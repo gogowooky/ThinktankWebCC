@@ -256,6 +256,10 @@ export class TTPanelTableBehavior implements IPanelModeBehavior {
                 }
             }
         }
+        // それでも見つからず、TTModels自身がリソースの場合はTTModels.Instanceを使う
+        if (!collection && TTModels.Instance?.ID === resource) {
+            collection = TTModels.Instance;
+        }
 
         if (collection instanceof TTCollection) {
             totalCount = collection.Count;
