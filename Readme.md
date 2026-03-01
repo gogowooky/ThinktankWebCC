@@ -231,6 +231,11 @@
 
 - TTChats/TTChatの追加
 
+[260302]
+- 以下のWebView用のkeybindingを追加してください。
+Alt+S : WebView.Action.Search
+WebView.Action.SearchはWebView.Keywordに /ttsearch と入力して全文検索サービスを表示します。
+
 [260301]
 - 質問です。WebViewではキーイベントが取得できていません、キーイベントが発生していないのでしょうか？
 

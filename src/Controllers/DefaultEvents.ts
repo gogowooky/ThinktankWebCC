@@ -85,6 +85,7 @@ export function InitializeDefaultEvents(models: TTModels) {
 
     // Global Search (WebView)
     AddEvent('*-*-*-*', 'Control+Alt', 'F', 'WebView.OpenSearch');
+    AddEvent('*-WebView-*-*', 'Alt', 'S', 'WebView.Action.Search');         // WebView内検索 (Alt+S:Shelfより優先)
 
     AddEvent('*-*-*-ExApp', '', 'Z', 'Application.Style.PanelRatio:zen');           // style zen
     AddEvent('*-*-*-ExApp', '', 'S', 'Application.Style.PanelRatio:standard');      // style standard

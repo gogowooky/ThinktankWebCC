@@ -85,6 +85,15 @@ export function InitializeDefaultActions(models: TTModels) {
         }
     });
 
+    AddAction('WebView.Action.Search', 'WebViewで全文検索画面を表示', (_context) => {
+        const app = TTApplication.Instance;
+        const panel = app.ActivePanel;
+        if (panel) {
+            panel.WebView.ApplyUrl('/ttsearch');
+            app.Focus(panel.Name, 'WebView', 'Keyword');
+        }
+    });
+
     AddAction('WebView.Keyword.Query', 'WebViewキーワード欄の入力を実行', (_context) => {
         const app = TTApplication.Instance;
         const panel = app.ExCurrentPanel || app.ActivePanel;
