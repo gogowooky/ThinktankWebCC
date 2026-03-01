@@ -231,6 +231,10 @@
 
 - TTChats/TTChatの追加
 
+[260230]
+- TTMemosのcsvキャッシュはlocal cacheとBQの両方に保存しますが、TTMemosへのTTMemoの登録は、まずBQの一覧情報からの登録を試み、BQアクセスができない場合に、local cacheからよみとる形にしてください。
+
+
 [260227]
 
 - TTState((Panel).Editor.CurPos)の設定値に、linestart+/lineend+を追加してください。linestart+は現在位置が行先頭であった場合は文書先頭へ、lineend+は現在位置が行末であった場合は文書末尾へ移動します。
