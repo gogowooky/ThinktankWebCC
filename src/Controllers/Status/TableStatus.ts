@@ -138,6 +138,16 @@ export function registerTableStatus(models: TTModels) {
             BindPanelWatch(status, id, (panel) => panel.Keywords['WebView'] || '');
         }
     });
+    status.RegisterState('[Panels].WebView.CurPos', '[Panels]WebViewのリンク位置', {
+        Default: () => '',
+        Apply: (id: string, val: string) => {
+            const panel = GetPanel(id);
+            if (panel) panel.WebView.CurPos = val;
+        },
+        Watch: (id: string) => {
+            BindPanelWatchWithRetry(status, id, (panel) => panel.WebView.CurPos);
+        }
+    });
     // #endregion
 
     // #region [Panels].Keyword.* (Keywordカーソル・選択)

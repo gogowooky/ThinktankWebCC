@@ -120,7 +120,7 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #endregion
     // #region Editor tool         Status:     ![ H ]
     AddEvent('*-Table-*-*', 'Alt', 'H', 'Application.Current.Tool:Main');         // Tool
-    AddEvent('*-WebView-*-*', 'Alt', 'H', 'Application.Current.Tool:Main');         // Tool
+    AddEvent('*-WebView-*-*', 'Alt', 'H', 'Application.Current.Tool:next');         // Tool
     AddEvent('*-Editor-*-*', 'Alt', 'H', 'Application.Current.Tool:next');         // Tool
     // #endregion
     // #region Application exapp        Status:     ![ A ]

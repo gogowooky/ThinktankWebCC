@@ -217,6 +217,64 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
         };
     }, [model]);
 
+    // WebView CurPos Handler (リンク位置ナビゲーション)
+    React.useEffect(() => {
+        const curPosSubId = `WebViewCurPos:${model.ID}`;
+        let lastCurPos = model.WebView.CurPos;
+
+        model.AddOnUpdate(curPosSubId, () => {
+            const newCurPos = model.WebView.CurPos;
+            if (newCurPos === lastCurPos) return;
+            lastCurPos = newCurPos;
+
+            if (!webviewIframeRef.current) return;
+            try {
+                const iframeDoc = webviewIframeRef.current.contentDocument || webviewIframeRef.current.contentWindow?.document;
+                if (!iframeDoc) return;
+
+                const links = Array.from(iframeDoc.querySelectorAll('a[href]')) as HTMLElement[];
+                if (links.length === 0) return;
+
+                const currentFocus = iframeDoc.activeElement as HTMLElement;
+                const currentIndex = links.indexOf(currentFocus);
+
+                let nextIndex = -1;
+                if (newCurPos === 'next') {
+                    nextIndex = currentIndex === -1 ? 0 : Math.min(links.length - 1, currentIndex + 1);
+                } else if (newCurPos === 'prev') {
+                    nextIndex = currentIndex === -1 ? links.length - 1 : Math.max(0, currentIndex - 1);
+                } else if (newCurPos === 'first') {
+                    nextIndex = 0;
+                } else if (newCurPos === 'last') {
+                    nextIndex = links.length - 1;
+                } else {
+                    const parsed = parseInt(newCurPos, 10);
+                    if (!isNaN(parsed)) {
+                        nextIndex = Math.max(0, Math.min(links.length - 1, parsed));
+                    }
+                }
+
+                if (nextIndex !== -1) {
+                    const target = links[nextIndex];
+                    if (nextIndex !== currentIndex) {
+                        target.focus();
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    // コマンドを実際のインデックスに正規化（再処理防止のため先に lastCurPos を更新）
+                    const indexStr = String(nextIndex);
+                    lastCurPos = indexStr;
+                    model.WebView.CurPos = indexStr;
+                }
+            } catch (_e) {
+                // クロスオリジンiframeの場合は無視
+            }
+        });
+
+        return () => {
+            model.RemoveOnUpdate(curPosSubId);
+        };
+    }, [model]);
+
     // メインエディタのハンドルをモデルに設定
     // エディタがマウントされた後に参照を設定するため、ポーリングで取得を試みる
     React.useEffect(() => {
@@ -354,6 +412,12 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
                         // モデルへ同期
                         model.SetKeywordsText('WebView', href, false); // 表示は更新しない
                         model.WebView.CurrentLink = href;
+                        // CurPos をリンクのインデックスに更新
+                        const links = Array.from(iframeDoc.querySelectorAll('a[href]')) as HTMLElement[];
+                        const idx = links.indexOf(target);
+                        if (idx !== -1) {
+                            model.WebView.CurPos = String(idx);
+                        }
                     }
                 };
 
@@ -475,7 +539,7 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
         return () => {
             iframe.removeEventListener('load', setupIframeKeyHandler);
         };
-    }, [mode, editorText]);
+    }, [mode, editorText, webViewUrl]);
 
 
 
