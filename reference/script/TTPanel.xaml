@@ -1,0 +1,57 @@
+﻿
+
+<UserControl
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+    xmlns:folding="clr-namespace:ICSharpCode.AvalonEdit.Folding;assembly=ICSharpCode.AvalonEdit"
+    xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf" >
+    
+
+    <UserControl.Resources>
+        <ResourceDictionary Source="Style.xaml" />
+    </UserControl.Resources>
+
+    <!-- Menu -->
+    <UserControl.ContextMenu>
+        <ContextMenu/>
+    </UserControl.ContextMenu>
+
+    <DockPanel >
+        <Label Name="Title" DockPanel.Dock="Top" />
+
+        <DockPanel Name="EditorPanel" 
+            HorizontalAlignment="Stretch"
+            Width = "{Binding ElementName=Title, Path=ActualWidth}" >
+            <avalonEdit:TextEditor Name="EditorKeyword" DockPanel.Dock="Top" 
+                Style="{StaticResource KeywordStyle}" />
+            <avalonEdit:TextEditor Name="EditorMain"    
+                Style="{StaticResource EditorStyle}" />
+        </DockPanel>
+
+
+        <DockPanel Name="TablePanel"
+            HorizontalAlignment="Stretch"> 
+            <avalonEdit:TextEditor Name="TableKeyword"  DockPanel.Dock="Top" 
+                Style="{StaticResource KeywordStyle}" />
+            <DataGrid Name="TableMain" />
+        </DockPanel>
+
+
+        <DockPanel Name="WebViewPanel"
+            HorizontalAlignment="Stretch">
+            <avalonEdit:TextEditor Name="WebViewKeyword" DockPanel.Dock="Top"
+                Style="{StaticResource KeywordStyle}"/>
+            <wv2:WebView2 Name="WebViewMain" 
+                Focusable ="True"
+                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" >
+            </wv2:WebView2>
+        </DockPanel>
+
+
+    </DockPanel>
+
+
+</UserControl>

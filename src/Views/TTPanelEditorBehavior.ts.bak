@@ -1,0 +1,1155 @@
+﻿/**
+ * TTPanelEditorBehavior.ts
+ * TTPanel の Editor モード関連の機能を集約
+ */
+
+import { TTModels } from '../models/TTModels';
+import type { TTMemo } from '../models/TTMemo';
+import type { TTMemo } from '../models/TTMemo';
+import type { IPanelModeBehavior, RequestInfo } from './IPanelModeBehavior';
+import type { ActionContext } from '../types';
+import { getRequestPatterns, findRequestMatches } from '../services/RequestLinkProvider';
+
+// エディタへのハンドルインターフェース（CodeEditorHandleと互換）
+export interface EditorHandleInterface {
+    focus: () => void;
+    triggerAction: (actionId: string) => void;
+    getEditor: () => any | null;
+}
+
+/**
+ * TTPanel の Editor モード関連の機能を管理するクラス
+ */
+export class TTPanelEditorBehavior implements IPanelModeBehavior {
+
+    // #region Private Fields
+    private _panel: { ID: string; Name: string; NotifyUpdated: () => void };
+
+    // エディタへのハンドル
+    public Handle: EditorHandleInterface | null = null;
+
+    // リソース（表示中のメモID）
+    private _resource: string = '';
+
+    // エディタのテキスト内容
+    private _text: string = '';
+
+    // 自分で編集（ローカル変更）中かどうかを追跡
+    private _isEditingLocally: boolean = false;
+
+    // 保存関連
+    private _saveTimerId: ReturnType<typeof setTimeout> | null = null;
+    private _isSaving: boolean = false;
+
+    // エディタオプション
+    private _wordWrap: boolean = false;
+    private _minimap: boolean = true;
+    private _lineNumbers: boolean = true;
+
+    // キーワード
+    private _keywords: string = '';
+    private _activeKeyword: string = '';
+
+    constructor(panel: { ID: string; Name: string; NotifyUpdated: () => void }) {
+        this._panel = panel;
+    }
+    // #endregion
+
+    // #region Resource
+    public get Resource(): string {
+        return this._resource;
+    }
+    public set Resource(value: string) {
+        if (this._resource === value) return;
+
+        // 以前のメモのサブスクリプションを解除
+        this.unsubscribeFromMemo();
+
+        this._resource = value;
+        this._isEditingLocally = false; // Fix: Reset local editing state
+        this._text = ''; // Fix: Clear text to avoid stale content
+        this._panel.NotifyUpdated();
+        this.ReloadContent();
+    }
+    // #endregion
+
+    // #region Text
+    public get Text(): string {
+        return this._text;
+    }
+
+    public set Text(value: string) {
+        if (this._text === value) return;
+        this._text = value;
+        this._isEditingLocally = true;
+        this._panel.NotifyUpdated();
+
+        // デバウンス付き保存ルーチン
+        this.scheduleSave();
+    }
+
+    /**
+     * 外部からテキストを設定（NotifyUpdatedを呼ぶが保存はしない）
+     */
+    public setTextSilent(value: string): void {
+        if (this._text === value) return;
+        this._text = value;
+    }
+    // #endregion
+
+    // #region Editor Options
+    public get WordWrap(): boolean {
+        return this._wordWrap;
+    }
+    public set WordWrap(value: boolean) {
+        if (this._wordWrap === value) return;
+        this._wordWrap = value;
+        this._panel.NotifyUpdated();
+    }
+
+    public get Minimap(): boolean {
+        return this._minimap;
+    }
+    public set Minimap(value: boolean) {
+        if (this._minimap === value) return;
+        this._minimap = value;
+        this._panel.NotifyUpdated();
+    }
+
+    public get LineNumbers(): boolean {
+        return this._lineNumbers;
+    }
+    public set LineNumbers(value: boolean) {
+        if (this._lineNumbers === value) return;
+        this._lineNumbers = value;
+        this._panel.NotifyUpdated();
+    }
+    // #endregion
+
+    // #region Keywords
+    public get Keywords(): string {
+        return this._keywords;
+    }
+    public set Keywords(value: string) {
+        if (this._keywords === value) return;
+        this._keywords = value;
+        this._panel.NotifyUpdated();
+    }
+
+    public get ActiveKeyword(): string {
+        return this._activeKeyword;
+    }
+    public set ActiveKeyword(value: string) {
+        if (this._activeKeyword === value) return;
+        this._activeKeyword = value;
+        this._panel.NotifyUpdated();
+    }
+
+    // #endregion
+
+    // #region SearchMode
+    /**
+     * Search Widget State ('Search' | 'Replace' | 'None')
+     */
+    public get SearchMode(): string {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return 'None';
+
+        try {
+            const controller = editor.getContribution('editor.contrib.findController');
+            if (controller) {
+                // getState() returns { isRevealed: boolean, isReplaceRevealed: boolean }
+                const state = controller.getState();
+                if (!state.isRevealed) return 'None';
+                if (state.isReplaceRevealed) return 'Replace';
+                return 'Search';
+            }
+        } catch (e) {
+            console.warn('[TTPanelEditorBehavior] Failed to get findController state', e);
+        }
+        return 'None';
+    }
+
+    public set SearchMode(value: string) {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return;
+
+        try {
+            const current = this.SearchMode;
+            if (current === value) return;
+
+            if (value === 'None') {
+                // Close
+                editor.trigger('source', 'closeFindWidget', null);
+            } else if (value === 'Replace') {
+                // Open Replace
+                // If currently in Search mode (revealed but not replace), we might need to toggle it 
+                // or force open. Some versions of Monaco toggle back and forth with startFindReplace, 
+                // others might need explicit handling.
+
+                // Force close if it's just 'Search' to reset state, ensuring startFindReplace opens it as Replace
+                // console.log('[TTPanelEditorBehavior] Switching to Replace mode...');
+
+                const controller = editor.getContribution('editor.contrib.findController');
+                // @ts-ignore
+                const isRevealed = controller?.getState()?.isRevealed;
+                // @ts-ignore
+                const isReplaceRevealed = controller?.getState()?.isReplaceRevealed;
+
+                if (isRevealed && !isReplaceRevealed) {
+                    // Close first to ensure next call opens Replace
+                    editor.trigger('source', 'closeFindWidget', null);
+                    // Small delay might be needed in some envs but let's try synchronous first
+                }
+
+                // Correct command ID for Find & Replace
+                editor.trigger('source', 'editor.action.startFindReplaceAction', null);
+            } else if (value === 'Search') {
+                // Open Search
+                // If Replace is open, close it first to revert to simple Search
+                const controller = editor.getContribution('editor.contrib.findController');
+                // @ts-ignore
+                const isReplaceRevealed = controller?.getState()?.isReplaceRevealed;
+
+                if (isReplaceRevealed) {
+                    editor.trigger('source', 'closeFindWidget', null);
+                }
+
+                const action = editor.getAction('actions.find');
+                if (action) action.run();
+            }
+            // Note: We don't call NotifyUpdated() here immediately because the editor event loop 
+            // will update the UI. However, without a dedicated listener, the State cache 
+            // might lag until something else triggers an update. 
+            // For now, we rely on the command execution.
+            this._panel.NotifyUpdated();
+        } catch (e) {
+            console.warn('[TTPanelEditorBehavior] Failed to set SearchMode', e);
+        }
+    }
+    // #endregion
+
+    // #region Search Options (Regex, CaseSensitive, WholeWord)
+    /**
+     * Search Regex State
+     */
+    public get SearchRegex(): boolean {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return false;
+        try {
+            const controller = editor.getContribution('editor.contrib.findController');
+            // @ts-ignore
+            return controller?.getState()?.isRegex || false;
+        } catch (e) { return false; }
+    }
+    public set SearchRegex(value: boolean) {
+        if (this.SearchRegex === value) return;
+        const editor = this.Handle?.getEditor();
+        if (editor) {
+            // toggleFindRegex toggles state. If current != target, toggle it.
+            editor.trigger('source', 'toggleFindRegex', null);
+            this._panel.NotifyUpdated();
+        }
+    }
+
+    /**
+     * Search CaseSensitive State
+     */
+    public get SearchCaseSensitive(): boolean {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return false;
+        try {
+            const controller = editor.getContribution('editor.contrib.findController');
+            // @ts-ignore
+            return controller?.getState()?.matchCase || false;
+        } catch (e) { return false; }
+    }
+    public set SearchCaseSensitive(value: boolean) {
+        if (this.SearchCaseSensitive === value) return;
+        const editor = this.Handle?.getEditor();
+        if (editor) {
+            editor.trigger('source', 'toggleFindCaseSensitive', null);
+            this._panel.NotifyUpdated();
+        }
+    }
+
+    /**
+     * Search WholeWord State
+     */
+    public get SearchWholeWord(): boolean {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return false;
+        try {
+            const controller = editor.getContribution('editor.contrib.findController');
+            // @ts-ignore
+            return controller?.getState()?.wholeWord || false;
+        } catch (e) { return false; }
+    }
+    public set SearchWholeWord(value: boolean) {
+        if (this.SearchWholeWord === value) return;
+        const editor = this.Handle?.getEditor();
+        if (editor) {
+            editor.trigger('source', 'toggleFindWholeWord', null);
+            this._panel.NotifyUpdated();
+        }
+    }
+    // #endregion
+
+    // #region Replace Options
+    /**
+     * Replace KeepCapitalize State
+     */
+    public get ReplaceKeepCapitalize(): boolean {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return false;
+        try {
+            const controller = editor.getContribution('editor.contrib.findController');
+            // @ts-ignore
+            return controller?.getState()?.preserveCase || false;
+        } catch (e) { return false; }
+    }
+    public set ReplaceKeepCapitalize(value: boolean) {
+        if (this.ReplaceKeepCapitalize === value) return;
+        const editor = this.Handle?.getEditor();
+        if (editor) {
+            editor.trigger('source', 'togglePreserveCase', null);
+            this._panel.NotifyUpdated();
+        }
+    }
+
+    /**
+     * Replace In Selection State
+     */
+    public get ReplaceInSelection(): boolean {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return false;
+        try {
+            const controller = editor.getContribution('editor.contrib.findController');
+            // @ts-ignore
+            return controller?.getState()?.isFindInSelection || false;
+        } catch (e) { return false; }
+    }
+    public set ReplaceInSelection(value: boolean) {
+        if (this.ReplaceInSelection === value) return;
+        const editor = this.Handle?.getEditor();
+        if (editor) {
+            editor.trigger('source', 'toggleFindInSelection', null);
+            this._panel.NotifyUpdated();
+        }
+    }
+    // #endregion
+
+    /**
+     * キーワードを整形（重複除去、空行除去）
+     */
+    public FormatKeywords(): void {
+        const text = this._keywords;
+        if (!text) return;
+
+        const lines = text.split(/\r?\n/);
+        const validLines = lines.filter(line => line.trim().length > 0);
+        const uniqueLines = Array.from(new Set(validLines));
+        const newText = uniqueLines.join('\n');
+
+        if (newText !== text) {
+            this.Keywords = newText;
+        }
+    }
+    // #endregion
+
+    // #region Save
+    private scheduleSave(): void {
+        if (this._saveTimerId !== null) {
+            clearTimeout(this._saveTimerId);
+        }
+
+        this._saveTimerId = setTimeout(() => {
+            this._saveTimerId = null;
+            this.saveContent();
+        }, 100);
+    }
+
+    private async saveContent(): Promise<void> {
+        console.log(`[TTPanelEditorBehavior.${this._panel.Name}] saveContent called, resource: ${this._resource}, isSaving: ${this._isSaving}`);
+
+        if (this._isSaving) return;
+        if (!this._resource) {
+            console.log(`[TTPanelEditorBehavior.${this._panel.Name}] Resourceが未設定のため保存スキップ`);
+            return;
+        }
+
+        this._isSaving = true;
+        try {
+            const memos = TTModels.Instance?.Memos;
+            if (!memos) {
+                console.log(`[TTPanelEditorBehavior.${this._panel.Name}] Memosが未初期化のため保存スキップ`);
+                return;
+            }
+
+            let memo = memos.GetItem(this._resource) as TTMemo;
+            if (memo) {
+                memo.setContentSilent(this._text);
+                await memo.SaveContent();
+                memo.NotifyUpdated();
+                console.log(`[TTPanelEditorBehavior.${this._panel.Name}] 自動保存完了: ${this._resource}`);
+            } else {
+                console.log(`[TTPanelEditorBehavior.${this._panel.Name}] メモが見つかりません: ${this._resource}`);
+            }
+        } catch (e) {
+            console.error(`[TTPanelEditorBehavior.${this._panel.Name}] 自動保存失敗: ${this._resource}`, e);
+        } finally {
+            this._isSaving = false;
+            this._isEditingLocally = false;
+        }
+    }
+    // #endregion
+
+    // #region Memo Subscription
+    private unsubscribeFromMemo(): void {
+        if (this._resource) {
+            const memos = TTModels.Instance?.Memos;
+            if (memos) {
+                const memo = memos.GetItem(this._resource);
+                if (memo) {
+                    memo.RemoveOnUpdate(`Panel:${this._panel.ID}`);
+                }
+            }
+        }
+    }
+
+    private subscribeToMemo(memo: TTMemo): void {
+        console.log(`[TTPanelEditorBehavior.${this._panel.Name}] subscribeToMemo called for: ${memo.ID}`);
+        memo.AddOnUpdate(`Panel:${this._panel.ID}`, () => {
+            console.log(`[TTPanelEditorBehavior.${this._panel.Name}] Memo update callback triggered`);
+            if (!this._isEditingLocally && this._text !== memo.Content) {
+                console.log(`[TTPanelEditorBehavior.${this._panel.Name}] 外部からのメモ変更を受信: ${memo.ID}`);
+                this._text = memo.Content;
+                this._panel.NotifyUpdated();
+            }
+        });
+    }
+
+    private async ReloadContent(): Promise<void> {
+        console.log(`[TTPanelEditorBehavior.${this._panel.Name}] ReloadContent called, resource: ${this._resource}`);
+        if (!this._resource) {
+            this._text = '';
+            this._panel.NotifyUpdated();
+            return;
+        }
+
+        try {
+            const memos = TTModels.Instance.Memos;
+            const memo = await memos.getOrCreateMemo(this._resource);
+            console.log(`[TTPanelEditorBehavior.${this._panel.Name}] Got memo: ${memo.ID}`);
+
+            this.subscribeToMemo(memo);
+            this._text = memo.Content;
+
+            console.log(`[TTPanelEditorBehavior.${this._panel.Name}] Reloaded content logic: ID=${memo.ID}, ContentLength=${memo.Content.length}, IsEmpty=${!memo.Content}`);
+
+            this._panel.NotifyUpdated();
+
+
+        } catch (e) {
+            console.error(`Failed to reload content for ${this._resource}`, e);
+            this._text = '';
+            this._panel.NotifyUpdated();
+        }
+    }
+
+
+
+    // #region Navigation
+    /**
+     * 指定行から始まる折りたたみ領域が閉じている場合、その終了行を返す
+     * 閉じている場合や折りたたみ領域がない場合は-1を返す
+     */
+    private getCollapsedRangeEndLine(editor: any, startLineNumber: number): number {
+        const foldingController = editor.getContribution?.('editor.contrib.folding');
+        if (!foldingController) {
+            console.warn('[TTPanelEditorBehavior] foldingController not found');
+            return -1;
+        }
+
+        try {
+            // foldingModel を直接参照（アンダースコアなし）
+            let foldingModel = foldingController.foldingModel;
+            if (!foldingModel) {
+                // getFoldingModel メソッドがある場合も考慮
+                if (typeof foldingController.getFoldingModel === 'function') {
+                    foldingModel = foldingController.getFoldingModel();
+                }
+            }
+
+            if (!foldingModel) {
+                console.warn('[TTPanelEditorBehavior] foldingModel not found');
+                return -1;
+            }
+
+            // regionsを取得
+            const regions = foldingModel.regions || foldingModel._regions;
+            if (!regions) {
+                console.warn('[TTPanelEditorBehavior] regions not found');
+                return -1;
+            }
+
+            for (let i = 0; i < regions.length; i++) {
+                const regionStart = regions.getStartLineNumber(i);
+                if (regionStart === startLineNumber) {
+                    const isCollapsed = regions.isCollapsed(i);
+                    if (isCollapsed) {
+                        return regions.getEndLineNumber(i);
+                    }
+                    // 折りたたまれていないがマッチした -> ループ終了して -1 を返す
+                    break;
+                }
+            }
+        } catch (e) {
+            console.warn('[TTPanelEditorBehavior] getCollapsedRangeEndLine error:', e);
+        }
+
+        return -1;
+    }
+    /**
+     * 指定行が折りたたまれた領域内にあるかどうかを判定
+     * 親Foldingが閉じている場合、その中の全ての行（子・見出し含む）は表示されていない
+     */
+    private isLineInCollapsedRegion(editor: any, lineNumber: number): boolean {
+        const foldingController = editor.getContribution?.('editor.contrib.folding');
+        if (!foldingController) return false;
+
+        try {
+            // foldingModel を直接参照（アンダースコアなし）
+            const foldingModel = foldingController.foldingModel;
+            if (!foldingModel) return false;
+
+            const regions = foldingModel.regions || foldingModel._regions;
+            if (!regions) return false;
+
+            return this.checkRegions(regions, lineNumber);
+        } catch (e) {
+            console.warn('[TTPanelEditorBehavior] FoldingModel API unavailable:', e);
+        }
+
+        return false;
+    }
+    /**
+     * 折りたたみ領域内に行があるかチェック
+     */
+    private checkRegions(regions: any, lineNumber: number): boolean {
+        // 全ての折りたたまれた領域をチェック
+        // 折りたたまれた領域の開始行より後、終了行以前の行は全て非表示
+        for (let i = 0; i < regions.length; i++) {
+            const isCollapsed = regions.isCollapsed(i);
+            if (!isCollapsed) continue;
+
+            const startLine = regions.getStartLineNumber(i);
+            const endLine = regions.getEndLineNumber(i);
+
+            // 折りたたまれた領域の開始行より後の行は全て非表示
+            // (startLine自体は見出し行なので表示されている)
+            if (lineNumber > startLine && lineNumber <= endLine) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * 前の見出し行に移動（表示されている見出しのみ対象）
+     */
+    public GotoPrevHeading(): void {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return;
+
+        const model = editor.getModel();
+        if (!model) return;
+
+        const position = editor.getPosition();
+        if (!position) return;
+
+        let line = position.lineNumber - 1;
+        while (line >= 1) {
+            // 折りたたまれた領域内の行はスキップ
+            if (this.isLineInCollapsedRegion(editor, line)) {
+                line--;
+                continue;
+            }
+
+            const lineContent = model.getLineContent(line);
+            if (/^#+\s/.test(lineContent)) {
+                editor.setPosition({ lineNumber: line, column: 1 });
+                editor.revealLineNearTop(line, 1);
+                return;
+            }
+            line--;
+        }
+    }
+    /**
+     * 次の見出し行に移動（表示されている見出しのみ対象）
+     * カーソル位置の見出しが閉じた折りたたみである場合、その子はスキップする
+     */
+    public GotoNextHeading(): void {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return;
+
+        const model = editor.getModel();
+        if (!model) return;
+
+        const position = editor.getPosition();
+        if (!position) return;
+
+        const lineCount = model.getLineCount();
+        let line = position.lineNumber + 1;
+
+        // 現在の位置が折りたたまれた見出しの場合、その終了行までスキップ
+        const currentLineContent = model.getLineContent(position.lineNumber);
+        if (/^#+\s/.test(currentLineContent)) {
+            const collapsedEndLine = this.getCollapsedRangeEndLine(editor, position.lineNumber);
+            if (collapsedEndLine > 0) {
+                // 折りたたまれた領域の終了行の次から検索開始
+                line = collapsedEndLine + 1;
+            }
+        }
+
+        while (line <= lineCount) {
+            // この行が見出し行かチェック
+            const lineContent = model.getLineContent(line);
+            if (/^#+\s/.test(lineContent)) {
+                // 折りたたまれた領域内・見出しをスキップ
+                if (this.isLineInCollapsedRegion(editor, line)) {
+                    // この見出しは非表示なので、その折りたたみ領域の終了行までスキップ
+                    const endLine = this.getCollapsedRangeEndLine(editor, line);
+                    if (endLine > 0) {
+                        line = endLine + 1;
+                    } else {
+                        line++;
+                    }
+                    continue;
+                }
+
+                // 表示されている見出しに移動
+                editor.setPosition({ lineNumber: line, column: 1 });
+                editor.revealLineNearTop(line, 1);
+                return;
+            }
+            line++;
+        }
+    }
+
+    private getHeadingLevel(content: string): number {
+        const match = content.match(/^(#+)\s/);
+        return match ? match[1].length : 0;
+    }
+
+    private getSiblingHeadings(): number[] {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return [];
+        const model = editor.getModel();
+        if (!model) return [];
+        const position = editor.getPosition();
+        if (!position) return [];
+
+        let currentLine = position.lineNumber;
+        let headingLevel = 0;
+
+        // 現在行が見出しでなければ、直近の上位見出しを探す
+        let content = model.getLineContent(currentLine);
+        headingLevel = this.getHeadingLevel(content);
+
+        if (headingLevel === 0) {
+            // 上にさかのぼって見出しを探す
+            let l = currentLine - 1;
+            while (l >= 1) {
+                const c = model.getLineContent(l);
+                const h = this.getHeadingLevel(c);
+                if (h > 0) {
+                    headingLevel = h;
+                    currentLine = l; // 基準行を更新
+                    break;
+                }
+                l--;
+            }
+        }
+
+        if (headingLevel === 0) return []; // 見出しがない
+
+        const siblings: number[] = [];
+        const lineCount = model.getLineCount();
+
+        console.log(`[getSiblingHeadings] BaseLine: ${currentLine}, Level: ${headingLevel}`);
+
+        // 上方向探索
+        for (let l = currentLine - 1; l >= 1; l--) {
+            const c = model.getLineContent(l);
+            const h = this.getHeadingLevel(c);
+            if (h > 0) {
+                if (h === headingLevel) {
+                    siblings.unshift(l);
+                } else if (h < headingLevel) {
+                    break; // 親が見つかったら終了
+                }
+            }
+        }
+
+        siblings.push(currentLine);
+
+        // 下方向探索
+        for (let l = currentLine + 1; l <= lineCount; l++) {
+            const c = model.getLineContent(l);
+            const h = this.getHeadingLevel(c);
+            if (h > 0) {
+                if (h === headingLevel) {
+                    siblings.push(l);
+                } else if (h < headingLevel) {
+                    break; // 親と同じレベル（次のセクション）が見つかったら終了
+                }
+            }
+        }
+
+        console.log(`[getSiblingHeadings] Found siblings: ${siblings.join(', ')}`);
+        return siblings;
+    }
+
+    private revealLine(lineNumber: number): void {
+        const editor = this.Handle?.getEditor();
+        if (editor) {
+            editor.setPosition({ lineNumber, column: 1 });
+            editor.revealLineNearTop(lineNumber, 1);
+        }
+    }
+
+    public GotoFirstSiblingHeading(): void {
+        const siblings = this.getSiblingHeadings();
+        if (siblings.length > 0) {
+            this.revealLine(siblings[0]);
+        }
+    }
+
+    public GotoLastSiblingHeading(): void {
+        const siblings = this.getSiblingHeadings();
+        if (siblings.length > 0) {
+            this.revealLine(siblings[siblings.length - 1]);
+        }
+    }
+
+    public async OpenAllSiblingHeading(): Promise<void> {
+        const siblings = this.getSiblingHeadings();
+        await this.toggleFoldings(siblings, false);
+    }
+
+    public async CloseAllSiblingHeading(): Promise<void> {
+        const siblings = this.getSiblingHeadings();
+        await this.toggleFoldings(siblings, true);
+    }
+
+    private async toggleFoldings(lines: number[], doFold: boolean): Promise<void> {
+        const editor = this.Handle?.getEditor();
+        if (!editor) return;
+
+        const foldingController = editor.getContribution?.('editor.contrib.folding');
+        if (!foldingController) return;
+
+        let foldingModel = foldingController.foldingModel;
+        if (!foldingModel && typeof foldingController.getFoldingModel === 'function') {
+            foldingModel = foldingController.getFoldingModel();
+        }
+        if (!foldingModel) return;
+        const regions = foldingModel.regions || foldingModel._regions;
+        if (!regions) return;
+
+        const originalPosition = editor.getPosition();
+        const originalSelections = editor.getSelections();
+
+        const targetLines: number[] = [];
+
+        for (const line of lines) {
+            let regionIndex = -1;
+            for (let i = 0; i < regions.length; i++) {
+                if (regions.getStartLineNumber(i) === line) {
+                    regionIndex = i;
+                    break;
+                }
+            }
+
+            if (regionIndex === -1) continue;
+
+            const isCollapsed = regions.isCollapsed(regionIndex);
+
+            if (doFold && !isCollapsed) {
+                targetLines.push(line);
+            } else if (!doFold && isCollapsed) {
+                targetLines.push(line);
+            }
+        }
+
+        if (targetLines.length === 0) return;
+
+        const actionId = doFold ? 'editor.fold' : 'editor.unfold';
+        const action = editor.getAction(actionId);
+
+        if (!action) {
+            console.warn(`[toggleFoldings] Action ${actionId} not found`);
+            return;
+        }
+
+        for (const line of targetLines) {
+            editor.setPosition({ lineNumber: line, column: 1 });
+            await action.run();
+        }
+
+        if (originalSelections) {
+            editor.setSelections(originalSelections);
+        }
+        if (originalPosition) {
+            editor.setPosition(originalPosition);
+            editor.revealLine(originalPosition.lineNumber);
+        }
+    }
+    // #endregion
+
+    // #region Request
+    /**
+     * 現在のアクティブなリクエスト（カーソル位置）を取得
+     */
+    public GetActiveRequest(context?: ActionContext): RequestInfo | null {
+        // コンテキストの座標があればそれを使う、なければ計算
+        let clientX = context?.ClientX;
+        let clientY = context?.ClientY;
+
+        const editor = this.Handle?.getEditor();
+        if (editor) {
+            const position = editor.getPosition();
+            const model = editor.getModel();
+
+            if (position && model) {
+                const patterns = getRequestPatterns();
+                const lineContent = model.getLineContent(position.lineNumber);
+                const matches = findRequestMatches(lineContent, patterns);
+
+                const col = position.column;
+                for (const m of matches) {
+                    if (col >= m.startColumn && col <= m.endColumn) {
+                        const requestId = m.requestId;
+                        const requestTag = m.matchedText;
+
+                        // Coordinate calculation if missing
+                        if (clientX === undefined || clientY === undefined) {
+                            const scrolledVisiblePosition = editor.getScrolledVisiblePosition(position);
+                            if (scrolledVisiblePosition) {
+                                const editorDom = editor.getDomNode();
+                                if (editorDom) {
+                                    const rect = editorDom.getBoundingClientRect();
+                                    clientX = rect.left + scrolledVisiblePosition.left;
+                                    clientY = rect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height;
+                                }
+                            }
+                        }
+
+                        return { requestId, requestTag, clientX, clientY };
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    // #endregion
+    const editor = this.Handle?.getEditor();
+    if(!editor) return;
+
+    const foldingController = editor.getContribution?.('editor.contrib.folding');
+    if(!foldingController) return;
+
+        // FoldingModelの取得（Region判定用）
+        let foldingModel = foldingController.foldingModel;
+if (!foldingModel && typeof foldingController.getFoldingModel === 'function') {
+    foldingModel = foldingController.getFoldingModel();
+}
+if (!foldingModel) return;
+const regions = foldingModel.regions || foldingModel._regions;
+if (!regions) return;
+
+const originalPosition = editor.getPosition();
+const originalSelections = editor.getSelections();
+
+const targetLines: number[] = [];
+
+console.log(`[toggleFoldings] Targets: ${lines.join(', ')}, doFold: ${doFold}`);
+
+// 対象行をフィルタリング
+for (const line of lines) {
+    // その行に対応するregion indexを探す
+    let regionIndex = -1;
+    for (let i = 0; i < regions.length; i++) {
+        if (regions.getStartLineNumber(i) === line) {
+            regionIndex = i;
+            break;
+        }
+    }
+
+    if (regionIndex === -1) {
+        console.log(`[toggleFoldings] Line ${line} is not a folding region start. Skipped.`);
+        continue;
+    }
+
+    const isCollapsed = regions.isCollapsed(regionIndex);
+
+    if (doFold && !isCollapsed) {
+        // 閉じたい & 開いている -> 対象
+        targetLines.push(line);
+    } else if (!doFold && isCollapsed) {
+        // 開きたい & 閉じている -> 対象
+        targetLines.push(line);
+    }
+}
+
+if (targetLines.length === 0) {
+    console.log('[toggleFoldings] No valid lines to toggle.');
+    return;
+}
+
+console.log(`[toggleFoldings] Processing ${targetLines.length} lines to ${doFold ? 'FOLD' : 'UNFOLD'}: ${targetLines.join(', ')}`);
+
+const actionId = doFold ? 'editor.fold' : 'editor.unfold';
+const action = editor.getAction(actionId);
+if (action) {
+    action.run().catch(e => console.warn(`[toggleFoldings] Action ${actionId} failed:`, e));
+}
+    }
+    // #endregion
+
+    // #region Request
+    /**
+     * 現在のアクティブなリクエスト（カーソル位置）を取得
+     */
+    public GetActiveRequest(context ?: ActionContext): RequestInfo | null {
+    // コンテキストの座標があればそれを使う、なければ計算
+    let clientX = context?.ClientX;
+    let clientY = context?.ClientY;
+
+    const editor = this.Handle?.getEditor();
+    if (editor) {
+        const position = editor.getPosition();
+        const model = editor.getModel();
+
+        if (position && model) {
+            const patterns = getRequestPatterns();
+            const lineContent = model.getLineContent(position.lineNumber);
+            const matches = findRequestMatches(lineContent, patterns);
+
+            const col = position.column;
+            for (const m of matches) {
+                if (col >= m.startColumn && col <= m.endColumn) {
+                    const requestId = m.requestId;
+                    const requestTag = m.matchedText;
+
+                    // Coordinate calculation if missing
+                    if (clientX === undefined || clientY === undefined) {
+                        const scrolledVisiblePosition = editor.getScrolledVisiblePosition(position);
+                        if (scrolledVisiblePosition) {
+                            const editorDom = editor.getDomNode();
+                            if (editorDom) {
+                                const rect = editorDom.getBoundingClientRect();
+                                clientX = rect.left + scrolledVisiblePosition.left;
+                                clientY = rect.top + scrolledVisiblePosition.top + scrolledVisiblePosition.height;
+                            }
+                        }
+                    }
+
+                    return { requestId, requestTag, clientX, clientY };
+                }
+            }
+        }
+    }
+    return null;
+}
+// #endregion
+
+if (!action) {
+    console.warn(`[toggleFoldings] Action ${actionId} not found`);
+    return;
+}
+
+// 各行を順次処理（非同期）
+for (const line of targetLines) {
+    console.log(`[toggleFoldings] ${doFold ? 'Folding' : 'Unfolding'} line ${line}`);
+    editor.setPosition({ lineNumber: line, column: 1 });
+    await action.run();
+}
+
+// 復元
+if (originalSelections) {
+    editor.setSelections(originalSelections);
+}
+if (originalPosition) {
+    editor.setPosition(originalPosition);
+    editor.revealLine(originalPosition.lineNumber);
+}
+}
+
+    public FoldOrCloseSiblings(): void {
+    const editor = this.Handle?.getEditor();
+    if(!editor) return;
+
+    const position = editor.getPosition();
+    if(!position) return;
+
+    const line = position.lineNumber;
+
+    // 既に閉じているかチェック
+    const collapsedEndLine = this.getCollapsedRangeEndLine(editor, line);
+    const isCollapsed = collapsedEndLine > 0;
+
+    if(isCollapsed) {
+        this.CloseAllSiblingHeading();
+    } else {
+        this.Handle?.triggerAction('editor.fold');
+    }
+}
+
+
+    // #endregion
+
+    // #region Request Navigation
+    /**
+     * ドキュメント内の全てのRequestマッチを取得して行番号順にソート
+     */
+    private getAllRequestMatches(): { lineNumber: number; startColumn: number; endColumn: number; matchedText: string } [] {
+    const editor = this.Handle?.getEditor();
+    if (!editor) return [];
+
+    const model = editor.getModel();
+    if (!model) return [];
+
+    // RequestLinkProviderからパターンを取得
+    // RequestLinkProviderからパターンを取得 (Top-level import used)
+    const patterns = getRequestPatterns();
+    const text = model.getValue();
+    const matches = findRequestMatches(text, patterns);
+
+    // 行番号、開始列でソート
+    matches.sort((a: any, b: any) => {
+        if (a.lineNumber !== b.lineNumber) {
+            return a.lineNumber - b.lineNumber;
+        }
+        return a.startColumn - b.startColumn;
+    });
+
+    return matches;
+}
+
+    /**
+     * 次のRequestへカーソルを移動
+     */
+    public GotoNextRequest(): void {
+    const editor = this.Handle?.getEditor();
+    if(!editor) return;
+
+    const position = editor.getPosition();
+    if(!position) return;
+
+    const matches = this.getAllRequestMatches();
+    if(matches.length === 0) return;
+
+    // 現在位置より後ろの最初のマッチを探す
+    for(const m of matches) {
+        if (m.lineNumber > position.lineNumber ||
+            (m.lineNumber === position.lineNumber && m.startColumn > position.column)) {
+            editor.setPosition({ lineNumber: m.lineNumber, column: m.startColumn });
+            editor.revealLineNearTop(m.lineNumber, 1);
+            return;
+        }
+    }
+
+        // 見つからない場合、最初のRequestへ（ラップ）
+        const first = matches[0];
+    editor.setPosition({ lineNumber: first.lineNumber, column: first.startColumn });
+    editor.revealLineNearTop(first.lineNumber, 1);
+}
+
+    /**
+     * 前のRequestへカーソルを移動
+     */
+    public GotoPrevRequest(): void {
+    const editor = this.Handle?.getEditor();
+    if(!editor) return;
+
+    const position = editor.getPosition();
+    if(!position) return;
+
+    const matches = this.getAllRequestMatches();
+    if(matches.length === 0) return;
+
+    // 現在位置より前の最後のマッチを探す（逆順で探索）
+    for(let i = matches.length - 1; i >= 0; i--) {
+    const m = matches[i];
+    if (m.lineNumber < position.lineNumber ||
+        (m.lineNumber === position.lineNumber && m.endColumn < position.column)) {
+        editor.setPosition({ lineNumber: m.lineNumber, column: m.startColumn });
+        editor.revealLineNearTop(m.lineNumber, 1);
+        return;
+    }
+}
+
+// 見つからない場合、最後のRequestへ（ラップ）
+const last = matches[matches.length - 1];
+editor.setPosition({ lineNumber: last.lineNumber, column: last.startColumn });
+editor.revealLineNearTop(last.lineNumber, 1);
+    }
+
+    /**
+     * 最初のRequestへカーソルを移動
+     */
+    public GotoFirstRequest(): void {
+    const editor = this.Handle?.getEditor();
+    if(!editor) return;
+
+    const matches = this.getAllRequestMatches();
+    if(matches.length === 0) return;
+
+    const first = matches[0];
+    editor.setPosition({ lineNumber: first.lineNumber, column: first.startColumn });
+    editor.revealLineNearTop(first.lineNumber, 1);
+}
+
+    /**
+     * 最後のRequestへカーソルを移動
+     */
+    public GotoLastRequest(): void {
+    const editor = this.Handle?.getEditor();
+    if(!editor) return;
+
+    const matches = this.getAllRequestMatches();
+    if(matches.length === 0) return;
+
+    const last = matches[matches.length - 1];
+    editor.setPosition({ lineNumber: last.lineNumber, column: last.startColumn });
+    editor.revealLineNearTop(last.lineNumber, 1);
+}
+    // #endregion
+
+    public OnKeyDown(e: KeyboardEvent, modifiers: string[], triggerAction: (context: any) => boolean): boolean {
+    // キーマッピング
+    let mappedKey = e.key.toUpperCase();
+    if (e.key === 'ArrowLeft') mappedKey = 'LEFT';
+    else if (e.key === 'ArrowRight') mappedKey = 'RIGHT';
+    else if (e.key === 'ArrowUp') mappedKey = 'UP';
+    else if (e.key === 'ArrowDown') mappedKey = 'DOWN';
+    else if (e.key === ' ') mappedKey = 'SPACE';
+    // F1-F12などはそのまま
+
+    const context = {
+        Key: mappedKey,
+        Mods: modifiers
+    };
+
+    const processed = triggerAction(context);
+
+    if (processed) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    return processed;
+}
+
+}

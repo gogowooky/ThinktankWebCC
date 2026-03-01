@@ -1,0 +1,109 @@
+.search-app-container {
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+    max-width: 800px;
+    margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    color: var(--tt-text, #333);
+    background-color: transparent;
+    min-height: 100vh;
+}
+
+.search-header {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.search-input-wrapper {
+    display: flex;
+    width: 100%;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-radius: 24px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #dfe1e5;
+}
+
+.search-input-wrapper:hover,
+.search-input-wrapper:focus-within {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-color: transparent;
+}
+
+.search-input {
+    flex-grow: 1;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    outline: none;
+    background: transparent;
+}
+
+.search-button {
+    background: #f8f9fa;
+    border: none;
+    padding: 0 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #5f6368;
+    border-left: 1px solid #dfe1e5;
+    transition: background 0.2s;
+}
+
+.search-button:hover {
+    background: #e8e9ea;
+}
+
+.search-results {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.search-result-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-result-title {
+    font-size: 14px;
+    color: #1a0dab;
+    text-decoration: none;
+    cursor: pointer;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.search-result-title:hover {
+    text-decoration: underline;
+}
+
+.search-result-snippet {
+    font-size: 12px;
+    color: #4d5156;
+    line-height: 1.4;
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.search-result-snippet strong {
+    font-weight: bold;
+    color: #000;
+    background-color: #ffffcc;
+    /* 少しマーカー風にする場合は残すが、太字のみの場合は色のみでもOK */
+}
+
+.search-loading,
+.search-error,
+.search-empty {
+    margin-top: 20px;
+    font-size: 16px;
+    color: #5f6368;
+    text-align: center;
+}

@@ -1,0 +1,94 @@
+.tt-command-palette-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 50px;
+}
+
+.tt-command-palette {
+    width: 600px;
+    max-width: 90%;
+    background-color: var(--tt-editor-bg);
+    color: var(--tt-editor-fg);
+    border: 1px solid var(--tt-border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.tt-command-palette-input-container {
+    padding: 10px;
+    border-bottom: 1px solid var(--tt-border-color);
+}
+
+.tt-command-palette-input {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+    background-color: var(--tt-keyword-bg);
+    color: var(--tt-editor-fg);
+    border: 1px solid var(--tt-border-color);
+    border-radius: 4px;
+    outline: none;
+}
+
+.tt-command-palette-input:focus {
+    border-color: var(--tt-title-bg);
+}
+
+.tt-command-palette-list {
+    max-height: 400px;
+    overflow-y: auto;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tt-command-palette-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid transparent;
+    /* Stabilize height */
+}
+
+.tt-command-palette-item:last-child {
+    border-bottom: none;
+}
+
+.tt-command-palette-item.selected {
+    background-color: var(--tt-list-item-selected);
+    color: #ffffff;
+    /* Ensure text is readable on selection */
+}
+
+.tt-command-palette-item.selected .tt-command-palette-item-desc {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.tt-command-palette-item:hover:not(.selected) {
+    background-color: var(--tt-list-item-bg);
+}
+
+.tt-command-palette-item-label {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tt-command-palette-item-desc {
+    font-size: 12px;
+    color: var(--tt-editor-fg);
+    opacity: 0.6;
+    margin-top: 2px;
+}

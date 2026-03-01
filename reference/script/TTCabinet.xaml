@@ -1,0 +1,18 @@
+<Window
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+    xmlns:folding="clr-namespace:ICSharpCode.AvalonEdit.Folding;assembly=ICSharpCode.AvalonEdit"
+    xmlns:Thinktank="clr-namespace:Thinktank;assembly={dllname}"
+    Title="Cabinet" Name="Cabinet" Height="400" Width="600" Top="10" Left="10"  >
+
+    <!-- <Window.Resources>
+        <ResourceDictionary Source=".\script\thinktank-style.xaml"/>
+    </Window.Resources> -->
+
+    <Grid Name="CabinetGrid" >
+    </Grid>
+
+</UserControl>

@@ -1,0 +1,128 @@
+/* CSS変数のデフォルト値（DefaultOriginal - ラベンダー系ライトテーマ） */
+:root {
+    --tt-base-color: #E6E6FA;
+    --tt-title-bg: #6A5ACD;
+    --tt-title-fg: #FFFFFF;
+    --tt-editor-bg: #FFFAF5;
+    --tt-editor-fg: #483D8B;
+    --tt-keyword-bg: #FFF8F0;
+    --tt-border-color: #B0B0D8;
+    --tt-column-header-bg: #7B68EE;
+    --tt-column-header-fg: #FFFFFF;
+    --tt-list-item-bg: #EAEAFF;
+    --tt-list-item-bg-alt: #F8F8FF;
+    --tt-list-item-selected: #C6C6FA;
+    --tt-splitter-bg: #B0B0D8;
+    --tt-splitter-hover: #6A5ACD;
+}
+
+.tt-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    border: 1px solid var(--tt-border-color);
+    background-color: var(--tt-base-color);
+    box-sizing: border-box;
+}
+
+.tt-panel-title {
+    background-color: var(--tt-title-bg);
+    color: var(--tt-title-fg);
+    padding: 0 8px;
+    font-size: 9.5pt;
+    font-weight: bold;
+    user-select: none;
+    border-bottom: 1px solid var(--tt-border-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tt-panel-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+
+.tt-panel-keyword {
+    height: 21px;
+    flex-shrink: 0;
+    flex-grow: 0;
+    border-bottom: 1px solid var(--tt-border-color);
+    overflow: hidden;
+}
+
+
+
+.tt-panel-main {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Monaco Editorのオーバーフローウィジェットを最前面に表示 */
+.monaco-editor .overflow-guard>.overflowingContentWidgets,
+.monaco-editor .overflow-guard>.monaco-editor-overlaymessage,
+.overflowingContentWidgets {
+    z-index: 10000 !important;
+}
+
+/* Custom Folding Icons */
+/* Monaco Editorのフォールディングアイコンの色のみ変更 */
+.monaco-editor .codicon-folding-collapsed::before,
+.monaco-editor .codicon-folding-expanded::before {
+    color: #555 !important;
+}
+
+/* ホバー時の視認性向上 */
+.monaco-editor .codicon-folding-collapsed:hover::before,
+.monaco-editor .codicon-folding-expanded:hover::before {
+    color: #888 !important;
+    cursor: pointer;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════
+   Table (model-browser/react-window) スクロールバースタイル
+   Monaco Editorと同じスタイル: デフォルト透明、ホバー/フォーカス時に表示
+   ════════════════════════════════════════════════════════════════════════════════ */
+.model-browser ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+}
+
+.model-browser ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.model-browser ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 0;
+    transition: background 0.2s;
+}
+
+/* パネルにホバー時またはフォーカス時にスクロールバーを表示 */
+.tt-panel:hover .model-browser ::-webkit-scrollbar-thumb,
+.tt-panel:focus-within .model-browser ::-webkit-scrollbar-thumb {
+    background: rgba(121, 121, 121, 0.4);
+}
+
+.model-browser ::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 100, 100, 0.7);
+}
+
+.model-browser ::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════
+   WebView (iframe) スクロールバースタイル
+   ※ iframeの内部スタイルはmarkdownToHtml.tsで設定
+   ════════════════════════════════════════════════════════════════════════════════ */
+.tt-panel-main iframe {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}

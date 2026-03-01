@@ -1,0 +1,40 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+
+import { TTApplication } from './Views/TTApplication';
+import { webSocketService } from './services/sync/WebSocketService';
+import { setupMemoWebSocketHandler } from './models/TTMemo';
+import { TTModels } from './models/TTModels';
+import { TTMemo } from './models/TTMemo';
+import { SearchApp } from './components/Search/SearchApp';
+
+const app = TTApplication.Instance;
+console.log('TTApplication initialized:', app);
+console.log('Panels:', app.Panels);
+console.log('Active Panel:', app.ActivePanel);
+
+// WebSocketサービスを初期化
+webSocketService.initialize();
+
+// メモのリモート更新ハンドラを設定
+setupMemoWebSocketHandler((fileId: string) => {
+    const memos = TTModels.Instance?.Memos;
+    if (memos) {
+        return memos.GetItem(fileId) as TTMemo | undefined;
+    }
+    return undefined;
+});
+
+// Test focus
+app.Focus('Library', 'Table', 'Main');
+console.log('Focused Tool:', app.FocusedTool);
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+    <React.StrictMode>
+        {window.location.pathname === '/' ? <App /> :
+            window.location.pathname === '/ttsearch' ? <SearchApp /> :
+                <div style={{ backgroundColor: '#ffffff', width: '100vw', height: '100vh' }}></div>}
+    </React.StrictMode>
+);

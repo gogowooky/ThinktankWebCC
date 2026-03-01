@@ -1,0 +1,99 @@
+﻿
+<SyntaxDefinition name="MD" extensions=".md" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+
+    <Color name="Marker1" background="#FFBBBB" />
+    <Color name="Marker2" background="#EEDDAA" />
+    <Color name="Marker3" background="#BBFFDD" />
+    <Color name="Marker4" background="#AACCFF" />
+    <Color name="Marker5" background="#EEDDFF" />
+    <Color name="Marker6" background="#CCCCCC" />
+
+    <Color name="Keyword1" background="#EEDDFF" foreground="#CC2222" fontWeight="bold" underline="true"/>
+    <Color name="Keyword2" background="#EEDDFF" foreground="#229922" fontWeight="bold" underline="true"/>
+    <Color name="Keyword3" background="#EEDDFF" foreground="#6666CC" fontWeight="bold" underline="true"/>
+    <Color name="Keyword4" background="#EEDDFF" foreground="#0088FF" fontWeight="bold" underline="true"/>
+    <Color name="Keyword5" background="#EEDDFF" foreground="#AA66AA" fontWeight="bold" underline="true"/>
+    <Color name="Keyword6" background="#EEDDFF" foreground="#666666" fontWeight="bold" underline="true"/>
+
+    <Color name="SectionL1" foreground="#008000" fontWeight="bold" underline="true" />
+    <Color name="SectionL2" foreground="#EEA500" fontWeight="bold" underline="true" />
+    <Color name="SectionL3" foreground="#DB7093" fontWeight="bold" underline="true" />
+    <Color name="SectionL4" foreground="#4682B4" fontWeight="bold" underline="true" />
+    <Color name="SectionL5" foreground="#A52A2A" fontWeight="bold" underline="true" />
+    <Color name="SectionL6" foreground="#008080" fontWeight="bold" underline="true" />
+
+    <Color name="SearchTag"     foreground="#2E8B57" underline="true" />
+    <Color name="SearchTag2"    foreground="#4682B4" underline="true" />
+    <Color name="SearchTag3"    foreground="#4682B4" underline="true" />
+
+    <Color name="Comment"       foreground="#AAAAAA" />
+    <Color name="ItemA"         foreground="Black" fontWeight="bold" underline="true" />
+    <Color name="ItemB"         foreground="green"  />
+
+    <Color name="Tag"           foreground="#AAAAAA" />
+    <Color name="Url"           foreground="#5599FF" underline="true" />
+    <Color name="File"          foreground="#5599FF" underline="true" />
+    <Color name="ChildPath"     foreground="#5599FF" underline="true" />
+    <Color name="Date"          foreground="#FFA500" underline="true" />
+    <Color name="DateJ"         foreground="#FFA500" underline="true" />
+
+    <Color name="UrlPath"       foreground="#5599FF" underline="true" />
+    <Color name="Mark"          foreground="#FF1493" />
+
+    <Color name="EyeCatch1"     foreground="red"        underline="true" fontWeight="bold" />
+    <Color name="EyeCatch2"     foreground="yellow"     underline="true" fontWeight="bold" background="black" />
+    <Color name="EyeCatch3"     foreground="royalblue"  underline="true" fontWeight="bold" />
+    <Color name="DoneEvent"     background="Gray"   foreground="white" fontWeight="bold" />
+    <Color name="TodaysEvent"   background="Yellow" foreground="white" fontWeight="bold" />
+    <Color name="ComingEvent"   background="Green"  foreground="white" fontWeight="bold" />
+    <Color name="PassedEvent"   background="Red"    foreground="white" fontWeight="bold" />
+
+    <RuleSet>
+        <Span color="SectionL1" begin="^# " >       <RuleSet></RuleSet> </Span>
+        <Span color="SectionL2" begin="^## " >      <RuleSet></RuleSet> </Span>
+        <Span color="SectionL3" begin="^### " >     <RuleSet></RuleSet> </Span>
+        <Span color="SectionL4" begin="^#### " >    <RuleSet></RuleSet> </Span>
+        <Span color="SectionL5" begin="^##### " >   <RuleSet></RuleSet> </Span>
+        <Span color="SectionL6" begin="^###### " >  <RuleSet></RuleSet> </Span>
+        <Span color="Comment"   begin="^; " >       <RuleSet></RuleSet> </Span>
+        <Span color="ItemA"     begin="^= " >       <RuleSet></RuleSet> </Span>
+        <Span color="ItemB"     begin="^・ " >      <RuleSet></RuleSet> </Span> 
+
+        <Span color="SearchTag" begin="\[(CTG|KAKEN|VBAWord|GoogleJE|GScholar|MHLWG|GoogleJC|GoogleE|NIPH|VBAObject|Spotify|JST|NET|Yahoo|VBAOutlook|Youtube|GoogleEJ|PMC|Pubmed|Cortellis|Wikipedia|PMDA|Google|GoogleMap|VBAExcel|EMA|MHLW|WikipediaE):" end="\]" />
+        <Span color="SearchTag2" begin="\[(Memo|Route|photo|subject|library|index|shelf|cabinet|ref|Mail):" end="\]" />
+        <Span color="SearchTag2" begin="\[([0-9]{4}\-[0-9]{2}\-[0-9]{2}\-[0-9]{6}):(Memo|Route|photo|subject|library|index|shelf|cabinet|ref|Mail)" end="\]" />
+
+        <Rule foreground="#FFA500" underline="true" >
+            (\[[0-9]{4}\-[0-9]{2}\-[0-9]{2}\](( [0-9]{2}:[0-9]{2})|(\(...\)))?)
+        </Rule>
+        <Rule foreground="#FFA500" underline="true" >
+            ([0-9]{4}\/[0-9]{1,2}\/[0-9]{1,2}(( [0-9]{2}:[0-9]{2})|(\(...\)))?)
+        </Rule>
+        <Rule foreground="#FFA500" underline="true" >
+            (明治|大正|昭和|平成|令和)(\d{1,2}|元)年\d{1,2}月\d{1,2}日(\(.\))?( \d{2}(:|時)\d{2}分?)?
+        </Rule>
+        <Rule foreground="#FFA500" underline="true" >
+            ([0-9]{4}年[0-9]{1,2}月[0-9]{1,2}日((( [0-9]{2}時[0-9]{2}分)|（.）))?)
+        </Rule>
+
+        <!-- Url -->
+        <Rule foreground="#4169E1" underline="true" >
+            https?://[^"\)]+
+        </Rule>
+        <!-- Path -->
+        <Rule foreground="#4169E1" underline="true" >
+            ([a-zA-Z]:\\|\\\\)([^:"/\\\|\?\*]+\\?)*
+        </Rule>
+        <!-- iPath -->
+        <Rule foreground="#FF1493" underline="true" >
+            (^\s*\/([^:"\\\/|?*]+\\?)*)
+        </Rule>
+
+        <!-- Check -->
+        <Rule foreground="#FF1493" >
+            (^[\s　]*\[.\])
+        </Rule>
+
+    </RuleSet>
+</SyntaxDefinition>
+

@@ -1,0 +1,54 @@
+/* Main Layout Container */
+.main-layout {
+    display: flex;
+    flex-direction: row;
+    /* Horizontal layout: Left | Center | Right */
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--tt-base-color, #1e1e1e);
+    /* Global app background */
+    color: var(--tt-editor-fg, #cccccc);
+}
+
+/* Generic Layout Column (Vertical Stack) */
+.layout-col {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    min-width: 0;
+    /* Prevent flex items from overflowing */
+}
+
+/* Generic Panel Container */
+.panel-container {
+    overflow: hidden;
+    width: 100%;
+    display: flex;
+    /* Ensure inner content fills */
+    flex-direction: column;
+}
+
+
+
+/* Splitter */
+.splitter {
+    flex: 0 0 3px;
+    /* Fixed thickness for splitter */
+    background-color: var(--tt-splitter-bg, #555);
+    transition: background-color 0.2s;
+}
+
+.splitter:hover,
+.splitter.dragging {
+    background-color: var(--tt-splitter-hover, #007acc);
+}
+
+.splitter.horizontal {
+    cursor: col-resize;
+}
+
+.splitter.vertical {
+    cursor: row-resize;
+}

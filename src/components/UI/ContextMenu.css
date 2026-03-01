@@ -1,0 +1,44 @@
+.tt-context-menu {
+    position: fixed;
+    z-index: 9999;
+    background-color: var(--tt-editor-bg, #FFFAF5);
+    border: 1px solid var(--tt-border-color, #B0B0D8);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 4px 0;
+    min-width: 150px;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 13px;
+    animation: fadeIn 0.1s ease-out;
+}
+
+.tt-context-menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tt-context-menu li {
+    padding: 6px 16px;
+    cursor: pointer;
+    color: var(--tt-editor-fg, #483D8B);
+    display: block;
+    white-space: nowrap;
+}
+
+.tt-context-menu li:hover {
+    background-color: var(--tt-list-item-selected, #C6C6FA);
+    color: var(--tt-column-header-fg, #FFFFFF);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
