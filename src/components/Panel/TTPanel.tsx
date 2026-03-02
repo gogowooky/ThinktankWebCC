@@ -167,8 +167,8 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
             const doc = iframeWin.document;
             if (!doc) return;
 
-            // フォーカス可能なリンク要素を取得
-            const links = Array.from(doc.querySelectorAll('a[href]')) as HTMLElement[];
+            // フォーカス可能なリンク要素を取得（a[href] または data-request-tag 付き要素）
+            const links = Array.from(doc.querySelectorAll('a[href], [data-request-tag]')) as HTMLElement[];
             if (links.length === 0) return;
 
             // 現在のフォーカス位置を取得
@@ -232,7 +232,7 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
                 const iframeDoc = webviewIframeRef.current.contentDocument || webviewIframeRef.current.contentWindow?.document;
                 if (!iframeDoc) return;
 
-                const links = Array.from(iframeDoc.querySelectorAll('a[href]')) as HTMLElement[];
+                const links = Array.from(iframeDoc.querySelectorAll('a[href], [data-request-tag]')) as HTMLElement[];
                 if (links.length === 0) return;
 
                 const currentFocus = iframeDoc.activeElement as HTMLElement;
@@ -374,6 +374,11 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
                         return;
                     }
 
+                    // Tabキーはブラウザのネイティブフォーカス移動に委ねる
+                    if (e.key === 'Tab') {
+                        return;
+                    }
+
                     // ESCキーでiframeからフォーカスを外す
                     if (e.key === 'Escape') {
                         e.preventDefault();
@@ -407,13 +412,29 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
 
                 const handleFocusIn = (e: FocusEvent) => {
                     const target = e.target as HTMLElement;
-                    if (target && target.tagName === 'A' && (target as HTMLAnchorElement).href) {
+
+                    // data-request-tag 付き要素（SearchApp の検索結果など）
+                    const reqId = target.dataset.requestId;
+                    const reqTag = target.dataset.requestTag;
+                    if (reqId && reqTag) {
+                        // ttx:// 形式で CurrentLink に格納（GetActiveRequest が解析する）
+                        model.WebView.CurrentLink = `ttx://${reqId}/${reqTag}`;
+                        const links = Array.from(iframeDoc.querySelectorAll('a[href], [data-request-tag]')) as HTMLElement[];
+                        const idx = links.indexOf(target);
+                        if (idx !== -1) {
+                            model.WebView.CurPos = String(idx);
+                        }
+                        return;
+                    }
+
+                    // 通常の <a href> リンク
+                    if (target.tagName === 'A' && (target as HTMLAnchorElement).href) {
                         const href = (target as HTMLAnchorElement).href;
-                        // モデルへ同期
-                        model.SetKeywordsText('WebView', href, false); // 表示は更新しない
+                        if (!href.startsWith('ttx://')) {
+                            model.SetKeywordsText('WebView', href, false);
+                        }
                         model.WebView.CurrentLink = href;
-                        // CurPos をリンクのインデックスに更新
-                        const links = Array.from(iframeDoc.querySelectorAll('a[href]')) as HTMLElement[];
+                        const links = Array.from(iframeDoc.querySelectorAll('a[href], [data-request-tag]')) as HTMLElement[];
                         const idx = links.indexOf(target);
                         if (idx !== -1) {
                             model.WebView.CurPos = String(idx);

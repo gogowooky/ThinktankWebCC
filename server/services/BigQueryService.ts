@@ -338,6 +338,7 @@ export class BigQueryService {
 
     /**
      * バージョン情報を取得（キャッシュ整合性チェック用）
+     * 重複排除: file_id ごとに最新の updated_at を1件だけ返す
      */
     async getVersions(): Promise<QueryResult<VersionInfo>> {
         if (!this.bigquery) {
@@ -346,8 +347,10 @@ export class BigQueryService {
 
         try {
             const query = `
-                SELECT file_id, updated_at
+                SELECT file_id, MAX(updated_at) as updated_at
                 FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
+                GROUP BY file_id
+                ORDER BY updated_at DESC
             `;
             const [rows] = await this.bigquery.query({ query });
             return { success: true, data: rows as VersionInfo[] };

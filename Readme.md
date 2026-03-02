@@ -27,204 +27,6 @@
 　<http://localhost:5173/>
 　<https://thinktank-web-699735546730.asia-northeast1.run.app>>
 
-- ■ Monaco Editor 組み込みショートカット一覧
-  - 検索・置換
-    ショートカット コマンドID ラベル
-    Ctrl+F           actions.find                                       Find
-    Ctrl+H           editor.action.startFindReplaceAction               Replace
-    F3               editor.action.nextMatchFindAction                   Find Next
-    Shift+F3         editor.action.previousMatchFindAction               Find Previous
-    Ctrl+F3           editor.action.nextSelectionMatchFindAction         Find Next Selection
-    Ctrl+Shift+F3     editor.action.previousSelectionMatchFindAction     Find Previous Selection
-    Ctrl+D           editor.action.addSelectionToNextFindMatch           Add Selection to Next Find Match
-    Ctrl+Shift+L     editor.action.selectHighlights                     Select All Occurrences
-
-  - 行操作
-    ショートカット コマンドID ラベル
-    Ctrl+Shift+K     editor.action.deleteLines                           Delete Line
-    Alt+↑             editor.action.moveLinesUpAction                     Move Line Up
-    Alt+↓             editor.action.moveLinesDownAction                   Move Line Down
-    Shift+Alt+↑       editor.action.copyLinesUpAction                     Copy Line Up
-    Shift+Alt+↓       editor.action.copyLinesDownAction                   Copy Line Down
-    Ctrl+Enter       editor.action.insertLineAfter                       Insert Line Below
-    Ctrl+Shift+Enter editor.action.insertLineBefore                     Insert Line Above
-    Ctrl+J           editor.action.joinLines                             Join Lines
-    Ctrl+L           extendLineSelection                                 Expand Line Selection
-
-  - カーソル操作
-    ショートカット コマンドID ラベル
-    Ctrl+Alt+↑       editor.action.insertCursorAbove                     Add Cursor Above
-    Ctrl+Alt+↓       editor.action.insertCursorBelow                     Add Cursor Below
-    Ctrl+U           cursorUndo                                         Cursor Undo
-    Ctrl+Shift+U     cursorRedo                                         Cursor Redo
-
-  - コメント
-    ショートカット コマンドID ラベル
-    Ctrl+/          editor.action.commentLine                           Toggle Line Comment
-    Ctrl+K Ctrl+C     editor.action.addCommentLine                       Add Line Comment
-    Ctrl+K Ctrl+U     editor.action.removeCommentLine                     Remove Line Comment
-    Shift+Alt+A       editor.action.blockComment                         Toggle Block Comment
-
-  - インデント
-    ショートカット コマンドID ラベル
-    Ctrl+]          editor.action.indentLines                           Indent Line
-    Ctrl+[          editor.action.outdentLines                         Outdent Line
-
-  - フォールディング
-    ショートカット コマンドID ラベル
-    Ctrl+Shift+[     editor.fold                                         Fold
-    Ctrl+Shift+]     editor.unfold                                       Unfold
-    Ctrl+K Ctrl+0     editor.foldAll                                     Fold All
-    Ctrl+K Ctrl+J     editor.unfoldAll                                   Unfold All
-
-  - ☑ ナビゲーション
-    ショートカット コマンドID ラベル
-    Ctrl+G           editor.action.gotoLine                             Go to Line/Column...
-    Ctrl+Shift+\     editor.action.jumpToBracket                         Go to Bracket
-    F12               editor.action.revealDefinition                     Go to Definition
-    Alt+F12           editor.action.peekDefinition                       Peek Definition
-    Shift+F12         editor.action.goToReferences                       Go to References
-
-  - ☑ コード編集
-    ショートカット コマンドID ラベル
-    Ctrl+Space       editor.action.triggerSuggest                       Trigger Suggest
-    Ctrl+Shift+Space editor.action.triggerParameterHints                 Trigger Parameter Hints
-    F2               editor.action.rename                               Rename Symbol
-    Ctrl+.           editor.action.quickFix                             Quick Fix
-    Shift+Alt+F       editor.action.formatDocument                       Format Document
-    Ctrl+K Ctrl+F     editor.action.formatSelection                       Format Selection
-    Ctrl+K Ctrl+X     editor.action.trimTrailingWhitespace               Trim Trailing Whitespace
-    Ctrl+Shift+D     editor.action.duplicateSelection                   Duplicate Selection
-
-  - ☑ その他
-    ショートカット コマンドID ラベル
-    F1               editor.action.quickCommand                         Command Palette
-    Escape           -                                                   Cancel / Close
-
-  - ☑ 基本操作（OS/ブラウザ共通）
-    ショートカット 機能
-    Ctrl+Z               Undo
-    Ctrl+Y / Ctrl+Shift+Z Redo
-    Ctrl+X               Cut
-    Ctrl+C               Copy
-    Ctrl+V               Paste
-    Ctrl+A               Select All
-
-- ■ Monaco Editor 組み込みコマンド一覧
-  - 検索・置換
-    ID ラベル
-    actions.find Find
-    actions.findWithSelection Find with Selection
-    editor.action.nextMatchFindAction Find Next
-    editor.action.previousMatchFindAction Find Previous
-    editor.action.nextSelectionMatchFindAction Find Next Selection
-    editor.action.previousSelectionMatchFindAction Find Previous Selection
-    editor.action.startFindReplaceAction Replace
-    editor.action.selectHighlights Select All Occurrences of Find Match
-    editor.actions.findWithArgs Find with Arguments
-  - カーソル操作
-    ID ラベル
-    editor.action.insertCursorAbove Add Cursor Above
-    editor.action.insertCursorBelow Add Cursor Below
-    editor.action.addCursorsToTop Add Cursors to Top
-    editor.action.addCursorsToBottom Add Cursors to Bottom
-    editor.action.insertCursorAtEndOfEachLineSelected Add Cursors to Line Ends
-    editor.action.focusNextCursor Focus Next Cursor
-    editor.action.focusPreviousCursor Focus Previous Cursor
-    cursorUndo Cursor Undo
-    cursorRedo Cursor Redo
-  - 行操作
-    ID ラベル
-    editor.action.deleteLines Delete Line
-    editor.action.copyLinesDownAction Copy Line Down
-    editor.action.copyLinesUpAction Copy Line Up
-    editor.action.moveLinesDownAction Move Line Down
-    editor.action.moveLinesUpAction Move Line Up
-    editor.action.joinLines Join Lines
-    editor.action.insertLineAfter Insert Line Below
-    editor.action.insertLineBefore Insert Line Above
-    editor.action.insertFinalNewLine Insert Final New Line
-    expandLineSelection Expand Line Selection
-  - コメント
-    ID ラベル
-    editor.action.commentLine Toggle Line Comment
-    editor.action.addCommentLine Add Line Comment
-    editor.action.removeCommentLine Remove Line Comment
-    editor.action.blockComment Toggle Block Comment
-  - インデント
-    ID ラベル
-    editor.action.indentLines Indent Line
-    editor.action.outdentLines Outdent Line
-    editor.action.reindentlines Reindent Lines
-    editor.action.reindentselectedlines Reindent Selected Lines
-    editor.action.indentationToSpaces Convert Indentation to Spaces
-    editor.action.indentationToTabs Convert Indentation to Tabs
-    editor.action.indentUsingSpaces Indent Using Spaces
-    editor.action.indentUsingTabs Indent Using Tabs
-    editor.action.detectIndentation Detect Indentation from Content
-  - テキスト変換
-    ID ラベル
-    editor.action.transformToUppercase Transform to Uppercase
-    editor.action.transformToLowercase Transform to Lowercase
-    editor.action.transformToTitlecase Transform to Title Case
-    editor.action.transformToCamelcase Transform to Camel Case
-    editor.action.transformToPascalcase Transform to Pascal Case
-    editor.action.transformToSnakecase Transform to Snake Case
-    editor.action.transformToKebabcase Transform to Kebab Case
-  - 並べ替え
-    ID ラベル
-    editor.action.sortLinesAscending Sort Lines Ascending
-    editor.action.sortLinesDescending Sort Lines Descending
-    editor.action.reverseLines Reverse lines
-    editor.action.removeDuplicateLines Delete Duplicate Lines
-  - 選択
-    ID ラベル
-    editor.action.smartSelect.expand Expand Selection
-    editor.action.smartSelect.shrink Shrink Selection
-    editor.action.duplicateSelection Duplicate Selection
-    editor.action.setSelectionAnchor Set Selection Anchor
-    editor.action.selectToBracket Select to Bracket
-    editor.action.addSelectionToNextFindMatch Add Selection to Next Find Match
-    editor.action.addSelectionToPreviousFindMatch Add Selection to Previous Find Match
-    editor.action.moveSelectionToNextFindMatch Move Last Selection to Next Find Match
-    editor.action.moveSelectionToPreviousFindMatch Move Last Selection to Previous Find Match
-  - 削除
-    ID ラベル
-    deleteAllLeft Delete All Left
-    deleteAllRight Delete All Right
-    deleteInsideWord Delete Word
-    editor.action.trimTrailingWhitespace Trim Trailing Whitespace
-  - ナビゲーション
-    ID ラベル
-    editor.action.gotoLine Go to Line/Column...
-    editor.action.jumpToBracket Go to Bracket
-    editor.action.marker.next Go to Next Problem
-    editor.action.marker.prev Go to Previous Problem
-    editor.action.marker.nextInFiles Go to Next Problem in Files
-    editor.action.marker.prevInFiles Go to Previous Problem in Files
-  - その他
-    ID ラベル
-    editor.action.quickCommand Command Palette
-    editor.action.triggerSuggest Trigger Suggest
-    editor.action.showHover Show or Focus Hover
-    editor.action.hideHover Hide Hover
-    editor.action.showContextMenu Show Editor Context Menu
-    editor.action.openLink Open Link
-    editor.action.removeBrackets Remove Brackets
-    editor.action.transpose Transpose Characters around the Cursor
-    editor.action.transposeLetters Transpose Letters
-    editor.action.moveCarretLeftAction Move Selected Text Left
-    editor.action.moveCarretRightAction Move Selected Text Right
-    editor.action.pasteAs Paste As...
-    editor.action.pasteAsText Paste as Text
-    editor.action.clipboardCopyWithSyntaxHighlightingAction Copy with Syntax Highlighting
-    editor.action.fontZoomIn Increase Editor Font Size
-    editor.action.fontZoomOut Decrease Editor Font Size
-    editor.action.fontZoomReset Reset Editor Font Size
-    editor.action.toggleHighContrast Toggle High Contrast Theme
-    editor.action.inlineSuggest.trigger Trigger Inline Suggestion
-    editor.action.inlineSuggest.toggleShowCollapsed Toggle Inline Suggestions Show Collapsed
-
 - ■ TTRequests/TTRequest
 
 [26xxxx]
@@ -232,6 +34,10 @@
 - TTChats/TTChatの追加
 
 [260302]
+- 昨日「 node .\scripts\analyze-duplicates.js を実行したところ、ダブって登録されているファイルが複数あります（下記）。File_ID＋Categoryが同じであればupdateされるはずです。調査して修正してください。」として修正していただいたのですが、添付のような状況
+- 
+- WebViewは、Markdown プレビュー や全文検索(/ttsearch)などの同一オリジンに限定した利用法を考えています。全文検索サービス(/ttsearch)でキーボードでリンクを移動できるようにすることは可能でしょうか？
+
 - 以下のWebView用のkeybindingを追加してください。
 Alt+S : WebView.Action.Search
 WebView.Action.SearchはWebView.Keywordに /ttsearch と入力して全文検索サービスを表示します。
@@ -1399,3 +1205,202 @@ GET <http://localhost:5174/favicon.ico> 404 (Not Found)
 - implementation plan, taskとも日本語で記載してください。
 
 - Webアプリケーションのテキストエディターを作成します。まずは環境の準備について指示してください。monaco-editorを使ってください。
+
+
+- ■ Monaco Editor 組み込みショートカット一覧
+  - 検索・置換
+    ショートカット コマンドID ラベル
+    Ctrl+F           actions.find                                       Find
+    Ctrl+H           editor.action.startFindReplaceAction               Replace
+    F3               editor.action.nextMatchFindAction                   Find Next
+    Shift+F3         editor.action.previousMatchFindAction               Find Previous
+    Ctrl+F3           editor.action.nextSelectionMatchFindAction         Find Next Selection
+    Ctrl+Shift+F3     editor.action.previousSelectionMatchFindAction     Find Previous Selection
+    Ctrl+D           editor.action.addSelectionToNextFindMatch           Add Selection to Next Find Match
+    Ctrl+Shift+L     editor.action.selectHighlights                     Select All Occurrences
+
+  - 行操作
+    ショートカット コマンドID ラベル
+    Ctrl+Shift+K     editor.action.deleteLines                           Delete Line
+    Alt+↑             editor.action.moveLinesUpAction                     Move Line Up
+    Alt+↓             editor.action.moveLinesDownAction                   Move Line Down
+    Shift+Alt+↑       editor.action.copyLinesUpAction                     Copy Line Up
+    Shift+Alt+↓       editor.action.copyLinesDownAction                   Copy Line Down
+    Ctrl+Enter       editor.action.insertLineAfter                       Insert Line Below
+    Ctrl+Shift+Enter editor.action.insertLineBefore                     Insert Line Above
+    Ctrl+J           editor.action.joinLines                             Join Lines
+    Ctrl+L           extendLineSelection                                 Expand Line Selection
+
+  - カーソル操作
+    ショートカット コマンドID ラベル
+    Ctrl+Alt+↑       editor.action.insertCursorAbove                     Add Cursor Above
+    Ctrl+Alt+↓       editor.action.insertCursorBelow                     Add Cursor Below
+    Ctrl+U           cursorUndo                                         Cursor Undo
+    Ctrl+Shift+U     cursorRedo                                         Cursor Redo
+
+  - コメント
+    ショートカット コマンドID ラベル
+    Ctrl+/          editor.action.commentLine                           Toggle Line Comment
+    Ctrl+K Ctrl+C     editor.action.addCommentLine                       Add Line Comment
+    Ctrl+K Ctrl+U     editor.action.removeCommentLine                     Remove Line Comment
+    Shift+Alt+A       editor.action.blockComment                         Toggle Block Comment
+
+  - インデント
+    ショートカット コマンドID ラベル
+    Ctrl+]          editor.action.indentLines                           Indent Line
+    Ctrl+[          editor.action.outdentLines                         Outdent Line
+
+  - フォールディング
+    ショートカット コマンドID ラベル
+    Ctrl+Shift+[     editor.fold                                         Fold
+    Ctrl+Shift+]     editor.unfold                                       Unfold
+    Ctrl+K Ctrl+0     editor.foldAll                                     Fold All
+    Ctrl+K Ctrl+J     editor.unfoldAll                                   Unfold All
+
+  - ☑ ナビゲーション
+    ショートカット コマンドID ラベル
+    Ctrl+G           editor.action.gotoLine                             Go to Line/Column...
+    Ctrl+Shift+\     editor.action.jumpToBracket                         Go to Bracket
+    F12               editor.action.revealDefinition                     Go to Definition
+    Alt+F12           editor.action.peekDefinition                       Peek Definition
+    Shift+F12         editor.action.goToReferences                       Go to References
+
+  - ☑ コード編集
+    ショートカット コマンドID ラベル
+    Ctrl+Space       editor.action.triggerSuggest                       Trigger Suggest
+    Ctrl+Shift+Space editor.action.triggerParameterHints                 Trigger Parameter Hints
+    F2               editor.action.rename                               Rename Symbol
+    Ctrl+.           editor.action.quickFix                             Quick Fix
+    Shift+Alt+F       editor.action.formatDocument                       Format Document
+    Ctrl+K Ctrl+F     editor.action.formatSelection                       Format Selection
+    Ctrl+K Ctrl+X     editor.action.trimTrailingWhitespace               Trim Trailing Whitespace
+    Ctrl+Shift+D     editor.action.duplicateSelection                   Duplicate Selection
+
+  - ☑ その他
+    ショートカット コマンドID ラベル
+    F1               editor.action.quickCommand                         Command Palette
+    Escape           -                                                   Cancel / Close
+
+  - ☑ 基本操作（OS/ブラウザ共通）
+    ショートカット 機能
+    Ctrl+Z               Undo
+    Ctrl+Y / Ctrl+Shift+Z Redo
+    Ctrl+X               Cut
+    Ctrl+C               Copy
+    Ctrl+V               Paste
+    Ctrl+A               Select All
+
+- ■ Monaco Editor 組み込みコマンド一覧
+  - 検索・置換
+    ID ラベル
+    actions.find Find
+    actions.findWithSelection Find with Selection
+    editor.action.nextMatchFindAction Find Next
+    editor.action.previousMatchFindAction Find Previous
+    editor.action.nextSelectionMatchFindAction Find Next Selection
+    editor.action.previousSelectionMatchFindAction Find Previous Selection
+    editor.action.startFindReplaceAction Replace
+    editor.action.selectHighlights Select All Occurrences of Find Match
+    editor.actions.findWithArgs Find with Arguments
+  - カーソル操作
+    ID ラベル
+    editor.action.insertCursorAbove Add Cursor Above
+    editor.action.insertCursorBelow Add Cursor Below
+    editor.action.addCursorsToTop Add Cursors to Top
+    editor.action.addCursorsToBottom Add Cursors to Bottom
+    editor.action.insertCursorAtEndOfEachLineSelected Add Cursors to Line Ends
+    editor.action.focusNextCursor Focus Next Cursor
+    editor.action.focusPreviousCursor Focus Previous Cursor
+    cursorUndo Cursor Undo
+    cursorRedo Cursor Redo
+  - 行操作
+    ID ラベル
+    editor.action.deleteLines Delete Line
+    editor.action.copyLinesDownAction Copy Line Down
+    editor.action.copyLinesUpAction Copy Line Up
+    editor.action.moveLinesDownAction Move Line Down
+    editor.action.moveLinesUpAction Move Line Up
+    editor.action.joinLines Join Lines
+    editor.action.insertLineAfter Insert Line Below
+    editor.action.insertLineBefore Insert Line Above
+    editor.action.insertFinalNewLine Insert Final New Line
+    expandLineSelection Expand Line Selection
+  - コメント
+    ID ラベル
+    editor.action.commentLine Toggle Line Comment
+    editor.action.addCommentLine Add Line Comment
+    editor.action.removeCommentLine Remove Line Comment
+    editor.action.blockComment Toggle Block Comment
+  - インデント
+    ID ラベル
+    editor.action.indentLines Indent Line
+    editor.action.outdentLines Outdent Line
+    editor.action.reindentlines Reindent Lines
+    editor.action.reindentselectedlines Reindent Selected Lines
+    editor.action.indentationToSpaces Convert Indentation to Spaces
+    editor.action.indentationToTabs Convert Indentation to Tabs
+    editor.action.indentUsingSpaces Indent Using Spaces
+    editor.action.indentUsingTabs Indent Using Tabs
+    editor.action.detectIndentation Detect Indentation from Content
+  - テキスト変換
+    ID ラベル
+    editor.action.transformToUppercase Transform to Uppercase
+    editor.action.transformToLowercase Transform to Lowercase
+    editor.action.transformToTitlecase Transform to Title Case
+    editor.action.transformToCamelcase Transform to Camel Case
+    editor.action.transformToPascalcase Transform to Pascal Case
+    editor.action.transformToSnakecase Transform to Snake Case
+    editor.action.transformToKebabcase Transform to Kebab Case
+  - 並べ替え
+    ID ラベル
+    editor.action.sortLinesAscending Sort Lines Ascending
+    editor.action.sortLinesDescending Sort Lines Descending
+    editor.action.reverseLines Reverse lines
+    editor.action.removeDuplicateLines Delete Duplicate Lines
+  - 選択
+    ID ラベル
+    editor.action.smartSelect.expand Expand Selection
+    editor.action.smartSelect.shrink Shrink Selection
+    editor.action.duplicateSelection Duplicate Selection
+    editor.action.setSelectionAnchor Set Selection Anchor
+    editor.action.selectToBracket Select to Bracket
+    editor.action.addSelectionToNextFindMatch Add Selection to Next Find Match
+    editor.action.addSelectionToPreviousFindMatch Add Selection to Previous Find Match
+    editor.action.moveSelectionToNextFindMatch Move Last Selection to Next Find Match
+    editor.action.moveSelectionToPreviousFindMatch Move Last Selection to Previous Find Match
+  - 削除
+    ID ラベル
+    deleteAllLeft Delete All Left
+    deleteAllRight Delete All Right
+    deleteInsideWord Delete Word
+    editor.action.trimTrailingWhitespace Trim Trailing Whitespace
+  - ナビゲーション
+    ID ラベル
+    editor.action.gotoLine Go to Line/Column...
+    editor.action.jumpToBracket Go to Bracket
+    editor.action.marker.next Go to Next Problem
+    editor.action.marker.prev Go to Previous Problem
+    editor.action.marker.nextInFiles Go to Next Problem in Files
+    editor.action.marker.prevInFiles Go to Previous Problem in Files
+  - その他
+    ID ラベル
+    editor.action.quickCommand Command Palette
+    editor.action.triggerSuggest Trigger Suggest
+    editor.action.showHover Show or Focus Hover
+    editor.action.hideHover Hide Hover
+    editor.action.showContextMenu Show Editor Context Menu
+    editor.action.openLink Open Link
+    editor.action.removeBrackets Remove Brackets
+    editor.action.transpose Transpose Characters around the Cursor
+    editor.action.transposeLetters Transpose Letters
+    editor.action.moveCarretLeftAction Move Selected Text Left
+    editor.action.moveCarretRightAction Move Selected Text Right
+    editor.action.pasteAs Paste As...
+    editor.action.pasteAsText Paste as Text
+    editor.action.clipboardCopyWithSyntaxHighlightingAction Copy with Syntax Highlighting
+    editor.action.fontZoomIn Increase Editor Font Size
+    editor.action.fontZoomOut Decrease Editor Font Size
+    editor.action.fontZoomReset Reset Editor Font Size
+    editor.action.toggleHighContrast Toggle High Contrast Theme
+    editor.action.inlineSuggest.trigger Trigger Inline Suggestion
+    editor.action.inlineSuggest.toggleShowCollapsed Toggle Inline Suggestions Show Collapsed

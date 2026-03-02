@@ -80,6 +80,13 @@
     text-decoration: underline;
 }
 
+.search-result-title:focus {
+    outline: 2px solid #1a0dab;
+    outline-offset: 2px;
+    border-radius: 2px;
+    text-decoration: underline;
+}
+
 .search-result-snippet {
     font-size: 12px;
     color: #4d5156;

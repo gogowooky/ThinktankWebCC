@@ -169,6 +169,20 @@ export class TTPanelWebViewBehavior implements IPanelModeBehavior {
         const currentLink = this.CurrentLink;
         if (!currentLink) return null;
 
+        // ttx://{requestId}/{requestTag} 形式を解析
+        if (currentLink.startsWith('ttx://')) {
+            const withoutScheme = currentLink.slice(6); // 'ttx://'.length
+            const slashIdx = withoutScheme.indexOf('/');
+            if (slashIdx >= 0) {
+                return {
+                    requestId: withoutScheme.slice(0, slashIdx),
+                    requestTag: withoutScheme.slice(slashIdx + 1),
+                    clientX: context?.ClientX as number | undefined,
+                    clientY: context?.ClientY as number | undefined
+                };
+            }
+        }
+
         return {
             requestId: 'Link',
             requestTag: currentLink,

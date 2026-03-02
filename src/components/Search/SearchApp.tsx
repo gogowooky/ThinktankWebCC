@@ -94,26 +94,6 @@ export const SearchApp: React.FC = () => {
         window.location.href = url.toString();
     };
 
-    const handleResultClick = (fileId: string, e: React.MouseEvent) => {
-        e.preventDefault();
-
-        // メッセージを親ウィンドウ（Thinktankアプリ本体）へ送信
-        const contextData = {
-            type: 'TT_WEBVIEW_ACTION',
-            event: {
-                Key: 'LEFT1',  // 左クリック
-                Mods: [],
-                ScreenX: e.screenX,
-                ScreenY: e.screenY,
-                ClientX: e.clientX,
-                ClientY: e.clientY,
-                RequestID: 'TTObject', // TTMemoからTTObjectへ一時変更を維持
-                RequestTag: `[TTMemo:${fileId}]` // アプリ側で解釈できる形式
-            }
-        };
-
-        window.parent.postMessage(contextData, '*');
-    };
 
     // コンテンツのスニペット生成とキーワードのハイライト（複数キーワード対応）
     const highlightSnippet = (content: string | null, contentPreview: string | undefined, keyword: string) => {
@@ -212,14 +192,14 @@ export const SearchApp: React.FC = () => {
                 <div className="search-results">
                     {results.map((item) => (
                         <div key={item.file_id} className="search-result-item">
-                            <span
+                            <a
                                 className="search-result-title"
-                                onClick={(e) => handleResultClick(item.file_id, e)}
+                                tabIndex={0}
                                 data-request-id="TTObject"
                                 data-request-tag={`[TTMemo:${item.file_id}]`}
                             >
                                 {item.file_id} : {item.title || "Untitled"}
-                            </span>
+                            </a>
                             <div className="search-result-snippet">
                                 {highlightSnippet(item.content, item.content_preview, query)}
                             </div>
