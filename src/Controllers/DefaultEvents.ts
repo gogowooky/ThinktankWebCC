@@ -85,6 +85,7 @@ export function InitializeDefaultEvents(models: TTModels) {
 
     // Global Search (WebView)
     AddEvent('*-*-*-*', 'Control+Alt', 'F', 'WebView.OpenSearch');
+    AddEvent('*-WebView-*-*', 'Alt', 'S', 'WebView.Action.Search');         // WebView内検索 (Alt+S:Shelfより優先)
 
     AddEvent('*-*-*-ExApp', '', 'Z', 'Application.Style.PanelRatio:zen');           // style zen
     AddEvent('*-*-*-ExApp', '', 'S', 'Application.Style.PanelRatio:standard');      // style standard
@@ -120,7 +121,7 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #endregion
     // #region Editor tool         Status:     ![ H ]
     AddEvent('*-Table-*-*', 'Alt', 'H', 'Application.Current.Tool:Main');         // Tool
-    AddEvent('*-WebView-*-*', 'Alt', 'H', 'Application.Current.Tool:Main');         // Tool
+    AddEvent('*-WebView-*-*', 'Alt', 'H', 'Application.Current.Tool:next');         // Tool
     AddEvent('*-Editor-*-*', 'Alt', 'H', 'Application.Current.Tool:next');         // Tool
     // #endregion
     // #region Application exapp        Status:     ![ A ]

@@ -101,6 +101,24 @@ export class TTPanelWebViewBehavior implements IPanelModeBehavior {
     }
     // #endregion
 
+    // #region CurPos
+    private _curPos: string = '';
+
+    /**
+     * WebView内でフォーカスされているリンクの順位（0始まりの数値文字列）
+     * next / prev / first / last コマンドも受け付ける
+     */
+    public get CurPos(): string {
+        return this._curPos;
+    }
+
+    public set CurPos(value: string) {
+        if (this._curPos === value) return;
+        this._curPos = value;
+        this._panel.NotifyUpdated();
+    }
+    // #endregion
+
     // #region ApplyUrl
     /**
      * URLをWebViewに適用し、Keywords/Keywordに同期する。

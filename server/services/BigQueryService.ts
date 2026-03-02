@@ -200,7 +200,7 @@ export class BigQueryService {
     }
     /**
      * ファイルを保存（Upsert: MERGE文を使用）
-     * 既存のfile_idがあれば更新、なければ挿入
+     * file_id + category が一致するレコードがあれば更新、なければ挿入
      */
     async saveFile(record: FileRecord): Promise<QueryResult> {
         if (!this.bigquery || !this.table) {
@@ -209,10 +209,32 @@ export class BigQueryService {
 
         try {
             const query = `
-                INSERT INTO \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-                (file_id, title, file_type, category, content, metadata, size_bytes, created_at, updated_at)
-                VALUES
-                (@file_id, @title, @file_type, @category, @content, PARSE_JSON(@metadata), @size_bytes, TIMESTAMP(@created_at), TIMESTAMP(@updated_at))
+                MERGE \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\` AS target
+                USING (
+                    SELECT
+                        @file_id AS file_id,
+                        @title AS title,
+                        @file_type AS file_type,
+                        @category AS category,
+                        @content AS content,
+                        IF(@metadata IS NULL, NULL, PARSE_JSON(@metadata)) AS metadata,
+                        @size_bytes AS size_bytes,
+                        @created_at AS created_at,
+                        @updated_at AS updated_at
+                ) AS source
+                ON target.file_id = source.file_id
+                   AND IFNULL(target.category, '') = IFNULL(source.category, '')
+                WHEN MATCHED THEN
+                    UPDATE SET
+                        target.title = source.title,
+                        target.file_type = source.file_type,
+                        target.content = source.content,
+                        target.metadata = source.metadata,
+                        target.size_bytes = source.size_bytes,
+                        target.updated_at = source.updated_at
+                WHEN NOT MATCHED THEN
+                    INSERT (file_id, title, file_type, category, content, metadata, size_bytes, created_at, updated_at)
+                    VALUES (source.file_id, source.title, source.file_type, source.category, source.content, source.metadata, source.size_bytes, source.created_at, source.updated_at)
             `;
 
             const params = {
@@ -289,7 +311,7 @@ export class BigQueryService {
 
         try {
             let query = `
-                SELECT file_id, title, file_type, category, 
+                SELECT file_id, title, file_type, category,
                        content,
                        updated_at
                 FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
@@ -302,6 +324,8 @@ export class BigQueryService {
                 params.category = category;
             }
 
+            // 重複排除: file_id + category ごとに最新のレコードのみ返す
+            query += ` QUALIFY ROW_NUMBER() OVER (PARTITION BY file_id, IFNULL(category, '') ORDER BY updated_at DESC) = 1`;
             query += ` ORDER BY updated_at DESC LIMIT 200`;
 
             const [rows] = await this.bigquery.query({ query, params });

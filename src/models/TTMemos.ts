@@ -106,18 +106,27 @@ export class TTMemos extends TTCollection {
             console.log(`[TTMemos] LastSyncTime restored: ${this.LastSyncTime.toISOString()}`);
         }
 
-        await super.LoadCache();
-        console.log(`[TTMemos] LoadCache完了: ${this.Count}件`);
+        // まずBQの一覧情報からTTMemoを登録試行
+        const bqSuccess = await this.SyncWithBigQuery();
 
-        // キャッシュの件数に関わらず、BigQueryと同期
-        await this.SyncWithBigQuery();
+        if (!bqSuccess) {
+            // BQアクセス失敗時はローカルキャッシュにフォールバック
+            console.log(`[TTMemos] BQアクセス失敗、ローカルキャッシュにフォールバック`);
+            await super.LoadCache();
+        } else {
+            // BQ成功時はIsLoadedをセットしてView更新・キャッシュ保存をトリガー
+            this.IsLoaded = true;
+            this.NotifyUpdated();
+        }
+
+        console.log(`[TTMemos] LoadCache完了: ${this.Count}件`);
     }
 
     /**
      * BigQueryとメモ一覧を同期
      * キャッシュにないメモのみ追加する
      */
-    public async SyncWithBigQuery(): Promise<void> {
+    public async SyncWithBigQuery(): Promise<boolean> {
         try {
             console.log(`[TTMemos] BigQuery同期開始... LastSyncTime: ${this.LastSyncTime ? this.LastSyncTime.toISOString() : 'None'}`);
 
@@ -131,7 +140,7 @@ export class TTMemos extends TTCollection {
             const response = await fetch(url);
             if (!response.ok) {
                 console.error(`[TTMemos] BigQuery API失敗: ${response.status}`);
-                return;
+                return false;
             }
             const data = await response.json();
             const files = data.files || [];
@@ -277,8 +286,11 @@ export class TTMemos extends TTCollection {
                 console.log(`[TTMemos] LastSyncTime updated: ${this.LastSyncTime.toISOString()}`);
             }
 
+            return true;
+
         } catch (e) {
             console.error('[TTMemos] BigQuery同期失敗:', e);
+            return false;
         }
     }
 }

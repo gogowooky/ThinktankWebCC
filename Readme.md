@@ -231,6 +231,22 @@
 
 - TTChats/TTChatの追加
 
+[260302]
+- 以下のWebView用のkeybindingを追加してください。
+Alt+S : WebView.Action.Search
+WebView.Action.SearchはWebView.Keywordに /ttsearch と入力して全文検索サービスを表示します。
+
+[260301]
+- 質問です。WebViewではキーイベントが取得できていません、キーイベントが発生していないのでしょうか？
+
+- 各パネルのWebView上でカーソルがあるLinkの順位を示すTTState([Panels].WebView.CurPos) を追加してください。next/prev/first/lastも受け入れるようにしてください。
+- 
+- node .\scripts\analyze-duplicates.js を実行したところ、ダブって登録されているファイルが複数あります（下記）。File_ID＋Categoryが同じであればupdateされるはずです。調査して修正してください。
+- 
+- WebViewパネルで/ttsearchが表示されておりません。調査修正をお願いします。
+- TTMemosのcsvキャッシュはlocal cacheとBQの両方に保存しますが、TTMemosへのTTMemoの登録は、まずBQの一覧情報からの登録を試み、BQアクセスができない場合に、local cacheからよみとる形にしてください。
+
+
 [260227]
 
 - TTState((Panel).Editor.CurPos)の設定値に、linestart+/lineend+を追加してください。linestart+は現在位置が行先頭であった場合は文書先頭へ、lineend+は現在位置が行末であった場合は文書末尾へ移動します。
