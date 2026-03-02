@@ -33,9 +33,12 @@
 
 - TTChats/TTChatの追加
 
+[260303]
+- node .\scripts\analyze-duplicates.js を実行したところ、ダブって登録されているファイルが複数ありました。File_ID＋Categoryが同じであればupdateされるはずです。調査して修正してください。
+
+
 [260302]
-- 昨日「 node .\scripts\analyze-duplicates.js を実行したところ、ダブって登録されているファイルが複数あります（下記）。File_ID＋Categoryが同じであればupdateされるはずです。調査して修正してください。」として修正していただいたのですが、添付のような状況
-- 
+
 - WebViewは、Markdown プレビュー や全文検索(/ttsearch)などの同一オリジンに限定した利用法を考えています。全文検索サービス(/ttsearch)でキーボードでリンクを移動できるようにすることは可能でしょうか？
 
 - 以下のWebView用のkeybindingを追加してください。
