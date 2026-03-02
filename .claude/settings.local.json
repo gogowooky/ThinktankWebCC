@@ -1,7 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Bash(netstat -ano)",
+      "Read(//c/Users/shinichiro.egashira/Documents/ThinktankWebCC/**)",
+      "Bash(xargs -I{} taskkill /PID {} /F)",
+      "Bash(taskkill /PID 18584 /F)",
+      "Bash(taskkill /PID 20920 /F)",
+      "Bash(taskkill /PID 4076 /F)"
     ]
   }
 }
