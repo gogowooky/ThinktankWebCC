@@ -223,11 +223,12 @@ export class BigQueryService {
                         @updated_at AS updated_at
                 ) AS source
                 ON target.file_id = source.file_id
-                   AND IFNULL(target.category, '') = IFNULL(source.category, '')
+                   AND LOWER(IFNULL(target.category, '')) = LOWER(IFNULL(source.category, ''))
                 WHEN MATCHED THEN
                     UPDATE SET
                         target.title = source.title,
                         target.file_type = source.file_type,
+                        target.category = source.category,
                         target.content = source.content,
                         target.metadata = source.metadata,
                         target.size_bytes = source.size_bytes,

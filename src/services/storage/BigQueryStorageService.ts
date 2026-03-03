@@ -246,6 +246,34 @@ export class BigQueryStorageService implements IStorageService {
         return new Promise((resolve, reject) => {
             const { file_id, file_type, category } = this.parseFilePath(path);
 
+            // 同じ file_id + category がバッファに既にある場合は上書き（重複 MERGE 防止）
+            const existingIdx = this.requestBuffer.findIndex(
+                r => r.type === 'save' && r.fileId === file_id &&
+                     (r.data?.category ?? null) === (category ?? null)
+            );
+            if (existingIdx !== -1) {
+                // 古いリクエストの resolve を新しいもので上書きし、エントリを置き換える
+                const oldResolve = this.requestBuffer[existingIdx].resolve;
+                this.requestBuffer[existingIdx] = {
+                    type: 'save',
+                    fileId: file_id,
+                    data: {
+                        file_id,
+                        title: null,
+                        file_type,
+                        category,
+                        content,
+                        metadata: null,
+                        size_bytes: content.length,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    },
+                    resolve: (result) => { oldResolve(result); resolve(result); },
+                    reject
+                };
+                return;
+            }
+
             this.requestBuffer.push({
                 type: 'save',
                 fileId: file_id,
