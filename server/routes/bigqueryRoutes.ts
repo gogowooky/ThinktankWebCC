@@ -67,10 +67,16 @@ export function createBigQueryRoutes(): Router {
     /**
      * POST /api/bq/files
      * ファイルを保存（新規作成または更新）
+     * 
+     * UPSERT キー: file_id + category
+     * 同じ (file_id, category) のレコードが存在する場合は UPDATE、
+     * 存在しない場合は INSERT される（BigQueryService.saveFile の MERGE文）。
+     * created_at はクライアントから送られた値を優先し、
+     * 送られない場合のみ現在時刻を使用する（UPDATE時はcreated_atは変更されない）。
      */
     router.post('/files', async (req: Request, res: Response) => {
         try {
-            const { file_id, title, file_type, category, content, metadata } = req.body;
+            const { file_id, title, file_type, category, content, metadata, created_at } = req.body;
 
             if (!file_id || !file_type) {
                 return res.status(400).json({
@@ -79,6 +85,10 @@ export function createBigQueryRoutes(): Router {
             }
 
             const now = new Date();
+            // created_at: クライアントが送ってきた値があればそれを使用（初回作成日時を保持）
+            // 新規レコードの場合は now、既存レコードのUPDATE時はMERGE文がcreated_atを変更しない
+            const createdAt = created_at ? new Date(created_at) : now;
+
             const record: FileRecord = {
                 file_id,
                 title: title || null,
@@ -87,7 +97,7 @@ export function createBigQueryRoutes(): Router {
                 content: content || null,
                 metadata: metadata || null,
                 size_bytes: content ? Buffer.byteLength(content, 'utf8') : null,
-                created_at: now,
+                created_at: createdAt,
                 updated_at: now
             };
 
@@ -190,7 +200,11 @@ export function createBigQueryRoutes(): Router {
 
     /**
      * POST /api/bq/bulk
-     * 一括保存
+     * 一括保存（UPSERT: file_id + category がキー）
+     * 
+     * UPSERT キー: file_id + category
+     * 各レコードは BigQueryService.bulkSave → saveFile の MERGE文で処理される。
+     * created_at: クライアントが送ってきた値を優先（初回作成日時を保持）。
      */
     router.post('/bulk', async (req: Request, res: Response) => {
         try {
@@ -209,7 +223,8 @@ export function createBigQueryRoutes(): Router {
                 content: f.content || null,
                 metadata: f.metadata || null,
                 size_bytes: f.content ? Buffer.byteLength(f.content, 'utf8') : null,
-                created_at: now,
+                // created_at: クライアントから送られた値があればそれを優先、なければ現在時刻
+                created_at: f.created_at ? new Date(f.created_at) : now,
                 updated_at: now
             }));
 
