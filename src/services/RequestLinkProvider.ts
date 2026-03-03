@@ -19,7 +19,7 @@ export interface RequestLink extends Monaco.languages.ILink {
  * パターンキャッシュ
  * TTRequestsから生成したパターンをキャッシュして、毎回の再生成を防ぐ
  */
-let cachedPatterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string }[] | null = null;
+let cachedPatterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string; underline?: boolean }[] | null = null;
 
 /**
  * パターンキャッシュを無効化
@@ -33,7 +33,7 @@ export function invalidatePatternCache(): void {
 /**
  * TTRequestsからDeterminantパターンを取得（キャッシュ付き）
  */
-export function getRequestPatterns(): { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string }[] {
+export function getRequestPatterns(): { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string; underline?: boolean }[] {
     // キャッシュがあればそれを返す
     if (cachedPatterns !== null) {
         return cachedPatterns;
@@ -49,7 +49,7 @@ export function getRequestPatterns(): { id: string; name: string; regex: RegExp;
     const items = models.Requests.GetItems();
     console.log(`[RequestLinkProvider] パターンキャッシュを生成中... (${items.length} 件)`);
 
-    const patterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string }[] = [];
+    const patterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string; underline?: boolean }[] = [];
 
     for (const item of models.Requests.GetItems()) {
         const request = item as TTRequest;
@@ -69,7 +69,8 @@ export function getRequestPatterns(): { id: string; name: string; regex: RegExp;
                 name: request.Name,
                 regex,
                 color: request.Color,
-                fontWeight: request.FontWeight
+                fontWeight: request.FontWeight,
+                underline: request.Underline
             });
         } catch (e) {
             console.warn(`[RequestLinkProvider] Invalid regex in ${request.ID}:`, e);
@@ -86,7 +87,7 @@ export function getRequestPatterns(): { id: string; name: string; regex: RegExp;
 /**
  * テキスト内でパターンにマッチする箇所を検出してリンクを生成
  */
-export function findRequestLinks(text: string, patterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string }[]): RequestLink[] {
+export function findRequestLinks(text: string, patterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string; underline?: boolean }[]): RequestLink[] {
     const links: RequestLink[] = [];
     const lines = text.split('\n');
 
@@ -183,12 +184,13 @@ export interface RequestMatch {
     matchedText: string;
     color?: string;
     fontWeight?: string;
+    underline?: boolean;
 }
 
 /**
  * テキスト内のパターンマッチを検索
  */
-export function findRequestMatches(text: string, patterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string }[]): RequestMatch[] {
+export function findRequestMatches(text: string, patterns: { id: string; name: string; regex: RegExp; color?: string; fontWeight?: string; underline?: boolean }[]): RequestMatch[] {
     const matches: RequestMatch[] = [];
     const lines = text.split('\n');
     const registeredRanges = new Set<string>();
@@ -224,7 +226,8 @@ export function findRequestMatches(text: string, patterns: { id: string; name: s
                     requestName: pattern.name,
                     matchedText: match[0],
                     color: pattern.color,
-                    fontWeight: pattern.fontWeight
+                    fontWeight: pattern.fontWeight,
+                    underline: pattern.underline
                 });
             }
         }

@@ -15,6 +15,8 @@ export class TTRequest extends TTObject {
     public Color: string = '';
     /** 文字の太さ */
     public FontWeight: string = '';
+    /** アンダーライン */
+    public Underline: boolean = false;
 
     public override get ClassName(): string {
         return 'TTRequest';
@@ -41,11 +43,11 @@ export class TTRequests extends TTCollection {
     constructor(models?: TTModels) {
         super();
         this._models = models || null;
-        this.ItemSaveProperties = "ID,Name,Determinant,Color,FontWeight,UpdateDate";
+        this.ItemSaveProperties = "ID,Name,Determinant,Color,FontWeight,Underline,UpdateDate";
         this.ListPropertiesMin = "ID,Name";
-        this.ListProperties = "ID,Name,Determinant,Color,FontWeight";
-        this.ColumnMapping = "ID:リクエストID,Name:名前,Determinant:判定パターン,Color:文字色,FontWeight:文字の太さ";
-        this.ColumnMaxWidth = "ID:30,Name:40,Determinant:60,Color:20,FontWeight:20";
+        this.ListProperties = "ID,Name,Determinant,Color,FontWeight,Underline";
+        this.ColumnMapping = "ID:リクエストID,Name:名前,Determinant:判定パターン,Color:文字色,FontWeight:文字の太さ,Underline:アンダーライン";
+        this.ColumnMaxWidth = "ID:30,Name:40,Determinant:60,Color:20,FontWeight:20,Underline:15";
     }
 
     protected CreateChildInstance(): TTObject {

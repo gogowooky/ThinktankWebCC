@@ -8,13 +8,14 @@ export function InitializeDefaultRequests(models: TTModels): void {
     const requests = models.Requests;
 
     // ヘルパー関数: リクエストの追加
-    function AddRequest(id: string, name: string, determinant: string, color?: string, fontWeight?: string): TTRequest {
+    function AddRequest(id: string, name: string, determinant: string, color?: string, fontWeight?: string, underline?: boolean): TTRequest {
         const request = new TTRequest();
         request.ID = id;
         request.Name = name;
         request.Determinant = determinant;
         request.Color = color || '';
         request.FontWeight = fontWeight || '';
+        request.Underline = underline ?? false;
         requests.AddItem(request);
         return request;
     }
@@ -23,30 +24,30 @@ export function InitializeDefaultRequests(models: TTModels): void {
     // 正規表現のエスケープ: \[ → \\[, \] → \\], [^\]] → [^\\]]
     AddRequest('Editor', 'エディター上表示',
         '\\[' + '(?<tag>TTMemo:(?<id>[^\\]]+))' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', true
     );
     AddRequest('Table', 'テーブル上表示',
         '\\[' + '(?<tag>TTModels|TTActions|TTEvents|TTMemos|TTRequests|TTStatus)' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', true
     );
     AddRequest('Import', '外部データ',
         '\\[' + '(?<class>Clipboard|DragDrop)' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', false
     );
     AddRequest('Url', 'URL',
         '(' + '(?<http>https?://[^") ]+)|' + ')',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', true
     );
     AddRequest('RelUrl', '相対URL',
         '┗ (' + '(?<path>\/([^<>:\\" \\|\\?\\*]+)*)|' + ')',
-        '#12abe2ff', 'normal',
+        '#12abe2ff', 'normal', true
     );
     AddRequest('Path', 'パス',
         '(' +
         '(?<file>(([a-zA-Z]:\\\\)|\\\\\\\\)([^<>:\\" \\|\\?\\*]+\\\\?)*)|' +
         '"(?<fileq>(([a-zA-Z]:\\\\)|\\\\\\\\)([^<>:\\"\\|\\?\\*]+\\\\?)*)"' +
         ')',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', true
     );
     AddRequest('RelPath', '相対パス',
         // '^(?<=\\s*)(' +
@@ -54,7 +55,7 @@ export function InitializeDefaultRequests(models: TTModels): void {
         '(?<path>\\\\([^<>:\\" \\|\\?\\*]+\\\\?)*)|' +
         '"(?<pathq>\\\\([^<>:\\"\\|\\?\\*]+\\\\?)*)"' +
         ')',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', true
     );
     AddRequest('Icon', 'アイコン',
         '\\[(' +
@@ -62,47 +63,47 @@ export function InitializeDefaultRequests(models: TTModels): void {
         '(?<i2>2|TODO|WAIT||DOING|DONE|NEED|EVENT)|' +
         '(?<i3>3| |o|x|-|=)' +
         ')\\]',
-        '#12abe2ff', 'normal'
+        '#e28f12ff', 'bold', false
     );
     AddRequest('Reference', '参照',
         '\\[' + '(?<scope>>|>>|:)(?<tag>[^\\]]+)' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', false
     );
     AddRequest('WebSearch', 'Web検索',
         '\\[' + '(?<cite>Google|Wikipedia|Pubmed)' + ':(?<keyword>[^\\]]+)' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', false
     );
     AddRequest('Route', '旅程ルート',
         '\\[' + '(?<tag>Route)' + ':(?<param1>[^\\>:\\]]+)' + '(:(?<param2>[\\w]+))?' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', false
     );
     AddRequest('Memo', 'メモ',
         '\\[' + 'Memo:' + '(?<param1>[^\\>:\\]]+)' + '(:(?<param2>[\\w]+))?' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', false
     );
     AddRequest('ThinkTank', 'アプリタグ',
         '\\[' + '(?<tag>Mail|Set|Photo)' + ':(?<param1>[^\\>:\\]]+)' + '(:(?<param2>[\\w]+))?' + '\\]',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', false
     );
     AddRequest('Chat', 'AIチャットログ',
         '^\\[' + '(?<tag>Gemini|Claude|ChatGPT)>' + '\\]' + '(?<chat>.*)',
-        '#12abe2ff', 'normal'
+        '#12abe2ff', 'normal', false
     );
     AddRequest('DateTag', '日付タグ',
         '\\[(?<y>\\d{4})\\-(?<m>\\d{2})\\-(?<d>\\d{2})\\]',
-        '#12abe2ff', 'normal'
+        '#15a80bcb', 'bold', false
     );
     AddRequest('Date', '日付',
         '(?<y>\\d{4})\\/(?<m>\\d{1,2})\\/(?<d>\\d{1,2})' + '(\\((?<w>[日月火水木金土])\\))?' + '( (?<h>\\d{2}):(?<n>\\d{2}))?',
-        '#12abe2ff', 'normal'
+        '#15a80bcb', 'bold', true
     );
     AddRequest('JDate', '日付',
         '(?<y>\\d{4})年' + '(?<m>\\d{1,2})月' + '(?<d>\\d{1,2})日' + '(\\((?<w>[日月火水木金土])\\))?' + '( (?<h>\\d{2}):(?<n>\\d{2}))?',
-        '#12abe2ff', 'normal'
+        '#15a80bcb', 'bold', true
     );
     AddRequest('GDate', '日付',
         '(?<g>明治|大正|昭和|平成|令和)(?<y>\\d{1,2}|元)年' + '(?<m>\\d{1,2})月' + '(?<d>\\d{1,2})日' + '(\\((?<w>[日月火水木金土])\\))?' + '( (?<h>\\d{2}):(?<n>\\d{2}))?',
-        '#12abe2ff', 'normal'
+        '#15a80bcb', 'bold', true
     );
     // #endregion
 

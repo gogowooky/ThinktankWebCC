@@ -89,12 +89,12 @@ export const CodeEditor = React.memo(React.forwardRef<CodeEditorHandle, CodeEdit
         const requestPatterns = getRequestPatterns();
         let dynamicRequestStyles = '';
         requestPatterns.forEach(pattern => {
-            if (pattern.color || pattern.fontWeight) {
+            if (pattern.color || pattern.fontWeight || pattern.underline !== undefined) {
                 dynamicRequestStyles += `
             .tt-request-link-${pattern.id} {
                 ${pattern.color ? `color: ${pattern.color} !important;` : 'color: #6B8CAD;'}
                 ${pattern.fontWeight ? `font-weight: ${pattern.fontWeight} !important;` : ''}
-                text-decoration: underline;
+                text-decoration: ${pattern.underline ? 'underline' : 'none'} !important;
                 cursor: pointer;
             }
             [data-color-mode="DefaultOriginal"] .tt-request-link-${pattern.id} {
@@ -147,7 +147,7 @@ export const CodeEditor = React.memo(React.forwardRef<CodeEditorHandle, CodeEdit
                 m.endColumn
             ),
             options: {
-                inlineClassName: (m.color || m.fontWeight) ? `tt-request-link-${m.requestId}` : 'tt-request-link',
+                inlineClassName: (m.color || m.fontWeight || m.underline !== undefined) ? `tt-request-link-${m.requestId}` : 'tt-request-link',
                 cursor: 'pointer'
             }
         }));

@@ -27,11 +27,23 @@
 　<http://localhost:5173/>
 　<https://thinktank-web-699735546730.asia-northeast1.run.app>>
 
-- ■ TTRequests/TTRequest
+全文検索
+カレンダー(日一覧、週一覧、月一覧)
+  メモ
+  イベント
+  写真
+タグ分類･タグ詳細
+  メモ
+  イベント
+日記･週報
 
 [26xxxx]
 
 - TTChats/TTChatの追加
+
+[260304]
+
+- TTRequestにunderline属性も加え、AddRequestで指定できるようにしてください。表示ルーチンも整備してください。
 
 [260303]
 
