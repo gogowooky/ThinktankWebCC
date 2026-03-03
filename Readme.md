@@ -15,8 +15,8 @@
 ・ 新しい機能
 - Chatの創設、BigQueryとGeminiとの連携、
 
-　　Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
-   $env:GOOGLE_SERVICE_ACCOUNT_KEY = Get-Content .\thinktankweb-483408-9548b5a08345.json -Raw
+　Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+  $env:GOOGLE_SERVICE_ACCOUNT_KEY = Get-Content .\thinktankweb-483408-9548b5a08345.json -Raw
 
 - BQリンク
 　⇒ <https://console.cloud.google.com/bigquery?project=thinktankweb-483408&ws=!1m0>
@@ -34,8 +34,12 @@
 - TTChats/TTChatの追加
 
 [260303]
-- node .\scripts\analyze-duplicates.js を実行したところ、ダブって登録されているファイルが複数ありました。File_ID＋Categoryが同じであればupdateされるはずです。調査して修正してください。
 
+- boldではない場合は何ですか？
+- 上記設定のコンポーネント側での表示反映の実装もお願いします。
+- TTRequestの個々アイテム毎に、文字色と文字太さの指定をします。TTRequestのメンバー変数に追加し、AddRequestで指定できるようにしてください。
+
+- node .\scripts\analyze-duplicates.js を実行したところ、ダブって登録されているファイルが複数ありました。File_ID＋Categoryが同じであればupdateされるはずです。調査して修正してください。
 
 [260302]
 
@@ -46,15 +50,15 @@ Alt+S : WebView.Action.Search
 WebView.Action.SearchはWebView.Keywordに /ttsearch と入力して全文検索サービスを表示します。
 
 [260301]
+
 - 質問です。WebViewではキーイベントが取得できていません、キーイベントが発生していないのでしょうか？
 
 - 各パネルのWebView上でカーソルがあるLinkの順位を示すTTState([Panels].WebView.CurPos) を追加してください。next/prev/first/lastも受け入れるようにしてください。
-- 
+-
 - node .\scripts\analyze-duplicates.js を実行したところ、ダブって登録されているファイルが複数あります（下記）。File_ID＋Categoryが同じであればupdateされるはずです。調査して修正してください。
-- 
+-
 - WebViewパネルで/ttsearchが表示されておりません。調査修正をお願いします。
 - TTMemosのcsvキャッシュはlocal cacheとBQの両方に保存しますが、TTMemosへのTTMemoの登録は、まずBQの一覧情報からの登録を試み、BQアクセスができない場合に、local cacheからよみとる形にしてください。
-
 
 [260227]
 
@@ -1208,7 +1212,6 @@ GET <http://localhost:5174/favicon.ico> 404 (Not Found)
 - implementation plan, taskとも日本語で記載してください。
 
 - Webアプリケーションのテキストエディターを作成します。まずは環境の準備について指示してください。monaco-editorを使ってください。
-
 
 - ■ Monaco Editor 組み込みショートカット一覧
   - 検索・置換

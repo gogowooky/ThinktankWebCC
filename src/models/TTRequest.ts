@@ -11,6 +11,10 @@ import { invalidatePatternCache } from '../services/RequestLinkProvider';
 export class TTRequest extends TTObject {
     /** 正規表現パターン（文字列形式） */
     public Determinant: string = '';
+    /** 文字色 */
+    public Color: string = '';
+    /** 文字の太さ */
+    public FontWeight: string = '';
 
     public override get ClassName(): string {
         return 'TTRequest';
@@ -37,11 +41,11 @@ export class TTRequests extends TTCollection {
     constructor(models?: TTModels) {
         super();
         this._models = models || null;
-        this.ItemSaveProperties = "ID,Name,Determinant,UpdateDate";
+        this.ItemSaveProperties = "ID,Name,Determinant,Color,FontWeight,UpdateDate";
         this.ListPropertiesMin = "ID,Name";
-        this.ListProperties = "ID,Name,Determinant";
-        this.ColumnMapping = "ID:リクエストID,Name:名前,Determinant:判定パターン";
-        this.ColumnMaxWidth = "ID:30,Name:40,Determinant:60";
+        this.ListProperties = "ID,Name,Determinant,Color,FontWeight";
+        this.ColumnMapping = "ID:リクエストID,Name:名前,Determinant:判定パターン,Color:文字色,FontWeight:文字の太さ";
+        this.ColumnMaxWidth = "ID:30,Name:40,Determinant:60,Color:20,FontWeight:20";
     }
 
     protected CreateChildInstance(): TTObject {

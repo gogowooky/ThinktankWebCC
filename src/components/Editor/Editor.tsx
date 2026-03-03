@@ -86,6 +86,23 @@ export const CodeEditor = React.memo(React.forwardRef<CodeEditorHandle, CodeEdit
             styleElementRef.current.id = 'keyword-highlight-styles';
             document.head.appendChild(styleElementRef.current);
         }
+        const requestPatterns = getRequestPatterns();
+        let dynamicRequestStyles = '';
+        requestPatterns.forEach(pattern => {
+            if (pattern.color || pattern.fontWeight) {
+                dynamicRequestStyles += `
+            .tt-request-link-${pattern.id} {
+                ${pattern.color ? `color: ${pattern.color} !important;` : 'color: #6B8CAD;'}
+                ${pattern.fontWeight ? `font-weight: ${pattern.fontWeight} !important;` : ''}
+                text-decoration: underline;
+                cursor: pointer;
+            }
+            [data-color-mode="DefaultOriginal"] .tt-request-link-${pattern.id} {
+                ${pattern.color ? `color: ${pattern.color} !important;` : 'color: #5050A0;'}
+            }`;
+            }
+        });
+
         styleElementRef.current.textContent = generateKeywordStyles(keywordColorMode) + `
             .tt-request-link {
                 color: #6B8CAD;
@@ -96,7 +113,7 @@ export const CodeEditor = React.memo(React.forwardRef<CodeEditorHandle, CodeEdit
             [data-color-mode="DefaultOriginal"] .tt-request-link {
                 color: #5050A0;
             }
-        `;
+        ` + dynamicRequestStyles;
 
         // キーワードをパース
         const parsedKeywords = parseKeywords(keywords, keywordColorMode);
@@ -120,7 +137,6 @@ export const CodeEditor = React.memo(React.forwardRef<CodeEditorHandle, CodeEdit
 
         // Request Links Decoration Logic
         // LinkProviderを使わずにDecorationでリンク表示を行う
-        const requestPatterns = getRequestPatterns();
         const requestMatches = findRequestMatches(text, requestPatterns);
 
         const requestDecorations = requestMatches.map(m => ({
@@ -131,7 +147,7 @@ export const CodeEditor = React.memo(React.forwardRef<CodeEditorHandle, CodeEdit
                 m.endColumn
             ),
             options: {
-                inlineClassName: 'tt-request-link', // 定義するCSSクラス
+                inlineClassName: (m.color || m.fontWeight) ? `tt-request-link-${m.requestId}` : 'tt-request-link',
                 cursor: 'pointer'
             }
         }));
