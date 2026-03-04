@@ -41,7 +41,12 @@
 
 - TTChats/TTChatの追加
 
+[260305]
+
+- generate_keybindings_excel.pyはDefaultEventsからKeyBindingを見やすくまとめてThinktankWebCC_KeyBinding.xlsxファイルとして保存するスクリプトです。非常にすばらしいので、このスクリプトを参考にして、ThinktankWebCC_KeyBinding.xlsxの②③④のシートからDefaultEvents.tsを生成するスクリプトも作成してください。
+
 [260304]
+
 - 「数秒〜十数秒おきに新しいレコードが保存されています。」という点が問題です。あるファイルを保存する場合は1分間の猶予時間を設け、再度同じファイルの保存がオーダーされなければ、はじめて保存する、というルールを導入してください。再度同じファイルの保存がオーダーされた場合は猶予時間(1分間)をリセットします。
 - node .\scripts\analyze-duplicates.js を実施したところ、以下のような結果が得られました。同一IDの重複はない状況とは思いますが、レコードとしてはどんどん蓄積されていっている状況ということなのでしょうか？
 
