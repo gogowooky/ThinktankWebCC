@@ -6,6 +6,47 @@
 import { Router, Request, Response } from 'express';
 import { bigqueryService, FileRecord } from '../services/BigQueryService.js';
 
+const DEBOUNCE_MS = 60000; // 1 minute
+const saveTimers = new Map<string, NodeJS.Timeout>();
+const pendingSaves = new Map<string, FileRecord>();
+
+function getFileKey(fileId: string, category: string | null): string {
+    return `${fileId}_${category || ''}`;
+}
+
+async function executeSave(key: string) {
+    const record = pendingSaves.get(key);
+    if (!record) return;
+
+    pendingSaves.delete(key);
+    saveTimers.delete(key);
+
+    try {
+        await bigqueryService.saveFile(record);
+        console.log(`[BigQueryRoutes] Debounced save executed for ${key}`);
+    } catch (error) {
+        console.error(`[BigQueryRoutes] Debounced save failed for ${key}:`, error);
+    }
+}
+
+function scheduleSave(record: FileRecord) {
+    const key = getFileKey(record.file_id, record.category);
+    
+    // Update the pending record
+    pendingSaves.set(key, record);
+
+    // Reset the timer
+    if (saveTimers.has(key)) {
+        clearTimeout(saveTimers.get(key)!);
+    }
+
+    const timer = setTimeout(() => {
+        executeSave(key);
+    }, DEBOUNCE_MS);
+
+    saveTimers.set(key, timer);
+}
+
 export function createBigQueryRoutes(): Router {
     const router = Router();
 
@@ -73,6 +114,8 @@ export function createBigQueryRoutes(): Router {
      * 存在しない場合は INSERT される（BigQueryService.saveFile の MERGE文）。
      * created_at はクライアントから送られた値を優先し、
      * 送られない場合のみ現在時刻を使用する（UPDATE時はcreated_atは変更されない）。
+     * 
+     * 1分間のデバウンス処理が組み込まれています。
      */
     router.post('/files', async (req: Request, res: Response) => {
         try {
@@ -101,13 +144,9 @@ export function createBigQueryRoutes(): Router {
                 updated_at: now
             };
 
-            const result = await bigqueryService.saveFile(record);
+            scheduleSave(record);
 
-            if (!result.success) {
-                return res.status(500).json({ error: result.error });
-            }
-
-            res.json({ success: true });
+            res.json({ success: true, status: 'scheduled' });
         } catch (error) {
             console.error('[BigQueryRoutes] Save error:', error);
             res.status(500).json({ error: 'Internal Server Error' });
@@ -205,6 +244,8 @@ export function createBigQueryRoutes(): Router {
      * UPSERT キー: file_id + category
      * 各レコードは BigQueryService.bulkSave → saveFile の MERGE文で処理される。
      * created_at: クライアントが送ってきた値を優先（初回作成日時を保持）。
+     * 
+     * 1分間のデバウンス処理が組み込まれています。
      */
     router.post('/bulk', async (req: Request, res: Response) => {
         try {
@@ -215,26 +256,23 @@ export function createBigQueryRoutes(): Router {
             }
 
             const now = new Date();
-            const records: FileRecord[] = files.map(f => ({
-                file_id: f.file_id,
-                title: f.title || null,
-                file_type: f.file_type,
-                category: f.category || null,
-                content: f.content || null,
-                metadata: f.metadata || null,
-                size_bytes: f.content ? Buffer.byteLength(f.content, 'utf8') : null,
-                // created_at: クライアントから送られた値があればそれを優先、なければ現在時刻
-                created_at: f.created_at ? new Date(f.created_at) : now,
-                updated_at: now
-            }));
-
-            const result = await bigqueryService.bulkSave(records);
-
-            if (!result.success) {
-                return res.status(500).json({ error: result.error });
+            for (const f of files) {
+                const record: FileRecord = {
+                    file_id: f.file_id,
+                    title: f.title || null,
+                    file_type: f.file_type,
+                    category: f.category || null,
+                    content: f.content || null,
+                    metadata: f.metadata || null,
+                    size_bytes: f.content ? Buffer.byteLength(f.content, 'utf8') : null,
+                    // created_at: クライアントから送られた値があればそれを優先、なければ現在時刻
+                    created_at: f.created_at ? new Date(f.created_at) : now,
+                    updated_at: now
+                };
+                scheduleSave(record);
             }
 
-            res.json({ success: true, count: records.length });
+            res.json({ success: true, count: files.length, status: 'scheduled' });
         } catch (error) {
             console.error('[BigQueryRoutes] Bulk save error:', error);
             res.status(500).json({ error: 'Internal Server Error' });
