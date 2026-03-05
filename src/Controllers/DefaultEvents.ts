@@ -135,10 +135,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-*-*', 'Alt', 'H', 'Application.Current.Tool:next');         // Tool
     // #endregion
 
-    // #region 
-    AddEvent('*-*-*-*', 'Control', 'G', 'Editor.Memo.Create');      // Memo Create
-    // #endregion
-
     // #region DateTime
     AddEvent('*-*-*-*', 'Alt', 'T', 'Editor.Date.Action');          // DateTime Mode
     AddEvent('*-*-*-ExDateTime', '', 'Y', 'DateTime.Shift.Next1y');
@@ -296,7 +292,9 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-Main-*', 'Control', '/', 'Editor.Edit.NextComment');
     AddEvent('*-Editor-Main-*', 'Control+Shift', '?', 'Editor.Edit.PrevComment');
 
+    AddEvent('*-*-*-*', 'Control', 'G', 'Editor.Memo.Create');      // Memo Create
     // #endregion
+
     // #region Editor autoComplete      Action:     ^[ SPACE ]
     AddEvent('*-Editor-Main-*', 'Control', 'SPACE', 'Editor.AutoComplete.Suggest');
     // #endregion

@@ -36,11 +36,19 @@
   メモ
   イベント
 日記･週報
+WebViewのカーソル
+ttsearchの検索式をEditorにあわせる
+パネルタイトルに表示中データのクラスを表示
 
 [26xxxx]
 
 - TTChats/TTChatの追加
 
+[260306]
+
+- 非開発者に使ってもらいたいのでこのままの開発のほうがよさそうだと感じました。また一方、VSCode on Webのpluginとして開発する方法はないのでしょうか？それであればVSCodeのinstallは不要です。
+- 相談です。現在開発しているこのプロジェクトですが、全体を作成するのではなく、VSCodeのPluginとして開発したほうが良いのではないか、とも考えています。デメリット・メリットをおしえてください。
+ 
 [260305]
 
 - generate_default_events_from_excel.pyで作成したsrc\Controllers\DefaultEvents.tsがキーマップを再現しませんでした。再確認してみてください。
