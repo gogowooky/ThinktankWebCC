@@ -43,6 +43,7 @@
 
 [260305]
 
+- generate_default_events_from_excel.pyで作成したsrc\Controllers\DefaultEvents.tsがキーマップを再現しませんでした。再確認してみてください。
 - generate_keybindings_excel.pyはDefaultEventsからKeyBindingを見やすくまとめてThinktankWebCC_KeyBinding.xlsxファイルとして保存するスクリプトです。非常にすばらしいので、このスクリプトを参考にして、ThinktankWebCC_KeyBinding.xlsxの②③④のシートからDefaultEvents.tsを生成するスクリプトも作成してください。
 
 [260304]
