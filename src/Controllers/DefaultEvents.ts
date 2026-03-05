@@ -51,11 +51,11 @@ export function InitializeDefaultEvents(models: TTModels) {
 
     // #region Editor MASK
     AddEvent('*-Editor-Main-*', 'Alt', 'R', 'Application.Command.NoAction');        // Search RegEx
-    // AddEvent('*-Editor-Main-*', 'Alt', 'W', 'Application.Command.NoAction');        // Search Word
     AddEvent('*-Editor-Main-*', 'Alt', 'C', 'Application.Command.NoAction');        // Search Captalize
     AddEvent('*-Editor-Main-*', 'Alt', 'P', 'Application.Command.NoAction');        // Replace with Keeping Capitalize
-    // AddEvent('*-Editor-Main-*', 'Alt', 'L', 'Application.Command.NoAction');        // Replace In Selection
     AddEvent('*-Editor-Main-*', 'Control', 'H', 'Application.Command.NoAction');    // x Replace
+    // AddEvent('*-Editor-Main-*', 'Alt', 'W', 'Application.Command.NoAction');        // Search Word
+    // AddEvent('*-Editor-Main-*', 'Alt', 'L', 'Application.Command.NoAction');        // Replace In Selection
     // #endregion
     // #region Keyword MASK
     AddEvent('*-*-Keyword-*', 'Control', 'F', 'Application.Command.NoAction');      // x Search
@@ -99,16 +99,27 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-ExApp', 'Shift+Control+Alt', 'R', 'Application.AllCollection.Save');
     // #endregion
 
-    // #region Application panel        Status:     ![ \ LISD?{} ] !+[ _ ]
+    // #region Application exapp        Status:     ![ A LSID/[] ]
+    AddEvent('*-*-*-*', 'Alt', 'A', 'Application.Current.ExMode:ExApp');            // ExApp
+
+    AddEvent('*-*-*-*', 'Alt', 'L', 'Application.Current.ExMode:ExLibrary');        // ExLibrary
+    AddEvent('*-*-*-*', 'Alt', 'I', 'Application.Current.ExMode:ExIndex');          // ExIndex
+    AddEvent('*-*-*-*', 'Alt', 'S', 'Application.Current.ExMode:ExShelf');          // ExShelf
+    AddEvent('*-*-*-*', 'Alt', 'D', 'Application.Current.ExMode:ExDesk');           // ExDesk
+    AddEvent('*-*-*-*', 'Alt', '/', 'Application.Current.ExMode:ExSystem');         // ExSystem
+    AddEvent('*-*-*-*', 'Alt', '[', 'Application.Current.ExMode:ExChat');           // ExChat
+    AddEvent('*-*-*-*', 'Alt', ']', 'Application.Current.ExMode:ExLog');            // ExLog
+    // #endregion
+    // #region Application panel        Status:     ![ \ ] !+[ LISD?{} ]
     AddEvent('*-*-*-*', 'Alt', '\\', 'Application.Current.Panel:next');             // Panel
     AddEvent('*-*-*-*', 'Alt+Shift', '_', 'Application.Current.Panel:prev');        // Panel
-    AddEvent('*-*-*-*', 'Alt', 'L', 'Application.Current.Panel:Library');           // library
-    AddEvent('*-*-*-*', 'Alt', 'I', 'Application.Current.Panel:Index');             // index
-    AddEvent('*-*-*-*', 'Alt', 'S', 'Application.Current.Panel:Shelf');             // shelf
-    AddEvent('*-*-*-*', 'Alt', 'D', 'Application.Current.Panel:Desk');              // desk
-    AddEvent('*-*-*-*', 'Alt', '/', 'Application.Current.Panel:System');            // system
-    AddEvent('*-*-*-*', 'Alt', '[', 'Application.Current.Panel:Chat');              // chat
-    AddEvent('*-*-*-*', 'Alt', ']', 'Application.Current.Panel:Log');               // log
+    AddEvent('*-*-*-*', 'Alt+Shift', 'L', 'Application.Current.Panel:Library');     // library
+    AddEvent('*-*-*-*', 'Alt+Shift', 'I', 'Application.Current.Panel:Index');       // index
+    AddEvent('*-*-*-*', 'Alt+Shift', 'S', 'Application.Current.Panel:Shelf');       // shelf
+    AddEvent('*-*-*-*', 'Alt+Shift', 'D', 'Application.Current.Panel:Desk');        // desk
+    AddEvent('*-*-*-*', 'Alt+Shift', '?', 'Application.Current.Panel:System');      // system
+    AddEvent('*-*-*-*', 'Alt+Shift', '{', 'Application.Current.Panel:Chat');        // chat
+    AddEvent('*-*-*-*', 'Alt+Shift', '}', 'Application.Current.Panel:Log');         // log
     // #endregion
     // #region Application mode         Status:     ![ QWE M ] !+[ M ]
     AddEvent('*-*-*-*', 'Alt', 'Q', 'Application.Current.Mode:Table');              // Mode:Table
@@ -117,24 +128,11 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-*', 'Alt', 'M', 'Application.Current.Mode:next');               // Mode
     AddEvent('*-*-*-*', 'Alt+Shift', 'M', 'Application.Current.Mode:prev');         // Mode
 
-
     // #endregion
-    // #region Editor tool         Status:     ![ H ]
+    // #region Application tool         Status:     ![ H ]
     AddEvent('*-Table-*-*', 'Alt', 'H', 'Application.Current.Tool:Main');         // Tool
     AddEvent('*-WebView-*-*', 'Alt', 'H', 'Application.Current.Tool:next');         // Tool
     AddEvent('*-Editor-*-*', 'Alt', 'H', 'Application.Current.Tool:next');         // Tool
-    // #endregion
-    // #region Application exapp        Status:     ![ A ]
-    AddEvent('*-*-*-*', 'Alt+Control', 'A', 'Application.Current.ExMode:ExApp');            // ExApp
-    // #endregion
-    // #region Application expanel      Status:     !^[ LSID?{} ]
-    AddEvent('*-*-*-*', 'Alt+Control', 'L', 'Application.Current.ExMode:ExLibrary');  // ExLibrary
-    AddEvent('*-*-*-*', 'Alt+Control', 'I', 'Application.Current.ExMode:ExIndex');    // ExIndex
-    AddEvent('*-*-*-*', 'Alt+Control', 'S', 'Application.Current.ExMode:ExShelf');    // ExShelf
-    AddEvent('*-*-*-*', 'Alt+Control', 'D', 'Application.Current.ExMode:ExDesk');     // ExDesk
-    AddEvent('*-*-*-*', 'Alt+Control', '/', 'Application.Current.ExMode:ExSystem');   // ExSystem
-    AddEvent('*-*-*-*', 'Alt+Control', '[', 'Application.Current.ExMode:ExChat');     // ExChat
-    AddEvent('*-*-*-*', 'Alt+Control', ']', 'Application.Current.ExMode:ExLog');      // ExLog
     // #endregion
 
     // #region 
