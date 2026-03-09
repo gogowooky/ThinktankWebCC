@@ -44,6 +44,10 @@ ttsearchの検索式をEditorにあわせる
 
 - TTChats/TTChatの追加
 
+[260310]
+
+- WebView.KeywordにフォーカスするとModeがEditorに切り替わってしまいます。調査して修正してください。
+
 [260305]
 
 - generate_default_events_from_excel.pyで作成したsrc\Controllers\DefaultEvents.tsがキーマップを再現しませんでした。再確認してみてください。
