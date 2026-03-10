@@ -161,13 +161,21 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #region common
     AddEvent('*-Editor-Main-*', 'Alt', 'P', '(Panel).Editor.CurPos:prevvisiblefolding');
     AddEvent('*-Editor-Main-*', 'Alt', 'N', '(Panel).Editor.CurPos:nextvisiblefolding');
+    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'P', 'Editor.Folding.Close');
+    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'N', 'Editor.Folding.Open');
+    AddEvent('*-Editor-Main-*', 'Alt', 'G', 'Request.Invoke.Default');
+    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-Editor-Main-*', '', 'sel_LEFT2', 'Request.Invoke.Default');
+    AddEvent('*-Editor-Main-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
 
-    AddEvent('*-Table-*-ExPanel', 'Alt', 'P', '(ExPanel).Table.CurPos:prev');
-    AddEvent('*-Table-*-ExPanel', 'Alt', 'N', '(ExPanel).Table.CurPos:next');
-    AddEvent('*-Table-*-ExPanel', 'Alt+Shift', 'P', '(ExPanel).Table.CurPos:prev10');
-    AddEvent('*-Table-*-ExPanel', 'Alt+Shift', 'N', '(ExPanel).Table.CurPos:next10');
-    AddEvent('*-Table-*-ExPanel', 'Alt', 'G', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-ExPanel', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-Table-*-*', 'Alt', 'P', '(ExPanel).Table.CurPos:prev');
+    AddEvent('*-Table-*-*', 'Alt', 'N', '(ExPanel).Table.CurPos:next');
+    AddEvent('*-Table-*-*', 'Alt+Shift', 'P', '(ExPanel).Table.CurPos:prev10');
+    AddEvent('*-Table-*-*', 'Alt+Shift', 'N', '(ExPanel).Table.CurPos:next10');
+    AddEvent('*-Table-*-*', 'Alt', 'G', 'Request.Invoke.Default');
+    AddEvent('*-Table-*-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-Table-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
+    AddEvent('*-Table-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
     // #endregion
 
     // #region ExPanel Table move       Status:     [ ↑↓ ] +[ ↑↓ ] ^+[ ↑↓ ] ^[ PN AE ] ^+[ PN ]
@@ -297,8 +305,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-Main-*', 'Control', 'SPACE', 'Editor.AutoComplete.Suggest');
     // #endregion
     // #region Editor request           ![ ENTER PN ]  !+[ ENTER ]  [ sel_LEFT2/RIGHT1 ]
-    AddEvent('*-Editor-Main-*', 'Alt', 'ENTER', 'Request.Invoke.Default');
-    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'ENTER', 'Request.Show.ContextMenu');
     // #endregion
 
     // #region WebView request            [ sel_LEFT2,RIGHT1 ]  +[ ENTER ]  ![ ENTER ] !+[ ENTER ]
