@@ -158,7 +158,7 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-ExPanel', 'Alt+Shift', 'M', '(ExPanel).Current.Mode:prev');     // Mode
     // #endregion
 
-    // #region common
+    // #region common                   
     AddEvent('*-Editor-Main-*', 'Alt', 'P', '(Panel).Editor.CurPos:prevvisiblefolding');
     AddEvent('*-Editor-Main-*', 'Alt', 'N', '(Panel).Editor.CurPos:nextvisiblefolding');
     AddEvent('*-Editor-Main-*', 'Alt+Shift', 'P', 'Editor.Folding.Close');
@@ -176,6 +176,16 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Table-*-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
     AddEvent('*-Table-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
     AddEvent('*-Table-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
+
+    AddEvent('*-WebView-*-*', 'Alt', 'P', '(ExPanel).WebView.CurPos:prev');
+    AddEvent('*-WebView-*-*', 'Alt', 'N', '(ExPanel).WebView.CurPos:next');
+    AddEvent('*-WebView-*-*', 'Alt+Shift', 'P', '(ExPanel).WebView.CurPos:first');
+    AddEvent('*-WebView-*-*', 'Alt+Shift', 'N', '(ExPanel).WebView.CurPos:last');
+    AddEvent('*-WebView-*-*', 'Alt', 'G', 'Request.Invoke.Default');
+    AddEvent('*-WebView-*-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-WebView-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
+    AddEvent('*-WebView-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
+
     // #endregion
 
     // #region ExPanel Table move       Status:     [ ↑↓ ] +[ ↑↓ ] ^+[ ↑↓ ] ^[ PN AE ] ^+[ PN ]
@@ -307,14 +317,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #region Editor request           ![ ENTER PN ]  !+[ ENTER ]  [ sel_LEFT2/RIGHT1 ]
     // #endregion
 
-    // #region WebView request            [ sel_LEFT2,RIGHT1 ]  +[ ENTER ]  ![ ENTER ] !+[ ENTER ]
-    AddEvent('*-WebView-*-*', 'Alt', 'ENTER', 'Request.Invoke.Default');
-    AddEvent('*-WebView-*-*', 'Alt+Shift', 'ENTER', 'Request.Show.ContextMenu');
-    AddEvent('*-WebView-*-*', '', 'LEFT1', 'Request.Invoke.Default');
-    AddEvent('*-WebView-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
-    AddEvent('*-WebView-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
-    // #endregion
-
     // #region WebView keyword query     [ ENTER ]
     AddEvent('*-WebView-Keyword-*', '', 'ENTER', 'WebView.Keyword.Query');
     // #endregion
@@ -339,8 +341,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-Main-*', 'Alt', 'DOWN', '(Panel).Editor.CurPos:nextvisiblefolding');
     AddEvent('*-Editor-Main-*', 'Alt+Shift', 'UP', '(Panel).Editor.CurPos:prevsibfolding');
     AddEvent('*-Editor-Main-*', 'Alt+Shift', 'DOWN', '(Panel).Editor.CurPos:nextsibfolding');
-    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'P', '(Panel).Editor.CurPos:prevsibfolding');
-    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'N', '(Panel).Editor.CurPos:nextsibfolding');
     AddEvent('*-Editor-Main-*', 'Alt+Shift', 'F', '(Panel).Editor.CurPos:firstsibfolding');
     AddEvent('*-Editor-Main-*', 'Alt+Shift', 'B', '(Panel).Editor.CurPos:lastsibfolding');
 
@@ -379,10 +379,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Table-*-*', 'Control+Shift', 'N', '(Panel).Table.CurPos:+10');
     AddEvent('*-Table-*-*', 'Control', 'A', '(Panel).Table.CurPos:first');
     AddEvent('*-Table-*-*', 'Control', 'E', '(Panel).Table.CurPos:last');
-    AddEvent('*-Table-*-*', 'Alt', 'P', '(Panel).Table.CurPos:prev');
-    AddEvent('*-Table-*-*', 'Alt', 'N', '(Panel).Table.CurPos:next');
-    AddEvent('*-Table-*-*', 'Alt+Shift', 'P', '(Panel).Table.CurPos:-10');
-    AddEvent('*-Table-*-*', 'Alt+Shift', 'N', '(Panel).Table.CurPos:+10');
 
     AddEvent('*-Table-*-*', '', 'UP', '(Panel).Table.CurPos:prev');
     AddEvent('*-Table-*-*', '', 'DOWN', '(Panel).Table.CurPos:next');
@@ -404,19 +400,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Table-*-*', 'Shift', 'F5', 'Table.SortProp5.Rev');
 
     // #endregion
-    // #region Table request            [ ENTER,sel_LEFT2,RIGHT1 ]  +[ ENTER ]  ![ ENTER ] !+[ ENTER ]
-    AddEvent('*-Table-*-*', '', 'SPACE', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-*', 'Shift', 'SPACE', 'Request.Show.ContextMenu');
-    AddEvent('*-Table-*-*', 'Control', 'SPACE', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-*', 'Shift+Control', 'SPACE', 'Request.Show.ContextMenu');
-    AddEvent('*-Table-*-*', 'Alt+Control', 'SPACE', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-*', 'Alt+Shift+Control', 'SPACE', 'Request.Show.ContextMenu');
-    AddEvent('*-Table-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
-
-    AddEvent('*-Table-*-ExPanel', 'Control', 'SPACE', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-ExPanel', 'Shift+Control', 'SPACE', 'Request.Show.ContextMenu');
-    // #endregion
     // #region Table resource
     AddEvent('*-Table-*-*', 'Alt', 'R', '(Panel).Table.Resource:Thinktank');
     // #endregion
@@ -433,10 +416,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #endregion
 
     // #region WebView cursor           ![ PN ]  !+[ PN ]  [ ↑↓ ]  ^+[ ↑↓ ]
-    AddEvent('*-WebView-*-*', 'Alt', 'P', '(Panel).WebView.CurPos:prev');
-    AddEvent('*-WebView-*-*', 'Alt', 'N', '(Panel).WebView.CurPos:next');
-    AddEvent('*-WebView-*-*', 'Alt+Shift', 'P', '(Panel).WebView.CurPos:first');
-    AddEvent('*-WebView-*-*', 'Alt+Shift', 'N', '(Panel).WebView.CurPos:last');
     AddEvent('*-WebView-*-*', '', 'UP', '(Panel).WebView.CurPos:prev');
     AddEvent('*-WebView-*-*', '', 'DOWN', '(Panel).WebView.CurPos:next');
     AddEvent('*-WebView-*-*', 'Shift+Control', 'UP', '(Panel).WebView.CurPos:first');
