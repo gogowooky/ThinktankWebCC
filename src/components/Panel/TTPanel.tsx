@@ -511,20 +511,34 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
                     const context = { // ega> WebViewのマウスイベント
                         Key: key,
                         Mods: mods,
-                        ScreenX: e.screenX, // iframe内座標だとずれる可能性があるが、UIRequestTriggeredActionで補正されることを期待、またはiframeのoffsetを加算すべきか？
-                        ScreenY: e.screenY, // Event.screenX/Y はモニタ絶対座標なのでそのまま使えるはず
+                        ScreenX: e.screenX,
+                        ScreenY: e.screenY,
                         ClientX: e.clientX,
                         ClientY: e.clientY,
                         RequestID: requestId,
                         RequestTag: requestTag
                     };
 
-                    const app = TTApplication.Instance;
-                    const handled = app.UIRequestTriggeredAction(context);
+                    if (requestTag) {
+                        // リンク要素上のクリック:
+                        // iframe内のクリックはWebViewのMainエリア（コンテンツ側）の操作
+                        // Keywordエリアがフォーカス中でも、iframeリンククリックはMainとして扱う
+                        if (model.Tool !== 'Main') {
+                            model.Tool = 'Main';
+                        }
 
-                    if (handled) {
-                        e.preventDefault();
-                        e.stopPropagation();
+                        const app = TTApplication.Instance;
+                        const handled = app.UIRequestTriggeredAction(context);
+
+                        if (handled) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }
+                    } else {
+                        // リンク以外の場所をクリック:
+                        // CurrentLinkをクリアして古いリンク情報が残らないようにする
+                        // （CurrentLinkが残ると次回の意図しないRequest.Invoke.Defaultを防ぐ）
+                        model.WebView.CurrentLink = '';
                     }
                 };
 

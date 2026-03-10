@@ -43,8 +43,13 @@ ttsearchの検索式をEditorにあわせる
 [26xxxx]
 
 - TTChats/TTChatの追加
+- TTAction()
 
 [260310]
+
+- 再び、WebViewにマウスでフォーカスするとEditorがフォーカスされる現象が戻ってしまいました。前回の問題を考慮しながら修正をお願いします。
+
+- WebViewで表示されている/ttsearch結果のLinkをクリックすると Memoが開くようになっていたはずですが、今は開きません。　修正してください。
 
 - WebView.KeywordにフォーカスするとModeがEditorに切り替わってしまいます。調査して修正してください。
 

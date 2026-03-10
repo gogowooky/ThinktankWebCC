@@ -319,13 +319,25 @@ export class BigQueryService {
             `;
             const params: Record<string, string> = { queryText };
 
+            const conditions: string[] = [];
+
             if (category) {
-                query += ` AND category = @category`;
+                // 明示的にcategoryが指定された場合はそれで絞り込む
+                conditions.push(`category = @category`);
                 params.category = category;
+            } else {
+                // 未指定の場合はキャッシュ・コンフィグ等の内部カテゴリを除外
+                // Memo カテゴリのみを検索対象とする
+                conditions.push(`category = 'Memo'`);
             }
 
-            // 重複排除: file_id + category ごとに最新のレコードのみ返す
-            query += ` QUALIFY ROW_NUMBER() OVER (PARTITION BY file_id, IFNULL(category, '') ORDER BY updated_at DESC) = 1`;
+            if (conditions.length > 0) {
+                query += ` AND ${conditions.join(' AND ')}`;
+            }
+
+            // 重複排除: file_id ごとに最新のレコードのみ返す
+            // （同一file_idがcategory違いで複数存在しても最新の1件のみ）
+            query += ` QUALIFY ROW_NUMBER() OVER (PARTITION BY file_id ORDER BY updated_at DESC) = 1`;
             query += ` ORDER BY updated_at DESC LIMIT 200`;
 
             const [rows] = await this.bigquery.query({ query, params });
@@ -335,6 +347,7 @@ export class BigQueryService {
             return { success: false, error: String(error) };
         }
     }
+
 
     /**
      * バージョン情報を取得（キャッシュ整合性チェック用）
