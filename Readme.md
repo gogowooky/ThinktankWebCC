@@ -45,6 +45,10 @@ ttsearchの検索式をEditorにあわせる
 - TTChats/TTChatの追加
 - TTAction()
 
+[260312]
+
+- TTAction( Editor.Editing.Save ) は起動時に TTEditing を保存していることを確認してください。そして、表示していつTTMemoも保存するように修正してください。
+
 [260310]
 
 - 再び、WebViewにマウスでフォーカスするとEditorがフォーカスされる現象が戻ってしまいました。前回の問題を考慮しながら修正をお願いします。

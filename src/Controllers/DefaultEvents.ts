@@ -65,7 +65,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     // AddEvent('*-*-Keyword-*', 'Alt', 'L', 'Application.Command.NoAction');          // x Replace In Selection
     //AddEvent('*-*-*-*', 'Control', 'S', 'Application.Command.NoAction');            // x Disable Browser Save Dialog
     // #endregion
-
     // #region Application app          Delegate:   [ F5,F11,F12 ]
     AddEvent('*-*-*-*', '', 'F5', 'Application.Command.Delegate');                  // reload
     AddEvent('*-*-*-*', 'Control+Shift', 'R', 'Application.Command.Delegate');      // reload
@@ -73,18 +72,44 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-*', '', 'F11', 'Application.Command.Delegate');                 // fullscreen
     // #endregion
 
-    // #region Application font         Status:     ExApp[ ;- ZSR V ]
+    // #region Common-Binding move                   
+    AddEvent('*-Editor-Main-*', 'Alt', 'P', '(Panel).Editor.CurPos:prevvisiblefolding');
+    AddEvent('*-Editor-Main-*', 'Alt', 'N', '(Panel).Editor.CurPos:nextvisiblefolding');
+    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'P', 'Editor.Folding.Close');
+    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'N', 'Editor.Folding.Open');
+    AddEvent('*-Editor-Main-*', 'Alt', 'G', 'Request.Invoke.Default');
+    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-Editor-Main-*', '', 'sel_LEFT2', 'Request.Invoke.Default');
+    AddEvent('*-Editor-Main-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
+
+    AddEvent('*-Table-*-*', 'Alt', 'P', '(ExPanel).Table.CurPos:prev');
+    AddEvent('*-Table-*-*', 'Alt', 'N', '(ExPanel).Table.CurPos:next');
+    AddEvent('*-Table-*-*', 'Alt+Shift', 'P', '(ExPanel).Table.CurPos:prev10');
+    AddEvent('*-Table-*-*', 'Alt+Shift', 'N', '(ExPanel).Table.CurPos:next10');
+    AddEvent('*-Table-*-*', 'Alt', 'G', 'Request.Invoke.Default');
+    AddEvent('*-Table-*-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-Table-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
+    AddEvent('*-Table-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
+
+    AddEvent('*-WebView-*-*', 'Alt', 'P', '(ExPanel).WebView.CurPos:prev');
+    AddEvent('*-WebView-*-*', 'Alt', 'N', '(ExPanel).WebView.CurPos:next');
+    AddEvent('*-WebView-*-*', 'Alt+Shift', 'P', '(ExPanel).WebView.CurPos:first');
+    AddEvent('*-WebView-*-*', 'Alt+Shift', 'N', '(ExPanel).WebView.CurPos:last');
+    AddEvent('*-WebView-*-*', 'Alt', 'G', 'Request.Invoke.Default');
+    AddEvent('*-WebView-*-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-WebView-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
+    AddEvent('*-WebView-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
+    // #endregion
+
+    // #region Application font         Status:     ExApp> [ ;- ]
     AddEvent('*-*-*-*', 'Control+Shift', '+', 'Application.Command.Delegate');      // font up
     AddEvent('*-*-*-*', 'Control+Shift', '=', 'Application.Command.Delegate');      // font down
     AddEvent('*-*-*-*', 'Control', ';', 'Application.Command.Delegate');            // font up
     AddEvent('*-*-*-*', 'Control', '-', 'Application.Command.Delegate');            // font down
     AddEvent('*-*-*-ExApp', '', ';', 'Application.Font.Size:up');                   // font up
     AddEvent('*-*-*-ExApp', '', '-', 'Application.Font.Size:down');                 // font down
-
-    // Global Search (WebView)
-    AddEvent('*-*-*-*', 'Control+Alt', 'F', 'WebView.OpenSearch');
-    AddEvent('*-WebView-*-*', 'Alt', 'S', 'WebView.Action.Search');                 // WebView内検索 (Alt+S:Shelfより優先)
-
+    // #endregion
+    // #region Application style        Status:     ExApp> [ ZSR V ]
     AddEvent('*-*-*-ExApp', '', 'Z', 'Application.Style.PanelRatio:zen');           // style zen
     AddEvent('*-*-*-ExApp', '', 'S', 'Application.Style.PanelRatio:standard');      // style standard
     AddEvent('*-*-*-ExApp', '', 'R', 'Application.Style.PanelRatio:reset');         // style reset
@@ -92,7 +117,7 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-ExApp', '', 'V', 'Application.Voice.Input:next');               // voice input
 
     // #endregion
-    // #region Application reset        Actions:    ExApp!+[ R ] ExApp!^+[ R ]
+    // #region Application reset        Actions:    ExApp> !+[ R ] !^+[ R ]
     AddEvent('*-*-*-ExApp', 'Shift+Alt', 'R', 'Application.Memo.Renew');
     AddEvent('*-*-*-ExApp', 'Shift+Control+Alt', 'R', 'Application.AllCollection.Save');
     // AddEvent('*-*-*-*', 'Control', 'R', 'Application.Command.Delegate');         // reload
@@ -134,7 +159,40 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-*-*', 'Alt', 'H', 'Application.Current.Tool:next');          // Tool
     // #endregion
 
-    // #region DateTime                 Actions:    ![ T ] ExDateTime[ YMDKTWJ ] ExDateTime+[ YMDKT ]
+    // #region ExPanel mode             Status:     ![ QWE M ] Actions:    !+[ M ]
+    AddEvent('*-*-*-ExPanel', 'Alt', 'Q', '(ExPanel).Current.Mode:Table');          // Mode:Table
+    AddEvent('*-*-*-ExPanel', 'Alt', 'W', '(ExPanel).Current.Mode:WebView');        // Mode:WebView
+    AddEvent('*-*-*-ExPanel', 'Alt', 'E', '(ExPanel).Current.Mode:Editor');         // Mode:Editor
+    AddEvent('*-*-*-ExPanel', 'Alt', 'M', '(ExPanel).Current.Mode:next');           // Mode
+    AddEvent('*-*-*-ExPanel', 'Alt+Shift', 'M', '(ExPanel).Current.Mode:prev');     // Mode
+    // #endregion
+    // #region ExPanel Table move       Status:     ExPanel > [ PN↑↓ ] +[ PN↑↓ ] ^+[ PN↑↓ ]
+    AddEvent('*-Table-*-ExPanel', '', 'P', '(ExPanel).Table.CurPos:prev');
+    AddEvent('*-Table-*-ExPanel', '', 'N', '(ExPanel).Table.CurPos:next');
+    AddEvent('*-Table-*-ExPanel', 'Shift', 'P', '(ExPanel).Table.CurPos:prev10');
+    AddEvent('*-Table-*-ExPanel', 'Shift', 'N', '(ExPanel).Table.CurPos:next10');
+    AddEvent('*-Table-*-ExPanel', 'Shift+Control', 'P', '(ExPanel).Table.CurPos:first');
+    AddEvent('*-Table-*-ExPanel', 'Shift+Control', 'N', '(ExPanel).Table.CurPos:last');
+
+    AddEvent('*-Table-*-ExPanel', '', 'UP', '(ExPanel).Table.CurPos:prev');
+    AddEvent('*-Table-*-ExPanel', '', 'DOWN', '(ExPanel).Table.CurPos:next');
+    AddEvent('*-Table-*-ExPanel', 'Shift', 'UP', '(ExPanel).Table.CurPos:prev10');
+    AddEvent('*-Table-*-ExPanel', 'Shift', 'DOWN', '(ExPanel).Table.CurPos:next10');
+    AddEvent('*-Table-*-ExPanel', 'Shift+Control', 'UP', '(ExPanel).Table.CurPos:first');
+    AddEvent('*-Table-*-ExPanel', 'Shift+Control', 'DOWN', '(ExPanel).Table.CurPos:last');
+    // #endregion
+    // #region ExPanel Table font       Status:     ExPanel > [ ;- ]
+    AddEvent('*-*-*-ExPanel', '', ';', '(ExPanel).Font.Size:up');
+    AddEvent('*-*-*-ExPanel', '', '-', '(ExPanel).Font.Size:down');
+    // #endregion
+    // #region ExPanel Editor request   Action:     ExPanel > ![ ENTER PN ] !+[ ENTER ] [ sel_LEFT2/RIGHT1 ]
+    AddEvent('*-Editor-Main-ExPanel', '', 'G', 'Request.Invoke.Default');
+    AddEvent('*-Editor-Main-ExPanel', 'Shift', 'G', 'Request.Show.ContextMenu');
+    AddEvent('*-Editor-Main-ExPanel', '', 'Selection_LEFT2', 'Request.Invoke.Default');
+    AddEvent('*-Editor-Main-ExPanel', '', 'RIGHT1', 'Request.Show.ContextMenu');
+    // #endregion
+
+    // #region ExDateTime               Actions:    ExDateTime> ![ T ] [ YMDKTWJ ] +[ YMDKT ]
     AddEvent('*-*-*-*', 'Alt', 'T', 'Editor.Date.Action');
     AddEvent('*-*-*-ExDateTime', '', 'Y', 'DateTime.Shift.Next1y');
     AddEvent('*-*-*-ExDateTime', 'Shift', 'Y', 'DateTime.Shift.Prev1y');
@@ -150,67 +208,10 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-ExDateTime', '', 'J', 'DateTime.ChangeDetail.Time');
     // #endregion
 
-    // #region ExPanel mode             Status:     ![ QWE M ] Actions:    !+[ M ]
-    AddEvent('*-*-*-ExPanel', 'Alt', 'Q', '(ExPanel).Current.Mode:Table');          // Mode:Table
-    AddEvent('*-*-*-ExPanel', 'Alt', 'W', '(ExPanel).Current.Mode:WebView');        // Mode:WebView
-    AddEvent('*-*-*-ExPanel', 'Alt', 'E', '(ExPanel).Current.Mode:Editor');         // Mode:Editor
-    AddEvent('*-*-*-ExPanel', 'Alt', 'M', '(ExPanel).Current.Mode:next');           // Mode
-    AddEvent('*-*-*-ExPanel', 'Alt+Shift', 'M', '(ExPanel).Current.Mode:prev');     // Mode
+    // #region Global Search (WebView)
+    AddEvent('*-*-*-*', 'Control+Alt', 'F', 'WebView.OpenSearch');
+    AddEvent('*-WebView-*-*', 'Alt', 'S', 'WebView.Action.Search');                 // WebView内検索 (Alt+S:Shelfより優先)
     // #endregion
-
-    // #region common                   
-    AddEvent('*-Editor-Main-*', 'Alt', 'P', '(Panel).Editor.CurPos:prevvisiblefolding');
-    AddEvent('*-Editor-Main-*', 'Alt', 'N', '(Panel).Editor.CurPos:nextvisiblefolding');
-    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'P', 'Editor.Folding.Close');
-    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'N', 'Editor.Folding.Open');
-    AddEvent('*-Editor-Main-*', 'Alt', 'G', 'Request.Invoke.Default');
-    AddEvent('*-Editor-Main-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
-    AddEvent('*-Editor-Main-*', '', 'sel_LEFT2', 'Request.Invoke.Default');
-    AddEvent('*-Editor-Main-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
-
-    AddEvent('*-Table-*-*', 'Alt', 'P', '(ExPanel).Table.CurPos:prev');
-    AddEvent('*-Table-*-*', 'Alt', 'N', '(ExPanel).Table.CurPos:next');
-    AddEvent('*-Table-*-*', 'Alt+Shift', 'P', '(ExPanel).Table.CurPos:prev10');
-    AddEvent('*-Table-*-*', 'Alt+Shift', 'N', '(ExPanel).Table.CurPos:next10');
-    AddEvent('*-Table-*-*', 'Alt', 'G', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
-    AddEvent('*-Table-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
-    AddEvent('*-Table-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
-
-    AddEvent('*-WebView-*-*', 'Alt', 'P', '(ExPanel).WebView.CurPos:prev');
-    AddEvent('*-WebView-*-*', 'Alt', 'N', '(ExPanel).WebView.CurPos:next');
-    AddEvent('*-WebView-*-*', 'Alt+Shift', 'P', '(ExPanel).WebView.CurPos:first');
-    AddEvent('*-WebView-*-*', 'Alt+Shift', 'N', '(ExPanel).WebView.CurPos:last');
-    AddEvent('*-WebView-*-*', 'Alt', 'G', 'Request.Invoke.Default');
-    AddEvent('*-WebView-*-*', 'Alt+Shift', 'G', 'Request.Show.ContextMenu');
-    AddEvent('*-WebView-*-*', '', 'Selection_LEFT2', 'Request.Invoke.Default');
-    AddEvent('*-WebView-*-*', '', 'RIGHT1', 'Request.Show.ContextMenu');
-
-    // #endregion
-
-    // #region ExPanel Table move       Status:     [ ↑↓ ] +[ ↑↓ ] ^+[ ↑↓ ] ^[ PN AE ] ^+[ PN ]
-    AddEvent('*-Table-*-ExPanel', '', 'UP', '(ExPanel).Table.CurPos:prev');
-    AddEvent('*-Table-*-ExPanel', '', 'DOWN', '(ExPanel).Table.CurPos:next');
-    AddEvent('*-Table-*-ExPanel', 'Shift', 'UP', '(ExPanel).Table.CurPos:prev10');
-    AddEvent('*-Table-*-ExPanel', 'Shift', 'DOWN', '(ExPanel).Table.CurPos:next10');
-    AddEvent('*-Table-*-ExPanel', 'Shift+Control', 'UP', '(ExPanel).Table.CurPos:first');
-    AddEvent('*-Table-*-ExPanel', 'Shift+Control', 'DOWN', '(ExPanel).Table.CurPos:last');
-
-    // #endregion
-    // #region ExPanel Table font       Status:     ExPanel[ ;- ]
-    AddEvent('*-*-*-ExPanel', 'Control', ';', '(ExPanel).Font.Size:up');
-    AddEvent('*-*-*-ExPanel', 'Control', '-', '(ExPanel).Font.Size:down');
-    // #endregion
-    // #region ExPanel Editor request   Action:     ![ ENTER PN ]  !+[ ENTER ]  [ sel_LEFT2/RIGHT1 ]
-    AddEvent('*-Editor-Main-ExPanel', 'Alt', 'ENTER', 'Request.Invoke.Default');
-    AddEvent('*-Editor-Main-ExPanel', 'Alt+Shift', 'ENTER', 'Request.Show.ContextMenu');
-    AddEvent('*-Editor-Main-ExPanel', '', 'Selection_LEFT2', 'Request.Invoke.Default');
-    AddEvent('*-Editor-Main-ExPanel', '', 'RIGHT1', 'Request.Show.ContextMenu');
-
-    AddEvent('*-Editor-Main-ExPanel', 'Alt', 'P', '(ExPanel).Editor.CurPos:prevrequest');
-    AddEvent('*-Editor-Main-ExPanel', 'Alt', 'N', '(ExPanel).Editor.CurPos:nextrequest');
-    // #endregion
-
 
     // #region Editor edit              Delegate:   ^[ ZYXCV ]
     AddEvent('*-Editor-Main-*', 'Control', 'Z', 'Application.Command.Delegate');    // Undo
@@ -226,7 +227,7 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-Keyword-*', 'Control', 'C', 'Application.Command.Delegate');      // Copy
     AddEvent('*-*-Keyword-*', 'Control', 'V', 'Application.Command.Delegate');      // Paste
     // #endregion
-    // #region Editor move              Status:     [ ↑↓←→ ]  ^[ PNFBAE ] !^[ PN ]
+    // #region Editor move              Status:     [ ↑↓←→ ]  ^[ PNFBAE ]
     AddEvent('*-Editor-Main-*', '', 'UP', '(Panel).Editor.CurPos:prevline');
     AddEvent('*-Editor-Main-*', '', 'DOWN', '(Panel).Editor.CurPos:nextline');
     AddEvent('*-Editor-Main-*', '', 'LEFT', '(Panel).Editor.CurPos:prevchar');
@@ -235,11 +236,8 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-Main-*', 'Control', 'N', '(Panel).Editor.CurPos:nextline');
     AddEvent('*-Editor-Main-*', 'Control', 'F', '(Panel).Editor.CurPos:nextchar');
     AddEvent('*-Editor-Main-*', 'Control', 'B', '(Panel).Editor.CurPos:prevchar');
-
     AddEvent('*-Editor-Main-*', 'Control', 'A', '(Panel).Editor.CurPos:linestart+');
     AddEvent('*-Editor-Main-*', 'Control', 'E', '(Panel).Editor.CurPos:lineend+');
-    AddEvent('*-Editor-Main-*', 'Control+Alt', 'P', '(Panel).Editor.CurPos:firstline');
-    AddEvent('*-Editor-Main-*', 'Control+Alt', 'N', '(Panel).Editor.CurPos:lastline');
 
     // #endregion
     // #region Keyword move             Status:     [ ↑↓←→ ]  ^[ PNFBAE ]
@@ -252,12 +250,10 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-Keyword-*', 'Control', 'F', '(Panel).Keyword.CurPos:nextchar');
     AddEvent('*-*-Keyword-*', 'Control', 'B', '(Panel).Keyword.CurPos:prevchar');
 
-    AddEvent('*-*-Keyword-*', 'Control', 'A', '(Panel).Keyword.CurPos:linestart');
-    AddEvent('*-*-Keyword-*', 'Control', 'E', '(Panel).Keyword.CurPos:lineend');
-    AddEvent('*-*-Keyword-*', 'Control+Alt', 'P', '(Panel).Keyword.CurPos:firstline');
-    AddEvent('*-*-Keyword-*', 'Control+Alt', 'N', '(Panel).Keyword.CurPos:lastline');
+    AddEvent('*-*-Keyword-*', 'Control', 'A', '(Panel).Keyword.CurPos:linestart+');
+    AddEvent('*-*-Keyword-*', 'Control', 'E', '(Panel).Keyword.CurPos:lineend+');
     // #endregion 
-    // #region Editor select            Status:     +[ ↑↓←→ ]  ^+[ PNFBAE ] !^+[ PN ]
+    // #region Editor select            Status:     +[ ↑↓←→ ]  ^+[ PNFBAE ]
     AddEvent('*-Editor-Main-*', 'Shift', 'UP', '(Panel).Editor.SelPos:prevline');
     AddEvent('*-Editor-Main-*', 'Shift', 'DOWN', '(Panel).Editor.SelPos:nextline');
     AddEvent('*-Editor-Main-*', 'Shift', 'LEFT', '(Panel).Editor.SelPos:prevchar');
@@ -266,10 +262,8 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-Main-*', 'Control+Shift', 'N', '(Panel).Editor.SelPos:nextline');
     AddEvent('*-Editor-Main-*', 'Control+Shift', 'B', '(Panel).Editor.SelPos:prevchar');
     AddEvent('*-Editor-Main-*', 'Control+Shift', 'F', '(Panel).Editor.SelPos:nextchar');
-    AddEvent('*-Editor-Main-*', 'Control+Shift', 'A', '(Panel).Editor.SelPos:linestart');
-    AddEvent('*-Editor-Main-*', 'Control+Shift', 'E', '(Panel).Editor.SelPos:lineend');
-    AddEvent('*-Editor-Main-*', 'Control+Shift+Alt', 'P', '(Panel).Editor.SelPos:firstline');
-    AddEvent('*-Editor-Main-*', 'Control+Shift+Alt', 'N', '(Panel).Editor.SelPos:lastline');
+    AddEvent('*-Editor-Main-*', 'Control+Shift', 'A', '(Panel).Editor.SelPos:linestart+');
+    AddEvent('*-Editor-Main-*', 'Control+Shift', 'E', '(Panel).Editor.SelPos:lineend+');
     // #endregion
     // #region Keyword select           Status:     +[ ↑↓←→ ]  ^+[ PNFBAE ]
     AddEvent('*-*-Keyword-*', 'Shift', 'UP', '(Panel).Keyword.SelPos:prevline');
@@ -280,11 +274,14 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-Keyword-*', 'Control+Shift', 'N', '(Panel).Keyword.SelPos:nextline');
     AddEvent('*-*-Keyword-*', 'Control+Shift', 'B', '(Panel).Keyword.SelPos:prevchar');
     AddEvent('*-*-Keyword-*', 'Control+Shift', 'F', '(Panel).Keyword.SelPos:nextchar');
-    AddEvent('*-*-Keyword-*', 'Control+Shift', 'A', '(Panel).Keyword.SelPos:linestart');
-    AddEvent('*-*-Keyword-*', 'Control+Shift', 'E', '(Panel).Keyword.SelPos:lineend');
+    AddEvent('*-*-Keyword-*', 'Control+Shift', 'A', '(Panel).Keyword.SelPos:linestart+');
+    AddEvent('*-*-Keyword-*', 'Control+Shift', 'E', '(Panel).Keyword.SelPos:lineend+');
     // #endregion 
-    // #region Editor find              Status:     ![ F ]  ExApp[ RWCPL ]
-    AddEvent('*-Editor-Main-*', 'Alt', 'F', '(Panel).Editor.SearchMode:next');             // find,replace
+    // #region Editor find              Status:     ^[ F ] ^+[ F ]
+    AddEvent('*-Editor-Main-*', 'Control', 'F', '(Panel).Editor.SearchMode:next');          // find,replace
+    AddEvent('*-Editor-Main-*', 'Control+Shift', 'F', '(Panel).Editor.SearchMode:prev');    // find,replace
+    // #endregion 
+    // #region Editor find mode          Status:    ExApp > [ RWCPL ]
     AddEvent('*-Editor-Main-ExApp', '', 'R', '(Panel).Editor.SearchRegex:next');            // Search RegEx
     AddEvent('*-Editor-Main-ExApp', '', 'W', '(Panel).Editor.SearchWholeWord:next');        // Search Word
     AddEvent('*-Editor-Main-ExApp', '', 'C', '(Panel).Editor.SearchCaseSensitive:next');    // Search Word
@@ -303,10 +300,10 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #region Editor Edit
     AddEvent('*-Editor-Main-*', 'Control', ':', 'Editor.Edit.NextBullet');
     AddEvent('*-Editor-Main-*', 'Control+Shift', '*', 'Editor.Edit.PrevBullet');
-    // AddEvent('*-Editor-Main-*', 'Control', 'TAB', 'Editor.Edit.AddTAB');
-    // AddEvent('*-Editor-Main-*', 'Control+Shift', 'TAB', 'Editor.Edit.RemoveTAB');
     AddEvent('*-Editor-Main-*', 'Control', '/', 'Editor.Edit.NextComment');
     AddEvent('*-Editor-Main-*', 'Control+Shift', '?', 'Editor.Edit.PrevComment');
+    AddEvent('*-Editor-Main-*', 'Control', 'TAB', 'Application.Command.Delegate');
+    AddEvent('*-Editor-Main-*', 'Control+Shift', 'TAB', 'Application.Command.Delegate');
 
     AddEvent('*-*-*-*', 'Control', 'G', 'Editor.Memo.Create');      // Memo Create
     // #endregion
