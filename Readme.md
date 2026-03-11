@@ -47,6 +47,8 @@ ttsearchの検索式をEditorにあわせる
 
 [260312]
 
+- ./scripts/start-backend.bat を参考に　./scripts/start-frontend.bat　も作成してください。
+
 - TTAction( Editor.Editing.Save ) は起動時に TTEditing を保存していることを確認してください。そして、表示していつTTMemoも保存するように修正してください。
 
 [260310]
