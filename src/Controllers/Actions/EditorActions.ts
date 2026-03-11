@@ -19,9 +19,14 @@ export function registerEditorActions(
     // === Editor.Editing ===
     addAction('Editor.Editing.Save', 'エディタの内容を保存', async (_context: ActionContext) => {
         const app = TTApplication.Instance;
+        // ExCurrentPanel が設定されている場合はそちらを使い、なければ ActivePanel を使う
         const panel = app.ExCurrentPanel;
         if (panel?.Editor) {
+            console.log(`[Editor.Editing.Save] 保存開始: panel=${panel.Name}, mode=${panel.Mode}, tool=${panel.Tool}`);
             await panel.Editor.Save();
+            console.log(`[Editor.Editing.Save] 保存完了: panel=${panel.Name}`);
+        } else {
+            console.warn(`[Editor.Editing.Save] 対象パネルが見つかりません`);
         }
     });
 

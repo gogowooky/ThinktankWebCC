@@ -226,8 +226,19 @@ export class TTPanelEditorBehavior implements IPanelModeBehavior {
 
     // #region Save
     public async Save(): Promise<void> {
+        // ユーザーによる明示的な保存（Ctrl+S等）は _isRestoring フラグを無視して強制実行
+        const wasRestoring = this._isRestoring;
+        if (wasRestoring) {
+            console.log(`[TTPanelEditorBehavior.${this._panel.Name}] Save(): Restoring中だが明示的保存のため強制実行`);
+            this._isRestoring = false;
+        }
         await this.saveContent();
+        if (wasRestoring) {
+            // saveContentはfalseで完了するのでフラグは不要だが念のため戻す必要はない
+            // （saveContentのfinallyで_isRestoringは変更されないため）
+        }
     }
+
 
     private scheduleSave(): void {
         if (this._saveTimerId !== null) {
