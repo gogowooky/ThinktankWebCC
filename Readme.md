@@ -45,6 +45,10 @@ ttsearchの検索式をEditorにあわせる
 - TTChats/TTChatの追加
 - TTAction()
 
+[260316]
+
+- 同じパネルのEditorに表示されているテキストを markdownとして WebViewに表示する機能があると思いますが、表の表示を追加実装してください。
+
 [260312]
 
 - ./scripts/start-backend.bat を参考に　./scripts/start-frontend.bat　も作成してください。

@@ -14,8 +14,64 @@ export function markdownToHtml(markdown: string): string {
     html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_match, lang, code) => {
         const index = codeBlocks.length;
         codeBlocks.push(`<pre><code class="language-${lang || 'text'}">${escapeHtml(code)}</code></pre>`);
-        return `__CODE_BLOCK_${index}__`;
+        return `XCODEBLOCKXPHx${index}xPH`;
     });
+
+    // テーブル（GFM形式: | col | col | ...）をHTMLテーブルに変換
+    // コードブロック変換の後に処理し、プレースホルダーとして退避する
+    const tableBlocks: string[] = [];
+    html = html.replace(
+        /^(\|.+\|[ \t]*\r?\n)(\|[ \t]*[-:| \t]+\|[ \t]*\r?\n)((?:\|.+\|[ \t]*\r?\n?)*)/gm,
+        (_match, headerRow, separatorRow, bodyRows) => {
+            // ヘッダーセルの抽出
+            const headers = headerRow
+                .split('\n')[0]
+                .split('|')
+                .slice(1, -1)
+                .map((h: string) => h.trim());
+
+            // 区切り行からアライメントを解析
+            const aligns = separatorRow
+                .split('\n')[0]
+                .split('|')
+                .slice(1, -1)
+                .map((cell: string) => {
+                    const c = cell.trim();
+                    if (c.startsWith(':') && c.endsWith(':')) return 'center';
+                    if (c.endsWith(':')) return 'right';
+                    if (c.startsWith(':')) return 'left';
+                    return '';
+                });
+
+            // ヘッダー行のHTML生成
+            const thCells = headers.map((h: string, i: number) => {
+                const align = aligns[i] ? ` style="text-align:${aligns[i]}"` : '';
+                return `<th${align}>${h}</th>`;
+            }).join('');
+            const thead = `<thead><tr>${thCells}</tr></thead>`;
+
+            // ボディ行のHTML生成
+            const rows = bodyRows
+                .split('\n')
+                .filter((row: string) => row.trim().startsWith('|'))
+                .map((row: string) => {
+                    const cells = row
+                        .split('|')
+                        .slice(1, -1)
+                        .map((cell: string, i: number) => {
+                            const align = aligns[i] ? ` style="text-align:${aligns[i]}"` : '';
+                            return `<td${align}>${cell.trim()}</td>`;
+                        }).join('');
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+            const tbody = rows ? `<tbody>${rows}</tbody>` : '';
+
+            const tableHtml = `<table>${thead}${tbody}</table>`;
+            const index = tableBlocks.length;
+            tableBlocks.push(tableHtml);
+            return `XTABLEBLOCKXPHx${index}xPH`;
+        }
+    );
 
     // インラインコード（`）
     html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -73,7 +129,12 @@ export function markdownToHtml(markdown: string): string {
 
     // コードブロックを復元
     codeBlocks.forEach((block, index) => {
-        html = html.replace(`__CODE_BLOCK_${index}__`, block);
+        html = html.replace(`XCODEBLOCKXPHx${index}xPH`, block);
+    });
+
+    // テーブルブロックを復元
+    tableBlocks.forEach((block, index) => {
+        html = html.replace(`XTABLEBLOCKXPHx${index}xPH`, block);
     });
 
     // 最終的なラッピング
@@ -168,6 +229,26 @@ export function markdownToHtmlDocument(markdown: string, title: string = 'Previe
         img {
             max-width: 100%;
             height: auto;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1em 0;
+        }
+        th, td {
+            border: 1px solid #C8C0E8;
+            padding: 8px 12px;
+        }
+        th {
+            background-color: #EDE8FF;
+            color: #483D8B;
+            font-weight: bold;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #F8F5FF;
+        }
+        tbody tr:hover {
+            background-color: #EEE8FF;
         }
         /* スクロールバースタイル - Monaco Editorと同じ */
         ::-webkit-scrollbar {
