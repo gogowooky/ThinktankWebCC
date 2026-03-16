@@ -52,7 +52,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #region Editor MASK
     AddEvent('*-Editor-Main-*', 'Alt', 'R', 'Application.Command.NoAction');        // Search RegEx
     AddEvent('*-Editor-Main-*', 'Alt', 'C', 'Application.Command.NoAction');        // Search Captalize
-    AddEvent('*-Editor-Main-*', 'Alt', 'P', 'Application.Command.NoAction');        // Replace with Keeping Capitalize
     AddEvent('*-Editor-Main-*', 'Control', 'H', 'Application.Command.NoAction');    // x Replace
     AddEvent('*-*-Keyword-*', 'Control', 'F', 'Application.Command.NoAction');      // x Search
     AddEvent('*-*-Keyword-*', 'Alt', 'R', 'Application.Command.NoAction');          // x Search RegEx
@@ -139,6 +138,10 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-ExApp', 'Shift', 'R', 'Application.Memo.Renew');
     AddEvent('*-*-*-ExApp', 'Shift+Control', 'R', 'Application.AllCollection.Save');
     // AddEvent('*-*-*-*', 'Control', 'R', 'Application.Command.Delegate');         // reload
+    // #endregion
+    // #region ExApp webview functions  Status:     ExApp > ^[ S ]
+    AddEvent('*-*-*-ExApp', 'Control', 'S', 'WebView.Action.Search');                 // WebView内検索
+    AddEvent('*-*-*-ExApp', 'Control', 'M', 'WebView.Action.Markdown');               // WebView内検索
     // #endregion
 
     // #region ExPanel mode             Status:     ExPanel > [ QWE ] (non|+)[ M ]
@@ -375,15 +378,15 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-WebView-Keyword-*', '', 'ENTER', 'WebView.Keyword.Query');
     // #endregion
     // #region Global Function
-    AddEvent('*-*-*-*', 'Control', 'G', 'Editor.Memo.Create');      // Memo Create
-    AddEvent('*-WebView-*-*', 'Alt', 'S', 'WebView.Action.Search');                 // WebView内検索 (Alt+S:Shelfより優先)
+    AddEvent('*-*-*-*', 'Control', 'G', 'Editor.Memo.Create');                      // Memo Create
     // #endregion
-    // #region WebView cursor           ![ PN ]  !+[ PN ]  [ ↑↓ ]  ^+[ ↑↓ ]
+    // #region WebView move             ![ PN ]  !+[ PN ]  [ ↑↓ ]  ^+[ ↑↓ ]
     AddEvent('*-WebView-*-*', '', 'UP', '(Panel).WebView.CurPos:prev');
     AddEvent('*-WebView-*-*', '', 'DOWN', '(Panel).WebView.CurPos:next');
     AddEvent('*-WebView-*-*', 'Shift+Control', 'UP', '(Panel).WebView.CurPos:first');
     AddEvent('*-WebView-*-*', 'Shift+Control', 'DOWN', '(Panel).WebView.CurPos:last');
     // #endregion
+
 
 }
 

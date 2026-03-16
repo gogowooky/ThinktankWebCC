@@ -68,6 +68,9 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
     // Table.Resource の動的追跡（アクションから Table.Resource を変更された場合に対応）
     const [tableResource, setTableResource] = React.useState(model.Table.Resource);
 
+    // Markdown用の非同期取得テキスト（memoid指定時用）
+    const [markdownContent, setMarkdownContent] = React.useState<string | null>(null);
+
     // Stateの最新値をRefに同期（イベントリスナー内での参照用）
     const resourceRef = React.useRef(resource);
     resourceRef.current = resource;
@@ -157,6 +160,49 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
             model.RemoveOnUpdate('UI_Update');
         };
     }, [model]);
+
+    // urlが /ttmarkdown または /ttmarkdown?memoid=... の場合の処理を扱うEffect
+    React.useEffect(() => {
+        if (!webViewUrl.startsWith('/ttmarkdown')) {
+            setMarkdownContent(null);
+            return;
+        }
+
+        try {
+            // "dummy" というベースURLを与えてパスだけをパースしやすくする
+            const urlObj = new URL(webViewUrl, 'http://dummy');
+            let memoid = urlObj.searchParams.get('memoid');
+            
+            // memoidがシングルクォートやダブルクォートで囲まれている場合は除去する
+            if (memoid) {
+                memoid = memoid.replace(/^['"](.*)['"]$/, '$1');
+            }
+
+            if (memoid) {
+                // 非同期でメモテキストを取得
+                TTModels.Instance.Memos.getOrCreateMemo(memoid).then(async memo => {
+                    // メモが未ロードの場合はバックグラウンドロードの完了を待つ
+                    if (!memo.IsLoaded) {
+                        try {
+                            await memo.LoadContent();
+                        } catch (e) {
+                            console.error('Failed to load memo content:', e);
+                        }
+                    }
+                    setMarkdownContent(memo.Content);
+                }).catch(err => {
+                    console.error('Failed to getOrCreateMemo for markdown preview:', err);
+                    setMarkdownContent(`Error: Failed to load memo ${memoid}`);
+                });
+            } else {
+                // memoidがない場合はEditorのテキストを使用する
+                setMarkdownContent(editorText);
+            }
+        } catch (err) {
+            console.error('Invalid URL format in webViewUrl:', webViewUrl);
+            setMarkdownContent(editorText);
+        }
+    }, [webViewUrl, editorText]);
 
     // WebView Scroll Command Handler
     React.useEffect(() => {
@@ -846,23 +892,21 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
                     className={`tt-panel-main ${tool === 'Main' ? 'focused' : ''}`}
                     onMouseDown={(e) => activateTool('Main', e)}
                 >
-                    {webViewUrl && webViewUrl.trim() ? (
-                        // WebView.Resourceが設定されている場合はiframeで表示
+                    {webViewUrl.startsWith('/ttmarkdown') ? (
+                        <iframe
+                            ref={webviewIframeRef}
+                            srcDoc={markdownToHtmlDocument(markdownContent !== null ? markdownContent : 'Loading...', model.Name, fontSize)}
+                            style={{ width: '100%', height: '100%', border: 'none' }}
+                            title="Markdown Preview"
+                        />
+                    ) : webViewUrl && webViewUrl.trim() ? (
                         <iframe
                             ref={webviewIframeRef}
                             src={encodeURI(webViewUrl)}
                             style={{ width: '100%', height: '100%', border: 'none', zoom: fontSize / 12 }}
                             title="WebView"
                         />
-                    ) : (
-                        // Keywordが空の場合はEditorのmdをHTML化して表示
-                        <iframe
-                            ref={webviewIframeRef}
-                            srcDoc={markdownToHtmlDocument(editorText, model.Name, fontSize)}
-                            style={{ width: '100%', height: '100%', border: 'none' }}
-                            title="Markdown Preview"
-                        />
-                    )}
+                    ) : null}
                 </div>
             </div>
 

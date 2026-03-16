@@ -94,6 +94,16 @@ export function InitializeDefaultActions(models: TTModels) {
         }
     });
 
+    AddAction('WebView.Action.Markdown', 'EditorのテキストをMarkdownとしてWebViewで表示', (_context) => {
+        const app = TTApplication.Instance;
+        const panel = app.ExCurrentPanel || app.ActivePanel;
+        if (panel) {
+            panel.WebView.ApplyUrl('/ttmarkdown');
+            panel.Mode = 'WebView';
+            app.Focus(panel.Name, 'WebView', 'Main');
+        }
+    });
+
     AddAction('WebView.Keyword.Query', 'WebViewキーワード欄の入力を実行', (_context) => {
         const app = TTApplication.Instance;
         const panel = app.ExCurrentPanel || app.ActivePanel;

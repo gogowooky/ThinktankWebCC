@@ -45,7 +45,14 @@ ttsearchの検索式をEditorにあわせる
 - TTChats/TTChatの追加
 - TTAction()
 
+[260316]
+- WebView.Keywordに直接入力してEnterを押しましたが、表示されませんでした。何がいけないでしょうか？
+- WebView.Keywordに /ttmarkdown が入力されるときに、同パネルのEditorを markdown形式で表示するようにしてください。また、/ttmarkdown?memoid=<MemoID> と入力された場合は、EditorのテキストではなくテキストをBQから取得して markdownとして表示するようにしてください。もちろん (Panel)>Webview.Keywordへの反映等にも配慮してください。 
+- 現在、WebView.Keywordが空文字の場合に、Editorのテキストをmarkdownとして表示するようになっていると思いますが、その動作は廃止し、WebView.Keywordが空文字の場合は、WebViewには何も表示しないように変更してください。
+- 現在 Editorに表示されているテキストをmarkdownフォーマットとしてWebViewに表示するTTAction( WebView.Action.Markdown ) を作成してください。
+
 [260312]
+- /ttsearchで検索すると、2026-01-05-091016 が複数候補で出てきました。おそらく DELETE フラグがついているレコードも検索対象になっているものと思います。DELETEフラグ付きのレコードは全文検索の対象にしないでください。
 
 - ./scripts/start-backend.bat を参考に　./scripts/start-frontend.bat　も作成してください。
 
