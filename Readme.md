@@ -37,7 +37,7 @@
   イベント
 日記･週報
 WebViewのカーソル
-ttsearchの検索式をEditorにあわせる
+ttsearchの検索式をEditorにあわせ
 パネルタイトルに表示中データのクラスを表示
 
 [26xxxx]

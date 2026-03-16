@@ -147,6 +147,52 @@ A('WebView.Keyword.Query', 'WebViewキーワード検索', async (ctx) => {
 
 ---
 
+## 段98a: WebViewモード時のPanelTitle情報更新
+
+WebViewモードのPanelTitleに以下の情報を渡してください（段12の `PanelTitleProps` に対応）。
+
+**渡す情報:**
+- `url` — 現在WebViewに表示中のURL またはキーワード文字列
+
+**表示フォーマット（再掲）:**
+```
+○ [パネル名] | URL
+```
+
+**実装方針:**
+
+`TTPanelWebViewBehavior` にパネルタイトル用の情報を返すゲッターを追加してください。
+
+```typescript
+// TTPanelWebViewBehavior.ts に追加
+public get PanelTitleInfo(): { url: string } {
+  return { url: this._currentUrl ?? '' };
+}
+```
+
+`Panel.tsx` の WebViewモード描画部分でこのゲッターを使い、`PanelTitle` へPropsとして渡します。
+
+```typescript
+// Panel.tsx の描画部分（WebViewモード時）
+const webViewInfo = behavior instanceof TTPanelWebViewBehavior
+  ? behavior.PanelTitleInfo
+  : { url: '' };
+
+<PanelTitle
+  panelName={name}
+  mode="WebView"
+  isActive={isActive}
+  isDirty={false}
+  url={webViewInfo.url}
+  app={app}
+/>
+```
+
+- `SetResource(urlOrKeyword)` が呼ばれるたびに `_currentUrl` を更新し `app.NotifyRedraw()` を呼ぶ
+- URLが長い場合は `text-overflow: ellipsis` で末尾を省略表示（CSS側で対応）
+
+---
+
 ## 段98: Phase06 動作確認チェックリスト
 
 - [ ] WebViewパネルでMarkdownプレビューが表示されること（EditorのMarkdownをHTML変換）
@@ -154,6 +200,8 @@ A('WebView.Keyword.Query', 'WebViewキーワード検索', async (ctx) => {
 - [ ] Keyword欄に `/ttsearch?q=xxx` を入力してEnterで検索結果が表示されること
 - [ ] 検索結果のリンクをクリックしてEditorパネルにメモが表示されること
 - [ ] Keyword欄に通常テキストを入力するとttsearch検索が実行されること
+- [ ] PanelTitleに `○ [パネル名] | URL` が表示されること
+- [ ] Keyword欄でURLを変更するとPanelTitleのURLも更新されること
 
 ---
 

@@ -342,20 +342,77 @@ Google Fonts のリンクを `index.html` の `<head>` に追加:
 
 `src/components/PanelTitle.tsx` を作成してください。
 
+### Props設計
+
 ```typescript
 interface PanelTitleProps {
-  panelName: string;
-  mode: string;
-  title?: string;
+  panelName: PanelName;
+  mode: PanelMode;
   isActive?: boolean;
-  onClick?: () => void;
+  isDirty?: boolean;       // 未保存変更がある場合 true（●マーク表示用）
+  // Editorモード用
+  memoId?: string;         // 表示中メモのID
+  memoTitle?: string;      // 表示中メモの1行目タイトル
+  // Tableモード用
+  resourceName?: string;   // 表示中コレクション名
+  itemCount?: number;      // フィルター後の表示件数
+  totalCount?: number;     // コレクション全件数
+  cursorId?: string;       // 現在のカーソル行のID
+  // WebViewモード用
+  url?: string;            // 表示中URL またはキーワード
+  app: TTApplication;      // イベント連携用（Phase07B以降）
 }
 ```
 
-- パネル名、モード、タイトルを横並びで表示
-- `isActive` の場合は強調表示
-- タイトルが長い場合は `text-overflow: ellipsis` で省略
-- クリックイベントを親に伝える
+### モード別表示フォーマット
+
+| モード | 表示形式 |
+|---|---|
+| Editor | `<●> [パネル名] \| memoID \| タイトル` |
+| Table | `<●> [パネル名] \| リソース名(表示件数/全件数) \| カーソル位置ID` |
+| WebView | `<●> [パネル名] \| URL` |
+
+- `<●>` は `isDirty=true` のとき `●`（塗り）、`false` のとき `○`（抜き）を表示
+- 各セクションは `|` で区切り、`text-overflow: ellipsis` で長い文字列を省略
+- `isActive` の場合は背景色を強調表示
+- クリック・タッチイベントは `app.UIRequestTriggeredAction` へ渡す（Phase07B参照）
+
+### 実装例（骨格）
+
+```typescript
+export function PanelTitle({ panelName, mode, isActive, isDirty,
+    memoId, memoTitle, resourceName, itemCount, totalCount, cursorId,
+    url, app }: PanelTitleProps) {
+
+  const dirtyMark = isDirty ? '●' : '○';
+
+  const subtitle = (() => {
+    if (mode === 'Editor') {
+      return `${memoId ?? ''} | ${memoTitle ?? ''}`;
+    } else if (mode === 'Table') {
+      const count = (totalCount !== undefined)
+        ? `(${itemCount ?? 0}/${totalCount})`
+        : '';
+      return `${resourceName ?? ''}${count} | ${cursorId ?? ''}`;
+    } else {
+      return url ?? '';
+    }
+  })();
+
+  return (
+    <div className={`panel-title ${isActive ? 'active' : ''}`}>
+      <span className="panel-title-dirty">{dirtyMark}</span>
+      <span className="panel-title-name">[{panelName}]</span>
+      <span className="panel-title-subtitle" title={subtitle}>
+        {subtitle}
+      </span>
+    </div>
+  );
+}
+```
+
+> **注**: `app` プロパティへのイベント連携（クリック・タッチ）は Phase07B（段170）で追加します。
+> この段では表示ロジックのみ実装し、`onClick` を暫定で受け付けるだけで構いません。
 
 ---
 

@@ -414,6 +414,64 @@ E('*-Editor-*-*', 'Alt',      'LEFT',   'Editor.Edit.FoldingUp');
 
 ---
 
+## 段75a: Editorモード時のPanelTitle情報更新
+
+EditorモードのPanelTitleに以下の情報を渡してください（段12の `PanelTitleProps` に対応）。
+
+**渡す情報:**
+- `memoId` — 現在Editorに表示中のメモID
+- `memoTitle` — メモ本文の1行目テキスト（`TTMemo.Name` を使用）
+- `isDirty` — `TTMemo.IsDirty`（未保存変更フラグ）
+
+**表示フォーマット（再掲）:**
+```
+● [パネル名] | memoID | タイトル
+```
+
+**実装方針:**
+
+`TTPanelEditorBehavior` にパネルタイトル用の情報を返すゲッターを追加してください。
+
+```typescript
+// TTPanelEditorBehavior.ts に追加
+public get PanelTitleInfo(): {
+  memoId: string;
+  memoTitle: string;
+  isDirty: boolean;
+} {
+  const memo = this._currentMemo;
+  return {
+    memoId:    memo?.ID ?? '',
+    memoTitle: memo?.Name ?? '',
+    isDirty:   memo?.IsDirty ?? false,
+  };
+}
+```
+
+`Panel.tsx` の Editorモード描画部分でこのゲッターを使い、`PanelTitle` へPropsとして渡します。
+
+```typescript
+// Panel.tsx の描画部分（Editorモード時）
+const editorInfo = behavior instanceof TTPanelEditorBehavior
+  ? behavior.PanelTitleInfo
+  : { memoId: '', memoTitle: '', isDirty: false };
+
+<PanelTitle
+  panelName={name}
+  mode="Editor"
+  isActive={isActive}
+  isDirty={editorInfo.isDirty}
+  memoId={editorInfo.memoId}
+  memoTitle={editorInfo.memoTitle}
+  app={app}
+/>
+```
+
+- メモをロードしたとき（`LoadMemo` 完了後）と、編集内容が変わったとき（`IsDirty` 変化時）に再描画を行う
+- 再描画は `app.NotifyRedraw()` を呼ぶことで行う
+
+---
+
 ## 段75: Phase04 動作確認チェックリスト
 
 - [ ] EditorパネルにMonaco Editorが表示されること
@@ -425,6 +483,9 @@ E('*-Editor-*-*', 'Alt',      'LEFT',   'Editor.Edit.FoldingUp');
 - [ ] `Alt+T` で現在日時が挿入されること
 - [ ] 新規メモ作成（`Ctrl+N`）が動作すること
 - [ ] メモリロード後にFolding状態・カーソル位置が復元されること
+- [ ] PanelTitleに `○/● [パネル名] | memoID | タイトル` が表示されること
+- [ ] テキスト編集時にPanelTitleの `○` が `●` に変わること
+- [ ] 保存完了後にPanelTitleの `●` が `○` に戻ること
 
 ---
 

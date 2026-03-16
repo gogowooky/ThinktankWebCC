@@ -249,6 +249,69 @@ A('Request.Table.ContextMenu', 'テーブルコンテキストメニュー', asy
 
 ---
 
+## 段89a: Tableモード時のPanelTitle情報更新
+
+TableモードのPanelTitleに以下の情報を渡してください（段12の `PanelTitleProps` に対応）。
+
+**渡す情報:**
+- `resourceName` — 表示中コレクション名（`TTCollection.Name`）
+- `itemCount` — フィルター後の表示行数
+- `totalCount` — コレクションの全件数（`TTCollection.Count`）
+- `cursorId` — 現在カーソルが指している行のID（`[Panel].Table.CurrentID`）
+
+**表示フォーマット（再掲）:**
+```
+○ [パネル名] | リソース名(表示件数/全件数) | カーソル位置ID
+```
+
+**実装方針:**
+
+`TTPanelTableBehavior` にパネルタイトル用の情報を返すゲッターを追加してください。
+
+```typescript
+// TTPanelTableBehavior.ts に追加
+public get PanelTitleInfo(): {
+  resourceName: string;
+  itemCount: number;
+  totalCount: number;
+  cursorId: string;
+} {
+  const col = this._currentCollection;
+  return {
+    resourceName: col?.Name ?? '',
+    itemCount:    this._filteredItems.length,
+    totalCount:   col?.Count ?? 0,
+    cursorId:     this.GetCurrentId(),
+  };
+}
+```
+
+`Panel.tsx` の Tableモード描画部分でこのゲッターを使い、`PanelTitle` へPropsとして渡します。
+
+```typescript
+// Panel.tsx の描画部分（Tableモード時）
+const tableInfo = behavior instanceof TTPanelTableBehavior
+  ? behavior.PanelTitleInfo
+  : { resourceName: '', itemCount: 0, totalCount: 0, cursorId: '' };
+
+<PanelTitle
+  panelName={name}
+  mode="Table"
+  isActive={isActive}
+  isDirty={false}
+  resourceName={tableInfo.resourceName}
+  itemCount={tableInfo.itemCount}
+  totalCount={tableInfo.totalCount}
+  cursorId={tableInfo.cursorId}
+  app={app}
+/>
+```
+
+- カーソル移動・フィルター変更・コレクション同期完了のたびに `app.NotifyRedraw()` を呼ぶ
+- 全件ロード完了前は `totalCount` が暫定値になるため、ロード完了後に再描画してカウントを更新する
+
+---
+
 ## 段89: Phase05 動作確認チェックリスト
 
 - [ ] IndexパネルのTableにTTMemos一覧が表示されること
@@ -258,6 +321,9 @@ A('Request.Table.ContextMenu', 'テーブルコンテキストメニュー', asy
 - [ ] Keyword欄入力でフィルタリングが動作すること
 - [ ] パネル比率変更後のテーブル表示が崩れないこと
 - [ ] コマンドパレットが右クリックで表示されること
+- [ ] PanelTitleに `○ [パネル名] | リソース名(表示件数/全件数) | カーソル位置ID` が表示されること
+- [ ] カーソルを動かすとPanelTitleのカーソル位置IDが更新されること
+- [ ] フィルタリング後に表示件数が変化し全件数は変わらないこと（例: `Memos(12/5512)`）
 
 ---
 
