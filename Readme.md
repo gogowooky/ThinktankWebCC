@@ -51,6 +51,8 @@ ttsearchの検索式をEditorにあわせる
 - 現在、WebView.Keywordが空文字の場合に、Editorのテキストをmarkdownとして表示するようになっていると思いますが、その動作は廃止し、WebView.Keywordが空文字の場合は、WebViewには何も表示しないように変更してください。
 - 現在 Editorに表示されているテキストをmarkdownフォーマットとしてWebViewに表示するTTAction( WebView.Action.Markdown ) を作成してください。
 
+- 同じパネルのEditorに表示されているテキストを markdownとして WebViewに表示する機能があると思いますが、表の表示を追加実装してください。
+
 [260312]
 - /ttsearchで検索すると、2026-01-05-091016 が複数候補で出てきました。おそらく DELETE フラグがついているレコードも検索対象になっているものと思います。DELETEフラグ付きのレコードは全文検索の対象にしないでください。
 
