@@ -24,23 +24,23 @@
 5. **スマートフォン対応**: タッチイベント・レスポンシブ対応を各フェーズで考慮
 6. **Google Driveファイル格納**: D&Dファイルはyyyy-mm-ddフォルダへ自動格納
 
-## フェーズ一覧（全13フェーズ、約250段）
+## フェーズ一覧（全14フェーズ）
 
-| フェーズ | ファイル | 内容 | 段数目安 |
+| フェーズ | ファイル | 内容 | 段番号 |
 |---|---|---|---|
-| Phase 01 | phase01_foundation.md | プロジェクト基盤・環境構築 | 〜20段 |
-| Phase 02 | phase02_backend.md | バックエンドAPI・Firestore設計 | 〜30段 |
-| Phase 03 | phase03_ui_framework.md | コアUIフレームワーク | 〜30段 |
-| Phase 04 | phase04_editor.md | Editorパネル | 〜25段 |
-| Phase 05 | phase05_table.md | Tableパネル | 〜20段 |
-| Phase 06 | phase06_webview.md | WebViewパネル | 〜15段 |
-| Phase 07 | phase07_event_action.md | イベント・アクションシステム | 〜25段 |
-| Phase 08 | phase08_memo_search.md | メモ管理・全文検索 | 〜20段 |
-| Phase 09 | phase09_ai_chat.md | AIチャット機能 | 〜20段 |
-| Phase 10 | phase10_gdrive.md | Google Drive連携 | 〜15段 |
-| Phase 11 | phase11_gmail.md | Gmail連携 | 〜15段 |
-| Phase 12 | phase12_mobile.md | スマートフォン対応 | 〜15段 |
-| Phase 13 | phase13_deploy.md | デプロイ・仕上げ | 〜10段 |
+| Phase 01 | [phase01_foundation.md](./phase01_foundation.md) | プロジェクト基盤・環境構築 | 段01〜20 |
+| Phase 02 | [phase02_backend.md](./phase02_backend.md) | バックエンドAPI・Firestore設計 | 段21〜35 |
+| Phase 03 | [phase03_ui_framework.md](./phase03_ui_framework.md) | コアUIフレームワーク | 段36〜56 |
+| Phase 04 | [phase04_editor.md](./phase04_editor.md) | Editorパネル | 段57〜75 |
+| Phase 05 | [phase05_table.md](./phase05_table.md) | Tableパネル | 段76〜89 |
+| Phase 06 | [phase06_webview.md](./phase06_webview.md) | WebViewパネル | 段90〜98 |
+| Phase 07 | [phase07_event_action.md](./phase07_event_action.md) | イベント・アクションシステム統合 | 段99〜110 |
+| Phase 07B | [phase07b_ui_events.md](./phase07b_ui_events.md) | PanelTitle・StatusBar UIイベント統合 | 段170〜177 |
+| Phase 08+09 | [phase08_09_memo_ai.md](./phase08_09_memo_ai.md) | メモ管理・全文検索 + AIチャット機能 | 段111〜126 |
+| Phase 10〜13 | [phase10_13_gdrive_gmail_mobile_deploy.md](./phase10_13_gdrive_gmail_mobile_deploy.md) | GDrive連携・Gmail連携・モバイル対応・デプロイ | 段127〜157 |
+| Phase 14 | [phase14_bigquery.md](./phase14_bigquery.md) | BigQuery移行（Firestoreからの代替オプション） | 段158〜169 |
+
+> **段番号について**: Phase07Bの段170〜177はPhase07の拡張として後から追加されたため、番号が飛んでいます。実施順序は Phase07 → Phase07B → Phase08+09 の順です。
 
 ## 各フェーズ指令書の利用方法
 
@@ -48,3 +48,4 @@
 2. 各段の最後に「動作確認項目」を設けているので、実際にブラウザで確認してから次段へ進む
 3. 機能拡張を追加したい場合は、該当フェーズの段の**末尾に追記**して指令する
 4. 各フェーズのファイルを別AIセッションで使い回す際は冒頭の「前提条件」セクションを確認する
+

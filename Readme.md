@@ -45,7 +45,10 @@ ttsearchの検索式をEditorにあわせ
 - TTChats/TTChatの追加
 - TTAction()
 
-[260317]
+[260317] refactor_plan1
+- refactor_planの指示書を最初から順番に確認し、本プロジェクトを指示書だけで再構成できるか再度検討してください。
+
+
 - スマートフォン、タブレットがクライアントの場合、以下のように処置するよう変更してください。
 2. レスポンシブレイアウト（CSS）、3. 起動時の自動Zenモード
 　タブレット（縦置き）：ShelfとDeskとSystemを利用、ShelfとDeskを2分割で表示
