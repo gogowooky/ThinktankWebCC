@@ -338,6 +338,232 @@ Google Fonts のリンクを `index.html` の `<head>` に追加:
 
 ---
 
+## 段11a: 配色テーマCSSファイルの分離
+
+配色定義を独立したCSSファイルに切り出し、テーマの追加・変更を1ファイルの編集だけで行えるようにしてください。
+
+### ディレクトリ構成
+
+```
+src/styles/
+  themes/
+    theme-dark.css                ← Dark（デフォルト）
+    theme-kimbie-dark.css         ← Kimbie Dark
+    theme-synthwave84.css         ← SynthWave '84
+    theme-light.css               ← Light
+    theme-quiet-light.css         ← Quiet Light
+    theme-tokyo-night-light.css   ← Tokyo Night Light
+    theme-default-light-modern.css← Default Light Modern
+  layout.css                     ← グリッド・サイズ系変数（テーマに依存しない）
+```
+
+`src/index.css` 冒頭で以下のようにインポートしてください。
+
+```css
+/* src/index.css */
+@import './styles/layout.css';
+@import './styles/themes/theme-dark.css';   /* デフォルトテーマ */
+```
+
+実際の切り替えは `data-theme` 属性で行います（Phase03 段54で実装）。
+
+---
+
+### CSS変数の命名規則
+
+各テーマファイルは以下の変数のみ定義します。`layout.css` のサイズ変数は変更しません。
+
+```css
+[data-theme="テーマ名"] {
+  --color-bg-primary:    /* メイン背景 */
+  --color-bg-secondary:  /* サブ背景（サイドバー等） */
+  --color-bg-panel:      /* パネル背景 */
+  --color-bg-panel-title:/* パネルタイトル背景 */
+  --color-text-primary:  /* 主テキスト */
+  --color-text-secondary:/* 補助テキスト */
+  --color-text-accent:   /* 強調ハイライト色 */
+  --color-border:        /* ボーダー */
+  --color-selected:      /* 選択行背景 */
+  --color-active:        /* アクティブパネル枠など */
+  --monaco-theme:        /* Monaco Editorに渡すテーマ名 (例: 'vs-dark') */
+}
+```
+
+`layout.css` に配置するサイズ変数（テーマ非依存）：
+
+```css
+/* src/styles/layout.css */
+:root {
+  --panel-title-height:  28px;
+  --statusbar-height:    22px;
+  --font-size-base:      14px;
+  --font-family:         'Inter', 'Noto Sans JP', sans-serif;
+}
+```
+
+---
+
+### 各テーマのカラーパレット定義
+
+以下7テーマのCSSファイルを作成してください。
+
+#### `theme-dark.css`（Dark — VS Code Dark+）
+
+```css
+[data-theme="Dark"] {
+  --color-bg-primary:     #1e1e1e;
+  --color-bg-secondary:   #252526;
+  --color-bg-panel:       #2d2d2d;
+  --color-bg-panel-title: #181818;
+  --color-text-primary:   #d4d4d4;
+  --color-text-secondary: #9d9d9d;
+  --color-text-accent:    #4fc1ff;
+  --color-border:         #3c3c3c;
+  --color-selected:       #264f78;
+  --color-active:         #4fc1ff22;
+  --monaco-theme:         'vs-dark';
+}
+```
+
+#### `theme-kimbie-dark.css`（Kimbie Dark）
+
+```css
+[data-theme="KimbieDark"] {
+  --color-bg-primary:     #221a0f;
+  --color-bg-secondary:   #362712;
+  --color-bg-panel:       #2d2005;
+  --color-bg-panel-title: #1f1811;
+  --color-text-primary:   #d3af86;
+  --color-text-secondary: #a57a40;
+  --color-text-accent:    #f79a32;
+  --color-border:         #443a26;
+  --color-selected:       #554430;
+  --color-active:         #f79a3222;
+  --monaco-theme:         'kimbie-dark';
+}
+```
+
+#### `theme-synthwave84.css`（SynthWave '84）
+
+```css
+[data-theme="SynthWave84"] {
+  --color-bg-primary:     #262335;
+  --color-bg-secondary:   #2d2b55;
+  --color-bg-panel:       #2a2139;
+  --color-bg-panel-title: #1f1d30;
+  --color-text-primary:   #ffffff;
+  --color-text-secondary: #b6aee8;
+  --color-text-accent:    #ff7edb;
+  --color-border:         #3d3669;
+  --color-selected:       #4d3d72;
+  --color-active:         #ff7edb22;
+  --monaco-theme:         'vs-dark';
+}
+```
+
+#### `theme-light.css`（Light — VS Code Light）
+
+```css
+[data-theme="Light"] {
+  --color-bg-primary:     #ffffff;
+  --color-bg-secondary:   #f3f3f3;
+  --color-bg-panel:       #f5f5f5;
+  --color-bg-panel-title: #ececec;
+  --color-text-primary:   #333333;
+  --color-text-secondary: #666666;
+  --color-text-accent:    #0066b8;
+  --color-border:         #d4d4d4;
+  --color-selected:       #cce4f7;
+  --color-active:         #0066b822;
+  --monaco-theme:         'vs';
+}
+```
+
+#### `theme-quiet-light.css`（Quiet Light）
+
+```css
+[data-theme="QuietLight"] {
+  --color-bg-primary:     #f5f5f0;
+  --color-bg-secondary:   #ebebf0;
+  --color-bg-panel:       #f0f0eb;
+  --color-bg-panel-title: #e8e8e4;
+  --color-text-primary:   #333344;
+  --color-text-secondary: #777788;
+  --color-text-accent:    #4078b8;
+  --color-border:         #d0d0cc;
+  --color-selected:       #dde0ee;
+  --color-active:         #4078b822;
+  --monaco-theme:         'vs';
+}
+```
+
+#### `theme-tokyo-night-light.css`（Tokyo Night Light）
+
+```css
+[data-theme="TokyoNightLight"] {
+  --color-bg-primary:     #d5d6db;
+  --color-bg-secondary:   #cbccd1;
+  --color-bg-panel:       #d0d1d6;
+  --color-bg-panel-title: #c8c9ce;
+  --color-text-primary:   #343b58;
+  --color-text-secondary: #565a6e;
+  --color-text-accent:    #34548a;
+  --color-border:         #babbbe;
+  --color-selected:       #b4b5bb;
+  --color-active:         #34548a22;
+  --monaco-theme:         'vs';
+}
+```
+
+#### `theme-default-light-modern.css`（Default Light Modern）
+
+```css
+[data-theme="DefaultLightModern"] {
+  --color-bg-primary:     #ffffff;
+  --color-bg-secondary:   #f8f8f8;
+  --color-bg-panel:       #f3f3f3;
+  --color-bg-panel-title: #ebebeb;
+  --color-text-primary:   #2b2b2b;
+  --color-text-secondary: #616161;
+  --color-text-accent:    #005fb8;
+  --color-border:         #e5e5e5;
+  --color-selected:       #d7e8f8;
+  --color-active:         #005fb822;
+  --monaco-theme:         'vs';
+}
+```
+
+---
+
+### テーマの登録（DefaultStatus.ts）
+
+Phase03 段45（DefaultStatus）で `Application.Appearance.ColorMode` の選択肢として全7テーマを登録してください。
+
+```typescript
+models.Status.RegisterState('Application.Appearance.ColorMode', 'Dark', {
+  choices: [
+    'Dark',
+    'KimbieDark',
+    'SynthWave84',
+    'Light',
+    'QuietLight',
+    'TokyoNightLight',
+    'DefaultLightModern',
+  ],
+  apply: (value) => {
+    document.documentElement.dataset.theme = value;
+    // Monaco Editorのテーマもあわせて切り替え（段54で実装）
+  }
+});
+```
+
+### 動作確認項目
+- `src/styles/themes/` に7つのCSSファイルが存在すること
+- `data-theme` 属性を手動で変更してテーマが切り替わること
+- ライト系テーマでテキストが読みやすい配色になること
+
+---
+
 ## 段12: パネルタイトルコンポーネント作成
 
 `src/components/PanelTitle.tsx` を作成してください。

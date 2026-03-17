@@ -45,6 +45,24 @@ ttsearchの検索式をEditorにあわせ
 - TTChats/TTChatの追加
 - TTAction()
 
+[260317]
+- スマートフォン、タブレットがクライアントの場合、以下のように処置するよう変更してください。
+2. レスポンシブレイアウト（CSS）、3. 起動時の自動Zenモード
+　タブレット（縦置き）：ShelfとDeskとSystemを利用、ShelfとDeskを2分割で表示
+　タブレット（横置き）：IndexとDeskとLogを利用、IndexとDeskを2分割で表示
+　スマホ：IndexとDeskとLogを利用、DeskをZenモードで表示
+　Shelf/IndexはResourceをMemosとしてTableモードで固定、
+　SystemとLogはUrlを/ttmarkdownとしてWebViewモード固定、
+　DeskはEditorモード固定とする
+4. ボトムナビゲーション
+　画面下部に ナビゲーションバー を表示。以下の入力をできるようにする。
+　音声入力モード のOn/Off、文字削除、ペースト、コピー
+5. ジェスチャー操作
+　常にDeskにフォーカスがあり、Desk以外の画面操作はExPanelモード扱いで動作する。
+　タブレット（縦置き）：上下スワイプで、Shelf+Desk ↔ Desk+Systemで表示を切り替え
+　タブレット（横置き）：左右スワイプで、Index+Desk ↔ Desk+Logで表示を切り替え
+　スマホ：左右スワイプで、Index ↔ Desk ↔ Logで表示を切り替え
+
 [260316]
 - WebView.Keywordに直接入力してEnterを押しましたが、表示されませんでした。何がいけないでしょうか？
 - WebView.Keywordに /ttmarkdown が入力されるときに、同パネルのEditorを markdown形式で表示するようにしてください。また、/ttmarkdown?memoid=<MemoID> と入力された場合は、EditorのテキストではなくテキストをBQから取得して markdownとして表示するようにしてください。もちろん (Panel)>Webview.Keywordへの反映等にも配慮してください。 
