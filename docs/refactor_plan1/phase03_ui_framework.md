@@ -37,7 +37,7 @@ export class TTStatus extends TTCollection {
   private _items: Map<string, TTStateConfig & { value: string }> = new Map();
 
   /**
-   * 状態の登録。`[Panel]` を含むキーは 7パネル分を自動展開して登録する
+   * 状態の登録。`[Panels]` を含むキーは 7パネル分を自動展開して登録する
    * @param id     状態キー（例: 'Application.Current.Panel', '[Panels].Editor.Resource'）
    * @param desc   説明文字列
    * @param config 文字列の場合はその値をデフォルト値として使用、
@@ -70,6 +70,41 @@ export class TTStatus extends TTCollection {
 > `Apply` は値変更後のView反映（CSS変更・パネル操作等）に使用します。
 > `Watch` は登録時に一度だけ呼ばれ、外部状態（TTApplication・Firestoreリアルタイム更新）を
 > TTStatus に反映する購読処理を開始することに使用します。
+
+### `[Panels]` 自動展開の仕様
+
+`RegisterState` に `[Panels]` を含むキーを渡すと、内部で以下のように7パネル分に展開して登録します。
+
+```typescript
+// 呼び出し例:
+models.Status.RegisterState('[Panels].Editor.Resource', '表示中メモID', 'thinktank');
+
+// 内部で以下の7キーに自動展開される:
+// 'Library.Editor.Resource' = 'thinktank'
+// 'Index.Editor.Resource'   = 'thinktank'
+// 'Shelf.Editor.Resource'   = 'thinktank'
+// 'Desk.Editor.Resource'    = 'thinktank'
+// 'System.Editor.Resource'  = 'thinktank'
+// 'Chat.Editor.Resource'    = 'thinktank'
+// 'Log.Editor.Resource'     = 'thinktank'
+```
+
+実際のコードパターン:
+
+```typescript
+const PANELS: PanelName[] = ['Library', 'Index', 'Shelf', 'Desk', 'System', 'Chat', 'Log'];
+
+RegisterState(id: string, desc: string, config: string | TTStateConfig): void {
+  if (id.includes('[Panels]')) {
+    for (const panel of PANELS) {
+      const expandedId = id.replace('[Panels]', panel);
+      this._registerSingle(expandedId, desc, config);
+    }
+  } else {
+    this._registerSingle(id, desc, config);
+  }
+}
+```
 
 ---
 
@@ -240,13 +275,16 @@ export class TTApplication {
   private models: TTModels;
   private _panels: Map<PanelName, TTPanel>;
   public State: AppState;
+  public exMode: string = '';        // ExMode文字列（Phase07 段107で実装）
+  public ZenPanel: PanelName | null = null; // Phase07B 段174で追加
 
   // アクティブパネルの取得・設定
   get ActivePanel(): TTPanel
   SetActivePanel(name: PanelName): void
+  GetPanel(name: PanelName): TTPanel
   
   // ExPanel（補助パネル）
-  get ExPanel(): TTPanel | null
+  get ExFdPanel(): TTPanel  // ExModeが 'ExPanel:Shelf' の場合 Shelfパネルを返す、なければActivePanel
 
   // 統合イベント処理（キーボード・マウス・タッチすべてを受け付ける）
   UIRequestTriggeredAction(context: ActionContext): Promise<void>
@@ -254,10 +292,18 @@ export class TTApplication {
   // TTStatus変更の通知受け取り
   OnStatusChanged(key: string, value: string): void
 
-  // Viewへの再描画通知
-  NotifyRedraw(): void
+  // Viewへの再描画通知（ReactのforceUpdateをセットして呼び出す）
+  NotifyRedraw: () => void;  // ← コールバック形式で宣言
+
+  // Zenモード切り替え（Phase07B段174で実装）
+  SetZenMode(panelName: PanelName | null): void
 }
 ```
+
+> **React側との接続方法**: `App.tsx` で `TTApplication` インスタンスを生成した後、  
+> `useReducer` の dispatch または `useState` の setter を `app.NotifyRedraw` にセットする。  
+> これにより TTApplication 内から `this.NotifyRedraw()` を呼ぶだけで React が再描画される。  
+> 実装は段49の `App.tsx` 統合で行う（`app.NotifyRedraw = forceUpdate` の形式）。
 
 ---
 
