@@ -112,38 +112,6 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-*-*', 'Alt', 'H', 'Application.Current.Tool:next');          // Tool
     // #endregion
 
-    // #region ExApp style              Status:     ExApp > [ ZSR V ]
-    AddEvent('*-*-*-ExApp', '', 'Z', 'Application.Style.PanelRatio:zen');           // style zen
-    AddEvent('*-*-*-ExApp', '', 'S', 'Application.Style.PanelRatio:standard');      // style standard
-    AddEvent('*-*-*-ExApp', '', 'R', 'Application.Style.PanelRatio:reset');         // style reset
-
-    AddEvent('*-*-*-ExApp', '', 'V', 'Application.Voice.Input:next');               // voice input
-
-    // #endregion
-    // #region ExApp editor option      Status:     ExApp > [ MFX ] 
-    AddEvent('*-Editor-Main-ExApp', '', 'M', '(ExPanel).Editor.Minimap:next');
-    AddEvent('*-Editor-Main-ExApp', '', 'X', '(ExPanel).Editor.Wordwrap:next');
-    AddEvent('*-Editor-Main-ExApp', '', 'N', '(ExPanel).Editor.LineNumber:next');
-    // #endregion
-    // #region ExApp editor find        Status:     ExApp > (^|^+)[ F ] [ RWCPL ]
-    AddEvent('*-Editor-Main-ExApp', '', 'F', '(Panel).Editor.SearchMode:next');          // find,replace
-    AddEvent('*-Editor-Main-ExApp', 'Shift', 'F', '(Panel).Editor.SearchMode:prev');    // find,replace
-    AddEvent('*-Editor-Main-ExApp', '', 'R', '(Panel).Editor.SearchRegex:next');            // Search RegEx
-    AddEvent('*-Editor-Main-ExApp', '', 'W', '(Panel).Editor.SearchWholeWord:next');        // Search Word
-    AddEvent('*-Editor-Main-ExApp', '', 'C', '(Panel).Editor.SearchCaseSensitive:next');    // Search Word
-    AddEvent('*-Editor-Main-ExApp', '', 'P', '(Panel).Editor.ReplaceKeepCapitalize:next');  // Replace with Keeping Capitalize
-    AddEvent('*-Editor-Main-ExApp', '', 'L', '(Panel).Editor.ReplaceInSelection:next');     // Replace In Selection  
-    // #endregion
-    // #region ExApp reset              Actions:    ExApp > (+/+^)[ R ]
-    AddEvent('*-*-*-ExApp', 'Shift', 'R', 'Application.Memo.Renew');
-    AddEvent('*-*-*-ExApp', 'Shift+Control', 'R', 'Application.AllCollection.Save');
-    // AddEvent('*-*-*-*', 'Control', 'R', 'Application.Command.Delegate');         // reload
-    // #endregion
-    // #region ExApp webview functions  Status:     ExApp > ^[ S ]
-    AddEvent('*-*-*-ExApp', 'Control', 'S', 'WebView.Action.Search');                 // WebView内検索
-    AddEvent('*-*-*-ExApp', 'Control', 'M', 'WebView.Action.Markdown');               // WebView内検索
-    // #endregion
-
     // #region ExPanel mode             Status:     ExPanel > [ QWE ] (non|+)[ M ]
     AddEvent('*-*-*-ExPanel', '', 'Q', '(ExPanel).Current.Mode:Table');          // Mode:Table
     AddEvent('*-*-*-ExPanel', '', 'W', '(ExPanel).Current.Mode:WebView');        // Mode:WebView
@@ -175,6 +143,38 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-Editor-Main-ExPanel', 'Shift', 'G', 'Request.Show.ContextMenu');
     AddEvent('*-Editor-Main-ExPanel', '', 'Selection_LEFT2', 'Request.Invoke.Default');
     AddEvent('*-Editor-Main-ExPanel', '', 'RIGHT1', 'Request.Show.ContextMenu');
+    // #endregion
+
+    // #region ExApp style              Status:     ExApp > [ ZSR V ]
+    AddEvent('*-*-*-ExApp', '', 'Z', 'Application.Style.PanelRatio:zen');           // style zen
+    AddEvent('*-*-*-ExApp', '', 'S', 'Application.Style.PanelRatio:standard');      // style standard
+    AddEvent('*-*-*-ExApp', '', 'R', 'Application.Style.PanelRatio:reset');         // style reset
+
+    AddEvent('*-*-*-ExApp', '', 'V', 'Application.Voice.Input:next');               // voice input
+
+    // #endregion
+    // #region ExApp editor option      Status:     ExApp > [ MNX ] 
+    AddEvent('*-Editor-Main-ExApp', '', 'M', '(ExPanel).Editor.Minimap:next');
+    AddEvent('*-Editor-Main-ExApp', '', 'N', '(ExPanel).Editor.LineNumber:next');
+    AddEvent('*-Editor-Main-ExApp', '', 'X', '(ExPanel).Editor.Wordwrap:next');
+    // #endregion
+    // #region ExApp editor find        Status:     ExApp > (^|^+)[ F ] [ RWCPL ]
+    AddEvent('*-Editor-Main-ExApp', '', 'F', '(Panel).Editor.SearchMode:next');          // find,replace
+    AddEvent('*-Editor-Main-ExApp', 'Shift', 'F', '(Panel).Editor.SearchMode:prev');    // find,replace
+    AddEvent('*-Editor-Main-ExApp', '', 'R', '(Panel).Editor.SearchRegex:next');            // Search RegEx
+    AddEvent('*-Editor-Main-ExApp', '', 'W', '(Panel).Editor.SearchWholeWord:next');        // Search Word
+    AddEvent('*-Editor-Main-ExApp', '', 'C', '(Panel).Editor.SearchCaseSensitive:next');    // Search Word
+    AddEvent('*-Editor-Main-ExApp', '', 'P', '(Panel).Editor.ReplaceKeepCapitalize:next');  // Replace with Keeping Capitalize
+    AddEvent('*-Editor-Main-ExApp', '', 'L', '(Panel).Editor.ReplaceInSelection:next');     // Replace In Selection  
+    // #endregion
+    // #region ExApp reset              Actions:    ExApp > (+/+^)[ R ]
+    AddEvent('*-*-*-ExApp', 'Shift', 'R', 'Application.Memo.Renew');
+    AddEvent('*-*-*-ExApp', 'Shift+Control', 'R', 'Application.AllCollection.Save');
+    // AddEvent('*-*-*-*', 'Control', 'R', 'Application.Command.Delegate');         // reload
+    // #endregion
+    // #region ExApp webview functions  Status:     ExApp > ^[ S ]
+    AddEvent('*-*-*-ExApp', 'Control', 'S', 'WebView.Action.Search');                 // WebView内検索
+    AddEvent('*-*-*-ExApp', 'Control', 'M', 'WebView.Action.Markdown');               // WebView内検索
     // #endregion
     // #region ExDateTime               Actions:    ExDateTime > (non|+)[ YMDKTWJ ] ![ T ]
     AddEvent('*-*-*-*', 'Alt', 'T', 'Editor.Date.Action');
