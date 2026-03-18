@@ -87,7 +87,7 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-*', 'Alt', '[', 'Application.Current.ExMode:ExChat');           // ExChat
     AddEvent('*-*-*-*', 'Alt', ']', 'Application.Current.ExMode:ExLog');            // ExLog
     // #endregion
-    // #region Application panel        Status:     ![ \ ] !+[ LISD?{} ]
+    // #region Application panel        Status:     !+[ LISD?{} ] ![ \ ] 
     AddEvent('*-*-*-*', 'Alt', '\\', 'Application.Current.Panel:next');             // Panel
     AddEvent('*-*-*-*', 'Alt+Shift', '_', 'Application.Current.Panel:prev');        // Panel
 
@@ -155,7 +155,7 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-WebView-*-ExPanel', '', 'G', 'Request.Invoke.Default');
     AddEvent('*-WebView-*-ExPanel', 'Shift', 'G', 'Request.Show.ContextMenu');
     // #endregion
-    // #region ExPanel font             tatus:     ExPanel > [ ;- ]
+    // #region ExPanel font             tatus:      ExPanel > [ ;- ]
     AddEvent('*-*-*-ExPanel', '', ';', '(ExPanel).Font.Size:up');
     AddEvent('*-*-*-ExPanel', '', '-', '(ExPanel).Font.Size:down');
     // #endregion
