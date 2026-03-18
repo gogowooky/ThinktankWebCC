@@ -28,3 +28,6 @@ npm-debug.log*
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Claude AI worktrees（Gitの追跡対象外）
+.claude/worktrees/
