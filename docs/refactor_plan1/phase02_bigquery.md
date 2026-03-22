@@ -1,7 +1,7 @@
-# Phase 14: BigQueryへの切り替え（Firestoreからの移行）
+# Phase 02: BigQuery データ基盤（拡張テーブル含む）
 
 ## 前提条件
-- Phase 01〜13 が完了していること（または Phase 01〜02 完了後にこのフェーズへ移行することも可）
+- Phase 01 が完了していること
 - GCPプロジェクトで BigQuery API が有効化されていること
 - `@google-cloud/bigquery` がバックエンドにインストール済み:
   ```

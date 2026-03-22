@@ -1,4 +1,4 @@
-# Phase 07B: PanelTitle・StatusBarのUIイベント統合
+# Phase 08: PanelTitle・StatusBar UIイベント統合
 
 ## 前提条件
 - Phase 07（段99〜110）が完了していること
