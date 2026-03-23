@@ -10,7 +10,8 @@
       "Bash(taskkill /PID 4076 /F)",
       "Bash(xargs wc:*)",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(timeout 6 npm run server:dev)"
+      "Bash(timeout 6 npm run server:dev)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

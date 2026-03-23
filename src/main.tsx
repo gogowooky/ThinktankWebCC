@@ -9,6 +9,7 @@ import { setupMemoWebSocketHandler } from './models/TTMemo';
 import { TTModels } from './models/TTModels';
 import { TTMemo } from './models/TTMemo';
 import { SearchApp } from './components/Search/SearchApp';
+import { ChatApp } from './components/AI/ChatApp';
 
 const app = TTApplication.Instance;
 console.log('TTApplication initialized:', app);
@@ -35,6 +36,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         {window.location.pathname === '/' ? <App /> :
             window.location.pathname === '/ttsearch' ? <SearchApp /> :
+            window.location.pathname === '/aichat' ? <ChatApp /> :
                 <div style={{ backgroundColor: '#ffffff', width: '100vw', height: '100vh' }}></div>}
     </React.StrictMode>
 );

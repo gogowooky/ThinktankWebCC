@@ -193,11 +193,11 @@ export function InitializeDefaultEvents(models: TTModels) {
     // #endregion
 
     // #region ExDebug                  Actions:    ExDebug > [ 1234567890]
-    AddEvent('*-*-*-*', 'Alt', '@', 'Application.Current.ExMode:ExDebug');
+    AddEvent('*-*-*-*', 'Alt', ':', 'Application.Current.ExMode:ExDebug');
     // #endregion
 
     // #region ExDateTime               Actions:    ExDateTime > (non|+)[ YMDKTWJ ] ![ T ]
-    AddEvent('*-*-*-*', 'Alt', 'T', 'Application.Current.ExMode:ExDateTime');
+    AddEvent('*-*-*-*', 'Alt', 'T', 'Editor.Date.Action');
     AddEvent('*-*-*-ExDateTime', '', 'Y', 'DateTime.Shift.Next1y');
     AddEvent('*-*-*-ExDateTime', 'Shift', 'Y', 'DateTime.Shift.Prev1y');
     AddEvent('*-*-*-ExDateTime', '', 'M', 'DateTime.Shift.Next1m');

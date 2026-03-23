@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@google-cloud/bigquery": "^8.1.1",
+    "@google/generative-ai": "^0.24.1",
     "@monaco-editor/react": "^4.6.0",
     "@types/react-window": "^1.8.8",
     "chardet": "^2.1.1",

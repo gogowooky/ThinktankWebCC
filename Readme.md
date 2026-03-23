@@ -40,10 +40,64 @@ WebViewのカーソル
 ttsearchの検索式をEditorにあわせ
 パネルタイトルに表示中データのクラスを表示
 
-[26xxxx]
 
-- TTChats/TTChatの追加
-- TTAction()
+[260324] Phase11
+- Browser動作
+- Pending(42件) って何？
+- 
+段126: 動作確認チェックリスト
+実装した内容を確認します。
+
+確認方法:
+
+GEMINI_API_KEY=xxx を server/.env に設定してサーバーを起動
+npm run dev でフロントを起動
+チェック項目:
+
+#	確認内容	操作方法
+✅	Chat APIが応答する	POST /api/chats/{id}/messages
+✅	チャット画面が開く	Alt+@ → C
+✅	新規チャット	Alt+@ → N
+✅	メモコンテキスト送信	Alt+@ → A
+✅	セッション一覧（BQ取得）	/aichat 画面左ペイン
+Phase 11 実装完了
+作成・変更したファイル
+新規作成:
+
+src/models/TTChat.ts — 段119: TTChatクラス（メッセージ管理・BQ保存）
+src/models/TTChats.ts — 段120: TTChatsコレクション（BQ同期）
+server/services/geminiService.ts — 段121: Gemini/Claude AI サービス
+server/routes/chatRoutes.ts — 段122: チャットAPI (POST /api/chats/:id/messages)
+src/components/AI/ChatApp.tsx — 段123: チャットUI（WebView表示）
+src/components/AI/ChatApp.css — チャットUIスタイル
+src/Controllers/Actions/ChatActions.ts — 段124-125: Chat Actions
+変更:
+
+src/models/TTModels.ts — Chats: TTChats 追加
+server/index.ts — /api/chats ルート追加
+src/main.tsx — /aichat ルート追加
+src/Controllers/DefaultActions.ts — registerChatActions 登録
+src/Controllers/DefaultEvents.ts — ExDebugモードにChat操作キー登録
+操作キーバインド（ExDebugモード: Alt+@ で入る）
+キー	アクション
+C	AIチャットを開く
+N	新規チャットセッション
+A	現在のメモをコンテキストとして送信
+環境設定（必要なもの）
+server/.env に追加:
+
+
+GEMINI_API_KEY=your_key_here
+# オプション（Claudeを使う場合）
+ANTHROPIC_API_KEY=your_key_here
+AI_PROVIDER=claude   # または gemini (デフォルト)
+サーバーへのSDKインストール（使用するプロバイダに応じて）:
+
+
+cd server && npm install @google/generative-ai
+# または
+cd server && npm install @anthropic-ai/sdk
+
 
 [260323] ThinktankWebCC::TTRecon-260323::refactor_plan1
 
@@ -53,6 +107,7 @@ ttsearchの検索式をEditorにあわせ
 ・ 既存のDBは書き換えないでください。
 ・ UI関連の修正はExDebugモードで起動されるActionとして登録してください。
 ・ 今回はPhase11からになります。
+
 
 - 本日の完了サマリー
 Phase 02 差分 (段158拡張)

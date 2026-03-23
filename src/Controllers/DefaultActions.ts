@@ -16,6 +16,7 @@ import { registerEditorActions } from './Actions/EditorActions';
 import { registerRequestActions } from './Actions/RequestActions';
 import { registerModelActions } from './Actions/ModelActions';
 import { registerTableActions } from './Actions/TableActions';
+import { registerChatActions } from './Actions/ChatActions';  // Phase 11
 
 export function InitializeDefaultActions(models: TTModels) {
     const actions = models.Actions;
@@ -70,6 +71,7 @@ export function InitializeDefaultActions(models: TTModels) {
     registerRequestActions(models, actions, AddAction);
     registerModelActions(models, actions, AddAction);
     registerTableActions(models, AddAction);
+    registerChatActions(models, AddAction);  // Phase 11
 
     // === 未分類アクション ===
     // どのカテゴリにも該当しないアクションはここに追加してください。
