@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './SearchApp.css';
+import { localSearchService } from '../../services/storage/LocalSearchService';
 
 interface FileRecord {
     file_id: string;
@@ -38,6 +39,31 @@ export const SearchApp: React.FC = () => {
         setError(null);
         setHasSearched(true);
         setResults([]);
+
+        // 段206: オフライン時はLocalSearchServiceを使用
+        if (!navigator.onLine) {
+            try {
+                const localResults = await localSearchService.search(searchQuery);
+                // LocalSearchResult を FileRecord 形式に変換
+                const mapped: FileRecord[] = localResults.map(r => ({
+                    file_id: r.id,
+                    title: r.title,
+                    file_type: 'md',
+                    category: 'Memo',
+                    content: r.snippet,
+                    metadata: null,
+                    size_bytes: null,
+                    created_at: r.updateDate,
+                    updated_at: r.updateDate,
+                }));
+                setResults(mapped);
+            } catch (err: any) {
+                setError(`オフライン検索に失敗しました: ${err?.message ?? err}`);
+            } finally {
+                setIsLoading(false);
+            }
+            return;
+        }
 
         try {
             // 検索対象を Memo カテゴリに限定

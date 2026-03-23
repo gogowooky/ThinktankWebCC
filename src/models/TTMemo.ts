@@ -71,86 +71,123 @@ export class TTMemo extends TTObject {
         this.UpdateDate = this.getNowString();
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // 段200: LoadContent — BQ優先 + IndexedDBキャッシュフォールバック
+    // ─────────────────────────────────────────────────────────────
     public async LoadContent(): Promise<void> {
         console.log(`[TTMemo.LoadContent] Loading content for ${this.ID}...`);
-        try {
-            // BigQuery APIからコンテンツを取得
-            const response = await fetch(`/api/bq/files/${encodeURIComponent(this.ID)}`, {
-                cache: 'no-store'  // キャッシュを使用せず、常に最新データを取得
-            });
-            console.log(`[TTMemo.LoadContent] Response status: ${response.status}`);
-            if (response.ok) {
-                const data = await response.json();
-                console.log(`[TTMemo.LoadContent] Loaded data:`, data);
 
-                // ループ防止のため、NotifyUpdated (Content setter) の前にフラグを立てる
-                this.IsLoaded = true;
+        // ── オンライン時: BQ優先（既存動作を維持） ──
+        if (navigator.onLine) {
+            try {
+                const response = await fetch(`/api/bq/files/${encodeURIComponent(this.ID)}`, {
+                    cache: 'no-store'
+                });
+                console.log(`[TTMemo.LoadContent] Response status: ${response.status}`);
 
-                // Contentセッターを使うとNotifyUpdatedが走り、UpdateDateが現在時刻になってしまうため、
-                // 内部フィールドに直接セットする
-                const newContent = data.file?.content || '';
-                this._content = newContent;
-                this.updateNameFromContent();
-                this._savedContent = this._content; // ロード時のコンテンツを記録
-
-                // サーバーから更新日時の返却があればセットする（なければ維持）
-                if (data.file?.updated_at) {
-                    let val = data.file.updated_at;
-                    // オブジェクトの場合の処理（{value: "..."}形式への対応など）
-                    if (typeof val === 'object' && val !== null) {
-                        if ('value' in val) val = val.value;
-                    }
-
-                    // 日付として解析・整形
-                    const d = new Date(val);
-                    if (!isNaN(d.getTime())) {
-                        const yyyy = d.getFullYear();
-                        const mm = String(d.getMonth() + 1).padStart(2, '0');
-                        const dd = String(d.getDate()).padStart(2, '0');
-                        const hh = String(d.getHours()).padStart(2, '0');
-                        const min = String(d.getMinutes()).padStart(2, '0');
-                        const ss = String(d.getSeconds()).padStart(2, '0');
-                        this.UpdateDate = `${yyyy}-${mm}-${dd}-${hh}${min}${ss}`;
-                    } else if (typeof val === 'string') {
-                        this.UpdateDate = val;
-                    } else {
-                        // 不明な形式の場合は文字列化しておく
-                        this.UpdateDate = String(val);
-                    }
+                if (response.ok) {
+                    const data = await response.json();
+                    this._applyLoadedData(data);
+                    await this._saveToLocalCache();   // ★ キャッシュに書き込み
+                    return;
                 }
 
-                // Viewに通知（更新日付は更新しない）
-                this.NotifyUpdated(false);
-
-                // デバッグ: タイトルが不正になる問題を調査
-                console.log(`[TTMemo.LoadContent] Loaded. ID=${this.ID}, Name=${this.Name}, ContentLength=${this.Content.length}, UpdateDate=${this.UpdateDate}`);
-
-                // 強制的に名前を再評価（サーバーからの古いタイトルで上書きされている可能性を排除）
-                const oldName = this.Name;
-                this.updateNameFromContent();
-                if (oldName !== this.Name) {
-                    console.warn(`[TTMemo.LoadContent] Name mismatched! Server/Cache='${oldName}' -> Content derived='${this.Name}'`);
-                    // 名前が変わったので通知が必要だが、UpdateDateは変えたくない
-                    this.NotifyUpdated(false);
+                if (response.status === 404) {
+                    this.IsLoaded = true;
+                    this.Content = '';
+                    this._savedContent = '';
+                    return;
                 }
+                // その他エラー → キャッシュフォールバックへ
+                console.warn(`[TTMemo.LoadContent] BQ error ${response.status}, falling back to cache`);
+            } catch (e) {
+                console.warn(`[TTMemo.LoadContent] BQ通信エラー, キャッシュフォールバック:`, e);
+            }
+        }
 
-            } else if (response.status === 404) {
-                // 新規メモの場合
-                console.log(`[TTMemo.LoadContent] 404 - 新規メモとして扱います`);
-                this.IsLoaded = true;
-                this.Content = '';
-                this._savedContent = '';
+        // ── オフライン or BQ失敗: IndexedDBキャッシュから取得 ──
+        await this._loadFromLocalCache();
+    }
+
+    // BQ応答データをメモに適用する（既存ロジックを抽出）
+    private _applyLoadedData(data: any): void {
+        this.IsLoaded = true;
+        const newContent = data.file?.content || '';
+        this._content = newContent;
+        this.updateNameFromContent();
+        this._savedContent = this._content;
+
+        if (data.file?.updated_at) {
+            let val = data.file.updated_at;
+            if (typeof val === 'object' && val !== null) {
+                if ('value' in val) val = val.value;
+            }
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const hh = String(d.getHours()).padStart(2, '0');
+                const min = String(d.getMinutes()).padStart(2, '0');
+                const ss = String(d.getSeconds()).padStart(2, '0');
+                this.UpdateDate = `${yyyy}-${mm}-${dd}-${hh}${min}${ss}`;
+            } else if (typeof val === 'string') {
+                this.UpdateDate = val;
             } else {
-                console.warn(`Failed to load content for ${this.ID}: ${response.statusText}`);
-                this.IsLoaded = true; // エラーでも完了としてマーク（無限ループ防止）
-                this.Content = '';
-                this._savedContent = '';
+                this.UpdateDate = String(val);
+            }
+        }
+
+        this.NotifyUpdated(false);
+
+        // タイトルを再評価（サーバーデータで上書きされた場合を排除）
+        const oldName = this.Name;
+        this.updateNameFromContent();
+        if (oldName !== this.Name) {
+            this.NotifyUpdated(false);
+        }
+
+        console.log(`[TTMemo.LoadContent] Loaded from BQ. ID=${this.ID}, Name=${this.Name}, ContentLength=${this.Content.length}`);
+    }
+
+    // IndexedDBキャッシュへ書き込み
+    private async _saveToLocalCache(): Promise<void> {
+        try {
+            const { StorageManager } = await import('../services/storage');
+            await StorageManager.local.save(`memo_content_${this.ID}`, JSON.stringify({
+                content: this._content,
+                updateDate: this.UpdateDate,
+                cachedAt: Date.now(),
+            }));
+        } catch (e) {
+            console.warn(`[TTMemo] キャッシュ書き込み失敗 (${this.ID}):`, e);
+        }
+    }
+
+    // IndexedDBキャッシュから読み込み
+    private async _loadFromLocalCache(): Promise<void> {
+        try {
+            const { StorageManager } = await import('../services/storage');
+            const result = await StorageManager.local.load(`memo_content_${this.ID}`);
+            if (result.success && result.data) {
+                const cached = JSON.parse(result.data as string);
+                this._content = cached.content || '';
+                this.updateNameFromContent();
+                if (cached.updateDate) this.UpdateDate = cached.updateDate;
+                this.IsLoaded = true;
+                this._savedContent = this._content;
+                this.NotifyUpdated(false);
+                console.log(`[TTMemo.LoadContent] Loaded from IndexedDB cache. ID=${this.ID}`);
+                return;
             }
         } catch (e) {
-            console.error(`Error loading content for ${this.ID}`, e);
-            this.IsLoaded = true; // エラーでも完了としてマーク
-            this.Content = '';
+            console.warn(`[TTMemo] キャッシュ読み込み失敗 (${this.ID}):`, e);
         }
+        // キャッシュもない
+        this.IsLoaded = true;
+        this._content = '';
+        this._savedContent = '';
+        console.log(`[TTMemo.LoadContent] No cache available for ${this.ID}, using empty content`);
     }
 
     // コンテンツが変更されているかチェック
@@ -158,50 +195,96 @@ export class TTMemo extends TTObject {
         return this.normalizeContent(this._content) !== this.normalizeContent(this._savedContent);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // 段201: SaveContent — 常にキャッシュ更新 + BQ優先 + SyncQueue統合
+    // ─────────────────────────────────────────────────────────────
     public async SaveContent(): Promise<void> {
-        // テキストの変更がない場合は保存しない
         if (!this.IsDirty) {
             console.log(`[TTMemo] Content unchanged for ${this.ID}, skipping save.`);
             return;
         }
 
+        // ★ 常にIndexedDBキャッシュを更新（高速・失敗しない）
+        await this._saveToLocalCache();
+
+        if (navigator.onLine) {
+            try {
+                const response = await fetch('/api/bq/files', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        file_id: this.ID,
+                        title: this.Name,
+                        file_type: 'md',
+                        category: 'Memo',
+                        content: this.Content,
+                    })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || `HTTP ${response.status}`);
+                }
+
+                console.log(`[TTMemo] Saved to BQ: ${this.ID}`);
+                this._savedContent = this._content;
+
+                if (!this._isRemoteUpdate) {
+                    webSocketService.sendContentUpdate(this.ID, this.Content);
+                }
+
+                this.UpdateDate = this.getNowString();
+                this.NotifyUpdated();
+
+                // ★ BQ成功 → SyncQueueから該当エントリを削除
+                await this._clearPendingChanges();
+                return;
+            } catch (e) {
+                console.warn(`[TTMemo] BQ保存失敗, SyncQueueに追加: ${this.ID}`, e);
+            }
+        }
+
+        // ── オフライン or BQ失敗 → SyncQueueに追加 ──
+        await this._addToSyncQueue();
+        this._savedContent = this._content;
+        this.UpdateDate = this.getNowString();
+        this.NotifyUpdated();
+        console.log(`[TTMemo] Added to SyncQueue: ${this.ID}`);
+    }
+
+    // SyncQueueへ追加
+    private async _addToSyncQueue(): Promise<void> {
         try {
-            // BigQuery APIにコンテンツを保存
-            const response = await fetch('/api/bq/files', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
+            const { StorageManager } = await import('../services/storage');
+            await StorageManager.local.addPendingChange(
+                this.ID,
+                JSON.stringify({
                     file_id: this.ID,
                     title: this.Name,
                     file_type: 'md',
                     category: 'Memo',
-                    content: this.Content
-                })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Unknown error');
-            }
-            console.log(`Saved content for ${this.ID}`);
-            // 保存成功後、保存済みコンテンツを更新
-            this._savedContent = this._content;
-
-            // WebSocket経由で他のブラウザ/タブに通知（リモート更新でなければ）
-            if (!this._isRemoteUpdate) {
-                webSocketService.sendContentUpdate(this.ID, this.Content);
-            }
-
-            // 保存成功直後にローカルのUpdateDateを更新
-            // これにより、直後に走るSyncWithBigQueryで、サーバーからの古いデータ(stale read)による上書きを防ぐ
-            this.UpdateDate = this.getNowString();
-
-            this.NotifyUpdated();
+                    content: this.Content,
+                    updateDate: this.UpdateDate,
+                }),
+                'save'
+            );
         } catch (e) {
-            console.error(`Error saving content for ${this.ID}`, e);
-            throw e;
+            console.warn(`[TTMemo] SyncQueue追加失敗 (${this.ID}):`, e);
+        }
+    }
+
+    // BQ保存成功後にSyncQueueから自分のエントリを削除
+    private async _clearPendingChanges(): Promise<void> {
+        try {
+            const { StorageManager } = await import('../services/storage');
+            const pending = await StorageManager.local.getPendingChanges();
+            for (const change of pending) {
+                if (change.path === this.ID) {
+                    await StorageManager.local.removePendingChange(change.id);
+                }
+            }
+        } catch (e) {
+            console.warn(`[TTMemo] SyncQueueクリア失敗 (${this.ID}):`, e);
         }
     }
 }

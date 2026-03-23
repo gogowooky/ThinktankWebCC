@@ -1,10 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TTApplication } from '../../Views/TTApplication';
+import { StorageManager, ConnectionStatus } from '../../services/storage';
+import { conflictResolver } from '../../services/storage/ConflictResolver';
+
+// 段205: 同期状態の表示テキスト・色を返す
+function getSyncIndicator(
+    connStatus: ConnectionStatus,
+    pendingCount: number,
+    conflictCount: number
+): { text: string; color: string } {
+    if (conflictCount > 0) {
+        return { text: `⚠ Conflict (${conflictCount}件)`, color: '#ff4444' };
+    }
+    switch (connStatus) {
+        case 'syncing':
+            return { text: `◐ Syncing`, color: '#4488ff' };
+        case 'offline':
+            return pendingCount > 0
+                ? { text: `○ Offline (${pendingCount}件未送信)`, color: '#ffcc00' }
+                : { text: `○ Offline`, color: '#888888' };
+        case 'online':
+        default:
+            return pendingCount > 0
+                ? { text: `◐ Pending (${pendingCount}件)`, color: '#ff8800' }
+                : { text: `● Synced`, color: '#44cc44' };
+    }
+}
 
 export const StatusBar: React.FC = () => {
     const [status, setStatus] = useState<string>('');
     const [key, setKey] = useState<string>('');
     const [action, setAction] = useState<string>('');
+    // 段205: 同期状態
+    const [connStatus, setConnStatus] = useState<ConnectionStatus>(StorageManager.connectionStatus);
+    const [pendingCount, setPendingCount] = useState<number>(0);
+    const [conflictCount, setConflictCount] = useState<number>(0);
+    const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // 未送信件数・衝突件数をポーリングで更新（10秒間隔）
+    const refreshSyncState = async () => {
+        const count = await StorageManager.getPendingCount();
+        setPendingCount(count);
+        setConflictCount(conflictResolver.conflictCount);
+    };
 
     useEffect(() => {
         const updateState = () => {
@@ -16,12 +54,25 @@ export const StatusBar: React.FC = () => {
 
         // Initial update
         updateState();
+        refreshSyncState();
 
         // Subscribe
         TTApplication.Instance.AddOnUpdate('StatusBar', updateState);
 
+        // StorageManager の接続状態変化を購読
+        const onStatusChange = (s: ConnectionStatus) => {
+            setConnStatus(s);
+            refreshSyncState();
+        };
+        StorageManager.addStatusListener(onStatusChange);
+
+        // ポーリング（10秒間隔）
+        pollTimerRef.current = setInterval(refreshSyncState, 10000);
+
         return () => {
             TTApplication.Instance.RemoveOnUpdate('StatusBar');
+            StorageManager.removeStatusListener(onStatusChange);
+            if (pollTimerRef.current) clearInterval(pollTimerRef.current);
         };
     }, []);
 
@@ -85,6 +136,15 @@ export const StatusBar: React.FC = () => {
             <div>Status: {status}</div>
             <div>Key: {key}</div>
             <div>Action: {action}</div>
+            {/* 段205: 同期状態インジケーター */}
+            {(() => {
+                const ind = getSyncIndicator(connStatus, pendingCount, conflictCount);
+                return (
+                    <div style={{ marginLeft: 'auto', color: ind.color, fontWeight: 'bold' }}>
+                        {ind.text}
+                    </div>
+                );
+            })()}
         </div>
     );
 };

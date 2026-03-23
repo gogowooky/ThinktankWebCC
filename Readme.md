@@ -46,23 +46,53 @@ ttsearchの検索式をEditorにあわせ
 - TTAction()
 
 
+[260323] ThinktankWebCC::TTRecon-260323::refactor_plan1
 
-[260317] refactor_plan1
+- 完了サマリー
+Phase 02 差分 (段158拡張)
+scripts/create-extended-bq-tables.js 新規作成
+tt_ai_context, tt_suggestions, tt_reminders, tt_entries, tt_embeddings, tt_digests テーブル作成スクリプト
+実行: node scripts/create-extended-bq-tables.js
+Phase 09 差分
+段113 Application.Memo.Delete アクション実装（確認ダイアログ → BQ DELETE → コレクション削除 → 次のメモへ）
+段116 Application.Memo.ImportFromText アクション実装
+段112 beforeunload 即時保存実装（sendBeacon でIsDirtyなメモを送信）
+Phase 10 — オフライン耐性 (段200〜207)
+段	変更ファイル	内容
+200	TTMemo.ts	LoadContent: BQ優先 + IndexedDBキャッシュフォールバック
+201	TTMemo.ts	SaveContent: 常にキャッシュ更新 + SyncQueue統合
+202	StorageManager.ts	flushSyncQueue / getPendingMemoIds / getPendingCount 追加
+203	TTMemos.ts	SyncWithBigQuery: SyncQueue保護 + IsDirty保護
+204	ConflictResolver.ts	新規作成: 衝突検出 + ローカル版を別メモ保存
+205	StatusBar.tsx	同期状態インジケーター (Synced/Syncing/Offline/Pending/Conflict)
+206	LocalSearchService.ts	新規作成: IndexedDBキャッシュ全文検索
+207	TTMemos.ts	初回起動時に直近30日分をプリフェッチ
+次フェーズ: Phase 11 (AIチャット + コンテキストソース + 対話トリガー)
+
+
+- 現プロジェクトを ./docs/refactor_planの指示書に従って開発を進めます。
+・ 指示書はPhaseに分かれています。実装はPhase/段示して経過を明示しながらすすめてください。
+・ 必要な環境整備があれば、Phase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
+・ 既存のDBを書き換えるようなことはしないでください。
+・ UI関連の修正は一度にまとめて実施しないでください。
+
+
+[260317] ThinktankWebCC::TTRecon-260323::refactor_plan1
 - refactor_planの指示書を最初から順番に確認し、本プロジェクトを指示書だけで再構成できるか再度検討してください。
 
 
 - スマートフォン、タブレットがクライアントの場合、以下のように処置するよう変更してください。
-2. レスポンシブレイアウト（CSS）、3. 起動時の自動Zenモード
+1. レスポンシブレイアウト（CSS）、3. 起動時の自動Zenモード
 　タブレット（縦置き）：ShelfとDeskとSystemを利用、ShelfとDeskを2分割で表示
 　タブレット（横置き）：IndexとDeskとLogを利用、IndexとDeskを2分割で表示
 　スマホ：IndexとDeskとLogを利用、DeskをZenモードで表示
 　Shelf/IndexはResourceをMemosとしてTableモードで固定、
 　SystemとLogはUrlを/ttmarkdownとしてWebViewモード固定、
 　DeskはEditorモード固定とする
-4. ボトムナビゲーション
+1. ボトムナビゲーション
 　画面下部に ナビゲーションバー を表示。以下の入力をできるようにする。
 　音声入力モード のOn/Off、文字削除、ペースト、コピー
-5. ジェスチャー操作
+1. ジェスチャー操作
 　常にDeskにフォーカスがあり、Desk以外の画面操作はExPanelモード扱いで動作する。
 　タブレット（縦置き）：上下スワイプで、Shelf+Desk ↔ Desk+Systemで表示を切り替え
 　タブレット（横置き）：左右スワイプで、Index+Desk ↔ Desk+Logで表示を切り替え

@@ -335,6 +335,37 @@ export class TTApplication extends TTObject {
         window.addEventListener('keyup', (e) => this.HandleKeyUp(e), true);
         // ブラウザデフォルトのコンテキストメニューを抑制
         window.addEventListener('contextmenu', (e) => e.preventDefault(), true);
+
+        // 段112: ブラウザを閉じる前に IsDirty なメモを即時保存
+        window.addEventListener('beforeunload', (_e) => {
+            this._flushDirtyMemosSync();
+        });
+    }
+
+    // beforeunload 用の同期的フラッシュ（sendBeacon を使用）
+    private _flushDirtyMemosSync(): void {
+        try {
+            const models = TTModels.Instance;
+            if (!models?.Memos) return;
+            const memos = models.Memos.GetItems();
+            for (const item of memos) {
+                const memo = item as any;
+                if (memo.IsDirty && memo.ID && memo.Content !== undefined) {
+                    // sendBeacon はブラウザ終了時でも送信が保証される
+                    const payload = JSON.stringify({
+                        file_id: memo.ID,
+                        title: memo.Name ?? memo.ID,
+                        file_type: 'md',
+                        category: 'Memo',
+                        content: memo.Content,
+                        created_at: memo.CreatedAt ?? undefined,
+                    });
+                    navigator.sendBeacon('/api/bq/files', new Blob([payload], { type: 'application/json' }));
+                }
+            }
+        } catch (e) {
+            // beforeunload 内のエラーは無視
+        }
     }
 
     private HandleKeyDown(e: KeyboardEvent): void {
