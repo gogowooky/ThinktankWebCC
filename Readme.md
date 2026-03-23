@@ -45,10 +45,16 @@ ttsearchの検索式をEditorにあわせ
 - TTChats/TTChatの追加
 - TTAction()
 
-
 [260323] ThinktankWebCC::TTRecon-260323::refactor_plan1
 
-- 完了サマリー
+- 現プロジェクトを ./docs/refactor_planの指示書に従って開発を進めます。
+・ 指示書はPhaseに分かれています。実装はPhase/段示して経過を明示しながらすすめてください。
+・ 必要な環境整備があればPhase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
+・ 既存のDBは書き換えないでください。
+・ UI関連の修正はExDebugモードで起動されるActionとして登録してください。
+・ 今回はPhase11からになります。
+
+- 本日の完了サマリー
 Phase 02 差分 (段158拡張)
 scripts/create-extended-bq-tables.js 新規作成
 tt_ai_context, tt_suggestions, tt_reminders, tt_entries, tt_embeddings, tt_digests テーブル作成スクリプト
@@ -58,30 +64,27 @@ Phase 09 差分
 段116 Application.Memo.ImportFromText アクション実装
 段112 beforeunload 即時保存実装（sendBeacon でIsDirtyなメモを送信）
 Phase 10 — オフライン耐性 (段200〜207)
-段	変更ファイル	内容
-200	TTMemo.ts	LoadContent: BQ優先 + IndexedDBキャッシュフォールバック
-201	TTMemo.ts	SaveContent: 常にキャッシュ更新 + SyncQueue統合
-202	StorageManager.ts	flushSyncQueue / getPendingMemoIds / getPendingCount 追加
-203	TTMemos.ts	SyncWithBigQuery: SyncQueue保護 + IsDirty保護
-204	ConflictResolver.ts	新規作成: 衝突検出 + ローカル版を別メモ保存
-205	StatusBar.tsx	同期状態インジケーター (Synced/Syncing/Offline/Pending/Conflict)
-206	LocalSearchService.ts	新規作成: IndexedDBキャッシュ全文検索
-207	TTMemos.ts	初回起動時に直近30日分をプリフェッチ
+段 変更ファイル 内容
+200 TTMemo.ts LoadContent: BQ優先 + IndexedDBキャッシュフォールバック
+201 TTMemo.ts SaveContent: 常にキャッシュ更新 + SyncQueue統合
+202 StorageManager.ts flushSyncQueue / getPendingMemoIds / getPendingCount 追加
+203 TTMemos.ts SyncWithBigQuery: SyncQueue保護 + IsDirty保護
+204 ConflictResolver.ts 新規作成: 衝突検出 + ローカル版を別メモ保存
+205 StatusBar.tsx 同期状態インジケーター (Synced/Syncing/Offline/Pending/Conflict)
+206 LocalSearchService.ts 新規作成: IndexedDBキャッシュ全文検索
+207 TTMemos.ts 初回起動時に直近30日分をプリフェッチ
 次フェーズ: Phase 11 (AIチャット + コンテキストソース + 対話トリガー)
-
 
 - 現プロジェクトを ./docs/refactor_planの指示書に従って開発を進めます。
 ・ 指示書はPhaseに分かれています。実装はPhase/段示して経過を明示しながらすすめてください。
-・ 必要な環境整備があれば、Phase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
-・ 既存のDBを書き換えるようなことはしないでください。
-・ UI関連の修正は一度にまとめて実施しないでください。
-
+・ 必要な環境整備があればPhase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
 
 [260317] ThinktankWebCC::TTRecon-260323::refactor_plan1
+
 - refactor_planの指示書を最初から順番に確認し、本プロジェクトを指示書だけで再構成できるか再度検討してください。
 
-
 - スマートフォン、タブレットがクライアントの場合、以下のように処置するよう変更してください。
+
 1. レスポンシブレイアウト（CSS）、3. 起動時の自動Zenモード
 　タブレット（縦置き）：ShelfとDeskとSystemを利用、ShelfとDeskを2分割で表示
 　タブレット（横置き）：IndexとDeskとLogを利用、IndexとDeskを2分割で表示
@@ -99,8 +102,9 @@ Phase 10 — オフライン耐性 (段200〜207)
 　スマホ：左右スワイプで、Index ↔ Desk ↔ Logで表示を切り替え
 
 [260316]
+
 - WebView.Keywordに直接入力してEnterを押しましたが、表示されませんでした。何がいけないでしょうか？
-- WebView.Keywordに /ttmarkdown が入力されるときに、同パネルのEditorを markdown形式で表示するようにしてください。また、/ttmarkdown?memoid=<MemoID> と入力された場合は、EditorのテキストではなくテキストをBQから取得して markdownとして表示するようにしてください。もちろん (Panel)>Webview.Keywordへの反映等にも配慮してください。 
+- WebView.Keywordに /ttmarkdown が入力されるときに、同パネルのEditorを markdown形式で表示するようにしてください。また、/ttmarkdown?memoid=<MemoID> と入力された場合は、EditorのテキストではなくテキストをBQから取得して markdownとして表示するようにしてください。もちろん (Panel)>Webview.Keywordへの反映等にも配慮してください。
 - 現在、WebView.Keywordが空文字の場合に、Editorのテキストをmarkdownとして表示するようになっていると思いますが、その動作は廃止し、WebView.Keywordが空文字の場合は、WebViewには何も表示しないように変更してください。
 - 現在 Editorに表示されているテキストをmarkdownフォーマットとしてWebViewに表示するTTAction( WebView.Action.Markdown ) を作成してください。
 
@@ -118,6 +122,7 @@ Phase 10 — オフライン耐性 (段200〜207)
 - 同じパネルのEditorに表示されているテキストを markdownとして WebViewに表示する機能があると思いますが、表の表示を追加実装してください。
 
 [260312]
+
 - /ttsearchで検索すると、2026-01-05-091016 が複数候補で出てきました。おそらく DELETE フラグがついているレコードも検索対象になっているものと思います。DELETEフラグ付きのレコードは全文検索の対象にしないでください。
 
 - ./scripts/start-backend.bat を参考に　./scripts/start-frontend.bat　も作成してください。

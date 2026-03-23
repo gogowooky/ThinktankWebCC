@@ -191,8 +191,13 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-ExApp', 'Shift+Control', 'R', 'Application.AllCollection.Save');
     // AddEvent('*-*-*-*', 'Control', 'R', 'Application.Command.Delegate');         // reload
     // #endregion
+
+    // #region ExDebug                  Actions:    ExDebug > [ 1234567890]
+    AddEvent('*-*-*-*', 'Alt', '@', 'Application.Current.ExMode:ExDebug');
+    // #endregion
+
     // #region ExDateTime               Actions:    ExDateTime > (non|+)[ YMDKTWJ ] ![ T ]
-    AddEvent('*-*-*-*', 'Alt', 'T', 'Editor.Date.Action');
+    AddEvent('*-*-*-*', 'Alt', 'T', 'Application.Current.ExMode:ExDateTime');
     AddEvent('*-*-*-ExDateTime', '', 'Y', 'DateTime.Shift.Next1y');
     AddEvent('*-*-*-ExDateTime', 'Shift', 'Y', 'DateTime.Shift.Prev1y');
     AddEvent('*-*-*-ExDateTime', '', 'M', 'DateTime.Shift.Next1m');
