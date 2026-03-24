@@ -10,6 +10,9 @@ const DEBOUNCE_MS = 60000; // 1 minute
 const saveTimers = new Map<string, NodeJS.Timeout>();
 const pendingSaves = new Map<string, FileRecord>();
 
+// Serial queue to prevent concurrent DML on BigQuery (serialization error対策)
+let saveQueue: Promise<void> = Promise.resolve();
+
 function getFileKey(fileId: string, category: string | null): string {
     return `${fileId}_${category || ''}`;
 }
@@ -21,12 +24,15 @@ async function executeSave(key: string) {
     pendingSaves.delete(key);
     saveTimers.delete(key);
 
-    try {
-        await bigqueryService.saveFile(record);
-        console.log(`[BigQueryRoutes] Debounced save executed for ${key}`);
-    } catch (error) {
-        console.error(`[BigQueryRoutes] Debounced save failed for ${key}:`, error);
-    }
+    // Chain onto the serial queue so BigQuery DML never runs concurrently
+    saveQueue = saveQueue.then(async () => {
+        try {
+            await bigqueryService.saveFile(record);
+            console.log(`[BigQueryRoutes] Debounced save executed for ${key}`);
+        } catch (error) {
+            console.error(`[BigQueryRoutes] Debounced save failed for ${key}:`, error);
+        }
+    });
 }
 
 function scheduleSave(record: FileRecord) {

@@ -7,11 +7,12 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:server": "tsc -p server/tsconfig.json",
-    "server:dev": "node --input-type=module -e \"import { readFileSync } from 'fs'; process.env.GOOGLE_SERVICE_ACCOUNT_KEY = readFileSync('thinktankweb-483408-9548b5a08345.json', 'utf8'); await import('./dist-server/index.js');\"",
+    "server:dev": "node --input-type=module -e \"import { readFileSync, existsSync } from 'fs'; process.env.GOOGLE_SERVICE_ACCOUNT_KEY = readFileSync('thinktankweb-483408-9548b5a08345.json', 'utf8'); if (existsSync('server/.env')) { readFileSync('server/.env', 'utf8').split('\\n').forEach(line => { const m = line.match(/^([^#=]+)=(.*)$/); if (m) process.env[m[1].trim()] = m[2].trim(); }); } await import('./dist-server/index.js');\"",
     "start": "node dist-server/index.js",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0",
     "@google-cloud/bigquery": "^8.1.1",
     "@google/generative-ai": "^0.24.1",
     "@monaco-editor/react": "^4.6.0",

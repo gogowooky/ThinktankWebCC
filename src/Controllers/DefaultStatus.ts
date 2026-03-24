@@ -16,12 +16,14 @@ import { TTModels } from '../models/TTModels';
 import { registerApplicationStatus } from './Status/ApplicationStatus';
 import { registerEditorStatus } from './Status/EditorStatus';
 import { registerTableStatus } from './Status/TableStatus';
+import { registerAIStatus } from './Status/AIStatus';  // Phase 12
 
 export function InitializeDefaultStatus(models: TTModels) {
     // === 各カテゴリの状態を登録 ===
     registerApplicationStatus(models);
     registerEditorStatus(models);
     registerTableStatus(models);
+    registerAIStatus(models);  // Phase 12
 
     // === 未分類の状態 ===
     // どのカテゴリにも該当しない状態はここに追加してください。

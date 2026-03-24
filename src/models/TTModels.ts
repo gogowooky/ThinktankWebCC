@@ -4,6 +4,7 @@ import { TTActions } from './TTAction';
 import { TTEvents } from './TTEvent';
 import { TTMemos } from './TTMemos';
 import { TTChats } from './TTChats';
+import { TTSuggestions } from './TTSuggestion';  // Phase 12 段261
 import { TTRequests } from './TTRequest';
 import { TTEditings } from './TTEditing';
 import { InitializeDefaultStatus } from '../Controllers/DefaultStatus';
@@ -16,7 +17,8 @@ export class TTModels extends TTCollection {
     public Actions: TTActions;
     public Events: TTEvents;
     public Memos: TTMemos;
-    public Chats: TTChats;    // Phase 11 段120
+    public Chats: TTChats;          // Phase 11 段120
+    public Suggestions: TTSuggestions; // Phase 12 段261
     public Requests: TTRequests;
     public Editings: TTEditings;
 
@@ -61,6 +63,10 @@ export class TTModels extends TTCollection {
         this.Chats.ID = "Chats";
         this.Chats.Name = "チャット";
 
+        this.Suggestions = new TTSuggestions();
+        this.Suggestions.ID = "Suggestions";
+        this.Suggestions.Name = "AI提案";
+
         this.Requests = new TTRequests(this);
         this.Requests.ID = "Requests";
         this.Requests.Name = "リクエスト";
@@ -74,6 +80,7 @@ export class TTModels extends TTCollection {
         this.AddItem(this.Events);
         this.AddItem(this.Memos);
         this.AddItem(this.Chats);
+        this.AddItem(this.Suggestions);
         this.AddItem(this.Requests);
         this.AddItem(this.Editings);
 
@@ -89,6 +96,7 @@ export class TTModels extends TTCollection {
         this.Events.LoadCache();
         this.Memos.LoadCache();
         this.Chats.LoadCache();
+        this.Suggestions.LoadCache();
         this.Requests.LoadCache();
         this.Editings.LoadCache();
         this.LoadCache();

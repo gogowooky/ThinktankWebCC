@@ -8,6 +8,9 @@
  *   AI_PROVIDER         - 使用するプロバイダ ('gemini' | 'claude')、デフォルト: 'gemini'
  */
 
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
+
 export interface ChatTurn {
     role: 'user' | 'assistant';
     content: string;
@@ -26,20 +29,10 @@ async function sendWithGemini(
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error('GEMINI_API_KEY が設定されていません');
 
-    // @google/generative-ai を動的インポート（optional dependency）
-    let GoogleGenerativeAI: any;
-    try {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore optional dependency
-        const mod = await import('@google/generative-ai');
-        GoogleGenerativeAI = mod.GoogleGenerativeAI;
-    } catch {
-        throw new Error('@google/generative-ai がインストールされていません。npm install @google/generative-ai を実行してください。');
-    }
-
     const genAI = new GoogleGenerativeAI(apiKey);
+    const modelName = process.env.GEMINI_MODEL || 'gemini-2.0-flash-lite';
     const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: modelName,
         ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
     });
 
@@ -62,16 +55,6 @@ async function sendWithClaude(
 ): Promise<string> {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) throw new Error('ANTHROPIC_API_KEY が設定されていません');
-
-    let Anthropic: any;
-    try {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore optional dependency
-        const mod = await import('@anthropic-ai/sdk');
-        Anthropic = mod.default;
-    } catch {
-        throw new Error('@anthropic-ai/sdk がインストールされていません。npm install @anthropic-ai/sdk を実行してください。');
-    }
 
     const client = new Anthropic({ apiKey });
     const response = await client.messages.create({

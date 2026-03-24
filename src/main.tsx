@@ -28,6 +28,19 @@ setupMemoWebSocketHandler((fileId: string) => {
     return undefined;
 });
 
+// Phase 12 段265: AI Facilitator 起動（Memosロード後に実行）
+const models = TTModels.Instance;
+if (models.Status.GetValue('AI.Facilitator.Enabled') !== 'false') {
+    // メモのロード完了後に記念日リコールを実行するため少し遅延させる
+    setTimeout(async () => {
+        try {
+            await app.startFacilitator(models);
+        } catch (e) {
+            console.warn('[Facilitator] 起動エラー:', e);
+        }
+    }, 3000); // 3秒後にFacilitatorを起動
+}
+
 // Test focus
 app.Focus('Library', 'Table', 'Main');
 console.log('Focused Tool:', app.FocusedTool);

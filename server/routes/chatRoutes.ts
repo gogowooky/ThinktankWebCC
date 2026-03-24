@@ -113,7 +113,13 @@ export function createChatRoutes(): Router {
             });
         } catch (error: any) {
             console.error('[ChatRoutes] POST /:id/messages error:', error);
-            res.status(500).json({ error: error.message || 'Internal Server Error' });
+            // ユーザー向けに簡潔なメッセージを返す（詳細はサーバーログで確認）
+            const status = error.status || 500;
+            let message = 'AIへの送信に失敗しました';
+            if (status === 429) message = 'APIのクォータ制限に達しました。しばらく待ってから再試行してください。';
+            else if (status === 401 || status === 403) message = 'APIキーが無効です。設定を確認してください。';
+            else if (error.message?.includes('API_KEY') || error.message?.includes('設定されていません')) message = error.message;
+            res.status(status < 600 ? status : 500).json({ error: message });
         }
     });
 

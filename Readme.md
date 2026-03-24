@@ -41,6 +41,55 @@ ttsearchの検索式をEditorにあわせ
 パネルタイトルに表示中データのクラスを表示
 
 
+
+[260324] ThinktankWebCC::TTRecon-260323::refactor_plan1::Phase12
+
+- Phase 12 実装完了サマリー
+作成ファイル
+ファイル	内容
+server/routes/aiRoutes.ts	POST /api/ai/complete – Facilitator用AI補完エンドポイント
+src/services/ai/AIApiService.ts	クライアント側AI API呼び出しラッパー（オフライン時null返却）
+src/services/ai/AIFacilitatorService.ts	段260: Facilitatorファサードクラス
+src/services/ai/AnniversaryRecallEngine.ts	段262: 記念日リコール（AI不要、オフライン動作）
+src/services/ai/RelatedRecallEngine.ts	段263: 関連メモリコール（AI活用、オフライン時スキップ）
+src/services/ai/AutoTagEngine.ts	段264: 自動タグエンジン（AI活用、オフライン時スキップ）
+src/models/TTSuggestion.ts	段261: TTSuggestion / TTSuggestions モデル
+src/Controllers/Actions/FacilitatorActions.ts	段266〜268: 全Facilitatorアクション
+src/Controllers/Status/AIStatus.ts	段268: AI Facilitator設定State
+更新ファイル
+ファイル	変更内容
+server/index.ts	/api/ai ルートを追加
+src/models/TTModels.ts	Suggestions: TTSuggestions を追加
+src/Views/TTApplication.ts	startFacilitator / stopFacilitator / _runAnniversaryRecall / _runRelatedRecall を追加
+src/Controllers/DefaultActions.ts	registerFacilitatorActions を追加
+src/Controllers/DefaultStatus.ts	registerAIStatus を追加
+src/Controllers/DefaultEvents.ts	ExDebug: F(提案パネル) / R(今すぐ実行) / T(Toggle)、Ctrl+Shift+T(バッチタグ) を追加
+src/main.tsx	アプリ起動3秒後にFacilitatorを自動開始
+キーバインド（ExDebug モード: Alt+: で入る）
+キー	アクション
+F	AI提案パネルを開く
+R	記念日リコールを今すぐ実行
+T	Facilitator 有効/無効切替
+Ctrl+Shift+T (全体)	全メモに自動タグ一括付与
+
+
+
+- 現プロジェクトを ./docs/refactor_planの指示書に従って開発を進めます。
+・ 指示書はPhaseに分かれています。実装はPhase/段示して経過を明示しながらすすめてください。
+・ 必要な環境整備があればPhase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
+・ 既存のDBは書き換えないでください。
+・ UI関連の修正はExDebugモードで起動されるActionとして登録してください。
+・ 今回はPhase12からになります。
+
+
+[260324] Phase11後
+現在Phase11完了の状態です。
+ExDebugモード（Alt+: ）で動く以下Actionが定義されていませんので、対応してください。
+キー	アクション
+C	AIチャットを開く
+N	新規チャットセッション
+A	現在のメモをコンテキストとして送信
+
 [260324] Phase11
 - Browser動作
 - Pending(42件) って何？

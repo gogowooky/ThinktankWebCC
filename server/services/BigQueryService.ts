@@ -202,7 +202,7 @@ export class BigQueryService {
      * ファイルを保存（Upsert: MERGE文を使用）
      * file_id + category が一致するレコードがあれば更新、なければ挿入
      */
-    async saveFile(record: FileRecord): Promise<QueryResult> {
+    async saveFile(record: FileRecord, retries = 3): Promise<QueryResult> {
         if (!this.bigquery || !this.table) {
             return { success: false, error: 'BigQuery未初期化' };
         }
@@ -268,7 +268,19 @@ export class BigQueryService {
             });
 
             return { success: true };
-        } catch (error) {
+        } catch (error: any) {
+            // concurrent update エラーの場合はリトライ
+            const isConcurrentError =
+                error?.errors?.[0]?.reason === 'invalidQuery' &&
+                String(error?.message).includes('concurrent update');
+
+            if (isConcurrentError && retries > 0) {
+                const delayMs = (4 - retries) * 2000; // 2s, 4s, 6s
+                console.warn(`[BigQueryService] 同時更新競合 (${record.file_id}), ${delayMs}ms後にリトライ (残り${retries}回)`);
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+                return this.saveFile(record, retries - 1);
+            }
+
             console.error(`[BigQueryService] ファイル保存失敗 (${record.file_id}):`, error);
             return { success: false, error: String(error) };
         }
