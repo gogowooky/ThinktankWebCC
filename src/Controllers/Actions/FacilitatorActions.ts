@@ -83,6 +83,9 @@ export function registerFacilitatorActions(
         const app = TTApplication.Instance;
         const panel = app.ExCurrentPanel || app.GetPanel('Chat');
         if (panel) {
+            // 提案データを localStorage 経由で WebView に渡す
+            const suggestions = models.Suggestions.getActiveSuggestions();
+            localStorage.setItem('tt_suggestions', JSON.stringify(suggestions));
             panel.Mode = 'WebView';
             panel.WebView.ApplyUrl('/aisuggestions');
             app.Focus(panel.Name, 'WebView', 'Main');

@@ -10,6 +10,7 @@ import { TTModels } from './models/TTModels';
 import { TTMemo } from './models/TTMemo';
 import { SearchApp } from './components/Search/SearchApp';
 import { ChatApp } from './components/AI/ChatApp';
+import { SuggestionsApp } from './components/AI/SuggestionsApp';
 
 const app = TTApplication.Instance;
 console.log('TTApplication initialized:', app);
@@ -50,6 +51,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         {window.location.pathname === '/' ? <App /> :
             window.location.pathname === '/ttsearch' ? <SearchApp /> :
             window.location.pathname === '/aichat' ? <ChatApp /> :
+            window.location.pathname === '/aisuggestions' ? <SuggestionsApp /> :
                 <div style={{ backgroundColor: '#ffffff', width: '100vw', height: '100vh' }}></div>}
     </React.StrictMode>
 );
