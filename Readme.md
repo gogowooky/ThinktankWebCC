@@ -42,6 +42,16 @@ ttsearchの検索式をEditorにあわせ
 
 
 
+[260325]
+# AIプロバイダ設定（gemini または claude）
+# GEMINI_MODEL=gemini-2.0-flash-lite
+# Gemini API キー（AI_PROVIDER=gemini の場合必須）
+# GEMINI_API_KEY=AIzaSyC9QukVU-UfBPD8Z5va9Ua2NdVnk8wLQeM
+# Anthropic API キー（AI_PROVIDER=claude の場合必須）
+AI_PROVIDER=claude
+ANTHROPIC_API_KEY=[REMOVED]
+
+
 [260324] ThinktankWebCC::TTRecon-260323::refactor_plan1::Phase12
 
 - Phase 12 実装完了サマリー
