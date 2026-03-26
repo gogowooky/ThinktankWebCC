@@ -140,13 +140,6 @@ A	現在のメモをコンテキストとして送信
 server/.env に追加:
 
 
-GEMINI_API_KEY=your_key_here
-# オプション（Claudeを使う場合）
-ANTHROPIC_API_KEY=your_key_here
-AI_PROVIDER=claude   # または gemini (デフォルト)
-サーバーへのSDKインストール（使用するプロバイダに応じて）:
-
-
 cd server && npm install @google/generative-ai
 # または
 cd server && npm install @anthropic-ai/sdk
