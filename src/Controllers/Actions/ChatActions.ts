@@ -87,14 +87,15 @@ export function registerChatActions(
         const memo = models.Memos.GetItem(memoId) as TTMemo | undefined;
         const memoContent = memo?.Content || '';
 
-        // /aichat に memoContent をクエリパラメータとして渡す
-        const params = new URLSearchParams({
-            context: memoContent.substring(0, 60),
-            memoContent: memoContent.substring(0, 8000), // トークン節約のため先頭8000文字
-        });
+        // memoContent はサイズが大きいため localStorage 経由で渡す（URLクエリ431回避）
+        localStorage.setItem('tt_chat_memo_context', JSON.stringify({
+            memoId,
+            memoName: memo?.Name || '',
+            memoContent: memoContent.substring(0, 8000),
+        }));
 
         panel.Mode = 'WebView';
-        panel.WebView.ApplyUrl(`/aichat?${params.toString()}`);
+        panel.WebView.ApplyUrl('/aichat?source=memo');
         app.Focus(panel.Name, 'WebView', 'Main');
     });
 }

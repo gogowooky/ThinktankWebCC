@@ -83,8 +83,18 @@ export function registerFacilitatorActions(
         const app = TTApplication.Instance;
         const panel = app.ExCurrentPanel || app.GetPanel('Chat');
         if (panel) {
-            // 提案データを localStorage 経由で WebView に渡す
-            const suggestions = models.Suggestions.getActiveSuggestions();
+            // 提案データを localStorage 経由で WebView に渡す（循環参照回避のため平坦化）
+            const suggestions = models.Suggestions.getActiveSuggestions().map(s => ({
+                id: s.ID,
+                type: s.Type,
+                title: s.Title,
+                body: s.Body,
+                relatedMemoIds: s.RelatedMemoIds,
+                priority: s.Priority,
+                dismissed: s.Dismissed,
+                actedOn: s.ActedOn,
+                createdAt: s.UpdateDate,
+            }));
             localStorage.setItem('tt_suggestions', JSON.stringify(suggestions));
             panel.Mode = 'WebView';
             panel.WebView.ApplyUrl('/aisuggestions');

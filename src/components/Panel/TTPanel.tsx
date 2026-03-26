@@ -411,13 +411,18 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
 
                 const handleKeyDown = (e: KeyboardEvent) => {
                     // 入力欄でのキー入力はフックしない
+                    // ただし Alt/Ctrl/Meta 付きショートカットは親ウィンドウに転送する
                     const target = e.target as HTMLElement;
                     if (target && (
                         target.tagName === 'INPUT' ||
                         target.tagName === 'TEXTAREA' ||
                         target.isContentEditable
                     )) {
-                        return;
+                        if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+                            return;
+                        }
+                        // Alt/Ctrl/Meta 付きは親に転送（以下の処理に続く）
+                        console.log(`[TTPanel] iframe input shortcut intercepted: alt=${e.altKey} key=${e.key}`);
                     }
 
                     // Tabキーはブラウザのネイティブフォーカス移動に委ねる
@@ -453,7 +458,10 @@ export const TTPanelComponent: React.FC<TTPanelProps> = ({ model, className, chi
                         cancelable: true
                     });
 
-                    window.dispatchEvent(newEvent);
+                    // iframeのwindowではなく親ウィンドウにイベントを転送する
+                    const targetWindow = (iframe.contentWindow?.parent ?? window) as Window;
+                    console.log(`[TTPanel] dispatching to parent window: key=${e.key} alt=${e.altKey} same=${targetWindow === window}`);
+                    targetWindow.dispatchEvent(newEvent);
                 };
 
                 const handleFocusIn = (e: FocusEvent) => {

@@ -198,12 +198,18 @@ export const ChatApp: React.FC = () => {
         setError(null);
 
         try {
-            // コンテキストメモがURLにある場合はsystemPromptとして付与
+            // コンテキストメモを localStorage から取得してsystemPromptとして付与
             const params = new URLSearchParams(window.location.search);
-            const memoCtx = params.get('memoContent');
-            const systemPrompt = memoCtx
-                ? `以下はユーザーの参照メモです。回答時に活用してください。\n\n${decodeURIComponent(memoCtx)}`
-                : undefined;
+            let systemPrompt: string | undefined;
+            if (params.get('source') === 'memo') {
+                try {
+                    const stored = localStorage.getItem('tt_chat_memo_context');
+                    if (stored) {
+                        const ctx = JSON.parse(stored) as { memoName: string; memoContent: string };
+                        systemPrompt = `以下はユーザーの参照メモ「${ctx.memoName}」です。回答時に活用してください。\n\n${ctx.memoContent}`;
+                    }
+                } catch { /* パース失敗時は無視 */ }
+            }
 
             const res = await fetch(`/api/chats/${encodeURIComponent(chatId)}/messages`, {
                 method: 'POST',
