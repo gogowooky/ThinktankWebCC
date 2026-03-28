@@ -41,6 +41,16 @@ ttsearchの検索式をEditorにあわせ
 パネルタイトルに表示中データのクラスを表示
 
 
+[260326]
+キーバインド（ExDebug モード: Alt+: で入る）
+キー	アクション
+C	AIチャットを開く
+N	新規チャットセッション
+A	現在のメモをコンテキストとして送信
+F	AI提案パネルを開く
+R	記念日リコールを今すぐ実行
+T	Facilitator 有効/無効切替
+Ctrl+Shift+T (全体)	全メモに自動タグ一括付与
 
 [260324] ThinktankWebCC::TTRecon-260323::refactor_plan1::Phase12
 
