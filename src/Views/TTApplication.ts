@@ -4,6 +4,11 @@ import { TTEvent } from '../models/TTEvent';
 import { TTPanel, PanelMode, PanelTool } from './TTPanel';
 import { TTAction } from '../models/TTAction';
 import { isTouchDevice } from '../services/TouchGestureRecognizer';
+// Phase 12 段265: Facilitator
+import { AnniversaryRecallEngine } from '../services/ai/AnniversaryRecallEngine';
+import { RelatedRecallEngine } from '../services/ai/RelatedRecallEngine';
+import { TTSuggestion } from '../models/TTSuggestion';
+import type { TTMemo } from '../models/TTMemo';
 
 export interface ContextMenuItem {
     id: string;
@@ -335,6 +340,37 @@ export class TTApplication extends TTObject {
         window.addEventListener('keyup', (e) => this.HandleKeyUp(e), true);
         // ブラウザデフォルトのコンテキストメニューを抑制
         window.addEventListener('contextmenu', (e) => e.preventDefault(), true);
+
+        // 段112: ブラウザを閉じる前に IsDirty なメモを即時保存
+        window.addEventListener('beforeunload', (_e) => {
+            this._flushDirtyMemosSync();
+        });
+    }
+
+    // beforeunload 用の同期的フラッシュ（sendBeacon を使用）
+    private _flushDirtyMemosSync(): void {
+        try {
+            const models = TTModels.Instance;
+            if (!models?.Memos) return;
+            const memos = models.Memos.GetItems();
+            for (const item of memos) {
+                const memo = item as any;
+                if (memo.IsDirty && memo.ID && memo.Content !== undefined) {
+                    // sendBeacon はブラウザ終了時でも送信が保証される
+                    const payload = JSON.stringify({
+                        file_id: memo.ID,
+                        title: memo.Name ?? memo.ID,
+                        file_type: 'md',
+                        category: 'Memo',
+                        content: memo.Content,
+                        created_at: memo.CreatedAt ?? undefined,
+                    });
+                    navigator.sendBeacon('/api/bq/files', new Blob([payload], { type: 'application/json' }));
+                }
+            }
+        } catch (e) {
+            // beforeunload 内のエラーは無視
+        }
     }
 
     private HandleKeyDown(e: KeyboardEvent): void {
@@ -1064,6 +1100,105 @@ export class TTApplication extends TTObject {
             // 今回はシンプルに null に戻す。
             this.CommandPalette = null;
             this.NotifyUpdated();
+        }
+    }
+
+    // =========================================================
+    // Phase 12 段265: AI Facilitator 起動ループ
+    // =========================================================
+
+    private _facilitatorInterval: number | null = null;
+
+    /** Facilitatorを起動する（アプリ起動時またはFacilitator有効化時に呼ぶ） */
+    public async startFacilitator(models: TTModels): Promise<void> {
+        // 起動時に記念日リコールを実行
+        await this._runAnniversaryRecall(models);
+
+        // 既存のインターバルをクリア
+        if (this._facilitatorInterval !== null) {
+            window.clearInterval(this._facilitatorInterval);
+        }
+
+        // 設定から間隔を取得（デフォルト30分）
+        const intervalMin = parseInt(
+            models.Status.GetValue('AI.Facilitator.RecallInterval') || '30', 10
+        );
+
+        this._facilitatorInterval = window.setInterval(async () => {
+            const enabled = models.Status.GetValue('AI.Facilitator.Enabled');
+            if (enabled !== 'true') return;
+
+            const relatedEnabled = models.Status.GetValue('AI.Facilitator.RelatedRecall');
+            if (relatedEnabled === 'true') {
+                await this._runRelatedRecall(models);
+            }
+        }, intervalMin * 60 * 1000);
+
+        console.log(`[Facilitator] 起動 (間隔: ${intervalMin}分)`);
+    }
+
+    /** Facilitatorを停止する */
+    public stopFacilitator(): void {
+        if (this._facilitatorInterval !== null) {
+            window.clearInterval(this._facilitatorInterval);
+            this._facilitatorInterval = null;
+        }
+        console.log('[Facilitator] 停止');
+    }
+
+    /** 記念日リコールを実行してSuggestionsに追加する */
+    public async _runAnniversaryRecall(models: TTModels): Promise<void> {
+        if (models.Status.GetValue('AI.Facilitator.AnniversaryRecall') !== 'true') return;
+
+        const engine = new AnniversaryRecallEngine();
+        const memos = models.Memos.GetItems() as TTMemo[];
+        const matches = await engine.findAnniversaryMemos(memos);
+
+        for (const match of matches.slice(0, 3)) {
+            const suggestion = new TTSuggestion();
+            suggestion.Type = 'anniversary';
+            suggestion.Title = `${match.period}のメモ: ${match.memo.Name}`;
+            suggestion.Body = `${match.period}にこのメモを書きました。振り返ってみませんか？`;
+            suggestion.RelatedMemoIds = match.memo.ID;
+            suggestion.Priority = match.priority;
+            models.Suggestions.AddItem(suggestion);
+        }
+
+        if (matches.length > 0) {
+            console.log(`[Facilitator] 記念日リコール: ${Math.min(matches.length, 3)}件追加`);
+        }
+    }
+
+    /** 関連メモリコールを実行してSuggestionsに追加する */
+    public async _runRelatedRecall(models: TTModels): Promise<void> {
+        const activePanel = this.ActivePanel;
+        if (!activePanel || activePanel.Mode !== 'Editor') return;
+
+        const memoId = models.Status.GetValue(`${activePanel.Name}.Editor.Resource`) || '';
+        if (!memoId) return;
+
+        const memo = models.Memos.GetItem(memoId) as TTMemo | undefined;
+        if (!memo || !memo.Content) return;
+
+        const engine = new RelatedRecallEngine();
+        const suggestions = await engine.findRelatedMemos(
+            memo.Content,
+            models.Memos.GetItems() as TTMemo[],
+            memoId
+        );
+
+        for (const s of suggestions) {
+            const suggestion = new TTSuggestion();
+            suggestion.Type = 'related';
+            suggestion.Title = s.title;
+            suggestion.Body = s.body;
+            suggestion.RelatedMemoIds = s.relatedMemoIds.join(',');
+            suggestion.Priority = s.priority;
+            models.Suggestions.AddItem(suggestion);
+        }
+
+        if (suggestions.length > 0) {
+            console.log(`[Facilitator] 関連メモリコール: ${suggestions.length}件追加`);
         }
     }
 }

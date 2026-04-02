@@ -1,5 +1,6 @@
 ﻿import { TTCollection } from './TTCollection';
 import { TTMemo } from './TTMemo';
+import { StorageManager } from '../services/storage';
 
 export class TTMemos extends TTCollection {
     // Promiseキャッシュ（競合状態防止）
@@ -117,9 +118,51 @@ export class TTMemos extends TTCollection {
             // BQ成功時はIsLoadedをセットしてView更新・キャッシュ保存をトリガー
             this.IsLoaded = true;
             this.NotifyUpdated();
+
+            // 段207: 初回起動時（IndexedDBが空の場合）に直近30日分をプリフェッチ
+            this._prefetchRecentMemos(30).catch(e =>
+                console.warn('[TTMemos] プリフェッチ失敗:', e)
+            );
         }
 
         console.log(`[TTMemos] LoadCache完了: ${this.Count}件`);
+    }
+
+    // 段207: 直近N日分のメモコンテンツをバックグラウンドでプリフェッチ
+    private async _prefetchRecentMemos(days: number): Promise<void> {
+        if (!navigator.onLine) return;
+
+        const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+        const memos = this.GetItems() as TTMemo[];
+        const recent = memos.filter(m => {
+            if (!m.UpdateDate) return false;
+            const d = new Date(m.UpdateDate);
+            return !isNaN(d.getTime()) && d.getTime() > cutoff;
+        });
+
+        if (recent.length === 0) return;
+
+        // IndexedDBキャッシュに既に入っているメモはスキップ（非同期で確認）
+        const { StorageManager: SM } = await import('../services/storage');
+
+        let fetched = 0;
+        for (const memo of recent) {
+            if (memo.IsLoaded) continue;
+
+            // 既にキャッシュにあるかチェック
+            const cached = await SM.local.load(`memo_content_${memo.ID}`);
+            if (cached.success && cached.data) continue; // キャッシュ済みはスキップ
+
+            await memo.LoadContent();
+            fetched++;
+
+            // レート制限: 100ms間隔
+            await new Promise(r => setTimeout(r, 100));
+        }
+
+        if (fetched > 0) {
+            console.log(`[TTMemos] プリフェッチ完了: ${fetched}件 (直近${days}日)`);
+        }
     }
 
     /**
@@ -129,6 +172,12 @@ export class TTMemos extends TTCollection {
     public async SyncWithBigQuery(): Promise<boolean> {
         try {
             console.log(`[TTMemos] BigQuery同期開始... LastSyncTime: ${this.LastSyncTime ? this.LastSyncTime.toISOString() : 'None'}`);
+
+            // 段203: SyncQueue保護 — 未送信変更があるメモIDを取得
+            const pendingMemoIds = await StorageManager.getPendingMemoIds();
+            if (pendingMemoIds.size > 0) {
+                console.log(`[TTMemos] SyncQueue保護対象: ${[...pendingMemoIds].join(', ')}`);
+            }
 
             // カテゴリ未設定のメモも拾うため、カテゴリ指定なしで全件取得してからクライアント側でフィルタリングする
             let url = '/api/bq/files';
@@ -173,6 +222,20 @@ export class TTMemos extends TTCollection {
                 let memo = this.GetItem(file.file_id) as TTMemo | undefined;
 
                 if (memo) {
+                    // 段203: SyncQueue保護 — 未送信変更があるメモはBQで上書きしない
+                    if (pendingMemoIds.has(file.file_id)) {
+                        console.log(`[TTMemos] SyncQueue保護でスキップ: ${file.file_id}`);
+                        validBqFileIds.add(file.file_id);
+                        continue;
+                    }
+
+                    // 段203: 編集中保護 — IsDirtyなメモはBQで上書きしない
+                    if ((memo as TTMemo).IsDirty) {
+                        console.log(`[TTMemos] 編集中保護でスキップ: ${file.file_id}`);
+                        validBqFileIds.add(file.file_id);
+                        continue;
+                    }
+
                     // BigQueryから返る日付は文字列(ISO)の場合と、BigQueryTimestampオブジェクト等の場合がある
                     let dateVal = file.updated_at;
                     if (typeof dateVal === 'object' && dateVal !== null) {

@@ -13,6 +13,8 @@ import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 
 import { createBigQueryRoutes } from './routes/bigqueryRoutes.js';
+import { createChatRoutes } from './routes/chatRoutes.js';
+import { createAIRoutes } from './routes/aiRoutes.js';  // Phase 12
 import { bigqueryService } from './services/BigQueryService.js';
 import { authMiddleware, authRoutes } from './middleware/authMiddleware.js';
 
@@ -37,6 +39,8 @@ app.use(express.static(path.join(projectRoot, 'dist')));
 
 // APIルートのマウント
 app.use('/api/bq', createBigQueryRoutes());
+app.use('/api/chats', createChatRoutes());   // Phase 11 段122
+app.use('/api/ai', createAIRoutes());        // Phase 12 段260
 
 // SPA フォールバック
 app.get(/.*/, (req, res) => {

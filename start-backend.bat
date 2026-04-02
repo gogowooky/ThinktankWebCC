@@ -1,9 +1,19 @@
 @echo off
-cd /d C:\Users\gogow\Documents\ThinktankWebCC
+chcp 65001 > nul
 
-echo ポート 8080 を使用中のプロセスを終了しています...
-call npx kill-port 8080
+cd /d C:\Users\shinichiro.egashira\Documents\Claude\ThinktankWebCC
 
-echo サーバーを起動しています...
+echo [1/3] Killing port 8080...
+call npx kill-port 8080 2>nul
+
+echo [2/3] Building server...
+call npm run build:server
+if %ERRORLEVEL% neq 0 (
+    echo Build failed.
+    pause
+    exit /b 1
+)
+
+echo [3/3] Starting server...
 npm run server:dev
 pause

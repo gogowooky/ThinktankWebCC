@@ -8,7 +8,14 @@
       "Bash(taskkill /PID 18584 /F)",
       "Bash(taskkill /PID 20920 /F)",
       "Bash(taskkill /PID 4076 /F)",
-      "Bash(xargs wc:*)"
+      "Bash(xargs wc:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(timeout 6 npm run server:dev)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(node --input-type=module -e \":*)",
+      "Bash(git push:*)"
     ]
   }
 }

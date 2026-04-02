@@ -40,40 +40,188 @@ WebViewのカーソル
 ttsearchの検索式をEditorにあわせ
 パネルタイトルに表示中データのクラスを表示
 
-[26xxxx]
 
-- TTChats/TTChatの追加
-- TTAction()
+[260326]
+キーバインド（ExDebug モード: Alt+: で入る）
+キー	アクション
+C	AIチャットを開く
+N	新規チャットセッション
+A	現在のメモをコンテキストとして送信
+F	AI提案パネルを開く
+R	記念日リコールを今すぐ実行
+T	Facilitator 有効/無効切替
+Ctrl+Shift+T (全体)	全メモに自動タグ一括付与
+
+[260324] ThinktankWebCC::TTRecon-260323::refactor_plan1::Phase12
+
+- Phase 12 実装完了サマリー
+作成ファイル
+ファイル	内容
+server/routes/aiRoutes.ts	POST /api/ai/complete – Facilitator用AI補完エンドポイント
+src/services/ai/AIApiService.ts	クライアント側AI API呼び出しラッパー（オフライン時null返却）
+src/services/ai/AIFacilitatorService.ts	段260: Facilitatorファサードクラス
+src/services/ai/AnniversaryRecallEngine.ts	段262: 記念日リコール（AI不要、オフライン動作）
+src/services/ai/RelatedRecallEngine.ts	段263: 関連メモリコール（AI活用、オフライン時スキップ）
+src/services/ai/AutoTagEngine.ts	段264: 自動タグエンジン（AI活用、オフライン時スキップ）
+src/models/TTSuggestion.ts	段261: TTSuggestion / TTSuggestions モデル
+src/Controllers/Actions/FacilitatorActions.ts	段266〜268: 全Facilitatorアクション
+src/Controllers/Status/AIStatus.ts	段268: AI Facilitator設定State
+更新ファイル
+ファイル	変更内容
+server/index.ts	/api/ai ルートを追加
+src/models/TTModels.ts	Suggestions: TTSuggestions を追加
+src/Views/TTApplication.ts	startFacilitator / stopFacilitator / _runAnniversaryRecall / _runRelatedRecall を追加
+src/Controllers/DefaultActions.ts	registerFacilitatorActions を追加
+src/Controllers/DefaultStatus.ts	registerAIStatus を追加
+src/Controllers/DefaultEvents.ts	ExDebug: F(提案パネル) / R(今すぐ実行) / T(Toggle)、Ctrl+Shift+T(バッチタグ) を追加
+src/main.tsx	アプリ起動3秒後にFacilitatorを自動開始
+キーバインド（ExDebug モード: Alt+: で入る）
+キー	アクション
+F	AI提案パネルを開く
+R	記念日リコールを今すぐ実行
+T	Facilitator 有効/無効切替
+Ctrl+Shift+T (全体)	全メモに自動タグ一括付与
 
 
 [260323] ThinktankWebCC の 指示書からの再構築　TTRecon シリーズ開始
 
 
 
-[260317] refactor_plan1
+- 現プロジェクトを ./docs/refactor_planの指示書に従って開発を進めます。
+・ 指示書はPhaseに分かれています。実装はPhase/段示して経過を明示しながらすすめてください。
+・ 必要な環境整備があればPhase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
+・ 既存のDBは書き換えないでください。
+・ UI関連の修正はExDebugモードで起動されるActionとして登録してください。
+・ 今回はPhase12からになります。
+
+
+[260324] Phase11後
+現在Phase11完了の状態です。
+ExDebugモード（Alt+: ）で動く以下Actionが定義されていませんので、対応してください。
+キー	アクション
+C	AIチャットを開く
+N	新規チャットセッション
+A	現在のメモをコンテキストとして送信
+
+[260324] Phase11
+- Browser動作
+- Pending(42件) って何？
+- 
+段126: 動作確認チェックリスト
+実装した内容を確認します。
+
+確認方法:
+
+GEMINI_API_KEY=xxx を server/.env に設定してサーバーを起動
+npm run dev でフロントを起動
+チェック項目:
+
+#	確認内容	操作方法
+✅	Chat APIが応答する	POST /api/chats/{id}/messages
+✅	チャット画面が開く	Alt+@ → C
+✅	新規チャット	Alt+@ → N
+✅	メモコンテキスト送信	Alt+@ → A
+✅	セッション一覧（BQ取得）	/aichat 画面左ペイン
+Phase 11 実装完了
+作成・変更したファイル
+新規作成:
+
+src/models/TTChat.ts — 段119: TTChatクラス（メッセージ管理・BQ保存）
+src/models/TTChats.ts — 段120: TTChatsコレクション（BQ同期）
+server/services/geminiService.ts — 段121: Gemini/Claude AI サービス
+server/routes/chatRoutes.ts — 段122: チャットAPI (POST /api/chats/:id/messages)
+src/components/AI/ChatApp.tsx — 段123: チャットUI（WebView表示）
+src/components/AI/ChatApp.css — チャットUIスタイル
+src/Controllers/Actions/ChatActions.ts — 段124-125: Chat Actions
+変更:
+
+src/models/TTModels.ts — Chats: TTChats 追加
+server/index.ts — /api/chats ルート追加
+src/main.tsx — /aichat ルート追加
+src/Controllers/DefaultActions.ts — registerChatActions 登録
+src/Controllers/DefaultEvents.ts — ExDebugモードにChat操作キー登録
+操作キーバインド（ExDebugモード: Alt+@ で入る）
+キー	アクション
+C	AIチャットを開く
+N	新規チャットセッション
+A	現在のメモをコンテキストとして送信
+環境設定（必要なもの）
+server/.env に追加:
+
+
+GEMINI_API_KEY=your_key_here
+# オプション（Claudeを使う場合）
+ANTHROPIC_API_KEY=your_key_here
+AI_PROVIDER=claude   # または gemini (デフォルト)
+サーバーへのSDKインストール（使用するプロバイダに応じて）:
+
+
+cd server && npm install @google/generative-ai
+# または
+cd server && npm install @anthropic-ai/sdk
+
+
+[260323] ThinktankWebCC::TTRecon-260323::refactor_plan1
+
+- 現プロジェクトを ./docs/refactor_planの指示書に従って開発を進めます。
+・ 指示書はPhaseに分かれています。実装はPhase/段示して経過を明示しながらすすめてください。
+・ 必要な環境整備があればPhase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
+・ 既存のDBは書き換えないでください。
+・ UI関連の修正はExDebugモードで起動されるActionとして登録してください。
+・ 今回はPhase11からになります。
+
+
+- 本日の完了サマリー
+Phase 02 差分 (段158拡張)
+scripts/create-extended-bq-tables.js 新規作成
+tt_ai_context, tt_suggestions, tt_reminders, tt_entries, tt_embeddings, tt_digests テーブル作成スクリプト
+実行: node scripts/create-extended-bq-tables.js
+Phase 09 差分
+段113 Application.Memo.Delete アクション実装（確認ダイアログ → BQ DELETE → コレクション削除 → 次のメモへ）
+段116 Application.Memo.ImportFromText アクション実装
+段112 beforeunload 即時保存実装（sendBeacon でIsDirtyなメモを送信）
+Phase 10 — オフライン耐性 (段200〜207)
+段 変更ファイル 内容
+200 TTMemo.ts LoadContent: BQ優先 + IndexedDBキャッシュフォールバック
+201 TTMemo.ts SaveContent: 常にキャッシュ更新 + SyncQueue統合
+202 StorageManager.ts flushSyncQueue / getPendingMemoIds / getPendingCount 追加
+203 TTMemos.ts SyncWithBigQuery: SyncQueue保護 + IsDirty保護
+204 ConflictResolver.ts 新規作成: 衝突検出 + ローカル版を別メモ保存
+205 StatusBar.tsx 同期状態インジケーター (Synced/Syncing/Offline/Pending/Conflict)
+206 LocalSearchService.ts 新規作成: IndexedDBキャッシュ全文検索
+207 TTMemos.ts 初回起動時に直近30日分をプリフェッチ
+次フェーズ: Phase 11 (AIチャット + コンテキストソース + 対話トリガー)
+
+- 現プロジェクトを ./docs/refactor_planの指示書に従って開発を進めます。
+・ 指示書はPhaseに分かれています。実装はPhase/段示して経過を明示しながらすすめてください。
+・ 必要な環境整備があればPhase進行は中断してすすめましょう。その際中断したPhase・段はわかるようにしてください
+
+[260317] ThinktankWebCC::TTRecon-260323::refactor_plan1
+
 - refactor_planの指示書を最初から順番に確認し、本プロジェクトを指示書だけで再構成できるか再度検討してください。
 
-
 - スマートフォン、タブレットがクライアントの場合、以下のように処置するよう変更してください。
-2. レスポンシブレイアウト（CSS）、3. 起動時の自動Zenモード
+
+1. レスポンシブレイアウト（CSS）、3. 起動時の自動Zenモード
 　タブレット（縦置き）：ShelfとDeskとSystemを利用、ShelfとDeskを2分割で表示
 　タブレット（横置き）：IndexとDeskとLogを利用、IndexとDeskを2分割で表示
 　スマホ：IndexとDeskとLogを利用、DeskをZenモードで表示
 　Shelf/IndexはResourceをMemosとしてTableモードで固定、
 　SystemとLogはUrlを/ttmarkdownとしてWebViewモード固定、
 　DeskはEditorモード固定とする
-4. ボトムナビゲーション
+1. ボトムナビゲーション
 　画面下部に ナビゲーションバー を表示。以下の入力をできるようにする。
 　音声入力モード のOn/Off、文字削除、ペースト、コピー
-5. ジェスチャー操作
+1. ジェスチャー操作
 　常にDeskにフォーカスがあり、Desk以外の画面操作はExPanelモード扱いで動作する。
 　タブレット（縦置き）：上下スワイプで、Shelf+Desk ↔ Desk+Systemで表示を切り替え
 　タブレット（横置き）：左右スワイプで、Index+Desk ↔ Desk+Logで表示を切り替え
 　スマホ：左右スワイプで、Index ↔ Desk ↔ Logで表示を切り替え
 
 [260316]
+
 - WebView.Keywordに直接入力してEnterを押しましたが、表示されませんでした。何がいけないでしょうか？
-- WebView.Keywordに /ttmarkdown が入力されるときに、同パネルのEditorを markdown形式で表示するようにしてください。また、/ttmarkdown?memoid=<MemoID> と入力された場合は、EditorのテキストではなくテキストをBQから取得して markdownとして表示するようにしてください。もちろん (Panel)>Webview.Keywordへの反映等にも配慮してください。 
+- WebView.Keywordに /ttmarkdown が入力されるときに、同パネルのEditorを markdown形式で表示するようにしてください。また、/ttmarkdown?memoid=<MemoID> と入力された場合は、EditorのテキストではなくテキストをBQから取得して markdownとして表示するようにしてください。もちろん (Panel)>Webview.Keywordへの反映等にも配慮してください。
 - 現在、WebView.Keywordが空文字の場合に、Editorのテキストをmarkdownとして表示するようになっていると思いますが、その動作は廃止し、WebView.Keywordが空文字の場合は、WebViewには何も表示しないように変更してください。
 - 現在 Editorに表示されているテキストをmarkdownフォーマットとしてWebViewに表示するTTAction( WebView.Action.Markdown ) を作成してください。
 
@@ -91,6 +239,7 @@ ttsearchの検索式をEditorにあわせ
 - 同じパネルのEditorに表示されているテキストを markdownとして WebViewに表示する機能があると思いますが、表の表示を追加実装してください。
 
 [260312]
+
 - /ttsearchで検索すると、2026-01-05-091016 が複数候補で出てきました。おそらく DELETE フラグがついているレコードも検索対象になっているものと思います。DELETEフラグ付きのレコードは全文検索の対象にしないでください。
 
 - ./scripts/start-backend.bat を参考に　./scripts/start-frontend.bat　も作成してください。

@@ -191,6 +191,19 @@ export function InitializeDefaultEvents(models: TTModels) {
     AddEvent('*-*-*-ExApp', 'Shift+Control', 'R', 'Application.AllCollection.Save');
     // AddEvent('*-*-*-*', 'Control', 'R', 'Application.Command.Delegate');         // reload
     // #endregion
+
+    // #region ExDebug                  Actions:    ExDebug > [ CNA 1234567890]
+    AddEvent('*-*-*-*', 'Alt', ':', 'Application.Current.ExMode:ExDebug');
+    AddEvent('*-*-*-ExDebug', '', 'C', 'Chat.Open');                    // AIチャットを開く
+    AddEvent('*-*-*-ExDebug', '', 'N', 'Chat.New');                     // 新規チャットセッション
+    AddEvent('*-*-*-ExDebug', '', 'A', 'Chat.SendWithMemoContext');      // 現在のメモをコンテキストとして送信
+    // Phase 12: AI Facilitator
+    AddEvent('*-*-*-ExDebug', '', 'F', 'AI.Suggestion.OpenPanel');      // AI提案パネルを開く
+    AddEvent('*-*-*-ExDebug', '', 'R', 'AI.Facilitator.RunNow');        // 記念日リコールを手動実行
+    AddEvent('*-*-*-ExDebug', '', 'T', 'AI.Facilitator.Toggle');        // Facilitator有効/無効切替
+    AddEvent('*-*-*-*', 'Control+Shift', 'T', 'AI.Tag.BatchAll');       // 全メモ自動タグ付与
+    // #endregion
+
     // #region ExDateTime               Actions:    ExDateTime > (non|+)[ YMDKTWJ ] ![ T ]
     AddEvent('*-*-*-*', 'Alt', 'T', 'Editor.Date.Action');
     AddEvent('*-*-*-ExDateTime', '', 'Y', 'DateTime.Shift.Next1y');
