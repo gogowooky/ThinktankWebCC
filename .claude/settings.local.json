@@ -15,7 +15,8 @@
       "Bash(npm run:*)",
       "Bash(npm install:*)",
       "Bash(node --input-type=module -e \":*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(handle \"c:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankWebCC\\\\.claude\\\\worktrees\")"
     ]
   }
 }

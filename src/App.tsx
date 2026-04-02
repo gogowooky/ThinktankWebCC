@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { TTObject } from './models/TTObject'
-import { TTCollection } from './models/TTCollection'
+import { TTModels } from './models/TTModels'
+import { TTDataItem } from './models/TTDataItem'
 
 function App() {
   const [log, setLog] = useState<string[]>([])
@@ -12,91 +12,70 @@ function App() {
       setLog([...messages])
     }
 
-    // === TTObject 検証 ===
-    const obj = new TTObject()
-    addLog(`[TTObject] Created: ID="${obj.ID}", Name="${obj.Name}"`)
-    addLog(`[TTObject] ClassName="${obj.ClassName}", UpdateDate="${obj.UpdateDate}"`)
+    // === TTModels シングルトン検証 ===
+    const models = TTModels.Instance
+    addLog(`[TTModels] ID="${models.ID}", Name="${models.Name}"`)
+    addLog(`[TTModels] Collections: ${models.GetItems().map(i => i.ID).join(', ')}`)
 
-    // Observer 検証
-    obj.AddOnUpdate('test-listener', () => {
-      addLog(`[TTObject] Observer fired: UpdateDate="${obj.UpdateDate}"`)
-    })
-    obj.Name = 'TestObject'
-    obj.NotifyUpdated()
+    // === TTStatus 検証 ===
+    models.Status.RegisterState('App.Theme', 'テーマ設定', 'dark')
+    models.Status.RegisterState('App.FontSize', 'フォントサイズ', '14')
+    addLog(`\n[TTStatus] Registered: App.Theme="${models.Status.GetValue('App.Theme')}"`)
+    addLog(`[TTStatus] Registered: App.FontSize="${models.Status.GetValue('App.FontSize')}"`)
 
-    obj.RemoveOnUpdate('test-listener')
-    obj.NotifyUpdated() // リスナー解除後は発火しない
-    addLog(`[TTObject] Listener removed - no fire expected above`)
+    models.Status.SetValue('App.Theme', 'light')
+    addLog(`[TTStatus] SetValue: App.Theme="${models.Status.GetValue('App.Theme')}"`)
 
-    // getNowString 検証
-    addLog(`[TTObject] getNowString="${TTObject.getNowString()}"`)
+    // [Columns]ワイルドカード検証
+    models.Status.RegisterState('Column[Columns].Filter', '列フィルタ', '')
+    addLog(`[TTStatus] Column wildcard: ${['Column0.Filter', 'Column1.Filter', 'Column2.Filter']
+      .map(id => `${id}="${models.Status.GetValue(id)}"`).join(', ')}`)
 
-    // === TTCollection 検証 ===
-    const collection = new TTCollection()
-    collection.ID = 'TestMemos'
-    collection.Name = 'TestMemos'
-    collection.ItemSaveProperties = 'ID,Name,UpdateDate'
-    collection.IsLoaded = true
-    addLog(`\n[TTCollection] Created: ID="${collection.ID}"`)
+    // === TTDataItem 検証 ===
+    addLog(`\n[TTDataItem] Creating items...`)
+    const memo1 = new TTDataItem()
+    memo1.Content = '# 朝の振り返り\n今日の予定を確認する'
+    addLog(`[TTDataItem] memo1: ID="${memo1.ID}", Name="${memo1.Name}", ContentType="${memo1.ContentType}"`)
+    addLog(`[TTDataItem] memo1.Content first line: "${memo1.Content.split('\\n')[0]}"`)
 
-    // Observer on collection
-    collection.AddOnUpdate('collection-listener', () => {
-      addLog(`[TTCollection] Observer fired: Count=${collection.Count}`)
-    })
+    const memo2 = new TTDataItem()
+    memo2.Content = '買い物リスト\n- 牛乳\n- パン'
+    memo2.Keywords = '買い物,生活'
+    addLog(`[TTDataItem] memo2: Name="${memo2.Name}", Keywords="${memo2.Keywords}"`)
 
-    // AddItem
-    const item1 = new TTObject()
-    item1.ID = '2026-04-02-120000'
-    item1.Name = 'テストメモ1'
-    collection.AddItem(item1)
+    // IsDirty 検証
+    addLog(`[TTDataItem] memo1.IsDirty=${memo1.IsDirty}`)
+    memo1.markSaved()
+    addLog(`[TTDataItem] After markSaved: memo1.IsDirty=${memo1.IsDirty}`)
+    memo1.Content = '# 朝の振り返り（修正）\n今日の予定を再確認'
+    addLog(`[TTDataItem] After edit: memo1.IsDirty=${memo1.IsDirty}`)
 
-    const item2 = new TTObject()
-    item2.ID = '2026-04-02-130000'
-    item2.Name = 'テストメモ2'
-    collection.AddItem(item2)
+    // === Memos コレクション検証 ===
+    addLog(`\n[Memos] Adding items to collection...`)
+    models.Memos.AddItem(memo1)
+    models.Memos.AddItem(memo2)
+    addLog(`[Memos] Count=${models.Memos.Count}`)
+    addLog(`[Memos] Items: ${models.Memos.GetDataItems().map(i => i.Name).join(', ')}`)
 
-    // GetItem
-    const found = collection.GetItem('2026-04-02-120000')
-    addLog(`[TTCollection] GetItem: "${found?.Name}"`)
+    // GetDataItem 型付き取得
+    const found = models.Memos.GetDataItem(memo1.ID)
+    addLog(`[Memos] GetDataItem: "${found?.Name}", Content length=${found?.Content.length}`)
 
-    // GetItems
-    addLog(`[TTCollection] GetItems: ${collection.GetItems().map(i => i.Name).join(', ')}`)
+    // CSV シリアライズ検証
+    const csv = models.Memos.ToCsvString()
+    addLog(`\n[Memos] CSV:\n${csv}`)
 
-    // FindItems
-    const filtered = collection.FindItems(i => i.Name.includes('メモ2'))
-    addLog(`[TTCollection] FindItems("メモ2"): ${filtered.map(i => i.Name).join(', ')}`)
+    // === TTActions 検証 ===
+    addLog(`[TTActions] Count=${models.Actions.Count}`)
 
-    // CSV シリアライズ
-    const csv = collection.ToCsvString()
-    addLog(`\n[TTCollection] ToCsvString:\n${csv}`)
+    // === TTEvents 検証 ===
+    addLog(`[TTEvents] Count=${models.Events.Count}`)
 
-    // CSV デシリアライズ
-    const collection2 = new TTCollection()
-    collection2.ID = 'Restored'
-    collection2.ItemSaveProperties = 'ID,Name,UpdateDate'
-    collection2.FromCsvString(csv)
-    addLog(`[TTCollection] FromCsvString: ${collection2.Count} items restored`)
-    collection2.GetItems().forEach(item => {
-      addLog(`  - ID="${item.ID}", Name="${item.Name}"`)
-    })
+    // === シングルトン同一性検証 ===
+    const models2 = TTModels.Instance
+    addLog(`\n[Singleton] Same instance: ${models === models2}`)
 
-    // DeleteItem
-    collection.DeleteItem('2026-04-02-120000')
-    addLog(`\n[TTCollection] After delete: Count=${collection.Count}`)
-
-    // 親への通知伝播
-    const parentCollection = new TTCollection()
-    parentCollection.ID = 'Parent'
-    parentCollection.IsLoaded = true
-    parentCollection.AddOnUpdate('parent-listener', () => {
-      addLog(`[Parent] Notified by child propagation`)
-    })
-    const child = new TTObject()
-    child.ID = 'child-1'
-    child._parent = parentCollection
-    child.NotifyUpdated()
-
-    addLog(`\n✅ Phase 2 検証完了`)
+    addLog(`\n✅ Phase 3 検証完了`)
   }, [])
 
   return (
@@ -109,13 +88,16 @@ function App() {
       backgroundColor: '#1e1e1e',
       overflow: 'auto'
     }}>
-      <h2 style={{ color: '#61dafb', marginBottom: '16px' }}>Thinktank - Phase 2 検証</h2>
+      <h2 style={{ color: '#61dafb', marginBottom: '16px' }}>Thinktank - Phase 3 検証</h2>
       {log.map((line, i) => (
         <div key={i} style={{
           whiteSpace: 'pre-wrap',
           color: line.startsWith('✅') ? '#4caf50'
-            : line.startsWith('[TTCollection] Observer') ? '#ff9800'
-            : line.startsWith('[Parent]') ? '#e91e63'
+            : line.startsWith('[TTModels]') ? '#64b5f6'
+            : line.startsWith('[TTStatus]') ? '#ff9800'
+            : line.startsWith('[TTDataItem]') ? '#ce93d8'
+            : line.startsWith('[Memos]') ? '#81c784'
+            : line.startsWith('[Singleton]') ? '#ffeb3b'
             : '#e0e0e0'
         }}>
           {line}
