@@ -5,6 +5,9 @@ node_modules/
 dist/
 dist-server/
 
+# Reference code (backup)
+reference2/node_modules/
+
 # Cache
 cache/
 
