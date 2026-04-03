@@ -1,5 +1,7 @@
 import { TTObject } from './TTObject';
 import { toCsv, parseCsv } from '../utils/csv';
+import { storageManager } from '../services/storage/StorageManager';
+import type { FileRecord } from '../services/storage/IStorageService';
 
 /**
  * TTCollection - データコンテナ
@@ -244,13 +246,15 @@ export class TTCollection extends TTObject {
     this._nextSaveScheduled = false;
 
     try {
-      const csv = this.ToCsvString();
-      const fileName = `${this.ID}.csv`;
-
-      // Phase 12でStorageManagerに置き換え
-      // 現時点ではconsoleログのみ
-      console.log(`[TTCollection] Save scheduled: ${fileName} (${this.Count} items)`);
-      console.debug(csv);
+      if (storageManager.isInitialized) {
+        // 変更のあったアイテムをStorageManager経由で保存
+        const items = this.GetItems();
+        const records: FileRecord[] = items.map(item => this.itemToRecord(item));
+        await storageManager.bulkSave(records);
+        console.log(`[TTCollection] Saved ${records.length} items via StorageManager`);
+      } else {
+        console.log(`[TTCollection] StorageManager not ready, save deferred: ${this.ID}`);
+      }
     } catch (error) {
       console.error(`Failed to save cache ${this.ID}:`, error);
     } finally {
@@ -262,12 +266,68 @@ export class TTCollection extends TTObject {
     }
   }
 
-  /** キャッシュからロード（Phase 12でStorageManager統合） */
+  /** StorageManagerからデータをロード */
   public async LoadCache(): Promise<void> {
-    // Phase 12でStorageManagerから読み込みを実装
-    // 現時点ではロード完了フラグのみ設定
-    this.IsLoaded = true;
-    console.log(`[TTCollection] LoadCache: ${this.ID} (stub - will integrate StorageManager in Phase 12)`);
+    if (!storageManager.isInitialized) {
+      console.log(`[TTCollection] StorageManager not ready, LoadCache deferred: ${this.ID}`);
+      this.IsLoaded = true;
+      return;
+    }
+
+    try {
+      const category = this.DatabaseID || this.ID;
+      const records = await storageManager.listFiles(category);
+
+      for (const record of records) {
+        let item = this.GetItem(record.file_id);
+        if (!item) {
+          item = this.CreateChildInstance();
+          item.ID = record.file_id;
+          item._parent = this;
+          this._children.set(item.ID, item);
+        }
+        this.recordToItem(record, item);
+      }
+
+      this.Count = this._children.size;
+      this.IsLoaded = true;
+      this.NotifyUpdated(false);
+      console.log(`[TTCollection] Loaded ${records.length} items from StorageManager for ${category}`);
+    } catch (error) {
+      console.error(`[TTCollection] LoadCache failed for ${this.ID}:`, error);
+      this.IsLoaded = true;
+    }
+  }
+
+  /** TTObjectをFileRecordに変換 */
+  private itemToRecord(item: TTObject): FileRecord {
+    const dataItem = item as unknown as Record<string, unknown>;
+    return {
+      file_id: item.ID,
+      title: item.Name || null,
+      file_type: (dataItem.ContentType as string) || 'memo',
+      category: this.DatabaseID || this.ID,
+      content: (dataItem.Content as string) ?? null,
+      metadata: null,
+      size_bytes: null,
+      created_at: item.UpdateDate || new Date().toISOString(),
+      updated_at: item.UpdateDate || new Date().toISOString(),
+    };
+  }
+
+  /** FileRecordからTTObjectにプロパティを適用 */
+  private recordToItem(record: FileRecord, item: TTObject): void {
+    item.Name = record.title || item.Name;
+    item.UpdateDate = record.updated_at || item.UpdateDate;
+    const dataItem = item as unknown as Record<string, unknown>;
+    if (record.content !== null && typeof dataItem.setContentSilent === 'function') {
+      (dataItem as { setContentSilent: (v: string) => void }).setContentSilent(record.content);
+    } else if (record.content !== null) {
+      dataItem.Content = record.content;
+    }
+    if (record.file_type) {
+      dataItem.ContentType = record.file_type;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════

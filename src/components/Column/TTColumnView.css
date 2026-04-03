@@ -10,26 +10,108 @@
   background-color: #1e1e1e;
 }
 
-/* ─── パネルプレースホルダ ─── */
+/* ─── パネルコンテナ ─── */
 
-.panel-placeholder {
+.panel-container {
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
+}
+
+/* ─── タイトルバー（タイトル + ツールバー統合） ─── */
+
+.panel-titlebar {
+  display: flex;
+  flex-direction: column;
+  background-color: #252526;
+  border-bottom: 1px solid #333;
+  user-select: none;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.panel-titlebar-focused {
+  background-color: #2d2d30;
+}
+
+.panel-title-row {
+  height: 18px;
+  min-height: 18px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 13px;
+  padding: 0 8px;
+  font-size: 11px;
   color: #888;
+}
+
+.panel-titlebar-focused .panel-title-row {
+  color: #e0e0e0;
+}
+
+.panel-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 0 4px 3px;
+}
+
+.panel-toolbar-input {
+  width: 100%;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  color: #e0e0e0;
+  background-color: #2d2d30;
+  border: 1px solid #3c3c3c;
+  border-radius: 2px;
+  outline: none;
+}
+
+.panel-titlebar-focused .panel-toolbar-input {
+  background-color: #333;
+}
+
+.panel-toolbar-input:focus {
+  border-color: #0078d4;
+}
+
+/* ─── ハイライトタグ表示 ─── */
+
+.panel-toolbar-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 2px 4px 3px;
+}
+
+.panel-toolbar-tag {
+  display: inline-block;
+  padding: 0 5px;
+  font-size: 10px;
+  line-height: 16px;
+  color: #f0f0f0;
+  border-radius: 3px;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── パネルコンテンツ ─── */
+
+.panel-content {
+  flex: 1;
+  overflow: hidden;
   border: 1px solid #333;
 }
 
-.panel-datagrid {
+.panel-datagrid .panel-content {
   background-color: #1e1e1e;
 }
 
-.panel-webview {
+.panel-webview .panel-content {
   background-color: #222;
 }
 
-.panel-texteditor {
+.panel-texteditor .panel-content {
   background-color: #1e1e1e;
 }

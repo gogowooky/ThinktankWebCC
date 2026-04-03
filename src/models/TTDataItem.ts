@@ -1,5 +1,7 @@
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
+import { storageManager } from '../services/storage/StorageManager';
+import { syncManager } from '../services/sync/SyncManager';
 
 /**
  * TTDataItem - 統一コンテンツモデル
@@ -93,23 +95,48 @@ export class TTDataItem extends TTObject {
   // コンテンツ読み書き（Phase 12でStorageManager統合）
   // ═══════════════════════════════════════════════════════════════
 
-  /** コンテンツをロード（Phase 12で実装） */
+  /** コンテンツをロード */
   public async LoadContent(): Promise<void> {
-    // Phase 12でBigQuery/IndexedDB連携を実装
-    this.IsLoaded = true;
-    console.log(`[TTDataItem] LoadContent stub: ${this.ID}`);
-  }
-
-  /** コンテンツを保存（Phase 12で実装） */
-  public async SaveContent(): Promise<void> {
-    if (!this.IsDirty) {
-      console.log(`[TTDataItem] Content unchanged: ${this.ID}`);
+    if (!storageManager.isInitialized) {
+      this.IsLoaded = true;
       return;
     }
-    // Phase 12でBigQuery/IndexedDB連携を実装
-    this._savedContent = this._content;
+
+    try {
+      const record = await storageManager.getFile(this.ID);
+      if (record?.content) {
+        this.setContentSilent(record.content);
+        this._savedContent = this._content;
+      }
+    } catch (error) {
+      console.error(`[TTDataItem] LoadContent failed: ${this.ID}`, error);
+    }
+    this.IsLoaded = true;
+  }
+
+  /** コンテンツを保存（StorageManager + WebSocket送信） */
+  public async SaveContent(): Promise<void> {
+    if (!this.IsDirty) return;
+
+    const now = new Date().toISOString();
     this.UpdateDate = TTObject.getNowString();
-    console.log(`[TTDataItem] SaveContent stub: ${this.ID}`);
+
+    try {
+      await syncManager.saveAndBroadcast({
+        file_id: this.ID,
+        title: this.Name || null,
+        file_type: this.ContentType,
+        category: this.CollectionID || null,
+        content: this._content,
+        metadata: null,
+        size_bytes: null,
+        created_at: now,
+        updated_at: now,
+      });
+      this._savedContent = this._content;
+    } catch (error) {
+      console.error(`[TTDataItem] SaveContent failed: ${this.ID}`, error);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════

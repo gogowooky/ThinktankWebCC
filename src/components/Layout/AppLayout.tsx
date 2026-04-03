@@ -12,8 +12,8 @@ import './AppLayout.css';
  * レスポンシブ: ウィンドウ幅に応じて1/2/3列に切替。
  */
 
-/** 列幅比率の最小値 */
-const MIN_COL_RATIO = 0.1;
+const MIN_COL_RATIO = 0;
+const STATUSBAR_HEIGHT = 22;
 
 export function AppLayout() {
   const app = TTApplication.Instance;
@@ -30,11 +30,16 @@ export function AppLayout() {
   const colRatiosRef = useRef(colRatios);
   colRatiosRef.current = colRatios;
 
-  // TTApplication の Observer を購読（列数変更の検知）
+  // TTApplication + 全TTColumn の Observer を購読
   const [, setTick] = useState(0);
   useEffect(() => {
-    app.AddOnUpdate('AppLayout', () => setTick(t => t + 1));
-    return () => app.RemoveOnUpdate('AppLayout');
+    const rerender = () => setTick(t => t + 1);
+    app.AddOnUpdate('AppLayout', rerender);
+    app.Columns.forEach((col, i) => col.AddOnUpdate(`AppLayout-col${i}`, rerender));
+    return () => {
+      app.RemoveOnUpdate('AppLayout');
+      app.Columns.forEach((col, i) => col.RemoveOnUpdate(`AppLayout-col${i}`));
+    };
   }, [app]);
 
   // ウィンドウリサイズ監視
@@ -69,11 +74,11 @@ export function AppLayout() {
     let newRight = r[right] - deltaRatio;
 
     if (newLeft < MIN_COL_RATIO) {
-      newRight -= (MIN_COL_RATIO - newLeft);
+      newRight += newLeft;
       newLeft = MIN_COL_RATIO;
     }
     if (newRight < MIN_COL_RATIO) {
-      newLeft -= (MIN_COL_RATIO - newRight);
+      newLeft += newRight;
       newRight = MIN_COL_RATIO;
     }
     if (newLeft < MIN_COL_RATIO || newRight < MIN_COL_RATIO) return;
@@ -126,14 +131,22 @@ export function AppLayout() {
         key={`column-${i}`}
         column={app.Columns[i]}
         width={columnWidths[i]}
-        height={size.height}
+        height={size.height - STATUSBAR_HEIGHT}
       />
     );
   }
 
+  const activeCol = app.ActiveColumn;
+  const statusText = `Column ${activeCol.Index + 1} | ${activeCol.FocusedPanel}`;
+
   return (
-    <div className="app-layout">
-      {elements}
+    <div className="app-root">
+      <div className="app-layout">
+        {elements}
+      </div>
+      <div className="app-statusbar">
+        <span>{statusText}</span>
+      </div>
     </div>
   );
 }

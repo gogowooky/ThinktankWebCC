@@ -1,26 +1,37 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { TTColumn } from '../../views/TTColumn';
+import { TTApplication } from '../../views/TTApplication';
 import { Splitter } from '../Layout/Splitter';
+import { DataGridPanel } from '../DataGrid/DataGridPanel';
+import { TextEditorPanel } from '../TextEditor/TextEditorPanel';
+import { WebViewPanel } from '../WebView/WebViewPanel';
+import { KEYWORD_COLORS } from '../../utils/editorHighlight';
+import type { PanelType } from '../../types';
 import './TTColumnView.css';
 
 /**
  * TTColumnView - 1列分のUIコンポーネント
  *
  * 縦にDataGridPanel / WebViewPanel / TextEditorPanelを配置。
+ * 各パネルにタイトルバー+ツールバーあり。フォーカス中のパネルには ● マーク。
  * パネル間にSplitterを設置し、ドラッグで高さ比率を変更可能。
- * 列全高を3パネルで分割し、スクロールは使用しない。
+ * Splitterはパネルを完全に隠す（タイトルバー・ツールバーも含め）まで移動可能。
  */
 
 interface TTColumnViewProps {
   column: TTColumn;
-  /** 列の幅(px) - 親(AppLayout)が管理 */
   width: number;
-  /** 列の高さ(px) - 親(AppLayout)が管理 */
   height: number;
 }
 
-/** パネル高さ比率の最小値 */
-const MIN_RATIO = 0.05;
+/** タイトルバー（タイトル行 + ツールバー + border）の概算高さ */
+const TITLEBAR_TOTAL = 40;
+
+const PANEL_TITLES: Record<PanelType, string> = {
+  DataGrid: 'DataGrid',
+  WebView: 'WebView',
+  TextEditor: 'TextEditor',
+};
 
 export function TTColumnView({ column, width, height }: TTColumnViewProps) {
   const [ratios, setRatios] = useState<[number, number, number]>(
@@ -29,18 +40,22 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
   const ratiosRef = useRef(ratios);
   ratiosRef.current = ratios;
 
-  // Column の Observer を購読してリレンダー
   const [, setTick] = useState(0);
+  const rerender = useCallback(() => setTick(t => t + 1), []);
   useEffect(() => {
-    const key = `TTColumnView-${column.Index}`;
-    column.AddOnUpdate(key, () => setTick(t => t + 1));
-    return () => column.RemoveOnUpdate(key);
-  }, [column]);
+    const colKey = `TTColumnView-${column.Index}`;
+    const appKey = `TTColumnView-app-${column.Index}`;
+    column.AddOnUpdate(colKey, rerender);
+    TTApplication.Instance.AddOnUpdate(appKey, rerender);
+    return () => {
+      column.RemoveOnUpdate(colKey);
+      TTApplication.Instance.RemoveOnUpdate(appKey);
+    };
+  }, [column, rerender]);
 
-  // Splitter間ドラッグ: 上下パネル比率を変更
-  // splitterIndex: 0 = DataGrid↔WebView境界, 1 = WebView↔TextEditor境界
   const handleVerticalResize = useCallback((splitterIndex: 0 | 1, deltaPx: number) => {
-    const totalHeight = height - 8; // 2つのsplitter(各4px)
+    // Splitter2本分(8px)だけ固定、残り全体を比率分割
+    const totalHeight = height - 8;
     if (totalHeight <= 0) return;
 
     const deltaRatio = deltaPx / totalHeight;
@@ -52,29 +67,31 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     let newUpper = r[upper] + deltaRatio;
     let newLower = r[lower] - deltaRatio;
 
-    // 最小比率の制約
-    if (newUpper < MIN_RATIO) {
-      newLower -= (MIN_RATIO - newUpper);
-      newUpper = MIN_RATIO;
+    if (newUpper < 0) {
+      newLower += newUpper;
+      newUpper = 0;
     }
-    if (newLower < MIN_RATIO) {
-      newUpper -= (MIN_RATIO - newLower);
-      newLower = MIN_RATIO;
+    if (newLower < 0) {
+      newUpper += newLower;
+      newLower = 0;
     }
-
-    // まだ制約外なら諦める
-    if (newUpper < MIN_RATIO || newLower < MIN_RATIO) return;
+    if (newUpper < 0 || newLower < 0) return;
 
     r[upper] = newUpper;
     r[lower] = newLower;
 
-    // TTColumn にも反映
     column.VerticalRatios = r;
     setRatios(r);
   }, [column, height]);
 
-  // Splitter 分を引いた有効高さ
-  const splitterTotal = 8; // 4px × 2
+  const handlePanelFocus = useCallback((panel: PanelType) => {
+    const app = TTApplication.Instance;
+    app.ActiveColumnIndex = column.Index;
+    column.FocusedPanel = panel;
+  }, [column]);
+
+  // Splitter2本(8px)のみ固定。残り全体を3パネルで比率分割
+  const splitterTotal = 8;
   const availableHeight = Math.max(0, height - splitterTotal);
 
   const panelHeights = [
@@ -82,12 +99,104 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     Math.round(availableHeight * ratios[1]),
     Math.round(availableHeight * ratios[2]),
   ];
-
-  // 丸め誤差補正: 最後のパネルに吸収
   const sum = panelHeights[0] + panelHeights[1] + panelHeights[2];
   panelHeights[2] += (availableHeight - sum);
 
   if (!column.IsVisible) return null;
+
+  const app = TTApplication.Instance;
+  const isActiveColumn = app.ActiveColumnIndex === column.Index;
+  const focused = column.FocusedPanel;
+  const panels: { type: PanelType; height: number; className: string }[] = [
+    { type: 'DataGrid', height: panelHeights[0], className: 'panel-datagrid' },
+    { type: 'TextEditor', height: panelHeights[1], className: 'panel-texteditor' },
+    { type: 'WebView', height: panelHeights[2], className: 'panel-webview' },
+  ];
+
+  const elements: React.ReactNode[] = [];
+  panels.forEach((panel, i) => {
+    if (i > 0) {
+      elements.push(
+        <Splitter
+          key={`splitter-${i}`}
+          direction="vertical"
+          onResize={(delta) => handleVerticalResize((i - 1) as 0 | 1, delta)}
+        />
+      );
+    }
+
+    const isFocused = isActiveColumn && focused === panel.type;
+    const selectedId = column.SelectedItemID;
+    const selectedItem = selectedId ? column.GetCurrentCollection()?.GetDataItem(selectedId) : null;
+    const itemInfo = selectedItem ? ` | ${selectedItem.ID} | ${selectedItem.Name}` : '';
+    const title = `${isFocused ? '● ' : ''}${PANEL_TITLES[panel.type]}${itemInfo}`;
+
+    const toolbarProps = {
+      DataGrid: { placeholder: 'Filter...', value: column.DataGridFilter, onChange: (v: string) => { column.DataGridFilter = v; } },
+      WebView: { placeholder: 'Address...', value: column.WebViewUrl, onChange: (v: string) => { column.WebViewUrl = v; } },
+      TextEditor: { placeholder: 'Highlight...', value: column.HighlighterKeyword, onChange: (v: string) => { column.HighlighterKeyword = v; } },
+    }[panel.type];
+
+    elements.push(
+      <div
+        key={panel.type}
+        className={`panel-container ${panel.className}`}
+        style={{ height: panel.height }}
+        onMouseDown={() => handlePanelFocus(panel.type)}
+      >
+        <div className={`panel-titlebar ${isFocused ? 'panel-titlebar-focused' : ''}`}>
+          <div className="panel-title-row">{title}</div>
+          <div className="panel-toolbar">
+            <input
+              className="panel-toolbar-input"
+              type="text"
+              placeholder={toolbarProps.placeholder}
+              value={toolbarProps.value}
+              onChange={(e) => toolbarProps.onChange(e.target.value)}
+              onMouseDown={(e) => e.stopPropagation()}
+            />
+            {panel.type === 'TextEditor' && column.HighlighterKeyword.trim() && (
+              <div className="panel-toolbar-tags">
+                {column.HighlighterKeyword.split(',').map((group, gi) => {
+                  const trimmed = group.trim();
+                  if (!trimmed) return null;
+                  const color = KEYWORD_COLORS[gi % KEYWORD_COLORS.length];
+                  return (
+                    <span key={gi} className="panel-toolbar-tag" style={{ backgroundColor: color }}>
+                      {trimmed}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="panel-content">
+          {panel.type === 'DataGrid' && (
+            <DataGridPanel
+              column={column}
+              width={width}
+              height={Math.max(0, panel.height - TITLEBAR_TOTAL)}
+            />
+          )}
+          {panel.type === 'TextEditor' && (
+            <TextEditorPanel
+              column={column}
+              width={width - 2}
+              height={Math.max(0, panel.height - TITLEBAR_TOTAL - 2)}
+            />
+          )}
+          {panel.type === 'WebView' && (
+            <WebViewPanel
+              column={column}
+              width={width - 2}
+              height={Math.max(0, panel.height - TITLEBAR_TOTAL - 2)}
+            />
+          )}
+        </div>
+      </div>
+    );
+  });
 
   return (
     <div
@@ -95,44 +204,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
       style={{ width, height, flexShrink: 0 }}
       data-column-index={column.Index}
     >
-      {/* DataGrid Panel */}
-      <div
-        className="panel-placeholder panel-datagrid"
-        style={{ height: panelHeights[0] }}
-      >
-        DataGrid [{column.Index}]
-        {column.DataGridFilter && ` | Filter: ${column.DataGridFilter}`}
-      </div>
-
-      {/* Splitter: DataGrid ↔ WebView */}
-      <Splitter
-        direction="vertical"
-        onResize={(delta) => handleVerticalResize(0, delta)}
-      />
-
-      {/* WebView Panel */}
-      <div
-        className="panel-placeholder panel-webview"
-        style={{ height: panelHeights[1] }}
-      >
-        WebView [{column.Index}]
-        {column.WebViewUrl && ` | ${column.WebViewUrl}`}
-      </div>
-
-      {/* Splitter: WebView ↔ TextEditor */}
-      <Splitter
-        direction="vertical"
-        onResize={(delta) => handleVerticalResize(1, delta)}
-      />
-
-      {/* TextEditor Panel */}
-      <div
-        className="panel-placeholder panel-texteditor"
-        style={{ height: panelHeights[2] }}
-      >
-        TextEditor [{column.Index}]
-        {column.EditorResource && ` | ${column.EditorResource}`}
-      </div>
+      {elements}
     </div>
   );
 }

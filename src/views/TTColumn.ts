@@ -1,7 +1,7 @@
 import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
-import type { ColumnIndex } from '../types';
+import type { ColumnIndex, PanelType } from '../types';
 
 /**
  * TTColumn - 列ビューモデル
@@ -58,7 +58,10 @@ export class TTColumn extends TTObject {
   public Height: number = 0;
 
   /** フォントサイズ */
-  public FontSize: number = 14;
+  public FontSize: number = 13;
+
+  /** フォーカス中のパネル */
+  private _focusedPanel: PanelType = 'DataGrid';
 
   public override get ClassName(): string {
     return 'TTColumn';
@@ -124,6 +127,16 @@ export class TTColumn extends TTObject {
   public set EditorResource(value: string) {
     if (this._editorResource === value) return;
     this._editorResource = value;
+    this.NotifyUpdated(false);
+  }
+
+  /** フォーカス中のパネル */
+  public get FocusedPanel(): PanelType {
+    return this._focusedPanel;
+  }
+  public set FocusedPanel(value: PanelType) {
+    if (this._focusedPanel === value) return;
+    this._focusedPanel = value;
     this.NotifyUpdated(false);
   }
 

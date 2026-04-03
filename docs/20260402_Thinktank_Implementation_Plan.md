@@ -55,16 +55,16 @@ TTApplication (最上位コントローラ / 最大3列を制御)
 ├── TTColumn[0] ─┐
 ├── TTColumn[1] ─┼─ 横並び最大3列
 └── TTColumn[2] ─┘
-     各TTColumn（縦に3パネル積層）:
+     各TTColumn（縦に3パネル積層、上から順に）:
      ├── DataGridPanel
-     │    ├── DataGridFilter  (1行TextBox: AND/OR/NOT フィルタ式)
-     │    └── DataGrid        (仮想スクロールテーブル: ID + タイトル)
-     ├── WebViewPanel
-     │    ├── WebViewAddrBar  (1行TextBox: URL/プロトコル入力)
-     │    └── WebView         (iframe / ChatView / SearchView / EmailView 等)
-     └── TextEditorPanel
-          ├── TextEditorHighlighter (1行エディタ: ハイライトキーワード入力)
-          └── TextEditor            (Monaco Editor: タグ・リンク・Folding対応)
+     │    ├── TitleBar + Filter    (タイトルバー内にフィルタ入力を統合)
+     │    └── DataGrid             (仮想スクロールテーブル: ID + タイトル)
+     ├── TextEditorPanel
+     │    ├── TitleBar + Highlight (タイトルバー内にハイライト入力を統合)
+     │    └── TextEditor           (Monaco Editor: タグ・リンク・Folding対応)
+     └── WebViewPanel
+          ├── TitleBar + Address   (タイトルバー内にURL入力を統合)
+          └── WebView              (iframe / ChatView / SearchView / EmailView 等)
 ```
 
 TTColumnはマルチモーダル（テーブル・Web・テキスト）な閲覧・編集環境を1列で提供し、最大3列を並べることで複数のデータセットを同時に操作できる。
@@ -147,12 +147,14 @@ Timestamp: string
 
 **TTColumn** (TTObject継承)
 ```typescript
-DataGridFilter: string   // フィルタ式
-WebViewUrl: string       // 表示URL/プロトコル
-EditorResource: string   // 編集中アイテムID
-SelectedItemID: string   // DataGrid選択行ID
-IsVisible: boolean       // レスポンシブ表示制御
-VerticalRatios: number[] // パネル高さ比率
+DataGridFilter: string    // フィルタ式
+WebViewUrl: string        // 表示URL/プロトコル
+EditorResource: string    // 編集中アイテムID
+SelectedItemID: string    // DataGrid選択行ID（setter でEditorResourceも自動連動）
+HighlighterKeyword: string // ハイライトキーワード
+FocusedPanel: PanelType   // フォーカス中のパネル ('DataGrid' | 'WebView' | 'TextEditor')
+IsVisible: boolean        // レスポンシブ表示制御
+VerticalRatios: number[]  // パネル高さ比率
 ```
 
 ### 3.4 各パネルでのデータ表示
@@ -389,17 +391,78 @@ ThinktankWebCC/
 
 ### Phase 5: 3列レイアウトシェル
 
-**目標**: 3列レイアウトのUI基盤。各列に3パネルのプレースホルダを配置。
+**目標**: 3列レイアウトのUI基盤。各列に3パネルのプレースホルダを配置。ステータスバー。
 
 **新規作成ファイル**:
-- `src/components/Layout/AppLayout.tsx` + `AppLayout.css` - 3列グリッド
+- `src/components/Layout/AppLayout.tsx` + `AppLayout.css` - 3列グリッド + ステータスバー
 - `src/components/Layout/Splitter.tsx` - ドラッグリサイズ（列間・パネル間）
 - `src/components/Column/TTColumnView.tsx` + `TTColumnView.css` - 列コンポーネント
 
 **修正ファイル**:
 - `src/App.tsx` - AppLayoutを描画
+- `src/views/TTColumn.ts` - `FocusedPanel`プロパティ追加（PanelType型、setter でObserver通知）
 
-**検証**: 3列が横並びで表示。列間のスプリッタでリサイズ可能。各列内に3つの灰色プレースホルダが縦積み。
+**画面構成の詳細**:
+
+#### レイアウト全体
+```
+┌─────────────────────────────────────────────────────┐
+│ [Column1]  │S│  [Column2]  │S│  [Column3]          │  ← 列間Splitter(S)で幅変更可
+│            │ │             │ │                      │
+│  (3パネル) │ │  (3パネル)  │ │  (3パネル)           │
+├─────────────────────────────────────────────────────┤
+│ [StatusBar]  Column 1 | DataGrid                    │  ← 22px固定
+└─────────────────────────────────────────────────────┘
+```
+
+- 最大3列がアプリ全幅を分割（スクロールなし）
+- 列番号は表示上1ベース（内部Index 0,1,2 → 表示 1,2,3）
+- レスポンシブ: <768px=1列, <1200px=2列, >=1200px=3列
+
+#### パネル配置順序（上から下）
+1. **DataGridPanel** - データ一覧
+2. **TextEditorPanel** - テキスト編集（Monaco Editor）
+3. **WebViewPanel** - Webコンテンツ表示
+
+#### 各パネルの内部構造（タイトルバー統合型）
+```
+各パネル:
+┌───────────────────────┐
+│ [● ] DataGrid         │ ← タイトル行（18px、フォーカス時に ● 表示）
+│ [Filter...          ] │ ← ツールバー（入力フィールド、タイトルバー内に統合）
+├───────────────────────┤
+│                       │ ← コンテンツ領域（border: 1px solid #333）
+│   (Panel Content)     │
+│                       │
+└───────────────────────┘
+```
+
+- タイトルバーの中にタイトル行とツールバー（入力フィールド）を統合配置
+- 各パネルのツールバー:
+  - DataGridPanel: Filter（フィルタ式入力）
+  - TextEditorPanel: Highlight（ハイライトキーワード入力）
+  - WebViewPanel: Address（URL/プロトコル入力）
+
+#### Splitter動作
+- **縦方向**: パネル間Splitterはタイトルバー・ツールバーも含めて完全に隠すまで移動可能（MIN_RATIO=0）
+- **横方向**: 列間Splitterも列を完全に隠すまで移動可能（MIN_COL_RATIO=0）
+
+#### フォーカス管理
+- アプリ全体で●マークは1つだけ表示（アクティブ列 × フォーカスパネル）
+- パネルをクリック（mousedown）するとそのパネルにフォーカスが移動
+- フォーカス移動時にTTApplication.ActiveColumnIndexとTTColumn.FocusedPanelが更新
+- ステータスバーにアクティブ列とフォーカスパネル名を表示（例: `Column 1 | WebView`）
+
+#### 共通UIスタイル
+- スクロールバー: ダークテーマ（トラック`#1e1e1e`、サム`#424242`、ホバー`#555`）
+- フォントサイズ: テーブル・タイトルバー等は11-12px
+
+#### ステータスバー
+- アプリ最下部に22px固定高で配置
+- 青背景（#007acc）、11pxフォント
+- 表示内容: `Column {1ベース番号} | {フォーカスパネル名}`
+
+**検証**: 3列が横並びで表示。列間・パネル間のスプリッタでリサイズ可能（完全に隠すことも可能）。各パネルにタイトルバー+ツールバー統合。フォーカス●が1つだけ表示。ステータスバーにフォーカス情報。
 
 ---
 
@@ -407,46 +470,93 @@ ThinktankWebCC/
 
 **目標**: DataGridパネルの基本実装。react-windowで仮想スクロールテーブル。
 
+**注意**: Phase 5でタイトルバー内にFilterツールバーを統合済み。DataGridFilter.tsxは不要（TTColumnView内のツールバーが担当）。
+
 **新規作成ファイル**:
-- `src/components/DataGrid/DataGridPanel.tsx` - パネルコンテナ
-- `src/components/DataGrid/DataGridFilter.tsx` - 1行フィルタ入力
-- `src/components/DataGrid/DataGrid.tsx` + `DataGrid.css` - 仮想スクロールテーブル
+- `src/components/DataGrid/DataGridPanel.tsx` - パネルコンテナ（Observer購読・ソート・フィルタ・選択管理）
+- `src/components/DataGrid/DataGrid.tsx` + `DataGrid.css` - react-window仮想スクロールテーブル
 
 **修正ファイル**:
-- `src/components/Column/TTColumnView.tsx` - 上部スロットにDataGridPanel配置
+- `src/components/Column/TTColumnView.tsx` - DataGridPanelのコンテンツ領域にDataGridPanel配置
+- `src/App.tsx` - テストデータ12件投入（Phase 12でStorageManager統合後に削除）
 
-**検証**: 各列の上部パネルにテーブルが表示。仮テストデータ（ID + タイトル）の行が表示・選択可能。
+**DataGrid実装詳細**:
+- 列定義はTTDataCollectionの`ListPropertiesMin`（`ID,Name`）、`ColumnMapping`、`ColumnMaxWidth`から自動取得
+- react-window `FixedSizeList`による仮想スクロール（行高20px、ヘッダ18px）
+- 列幅: `ColumnMaxWidth`のch値をpx換算（1ch≒7px）、`-1`はflex（残り幅を均等分配）
+- ヘッダクリックでソート切替（昇順/降順、インジケータ▲▼表示）
+- 行クリックで選択（青ハイライト`#094771`）→ `TTColumn.SelectedItemID`に反映
+- スクロールバーはダークテーマ（トラック`#1e1e1e`、サム`#424242`）
+- 空状態時は「No items」表示
+
+**検証**: 各列の上部パネルにテーブルが表示。テストデータ12件（ID + タイトル）の行が表示・選択可能。ソート切替動作。
 
 ---
 
 ### Phase 7: TextEditorPanel - Monaco統合
 
-**目標**: Monaco Editorによるテキスト編集パネル。
+**目標**: Monaco Editorによるテキスト編集パネル。DataGrid行選択でコンテンツをロード・編集可能に。
+
+**注意**: Phase 5でタイトルバー内にHighlightツールバーを統合済み。TextEditorHighlighter.tsxは不要。
 
 **新規作成ファイル**:
-- `src/components/TextEditor/TextEditorPanel.tsx` + `TextEditor.css` - パネルコンテナ
-- `src/components/TextEditor/TextEditorHighlighter.tsx` - 1行ハイライタバー
+- `src/components/TextEditor/TextEditorPanel.tsx` + `TextEditor.css` - パネルコンテナ（コンテンツ領域のみ）
 
 **修正ファイル**:
-- `src/components/Column/TTColumnView.tsx` - 下部スロットにTextEditorPanel配置
+- `src/components/Column/TTColumnView.tsx` - TextEditorPanelのコンテンツ領域にTextEditorPanel配置
+- `src/App.tsx` - テストデータにcontent（Markdown文）を追加
 
-**検証**: 各列の下部パネルでMonaco Editorが動作。テキスト入力・基本編集機能が使える。
+**実装詳細**:
+
+#### TextEditorPanel動作仕様
+- `column.EditorResource`（アイテムID）の変更をObserverで監視
+- EditorResource変更時、TTCollectionから該当TTDataItemを取得しContentをMonaco Editorにロード
+- 編集内容はリアルタイムでTTDataItem.Contentに書き戻し
+- `suppressChange` refでsetValue時のonChange発火を抑制（フィードバックループ防止）
+- 未選択時は「No item selected」を中央表示
+
+#### Monaco Editor設定
+| 設定 | 値 |
+|------|-----|
+| language | markdown |
+| theme | vs-dark |
+| fontSize | column.FontSize（デフォルト13px） |
+| minimap | disabled |
+| wordWrap | on |
+| lineNumbers | off |
+| folding | enabled |
+| scrollBeyondLastLine | false |
+| automaticLayout | true |
+| overviewRuler | hidden |
+| renderLineHighlight | line |
+| scrollbar | vertical 8px, horizontal 8px |
+| padding | top 4px |
+
+#### DataGrid→TextEditor選択連携（Phase 9を前倒し実装）
+- DataGrid行クリック → `column.SelectedItemID` 設定
+- TTColumn.SelectedItemIDセッター内で `EditorResource` を同期更新
+- EditorResource変更 → TextEditorPanelのObserverが発火 → コンテンツロード
+
+**検証**: DataGridで行クリック→TextEditorに当該アイテムのMarkdownコンテンツが表示・編集可能。
 
 ---
 
 ### Phase 8: WebViewPanel - iframe基盤
 
-**目標**: アドレスバー付きWebViewパネル。iframe表示とMarkdownプレビュー。
+**目標**: WebViewパネル。iframe表示とMarkdownプレビュー。
+
+**注意**: Phase 5でタイトルバー内にAddressツールバーを統合済み。WebViewAddrBar.tsxは不要。
 
 **新規作成ファイル**:
-- `src/components/WebView/WebViewPanel.tsx` + `WebView.css` - パネルコンテナ
-- `src/components/WebView/WebViewAddrBar.tsx` - 1行アドレスバー
+- `src/components/WebView/WebViewPanel.tsx` + `WebView.css` - パネルコンテナ（コンテンツ領域のみ）
 - `src/utils/markdownToHtml.ts` - Markdownをhtml変換
 
 **修正ファイル**:
-- `src/components/Column/TTColumnView.tsx` - 中央スロットにWebViewPanel配置
+- `src/components/Column/TTColumnView.tsx` - WebViewPanelのコンテンツ領域にWebViewPanel配置
 
-**検証**: 各列の中央パネルにiframe。アドレスバーにURL入力→ページ表示。Markdownプレビュー可能。
+**検証**: 各列の中央パネルにiframe。Addressツールバー（タイトルバー内）にURL入力→ページ表示。Markdownプレビュー可能。
+
+**実施**: 2026-04-02 完了。前セッションで実装済み。2026-04-03検証にて全機能動作確認。
 
 ---
 
@@ -460,6 +570,11 @@ ThinktankWebCC/
 - `src/components/TextEditor/TextEditorPanel.tsx` - EditorResource変更でコンテンツロード
 
 **検証**: DataGridで行をクリック→TextEditorに当該アイテムの内容が表示。編集可能。
+
+**実施**: 2026-04-02 完了。前セッションで実装済み。2026-04-03検証にて全機能動作確認。
+
+**追加変更** (2026-04-03):
+- `src/components/Column/TTColumnView.tsx` - パネルタイトルバーに選択中アイテム情報を表示。形式: `パネル名 | ID | タイトル`（例: `● DataGrid | 2026-04-02-160000 | 仕様書v2の参照メモ`）。今後パネルごとに異なるアイテムを表示する際の識別用。
 
 ---
 
@@ -478,6 +593,24 @@ ThinktankWebCC/
 - WebView操作 → DataGridフィルタ/TextEditorリソース変更
 
 **検証**: 3パネル間を遷移する操作サイクルが動作。
+
+**実施**: 2026-04-03 完了。
+- `src/components/DataGrid/DataGridPanel.tsx` - DataGridFilterによるテキストフィルタ実装（ID/Name/Keywordsを対象）。構文: space区切り=AND, comma区切り=OR, `-`接頭辞=NOT。（例: `メモ -写真` → 「メモ」含む AND 「写真」除外）。Phase 13のFilterParser新設は不要となった。
+- `src/components/WebView/WebViewPanel.tsx` - コレクション変更購読を追加（TextEditor編集→Markdownプレビュー即時反映）。Markdownプレビュー内リンククリックによるパネル間連携（`http(s)://` → iframe表示、`filter:` → DataGridフィルタ設定、`item:` → TextEditorリソース変更）。
+- TextEditor編集 → DataGrid行タイトル即時反映（TTDataItem.Content setter → updateNameFromContent → NotifyUpdated → 親コレクション伝播）確認済み。
+
+**追加変更** (2026-04-03): TextEditorハイライト機能
+
+新規作成:
+- `src/utils/editorHighlight.ts` - Monaco Editorカスタムハイライトエンジン
+
+修正:
+- `src/components/TextEditor/TextEditorPanel.tsx` - ハイライト機能統合、Monaco組み込み`occurrencesHighlight`無効化
+
+機能詳細:
+1. **見出しカラー**: Markdown `#`レベル(H1-H6)ごとに青系6色で行全体を色分け表示。H1(シアン)→H2(ライトブルー)→H3(ロイヤルブルー)→H4(ペールブルー)→H5(ペリウィンクル)→H6(ラベンダーブルー)。コンテンツ変更時に自動再適用。
+2. **キーワードハイライト**: Highlightツールバー入力に基づくハイライト。space区切り=同色グループ、comma区切り=異なる色グループ（最大8色ローテーション）。エディタ内背景色とツールバータグ表示を`KEYWORD_COLORS`で共通化。HighlighterKeyword変更・コンテンツ編集時に自動再適用。
+3. **単語ハイライト**: カーソル位置のワードと同一文字列を全箇所ハイライト（2箇所以上の場合のみ）。ワード境界: 全角区切り文字（。、！？・～「」等）、文字種切り替わり（漢字↔カタカナ↔ひらがな↔ASCII）、括弧内テキスト（「」『』（）【】等）。
 
 ---
 
@@ -673,7 +806,7 @@ ThinktankWebCC/
 - `src/controllers/actions/TableActions.ts` - テーブル操作
 - `src/components/UI/CommandPalette.tsx` - コマンドパレット
 - `src/components/UI/ContextMenu.tsx` - 右クリックメニュー
-- `src/components/UI/StatusBar.tsx` - ステータスバー
+- `src/components/UI/StatusBar.tsx` - ステータスバー（※基本のステータスバーはPhase 5でAppLayout内に実装済み。Phase 21で拡張）
 
 **検証**: ショートカットで列切替、DataGridナビ、エディタフォーカス、コマンドパレット起動。
 
