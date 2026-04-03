@@ -15,6 +15,8 @@ export interface FileRecord {
   size_bytes: number | null;
   created_at: string;
   updated_at: string;
+  /** IndexedDB専用: BigQuery未同期フラグ (trueならBQ送信が必要) */
+  _dirty?: boolean;
 }
 
 export interface VersionInfo {

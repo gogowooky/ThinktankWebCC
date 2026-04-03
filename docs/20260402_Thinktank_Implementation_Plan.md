@@ -289,6 +289,8 @@ ThinktankWebCC/
 │   └── utils/
 │       ├── csv.ts
 │       └── markdownToHtml.ts
+│       ├── markdownToHtml.ts
+│       └── editorHighlight.ts
 ├── server/
 │   ├── index.ts            # Express + WebSocketサーバ
 │   ├── tsconfig.json
@@ -478,7 +480,7 @@ ThinktankWebCC/
 
 **修正ファイル**:
 - `src/components/Column/TTColumnView.tsx` - DataGridPanelのコンテンツ領域にDataGridPanel配置
-- `src/App.tsx` - テストデータ12件投入（Phase 12でStorageManager統合後に削除）
+- `src/App.tsx` - テストデータ12件投入（Phase 12でStorageManager統合済み、データなし時のフォールバックとして残存）
 
 **DataGrid実装詳細**:
 - 列定義はTTDataCollectionの`ListPropertiesMin`（`ID,Name`）、`ColumnMapping`、`ColumnMaxWidth`から自動取得
@@ -622,10 +624,39 @@ ThinktankWebCC/
 - `server/index.ts` - Express + WebSocket サーバ
 - `server/tsconfig.json`
 - `server/middleware/authMiddleware.ts`
-- `server/routes/bigqueryRoutes.ts` - CRUD API（コレクション毎テーブル対応）
+- `server/routes/bigqueryRoutes.ts` - CRUD API（単一テーブル+categoryクラスタリング）
 - `server/services/BigQueryService.ts` - BigQueryアクセス層
 
-**検証**: `GET /api/bq/collections/{id}/files` でBigQueryからデータ取得。POST/DELETEも動作。
+**検証**: `GET /api/bq/files` でBigQueryからデータ取得。POST/DELETEも動作。
+
+**実施**: 2026-04-04 完了。
+
+設計判断:
+- **単一テーブル+クラスタリング方式を採用**: コレクション毎テーブル方式と比較検討した結果、データ巻き戻し時の整合性維持が容易な単一テーブル方式を選択。`category`列によるクラスタリングでアクセス速度を確保。テーブル分割は必要時に後から対応可能。
+- **既存BQデータ保護**: テーブル作成は未存在時のみ（`ensureTableExists`でexistsチェック）。DROP/TRUNCATE操作なし。MERGE文によるUpsertで既存レコードの`created_at`を保持。
+
+新規作成ファイル詳細:
+- `server/index.ts` - Express 5 + WebSocket(`ws`)サーバ。ポート8080。静的ファイル配信（dist/）、SPA フォールバック、WebSocket `/ws` エンドポイント（content-updateブロードキャスト）。
+- `server/tsconfig.json` - ES2020ターゲット、ESModules、`dist-server/`出力。
+- `server/middleware/authMiddleware.ts` - HMAC-SHA256セッション認証。`APP_PASSWORD`環境変数設定時のみ有効。httpOnlyクッキー、30日有効期限。ローカル開発時は認証不要（パスワード未設定時はスルー）。
+- `server/services/BigQueryService.ts` - データセット`thinktank`、テーブル`files`、キー`(file_id, category)`。MERGE文Upsert、concurrent update自動リトライ（最大3回、指数バックオフ2s/4s/6s）。テーブル新規作成時に`category`列クラスタリング設定。
+- `server/routes/bigqueryRoutes.ts` - 60秒デバウンス書き込み、直列DMLキュー（concurrent DML防止）。
+
+APIエンドポイント:
+| メソッド | パス | 機能 |
+|---------|------|------|
+| GET | `/api/bq/files` | ファイル一覧（`?category=`、`?since=` オプション） |
+| GET | `/api/bq/files/:id` | 単一ファイル取得 |
+| POST | `/api/bq/files` | ファイル保存（Upsert、60sデバウンス） |
+| DELETE | `/api/bq/files/:id` | ファイル削除 |
+| GET | `/api/bq/ttsearch?q=` | 全文検索（CONTAINS_SUBSTR） |
+| GET | `/api/bq/versions` | バージョン情報（キャッシュ整合性チェック用） |
+| GET | `/api/bq/all` | 全データ取得（キャッシュ再構築用） |
+| POST | `/api/bq/bulk` | 一括保存（Upsert、デバウンス） |
+
+依存パッケージ追加: `express ^5.2.1`, `@google-cloud/bigquery ^8.1.1`, `ws ^8.19.0`, `dotenv ^17.3.1`, `@types/express`, `@types/node`, `@types/ws`
+
+起動: `npm run build:server && npm run server:dev`
 
 ---
 
@@ -634,17 +665,43 @@ ThinktankWebCC/
 **目標**: フロントエンドのストレージ抽象化とWebSocket同期。
 
 **新規作成ファイル**:
-- `src/services/storage/IStorageService.ts` - ストレージインターフェース
-- `src/services/storage/BigQueryStorageService.ts` - BigQuery API呼び出し
-- `src/services/storage/IndexedDBStorageService.ts` - ローカルキャッシュ
-- `src/services/storage/StorageManager.ts` - デュアルライト（BigQuery + IndexedDB）
-- `src/services/sync/WebSocketService.ts` - WS接続・再接続
+- `src/services/storage/IStorageService.ts` - ストレージインターフェース（FileRecord型、`_dirty`フラグ含む）
+- `src/services/storage/BigQueryStorageService.ts` - REST API経由BigQueryアクセス（fetch）
+- `src/services/storage/IndexedDBStorageService.ts` - ブラウザIndexedDBローカルキャッシュ
+- `src/services/storage/StorageManager.ts` - デュアルライト・オーケストレータ
+- `src/services/sync/WebSocketService.ts` - WS接続・自動再接続
 - `src/services/sync/SyncManager.ts` - リアルタイム同期制御
 
 **修正ファイル**:
-- `src/models/TTCollection.ts` - StorageManagerとの統合
+- `src/models/TTCollection.ts` - StorageManagerとの統合（`_doSave`/`LoadCache`）
+- `src/models/TTDataItem.ts` - `LoadContent`/`SaveContent`をStorageManager/SyncManager経由に変更
+- `src/App.tsx` - StorageManager初期化→LoadCache→SyncManager開始の非同期フロー。データなし時はテストデータにフォールバック
+- `vite.config.ts` - `/api` → localhost:8080プロキシ、`/ws` → WebSocketプロキシ追加
 
 **検証**: アイテム保存→BigQueryとIndexedDBの両方に書込。別タブで変更がリアルタイム反映。
+
+**実施**: 2026-04-04 完了。
+
+動作フロー:
+1. アプリ起動 → `storageManager.initialize()`（IndexedDB + BigQuery接続確認）
+2. `memos.LoadCache()` → StorageManagerからカテゴリ別データロード
+3. データなし → テストデータフォールバック（12件）
+4. `syncManager.start()` → WebSocket接続、他タブからの変更をリアルタイム反映
+5. 編集保存 → IndexedDB即時（dirty付き） + BigQuery非同期 + WebSocketブロードキャスト
+
+ストレージ詳細:
+- `IndexedDBStorageService` - DB名`thinktank` v2、ObjectStore`files`（keyPath: file_id）。インデックス: `by_category`, `by_updated`, `by_dirty`。ダーティキュー操作メソッド（`saveAsDirty`, `getDirtyRecords`, `clearDirty`, `clearDirtyBatch`）。
+- `BigQueryStorageService` - `/api/bq/*` エンドポイントへのfetchラッパー。
+- `StorageManager` - デュアルライト制御。書込: IndexedDB即時(dirty=true) → BQ非同期(成功時dirtyクリア)。読込: ローカル優先 → リモート差分同期。
+
+オフライン同期対策（2026-04-04追加実装）:
+1. **ダーティキュー**: BQ送信失敗時にIndexedDBに`_dirty=true`で保持。次回接続時に`flushDirtyQueue()`で直列リトライ送信。
+2. **タイムスタンプ比較マージ**: `loadAll()`時にローカル/リモートの`updated_at`を比較。ローカルが新しい→ローカル優先（BQに送信）。リモートが新しい→リモートで上書き。ローカルのみ存在→BQに送信。
+3. **ルール**: 「新しい方が勝つ」（Last Write Wins）。コンフリクト検出UIは将来の拡張として保留。
+
+WebSocket同期:
+- `WebSocketService` - `ws://host/ws`接続。指数バックオフ自動再接続（1s→2s→4s...最大30s）。クライアントID（`crypto.randomUUID()`）で自分送信メッセージを除外。
+- `SyncManager` - リモートcontent-update受信→IndexedDB更新+メモリ上TTDataItem反映。ローカル変更→`saveAndBroadcast()`でStorageManager保存+WebSocket送信。
 
 ---
 
@@ -652,20 +709,20 @@ ThinktankWebCC/
 
 **目標**: フィルタ式パーサーとリアルタイムフィルタリング。
 
-**新規作成ファイル**:
-- `src/views/helpers/FilterParser.ts` - フィルタ式パーサー
-
 **フィルタ構文**:
-- スペース区切り = OR
-- `+` 接頭辞 = AND
-- `-` 接頭辞 = NOT
-- 例: `日記 +2026 -下書き` → 「日記」含む AND「2026」含む AND「下書き」除外
+- スペース区切り = AND（グループ内の全キーワードを含む）
+- カンマ(`,`)区切り = OR（いずれかのグループにマッチ）
+- `-` 接頭辞 = NOT（そのキーワードを含まない）
+- 例: `メモ -写真` → 「メモ」含む AND 「写真」除外
+- 例: `会議 2026,メール` → （「会議」AND「2026」）OR（「メール」）
+- 検索対象: `ID`, `Name`, `Keywords` の結合テキスト（大文字小文字区別なし）
 
-**修正ファイル**:
-- `src/components/DataGrid/DataGrid.tsx` - フィルタ適用
-- `src/components/DataGrid/DataGridFilter.tsx` - フィルタテキスト連携
+**実装ファイル**:
+- `src/components/DataGrid/DataGridPanel.tsx` - フィルタロジックをコンポーネント内に直接実装（`FilterParser.ts`の新設は不要）
 
 **検証**: フィルタバーに式入力→リアルタイムで行が絞り込まれる。
+
+**実施**: 2026-04-03 Phase 10と同時に完了。独立したフィルタパーサーは不要と判断し、DataGridPanel内にインライン実装。
 
 ---
 
