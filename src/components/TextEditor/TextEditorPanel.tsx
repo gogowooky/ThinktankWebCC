@@ -107,6 +107,17 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
       wordDecoIds.current = applyWordHighlight(editor, wordDecoIds.current);
     });
 
+    // 選択テキストをTTColumnに反映（チャットコンテキスト用）
+    editor.onDidChangeCursorSelection(() => {
+      const selection = editor.getSelection();
+      const model = editor.getModel();
+      if (selection && model && !selection.isEmpty()) {
+        column.EditorSelection = model.getValueInRange(selection);
+      } else {
+        column.EditorSelection = '';
+      }
+    });
+
     // コンテンツ変更時にキーワード＋見出しハイライト再適用
     editor.onDidChangeModelContent(() => {
       keywordDecoIds.current = applyKeywordHighlight(

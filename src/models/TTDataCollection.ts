@@ -17,7 +17,7 @@ export class TTDataCollection extends TTCollection {
   constructor() {
     super();
     this.ItemSaveProperties = 'ID,Name,ContentType,Keywords,UpdateDate';
-    this.ListPropertiesMin = 'ID,Name';
+    this.ListPropertiesMin = 'ID,ContentType,Name';
     this.ListProperties = 'ID,Name,ContentType,Keywords,UpdateDate';
     this.ColumnMapping = 'ID:ID,Name:タイトル,ContentType:種別,Keywords:キーワード,UpdateDate:更新日時';
     this.ColumnMaxWidth = 'ID:18,Name:40,ContentType:6,Keywords:20,UpdateDate:18';

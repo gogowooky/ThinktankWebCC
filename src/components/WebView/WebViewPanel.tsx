@@ -1,15 +1,21 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { TTColumn } from '../../views/TTColumn';
-import { markdownToHtml } from '../../utils/markdownToHtml';
+import { TTModels } from '../../models/TTModels';
+import { TTDataCollection } from '../../models/TTDataCollection';
+import { isExternalUrl, buildMarkdownUrl } from '../../utils/webviewUrl';
 import './WebView.css';
 
 /**
- * WebViewPanel - WebView表示パネル
+ * WebViewPanel - URL駆動のWebView表示パネル
  *
- * column.WebViewUrlに応じて表示を切り替え:
- * - 空文字: 選択中アイテムのMarkdownプレビュー
- * - http(s)://: iframe表示
- * - 将来: search:, chat:, related: 等のプロトコル対応
+ * column.WebViewUrl (= address bar) に基づいてiframe表示:
+ * - /view/markdown?category=Memos&id={id} : サーバーがHTML返却 → iframe表示
+ * - http(s)://...  : 外部サイト iframe表示
+ * - 空文字         : 空状態
+ * - 将来: /view/chat, /view/search, /view/related 等
+ *
+ * サーバー側ルート(/view/*)がHTMLを返すため、
+ * クライアント側でのmarkdown→HTML変換は不要。
  */
 
 interface WebViewPanelProps {
@@ -19,89 +25,95 @@ interface WebViewPanelProps {
 }
 
 export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
   const rerender = useCallback(() => setTick(t => t + 1), []);
-  const markdownRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     const colKey = `WebViewPanel-col-${column.Index}`;
     column.AddOnUpdate(colKey, rerender);
+    return () => column.RemoveOnUpdate(colKey);
+  }, [column, rerender]);
 
-    const collection = column.GetCurrentCollection();
-    const collKey = `WebViewPanel-coll-${column.Index}`;
-    collection?.AddOnUpdate(collKey, rerender);
-
-    return () => {
-      column.RemoveOnUpdate(colKey);
-      collection?.RemoveOnUpdate(collKey);
-    };
-  }, [column, column.DataGridResource, rerender]);
-
-  // Markdownプレビュー内のリンククリックでパネル間連携
+  // iframe postMessage受信 → コレクションにアイテム追加
   useEffect(() => {
-    const container = markdownRef.current;
-    if (!container) return;
-    const handleClick = (e: MouseEvent) => {
-      const anchor = (e.target as HTMLElement).closest('a');
-      if (!anchor) return;
-      e.preventDefault();
-      const href = anchor.getAttribute('href') || '';
-      if (href.startsWith('http://') || href.startsWith('https://')) {
-        // 外部URL → WebView Addressに設定してiframe表示
-        column.WebViewUrl = href;
-      } else if (href.startsWith('filter:')) {
-        // filter:キーワード → DataGridフィルタを設定
-        column.DataGridFilter = decodeURIComponent(href.slice(7));
-      } else if (href.startsWith('item:')) {
-        // item:ID → TextEditorで該当アイテムを開く
-        column.EditorResource = decodeURIComponent(href.slice(5));
+    const handleMessage = (e: MessageEvent) => {
+      if (!e.data || e.data.type !== 'thinktank-item-saved') return;
+      const record = e.data.record;
+      if (!record || !record.file_id || !record.category) return;
+
+      // カテゴリに対応するコレクションを取得して追加
+      // コレクションのIDまたはDatabaseIDで検索
+      const models = TTModels.Instance;
+      const category = record.category;
+      let col = models.GetItem(category);
+      if (!(col instanceof TTDataCollection)) {
+        // DatabaseIDで検索
+        const allItems = models.GetItems();
+        col = allItems.find(
+          item => item instanceof TTDataCollection && (item as TTDataCollection).DatabaseID === category
+        ) || undefined;
+      }
+      if (col instanceof TTDataCollection) {
+        col.AddOrUpdateFromRecord(record);
       }
     };
-    container.addEventListener('click', handleClick);
-    return () => container.removeEventListener('click', handleClick);
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  // iframe内リンククリックでパネル間連携
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const handleLoad = () => {
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc) return;
+
+        doc.addEventListener('click', (e: MouseEvent) => {
+          const anchor = (e.target as HTMLElement).closest('a');
+          if (!anchor) return;
+          const href = anchor.getAttribute('href') || '';
+
+          if (href.startsWith('filter:')) {
+            e.preventDefault();
+            column.DataGridFilter = decodeURIComponent(href.slice(7));
+          } else if (href.startsWith('item:')) {
+            e.preventDefault();
+            const itemId = decodeURIComponent(href.slice(5));
+            column.EditorResource = itemId;
+            column.WebViewUrl = buildMarkdownUrl(
+              column.DataGridResource || 'Memos',
+              itemId,
+            );
+          }
+          // http(s):// links: let iframe handle normally
+        });
+      } catch {
+        // cross-origin iframe - can't access contentDocument
+      }
+    };
+
+    iframe.addEventListener('load', handleLoad);
+    return () => iframe.removeEventListener('load', handleLoad);
   }, [column]);
 
   const url = column.WebViewUrl.trim();
 
-  // Markdownプレビュー: URLが空のとき、選択中アイテムのContentを表示
-  // tickでObserver通知（Content変更含む）に反応して再計算
-  const markdownHtml = useMemo(() => {
-    void tick;
-    if (url !== '') return '';
-    const itemId = column.EditorResource;
-    if (!itemId) return '';
-    const collection = column.GetCurrentCollection();
-    if (!collection) return '';
-    const item = collection.GetDataItem(itemId);
-    if (!item) return '';
-    return markdownToHtml(item.Content);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, column, column.EditorResource, tick]);
-
   if (height <= 0 || width <= 0) return null;
 
-  // URL入力あり → iframe
-  if (url.startsWith('http://') || url.startsWith('https://')) {
+  // URL入力あり → iframe（外部URL、内部/view/* 両方）
+  if (url && (isExternalUrl(url) || url.startsWith('/view/'))) {
     return (
       <div className="webview-panel" style={{ width, height }}>
         <iframe
+          ref={iframeRef}
           className="webview-iframe"
           src={url}
           title="WebView"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        />
-      </div>
-    );
-  }
-
-  // Markdownプレビュー
-  if (markdownHtml) {
-    return (
-      <div className="webview-panel" style={{ width, height }}>
-        <div
-          ref={markdownRef}
-          className="webview-markdown"
-          dangerouslySetInnerHTML={{ __html: markdownHtml }}
         />
       </div>
     );

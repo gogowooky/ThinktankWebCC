@@ -13,7 +13,11 @@ import { fileURLToPath } from 'url';
 import { WebSocketServer, WebSocket } from 'ws';
 
 import { createBigQueryRoutes } from './routes/bigqueryRoutes.js';
+import { createChatRoutes } from './routes/chatRoutes.js';
+import { createFetchRoutes } from './routes/fetchRoutes.js';
+import { createViewRoutes } from './routes/viewRoutes.js';
 import { bigqueryService } from './services/BigQueryService.js';
+import { chatService } from './services/ChatService.js';
 import { authMiddleware, authRoutes } from './middleware/authMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,6 +38,11 @@ app.use(express.static(path.join(projectRoot, 'dist')));
 
 // API routes
 app.use('/api/bq', createBigQueryRoutes());
+app.use('/api/chat', createChatRoutes());
+app.use('/api', createFetchRoutes());
+
+// View routes (content rendering for WebView iframe / browser)
+app.use('/view', createViewRoutes());
 
 // SPA fallback
 app.get(/.*/, (req, res) => {
@@ -106,6 +115,8 @@ async function startServer() {
   } else {
     console.log('GOOGLE_SERVICE_ACCOUNT_KEY not set, BigQuery API disabled');
   }
+
+  chatService.initialize();
 
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

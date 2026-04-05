@@ -726,49 +726,164 @@ WebSocket同期:
 
 ---
 
-### Phase 14: DataGridソートと列設定
+### Phase 14: WebView URL駆動アーキテクチャ + ストレージ基盤
 
-**目標**: 列ヘッダクリックでソート。列幅・列名マッピング。
+**目標**: WebViewをURL駆動に変更。フロントエンドサーバー（Vite）が `/view/*` リクエストを処理し、IndexedDBからデータ取得→Markdown→HTML変換→表示する自己完結型HTMLを返す。バックエンドサーバー不要で動作。同時にIndexedDB + BigQuery デュアルライト基盤、オフライン同期（ダーティキュー＋タイムスタンプマージ）、WebSocket同期を構築。
+
+#### 14-A: ストレージ・同期基盤
+
+**新規作成ファイル**:
+- `src/services/storage/IStorageService.ts` - ストレージインターフェース（`FileRecord` 型定義、`_dirty` フラグ）
+- `src/services/storage/IndexedDBStorageService.ts` - IndexedDB実装（DB名 `thinktank` v2、`files` ストア、`by_category`/`by_updated`/`by_dirty` インデックス、`saveAsDirty()`/`getDirtyRecords()`/`clearDirty()` メソッド）
+- `src/services/storage/BigQueryStorageService.ts` - BigQuery REST API呼び出しラッパー
+- `src/services/storage/StorageManager.ts` - デュアルライト管理（`saveFile()`: ローカルdirty保存→リモート非同期、`loadAll()`: ローカル＋リモートタイムスタンプ比較マージ、`flushDirtyQueue()`: 再接続時dirty送信）
+- `src/services/sync/WebSocketService.ts` - WebSocket接続管理（指数バックオフ再接続、最大30秒）
+- `src/services/sync/SyncManager.ts` - リモート更新→ローカル適用、ローカル変更→ブロードキャスト
 
 **修正ファイル**:
-- `src/components/DataGrid/DataGrid.tsx` - ソートロジック、列設定
-- `src/components/DataGrid/DataGrid.css` - ソートインジケータ
+- `src/models/TTCollection.ts` - `LoadCache()` で StorageManager 経由ロード、`_doSave()` で StorageManager 経由保存
+- `src/models/TTDataItem.ts` - `LoadContent()`/`SaveContent()` を StorageManager/SyncManager 経由に変更
 
-**検証**: 列ヘッダクリックで昇順/降順切替。列幅が設定値に従う。
+#### 14-B: Express + BigQuery バックエンドサーバー
+
+**新規作成ファイル**:
+- `server/index.ts` - Express 5 + WebSocket (`ws`) サーバーエントリポイント（ポート8080）
+- `server/services/BigQueryService.ts` - BigQuery操作（データセット `thinktank`、テーブル `files`、キー `(file_id, category)`、MERGE upsert、カテゴリクラスタリング）
+- `server/routes/bigqueryRoutes.ts` - CRUD API（60秒デバウンス、シリアルDMLキュー）
+- `server/middleware/authMiddleware.ts` - HMAC-SHA256 cookie認証
+- `server/tsconfig.json` - サーバー用TSConfig（ES2020、ESModules、出力先 `dist-server/`）
+
+**重要制約**: 既存BigQueryデータは絶対に削除しない。DELETE/DROP/TRUNCATEは `deleteFile()` のみ（明示的単一レコード削除）。
+
+#### 14-C: WebView URL駆動表示
+
+**新規作成ファイル**:
+- `src/view-templates/markdown.html` - 自己完結型HTMLテンプレート。ブラウザ側でURLパラメータからIndexedDBを参照し、markdownToHtmlでHTML変換して表示。アプリ内iframe・別ブラウザタブの両方で動作
+- `src/utils/webviewUrl.ts` - URL生成・解析ユーティリティ（`buildViewUrl()`、`buildMarkdownUrl()`、`parseViewUrl()`、`isExternalUrl()`、`toFullUrl()`）
+
+**修正ファイル**:
+- `vite.config.ts` - Viteプラグイン `thinktank-view` 追加。`/view/markdown` リクエストに `markdown.html` テンプレートを返す。`/api`・`/ws` はバックエンド（localhost:8080）へプロキシ
+- `src/views/TTColumn.ts` - `SelectedItemID` セッターで `buildMarkdownUrl()` を使い `_webViewUrl` を設定
+- `src/components/WebView/WebViewPanel.tsx` - URL入力時は iframe (`src=url`) で表示。内部 `/view/*` URL・外部 `http(s)://` URL 両対応
+- `src/components/Column/TTColumnView.tsx` - ↗ ボタンで `window.open(toFullUrl(url), '_blank')` により同じURLをブラウザ新タブで開く
+- `src/components/Column/TTColumnView.css` - `.panel-toolbar-btn` スタイル追加
+- `src/App.tsx` - テストデータをIndexedDBにも保存（`/view/markdown` 参照用）
+
+**URL設計（拡張可能）**:
+```
+/view/markdown?category=Memos&id={id}   ← Markdownプレビュー
+/view/chat?session={id}                  ← 将来: チャット表示
+/view/search?q={keyword}&category={cat}  ← 将来: 検索結果
+/view/related?id={id}                    ← 将来: 関連アイテム
+```
+
+**検証**: DataGridでアイテム選択→WebViewアドレスバーにURL表示→iframe内にMarkdown→HTML表示。↗ボタンで同じURLがブラウザ別タブで表示。バックエンド不要で動作。
 
 ---
 
 ### Phase 15: AIチャット基盤
 
-**目標**: メモとは分離されたチャットシステム。WebView内にチャットUI。
+**目標**: WebView内でAIチャットを行う機能。Phase 14のURL駆動アーキテクチャと同じ仕組み（`/view/chat`）で、自己完結型HTMLテンプレートによるチャットUIを実現。バックエンドのClaude APIを通じてAIとストリーミング会話。会話履歴はIndexedDBに保存。
+
+#### 15-A: バックエンドチャットAPI
 
 **新規作成ファイル**:
-- `src/models/TTChatSession.ts` - チャットセッション
-- `src/models/TTChatMessage.ts` - メッセージ
-- `src/components/WebView/ChatView.tsx` + CSS
-- `server/routes/chatRoutes.ts` - チャットAPI
-- `server/services/ChatService.ts` - AI API連携（Claude/Gemini）
+- `server/services/ChatService.ts` - Anthropic SDK（`@anthropic-ai/sdk`）ラッパー。`streamMessage()` でSSEストリーミング応答を返す。モデルは `ANTHROPIC_MODEL` 環境変数で設定可能（デフォルト `claude-sonnet-4-6`）
+- `server/routes/chatRoutes.ts` - `POST /api/chat/:sessionId/messages` エンドポイント。リクエスト（`{ message, history, systemPrompt? }`）を受け、SSE（`text/event-stream`）でストリーミング応答。各イベントは `data: {"type":"delta","text":"..."}` 形式、完了時 `data: {"type":"done","text":"全文"}`
 
 **修正ファイル**:
-- `server/index.ts` - チャットルート追加
-- `src/models/TTModels.ts` - ChatCollectionをルートに追加
-- `src/components/WebView/WebViewPanel.tsx` - ChatView描画条件
+- `server/index.ts` - `createChatRoutes` インポート＋ `/api/chat` ルート登録、`chatService.initialize()` 呼び出し追加
 
-**検証**: WebViewでチャットUI。メッセージ送受信。セッションがChatsコレクションに独立保存。
+**環境変数** (`server/.env`):
+- `ANTHROPIC_API_KEY` - Claude APIキー（必須）
+- `ANTHROPIC_MODEL` - モデル名（任意、デフォルト `claude-sonnet-4-6`）
+
+**依存パッケージ追加**: `@anthropic-ai/sdk`
+
+#### 15-B: チャットUIテンプレート
+
+**新規作成ファイル**:
+- `src/view-templates/chat.html` - 自己完結型チャットUI（`markdown.html` と同じ方式）。HTML + CSS + vanilla JS を1ファイルに格納
+  - UIレイアウト: メッセージ一覧（スクロール可能）＋テキスト入力欄＋送信ボタン
+  - ユーザーメッセージ: 右寄せ青バブル / AI応答: 左寄せダークバブル
+  - Markdown変換: AI応答にmarkdownToHtml適用（見出し、リスト、コードブロック、太字等）
+  - ストリーミング表示: `fetch` + `ReadableStream` でSSEを逐次パース、AI応答をリアルタイム描画（カーソルアニメーション付き）
+  - IndexedDB読み書き: `file_id=sessionId`, `category='Chats'`, `file_type='chat'`, `content=JSON.stringify(会話履歴配列)`
+  - セッションID: URLパラメータ `session` がない場合は `yyyy-MM-dd-HHmmss` 形式で自動生成
+  - タイトル自動生成: 最初のユーザーメッセージの先頭40文字
+  - Enter送信 / Shift+Enter改行 / テキストエリア自動リサイズ
+
+**修正ファイル**:
+- `vite.config.ts` - `templates.chat` にchatテンプレート読み込み追加（1行）
+- `src/utils/webviewUrl.ts` - `buildChatUrl(sessionId)` ヘルパー関数追加
+
+**チャットURL**: `/view/chat?session={sessionId}`
+- WebViewアドレスバーに入力 → iframe内にチャットUI表示
+- ↗ボタン → ブラウザ別タブで同じチャットを表示
+- `/view/chat`（sessionなし） → 新規チャット開始（IDを自動生成）
+
+**データフロー**:
+```
+① ユーザーがメッセージ入力・送信
+② chat.html JS → IndexedDB に会話履歴保存
+③ chat.html JS → POST /api/chat/{sessionId}/messages (SSE)
+④ chatRoutes → ChatService → Anthropic Claude API
+⑤ SSEストリーミング応答 → chat.html がリアルタイム描画
+⑥ 応答完了 → IndexedDB にAI応答を追記保存
+```
+
+**検証**: WebViewアドレスバーに `/view/chat` 入力→チャットUI表示→メッセージ送信→AIストリーミング応答→会話履歴がIndexedDBに保存。↗ボタンでブラウザ別タブでも同じチャット表示。
+
+#### 15-C: DataGrid複数選択（チェックボックス列）
+
+**目標**: DataGridにチェックボックス列を追加し、複数アイテムを選択可能にする。選択データをAIチャットのコンテキストとして利用する基盤。
+
+**修正ファイル**:
+- `src/views/TTColumn.ts` - `_checkedItemIDs: Set<string>` 追加、`toggleChecked(id)`・`setAllChecked(ids, checked)`・`CheckedCount` メソッド/プロパティ追加
+- `src/components/DataGrid/DataGrid.tsx` - チェックボックス列追加（固定幅26px）。ヘッダに全選択/全解除チェック、各行に個別チェック。チェッククリックは行選択（`onSelect`）と独立動作（`e.stopPropagation()`）。新Props: `checkedIds`, `onToggleCheck`, `onToggleAllCheck`
+- `src/components/DataGrid/DataGridPanel.tsx` - `handleToggleCheck`・`handleToggleAllCheck` ハンドラ追加、DataGridに渡す
+- `src/components/DataGrid/DataGrid.css` - `.datagrid-check-cell`/`.datagrid-check-header`/`.datagrid-check`/`.datagrid-check-on` スタイル追加（チェック済みは青色 `#4fc1ff`）
+
+#### 15-D: DataGrid列表示の調整
+
+**修正ファイル**:
+- `src/models/TTDataCollection.ts` - `ListPropertiesMin` を `'ID,ContentType,Name'` に変更（種別列をIDとタイトルの間に配置）。ContentType列追加で「☐ | ID | 種別 | タイトル」の4列構成
+
+**検証**: DataGridにチェックボックス列表示。個別チェック/全選択/全解除が動作。チェックと行選択は独立。列順は ☐ → ID → 種別 → タイトル。
 
 ---
 
 ### Phase 16: チャット-メモ統合
 
-**目標**: メモをコンテキストとしたAIチャット。チャットからメモ作成。
+**目標**: DataGridチェック済みアイテム＋TextEditor選択テキストをコンテキストとしたAIチャット。チャット会話をメモとして保存。
+
+#### 16-A: コンテキスト構築とチャット起動フロー
 
 **修正ファイル**:
-- `src/models/TTChatSession.ts` - KeyMemoID、コンテキスト構築
-- `src/components/WebView/ChatView.tsx` - メモコンテキスト表示、メモ作成アクション
-- `src/views/TTColumn.ts` - エディタ選択→チャット起動フロー
-- `server/services/ChatService.ts` - メモ内容をAIプロンプトに含む
+- `src/views/TTColumn.ts` - `_editorSelection: string` プロパティ追加（TextEditorの選択テキストを保持）。`buildChatContext()` メソッド追加（チェック済みアイテム＋エディタ選択テキストを `{ items: [{id, title, contentType, content}], selection: string }` 形式で返す）
+- `src/components/TextEditor/TextEditorPanel.tsx` - `editor.onDidChangeCursorSelection()` イベントハンドラ追加。選択テキストを `column.EditorSelection` に反映
+- `src/components/Column/TTColumnView.tsx` - `handleStartChat` コールバック追加。`buildChatContext()` でコンテキスト取得→セッションID（`yyyy-MM-dd-HHmmss`）生成→IndexedDB `_chat_context_{sessionId}` に一時保存→WebViewUrlに `/view/chat?session={id}` をセット。DataGridツールバーに💬ボタン追加（`column.CheckedCount > 0` 時のみ表示）
 
-**検証**: メモ選択→チャット開始。AIがメモ踏まえた応答。チャットからメモ新規作成。
+#### 16-B: チャットUIテンプレート拡張（コンテキスト・メモ保存）
+
+**修正ファイル**:
+- `src/view-templates/chat.html` - 全面改修:
+  - **コンテキストバー**: IndexedDB `_chat_context_{sessionId}` から読み込み、アイテム名・種別・エディタ選択テキスト・検出URLを表示。読込後一時レコードは削除
+  - **URL自動検出**: コンテキストテキスト内のURL(`https?://...`)を正規表現で自動検出し、`POST /api/fetch-urls` でサーバー経由で内容取得
+  - **システムプロンプト構築**: `buildSystemPrompt()` でチェック済みアイテム内容＋エディタ選択テキスト＋URL取得内容を結合し、AIへのシステムプロンプトとして送信
+  - **チャット自動保存**: 各送受信後にIndexedDB `files` ストアへ `file_type: 'chat'`, `category: 'Chats'` で保存
+  - **「メモに保存」ボタン**: 会話内容をMarkdown形式でまとめ、IndexedDB に新規メモとして保存。`file_type: 'memo'`, `category: 'Memos'`。タイトルは `{最初のユーザーメッセージ先頭30文字} [Chat:{sessionId}]`。内容は `# Chat Summary [Chat:{sessionId}]` ヘッダー＋各メッセージの `## User/Assistant` セクション
+
+#### 16-C: URL内容取得API
+
+**新規作成ファイル**:
+- `server/routes/fetchRoutes.ts` - `POST /api/fetch-urls` エンドポイント。`{ urls: string[] }` を受け取り、最大10URL・10秒タイムアウトで内容取得。HTML はタグ除去してテキスト抽出（最大10000文字）。レスポンス: `{ results: [{ url, text?, error? }] }`
+
+**修正ファイル**:
+- `server/index.ts` - `createFetchRoutes` インポート・`/api` ルート登録追加
+- `vite.config.ts` - 開発モードでリクエストごとにテンプレートファイルを再読み込みするよう修正（テンプレート編集の即反映）
+
+**検証**: DataGridで複数アイテムをチェック→💬ボタンクリック→WebViewにチャットUI表示。コンテキストバーにチェック済みアイテム一覧表示。メッセージ送信→AIがコンテキストを踏まえた応答をSSEストリーミングで返却。「メモに保存」→新規メモがIndexedDBに作成（タイトル: `{メッセージ} [Chat:yyyy-MM-dd-HHmmss]`、カテゴリ: `Memos`）。
 
 ---
 

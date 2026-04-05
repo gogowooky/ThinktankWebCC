@@ -79,6 +79,32 @@
   background-color: #0a5a8a;
 }
 
+/* ─── チェックボックス列 ─── */
+
+.datagrid-check-cell,
+.datagrid-check-header {
+  justify-content: center;
+  padding: 0 !important;
+  border-right: 1px solid #3c3c3c;
+  flex-shrink: 0;
+}
+
+.datagrid-check {
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1;
+}
+
+.datagrid-check-on {
+  color: #4fc1ff;
+}
+
+.datagrid-check-header .datagrid-check {
+  font-size: 11px;
+}
+
 /* ─── セル ─── */
 
 .datagrid-cell {

@@ -29,6 +29,19 @@ function loadTestData(memos: typeof TTModels.Instance.Memos) {
     item.Content = d.content
     item.UpdateDate = d.id
     memos.AddItem(item)
+
+    // IndexedDBにも保存（/view/markdown 等で参照可能にする）
+    storageManager.saveFile({
+      file_id: d.id,
+      title: d.name,
+      file_type: d.type,
+      category: 'memos',
+      content: d.content,
+      metadata: null,
+      size_bytes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
   })
 }
 

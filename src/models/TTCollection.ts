@@ -315,6 +315,20 @@ export class TTCollection extends TTObject {
     };
   }
 
+  /** FileRecordからアイテムを追加/更新（iframe等からの通知用） */
+  public AddOrUpdateFromRecord(record: FileRecord): void {
+    let item = this.GetItem(record.file_id);
+    if (!item) {
+      item = this.CreateChildInstance();
+      item.ID = record.file_id;
+      item._parent = this;
+      this._children.set(item.ID, item);
+    }
+    this.recordToItem(record, item);
+    this.Count = this._children.size;
+    this.NotifyUpdated(false);
+  }
+
   /** FileRecordからTTObjectにプロパティを適用 */
   private recordToItem(record: FileRecord, item: TTObject): void {
     item.Name = record.title || item.Name;

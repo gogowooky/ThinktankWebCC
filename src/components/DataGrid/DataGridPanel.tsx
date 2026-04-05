@@ -105,6 +105,15 @@ export function DataGridPanel({ column, width, height }: DataGridPanelProps) {
     column.SelectedItemID = id;
   }, [column]);
 
+  // チェックハンドラ
+  const handleToggleCheck = useCallback((id: string) => {
+    column.toggleChecked(id);
+  }, [column]);
+
+  const handleToggleAllCheck = useCallback((ids: string[], checked: boolean) => {
+    column.setAllChecked(ids, checked);
+  }, [column]);
+
   // ソート切替ハンドラ
   const handleSort = useCallback((property: string) => {
     if (column.DataGridSortProperty === property) {
@@ -121,11 +130,14 @@ export function DataGridPanel({ column, width, height }: DataGridPanelProps) {
       items={items}
       columns={columns}
       selectedId={column.SelectedItemID}
+      checkedIds={column.CheckedItemIDs}
       sortProperty={column.DataGridSortProperty}
       sortDir={column.DataGridSortDir as SortDirection}
       width={width}
       height={height}
       onSelect={handleSelect}
+      onToggleCheck={handleToggleCheck}
+      onToggleAllCheck={handleToggleAllCheck}
       onSort={handleSort}
     />
   );

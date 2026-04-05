@@ -1,6 +1,7 @@
 import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
+import { buildMarkdownUrl } from '../utils/webviewUrl';
 import type { ColumnIndex, PanelType } from '../types';
 
 /**
@@ -30,6 +31,9 @@ export class TTColumn extends TTObject {
   /** 選択中アイテムID */
   private _selectedItemID: string = '';
 
+  /** チェック済みアイテムIDセット（複数選択） */
+  private _checkedItemIDs: Set<string> = new Set();
+
   // ─── WebViewPanel 状態 ───
 
   /** WebView表示URL/プロトコル */
@@ -42,6 +46,10 @@ export class TTColumn extends TTObject {
 
   /** ハイライタバーのキーワード */
   private _highlighterKeyword: string = '';
+
+  /** TextEditorの選択テキスト */
+  private _editorSelection: string = '';
+  private _selectionDebounce: number = 0;
 
   // ─── レイアウト状態 ───
 
@@ -105,9 +113,42 @@ export class TTColumn extends TTObject {
   public set SelectedItemID(value: string) {
     if (this._selectedItemID === value) return;
     this._selectedItemID = value;
-    // 選択変更時にEditorResourceも連動更新
+    // 選択変更時にEditorResource + WebViewUrlも連動更新
     this._editorResource = value;
+    this._webViewUrl = value
+      ? buildMarkdownUrl(this._dataGridResource || 'Memos', value)
+      : '';
     this.NotifyUpdated(false);
+  }
+
+  /** チェック済みアイテムIDセット */
+  public get CheckedItemIDs(): Set<string> {
+    return this._checkedItemIDs;
+  }
+
+  /** チェック状態をトグル */
+  public toggleChecked(id: string): void {
+    if (this._checkedItemIDs.has(id)) {
+      this._checkedItemIDs.delete(id);
+    } else {
+      this._checkedItemIDs.add(id);
+    }
+    this.NotifyUpdated(false);
+  }
+
+  /** 全選択/全解除 */
+  public setAllChecked(ids: string[], checked: boolean): void {
+    if (checked) {
+      ids.forEach(id => this._checkedItemIDs.add(id));
+    } else {
+      this._checkedItemIDs.clear();
+    }
+    this.NotifyUpdated(false);
+  }
+
+  /** チェック済みアイテム数 */
+  public get CheckedCount(): number {
+    return this._checkedItemIDs.size;
   }
 
   /** WebView URL/プロトコル */
@@ -148,6 +189,49 @@ export class TTColumn extends TTObject {
     if (this._highlighterKeyword === value) return;
     this._highlighterKeyword = value;
     this.NotifyUpdated(false);
+  }
+
+  /** TextEditorの選択テキスト */
+  public get EditorSelection(): string {
+    return this._editorSelection;
+  }
+  public set EditorSelection(value: string) {
+    const hadSelection = this._editorSelection.length > 0;
+    const hasSelection = value.length > 0;
+    this._editorSelection = value;
+    // 選択の有無変化 → 即通知、選択範囲変化 → デバウンス通知（行数表示更新）
+    if (hadSelection !== hasSelection) {
+      this.NotifyUpdated(false);
+    } else if (hasSelection) {
+      if (this._selectionDebounce) clearTimeout(this._selectionDebounce);
+      this._selectionDebounce = window.setTimeout(() => {
+        this.NotifyUpdated(false);
+      }, 200);
+    }
+  }
+
+  /**
+   * チャット用コンテキストを構築
+   * - チェック済みアイテムのContent
+   * - TextEditorの選択テキスト
+   */
+  public buildChatContext(): { items: { id: string; title: string; contentType: string; content: string }[]; selection: string } {
+    const items: { id: string; title: string; contentType: string; content: string }[] = [];
+    const collection = this.GetCurrentCollection();
+    if (collection) {
+      this._checkedItemIDs.forEach(id => {
+        const item = collection.GetDataItem(id);
+        if (item) {
+          items.push({
+            id: item.ID,
+            title: item.Name,
+            contentType: item.ContentType,
+            content: item.Content,
+          });
+        }
+      });
+    }
+    return { items, selection: this._editorSelection };
   }
 
   // ═══════════════════════════════════════════════════════════════

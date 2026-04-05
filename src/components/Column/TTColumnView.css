@@ -74,6 +74,50 @@
   border-color: #0078d4;
 }
 
+/* ─── ツールバーボタン ─── */
+
+.panel-toolbar-btn {
+  flex-shrink: 0;
+  width: 20px;
+  height: 18px;
+  margin-left: 3px;
+  padding: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #aaa;
+  background: #2d2d30;
+  border: 1px solid #3c3c3c;
+  border-radius: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-toolbar-btn:hover {
+  color: #e0e0e0;
+  background: #3c3c3c;
+}
+
+/* ─── チャットボタン（アイコン＋数字） ─── */
+
+.panel-toolbar-btn-chat {
+  width: auto;
+  padding: 0 6px;
+  gap: 3px;
+}
+
+.chat-btn-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.chat-btn-count {
+  font-size: 10px;
+  color: #4fc1ff;
+  line-height: 1;
+}
+
 /* ─── ハイライトタグ表示 ─── */
 
 .panel-toolbar-tags {

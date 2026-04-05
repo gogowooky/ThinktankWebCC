@@ -6,6 +6,7 @@ import { DataGridPanel } from '../DataGrid/DataGridPanel';
 import { TextEditorPanel } from '../TextEditor/TextEditorPanel';
 import { WebViewPanel } from '../WebView/WebViewPanel';
 import { KEYWORD_COLORS } from '../../utils/editorHighlight';
+import { toFullUrl, buildChatUrl } from '../../utils/webviewUrl';
 import type { PanelType } from '../../types';
 import './TTColumnView.css';
 
@@ -90,6 +91,51 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     column.FocusedPanel = panel;
   }, [column]);
 
+  /** チェック済みアイテム＋TextEditor選択テキストでチャット開始 */
+  const handleStartChat = useCallback(async () => {
+    const context = column.buildChatContext();
+    // セッションIDを生成
+    const d = new Date();
+    const sessionId = d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0') + '-' +
+      String(d.getHours()).padStart(2, '0') +
+      String(d.getMinutes()).padStart(2, '0') +
+      String(d.getSeconds()).padStart(2, '0');
+
+    // コンテキストをIndexedDBの一時レコードに保存
+    try {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const req = indexedDB.open('thinktank', 2);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      const tx = db.transaction('files', 'readwrite');
+      const store = tx.objectStore('files');
+      await new Promise<void>((resolve, reject) => {
+        const req = store.put({
+          file_id: `_chat_context_${sessionId}`,
+          title: 'Chat Context',
+          file_type: 'context',
+          category: '_system',
+          content: JSON.stringify(context),
+          metadata: null,
+          size_bytes: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+      db.close();
+    } catch (e) {
+      console.error('Failed to save chat context:', e);
+    }
+
+    // WebViewにチャットURLをセット
+    column.WebViewUrl = buildChatUrl(sessionId);
+  }, [column]);
+
   // Splitter2本(8px)のみ固定。残り全体を3パネルで比率分割
   const splitterTotal = 8;
   const availableHeight = Math.max(0, height - splitterTotal);
@@ -155,6 +201,40 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
               onChange={(e) => toolbarProps.onChange(e.target.value)}
               onMouseDown={(e) => e.stopPropagation()}
             />
+            {panel.type === 'DataGrid' && column.CheckedCount > 0 && (
+              <button
+                className="panel-toolbar-btn panel-toolbar-btn-chat"
+                title={`Chat with ${column.CheckedCount} selected items`}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={handleStartChat}
+              >
+                <span className="chat-btn-icon">💬</span>
+                <span className="chat-btn-count">{column.CheckedCount}</span>
+              </button>
+            )}
+            {panel.type === 'WebView' && column.WebViewUrl.trim() && (
+              <button
+                className="panel-toolbar-btn"
+                title="Open in new window"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => {
+                  window.open(toFullUrl(column.WebViewUrl), '_blank');
+                }}
+              >
+                &#x2197;
+              </button>
+            )}
+            {panel.type === 'TextEditor' && column.EditorSelection && (
+              <button
+                className="panel-toolbar-btn panel-toolbar-btn-chat"
+                title="Chat with selected text"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={handleStartChat}
+              >
+                <span className="chat-btn-icon">💬</span>
+                <span className="chat-btn-count">{column.EditorSelection.split('\n').length}</span>
+              </button>
+            )}
             {panel.type === 'TextEditor' && column.HighlighterKeyword.trim() && (
               <div className="panel-toolbar-tags">
                 {column.HighlighterKeyword.split(',').map((group, gi) => {
