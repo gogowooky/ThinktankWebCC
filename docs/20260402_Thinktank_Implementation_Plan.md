@@ -860,9 +860,10 @@ WebSocket同期:
 #### 16-A: コンテキスト構築とチャット起動フロー
 
 **修正ファイル**:
-- `src/views/TTColumn.ts` - `_editorSelection: string` プロパティ追加（TextEditorの選択テキストを保持）。`buildChatContext()` メソッド追加（チェック済みアイテム＋エディタ選択テキストを `{ items: [{id, title, contentType, content}], selection: string }` 形式で返す）
+- `src/views/TTColumn.ts` - `_editorSelection: string` プロパティ追加（TextEditorの選択テキストを保持）。`buildChatContext()` メソッド追加（チェック済みアイテム＋エディタ選択テキストを `{ items: [{id, title, contentType, content}], selection: string }` 形式で返す）。`EditorSelection` セッターで選択有無の変化時は即通知、選択範囲変化時は200msデバウンスで `NotifyUpdated(false)` を呼び出し（行数表示更新用）。`_selectionDebounce: number` フィールド追加
 - `src/components/TextEditor/TextEditorPanel.tsx` - `editor.onDidChangeCursorSelection()` イベントハンドラ追加。選択テキストを `column.EditorSelection` に反映
-- `src/components/Column/TTColumnView.tsx` - `handleStartChat` コールバック追加。`buildChatContext()` でコンテキスト取得→セッションID（`yyyy-MM-dd-HHmmss`）生成→IndexedDB `_chat_context_{sessionId}` に一時保存→WebViewUrlに `/view/chat?session={id}` をセット。DataGridツールバーに💬ボタン追加（`column.CheckedCount > 0` 時のみ表示）
+- `src/components/Column/TTColumnView.tsx` - `handleStartChat` コールバック追加。`buildChatContext()` でコンテキスト取得→セッションID（`yyyy-MM-dd-HHmmss`）生成→IndexedDB `_chat_context_{sessionId}` に一時保存→WebViewUrlに `/view/chat?session={id}` をセット。DataGridツールバーに💬ボタン追加（`column.CheckedCount > 0` 時のみ表示、アイコン左・チェック数右の `panel-toolbar-btn-chat` クラス）。TextEditorツールバーにも💬ボタン追加（`column.EditorSelection` が非空の時のみ表示、アイコン左・選択行数右）
+- `src/components/Column/TTColumnView.css` - `.panel-toolbar-btn-chat`（`width: auto; padding: 0 6px; gap: 3px`）、`.chat-btn-icon`、`.chat-btn-count`（`color: #4fc1ff; font-size: 10px`）スタイル追加
 
 #### 16-B: チャットUIテンプレート拡張（コンテキスト・メモ保存）
 
@@ -872,7 +873,8 @@ WebSocket同期:
   - **URL自動検出**: コンテキストテキスト内のURL(`https?://...`)を正規表現で自動検出し、`POST /api/fetch-urls` でサーバー経由で内容取得
   - **システムプロンプト構築**: `buildSystemPrompt()` でチェック済みアイテム内容＋エディタ選択テキスト＋URL取得内容を結合し、AIへのシステムプロンプトとして送信
   - **チャット自動保存**: 各送受信後にIndexedDB `files` ストアへ `file_type: 'chat'`, `category: 'Chats'` で保存
-  - **「メモに保存」ボタン**: 会話内容をMarkdown形式でまとめ、IndexedDB に新規メモとして保存。`file_type: 'memo'`, `category: 'Memos'`。タイトルは `{最初のユーザーメッセージ先頭30文字} [Chat:{sessionId}]`。内容は `# Chat Summary [Chat:{sessionId}]` ヘッダー＋各メッセージの `## User/Assistant` セクション
+  - **「メモに保存」ボタン**: 会話内容をMarkdown形式でまとめ、IndexedDB に新規メモとして保存。`file_type: 'memo'`, `category: 'memos'`。タイトルは `{最初のユーザーメッセージ先頭30文字} [Chat:{sessionId}]`。内容は `# Chat Summary [Chat:{sessionId}]` ヘッダー＋各メッセージの `### 🧑 User / ### 🤖 Assistant` セクション（話者がアイコン付きで一目で区別可能）
+  - **postMessage通知**: メモ保存・チャット保存後に `window.parent.postMessage({ type: 'thinktank-item-saved', record })` で親ウィンドウに通知し、DataGridにアイテムを即反映
 
 #### 16-C: URL内容取得API
 
@@ -883,7 +885,15 @@ WebSocket同期:
 - `server/index.ts` - `createFetchRoutes` インポート・`/api` ルート登録追加
 - `vite.config.ts` - 開発モードでリクエストごとにテンプレートファイルを再読み込みするよう修正（テンプレート編集の即反映）
 
-**検証**: DataGridで複数アイテムをチェック→💬ボタンクリック→WebViewにチャットUI表示。コンテキストバーにチェック済みアイテム一覧表示。メッセージ送信→AIがコンテキストを踏まえた応答をSSEストリーミングで返却。「メモに保存」→新規メモがIndexedDBに作成（タイトル: `{メッセージ} [Chat:yyyy-MM-dd-HHmmss]`、カテゴリ: `Memos`）。
+#### 16-D: iframe→メインアプリ連携（DataGrid即反映）
+
+**修正ファイル**:
+- `src/components/WebView/WebViewPanel.tsx` - `window.addEventListener('message')` で `thinktank-item-saved` メッセージをリッスン。受信レコードの `category` からコレクションを特定（`TTModels.GetItem(category)` → 見つからなければ `DatabaseID` で検索）し、`AddOrUpdateFromRecord()` で即座に追加。`TTModels`, `TTDataCollection` インポート追加
+- `src/models/TTCollection.ts` - `AddOrUpdateFromRecord(record: FileRecord)` メソッド新規追加（FileRecordからアイテムを追加/更新し `NotifyUpdated(false)` で通知）
+- `src/view-templates/chat.html` - `category` を `'memos'`（小文字）に統一し `TTDataCollection.DatabaseID` と一致させる
+- `src/App.tsx` - `loadTestData()` の `category` を `'memos'`（小文字）に統一
+
+**検証**: DataGridで複数アイテムをチェック→💬ボタンクリック→WebViewにチャットUI表示。コンテキストバーにチェック済みアイテム一覧表示。メッセージ送信→AIがコンテキストを踏まえた応答をSSEストリーミングで返却。「メモに保存」→新規メモがIndexedDBに作成（タイトル: `{メッセージ} [Chat:yyyy-MM-dd-HHmmss]`、カテゴリ: `memos`）→DataGridに即反映。TextEditorでテキスト選択→💬ボタン表示（選択行数付き）→クリックでチャット起動。
 
 ---
 
