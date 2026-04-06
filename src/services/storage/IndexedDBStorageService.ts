@@ -1,305 +1,197 @@
 /**
  * IndexedDBStorageService.ts
- * IndexedDB を使用したオフライン対応ストレージサービス
+ * ブラウザ IndexedDB を使ったローカルキャッシュ実装
+ *
+ * DB名: thinktank
+ * ObjectStore: files (keyPath: file_id)
+ * Index: by_category (category), by_updated (updated_at), by_dirty (_dirty)
+ *
+ * _dirty フラグ: BigQuery未同期のレコードを追跡。
+ * オフライン中の編集はdirty=trueで保存され、接続復帰時にリトライされる。
  */
 
-import type { IStorageService, StorageResult } from './IStorageService';
+import type { IStorageService, FileRecord, VersionInfo } from './IStorageService';
 
-const DB_NAME = 'ThinktankDB';
-const DB_VERSION = 1;
+const DB_NAME = 'thinktank';
+const DB_VERSION = 2; // v2: _dirty index追加
+const STORE_NAME = 'files';
 
-// ストア名
-const STORES = {
-    files: 'files',           // ファイルデータ
-    pendingChanges: 'pending', // オフライン時の変更キュー
-    syncMeta: 'syncMeta'      // 同期メタデータ
-};
-
-/**
- * IndexedDB をラップしたストレージサービス
- */
 export class IndexedDBStorageService implements IStorageService {
-    readonly name = 'IndexedDBStorage';
-    private db: IDBDatabase | null = null;
+  readonly name = 'IndexedDB';
+  private db: IDBDatabase | null = null;
 
-    /**
-     * データベースを初期化
-     */
-    async initialize(): Promise<boolean> {
-        if (this.db) return true;
+  async initialize(): Promise<boolean> {
+    return new Promise((resolve) => {
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-        return new Promise((resolve) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = (event) => {
+          const db = request.result;
+          const oldVersion = event.oldVersion;
 
-            request.onerror = () => {
-                console.error(`[${this.name}] Failed to open database`);
-                resolve(false);
-            };
+          if (oldVersion < 1) {
+            // v1: 初期スキーマ
+            const store = db.createObjectStore(STORE_NAME, { keyPath: 'file_id' });
+            store.createIndex('by_category', 'category', { unique: false });
+            store.createIndex('by_updated', 'updated_at', { unique: false });
+            store.createIndex('by_dirty', '_dirty', { unique: false });
+          } else if (oldVersion < 2) {
+            // v1→v2: _dirty index追加
+            const tx = (event.target as IDBOpenDBRequest).transaction!;
+            const store = tx.objectStore(STORE_NAME);
+            if (!store.indexNames.contains('by_dirty')) {
+              store.createIndex('by_dirty', '_dirty', { unique: false });
+            }
+          }
+        };
 
-            request.onsuccess = () => {
-                this.db = request.result;
-                console.log(`[${this.name}] Database initialized`);
-                resolve(true);
-            };
+        request.onsuccess = () => {
+          this.db = request.result;
+          console.log('[IndexedDB] Initialized (v2)');
+          resolve(true);
+        };
 
-            request.onupgradeneeded = (event) => {
-                const db = (event.target as IDBOpenDBRequest).result;
+        request.onerror = () => {
+          console.error('[IndexedDB] Open failed:', request.error);
+          resolve(false);
+        };
+      } catch {
+        resolve(false);
+      }
+    });
+  }
 
-                // ファイルストア（パスをキーとして使用）
-                if (!db.objectStoreNames.contains(STORES.files)) {
-                    db.createObjectStore(STORES.files, { keyPath: 'path' });
-                }
+  private getStore(mode: IDBTransactionMode): IDBObjectStore {
+    if (!this.db) throw new Error('IndexedDB not initialized');
+    const tx = this.db.transaction(STORE_NAME, mode);
+    return tx.objectStore(STORE_NAME);
+  }
 
-                // 変更キュー（自動生成ID）
-                if (!db.objectStoreNames.contains(STORES.pendingChanges)) {
-                    const pendingStore = db.createObjectStore(STORES.pendingChanges, {
-                        keyPath: 'id',
-                        autoIncrement: true
-                    });
-                    pendingStore.createIndex('path', 'path', { unique: false });
-                }
+  private request<T>(req: IDBRequest<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
 
-                // 同期メタデータ
-                if (!db.objectStoreNames.contains(STORES.syncMeta)) {
-                    db.createObjectStore(STORES.syncMeta, { keyPath: 'key' });
-                }
+  async listFiles(category?: string): Promise<FileRecord[]> {
+    const store = this.getStore('readonly');
+    let records: FileRecord[];
 
-                console.log(`[${this.name}] Database schema created/updated`);
-            };
-        });
+    if (category) {
+      const index = store.index('by_category');
+      records = await this.request(index.getAll(category));
+    } else {
+      records = await this.request(store.getAll());
     }
 
-    /**
-     * データベースが初期化されているか確認
-     */
-    private async ensureDB(): Promise<IDBDatabase | null> {
-        if (!this.db) {
-            await this.initialize();
-        }
-        return this.db;
+    return records.sort((a, b) =>
+      (b.updated_at || '').localeCompare(a.updated_at || ''),
+    );
+  }
+
+  async getFile(fileId: string): Promise<FileRecord | null> {
+    const store = this.getStore('readonly');
+    const result = await this.request(store.get(fileId));
+    return result || null;
+  }
+
+  async saveFile(record: FileRecord): Promise<void> {
+    const store = this.getStore('readwrite');
+    await this.request(store.put(record));
+  }
+
+  async deleteFile(fileId: string): Promise<void> {
+    const store = this.getStore('readwrite');
+    await this.request(store.delete(fileId));
+  }
+
+  async getAllFiles(): Promise<FileRecord[]> {
+    const store = this.getStore('readonly');
+    return this.request(store.getAll());
+  }
+
+  async getVersions(): Promise<VersionInfo[]> {
+    const all = await this.getAllFiles();
+    return all.map(f => ({
+      file_id: f.file_id,
+      updated_at: f.updated_at,
+    }));
+  }
+
+  async bulkSave(records: FileRecord[]): Promise<void> {
+    if (!this.db) throw new Error('IndexedDB not initialized');
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+
+      for (const record of records) {
+        store.put(record);
+      }
+
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ダーティキュー操作
+  // ═══════════════════════════════════════════════════════════════
+
+  /** dirtyフラグ付きで保存（BQ未同期マーク） */
+  async saveAsDirty(record: FileRecord): Promise<void> {
+    const store = this.getStore('readwrite');
+    await this.request(store.put({ ...record, _dirty: true }));
+  }
+
+  /** dirty=trueの全レコードを取得 */
+  async getDirtyRecords(): Promise<FileRecord[]> {
+    const store = this.getStore('readonly');
+    const index = store.index('by_dirty');
+    // IDBKeyRange.only(true) ではなく1を使う（IndexedDBはboolをそのまま格納）
+    const records: FileRecord[] = await this.request(index.getAll(1));
+    // booleanの場合も対応
+    if (records.length === 0) {
+      const allRecords = await this.request(
+        this.getStore('readonly').getAll()
+      );
+      return allRecords.filter(r => r._dirty === true);
     }
+    return records;
+  }
 
-    /**
-     * ファイルを保存
-     */
-    async save(path: string, content: string): Promise<StorageResult> {
-        const db = await this.ensureDB();
-        if (!db) return { success: false, error: 'Database not initialized' };
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.files], 'readwrite');
-            const store = transaction.objectStore(STORES.files);
-
-            const data = {
-                path,
-                content,
-                updatedAt: Date.now()
-            };
-
-            const request = store.put(data);
-
-            request.onsuccess = () => {
-                console.log(`[${this.name}] Saved: ${path}`);
-                resolve({ success: true });
-            };
-
-            request.onerror = () => {
-                console.error(`[${this.name}] Save failed:`, request.error);
-                resolve({ success: false, error: request.error?.message || 'Save failed' });
-            };
-        });
+  /** 指定レコードのdirtyフラグをクリア */
+  async clearDirty(fileId: string): Promise<void> {
+    const store = this.getStore('readwrite');
+    const existing = await this.request(store.get(fileId));
+    if (existing) {
+      delete existing._dirty;
+      await this.request(store.put(existing));
     }
+  }
 
-    /**
-     * ファイルを読み込み
-     */
-    async load(path: string): Promise<StorageResult<string | null>> {
-        const db = await this.ensureDB();
-        if (!db) return { success: false, error: 'Database not initialized' };
+  /** 複数レコードのdirtyフラグを一括クリア */
+  async clearDirtyBatch(fileIds: string[]): Promise<void> {
+    if (!this.db || fileIds.length === 0) return;
 
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.files], 'readonly');
-            const store = transaction.objectStore(STORES.files);
-            const request = store.get(path);
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
 
-            request.onsuccess = () => {
-                const result = request.result;
-                if (result) {
-                    resolve({ success: true, data: result.content });
-                } else {
-                    resolve({ success: true, data: null });
-                }
-            };
+      for (const fileId of fileIds) {
+        const getReq = store.get(fileId);
+        getReq.onsuccess = () => {
+          const record = getReq.result;
+          if (record && record._dirty) {
+            delete record._dirty;
+            store.put(record);
+          }
+        };
+      }
 
-            request.onerror = () => {
-                resolve({ success: false, error: request.error?.message || 'Load failed' });
-            };
-        });
-    }
-
-    /**
-     * ファイルが存在するか確認
-     */
-    async exists(path: string): Promise<StorageResult<boolean>> {
-        const result = await this.load(path);
-        return { success: true, data: result.success && result.data !== null };
-    }
-
-    /**
-     * ファイル一覧を取得（プレフィックスでフィルタ）
-     */
-    async list(directory: string, pattern?: string): Promise<StorageResult<string[]>> {
-        const db = await this.ensureDB();
-        if (!db) return { success: false, error: 'Database not initialized' };
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.files], 'readonly');
-            const store = transaction.objectStore(STORES.files);
-            const request = store.getAllKeys();
-
-            request.onsuccess = () => {
-                let files = (request.result as string[]) || [];
-
-                // ディレクトリでフィルタ
-                if (directory) {
-                    const prefix = directory.endsWith('/') ? directory : `${directory}/`;
-                    files = files.filter(f => f.startsWith(prefix));
-                }
-
-                // パターンでフィルタ（*.md など）
-                if (pattern) {
-                    const ext = pattern.replace('*', '');
-                    files = files.filter(f => f.endsWith(ext));
-                }
-
-                resolve({ success: true, data: files });
-            };
-
-            request.onerror = () => {
-                resolve({ success: false, error: request.error?.message || 'List failed' });
-            };
-        });
-    }
-
-    /**
-     * ファイルを削除
-     */
-    async delete(path: string): Promise<StorageResult> {
-        const db = await this.ensureDB();
-        if (!db) return { success: false, error: 'Database not initialized' };
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.files], 'readwrite');
-            const store = transaction.objectStore(STORES.files);
-            const request = store.delete(path);
-
-            request.onsuccess = () => {
-                console.log(`[${this.name}] Deleted: ${path}`);
-                resolve({ success: true });
-            };
-
-            request.onerror = () => {
-                resolve({ success: false, error: request.error?.message || 'Delete failed' });
-            };
-        });
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    // 変更キュー関連（オフライン同期用）
-    // ═══════════════════════════════════════════════════════════
-
-    /**
-     * 変更をキューに追加
-     */
-    async addPendingChange(path: string, content: string, action: 'save' | 'delete'): Promise<boolean> {
-        const db = await this.ensureDB();
-        if (!db) return false;
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.pendingChanges], 'readwrite');
-            const store = transaction.objectStore(STORES.pendingChanges);
-
-            const change = {
-                path,
-                content,
-                action,
-                timestamp: Date.now()
-            };
-
-            const request = store.add(change);
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => resolve(false);
-        });
-    }
-
-    /**
-     * 保留中の変更を取得
-     */
-    async getPendingChanges(): Promise<Array<{ id: number; path: string; content: string; action: string; timestamp: number }>> {
-        const db = await this.ensureDB();
-        if (!db) return [];
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.pendingChanges], 'readonly');
-            const store = transaction.objectStore(STORES.pendingChanges);
-            const request = store.getAll();
-
-            request.onsuccess = () => resolve(request.result || []);
-            request.onerror = () => resolve([]);
-        });
-    }
-
-    /**
-     * 変更を削除（同期完了後）
-     */
-    async removePendingChange(id: number): Promise<boolean> {
-        const db = await this.ensureDB();
-        if (!db) return false;
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.pendingChanges], 'readwrite');
-            const store = transaction.objectStore(STORES.pendingChanges);
-            const request = store.delete(id);
-
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => resolve(false);
-        });
-    }
-
-    /**
-     * 全ての変更をクリア
-     */
-    async clearPendingChanges(): Promise<boolean> {
-        const db = await this.ensureDB();
-        if (!db) return false;
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.pendingChanges], 'readwrite');
-            const store = transaction.objectStore(STORES.pendingChanges);
-            const request = store.clear();
-
-            request.onsuccess = () => resolve(true);
-            request.onerror = () => resolve(false);
-        });
-    }
-
-    /**
-     * 全てのファイルデータをクリア（キャッシュ再構築用）
-     */
-    async clear(): Promise<boolean> {
-        const db = await this.ensureDB();
-        if (!db) return false;
-
-        return new Promise((resolve) => {
-            const transaction = db.transaction([STORES.files], 'readwrite');
-            const store = transaction.objectStore(STORES.files);
-            const request = store.clear();
-
-            request.onsuccess = () => {
-                console.log(`[${this.name}] All files cleared`);
-                resolve(true);
-            };
-            request.onerror = () => resolve(false);
-        });
-    }
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
 }

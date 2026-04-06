@@ -1,90 +1,41 @@
-import { MainLayout } from './components/Layout/MainLayout';
-import { StatusBar } from './components/Status/StatusBar';
-import { ContextMenu } from './components/UI/ContextMenu';
-import { CommandPalette } from './components/UI/CommandPalette';
-import { TTApplication, CommandPaletteState } from './Views/TTApplication';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react'
+import { TTApplication } from './views/TTApplication'
+import { TTModels } from './models/TTModels'
+import { storageManager } from './services/storage/StorageManager'
+import { syncManager } from './services/sync/SyncManager'
+import { AppLayout } from './components/Layout/AppLayout'
 
 function App() {
-    const [contextMenu, setContextMenu] = useState(TTApplication.Instance.ContextMenu);
-    const [commandPalette, setCommandPalette] = useState<CommandPaletteState | null>(TTApplication.Instance.CommandPalette);
+  useEffect(() => {
+    const app = TTApplication.Instance
+    app.Initialize()
 
-    useEffect(() => {
-        const updateState = () => {
-            setContextMenu(TTApplication.Instance.ContextMenu);
-            setCommandPalette(TTApplication.Instance.CommandPalette);
-        };
-        TTApplication.Instance.AddOnUpdate('App', updateState);
-        return () => {
-            TTApplication.Instance.RemoveOnUpdate('App');
-        };
-    }, []);
+    // StorageManager初期化 → データロード → SyncManager開始
+    async function initStorage() {
+      await storageManager.initialize()
 
-    useEffect(() => {
-        const handleMessage = (event: MessageEvent) => {
-            // 同一オリジンからのメッセージのみ受け付ける
-            if (event.origin !== window.location.origin) return;
+      const models = TTModels.Instance
+      // LoadCache()内でBQ↔IndexedDB自動同期（memos + Chats の両カテゴリ）
+      await models.Knowledge.LoadCache()
 
-            const data = event.data;
-            if (data && data.type === 'TT_WEBVIEW_ACTION' && data.event) {
-                const app = TTApplication.Instance;
-                app.UIRequestTriggeredAction(data.event);
-            }
-            // iframe内のSearchApp等からのナビゲーション通知 → WebView.Keywordに反映
-            if (data && data.type === 'TT_WEBVIEW_NAVIGATE' && data.url) {
-                const app = TTApplication.Instance;
-                const panel = app.ActivePanel;
-                if (panel && panel.Mode === 'WebView') {
-                    panel.WebView.ApplyUrl(data.url);
-                }
-            }
-        };
-
-        window.addEventListener('message', handleMessage);
-        return () => window.removeEventListener('message', handleMessage);
-    }, []);
-
-    const closeContextMenu = () => {
-        TTApplication.Instance.HideContextMenu();
-    };
-
-    const closeCommandPalette = () => {
-        TTApplication.Instance.HideCommandPalette();
-    };
-
-    const handleCommandSelect = (item: any) => { // Type as any or fix import if circular dependency
-        // item is CommandPaletteItem
-        if (commandPalette?.onSelect) {
-            commandPalette.onSelect(item);
-        } else {
-            item.onClick();
+      // SyncManager: WebSocket接続 + リモート更新受信
+      syncManager.start((fileId: string) => {
+        const item = models.Knowledge.GetItem(fileId)
+        if (item && 'applyRemoteUpdate' in item) {
+          return item as { applyRemoteUpdate: (content: string) => void }
         }
-    };
+        return null
+      })
+    }
 
-    return (
-        <div className="app-container">
-            <main className="editor-area" style={{ padding: 0, paddingBottom: '22px' }}>
-                <MainLayout />
-            </main>
-            <StatusBar />
-            {contextMenu && (
-                <ContextMenu
-                    items={contextMenu.items}
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    onClose={closeContextMenu}
-                />
-            )}
-            {commandPalette && commandPalette.visible && (
-                <CommandPalette
-                    items={commandPalette.items}
-                    placeholder={commandPalette.placeholder}
-                    onSelect={handleCommandSelect}
-                    onClose={closeCommandPalette}
-                />
-            )}
-        </div>
-    )
+    initStorage()
+
+    return () => {
+      syncManager.stop()
+    }
+  }, [])
+
+  return <AppLayout />
 }
 
 export default App

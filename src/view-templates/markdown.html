@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loading...</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1e1e1e; color: #ccc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px; line-height: 1.7;
+  padding: 24px 32px; max-width: 900px; margin: 0 auto;
+}
+h1, h2, h3, h4, h5, h6 { color: #e0e0e0; margin: 1em 0 0.4em; }
+h1 { font-size: 1.6em; border-bottom: 1px solid #444; padding-bottom: 6px; }
+h2 { font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 4px; }
+h3 { font-size: 1.15em; }
+p { margin: 0.5em 0; }
+ul, ol { margin: 0.5em 0; padding-left: 1.5em; }
+li { margin: 0.2em 0; }
+code { background: #2d2d30; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #2d2d30; padding: 12px; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+a { color: #4fc1ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid #444; margin: 1em 0; }
+strong { color: #e0e0e0; }
+.error { color: #ff6b6b; text-align: center; margin-top: 2em; }
+.loading { color: #888; text-align: center; margin-top: 2em; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #1e1e1e; }
+::-webkit-scrollbar-thumb { background: #424242; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div id="content"><p class="loading">Loading...</p></div>
+<script>
+function escapeHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function inlineFormat(text) {
+  var s = escapeHtml(text);
+  s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  s = s.replace(/_(.+?)_/g, '<em>$1</em>');
+  s = s.replace(/`(.+?)`/g, '<code>$1</code>');
+  s = s.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return s;
+}
+function markdownToHtml(md) {
+  var html = md;
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, function(m, lang, code) {
+    return '<pre><code>' + escapeHtml(code.trimEnd()) + '</code></pre>';
+  });
+  var lines = html.split('\n');
+  var result = [];
+  var inList = null;
+  var inPre = false;
+  function closeList() {
+    if (inList === 'ul') { result.push('</ul>'); inList = null; }
+    if (inList === 'ol') { result.push('</ol>'); inList = null; }
+  }
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line.indexOf('<pre>') >= 0) inPre = true;
+    if (line.indexOf('</pre>') >= 0) { inPre = false; result.push(line); continue; }
+    if (inPre) { result.push(line); continue; }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line.trim())) { closeList(); result.push('<hr>'); continue; }
+    var hm = line.match(/^(#{1,6})\s+(.*)$/);
+    if (hm) { closeList(); result.push('<h'+hm[1].length+'>'+inlineFormat(hm[2])+'</h'+hm[1].length+'>'); continue; }
+    var olm = line.match(/^\d+\.\s+(.*)$/);
+    if (olm) { if(inList!=='ol'){closeList();result.push('<ol>');inList='ol';} result.push('<li>'+inlineFormat(olm[1])+'</li>'); continue; }
+    var ulm = line.match(/^[-*+]\s+(.*)$/);
+    if (ulm) { if(inList!=='ul'){closeList();result.push('<ul>');inList='ul';} result.push('<li>'+inlineFormat(ulm[1])+'</li>'); continue; }
+    if (line.trim() === '') { closeList(); result.push(''); continue; }
+    closeList();
+    result.push('<p>'+inlineFormat(line)+'</p>');
+  }
+  closeList();
+  return result.join('\n');
+}
+
+(async function() {
+  var params = new URLSearchParams(window.location.search);
+  var fileId = params.get('id');
+  if (!fileId) {
+    document.getElementById('content').innerHTML = '<p class="error">Parameter "id" is required</p>';
+    document.title = 'Error';
+    return;
+  }
+  try {
+    var db = await new Promise(function(resolve, reject) {
+      var req = indexedDB.open('thinktank', 2);
+      req.onsuccess = function() { resolve(req.result); };
+      req.onerror = function() { reject(req.error); };
+      req.onupgradeneeded = function() { reject(new Error('DB not initialized')); };
+    });
+    var tx = db.transaction('files', 'readonly');
+    var store = tx.objectStore('files');
+    var item = await new Promise(function(resolve, reject) {
+      var req = store.get(fileId);
+      req.onsuccess = function() { resolve(req.result); };
+      req.onerror = function() { reject(req.error); };
+    });
+    db.close();
+    if (!item) {
+      document.getElementById('content').innerHTML = '<p class="error">Item not found: ' + fileId + '</p>';
+      document.title = 'Not Found';
+      return;
+    }
+    document.title = (item.title || fileId) + ' - Thinktank';
+    document.getElementById('content').innerHTML = markdownToHtml(item.content || '');
+  } catch (e) {
+    document.getElementById('content').innerHTML = '<p class="error">' + e.message + '</p>';
+    document.title = 'Error';
+  }
+})();
+</script>
+</body>
+</html>

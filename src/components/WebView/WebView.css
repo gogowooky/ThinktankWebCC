@@ -1,0 +1,122 @@
+/* ═══════════════════════════════════════════════════════════════
+   WebViewPanel
+   ═══════════════════════════════════════════════════════════════ */
+
+.webview-panel {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.webview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 12px;
+}
+
+/* iframe表示 */
+.webview-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+/* Markdownプレビュー */
+.webview-markdown {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  color: #ccc;
+  font-size: 13px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  line-height: 1.6;
+}
+
+.webview-markdown h1,
+.webview-markdown h2,
+.webview-markdown h3,
+.webview-markdown h4,
+.webview-markdown h5,
+.webview-markdown h6 {
+  color: #e0e0e0;
+  margin: 0.8em 0 0.4em;
+}
+
+.webview-markdown h1 { font-size: 1.4em; border-bottom: 1px solid #444; padding-bottom: 4px; }
+.webview-markdown h2 { font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 3px; }
+.webview-markdown h3 { font-size: 1.1em; }
+
+.webview-markdown p {
+  margin: 0.4em 0;
+}
+
+.webview-markdown ul,
+.webview-markdown ol {
+  margin: 0.4em 0;
+  padding-left: 1.5em;
+}
+
+.webview-markdown li {
+  margin: 0.2em 0;
+}
+
+.webview-markdown code {
+  background: #2d2d30;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+.webview-markdown pre {
+  background: #2d2d30;
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.webview-markdown pre code {
+  background: none;
+  padding: 0;
+}
+
+.webview-markdown a {
+  color: #4fc1ff;
+  text-decoration: none;
+}
+
+.webview-markdown a:hover {
+  text-decoration: underline;
+}
+
+.webview-markdown hr {
+  border: none;
+  border-top: 1px solid #444;
+  margin: 0.8em 0;
+}
+
+.webview-markdown strong {
+  color: #e0e0e0;
+}
+
+/* スクロールバー */
+.webview-markdown::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.webview-markdown::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+.webview-markdown::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 4px;
+}
+.webview-markdown::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

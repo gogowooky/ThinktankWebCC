@@ -1,0 +1,151 @@
+/* ═══════════════════════════════════════════════════════════════
+   DataGrid - 仮想スクロールテーブル
+   ═══════════════════════════════════════════════════════════════ */
+
+.datagrid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-size: 12px;
+  color: #ccc;
+}
+
+/* ─── ヘッダ ─── */
+
+.datagrid-header {
+  display: flex;
+  flex-direction: row;
+  height: 18px;
+  min-height: 18px;
+  background-color: #2d2d30;
+  border-bottom: 1px solid #3c3c3c;
+  user-select: none;
+}
+
+.datagrid-header-cell {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+  font-size: 11px;
+  color: #aaa;
+  cursor: pointer;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  border-right: 1px solid #3c3c3c;
+}
+
+.datagrid-header-cell:hover {
+  background-color: #333;
+}
+
+.datagrid-header-cell-sorted {
+  color: #e0e0e0;
+}
+
+.datagrid-sort-indicator {
+  margin-left: 4px;
+  font-size: 9px;
+}
+
+/* ─── ボディ（仮想スクロール） ─── */
+
+.datagrid-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ─── 行 ─── */
+
+.datagrid-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 1px solid #2a2a2a;
+  cursor: pointer;
+}
+
+.datagrid-row:hover {
+  background-color: #2a2d2e;
+}
+
+.datagrid-row-selected {
+  background-color: #094771;
+}
+
+.datagrid-row-selected:hover {
+  background-color: #0a5a8a;
+}
+
+/* ─── チェックボックス列 ─── */
+
+.datagrid-check-cell,
+.datagrid-check-header {
+  justify-content: center;
+  padding: 0 !important;
+  border-right: 1px solid #3c3c3c;
+  flex-shrink: 0;
+}
+
+.datagrid-check {
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  user-select: none;
+  line-height: 1;
+}
+
+.datagrid-check-on {
+  color: #4fc1ff;
+}
+
+.datagrid-check-header .datagrid-check {
+  font-size: 11px;
+}
+
+/* ─── セル ─── */
+
+.datagrid-cell {
+  padding: 0 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* ─── 空状態 ─── */
+
+/* ─── スクロールバー ─── */
+
+.datagrid-body ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.datagrid-body ::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.datagrid-body ::-webkit-scrollbar-thumb {
+  background: #424242;
+  border-radius: 4px;
+}
+
+.datagrid-body ::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ─── 空状態 ─── */
+
+.datagrid-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-size: 12px;
+}
