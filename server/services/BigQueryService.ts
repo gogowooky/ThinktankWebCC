@@ -166,6 +166,35 @@ export class BigQueryService {
   }
 
   /**
+   * カテゴリ別に全データ（content付き）を重複排除して取得
+   */
+  async listFilesFull(category: string): Promise<QueryResult<FileRecord>> {
+    if (!this.bigquery) return { success: false, error: 'BigQuery not initialized' };
+
+    try {
+      const query = `
+        SELECT t.*
+        FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\` t
+        INNER JOIN (
+          SELECT file_id, IFNULL(category, '') as cat_key, MAX(updated_at) as max_updated_at
+          FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
+          WHERE category = @category
+          GROUP BY file_id, cat_key
+        ) latest ON t.file_id = latest.file_id
+          AND IFNULL(t.category, '') = latest.cat_key
+          AND t.updated_at = latest.max_updated_at
+        WHERE t.category = @category
+        ORDER BY t.updated_at DESC
+      `;
+      const [rows] = await this.bigquery.query({ query, params: { category } });
+      return { success: true, data: rows as FileRecord[] };
+    } catch (error) {
+      console.error('[BigQueryService] listFilesFull failed:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
    * MERGE-based upsert on (file_id, category) key.
    * Existing records are updated, new records are inserted.
    * created_at is preserved on update.
@@ -292,20 +321,72 @@ export class BigQueryService {
     }
   }
 
-  async getVersions(): Promise<QueryResult<VersionInfo>> {
+  async getVersions(category?: string): Promise<QueryResult<VersionInfo>> {
     if (!this.bigquery) return { success: false, error: 'BigQuery not initialized' };
 
     try {
-      const query = `
-        SELECT file_id, MAX(updated_at) as updated_at
-        FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-        GROUP BY file_id
-        ORDER BY updated_at DESC
-      `;
-      const [rows] = await this.bigquery.query({ query });
+      let query: string;
+      const params: Record<string, string> = {};
+
+      if (category) {
+        query = `
+          SELECT file_id, MAX(updated_at) as updated_at
+          FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
+          WHERE category = @category
+          GROUP BY file_id
+          ORDER BY updated_at DESC
+        `;
+        params.category = category;
+      } else {
+        query = `
+          SELECT file_id, MAX(updated_at) as updated_at
+          FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
+          GROUP BY file_id
+          ORDER BY updated_at DESC
+        `;
+      }
+      const [rows] = await this.bigquery.query({ query, params });
       return { success: true, data: rows as VersionInfo[] };
     } catch (error) {
       console.error('[BigQueryService] getVersions failed:', error);
+      return { success: false, error: String(error) };
+    }
+  }
+
+  /**
+   * 複数file_idを指定してcontent付きレコードを一括取得（差分同期用）
+   */
+  async getFilesByIds(fileIds: string[], category?: string): Promise<QueryResult<FileRecord>> {
+    if (!this.bigquery) return { success: false, error: 'BigQuery not initialized' };
+    if (fileIds.length === 0) return { success: true, data: [] };
+
+    try {
+      let whereClause = 't.file_id IN UNNEST(@fileIds)';
+      const params: Record<string, unknown> = { fileIds };
+      if (category) {
+        whereClause += ' AND t.category = @category';
+        params.category = category;
+      }
+
+      const query = `
+        SELECT t.*
+        FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\` t
+        INNER JOIN (
+          SELECT file_id, IFNULL(category, '') as cat_key, MAX(updated_at) as max_updated_at
+          FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
+          WHERE file_id IN UNNEST(@fileIds)
+          ${category ? 'AND category = @category' : ''}
+          GROUP BY file_id, cat_key
+        ) latest ON t.file_id = latest.file_id
+          AND IFNULL(t.category, '') = latest.cat_key
+          AND t.updated_at = latest.max_updated_at
+        WHERE ${whereClause}
+        ORDER BY t.updated_at DESC
+      `;
+      const [rows] = await this.bigquery.query({ query, params });
+      return { success: true, data: rows as FileRecord[] };
+    } catch (error) {
+      console.error('[BigQueryService] getFilesByIds failed:', error);
       return { success: false, error: String(error) };
     }
   }

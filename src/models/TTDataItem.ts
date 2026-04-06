@@ -61,9 +61,11 @@ export class TTDataItem extends TTObject {
 
   /** 通知なしでコンテンツを設定（外部同期用） */
   public setContentSilent(value: string): void {
-    const normalized = TTDataItem.normalizeLineEndings(value);
+    // BOM（\uFEFF）を除去してから設定（UTF-8 BOMファイル取り込み対応）
+    const stripped = value.startsWith('\uFEFF') ? value.slice(1) : value;
+    const normalized = TTDataItem.normalizeLineEndings(stripped);
     if (TTDataItem.normalizeLineEndings(this._content) === normalized) return;
-    this._content = value;
+    this._content = stripped;
     this.updateNameFromContent();
   }
 

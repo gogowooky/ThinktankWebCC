@@ -146,14 +146,35 @@ export function createBigQueryRoutes(): Router {
     }
   });
 
-  // GET /api/bq/versions - Version info for cache validation
+  // GET /api/bq/versions - Version info for cache validation (optional ?category=)
   router.get('/versions', async (req: Request, res: Response) => {
     try {
-      const result = await bigqueryService.getVersions();
+      const category = req.query.category as string | undefined;
+      const result = await bigqueryService.getVersions(category);
       if (!result.success) return res.status(500).json({ error: result.error });
       res.json({ versions: result.data });
     } catch (error) {
       console.error('[BigQueryRoutes] Versions error:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
+  // POST /api/bq/fetch-by-ids - Fetch full records by file_id list (for differential sync)
+  router.post('/fetch-by-ids', async (req: Request, res: Response) => {
+    try {
+      const { fileIds, category } = req.body;
+      if (!Array.isArray(fileIds) || fileIds.length === 0) {
+        return res.status(400).json({ error: 'fileIds array is required' });
+      }
+
+      const result = await bigqueryService.getFilesByIds(fileIds, category);
+      if (!result.success) return res.status(500).json({ error: result.error });
+
+      const files = result.data || [];
+      console.log(`[BigQueryRoutes] fetch-by-ids: ${files.length}/${fileIds.length} records`);
+      res.json({ files, count: files.length });
+    } catch (error) {
+      console.error('[BigQueryRoutes] fetch-by-ids error:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });
@@ -166,6 +187,24 @@ export function createBigQueryRoutes(): Router {
       res.json({ files: result.data });
     } catch (error) {
       console.error('[BigQueryRoutes] All files error:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    }
+  });
+
+  // GET /api/bq/migrate - Get all records for a category with content (for sync/migration)
+  router.get('/migrate', async (req: Request, res: Response) => {
+    try {
+      const category = req.query.category as string;
+      if (!category) return res.status(400).json({ error: 'category is required' });
+
+      const result = await bigqueryService.listFilesFull(category);
+      if (!result.success) return res.status(500).json({ error: result.error });
+
+      const files = result.data || [];
+      console.log(`[BigQueryRoutes] Migrate: ${files.length} records for category=${category}`);
+      res.json({ files, count: files.length });
+    } catch (error) {
+      console.error('[BigQueryRoutes] Migrate error:', error);
       res.status(500).json({ error: 'Internal Server Error' });
     }
   });

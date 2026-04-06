@@ -22,6 +22,9 @@ export class TTCollection extends TTObject {
   /** データベース識別子（コレクション毎のテーブル/ストアを決定） */
   public DatabaseID: string = '';
 
+  /** BQ側カテゴリ名（旧アプリとの互換用。空の場合はDatabaseIDと同じ） */
+  public RemoteCategoryID: string = '';
+
   // ─── 表示・保存設定 ───
 
   /** CSV保存対象プロパティ（カンマ区切り） */
@@ -266,7 +269,13 @@ export class TTCollection extends TTObject {
     }
   }
 
-  /** StorageManagerからデータをロード */
+  /**
+   * StorageManagerからデータをロード（BQ同期付き）
+   *
+   * 1. BQが利用可能ならsyncCategory()でBQ↔IndexedDBをマージ
+   * 2. BQが利用不可ならIndexedDBのみからロード
+   * 3. マージ結果をコレクションに反映
+   */
   public async LoadCache(): Promise<void> {
     if (!storageManager.isInitialized) {
       console.log(`[TTCollection] StorageManager not ready, LoadCache deferred: ${this.ID}`);
@@ -275,8 +284,17 @@ export class TTCollection extends TTObject {
     }
 
     try {
-      const category = this.DatabaseID || this.ID;
-      const records = await storageManager.listFiles(category);
+      const localCategory = this.DatabaseID || this.ID;
+      const remoteCategory = this.RemoteCategoryID || localCategory;
+
+      let records: FileRecord[];
+      if (storageManager.isRemoteAvailable) {
+        // BQ↔IndexedDBをタイムスタンプ比較マージ
+        records = await storageManager.syncCategory(localCategory, remoteCategory);
+      } else {
+        // IndexedDBのみ
+        records = await storageManager.listFiles(localCategory);
+      }
 
       for (const record of records) {
         let item = this.GetItem(record.file_id);
@@ -292,7 +310,7 @@ export class TTCollection extends TTObject {
       this.Count = this._children.size;
       this.IsLoaded = true;
       this.NotifyUpdated(false);
-      console.log(`[TTCollection] Loaded ${records.length} items from StorageManager for ${category}`);
+      console.log(`[TTCollection] Loaded ${records.length} items from StorageManager for ${localCategory}`);
     } catch (error) {
       console.error(`[TTCollection] LoadCache failed for ${this.ID}:`, error);
       this.IsLoaded = true;
@@ -330,7 +348,7 @@ export class TTCollection extends TTObject {
   }
 
   /** FileRecordからTTObjectにプロパティを適用 */
-  private recordToItem(record: FileRecord, item: TTObject): void {
+  protected recordToItem(record: FileRecord, item: TTObject): void {
     item.Name = record.title || item.Name;
     item.UpdateDate = record.updated_at || item.UpdateDate;
     const dataItem = item as unknown as Record<string, unknown>;
@@ -340,8 +358,45 @@ export class TTCollection extends TTObject {
       dataItem.Content = record.content;
     }
     if (record.file_type) {
-      dataItem.ContentType = record.file_type;
+      // 'md'/'markdown'/'text' はすべて 'memo' として扱う
+      const rawType = record.file_type.toLowerCase();
+      const normalizedType =
+        rawType === 'md' || rawType === 'markdown' || rawType === 'text'
+          ? 'memo'
+          : record.file_type;
+      dataItem.ContentType = normalizedType;
+
+      // chatレコードのタイトルが chatHistory の JSON 配列になっている場合に正規化
+      // （旧バージョンのバグで title に JSON が入った場合の互換対応）
+      if (rawType === 'chat' && item.Name) {
+        const t = item.Name.trim();
+        if (t.startsWith('[') || t.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(t);
+            const arr = Array.isArray(parsed) ? parsed : [parsed];
+            const firstUser = arr.find(
+              (m: unknown) => (m as { role: string }).role === 'user'
+            );
+            if (firstUser && typeof (firstUser as { content: unknown }).content === 'string') {
+              item.Name = ((firstUser as { content: string }).content).substring(0, 40);
+            }
+          } catch { /* JSON でなければそのまま */ }
+        }
+      }
     }
+    // CollectionID: アイテム保存時の実際のカテゴリとして元カテゴリを保持
+    if ('CollectionID' in dataItem && record.category) {
+      dataItem.CollectionID = record.category;
+    }
+  }
+
+  /**
+   * このコレクションが扱うカテゴリ一覧（デフォルトは自身のDatabaseIDのみ）
+   * TTKnowledge等の複数カテゴリ統合コレクションでオーバーライド
+   */
+  public get HandledCategories(): string[] {
+    const cat = this.DatabaseID || this.ID;
+    return cat ? [cat] : [];
   }
 
   // ═══════════════════════════════════════════════════════════════

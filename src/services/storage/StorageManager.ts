@@ -146,6 +146,155 @@ export class StorageManager {
   }
 
   /**
+   * BQタイムスタンプを正規化（{value: "..."} 形式 or 文字列 → 文字列）
+   */
+  private normalizeBqTimestamp(ts: unknown): string {
+    if (typeof ts === 'object' && ts !== null && 'value' in (ts as Record<string, unknown>)) {
+      return String((ts as { value: string }).value);
+    }
+    return String(ts);
+  }
+
+  /**
+   * BQレコードをローカル形式に変換（カテゴリ変換 + タイムスタンプ正規化）
+   */
+  private convertRemoteRecord(remoteRec: FileRecord, localCategory: string): FileRecord {
+    return {
+      ...remoteRec,
+      category: localCategory,
+      updated_at: this.normalizeBqTimestamp(remoteRec.updated_at),
+      created_at: this.normalizeBqTimestamp(remoteRec.created_at),
+      _dirty: undefined,
+    };
+  }
+
+  /**
+   * カテゴリ別差分同期（BQ ↔ IndexedDB）
+   *
+   * 手順:
+   * 1. IndexedDBからカテゴリのローカルデータ取得
+   * 2. BQからバージョン情報のみ取得（file_id + updated_at、contentなし → 軽量）
+   * 3. file_idごとにupdated_atを比較し、差分を特定:
+   *    - ローカルが新しい or 同じ → スキップ
+   *    - リモートが新しい → 要取得リストに追加
+   *    - リモートのみ存在 → 要取得リストに追加
+   * 4. 差分のfile_idのみBQからcontent付きで一括取得
+   * 5. マージ結果をIndexedDBに保存
+   *
+   * @param localCategory IndexedDB側のカテゴリ名（例: 'memos'）
+   * @param remoteCategory BQ側のカテゴリ名（例: 'Memo'）。省略時はlocalCategoryと同じ
+   * @returns マージ後のレコード一覧
+   */
+  async syncCategory(localCategory: string, remoteCategory?: string): Promise<FileRecord[]> {
+    const bqCategory = remoteCategory || localCategory;
+
+    // 1. ローカルデータ取得
+    const localRecords = await this.local.listFiles(localCategory);
+    const localMap = new Map<string, FileRecord>();
+    for (const r of localRecords) {
+      localMap.set(r.file_id, r);
+    }
+
+    if (!this._remoteAvailable) {
+      return localRecords;
+    }
+
+    try {
+      // 2. BQからバージョン情報のみ取得（軽量: file_id + updated_at のみ）
+      const versionRes = await fetch(`/api/bq/versions?category=${encodeURIComponent(bqCategory)}`);
+      if (!versionRes.ok) {
+        console.warn(`[StorageManager] syncCategory: BQ versions fetch failed (${versionRes.status})`);
+        return localRecords;
+      }
+      const versionData = await versionRes.json();
+      const remoteVersions: { file_id: string; updated_at: unknown }[] = versionData.versions || [];
+
+      if (remoteVersions.length === 0 && localRecords.length === 0) {
+        console.log(`[StorageManager] syncCategory(${localCategory}←${bqCategory}): empty on both sides`);
+        return [];
+      }
+
+      // 3. 差分を特定: リモートが新しい or リモートのみ存在 → 要取得
+      const needFetchIds: string[] = [];
+      let localWins = 0;
+
+      for (const rv of remoteVersions) {
+        const remoteTime = new Date(this.normalizeBqTimestamp(rv.updated_at)).getTime();
+        const localRec = localMap.get(rv.file_id);
+
+        if (!localRec) {
+          // リモートのみ存在 → 要取得
+          needFetchIds.push(rv.file_id);
+        } else {
+          const localTime = new Date(localRec.updated_at).getTime();
+          if (localTime >= remoteTime) {
+            localWins++;
+          } else {
+            // リモートが新しい → 要取得
+            needFetchIds.push(rv.file_id);
+          }
+        }
+      }
+      console.log(
+        `[StorageManager] syncCategory(${localCategory}←${bqCategory}): ` +
+        `BQ has ${remoteVersions.length}, local has ${localRecords.length}, ` +
+        `need fetch: ${needFetchIds.length}, local wins: ${localWins}`
+      );
+
+      // 4. 差分のみBQからcontent付きで取得
+      if (needFetchIds.length > 0) {
+        const FETCH_BATCH = 500; // BQへの一回のリクエストで取得するID数
+        const fetchedRecords: FileRecord[] = [];
+
+        for (let i = 0; i < needFetchIds.length; i += FETCH_BATCH) {
+          const batchIds = needFetchIds.slice(i, i + FETCH_BATCH);
+          const fetchRes = await fetch('/api/bq/fetch-by-ids', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileIds: batchIds, category: bqCategory }),
+          });
+
+          if (!fetchRes.ok) {
+            console.warn(`[StorageManager] syncCategory: fetch-by-ids failed (${fetchRes.status})`);
+            continue;
+          }
+
+          const fetchData = await fetchRes.json();
+          const records: FileRecord[] = fetchData.files || [];
+          fetchedRecords.push(...records);
+        }
+
+        // 5. 取得したレコードをローカル形式に変換してIndexedDBに保存
+        if (fetchedRecords.length > 0) {
+          const toSave = fetchedRecords.map(r => this.convertRemoteRecord(r, localCategory));
+          const SAVE_BATCH = 100;
+          for (let i = 0; i < toSave.length; i += SAVE_BATCH) {
+            await this.local.bulkSave(toSave.slice(i, i + SAVE_BATCH));
+          }
+
+          // localMapにも反映（戻り値用）
+          for (const rec of toSave) {
+            localMap.set(rec.file_id, rec);
+          }
+        }
+
+        console.log(
+          `[StorageManager] syncCategory: fetched ${fetchedRecords.length} records from BQ, ` +
+          `saved to IndexedDB`
+        );
+      } else {
+        console.log(`[StorageManager] syncCategory: no changes needed, all up to date`);
+      }
+
+      // ローカルのみ存在するレコードも含めた全件を返す
+      return Array.from(localMap.values());
+    } catch (error) {
+      console.warn('[StorageManager] syncCategory failed, using local:', error);
+      return localRecords;
+    }
+  }
+
+  /**
    * 単一ファイル取得（ローカル優先、なければリモート）
    */
   async getFile(fileId: string): Promise<FileRecord | null> {

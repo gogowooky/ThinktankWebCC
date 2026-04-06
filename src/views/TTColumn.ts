@@ -1,7 +1,7 @@
 import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
-import { buildMarkdownUrl } from '../utils/webviewUrl';
+import { buildMarkdownUrl, buildChatUrl } from '../utils/webviewUrl';
 import type { ColumnIndex, PanelType } from '../types';
 
 /**
@@ -26,7 +26,7 @@ export class TTColumn extends TTObject {
   public DataGridSortDir: 'asc' | 'desc' = 'desc';
 
   /** 表示対象のコレクション参照名 */
-  private _dataGridResource: string = 'Memos';
+  private _dataGridResource: string = 'Knowledge';
 
   /** 選択中アイテムID */
   private _selectedItemID: string = '';
@@ -115,9 +115,19 @@ export class TTColumn extends TTObject {
     this._selectedItemID = value;
     // 選択変更時にEditorResource + WebViewUrlも連動更新
     this._editorResource = value;
-    this._webViewUrl = value
-      ? buildMarkdownUrl(this._dataGridResource || 'Memos', value)
-      : '';
+    if (value) {
+      const collection = this.GetCurrentCollection();
+      const item = collection?.GetDataItem(value);
+      if (item?.ContentType === 'chat') {
+        // チャットアイテムはチャットUIで復元表示
+        this._webViewUrl = buildChatUrl(value);
+      } else {
+        // メモ等はMarkdownプレビュー
+        this._webViewUrl = buildMarkdownUrl(this._dataGridResource || 'Knowledge', value);
+      }
+    } else {
+      this._webViewUrl = '';
+    }
     this.NotifyUpdated(false);
   }
 
@@ -247,8 +257,8 @@ export class TTColumn extends TTObject {
     if (item instanceof TTDataCollection) {
       return item;
     }
-    // デフォルトはMemosコレクション
-    return models.Memos;
+    // デフォルトはKnowledgeコレクション
+    return models.Knowledge;
   }
 
   // ═══════════════════════════════════════════════════════════════

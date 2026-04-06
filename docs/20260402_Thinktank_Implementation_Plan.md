@@ -895,6 +895,75 @@ WebSocket同期:
 
 **検証**: DataGridで複数アイテムをチェック→💬ボタンクリック→WebViewにチャットUI表示。コンテキストバーにチェック済みアイテム一覧表示。メッセージ送信→AIがコンテキストを踏まえた応答をSSEストリーミングで返却。「メモに保存」→新規メモがIndexedDBに作成（タイトル: `{メッセージ} [Chat:yyyy-MM-dd-HHmmss]`、カテゴリ: `memos`）→DataGridに即反映。TextEditorでテキスト選択→💬ボタン表示（選択行数付き）→クリックでチャット起動。
 
+#### 16-E: 旧アプリBQデータ移行と起動時自動差分同期
+
+**目標**: 旧アプリのBigQueryデータ（category='Memo'）を新アプリのIndexedDB（category='memos'）に自動同期する仕組みを実装。別PCで起動しても自動的にBQからデータをロードする。毎回全件フェッチせず、個別アイテムのupdated_atを比較した差分同期とする。
+
+**修正ファイル**:
+- `server/services/BigQueryService.ts`:
+  - `listFilesFull(category)` 追加 — カテゴリ別content付き全件取得（INNER JOINで重複排除）
+  - `getVersions(category?)` 拡張 — カテゴリ引数を追加し、指定時は `WHERE category=@category` でフィルタ（軽量）
+  - `getFilesByIds(fileIds, category?)` 追加 — 複数file_idを指定してcontent付きレコードを一括取得
+- `server/routes/bigqueryRoutes.ts`:
+  - `GET /api/bq/migrate?category=` 追加 — `listFilesFull()` でカテゴリ別全件取得
+  - `GET /api/bq/versions?category=` 拡張 — カテゴリ別バージョン情報（file_id + updated_atのみ、軽量）
+  - `POST /api/bq/fetch-by-ids` 追加 — `{ fileIds: string[], category?: string }` でcontent付きレコード一括返却
+- `src/services/storage/StorageManager.ts`:
+  - `syncCategory(localCategory, remoteCategory?)` 追加 — **差分同期アルゴリズム**:
+    1. IndexedDBからローカルレコード取得
+    2. `GET /api/bq/versions?category=` でBQのバージョン情報のみ取得（file_id + updated_atのみ、数KB程度）
+    3. file_idごとにupdated_atを比較し「BQが新しい」または「BQのみ存在」するIDリストを特定
+    4. 差分IDのみ `POST /api/bq/fetch-by-ids` でcontent付きフェッチ（500件単位バッチ）
+    5. 取得レコードをカテゴリ変換・タイムスタンプ正規化してIndexedDBに保存（100件単位バッチ）
+  - `normalizeBqTimestamp()` — BQの `{value: "..."}` 形式タイムスタンプを文字列に正規化
+  - `convertRemoteRecord()` — リモートレコードをローカルカテゴリ・タイムスタンプ形式に変換
+- `src/models/TTCollection.ts`:
+  - `RemoteCategoryID: string = ''` プロパティ追加（BQ側カテゴリ名マッピング用）
+  - `LoadCache()` 修正 — `storageManager.isRemoteAvailable` が true の場合 `syncCategory()` を呼び出し、false の場合はローカルのみ `listFiles()` を実行
+- `src/models/TTModels.ts`:
+  - `this.Memos.RemoteCategoryID = 'Memo'` 追加（BQ側は 'Memo'、IndexedDB側は 'memos' の差異を吸収）
+- `src/App.tsx`:
+  - テストデータ・手動マイグレーションコードを削除
+  - `initStorage()` 内で `storageManager.initialize()` → `memos.LoadCache()`（自動同期含む）→ `syncManager.start()` の順で実行
+
+**同期ログ出力例（初回起動）**:
+```
+[StorageManager] syncCategory(memos←Memo): BQ has 5525, local has 0, need fetch: 5525, local wins: 0
+[StorageManager] syncCategory: fetched 5525 records from BQ, saved to IndexedDB
+```
+**2回目以降（同期済み）**:
+```
+[StorageManager] syncCategory(memos←Memo): BQ has 5525, local has 5525, need fetch: 3, local wins: 5522
+[StorageManager] syncCategory: fetched 3 records from BQ, saved to IndexedDB
+```
+
+#### 16-F: アプリ一括起動コマンドとサーバー起動順序制御
+
+**目標**: `npm run dev` 1コマンドでバックエンド・フロントエンドを正しい順序で起動。ViteがバックエンドAPIより先に起動してBQ同期が失敗する問題を解消。
+
+**修正ファイル**:
+- `package.json`:
+  - `"dev"` スクリプトを変更: `npm run build:server && concurrently -n server,vite -c blue,green "npm run server:dev" "node server/wait-for-server.mjs && vite"`
+  - `concurrently@^9.2.1` を devDependencies に追加
+- `server/wait-for-server.mjs` 新規作成 — `http://localhost:8080/api/bq/versions` に500msごとにポーリングし、最大30秒待機後にViteを起動するヘルパースクリプト
+
+**起動フロー**:
+1. `npm run build:server` — サーバーTypeScriptをビルド（`dist-server/` 出力）
+2. `concurrently` で並列起動:
+   - **[server]**: Express + BigQuery + WebSocket (port 8080)
+   - **[vite]**: `wait-for-server.mjs` でバックエンド起動確認後にVite起動 (port 5173)
+
+**解消した問題**: Viteがバックエンドより先に起動し `BigQueryStorageService.initialize()` の `/api/bq/versions` が `ECONNREFUSED` で失敗 → `isRemoteAvailable=false` → BQ同期スキップ → ローカルデータのみ表示
+
+#### 16-G: Chat API キー読み込み修正
+
+**問題**: `dotenv` はデフォルトでシステム環境変数に既存キーがある場合に `.env` の値で上書きしない。`ANTHROPIC_API_KEY` が空値でシステム環境変数に存在する場合、`server/.env` の値が無視され `Chat API not available (503)` エラーが発生。
+
+**修正ファイル**:
+- `package.json` — `server:dev` スクリプトの `config({ path: 'server/.env' })` を `config({ path: 'server/.env', override: true })` に変更
+
+**確認方法**: サーバー起動ログで `injecting env (3) from server\.env` および `Chat API initialized (model: claude-sonnet-4-6)` が出力されることを確認（変更前は `injecting env (2)` かつ `ANTHROPIC_API_KEY not set, Chat API disabled`）。
+
 ---
 
 ### Phase 17: TextEditorタグシステム

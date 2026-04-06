@@ -370,27 +370,53 @@ async function saveChat() {
     document.title = title + ' - Chat';
     document.getElementById('headerTitle').textContent = title;
 
-    var db = await openDB();
-    var tx = db.transaction('files', 'readwrite');
-    var store = tx.objectStore('files');
     var now = new Date().toISOString();
+    var contentStr = JSON.stringify(chatHistory);
     var chatRecord = {
         file_id: sessionId,
         title: title,
         file_type: 'chat',
-        category: 'Chats',
-        content: JSON.stringify(chatHistory),
+        category: 'chats',
+        content: contentStr,
         metadata: null,
-        size_bytes: null,
+        size_bytes: contentStr.length,
         created_at: now,
         updated_at: now,
     };
+
+    // IndexedDBに即時保存（dirty付き）
+    var db = await openDB();
+    var tx = db.transaction('files', 'readwrite');
+    var store = tx.objectStore('files');
     await new Promise(function(resolve, reject) {
-      var req = store.put(chatRecord);
+      var req = store.put(Object.assign({}, chatRecord, { _dirty: true }));
       req.onsuccess = function() { resolve(); };
       req.onerror = function() { reject(req.error); };
     });
     db.close();
+
+    // BQへ非同期同期（失敗してもIndexedDBに残るため問題なし）
+    fetch('/api/bq/files', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(chatRecord),
+    }).then(function(res) {
+      if (res.ok) {
+        // BQ保存成功 → IndexedDBのdirtyフラグをクリア
+        openDB().then(function(db2) {
+          var tx2 = db2.transaction('files', 'readwrite');
+          var store2 = tx2.objectStore('files');
+          var getReq = store2.get(sessionId);
+          getReq.onsuccess = function() {
+            var rec = getReq.result;
+            if (rec) { delete rec._dirty; store2.put(rec); }
+          };
+          tx2.oncomplete = function() { db2.close(); };
+        });
+      }
+    }).catch(function(e) {
+      console.warn('BQ sync failed for chat, will retry on next startup:', e);
+    });
 
     // メインアプリに通知（DataGridに反映）
     if (window.parent !== window) {

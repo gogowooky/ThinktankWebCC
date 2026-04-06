@@ -43,15 +43,17 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
       if (!record || !record.file_id || !record.category) return;
 
       // カテゴリに対応するコレクションを取得して追加
-      // コレクションのIDまたはDatabaseIDで検索
+      // 1. ID一致 → 2. DatabaseID一致 → 3. HandledCategories含む
       const models = TTModels.Instance;
       const category = record.category;
       let col = models.GetItem(category);
       if (!(col instanceof TTDataCollection)) {
-        // DatabaseIDで検索
         const allItems = models.GetItems();
-        col = allItems.find(
-          item => item instanceof TTDataCollection && (item as TTDataCollection).DatabaseID === category
+        col = allItems.find(item =>
+          item instanceof TTDataCollection && (
+            (item as TTDataCollection).DatabaseID === category ||
+            (item as TTDataCollection).HandledCategories.includes(category)
+          )
         ) || undefined;
       }
       if (col instanceof TTDataCollection) {

@@ -27,7 +27,7 @@ const projectRoot = path.resolve(__dirname, '..');
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '50mb' }));
 
 // Auth routes and middleware
 app.use('/api/auth', authRoutes());
