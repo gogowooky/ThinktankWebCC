@@ -38,8 +38,9 @@ export class TTObject {
   /**
    * 更新を通知する
    * @param updateDate trueの場合、UpdateDateを現在日時に更新
+   * @param skipSave trueの場合、親コレクションの自動保存をスキップする
    */
-  public NotifyUpdated(updateDate: boolean = true): void {
+  public NotifyUpdated(updateDate: boolean = true, skipSave: boolean = false): void {
     if (updateDate) {
       this.UpdateDate = TTObject.getNowString();
     }
@@ -49,7 +50,7 @@ export class TTObject {
 
     // 親コレクションにも通知を伝播
     if (this._parent) {
-      this._parent.NotifyUpdated(false);
+      this._parent.NotifyUpdated(false, skipSave);
     }
   }
 

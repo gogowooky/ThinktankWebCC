@@ -15,8 +15,14 @@ function App() {
       await storageManager.initialize()
 
       const models = TTModels.Instance
-      // LoadCache()内でBQ↔IndexedDB自動同期（memos + Chats の両カテゴリ）
-      await models.Knowledge.LoadCache()
+      // 各コレクションの初期化
+      await Promise.all([
+        models.Status.LoadCache(),
+        models.Actions.LoadCache(),
+        models.Events.LoadCache(),
+        models.Knowledge.LoadCache(),
+      ])
+      await models.LoadCache()
 
       // SyncManager: WebSocket接続 + リモート更新受信
       syncManager.start((fileId: string) => {

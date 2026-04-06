@@ -75,7 +75,9 @@ export class TTKnowledge extends TTDataCollection {
 
       this.Count = this._children.size;
       this.IsLoaded = true;
-      this.NotifyUpdated(false);
+      this._suppressSave = true;
+      this.NotifyUpdated(false, true);
+      this._suppressSave = false;
       console.log(`[TTKnowledge] Total loaded: ${totalLoaded} items across ${this.SyncCategories.length} categories`);
     } catch (error) {
       console.error('[TTKnowledge] LoadCache failed:', error);

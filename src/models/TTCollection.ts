@@ -47,6 +47,7 @@ export class TTCollection extends TTObject {
   private _saveTimer: number | null = null;
   private _isSaving: boolean = false;
   private _nextSaveScheduled: boolean = false;
+  protected _suppressSave: boolean = false;
 
   /** ロード完了フラグ（未ロード時の保存によるデータ消失を防止） */
   public IsLoaded: boolean = false;
@@ -206,9 +207,11 @@ export class TTCollection extends TTObject {
   // キャッシュ保存/読込（Phase 12でStorageManager統合）
   // ═══════════════════════════════════════════════════════════════
 
-  public override NotifyUpdated(updateDate: boolean = true): void {
-    super.NotifyUpdated(updateDate);
-    this._scheduleSave();
+  public override NotifyUpdated(updateDate: boolean = true, skipSave: boolean = false): void {
+    super.NotifyUpdated(updateDate, skipSave);
+    if (!skipSave) {
+      this._scheduleSave();
+    }
   }
 
   /** デバウンス付き保存スケジュール（5秒） */
@@ -309,7 +312,9 @@ export class TTCollection extends TTObject {
 
       this.Count = this._children.size;
       this.IsLoaded = true;
-      this.NotifyUpdated(false);
+      this._suppressSave = true;
+      this.NotifyUpdated(false, true);
+      this._suppressSave = false;
       console.log(`[TTCollection] Loaded ${records.length} items from StorageManager for ${localCategory}`);
     } catch (error) {
       console.error(`[TTCollection] LoadCache failed for ${this.ID}:`, error);
@@ -344,7 +349,9 @@ export class TTCollection extends TTObject {
     }
     this.recordToItem(record, item);
     this.Count = this._children.size;
-    this.NotifyUpdated(false);
+    this._suppressSave = true;
+    this.NotifyUpdated(false, true);
+    this._suppressSave = false;
   }
 
   /** FileRecordからTTObjectにプロパティを適用 */

@@ -82,13 +82,6 @@ export class TTModels extends TTCollection {
 
     // ─── 初期化処理 ───
     // Phase 21でDefaultStatus/DefaultActions/DefaultEventsの初期化を追加
-
-    // キャッシュロード
-    this.Status.LoadCache();
-    this.Actions.LoadCache();
-    this.Events.LoadCache();
-    this.Knowledge.LoadCache();
-    this.LoadCache();
   }
 
   /** シングルトンインスタンスを取得 */
