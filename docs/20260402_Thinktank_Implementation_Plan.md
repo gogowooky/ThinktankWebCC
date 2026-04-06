@@ -964,6 +964,131 @@ WebSocket同期:
 
 **確認方法**: サーバー起動ログで `injecting env (3) from server\.env` および `Chat API initialized (model: claude-sonnet-4-6)` が出力されることを確認（変更前は `injecting env (2)` かつ `ANTHROPIC_API_KEY not set, Chat API disabled`）。
 
+#### 16-H: TTChatsコレクションとTTKnowledge統合DataGrid
+
+**目標**: AIチャット会話をIndexedDB + BigQueryの両方に保存（TTChatsコレクション）し、MemoとChatを1つのDataGridに統合表示するTTKnowledgeを実装する。
+
+**背景**: チャット保存はIndexedDBのみだったため、BQ側に永続化されずデバイス間同期されていなかった。また、DataGridはMemoのみ表示しておりChat一覧が表示されなかった。
+
+##### チャット保存のBQ二重書き込み
+
+**修正ファイル**:
+- `src/view-templates/chat.html` — `saveChat()` 関数を拡張:
+  - IndexedDB `files` ストアへ `{ file_id: sessionId, file_type: 'chat', category: 'chats', ... , _dirty: true }` として即時保存
+  - 非同期で `POST /api/bq/files` へ同一レコードを送信
+  - BQ保存成功後に IndexedDB のレコードから `_dirty` フラグを削除（次回起動時の再送防止）
+  - `category: 'Chats'`（旧）→ `category: 'chats'`（新・小文字に統一）
+- `server/index.ts` — `express.json({ limit: '50mb' })` に拡張（チャット内容が大きい場合の `PayloadTooLargeError` 対策）
+
+##### チャットタイトル正規化
+
+**問題**: BQには `title` フィールドにチャット全履歴JSON（`[{"role":"user","content":"..."}]` 形式）が保存されていた。
+
+**修正ファイル**:
+- `src/models/TTCollection.ts` — `recordToItem()` 内でチャットタイトルを正規化:
+  - `file_type === 'chat'` かつ `title` が `[` または `{` 始まりの場合、JSONとしてパースし、最初の `role==='user'` のメッセージの `content` 先頭40文字をタイトルとして使用
+  - パース失敗時はそのまま（フォールバック）
+
+##### md→memo 種別正規化
+
+**修正ファイル**:
+- `src/models/TTCollection.ts` — `recordToItem()` 内で `file_type` を表示用 `ContentType` に変換:
+  - `'md'` / `'markdown'` / `'text'` → `'memo'` に正規化（DataGridの「種別」列に `md` ではなく `memo` を表示）
+
+##### UTF-8 BOM除去
+
+**修正ファイル**:
+- `src/models/TTDataItem.ts` — `setContentSilent()` でコンテンツ先頭の `\uFEFF`（UTF-8 BOM）を除去してからセット（BOM付きmdファイルインポート時の表示崩れ対策）
+
+##### TTKnowledge統合コレクション
+
+**新規作成ファイル**:
+- `src/models/TTKnowledge.ts` — `TTDataCollection` を継承した統合コレクションクラス:
+  ```typescript
+  export class TTKnowledge extends TTDataCollection {
+    public SyncCategories: KnowledgeCategory[] = [];
+    constructor() { super(); this.ItemSaveProperties = ''; } // 直接Save不要
+    public override get HandledCategories(): string[] {
+      return this.SyncCategories.map(c => c.localCategory);
+    }
+    public override async LoadCache(): Promise<void> {
+      // SyncCategories を順に syncCategory() し、結果を _children に集約
+    }
+  }
+  ```
+  - `KnowledgeCategory: { localCategory: string; remoteCategory?: string }` インターフェース定義
+  - 複数カテゴリ（'memos', 'chats'）を1つの配列に集約して DataGrid に提供
+
+**修正ファイル**:
+- `src/models/TTCollection.ts`:
+  - `recordToItem()` を `private` → `protected` に変更（TTKnowledge でオーバーライド可能に）
+  - `HandledCategories: string[]` ゲッターを追加（デフォルト: `[this.DatabaseID || this.ID]`）
+  - `CollectionID` フィールド対応: recordToItem 内で `dataItem.CollectionID = record.category` をセット（アイテムの保存先カテゴリを保持）
+- `src/models/TTModels.ts`:
+  - `Memos: TTDataCollection` と `Chats: TTDataCollection` を削除
+  - `Knowledge: TTKnowledge` を追加
+  - `SyncCategories` を設定:
+    ```typescript
+    this.Knowledge.SyncCategories = [
+      { localCategory: 'memos', remoteCategory: 'Memo' },   // BQ旧データ
+      { localCategory: 'chats', remoteCategory: 'Chats' }, // BQ旧カテゴリ
+      { localCategory: 'chats', remoteCategory: 'chats' }, // BQ新カテゴリ
+    ];
+    ```
+  - DataGrid列マッピング: `'ID:ID,Name:タイトル,ContentType:種別,UpdateDate:更新日時'`
+- `src/App.tsx`:
+  - `models.Memos.LoadCache()` + `models.Chats.LoadCache()` → `models.Knowledge.LoadCache()` に統合
+  - `syncManager` の `GetItem(fileId)` 検索対象も `Knowledge` に変更
+- `src/components/WebView/WebViewPanel.tsx`:
+  - `postMessage` の `category` 解決に `HandledCategories.includes(category)` を使用（TTKnowledgeが複数カテゴリを処理できるよう対応）
+- `src/views/TTColumn.ts`:
+  - `_dataGridResource: string = 'Knowledge'`（'Memos' → 'Knowledge'）
+  - `GetCurrentCollection()` フォールバック: `models.Knowledge`
+
+**検証**:
+- DataGridにMemo（種別: memo）とChat（種別: chat）が混在して表示される
+- 種別列に `md` ではなく `memo` が表示される
+- チャットのタイトルがJSON文字列ではなく最初のユーザー発言の先頭40文字で表示される
+- BQ同期ログに `syncCategory(memos←Memo)` と `syncCategory(chats←chats)` の両方が出力される
+
+#### 16-I: DataGridチャットクリックによるチャットUI復元表示
+
+**目標**: DataGridでチャットアイテムをクリックした際、Markdownビューではなくチャット専用UIを WebViewPanel に表示し、保存済み会話を復元する。
+
+**実現方式**:
+- `chat.html` の `loadChat()` は既に `sessionId`（= `file_id`）を URL パラメータから取得し、IndexedDB の `files` ストアから `chatHistory` を読み込んで `renderMessages()` で描画する実装が完成している
+- `buildChatUrl(sessionId)` → `/view/chat?session={sessionId}` のユーティリティも既存
+
+**修正ファイル**:
+- `src/views/TTColumn.ts` — `SelectedItemID` セッターを拡張:
+  ```typescript
+  public set SelectedItemID(value: string) {
+    if (this._selectedItemID === value) return;
+    this._selectedItemID = value;
+    this._editorResource = value;
+    if (value) {
+      const collection = this.GetCurrentCollection();
+      const item = collection?.GetDataItem(value);
+      if (item?.ContentType === 'chat') {
+        this._webViewUrl = buildChatUrl(value);       // チャットUI復元
+      } else {
+        this._webViewUrl = buildMarkdownUrl(this._dataGridResource || 'Knowledge', value);
+      }
+    } else {
+      this._webViewUrl = '';
+    }
+    this.NotifyUpdated(false);
+  }
+  ```
+  - `buildChatUrl` を `webviewUrl.ts` からインポート追加
+
+**検証**:
+1. DataGrid でチャットアイテム（種別: chat）をクリック
+2. WebViewPanel が `/view/chat?session={id}` を iframe で表示
+3. `chat.html` が IndexedDB から該当 sessionId の会話履歴を読み込み
+4. 保存済みチャット（ユーザー発言・AI応答の全ターン）が UI に復元表示される
+5. 続きのメッセージ送信も可能（送信時は同一 sessionId で上書き保存）
+
 ---
 
 ### Phase 17: TextEditorタグシステム
