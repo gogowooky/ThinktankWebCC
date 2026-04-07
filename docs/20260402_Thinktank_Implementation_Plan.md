@@ -1157,7 +1157,7 @@ WebSocket同期:
 - `MutationObserver` が `data-color-mode` 変化を検知 → `setMonacoTheme()` でテーマを切替
 - 見出しスタックアルゴリズムによる `FoldingRangeProvider` を登録
 
-#### Phase 18-A 追加修正: テーマ統合 CSS 変数・Splitter・スクロールバー・キーワードチップ入力
+#### Phase 18-A 追加修正: テーマ統合 CSS 変数・Splitter・スクロールバー・キーワードハイライト入力
 
 **新規作成ファイル**:
 - `src/components/Layout/Splitter.css` - Splitter を `var(--tt-border-color)` / hover で `var(--tt-title-bg)` に変更
@@ -1167,18 +1167,18 @@ WebSocket同期:
 - `src/components/DataGrid/DataGrid.css`:
   - `.datagrid-check-cell, .datagrid-check-header` の `border-right` を `var(--tt-border-color)` に変更
   - スクロールバー track/thumb/hover を `var(--tt-base-color)` / `var(--tt-border-color)` / `var(--tt-column-header-fg)` に変更
-- `src/components/Column/TTColumnView.css` - キーワードチップ入力用 CSS 追加（`.panel-toolbar-tag-input` / `.keyword-chip` / `.keyword-chip-input`）
+- `src/components/Column/TTColumnView.css` - キーワードハイライト表示用 CSS 追加（`.keyword-highlight-display` / `.keyword-highlight-word`）
 - `src/components/Column/TTColumnView.tsx`:
-  - `KeywordTagInput` コンポーネントを追加（カンマ区切りキーワードをインラインチップとして TextBox 内に表示）
+  - `KeywordTagInput` コンポーネントを追加（TextEditor と同じ色付き背景スパンでキーワードを表示）
   - TextEditor ツールバーの `<input>` を `<KeywordTagInput>` に置換
   - 2 行目の `panel-toolbar-tags` div を削除（Editor 幅が狭くなる問題を解消）
 
 `KeywordTagInput` 動作:
-- カンマ前の各グループを色付きチップとして表示（`KEYWORD_COLORS` を使用）
-- 最後のカンマ以降の文字列を `<input>` で編集
-- Backspace キーで入力欄が空の場合、直前のチップを編集状態に戻す
+- **表示モード**（非フォーカス・値あり）: カンマ区切り各語を色付き背景スパンで表示（TextEditor のハイライトと同じ見た目）
+- **編集モード**（クリック後）: 通常の `<input>` に切り替え、任意の位置を自由に編集可能（中間語の削除・変更も可）
+- フォーカスアウトで表示モードに戻る
 
-**検証**: ハイライタバーにキーワード入力→一致箇所がハイライト。セクションFold/Unfold。テーマ切替。キーワードチップが TextBox 内にインライン表示。Splitter・スクロールバーがテーマ色に追従。
+**検証**: ハイライタバーにキーワード入力→一致箇所がハイライト。セクションFold/Unfold。テーマ切替。キーワードが TextBox 内に色付き背景スパンで表示。クリックで編集モードに切替、任意の語を編集・削除可能。Splitter・スクロールバーがテーマ色に追従。
 
 ---
 

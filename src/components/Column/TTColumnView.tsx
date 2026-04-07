@@ -10,56 +10,55 @@ import { toFullUrl, buildChatUrl } from '../../utils/webviewUrl';
 import type { PanelType } from '../../types';
 import './TTColumnView.css';
 
-/** カンマ区切りキーワードをチップ形式でTextBox内に表示するコンポーネント */
+/**
+ * キーワード入力コンポーネント
+ * - 編集時: 通常の <input>（自由にどこでも編集可能）
+ * - 表示時: 各カンマ区切り語をTextEditorと同じ色付き背景スパンで表示
+ */
 function KeywordTagInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const parts = value.split(',');
-  // 最後の要素が「入力中」、それ以前が確定済みチップ
-  const chips = parts.slice(0, -1);
-  const current = parts[parts.length - 1];
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newCurrent = e.target.value;
-    onChange(chips.length > 0 ? chips.join(',') + ',' + newCurrent : newCurrent);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && current === '' && chips.length > 0) {
-      // 最後のチップを削除して入力に戻す
-      const last = chips[chips.length - 1];
-      const remaining = chips.slice(0, -1);
-      onChange(remaining.length > 0 ? remaining.join(',') + ',' + last : last);
-      e.preventDefault();
-    }
-  };
-
-  return (
-    <div
-      className="panel-toolbar-input panel-toolbar-tag-input"
-      onClick={(e) => {
-        const input = (e.currentTarget as HTMLElement).querySelector('input');
-        input?.focus();
-      }}
-    >
-      {chips.map((chip, gi) => {
-        const trimmed = chip.trim();
-        if (!trimmed) return null;
-        const color = KEYWORD_COLORS[gi % KEYWORD_COLORS.length];
-        return (
-          <span key={gi} className="keyword-chip" style={{ backgroundColor: color }}>
-            {trimmed}
-          </span>
-        );
-      })}
-      <input
-        type="text"
-        className="keyword-chip-input"
-        placeholder={chips.length === 0 ? 'Highlight...' : ''}
-        value={current}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
+  // 表示モード: 値あり かつ 非編集中
+  if (!editing && value.trim()) {
+    return (
+      <div
+        className="panel-toolbar-input keyword-highlight-display"
+        title={value}
+        onClick={() => {
+          setEditing(true);
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }}
         onMouseDown={(e) => e.stopPropagation()}
-      />
-    </div>
+      >
+        {value.split(',').map((part, gi) => {
+          const trimmed = part.trim();
+          if (!trimmed) return null;
+          const color = KEYWORD_COLORS[gi % KEYWORD_COLORS.length];
+          return (
+            <span key={gi} className="keyword-highlight-word" style={{ backgroundColor: color }}>
+              {trimmed}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // 編集モード: 通常の input
+  return (
+    <input
+      ref={inputRef}
+      className="panel-toolbar-input"
+      type="text"
+      placeholder="Highlight..."
+      value={value}
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus={editing}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={() => setEditing(false)}
+      onMouseDown={(e) => e.stopPropagation()}
+    />
   );
 }
 
