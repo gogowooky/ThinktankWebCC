@@ -10,6 +10,59 @@ import { toFullUrl, buildChatUrl } from '../../utils/webviewUrl';
 import type { PanelType } from '../../types';
 import './TTColumnView.css';
 
+/** カンマ区切りキーワードをチップ形式でTextBox内に表示するコンポーネント */
+function KeywordTagInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const parts = value.split(',');
+  // 最後の要素が「入力中」、それ以前が確定済みチップ
+  const chips = parts.slice(0, -1);
+  const current = parts[parts.length - 1];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCurrent = e.target.value;
+    onChange(chips.length > 0 ? chips.join(',') + ',' + newCurrent : newCurrent);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && current === '' && chips.length > 0) {
+      // 最後のチップを削除して入力に戻す
+      const last = chips[chips.length - 1];
+      const remaining = chips.slice(0, -1);
+      onChange(remaining.length > 0 ? remaining.join(',') + ',' + last : last);
+      e.preventDefault();
+    }
+  };
+
+  return (
+    <div
+      className="panel-toolbar-input panel-toolbar-tag-input"
+      onClick={(e) => {
+        const input = (e.currentTarget as HTMLElement).querySelector('input');
+        input?.focus();
+      }}
+    >
+      {chips.map((chip, gi) => {
+        const trimmed = chip.trim();
+        if (!trimmed) return null;
+        const color = KEYWORD_COLORS[gi % KEYWORD_COLORS.length];
+        return (
+          <span key={gi} className="keyword-chip" style={{ backgroundColor: color }}>
+            {trimmed}
+          </span>
+        );
+      })}
+      <input
+        type="text"
+        className="keyword-chip-input"
+        placeholder={chips.length === 0 ? 'Highlight...' : ''}
+        value={current}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        onMouseDown={(e) => e.stopPropagation()}
+      />
+    </div>
+  );
+}
+
 /**
  * TTColumnView - 1列分のUIコンポーネント
  *
@@ -193,14 +246,21 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
         <div className={`panel-titlebar ${isFocused ? 'panel-titlebar-focused' : ''}`}>
           <div className="panel-title-row">{title}</div>
           <div className="panel-toolbar">
-            <input
-              className="panel-toolbar-input"
-              type="text"
-              placeholder={toolbarProps.placeholder}
-              value={toolbarProps.value}
-              onChange={(e) => toolbarProps.onChange(e.target.value)}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
+            {panel.type === 'TextEditor' ? (
+              <KeywordTagInput
+                value={toolbarProps.value}
+                onChange={toolbarProps.onChange}
+              />
+            ) : (
+              <input
+                className="panel-toolbar-input"
+                type="text"
+                placeholder={toolbarProps.placeholder}
+                value={toolbarProps.value}
+                onChange={(e) => toolbarProps.onChange(e.target.value)}
+                onMouseDown={(e) => e.stopPropagation()}
+              />
+            )}
             {panel.type === 'DataGrid' && column.CheckedCount > 0 && (
               <button
                 className="panel-toolbar-btn panel-toolbar-btn-chat"
@@ -234,20 +294,6 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 <span className="chat-btn-icon">💬</span>
                 <span className="chat-btn-count">{column.EditorSelection.split('\n').length}</span>
               </button>
-            )}
-            {panel.type === 'TextEditor' && column.HighlighterKeyword.trim() && (
-              <div className="panel-toolbar-tags">
-                {column.HighlighterKeyword.split(',').map((group, gi) => {
-                  const trimmed = group.trim();
-                  if (!trimmed) return null;
-                  const color = KEYWORD_COLORS[gi % KEYWORD_COLORS.length];
-                  return (
-                    <span key={gi} className="panel-toolbar-tag" style={{ backgroundColor: color }}>
-                      {trimmed}
-                    </span>
-                  );
-                })}
-              </div>
             )}
           </div>
         </div>

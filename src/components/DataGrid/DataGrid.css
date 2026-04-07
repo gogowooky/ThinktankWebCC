@@ -87,7 +87,7 @@
 .datagrid-check-header {
   justify-content: center;
   padding: 0 !important;
-  border-right: 1px solid #3c3c3c;
+  border-right: 1px solid var(--tt-border-color, #3c3c3c);
   flex-shrink: 0;
 }
 
@@ -129,16 +129,16 @@
 }
 
 .datagrid-body ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: var(--tt-base-color, #1e1e1e);
 }
 
 .datagrid-body ::-webkit-scrollbar-thumb {
-  background: #424242;
+  background: var(--tt-border-color, #424242);
   border-radius: 4px;
 }
 
 .datagrid-body ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--tt-column-header-fg, #555);
 }
 
 /* ─── 空状態 ─── */

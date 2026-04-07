@@ -1127,15 +1127,58 @@ WebSocket同期:
 
 **目標**: ハイライタバー駆動のハイライト、Folding、ビジュアルテーマ。
 
+#### Phase 18 実装内容
+
 **新規作成ファイル**:
-- `src/services/KeywordHighlighter.ts` - キーワードハイライトデコレーション
-- `src/services/ColorTheme.ts` - ビジュアルテーマ定義
+- `src/services/ColorTheme.ts` - ビジュアルテーマ定義と CSS 変数適用サービス
 
 **修正ファイル**:
-- `src/components/TextEditor/TextEditorHighlighter.tsx` - キーワード入力→ハイライト駆動
-- `src/components/TextEditor/TextEditorPanel.tsx` - Folding設定、テーマ適用
+- `src/components/TextEditor/TextEditorPanel.tsx` - Monaco カスタムテーマ・`tt-markdown` トークナイザ・Folding
+- `src/utils/editorHighlight.ts` - `applyHeadingHighlight` / 見出しCSS注入を削除（Monacoトークナイザに移行）
+- `src/App.tsx` - モジュールレベルで `applyColorMode('DefaultOriginal')` 呼び出し追加
+- `src/index.css` - `body` に `var(--tt-base-color)` / `var(--tt-editor-fg)` 適用
+- `src/components/Layout/AppLayout.css` - `.app-layout` / `.app-statusbar` を CSS 変数化
+- `src/components/Column/TTColumnView.css` - 全セレクタを `--tt-*` CSS 変数化
+- `src/components/DataGrid/DataGrid.css` - 全セレクタを `--tt-*` CSS 変数化
 
-**検証**: ハイライタバーにキーワード入力→一致箇所がハイライト。セクションFold/Unfold。テーマ切替。
+**実装詳細**:
+
+`ColorTheme.ts`:
+- `DefaultDark` / `DefaultOriginal`（reference2 ラベンダー系）の 2 テーマを定義
+- `applyColorMode(modeName)` が `document.documentElement` に `--tt-*` CSS 変数をすべてセット、`data-color-mode` 属性も更新
+- デフォルトテーマは `DefaultOriginal`（起動時に `App.tsx` から呼び出し）
+
+`TextEditorPanel.tsx`:
+- モジュールフラグ `monacoSetupDone` で二重登録防止
+- `beforeMount` ハンドラで `tt-markdown` 言語・Monarch トークナイザを登録
+  - H1–H6 を色分け（my-dark: `40C040` / `FFB030` / `F080A0` / `5090D0` / `D08060` / `30B0B0`）
+  - my-light: `008000` / `CC8500` / `DB7093` / `4682B4` / `A52A2A` / `008080`
+- `my-dark` / `my-light` Monaco テーマを `defineTheme` で登録
+- `MutationObserver` が `data-color-mode` 変化を検知 → `setMonacoTheme()` でテーマを切替
+- 見出しスタックアルゴリズムによる `FoldingRangeProvider` を登録
+
+#### Phase 18-A 追加修正: テーマ統合 CSS 変数・Splitter・スクロールバー・キーワードチップ入力
+
+**新規作成ファイル**:
+- `src/components/Layout/Splitter.css` - Splitter を `var(--tt-border-color)` / hover で `var(--tt-title-bg)` に変更
+
+**修正ファイル**:
+- `src/components/Layout/Splitter.tsx` - インラインカラー削除、`Splitter.css` をインポート
+- `src/components/DataGrid/DataGrid.css`:
+  - `.datagrid-check-cell, .datagrid-check-header` の `border-right` を `var(--tt-border-color)` に変更
+  - スクロールバー track/thumb/hover を `var(--tt-base-color)` / `var(--tt-border-color)` / `var(--tt-column-header-fg)` に変更
+- `src/components/Column/TTColumnView.css` - キーワードチップ入力用 CSS 追加（`.panel-toolbar-tag-input` / `.keyword-chip` / `.keyword-chip-input`）
+- `src/components/Column/TTColumnView.tsx`:
+  - `KeywordTagInput` コンポーネントを追加（カンマ区切りキーワードをインラインチップとして TextBox 内に表示）
+  - TextEditor ツールバーの `<input>` を `<KeywordTagInput>` に置換
+  - 2 行目の `panel-toolbar-tags` div を削除（Editor 幅が狭くなる問題を解消）
+
+`KeywordTagInput` 動作:
+- カンマ前の各グループを色付きチップとして表示（`KEYWORD_COLORS` を使用）
+- 最後のカンマ以降の文字列を `<input>` で編集
+- Backspace キーで入力欄が空の場合、直前のチップを編集状態に戻す
+
+**検証**: ハイライタバーにキーワード入力→一致箇所がハイライト。セクションFold/Unfold。テーマ切替。キーワードチップが TextBox 内にインライン表示。Splitter・スクロールバーがテーマ色に追従。
 
 ---
 

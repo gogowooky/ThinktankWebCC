@@ -75,6 +75,42 @@
   border-color: #0078d4;
 }
 
+/* ─── キーワードチップ入力（TextBox内インライン表示） ─── */
+
+.panel-toolbar-tag-input {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 3px;
+  overflow: hidden;
+  cursor: text;
+}
+
+.keyword-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 5px;
+  height: 14px;
+  font-size: 10px;
+  line-height: 1;
+  border-radius: 3px;
+  white-space: nowrap;
+  color: #f0f0f0;
+  flex-shrink: 0;
+}
+
+.keyword-chip-input {
+  flex: 1;
+  min-width: 30px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--tt-editor-fg, #e0e0e0);
+  font-size: 11px;
+  height: 100%;
+  padding: 0;
+}
+
 /* ─── ツールバーボタン ─── */
 
 .panel-toolbar-btn {

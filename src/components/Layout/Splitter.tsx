@@ -1,4 +1,5 @@
 import { useCallback, useRef } from 'react';
+import './Splitter.css';
 
 /**
  * Splitter - ドラッグでリサイズするスプリッタバー
@@ -55,15 +56,10 @@ export function Splitter({ direction, onResize }: SplitterProps) {
       className={`splitter splitter-${direction}`}
       onMouseDown={handleMouseDown}
       style={{
-        flexShrink: 0,
         width: isHorizontal ? 4 : '100%',
         height: isHorizontal ? '100%' : 4,
         cursor: isHorizontal ? 'col-resize' : 'row-resize',
-        backgroundColor: '#333',
-        transition: 'background-color 0.15s',
       }}
-      onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#0078d4')}
-      onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#333')}
     />
   );
 }
