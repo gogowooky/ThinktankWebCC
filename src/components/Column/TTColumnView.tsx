@@ -15,7 +15,7 @@ import './TTColumnView.css';
  * - 編集時: 通常の <input>（自由にどこでも編集可能）
  * - 表示時: 各カンマ区切り語をTextEditorと同じ色付き背景スパンで表示
  */
-function KeywordTagInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onChange: (v: string) => void, onFocusPanel: () => void }) {
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -29,7 +29,10 @@ function KeywordTagInput({ value, onChange }: { value: string; onChange: (v: str
           setEditing(true);
           setTimeout(() => inputRef.current?.focus(), 0);
         }}
-        onMouseDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onFocusPanel();
+        }}
       >
         {value.split(',').map((part, gi) => {
           const trimmed = part.trim();
@@ -57,7 +60,10 @@ function KeywordTagInput({ value, onChange }: { value: string; onChange: (v: str
       autoFocus={editing}
       onChange={(e) => onChange(e.target.value)}
       onBlur={() => setEditing(false)}
-      onMouseDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        onFocusPanel();
+      }}
     />
   );
 }
@@ -227,7 +233,35 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     const selectedId = column.SelectedItemID;
     const selectedItem = selectedId ? column.GetCurrentCollection()?.GetDataItem(selectedId) : null;
     const itemInfo = selectedItem ? ` | ${selectedItem.ID} | ${selectedItem.Name}` : '';
-    const title = `${isFocused ? '● ' : ''}${PANEL_TITLES[panel.type]}${itemInfo}`;
+    
+    let titleNode: React.ReactNode;
+    if (panel.type === 'WebView') {
+      let displayUrl = column.WebViewUrl.trim();
+      if (displayUrl.length > 50) {
+        displayUrl = displayUrl.substring(0, 50) + '...';
+      }
+      titleNode = (
+        <>
+          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {`${isFocused ? '● ' : ''}WebView${displayUrl ? ` | ${displayUrl}` : ''}`}
+          </span>
+          {column.WebViewUrl.trim() && (
+            <button
+              className="panel-title-open-btn"
+              title="Open in new window"
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={() => {
+                window.open(toFullUrl(column.WebViewUrl), '_blank');
+              }}
+            >
+              &#x2197;
+            </button>
+          )}
+        </>
+      );
+    } else {
+      titleNode = <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{`${isFocused ? '● ' : ''}${PANEL_TITLES[panel.type]}${itemInfo}`}</span>;
+    }
 
     const toolbarProps = {
       DataGrid: { placeholder: 'Filter...', value: column.DataGridFilter, onChange: (v: string) => { column.DataGridFilter = v; } },
@@ -243,12 +277,13 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
         onMouseDown={() => handlePanelFocus(panel.type)}
       >
         <div className={`panel-titlebar ${isFocused ? 'panel-titlebar-focused' : ''}`}>
-          <div className="panel-title-row">{title}</div>
+          <div className="panel-title-row">{titleNode}</div>
           <div className="panel-toolbar">
             {panel.type === 'TextEditor' ? (
               <KeywordTagInput
                 value={toolbarProps.value}
                 onChange={toolbarProps.onChange}
+                onFocusPanel={() => handlePanelFocus(panel.type)}
               />
             ) : (
               <input
@@ -257,7 +292,10 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 placeholder={toolbarProps.placeholder}
                 value={toolbarProps.value}
                 onChange={(e) => toolbarProps.onChange(e.target.value)}
-                onMouseDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handlePanelFocus(panel.type);
+                }}
               />
             )}
             {panel.type === 'DataGrid' && column.CheckedCount > 0 && (
@@ -269,18 +307,6 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
               >
                 <span className="chat-btn-icon">💬</span>
                 <span className="chat-btn-count">{column.CheckedCount}</span>
-              </button>
-            )}
-            {panel.type === 'WebView' && column.WebViewUrl.trim() && (
-              <button
-                className="panel-toolbar-btn"
-                title="Open in new window"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={() => {
-                  window.open(toFullUrl(column.WebViewUrl), '_blank');
-                }}
-              >
-                &#x2197;
               </button>
             )}
             {panel.type === 'TextEditor' && column.EditorSelection && (

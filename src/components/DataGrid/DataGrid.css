@@ -38,7 +38,7 @@
 }
 
 .datagrid-header-cell:hover {
-  background-color: #333;
+  background-color: var(--tt-title-bg, #2d2d30);
 }
 
 .datagrid-header-cell-sorted {
@@ -87,7 +87,6 @@
 .datagrid-check-header {
   justify-content: center;
   padding: 0 !important;
-  border-right: 1px solid var(--tt-border-color, #3c3c3c);
   flex-shrink: 0;
 }
 

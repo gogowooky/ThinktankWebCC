@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { TTColumn } from '../../views/TTColumn';
+import { TTApplication } from '../../views/TTApplication';
 import { TTModels } from '../../models/TTModels';
 import { TTDataCollection } from '../../models/TTDataCollection';
 import { isExternalUrl, buildMarkdownUrl } from '../../utils/webviewUrl';
@@ -100,6 +101,21 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
 
     iframe.addEventListener('load', handleLoad);
     return () => iframe.removeEventListener('load', handleLoad);
+  }, [column]);
+
+  // iframeへのフォーカス移動を検知してパネルフォーカス状態を更新する
+  useEffect(() => {
+    const handleWindowBlur = () => {
+      // blurイベント発生直後は activeElement が更新されていない場合があるため遅延評価
+      setTimeout(() => {
+        if (document.activeElement === iframeRef.current) {
+          TTApplication.Instance.ActiveColumnIndex = column.Index;
+          column.FocusedPanel = 'WebView';
+        }
+      }, 0);
+    };
+    window.addEventListener('blur', handleWindowBlur);
+    return () => window.removeEventListener('blur', handleWindowBlur);
   }, [column]);
 
   const url = column.WebViewUrl.trim();
