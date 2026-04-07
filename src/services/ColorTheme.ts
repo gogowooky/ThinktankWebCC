@@ -45,11 +45,33 @@ export const DefaultDark: ColorTheme = {
   splitterTrigger: '#32CD32',
 };
 
-const colorThemes: Record<string, ColorTheme> = {
-  DefaultDark,
+// DefaultOriginal - ラベンダー系ライトテーマ（reference2 Style.xaml準拠）
+export const DefaultOriginal: ColorTheme = {
+  name: 'DefaultOriginal',
+  baseColor: '#E6E6FA',
+  titleBackground: '#6A5ACD',
+  titleForeground: '#FFFFFF',
+  editorBackground: '#FFFFFF',
+  editorForeground: '#483D8B',
+  keywordBackground: '#FFF0F0',
+  cursorLineInactive: '#E6E6FA',
+  cursorLineActive1: '#F5E0F0',
+  cursorLineActive2: '#D5E0FF',
+  cursorLineActive3: '#F4F4E0',
+  columnHeaderBackground: '#7B68EE',
+  columnHeaderForeground: '#FFFFFF',
+  listItemBackground: '#EAEAFF',
+  listItemSelected: '#C6C6FA',
+  borderColor: '#B0B0D8',
+  splitterTrigger: '#32CD32',
 };
 
-let currentTheme: ColorTheme = DefaultDark;
+const colorThemes: Record<string, ColorTheme> = {
+  DefaultDark,
+  DefaultOriginal,
+};
+
+let currentTheme: ColorTheme = DefaultOriginal;
 
 /**
  * カラーモードを適用してCSS変数をセット

@@ -16,7 +16,7 @@
   flex-direction: row;
   flex: 1;
   overflow: hidden;
-  background-color: #1e1e1e;
+  background-color: var(--tt-base-color, #1e1e1e);
 }
 
 /* ─── ステータスバー ─── */
@@ -28,7 +28,7 @@
   align-items: center;
   padding: 0 10px;
   font-size: 11px;
-  color: #ccc;
-  background-color: #007acc;
+  color: var(--tt-title-fg, #ccc);
+  background-color: var(--tt-title-bg, #007acc);
   user-select: none;
 }

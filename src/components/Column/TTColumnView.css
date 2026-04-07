@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #1e1e1e;
+  background-color: var(--tt-base-color, #1e1e1e);
 }
 
 /* ─── パネルコンテナ ─── */
@@ -31,7 +31,8 @@
 }
 
 .panel-titlebar-focused {
-  background-color: #2d2d30;
+  background-color: var(--tt-title-bg, #2d2d30);
+  opacity: 0.92;
 }
 
 .panel-title-row {
@@ -45,7 +46,7 @@
 }
 
 .panel-titlebar-focused .panel-title-row {
-  color: #e0e0e0;
+  color: var(--tt-title-fg, #e0e0e0);
 }
 
 .panel-toolbar {
@@ -59,15 +60,15 @@
   height: 18px;
   padding: 0 6px;
   font-size: 11px;
-  color: #e0e0e0;
-  background-color: #2d2d30;
-  border: 1px solid #3c3c3c;
+  color: var(--tt-editor-fg, #e0e0e0);
+  background-color: var(--tt-editor-bg, #2d2d30);
+  border: 1px solid var(--tt-border-color, #3c3c3c);
   border-radius: 2px;
   outline: none;
 }
 
 .panel-titlebar-focused .panel-toolbar-input {
-  background-color: #333;
+  background-color: var(--tt-editor-bg, #333);
 }
 
 .panel-toolbar-input:focus {
@@ -84,9 +85,9 @@
   padding: 0;
   font-size: 12px;
   line-height: 18px;
-  color: #aaa;
-  background: #2d2d30;
-  border: 1px solid #3c3c3c;
+  color: var(--tt-column-header-fg, #aaa);
+  background: var(--tt-list-item-bg, #2d2d30);
+  border: 1px solid var(--tt-border-color, #3c3c3c);
   border-radius: 2px;
   cursor: pointer;
   display: flex;
@@ -95,8 +96,8 @@
 }
 
 .panel-toolbar-btn:hover {
-  color: #e0e0e0;
-  background: #3c3c3c;
+  color: var(--tt-title-fg, #e0e0e0);
+  background: var(--tt-title-bg, #3c3c3c);
 }
 
 /* ─── チャットボタン（アイコン＋数字） ─── */
@@ -145,17 +146,17 @@
 .panel-content {
   flex: 1;
   overflow: hidden;
-  border: 1px solid #333;
+  border: 1px solid var(--tt-border-color, #333);
 }
 
 .panel-datagrid .panel-content {
-  background-color: #1e1e1e;
+  background-color: var(--tt-list-item-bg, #1e1e1e);
 }
 
 .panel-webview .panel-content {
-  background-color: #222;
+  background-color: var(--tt-editor-bg, #222);
 }
 
 .panel-texteditor .panel-content {
-  background-color: #1e1e1e;
+  background-color: var(--tt-editor-bg, #1e1e1e);
 }

@@ -97,6 +97,45 @@ const handleEditorWillMount: BeforeMount = (monaco) => {
     },
   });
 
+  // ── my-light テーマ定義（DefaultOriginal ラベンダー系） ──────
+  monaco.editor.defineTheme('my-light', {
+    base: 'vs',
+    inherit: true,
+    rules: [
+      { token: 'heading1.md', foreground: '008000', fontStyle: 'bold underline' },
+      { token: 'heading2.md', foreground: 'CC8500', fontStyle: 'bold underline' },
+      { token: 'heading3.md', foreground: 'DB7093', fontStyle: 'bold underline' },
+      { token: 'heading4.md', foreground: '4682B4', fontStyle: 'bold underline' },
+      { token: 'heading5.md', foreground: 'A52A2A', fontStyle: 'bold underline' },
+      { token: 'heading6.md', foreground: '008080', fontStyle: 'bold underline' },
+      { token: 'strong.md',   fontStyle: 'bold' },
+      { token: 'emphasis.md', fontStyle: 'italic' },
+      { token: 'string.link.md', foreground: '4169E1', fontStyle: 'underline' },
+      { token: 'string.code.md', foreground: 'A31515' },
+      { token: 'variable.md',    foreground: 'A31515' },
+      { token: 'keyword.md',     foreground: '5050A0' },
+      { token: 'comment.md',     foreground: '008000' },
+    ],
+    colors: {
+      'editor.background':                          '#FFFFFF',
+      'editor.foreground':                          '#483D8B',
+      'editorLineNumber.foreground':                '#B0B0D8',
+      'editorGutter.foldingControlForeground':      '#B0B0D8',
+      'editor.lineHighlightBackground':             '#F5F5FF',
+      'editorCursor.foreground':                    '#483D8B',
+      'editor.selectionBackground':                 '#C6C6FA',
+      'editorBracketMatch.background':              '#00000000',
+      'editorBracketMatch.border':                  '#00000000',
+      'editorBracketHighlight.foreground1':         '#483D8B',
+      'editorBracketHighlight.foreground2':         '#483D8B',
+      'editorBracketHighlight.foreground3':         '#483D8B',
+      'editorBracketHighlight.foreground4':         '#483D8B',
+      'editorBracketHighlight.foreground5':         '#483D8B',
+      'editorBracketHighlight.foreground6':         '#483D8B',
+      'editorBracketHighlight.unexpectedBracket.foreground': '#483D8B',
+    },
+  });
+
   // ── 見出しベース Folding プロバイダ ──────────────────────────
   monaco.languages.registerFoldingRangeProvider('tt-markdown', {
     provideFoldingRanges: (model: editor.ITextModel) => {
@@ -124,6 +163,11 @@ const handleEditorWillMount: BeforeMount = (monaco) => {
   });
 };
 
+/** colorMode文字列からMonacoテーマ名を返す */
+function monacoThemeFromColorMode(colorMode: string | undefined): string {
+  return colorMode === 'DefaultOriginal' ? 'my-light' : 'my-dark';
+}
+
 // ─────────────────────────────────────────────────────────────────
 
 interface TextEditorPanelProps {
@@ -140,6 +184,18 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
 
   const wordDecoIds    = useRef<string[]>([]);
   const keywordDecoIds = useRef<string[]>([]);
+
+  // colorMode変更を監視してMonacoテーマを切り替え
+  const [monacoTheme, setMonacoTheme] = useState(
+    () => monacoThemeFromColorMode(document.documentElement.dataset.colorMode)
+  );
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setMonacoTheme(monacoThemeFromColorMode(document.documentElement.dataset.colorMode));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-color-mode'] });
+    return () => observer.disconnect();
+  }, []);
 
   // EditorResource変更時にコンテンツをロード
   useEffect(() => {
@@ -250,7 +306,7 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
         width={width}
         height={height}
         language="tt-markdown"
-        theme="my-dark"
+        theme={monacoTheme}
         value={content}
         beforeMount={handleEditorWillMount}
         onMount={handleEditorMount}
