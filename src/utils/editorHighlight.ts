@@ -232,54 +232,6 @@ export function applyKeywordHighlight(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// 見出しハイライト適用（Markdown # レベル別カラー）
-// ═══════════════════════════════════════════════════════════════
-
-/** 見出しレベル別カラー（明るい水色〜青系、全レベル高視認性） */
-const HEADING_COLORS = [
-  '#5ce0ff',   // H1 - 明るいシアン
-  '#45c8f0',   // H2 - ライトブルー
-  '#6898ff',   // H3 - ロイヤルブルー
-  '#a0b8ff',   // H4 - ペールブルー
-  '#8898e8',   // H5 - ペリウィンクル
-  '#9a90e0',   // H6 - ラベンダーブルー
-];
-
-export function applyHeadingHighlight(
-  ed: editor.IStandaloneCodeEditor,
-  prevIds: string[],
-): string[] {
-  const model = ed.getModel();
-  if (!model) return ed.deltaDecorations(prevIds, []);
-
-  const decorations: editor.IModelDeltaDecoration[] = [];
-  const lineCount = model.getLineCount();
-
-  for (let line = 1; line <= lineCount; line++) {
-    const content = model.getLineContent(line);
-    const match = content.match(/^(#{1,6})\s/);
-    if (!match) continue;
-
-    const level = match[1].length; // 1-6
-
-    decorations.push({
-      range: {
-        startLineNumber: line,
-        startColumn: 1,
-        endLineNumber: line,
-        endColumn: content.length + 1,
-      },
-      options: {
-        inlineClassName: `tt-heading-${level}`,
-        stickiness: 1,
-      },
-    });
-  }
-
-  return ed.deltaDecorations(prevIds, decorations);
-}
-
-// ═══════════════════════════════════════════════════════════════
 // CSS注入（初回のみ）
 // ═══════════════════════════════════════════════════════════════
 
@@ -304,16 +256,6 @@ export function injectHighlightCSS(): void {
   background-color: ${color};
   color: #f0f0f0;
   border-radius: 2px;
-}`);
-  });
-
-  // 見出しハイライト（レベル別カラー + フォントウェイト）
-  HEADING_COLORS.forEach((color, i) => {
-    const level = i + 1;
-    const weight = level <= 2 ? 'bold' : 'normal';
-    rules.push(`.tt-heading-${level} {
-  color: ${color} !important;
-  font-weight: ${weight};
 }`);
   });
 

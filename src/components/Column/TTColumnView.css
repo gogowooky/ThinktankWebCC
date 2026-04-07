@@ -23,8 +23,8 @@
 .panel-titlebar {
   display: flex;
   flex-direction: column;
-  background-color: #252526;
-  border-bottom: 1px solid #333;
+  background-color: var(--tt-column-header-bg, #252526);
+  border-bottom: 1px solid var(--tt-border-color, #333);
   user-select: none;
   cursor: default;
   flex-shrink: 0;
@@ -41,7 +41,7 @@
   align-items: center;
   padding: 0 8px;
   font-size: 11px;
-  color: #888;
+  color: var(--tt-column-header-fg, #888);
 }
 
 .panel-titlebar-focused .panel-title-row {

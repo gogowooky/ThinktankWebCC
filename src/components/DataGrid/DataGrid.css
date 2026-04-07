@@ -19,8 +19,8 @@
   flex-direction: row;
   height: 18px;
   min-height: 18px;
-  background-color: #2d2d30;
-  border-bottom: 1px solid #3c3c3c;
+  background-color: var(--tt-column-header-bg, #2d2d30);
+  border-bottom: 1px solid var(--tt-border-color, #3c3c3c);
   user-select: none;
 }
 
@@ -29,12 +29,12 @@
   align-items: center;
   padding: 0 6px;
   font-size: 11px;
-  color: #aaa;
+  color: var(--tt-column-header-fg, #aaa);
   cursor: pointer;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  border-right: 1px solid #3c3c3c;
+  border-right: 1px solid var(--tt-border-color, #3c3c3c);
 }
 
 .datagrid-header-cell:hover {
@@ -72,11 +72,12 @@
 }
 
 .datagrid-row-selected {
-  background-color: #094771;
+  background-color: var(--tt-list-item-selected, #094771);
 }
 
 .datagrid-row-selected:hover {
-  background-color: #0a5a8a;
+  background-color: var(--tt-list-item-selected, #094771);
+  filter: brightness(1.15);
 }
 
 /* ─── チェックボックス列 ─── */

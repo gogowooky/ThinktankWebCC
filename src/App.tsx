@@ -4,6 +4,10 @@ import { TTModels } from './models/TTModels'
 import { storageManager } from './services/storage/StorageManager'
 import { syncManager } from './services/sync/SyncManager'
 import { AppLayout } from './components/Layout/AppLayout'
+import { applyColorMode } from './services/ColorTheme'
+
+// カラーテーマを即時適用（Monaco描画前にCSS変数を確定させる）
+applyColorMode('DefaultDark')
 
 function App() {
   useEffect(() => {

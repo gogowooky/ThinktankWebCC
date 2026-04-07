@@ -1,11 +1,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import Editor, { type OnMount } from '@monaco-editor/react';
-import type { editor } from 'monaco-editor';
+import Editor, { type OnMount, type BeforeMount } from '@monaco-editor/react';
+import type { editor, languages as MonacoLanguages } from 'monaco-editor';
 import { TTColumn } from '../../views/TTColumn';
 import {
   applyWordHighlight,
   applyKeywordHighlight,
-  applyHeadingHighlight,
   injectHighlightCSS,
 } from '../../utils/editorHighlight';
 import './TextEditor.css';
@@ -13,13 +12,119 @@ import './TextEditor.css';
 /**
  * TextEditorPanel - Monaco Editorによるテキスト編集パネル
  *
- * TTColumn.EditorResourceの変更を監視し、対応するTTDataItemのContentを
- * Monaco Editorにロード。編集内容はTTDataItemに書き戻す。
- *
- * ハイライト機能:
- * - 単語ハイライト: カーソル位置の日本語対応ワード（漢字/カタカナ/ひらがな/括弧内）
- * - キーワードハイライト: Highlightバー入力（space=同色AND, comma=別色OR）
+ * Phase 18 対応:
+ * - tt-markdown カスタム言語（Monarchトークナイザー）
+ * - my-dark カスタムテーマ（reference2準拠の見出し色: H1=緑/H2=橙/H3=ピンク等）
+ * - 見出しベースのFolding（FoldingRangeProvider）
+ * - 見出しハイライトはMonacoトークン着色に一本化（CSS decorationは廃止）
  */
+
+// 言語・テーマ・Foldingの登録済みフラグ（ホットリロード対策）
+let monacoSetupDone = false;
+
+/** Monaco beforeMount: tt-markdown 言語・my-dark テーマ・Foldingを登録 */
+const handleEditorWillMount: BeforeMount = (monaco) => {
+  if (monacoSetupDone) return;
+  monacoSetupDone = true;
+
+  // ── tt-markdown 言語登録 ──────────────────────────────────
+  if (!monaco.languages.getLanguages().some(l => l.id === 'tt-markdown')) {
+    monaco.languages.register({ id: 'tt-markdown' });
+  }
+
+  monaco.languages.setMonarchTokensProvider('tt-markdown', {
+    tokenizer: {
+      root: [
+        [/^######\s.*$/, 'heading6.md'],
+        [/^#####\s.*$/, 'heading5.md'],
+        [/^####\s.*$/,  'heading4.md'],
+        [/^###\s.*$/,   'heading3.md'],
+        [/^##\s.*$/,    'heading2.md'],
+        [/^#\s.*$/,     'heading1.md'],
+        [/^```\w*$/,    { token: 'string.code.md', next: '@codeblock' }],
+        [/`[^`]+`/,     'variable.md'],
+        [/\*\*[^*]+\*\*/, 'strong.md'],
+        [/__[^_]+__/,   'strong.md'],
+        [/\*[^*]+\*/,   'emphasis.md'],
+        [/_[^_]+_/,     'emphasis.md'],
+        [/\[[^\]]+\]\([^)]+\)/, 'string.link.md'],
+        [/https?:\/\/[^\s]+/, 'string.link.md'],
+        [/^\s*[-*+]\s/, 'keyword.md'],
+        [/^\s*\d+\.\s/, 'keyword.md'],
+        [/^>\s.*$/,     'comment.md'],
+        [/^[-*_]{3,}$/, 'keyword.md'],
+        [/./,           ''],
+      ],
+      codeblock: [
+        [/^```$/, { token: 'string.code.md', next: '@pop' }],
+        [/.*/,    'string.code.md'],
+      ],
+    },
+  });
+
+  // ── my-dark テーマ定義（reference2準拠の見出し色） ─────────
+  monaco.editor.defineTheme('my-dark', {
+    base: 'vs-dark',
+    inherit: true,
+    rules: [
+      { token: 'heading1.md', foreground: '40C040', fontStyle: 'bold underline' },
+      { token: 'heading2.md', foreground: 'FFB030', fontStyle: 'bold underline' },
+      { token: 'heading3.md', foreground: 'F080A0', fontStyle: 'bold underline' },
+      { token: 'heading4.md', foreground: '5090D0', fontStyle: 'bold underline' },
+      { token: 'heading5.md', foreground: 'D08060', fontStyle: 'bold underline' },
+      { token: 'heading6.md', foreground: '30B0B0', fontStyle: 'bold underline' },
+      { token: 'strong.md',   fontStyle: 'bold' },
+      { token: 'emphasis.md', fontStyle: 'italic' },
+      { token: 'string.link.md', foreground: '4fc1ff', fontStyle: 'underline' },
+      { token: 'string.code.md', foreground: 'CE9178' },
+      { token: 'variable.md',    foreground: 'CE9178' },
+      { token: 'keyword.md',     foreground: '9cdcfe' },
+      { token: 'comment.md',     foreground: '6A9955' },
+    ],
+    colors: {
+      'editor.background':                          '#1e1e1e',
+      'editorLineNumber.foreground':                '#555555',
+      'editorGutter.foldingControlForeground':      '#666666',
+      'editorBracketMatch.background':              '#00000000',
+      'editorBracketMatch.border':                  '#00000000',
+      'editorBracketHighlight.foreground1':         '#D4D4D4',
+      'editorBracketHighlight.foreground2':         '#D4D4D4',
+      'editorBracketHighlight.foreground3':         '#D4D4D4',
+      'editorBracketHighlight.foreground4':         '#D4D4D4',
+      'editorBracketHighlight.foreground5':         '#D4D4D4',
+      'editorBracketHighlight.foreground6':         '#D4D4D4',
+      'editorBracketHighlight.unexpectedBracket.foreground': '#D4D4D4',
+    },
+  });
+
+  // ── 見出しベース Folding プロバイダ ──────────────────────────
+  monaco.languages.registerFoldingRangeProvider('tt-markdown', {
+    provideFoldingRanges: (model: editor.ITextModel) => {
+      const ranges: MonacoLanguages.FoldingRange[] = [];
+      const lineCount = model.getLineCount();
+      const stack: { line: number; level: number }[] = [];
+
+      for (let i = 1; i <= lineCount; i++) {
+        const match = model.getLineContent(i).match(/^(#+)\s/);
+        if (!match) continue;
+        const currentLevel = match[1].length;
+
+        while (stack.length > 0 && stack[stack.length - 1].level >= currentLevel) {
+          const top = stack.pop()!;
+          ranges.push({ start: top.line, end: i - 1, kind: monaco.languages.FoldingRangeKind.Region });
+        }
+        stack.push({ line: i, level: currentLevel });
+      }
+      while (stack.length > 0) {
+        const top = stack.pop()!;
+        ranges.push({ start: top.line, end: lineCount, kind: monaco.languages.FoldingRangeKind.Region });
+      }
+      return ranges;
+    },
+  });
+};
+
+// ─────────────────────────────────────────────────────────────────
 
 interface TextEditorPanelProps {
   column: TTColumn;
@@ -33,10 +138,8 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const suppressChange = useRef(false);
 
-  // ハイライト用デコレーションID
-  const wordDecoIds = useRef<string[]>([]);
+  const wordDecoIds    = useRef<string[]>([]);
   const keywordDecoIds = useRef<string[]>([]);
-  const headingDecoIds = useRef<string[]>([]);
 
   // EditorResource変更時にコンテンツをロード
   useEffect(() => {
@@ -53,24 +156,19 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
         suppressChange.current = true;
         setContent(item.Content);
         setCurrentItemId(itemId);
-        if (editorRef.current) {
-          editorRef.current.setValue(item.Content);
-        }
+        if (editorRef.current) editorRef.current.setValue(item.Content);
         suppressChange.current = false;
       } else if (itemId === '') {
         suppressChange.current = true;
         setContent('');
         setCurrentItemId('');
-        if (editorRef.current) {
-          editorRef.current.setValue('');
-        }
+        if (editorRef.current) editorRef.current.setValue('');
         suppressChange.current = false;
       }
     };
 
     column.AddOnUpdate(key, loadContent);
     loadContent();
-
     return () => column.RemoveOnUpdate(key);
   }, [column, currentItemId]);
 
@@ -80,16 +178,11 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
     const updateKeywordHighlight = () => {
       const ed = editorRef.current;
       if (!ed) return;
-      keywordDecoIds.current = applyKeywordHighlight(
-        ed,
-        column.HighlighterKeyword,
-        keywordDecoIds.current,
-      );
+      keywordDecoIds.current = applyKeywordHighlight(ed, column.HighlighterKeyword, keywordDecoIds.current);
     };
 
     column.AddOnUpdate(key, updateKeywordHighlight);
     updateKeywordHighlight();
-
     return () => column.RemoveOnUpdate(key);
   }, [column, currentItemId]);
 
@@ -98,11 +191,9 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
     editorRef.current = editor;
     injectHighlightCSS();
 
-    if (content) {
-      editor.setValue(content);
-    }
+    if (content) editor.setValue(content);
 
-    // 単語ハイライト: カーソル移動時に更新
+    // 単語ハイライト（カーソル位置の日本語対応ワード）
     editor.onDidChangeCursorPosition(() => {
       wordDecoIds.current = applyWordHighlight(editor, wordDecoIds.current);
     });
@@ -118,23 +209,13 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
       }
     });
 
-    // コンテンツ変更時にキーワード＋見出しハイライト再適用
+    // コンテンツ変更時にキーワードハイライト再適用
     editor.onDidChangeModelContent(() => {
-      keywordDecoIds.current = applyKeywordHighlight(
-        editor,
-        column.HighlighterKeyword,
-        keywordDecoIds.current,
-      );
-      headingDecoIds.current = applyHeadingHighlight(editor, headingDecoIds.current);
+      keywordDecoIds.current = applyKeywordHighlight(editor, column.HighlighterKeyword, keywordDecoIds.current);
     });
 
-    // 初回ハイライト適用
-    keywordDecoIds.current = applyKeywordHighlight(
-      editor,
-      column.HighlighterKeyword,
-      keywordDecoIds.current,
-    );
-    headingDecoIds.current = applyHeadingHighlight(editor, headingDecoIds.current);
+    // 初回キーワードハイライト
+    keywordDecoIds.current = applyKeywordHighlight(editor, column.HighlighterKeyword, keywordDecoIds.current);
   }, [content, column]);
 
   // 編集内容の変更をTTDataItemに反映
@@ -150,9 +231,7 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
     if (!collection) return;
 
     const item = collection.GetDataItem(itemId);
-    if (item) {
-      item.Content = newValue;
-    }
+    if (item) item.Content = newValue;
   }, [column]);
 
   if (height <= 0 || width <= 0) return null;
@@ -170,11 +249,12 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
       <Editor
         width={width}
         height={height}
-        language="markdown"
-        theme="vs-dark"
+        language="tt-markdown"
+        theme="my-dark"
         value={content}
-        onChange={handleChange}
+        beforeMount={handleEditorWillMount}
         onMount={handleEditorMount}
+        onChange={handleChange}
         options={{
           fontSize: column.FontSize,
           minimap: { enabled: false },
@@ -182,6 +262,7 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
           lineNumbers: 'off',
           glyphMargin: false,
           folding: true,
+          foldingStrategy: 'auto',
           scrollBeyondLastLine: false,
           automaticLayout: true,
           overviewRulerLanes: 0,
@@ -189,10 +270,11 @@ export function TextEditorPanel({ column, width, height }: TextEditorPanelProps)
           overviewRulerBorder: false,
           renderLineHighlight: 'line',
           occurrencesHighlight: 'off',
-          scrollbar: {
-            verticalScrollbarSize: 8,
-            horizontalScrollbarSize: 8,
-          },
+          unicodeHighlight: { ambiguousCharacters: false, invisibleCharacters: false },
+          matchBrackets: 'never',
+          bracketPairColorization: { enabled: false },
+          guides: { bracketPairs: false, highlightActiveBracketPair: false },
+          scrollbar: { verticalScrollbarSize: 8, horizontalScrollbarSize: 8 },
           padding: { top: 4 },
         }}
       />
