@@ -57,6 +57,24 @@ export type ActionScript = (context: ActionContext) => void | boolean | Promise<
 export type SortDirection = 'asc' | 'desc';
 
 // ════════════════════════════════════════════════════════════════════════
+// Highlight 関連
+// ════════════════════════════════════════════════════════════════════════
+
+/** キーワードハイライトの適用対象設定 */
+export interface HighlightTargets {
+  /** パネルタイトル行 */
+  panelTitle: boolean;
+  /** DataGrid 本体（行データ） */
+  dataGrid: boolean;
+  /** WebView 本体（iframe 内テキスト） */
+  webView: boolean;
+  /** DataGrid ツールバー TextBox（フィルタ入力） */
+  dataGridToolbar: boolean;
+  /** WebView ツールバー TextBox（アドレス入力） */
+  webViewToolbar: boolean;
+}
+
+// ════════════════════════════════════════════════════════════════════════
 // Status 関連
 // ════════════════════════════════════════════════════════════════════════
 

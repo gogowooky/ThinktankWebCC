@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import { TTDataItem } from '../../models/TTDataItem';
 import type { SortDirection } from '../../types';
+import { highlightTextSpans } from '../../utils/highlightSpans';
 import './DataGrid.css';
 
 /**
@@ -27,6 +28,7 @@ interface DataGridProps {
   sortDir: SortDirection;
   width: number;
   height: number;
+  highlightKeyword?: string;
   onSelect: (id: string) => void;
   onToggleCheck: (id: string) => void;
   onToggleAllCheck: (ids: string[], checked: boolean) => void;
@@ -58,7 +60,7 @@ function calcColumnWidths(columns: ColumnDef[], totalWidth: number): number[] {
 
 export function DataGrid({
   items, columns, selectedId, checkedIds, sortProperty, sortDir,
-  width, height, onSelect, onToggleCheck, onToggleAllCheck, onSort,
+  width, height, highlightKeyword, onSelect, onToggleCheck, onToggleAllCheck, onSort,
 }: DataGridProps) {
   const colWidths = useMemo(() => calcColumnWidths(columns, width), [columns, width]);
   const listHeight = Math.max(0, height - HEADER_HEIGHT);
@@ -86,20 +88,20 @@ export function DataGrid({
           </span>
         </div>
         {columns.map((col, ci) => {
-          const value = (item as unknown as Record<string, unknown>)[col.property];
+          const text = String((item as unknown as Record<string, unknown>)[col.property] ?? '');
           return (
             <div
               key={col.property}
               className="datagrid-cell"
               style={{ width: colWidths[ci], minWidth: colWidths[ci] }}
             >
-              {String(value ?? '')}
+              {highlightKeyword ? highlightTextSpans(text, highlightKeyword) : text}
             </div>
           );
         })}
       </div>
     );
-  }, [items, columns, colWidths, selectedId, checkedIds, onSelect, onToggleCheck]);
+  }, [items, columns, colWidths, selectedId, checkedIds, highlightKeyword, onSelect, onToggleCheck]);
 
   if (items.length === 0) {
     return (

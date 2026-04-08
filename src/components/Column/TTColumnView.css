@@ -167,6 +167,59 @@
   line-height: 1;
 }
 
+/* ─── ハイライト対象トグルボタン ─── */
+
+.hl-target-toggles {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-left: 3px;
+}
+
+.hl-target-btn {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 16px;
+  text-align: center;
+  color: var(--tt-column-header-fg, #888);
+  background: var(--tt-list-item-bg, #2d2d30);
+  border: 1px solid var(--tt-border-color, #3c3c3c);
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.hl-target-btn:hover {
+  color: var(--tt-title-fg, #e0e0e0);
+  border-color: #555;
+}
+
+.hl-target-btn-on {
+  background: #b8a000;
+  color: #fff;
+  border-color: #d4b800;
+}
+
+.hl-target-btn-on:hover {
+  background: #ccc000;
+}
+
+/* ─── ハイライト表示 TextBox（HighlightableInput 表示モード） ─── */
+
+.highlight-text-display {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: text;
+  padding: 0 6px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 /* ─── ハイライトタグ表示 ─── */
 
 .panel-toolbar-tags {

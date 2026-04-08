@@ -2,7 +2,7 @@ import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
 import { buildMarkdownUrl, buildChatUrl } from '../utils/webviewUrl';
-import type { ColumnIndex, PanelType } from '../types';
+import type { ColumnIndex, PanelType, HighlightTargets } from '../types';
 
 /**
  * TTColumn - 列ビューモデル
@@ -46,6 +46,15 @@ export class TTColumn extends TTObject {
 
   /** ハイライタバーのキーワード */
   private _highlighterKeyword: string = '';
+
+  /** ハイライト適用対象設定 */
+  private _highlightTargets: HighlightTargets = {
+    panelTitle: false,
+    dataGrid: false,
+    webView: false,
+    dataGridToolbar: false,
+    webViewToolbar: false,
+  };
 
   /** TextEditorの選択テキスト */
   private _editorSelection: string = '';
@@ -201,6 +210,17 @@ export class TTColumn extends TTObject {
     this.NotifyUpdated(false);
   }
 
+  /** ハイライト適用対象設定 */
+  public get HighlightTargets(): HighlightTargets {
+    return this._highlightTargets;
+  }
+
+  /** 特定のハイライト対象をトグル */
+  public toggleHighlightTarget(key: keyof HighlightTargets): void {
+    this._highlightTargets = { ...this._highlightTargets, [key]: !this._highlightTargets[key] };
+    this.NotifyUpdated(false);
+  }
+
   /** TextEditorの選択テキスト */
   public get EditorSelection(): string {
     return this._editorSelection;
@@ -276,6 +296,7 @@ export class TTColumn extends TTObject {
       WebViewUrl: this._webViewUrl,
       EditorResource: this._editorResource,
       HighlighterKeyword: this._highlighterKeyword,
+      HighlightTargets: JSON.stringify(this._highlightTargets),
       FontSize: String(this.FontSize),
     };
   }
@@ -290,6 +311,9 @@ export class TTColumn extends TTObject {
     if (state.WebViewUrl !== undefined) this._webViewUrl = state.WebViewUrl;
     if (state.EditorResource !== undefined) this._editorResource = state.EditorResource;
     if (state.HighlighterKeyword !== undefined) this._highlighterKeyword = state.HighlighterKeyword;
+    if (state.HighlightTargets !== undefined) {
+      try { this._highlightTargets = { ...this._highlightTargets, ...JSON.parse(state.HighlightTargets) }; } catch { /* ignore */ }
+    }
     if (state.FontSize !== undefined) this.FontSize = parseInt(state.FontSize, 10) || 14;
     this.NotifyUpdated(false);
   }

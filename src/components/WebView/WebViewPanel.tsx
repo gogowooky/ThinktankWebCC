@@ -4,6 +4,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { TTModels } from '../../models/TTModels';
 import { TTDataCollection } from '../../models/TTDataCollection';
 import { isExternalUrl, buildMarkdownUrl } from '../../utils/webviewUrl';
+import { applyIframeHighlight } from '../../utils/highlightSpans';
 import './WebView.css';
 
 /**
@@ -36,6 +37,28 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
     return () => column.RemoveOnUpdate(colKey);
   }, [column, rerender]);
 
+  // キーワード/対象設定変更時にiframeハイライトを再適用（column.AddOnUpdateパターン）
+  useEffect(() => {
+    const key = `WebViewPanel-hl-${column.Index}`;
+    const applyHighlight = () => {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+      try {
+        const doc = iframe.contentDocument;
+        if (!doc || !doc.body) return;
+        if (column.HighlightTargets.webView && column.HighlighterKeyword) {
+          applyIframeHighlight(doc, column.HighlighterKeyword);
+        } else {
+          applyIframeHighlight(doc, '');
+        }
+      } catch {
+        // cross-origin - ignore
+      }
+    };
+    column.AddOnUpdate(key, applyHighlight);
+    return () => column.RemoveOnUpdate(key);
+  }, [column]);
+
   // iframe postMessage受信 → コレクションにアイテム追加
   useEffect(() => {
     const handleMessage = (e: MessageEvent) => {
@@ -65,7 +88,7 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  // iframe内リンククリックでパネル間連携
+  // iframe内リンククリックでパネル間連携 + ロード時ハイライト適用
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!iframe) return;
@@ -73,7 +96,13 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
     const handleLoad = () => {
       try {
         const doc = iframe.contentDocument;
-        if (!doc) return;
+        if (!doc || !doc.body) return;
+
+        // iframe内クリックでパネルフォーカスを設定（同一オリジン）
+        doc.addEventListener('pointerdown', () => {
+          TTApplication.Instance.ActiveColumnIndex = column.Index;
+          column.FocusedPanel = 'WebView';
+        });
 
         doc.addEventListener('click', (e: MouseEvent) => {
           const anchor = (e.target as HTMLElement).closest('a');
@@ -94,12 +123,27 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
           }
           // http(s):// links: let iframe handle normally
         });
+
+        // ロード完了時にハイライトを適用
+        if (column.HighlightTargets.webView && column.HighlighterKeyword) {
+          applyIframeHighlight(doc, column.HighlighterKeyword);
+        }
       } catch {
         // cross-origin iframe - can't access contentDocument
       }
     };
 
     iframe.addEventListener('load', handleLoad);
+
+    // effect 実行時点で既にロード済みの場合は即時実行（load イベントが先行した場合の対策）
+    try {
+      if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete' && iframe.contentDocument.body) {
+        handleLoad();
+      }
+    } catch {
+      // cross-origin - ignore
+    }
+
     return () => iframe.removeEventListener('load', handleLoad);
   }, [column]);
 

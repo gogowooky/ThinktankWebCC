@@ -6,8 +6,9 @@ import { DataGridPanel } from '../DataGrid/DataGridPanel';
 import { TextEditorPanel } from '../TextEditor/TextEditorPanel';
 import { WebViewPanel } from '../WebView/WebViewPanel';
 import { KEYWORD_COLORS } from '../../utils/editorHighlight';
+import { highlightTextSpans } from '../../utils/highlightSpans';
 import { toFullUrl, buildChatUrl } from '../../utils/webviewUrl';
-import type { PanelType } from '../../types';
+import type { PanelType, HighlightTargets } from '../../types';
 import './TTColumnView.css';
 
 /**
@@ -59,6 +60,73 @@ function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onC
       // eslint-disable-next-line jsx-a11y/no-autofocus
       autoFocus={editing}
       onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setEditing(true)}
+      onBlur={() => setEditing(false)}
+      onMouseDown={(e) => {
+        e.stopPropagation();
+        onFocusPanel();
+      }}
+    />
+  );
+}
+
+/** ハイライト適用対象トグルボタンの定義 */
+const HL_TARGET_DEFS: { key: keyof HighlightTargets; label: string; title: string }[] = [
+  { key: 'panelTitle',      label: 'T', title: 'パネルタイトルをハイライト' },
+  { key: 'dataGrid',        label: 'G', title: 'DataGrid本体をハイライト' },
+  { key: 'webView',         label: 'W', title: 'WebView本体をハイライト' },
+  { key: 'dataGridToolbar', label: 'F', title: 'DataGridフィルタ入力をハイライト' },
+  { key: 'webViewToolbar',  label: 'A', title: 'WebViewアドレス入力をハイライト' },
+];
+
+/**
+ * HighlightableInput - ハイライト表示対応のツールバー入力コンポーネント
+ * - 編集時: 通常の <input>
+ * - 表示時（highlightKeyword指定時）: キーワードをインラインハイライト表示
+ */
+function HighlightableInput({
+  value, onChange, placeholder, onFocusPanel, highlightKeyword,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+  onFocusPanel: () => void;
+  highlightKeyword?: string;
+}) {
+  const [editing, setEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // 非編集中かつキーワードあり・値あり → ハイライト表示モード
+  if (!editing && highlightKeyword && value) {
+    return (
+      <div
+        className="panel-toolbar-input highlight-text-display"
+        title={value}
+        onClick={() => {
+          setEditing(true);
+          setTimeout(() => inputRef.current?.focus(), 0);
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onFocusPanel();
+        }}
+      >
+        {highlightTextSpans(value, highlightKeyword)}
+      </div>
+    );
+  }
+
+  return (
+    <input
+      ref={inputRef}
+      className="panel-toolbar-input"
+      type="text"
+      placeholder={placeholder}
+      value={value}
+      // eslint-disable-next-line jsx-a11y/no-autofocus
+      autoFocus={editing}
+      onChange={(e) => onChange(e.target.value)}
+      onFocus={() => setEditing(true)}
       onBlur={() => setEditing(false)}
       onMouseDown={(e) => {
         e.stopPropagation();
@@ -233,17 +301,20 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     const selectedId = column.SelectedItemID;
     const selectedItem = selectedId ? column.GetCurrentCollection()?.GetDataItem(selectedId) : null;
     const itemInfo = selectedItem ? ` | ${selectedItem.ID} | ${selectedItem.Name}` : '';
-    
+    const hlTargets = column.HighlightTargets;
+    const hlKeyword = column.HighlighterKeyword;
+
     let titleNode: React.ReactNode;
     if (panel.type === 'WebView') {
       let displayUrl = column.WebViewUrl.trim();
       if (displayUrl.length > 50) {
         displayUrl = displayUrl.substring(0, 50) + '...';
       }
+      const titleText = `${isFocused ? '● ' : ''}WebView${displayUrl ? ` | ${displayUrl}` : ''}`;
       titleNode = (
         <>
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {`${isFocused ? '● ' : ''}WebView${displayUrl ? ` | ${displayUrl}` : ''}`}
+            {hlTargets.panelTitle && hlKeyword ? highlightTextSpans(titleText, hlKeyword) : titleText}
           </span>
           {column.WebViewUrl.trim() && (
             <button
@@ -260,7 +331,12 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
         </>
       );
     } else {
-      titleNode = <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{`${isFocused ? '● ' : ''}${PANEL_TITLES[panel.type]}${itemInfo}`}</span>;
+      const titleText = `${isFocused ? '● ' : ''}${PANEL_TITLES[panel.type]}${itemInfo}`;
+      titleNode = (
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {hlTargets.panelTitle && hlKeyword ? highlightTextSpans(titleText, hlKeyword) : titleText}
+        </span>
+      );
     }
 
     const toolbarProps = {
@@ -280,22 +356,41 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
           <div className="panel-title-row">{titleNode}</div>
           <div className="panel-toolbar">
             {panel.type === 'TextEditor' ? (
-              <KeywordTagInput
+              <>
+                <KeywordTagInput
+                  value={toolbarProps.value}
+                  onChange={toolbarProps.onChange}
+                  onFocusPanel={() => handlePanelFocus(panel.type)}
+                />
+                <div className="hl-target-toggles">
+                  {HL_TARGET_DEFS.map(({ key, label, title }) => (
+                    <button
+                      key={key}
+                      className={`hl-target-btn ${hlTargets[key] ? 'hl-target-btn-on' : ''}`}
+                      title={title}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={() => column.toggleHighlightTarget(key)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            ) : panel.type === 'DataGrid' ? (
+              <HighlightableInput
                 value={toolbarProps.value}
                 onChange={toolbarProps.onChange}
+                placeholder={toolbarProps.placeholder}
                 onFocusPanel={() => handlePanelFocus(panel.type)}
+                highlightKeyword={hlTargets.dataGridToolbar && hlKeyword ? hlKeyword : undefined}
               />
             ) : (
-              <input
-                className="panel-toolbar-input"
-                type="text"
-                placeholder={toolbarProps.placeholder}
+              <HighlightableInput
                 value={toolbarProps.value}
-                onChange={(e) => toolbarProps.onChange(e.target.value)}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  handlePanelFocus(panel.type);
-                }}
+                onChange={toolbarProps.onChange}
+                placeholder={toolbarProps.placeholder}
+                onFocusPanel={() => handlePanelFocus(panel.type)}
+                highlightKeyword={hlTargets.webViewToolbar && hlKeyword ? hlKeyword : undefined}
               />
             )}
             {panel.type === 'DataGrid' && column.CheckedCount > 0 && (

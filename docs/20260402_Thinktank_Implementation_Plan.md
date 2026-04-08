@@ -1180,6 +1180,59 @@ WebSocket同期:
 
 **検証**: ハイライタバーにキーワード入力→一致箇所がハイライト。セクションFold/Unfold。テーマ切替。キーワードが TextBox 内に色付き背景スパンで表示。クリックで編集モードに切替、任意の語を編集・削除可能。Splitter・スクロールバーがテーマ色に追従。
 
+#### Phase 18-B 追加修正: KeywordTagInput フォーカスバグ修正
+
+**修正ファイル**:
+- `src/components/Column/TTColumnView.tsx`
+
+**問題**: `KeywordTagInput` で値が空のとき `<input>` が表示されているが、クリックでフォーカスした後に 1 文字入力すると値が入り条件 `!editing && value.trim()` が true となり `<input>` がアンマウント→フォーカスを失う。
+
+**修正**: `<input>` 要素に `onFocus={() => setEditing(true)}` を追加。クリック時点で `editing=true` にすることで値が入っても表示モードに切り替わらない。
+
+#### Phase 18-C 追加修正: ハイライト適用範囲の拡大と設定
+
+**目標**: TextEditor 以外の UI 領域（パネルタイトル・DataGrid・WebView・各ツールバー入力）にもキーワードハイライトを適用可能にし、項目ごとに ON/OFF を切り替えられるようにする。
+
+**新規作成ファイル**:
+- `src/utils/highlightSpans.tsx`
+  - `highlightTextSpans(text, keyword)` : テキスト内キーワードを `KEYWORD_COLORS` で色付けした ReactNode に変換
+  - `applyIframeHighlight(doc, keyword)` : 同一オリジン iframe の `contentDocument` 内テキストノードに DOM 操作でハイライト適用（`.tt-hl` マークで管理）
+
+**修正ファイル**:
+- `src/types/index.ts` - `HighlightTargets` インターフェース追加（`panelTitle` / `dataGrid` / `webView` / `dataGridToolbar` / `webViewToolbar` の 5 フラグ）
+- `src/views/TTColumn.ts`
+  - `_highlightTargets: HighlightTargets` プロパティ追加（デフォルトすべて `false`）
+  - `toggleHighlightTarget(key)` メソッド追加
+  - `SerializeState` / `RestoreState` に `HighlightTargets`（JSON文字列）を追加
+- `src/components/DataGrid/DataGrid.tsx` - `highlightKeyword?: string` prop 追加。行セルのテキスト描画を `highlightTextSpans()` に対応
+- `src/components/DataGrid/DataGridPanel.tsx` - `column.HighlightTargets.dataGrid` が ON のとき `highlightKeyword` を DataGrid に渡す
+- `src/components/WebView/WebViewPanel.tsx`
+  - `column.AddOnUpdate` パターンで `applyIframeHighlight` をキーワード変更時に再適用
+  - iframe の `load` イベント + 既ロード済み即時実行（`readyState === 'complete'` チェック）でロード時ハイライト適用
+  - `contentDocument.pointerdown` を監視してパネルフォーカス取得（同一オリジン）
+- `src/components/Column/TTColumnView.tsx`
+  - `HL_TARGET_DEFS` 定数（5 項目のトグルボタン定義）追加
+  - `HighlightableInput` コンポーネント追加（非編集中にキーワードをインラインハイライト表示、クリックで編集可能）
+  - TextEditor ツールバー右端に 5 つのトグルボタン [T][G][W][F][A] を追加
+  - DataGrid / WebView ツールバー入力を `HighlightableInput` に置換
+  - パネルタイトル行に `highlightTextSpans()` を適用（`panelTitle` ON 時）
+- `src/components/Column/TTColumnView.css` - `.hl-target-btn` / `.hl-target-btn-on` / `.hl-target-toggles` / `.highlight-text-display` スタイル追加
+
+**ハイライト対象ボタン**:
+| ボタン | key | 対象 |
+|--------|-----|------|
+| T | `panelTitle` | 全パネルタイトル行テキスト |
+| G | `dataGrid` | DataGrid 行セルテキスト |
+| W | `webView` | WebView iframe 内テキスト（同一オリジン） |
+| F | `dataGridToolbar` | DataGrid フィルタ入力テキスト |
+| A | `webViewToolbar` | WebView アドレス入力テキスト |
+
+**WebView ハイライトの技術的詳細**:
+- `load` イベントリスナーを登録しつつ、effect 実行時点で既にロード済みの場合は `handleLoad()` を即時呼び出す（Vite HMR / 高速表示対策）
+- キーワード変更は `AddOnUpdate` コールバック内で `iframeRef.current.contentDocument` を直接参照して再適用（`useEffect` 依存配列方式は `HighlightTargets` オブジェクト参照変化を正確に捉えられないため廃止）
+
+**検証**: Highlight 入力にキーワード設定後、各トグルボタンを ON にすると対応箇所がハイライト。ボタン OFF で即解除。設定はセッション間で保持。WebView ロード後・ページ切替後も自動ハイライト適用。
+
 ---
 
 ### Phase 19: 全文検索（WebView）

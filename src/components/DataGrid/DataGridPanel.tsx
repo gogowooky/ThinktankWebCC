@@ -125,6 +125,9 @@ export function DataGridPanel({ column, width, height }: DataGridPanelProps) {
     column.NotifyUpdated(false);
   }, [column]);
 
+  const targets = column.HighlightTargets;
+  const hlKeyword = targets.dataGrid && column.HighlighterKeyword ? column.HighlighterKeyword : undefined;
+
   return (
     <DataGrid
       items={items}
@@ -135,6 +138,7 @@ export function DataGridPanel({ column, width, height }: DataGridPanelProps) {
       sortDir={column.DataGridSortDir as SortDirection}
       width={width}
       height={height}
+      highlightKeyword={hlKeyword}
       onSelect={handleSelect}
       onToggleCheck={handleToggleCheck}
       onToggleAllCheck={handleToggleAllCheck}
