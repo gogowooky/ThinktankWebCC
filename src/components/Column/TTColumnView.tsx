@@ -11,6 +11,64 @@ import { toFullUrl, buildChatUrl } from '../../utils/webviewUrl';
 import type { PanelType, HighlightTargets } from '../../types';
 import './TTColumnView.css';
 
+function useLocalStorageHistory(key: string, maxItems: number = 15) {
+  const [history, setHistory] = useState<string[]>(() => {
+    try {
+      const item = window.localStorage.getItem(key);
+      return item ? JSON.parse(item) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const addHistory = useCallback((value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setHistory(prev => {
+      const next = [trimmed, ...prev.filter(v => v !== trimmed)].slice(0, maxItems);
+      window.localStorage.setItem(key, JSON.stringify(next));
+      return next;
+    });
+  }, [key, maxItems]);
+
+  return [history, addHistory] as const;
+}
+
+function HistoryInput({
+  className, placeholder, value, onChange, onMouseDown, historyKey
+}: {
+  className: string; placeholder: string; value: string;
+  onChange: (v: string) => void; onMouseDown: (e: React.MouseEvent) => void;
+  historyKey: string;
+}) {
+  const [history, addHistory] = useLocalStorageHistory(historyKey, 15);
+  const listId = `history-list-${historyKey}`;
+
+  return (
+    <>
+      <input
+        className={className}
+        type="text"
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onMouseDown={onMouseDown}
+        onBlur={(e) => addHistory(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            addHistory(e.currentTarget.value);
+            e.currentTarget.blur();
+          }
+        }}
+        list={listId}
+      />
+      <datalist id={listId}>
+        {history.map(h => <option key={h} value={h} />)}
+      </datalist>
+    </>
+  );
+}
+
 /**
  * キーワード入力コンポーネント
  * - 編集時: 通常の <input>（自由にどこでも編集可能）
@@ -19,6 +77,8 @@ import './TTColumnView.css';
 function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onChange: (v: string) => void, onFocusPanel: () => void }) {
   const [editing, setEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [history, addHistory] = useLocalStorageHistory('thinktank-history-texteditor', 15);
+  const listId = 'history-list-texteditor';
 
   // 表示モード: 値あり かつ 非編集中
   if (!editing && value.trim()) {
@@ -51,22 +111,37 @@ function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onC
 
   // 編集モード: 通常の input
   return (
-    <input
-      ref={inputRef}
-      className="panel-toolbar-input"
-      type="text"
-      placeholder="Highlight..."
-      value={value}
-      // eslint-disable-next-line jsx-a11y/no-autofocus
-      autoFocus={editing}
-      onChange={(e) => onChange(e.target.value)}
-      onFocus={() => setEditing(true)}
-      onBlur={() => setEditing(false)}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-        onFocusPanel();
-      }}
-    />
+    <>
+      <input
+        ref={inputRef}
+        className="panel-toolbar-input"
+        type="text"
+        placeholder="Highlight..."
+        value={value}
+        // eslint-disable-next-line jsx-a11y/no-autofocus
+        autoFocus={editing}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setEditing(true)}
+        onBlur={(e) => {
+          addHistory(e.target.value);
+          setEditing(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            addHistory(e.currentTarget.value);
+            e.currentTarget.blur();
+          }
+        }}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onFocusPanel();
+        }}
+        list={listId}
+      />
+      <datalist id={listId}>
+        {history.map(h => <option key={h} value={h} />)}
+      </datalist>
+    </>
   );
 }
 
@@ -318,16 +393,16 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 </div>
               </>
             ) : (
-              <input
+              <HistoryInput
                 className="panel-toolbar-input"
-                type="text"
                 placeholder={toolbarProps.placeholder}
                 value={toolbarProps.value}
-                onChange={(e) => toolbarProps.onChange(e.target.value)}
+                onChange={(v) => toolbarProps.onChange(v)}
                 onMouseDown={(e) => {
                   e.stopPropagation();
                   handlePanelFocus(panel.type);
                 }}
+                historyKey={`thinktank-history-${panel.type.toLowerCase()}`}
               />
             )}
             {panel.type === 'DataGrid' && column.CheckedCount > 0 && (

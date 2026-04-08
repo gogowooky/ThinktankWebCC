@@ -2,31 +2,39 @@
 
 2026/04/08
 ・Phase18
-機能を全体的に向上させます。
+機能を全体的に向上させるため、各パネルの機能を拡張します。
 
 ・DataGrid
- - タイトルから"DataGrid"表示をなくし、表示対象毎に以下のように変更する
- - 全TTKnowledge：              All (表示アイテム個数/全アイテム個数)
- - TTKnowledgeの種別：          種別 (表示アイテム個数/全アイテム個数) 
- - TTKnowledgeの全文検索結果：  Search (表示アイテム個数/全アイテム個数) | Orexin,オレキシン 
- - TTKnowledgeの期間：          Filter (表示アイテム個数/全アイテム個数) | 2020-10-10,3mo 
+ - TTKnowledgeの一覧を表示・選択するのが主機能
+ - タイトルから"DataGrid"の文字をなくし、表示対象毎に表示モードを変更する
+   モード:  内容:                       タイトル表示:
+   All:     全TTKnowledge               All (表示アイテム個数/全アイテム個数)
+   Memos:   TKnowledgeの種別：          Memos (表示アイテム個数/全アイテム個数) 
+   Chats:   TKnowledgeの種別：          Chats (表示アイテム個数/全アイテム個数) 
+   Refs:    TTKnowledgeの全文検索結果：   Refs (表示アイテム個数/全アイテム個数) | Orexin,オレキシン
+   Dura:    TTKnowledgeの期間：         Duration (表示アイテム個数/全アイテム個数) | 2020-10-10,3mo
 
- - DataGridに表示するもの
-　TTKnowledge: Memos, Chats, Searches, Urls, LocalFiles, GoogleDocs, GooglePhotos
+   その他：　Searches, Urls, LocalFiles, Pdfs, Docs, Photos
 
 ・TextEditor
+ - TTKnowledgeのアイテムを表示・編集するのが主機能
  - タイトルから"TextEditor"表示をなくし、表示対象毎に以下のように変更する
+   モード:
  - Memos:       Memo | {表示アイテムID} | {表示アイテムタイトル}
  - Chats:       Chat | {表示アイテムID} | {表示アイテムタイトル}
- - Searches:    Search | 検索keywords
+ - Refs:        Ref | 全文検索keywords
 
 ・WebView
- - address barはcommand barに名称変更
+ - TTKnowledgeの一覧・アイテムを元に解析・調査するのが主機能
+ - address barはcommunication barに名称変更
+ - 基本chatモード
  - タイトルから"WebView"表示をなくし、表示対象毎に以下のように変更する
- - /markdown?category=xxxxxx&id=xxxxx
- - /chat?session=xxxxx
- - /search?q=xxxxx
-
+ - Markdown | /markdown?category=xxxxxx&id=xxxxx
+ - Chat | /chat?session=xxxxx
+ - Search | /search?q=xxxxx
+ - Photo
+ - Document
+ - Mail
 
 
 ・Phase18 ここまでの個別変更を　docs\20260402_Thinktank_Implementation_Plan.md　の Phase18 に追記
