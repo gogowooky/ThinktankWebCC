@@ -208,18 +208,6 @@
   background: #ccc000;
 }
 
-/* ─── ハイライト表示 TextBox（HighlightableInput 表示モード） ─── */
-
-.highlight-text-display {
-  display: flex;
-  align-items: center;
-  overflow: hidden;
-  cursor: text;
-  padding: 0 6px;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
 /* ─── ハイライトタグ表示 ─── */
 
 .panel-toolbar-tags {

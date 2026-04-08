@@ -52,8 +52,6 @@ export class TTColumn extends TTObject {
     panelTitle: false,
     dataGrid: false,
     webView: false,
-    dataGridToolbar: false,
-    webViewToolbar: false,
   };
 
   /** TextEditorの選択テキスト */

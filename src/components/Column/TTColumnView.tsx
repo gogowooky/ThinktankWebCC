@@ -72,69 +72,10 @@ function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onC
 
 /** ハイライト適用対象トグルボタンの定義 */
 const HL_TARGET_DEFS: { key: keyof HighlightTargets; label: string; title: string }[] = [
-  { key: 'panelTitle',      label: 'T', title: 'パネルタイトルをハイライト' },
-  { key: 'dataGrid',        label: 'G', title: 'DataGrid本体をハイライト' },
-  { key: 'webView',         label: 'W', title: 'WebView本体をハイライト' },
-  { key: 'dataGridToolbar', label: 'F', title: 'DataGridフィルタ入力をハイライト' },
-  { key: 'webViewToolbar',  label: 'A', title: 'WebViewアドレス入力をハイライト' },
+  { key: 'panelTitle', label: 'T', title: 'パネルタイトルをハイライト' },
+  { key: 'dataGrid',   label: 'G', title: 'DataGrid本体をハイライト' },
+  { key: 'webView',    label: 'W', title: 'WebView本体をハイライト' },
 ];
-
-/**
- * HighlightableInput - ハイライト表示対応のツールバー入力コンポーネント
- * - 編集時: 通常の <input>
- * - 表示時（highlightKeyword指定時）: キーワードをインラインハイライト表示
- */
-function HighlightableInput({
-  value, onChange, placeholder, onFocusPanel, highlightKeyword,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-  onFocusPanel: () => void;
-  highlightKeyword?: string;
-}) {
-  const [editing, setEditing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // 非編集中かつキーワードあり・値あり → ハイライト表示モード
-  if (!editing && highlightKeyword && value) {
-    return (
-      <div
-        className="panel-toolbar-input highlight-text-display"
-        title={value}
-        onClick={() => {
-          setEditing(true);
-          setTimeout(() => inputRef.current?.focus(), 0);
-        }}
-        onMouseDown={(e) => {
-          e.stopPropagation();
-          onFocusPanel();
-        }}
-      >
-        {highlightTextSpans(value, highlightKeyword)}
-      </div>
-    );
-  }
-
-  return (
-    <input
-      ref={inputRef}
-      className="panel-toolbar-input"
-      type="text"
-      placeholder={placeholder}
-      value={value}
-      // eslint-disable-next-line jsx-a11y/no-autofocus
-      autoFocus={editing}
-      onChange={(e) => onChange(e.target.value)}
-      onFocus={() => setEditing(true)}
-      onBlur={() => setEditing(false)}
-      onMouseDown={(e) => {
-        e.stopPropagation();
-        onFocusPanel();
-      }}
-    />
-  );
-}
 
 /**
  * TTColumnView - 1列分のUIコンポーネント
@@ -376,21 +317,17 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                   ))}
                 </div>
               </>
-            ) : panel.type === 'DataGrid' ? (
-              <HighlightableInput
-                value={toolbarProps.value}
-                onChange={toolbarProps.onChange}
-                placeholder={toolbarProps.placeholder}
-                onFocusPanel={() => handlePanelFocus(panel.type)}
-                highlightKeyword={hlTargets.dataGridToolbar && hlKeyword ? hlKeyword : undefined}
-              />
             ) : (
-              <HighlightableInput
-                value={toolbarProps.value}
-                onChange={toolbarProps.onChange}
+              <input
+                className="panel-toolbar-input"
+                type="text"
                 placeholder={toolbarProps.placeholder}
-                onFocusPanel={() => handlePanelFocus(panel.type)}
-                highlightKeyword={hlTargets.webViewToolbar && hlKeyword ? hlKeyword : undefined}
+                value={toolbarProps.value}
+                onChange={(e) => toolbarProps.onChange(e.target.value)}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                  handlePanelFocus(panel.type);
+                }}
               />
             )}
             {panel.type === 'DataGrid' && column.CheckedCount > 0 && (

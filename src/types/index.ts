@@ -68,10 +68,6 @@ export interface HighlightTargets {
   dataGrid: boolean;
   /** WebView 本体（iframe 内テキスト） */
   webView: boolean;
-  /** DataGrid ツールバー TextBox（フィルタ入力） */
-  dataGridToolbar: boolean;
-  /** WebView ツールバー TextBox（アドレス入力） */
-  webViewToolbar: boolean;
 }
 
 // ════════════════════════════════════════════════════════════════════════
