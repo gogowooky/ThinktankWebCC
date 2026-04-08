@@ -1,5 +1,34 @@
 
+
 2026/04/08
+・Phase18
+機能を全体的に向上させます。
+
+・DataGrid
+ - タイトルから"DataGrid"表示をなくし、表示対象毎に以下のように変更する
+ - 全TTKnowledge：              All (表示アイテム個数/全アイテム個数)
+ - TTKnowledgeの種別：          種別 (表示アイテム個数/全アイテム個数) 
+ - TTKnowledgeの全文検索結果：  Search (表示アイテム個数/全アイテム個数) | Orexin,オレキシン 
+ - TTKnowledgeの期間：          Filter (表示アイテム個数/全アイテム個数) | 2020-10-10,3mo 
+
+ - DataGridに表示するもの
+　TTKnowledge: Memos, Chats, Searches, Urls, LocalFiles, GoogleDocs, GooglePhotos
+
+・TextEditor
+ - タイトルから"TextEditor"表示をなくし、表示対象毎に以下のように変更する
+ - Memos:       Memo | {表示アイテムID} | {表示アイテムタイトル}
+ - Chats:       Chat | {表示アイテムID} | {表示アイテムタイトル}
+ - Searches:    Search | 検索keywords
+
+・WebView
+ - address barはcommand barに名称変更
+ - タイトルから"WebView"表示をなくし、表示対象毎に以下のように変更する
+ - /markdown?category=xxxxxx&id=xxxxx
+ - /chat?session=xxxxx
+ - /search?q=xxxxx
+
+
+
 ・Phase18 ここまでの個別変更を　docs\20260402_Thinktank_Implementation_Plan.md　の Phase18 に追記
 
 2026/04/07
