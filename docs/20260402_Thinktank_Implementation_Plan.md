@@ -1233,6 +1233,75 @@ WebSocket同期:
 
 **検証**: Highlight 入力にキーワード設定後、各トグルボタンを ON にすると対応箇所がハイライト。ボタン OFF で即解除。設定はセッション間で保持。WebView ロード後・ページ切替後も自動ハイライト適用。
 
+#### Phase 18-D 追加修正: DataGrid 表示モード導入
+
+**目標**: DataGrid パネルタイトルバーに "表示モード" の概念を導入。現在は "All" モード（全 TTKnowledge が対象）。タイトルに `All (表示件数/全件数)` を表示し、フィルタ件数をリアルタイム反映。
+
+**修正ファイル**:
+- `src/views/TTColumn.ts`
+  - `GetTotalItemCount()` メソッド追加: 現在のコレクションの全アイテム数を返す
+  - `GetDisplayItemCount()` メソッド追加: `DataGridFilter` を適用したフィルタ後件数を返す（DataGridPanel と同じフィルタロジックを共有）
+- `src/components/Column/TTColumnView.tsx`
+  - DataGrid パネル専用タイトル生成ブランチを追加
+  - タイトル形式: `● All (表示数/総数)`（フォーカス時）/ `All (表示数/総数)`（非フォーカス時）
+  - "DataGrid" 文字列・選択アイテム情報の表示を廃止
+
+**フィルタロジック**: comma 区切り=OR、space 区切り=AND、`-` 接頭辞=NOT。DataGridPanel と同一ロジックを TTColumn 側に実装。
+
+**検証**: フィルタ未入力時は `All (5535/5535)` のように全件表示。フィルタ入力で `All (42/5535)` のようにリアルタイム更新。フォーカス時に `●` 表示。
+
+#### Phase 18-E 追加修正: TextEditor タイトルバー変更
+
+**目標**: TextEditor パネルタイトルバーを "TextEditor" 固定文字列から、表示中アイテムのメタ情報表示に変更。
+
+**修正ファイル**:
+- `src/components/Column/TTColumnView.tsx`
+  - TextEditor パネル専用タイトル生成ブランチを追加
+  - タイトル形式: `● {ContentType} | {ID} | {Name}`（アイテム選択時）/ `●`（未選択時）
+  - "TextEditor" 文字列・固定ラベルを廃止
+
+**検証**: DataGrid でアイテムを選択すると TextEditor タイトルに `memo | thinktank | Thinktank` のように種別・ID・タイトルが反映される。未選択時はタイトル空（フォーカス `●` のみ）。
+
+#### Phase 18-F 追加修正: WebView パネル Chat モード導入
+
+**目標**: WebView パネルを常時 Chat モードとして再設計。Address バーを Chat バーに改名し、CLI 風チャット UI を実装。バックエンドの SSE ストリーミング API と接続。
+
+**修正ファイル**:
+- `src/types/index.ts` - `ChatMessage` インターフェース追加（`role` / `content` / `isStreaming`）
+- `src/views/TTColumn.ts`
+  - `_chatMessages: ChatMessage[]` - チャット履歴（クライアント保持）
+  - `_chatInput: string` - Chat バー入力テキスト
+  - `_chatSessionId: string` - 列インスタンスごとの固定セッション ID（`col${index}-${Date.now()}`）
+  - `ChatMessages` / `ChatInput` / `ChatSessionId` / `LastUserMessage` ゲッター追加
+  - `addChatMessage(msg)` / `updateLastAssistantMessage(content, isStreaming)` メソッド追加
+- `src/components/Column/TTColumnView.tsx`
+  - `HistoryInput` に `onSend?: (value: string) => void` prop 追加: Enter 押下で `onSend` 呼び出し・入力クリア・フォーカス維持（ブラーしない）
+  - `handleSendChat` 非同期関数追加: ユーザー発言を `_chatMessages` に追加→空アシスタントメッセージを追加→`/api/chat/:sessionId/messages` に POST→SSE ストリーミングでアシスタント応答をリアルタイム更新
+  - WebView タイトル形式を `Chat | {lastUserMessage}`（CSS ellipsis で自動省略）に変更
+  - WebView ツールバーの `value`/`onChange` を `column.ChatInput` に変更、`onSend={handleSendChat}` を渡す
+  - プレースホルダーを `Address...` → `Chat...` に変更
+  - 外部ブラウザ開くボタン（`↗`）は WebViewUrl セット時のみ表示として維持
+- `src/components/WebView/WebViewPanel.tsx`
+  - `ChatCliView` コンポーネント追加: `column.ChatMessages` を CLI 風リストで描画。新メッセージ追加時に自動スクロール
+  - レンダリング分岐: 外部 URL または `/view/markdown` → iframe、それ以外（デフォルト） → `ChatCliView`
+- `src/components/WebView/WebView.css` - `.chat-cli` / `.chat-cli-message` / `.chat-cli-user` / `.chat-cli-assistant` / `.chat-cli-streaming`（`▊` カーソル点滅）スタイル追加
+
+**Chat UI 仕様**:
+| 要素 | 表示 |
+|------|------|
+| ユーザー発言 | `> {text}` (青色 `#9cdcfe`) |
+| アシスタント応答 | プレーンテキスト (白灰 `#d4d4d4`) |
+| ストリーミング中 | 末尾に `▊` カーソル点滅 |
+| 未発言状態 | `Chat...` イタリック |
+
+**SSE ストリーミング仕様**:
+- エンドポイント: `POST /api/chat/:sessionId/messages`
+- リクエスト: `{ message: string, history: ChatTurn[] }`（送信前の全履歴を毎回渡す）
+- レスポンス: `data: { type: 'delta'|'done'|'error', text: string }` 形式の SSE
+- クライアント: `ReadableStream.getReader()` で逐次読み取り、`updateLastAssistantMessage()` でリアルタイム描画更新
+
+**検証**: Chat バーにメッセージ入力→Enter→ユーザー発言が `>` プレフィックスで表示→アシスタント応答がストリーミングで逐次表示。タイトルバーに最後のユーザー発言が反映。外部ブラウザボタンは URL セット時のみ表示。
+
 ---
 
 ### Phase 19: 全文検索（WebView）

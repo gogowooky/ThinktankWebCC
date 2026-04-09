@@ -5,6 +5,7 @@ import { TTModels } from '../../models/TTModels';
 import { TTDataCollection } from '../../models/TTDataCollection';
 import { isExternalUrl, buildMarkdownUrl } from '../../utils/webviewUrl';
 import { applyIframeHighlight } from '../../utils/highlightSpans';
+import type { ChatMessage } from '../../types';
 import './WebView.css';
 
 /**
@@ -24,6 +25,32 @@ interface WebViewPanelProps {
   column: TTColumn;
   width: number;
   height: number;
+}
+
+/** CLIスタイルチャット表示 */
+function ChatCliView({ messages }: { messages: ChatMessage[] }) {
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: 'instant' });
+  });
+
+  return (
+    <div className="chat-cli">
+      {messages.length === 0 && (
+        <div className="chat-cli-empty">Chat...</div>
+      )}
+      {messages.map((msg, i) => (
+        <div key={i} className={`chat-cli-message chat-cli-${msg.role}${msg.isStreaming ? ' chat-cli-streaming' : ''}`}>
+          {msg.role === 'user'
+            ? <><span className="chat-cli-prompt">&gt; </span>{msg.content}</>
+            : msg.content || null
+          }
+        </div>
+      ))}
+      <div ref={endRef} />
+    </div>
+  );
 }
 
 export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
@@ -166,8 +193,8 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
 
   if (height <= 0 || width <= 0) return null;
 
-  // URL入力あり → iframe（外部URL、内部/view/* 両方）
-  if (url && (isExternalUrl(url) || url.startsWith('/view/'))) {
+  // 外部URL または /view/markdown → iframe表示
+  if (url && (isExternalUrl(url) || url.startsWith('/view/markdown'))) {
     return (
       <div className="webview-panel" style={{ width, height }}>
         <iframe
@@ -181,10 +208,10 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
     );
   }
 
-  // 空状態
+  // デフォルト: CLIチャット表示
   return (
     <div className="webview-panel" style={{ width, height }}>
-      <div className="webview-empty">No content</div>
+      <ChatCliView messages={column.ChatMessages} />
     </div>
   );
 }

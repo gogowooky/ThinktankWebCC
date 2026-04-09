@@ -2,7 +2,7 @@ import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
 import { buildMarkdownUrl, buildChatUrl } from '../utils/webviewUrl';
-import type { ColumnIndex, PanelType, HighlightTargets } from '../types';
+import type { ColumnIndex, PanelType, HighlightTargets, ChatMessage } from '../types';
 
 /**
  * TTColumn - 列ビューモデル
@@ -58,6 +58,17 @@ export class TTColumn extends TTObject {
   private _editorSelection: string = '';
   private _selectionDebounce: number = 0;
 
+  // ─── ChatPanel 状態 ───
+
+  /** チャットメッセージ履歴 */
+  private _chatMessages: ChatMessage[] = [];
+
+  /** Chatバー入力中テキスト */
+  private _chatInput: string = '';
+
+  /** チャットセッションID（列インスタンスごとに固定） */
+  private _chatSessionId: string = '';
+
   // ─── レイアウト状態 ───
 
   /** 表示/非表示（レスポンシブ制御用） */
@@ -87,6 +98,7 @@ export class TTColumn extends TTObject {
     this.Index = index;
     this.ID = `Column${index}`;
     this.Name = `Column${index}`;
+    this._chatSessionId = `col${index}-${Date.now()}`;
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -236,6 +248,73 @@ export class TTColumn extends TTObject {
         this.NotifyUpdated(false);
       }, 200);
     }
+  }
+
+  /** チャットセッションID */
+  public get ChatSessionId(): string { return this._chatSessionId; }
+
+  /** チャットバー入力テキスト */
+  public get ChatInput(): string { return this._chatInput; }
+  public set ChatInput(value: string) {
+    if (this._chatInput === value) return;
+    this._chatInput = value;
+    this.NotifyUpdated(false);
+  }
+
+  /** チャットメッセージ一覧 */
+  public get ChatMessages(): ChatMessage[] { return this._chatMessages; }
+
+  /** 最後のユーザー発言 */
+  public get LastUserMessage(): string {
+    for (let i = this._chatMessages.length - 1; i >= 0; i--) {
+      if (this._chatMessages[i].role === 'user') return this._chatMessages[i].content;
+    }
+    return '';
+  }
+
+  /** チャットメッセージを追加して通知 */
+  public addChatMessage(msg: ChatMessage): void {
+    this._chatMessages.push(msg);
+    this.NotifyUpdated(false);
+  }
+
+  /** 最後のアシスタントメッセージを更新（ストリーミング用） */
+  public updateLastAssistantMessage(content: string, isStreaming: boolean): void {
+    const last = this._chatMessages[this._chatMessages.length - 1];
+    if (last && last.role === 'assistant') {
+      last.content = content;
+      last.isStreaming = isStreaming;
+      this.NotifyUpdated(false);
+    }
+  }
+
+  /** DataGrid総アイテム数 */
+  public GetTotalItemCount(): number {
+    return this.GetCurrentCollection()?.GetDataItems().length ?? 0;
+  }
+
+  /** DataGridフィルタ適用後の表示アイテム数 */
+  public GetDisplayItemCount(): number {
+    const collection = this.GetCurrentCollection();
+    if (!collection) return 0;
+    let result = collection.GetDataItems();
+    const filter = this._dataGridFilter.trim();
+    if (filter) {
+      const orGroups = filter.split(',').map(g => g.trim()).filter(Boolean);
+      result = result.filter(item => {
+        const text = `${item.ID} ${item.Name} ${item.Keywords}`.toLowerCase();
+        return orGroups.some(group => {
+          const terms = group.split(/\s+/).filter(Boolean);
+          return terms.every(term => {
+            if (term.startsWith('-') && term.length > 1) {
+              return !text.includes(term.slice(1).toLowerCase());
+            }
+            return text.includes(term.toLowerCase());
+          });
+        });
+      });
+    }
+    return result.length;
   }
 
   /**

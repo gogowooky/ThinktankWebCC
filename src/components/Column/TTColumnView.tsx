@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { TTColumn } from '../../views/TTColumn';
 import { TTApplication } from '../../views/TTApplication';
 import { Splitter } from '../Layout/Splitter';
@@ -11,7 +12,9 @@ import { toFullUrl, buildChatUrl } from '../../utils/webviewUrl';
 import type { PanelType, HighlightTargets } from '../../types';
 import './TTColumnView.css';
 
-function useLocalStorageHistory(key: string, maxItems: number = 15) {
+const HISTORY_MAX = 10;
+
+function useLocalStorageHistory(key: string, maxItems: number = HISTORY_MAX) {
   const [history, setHistory] = useState<string[]>(() => {
     try {
       const item = window.localStorage.getItem(key);
@@ -34,38 +37,108 @@ function useLocalStorageHistory(key: string, maxItems: number = 15) {
   return [history, addHistory] as const;
 }
 
+function HistoryDropdown({
+  anchorEl,
+  history,
+  activeIndex,
+  onSelect,
+}: {
+  anchorEl: HTMLElement | null;
+  history: string[];
+  activeIndex: number;
+  onSelect: (item: string) => void;
+}) {
+  if (history.length === 0 || !anchorEl) return null;
+  const rect = anchorEl.getBoundingClientRect();
+  return createPortal(
+    <div
+      className="history-dropdown"
+      style={{ position: 'fixed', top: rect.bottom, left: rect.left, width: rect.width }}
+    >
+      {history.map((h, i) => (
+        <div
+          key={h}
+          className={`history-dropdown-item${i === activeIndex ? ' history-dropdown-item-active' : ''}`}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            onSelect(h);
+          }}
+        >
+          {h}
+        </div>
+      ))}
+    </div>,
+    document.body
+  );
+}
+
 function HistoryInput({
-  className, placeholder, value, onChange, onMouseDown, historyKey
+  className, placeholder, value, onChange, onMouseDown, historyKey, onSend
 }: {
   className: string; placeholder: string; value: string;
   onChange: (v: string) => void; onMouseDown: (e: React.MouseEvent) => void;
-  historyKey: string;
+  historyKey: string; onSend?: (value: string) => void;
 }) {
-  const [history, addHistory] = useLocalStorageHistory(historyKey, 15);
-  const listId = `history-list-${historyKey}`;
+  const [history, addHistory] = useLocalStorageHistory(historyKey, HISTORY_MAX);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSelect = useCallback((item: string) => {
+    onChange(item);
+    addHistory(item);
+    setOpen(false);
+    setActiveIndex(-1);
+    setTimeout(() => inputRef.current?.blur(), 0);
+  }, [onChange, addHistory]);
 
   return (
-    <>
+    <div className="history-input-wrapper">
       <input
+        ref={inputRef}
         className={className}
         type="text"
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onMouseDown={onMouseDown}
-        onBlur={(e) => addHistory(e.target.value)}
+        onFocus={() => { setOpen(true); setActiveIndex(-1); }}
+        onBlur={(e) => {
+          addHistory(e.target.value);
+          setTimeout(() => setOpen(false), 120);
+        }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            addHistory(e.currentTarget.value);
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(i => Math.min(i + 1, history.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(i => Math.max(i - 1, -1));
+          } else if (e.key === 'Enter') {
+            if (activeIndex >= 0 && activeIndex < history.length) {
+              handleSelect(history[activeIndex]);
+            } else if (onSend) {
+              addHistory(e.currentTarget.value);
+              onSend(e.currentTarget.value);
+              onChange('');
+              setOpen(false);
+              setActiveIndex(-1);
+            } else {
+              addHistory(e.currentTarget.value);
+              setOpen(false);
+              e.currentTarget.blur();
+            }
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+            setActiveIndex(-1);
             e.currentTarget.blur();
           }
         }}
-        list={listId}
       />
-      <datalist id={listId}>
-        {history.map(h => <option key={h} value={h} />)}
-      </datalist>
-    </>
+      {open && (
+        <HistoryDropdown anchorEl={inputRef.current} history={history} activeIndex={activeIndex} onSelect={handleSelect} />
+      )}
+    </div>
   );
 }
 
@@ -76,9 +149,19 @@ function HistoryInput({
  */
 function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onChange: (v: string) => void, onFocusPanel: () => void }) {
   const [editing, setEditing] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [history, addHistory] = useLocalStorageHistory('thinktank-history-texteditor', 15);
-  const listId = 'history-list-texteditor';
+  const [history, addHistory] = useLocalStorageHistory('thinktank-history-texteditor', HISTORY_MAX);
+
+  const handleSelect = useCallback((item: string) => {
+    onChange(item);
+    addHistory(item);
+    setOpen(false);
+    setActiveIndex(-1);
+    setEditing(false);
+    setTimeout(() => inputRef.current?.blur(), 0);
+  }, [onChange, addHistory]);
 
   // 表示モード: 値あり かつ 非編集中
   if (!editing && value.trim()) {
@@ -109,9 +192,9 @@ function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onC
     );
   }
 
-  // 編集モード: 通常の input
+  // 編集モード: 通常の input + カスタムドロップダウン
   return (
-    <>
+    <div className="history-input-wrapper">
       <input
         ref={inputRef}
         className="panel-toolbar-input"
@@ -121,14 +204,30 @@ function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onC
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={editing}
         onChange={(e) => onChange(e.target.value)}
-        onFocus={() => setEditing(true)}
+        onFocus={() => { setEditing(true); setOpen(true); setActiveIndex(-1); }}
         onBlur={(e) => {
           addHistory(e.target.value);
           setEditing(false);
+          setTimeout(() => setOpen(false), 120);
         }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            addHistory(e.currentTarget.value);
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(i => Math.min(i + 1, history.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(i => Math.max(i - 1, -1));
+          } else if (e.key === 'Enter') {
+            if (activeIndex >= 0 && activeIndex < history.length) {
+              handleSelect(history[activeIndex]);
+            } else {
+              addHistory(e.currentTarget.value);
+              setOpen(false);
+              e.currentTarget.blur();
+            }
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+            setActiveIndex(-1);
             e.currentTarget.blur();
           }
         }}
@@ -136,12 +235,11 @@ function KeywordTagInput({ value, onChange, onFocusPanel }: { value: string; onC
           e.stopPropagation();
           onFocusPanel();
         }}
-        list={listId}
       />
-      <datalist id={listId}>
-        {history.map(h => <option key={h} value={h} />)}
-      </datalist>
-    </>
+      {open && (
+        <HistoryDropdown anchorEl={inputRef.current} history={history} activeIndex={activeIndex} onSelect={handleSelect} />
+      )}
+    </div>
   );
 }
 
@@ -278,6 +376,56 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     column.WebViewUrl = buildChatUrl(sessionId);
   }, [column]);
 
+  /** ChatバーからのEnter送信 → SSEストリーミング */
+  const handleSendChat = useCallback(async (message: string) => {
+    const trimmed = message.trim();
+    if (!trimmed) return;
+
+    // 送信前に履歴スナップショット取得
+    const history = column.ChatMessages.map(m => ({ role: m.role, content: m.content }));
+
+    column.addChatMessage({ role: 'user', content: trimmed });
+    column.addChatMessage({ role: 'assistant', content: '', isStreaming: true });
+
+    try {
+      const res = await fetch(`/api/chat/${column.ChatSessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: trimmed, history }),
+      });
+
+      if (!res.ok || !res.body) {
+        column.updateLastAssistantMessage(`[Error ${res.status}]`, false);
+        return;
+      }
+
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let acc = '';
+      let buf = '';
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop() ?? '';
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const d = JSON.parse(line.slice(6)) as { type: string; text: string };
+            if (d.type === 'delta') { acc += d.text; column.updateLastAssistantMessage(acc, true); }
+            else if (d.type === 'done') { column.updateLastAssistantMessage(d.text || acc, false); }
+            else if (d.type === 'error') { column.updateLastAssistantMessage(`[Error] ${d.text}`, false); }
+          } catch { /* ignore */ }
+        }
+      }
+      column.updateLastAssistantMessage(acc, false);
+    } catch (err) {
+      column.updateLastAssistantMessage(`[Error] ${err instanceof Error ? err.message : String(err)}`, false);
+    }
+  }, [column]);
+
   // Splitter2本(8px)のみ固定。残り全体を3パネルで比率分割
   const splitterTotal = 8;
   const availableHeight = Math.max(0, height - splitterTotal);
@@ -322,11 +470,8 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
 
     let titleNode: React.ReactNode;
     if (panel.type === 'WebView') {
-      let displayUrl = column.WebViewUrl.trim();
-      if (displayUrl.length > 50) {
-        displayUrl = displayUrl.substring(0, 50) + '...';
-      }
-      const titleText = `${isFocused ? '● ' : ''}WebView${displayUrl ? ` | ${displayUrl}` : ''}`;
+      const lastMsg = column.LastUserMessage;
+      const titleText = `${isFocused ? '● ' : ''}Chat${lastMsg ? ` | ${lastMsg}` : ''}`;
       titleNode = (
         <>
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -346,6 +491,25 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
           )}
         </>
       );
+    } else if (panel.type === 'DataGrid') {
+      const displayCount = column.GetDisplayItemCount();
+      const totalCount = column.GetTotalItemCount();
+      const titleText = `${isFocused ? '● ' : ''}All (${displayCount}/${totalCount})`;
+      titleNode = (
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {hlTargets.panelTitle && hlKeyword ? highlightTextSpans(titleText, hlKeyword) : titleText}
+        </span>
+      );
+    } else if (panel.type === 'TextEditor') {
+      const contentType = selectedItem?.ContentType ?? '';
+      const titleText = selectedItem
+        ? `${isFocused ? '● ' : ''}${contentType} | ${selectedItem.ID} | ${selectedItem.Name}`
+        : `${isFocused ? '● ' : ''}`;
+      titleNode = (
+        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {hlTargets.panelTitle && hlKeyword ? highlightTextSpans(titleText, hlKeyword) : titleText}
+        </span>
+      );
     } else {
       const titleText = `${isFocused ? '● ' : ''}${PANEL_TITLES[panel.type]}${itemInfo}`;
       titleNode = (
@@ -356,9 +520,9 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     }
 
     const toolbarProps = {
-      DataGrid: { placeholder: 'Filter...', value: column.DataGridFilter, onChange: (v: string) => { column.DataGridFilter = v; } },
-      WebView: { placeholder: 'Address...', value: column.WebViewUrl, onChange: (v: string) => { column.WebViewUrl = v; } },
-      TextEditor: { placeholder: 'Highlight...', value: column.HighlighterKeyword, onChange: (v: string) => { column.HighlighterKeyword = v; } },
+      DataGrid: { placeholder: 'Filter...', value: column.DataGridFilter, onChange: (v: string) => { column.DataGridFilter = v; }, onSend: undefined as ((v: string) => void) | undefined },
+      WebView: { placeholder: 'Chat...', value: column.ChatInput, onChange: (v: string) => { column.ChatInput = v; }, onSend: handleSendChat },
+      TextEditor: { placeholder: 'Highlight...', value: column.HighlighterKeyword, onChange: (v: string) => { column.HighlighterKeyword = v; }, onSend: undefined as ((v: string) => void) | undefined },
     }[panel.type];
 
     elements.push(
@@ -403,6 +567,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                   handlePanelFocus(panel.type);
                 }}
                 historyKey={`thinktank-history-${panel.type.toLowerCase()}`}
+                onSend={toolbarProps.onSend}
               />
             )}
             {panel.type === 'DataGrid' && column.CheckedCount > 0 && (

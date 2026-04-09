@@ -230,6 +230,47 @@
   text-overflow: ellipsis;
 }
 
+/* ─── 履歴ドロップダウン ─── */
+
+.history-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.history-input-wrapper .panel-toolbar-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.history-dropdown {
+  z-index: 9999;
+  background: var(--tt-editor-bg, #2d2d30);
+  border: 1px solid var(--tt-border-color, #3c3c3c);
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.history-dropdown-item {
+  padding: 0 8px;
+  height: 20px;
+  line-height: 20px;
+  font-size: 11px;
+  color: var(--tt-editor-fg, #d4d4d4);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-dropdown-item:hover,
+.history-dropdown-item-active {
+  background: var(--tt-title-bg, #094771);
+  color: var(--tt-title-fg, #fff);
+}
+
 /* ─── パネルコンテンツ ─── */
 
 .panel-content {
