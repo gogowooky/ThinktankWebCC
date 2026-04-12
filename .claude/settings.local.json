@@ -7,7 +7,22 @@
       "Bash(xargs -I{} taskkill /PID {} /F)",
       "Bash(taskkill /PID 18584 /F)",
       "Bash(taskkill /PID 20920 /F)",
-      "Bash(taskkill /PID 4076 /F)"
+      "Bash(taskkill /PID 4076 /F)",
+      "Bash(xargs wc:*)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(timeout 6 npm run server:dev)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npm install:*)",
+      "Bash(node --input-type=module -e \":*)",
+      "Bash(git push:*)",
+      "Bash(handle \"c:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankWebCC\\\\.claude\\\\worktrees\")",
+      "Bash(xargs -r kill -9)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(tasklist /FI \"PID eq 12380\" /FO CSV)",
+      "Bash(tasklist /FI \"PID eq 21204\" /FO CSV)",
+      "Bash(powershell.exe -Command \"Get-Process -Id 12380 | Select-Object ProcessName,Id; Get-Process -Id 21204 | Select-Object ProcessName,Id\")",
+      "Bash(find /c/Users/shinichiro.egashira/Documents/ThinktankWebCC/reference2 -maxdepth 2 -type f \\\\\\(-name .env* -o -name *.env \\\\\\))"
     ]
   }
 }

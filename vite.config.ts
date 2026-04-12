@@ -1,91 +1,68 @@
-import { defineConfig, Plugin, ViteDevServer } from 'vite'
+import { defineConfig, Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
-import fs from 'fs'
-import path from 'path'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
-// APIミドルウェアプラグイン
-function apiMiddlewarePlugin(): Plugin {
+/**
+ * Viteプラグイン: /view/* リクエストに自己完結型HTMLを返す
+ *
+ * ブラウザ側で IndexedDB からデータ取得 → markdown→HTML変換 → 表示。
+ * アプリ内WebView (iframe) でも、別ブラウザタブでも同じURLで動作する。
+ */
+function viewPlugin(): Plugin {
+  const templates: Record<string, string> = {}
+
   return {
-    name: 'api-middleware',
-    configureServer(server: ViteDevServer) {
-      // ミドルウェアを最初に追加
+    name: 'thinktank-view',
+    configureServer(server) {
+      // テンプレートHTMLを読み込み
+      const templatesDir = resolve(__dirname, 'src/view-templates')
+      templates.markdown = readFileSync(resolve(templatesDir, 'markdown.html'), 'utf-8')
+      templates.chat = readFileSync(resolve(templatesDir, 'chat.html'), 'utf-8')
+
       server.middlewares.use((req, res, next) => {
-        // /api/save
-        if (req.method === 'POST' && req.url === '/api/save') {
-          let body = '';
-          req.on('data', (chunk: Buffer) => { body += chunk.toString(); });
-          req.on('end', () => {
-            try {
-              const { filename, content } = JSON.parse(body);
-              const filePath = path.join(cacheDir, filename);
-              // ファイルパスの親ディレクトリを再帰的に作成
-              const dir = path.dirname(filePath);
-              if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-              }
-              fs.writeFileSync(filePath, content, 'utf-8');
-              res.setHeader('Content-Type', 'application/json');
-              res.statusCode = 200;
-              res.end(JSON.stringify({ success: true }));
-            } catch (error) {
-              console.error('Save failed:', error);
-              res.statusCode = 500;
-              res.end(JSON.stringify({ error: 'Save failed' }));
-            }
-          });
-          return;
-        }
+        if (!req.url?.startsWith('/view/')) return next()
 
-        // /api/load
-        if (req.method === 'GET' && req.url?.startsWith('/api/load')) {
+        const urlObj = new URL(req.url, 'http://localhost')
+        const viewType = urlObj.pathname.replace('/view/', '')
+
+        // 開発中はリクエストごとに再読み込み（テンプレート編集を即反映）
+        if (viewType in templates) {
           try {
-            const url = new URL(req.url, 'http://localhost');
-            const filename = url.searchParams.get('filename');
-            if (!filename) {
-              res.statusCode = 400;
-              res.end(JSON.stringify({ error: 'Filename is required' }));
-              return;
-            }
-            const filePath = path.join(cacheDir, filename);
-            if (fs.existsSync(filePath)) {
-              const content = fs.readFileSync(filePath, 'utf-8');
-              res.setHeader('Content-Type', 'application/json');
-              res.statusCode = 200;
-              res.end(JSON.stringify({ content }));
-            } else {
-              res.setHeader('Content-Type', 'application/json');
-              res.statusCode = 200;
-              res.end(JSON.stringify({ content: null }));
-            }
-          } catch (error) {
-            console.error('Load failed:', error);
-            res.statusCode = 500;
-            res.end(JSON.stringify({ error: 'Load failed' }));
-          }
-          return;
+            templates[viewType] = readFileSync(resolve(templatesDir, `${viewType}.html`), 'utf-8')
+          } catch { /* fallback to cached */ }
         }
 
-        // 他のリクエストは次のミドルウェアへ
-        next();
-      });
-    }
-  };
+        const template = templates[viewType]
+        if (template) {
+          res.setHeader('Content-Type', 'text/html; charset=utf-8')
+          res.end(template)
+          return
+        }
+
+        // 未対応の viewType
+        res.statusCode = 404
+        res.setHeader('Content-Type', 'text/plain')
+        res.end('Not found: ' + viewType)
+      })
+    },
+  }
 }
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    apiMiddlewarePlugin(),
-    react()
-  ],
+  plugins: [react(), viewPlugin()],
   server: {
+    port: 5173,
+    open: true,
     proxy: {
-      // BigQuery APIをバックエンドサーバーにプロキシ（別途起動が必要）
-      // Node.js 17以降のIPv6解決問題（localhost -> ::1）により503エラーになるのを防ぐため、127.0.0.1 を直接指定する。
-      '/api/bq': {
-        target: 'http://127.0.0.1:8080',
-        changeOrigin: true
-      }
-    }
-  }
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/ws': {
+        target: 'ws://localhost:8080',
+        ws: true,
+      },
+    },
+  },
 })

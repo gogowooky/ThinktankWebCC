@@ -1,84 +1,54 @@
 /**
  * IStorageService.ts
- * ストレージサービスのインターフェース定義
- * 
- * 将来の拡張:
- * - LocalStorageService: ブラウザのlocalStorageを使用
- * - ApiStorageService: サーバーAPI経由でファイルシステムにアクセス
- * - DriveStorageService: Google Drive API経由でクラウドにアクセス
+ * ストレージ抽象化インターフェース
+ *
+ * BigQuery / IndexedDB の両方で実装し、StorageManagerで統合する。
  */
 
-/**
- * ストレージ操作の結果
- */
-export interface StorageResult<T = void> {
-    success: boolean;
-    data?: T;
-    error?: string;
+export interface FileRecord {
+  file_id: string;
+  title: string | null;
+  file_type: string;
+  category: string | null;
+  content: string | null;
+  metadata: Record<string, unknown> | null;
+  size_bytes: number | null;
+  created_at: string;
+  updated_at: string;
+  /** IndexedDB専用: BigQuery未同期フラグ (trueならBQ送信が必要) */
+  _dirty?: boolean;
 }
 
-/**
- * ストレージサービスのインターフェース
- */
+export interface VersionInfo {
+  file_id: string;
+  updated_at: string;
+}
+
 export interface IStorageService {
-    /**
-     * サービス名（デバッグ/ログ用）
-     */
-    readonly name: string;
+  /** サービス名（デバッグ用） */
+  readonly name: string;
 
-    /**
-     * ファイルを保存
-     * @param path ファイルパス（相対パス）
-     * @param content ファイル内容
-     */
-    save(path: string, content: string): Promise<StorageResult>;
+  /** 初期化 */
+  initialize(): Promise<boolean>;
 
-    /**
-     * ファイルを読み込み
-     * @param path ファイルパス（相対パス）
-     * @returns ファイル内容、見つからない場合は null
-     */
-    load(path: string): Promise<StorageResult<string | null>>;
+  /** ファイル一覧取得 */
+  listFiles(category?: string): Promise<FileRecord[]>;
 
-    /**
-     * ファイルが存在するか確認
-     * @param path ファイルパス（相対パス）
-     */
-    exists(path: string): Promise<StorageResult<boolean>>;
+  /** 単一ファイル取得 */
+  getFile(fileId: string): Promise<FileRecord | null>;
 
-    /**
-     * ファイル一覧を取得
-     * @param directory ディレクトリパス（相対パス）
-     * @param pattern ファイルパターン（オプション、例: "*.md"）
-     */
-    list(directory: string, pattern?: string): Promise<StorageResult<string[]>>;
+  /** ファイル保存（upsert） */
+  saveFile(record: FileRecord): Promise<void>;
 
-    /**
-     * ファイルを削除
-     * @param path ファイルパス（相対パス）
-     */
-    delete(path: string): Promise<StorageResult>;
-}
+  /** ファイル削除 */
+  deleteFile(fileId: string): Promise<void>;
 
-/**
- * ストレージタイプの定義
- */
-export type StorageType = 'bigquery' | 'local';
+  /** 全データ取得 */
+  getAllFiles(): Promise<FileRecord[]>;
 
-/**
- * ストレージマネージャーのインターフェース
- * 複数のストレージサービスを管理
- */
-export interface IStorageManager {
-    /**
-     * 指定されたタイプのストレージサービスを取得
-     */
-    getStorage(type: StorageType): IStorageService;
+  /** バージョン情報取得 */
+  getVersions(): Promise<VersionInfo[]>;
 
-    /**
-     * キャッシュストレージを取得
-     */
-    readonly cache: IStorageService;
-
-
+  /** 一括保存 */
+  bulkSave(records: FileRecord[]): Promise<void>;
 }

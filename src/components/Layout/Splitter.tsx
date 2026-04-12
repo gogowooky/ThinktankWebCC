@@ -1,48 +1,65 @@
-import React, { useState, useCallback } from 'react';
+import { useCallback, useRef } from 'react';
+import './Splitter.css';
 
-interface SplitterProps {
-    direction: 'horizontal' | 'vertical';
-    onResize: (delta: number) => void;
-    className?: string;
+/**
+ * Splitter - ドラッグでリサイズするスプリッタバー
+ *
+ * direction:
+ *   'horizontal' → 左右分割（列間）。ドラッグで左右幅を変更
+ *   'vertical'   → 上下分割（パネル間）。ドラッグで上下高さを変更
+ *
+ * onResize(delta): ドラッグ移動量(px)を親に通知
+ */
+
+export interface SplitterProps {
+  direction: 'horizontal' | 'vertical';
+  onResize: (delta: number) => void;
 }
 
-export const Splitter: React.FC<SplitterProps> = ({ direction, onResize, className }) => {
-    const [isDragging, setIsDragging] = useState(false);
+export function Splitter({ direction, onResize }: SplitterProps) {
+  const dragging = useRef(false);
+  const lastPos = useRef(0);
 
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    lastPos.current = direction === 'horizontal' ? e.clientX : e.clientY;
 
-        const startX = e.clientX;
-        const startY = e.clientY;
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!dragging.current) return;
+      const current = direction === 'horizontal' ? ev.clientX : ev.clientY;
+      const delta = current - lastPos.current;
+      if (delta !== 0) {
+        onResize(delta);
+        lastPos.current = current;
+      }
+    };
 
-        const handleMouseMove = (moveEvent: MouseEvent) => {
-            if (direction === 'horizontal') {
-                onResize(moveEvent.clientX - startX);
-            } else {
-                onResize(moveEvent.clientY - startY);
-            }
-        };
+    const handleMouseUp = () => {
+      dragging.current = false;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
 
-        const handleMouseUp = () => {
-            setIsDragging(false);
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-        };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = direction === 'horizontal' ? 'col-resize' : 'row-resize';
+    document.body.style.userSelect = 'none';
+  }, [direction, onResize]);
 
-        document.addEventListener('mousemove', handleMouseMove);
-        document.addEventListener('mouseup', handleMouseUp);
-    }, [direction, onResize]);
+  const isHorizontal = direction === 'horizontal';
 
-    return (
-        <div
-            className={`splitter ${direction} ${isDragging ? 'dragging' : ''} ${className || ''}`}
-            onMouseDown={handleMouseDown}
-            style={{
-                cursor: direction === 'horizontal' ? 'col-resize' : 'row-resize',
-                zIndex: 10,
-                userSelect: 'none',
-            }}
-        />
-    );
-};
+  return (
+    <div
+      className={`splitter splitter-${direction}`}
+      onMouseDown={handleMouseDown}
+      style={{
+        width: isHorizontal ? 4 : '100%',
+        height: isHorizontal ? '100%' : 4,
+        cursor: isHorizontal ? 'col-resize' : 'row-resize',
+      }}
+    />
+  );
+}

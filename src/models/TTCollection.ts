@@ -1,243 +1,417 @@
 import { TTObject } from './TTObject';
-import { StorageManager } from '../services/storage';
 import { toCsv, parseCsv } from '../utils/csv';
+import { storageManager } from '../services/storage/StorageManager';
+import type { FileRecord } from '../services/storage/IStorageService';
 
-
+/**
+ * TTCollection - データコンテナ
+ *
+ * TTObjectを継承し、子要素のMap管理、CSV直列化、デバウンス自動保存を提供する。
+ * 将来的にStorageManagerと統合してBigQuery/IndexedDBへの永続化を行う。
+ */
 export class TTCollection extends TTObject {
-    protected _children: Map<string, TTObject>;
-    public Count: number;
-    public Description: string;
+  /** 子要素Map */
+  protected _children: Map<string, TTObject>;
 
-    // 設定用プロパティ
-    public ItemSaveProperties: string = "";
-    public ListPropertiesMin: string = "";
-    public ListProperties: string = "";
-    public ColumnMapping: string = "";
-    public ColumnMaxWidth: string = "";  // 列ごとの最大幅（例: "ID:20,Name:-1"）。-1は無制限
+  /** 子要素数 */
+  public Count: number = 0;
 
-    private _saveTimer: number | null = null;
+  /** コレクションの説明 */
+  public Description: string = '';
 
-    constructor() {
-        super();
-        this._children = new Map();
-        this.Count = 0;
-        this.Description = 'Template';
+  /** データベース識別子（コレクション毎のテーブル/ストアを決定） */
+  public DatabaseID: string = '';
+
+  /** BQ側カテゴリ名（旧アプリとの互換用。空の場合はDatabaseIDと同じ） */
+  public RemoteCategoryID: string = '';
+
+  // ─── 表示・保存設定 ───
+
+  /** CSV保存対象プロパティ（カンマ区切り） */
+  public ItemSaveProperties: string = '';
+
+  /** DataGrid表示プロパティ（簡易版、カンマ区切り） */
+  public ListPropertiesMin: string = '';
+
+  /** DataGrid表示プロパティ（完全版、カンマ区切り） */
+  public ListProperties: string = '';
+
+  /** 列名マッピング (例: "ID:番号,Name:タイトル") */
+  public ColumnMapping: string = '';
+
+  /** 列最大幅 (例: "ID:20,Name:-1") -1は無制限 */
+  public ColumnMaxWidth: string = '';
+
+  // ─── 保存制御 ───
+
+  private _saveTimer: number | null = null;
+  private _isSaving: boolean = false;
+  private _nextSaveScheduled: boolean = false;
+  protected _suppressSave: boolean = false;
+
+  /** ロード完了フラグ（未ロード時の保存によるデータ消失を防止） */
+  public IsLoaded: boolean = false;
+
+  constructor() {
+    super();
+    this._children = new Map();
+  }
+
+  public override get ClassName(): string {
+    return 'TTCollection';
+  }
+
+  /** 子要素のクラス名 */
+  public get ItemClassName(): string {
+    return this.CreateChildInstance().ClassName;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CRUD操作
+  // ═══════════════════════════════════════════════════════════════
+
+  /** IDで子要素を取得 */
+  public GetItem(id: string): TTObject | undefined {
+    return this._children.get(id);
+  }
+
+  /** 子要素を追加（既存IDは上書き） */
+  public AddItem(item: TTObject): TTObject {
+    item._parent = this;
+    this._children.set(item.ID, item);
+    this.Count = this._children.size;
+    this.NotifyUpdated();
+    return item;
+  }
+
+  /** IDで子要素を削除 */
+  public DeleteItem(id: string): void {
+    const item = this._children.get(id);
+    if (item) {
+      item._parent = null;
+      this._children.delete(id);
+      this.Count = this._children.size;
+      this.NotifyUpdated();
+    }
+  }
+
+  /** 全子要素を配列で取得 */
+  public GetItems(): TTObject[] {
+    return Array.from(this._children.values());
+  }
+
+  /** 全子要素をクリア */
+  public ClearItems(): void {
+    this._children.forEach(item => {
+      item._parent = null;
+    });
+    this._children.clear();
+    this.Count = 0;
+    this.NotifyUpdated();
+  }
+
+  /** 条件に合致する子要素を検索 */
+  public FindItems(predicate: (item: TTObject) => boolean): TTObject[] {
+    return this.GetItems().filter(predicate);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 列設定ヘルパー
+  // ═══════════════════════════════════════════════════════════════
+
+  /** ColumnMappingをパースしてRecord<string,string>で返す */
+  public GetColumnMappingRecord(): Record<string, string> {
+    if (!this.ColumnMapping) return {};
+    const result: Record<string, string> = {};
+    this.ColumnMapping.split(',').forEach(pair => {
+      const [key, value] = pair.split(':').map(s => s.trim());
+      if (key && value) result[key] = value;
+    });
+    return result;
+  }
+
+  /** ColumnMaxWidthをパースしてRecord<string,number>で返す */
+  public GetColumnMaxWidthRecord(): Record<string, number> {
+    if (!this.ColumnMaxWidth) return {};
+    const result: Record<string, number> = {};
+    this.ColumnMaxWidth.split(',').forEach(pair => {
+      const [key, value] = pair.split(':').map(s => s.trim());
+      if (key && value) result[key] = parseInt(value, 10);
+    });
+    return result;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // CSV シリアライズ
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 子要素をCSV文字列にシリアライズ */
+  public ToCsvString(): string {
+    if (!this.ItemSaveProperties) return '';
+
+    const props = this.ItemSaveProperties.split(',').map(p => p.trim());
+    if (props.length === 0) return '';
+
+    const items = this.GetItems().map(item => {
+      const obj: Record<string, unknown> = {};
+      props.forEach(prop => {
+        obj[prop] = (item as unknown as Record<string, unknown>)[prop];
+      });
+      return obj;
+    });
+
+    return toCsv(items, props);
+  }
+
+  /** CSV文字列から子要素を復元 */
+  public FromCsvString(content: string): void {
+    if (!content) return;
+
+    const rows = parseCsv(content);
+    if (rows.length === 0) return;
+
+    const headers = rows[0];
+    const propertyMap = new Map<string, number>();
+    headers.forEach((h, i) => propertyMap.set(h.trim(), i));
+
+    if (!propertyMap.has('ID')) {
+      console.error(`CSV for ${this.ID} missing ID column`);
+      return;
     }
 
-    public get ItemClassName(): string {
-        return this.CreateChildInstance().ClassName;
-    }
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length !== headers.length) continue;
 
-    public override get ClassName(): string {
-        return 'TTCollection';
-    }
+      const id = row[propertyMap.get('ID')!];
+      if (!id) continue;
 
-    public NotifyUpdated(): void {
-        super.NotifyUpdated();
-        this.SaveCache();
-    }
-
-    private async SaveCache(): Promise<void> {
-        if (!this.ItemSaveProperties) return;
-
-        if (this._saveTimer) {
-            clearTimeout(this._saveTimer);
-        }
-
-        this._saveTimer = window.setTimeout(() => {
-            this._DoSave();
-        }, 5000); // 5秒の遅延（リクエストがあるたびにリセットされる）
-    }
-
-    /**
-     * キャッシュを強制的に即時保存します。
-     */
-    public async FlushCache(): Promise<void> {
-        if (!this.ItemSaveProperties) return;
-        if (this._saveTimer) {
-            clearTimeout(this._saveTimer);
-            this._saveTimer = null;
-        }
-        await this._DoSave();
-    }
-
-    private _isSaving: boolean = false;
-    private _nextSaveScheduled: boolean = false;
-
-    public IsLoaded: boolean = false;
-
-    private async _DoSave(): Promise<void> {
-        if (this._isSaving) {
-            // 保存中に次のリクエストが来たら、完了後に再実行フラグを立てる
-            this._nextSaveScheduled = true;
-            return;
-        }
-
-        this._isSaving = true;
-        this._nextSaveScheduled = false;
-
-        // ロード未完了の場合は保存しない（データ消失防止）
-        if (!this.IsLoaded) {
-            // ロード完了を待つために再スケジュールして終了
-            // finallyブロックで _isSaving = false になり、_nextSaveScheduled = true なので SaveCache() が呼ばれる
-            this._nextSaveScheduled = true;
-            this._isSaving = false; // ここでfalseにしないとfinallyまで行かない（returnするので）
-            // returnする前にfinallyに行く？いや明示的にfalseにする必要
-            // try-finallyではないので、ここでreturnするとfinallyは実行されない（この関数全体がtryに入っていない）
-            // LoadCache完了を待つ
-            return;
-        }
-
-        const props = this.ItemSaveProperties.split(',').map(p => p.trim());
-        if (props.length === 0) {
-            this._isSaving = false;
-            return;
-        }
-
-        // CSV ユーティリティを使用してシリアライズ
-        const items = Array.from(this._children.values()).map(item => {
-            const obj: Record<string, unknown> = {};
-            props.forEach(prop => {
-                obj[prop] = (item as unknown as Record<string, unknown>)[prop];
-            });
-            return obj;
-        });
-        const content = toCsv(items, props);
-        const fileName = `${this.ID}.csv`;
-
-        try {
-            // ローカルキャッシュに保存
-            await StorageManager.local.save(fileName, content);
-
-            // BigQueryにも保存
-            const bqResult = await StorageManager.bigquery.save(fileName, content);
-            if (bqResult.success) {
-                console.log(`Saved to BigQuery: ${fileName}`);
-            } else {
-                console.warn(`Failed to save to BigQuery: ${fileName}`, bqResult.error);
-            }
-        } catch (error) {
-            console.error(`Failed to save cache ${fileName}:`, error);
-        } finally {
-            this._isSaving = false;
-
-            // 保存中にリクエストがあった場合は再実行
-            if (this._nextSaveScheduled) {
-                this.SaveCache(); // タイマー経由で再スケジュール
-            }
-        }
-    }
-
-    public GetItem(id: string): TTObject | undefined {
-        return this._children.get(id);
-    }
-
-    public AddItem(item: TTObject): TTObject {
+      let item = this.GetItem(id);
+      if (!item) {
+        item = this.CreateChildInstance();
+        item.ID = id;
         item._parent = this;
-        this._children.set(item.ID, item);
-        this.Count = this._children.size;
-        this.NotifyUpdated();
-        return item;
+        this._children.set(id, item);
+      }
+
+      propertyMap.forEach((index, prop) => {
+        (item as unknown as Record<string, unknown>)[prop] = row[index];
+      });
     }
 
-    public DeleteItem(id: string): void {
-        if (this._children.has(id)) {
-            const item = this._children.get(id);
-            if (item) {
-                item._parent = null;
-            }
-            this._children.delete(id);
-            this.Count = this._children.size;
-            this.NotifyUpdated();
+    this.Count = this._children.size;
+    this.IsLoaded = true;
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // キャッシュ保存/読込（Phase 12でStorageManager統合）
+  // ═══════════════════════════════════════════════════════════════
+
+  public override NotifyUpdated(updateDate: boolean = true, skipSave: boolean = false): void {
+    super.NotifyUpdated(updateDate, skipSave);
+    if (!skipSave) {
+      this._scheduleSave();
+    }
+  }
+
+  /** デバウンス付き保存スケジュール（5秒） */
+  private _scheduleSave(): void {
+    if (!this.ItemSaveProperties) return;
+
+    if (this._saveTimer) {
+      clearTimeout(this._saveTimer);
+    }
+
+    this._saveTimer = window.setTimeout(() => {
+      this._doSave();
+    }, 5000);
+  }
+
+  /** キャッシュを即時保存 */
+  public async FlushCache(): Promise<void> {
+    if (!this.ItemSaveProperties) return;
+    if (this._saveTimer) {
+      clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+    }
+    await this._doSave();
+  }
+
+  private async _doSave(): Promise<void> {
+    if (this._isSaving) {
+      this._nextSaveScheduled = true;
+      return;
+    }
+
+    if (!this.IsLoaded) {
+      this._nextSaveScheduled = true;
+      return;
+    }
+
+    this._isSaving = true;
+    this._nextSaveScheduled = false;
+
+    try {
+      if (storageManager.isInitialized) {
+        // 変更のあったアイテムをStorageManager経由で保存
+        const items = this.GetItems();
+        const records: FileRecord[] = items.map(item => this.itemToRecord(item));
+        await storageManager.bulkSave(records);
+        console.log(`[TTCollection] Saved ${records.length} items via StorageManager`);
+      } else {
+        console.log(`[TTCollection] StorageManager not ready, save deferred: ${this.ID}`);
+      }
+    } catch (error) {
+      console.error(`Failed to save cache ${this.ID}:`, error);
+    } finally {
+      this._isSaving = false;
+
+      if (this._nextSaveScheduled) {
+        this._scheduleSave();
+      }
+    }
+  }
+
+  /**
+   * StorageManagerからデータをロード（BQ同期付き）
+   *
+   * 1. BQが利用可能ならsyncCategory()でBQ↔IndexedDBをマージ
+   * 2. BQが利用不可ならIndexedDBのみからロード
+   * 3. マージ結果をコレクションに反映
+   */
+  public async LoadCache(): Promise<void> {
+    if (!storageManager.isInitialized) {
+      console.log(`[TTCollection] StorageManager not ready, LoadCache deferred: ${this.ID}`);
+      this.IsLoaded = true;
+      return;
+    }
+
+    try {
+      const localCategory = this.DatabaseID || this.ID;
+      const remoteCategory = this.RemoteCategoryID || localCategory;
+
+      let records: FileRecord[];
+      if (storageManager.isRemoteAvailable) {
+        // BQ↔IndexedDBをタイムスタンプ比較マージ
+        records = await storageManager.syncCategory(localCategory, remoteCategory);
+      } else {
+        // IndexedDBのみ
+        records = await storageManager.listFiles(localCategory);
+      }
+
+      for (const record of records) {
+        let item = this.GetItem(record.file_id);
+        if (!item) {
+          item = this.CreateChildInstance();
+          item.ID = record.file_id;
+          item._parent = this;
+          this._children.set(item.ID, item);
         }
+        this.recordToItem(record, item);
+      }
+
+      this.Count = this._children.size;
+      this.IsLoaded = true;
+      this._suppressSave = true;
+      this.NotifyUpdated(false, true);
+      this._suppressSave = false;
+      console.log(`[TTCollection] Loaded ${records.length} items from StorageManager for ${localCategory}`);
+    } catch (error) {
+      console.error(`[TTCollection] LoadCache failed for ${this.ID}:`, error);
+      this.IsLoaded = true;
     }
+  }
 
-    public GetItems(): TTObject[] {
-        return Array.from(this._children.values());
+  /** TTObjectをFileRecordに変換 */
+  private itemToRecord(item: TTObject): FileRecord {
+    const dataItem = item as unknown as Record<string, unknown>;
+    return {
+      file_id: item.ID,
+      title: item.Name || null,
+      file_type: (dataItem.ContentType as string) || 'memo',
+      category: this.DatabaseID || this.ID,
+      content: (dataItem.Content as string) ?? null,
+      metadata: null,
+      size_bytes: null,
+      created_at: item.UpdateDate || new Date().toISOString(),
+      updated_at: item.UpdateDate || new Date().toISOString(),
+    };
+  }
+
+  /** FileRecordからアイテムを追加/更新（iframe等からの通知用） */
+  public AddOrUpdateFromRecord(record: FileRecord): void {
+    let item = this.GetItem(record.file_id);
+    if (!item) {
+      item = this.CreateChildInstance();
+      item.ID = record.file_id;
+      item._parent = this;
+      this._children.set(item.ID, item);
     }
+    this.recordToItem(record, item);
+    this.Count = this._children.size;
+    this._suppressSave = true;
+    this.NotifyUpdated(false, true);
+    this._suppressSave = false;
+  }
 
-    public ClearItems(): void {
-        this._children.forEach(item => {
-            item._parent = null;
-        });
-        this._children.clear();
-        this.Count = 0;
-        this.NotifyUpdated();
+  /** FileRecordからTTObjectにプロパティを適用 */
+  protected recordToItem(record: FileRecord, item: TTObject): void {
+    item.Name = record.title || item.Name;
+    item.UpdateDate = record.updated_at || item.UpdateDate;
+    const dataItem = item as unknown as Record<string, unknown>;
+    if (record.content !== null && typeof dataItem.setContentSilent === 'function') {
+      (dataItem as { setContentSilent: (v: string) => void }).setContentSilent(record.content);
+    } else if (record.content !== null) {
+      dataItem.Content = record.content;
     }
+    if (record.file_type) {
+      // 'md'/'markdown'/'text' はすべて 'memo' として扱う
+      const rawType = record.file_type.toLowerCase();
+      const normalizedType =
+        rawType === 'md' || rawType === 'markdown' || rawType === 'text'
+          ? 'memo'
+          : record.file_type;
+      dataItem.ContentType = normalizedType;
 
-    public async LoadCache(): Promise<void> {
-        if (!this.ItemSaveProperties) return;
-        const fileName = `${this.ID}.csv`;
-
-        try {
-            // まずローカルキャッシュから読み込み
-            let result = await StorageManager.local.load(fileName);
-
-            // ローカルにない場合はBigQueryから取得
-            if (!result.success || !result.data) {
-                result = await StorageManager.bigquery.load(fileName);
-                if (result.success && result.data) {
-                    // BigQueryから取得したデータをローカルにキャッシュ
-                    await StorageManager.local.save(fileName, result.data);
-                    console.log(`Loaded from BigQuery and cached locally: ${fileName}`);
-                }
+      // chatレコードのタイトルが chatHistory の JSON 配列になっている場合に正規化
+      // （旧バージョンのバグで title に JSON が入った場合の互換対応）
+      if (rawType === 'chat' && item.Name) {
+        const t = item.Name.trim();
+        if (t.startsWith('[') || t.startsWith('{')) {
+          try {
+            const parsed = JSON.parse(t);
+            const arr = Array.isArray(parsed) ? parsed : [parsed];
+            const firstUser = arr.find(
+              (m: unknown) => (m as { role: string }).role === 'user'
+            );
+            if (firstUser && typeof (firstUser as { content: unknown }).content === 'string') {
+              item.Name = ((firstUser as { content: string }).content).substring(0, 40);
             }
-
-            if (!result.success || !result.data) return;
-
-            // CSV ユーティリティを使用してパース
-            const rows = parseCsv(result.data);
-            if (rows.length === 0) return;
-
-            const headers = rows[0];
-            const propertyMap = new Map<string, number>();
-            headers.forEach((h: string, i: number) => propertyMap.set(h.trim(), i));
-
-            if (!propertyMap.has('ID')) {
-                console.error(`Cache for ${this.ID} missing ID column`);
-                return;
-            }
-
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (row.length !== headers.length) continue;
-
-                const id = row[propertyMap.get('ID')!];
-                if (!id) continue;
-
-                let item = this.GetItem(id);
-                if (!item) {
-                    item = this.CreateChildInstance();
-                    item.ID = id;
-                    item._parent = this;
-                    this._children.set(id, item);
-                }
-
-                propertyMap.forEach((index, prop) => {
-                    const val = row[index];
-                    (item as unknown as Record<string, unknown>)[prop] = val;
-                });
-            }
-
-            this.Count = this._children.size;
-
-            // ロード完了フラグを立てる
-            this.IsLoaded = true;
-
-            // ロード中に保存リクエストがあった場合は、ここで保存を実行する
-            if (this._nextSaveScheduled) {
-                this.SaveCache();
-            }
-
-            // NotifyUpdatedを呼ぶと保存がトリガーされるので、直接親メソッドを呼ぶ
-            // ただし上記でSaveCacheを呼んでいるので、ここでは純粋にView更新通知のみを行う
-            super.NotifyUpdated();
-        } catch (error) {
-            console.error(`Failed to load cache for ${this.ID}:`, error);
+          } catch { /* JSON でなければそのまま */ }
         }
+      }
     }
+    // CollectionID: アイテム保存時の実際のカテゴリとして元カテゴリを保持
+    if ('CollectionID' in dataItem && record.category) {
+      dataItem.CollectionID = record.category;
+    }
+  }
 
-    protected CreateChildInstance(): TTObject {
-        return new TTObject();
-    }
+  /**
+   * このコレクションが扱うカテゴリ一覧（デフォルトは自身のDatabaseIDのみ）
+   * TTKnowledge等の複数カテゴリ統合コレクションでオーバーライド
+   */
+  public get HandledCategories(): string[] {
+    const cat = this.DatabaseID || this.ID;
+    return cat ? [cat] : [];
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // ファクトリメソッド（サブクラスでオーバーライド）
+  // ═══════════════════════════════════════════════════════════════
+
+  /** 子要素のインスタンスを生成する（サブクラスでオーバーライド） */
+  protected CreateChildInstance(): TTObject {
+    return new TTObject();
+  }
 }

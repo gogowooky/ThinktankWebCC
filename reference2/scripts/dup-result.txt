@@ -1,0 +1,4 @@
+Table: thinktankweb-483408.thinktank.files
+Duplicates (file_id+category): 136
+Duplicate file_ids (by file_id only): 8
+Total records: 5665
