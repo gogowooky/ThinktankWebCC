@@ -126,15 +126,19 @@
   box-sizing: border-box;
 }
 
-/* 入力エリア（チャットモード時） */
+/* 入力エリア（チャットモード時・高さはスプリッターで可変） */
 .chat-cli-input-area {
   flex-shrink: 0;
-  border-top: 1px solid #333;
+  display: flex;
+  flex-direction: column;
   padding: 4px 6px;
   background: #252526;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .chat-cli-textarea {
+  flex: 1;
   width: 100%;
   box-sizing: border-box;
   resize: none;
@@ -147,6 +151,7 @@
   font-size: 11px;
   line-height: 1.5;
   outline: none;
+  min-height: 0;
 }
 
 .chat-cli-textarea:focus {

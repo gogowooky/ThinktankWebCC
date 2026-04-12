@@ -291,6 +291,13 @@ export class TTColumn extends TTObject {
     this.NotifyUpdated(false);
   }
 
+  /** チャットをクリア（モード解除＋メッセージ全削除） */
+  public clearChatMessages(): void {
+    this._chatMessages = [];
+    this._chatMode = false;
+    this.NotifyUpdated(false);
+  }
+
   /** 最後のアシスタントメッセージを更新（ストリーミング用） */
   public updateLastAssistantMessage(content: string, isStreaming: boolean): void {
     const last = this._chatMessages[this._chatMessages.length - 1];

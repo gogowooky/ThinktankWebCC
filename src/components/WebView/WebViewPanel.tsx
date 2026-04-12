@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback, useRef, KeyboardEvent } from 'react';
+import { useEffect, useState, useCallback, useRef, KeyboardEvent, useReducer } from 'react';
+import { Splitter } from '../Layout/Splitter';
 import { TTColumn } from '../../views/TTColumn';
 import { TTApplication } from '../../views/TTApplication';
 import { TTModels } from '../../models/TTModels';
@@ -63,7 +64,9 @@ function MarkdownView({ column, id }: { column: TTColumn; id: string }) {
   );
 }
 
-/** CLIスタイルチャット表示（＋チャットモード時のマルチライン入力エリア） */
+const CHAT_INPUT_MAX = 400;
+
+/** CLIスタイルチャット表示（＋チャットモード時のスプリッター可変入力エリア） */
 function ChatCliView({
   messages,
   chatMode,
@@ -74,11 +77,21 @@ function ChatCliView({
   onSend?: (text: string) => Promise<void>;
 }) {
   const [input, setInput] = useState('');
+  // 入力エリアの高さ。デフォルト 0 = 閉じた状態
+  const [inputHeight, setInputHeight] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
+  // useReducer で強制再レンダリング（Splitter の getBoundingClientRect 更新用）
+  const [, forceUpdate] = useReducer(x => x + 1, 0);
 
+  // messages 追加時に最下部へスクロール
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'instant' });
   });
+
+  // chatMode が false になったとき入力エリアを閉じる
+  useEffect(() => {
+    if (!chatMode) setInputHeight(0);
+  }, [chatMode]);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
@@ -93,6 +106,11 @@ function ChatCliView({
       handleSend();
     }
   };
+
+  const handleSplitterResize = useCallback((delta: number) => {
+    setInputHeight(h => Math.max(0, Math.min(CHAT_INPUT_MAX, h - delta)));
+    forceUpdate();
+  }, []);
 
   return (
     <div className="chat-cli">
@@ -111,16 +129,22 @@ function ChatCliView({
         <div ref={endRef} />
       </div>
       {chatMode && (
-        <div className="chat-cli-input-area">
-          <textarea
-            className="chat-cli-textarea"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Enter で送信 / Shift+Enter で改行"
-            rows={3}
-          />
-        </div>
+        <>
+          {/* スプリッター: 常時表示。上へドラッグで入力エリアを展開 */}
+          <Splitter direction="vertical" onResize={handleSplitterResize} />
+          {/* 入力エリア: 高さ 0 のときは非表示 */}
+          {inputHeight > 0 && (
+            <div className="chat-cli-input-area" style={{ height: inputHeight }}>
+              <textarea
+                className="chat-cli-textarea"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Enter で送信 / Shift+Enter で改行"
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

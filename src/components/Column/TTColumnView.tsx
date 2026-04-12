@@ -634,6 +634,54 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
   }, [column]);
 
   /**
+   * チャット内容を chat 種別の TTDataItem として保存し、BQ へ送信する。
+   */
+  const handleSaveChatToKnowledge = useCallback(async () => {
+    const messages = column.ChatMessages.filter(m => !m.isStreaming);
+    if (messages.length === 0) return;
+
+    const collection = column.GetCurrentCollection();
+    if (!collection) return;
+
+    const SEP = 'ーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーーー';
+    const firstUser = messages.find(m => m.role === 'user')?.content ?? '';
+    const lines: string[] = [];
+    lines.push(`Chat | ${firstUser}`);
+    lines.push(SEP);
+    for (const msg of messages) {
+      if (msg.role === 'user') {
+        lines.push(`> ${msg.content}`);
+      } else {
+        lines.push(msg.content || '');
+      }
+      lines.push(SEP);
+    }
+    const content = lines.join('\n');
+
+    // CollectionID: chat 種別のアイテムを優先、なければ note/memo と同じカテゴリ
+    const existingChat = collection.GetDataItems().find(it => it.ContentType === 'chat');
+    const existingNote = collection.GetDataItems().find(
+      it => it.ContentType === 'note' || it.ContentType === 'memo'
+    );
+    const collectionId =
+      existingChat?.CollectionID ||
+      existingNote?.CollectionID ||
+      collection.HandledCategories[0] ||
+      collection.DatabaseID ||
+      collection.ID;
+
+    const newItem = new TTDataItem();
+    newItem.ContentType = 'chat';
+    newItem.CollectionID = collectionId;
+    newItem.Content = content;
+
+    collection.AddItem(newItem);
+    await newItem.SaveContent();
+
+    column.SelectedItemID = newItem.ID;
+  }, [column]);
+
+  /**
    * 純粋なSSEチャット送信（スラッシュコマンド処理なし）
    * WebViewPanel の textarea からも呼ばれる。
    * 初回メッセージ時はチェック済みアイテム＋選択テキストを systemPrompt に添付。
@@ -887,17 +935,35 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 </div>
               </>
             ) : panel.type === 'WebView' ? (
-              <CommandInput
-                className="panel-toolbar-input"
-                placeholder={toolbarProps.placeholder}
-                value={toolbarProps.value}
-                onChange={(v) => toolbarProps.onChange(v)}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                  handlePanelFocus(panel.type);
-                }}
-                onSend={toolbarProps.onSend}
-              />
+              <>
+                <CommandInput
+                  className="panel-toolbar-input"
+                  placeholder={toolbarProps.placeholder}
+                  value={toolbarProps.value}
+                  onChange={(v) => toolbarProps.onChange(v)}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                    handlePanelFocus(panel.type);
+                  }}
+                  onSend={toolbarProps.onSend}
+                />
+                {column.ChatMode && (
+                  <>
+                    <button
+                      className="panel-toolbar-btn panel-toolbar-btn-cs"
+                      title="チャットをクリア"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={() => column.clearChatMessages()}
+                    >C</button>
+                    <button
+                      className="panel-toolbar-btn panel-toolbar-btn-cs"
+                      title="チャットを保存 (chat)"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={handleSaveChatToKnowledge}
+                    >S</button>
+                  </>
+                )}
+              </>
             ) : (
               <HistoryInput
                 className="panel-toolbar-input"
