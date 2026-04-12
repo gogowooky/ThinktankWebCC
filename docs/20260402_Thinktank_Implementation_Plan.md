@@ -1503,6 +1503,53 @@ WebSocket同期:
 
 ---
 
+## 5-B. UI調整・細部改修ログ
+
+フェーズ外の細部調整・UI改修を時系列で記録する。
+
+---
+
+### 2026-04-12: DataGrid FilterBarボタン改修
+
+**対象ファイル**:
+- `src/components/Column/TTColumnView.tsx`
+- `src/components/Column/TTColumnView.css`
+
+**変更内容**:
+
+| 項目 | 変更前 | 変更後 |
+|------|--------|--------|
+| ボタンアイコン | 💬（チャット絵文字） | ☑（チェックマーク文字） |
+| アイコン色 | ブラウザ既定（絵文字カラー） | `color: inherit`（ボタンテキスト色を継承）|
+| アイコン描画モード | 絵文字モード | `font-variant-emoji: text`（テキスト描画強制） |
+| ボタン垂直位置 | `align-items: center`（ツールバー中央） | `align-self: flex-start`（FilterBar内径上辺に揃える） |
+
+**設計メモ**:
+- ボタンはチェック済みアイテム数が1件以上の時のみ表示（`column.CheckedCount > 0`）
+- 内部変数・クラス名（`panel-toolbar-btn-chat` 等）はそのまま維持
+
+---
+
+### 2026-04-12: WebViewパネル UIテキスト「Chat」→「Assistant」変更
+
+**対象ファイル**:
+- `src/components/Column/TTColumnView.tsx`
+
+**変更内容**:
+
+| 箇所 | 変更前 | 変更後 |
+|------|--------|--------|
+| パネルタイトル | `Chat` / `Chat \| {発言内容}` | `Assistant` / `Assistant \| {発言内容}` |
+| ツールバー placeholder | `Chat...` | `Assistant...` |
+| TextEditorチャットボタン tooltip | `Chat with selected text` | `Assistant with selected text` |
+
+**設計メモ**:
+- 内部変数名・ID（`WebViewUrl`, `ChatInput`, `ChatMessages`, `ChatSessionId`, `handleSendChat`, `handleStartChat` 等）は **`WebView` / `Chat` 系のまま維持**
+- ファイル名・CSS クラス名（`WebViewPanel.tsx`, `.webview-panel` 等）も変更なし
+- UIに表示される文字列のみ `Assistant` に統一
+
+---
+
 ## 6. ユーザーフロー概念図
 
 ```

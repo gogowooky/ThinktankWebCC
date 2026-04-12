@@ -73,11 +73,11 @@ function HistoryDropdown({
 }
 
 function HistoryInput({
-  className, placeholder, value, onChange, onMouseDown, historyKey, onSend
+  className, placeholder, value, onChange, onMouseDown, historyKey, onSend, disabled
 }: {
   className: string; placeholder: string; value: string;
   onChange: (v: string) => void; onMouseDown: (e: React.MouseEvent) => void;
-  historyKey: string; onSend?: (value: string) => void;
+  historyKey: string; onSend?: (value: string) => void; disabled?: boolean;
 }) {
   const [history, addHistory] = useLocalStorageHistory(historyKey, HISTORY_MAX);
   const [open, setOpen] = useState(false);
@@ -100,6 +100,7 @@ function HistoryInput({
         type="text"
         placeholder={placeholder}
         value={value}
+        disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
         onMouseDown={onMouseDown}
         onFocus={() => { setOpen(true); setActiveIndex(-1); }}
@@ -471,7 +472,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     let titleNode: React.ReactNode;
     if (panel.type === 'WebView') {
       const lastMsg = column.LastUserMessage;
-      const titleText = `${isFocused ? '● ' : ''}Chat${lastMsg ? ` | ${lastMsg}` : ''}`;
+      const titleText = `${isFocused ? '● ' : ''}Assistant${lastMsg ? ` | ${lastMsg}` : ''}`;
       titleNode = (
         <>
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -520,9 +521,9 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     }
 
     const toolbarProps = {
-      DataGrid: { placeholder: 'Filter...', value: column.DataGridFilter, onChange: (v: string) => { column.DataGridFilter = v; }, onSend: undefined as ((v: string) => void) | undefined },
-      WebView: { placeholder: 'Chat...', value: column.ChatInput, onChange: (v: string) => { column.ChatInput = v; }, onSend: handleSendChat },
-      TextEditor: { placeholder: 'Highlight...', value: column.HighlighterKeyword, onChange: (v: string) => { column.HighlighterKeyword = v; }, onSend: undefined as ((v: string) => void) | undefined },
+      DataGrid: { placeholder: 'Filter...', value: column.DataGridFilter, onChange: (v: string) => { column.DataGridFilter = v; }, onSend: undefined as ((v: string) => void) | undefined, disabled: false },
+      WebView: { placeholder: 'Assistant...', value: column.ChatInput, onChange: (v: string) => { column.ChatInput = v; }, onSend: handleSendChat, disabled: false },
+      TextEditor: { placeholder: 'Highlight...', value: column.HighlighterKeyword, onChange: (v: string) => { column.HighlighterKeyword = v; }, onSend: undefined as ((v: string) => void) | undefined, disabled: false },
     }[panel.type];
 
     elements.push(
@@ -568,23 +569,32 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 }}
                 historyKey={`thinktank-history-${panel.type.toLowerCase()}`}
                 onSend={toolbarProps.onSend}
+                disabled={toolbarProps.disabled}
               />
             )}
-            {panel.type === 'DataGrid' && column.CheckedCount > 0 && (
-              <button
-                className="panel-toolbar-btn panel-toolbar-btn-chat"
-                title={`Chat with ${column.CheckedCount} selected items`}
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={handleStartChat}
-              >
-                <span className="chat-btn-icon">☑</span>
-                <span className="chat-btn-count">{column.CheckedCount}</span>
-              </button>
-            )}
+            {panel.type === 'DataGrid' && (() => {
+              const displayItems = column.GetDisplayItems();
+              const displayIds = displayItems.map(i => i.ID);
+              const allChecked = displayIds.length > 0 && displayIds.every(id => column.CheckedItemIDs.has(id));
+              
+              return (
+                <button
+                  className={`panel-toolbar-btn panel-toolbar-btn-chat`}
+                  title={allChecked ? "Uncheck all displayed items" : "Check all displayed items"}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => {
+                    column.setAllChecked(displayIds, !allChecked);
+                  }}
+                >
+                  <span className="chat-btn-icon">☑</span>
+                  <span className="chat-btn-count">{column.CheckedCount}</span>
+                </button>
+              );
+            })()}
             {panel.type === 'TextEditor' && column.EditorSelection && (
               <button
                 className="panel-toolbar-btn panel-toolbar-btn-chat"
-                title="Chat with selected text"
+                title="Assistant with selected text"
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={handleStartChat}
               >
