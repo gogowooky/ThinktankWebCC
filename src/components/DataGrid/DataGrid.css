@@ -92,18 +92,19 @@
 
 .datagrid-check {
   font-size: 12px;
-  color: #666;
+  color: var(--tt-editor-fg, #ccc);
   cursor: pointer;
   user-select: none;
   line-height: 1;
 }
 
-.datagrid-check-on {
-  color: #4fc1ff;
-}
-
 .datagrid-check-header .datagrid-check {
   font-size: 11px;
+}
+
+/* ヘッダのチェックマークは常に白 */
+.datagrid-check-header-mark {
+  color: #fff !important;
 }
 
 /* ─── セル ─── */

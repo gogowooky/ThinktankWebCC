@@ -98,7 +98,7 @@ export interface ChatMessage {
 // ════════════════════════════════════════════════════════════════════════
 
 /** コンテンツタイプ */
-export type ContentType = 'memo' | 'chat' | 'url' | 'file' | 'photo' | 'email' | 'drive';
+export type ContentType = 'memo' | 'chat' | 'url' | 'file' | 'photo' | 'email' | 'drive' | 'note';
 
 // ════════════════════════════════════════════════════════════════════════
 // Utility 型

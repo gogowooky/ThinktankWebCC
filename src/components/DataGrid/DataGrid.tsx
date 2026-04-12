@@ -31,7 +31,6 @@ interface DataGridProps {
   highlightKeyword?: string;
   onSelect: (id: string) => void;
   onToggleCheck: (id: string) => void;
-  onToggleAllCheck: (ids: string[], checked: boolean) => void;
   onSort: (property: string) => void;
 }
 
@@ -60,13 +59,10 @@ function calcColumnWidths(columns: ColumnDef[], totalWidth: number): number[] {
 
 export function DataGrid({
   items, columns, selectedId, checkedIds, sortProperty, sortDir,
-  width, height, highlightKeyword, onSelect, onToggleCheck, onToggleAllCheck, onSort,
+  width, height, highlightKeyword, onSelect, onToggleCheck, onSort,
 }: DataGridProps) {
   const colWidths = useMemo(() => calcColumnWidths(columns, width), [columns, width]);
   const listHeight = Math.max(0, height - HEADER_HEIGHT);
-
-  // ヘッダのチェック状態
-  const allChecked = items.length > 0 && items.every(item => checkedIds.has(item.ID));
 
   const Row = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
     const item = items[index];
@@ -83,7 +79,7 @@ export function DataGrid({
           style={{ width: CHECK_COL_WIDTH, minWidth: CHECK_COL_WIDTH }}
           onClick={(e) => { e.stopPropagation(); onToggleCheck(item.ID); }}
         >
-          <span className={`datagrid-check ${isChecked ? 'datagrid-check-on' : ''}`}>
+          <span className="datagrid-check">
             {isChecked ? '☑' : '☐'}
           </span>
         </div>
@@ -116,13 +112,16 @@ export function DataGrid({
       {/* ヘッダ */}
       <div className="datagrid-header">
         <div
-          className="datagrid-header-cell datagrid-check-header"
+          className={`datagrid-header-cell datagrid-check-header ${sortProperty === '_check' ? 'datagrid-header-cell-sorted' : ''}`}
           style={{ width: CHECK_COL_WIDTH, minWidth: CHECK_COL_WIDTH }}
-          onClick={() => onToggleAllCheck(items.map(i => i.ID), !allChecked)}
+          onClick={() => onSort('_check')}
         >
-          <span className={`datagrid-check ${allChecked ? 'datagrid-check-on' : ''}`}>
-            {allChecked ? '☑' : '☐'}
-          </span>
+          <span className="datagrid-check datagrid-check-header-mark">☑</span>
+          {sortProperty === '_check' && (
+            <span className="datagrid-sort-indicator" style={{ color: '#fff' }}>
+              {sortDir === 'asc' ? '▲' : '▼'}
+            </span>
+          )}
         </div>
         {columns.map((col, ci) => {
           const isSorted = sortProperty === col.property;

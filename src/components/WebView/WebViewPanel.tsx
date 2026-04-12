@@ -1,59 +1,132 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, KeyboardEvent } from 'react';
 import { TTColumn } from '../../views/TTColumn';
 import { TTApplication } from '../../views/TTApplication';
 import { TTModels } from '../../models/TTModels';
 import { TTDataCollection } from '../../models/TTDataCollection';
-import { isExternalUrl, buildMarkdownUrl } from '../../utils/webviewUrl';
+import { isExternalUrl, buildMarkdownUrl, parseViewUrl } from '../../utils/webviewUrl';
 import { applyIframeHighlight } from '../../utils/highlightSpans';
+import { markdownToHtml } from '../../utils/markdownToHtml';
 import type { ChatMessage } from '../../types';
 import './WebView.css';
 
 /**
  * WebViewPanel - URL駆動のWebView表示パネル
  *
- * column.WebViewUrl (= address bar) に基づいてiframe表示:
- * - /view/markdown?category=Memos&id={id} : サーバーがHTML返却 → iframe表示
- * - http(s)://...  : 外部サイト iframe表示
- * - 空文字         : 空状態
- * - 将来: /view/chat, /view/search, /view/related 等
- *
- * サーバー側ルート(/view/*)がHTMLを返すため、
- * クライアント側でのmarkdown→HTML変換は不要。
+ * column.WebViewUrl に基づいて表示を切り替え:
+ * - /view/markdown?id={id} : クライアントサイドでMarkdown→HTML変換してインライン表示
+ * - http(s)://...          : 外部サイト iframe表示
+ * - 空文字                 : CLIチャット表示
  */
 
 interface WebViewPanelProps {
   column: TTColumn;
   width: number;
   height: number;
+  onChatSend?: (text: string) => Promise<void>;
 }
 
-/** CLIスタイルチャット表示 */
-function ChatCliView({ messages }: { messages: ChatMessage[] }) {
+/** クライアントサイド Markdown HTML レンダリング */
+function MarkdownView({ column, id }: { column: TTColumn; id: string }) {
+  const [html, setHtml] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) { setHtml(''); setLoading(false); return; }
+    const item = column.GetCurrentCollection()?.GetDataItem(id);
+    if (!item) { setHtml('<p style="color:#ff6b6b">Item not found: ' + id + '</p>'); setLoading(false); return; }
+
+    if (item.IsLoaded) {
+      setHtml(markdownToHtml(item.Content));
+      setLoading(false);
+    } else {
+      setLoading(true);
+      item.LoadContent().then(() => {
+        setHtml(markdownToHtml(item.Content));
+        setLoading(false);
+      }).catch(() => {
+        setHtml('<p style="color:#ff6b6b">Failed to load content</p>');
+        setLoading(false);
+      });
+    }
+  }, [column, id]);
+
+  if (loading) {
+    return <div className="webview-markdown" style={{ color: '#666' }}>Loading...</div>;
+  }
+
+  return (
+    <div
+      className="webview-markdown"
+      // eslint-disable-next-line react/no-danger
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
+/** CLIスタイルチャット表示（＋チャットモード時のマルチライン入力エリア） */
+function ChatCliView({
+  messages,
+  chatMode,
+  onSend,
+}: {
+  messages: ChatMessage[];
+  chatMode: boolean;
+  onSend?: (text: string) => Promise<void>;
+}) {
+  const [input, setInput] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'instant' });
   });
 
+  const handleSend = useCallback(() => {
+    const text = input.trim();
+    if (!text || !onSend) return;
+    onSend(text);
+    setInput('');
+  }, [input, onSend]);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
   return (
     <div className="chat-cli">
-      {messages.length === 0 && (
-        <div className="chat-cli-empty">Chat...</div>
-      )}
-      {messages.map((msg, i) => (
-        <div key={i} className={`chat-cli-message chat-cli-${msg.role}${msg.isStreaming ? ' chat-cli-streaming' : ''}`}>
-          {msg.role === 'user'
-            ? <><span className="chat-cli-prompt">&gt; </span>{msg.content}</>
-            : msg.content || null
-          }
+      <div className="chat-cli-messages">
+        {messages.length === 0 && (
+          <div className="chat-cli-empty">Chat...</div>
+        )}
+        {messages.map((msg, i) => (
+          <div key={i} className={`chat-cli-message chat-cli-${msg.role}${msg.isStreaming ? ' chat-cli-streaming' : ''}`}>
+            {msg.role === 'user'
+              ? <><span className="chat-cli-prompt">&gt; </span>{msg.content}</>
+              : msg.content || null
+            }
+          </div>
+        ))}
+        <div ref={endRef} />
+      </div>
+      {chatMode && (
+        <div className="chat-cli-input-area">
+          <textarea
+            className="chat-cli-textarea"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter で送信 / Shift+Enter で改行"
+            rows={3}
+          />
         </div>
-      ))}
-      <div ref={endRef} />
+      )}
     </div>
   );
 }
 
-export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
+export function WebViewPanel({ column, width, height, onChatSend }: WebViewPanelProps) {
   const [, setTick] = useState(0);
   const rerender = useCallback(() => setTick(t => t + 1), []);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -193,8 +266,19 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
 
   if (height <= 0 || width <= 0) return null;
 
-  // 外部URL または /view/markdown → iframe表示
-  if (url && (isExternalUrl(url) || url.startsWith('/view/markdown'))) {
+  // /view/markdown → クライアントサイドで直接レンダリング（BigQuery不要）
+  if (url.startsWith('/view/markdown')) {
+    const route = parseViewUrl(url);
+    const id = route?.params.id ?? '';
+    return (
+      <div className="webview-panel" style={{ width, height }}>
+        <MarkdownView column={column} id={id} />
+      </div>
+    );
+  }
+
+  // 外部URL → iframe表示
+  if (url && isExternalUrl(url)) {
     return (
       <div className="webview-panel" style={{ width, height }}>
         <iframe
@@ -211,7 +295,11 @@ export function WebViewPanel({ column, width, height }: WebViewPanelProps) {
   // デフォルト: CLIチャット表示
   return (
     <div className="webview-panel" style={{ width, height }}>
-      <ChatCliView messages={column.ChatMessages} />
+      <ChatCliView
+        messages={column.ChatMessages}
+        chatMode={column.ChatMode}
+        onSend={onChatSend}
+      />
     </div>
   );
 }

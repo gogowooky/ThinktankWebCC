@@ -89,7 +89,14 @@ export function DataGridPanel({ column, width, height }: DataGridPanelProps) {
     // ソート
     const sortProp = column.DataGridSortProperty;
     const sortDir = column.DataGridSortDir;
+    const checkedIds = column.CheckedItemIDs;
     result = [...result].sort((a, b) => {
+      if (sortProp === '_check') {
+        const ac = checkedIds.has(a.ID) ? 1 : 0;
+        const bc = checkedIds.has(b.ID) ? 1 : 0;
+        const cmp = ac - bc;
+        return sortDir === 'asc' ? cmp : -cmp;
+      }
       const va = String((a as unknown as Record<string, unknown>)[sortProp] ?? '');
       const vb = String((b as unknown as Record<string, unknown>)[sortProp] ?? '');
       const cmp = va.localeCompare(vb);
@@ -108,10 +115,6 @@ export function DataGridPanel({ column, width, height }: DataGridPanelProps) {
   // チェックハンドラ
   const handleToggleCheck = useCallback((id: string) => {
     column.toggleChecked(id);
-  }, [column]);
-
-  const handleToggleAllCheck = useCallback((ids: string[], checked: boolean) => {
-    column.setAllChecked(ids, checked);
   }, [column]);
 
   // ソート切替ハンドラ
@@ -141,7 +144,6 @@ export function DataGridPanel({ column, width, height }: DataGridPanelProps) {
       highlightKeyword={hlKeyword}
       onSelect={handleSelect}
       onToggleCheck={handleToggleCheck}
-      onToggleAllCheck={handleToggleAllCheck}
       onSort={handleSort}
     />
   );

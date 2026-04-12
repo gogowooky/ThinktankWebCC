@@ -1,7 +1,7 @@
 import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
-import { buildMarkdownUrl, buildChatUrl } from '../utils/webviewUrl';
+import { buildChatUrl } from '../utils/webviewUrl';
 import type { ColumnIndex, PanelType, HighlightTargets, ChatMessage } from '../types';
 
 /**
@@ -62,6 +62,9 @@ export class TTColumn extends TTObject {
 
   /** チャットメッセージ履歴 */
   private _chatMessages: ChatMessage[] = [];
+
+  /** Chatモード（WebViewにインライン入力エリアを表示） */
+  private _chatMode: boolean = false;
 
   /** Chatバー入力中テキスト */
   private _chatInput: string = '';
@@ -140,10 +143,8 @@ export class TTColumn extends TTObject {
       if (item?.ContentType === 'chat') {
         // チャットアイテムはチャットUIで復元表示
         this._webViewUrl = buildChatUrl(value);
-      } else {
-        // メモ等はMarkdownプレビュー
-        this._webViewUrl = buildMarkdownUrl(this._dataGridResource || 'Knowledge', value);
       }
+      // memo/note 等は自動WebView表示しない（/BrowseMarkdown で明示的に表示）
     } else {
       this._webViewUrl = '';
     }
@@ -170,7 +171,7 @@ export class TTColumn extends TTObject {
     if (checked) {
       ids.forEach(id => this._checkedItemIDs.add(id));
     } else {
-      this._checkedItemIDs.clear();
+      ids.forEach(id => this._checkedItemIDs.delete(id));
     }
     this.NotifyUpdated(false);
   }
@@ -278,6 +279,18 @@ export class TTColumn extends TTObject {
     this.NotifyUpdated(false);
   }
 
+  /** チャットモード */
+  public get ChatMode(): boolean { return this._chatMode; }
+
+  /** チャットモードに入る（メッセージリセット＋新セッション＋WebViewUrl クリア） */
+  public enterChatMode(): void {
+    this._chatMessages = [];
+    this._chatMode = true;
+    this._chatSessionId = `col${this.Index}-${Date.now()}`;
+    this._webViewUrl = '';
+    this.NotifyUpdated(false);
+  }
+
   /** 最後のアシスタントメッセージを更新（ストリーミング用） */
   public updateLastAssistantMessage(content: string, isStreaming: boolean): void {
     const last = this._chatMessages[this._chatMessages.length - 1];
@@ -295,8 +308,13 @@ export class TTColumn extends TTObject {
 
   /** DataGridフィルタ適用後の表示アイテム数 */
   public GetDisplayItemCount(): number {
+    return this.GetDisplayedItemIds().length;
+  }
+
+  /** DataGridフィルタ適用後の表示アイテムIDリスト */
+  public GetDisplayedItemIds(): string[] {
     const collection = this.GetCurrentCollection();
-    if (!collection) return 0;
+    if (!collection) return [];
     let result = collection.GetDataItems();
     const filter = this._dataGridFilter.trim();
     if (filter) {
@@ -314,7 +332,7 @@ export class TTColumn extends TTObject {
         });
       });
     }
-    return result.length;
+    return result.map(item => item.ID);
   }
 
   /**

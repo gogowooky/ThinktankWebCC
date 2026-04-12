@@ -108,16 +108,53 @@
 /* ─── CLIチャット ─── */
 
 .chat-cli {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
-  overflow-y: auto;
-  padding: 6px 8px;
-  box-sizing: border-box;
+  background: #1e1e1e;
   font-family: 'Consolas', 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.6;
+  color: #d4d4d4;
+}
+
+.chat-cli-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px;
+  box-sizing: border-box;
+}
+
+/* 入力エリア（チャットモード時） */
+.chat-cli-input-area {
+  flex-shrink: 0;
+  border-top: 1px solid #333;
+  padding: 4px 6px;
+  background: #252526;
+}
+
+.chat-cli-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: none;
   background: #1e1e1e;
   color: #d4d4d4;
+  border: 1px solid #3c3c3c;
+  border-radius: 2px;
+  padding: 4px 6px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  outline: none;
+}
+
+.chat-cli-textarea:focus {
+  border-color: #0078d4;
+}
+
+.chat-cli-textarea::placeholder {
+  color: #555;
 }
 
 .chat-cli-empty {
@@ -155,17 +192,17 @@
   50% { opacity: 0; }
 }
 
-.chat-cli::-webkit-scrollbar {
+.chat-cli-messages::-webkit-scrollbar {
   width: 6px;
 }
-.chat-cli::-webkit-scrollbar-track {
+.chat-cli-messages::-webkit-scrollbar-track {
   background: #1e1e1e;
 }
-.chat-cli::-webkit-scrollbar-thumb {
+.chat-cli-messages::-webkit-scrollbar-thumb {
   background: #424242;
   border-radius: 3px;
 }
-.chat-cli::-webkit-scrollbar-thumb:hover {
+.chat-cli-messages::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
 

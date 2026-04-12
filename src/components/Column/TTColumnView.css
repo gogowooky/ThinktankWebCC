@@ -171,6 +171,29 @@
   line-height: 1;
 }
 
+/* ─── Checkボタン（表示アイテム全チェック/全解除） ─── */
+
+.panel-toolbar-btn-check {
+  width: auto;
+  padding: 0 5px;
+  align-self: flex-start;
+  margin-top: 4px;
+  color: var(--tt-editor-fg, #ccc);
+}
+
+.check-btn-icon {
+  font-size: 12px;
+  line-height: 1;
+  color: inherit;
+  font-variant-emoji: text;
+}
+
+.check-btn-count {
+  font-size: 10px;
+  color: var(--tt-editor-fg, #ccc);
+  line-height: 1;
+}
+
 /* ─── ハイライト対象トグルボタン ─── */
 
 .hl-target-toggles {
@@ -232,6 +255,33 @@
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ─── コマンドドロップダウン（AssistBar） ─── */
+
+.command-dropdown-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.command-dropdown-name {
+  font-size: 11px;
+  font-weight: bold;
+  color: #4fc1ff;
+  flex-shrink: 0;
+}
+
+.command-dropdown-desc {
+  font-size: 10px;
+  color: var(--tt-column-header-fg, #888);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-dropdown-item-active .command-dropdown-desc {
+  color: #ccc;
 }
 
 /* ─── 履歴ドロップダウン ─── */
