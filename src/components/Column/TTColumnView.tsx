@@ -577,7 +577,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={handleStartChat}
               >
-                <span className="chat-btn-icon">💬</span>
+                <span className="chat-btn-icon">☑</span>
                 <span className="chat-btn-count">{column.CheckedCount}</span>
               </button>
             )}
