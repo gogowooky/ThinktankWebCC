@@ -690,6 +690,9 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     const trimmed = message.trim();
     if (!trimmed) return;
 
+    // AssistBar をクリア（送信開始と同時に）
+    column.ChatInput = '';
+
     // 初回メッセージ時にコンテキストを systemPrompt として構築
     const isFirst = column.ChatMessages.length === 0;
     let systemPrompt: string | undefined;
