@@ -121,6 +121,65 @@
   margin: 0.8em 0;
 }
 
+/* ─── テーブル ─── */
+.webview-markdown table,
+.chat-cli-md table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6em 0;
+  font-size: 0.92em;
+}
+
+.webview-markdown th,
+.chat-cli-md th {
+  background: rgba(78, 201, 176, 0.15);
+  color: #4ec9b0;
+  font-weight: 600;
+  padding: 5px 10px;
+  border: 1px solid rgba(78, 201, 176, 0.3);
+  text-align: left;
+}
+
+.webview-markdown td,
+.chat-cli-md td {
+  padding: 4px 10px;
+  border: 1px solid rgba(100, 100, 100, 0.3);
+  vertical-align: top;
+}
+
+.webview-markdown tr:nth-child(even),
+.chat-cli-md tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.webview-markdown tr:hover,
+.chat-cli-md tr:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ライトテーマ */
+[data-color-mode="DefaultOriginal"] .webview-markdown th,
+[data-color-mode="DefaultOriginal"] .chat-cli-md th {
+  background: rgba(106, 90, 205, 0.12);
+  color: #6A5ACD;
+  border-color: rgba(106, 90, 205, 0.3);
+}
+
+[data-color-mode="DefaultOriginal"] .webview-markdown td,
+[data-color-mode="DefaultOriginal"] .chat-cli-md td {
+  border-color: rgba(106, 90, 205, 0.2);
+}
+
+[data-color-mode="DefaultOriginal"] .webview-markdown tr:nth-child(even),
+[data-color-mode="DefaultOriginal"] .chat-cli-md tr:nth-child(even) {
+  background: rgba(106, 90, 205, 0.04);
+}
+
+[data-color-mode="DefaultOriginal"] .webview-markdown tr:hover,
+[data-color-mode="DefaultOriginal"] .chat-cli-md tr:hover {
+  background: rgba(106, 90, 205, 0.08);
+}
+
 .webview-markdown::-webkit-scrollbar       { width: 6px; height: 6px; }
 .webview-markdown::-webkit-scrollbar-track { background: var(--tt-editor-bg, #1e1e1e); }
 .webview-markdown::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
