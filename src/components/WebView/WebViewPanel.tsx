@@ -122,7 +122,11 @@ function ChatCliView({
           <div key={i} className={`chat-cli-message chat-cli-${msg.role}${msg.isStreaming ? ' chat-cli-streaming' : ''}`}>
             {msg.role === 'user'
               ? <><span className="chat-cli-prompt">&gt; </span>{msg.content}</>
-              : msg.content || null
+              : <div
+                  className="chat-cli-md"
+                  // eslint-disable-next-line react/no-danger
+                  dangerouslySetInnerHTML={{ __html: markdownToHtml(msg.content || '') }}
+                />
             }
           </div>
         ))}
