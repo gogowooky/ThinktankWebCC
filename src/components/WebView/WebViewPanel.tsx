@@ -52,15 +52,14 @@ function MarkdownView({ column, id }: { column: TTColumn; id: string }) {
   }, [column, id]);
 
   if (loading) {
-    return <div className="webview-markdown" style={{ color: '#666' }}>Loading...</div>;
+    return <div className="webview-markdown"><span style={{ color: '#666' }}>Loading...</span></div>;
   }
 
   return (
-    <div
-      className="webview-markdown"
-      // eslint-disable-next-line react/no-danger
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className="webview-markdown">
+      {/* eslint-disable-next-line react/no-danger */}
+      <div className="chat-cli-md" dangerouslySetInnerHTML={{ __html: html }} />
+    </div>
   );
 }
 

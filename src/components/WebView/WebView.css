@@ -26,158 +26,18 @@
   background: #fff;
 }
 
-/* ─── Markdown プレビュー ─── */
+/* ─── Markdown プレビュー（スクロールコンテナのみ） ─── */
+/* コンテンツのスタイリングは .chat-cli-md に統一         */
 
 .webview-markdown {
   width: 100%;
   height: 100%;
   overflow: auto;
-  padding: 12px 16px;
+  padding: 16px 20px;
   box-sizing: border-box;
-  color: var(--tt-editor-fg, #d4d4d4);
   font-size: 13px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.7;
   background: var(--tt-editor-bg, #1e1e1e);
-}
-
-.webview-markdown h1,
-.webview-markdown h2,
-.webview-markdown h3,
-.webview-markdown h4,
-.webview-markdown h5,
-.webview-markdown h6 {
-  color: #4ec9b0;
-  margin: 0.9em 0 0.4em;
-  font-weight: 600;
-}
-
-[data-color-mode="DefaultOriginal"] .webview-markdown h1,
-[data-color-mode="DefaultOriginal"] .webview-markdown h2,
-[data-color-mode="DefaultOriginal"] .webview-markdown h3,
-[data-color-mode="DefaultOriginal"] .webview-markdown h4,
-[data-color-mode="DefaultOriginal"] .webview-markdown h5,
-[data-color-mode="DefaultOriginal"] .webview-markdown h6 {
-  color: #6A5ACD;
-}
-
-.webview-markdown h1 { font-size: 1.4em; border-bottom: 1px solid var(--tt-border-color, #444); padding-bottom: 4px; }
-.webview-markdown h2 { font-size: 1.2em; border-bottom: 1px solid var(--tt-border-color, #333); padding-bottom: 3px; }
-.webview-markdown h3 { font-size: 1.05em; }
-
-.webview-markdown p  { margin: 0.4em 0; }
-
-.webview-markdown ul,
-.webview-markdown ol { margin: 0.4em 0; padding-left: 1.5em; }
-
-.webview-markdown li { margin: 0.2em 0; }
-
-.webview-markdown code {
-  background: rgba(100, 100, 100, 0.2);
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 0.88em;
-  font-family: 'Consolas', 'Courier New', monospace;
-  color: #ce9178;
-}
-
-[data-color-mode="DefaultOriginal"] .webview-markdown code {
-  background: #efe8ff;
-  color: #8B0000;
-}
-
-.webview-markdown pre {
-  background: rgba(0, 0, 0, 0.3);
-  border-left: 3px solid #4ec9b0;
-  padding: 10px 12px;
-  border-radius: 0 4px 4px 0;
-  overflow-x: auto;
-  margin: 0.5em 0;
-}
-
-[data-color-mode="DefaultOriginal"] .webview-markdown pre {
-  background: #f5f0ff;
-  border-left-color: #6A5ACD;
-}
-
-.webview-markdown pre code {
-  background: none;
-  padding: 0;
-  color: var(--tt-editor-fg, #d4d4d4);
-}
-
-.webview-markdown a        { color: #4fc1ff; text-decoration: none; }
-.webview-markdown a:hover  { text-decoration: underline; }
-
-[data-color-mode="DefaultOriginal"] .webview-markdown a { color: #0055cc; }
-
-.webview-markdown strong { color: #dcdcaa; }
-
-[data-color-mode="DefaultOriginal"] .webview-markdown strong { color: #4a1080; }
-
-.webview-markdown hr {
-  border: none;
-  border-top: 1px solid var(--tt-border-color, #444);
-  margin: 0.8em 0;
-}
-
-/* ─── テーブル ─── */
-.webview-markdown table,
-.chat-cli-md table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0.6em 0;
-  font-size: 0.92em;
-}
-
-.webview-markdown th,
-.chat-cli-md th {
-  background: rgba(78, 201, 176, 0.15);
-  color: #4ec9b0;
-  font-weight: 600;
-  padding: 5px 10px;
-  border: 1px solid rgba(78, 201, 176, 0.3);
-  text-align: left;
-}
-
-.webview-markdown td,
-.chat-cli-md td {
-  padding: 4px 10px;
-  border: 1px solid rgba(100, 100, 100, 0.3);
-  vertical-align: top;
-}
-
-.webview-markdown tr:nth-child(even),
-.chat-cli-md tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.webview-markdown tr:hover,
-.chat-cli-md tr:hover {
-  background: rgba(255, 255, 255, 0.06);
-}
-
-/* ライトテーマ */
-[data-color-mode="DefaultOriginal"] .webview-markdown th,
-[data-color-mode="DefaultOriginal"] .chat-cli-md th {
-  background: rgba(106, 90, 205, 0.12);
-  color: #6A5ACD;
-  border-color: rgba(106, 90, 205, 0.3);
-}
-
-[data-color-mode="DefaultOriginal"] .webview-markdown td,
-[data-color-mode="DefaultOriginal"] .chat-cli-md td {
-  border-color: rgba(106, 90, 205, 0.2);
-}
-
-[data-color-mode="DefaultOriginal"] .webview-markdown tr:nth-child(even),
-[data-color-mode="DefaultOriginal"] .chat-cli-md tr:nth-child(even) {
-  background: rgba(106, 90, 205, 0.04);
-}
-
-[data-color-mode="DefaultOriginal"] .webview-markdown tr:hover,
-[data-color-mode="DefaultOriginal"] .chat-cli-md tr:hover {
-  background: rgba(106, 90, 205, 0.08);
 }
 
 .webview-markdown::-webkit-scrollbar       { width: 6px; height: 6px; }
@@ -257,7 +117,11 @@
   border-left-color: #b0a8e8;
 }
 
-/* ─── AI 回答内 Markdown ─── */
+/* ═══════════════════════════════════════════════════════════════
+   Markdown レンダリング共通スタイル
+   - /Markdown プレビュー (.webview-markdown > .chat-cli-md)
+   - /Chat AI 回答 (.chat-cli-assistant > .chat-cli-md)
+   ═══════════════════════════════════════════════════════════════ */
 
 .chat-cli-md {
   color: var(--tt-editor-fg, #d4d4d4);
@@ -282,6 +146,16 @@
 [data-color-mode="DefaultOriginal"] .chat-cli-md h5,
 [data-color-mode="DefaultOriginal"] .chat-cli-md h6 {
   color: #6A5ACD;
+}
+
+/* Markdown プレビュー時は見出しをやや大きく */
+.webview-markdown .chat-cli-md h1 { font-size: 1.4em; border-bottom: 1px solid var(--tt-border-color, #444); padding-bottom: 4px; }
+.webview-markdown .chat-cli-md h2 { font-size: 1.2em; border-bottom: 1px solid var(--tt-border-color, #333); padding-bottom: 3px; }
+.webview-markdown .chat-cli-md h3 { font-size: 1.08em; }
+
+[data-color-mode="DefaultOriginal"] .webview-markdown .chat-cli-md h1,
+[data-color-mode="DefaultOriginal"] .webview-markdown .chat-cli-md h2 {
+  border-bottom-color: rgba(106, 90, 205, 0.3);
 }
 
 .chat-cli-md h1 { font-size: 1.15em; border-bottom: 1px solid rgba(100,100,100,0.4); padding-bottom: 2px; }
@@ -345,10 +219,89 @@
 
 [data-color-mode="DefaultOriginal"] .chat-cli-md em { color: #8B008B; }
 
+/* 取り消し線 (GFM ~~text~~) */
+.chat-cli-md del { color: #888; text-decoration: line-through; }
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md del { color: #999; }
+
+/* 引用ブロック */
+.chat-cli-md blockquote {
+  margin: 0.5em 0;
+  padding: 4px 12px;
+  border-left: 3px solid #555;
+  background: rgba(255, 255, 255, 0.03);
+  color: #aaa;
+  font-style: italic;
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md blockquote {
+  border-left-color: #9b8fd4;
+  background: rgba(106, 90, 205, 0.05);
+  color: #555;
+}
+
+/* 画像 */
+.chat-cli-md img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
 .chat-cli-md hr {
   border: none;
   border-top: 1px solid rgba(100, 100, 100, 0.3);
   margin: 0.6em 0;
+}
+
+/* ─── テーブル ─── */
+
+.chat-cli-md table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.6em 0;
+  font-size: 0.92em;
+}
+
+.chat-cli-md th {
+  background: rgba(78, 201, 176, 0.15);
+  color: #4ec9b0;
+  font-weight: 600;
+  padding: 5px 10px;
+  border: 1px solid rgba(78, 201, 176, 0.3);
+  text-align: left;
+}
+
+.chat-cli-md td {
+  padding: 4px 10px;
+  border: 1px solid rgba(100, 100, 100, 0.3);
+  vertical-align: top;
+}
+
+.chat-cli-md tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.chat-cli-md tr:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ライトテーマ テーブル */
+[data-color-mode="DefaultOriginal"] .chat-cli-md th {
+  background: rgba(106, 90, 205, 0.12);
+  color: #6A5ACD;
+  border-color: rgba(106, 90, 205, 0.3);
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md td {
+  border-color: rgba(106, 90, 205, 0.2);
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md tr:nth-child(even) {
+  background: rgba(106, 90, 205, 0.04);
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md tr:hover {
+  background: rgba(106, 90, 205, 0.08);
 }
 
 /* コードブロックのスクロールバー */

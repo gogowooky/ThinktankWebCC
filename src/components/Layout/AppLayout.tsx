@@ -14,6 +14,23 @@ import './AppLayout.css';
 
 const MIN_COL_RATIO = 0;
 const STATUSBAR_HEIGHT = 22;
+const LS_COL_RATIOS_KEY = 'thinktank-col-ratios';
+
+function loadColRatios(app: TTApplication): [number, number, number] {
+  try {
+    const saved = localStorage.getItem(LS_COL_RATIOS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved) as number[];
+      if (Array.isArray(parsed) && parsed.length === 3 && parsed.every(v => typeof v === 'number' && v >= 0)) {
+        app.ColumnRatios.column0 = parsed[0];
+        app.ColumnRatios.column1 = parsed[1];
+        app.ColumnRatios.column2 = parsed[2];
+        return [parsed[0], parsed[1], parsed[2]];
+      }
+    }
+  } catch { /* ignore */ }
+  return [app.ColumnRatios.column0, app.ColumnRatios.column1, app.ColumnRatios.column2];
+}
 
 export function AppLayout() {
   const app = TTApplication.Instance;
@@ -21,14 +38,19 @@ export function AppLayout() {
   // ウィンドウサイズ
   const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
-  // 列幅比率 (3列分)
-  const [colRatios, setColRatios] = useState<[number, number, number]>([
-    app.ColumnRatios.column0,
-    app.ColumnRatios.column1,
-    app.ColumnRatios.column2,
-  ]);
+  // 列幅比率 (3列分) - localStorage から復元
+  const [colRatios, setColRatios] = useState<[number, number, number]>(
+    () => loadColRatios(app)
+  );
   const colRatiosRef = useRef(colRatios);
   colRatiosRef.current = colRatios;
+
+  // 列幅比率が変わるたびに localStorage へ保存
+  useEffect(() => {
+    try {
+      localStorage.setItem(LS_COL_RATIOS_KEY, JSON.stringify(colRatios));
+    } catch { /* ignore */ }
+  }, [colRatios]);
 
   // TTApplication + 全TTColumn の Observer を購読
   const [, setTick] = useState(0);

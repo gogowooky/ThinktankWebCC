@@ -409,9 +409,24 @@ const PANEL_TITLES: Record<PanelType, string> = {
   TextEditor: 'TextEditor',
 };
 
+function loadPanelRatios(column: TTColumn): [number, number, number] {
+  try {
+    const key = `thinktank-col-${column.Index}-panel-ratios`;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved) as number[];
+      if (Array.isArray(parsed) && parsed.length === 3 && parsed.every(v => typeof v === 'number' && v >= 0)) {
+        column.VerticalRatios = [parsed[0], parsed[1], parsed[2]];
+        return [parsed[0], parsed[1], parsed[2]];
+      }
+    }
+  } catch { /* ignore */ }
+  return [...column.VerticalRatios] as [number, number, number];
+}
+
 export function TTColumnView({ column, width, height }: TTColumnViewProps) {
   const [ratios, setRatios] = useState<[number, number, number]>(
-    () => [...column.VerticalRatios] as [number, number, number]
+    () => loadPanelRatios(column)
   );
   const ratiosRef = useRef(ratios);
   ratiosRef.current = ratios;
@@ -458,6 +473,9 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
 
     column.VerticalRatios = r;
     setRatios(r);
+    try {
+      localStorage.setItem(`thinktank-col-${column.Index}-panel-ratios`, JSON.stringify(r));
+    } catch { /* ignore */ }
   }, [column, height]);
 
   const handlePanelFocus = useCallback((panel: PanelType) => {

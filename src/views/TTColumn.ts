@@ -400,6 +400,7 @@ export class TTColumn extends TTObject {
       HighlighterKeyword: this._highlighterKeyword,
       HighlightTargets: JSON.stringify(this._highlightTargets),
       FontSize: String(this.FontSize),
+      VerticalRatios: JSON.stringify(this.VerticalRatios),
     };
   }
 
@@ -417,6 +418,14 @@ export class TTColumn extends TTObject {
       try { this._highlightTargets = { ...this._highlightTargets, ...JSON.parse(state.HighlightTargets) }; } catch { /* ignore */ }
     }
     if (state.FontSize !== undefined) this.FontSize = parseInt(state.FontSize, 10) || 14;
+    if (state.VerticalRatios !== undefined) {
+      try {
+        const r = JSON.parse(state.VerticalRatios) as number[];
+        if (Array.isArray(r) && r.length === 3 && r.every(v => typeof v === 'number' && v >= 0)) {
+          this.VerticalRatios = [r[0], r[1], r[2]];
+        }
+      } catch { /* ignore */ }
+    }
     this.NotifyUpdated(false);
   }
 }
