@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #666;
+  color: var(--tt-column-header-fg, #888);
   font-size: 12px;
 }
 
@@ -26,17 +26,19 @@
   background: #fff;
 }
 
-/* Markdownプレビュー */
+/* ─── Markdown プレビュー ─── */
+
 .webview-markdown {
   width: 100%;
   height: 100%;
   overflow: auto;
-  padding: 8px 12px;
+  padding: 12px 16px;
   box-sizing: border-box;
-  color: #ccc;
+  color: var(--tt-editor-fg, #d4d4d4);
   font-size: 13px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  line-height: 1.6;
+  line-height: 1.7;
+  background: var(--tt-editor-bg, #1e1e1e);
 }
 
 .webview-markdown h1,
@@ -45,67 +47,89 @@
 .webview-markdown h4,
 .webview-markdown h5,
 .webview-markdown h6 {
-  color: #e0e0e0;
-  margin: 0.8em 0 0.4em;
+  color: #4ec9b0;
+  margin: 0.9em 0 0.4em;
+  font-weight: 600;
 }
 
-.webview-markdown h1 { font-size: 1.4em; border-bottom: 1px solid #444; padding-bottom: 4px; }
-.webview-markdown h2 { font-size: 1.2em; border-bottom: 1px solid #333; padding-bottom: 3px; }
-.webview-markdown h3 { font-size: 1.1em; }
-
-.webview-markdown p {
-  margin: 0.4em 0;
+[data-color-mode="DefaultOriginal"] .webview-markdown h1,
+[data-color-mode="DefaultOriginal"] .webview-markdown h2,
+[data-color-mode="DefaultOriginal"] .webview-markdown h3,
+[data-color-mode="DefaultOriginal"] .webview-markdown h4,
+[data-color-mode="DefaultOriginal"] .webview-markdown h5,
+[data-color-mode="DefaultOriginal"] .webview-markdown h6 {
+  color: #6A5ACD;
 }
+
+.webview-markdown h1 { font-size: 1.4em; border-bottom: 1px solid var(--tt-border-color, #444); padding-bottom: 4px; }
+.webview-markdown h2 { font-size: 1.2em; border-bottom: 1px solid var(--tt-border-color, #333); padding-bottom: 3px; }
+.webview-markdown h3 { font-size: 1.05em; }
+
+.webview-markdown p  { margin: 0.4em 0; }
 
 .webview-markdown ul,
-.webview-markdown ol {
-  margin: 0.4em 0;
-  padding-left: 1.5em;
-}
+.webview-markdown ol { margin: 0.4em 0; padding-left: 1.5em; }
 
-.webview-markdown li {
-  margin: 0.2em 0;
-}
+.webview-markdown li { margin: 0.2em 0; }
 
 .webview-markdown code {
-  background: #2d2d30;
-  padding: 1px 4px;
+  background: rgba(100, 100, 100, 0.2);
+  padding: 1px 5px;
   border-radius: 3px;
-  font-size: 0.9em;
+  font-size: 0.88em;
+  font-family: 'Consolas', 'Courier New', monospace;
+  color: #ce9178;
+}
+
+[data-color-mode="DefaultOriginal"] .webview-markdown code {
+  background: #efe8ff;
+  color: #8B0000;
 }
 
 .webview-markdown pre {
-  background: #2d2d30;
-  padding: 8px;
-  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid #4ec9b0;
+  padding: 10px 12px;
+  border-radius: 0 4px 4px 0;
   overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+[data-color-mode="DefaultOriginal"] .webview-markdown pre {
+  background: #f5f0ff;
+  border-left-color: #6A5ACD;
 }
 
 .webview-markdown pre code {
   background: none;
   padding: 0;
+  color: var(--tt-editor-fg, #d4d4d4);
 }
 
-.webview-markdown a {
-  color: #4fc1ff;
-  text-decoration: none;
-}
+.webview-markdown a        { color: #4fc1ff; text-decoration: none; }
+.webview-markdown a:hover  { text-decoration: underline; }
 
-.webview-markdown a:hover {
-  text-decoration: underline;
-}
+[data-color-mode="DefaultOriginal"] .webview-markdown a { color: #0055cc; }
+
+.webview-markdown strong { color: #dcdcaa; }
+
+[data-color-mode="DefaultOriginal"] .webview-markdown strong { color: #4a1080; }
 
 .webview-markdown hr {
   border: none;
-  border-top: 1px solid #444;
+  border-top: 1px solid var(--tt-border-color, #444);
   margin: 0.8em 0;
 }
 
-.webview-markdown strong {
-  color: #e0e0e0;
-}
+.webview-markdown::-webkit-scrollbar       { width: 6px; height: 6px; }
+.webview-markdown::-webkit-scrollbar-track { background: var(--tt-editor-bg, #1e1e1e); }
+.webview-markdown::-webkit-scrollbar-thumb { background: #555; border-radius: 3px; }
+.webview-markdown::-webkit-scrollbar-thumb:hover { background: #777; }
 
-/* ─── CLIチャット ─── */
+
+/* ═══════════════════════════════════════════════════════════════
+   CLIチャット
+   ═══════════════════════════════════════════════════════════════ */
 
 .chat-cli {
   display: flex;
@@ -113,26 +137,188 @@
   width: 100%;
   height: 100%;
   background: var(--tt-editor-bg, #1e1e1e);
-  font-family: 'Consolas', 'Courier New', monospace;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--tt-editor-fg, #d4d4d4);
 }
+
+/* ─── メッセージ一覧エリア ─── */
 
 .chat-cli-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 6px 8px;
+  padding: 8px 10px 4px;
   box-sizing: border-box;
 }
 
-/* 入力エリア（チャットモード時・高さはスプリッターで可変） */
+.chat-cli-empty {
+  color: var(--tt-column-header-fg, #888);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ─── 個別メッセージ ─── */
+
+.chat-cli-message {
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+/* ユーザー発言 */
+.chat-cli-user {
+  color: #7dd3f0;
+  white-space: pre-wrap;
+  padding: 3px 6px 3px 0;
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-user {
+  color: #1a5aaa;
+}
+
+.chat-cli-prompt {
+  color: #4fc1ff;
+  font-weight: bold;
+  user-select: none;
+  margin-right: 2px;
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-prompt {
+  color: #6A5ACD;
+}
+
+/* AI 回答 */
+.chat-cli-assistant {
+  border-left: 2px solid #3c3c3c;
+  padding-left: 8px;
+  margin-left: 2px;
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-assistant {
+  border-left-color: #b0a8e8;
+}
+
+/* ─── AI 回答内 Markdown ─── */
+
+.chat-cli-md {
+  color: var(--tt-editor-fg, #d4d4d4);
+  line-height: 1.7;
+}
+
+.chat-cli-md p {
+  margin: 0.35em 0;
+}
+
+.chat-cli-md h1, .chat-cli-md h2, .chat-cli-md h3,
+.chat-cli-md h4, .chat-cli-md h5, .chat-cli-md h6 {
+  color: #4ec9b0;
+  margin: 0.7em 0 0.3em;
+  font-weight: 600;
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md h1,
+[data-color-mode="DefaultOriginal"] .chat-cli-md h2,
+[data-color-mode="DefaultOriginal"] .chat-cli-md h3,
+[data-color-mode="DefaultOriginal"] .chat-cli-md h4,
+[data-color-mode="DefaultOriginal"] .chat-cli-md h5,
+[data-color-mode="DefaultOriginal"] .chat-cli-md h6 {
+  color: #6A5ACD;
+}
+
+.chat-cli-md h1 { font-size: 1.15em; border-bottom: 1px solid rgba(100,100,100,0.4); padding-bottom: 2px; }
+.chat-cli-md h2 { font-size: 1.05em; }
+.chat-cli-md h3 { font-size: 1.0em; }
+
+.chat-cli-md ul, .chat-cli-md ol {
+  margin: 0.3em 0;
+  padding-left: 1.4em;
+}
+
+.chat-cli-md li { margin: 0.15em 0; }
+
+/* インラインコード */
+.chat-cli-md code {
+  background: rgba(100, 100, 100, 0.2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.88em;
+  font-family: 'Consolas', 'Courier New', monospace;
+  color: #ce9178;
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md code {
+  background: #efe8ff;
+  color: #8B0000;
+}
+
+/* コードブロック */
+.chat-cli-md pre {
+  background: rgba(0, 0, 0, 0.3);
+  border-left: 3px solid #4ec9b0;
+  padding: 8px 10px;
+  border-radius: 0 4px 4px 0;
+  overflow-x: auto;
+  margin: 0.4em 0;
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md pre {
+  background: #f5f0ff;
+  border-left-color: #6A5ACD;
+}
+
+.chat-cli-md pre code {
+  background: none;
+  padding: 0;
+  color: var(--tt-editor-fg, #d4d4d4);
+  font-size: 0.9em;
+}
+
+.chat-cli-md a        { color: #4fc1ff; text-decoration: none; }
+.chat-cli-md a:hover  { text-decoration: underline; }
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md a { color: #0055cc; }
+
+.chat-cli-md strong { color: #dcdcaa; }
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md strong { color: #4a1080; font-weight: 700; }
+
+.chat-cli-md em { color: #c586c0; font-style: italic; }
+
+[data-color-mode="DefaultOriginal"] .chat-cli-md em { color: #8B008B; }
+
+.chat-cli-md hr {
+  border: none;
+  border-top: 1px solid rgba(100, 100, 100, 0.3);
+  margin: 0.6em 0;
+}
+
+/* コードブロックのスクロールバー */
+.chat-cli-md pre::-webkit-scrollbar       { height: 4px; }
+.chat-cli-md pre::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.chat-cli-md pre::-webkit-scrollbar-thumb { background: #666; border-radius: 2px; }
+
+/* ─── ストリーミングカーソル ─── */
+
+.chat-cli-streaming .chat-cli-md::after,
+.chat-cli-streaming > *:last-child::after {
+  content: '▊';
+  color: #4fc1ff;
+  animation: chat-blink 0.8s step-start infinite;
+  font-size: 0.9em;
+}
+
+@keyframes chat-blink {
+  50% { opacity: 0; }
+}
+
+/* ─── 入力エリア（スプリッター可変） ─── */
+
 .chat-cli-input-area {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   padding: 4px 6px;
-  background: #252526;
+  background: var(--tt-column-header-bg, #252526);
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -144,10 +330,10 @@
   resize: none;
   background: var(--tt-editor-bg, #1e1e1e);
   color: var(--tt-editor-fg, #d4d4d4);
-  border: 1px solid #3c3c3c;
-  border-radius: 2px;
-  padding: 4px 6px;
-  font-family: 'Consolas', 'Courier New', monospace;
+  border: 1px solid var(--tt-border-color, #3c3c3c);
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 11px;
   line-height: 1.5;
   outline: none;
@@ -155,161 +341,22 @@
 }
 
 .chat-cli-textarea:focus {
-  border-color: #0078d4;
+  border-color: #4fc1ff;
+  box-shadow: 0 0 0 1px rgba(79, 193, 255, 0.2);
+}
+
+[data-color-mode="DefaultOriginal"] .chat-cli-textarea:focus {
+  border-color: #6A5ACD;
+  box-shadow: 0 0 0 1px rgba(106, 90, 205, 0.2);
 }
 
 .chat-cli-textarea::placeholder {
-  color: #555;
+  color: var(--tt-column-header-fg, #888);
 }
 
-.chat-cli-empty {
-  color: #555;
-  font-style: italic;
-}
+/* ─── スクロールバー ─── */
 
-.chat-cli-message {
-  margin-bottom: 4px;
-  word-break: break-word;
-}
-
-.chat-cli-user {
-  color: #9cdcfe;
-  white-space: pre-wrap;
-}
-
-.chat-cli-prompt {
-  color: #569cd6;
-  user-select: none;
-}
-
-.chat-cli-assistant {
-  color: #d4d4d4;
-  padding-left: 2px;
-}
-
-/* アシスタント回答の Markdown レンダリング */
-.chat-cli-md {
-  color: #d4d4d4;
-  line-height: 1.65;
-}
-
-.chat-cli-md p {
-  margin: 0.3em 0;
-}
-
-.chat-cli-md h1, .chat-cli-md h2, .chat-cli-md h3,
-.chat-cli-md h4, .chat-cli-md h5, .chat-cli-md h6 {
-  color: #e8e8e8;
-  margin: 0.6em 0 0.3em;
-  font-weight: bold;
-}
-
-.chat-cli-md h1 { font-size: 1.2em; border-bottom: 1px solid #444; padding-bottom: 2px; }
-.chat-cli-md h2 { font-size: 1.1em; }
-.chat-cli-md h3 { font-size: 1.0em; }
-
-.chat-cli-md ul, .chat-cli-md ol {
-  margin: 0.3em 0;
-  padding-left: 1.4em;
-}
-
-.chat-cli-md li {
-  margin: 0.15em 0;
-}
-
-.chat-cli-md code {
-  background: #2d2d30;
-  padding: 1px 4px;
-  border-radius: 3px;
-  font-size: 0.9em;
-  font-family: 'Consolas', 'Courier New', monospace;
-}
-
-.chat-cli-md pre {
-  background: #2d2d30;
-  padding: 8px 10px;
-  border-radius: 4px;
-  overflow-x: auto;
-  margin: 0.4em 0;
-}
-
-.chat-cli-md pre code {
-  background: none;
-  padding: 0;
-  font-size: 0.9em;
-}
-
-.chat-cli-md a {
-  color: #4fc1ff;
-  text-decoration: none;
-}
-
-.chat-cli-md a:hover {
-  text-decoration: underline;
-}
-
-.chat-cli-md strong {
-  color: #e8e8e8;
-}
-
-.chat-cli-md em {
-  color: #ce9178;
-}
-
-.chat-cli-md hr {
-  border: none;
-  border-top: 1px solid #3c3c3c;
-  margin: 0.6em 0;
-}
-
-/* スクロールバー */
-.chat-cli-md pre::-webkit-scrollbar {
-  height: 4px;
-}
-.chat-cli-md pre::-webkit-scrollbar-track {
-  background: #2d2d30;
-}
-.chat-cli-md pre::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 2px;
-}
-
-.chat-cli-streaming::after {
-  content: '▊';
-  color: #888;
-  animation: chat-blink 1s step-start infinite;
-}
-
-@keyframes chat-blink {
-  50% { opacity: 0; }
-}
-
-.chat-cli-messages::-webkit-scrollbar {
-  width: 6px;
-}
-.chat-cli-messages::-webkit-scrollbar-track {
-  background: var(--tt-editor-bg, #1e1e1e);
-}
-.chat-cli-messages::-webkit-scrollbar-thumb {
-  background: #424242;
-  border-radius: 3px;
-}
-.chat-cli-messages::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-/* スクロールバー */
-.webview-markdown::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.webview-markdown::-webkit-scrollbar-track {
-  background: #1e1e1e;
-}
-.webview-markdown::-webkit-scrollbar-thumb {
-  background: #424242;
-  border-radius: 4px;
-}
-.webview-markdown::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
+.chat-cli-messages::-webkit-scrollbar       { width: 5px; }
+.chat-cli-messages::-webkit-scrollbar-track { background: var(--tt-editor-bg, #1e1e1e); }
+.chat-cli-messages::-webkit-scrollbar-thumb { background: #4a4a4a; border-radius: 3px; }
+.chat-cli-messages::-webkit-scrollbar-thumb:hover { background: #666; }
