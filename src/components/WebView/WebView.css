@@ -6,7 +6,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #1e1e1e;
+  background: var(--tt-editor-bg, #1e1e1e);
 }
 
 .webview-empty {
@@ -112,11 +112,11 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  background: #1e1e1e;
+  background: var(--tt-editor-bg, #1e1e1e);
   font-family: 'Consolas', 'Courier New', monospace;
   font-size: 12px;
   line-height: 1.6;
-  color: #d4d4d4;
+  color: var(--tt-editor-fg, #d4d4d4);
 }
 
 .chat-cli-messages {
@@ -142,8 +142,8 @@
   width: 100%;
   box-sizing: border-box;
   resize: none;
-  background: #1e1e1e;
-  color: #d4d4d4;
+  background: var(--tt-editor-bg, #1e1e1e);
+  color: var(--tt-editor-fg, #d4d4d4);
   border: 1px solid #3c3c3c;
   border-radius: 2px;
   padding: 4px 6px;
@@ -288,7 +288,7 @@
   width: 6px;
 }
 .chat-cli-messages::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: var(--tt-editor-bg, #1e1e1e);
 }
 .chat-cli-messages::-webkit-scrollbar-thumb {
   background: #424242;
