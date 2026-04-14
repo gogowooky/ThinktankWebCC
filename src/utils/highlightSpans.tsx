@@ -89,6 +89,83 @@ export function highlightTextSpans(text: string, keyword: string): React.ReactNo
 }
 
 // ═══════════════════════════════════════════════════════════════
+// DOM 用: 通常の HTMLElement 内にハイライトを適用
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * HTMLElement 内テキストノードにキーワードハイライトを適用。
+ * MarkdownView や ChatCliView など直接 DOM に描画される要素に使用。
+ */
+export function applyElementHighlight(container: HTMLElement, keyword: string): void {
+  container.querySelectorAll('mark.tt-hl').forEach(mark => {
+    const parent = mark.parentNode;
+    if (parent) {
+      parent.replaceChild(document.createTextNode(mark.textContent || ''), mark);
+      parent.normalize();
+    }
+  });
+
+  if (!keyword.trim()) return;
+
+  const termColors = buildTermColors(keyword);
+  if (termColors.length === 0) return;
+
+  const pattern = termColors.map(t => escapeRegex(t.term)).join('|');
+  const regex = new RegExp(pattern, 'gi');
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node: Node) => {
+      const parent = (node as Text).parentElement;
+      if (!parent) return NodeFilter.FILTER_REJECT;
+      const tag = parent.tagName.toLowerCase();
+      if (['script', 'style', 'noscript'].includes(tag)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  const textNodes: Text[] = [];
+  let node: Node | null;
+  while ((node = walker.nextNode())) {
+    textNodes.push(node as Text);
+  }
+
+  textNodes.forEach(textNode => {
+    const text = textNode.textContent || '';
+    regex.lastIndex = 0;
+    if (!regex.test(text)) return;
+    regex.lastIndex = 0;
+
+    const frag = document.createDocumentFragment();
+    let lastIndex = 0;
+    let m: RegExpExecArray | null;
+
+    while ((m = regex.exec(text)) !== null) {
+      if (m.index > lastIndex) {
+        frag.appendChild(document.createTextNode(text.slice(lastIndex, m.index)));
+      }
+      const matched = m[0];
+      const matchedEntry = termColors.find(t => t.term.toLowerCase() === matched.toLowerCase());
+      const colorIdx = matchedEntry?.colorIdx ?? 0;
+      const mark = document.createElement('mark');
+      mark.className = 'tt-hl';
+      mark.style.backgroundColor = KEYWORD_COLORS[colorIdx];
+      mark.style.color = '#f0f0f0';
+      mark.style.borderRadius = '2px';
+      mark.style.padding = '0 1px';
+      mark.textContent = matched;
+      frag.appendChild(mark);
+      lastIndex = m.index + matched.length;
+    }
+
+    if (lastIndex < text.length) {
+      frag.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+
+    textNode.parentNode!.replaceChild(frag, textNode);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // DOM 用: iframe document 内にハイライトを適用
 // ═══════════════════════════════════════════════════════════════
 

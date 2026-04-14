@@ -1,7 +1,7 @@
 import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
-import { buildChatUrl } from '../utils/webviewUrl';
+import { buildMarkdownUrl } from '../utils/webviewUrl';
 import type { ColumnIndex, PanelType, HighlightTargets, ChatMessage } from '../types';
 
 /**
@@ -141,8 +141,9 @@ export class TTColumn extends TTObject {
       const collection = this.GetCurrentCollection();
       const item = collection?.GetDataItem(value);
       if (item?.ContentType === 'chat') {
-        // チャットアイテムはチャットUIで復元表示
-        this._webViewUrl = buildChatUrl(value);
+        // チャットアイテムは保存内容をMarkdownとして表示
+        const cat = item.CollectionID || this._dataGridResource;
+        this._webViewUrl = buildMarkdownUrl(cat, value);
       }
       // memo/note 等は自動WebView表示しない（/BrowseMarkdown で明示的に表示）
     } else {
@@ -344,26 +345,53 @@ export class TTColumn extends TTObject {
 
   /**
    * チャット用コンテキストを構築
-   * - チェック済みアイテムのContent
+   * - チェック済みアイテムのContent（未ロードの場合はロードしてから取得）
+   * - TextEditorで表示中のアイテムのContent（チェック済みと重複しない場合のみ）
    * - TextEditorの選択テキスト
    */
-  public buildChatContext(): { items: { id: string; title: string; contentType: string; content: string }[]; selection: string } {
-    const items: { id: string; title: string; contentType: string; content: string }[] = [];
+  public async buildChatContext(): Promise<{
+    checkedItems: { id: string; title: string; contentType: string; content: string }[];
+    editorItem: { id: string; title: string; contentType: string; content: string } | null;
+    selection: string;
+  }> {
     const collection = this.GetCurrentCollection();
+    const checkedItems: { id: string; title: string; contentType: string; content: string }[] = [];
+
     if (collection) {
-      this._checkedItemIDs.forEach(id => {
+      const loadTasks = Array.from(this._checkedItemIDs).map(async id => {
         const item = collection.GetDataItem(id);
-        if (item) {
-          items.push({
-            id: item.ID,
-            title: item.Name,
-            contentType: item.ContentType,
-            content: item.Content,
-          });
+        if (!item) return;
+        if (!item.IsLoaded) {
+          try { await item.LoadContent(); } catch { /* ignore */ }
         }
+        checkedItems.push({
+          id: item.ID,
+          title: item.Name,
+          contentType: item.ContentType,
+          content: item.Content,
+        });
       });
+      await Promise.all(loadTasks);
     }
-    return { items, selection: this._editorSelection };
+
+    // TextEditorで表示中のアイテム（チェック済みと重複しない場合のみ）
+    let editorItem: { id: string; title: string; contentType: string; content: string } | null = null;
+    if (this._editorResource && !this._checkedItemIDs.has(this._editorResource) && collection) {
+      const item = collection.GetDataItem(this._editorResource);
+      if (item) {
+        if (!item.IsLoaded) {
+          try { await item.LoadContent(); } catch { /* ignore */ }
+        }
+        editorItem = {
+          id: item.ID,
+          title: item.Name,
+          contentType: item.ContentType,
+          content: item.Content,
+        };
+      }
+    }
+
+    return { checkedItems, editorItem, selection: this._editorSelection };
   }
 
   // ═══════════════════════════════════════════════════════════════

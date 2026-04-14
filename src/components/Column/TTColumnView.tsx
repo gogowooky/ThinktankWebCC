@@ -9,7 +9,8 @@ import { TextEditorPanel } from '../TextEditor/TextEditorPanel';
 import { WebViewPanel } from '../WebView/WebViewPanel';
 import { KEYWORD_COLORS } from '../../utils/editorHighlight';
 import { highlightTextSpans } from '../../utils/highlightSpans';
-import { toFullUrl, buildMarkdownUrl } from '../../utils/webviewUrl';
+import { toFullUrl, buildMarkdownUrl, parseViewUrl } from '../../utils/webviewUrl';
+import { markdownToHtml } from '../../utils/markdownToHtml';
 import type { PanelType, HighlightTargets } from '../../types';
 import './TTColumnView.css';
 
@@ -400,6 +401,52 @@ interface TTColumnViewProps {
   height: number;
 }
 
+/** HTML エスケープ */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** ポップアップウィンドウ用 CSS（WebView と同等のスタイル） */
+const POPUP_CSS = `
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #1e1e1e; color: #ccc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px; line-height: 1.7;
+  padding: 24px 32px; max-width: 900px; margin: 0 auto;
+}
+h1, h2, h3, h4, h5, h6 { color: #e0e0e0; margin: 1em 0 0.4em; }
+h1 { font-size: 1.6em; border-bottom: 1px solid #444; padding-bottom: 6px; }
+h2 { font-size: 1.3em; border-bottom: 1px solid #333; padding-bottom: 4px; }
+h3 { font-size: 1.15em; }
+p { margin: 0.5em 0; }
+ul, ol { margin: 0.5em 0; padding-left: 1.5em; }
+li { margin: 0.2em 0; }
+code { background: #2d2d30; padding: 2px 5px; border-radius: 3px; font-size: 0.9em; font-family: 'Fira Code', monospace; }
+pre { background: #2d2d30; padding: 12px; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+a { color: #4fc1ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+hr { border: none; border-top: 1px solid #444; margin: 1em 0; }
+strong { color: #e0e0e0; }
+blockquote { border-left: 3px solid #555; padding-left: 12px; color: #aaa; margin: 0.5em 0; }
+table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+th, td { border: 1px solid #444; padding: 6px 10px; text-align: left; }
+th { background: #2d2d30; }
+.chat-user { color: #4fc1ff; margin: 0.8em 0 0.3em; font-weight: bold; }
+.chat-assistant { margin: 0.3em 0 0.8em; padding-left: 12px; border-left: 2px solid #555; }
+`;
+
+function openHtmlInNewWindow(title: string, bodyHtml: string): void {
+  const win = window.open('', '_blank');
+  if (!win) return;
+  win.document.write(
+    `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8"><title>${escapeHtml(title)}</title>` +
+    `<style>${POPUP_CSS}</style></head><body>${bodyHtml}</body></html>`
+  );
+  win.document.close();
+}
+
 /** タイトルバー（タイトル行 + ツールバー + border）の概算高さ */
 const TITLEBAR_TOTAL = 40;
 
@@ -489,6 +536,49 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     const displayedIds = column.GetDisplayedItemIds();
     const allChecked = displayedIds.length > 0 && displayedIds.every(id => column.CheckedItemIDs.has(id));
     column.setAllChecked(displayedIds, !allChecked);
+  }, [column]);
+
+  /**
+   * WebView の ↗ ボタン: クライアント側データを使って新しいウィンドウで表示
+   * - /view/markdown → IndexedDB のアイテム内容を marked でレンダリング
+   * - ChatMode (URL なし) → 現在のチャットメッセージを HTML 化
+   * - その他 URL → 通常の window.open
+   */
+  const handleOpenInBrowser = useCallback(() => {
+    const url = column.WebViewUrl.trim();
+
+    // /view/markdown → IndexedDB から直接レンダリング（BigQuery 経由せず）
+    if (url.startsWith('/view/markdown')) {
+      const route = parseViewUrl(url);
+      const id = route?.params.id ?? '';
+      const item = column.GetCurrentCollection()?.GetDataItem(id);
+      if (item) {
+        const doOpen = async () => {
+          if (!item.IsLoaded) await item.LoadContent().catch(() => {});
+          openHtmlInNewWindow(item.Name + ' - Thinktank', markdownToHtml(item.Content));
+        };
+        doOpen();
+        return;
+      }
+    }
+
+    // ChatMode（URL なし）→ チャットメッセージを HTML として開く
+    if (column.ChatMode && !url) {
+      const messages = column.ChatMessages.filter(m => !m.isStreaming);
+      if (messages.length === 0) return;
+      const parts = messages.map(m => {
+        if (m.role === 'user') {
+          return `<p class="chat-user">&gt; ${escapeHtml(m.content)}</p>`;
+        }
+        return `<div class="chat-assistant">${markdownToHtml(m.content || '')}</div>`;
+      });
+      const firstUser = messages.find(m => m.role === 'user')?.content ?? 'Chat';
+      openHtmlInNewWindow(`${firstUser} - Thinktank`, parts.join('\n'));
+      return;
+    }
+
+    // その他 URL（外部 URL など）
+    if (url) window.open(toFullUrl(url), '_blank');
   }, [column]);
 
   /**
@@ -715,13 +805,16 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     const isFirst = column.ChatMessages.length === 0;
     let systemPrompt: string | undefined;
     if (isFirst) {
-      const ctx = column.buildChatContext();
+      const ctx = await column.buildChatContext();
       const parts: string[] = [];
-      if (ctx.items.length > 0) {
+      if (ctx.checkedItems.length > 0) {
         parts.push('## 参照アイテム（チェック済み）');
-        for (const item of ctx.items) {
+        for (const item of ctx.checkedItems) {
           parts.push(`### ${item.title} [${item.id}] (${item.contentType})\n${item.content}`);
         }
+      }
+      if (ctx.editorItem) {
+        parts.push(`## TextEditorで表示中のアイテム\n### ${ctx.editorItem.title} [${ctx.editorItem.id}] (${ctx.editorItem.contentType})\n${ctx.editorItem.content}`);
       }
       if (ctx.selection) {
         parts.push(`## 選択テキスト\n${ctx.selection}`);
@@ -876,14 +969,12 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {hlTargets.panelTitle && hlKeyword ? highlightTextSpans(titleText, hlKeyword) : titleText}
           </span>
-          {column.WebViewUrl.trim() && (
+          {(column.WebViewUrl.trim() || column.ChatMode) && (
             <button
               className="panel-title-open-btn"
               title="Open in new window"
               onMouseDown={(e) => e.stopPropagation()}
-              onClick={() => {
-                window.open(toFullUrl(column.WebViewUrl), '_blank');
-              }}
+              onClick={handleOpenInBrowser}
             >
               &#x2197;
             </button>

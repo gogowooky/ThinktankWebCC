@@ -40,7 +40,7 @@
   min-height: 18px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 4px 0 8px;
   font-size: 11px;
   color: var(--tt-column-header-fg, #888);
 }
@@ -127,12 +127,13 @@
 
 .panel-title-open-btn {
   flex-shrink: 0;
-  width: 20px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   margin-left: 8px;
+  margin-top: 1px;
   padding: 0;
-  font-size: 10px;
-  line-height: 12px;
+  font-size: 12px;
+  line-height: 1;
   color: var(--tt-column-header-fg, #aaa);
   background: transparent;
   border: 1px solid var(--tt-border-color, #3c3c3c);
@@ -213,6 +214,7 @@
   align-items: center;
   justify-content: center;
   margin-left: 2px;
+  margin-top: 2px;
 }
 
 .panel-toolbar-btn-cs:hover {
@@ -232,12 +234,12 @@
 }
 
 .hl-target-btn {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   padding: 0;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: bold;
-  line-height: 16px;
+  line-height: 1;
   text-align: center;
   color: var(--tt-column-header-fg, #888);
   background: var(--tt-list-item-bg, #2d2d30);
@@ -245,6 +247,10 @@
   border-radius: 2px;
   cursor: pointer;
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5px;
 }
 
 .hl-target-btn:hover {

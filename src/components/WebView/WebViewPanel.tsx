@@ -5,7 +5,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { TTModels } from '../../models/TTModels';
 import { TTDataCollection } from '../../models/TTDataCollection';
 import { isExternalUrl, buildMarkdownUrl, parseViewUrl } from '../../utils/webviewUrl';
-import { applyIframeHighlight } from '../../utils/highlightSpans';
+import { applyIframeHighlight, applyElementHighlight } from '../../utils/highlightSpans';
 import { markdownToHtml } from '../../utils/markdownToHtml';
 import type { ChatMessage } from '../../types';
 import './WebView.css';
@@ -27,9 +27,12 @@ interface WebViewPanelProps {
 }
 
 /** クライアントサイド Markdown HTML レンダリング */
-function MarkdownView({ column, id }: { column: TTColumn; id: string }) {
+function MarkdownView({ column, id, hlKeyword, hlEnabled }: {
+  column: TTColumn; id: string; hlKeyword: string; hlEnabled: boolean;
+}) {
   const [html, setHtml] = useState('');
   const [loading, setLoading] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!id) { setHtml(''); setLoading(false); return; }
@@ -51,12 +54,19 @@ function MarkdownView({ column, id }: { column: TTColumn; id: string }) {
     }
   }, [column, id]);
 
+  // html または highlight 設定変更時にハイライトを適用
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || loading) return;
+    applyElementHighlight(container, hlEnabled && hlKeyword ? hlKeyword : '');
+  }, [html, hlKeyword, hlEnabled, loading]);
+
   if (loading) {
     return <div className="webview-markdown"><span style={{ color: '#666' }}>Loading...</span></div>;
   }
 
   return (
-    <div className="webview-markdown">
+    <div className="webview-markdown" ref={containerRef}>
       {/* eslint-disable-next-line react/no-danger */}
       <div className="chat-cli-md" dangerouslySetInnerHTML={{ __html: html }} />
     </div>
@@ -70,15 +80,20 @@ function ChatCliView({
   messages,
   chatMode,
   onSend,
+  hlKeyword,
+  hlEnabled,
 }: {
   messages: ChatMessage[];
   chatMode: boolean;
   onSend?: (text: string) => Promise<void>;
+  hlKeyword: string;
+  hlEnabled: boolean;
 }) {
   const [input, setInput] = useState('');
   // 入力エリアの高さ。デフォルト 0 = 閉じた状態
   const [inputHeight, setInputHeight] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
   // useReducer で強制再レンダリング（Splitter の getBoundingClientRect 更新用）
   const [, forceUpdate] = useReducer(x => x + 1, 0);
 
@@ -91,6 +106,13 @@ function ChatCliView({
   useEffect(() => {
     if (!chatMode) setInputHeight(0);
   }, [chatMode]);
+
+  // messages または highlight 設定変更時にハイライトを適用
+  useEffect(() => {
+    const container = messagesRef.current;
+    if (!container) return;
+    applyElementHighlight(container, hlEnabled && hlKeyword ? hlKeyword : '');
+  }, [messages, hlKeyword, hlEnabled]);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
@@ -113,7 +135,7 @@ function ChatCliView({
 
   return (
     <div className="chat-cli">
-      <div className="chat-cli-messages">
+      <div className="chat-cli-messages" ref={messagesRef}>
         {messages.length === 0 && (
           <div className="chat-cli-empty">Chat...</div>
         )}
@@ -290,6 +312,8 @@ export function WebViewPanel({ column, width, height, onChatSend }: WebViewPanel
   }, [column]);
 
   const url = column.WebViewUrl.trim();
+  const hlEnabled = column.HighlightTargets.webView;
+  const hlKeyword = column.HighlighterKeyword;
 
   if (height <= 0 || width <= 0) return null;
 
@@ -299,7 +323,7 @@ export function WebViewPanel({ column, width, height, onChatSend }: WebViewPanel
     const id = route?.params.id ?? '';
     return (
       <div className="webview-panel" style={{ width, height }}>
-        <MarkdownView column={column} id={id} />
+        <MarkdownView column={column} id={id} hlKeyword={hlKeyword} hlEnabled={hlEnabled} />
       </div>
     );
   }
@@ -326,6 +350,8 @@ export function WebViewPanel({ column, width, height, onChatSend }: WebViewPanel
         messages={column.ChatMessages}
         chatMode={column.ChatMode}
         onSend={onChatSend}
+        hlKeyword={hlKeyword}
+        hlEnabled={hlEnabled}
       />
     </div>
   );
