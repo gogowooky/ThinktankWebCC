@@ -13,8 +13,12 @@ export type ColumnIndex = 0 | 1 | 2;
 /** 列パネル種別 */
 export type PanelType = 'DataGrid' | 'WebView' | 'TextEditor';
 
-/** パネルツール（フォーカス対象） */
-export type PanelTool = 'Main' | 'Filter' | 'AddrBar' | 'Highlighter';
+/**
+ * パネルツール（フォーカス対象）
+ * Main: パネルのメインコンテンツエリア
+ * Tool: パネルのツール入力エリア（DataGrid=Filter / WebView=Assist / TextEditor=Highlight）
+ */
+export type PanelTool = 'Main' | 'Tool';
 
 // ════════════════════════════════════════════════════════════════════════
 // Action 関連

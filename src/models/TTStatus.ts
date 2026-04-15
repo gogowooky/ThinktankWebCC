@@ -3,8 +3,8 @@ import { TTObject } from './TTObject';
 import { TTState } from './TTState';
 import type { StateConfig } from '../types';
 
-/** ColumnIndex用ワイルドカード展開定数 */
-const COLUMN_INDICES = [0, 1, 2] as const;
+/** ColumnIndex用ワイルドカード展開定数（1ベース） */
+const COLUMN_INDICES = [1, 2, 3] as const;
 
 /**
  * TTStatus - UI状態管理コレクション
@@ -38,7 +38,7 @@ export class TTStatus extends TTCollection {
       if (id.includes('[Columns]')) {
         COLUMN_INDICES.forEach(idx => {
           const _id = id.replace('[Columns]', String(idx));
-          const _desc = description.replace('[Columns]', `Column${idx}`);
+          const _desc = description.replace('[Columns]', String(idx));
           this.RegisterState(_id, _desc, config);
         });
         return;

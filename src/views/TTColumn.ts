@@ -2,7 +2,7 @@ import { TTObject } from '../models/TTObject';
 import { TTDataCollection } from '../models/TTDataCollection';
 import { TTModels } from '../models/TTModels';
 import { buildMarkdownUrl } from '../utils/webviewUrl';
-import type { ColumnIndex, PanelType, HighlightTargets, ChatMessage } from '../types';
+import type { ColumnIndex, PanelType, PanelTool, HighlightTargets, ChatMessage } from '../types';
 
 /**
  * TTColumn - 列ビューモデル
@@ -91,6 +91,9 @@ export class TTColumn extends TTObject {
 
   /** フォーカス中のパネル */
   private _focusedPanel: PanelType = 'DataGrid';
+
+  /** フォーカス中のツール（Main=メインエリア / Tool=ツール入力エリア） */
+  private _focusedTool: PanelTool = 'Main';
 
   public override get ClassName(): string {
     return 'TTColumn';
@@ -209,6 +212,23 @@ export class TTColumn extends TTObject {
   public set FocusedPanel(value: PanelType) {
     if (this._focusedPanel === value) return;
     this._focusedPanel = value;
+    this._focusedTool = 'Main'; // パネル切替時はToolをMainにリセット
+    // Status 同期（列番号は1ベース）
+    const status = TTModels.Instance.Status;
+    status.SetValue(`Column${this.Index + 1}.Panel`, value);
+    status.SetValue(`Column${this.Index + 1}.UI`, 'Main');
+    this.NotifyUpdated(false);
+  }
+
+  /** フォーカス中のツール（Main=メインエリア / Tool=ツール入力エリア） */
+  public get FocusedTool(): PanelTool {
+    return this._focusedTool;
+  }
+  public set FocusedTool(value: PanelTool) {
+    if (this._focusedTool === value) return;
+    this._focusedTool = value;
+    // Status 同期（列番号は1ベース）
+    TTModels.Instance.Status.SetValue(`Column${this.Index + 1}.UI`, value);
     this.NotifyUpdated(false);
   }
 
@@ -289,6 +309,7 @@ export class TTColumn extends TTObject {
     this._chatMode = true;
     this._chatSessionId = `col${this.Index}-${Date.now()}`;
     this._webViewUrl = '';
+    TTModels.Instance.Status.SetValue('ChatMode', 'true');
     this.NotifyUpdated(false);
   }
 
@@ -296,6 +317,7 @@ export class TTColumn extends TTObject {
   public clearChatMessages(): void {
     this._chatMessages = [];
     this._chatMode = false;
+    TTModels.Instance.Status.SetValue('ChatMode', 'false');
     this.NotifyUpdated(false);
   }
 

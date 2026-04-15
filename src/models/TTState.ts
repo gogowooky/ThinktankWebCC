@@ -67,6 +67,11 @@ export class TTState extends TTObject {
     this._value = value;
   }
 
+  /** デフォルト値を取得 */
+  public get DefaultValue(): string {
+    return this._default(this.ID);
+  }
+
   /** 値をビューに適用 */
   public Apply(value: string): void {
     this._applyToView(this.ID, value);

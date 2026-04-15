@@ -1,6 +1,7 @@
 import { TTObject } from '../models/TTObject';
 import { TTModels } from '../models/TTModels';
 import { TTColumn } from './TTColumn';
+import { InitializeDefaultStatus } from '../controllers/DefaultStatus';
 import type { ColumnIndex } from '../types';
 
 /**
@@ -146,7 +147,17 @@ export class TTApplication extends TTObject {
 
   public set ActiveColumnIndex(value: ColumnIndex) {
     if (this._activeColumnIndex === value) return;
+    const prev = this._activeColumnIndex;
     this._activeColumnIndex = value;
+    // Status 同期（InitializeDefaultStatus 完了後のみ）
+    const status = this.Models.Status;
+    if (status.GetItem('Application.ActiveColumn')) {
+      status.SetValue('Application.ActiveColumn', `Column${value + 1}`);
+      status.SetValue(`Column${prev + 1}.Focus`, 'false');
+      status.SetValue(`Column${value + 1}.Focus`, 'true');
+      // ChatMode: 新アクティブ列のチャットモードを反映
+      status.SetValue('ChatMode', String(this.Columns[value].ChatMode));
+    }
     this.NotifyUpdated(false);
   }
 
@@ -230,11 +241,15 @@ export class TTApplication extends TTObject {
 
   /**
    * アプリケーション初期化
-   * Phase 21でDefaultStatus/Actions/Eventsの初期化を追加
+   * Phase 21-A: DefaultStatus 初期化
+   * Phase 21-B: DefaultActions 初期化（予定）
+   * Phase 21-C: DefaultEvents 初期化（予定）
    */
   public Initialize(): void {
+    InitializeDefaultStatus(this.Models);
+
     console.log('[TTApplication] Initialized');
     console.log(`[TTApplication] Columns: ${this.Columns.map(c => c.ID).join(', ')}`);
-    console.log(`[TTApplication] Models: ${this.Models.ID}`);
+    console.log(`[TTApplication] Status: ${this.Models.Status.GetItems().length} states registered`);
   }
 }

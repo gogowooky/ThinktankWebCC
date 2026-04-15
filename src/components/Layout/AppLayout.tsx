@@ -52,15 +52,17 @@ export function AppLayout() {
     } catch { /* ignore */ }
   }, [colRatios]);
 
-  // TTApplication + 全TTColumn の Observer を購読
+  // TTApplication + 全TTColumn + TTModels（Status変化含む）の Observer を購読
   const [, setTick] = useState(0);
   useEffect(() => {
     const rerender = () => setTick(t => t + 1);
     app.AddOnUpdate('AppLayout', rerender);
     app.Columns.forEach((col, i) => col.AddOnUpdate(`AppLayout-col${i}`, rerender));
+    app.Models.AddOnUpdate('AppLayout-models', rerender);
     return () => {
       app.RemoveOnUpdate('AppLayout');
       app.Columns.forEach((col, i) => col.RemoveOnUpdate(`AppLayout-col${i}`));
+      app.Models.RemoveOnUpdate('AppLayout-models');
     };
   }, [app]);
 

@@ -14,6 +14,11 @@ function App() {
     const app = TTApplication.Instance
     app.Initialize()
 
+    // デバッグ用: ブラウザコンソールから __app / __models でアクセス可能
+    // 例: __models.Status.SetValue('ChatMode', 'true')
+    ;(window as unknown as Record<string, unknown>).__app = app
+    ;(window as unknown as Record<string, unknown>).__models = TTModels.Instance
+
     // StorageManager初期化 → データロード → SyncManager開始
     async function initStorage() {
       await storageManager.initialize()

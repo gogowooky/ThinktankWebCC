@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { TTColumn } from '../../views/TTColumn';
 import { TTApplication } from '../../views/TTApplication';
 import { TTDataItem } from '../../models/TTDataItem';
+import { TTModels } from '../../models/TTModels';
+import { TTState } from '../../models/TTState';
 import { Splitter } from '../Layout/Splitter';
 import { DataGridPanel } from '../DataGrid/DataGridPanel';
 import { TextEditorPanel } from '../TextEditor/TextEditorPanel';
@@ -149,6 +151,7 @@ const ASSIST_COMMANDS: { command: string; description: string }[] = [
   { command: '/Chat [text]',        description: 'AIとのチャットモードに入る' },
   { command: '/CheckList',          description: 'チェック済みアイテムの一覧を作成' },
   { command: '/Search <keywords>',  description: 'チェック済みアイテムを全文検索' },
+  { command: '/Status',             description: '全TTStateの状態一覧をnoteに表示' },
   { command: '/Markdown [id]',      description: 'MarkdownをWebViewにHTML表示' },
 ];
 
@@ -528,7 +531,14 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
   const handlePanelFocus = useCallback((panel: PanelType) => {
     const app = TTApplication.Instance;
     app.ActiveColumnIndex = column.Index;
+    column.FocusedPanel = panel; // FocusedTool は setter 内で 'Main' にリセット
+  }, [column]);
+
+  const handleToolFocus = useCallback((panel: PanelType) => {
+    const app = TTApplication.Instance;
+    app.ActiveColumnIndex = column.Index;
     column.FocusedPanel = panel;
+    column.FocusedTool = 'Tool';
   }, [column]);
 
   /** 表示アイテムの全チェック/全解除トグル */
@@ -736,6 +746,51 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     column.SelectedItemID = newItem.ID;
   }, [column]);
 
+  /**
+   * /Status コマンド処理
+   * 全 TTState の状態一覧を note として保存・表示する。
+   */
+  const handleCreateStatusNote = useCallback(async () => {
+    const collection = column.GetCurrentCollection();
+    if (!collection) return;
+
+    const states = TTModels.Instance.Status.GetItems()
+      .filter((item): item is TTState => item instanceof TTState);
+
+    // カラム幅を固定して整形
+    const COL = { id: 30, val: 18, def: 18 };
+    const pad = (s: string, n: number) => s.length >= n ? s.slice(0, n - 1) + ' ' : s.padEnd(n);
+
+    const header = pad('StateID', COL.id) + pad('StateValue', COL.val) + pad('StateDefault', COL.def) + 'StateName';
+    const sep    = '-'.repeat(COL.id + COL.val + COL.def + 40);
+
+    const rows = states.map(st =>
+      pad(st.ID, COL.id) + pad(st.Value, COL.val) + pad(st.DefaultValue, COL.def) + st.Description
+    );
+
+    const content = ['TTState', header, sep, ...rows].join('\n');
+
+    // note アイテムを作成・保存
+    const existingNote = collection.GetDataItems().find(
+      item => item.ContentType === 'note' || item.ContentType === 'memo'
+    );
+    const collectionId =
+      existingNote?.CollectionID ||
+      collection.HandledCategories[0] ||
+      collection.DatabaseID ||
+      collection.ID;
+
+    const newItem = new TTDataItem();
+    newItem.ContentType = 'note';
+    newItem.CollectionID = collectionId;
+    newItem.Content = content;
+
+    collection.AddItem(newItem);
+    await newItem.SaveContent();
+
+    column.SelectedItemID = newItem.ID;
+  }, [column]);
+
   /** TextEditor 💬 ボタン: チャットモードに入る（コンテキストは初回送信時に自動添付） */
   const handleStartChat = useCallback(() => {
     column.enterChatMode();
@@ -886,6 +941,10 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
       await handleSelectToNote();
       return;
     }
+    if (trimmedLower === '/status') {
+      await handleCreateStatusNote();
+      return;
+    }
     if (trimmedLower.startsWith('/search')) {
       const rest = trimmed.slice('/Search'.length).trim();
       await handleCreateSearchList(rest);
@@ -916,7 +975,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     }
 
     // 未知のスラッシュコマンド → 無視
-  }, [column, handleSelectToNote, handleCreateSearchList, handleBrowseMarkdown, handleChatSend]);
+  }, [column, handleSelectToNote, handleCreateSearchList, handleCreateStatusNote, handleBrowseMarkdown, handleChatSend]);
 
   // Splitter2本(8px)のみ固定。残り全体を3パネルで比率分割
   const splitterTotal = 8;
@@ -1030,7 +1089,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 <KeywordTagInput
                   value={toolbarProps.value}
                   onChange={toolbarProps.onChange}
-                  onFocusPanel={() => handlePanelFocus(panel.type)}
+                  onFocusPanel={() => handleToolFocus(panel.type)}
                 />
                 <div className="hl-target-toggles">
                   {HL_TARGET_DEFS.map(({ key, label, title }) => (
@@ -1055,7 +1114,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                   onChange={(v) => toolbarProps.onChange(v)}
                   onMouseDown={(e) => {
                     e.stopPropagation();
-                    handlePanelFocus(panel.type);
+                    handleToolFocus(panel.type);
                   }}
                   onSend={toolbarProps.onSend}
                 />
@@ -1084,7 +1143,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
                 onChange={(v) => toolbarProps.onChange(v)}
                 onMouseDown={(e) => {
                   e.stopPropagation();
-                  handlePanelFocus(panel.type);
+                  handleToolFocus(panel.type);
                 }}
                 historyKey={`thinktank-history-${panel.type.toLowerCase()}`}
                 onSend={toolbarProps.onSend}

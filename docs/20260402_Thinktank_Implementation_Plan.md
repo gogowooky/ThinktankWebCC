@@ -1334,22 +1334,221 @@ WebSocket同期:
 
 ---
 
-### Phase 21: キーボードショートカット・アクションシステム
+### Phase 21: アクション・イベント・状態管理システム構築
 
-**目標**: 列ベースのキーバインド、コマンドパレット。
+**目標**: 機能追加のための仕組みを段階的に構築し、いくつかの具体的なアクションを実装して動作確認する。
+
+#### 設計方針（Phase 21 共通）
+
+**コンテキスト文字列フォーマット**
+```
+{ColumnType}-{PanelType}-{PanelTool}-{Status}
+```
+| セグメント | 値 | ワイルドカード |
+|-----------|-----|--------------|
+| ColumnType | `Left` / `Center` / `Right` | `*` |
+| PanelType | `DataGrid` / `WebView` / `TextEditor` | `*` |
+| PanelTool | `Main` / `Tool` | `*` |
+| Status | bool StateID カンマ区切り（例: `ChatMode`）| `*` |
+
+**アクセス経路ルール**
+- Action → `TTApplication`（アプリ全体操作・列間操作）
+- Action → `TTApplication.ActiveColumn` / `.Columns[n]`（TTColumn の public API）
+- Action → `TTModels.Instance.Status`（状態読み書き）
+- Action → `TTModels.Instance.Knowledge`（データ操作）
+- Action から React コンポーネント（TextEditorPanel等）への直接参照は**禁止**
+- 基礎クラス間のクロストークは**禁止**（TTColumn が UI の proxy を担う）
+
+**UIデザイン管理方式（TSVコード生成）**
+- `ui-design/events.tsv` / `ui-design/menus.tsv` をExcelで編集
+- `scripts/codegen-ui.ts` でビルド時に `src/controllers/generated/` を自動生成
+- `npm run dev` 起動前に自動実行
+
+---
+
+#### Phase 21-A: TTStatus/TTState 完成 + React ブリッジ
+
+**目標**: 状態管理を完成させ、TTStatus の変更が React 再レンダリングに繋がる仕組みを構築する。
 
 **新規作成ファイル**:
-- `src/controllers/DefaultActions.ts` - 組込アクション定義
-- `src/controllers/DefaultEvents.ts` - キーバインド定義
-- `src/controllers/DefaultStatus.ts` - 初期ステータス
-- `src/controllers/actions/ApplicationActions.ts` - 列ナビゲーション
-- `src/controllers/actions/EditorActions.ts` - エディタ操作
-- `src/controllers/actions/TableActions.ts` - テーブル操作
-- `src/components/UI/CommandPalette.tsx` - コマンドパレット
-- `src/components/UI/ContextMenu.tsx` - 右クリックメニュー
-- `src/components/UI/StatusBar.tsx` - ステータスバー（※基本のステータスバーはPhase 5でAppLayout内に実装済み。Phase 21で拡張）
+- `src/hooks/useAppUpdate.ts` - TTObject の `AddOnUpdate` を React `useReducer` に繋ぐ購読フック
+- `src/controllers/DefaultStatus.ts` - アプリ全体の初期状態を登録
 
-**検証**: ショートカットで列切替、DataGridナビ、エディタフォーカス、コマンドパレット起動。
+**修正ファイル**:
+- `src/types/index.ts` - `PanelTool` 型を `'Main' | 'Tool'` に変更（`Filter`/`AddrBar`/`Highlighter` を削除）
+- `src/views/TTColumn.ts` - `FocusedTool: 'Main' | 'Tool'` プロパティ追加
+- `src/views/TTApplication.ts` - `Initialize()` に `DefaultStatus` 初期化を追加
+- `src/App.tsx` または `AppLayout.tsx` - `useAppUpdate(TTModels.Instance)` を購読
+
+**DefaultStatus 登録状態（初期セット）**:
+| StateID | 説明 | 初期値 |
+|---------|------|--------|
+| `Column[Columns].Focus` | 各列のフォーカス有無 | `false` |
+| `Column[Columns].Panel` | 各列のフォーカス中パネル | `DataGrid` |
+| `Column[Columns].Tool` | 各列のフォーカス中ツール | `Main` |
+| `ChatMode` | チャットモード | `false` |
+
+**useAppUpdate フック実装**:
+```ts
+// src/hooks/useAppUpdate.ts
+export function useAppUpdate(obj: TTObject): void {
+  const [, dispatch] = useReducer(x => x + 1, 0);
+  useEffect(() => {
+    const key = `react-${obj.ID}-${Math.random()}`;
+    obj.AddOnUpdate(key, dispatch);
+    return () => obj.RemoveOnUpdate(key);
+  }, [obj]);
+}
+```
+
+**検証**: `TTModels.Instance.Status.SetValue('ChatMode', 'true')` をコンソールから呼ぶ → React が再レンダリングされることを確認。
+
+---
+
+#### Phase 21-B: Action管理基盤 + UIデザイン定義ファイル
+
+**目標**: アクション登録の仕組みと、TSV→TypeScript コード生成パイプラインを構築する。
+
+**新規作成ファイル**:
+- `src/controllers/DefaultActions.ts` - アクション初期化エントリポイント（カテゴリ別 register 関数を呼ぶ）
+- `src/controllers/actions/ApplicationActions.ts` - 列ナビゲーション・フォーカス操作
+- `src/controllers/actions/DataGridActions.ts` - DataGrid 操作（選択・削除・チェック等）
+- `src/controllers/actions/EditorActions.ts` - TextEditor 操作（保存・フォーカス等）
+- `src/controllers/actions/WebViewActions.ts` - WebView・Chat 操作
+- `ui-design/events.tsv` - イベントバインディング設計（Excel編集対象）
+- `ui-design/menus.tsv` - メニュー設計（Excel編集対象）
+- `scripts/codegen-ui.ts` - TSV → TypeScript コード生成スクリプト
+- `src/controllers/generated/EventsGenerated.ts` - 自動生成（手編集禁止）
+- `src/controllers/generated/MenusGenerated.ts` - 自動生成（手編集禁止）
+
+**修正ファイル**:
+- `src/views/TTApplication.ts` - `Initialize()` に `DefaultActions` 初期化を追加、`DispatchAction(id, context)` メソッド実装
+- `src/models/TTModels.ts` - `Initialize()` 呼び出しを追加
+- `package.json` - `"codegen-ui": "ts-node scripts/codegen-ui.ts"` スクリプト追加
+
+**events.tsv フォーマット**:
+```tsv
+# Context	Mods	Key	ActionID	Comment
+*-*-*-*		F5	Application.Command.Delegate	リロード
+*-DataGrid-Main-*	Control	D	DataGrid.Item.Selected.Remove	選択削除
+*-DataGrid-Main-*	Control+Shift	Delete	DataGrid.Item.Checked.Remove	チェック削除
+```
+
+**アクション登録パターン**:
+```ts
+// src/controllers/actions/DataGridActions.ts
+export function registerDataGridActions(AddAction: AddActionFn) {
+  AddAction('DataGrid.Item.Selected.Remove', 'カーソル位置アイテムを削除', (ctx) => {
+    TTApplication.Instance.ActiveColumn.RemoveSelectedItem();
+  });
+}
+```
+
+**検証**: `TTModels.Instance.Actions.GetItem('DataGrid.Item.Selected.Remove')?.Invoke()` でアイテムが削除されることを確認。`npm run codegen-ui` で `EventsGenerated.ts` が生成されることを確認。
+
+---
+
+#### Phase 21-C: Event管理基盤（統一ディスパッチ）
+
+**目標**: キー・マウス・タッチイベントを統一ルーチンで処理し、Actionに繋ぐ。
+
+**新規作成ファイル**:
+- `src/controllers/DefaultEvents.ts` - イベントバインディング初期化（`EventsGenerated.ts` をimport）
+
+**修正ファイル**:
+- `src/models/TTEvent.ts` - `TTEvents.Dispatch(type, e)` 統一ディスパッチメソッド追加
+- `src/views/TTApplication.ts` - `GetContext()` メソッド追加（現在のフォーカス状態からコンテキスト文字列を生成）、`Initialize()` に `DefaultEvents` 初期化を追加
+- `src/components/Layout/AppLayout.tsx` - グローバルイベントリスナー登録（`keydown` / `mousedown` / `touchstart`）
+- `src/components/Column/TTColumnView.tsx` - 既存の `onKeyDown` を段階的に `DispatchKeyEvent` 経由に移行
+
+**TTEvents.Dispatch の実装方針**:
+```ts
+Dispatch(type: 'Key' | 'Mouse' | 'Touch', e: Event): boolean {
+  // 1. 修飾キーなし単一印字文字 → 即スルー（高速化）
+  if (type === 'Key' && isBareChar(e as KeyboardEvent)) return false;
+
+  // 2. コンテキスト文字列をキャッシュから取得（Statusセグメントのみここでリアルタイム評価）
+  const context = TTApplication.Instance.GetContext();
+
+  // 3. イベントID生成 → Actionルックアップ（キャッシュ使用）
+  const actionId = this.LookupAction(context, type, e);
+  if (!actionId) return false;
+
+  // 4. Action実行
+  const action = TTModels.Instance.Actions.GetItem(actionId);
+  return action?.Invoke({ ...contextFromEvent(e) }) ?? false;
+}
+```
+
+**コンテキスト文字列生成（GetContext）**:
+```ts
+GetContext(): string {
+  const col = this.ActiveColumn;
+  const colType = ['Left','Center','Right'][this.ActiveColumnIndex];
+  const panel = col.FocusedPanel;       // DataGrid / WebView / TextEditor
+  const tool = col.FocusedTool;         // Main / Tool
+  const status = this.GetStatusFlags(); // 例: 'ChatMode' or '*'
+  return `${colType}-${panel}-${tool}-${status}`;
+}
+```
+
+**検証**: DataGridにフォーカスした状態で `Ctrl+D` → 選択アイテムが削除されることを確認。TextEditor フォーカス時は通常文字入力が阻害されないことを確認。
+
+---
+
+#### Phase 21-D: ContextMenu / コマンドパレット
+
+**目標**: 右クリックメニューとコマンドパレットを状態ドリブンで表示する。
+
+**新規作成ファイル**:
+- `src/components/UI/ContextMenu.tsx` - ContextMenuコンポーネント（`TTApplication.ContextMenu` を描画）
+- `src/components/UI/CommandPalette.tsx` - コマンドパレットコンポーネント（`TTApplication.CommandPalette` を描画）
+
+**修正ファイル**:
+- `src/views/TTApplication.ts` - `ShowContextMenu(x, y)` / `HideContextMenu()` / `ShowCommandPalette()` メソッド実装（`NotifyUpdated()` で React に通知）
+- `src/controllers/actions/ApplicationActions.ts` - `Application.ContextMenu.Show` / `Application.CommandPalette.Show` アクション追加
+- `src/components/Layout/AppLayout.tsx` - `<ContextMenu>` / `<CommandPalette>` コンポーネントを描画
+- `ui-design/menus.tsv` - ContextMenu 項目を定義（`codegen-ui` で生成）
+
+**メニュー項目生成方針**:
+- `menus.tsv` にコンテキスト別メニュー定義を記載
+- `ShowContextMenu()` 呼び出し時に現在のコンテキスト文字列でフィルタして表示項目を決定
+
+**検証**: DataGrid 右クリック → コンテキストメニューが表示され「削除」等が動作することを確認。状態（ChatMode等）に応じてメニュー項目が変化することを確認。
+
+---
+
+#### Phase 21-E: 動作確認アクション実装
+
+**目標**: Phase 21-A〜D の仕組みを使い、具体的なアクションを複数実装して全体動作を検証する。
+
+**実装するアクション（初期セット）**:
+| ActionID | 説明 | Event |
+|----------|------|-------|
+| `Application.Column.FocusNext` | 次の列にフォーカス | `Ctrl+Tab` |
+| `Application.Column.FocusPrev` | 前の列にフォーカス | `Ctrl+Shift+Tab` |
+| `DataGrid.Item.Selected.Remove` | 選択アイテム削除 | `Delete`（DataGrid） |
+| `DataGrid.Item.Checked.Remove` | チェックアイテム削除 | `Ctrl+Shift+Delete` |
+| `TextEditor.Item.Save` | エディタ保存 | `Ctrl+S`（TextEditor） |
+| `Application.ContextMenu.Show` | コンテキストメニュー表示 | 右クリック |
+| `Application.CommandPalette.Show` | コマンドパレット表示 | `Ctrl+P` |
+
+**ui-design/events.tsv（初期セット）**:
+```tsv
+# Context	Mods	Key	ActionID	Comment
+*-*-*-*	Control	Tab	Application.Column.FocusNext	次の列
+*-*-*-*	Control+Shift	Tab	Application.Column.FocusPrev	前の列
+*-DataGrid-Main-*		Delete	DataGrid.Item.Selected.Remove	選択削除
+*-DataGrid-Main-*	Control+Shift	Delete	DataGrid.Item.Checked.Remove	チェック削除
+*-TextEditor-Main-*	Control	S	TextEditor.Item.Save	保存
+*-*-*-*	Control	P	Application.CommandPalette.Show	コマンドパレット
+```
+
+**検証**:
+1. `npm run codegen-ui` → `EventsGenerated.ts` 生成を確認
+2. 各ショートカットが期待通りに動作することを確認
+3. TSVに1行追加 → `codegen-ui` 実行 → 新ショートカットが即座に有効になることを確認
+4. コマンドパレット（`Ctrl+P`）でアクション一覧が表示されることを確認
 
 ---
 
