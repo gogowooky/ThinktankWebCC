@@ -16,6 +16,11 @@ export interface KnowledgeCategory {
   localCategory: string;
   /** BQ側のカテゴリ名（例: 'Memo'）。省略時はlocalCategoryと同じ */
   remoteCategory?: string;
+  /**
+   * true のとき BQ→local の取得のみ行い、local→BQ のプッシュは行わない。
+   * 旧カテゴリ名との互換読み込みなど、移行専用の同期に使用する。
+   */
+  readOnly?: boolean;
 }
 
 export class TTKnowledge extends TTDataCollection {
@@ -50,11 +55,11 @@ export class TTKnowledge extends TTDataCollection {
     try {
       let totalLoaded = 0;
 
-      for (const { localCategory, remoteCategory } of this.SyncCategories) {
+      for (const { localCategory, remoteCategory, readOnly } of this.SyncCategories) {
         const bqCategory = remoteCategory || localCategory;
 
         const records = storageManager.isRemoteAvailable
-          ? await storageManager.syncCategory(localCategory, bqCategory)
+          ? await storageManager.syncCategory(localCategory, bqCategory, { pushToRemote: !readOnly })
           : await storageManager.listFiles(localCategory);
 
         for (const record of records) {

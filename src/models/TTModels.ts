@@ -65,12 +65,12 @@ export class TTModels extends TTCollection {
     this.Knowledge.ColumnMapping = 'ID:ID,Name:タイトル,ContentType:種別,UpdateDate:更新日時';
     this.Knowledge.ColumnMaxWidth = 'ID:18,Name:50,ContentType:6,UpdateDate:18';
     // 統合対象カテゴリ:
-    //   memos  ← BQ:'Memo'  （旧アプリ互換）
-    //   chats  ← BQ:'Chats' （移行期: 旧カテゴリ名で保存されたBQデータを吸収）
-    //   chats  ← BQ:'chats' （新カテゴリ名、新規保存分）
+    //   memos  ← BQ:'Memo'  （旧アプリ互換。BQカテゴリ名が'Memo'なので双方向同期）
+    //   chats  ← BQ:'Chats' （移行期: 旧カテゴリ名のデータを吸収するだけ。プッシュ不要）
+    //   chats  ← BQ:'chats' （新カテゴリ名。双方向同期）
     this.Knowledge.SyncCategories = [
       { localCategory: 'memos', remoteCategory: 'Memo' },
-      { localCategory: 'chats', remoteCategory: 'Chats' },
+      { localCategory: 'chats', remoteCategory: 'Chats', readOnly: true },
       { localCategory: 'chats', remoteCategory: 'chats' },
     ];
 

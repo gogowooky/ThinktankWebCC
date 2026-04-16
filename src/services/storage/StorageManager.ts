@@ -175,18 +175,26 @@ export class StorageManager {
    * 1. IndexedDBからカテゴリのローカルデータ取得
    * 2. BQからバージョン情報のみ取得（file_id + updated_at、contentなし → 軽量）
    * 3. file_idごとにupdated_atを比較し、差分を特定:
-   *    - ローカルが新しい or 同じ → スキップ
+   *    - ローカルが新しい or 同じ → スキップ（pushToRemote時はBQへ送信）
    *    - リモートが新しい → 要取得リストに追加
    *    - リモートのみ存在 → 要取得リストに追加
+   *    - ローカルのみ存在 → pushToRemote時はBQへ送信
    * 4. 差分のfile_idのみBQからcontent付きで一括取得
    * 5. マージ結果をIndexedDBに保存
+   * 6. ローカルが新しい or ローカルのみのレコードをBQへ送信（pushToRemote=true時）
    *
    * @param localCategory IndexedDB側のカテゴリ名（例: 'memos'）
    * @param remoteCategory BQ側のカテゴリ名（例: 'Memo'）。省略時はlocalCategoryと同じ
+   * @param options.pushToRemote ローカルが新しいレコードをBQへ送信するか（デフォルト: true）
    * @returns マージ後のレコード一覧
    */
-  async syncCategory(localCategory: string, remoteCategory?: string): Promise<FileRecord[]> {
+  async syncCategory(
+    localCategory: string,
+    remoteCategory?: string,
+    options?: { pushToRemote?: boolean }
+  ): Promise<FileRecord[]> {
     const bqCategory = remoteCategory || localCategory;
+    const pushToRemote = options?.pushToRemote !== false; // デフォルト true
 
     // 1. ローカルデータ取得
     const localRecords = await this.local.listFiles(localCategory);
@@ -210,8 +218,14 @@ export class StorageManager {
       const remoteVersions: { file_id: string; updated_at: unknown }[] = versionData.versions || [];
 
       if (remoteVersions.length === 0 && localRecords.length === 0) {
-        console.log(`[StorageManager] syncCategory(${localCategory}←${bqCategory}): empty on both sides`);
+        console.log(`[StorageManager] syncCategory(${localCategory}↔${bqCategory}): empty on both sides`);
         return [];
+      }
+
+      // BQ側のバージョンマップを構築（ローカル優先判定用）
+      const remoteVersionMap = new Map<string, number>();
+      for (const rv of remoteVersions) {
+        remoteVersionMap.set(rv.file_id, new Date(this.normalizeBqTimestamp(rv.updated_at)).getTime());
       }
 
       // 3. 差分を特定: リモートが新しい or リモートのみ存在 → 要取得
@@ -219,7 +233,7 @@ export class StorageManager {
       let localWins = 0;
 
       for (const rv of remoteVersions) {
-        const remoteTime = new Date(this.normalizeBqTimestamp(rv.updated_at)).getTime();
+        const remoteTime = remoteVersionMap.get(rv.file_id)!;
         const localRec = localMap.get(rv.file_id);
 
         if (!localRec) {
@@ -235,10 +249,29 @@ export class StorageManager {
           }
         }
       }
+
+      // ローカルのみ存在 or ローカルが新しいレコードを特定（BQへ送信用）
+      const pushRecords: FileRecord[] = [];
+      if (pushToRemote) {
+        for (const localRec of localRecords) {
+          const remoteTime = remoteVersionMap.get(localRec.file_id);
+          if (remoteTime === undefined) {
+            // ローカルのみ存在 → BQへ送信
+            pushRecords.push(localRec);
+          } else {
+            const localTime = new Date(localRec.updated_at).getTime();
+            if (localTime > remoteTime) {
+              // ローカルが新しい → BQへ送信
+              pushRecords.push(localRec);
+            }
+          }
+        }
+      }
+
       console.log(
-        `[StorageManager] syncCategory(${localCategory}←${bqCategory}): ` +
+        `[StorageManager] syncCategory(${localCategory}↔${bqCategory}): ` +
         `BQ has ${remoteVersions.length}, local has ${localRecords.length}, ` +
-        `need fetch: ${needFetchIds.length}, local wins: ${localWins}`
+        `BQ→local: ${needFetchIds.length}, local→BQ: ${pushRecords.length}, local wins (no change): ${localWins}`
       );
 
       // 4. 差分のみBQからcontent付きで取得
@@ -283,7 +316,19 @@ export class StorageManager {
           `saved to IndexedDB`
         );
       } else {
-        console.log(`[StorageManager] syncCategory: no changes needed, all up to date`);
+        console.log(`[StorageManager] syncCategory: BQ→local: no changes needed`);
+      }
+
+      // 6. ローカルが新しい or ローカルのみのレコードをBQへ非同期送信
+      if (pushRecords.length > 0) {
+        // BQのカテゴリ名に変換してから送信
+        const remoteRecords = pushRecords.map(r => ({ ...r, category: bqCategory, _dirty: undefined }));
+        this.remote.bulkSave(remoteRecords as FileRecord[]).then(() => {
+          this.local.clearDirtyBatch(pushRecords.map(r => r.file_id));
+          console.log(`[StorageManager] syncCategory: pushed ${pushRecords.length} local records to BQ(${bqCategory})`);
+        }).catch(error => {
+          console.warn(`[StorageManager] syncCategory: push to BQ(${bqCategory}) failed:`, error);
+        });
       }
 
       // ローカルのみ存在するレコードも含めた全件を返す
