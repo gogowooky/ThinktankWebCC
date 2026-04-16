@@ -13,6 +13,8 @@ import { KEYWORD_COLORS } from '../../utils/editorHighlight';
 import { highlightTextSpans } from '../../utils/highlightSpans';
 import { toFullUrl, buildMarkdownUrl, parseViewUrl } from '../../utils/webviewUrl';
 import { markdownToHtml } from '../../utils/markdownToHtml';
+import { obsidianService, OBSIDIAN_DEFAULT_URL } from '../../services/ObsidianService';
+import { storageManager } from '../../services/storage/StorageManager';
 import type { PanelType, HighlightTargets } from '../../types';
 import './TTColumnView.css';
 
@@ -153,7 +155,8 @@ const ASSIST_COMMANDS: { command: string; description: string }[] = [
   { command: '/Search <keywords>',  description: 'チェック済みアイテムを全文検索' },
   { command: '/Status',             description: '全TTStateの状態一覧をnoteに表示' },
   { command: '/Markdown [id]',      description: 'MarkdownをWebViewにHTML表示' },
-  { command: '/SyncObsidian',       description: 'Obsidian Vault を obsidian 種別として同期' },
+  { command: '/SyncObsidian',            description: 'Obsidian Vault を obsidian 種別として同期' },
+  { command: '/SyncObsidian set <token> [url]', description: 'Obsidian API のトークン（と URL）を設定' },
 ];
 
 /** AssistBar 専用入力
@@ -794,61 +797,117 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
 
   /**
    * /SyncObsidian コマンド処理
-   * サーバーの OBSIDIAN_VAULT_PATH にある .md ファイルを BQ へ同期し、
-   * TTKnowledge に obsidian 種別として取り込む。
+   *
+   * 引数なし            : Obsidian Local REST API で Vault を同期
+   * set <token> [url]  : API トークン（と URL）を設定して同期
+   *
+   * Obsidian Local REST API プラグインが必要:
+   *   https://github.com/coddingtonbear/obsidian-local-rest-api
    */
-  const handleSyncObsidian = useCallback(async () => {
+  const handleSyncObsidian = useCallback(async (args: string) => {
     const collection = column.GetCurrentCollection();
     if (!collection) return;
 
-    // 結果表示用の note アイテムを作成（同期中はプログレスメッセージを表示）
     const collectionId =
       collection.GetDataItems().find(it => it.ContentType === 'memo' || it.ContentType === 'note')?.CollectionID ||
       collection.HandledCategories[0] ||
       collection.DatabaseID ||
       collection.ID;
 
-    const resultItem = new TTDataItem();
-    resultItem.ContentType = 'note';
-    resultItem.CollectionID = collectionId;
-    resultItem.Content = '# Obsidian 同期中...\n\nVault からデータを読み込んでいます。しばらくお待ちください。';
+    const makeNote = (content: string) => {
+      const item = new TTDataItem();
+      item.ContentType = 'note';
+      item.CollectionID = collectionId;
+      item.Content = content;
+      collection.AddItem(item);
+      column.SelectedItemID = item.ID;
+      return item;
+    };
 
-    collection.AddItem(resultItem);
-    column.SelectedItemID = resultItem.ID;
+    // ── /SyncObsidian set <token> [url] ──────────────────────────────────────
+    const setMatch = args.match(/^set\s+(\S+)(?:\s+(\S+))?$/i);
+    if (setMatch) {
+      const token = setMatch[1];
+      const url   = setMatch[2] || OBSIDIAN_DEFAULT_URL;
+      obsidianService.saveConfig(url, token);
+      const note = makeNote(
+        `# Obsidian API 設定完了\n\n- URL: \`${url}\`\n- Token: 設定済み\n\nそのまま同期を実行します…`
+      );
+      // 設定直後にそのまま同期実行
+      await note.SaveContent();
+      args = ''; // fall through to sync
+    }
+
+    // ── /SyncObsidian（同期） ────────────────────────────────────────────────
+    const config = obsidianService.getConfig();
+    if (!config) {
+      makeNote([
+        '# Obsidian API が未設定です',
+        '',
+        '以下のコマンドで API トークンを設定してください:',
+        '',
+        '```',
+        '/SyncObsidian set <APIトークン>',
+        '```',
+        '',
+        '`[url]` は省略可（デフォルト: `https://127.0.0.1:27123`）。',
+        '',
+        '## セットアップ手順',
+        '1. Obsidian の Community Plugins から **Local REST API** をインストール',
+        '2. プラグインの設定画面で **API Key** をコピー',
+        '3. 上記コマンドを AssistBar で実行',
+        '',
+        '> **HTTPS 証明書について**',
+        '> ブラウザで `https://127.0.0.1:27123` を一度開き、',
+        '> 自己署名証明書を許可してから同期してください。',
+      ].join('\n'));
+      return;
+    }
+
+    // プログレス表示用の note を作成
+    const resultItem = makeNote('# Obsidian 同期中...\n\nVault のファイルを確認しています。');
 
     try {
-      // 1. サーバー側で Vault → BQ 同期
-      const res = await fetch('/api/obsidian/sync', { method: 'POST' });
-      const data = await res.json() as {
-        synced: number; unchanged: number; total: number;
-        errors: string[]; vaultPath?: string; error?: string;
-      };
+      // Vault → FileRecord 一覧を構築（差分のみ）
+      const syncResult = await obsidianService.buildSyncRecords(
+        (current, total) => {
+          resultItem.Content = `# Obsidian 同期中...\n\n${current} / ${total} ファイル確認済み`;
+        },
+      );
 
-      if (!res.ok) {
-        resultItem.Content = `# Obsidian 同期エラー\n\n${data.error ?? '不明なエラー'}`;
-        await resultItem.SaveContent();
-        return;
+      // IndexedDB へ保存 + TTKnowledge のインメモリコレクションへ即時反映
+      const knowledge = TTModels.Instance.Knowledge;
+      for (const record of syncResult.records) {
+        await storageManager.saveFile(record);
+        knowledge.AddOrUpdateFromRecord(record);
       }
 
-      // 2. BQ → IndexedDB → TTKnowledge に反映
-      await TTModels.Instance.Knowledge.LoadCache();
-
-      // 3. 結果サマリーを表示
+      // 結果サマリーを表示
       const lines: string[] = [
         '# Obsidian 同期完了',
         '',
-        `- Vault: \`${data.vaultPath ?? '(不明)'}\``,
-        `- 総ファイル数: ${data.total}`,
-        `- 新規/更新: ${data.synced}`,
-        `- 変更なし: ${data.unchanged}`,
+        `- 総ファイル数: ${syncResult.total}`,
+        `- 新規/更新: ${syncResult.synced}`,
+        `- 変更なし: ${syncResult.unchanged}`,
+        `- API URL: \`${config.url}\``,
       ];
-      if (data.errors && data.errors.length > 0) {
-        lines.push('', '## エラー', ...data.errors.map(e => `- ${e}`));
+      if (syncResult.errors.length > 0) {
+        lines.push('', '## エラー', ...syncResult.errors.map(e => `- ${e}`));
       }
       resultItem.Content = lines.join('\n');
       await resultItem.SaveContent();
     } catch (err) {
-      resultItem.Content = `# Obsidian 同期エラー\n\n${err instanceof Error ? err.message : String(err)}`;
+      const msg = err instanceof Error ? err.message : String(err);
+      resultItem.Content = [
+        '# Obsidian 同期エラー',
+        '',
+        msg,
+        '',
+        '**接続できない場合のチェック:**',
+        '- Obsidian が起動中か確認してください',
+        '- Local REST API プラグインが有効か確認してください',
+        `- ブラウザで \`${config.url}\` を開いて証明書を許可してください`,
+      ].join('\n');
       await resultItem.SaveContent();
     }
   }, [column]);
@@ -1027,8 +1086,9 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
       if (rest) await handleChatSend(rest);
       return;
     }
-    if (trimmedLower === '/syncobsidian') {
-      await handleSyncObsidian();
+    if (trimmedLower.startsWith('/syncobsidian')) {
+      const rest = trimmed.slice('/SyncObsidian'.length).trim();
+      await handleSyncObsidian(rest);
       return;
     }
 
