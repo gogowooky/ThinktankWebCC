@@ -16,6 +16,7 @@ import { createBigQueryRoutes } from './routes/bigqueryRoutes.js';
 import { createChatRoutes } from './routes/chatRoutes.js';
 import { createFetchRoutes } from './routes/fetchRoutes.js';
 import { createViewRoutes } from './routes/viewRoutes.js';
+import { createObsidianRoutes } from './routes/obsidianRoutes.js';
 import { bigqueryService } from './services/BigQueryService.js';
 import { chatService } from './services/ChatService.js';
 import { authMiddleware, authRoutes } from './middleware/authMiddleware.js';
@@ -39,6 +40,7 @@ app.use(express.static(path.join(projectRoot, 'dist')));
 // API routes
 app.use('/api/bq', createBigQueryRoutes());
 app.use('/api/chat', createChatRoutes());
+app.use('/api/obsidian', createObsidianRoutes());
 app.use('/api', createFetchRoutes());
 
 // View routes (content rendering for WebView iframe / browser)

@@ -153,6 +153,7 @@ const ASSIST_COMMANDS: { command: string; description: string }[] = [
   { command: '/Search <keywords>',  description: 'チェック済みアイテムを全文検索' },
   { command: '/Status',             description: '全TTStateの状態一覧をnoteに表示' },
   { command: '/Markdown [id]',      description: 'MarkdownをWebViewにHTML表示' },
+  { command: '/SyncObsidian',       description: 'Obsidian Vault を obsidian 種別として同期' },
 ];
 
 /** AssistBar 専用入力
@@ -791,6 +792,67 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     column.SelectedItemID = newItem.ID;
   }, [column]);
 
+  /**
+   * /SyncObsidian コマンド処理
+   * サーバーの OBSIDIAN_VAULT_PATH にある .md ファイルを BQ へ同期し、
+   * TTKnowledge に obsidian 種別として取り込む。
+   */
+  const handleSyncObsidian = useCallback(async () => {
+    const collection = column.GetCurrentCollection();
+    if (!collection) return;
+
+    // 結果表示用の note アイテムを作成（同期中はプログレスメッセージを表示）
+    const collectionId =
+      collection.GetDataItems().find(it => it.ContentType === 'memo' || it.ContentType === 'note')?.CollectionID ||
+      collection.HandledCategories[0] ||
+      collection.DatabaseID ||
+      collection.ID;
+
+    const resultItem = new TTDataItem();
+    resultItem.ContentType = 'note';
+    resultItem.CollectionID = collectionId;
+    resultItem.Content = '# Obsidian 同期中...\n\nVault からデータを読み込んでいます。しばらくお待ちください。';
+
+    collection.AddItem(resultItem);
+    column.SelectedItemID = resultItem.ID;
+
+    try {
+      // 1. サーバー側で Vault → BQ 同期
+      const res = await fetch('/api/obsidian/sync', { method: 'POST' });
+      const data = await res.json() as {
+        synced: number; unchanged: number; total: number;
+        errors: string[]; vaultPath?: string; error?: string;
+      };
+
+      if (!res.ok) {
+        resultItem.Content = `# Obsidian 同期エラー\n\n${data.error ?? '不明なエラー'}`;
+        await resultItem.SaveContent();
+        return;
+      }
+
+      // 2. BQ → IndexedDB → TTKnowledge に反映
+      await TTModels.Instance.Knowledge.LoadCache();
+
+      // 3. 結果サマリーを表示
+      const lines: string[] = [
+        '# Obsidian 同期完了',
+        '',
+        `- Vault: \`${data.vaultPath ?? '(不明)'}\``,
+        `- 総ファイル数: ${data.total}`,
+        `- 新規/更新: ${data.synced}`,
+        `- 変更なし: ${data.unchanged}`,
+      ];
+      if (data.errors && data.errors.length > 0) {
+        lines.push('', '## エラー', ...data.errors.map(e => `- ${e}`));
+      }
+      resultItem.Content = lines.join('\n');
+      await resultItem.SaveContent();
+    } catch (err) {
+      resultItem.Content = `# Obsidian 同期エラー\n\n${err instanceof Error ? err.message : String(err)}`;
+      await resultItem.SaveContent();
+    }
+  }, [column]);
+
   /** TextEditor 💬 ボタン: チャットモードに入る（コンテキストは初回送信時に自動添付） */
   const handleStartChat = useCallback(() => {
     column.enterChatMode();
@@ -965,6 +1027,10 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
       if (rest) await handleChatSend(rest);
       return;
     }
+    if (trimmedLower === '/syncobsidian') {
+      await handleSyncObsidian();
+      return;
+    }
 
     // コマンド以外のテキスト → チャットモードに入り自動送信
     // すでにチャットモードの場合はリセットせずそのまま追加送信
@@ -975,7 +1041,7 @@ export function TTColumnView({ column, width, height }: TTColumnViewProps) {
     }
 
     // 未知のスラッシュコマンド → 無視
-  }, [column, handleSelectToNote, handleCreateSearchList, handleCreateStatusNote, handleBrowseMarkdown, handleChatSend]);
+  }, [column, handleSelectToNote, handleCreateSearchList, handleCreateStatusNote, handleBrowseMarkdown, handleChatSend, handleSyncObsidian]);
 
   // Splitter2本(8px)のみ固定。残り全体を3パネルで比率分割
   const splitterTotal = 8;
