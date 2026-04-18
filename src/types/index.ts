@@ -72,6 +72,61 @@ export interface SyncStatus {
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
+// #region コンテンツ種別
+// ════════════════════════════════════════════════════════════════════════
+
+/** TTDataItem のコンテンツ種別 */
+export type ContentType =
+  | 'memo'   // テキストメモ
+  | 'chat'   // AIチャット会話
+  | 'file'   // 添付ファイル
+  | 'photo'  // 写真
+  | 'email'  // メール
+  | 'drive'  // Google Drive リンク
+  | 'url';   // URL
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
+// #region アクション関連
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * アクション実行時のコンテキスト情報
+ * Phase 30 以降で拡張予定
+ */
+export interface ActionContext {
+  Mods?: string[];      // 修飾キー（例: ['Control', 'Shift']）
+  Key?: string;         // キー（例: 'S', 'ENTER'）
+  Sender?: unknown;     // 呼び出し元
+  [key: string]: unknown;
+}
+
+/** アクションのスクリプト関数型 */
+export type ActionScript =
+  (context: ActionContext) => void | boolean | Promise<void | boolean>;
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
+// #region 状態管理関連
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * TTState の設定オブジェクト
+ * Phase 30 以降で Apply / Watch / Calculate を活用予定
+ */
+export interface TTStateConfig {
+  Default?: (id: string) => string;
+  Test?: (id: string, value: string) => boolean;
+  Apply?: (id: string, value: string) => void;
+  Watch?: (id: string) => void;
+  Calculate?: (id: string) => string;
+}
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
 // #region ユーティリティ型
 // ════════════════════════════════════════════════════════════════════════
 
