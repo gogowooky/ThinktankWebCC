@@ -30,14 +30,16 @@ function runPhase2Tests(): TestResult[] {
   pass('TTObject: インスタンス生成', `ID=${obj.ID}, Name=${obj.Name}`)
 
   // 2. Observer 通知
+  // getNowString() は秒精度のため、同一秒内に呼ぶと UpdateDate が変化しない場合がある。
+  // テスト前に既知の過去日時を代入して変化を確実に検出する。
   let notified = 0
   obj.AddOnUpdate('test', () => { notified++ })
-  const dateBefore = obj.UpdateDate
+  obj.UpdateDate = '2000-01-01-000000'  // 過去の既知値にリセット
   obj.NotifyUpdated()
-  if (notified === 1 && obj.UpdateDate !== dateBefore) {
+  if (notified === 1 && obj.UpdateDate !== '2000-01-01-000000') {
     pass('TTObject: Observer 通知 + UpdateDate 更新', `UpdateDate=${obj.UpdateDate}`)
   } else {
-    fail('TTObject: Observer 通知', `notified=${notified}, date変化=${obj.UpdateDate !== dateBefore}`)
+    fail('TTObject: Observer 通知', `notified=${notified}, date変化=${obj.UpdateDate !== '2000-01-01-000000'}`)
   }
 
   // 3. Observer 削除
