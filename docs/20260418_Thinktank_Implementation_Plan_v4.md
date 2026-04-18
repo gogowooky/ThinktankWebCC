@@ -448,13 +448,178 @@ dotnet build ThinktankLocal.sln
 
 **目標**: Observerパターンの基底クラスとコレクション管理クラスを実装する。
 
-**新規作成**:
-- `src/models/TTObject.ts`
-- `src/models/TTCollection.ts`
-- `src/utils/csv.ts`
-- `src/types/index.ts`（`ItemMeta`, `FileRecord`, `SyncStatus`, `AppMode` 型定義を含む）
+---
 
-**検証**: コンソールでCRUDとObserver通知が動作する。
+#### 新規作成ファイルと実装仕様
+
+**`src/types/index.ts`**
+
+以下の型をすべて定義する:
+
+```typescript
+export type AppMode = 'pwa' | 'local';
+export type CsvValue = string | undefined | null;  // csv.ts が import して使用
+
+// 同期状態の種類（SyncStatus.state に使用）
+export type SyncState = 'synced' | 'syncing' | 'pending' | 'offline' | 'error' | 'conflict';
+
+export interface ItemMeta {
+  file_id: string; title: string; updated_at: string; created_at: string;
+  file_type: string; category: string;
+  is_meta_only: boolean; is_deleted: boolean;
+  device_id: string; sync_version: number;
+}
+
+export interface FileRecord extends ItemMeta {
+  content: string; keywords: string; related_ids: string;
+  size_bytes: number; metadata?: Record<string, unknown>;
+}
+
+export interface SyncStatus {
+  state: SyncState;      // ← SyncState を別型として定義すること（SyncIndicator が参照）
+  pendingCount: number;
+  isSyncing: boolean; isOnline: boolean;
+  lastSyncAt: string | null; errorMessage?: string;
+}
+```
+
+---
+
+**`src/models/TTObject.ts`**
+
+```typescript
+export class TTObject {
+  public _parent: TTObject | null = null;
+  public ID: string = '';
+  public Name: string = '';
+  public UpdateDate: string = '';
+  private _updateListeners: Map<string, () => void> = new Map();
+
+  constructor() { /* ID / Name / UpdateDate を初期化 */ }
+
+  public get ClassName(): string { return 'TTObject'; }
+
+  /**
+   * updateDate=true（デフォルト）のとき UpdateDate を更新してから通知する。
+   * 親への伝播時は false を渡して二重更新を防ぐ。
+   */
+  public NotifyUpdated(updateDate: boolean = true): void {
+    if (updateDate) this.UpdateDate = this.getNowString();
+    this._updateListeners.forEach(cb => cb());
+    if (this._parent) this._parent.NotifyUpdated(false);  // ← false が重要
+  }
+
+  public AddOnUpdate(key: string, callback: () => void): void { ... }
+  public RemoveOnUpdate(key: string): void { ... }
+
+  /** 登録済みObserverキー一覧（デバッグ用） */
+  public get ListenerKeys(): string[] {
+    return Array.from(this._updateListeners.keys());
+  }
+
+  protected getNowString(): string { /* "yyyy-MM-dd-HHmmss" */ }
+}
+```
+
+> ⚠ 親伝播は `this._parent.NotifyUpdated(false)` で呼ぶこと。`true`（デフォルト）で呼ぶと、子が保存されるたびに親の `UpdateDate` も書き変わり、無限ループと誤ったタイムスタンプを引き起こす。
+
+---
+
+**`src/models/TTCollection.ts`**
+
+> ⚠ **StorageManager 依存を持たない設計**。`SaveCache` / `LoadCache` を StorageManager に接続するのは Phase 13 で行う。Phase 2 では `LoadCache` / `FlushCache` は stub（空実装）とする。
+
+```typescript
+export class TTCollection extends TTObject {
+  protected _children: Map<string, TTObject> = new Map();
+  public Count: number = 0;
+  public IsLoaded: boolean = false;
+
+  // 設定プロパティ（Phase 13: StorageManager 連携時に使用）
+  public ItemSaveProperties: string = '';  // 保存対象プロパティ（カンマ区切り）
+  public ListPropertiesMin: string = '';
+  public ListProperties: string = '';
+
+  // ── CRUD ──────────────────────────────────────────
+  public GetItem(id: string): TTObject | undefined { ... }
+  public AddItem(item: TTObject): TTObject { /* item._parent = this を設定 */ }
+  public DeleteItem(id: string): void { /* item._parent = null を設定 */ }
+  public GetItems(): TTObject[] { ... }
+  public ClearItems(): void { /* 全アイテムの _parent = null */ }
+
+  // ── CSV シリアライズ（StorageManager 非依存） ──────
+  /**
+   * ItemSaveProperties に指定したプロパティを CSV 文字列に変換する。
+   * Phase 13 の FlushCache 実装時にこのメソッドを呼び出す。
+   */
+  public SerializeToCsv(): string { ... }
+
+  /**
+   * CSV 文字列からアイテムを復元する。
+   * 完了後に super.NotifyUpdated(false) を呼ぶ（保存トリガーなしで View のみ更新）。
+   */
+  public DeserializeFromCsv(content: string): void { ... }
+
+  // ── ストレージフック（Phase 13 でオーバーライド） ──
+  public async LoadCache(): Promise<void> { this.IsLoaded = true; }  // stub
+  public async FlushCache(): Promise<void> { /* Phase 13 で実装 */ } // stub
+
+  protected CreateChildInstance(): TTObject { return new TTObject(); }
+}
+```
+
+---
+
+**`src/utils/csv.ts`**
+
+`CsvValue` を `'../types'` から import して使用する（インライン定義しない）。
+
+```typescript
+import type { CsvValue } from '../types';
+
+export function toCsvValue(val: CsvValue): string { ... }
+export function toCsv(items: Record<string, unknown>[], properties: string[]): string { ... }
+export function parseCsv(content: string): string[][] { ... }
+export function parseCsvToObjects<T extends Record<string, string>>(content: string): T[] { ... }
+```
+
+---
+
+**`src/App.tsx`（Phase 2 検証ページ）**
+
+`useEffect` で `runPhase2Tests()` を呼び、結果を画面とコンソールの両方に出力する。
+
+テスト項目（10項目）:
+1. TTObject インスタンス生成
+2. Observer 通知 + UpdateDate 更新
+3. Observer 削除後に通知されないこと
+4. TTCollection AddItem × 3（Count / `_parent` 設定）
+5. GetItem
+6. DeleteItem
+7. 子 → 親 Observer 伝播（item.NotifyUpdated() → col が受信）
+8. GetItems
+9. SerializeToCsv / DeserializeFromCsv の往復（Count・IsLoaded・値の一致）
+10. ClearItems（Count=0 / `_parent=null`）
+
+---
+
+**検証**:
+
+```bash
+# 型チェック
+npx tsc --noEmit
+# → エラーなし
+
+# ビルド確認
+npx vite build
+# → ✓ built in ~1s（エラーなし）
+
+# 開発サーバー
+npm run dev
+# → ブラウザで Phase 2 検証ページが表示される
+# → "10 / 10 テスト通過" が画面に表示される
+# → DevTools コンソールに "[Phase 2] TTObject / TTCollection 検証" グループが表示される
+```
 
 ---
 
