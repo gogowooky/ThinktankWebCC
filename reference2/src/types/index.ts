@@ -4,151 +4,112 @@
  */
 
 // ════════════════════════════════════════════════════════════════════════
-// #region Panel 関連
+// Column 関連
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * パネルの表示モード
- */
-export type PanelMode = 'Editor' | 'Table' | 'WebView';
+/** 列インデックス */
+export type ColumnIndex = 0 | 1 | 2;
+
+/** 列パネル種別 */
+export type PanelType = 'DataGrid' | 'WebView' | 'TextEditor';
 
 /**
- * パネルのツール（フォーカス対象）
+ * パネルツール（フォーカス対象）
+ * Main: パネルのメインコンテンツエリア
+ * Tool: パネルのツール入力エリア（DataGrid=Filter / WebView=Assist / TextEditor=Highlight）
  */
-export type PanelTool = 'Main' | 'Keyword';
-
-/**
- * パネル名
- */
-export type PanelName = 'Library' | 'Index' | 'Shelf' | 'Desk' | 'System' | 'Chat' | 'Log';
-
-/**
- * すべてのパネル名の配列
- */
-export const PanelNames: readonly PanelName[] = ['Library', 'Index', 'Shelf', 'Desk', 'System', 'Chat', 'Log'] as const;
-
-/**
- * すべてのモードの配列
- */
-export const PanelModes: readonly PanelMode[] = ['Editor', 'Table', 'WebView'] as const;
-
-/**
- * すべてのツールの配列
- */
-export const PanelTools: readonly PanelTool[] = ['Main', 'Keyword'] as const;
-
-// #endregion
+export type PanelTool = 'Main' | 'Tool';
 
 // ════════════════════════════════════════════════════════════════════════
-// #region Action 関連
+// Action 関連
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * アクション実行時のコンテキスト情報
- */
+/** アクション実行時のコンテキスト */
 export interface ActionContext {
-    // イベント共通情報
-    /** 押されている修飾キーの配列 (例: ['Control', 'Shift']) */
-    Mods?: string[];
-    /** イベントキー (キーボード: 'A', 'ENTER'等 / マウス: 'LEFT1', 'RIGHT1', 'LINK', 'DROP'等) */
-    Key?: string;
-    /** 呼び出し元 */
-    Sender?: unknown;
-
-    // パネル参照情報（ExPanel-ActivePanel間アクション用）
-    /** ソースパネル名（情報を読み取る側。ExMode時=ExCurrentPanel, 通常時=ActivePanel）*/
-    SourcePanel?: string;
-    /** ターゲットパネル名（操作を実行する側。常にActivePanel）*/
-    TargetPanel?: string;
-
-    // マウス座標情報（オプショナル）
-    /** 画面X座標 */
-    ScreenX?: number;
-    /** 画面Y座標 */
-    ScreenY?: number;
-    /** ビューポート内X座標 */
-    ClientX?: number;
-    /** ビューポート内Y座標 */
-    ClientY?: number;
-
-    // リンククリック情報（オプショナル）
-    /** マッチしたTTRequest ID */
-    RequestID?: string;
-    /** マッチしたテキスト (RequestTag) */
-    RequestTag?: string;
-
-    // ドロップ情報（オプショナル）
-    /** ドロップされたデータ */
-    DroppedData?: unknown;
-
-    // その他の拡張用（後方互換性）
-    [key: string]: unknown;
+  /** 修飾キー (例: ['Control', 'Shift']) */
+  Mods?: string[];
+  /** イベントキー */
+  Key?: string;
+  /** 呼び出し元 */
+  Sender?: unknown;
+  /** ソース列インデックス */
+  SourceColumn?: ColumnIndex;
+  /** ターゲット列インデックス */
+  TargetColumn?: ColumnIndex;
+  /** 画面座標 */
+  ScreenX?: number;
+  ScreenY?: number;
+  ClientX?: number;
+  ClientY?: number;
+  /** リンク情報 */
+  RequestID?: string;
+  RequestTag?: string;
+  /** ドロップ情報 */
+  DroppedData?: unknown;
+  /** 拡張用 */
+  [key: string]: unknown;
 }
 
-/**
- * マウスイベントキーの型定義
- */
-export type MouseEventKey =
-    | 'LEFT1' | 'LEFT2' | 'LEFT3'   // 左クリック（シングル/ダブル/トリプル）
-    | 'RIGHT1'                       // 右クリック
-    | 'MIDDLE1'                      // 中クリック
-    | 'LINK'                         // リンククリック（TTRequest Determinantマッチ時）
-    | 'DROP'                         // ドロップイベント
-    | 'TAP1' | 'TAP2'               // タッチ（シングルタップ/ダブルタップ）
-    | 'LONGPRESS'                    // 長押し
-    | 'SWIPE_LEFT' | 'SWIPE_RIGHT'  // 水平スワイプ
-    | 'SWIPE_UP' | 'SWIPE_DOWN';    // 垂直スワイプ
-
-/**
- * アクションのスクリプト関数型
- */
+/** アクションスクリプト関数型 */
 export type ActionScript = (context: ActionContext) => void | boolean | Promise<void | boolean>;
 
-// #endregion
-
 // ════════════════════════════════════════════════════════════════════════
-// #region Table 関連
+// Table 関連
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * ソート方向
- */
+/** ソート方向 */
 export type SortDirection = 'asc' | 'desc';
 
-// #endregion
-
 // ════════════════════════════════════════════════════════════════════════
-// #region Status 関連
+// Highlight 関連
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * 状態設定のコンフィグ
- */
-export interface StateConfig {
-    /** デフォルト値を返す関数 */
-    Default?: (id: string) => string;
-    /** 値の妥当性をチェックする関数 */
-    Test?: (id: string, value: string) => boolean;
-    /** 値をビューに適用する関数 */
-    Apply?: (id: string, value: string) => void;
-    /** ビューの変更を監視する関数 */
-    Watch?: (id: string) => void;
+/** キーワードハイライトの適用対象設定 */
+export interface HighlightTargets {
+  /** パネルタイトル行 */
+  panelTitle: boolean;
+  /** DataGrid 本体（行データ） */
+  dataGrid: boolean;
+  /** WebView 本体（iframe 内テキスト） */
+  webView: boolean;
 }
 
-// #endregion
-
 // ════════════════════════════════════════════════════════════════════════
-// #region Utility 型
+// Status 関連
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * CSV の値（文字列または undefined）
- */
-export type CsvValue = string | undefined | null;
+/** 状態設定コンフィグ */
+export interface StateConfig {
+  Default?: (id: string) => string;
+  Test?: (id: string, value: string) => boolean;
+  Apply?: (id: string, value: string) => void;
+  Watch?: (id: string) => void;
+}
 
-/**
- * Record 型のキーを持つオブジェクトから、指定したプロパティの値を取得
- */
-export type PropertyValue<T, K extends keyof T> = T[K];
+// ════════════════════════════════════════════════════════════════════════
+// Chat 関連
+// ════════════════════════════════════════════════════════════════════════
 
-// #endregion
+/** チャットメッセージ */
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  isStreaming?: boolean;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// Content 関連
+// ════════════════════════════════════════════════════════════════════════
+
+/** コンテンツタイプ */
+export type ContentType = 'memo' | 'chat' | 'url' | 'file' | 'photo' | 'email' | 'drive' | 'note';
+
+// ════════════════════════════════════════════════════════════════════════
+// Utility 型
+// ════════════════════════════════════════════════════════════════════════
+
+/** CSV値型 */
+export type CsvValue = string | number | boolean | undefined | null;
+
+/** Observer コールバック型 */
+export type UpdateCallback = () => void;

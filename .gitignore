@@ -34,3 +34,8 @@ npm-debug.log*
 
 # Claude AI worktrees（Gitの追跡対象外）
 .claude/worktrees/
+
+# C# build artifacts
+bin/
+obj/
+*.user

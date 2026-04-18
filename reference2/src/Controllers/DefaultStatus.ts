@@ -1,31 +1,61 @@
+import type { TTModels } from '../models/TTModels';
+
 /**
- * DefaultStatus.ts
- * 状態管理変数の初期化エントリポイント
+ * DefaultStatus
  *
- * 各カテゴリの状態登録は Status/ 配下のファイルに分離されています。
- * どのカテゴリにも該当しない状態はこのファイルに直接追加してください。
+ * アプリケーション全体の初期状態を TTStatus に登録する。
+ * TTApplication.Initialize() から呼び出される。
  *
- * 記述ルール:
- * - RegisterState() の第一・第二パラメータは直接文字列を使用
- * - Default/Apply/Watch 関数本体内のみでヘルパー関数を使用可
+ * StateID 命名規則:
+ *   Application.*         - アプリ全体状態
+ *   Column{N}.*           - 列固有状態（N=0/1/2）
+ *   {StateID}             - グローバルモードフラグ（bool: 'true'/'false'）
+ *
+ * コンテキスト文字列での利用:
+ *   {ColumnType}-{PanelType}-{PanelTool}-{Status}
+ *   例: Left-DataGrid-Main-ChatMode  （ChatMode='true' の列でDataGridMainにフォーカス）
  */
+export function InitializeDefaultStatus(models: TTModels): void {
+  const s = models.Status;
 
-import { TTModels } from '../models/TTModels';
+  // ─── アプリケーション全体 ───────────────────────────────────────
 
-// 各カテゴリの登録関数
-import { registerApplicationStatus } from './Status/ApplicationStatus';
-import { registerEditorStatus } from './Status/EditorStatus';
-import { registerTableStatus } from './Status/TableStatus';
-import { registerAIStatus } from './Status/AIStatus';  // Phase 12
+  /** アクティブ列 (Column1/Column2/Column3) */
+  s.RegisterState(
+    'Application.ActiveColumn',
+    'アクティブ列',
+    'Column1',
+  );
 
-export function InitializeDefaultStatus(models: TTModels) {
-    // === 各カテゴリの状態を登録 ===
-    registerApplicationStatus(models);
-    registerEditorStatus(models);
-    registerTableStatus(models);
-    registerAIStatus(models);  // Phase 12
+  // ─── 列固有状態（[Columns]ワイルドカードで0/1/2に展開） ──────────
 
-    // === 未分類の状態 ===
-    // どのカテゴリにも該当しない状態はここに追加してください。
-    // カテゴリが明確になった時点で適切なファイルへ移動してください。
+  /** 列フォーカス有無 */
+  s.RegisterState(
+    'Column[Columns].Focus',
+    'Column[Columns]フォーカス',
+    'false',
+  );
+
+  /** 列フォーカス中パネル（DataGrid / WebView / TextEditor） */
+  s.RegisterState(
+    'Column[Columns].Panel',
+    'Column[Columns]フォーカスパネル',
+    'DataGrid',
+  );
+
+  /** 列フォーカス中ツール（Main / Tool） */
+  s.RegisterState(
+    'Column[Columns].UI',
+    'Column[Columns]フォーカスツール',
+    'Main',
+  );
+
+  // ─── グローバルモードフラグ ──────────────────────────────────────
+
+  /** チャットモード（bool: 'true'/'false'） */
+  s.RegisterState(
+    'ChatMode',
+    'チャットモード',
+    'false',
+  );
 }
