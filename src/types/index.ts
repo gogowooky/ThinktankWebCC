@@ -88,6 +88,29 @@ export type ContentType =
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
+// #region View 関連
+// ════════════════════════════════════════════════════════════════════════
+
+/** メインパネルのビュー種別 */
+export type ViewType = 'texteditor' | 'markdown' | 'datagrid' | 'graph' | 'chat';
+
+/** 左パネルの表示種別 */
+export type LeftPanelType = 'navigator' | 'search' | 'tags' | 'recent';
+
+/** 右パネルの表示種別 */
+export type RightPanelType = 'outline' | 'properties' | 'related' | 'chat';
+
+/** チャットメッセージ（RightPanel Chat / MainPanel ChatView 共通） */
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string; // ISO8601
+}
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
 // #region アクション関連
 // ════════════════════════════════════════════════════════════════════════
 

@@ -29,7 +29,30 @@
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
       "Bash(git checkout:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(dir \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankReconst\")",
+      "Bash(dotnet --version)",
+      "Bash(cp -r src reference2/)",
+      "Bash(cp -r server reference2/)",
+      "Bash(cp -r public reference2/)",
+      "Bash(winget --version)",
+      "Bash(winget search *)",
+      "Bash(winget install *)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/dotnet\")",
+      "Bash(\"/c/Program Files/dotnet/dotnet\" --version)",
+      "Bash(cmd.exe /c \"dotnet --version\")",
+      "Bash(dotnet --list-sdks)",
+      "Bash(dotnet --list-runtimes)",
+      "Bash(dotnet build *)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); dotnet --version)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); cd \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankReconst\\\\ThinktankLocal\"; dotnet build ThinktankLocalApi/ThinktankLocalApi.csproj)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); cd \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankReconst\\\\ThinktankLocal\"; dotnet build ThinktankLocal/ThinktankLocal.csproj)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); cd \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankReconst\\\\ThinktankLocal\"; dotnet build ThinktankLocal.sln)",
+      "PowerShell($env:PATH = [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\); cd \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankReconst\\\\ThinktankLocal\\\\ThinktankLocalApi\"; Start-Process powershell -ArgumentList \"-NoProfile -Command `\"& { `$env:PATH = '$\\($env:PATH\\)'; dotnet run 2>&1 | Tee-Object -FilePath C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\thinktank_api_run.txt }`\"\" -WindowStyle Hidden; Start-Sleep -Seconds 5; Get-Content C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\thinktank_api_run.txt -ErrorAction SilentlyContinue)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:5000/api/health\" -Method Get)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:5000/api/sync/status\" -Method Get)",
+      "PowerShell(Get-Process -Name \"ThinktankLocalApi\" -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process -Name \"dotnet\" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq \"\" } | Stop-Process -Force)",
+      "Bash(npx vite *)"
     ]
   }
 }
