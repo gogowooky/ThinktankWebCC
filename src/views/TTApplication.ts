@@ -112,6 +112,14 @@ export class TTApplication extends TTObject {
   }
 
   /**
+   * DataGrid ビューをメインパネルで開く。
+   * 既に DataGrid タブが開いていればそちらにスイッチする。
+   */
+  public OpenDataGrid(): void {
+    this.MainPanel.OpenTab('__datagrid__', 'データグリッド', 'datagrid');
+  }
+
+  /**
    * アクティブタブのアイテムを取得する。
    * メインパネルにタブが開いていなければ null を返す。
    */

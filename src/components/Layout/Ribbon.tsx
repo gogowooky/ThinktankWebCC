@@ -11,7 +11,7 @@
 import React from 'react';
 import {
   BookOpen, Search, Tag, Clock,
-  List, Link2, Settings,
+  List, Link2, Settings, LayoutGrid,
 } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -55,6 +55,7 @@ export function Ribbon() {
   const app = TTApplication.Instance;
   useAppUpdate(app.LeftPanel);
   useAppUpdate(app.RightPanel);
+  useAppUpdate(app.MainPanel);
 
   const lp = app.LeftPanel;
   const rp = app.RightPanel;
@@ -72,6 +73,16 @@ export function Ribbon() {
             onClick={() => lp.SwitchTo(type)}
           />
         ))}
+      </div>
+
+      {/* DataGrid ボタン（特殊タブを開く） */}
+      <div className="ribbon__group ribbon__group--datagrid">
+        <IconBtn
+          icon={<LayoutGrid size={18} />}
+          label="データグリッド"
+          active={app.MainPanel.ActiveTab?.ViewType === 'datagrid'}
+          onClick={() => app.OpenDataGrid()}
+        />
       </div>
 
       {/* 下部グループ: 右パネル切り替え＋設定 */}

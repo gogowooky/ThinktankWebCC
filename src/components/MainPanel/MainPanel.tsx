@@ -14,6 +14,7 @@ import { TabBar } from './TabBar';
 import { EmptyState } from './EmptyState';
 import { TextEditorView } from './views/TextEditorView';
 import { MarkdownView } from './views/MarkdownView';
+import { DataGridView } from './views/DataGridView';
 import { ViewToolbar } from './ViewToolbar';
 import type { SyncStatus } from '../../types';
 import './MainPanel.css';
@@ -47,17 +48,21 @@ export function MainPanel() {
           <EmptyState />
         ) : mp.ActiveTab ? (
           <>
-            {/* Editor / Preview トグルツールバー */}
-            <ViewToolbar
-              viewType={mp.ActiveTab.ViewType}
-              onSwitch={vt => mp.SetActiveTabViewType(vt)}
-            />
+            {/* Editor / Preview トグルツールバー（datagrid では非表示） */}
+            {mp.ActiveTab.ViewType !== 'datagrid' && (
+              <ViewToolbar
+                viewType={mp.ActiveTab.ViewType}
+                onSwitch={vt => mp.SetActiveTabViewType(vt)}
+              />
+            )}
 
             {/* ビュー本体（key={tab.ID} でタブ切替時に再マウント） */}
             {mp.ActiveTab.ViewType === 'texteditor' ? (
               <TextEditorView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
             ) : mp.ActiveTab.ViewType === 'markdown' ? (
               <MarkdownView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
+            ) : mp.ActiveTab.ViewType === 'datagrid' ? (
+              <DataGridView key={mp.ActiveTab.ID} />
             ) : (
               <div className="main-panel__editor-placeholder">
                 <p className="main-panel__editor-placeholder-text">
