@@ -148,4 +148,14 @@ export class TTMainPanel extends TTObject {
     tab.IsDirty = dirty;
     this.NotifyUpdated();
   }
+
+  /**
+   * アクティブタブのビュー種別を切り替える（Editor ↔ Markdown トグル用）。
+   */
+  public SetActiveTabViewType(viewType: ViewType): void {
+    const tab = this.ActiveTab;
+    if (!tab || tab.ViewType === viewType) return;
+    tab.ViewType = viewType;
+    this.NotifyUpdated();
+  }
 }

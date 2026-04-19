@@ -1,0 +1,205 @@
+/* MarkdownView.css */
+
+.markdown-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.markdown-view::-webkit-scrollbar { width: 6px; }
+.markdown-view::-webkit-scrollbar-track { background: transparent; }
+.markdown-view::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+/* ── ローディング ─────────────────────────────────── */
+
+.markdown-view--loading {
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  color: var(--text-muted);
+}
+
+.markdown-view__spinner {
+  animation: md-spin 1s linear infinite;
+}
+
+@keyframes md-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.markdown-view__loading-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── 本文エリア ──────────────────────────────────── */
+
+.markdown-view__body {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 32px 48px;
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: 1.75;
+  color: var(--text-primary);
+}
+
+/* ── 見出し ─────────────────────────────────────── */
+
+.markdown-view__body h1 {
+  font-size: 1.75em;
+  font-weight: 700;
+  color: var(--text-highlight);   /* #e0af68 */
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.3em;
+  margin: 0 0 0.8em;
+}
+
+.markdown-view__body h2 {
+  font-size: 1.35em;
+  font-weight: 600;
+  color: var(--text-accent);      /* #7aa2f7 */
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.2em;
+  margin: 1.4em 0 0.6em;
+}
+
+.markdown-view__body h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  color: var(--text-success);     /* #9ece6a */
+  margin: 1.2em 0 0.4em;
+}
+
+.markdown-view__body h4,
+.markdown-view__body h5,
+.markdown-view__body h6 {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 1em 0 0.4em;
+}
+
+/* ── 段落・インライン ───────────────────────────── */
+
+.markdown-view__body p { margin: 0 0 0.9em; }
+
+.markdown-view__body strong { color: var(--text-warning); font-weight: 700; }
+.markdown-view__body em     { color: var(--text-primary); font-style: italic; }
+
+/* ── リンク ─────────────────────────────────────── */
+
+.markdown-view__body a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.markdown-view__body a:hover {
+  text-decoration: underline;
+}
+
+/* [Memo:ID] リンク */
+.markdown-view__body a.md-memo-link {
+  color: var(--text-success);
+  border-bottom: 1px dashed var(--text-success);
+  cursor: pointer;
+}
+
+.markdown-view__body a.md-memo-link:hover {
+  text-decoration: none;
+  border-bottom-style: solid;
+}
+
+/* ── リスト ─────────────────────────────────────── */
+
+.markdown-view__body ul,
+.markdown-view__body ol {
+  padding-left: 1.6em;
+  margin: 0 0 0.9em;
+}
+
+.markdown-view__body li { margin: 0.2em 0; }
+
+/* ── コード ─────────────────────────────────────── */
+
+.markdown-view__body code {
+  font-family: 'Consolas', 'Menlo', 'Courier New', monospace;
+  font-size: 0.88em;
+  background: var(--bg-panel);
+  color: var(--text-success);
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+}
+
+.markdown-view__body pre {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  overflow-x: auto;
+  margin: 0 0 1em;
+}
+
+.markdown-view__body pre code {
+  background: transparent;
+  padding: 0;
+  color: var(--text-primary);
+  font-size: 0.85em;
+}
+
+/* ── 引用 ───────────────────────────────────────── */
+
+.markdown-view__body blockquote {
+  border-left: 3px solid var(--text-accent);
+  margin: 0 0 0.9em 0;
+  padding: 0.4em var(--spacing-md);
+  color: var(--text-muted);
+  background: var(--bg-panel);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.markdown-view__body blockquote p { margin: 0; }
+
+/* ── 区切り線 ───────────────────────────────────── */
+
+.markdown-view__body hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.6em 0;
+}
+
+/* ── テーブル ───────────────────────────────────── */
+
+.markdown-view__body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0 0 1em;
+  font-size: 0.9em;
+}
+
+.markdown-view__body th,
+.markdown-view__body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  text-align: left;
+}
+
+.markdown-view__body th {
+  background: var(--bg-panel);
+  color: var(--text-accent);
+  font-weight: 600;
+}
+
+.markdown-view__body tr:nth-child(even) td {
+  background: var(--bg-hover);
+}

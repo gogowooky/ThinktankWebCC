@@ -13,6 +13,8 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TabBar } from './TabBar';
 import { EmptyState } from './EmptyState';
 import { TextEditorView } from './views/TextEditorView';
+import { MarkdownView } from './views/MarkdownView';
+import { ViewToolbar } from './ViewToolbar';
 import type { SyncStatus } from '../../types';
 import './MainPanel.css';
 
@@ -44,20 +46,29 @@ export function MainPanel() {
         {mp.Tabs.length === 0 ? (
           <EmptyState />
         ) : mp.ActiveTab ? (
-          // key={tab.ID} でタブ切り替え時に確実に再マウントし、
-          // Monaco のコンテンツをリセットする
-          mp.ActiveTab.ViewType === 'texteditor' ? (
-            <TextEditorView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
-          ) : (
-            <div className="main-panel__editor-placeholder">
-              <p className="main-panel__editor-placeholder-text">
-                {mp.ActiveTab.Name}
-              </p>
-              <p className="main-panel__editor-placeholder-hint">
-                {mp.ActiveTab.ViewType} ビューは今後実装予定
-              </p>
-            </div>
-          )
+          <>
+            {/* Editor / Preview トグルツールバー */}
+            <ViewToolbar
+              viewType={mp.ActiveTab.ViewType}
+              onSwitch={vt => mp.SetActiveTabViewType(vt)}
+            />
+
+            {/* ビュー本体（key={tab.ID} でタブ切替時に再マウント） */}
+            {mp.ActiveTab.ViewType === 'texteditor' ? (
+              <TextEditorView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
+            ) : mp.ActiveTab.ViewType === 'markdown' ? (
+              <MarkdownView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
+            ) : (
+              <div className="main-panel__editor-placeholder">
+                <p className="main-panel__editor-placeholder-text">
+                  {mp.ActiveTab.Name}
+                </p>
+                <p className="main-panel__editor-placeholder-hint">
+                  {mp.ActiveTab.ViewType} ビューは今後実装予定
+                </p>
+              </div>
+            )}
+          </>
         ) : null}
       </div>
     </div>
