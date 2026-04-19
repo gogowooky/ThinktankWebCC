@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { TTObject } from './models/TTObject'
 import { TTCollection } from './models/TTCollection'
 import { TTDataItem } from './models/TTDataItem'
 import { TTModels } from './models/TTModels'
 import { TTApplication } from './views/TTApplication'
-import { useAppUpdate } from './hooks/useAppUpdate'
+import { AppLayout } from './components/Layout/AppLayout'
 
 /**
- * Phase 4: ビューモデル（TTTab / TTMainPanel / TTLeftPanel / TTRightPanel / TTApplication）
- * Phase 5 以降で AppLayout に置き換える。
+ * Phase 5: AppLayout に切り替え済み。
+ * Phase 2〜4 のテスト関数はデバッグ用としてファイル内に保持。
+ * ブラウザコンソールで window.__runTests() を呼ぶと全テストを実行できる。
  */
 
 // ── 型定義 ─────────────────────────────────────────────────────────────
@@ -226,113 +227,23 @@ function runPhase4Tests(): TestResult[] {
   return results
 }
 
-// ── モード検出 ──────────────────────────────────────────────────────────
-
-const appMode = (window as Window).__THINKTANK_MODE__ ?? 'pwa'
-const localApi = (window as Window).__THINKTANK_LOCAL_API__ ?? null
-
-// ── コンポーネント ──────────────────────────────────────────────────────
-
-interface PhaseResults { phase: number; title: string; results: TestResult[] }
-
-// useAppUpdate の動作確認用コンポーネント
-function LiveUpdate() {
-  TTApplication.resetInstance()
-  const app = TTApplication.Instance
-  useAppUpdate(app.MainPanel)
-  const tabCount = app.MainPanel.Tabs.length
-  return (
-    <span style={{ color: 'var(--text-success)', fontSize: 11 }}>
-      useAppUpdate: タブ数={tabCount}（クリックで変化）
-    </span>
-  )
-}
-
-export default function App() {
-  const [phases, setPhases] = useState<PhaseResults[]>([])
-
-  useEffect(() => {
+// ── デバッグ用: コンソールからテストを実行できるようにする ──────────────
+// ブラウザコンソールで window.__runTests() を実行すると Phase 2〜4 テスト結果を表示
+if (typeof window !== 'undefined') {
+  (window as Window & { __runTests?: () => void }).__runTests = () => {
+    console.group('[Thinktank] Phase 2〜4 テスト実行')
     const p2 = runPhase2Tests()
     const p3 = runPhase3Tests()
     const p4 = runPhase4Tests()
-    setPhases([
-      { phase: 2, title: 'TTObject / TTCollection', results: p2 },
-      { phase: 3, title: 'TTDataItem / TTModels', results: p3 },
-      { phase: 4, title: 'TTApplication / TTMainPanel / TTLeftPanel / TTRightPanel', results: p4 },
-    ])
-  }, [])
+    const all = [...p2, ...p3, ...p4]
+    const passed = all.filter(r => r.passed).length
+    console.log(`${passed}/${all.length} テスト通過`)
+    console.groupEnd()
+  }
+}
 
-  const totalPassed = phases.reduce((s, p) => s + p.results.filter(r => r.passed).length, 0)
-  const totalCount  = phases.reduce((s, p) => s + p.results.length, 0)
-  const allOk = totalPassed === totalCount && totalCount > 0
+// ── メインコンポーネント ────────────────────────────────────────────────
 
-  return (
-    <div style={{
-      height: '100%', overflowY: 'auto', padding: 'var(--spacing-lg)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--spacing-lg)',
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <h1 style={{ fontSize: '1.4rem', color: 'var(--text-accent)', fontWeight: 600 }}>
-          Thinktank — Phase 2〜4 検証
-        </h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: 12, marginTop: 4 }}>
-          データモデル + アプリケーションモデル + ビューモデル
-        </p>
-      </div>
-
-      {totalCount > 0 && (
-        <div style={{
-          padding: '6px 16px', borderRadius: 'var(--radius)', fontWeight: 600, fontSize: 13,
-          background: allOk ? 'rgba(158,206,106,0.12)' : 'rgba(247,118,142,0.12)',
-          color: allOk ? 'var(--text-success)' : 'var(--text-error)',
-        }}>
-          {allOk ? '✅' : '❌'} {totalPassed} / {totalCount} テスト通過
-        </div>
-      )}
-
-      {phases.map(({ phase, title, results }) => {
-        const passed = results.filter(r => r.passed).length
-        const ok = passed === results.length
-        return (
-          <div key={phase} style={{ width: '100%', maxWidth: 700 }}>
-            <div style={{
-              padding: '4px 10px', marginBottom: 4, borderRadius: 'var(--radius-sm)',
-              fontSize: 12, fontWeight: 600,
-              background: ok ? 'rgba(158,206,106,0.08)' : 'rgba(247,118,142,0.08)',
-              color: ok ? 'var(--text-success)' : 'var(--text-error)',
-            }}>
-              Phase {phase}: {title} — {passed}/{results.length}
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-              {results.map((r, i) => (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'flex-start', gap: 8,
-                  padding: '5px 10px', borderRadius: 'var(--radius-sm)', background: 'var(--bg-panel)',
-                }}>
-                  <span style={{ color: r.passed ? 'var(--text-success)' : 'var(--text-error)', flexShrink: 0 }}>
-                    {r.passed ? '✅' : '❌'}
-                  </span>
-                  <div>
-                    <div style={{ color: 'var(--text-primary)', fontSize: 12 }}>{r.name}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: 11 }}>{r.detail}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      })}
-
-      {/* useAppUpdate の動作確認 */}
-      <div style={{ padding: '6px 12px', background: 'var(--bg-panel)', borderRadius: 'var(--radius)' }}>
-        <LiveUpdate />
-      </div>
-
-      <div style={{ padding: '4px 12px', background: 'var(--bg-panel)', borderRadius: 'var(--radius)', fontSize: 12, color: 'var(--text-muted)' }}>
-        Mode: <span style={{ color: 'var(--text-accent)' }}>{appMode}</span>
-        {localApi && <span style={{ marginLeft: 12 }}>API: <span style={{ color: 'var(--text-success)' }}>{localApi}</span></span>}
-      </div>
-      <p style={{ color: 'var(--text-muted)', fontSize: 11 }}>Phase 5 で AppLayout に置き換え</p>
-    </div>
-  )
+export default function App() {
+  return <AppLayout />
 }
