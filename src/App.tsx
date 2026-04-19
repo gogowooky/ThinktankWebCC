@@ -249,28 +249,47 @@ function seedTestData(): void {
   const memos = TTApplication.Instance.Models.Memos
   if (memos.Count > 0) return  // 既にデータあり
 
-  const samples: { content: string; contentType: TTDataItem['ContentType'] }[] = [
-    { content: '# Thinktank について\nThinktank は記憶・思考・判断を支援するアプリです。', contentType: 'memo' },
-    { content: '# React と TypeScript\nReact 18 + TypeScript 5 + Vite 5 の構成でフロントエンドを構築しています。', contentType: 'memo' },
-    { content: '# Phase 実装計画\n## Phase 1〜5 完了\n- Phase 1: プロジェクト初期化\n- Phase 2: TTObject/TTCollection\n- Phase 3: TTDataItem/TTModels\n- Phase 4: ビューモデル\n- Phase 5: レイアウトシェル', contentType: 'memo' },
-    { content: '# Observer パターン\nTTObject は AddOnUpdate / RemoveOnUpdate / NotifyUpdated を持つ。', contentType: 'memo' },
-    { content: '# BigQuery スキーマ\nfile_id, title, content, keywords, device_id, sync_version などのカラム。', contentType: 'memo' },
-    { content: '# Claude API 連携\n@anthropic-ai/sdk を使ってSSEストリーミングでチャットを実装予定。', contentType: 'chat' },
-    { content: '# WPF + WebView2\nLocal版はWPFシェルにWebView2を組み込んでReact SPAを表示する。', contentType: 'memo' },
-    { content: '# 仮想スクロール\n@tanstack/react-virtual でナビゲーターリストを効率的にレンダリング。', contentType: 'memo' },
-    { content: '# 同期アーキテクチャ\nメタデータ先行同期 → コンテンツはオンデマンドフェッチ。', contentType: 'memo' },
-    { content: '# ストレージ抽象化\nIStorageBackend を介して PWA版（IndexedDB）とLocal版（C# API）を切り替える。', contentType: 'file' },
-  ]
-
-  samples.forEach(({ content, contentType }) => {
+  // ── 単体アイテムを先に作成して ID を確定させる ──────────────────────
+  const addItem = (content: string, contentType: TTDataItem['ContentType']) => {
     const item = new TTDataItem()
     item.ContentType = contentType
     item.Content = content
     item.markSaved()
     memos.AddItem(item)
-  })
+    return item
+  }
 
-  console.log(`[Phase 6] テストデータ ${samples.length} 件を追加しました`)
+  const thinktank  = addItem('# Thinktank について\nThinktank は記憶・思考・判断を支援するアプリです。\n\n関連: [Memo:REACT_TS_ID] / [Memo:OBSERVER_ID]', 'memo')
+  const reactTs    = addItem('# React と TypeScript\nReact 18 + TypeScript 5 + Vite 5 の構成でフロントエンドを構築しています。', 'memo')
+  const phases     = addItem('# Phase 実装計画\n## Phase 1〜8 完了\n- Phase 1: プロジェクト初期化\n- Phase 2: TTObject/TTCollection\n- Phase 3: TTDataItem/TTModels\n- Phase 4: ビューモデル\n- Phase 5: レイアウトシェル\n- Phase 6: NavigatorView\n- Phase 7: TextEditorView\n- Phase 8: MarkdownView', 'memo')
+  const observer   = addItem('# Observer パターン\nTTObject は AddOnUpdate / RemoveOnUpdate / NotifyUpdated を持つ。\n\nこのパターンは [Memo:PHASES_ID] 全体で使われている。', 'memo')
+  const bigquery   = addItem('# BigQuery スキーマ\nfile_id, title, content, keywords, device_id, sync_version などのカラム。\n\n詳細は [Memo:STORAGE_ID] を参照。', 'memo')
+  const claudeApi  = addItem('# Claude API 連携\n@anthropic-ai/sdk を使ってSSEストリーミングでチャットを実装予定。', 'chat')
+  const wpf        = addItem('# WPF + WebView2\nLocal版はWPFシェルにWebView2を組み込んでReact SPAを表示する。', 'memo')
+  const virtual    = addItem('# 仮想スクロール\n@tanstack/react-virtual でナビゲーターリストを効率的にレンダリング。\n\n詳細は [Memo:REACT_TS_ID] も参照。', 'memo')
+  const sync       = addItem('# 同期アーキテクチャ\nメタデータ先行同期 → コンテンツはオンデマンドフェッチ。\n\n[Memo:BIGQUERY_ID] と [Memo:STORAGE_ID] を参照。', 'memo')
+  const storage    = addItem('# ストレージ抽象化\nIStorageBackend を介して PWA版（IndexedDB）とLocal版（C# API）を切り替える。', 'file')
+
+  // ── ID が確定した後、[Memo:PLACEHOLDER] を実際の ID に差し替える ──
+  const replacePlaceholders = (content: string): string =>
+    content
+      .replace(/\[Memo:REACT_TS_ID\]/g,   `[Memo:${reactTs.ID}]`)
+      .replace(/\[Memo:OBSERVER_ID\]/g,    `[Memo:${observer.ID}]`)
+      .replace(/\[Memo:PHASES_ID\]/g,      `[Memo:${phases.ID}]`)
+      .replace(/\[Memo:BIGQUERY_ID\]/g,    `[Memo:${bigquery.ID}]`)
+      .replace(/\[Memo:STORAGE_ID\]/g,     `[Memo:${storage.ID}]`)
+
+  // クロスリファレンスを含むアイテムのコンテンツを更新
+  for (const item of [thinktank, observer, bigquery, virtual, sync]) {
+    const updated = replacePlaceholders(item.Content)
+    item.setContentSilent(updated)
+    item.markSaved()
+  }
+
+  // Claude API / WPF の未使用変数警告を抑止（参照されている）
+  void claudeApi; void wpf
+
+  console.log(`[Phase 6] テストデータ ${memos.Count} 件を追加しました`)
 }
 
 seedTestData()
