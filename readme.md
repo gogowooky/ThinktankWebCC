@@ -1,9 +1,32 @@
 # ログ
+
+
+## 依頼事項
+
+* データの種別と保管方法について
+1) アプリが取扱うデータはすべて種別を属性に持つテキストデータです
+2) 種別： memo.md,  chat.md,  list.md,  link.md,  data.csv  (追加予定)
+3) 保管庫という保管単位を導入します。
+4) LocalFSではdirectoryで管理
+   - {datafolder}/{保管庫名}/{memo/chat/list/link/data}/yyyy-MM-dd-hhmmss.{拡張子}
+5) BigQueryではtable名と種別属性で管理
+   - file_type: {拡張子}
+   - category: {memo/chat/list/link/data}
+   - 保管庫名: GoogleBigQuery:thinktank.files
+6) バイナリファイル等はGoogleDrive,LocalPCへ分散保管しているのをlinkで記述する
+
+* データの種別と表示方法について
+1) データ表示メディアは {texteditor/markdown/datagrid/graph/chat} です
+2) タブにはデータセットと表示メディアを搭載します
+3) 
+
+
+
+
 ## 2026/04/19
 
-
 ### Phase9をすすめてください。
-
+一旦、コミット・プッシュしてください。コミットコメントの先頭には Phase番号を記載してください。
 
 ### Phase7をすすめてください。Phase8をすすめてください。
 これまでの経過のうち、 docs\20260418_Thinktank_Implementation_Plan_v4.md には未記載の実施事項があって、次回の再構築時に必要なことがあれば、実装計画として Phase8 に記載してください。その後、コミット・プッシュしてください。コミットコメントの先頭には Phase番号を記載してください。
