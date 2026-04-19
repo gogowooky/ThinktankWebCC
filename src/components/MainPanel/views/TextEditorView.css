@@ -1,0 +1,40 @@
+/* TextEditorView.css */
+
+.text-editor-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* Monaco Editor のコンテナを全高に伸ばす */
+.text-editor-view > section,
+.text-editor-view > div {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── ローディング状態 ─────────────────────────────────── */
+
+.text-editor-view--loading {
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  color: var(--text-muted);
+}
+
+.text-editor-view__spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.text-editor-view__loading-text {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin: 0;
+}

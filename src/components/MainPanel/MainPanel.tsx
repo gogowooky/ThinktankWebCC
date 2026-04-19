@@ -3,7 +3,8 @@
  * メインパネルのコンテナ。タブバー + コンテンツエリア。
  *
  * Phase 5: 骨格実装（コンテンツエリアはプレースホルダー）
- * Phase 7 以降: TextEditorView / MarkdownView 等を差し込む
+ * Phase 7: TextEditorView を組み込み（viewType === 'texteditor'）
+ * Phase 8 以降: MarkdownView 等を追加
  */
 
 import React from 'react';
@@ -11,6 +12,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TabBar } from './TabBar';
 import { EmptyState } from './EmptyState';
+import { TextEditorView } from './views/TextEditorView';
 import type { SyncStatus } from '../../types';
 import './MainPanel.css';
 
@@ -41,17 +43,22 @@ export function MainPanel() {
       <div className="main-panel__content">
         {mp.Tabs.length === 0 ? (
           <EmptyState />
-        ) : (
-          <div className="main-panel__editor-placeholder">
-            {/* Phase 7 以降で ViewType に応じたコンポーネントに置き換え */}
-            <p className="main-panel__editor-placeholder-text">
-              {mp.ActiveTab?.Name}
-            </p>
-            <p className="main-panel__editor-placeholder-hint">
-              TextEditorView は Phase 7 で実装
-            </p>
-          </div>
-        )}
+        ) : mp.ActiveTab ? (
+          // key={tab.ID} でタブ切り替え時に確実に再マウントし、
+          // Monaco のコンテンツをリセットする
+          mp.ActiveTab.ViewType === 'texteditor' ? (
+            <TextEditorView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
+          ) : (
+            <div className="main-panel__editor-placeholder">
+              <p className="main-panel__editor-placeholder-text">
+                {mp.ActiveTab.Name}
+              </p>
+              <p className="main-panel__editor-placeholder-hint">
+                {mp.ActiveTab.ViewType} ビューは今後実装予定
+              </p>
+            </div>
+          )
+        ) : null}
       </div>
     </div>
   );
