@@ -11,7 +11,7 @@
 import React from 'react';
 import {
   BookOpen, Search, Tag, Clock,
-  AlignLeft, Link2, Settings,
+  List, Link2, Settings,
 } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -47,8 +47,8 @@ const LEFT_ITEMS: { type: LeftPanelType; icon: React.ReactNode; label: string }[
 ];
 
 const RIGHT_ITEMS: { type: RightPanelType; icon: React.ReactNode; label: string }[] = [
-  { type: 'outline',    icon: <AlignLeft size={18} />, label: 'アウトライン' },
-  { type: 'related',    icon: <Link2     size={18} />, label: '関連' },
+  { type: 'outline',    icon: <List  size={18} />, label: 'アウトライン' },
+  { type: 'related',    icon: <Link2 size={18} />, label: '関連' },
 ];
 
 export function Ribbon() {
