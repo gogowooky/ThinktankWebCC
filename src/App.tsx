@@ -208,9 +208,14 @@ function runPhase4Tests(): TestResult[] {
 
   // 12. TTApplication.OpenItem
   const item2 = new TTDataItem(); item2.Content = '# OpenItemテスト\n本文'
+  console.log(`[TEST] item2.ID created: ${item2.ID}`)
   app.Models.Memos.AddItem(item2)
   const prevCount = app.MainPanel.Tabs.length
+  console.log(`[TEST] Before OpenItem: Tabs.length=${prevCount}, SelectedItemID="${app.LeftPanel.SelectedItemID}"`)
+  console.log(`[TEST] Calling OpenItem with resourceId="${item2.ID}"`)
   app.OpenItem(item2.ID, 'texteditor')
+  console.log(`[TEST] After OpenItem: Tabs.length=${app.MainPanel.Tabs.length}, SelectedItemID="${app.LeftPanel.SelectedItemID}"`)
+  console.log(`[TEST] Tabs.map: ${app.MainPanel.Tabs.map((t,i) => `[${i}] resourceId=${t.ResourceID}`).join(' | ')}`)
   const tabsOk = app.MainPanel.Tabs.length > prevCount
   const selectedOk = app.LeftPanel.SelectedItemID === item2.ID
   tabsOk && selectedOk
