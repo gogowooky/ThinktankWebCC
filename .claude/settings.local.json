@@ -54,7 +54,8 @@
       "PowerShell(Get-Process -Name \"ThinktankLocalApi\" -ErrorAction SilentlyContinue | Stop-Process -Force; Get-Process -Name \"dotnet\" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -eq \"\" } | Stop-Process -Force)",
       "Bash(npx vite *)",
       "Bash(npm test *)",
-      "Bash(pkill -f \"npm run dev\")"
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
