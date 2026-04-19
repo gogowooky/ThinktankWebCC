@@ -15,7 +15,7 @@ export class TTRightPanel extends TTObject {
   public IsOpen: boolean = false;
 
   /** パネル幅（px）*/
-  public Width: number = 240;
+  public Width: number = 310;
 
   /** 表示中のパネル種別 */
   public PanelType: RightPanelType = 'outline';

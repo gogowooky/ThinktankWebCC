@@ -16,7 +16,7 @@ export class TTLeftPanel extends TTObject {
   public IsOpen: boolean = true;
 
   /** パネル幅（px）。Splitter でドラッグ変更される。*/
-  public Width: number = 260;
+  public Width: number = 330;
 
   /** 表示中のパネル種別 */
   public PanelType: LeftPanelType = 'navigator';
