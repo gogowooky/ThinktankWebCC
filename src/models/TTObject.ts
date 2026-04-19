@@ -53,7 +53,7 @@ export class TTObject {
     return Array.from(this._updateListeners.keys());
   }
 
-  /** 現在時刻を "yyyy-MM-dd-HHmmss-mmm" 形式の文字列で返す（ミリ秒単位で ID重複を防止） */
+  /** 現在時刻を "yyyy-MM-dd-HHmmss-mmm-rand" 形式の文字列で返す（ミリ秒 + ランダムで確実に一意） */
   protected getNowString(): string {
     const now = new Date();
     const yyyy = now.getFullYear();
@@ -63,6 +63,8 @@ export class TTObject {
     const min = String(now.getMinutes()).padStart(2, '0');
     const ss = String(now.getSeconds()).padStart(2, '0');
     const ms = String(now.getMilliseconds()).padStart(3, '0');
-    return `${yyyy}-${mm}-${dd}-${hh}${min}${ss}-${ms}`;
+    // ランダムなサフィックス（4文字）で同一ミリ秒内での重複を防止
+    const rand = Math.random().toString(36).slice(2, 6);
+    return `${yyyy}-${mm}-${dd}-${hh}${min}${ss}-${ms}-${rand}`;
   }
 }
