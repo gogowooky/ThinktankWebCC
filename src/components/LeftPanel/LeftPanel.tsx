@@ -11,6 +11,7 @@ import React from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { LeftPanelHeader } from './LeftPanelHeader';
+import { NavigatorView } from './NavigatorView';
 import './LeftPanel.css';
 
 export function LeftPanel() {
@@ -34,13 +35,16 @@ export function LeftPanel() {
             onClose={() => lp.Close()}
           />
           <div className="left-panel__content">
-            {/* Phase 6 以降で NavigatorView / SearchView 等に置き換え */}
-            <p className="left-panel__placeholder">
-              {lp.PanelType === 'navigator' && 'ナビゲーター（Phase 6 で実装）'}
-              {lp.PanelType === 'search'    && '検索（Phase 28 で実装）'}
-              {lp.PanelType === 'tags'      && 'タグ（Phase 33 で実装）'}
-              {lp.PanelType === 'recent'    && '最近（Phase 33 で実装）'}
-            </p>
+            {lp.PanelType === 'navigator' && <NavigatorView />}
+            {lp.PanelType === 'search' && (
+              <p className="left-panel__placeholder">検索（Phase 28 で実装）</p>
+            )}
+            {lp.PanelType === 'tags' && (
+              <p className="left-panel__placeholder">タグ（Phase 33 で実装）</p>
+            )}
+            {lp.PanelType === 'recent' && (
+              <p className="left-panel__placeholder">最近（Phase 33 で実装）</p>
+            )}
           </div>
         </>
       )}

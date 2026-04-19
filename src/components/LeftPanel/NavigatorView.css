@@ -1,0 +1,128 @@
+.navigator {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── フィルタ欄 ─────────────────────────────────── */
+
+.navigator__filter {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.navigator__filter-input {
+  width: 100%;
+  padding: 4px var(--spacing-sm);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  outline: none;
+  transition: border-color var(--transition-hover);
+}
+
+.navigator__filter-input::placeholder {
+  color: var(--text-muted);
+}
+
+.navigator__filter-input:focus {
+  border-color: var(--border-focus);
+}
+
+/* ── アイテム数 ─────────────────────────────────── */
+
+.navigator__count {
+  padding: 2px var(--spacing-md);
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── リスト ─────────────────────────────────────── */
+
+.navigator__list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.navigator__list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.navigator__list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navigator__list::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+.navigator__empty {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+/* ── 各アイテム行 ────────────────────────────────── */
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 0 var(--spacing-sm);
+  cursor: pointer;
+  border-radius: 0;
+  transition: background var(--transition-hover);
+  user-select: none;
+  border-left: 2px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+}
+
+.nav-item--selected {
+  background: var(--bg-selected);
+  border-left-color: var(--text-accent);
+}
+
+/* IsMetaOnly=true: コンテンツ未取得は薄い色で表示 */
+.nav-item--meta-only {
+  opacity: 0.5;
+}
+
+.nav-item__icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.nav-item__title {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-item--meta-only .nav-item__title {
+  color: var(--text-muted);
+}
+
+.nav-item__date {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}

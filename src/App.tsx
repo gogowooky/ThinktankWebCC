@@ -242,6 +242,39 @@ if (typeof window !== 'undefined') {
   }
 }
 
+// ── Phase 6 テストデータ初期投入 ──────────────────────────────────────
+// 実際のデータが空の場合のみサンプルデータを追加する（Phase 13 で StorageManager に置き換え）
+
+function seedTestData(): void {
+  const memos = TTApplication.Instance.Models.Memos
+  if (memos.Count > 0) return  // 既にデータあり
+
+  const samples: { content: string; contentType: TTDataItem['ContentType'] }[] = [
+    { content: '# Thinktank について\nThinktank は記憶・思考・判断を支援するアプリです。', contentType: 'memo' },
+    { content: '# React と TypeScript\nReact 18 + TypeScript 5 + Vite 5 の構成でフロントエンドを構築しています。', contentType: 'memo' },
+    { content: '# Phase 実装計画\n## Phase 1〜5 完了\n- Phase 1: プロジェクト初期化\n- Phase 2: TTObject/TTCollection\n- Phase 3: TTDataItem/TTModels\n- Phase 4: ビューモデル\n- Phase 5: レイアウトシェル', contentType: 'memo' },
+    { content: '# Observer パターン\nTTObject は AddOnUpdate / RemoveOnUpdate / NotifyUpdated を持つ。', contentType: 'memo' },
+    { content: '# BigQuery スキーマ\nfile_id, title, content, keywords, device_id, sync_version などのカラム。', contentType: 'memo' },
+    { content: '# Claude API 連携\n@anthropic-ai/sdk を使ってSSEストリーミングでチャットを実装予定。', contentType: 'chat' },
+    { content: '# WPF + WebView2\nLocal版はWPFシェルにWebView2を組み込んでReact SPAを表示する。', contentType: 'memo' },
+    { content: '# 仮想スクロール\n@tanstack/react-virtual でナビゲーターリストを効率的にレンダリング。', contentType: 'memo' },
+    { content: '# 同期アーキテクチャ\nメタデータ先行同期 → コンテンツはオンデマンドフェッチ。', contentType: 'memo' },
+    { content: '# ストレージ抽象化\nIStorageBackend を介して PWA版（IndexedDB）とLocal版（C# API）を切り替える。', contentType: 'file' },
+  ]
+
+  samples.forEach(({ content, contentType }) => {
+    const item = new TTDataItem()
+    item.ContentType = contentType
+    item.Content = content
+    item.markSaved()
+    memos.AddItem(item)
+  })
+
+  console.log(`[Phase 6] テストデータ ${samples.length} 件を追加しました`)
+}
+
+seedTestData()
+
 // ── メインコンポーネント ────────────────────────────────────────────────
 
 export default function App() {
