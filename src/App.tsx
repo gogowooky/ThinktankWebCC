@@ -211,9 +211,11 @@ function runPhase4Tests(): TestResult[] {
   app.Models.Memos.AddItem(item2)
   const prevCount = app.MainPanel.Tabs.length
   app.OpenItem(item2.ID, 'texteditor')
-  app.MainPanel.Tabs.length > prevCount && app.LeftPanel.SelectedItemID === item2.ID
+  const tabsOk = app.MainPanel.Tabs.length > prevCount
+  const selectedOk = app.LeftPanel.SelectedItemID === item2.ID
+  tabsOk && selectedOk
     ? pass('TTApplication: OpenItem', `SelectedItemID=${item2.ID.slice(0, 12)}...`)
-    : fail('TTApplication: OpenItem', 'NG')
+    : fail('TTApplication: OpenItem', `tabs=${app.MainPanel.Tabs.length}>${prevCount}? ${tabsOk} | selected=${app.LeftPanel.SelectedItemID.slice(0,8)} == ${item2.ID.slice(0,8)}? ${selectedOk}`)
 
   // コンソール出力
   console.group('[Phase 4] TTApplication / TTMainPanel / TTLeftPanel / TTRightPanel 検証')
