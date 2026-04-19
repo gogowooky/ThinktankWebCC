@@ -208,19 +208,12 @@ function runPhase4Tests(): TestResult[] {
 
   // 12. TTApplication.OpenItem
   const item2 = new TTDataItem(); item2.Content = '# OpenItemテスト\n本文'
-  console.log(`[TEST] item2.ID created: ${item2.ID}`)
   app.Models.Memos.AddItem(item2)
   const prevCount = app.MainPanel.Tabs.length
-  console.log(`[TEST] Before OpenItem: Tabs.length=${prevCount}, SelectedItemID="${app.LeftPanel.SelectedItemID}"`)
-  console.log(`[TEST] Calling OpenItem with resourceId="${item2.ID}"`)
   app.OpenItem(item2.ID, 'texteditor')
-  console.log(`[TEST] After OpenItem: Tabs.length=${app.MainPanel.Tabs.length}, SelectedItemID="${app.LeftPanel.SelectedItemID}"`)
-  console.log(`[TEST] Tabs.map: ${app.MainPanel.Tabs.map((t,i) => `[${i}] resourceId=${t.ResourceID}`).join(' | ')}`)
-  const tabsOk = app.MainPanel.Tabs.length > prevCount
-  const selectedOk = app.LeftPanel.SelectedItemID === item2.ID
-  tabsOk && selectedOk
+  app.MainPanel.Tabs.length > prevCount && app.LeftPanel.SelectedItemID === item2.ID
     ? pass('TTApplication: OpenItem', `SelectedItemID=${item2.ID.slice(0, 12)}...`)
-    : fail('TTApplication: OpenItem', `tabs=${app.MainPanel.Tabs.length}>${prevCount}? ${tabsOk} | selected=${app.LeftPanel.SelectedItemID.slice(0,8)} == ${item2.ID.slice(0,8)}? ${selectedOk}`)
+    : fail('TTApplication: OpenItem', 'NG')
 
   // コンソール出力
   console.group('[Phase 4] TTApplication / TTMainPanel / TTLeftPanel / TTRightPanel 検証')
