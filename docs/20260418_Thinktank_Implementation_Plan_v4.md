@@ -882,15 +882,139 @@ function formatDate(updateDate: string): string {
 
 **新規作成**:
 - `src/components/MainPanel/views/MarkdownView.tsx`
+- `src/components/MainPanel/views/MarkdownView.css`
 - `src/utils/markdownToHtml.ts`
+- `src/components/MainPanel/ViewToolbar.tsx`
+- `src/components/MainPanel/ViewToolbar.css`
 
-**仕様**:
-- `--text-primary`/`--bg-primary` 配色でレンダリング
-- 見出しをCSS変数ベースで色分け
-- `[Memo:ID]` 等のタグをクリッカブルリンクとして表示
-- TextEditorビューとMarkdownビューは右上ボタンでトグル
+**更新**:
+- `src/components/MainPanel/MainPanel.tsx` - ViewToolbar + MarkdownView 分岐を追加
+- `src/views/TTMainPanel.ts` - `SetActiveTabViewType()` メソッドを追加
+- `src/App.tsx` - `seedTestData()` に `[Memo:ID]` クロスリファレンスを追加
 
-**検証**: アイテムのMarkdownが正しくレンダリングされる。
+**仕様詳細**:
+
+**markdownToHtml.ts**:
+- `marked v18` の `parse()` を使用（同期でstring返却）
+- `[Memo:ID]` タグを **前処理** で `[title](memo://ID)` に変換してから marked に渡す
+  - コードブロック（``` ``` ```）・コードスパン（`` ` `` ）内は変換しない（プレースホルダー退避方式）
+- **後処理** で `<a href="memo://ID">` を `<a class="md-memo-link" data-memo-id="ID" href="#">` に差し替え
+- 外部リンク（`https?://`）に `target="_blank" rel="noopener noreferrer"` を付与
+- marked v18 の Renderer API は引数が `{href, title, tokens}` 形式に変更されており、
+  カスタムレンダラーを使う場合は `parser.parseInline(tokens)` が必要。
+  **後処理（正規表現）方式の方が安定しているため採用した。**
+
+```typescript
+// 前処理: [Memo:ID] → [title](memo://ID)
+// 後処理: <a href="memo://ID"> → <a class="md-memo-link" data-memo-id="ID" href="#">
+export function markdownToHtml(markdown: string, options?: MarkdownToHtmlOptions): string
+```
+
+**MarkdownView.tsx のアーキテクチャ**:
+- `MarkdownView`（外側） → `MarkdownBody`（内側サブコンポーネント）の2層構造
+- **重要**: `useAppUpdate(item)` を条件分岐の中で呼ぶと React の rules-of-hooks 違反になる。
+  `item` が存在する場合のみマウントされる `MarkdownBody` コンポーネント内で `useAppUpdate` を呼ぶことで回避する。
+  ```tsx
+  // ❌ NG（hooks ルール違反）
+  if (item) useAppUpdate(item);
+
+  // ✅ OK（MarkdownBody は item が存在する場合のみマウントされる）
+  function MarkdownBody({ item }: { item: TTDataItem }) {
+    useAppUpdate(item);  // 常に呼ばれる位置
+    // ...
+  }
+  export function MarkdownView({ tab }) {
+    const item = ...;
+    return item ? <MarkdownBody item={item} /> : null;
+  }
+  ```
+- `[Memo:ID]` リンクのクリックはイベント委譲（`e.target.closest('a.md-memo-link')`）で処理し、`app.OpenItem(id, 'texteditor')` を呼ぶ
+
+**ViewToolbar.tsx**:
+- タブが開いている間、コンテンツエリア上部に常時表示
+- [編集]（Pencil アイコン）/ [プレビュー]（Eye アイコン）トグルボタン
+- クリックで `mp.SetActiveTabViewType(viewType)` を呼び出す
+- MainPanel.tsx の `main-panel__content` 内に配置（TabBar の下、エディタの上）
+
+**MainPanel.tsx の分岐ロジック**:
+```tsx
+{mp.ActiveTab ? (
+  <>
+    <ViewToolbar viewType={mp.ActiveTab.ViewType} onSwitch={vt => mp.SetActiveTabViewType(vt)} />
+    {mp.ActiveTab.ViewType === 'texteditor' ? (
+      <TextEditorView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
+    ) : mp.ActiveTab.ViewType === 'markdown' ? (
+      <MarkdownView key={mp.ActiveTab.ID} tab={mp.ActiveTab} />
+    ) : (
+      /* 今後実装のビュー種別プレースホルダー */
+    )}
+  </>
+) : null}
+```
+> `key={tab.ID}` でタブ切り替え時に必ず再マウントし、Monaco のコンテンツをリセットする。
+
+**TTMainPanel.SetActiveTabViewType()**:
+```typescript
+public SetActiveTabViewType(viewType: ViewType): void {
+  const tab = this.ActiveTab;
+  if (!tab || tab.ViewType === viewType) return;
+  tab.ViewType = viewType;
+  this.NotifyUpdated();
+}
+```
+
+**MarkdownView.css の見出し色分け**:
+| 要素 | CSS 変数 | 色 |
+|---|---|---|
+| `h1` | `--text-highlight` | `#e0af68`（ゴールド） |
+| `h2` | `--text-accent` | `#7aa2f7`（ブルー） |
+| `h3` | `--text-success` | `#9ece6a`（グリーン） |
+| `strong` | `--text-warning` | `#ff9e64`（オレンジ） |
+| `a.md-memo-link` | `--text-success` | グリーン・破線下線 |
+
+**seedTestData() のクロスリファレンス追加方法**:
+- TTDataItem の ID は生成時に確定するため、先にアイテムを全て生成してから ID を使って `[Memo:PLACEHOLDER]` を実 ID に差し替える方式を採用。
+```typescript
+const reactTs = addItem('# React と TypeScript\n...', 'memo')
+const observer = addItem('# Observer パターン\n[Memo:PHASES_ID] 全体で使われている。', 'memo')
+// ...全アイテム生成後
+const replacePlaceholders = (content: string) =>
+  content.replace(/\[Memo:REACT_TS_ID\]/g, `[Memo:${reactTs.ID}]`)
+         .replace(/\[Memo:OBSERVER_ID\]/g,  `[Memo:${observer.ID}]`)
+         // ...
+for (const item of [thinktank, observer, bigquery, virtual, sync]) {
+  item.setContentSilent(replacePlaceholders(item.Content))
+  item.markSaved()
+}
+```
+
+**⚠ 実装上の落とし穴**:
+
+1. **marked v18 の Renderer API 変更**  
+   v18 では `renderer.link` の引数が `{href, title, text}` から `{href, title, tokens}` に変更。
+   `text` を得るには `this.parser.parseInline(tokens)` が必要。
+   カスタムレンダラーは避け、**後処理（正規表現）方式**を採用すること。
+
+2. **useAppUpdate を条件分岐の中で呼ばない**  
+   `if (item) useAppUpdate(item)` は rules-of-hooks 違反でランタイムエラーになる。
+   「item が存在する場合のみマウントされるサブコンポーネント」に hook を移すことで解決する。
+
+3. **[Memo:ID] のサンプルデータ追加方法**  
+   TTDataItem の ID は `super()` 呼び出し時に生成されるため、コンテンツ内で相互参照する際は
+   全アイテムを先に生成してから ID を差し替える必要がある。
+   ハードコードした ID を使うと ID フォーマット（`yyyy-MM-dd-HHmmss-mmm-rand`）の整合性が崩れるので避けること。
+
+4. **ViewToolbar はタブが開いている場合のみ表示**  
+   `mp.Tabs.length === 0` の EmptyState 表示時には ViewToolbar を出さない。
+   `mp.ActiveTab` の存在確認後に `<>ViewToolbar + View</>` をレンダーする構造にする。
+
+**検証条件**:
+- [ ] アイテムを開いて [プレビュー] ボタンをクリックすると Markdown がレンダリングされる
+- [ ] h1=ゴールド / h2=ブルー / h3=グリーンで色分けされている
+- [ ] `[Memo:ID]` リンクがグリーンの破線付きで表示される
+- [ ] `[Memo:ID]` リンクをクリックすると対象アイテムが新タブで開く
+- [ ] [編集] ボタンで Monaco Editor に戻れる
+- [ ] 別タブに切り替えても各タブの viewType が独立して保持される
 
 ---
 
