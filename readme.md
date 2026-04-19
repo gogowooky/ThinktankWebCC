@@ -4,23 +4,32 @@
 ## 依頼事項
 
 * データの種別と保管方法について
-1) アプリが取扱うデータはすべて種別を属性に持つテキストデータです
-2) 種別： memo.md,  chat.md,  list.md,  link.md,  data.csv  (追加予定)
-3) 保管庫という保管単位を導入します。
-4) LocalFSではdirectoryで管理
-   - {datafolder}/{保管庫名}/{memo/chat/list/link/data}/yyyy-MM-dd-hhmmss.{拡張子}
-5) BigQueryではtable名と種別属性で管理
+1) アプリが取扱うTTDataItemデータはすべてテキストデータで、category/種別 属性を持つ
+2) 現時点で想定種別は memo.md, chat.md, group.md, link.md, data.csv、後からも追加予定
+3) TTDataItemのテキストデータはstorage/保管庫に保存される
+4) 保管庫は LocalFS ではディレクトリで構成される
+   - {datafolder}/{保管庫名}/{memo/chat/group/link/data}/yyyy-MM-dd-hhmmss.{拡張子}
+5) 保管庫は BigQueryでは テーブル名や属性で構成される
    - file_type: {拡張子}
-   - category: {memo/chat/list/link/data}
-   - 保管庫名: GoogleBigQuery:thinktank.files
-6) バイナリファイル等はGoogleDrive,LocalPCへ分散保管しているのをlinkで記述する
+   - category: {memo/chat/group/link/data}
+   - table name: {テーブル名}
+6) 別の実体を持つTTDataItemは内容として参照先linkを記述し、アクセス方法などは別途定義する
+
+
+なんとなくの「考えてること」でタブ化したいな。で、タブ名はkeywordにしたい。
+かといって、「考えてること」タブではほかのことを考えてはいけない、ようにはしたくない
+「あなたオントロジー」
+
+
 
 * データの種別と表示方法について
 1) データ表示メディアは {texteditor/markdown/datagrid/graph/chat} です
 2) タブにはデータセットと表示メディアを搭載します
 3) 
 
-
+* タブの役割について
+1) タブはgroupの範囲で表示する
+2) 
 
 
 ## 2026/04/19
