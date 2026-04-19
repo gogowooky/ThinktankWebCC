@@ -478,15 +478,119 @@ dotnet build ThinktankLocal.sln
 **目標**: 新UIアーキテクチャのビューモデルを実装する。
 
 **新規作成**:
-- `src/views/TTTab.ts` - ViewType・ResourceID・IsLoading・IsDirty
-- `src/views/TTMainPanel.ts` - タブ管理（OpenTab / CloseTab / SwitchTab / NewTab）
-- `src/views/TTLeftPanel.ts` - IsOpen / Width / PanelType / Filter / SelectedItemID
-- `src/views/TTRightPanel.ts` - IsOpen / Width / PanelType / ChatMessages
-- `src/views/TTApplication.ts` - 最上位コントローラ。`AppMode: 'pwa' | 'local'` プロパティ
+- `src/views/TTTab.ts` - ViewType・ResourceID・IsLoading・IsDirty・DisplayTitle
+- `src/views/TTMainPanel.ts` - タブ管理（OpenTab / CloseTab / SwitchTab / NewTab / CloseAllTabs / SetActiveTabDirty）
+- `src/views/TTLeftPanel.ts` - IsOpen / Width / PanelType / Filter / SelectedItemID（Open/Close/Toggle/SwitchTo/SetFilter/SelectItem/SetWidth）
+- `src/views/TTRightPanel.ts` - IsOpen / Width / PanelType / ChatMessages（Open/Close/Toggle/SwitchTo/SetWidth/AddChatMessage/ClearChat）
+- `src/views/TTApplication.ts` - 最上位コントローラ（シングルトン）。AppMode / LocalApiUrl / Models / MainPanel / LeftPanel / RightPanel / OpenItem() / ActiveItem
 - `src/views/helpers/DateHelper.ts`
-- `src/hooks/useAppUpdate.ts` - TTObject Observer → React useReducer接続
+- `src/hooks/useAppUpdate.ts` - TTObject Observer → React useReducer 接続
 
-**検証**: タブの開く・切り替える・閉じる操作がObserver通知を伴って動作する。
+**修正**:
+- `src/models/TTObject.ts` - `getNowString()` をミリ秒＋ランダムサフィックスに変更（ID重複防止）
+- `src/types/index.ts` - 以下の型を追加
+  - `ViewType`: `'texteditor' | 'markdown' | 'datagrid' | 'graph' | 'chat'`
+  - `LeftPanelType`: `'navigator' | 'search' | 'tags' | 'recent'`
+  - `RightPanelType`: `'outline' | 'properties' | 'related' | 'chat'`
+  - `ChatMessage`: `{ id, role: 'user'|'assistant', content, timestamp }`
+
+---
+
+#### 実装詳細・仕様
+
+**TTTab**:
+```typescript
+public get DisplayTitle(): string {
+  return this.IsDirty ? `● ${this.Name}` : this.Name;
+}
+// ID: tab-{Date.now()}-{Math.random().toString(36).slice(2,7)} で一意に生成
+```
+
+**TTMainPanel.OpenTab()**:
+- 同一 `ResourceID` + 同一 `ViewType` のタブが既に存在する場合はスイッチのみ（重複防止）
+- 存在しない場合は新規タブを末尾に追加してアクティブにする
+
+**TTRightPanel.AddChatMessage()**:
+- メッセージ追加時に `IsOpen = true` を自動設定する（チャット送信でパネルを自動展開）
+- メッセージ ID: `msg-${Date.now()}-${Math.random().toString(36).slice(2,7)}`（重複防止のためランダムサフィックス付き）
+
+**TTApplication.OpenItem()**:
+```typescript
+// Models.Memos.GetDataItem(resourceId) でアイテムを検索
+// → MainPanel.OpenTab() でタブを作成
+// → IsMetaOnly=true の場合は tab.IsLoading=true → LoadContent() → IsLoading=false（Phase 13 以降）
+// → LeftPanel.SelectItem(resourceId) で左パネルの選択を更新
+```
+
+**useAppUpdate()**:
+```typescript
+// TTObject の AddOnUpdate を購読し、通知を受けて React コンポーネントを強制再レンダリングする
+export function useAppUpdate(obj: TTObject): void
+```
+
+---
+
+#### ⚠️ 落とし穴・注意事項（再構築時に必須）
+
+**① TTObject.getNowString() はミリ秒＋ランダムサフィックスが必須**
+
+> テスト実行時に同一ミリ秒内で複数の `TTDataItem` が生成されると ID が重複する。
+> `OpenTab()` の重複防止ロジックが誤発火し、新しいタブが追加されないバグが発生する。
+
+```typescript
+// ❌ 秒単位（重複する）
+return `${yyyy}-${mm}-${dd}-${hh}${min}${ss}`;
+
+// ✅ ミリ秒＋ランダムサフィックス（確実に一意）
+const ms = String(now.getMilliseconds()).padStart(3, '0');
+const rand = Math.random().toString(36).slice(2, 6);
+return `${yyyy}-${mm}-${dd}-${hh}${min}${ss}-${ms}-${rand}`;
+// 例: 2026-04-19-153639-634-kv4l
+```
+
+**② TTRightPanel.AddChatMessage() でパネルを自動展開すること**
+
+> テストは `AddChatMessage` 後に `IsOpen === true` を期待する。
+> 実装しないと「チャットを送信しても右パネルが開かない」UXバグになる。
+
+```typescript
+// ✅ 正しい実装
+this.ChatMessages = [...this.ChatMessages, msg];
+if (!this.IsOpen) this.IsOpen = true;  // ← 必須
+this.NotifyUpdated();
+```
+
+**③ TTApplication はシングルトンで子パネルの _parent を設定すること**
+
+```typescript
+this.MainPanel._parent = this;
+this.LeftPanel._parent = this;
+this.RightPanel._parent = this;
+// → 子パネルの NotifyUpdated() が TTApplication まで伝播する
+```
+
+---
+
+#### 検証（App.tsx に runPhase4Tests() として実装）
+
+テストケース 14 項目がすべてパスすること:
+
+| # | テスト | チェック内容 |
+|---|--------|-------------|
+| 1 | TTApplication: シングルトン | `Instance === Instance`、`AppMode = 'pwa'` |
+| 2 | TTApplication: パネル初期化 | MainPanel / LeftPanel / RightPanel が存在する |
+| 3 | TTMainPanel: NewTab | Tabs.length=1、ActiveTab.ID が一致 |
+| 4 | TTMainPanel: OpenTab（新規） | Tabs.length=2、ResourceID が一致 |
+| 5 | TTMainPanel: OpenTab（重複防止） | Tabs.length=2 のまま、既存タブへスイッチ |
+| 6 | TTMainPanel: SwitchTab | ActiveTab.ID が指定タブに変わる |
+| 7 | TTMainPanel: Observer 通知 | NewTab で mainNotified >= 1 |
+| 8 | TTMainPanel: CloseTab | Tabs.length が 1 減り、隣タブがアクティブに |
+| 9 | TTMainPanel: IsDirty + DisplayTitle | IsDirty=true で DisplayTitle が `●` で始まる |
+| 10 | TTLeftPanel: Toggle | IsOpen が反転する |
+| 11 | TTLeftPanel: SwitchTo | PanelType が変わり IsOpen=true |
+| 12 | TTLeftPanel: SetFilter | Filter 文字列が更新される |
+| 13 | TTRightPanel: AddChatMessage | messages=2、**IsOpen=true**（自動展開） |
+| 14 | TTApplication: OpenItem | Tabs.length が増加、SelectedItemID が一致 |
 
 ---
 
