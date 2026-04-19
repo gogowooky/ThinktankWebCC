@@ -761,15 +761,102 @@ interface Props {
 
 **新規作成**:
 - `src/components/LeftPanel/NavigatorView.tsx` - @tanstack/react-virtual 仮想スクロールリスト
+- `src/components/LeftPanel/NavigatorView.css` - ナビゲーター・フィルタ・行スタイル
+
+**更新**:
+- `src/components/LeftPanel/LeftPanel.tsx` - `PanelType === 'navigator'` 時に NavigatorView をレンダー
+- `src/App.tsx` - `seedTestData()` 関数を追加（起動時に10件のサンプルアイテムを投入）
+- `src/views/TTLeftPanel.ts` - デフォルト幅を 260px → **330px** に変更
+- `src/views/TTRightPanel.ts` - デフォルト幅を 240px → **310px** に変更
 
 **仕様**:
-- 各行: `[アイコン] タイトル [更新日]` 形式
-- ContentTypeアイコン（memo=📝、chat=💬、file=📎等）
-- フィルタ欄（AND/OR/NOT構文）
-- `IsMetaOnly=true` のアイテムは薄い色で表示（コンテンツ未ロード状態の可視化）
-- クリック → `TTApplication.OpenItem(id)` → メインパネルに新タブで開く
+- 各行: `[アイコン] タイトル [更新日]` 形式、行高さ固定 **36px**
+- ContentTypeアイコン（lucide-react）: memo=FileText / chat=MessageCircle / file=Paperclip / photo=Image / email=Mail / drive=HardDrive / url=Link
+- フィルタ欄（AND/OR/NOT構文）: スペース区切り=AND、`OR` キーワード=OR、`NOT` キーワード=次トークンを除外
+- フィルタ対象フィールド: `item.Name + " " + item.Keywords`（小文字比較）
+- アイテム数表示: フィルタ時は `N / M 件`、非フィルタ時は `M 件`
+- ソート: `UpdateDate` 降順（新しい順）、`localeCompare` で文字列比較（`yyyy-MM-dd-HHmmss-mmm-rand` 形式なので正しく並ぶ）
+- `IsMetaOnly=true` のアイテムは `opacity: 0.5` で薄く表示
+- クリック → `TTApplication.OpenItem(id, 'texteditor')` → メインパネルに新タブで開く
+- キーボード: `Enter` キーでも同じ動作（`role="button"` + `tabIndex={0}`）
+- 仮想スクロール: `useVirtualizer`（overscan=5）で大量アイテムでもパフォーマンス維持
 
-**検証**: テストデータが左パネルに表示される。フィルタが動作する。クリックでメインパネルにコンテンツが開く。
+**seedTestData() の仕様** (`src/App.tsx`):
+```typescript
+function seedTestData(): void {
+  const memos = TTApplication.Instance.Models.Memos
+  if (memos.Count > 0) return  // 重複投入防止（HMR対策）
+  const samples = [/* 10件のサンプル */]
+  samples.forEach(({ content, contentType }) => {
+    const item = new TTDataItem()
+    item.ContentType = contentType
+    item.Content = content
+    item.markSaved()   // IsDirty=false にする
+    memos.AddItem(item)
+  })
+}
+seedTestData()  // モジュールレベルで呼び出し
+```
+> ⚠ `memos.Count > 0` チェックが必須。HMR（Hot Module Replacement）でモジュールが再評価される際に重複投入されるのを防ぐ。
+
+**AND/OR/NOT フィルタ実装**:
+```typescript
+function matchesFilter(item: TTDataItem, filter: string): boolean {
+  if (!filter.trim()) return true;
+  const text = `${item.Name} ${item.Keywords}`.toLowerCase();
+  const orGroups = filter.split(/\bOR\b/i);
+  return orGroups.some(group => {
+    const tokens = group.trim().split(/\s+/).filter(Boolean);
+    return tokens.every(token => {
+      if (token.toUpperCase() === 'NOT') return true;
+      const notIdx = tokens.indexOf(token) - 1;
+      const isNot = notIdx >= 0 && tokens[notIdx].toUpperCase() === 'NOT';
+      return isNot ? !text.includes(token.toLowerCase()) : text.includes(token.toLowerCase());
+    });
+  });
+}
+```
+
+**UpdateDate 表示フォーマット**:
+```typescript
+function formatDate(updateDate: string): string {
+  // "2026-04-19-153639-634-kv4l" → "04/19"
+  const parts = updateDate.split('-');
+  if (parts.length >= 3) return `${parts[1]}/${parts[2]}`;
+  return '';
+}
+```
+
+**⚠ 実装上の落とし穴**:
+
+1. **`useAppUpdate` を2回呼ぶ必要がある**  
+   NavigatorView は `app.Models.Memos`（アイテム追加・削除で更新）と `app.LeftPanel`（フィルタ・選択状態で更新）の両方を購読しなければならない。どちらか一方だけだとフィルタ変更やアイテム追加が反映されない。
+   ```tsx
+   useAppUpdate(app.Models.Memos);
+   useAppUpdate(app.LeftPanel);
+   ```
+
+2. **仮想スクロールのコンテナは `position: relative` が必須**  
+   `useVirtualizer` の各アイテムは `position: absolute; top: vItem.start` で配置されるため、外側ラッパーに `position: relative` と `height: virtualizer.getTotalSize()` が必要。
+   ```tsx
+   <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+     {virtualizer.getVirtualItems().map(vItem => (
+       <div style={{ position: 'absolute', top: vItem.start, left: 0, right: 0, height: ITEM_HEIGHT }}>
+   ```
+
+3. **`navigator__list` の CSS に `flex: 1; overflow-y: auto` が必須**  
+   LeftPanel の高さから フィルタ欄・件数表示を除いた残り全体をリストが占有する必要がある。`flex: 1` を付けないと仮想スクロールの高さ計算がずれる。
+
+4. **デフォルトパネル幅はスクリーンサイズに合わせて要調整**  
+   `TTLeftPanel.Width = 330` / `TTRightPanel.Width = 310` は 1920px 幅モニター基準。小さい画面では `SetWidth()` の clamp 範囲（左: 180〜600、右: 180〜500）内で調整する。
+
+**検証条件**:
+- [ ] 左パネルを開く（Ribbon ナビゲーターアイコン）と 10 件のサンプルアイテムが表示される
+- [ ] フィルタ欄に入力するとリアルタイムに絞り込まれ件数表示が更新される（例: "react" → 該当件数/10件）
+- [ ] `OR` 構文（例: "react OR vue"）・`NOT` 構文（例: "react NOT test"）が正しく動作する
+- [ ] アイテムをクリックすると `TTApplication.OpenItem` が呼ばれる（コンソールログで確認）
+- [ ] UpdateDate 降順（新しい順）でソートされている
+- [ ] 左パネル幅デフォルト330px・右パネル幅デフォルト310pxで表示される
 
 ---
 
