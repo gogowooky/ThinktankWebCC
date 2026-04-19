@@ -76,12 +76,16 @@ export class TTRightPanel extends TTObject {
   /** チャットメッセージを追加する */
   public AddChatMessage(role: 'user' | 'assistant', content: string): void {
     const msg: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       role,
       content,
       timestamp: new Date().toISOString(),
     };
     this.ChatMessages = [...this.ChatMessages, msg];
+    // メッセージ追加時にパネルを自動的に開く
+    if (!this.IsOpen) {
+      this.IsOpen = true;
+    }
     this.NotifyUpdated();
   }
 
