@@ -599,26 +599,159 @@ this.RightPanel._parent = this;
 **目標**: リボン・左右サブパネル・メインパネルの骨格UIと同期インジケーターを構築する。
 
 **新規作成**:
-- `src/components/Layout/AppLayout.tsx + .css` - CSS Grid: `[ribbon][left][splitter][main][splitter][right]`
-- `src/components/Layout/Ribbon.tsx + .css` - 縦並びアイコンリボン（上部グループ: ナビ・検索・タグ・最近、下部グループ: 設定・同期状態）
-- `src/components/Layout/Splitter.tsx + .css`
-- `src/components/LeftPanel/LeftPanel.tsx + .css`
-- `src/components/LeftPanel/LeftPanelHeader.tsx`
-- `src/components/RightPanel/RightPanel.tsx + .css`
+- `src/components/UI/SyncIndicator.tsx + .css` - 同期状態バッジ（タブバー右端に常時表示）
+- `src/components/Layout/Splitter.tsx + .css` - ドラッグで幅変更するセパレーター
+- `src/components/Layout/Ribbon.tsx + .css` - 縦並びアイコンリボン（44px 幅）
+- `src/components/Layout/AppLayout.tsx + .css` - Flex レイアウト `[Ribbon][LeftPanel][Splitter][MainPanel][Splitter][RightPanel]`
+- `src/components/LeftPanel/LeftPanelHeader.tsx` - タイトル＋閉じるボタン
+- `src/components/LeftPanel/LeftPanel.tsx + .css` - 開閉アニメーション付きコンテナ
 - `src/components/RightPanel/RightPanelHeader.tsx`
-- `src/components/MainPanel/MainPanel.tsx + .css` - タブバー + コンテンツエリア
-- `src/components/MainPanel/TabBar.tsx + .css`
-- `src/components/MainPanel/EmptyState.tsx`
-- `src/components/UI/SyncIndicator.tsx` - 同期状態バッジ（タブバー右端に常時表示）
+- `src/components/RightPanel/RightPanel.tsx + .css`
+- `src/components/MainPanel/EmptyState.tsx + .css` - タブ 0 件時のウェルカム画面
+- `src/components/MainPanel/TabBar.tsx + .css` - タブ一覧＋右端 SyncIndicator
+- `src/components/MainPanel/MainPanel.tsx + .css` - TabBar＋コンテンツエリア
 
-**SyncIndicator 仕様**:
-- タブバー右端に常時表示（邪魔にならないサイズ）
-- 同期済み: `✓` アイコン（`--text-muted`、ほぼ見えない）
-- 同期中: スピナーアニメーション + 件数（`--text-accent`）
-- 未送信あり: `●N` バッジ（`--text-highlight`）
-- オフライン: `✗` アイコン（`--text-muted`）
+**変更**:
+- `src/App.tsx` - Phase 4 テストページ → `<AppLayout />` に切り替え。テスト関数はデバッグ用として保持。`window.__runTests()` でコンソールから実行可能。
 
-**検証**: リボンクリックで左パネルが開閉。Splitterで幅を変更できる。SyncIndicatorがタブバーに表示される。
+---
+
+#### 実装詳細・仕様
+
+**AppLayout のレイアウト構成**:
+```
+[Ribbon 44px固定][LeftPanel 可変][Splitter 4px][MainPanel flex:1][Splitter 4px][RightPanel 可変]
+```
+- CSS Flexbox（`display: flex`）で横並び
+- LeftPanel / RightPanel は `IsOpen=false` のとき Splitter ごと非表示
+- Splitter は `IsOpen` が true のときのみレンダリングする（条件付き）
+
+**Ribbon のアイコン構成**:
+
+| 位置 | アイコン（lucide-react） | 種別 | 操作 |
+|------|------------------------|------|------|
+| 上部 | `BookOpen` | navigator | `LeftPanel.SwitchTo('navigator')` |
+| 上部 | `Search` | search | `LeftPanel.SwitchTo('search')` |
+| 上部 | `Tag` | tags | `LeftPanel.SwitchTo('tags')` |
+| 上部 | `Clock` | recent | `LeftPanel.SwitchTo('recent')` |
+| 下部 | `List` | outline | `RightPanel.SwitchTo('outline')` |
+| 下部 | `Link2` | related | `RightPanel.SwitchTo('related')` |
+| 下部 | `Settings` | 設定 | Phase 30 以降 |
+
+- アクティブ状態: `PanelType === type && IsOpen` のとき `--bg-selected` + `--text-accent`
+- 同じアイコンを再クリックでパネルを閉じる（`SwitchTo()` の Toggle 仕様）
+
+**LeftPanel / RightPanel の開閉アニメーション**:
+```tsx
+// IsOpen=false のとき width:0 へ CSS transition でアニメーション
+style={{
+  width: lp.IsOpen ? lp.Width : 0,
+  minWidth: lp.IsOpen ? lp.Width : 0,
+}}
+// CSS: transition: width var(--transition-panel), min-width var(--transition-panel)
+// overflow: hidden で中身をクリップ
+```
+
+**Splitter の実装**:
+- `mousedown` で `lastX` を記録し `document` に `mousemove` / `mouseup` を登録
+- `mousemove` で `delta = currentX - lastX` を計算し `onResize(delta)` を呼ぶ（delta 方式）
+- `mouseup` でリスナーを解除
+- ドラッグ中: `document.body.style.cursor = 'col-resize'` / `userSelect = 'none'` を設定
+- ヒット領域: `::after { inset: 0 -3px }` で前後 3px 拡張
+- AppLayout 側で delta を `LeftPanel.SetWidth(width + delta)` / `RightPanel.SetWidth(width - delta)` に接続
+  - 右パネルは delta の符号が逆（`width - delta`）
+
+**SyncIndicator の状態とアイコン**:
+
+| state | アイコン（lucide-react） | 色 |
+|-------|------------------------|-----|
+| `synced` | `CheckCircle2` size=11 | `--sync-synced`（`--text-muted`） |
+| `syncing` | `Loader2` + spin animation + 件数 | `--sync-syncing`（`--text-accent`） |
+| `pending` | `●N` テキスト | `--text-highlight` |
+| `offline` | `WifiOff` | `--text-muted` |
+| `error` / `conflict` | `AlertCircle` | `--sync-error`（`--text-error`） |
+
+- Phase 5 では `MainPanel` がダミーの `SyncStatus { state: 'synced' }` を渡す
+- Phase 15 以降で `StorageManager.getSyncStatus()` に接続して差し替える
+
+**TabBar の Props**:
+```tsx
+interface Props {
+  tabs: ReadonlyArray<TTTab>;
+  activeTabId: string;
+  onSwitch: (tabId: string) => void;
+  onClose: (tabId: string) => void;
+  syncStatus: SyncStatus;
+}
+// タブ表示: tab.DisplayTitle（IsDirty 時に ● プレフィックス）
+// 右端: <SyncIndicator status={syncStatus} />
+```
+
+**panel-header 共有スタイル**:
+- `.panel-header` / `.panel-header__title` / `.panel-header__close` を `LeftPanel.css` に定義
+- `RightPanelHeader` も同じ CSS クラスを使用（import は `LeftPanel.css` に依存しない独立スタイルとして実装するのが望ましい。次回は共通の `Panel.css` に抽出推奨）
+
+---
+
+#### ⚠️ 落とし穴・注意事項（再構築時に必須）
+
+**① AppLayout に `flex: 1` と `min-height: 0` が必須**
+
+> `#root` が `flex-direction: column` の flex コンテナ。  
+> `AppLayout` に `flex: 1` がないと高さが縮んで Ribbon のアイコンだけが小さく表示される。
+
+```css
+/* ✅ 正しい AppLayout.css */
+.app-layout {
+  display: flex;
+  flex: 1;        /* ← 必須: #root の縦方向に広がる */
+  min-height: 0;  /* ← 必須: flex 子要素の縮小を許可 */
+  width: 100%;
+  overflow: hidden;
+}
+```
+
+**② MainPanel に `min-width: 0` が必須**
+
+> flex 子要素はデフォルトで `min-width: auto` のため、コンテンツ幅より縮まらない。  
+> `min-width: 0` を設定しないとタブが増えた際にレイアウトが崩れる。
+
+```css
+.main-panel {
+  flex: 1;
+  min-width: 0;  /* ← 必須 */
+}
+```
+
+**③ Splitter は `IsOpen` のときのみレンダリング**
+
+```tsx
+// ✅ IsOpen=false のとき Splitter を非表示にする
+{app.LeftPanel.IsOpen && <Splitter onResize={handleLeftResize} />}
+```
+
+> Splitter を常時レンダリングすると `IsOpen=false` でも幅 4px の隙間が残る。
+
+**④ `panel-header` スタイルは LeftPanel.css に定義**
+
+> 現実装では `.panel-header` 系のクラスが `LeftPanel.css` に書かれており、  
+> `RightPanelHeader` もこれに依存している。  
+> 次回再構築時は `src/components/shared/Panel.css` などに独立させること。
+
+---
+
+#### 検証条件
+
+| # | 操作 | 期待結果 |
+|---|------|---------|
+| 1 | Ribbon のナビアイコンをクリック | 左パネルが開く（`IsOpen=true`, `PanelType='navigator'`）|
+| 2 | 同じアイコンを再クリック | 左パネルが閉じる |
+| 3 | 別の種別（検索等）をクリック | `PanelType` が変わり開いた状態を維持 |
+| 4 | 左パネルの `×` ボタン | パネルが閉じる |
+| 5 | Splitter をドラッグ | 左パネル幅が変更される（180〜600px でクランプ） |
+| 6 | Ribbon 下部のアイコンをクリック | 右パネルが開く |
+| 7 | タブが 0 件 | EmptyState（「Thinktank」）が表示される |
+| 8 | タブバー右端 | SyncIndicator（薄い ○）が常時表示 |
 
 ---
 
