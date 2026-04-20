@@ -9,7 +9,7 @@
 
 * データの種別と保管方法について
 1) アプリが取扱うTTDataItemデータはすべてテキストデータで、「category/種別」属性を持つ
-2) 現時点の種別は memo.md, chat.md, group.md, link.md, data.csv、後からも追加予定
+2) 現時点の種別は {memo.md/chat.md/group.md/link.md/data.csv}。後からも追加予定
 3) TTDataItemのテキストデータはstorage/保管庫に保存される
 4) 保管庫は LocalFS ではディレクトリで構成される
    - {datafolder}/{保管庫名}/{memo/chat/group/link/data}/{ID:yyyy-MM-dd-hhmmss}.{拡張子}
@@ -19,20 +19,20 @@
    - table name: {保管庫名}
 
 * タブで表示するデータ種別と表示方法について
-1) データ表示メディアは {texteditor/markdown/datagrid/graph/chat} です
-  - texteditor: 個々のTTDataItemデータの編集・閲覧　  { memo.md, chat.md, group.md, link.md, data.csv }
-  - martkdown: 閲覧用のTTDataItemデータの閲覧         { memo.md, chat.md, group.md, link.md }
-  - datagrid: 一覧用のTTDataItemデータの編集・閲覧    { group.md, link.md, data.csv }
-  - graph: 一覧用のTTDataItemデータの閲覧　　         { group.md, link.md, data.csv }
-  - chat: Chat用のTTDataItemデータの利用              { (chat.md) }
-2) タブは1つのgroup.mdを持ち、そのデータセットが含むTTDataItemデータを表示します。
-　- group.mdのクリック ⇒ そのタブへFocus、または、group.md を持つタブを新規作成
-　- 
-3) 
+1) データを表示する方法/メディアは {texteditor/markdown/datagrid/graph/chat} です
+  - texteditor: 個々のTTDataItemデータの編集・閲覧　  表示できるデータcategory {memo/chat/group/link/data}
+  - martkdown: 閲覧用のTTDataItemデータの閲覧         表示できるデータcategory {memo/chat/group/link}
+  - datagrid: 一覧用のTTDataItemデータの編集・閲覧    表示できるデータcategory {group/link/data}
+  - graph: 一覧用のTTDataItemデータの閲覧　　         表示できるデータcategory {group/link/data}
+  - chat: Chat用のTTDataItemデータの利用（CLI風）     表示できるデータcategory {chat}
+2) タブは表示データセット用の{group}データを参照先として持つ。但し1番左のタブだけは{group}データを持たずに、全TTDataItemを表示対象とする
+3) タブ内の最上位にツールバーがあり、左側に ← → ボタンを設置し、表示履歴を行き来できるようにする。
+4) ツールバーのナビゲートボタン：　左パネル部にフォーカスタブの表示履歴をリスト表示
+5) ツールバーの検索ボタン：　あとで実装
+6) ツールバーのタグボタン：　あとで実装
+7) ツールバーのデータグリッドボタン：　左パネル部にフォーカスタブの データセットと 表示履歴中の{group/link/data}
 
-* タブの役割について
-1) タブはgroupの範囲で表示する
-2) 
+
 
 
 ## 2026/04/19
