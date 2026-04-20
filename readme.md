@@ -3,28 +3,31 @@
 
 ## 依頼事項
 
-* データの種別と保管方法について
-1) アプリが取扱うTTDataItemデータはすべてテキストデータで、category/種別 属性を持つ
-2) 現時点で想定種別は memo.md, chat.md, group.md, link.md, data.csv、後からも追加予定
-3) TTDataItemのテキストデータはstorage/保管庫に保存される
-4) 保管庫は LocalFS ではディレクトリで構成される
-   - {datafolder}/{保管庫名}/{memo/chat/group/link/data}/yyyy-MM-dd-hhmmss.{拡張子}
-5) 保管庫は BigQueryでは テーブル名や属性で構成される
-   - file_type: {拡張子}
-   - category: {memo/chat/group/link/data}
-   - table name: {テーブル名}
-6) 別の実体を持つTTDataItemは内容として参照先linkを記述し、アクセス方法などは別途定義する
-
-
-なんとなくの「考えてること」でタブ化したいな。で、タブ名はkeywordにしたい。
+* なんとなくの「考えてること」でタブ化したいな。で、タブ名はkeywordにしたい。
 かといって、「考えてること」タブではほかのことを考えてはいけない、ようにはしたくない
 「あなたオントロジー」
 
+* データの種別と保管方法について
+1) アプリが取扱うTTDataItemデータはすべてテキストデータで、「category/種別」属性を持つ
+2) 現時点の種別は memo.md, chat.md, group.md, link.md, data.csv、後からも追加予定
+3) TTDataItemのテキストデータはstorage/保管庫に保存される
+4) 保管庫は LocalFS ではディレクトリで構成される
+   - {datafolder}/{保管庫名}/{memo/chat/group/link/data}/{ID:yyyy-MM-dd-hhmmss}.{拡張子}
+5) 保管庫は BigQueryでは 保管庫名や属性で構成される
+   - file_type: {.md/.csv}
+   - category: {memo/chat/group/link/data}
+   - table name: {保管庫名}
 
-
-* データの種別と表示方法について
+* タブで表示するデータ種別と表示方法について
 1) データ表示メディアは {texteditor/markdown/datagrid/graph/chat} です
-2) タブにはデータセットと表示メディアを搭載します
+  - texteditor: 個々のTTDataItemデータの編集・閲覧　  { memo.md, chat.md, group.md, link.md, data.csv }
+  - martkdown: 閲覧用のTTDataItemデータの閲覧         { memo.md, chat.md, group.md, link.md }
+  - datagrid: 一覧用のTTDataItemデータの編集・閲覧    { group.md, link.md, data.csv }
+  - graph: 一覧用のTTDataItemデータの閲覧　　         { group.md, link.md, data.csv }
+  - chat: Chat用のTTDataItemデータの利用              { (chat.md) }
+2) タブは1つのgroup.mdを持ち、そのデータセットが含むTTDataItemデータを表示します。
+　- group.mdのクリック ⇒ そのタブへFocus、または、group.md を持つタブを新規作成
+　- 
 3) 
 
 * タブの役割について
