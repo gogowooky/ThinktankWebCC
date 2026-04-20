@@ -1,73 +1,79 @@
 import { TTObject } from './TTObject';
+import type { StateConfig } from '../types';
 
-export interface TTStateConfig {
-    Default?: (id: string) => string;
-    Test?: (id: string, value: string) => boolean;
-    Apply?: (id: string, value: string) => void;
-    Watch?: (id: string) => void;
-    Calculate?: (id: string) => string;
-}
-
+/**
+ * TTState - UI状態の個別エントリ
+ *
+ * 各状態は ID, Value, Description を持ち、
+ * Default/Test/Apply/Watch のコールバックで動作をカスタマイズできる。
+ */
 export class TTState extends TTObject {
-    private _value: string = '';
-    public Description: string;
+  /** 値 */
+  private _value: string = '';
 
-    protected _stored_value: string = '';
-    protected _default: (id: string) => string = () => '';
-    protected _test: (id: string, value: string) => boolean = () => true;
-    protected _apply_to_view: (id: string, value: string) => void = () => { };
-    protected _event_initiator: (id: string) => void = () => { };
-    protected _calculate_value: ((id: string) => string) | null = null;
+  /** 説明 */
+  public Description: string = '';
 
-    public override get ClassName(): string {
-        return 'TTState';
+  /** デフォルト値取得関数 */
+  protected _default: (id: string) => string = () => '';
+
+  /** バリデーション関数 */
+  protected _test: (id: string, value: string) => boolean = () => true;
+
+  /** ビューへの適用関数 */
+  protected _applyToView: (id: string, value: string) => void = () => {};
+
+  /** イベント監視開始関数 */
+  protected _watch: (id: string) => void = () => {};
+
+  /** 計算値関数（設定時、Valueは計算結果を返す） */
+  protected _calculate: ((id: string) => string) | null = null;
+
+  public override get ClassName(): string {
+    return 'TTState';
+  }
+
+  constructor(id: string = '', description: string = '', config?: string | StateConfig) {
+    super();
+    this.ID = id;
+    this.Name = id;
+    this.Description = description;
+
+    if (typeof config === 'string') {
+      this._value = config;
+      this._default = () => config;
+    } else if (config) {
+      this._default = config.Default || (() => '');
+      this._value = this._default(this.ID);
+      this._test = config.Test || (() => true);
+      this._applyToView = config.Apply || (() => {});
+      this._watch = config.Watch || (() => {});
     }
 
-    constructor(id: string = '', description: string = '', config?: string | TTStateConfig) {
-        super();
-        this.ID = id;
-        this.Name = id;
-        this.Description = description;
-        this.UpdateDate = this.getNowString();
+    // 監視を開始
+    this._watch(this.ID);
+  }
 
-        if (typeof config === 'string') {
-            this._value = config;
-            this._default = () => config;
-        } else if (config) {
-            this._default = config.Default || (() => '');
-            this._value = this._default(this.ID);
-            this._test = config.Test || (() => true);
-            this._apply_to_view = config.Apply || (() => { });
-            this._event_initiator = config.Watch || (() => { });
-            this._calculate_value = config.Calculate || null;
-        } else {
-            this._value = '';
-        }
-
-        // Execute Watch/event_initiator to start monitoring
-        this._event_initiator(this.ID);
+  /** 値を取得（_calculateが設定されている場合はその結果を返す） */
+  public get Value(): string {
+    if (this._calculate) {
+      return this._calculate(this.ID);
     }
+    return this._value;
+  }
 
-    /**
-     * 値を取得する
-     * _calculate_value が設定されている場合はその計算結果を返す
-     * 設定されていない場合は格納された値を返す
-     */
-    public get Value(): string {
-        if (this._calculate_value) {
-            return this._calculate_value(this.ID);
-        }
-        return this._value;
-    }
+  /** 値を設定 */
+  public set Value(value: string) {
+    this._value = value;
+  }
 
-    /**
-     * 値を設定する
-     */
-    public set Value(value: string) {
-        this._value = value;
-    }
+  /** デフォルト値を取得 */
+  public get DefaultValue(): string {
+    return this._default(this.ID);
+  }
 
-    public Apply(value: string): void {
-        this._apply_to_view(this.ID, value);
-    }
+  /** 値をビューに適用 */
+  public Apply(value: string): void {
+    this._applyToView(this.ID, value);
+  }
 }
