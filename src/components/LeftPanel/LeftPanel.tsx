@@ -3,16 +3,21 @@
  * 左パネルのコンテナ。
  * TTLeftPanel ビューモデルの IsOpen / Width / PanelType を購読して表示制御する。
  *
- * Phase 5: 骨格実装（コンテンツはプレースホルダー）
- * Phase 6 以降: NavigatorView / SearchView 等を差し込む
+ * Phase 5: 骨格実装
+ * Phase 9Ex1: 左端ツールバー5ボタンに対応した5種類のパネルを表示
  */
 
 import React from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { LeftPanelHeader } from './LeftPanelHeader';
-import { NavigatorView } from './NavigatorView';
+import { PickupSettingsPanel } from './panels/PickupSettingsPanel';
+import { MediaSettingsPanel }  from './panels/MediaSettingsPanel';
+import { HistoryPanel }        from './panels/HistoryPanel';
+import { FilterPanel }         from './panels/FilterPanel';
+import { FulltextSearchPanel } from './panels/FulltextSearchPanel';
 import './LeftPanel.css';
+import './panels/panels.css';
 
 export function LeftPanel() {
   const app = TTApplication.Instance;
@@ -35,16 +40,11 @@ export function LeftPanel() {
             onClose={() => lp.Close()}
           />
           <div className="left-panel__content">
-            {lp.PanelType === 'navigator' && <NavigatorView />}
-            {lp.PanelType === 'search' && (
-              <p className="left-panel__placeholder">検索（Phase 28 で実装）</p>
-            )}
-            {lp.PanelType === 'tags' && (
-              <p className="left-panel__placeholder">タグ（Phase 33 で実装）</p>
-            )}
-            {lp.PanelType === 'recent' && (
-              <p className="left-panel__placeholder">最近（Phase 33 で実装）</p>
-            )}
+            {lp.PanelType === 'pickup-settings'  && <PickupSettingsPanel />}
+            {lp.PanelType === 'media-settings'   && <MediaSettingsPanel />}
+            {lp.PanelType === 'history'           && <HistoryPanel />}
+            {lp.PanelType === 'filter'            && <FilterPanel />}
+            {lp.PanelType === 'fulltext-search'   && <FulltextSearchPanel />}
           </div>
         </>
       )}

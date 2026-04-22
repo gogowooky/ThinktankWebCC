@@ -19,16 +19,16 @@ export class TTLeftPanel extends TTObject {
   public Width: number = 330;
 
   /** 表示中のパネル種別 */
-  public PanelType: LeftPanelType = 'navigator';
+  public PanelType: LeftPanelType = 'pickup-settings';
 
-  /**
-   * ナビゲーターのフィルタ文字列。
-   * AND / OR / NOT 構文（Phase 6 の NavigatorView で解析）。
-   */
+  /** フィルター / 全文検索パネルで使用するフィルタ文字列 */
   public Filter: string = '';
 
-  /** ナビゲーターで選択中のアイテム ID */
+  /** フィルター / 全文検索パネルで選択中のアイテム ID */
   public SelectedItemID: string = '';
+
+  /** フィルター / 全文検索パネルで選択中の保管庫 ID */
+  public SelectedVaultId: string = '';
 
   public override get ClassName(): string {
     return 'TTLeftPanel';
@@ -86,6 +86,13 @@ export class TTLeftPanel extends TTObject {
   public SelectItem(id: string): void {
     if (this.SelectedItemID === id) return;
     this.SelectedItemID = id;
+    this.NotifyUpdated();
+  }
+
+  /** 選択保管庫を更新する */
+  public SetVault(vaultId: string): void {
+    if (this.SelectedVaultId === vaultId) return;
+    this.SelectedVaultId = vaultId;
     this.NotifyUpdated();
   }
 

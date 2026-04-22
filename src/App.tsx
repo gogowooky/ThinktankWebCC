@@ -190,8 +190,8 @@ function runPhase4Tests(): TestResult[] {
     ? pass('TTLeftPanel: Toggle', `IsOpen=${app.LeftPanel.IsOpen}`)
     : pass('TTLeftPanel: Toggle', `IsOpen=${app.LeftPanel.IsOpen}`) // どちらも成功扱い（構造確認）
 
-  app.LeftPanel.SwitchTo('search')
-  app.LeftPanel.PanelType === 'search' && app.LeftPanel.IsOpen
+  app.LeftPanel.SwitchTo('filter')
+  app.LeftPanel.PanelType === 'filter' && app.LeftPanel.IsOpen
     ? pass('TTLeftPanel: SwitchTo', `PanelType=${app.LeftPanel.PanelType}`)
     : fail('TTLeftPanel: SwitchTo', 'NG')
 
@@ -268,7 +268,7 @@ function seedTestData(): void {
   const wpf        = addItem('# WPF + WebView2\nLocal版はWPFシェルにWebView2を組み込んでReact SPAを表示する。', 'memo')
   const virtual    = addItem('# 仮想スクロール\n@tanstack/react-virtual でナビゲーターリストを効率的にレンダリング。\n\n詳細は [Memo:REACT_TS_ID] も参照。', 'memo')
   const sync       = addItem('# 同期アーキテクチャ\nメタデータ先行同期 → コンテンツはオンデマンドフェッチ。\n\n[Memo:BIGQUERY_ID] と [Memo:STORAGE_ID] を参照。', 'memo')
-  const storage    = addItem('# ストレージ抽象化\nIStorageBackend を介して PWA版（IndexedDB）とLocal版（C# API）を切り替える。', 'file')
+  const storage    = addItem('# ストレージ抽象化\nIStorageBackend を介して PWA版（IndexedDB）とLocal版（C# API）を切り替える。', 'memo')
 
   // ── ID が確定した後、[Memo:PLACEHOLDER] を実際の ID に差し替える ──
   const replacePlaceholders = (content: string): string =>

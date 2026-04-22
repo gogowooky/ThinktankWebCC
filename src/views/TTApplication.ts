@@ -63,6 +63,9 @@ export class TTApplication extends TTObject {
     this.LeftPanel._parent = this;
     this.RightPanel._parent = this;
 
+    // 起動時タブ: 空のpickup = 全保管庫・全データ対象
+    this.MainPanel.OpenPickupTab('', '全データ', 'datagrid');
+
     console.log(`[TTApplication] initialized: mode=${this.AppMode}${this.LocalApiUrl ? `, api=${this.LocalApiUrl}` : ''}`);
   }
 

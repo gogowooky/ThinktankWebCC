@@ -11,8 +11,7 @@
 import React, { useRef, useMemo, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
-  FileText, MessageCircle, Paperclip, Image,
-  Mail, HardDrive, Link, File,
+  FileText, MessageCircle, Bookmark, Link, Table, File,
 } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -23,13 +22,11 @@ import './NavigatorView.css';
 // ── ContentType アイコンマップ ────────────────────────────────────────
 
 const CONTENT_ICONS: Record<ContentType, React.ReactNode> = {
-  memo:   <FileText    size={13} />,
+  memo:   <FileText      size={13} />,
   chat:   <MessageCircle size={13} />,
-  file:   <Paperclip   size={13} />,
-  photo:  <Image       size={13} />,
-  email:  <Mail        size={13} />,
-  drive:  <HardDrive   size={13} />,
-  url:    <Link        size={13} />,
+  pickup: <Bookmark      size={13} />,
+  link:   <Link          size={13} />,
+  table:  <Table         size={13} />,
 };
 
 function ContentIcon({ type }: { type: ContentType }) {

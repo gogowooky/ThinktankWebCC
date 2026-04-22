@@ -44,12 +44,38 @@ export class TTMainPanel extends TTObject {
   // ── タブ操作 ───────────────────────────────────────────────────────
 
   /**
-   * 新規空タブを開く。
+   * 新規空タブを開く（全データ対象pickup タブ）。
    * @returns 作成した TTTab
    */
-  public NewTab(viewType: ViewType = 'texteditor'): TTTab {
+  public NewTab(viewType: ViewType = 'datagrid'): TTTab {
     const tab = new TTTab('', viewType);
     tab.Name = '新規タブ';
+    this._tabs.push(tab);
+    this._activeTabId = tab.ID;
+    this.NotifyUpdated();
+    return tab;
+  }
+
+  /**
+   * pickup データを指定してタブを開く（pickup タブの主要な生成手段）。
+   * - 既に同じ GroupID のタブがあれば、そちらにスイッチする（重複防止）。
+   * @param groupId   pickup データの ID（空文字 = 全データ対象）
+   * @param title     タブタイトル
+   * @param viewType  初期ビュー種別（デフォルト: datagrid）
+   */
+  public OpenPickupTab(
+    groupId: string,
+    title: string = '',
+    viewType: ViewType = 'datagrid'
+  ): TTTab {
+    const existing = this._tabs.find(t => t.GroupID === groupId);
+    if (existing) {
+      this._activeTabId = existing.ID;
+      this.NotifyUpdated();
+      return existing;
+    }
+    const tab = new TTTab(groupId, viewType);
+    tab.Name = title || (groupId ? groupId : '全データ');
     this._tabs.push(tab);
     this._activeTabId = tab.ID;
     this.NotifyUpdated();

@@ -77,13 +77,11 @@ export interface SyncStatus {
 
 /** TTDataItem のコンテンツ種別 */
 export type ContentType =
-  | 'memo'   // テキストメモ
-  | 'chat'   // AIチャット会話
-  | 'file'   // 添付ファイル
-  | 'photo'  // 写真
-  | 'email'  // メール
-  | 'drive'  // Google Drive リンク
-  | 'url';   // URL
+  | 'memo'    // テキストメモ
+  | 'chat'    // AIチャット会話（継続時は上書き保存）
+  | 'pickup'  // アイテム集合（フィルターまたはID一覧）
+  | 'link'    // URL/ローカルURI/Google Drive等へのリンク集
+  | 'table';  // 複数テーブルを含むデータ（独自形式md）
 
 // #endregion
 
@@ -94,8 +92,13 @@ export type ContentType =
 /** メインパネルのビュー種別 */
 export type ViewType = 'texteditor' | 'markdown' | 'datagrid' | 'graph' | 'chat';
 
-/** 左パネルの表示種別 */
-export type LeftPanelType = 'navigator' | 'search' | 'tags' | 'recent';
+/** 左パネルの表示種別（左端ツールバーの5ボタンに対応） */
+export type LeftPanelType =
+  | 'pickup-settings'   // ① フォーカスpickupタブの設定
+  | 'media-settings'    // ② フォーカスメディアの設定
+  | 'history'           // ③ 表示済みpickupタブの履歴
+  | 'filter'            // ④ 保管庫フィルタリング＋新規タブ作成
+  | 'fulltext-search';  // ⑤ 保管庫全文検索＋新規タブ作成
 
 /** 右パネルの表示種別 */
 export type RightPanelType = 'outline' | 'properties' | 'related' | 'chat';

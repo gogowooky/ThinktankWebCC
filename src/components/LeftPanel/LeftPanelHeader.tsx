@@ -10,10 +10,11 @@ import { X } from 'lucide-react';
 import type { LeftPanelType } from '../../types';
 
 const PANEL_TITLES: Record<LeftPanelType, string> = {
-  navigator: 'ナビゲーター',
-  search:    '検索',
-  tags:      'タグ',
-  recent:    '最近',
+  'pickup-settings':  'pickup設定',
+  'media-settings':   'メディア設定',
+  'history':          '履歴',
+  'filter':           'フィルター',
+  'fulltext-search':  '全文検索',
 };
 
 interface Props {

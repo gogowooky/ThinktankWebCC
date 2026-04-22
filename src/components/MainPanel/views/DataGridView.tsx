@@ -14,8 +14,7 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
-  FileText, MessageCircle, Paperclip, Image,
-  Mail, HardDrive, Link, File, MessageSquare,
+  FileText, MessageCircle, Bookmark, Link, Table, MessageSquare,
 } from 'lucide-react';
 import { TTApplication } from '../../../views/TTApplication';
 import { useAppUpdate } from '../../../hooks/useAppUpdate';
@@ -26,13 +25,11 @@ import './DataGridView.css';
 // ── ContentType アイコン ─────────────────────────────────────────────
 
 const CONTENT_ICONS: Record<ContentType, React.ReactNode> = {
-  memo:  <FileText      size={13} />,
-  chat:  <MessageCircle size={13} />,
-  file:  <Paperclip    size={13} />,
-  photo: <Image        size={13} />,
-  email: <Mail         size={13} />,
-  drive: <HardDrive    size={13} />,
-  url:   <Link         size={13} />,
+  memo:   <FileText      size={13} />,
+  chat:   <MessageCircle size={13} />,
+  pickup: <Bookmark      size={13} />,
+  link:   <Link          size={13} />,
+  table:  <Table         size={13} />,
 };
 
 // ── 同期状態バッジ ───────────────────────────────────────────────────
@@ -197,7 +194,7 @@ export function DataGridView() {
                   {/* ContentType アイコン */}
                   <div className="dg-col dg-col--type">
                     <span className="dg-type-icon">
-                      {CONTENT_ICONS[item.ContentType] ?? <File size={13} />}
+                      {CONTENT_ICONS[item.ContentType] ?? <FileText size={13} />}
                     </span>
                   </div>
 

@@ -9,59 +9,69 @@
 * データの種別と保管方法について
 
 1) アプリが取扱うTTDataItemデータはすべてテキストデータ（markdown）で、「category/種別」属性を持つ
-2) 現時点の{種別}は {memo/chat/group/link/data}で、後からも追加可
-3) データ種別ごとの記載内容は以下
+2) 現時点の{種別}は {memo/chat/pickup/link/table}で、後からも追加可
+3) データ種別ごとの記載ルールは以下（markdownは決定）
    * memo: メモ: テキストの文章
    * chat: チャット: AIとの対話の記録、追記不可。
       タイトルが1行目、ユーザー発話は #で始まる行、AI発話は自由記載
-   * group: グループ: 保管庫データを選別するfilter、または、保管庫データからの選別データのIDの一覧
+   * pickup: 保管庫データから選別した複数データの集合。filter、または、ID一覧
       タイトルが1行目、filterは >で始まる行、個別データは *で始まる行 他は自由表記
-   * link: リンク: テキストの記録されたURL、ローカルファイルURI、Google Driveファイル、Google Photoデータへのリンクとその付随情報
+   * link: リンク: URL、ローカルファイルURI、Google Driveファイル、Google Photoデータへのリンクとその付随情報
       タイトルが1行目、個別データは *で始まる行 他は自由表記
-   * data: データ: csvデータ
+   * table: データ: csvデータ
       タイトルが1行目、テーブルタイトルは #で始まる行、その後は 空行で区切られた1行のcsvデータ行があれば列名、その後、空行までのcsvはデータ行。
       空行後に テーブルタイトル行があれば、複数テーブル表記可
 4) TTDataItemのテキストデータは「storage/保管庫」に保存され、アプリでは複数保管庫を扱えるが、保管庫間の移動は行わない
 5) 保管庫は LocalFS ではディレクトリで構成される
-   * {datafolder}/{保管庫名}/{memo/chat/group/link/data}/{ID:yyyy-MM-dd-hhmmss}.{拡張子}
+   * {datafolder}/{保管庫名}/{memo/chat/pickup/link/table}/{ID:yyyy-MM-dd-hhmmss}.{拡張子}
 6) 保管庫は BigQueryでは 保管庫名や属性で構成される
    * file_type: {.md}
-   * category: {memo/chat/group/link/data}
+   * category: {memo/chat/pickup/link/table}
    * table name: {保管庫名}
-
-* メインパネルのtopicタブとその内部表示データの種別と表示方法について
-
-1) メインパネルには複数のtopicタブが表示される
-2) topicタブは、一つの{group}ファイルIDを持ち、その{group}に含まれるアイテムを各メディアで閲覧・編集を行う
-3) topicタブの内部を分割し、各メディアを並べて表示させることも可能とする
-4) アプリ起動時には空の{group}ファイルでtopicタブを1つ開くが、それは全保管庫の全データを対象とする。
-5) topicタブ生成時には{group}ファイルがdatagridメディアで表示されている状態、その後はメディアで選択されたデータが表示される。
-6) データを表示する方法/メディアは {texteditor/markdown/datagrid/graph/chat}
-   * texteditor: {memo/chat/group/link/data}の編集・閲覧
-   * martkdown: {memo/chat/group/link}の閲覧
-   * datagrid: {group/link/data}の編集・閲覧
-   * graph: {memo/chat/group/link/data}の閲覧
-   * chat: 主に新規チャット用、{chat}を読み込むケースも想定
-7) 各メディアは最上位にタイトルバーを持つ。　表示内容は以下
-   * （左寄せ）← → ボタン：　表示データ履歴を行き来できる。
-   * （左寄せ）チェックボタン：　表示のtopicタブの{group}に含まれることを示す。 通常inactive
-   * タイトル
-   * （右寄せ）メディア選択ボタン：　アイテムが表示可能なメディアのボタン
 
 * 左端ツールバーと左パネルの機能について
 
-1) アプリ左端のツールバーはグループビュー（topicタブ）の制御用。押下によって各種左パネルが開閉。
+1) アプリ左端のツールバーはpickupタブの制御用の機能群。押下によって各種左パネルが開閉。
 2) アプリ左端のツールバーに以下ボタンを設置
+   ① フォーカスpickupタブ用のための設定ボタン
+   　- {pickup}ファイルの、ID、データ個数、タイトル
+   　- 下DataGrid Filter用のpulldown履歴付textbox。
+   　- タブ用の{pickup}データに含まれるアイテムをDataGridで表示、表示されているアイテムにチェックマークを表示する。
+   　  分割時は、チェックマークの代わりに分割windowの番号を表示する
+   ② フォーカスpickupタブ内のフォーカスメディアのための設定ボタン
+   　- チェックボタン：　フォーカスメディアの表示データが、pickupタブの{pickup}に含まれることを示す。 変更不可
+       （将来的に{pickup}に含まれないファイルも表示する可能性のため）
+   　- フォーカスメディアの表示データタイトル
+   　- メディア選択ボタン：　フォーカスメディアの変更可能なメディアのボタン
+   　- メディア共通のハイライト用の履歴付きtextbox
+   ③ 履歴ボタン：これまで表示したpickupタブの履歴　（新規タブで表示）
+   ④ フィルターボタン　（新規タブで表示）
+   　- 保管庫のpulldown選択肢
+   　- 下DataGrid Filter用のpulldown履歴付textbox と フィルター作成ボタン
+   　- 保管庫の全データ表示用のDataGrid
+   ⑤ 全文検索ボタン　（新規タブで表示）
+   　- 保管庫のpulldown選択肢
+   　- 下DataGrid用の履歴付textbox と 全文検索ヒット作成ボタン
+   　- 保管庫の全データ表示用のDataGrid
 
-   * topicボタン：
-   　- これまでのtopic
-     * 保管庫のpulldown選択肢、履歴付textbox、filterボタン、全文検索ボタン、データリスト表示用のDataGrid、タブ作成ボタン
+* メインパネル（中央）のpickupタブとその内部表示データの種別と表示方法について
 
-   * 新規topicボタン：
-   　表示内容：　保管庫のpulldown選択肢、履歴付textbox、filterボタン、全文検索ボタン、データリスト表示用のDataGrid、タブ作成ボタン
-
-   * データグリッドボタン：
-   * ハイライトボタン：
+1) メインパネルには複数のタブ（pickupタブ）が表示される
+2) pickupタブは、一つの{pickup}ファイルIDを持ち、その{pickup}データに含まれるアイテムを各メディアを用いて閲覧・編集する
+3) pickupタブの内部は左右に最大３分割、上下に最大２分割し、各メディアを並べて表示可
+4) アプリ起動時には空の{pickup}ファイルでpickupタブを1つ作成するが、それは全保管庫の全データを対象タブである。
+5) pickupタブ生成時には{pickup}ファイルがdatagridで表示されている状態。（参考：2)-③,④,⑤）
+6) タブ内最上位にタイトルバーを配置。このバーは分割表示されない。表示内容は以下
+   * （左寄せ）← → ボタン：　表示データ履歴の行き来。
+7) データを表示する方法/メディアは {texteditor/markdown/datagrid/graph/chat}
+   * texteditor: {memo/chat/pickup/link/table}の編集・閲覧
+   * martkdown: {memo/chat/pickup/link}の閲覧
+   * datagrid: {pickup/link/table}の編集・閲覧
+   　datagrid上方にfilter用のpulldown履歴付textboxあり
+   * graph: {memo/chat/pickup/link/table}の閲覧
+   　graph上方にfilter用のpulldown履歴付textboxあり
+   * chat: 主に新規チャット用、{chat}を読み込むケースも想定、表示はgraphicではなくCLI風、
+   　上方にチャット用の履歴付textboxあり
 
 ## 2026/04/19
 
