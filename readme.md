@@ -1,10 +1,22 @@
 # ログ
 
-## 依頼事項
+## 2026/04/23
 
-* なんとなくの「考えてること」でタブ化したいな。で、タブ名はkeywordにしたい。
-かといって、「考えてること」タブではほかのことを考えてはいけない、ようにはしたくない
-「あなたオントロジー」
+Phase9Ex1 の実装が完了しました。
+
+実施内容まとめ:
+
+対象 変更内容
+ContentType memo/chat/pickup/link/table に変更
+TTVault 新規実装（保管庫管理、ID衝突回避）
+LeftPanelType 5種類に変更（①〜⑤に対応）
+TTTab GroupID / CurrentItemID / NavigationHistory 追加
+TTMainPanel OpenPickupTab メソッド追加
+LeftToolbar 新規コンポーネント（5ボタン）
+左パネル5種 スケルトン実装（Phase13以降で実データ接続）
+TTApplication 起動時に「全データ」タブを自動生成
+Ribbon 左パネルボタンをLeftToolbarに移管
+動作確認済み：①pickup設定パネル・④フィルターパネルの開閉切り替え、起動時タブ生成、コンソールエラーなし。
 
 * データの種別と保管方法について
 
