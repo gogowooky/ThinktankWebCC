@@ -5,10 +5,9 @@
  * Phase 9Ex1: 初期実装
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, FileText, History, Filter, Search } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
-import { useAppUpdate } from '../../hooks/useAppUpdate';
 import type { LeftPanelType } from '../../types';
 import './LeftToolbar.css';
 
@@ -28,13 +27,26 @@ const BUTTONS: ToolbarButton[] = [
 
 export function LeftToolbar() {
   const app = TTApplication.Instance;
-  useAppUpdate(app.LeftPanel);
   const lp = app.LeftPanel;
+
+  const [panelOpen, setPanelOpen] = useState(lp.IsOpen);
+  const [panelType, setPanelType] = useState(lp.PanelType);
+
+  useEffect(() => {
+    const key = `left-toolbar-${Math.random().toString(36).slice(2)}`;
+    lp.AddOnUpdate(key, () => {
+      setPanelOpen(lp.IsOpen);
+      setPanelType(lp.PanelType);
+    });
+    return () => lp.RemoveOnUpdate(key);
+  }, [lp]);
+
+  if (!panelOpen) return null;
 
   return (
     <div className="left-toolbar" role="toolbar" aria-label="左ツールバー">
       {BUTTONS.map(({ type, icon, label }) => {
-        const isActive = lp.IsOpen && lp.PanelType === type;
+        const isActive = panelOpen && panelType === type;
         return (
           <button
             key={type}

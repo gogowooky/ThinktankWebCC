@@ -17,8 +17,16 @@
   gap: var(--spacing-xs);
 }
 
+.ribbon__middle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+}
+
 .ribbon__bottom {
-  margin-top: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
