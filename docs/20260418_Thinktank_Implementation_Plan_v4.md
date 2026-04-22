@@ -1034,6 +1034,191 @@ for (const item of [thinktank, observer, bigquery, virtual, sync]) {
 
 ---
 
+### Phase 9Ex1: データモデル・UI構造の再定義
+
+**目標**: TTDataItemの種別定義、保管庫（TTVault）、左端ツールバー＋左パネル、pickupタブ設計を実装する。
+
+---
+
+#### データモデル
+
+##### ContentType の値変更（TTDataItem）
+
+`ContentType` 属性の値を以下に変更する（属性名は変更なし）：
+
+| ContentType | 用途 | 追記 |
+|---|---|---|
+| `memo` | テキストメモ | 可 |
+| `chat` | AIとの対話記録 | 可（既存chatを継続した場合は上書き保存） |
+| `pickup` | アイテム集合（フィルターまたはID一覧） | 可 |
+| `link` | URL/ローカルURI/Google Drive等へのリンク集 | 可 |
+| `table` | 複数テーブルを含むデータ（独自形式md） | 可 |
+
+##### ファイルフォーマット（すべて `.md`）
+
+**memo**
+```
+タイトル（1行目）
+（自由なmarkdownテキスト）
+```
+
+**chat**
+```
+タイトル（1行目）
+# ユーザー発話
+AI発話（自由記載）
+# ユーザー発話
+...
+```
+
+**pickup**
+```
+タイトル（1行目）
+> フィルター条件行（省略可）
+* アイテムID行（省略可）
+（その他自由記載）
+```
+- `>` 行 = フィルター条件（保存された検索クエリ）
+- `*` 行 = 個別データのID
+- 両方共存可能
+- 空のpickup = フィルターなし = 全件対象
+
+**link**
+```
+タイトル（1行目）
+* URL or URI（1件1行）
+（その他自由記載）
+```
+
+**table**
+```
+タイトル（1行目）
+
+# テーブルタイトル
+
+列名csv行（省略可）
+データcsv行
+データcsv行
+
+# テーブルタイトル2
+
+...（複数テーブル可）
+```
+- `#` テーブルタイトル行の前後に空行
+- 列名csv行の前にも空行
+
+##### ファイルID形式
+
+```
+yyyy-MM-dd-hhmmss
+```
+- 同秒衝突時：1秒ずつ遡って空いているIDを割り当て
+
+---
+
+#### 保管庫（TTVault）
+
+- `TTVault` クラスを新規実装（`src/models/TTVault.ts`）
+- アプリは複数保管庫を管理（保管庫間のデータ移動は不可）
+- LocalFS パス構造: `{datafolder}/{保管庫名}/{ContentType}/{ID}.md`
+- BigQuery 構造: テーブル名=保管庫名、`file_type(.md)` / `category(ContentType)` カラムを持つ
+
+---
+
+#### 左端ツールバー＋左パネル
+
+##### ツールバー（左端アイコンバー）5ボタン
+
+| ボタン | 左パネル内容 |
+|---|---|
+| ① pickup設定 | フォーカスpickupタブの設定 |
+| ② メディア設定 | フォーカスメディアの設定 |
+| ③ 履歴 | 表示済みpickupタブの履歴一覧 |
+| ④ フィルター | 保管庫フィルタリング＋新規タブ作成 |
+| ⑤ 全文検索 | 保管庫全文検索＋新規タブ作成 |
+
+##### ①パネル（pickup設定）
+- フォーカスpickupタブに紐づくpickupデータの情報: ID / アイテム数 / タイトル
+- DataGrid Filter用: pulldown履歴付きtextbox
+- DataGrid: pickupデータの子アイテム一覧（カラム: チェック / ID / タイトル / ContentType / 更新日）
+  - チェック列: タブで現在表示中のアイテムはチェック表示
+
+##### ②パネル（メディア設定）
+- チェックボタン（変更不可）: フォーカスメディアの表示データがpickupに含まれるか示す
+- 表示データのタイトル
+- メディア選択ボタン: ContentTypeに対応する利用可能なメディアへの切り替えボタン群
+- ハイライト用: 履歴付きtextbox（表示中メディア内のキーワードハイライト）
+
+##### ③パネル（履歴）
+- これまで表示したpickupタブの履歴一覧
+- アイテムを選択 → そのpickupを新規タブで生成・表示
+
+##### ④パネル（フィルター）
+- 保管庫のpulldown選択肢
+- Filter用 pulldown履歴付きtextbox ＋「フィルター作成」ボタン
+- 保管庫の全データ表示用DataGrid（filterテキストでリアルタイム絞り込み）
+- 「フィルター作成」押下 → 絞り込まれたアイテム群から新規pickupファイルを作成し、新規タブで表示
+
+##### ⑤パネル（全文検索）
+- 保管庫のpulldown選択肢
+- 検索キーワード用 履歴付きtextbox ＋「全文検索ヒット作成」ボタン
+- 全文検索ヒットアイテム表示用DataGrid
+- 「全文検索ヒット作成」押下 → ヒットアイテム群から新規pickupファイルを作成し、新規タブで表示
+
+---
+
+#### メインパネル（pickupタブ）
+
+##### タブの構造
+
+各タブは1つのpickupデータ（ContentType=`pickup`）を持つ：
+
+| プロパティ | 内容 |
+|---|---|
+| `GroupID` | pickupデータのResourceID |
+| `CurrentItemID` | 現在表示中のアイテムID |
+| `ViewType` | 現在のメディア種別 |
+| `NavigationHistory` | 表示履歴（← → 用） |
+
+- pickupデータのアイテム一覧を1件ずつ表示
+- タイトルバーの ← → で前後のアイテムに移動
+
+##### 起動時タブ
+- 空のpickupファイルで1タブ作成
+- 空pickup = フィルターなし = 全保管庫・全データ対象
+- 初期表示メディア: DataGrid
+
+##### タイトルバー（分割なし）
+- 左寄せ: ← → ボタン（表示データ履歴の行き来）
+
+##### メディアとContentTypeの対応
+
+| メディア | 対応ContentType | 備考 |
+|---|---|---|
+| texteditor | memo / chat / pickup / link / table | 編集・閲覧 |
+| markdown | memo / chat / pickup / link | 閲覧のみ |
+| datagrid | pickup / link / table | 編集・閲覧 / 上部にfilter textbox |
+| graph | memo / chat / pickup / link / table | 閲覧のみ（関係グラフ）/ 上部にfilter textbox |
+| chat | chat（新規・既存継続） | CLI風表示 / 上部に履歴付きtextbox |
+
+##### マルチペイン
+- 現フェーズはシングルペイン（1タブ1ペイン）
+- 将来フェーズで最大3列×2行に拡張予定
+
+---
+
+**実装対象**:
+- `TTDataItem.ContentType` の型定義を `memo/chat/pickup/link/table` に変更
+- `TTVault` クラスの新規実装（`src/models/TTVault.ts`）
+- `LeftPanelType` の種別定義変更（5種類: pickup-settings / media-settings / history / filter / fulltext-search）
+- `TTTab` に `GroupID`, `CurrentItemID`, `NavigationHistory` を追加
+- 左端ツールバーコンポーネント（`src/components/LeftToolbar/LeftToolbar.tsx`）
+- 各左パネルコンポーネント（PickupSettingsPanel / MediaSettingsPanel / HistoryPanel / FilterPanel / FulltextSearchPanel）
+
+**検証**: 左端ツールバーの各ボタンで対応左パネルが開閉できる。pickupタブが起動時に生成され、← → でダミーデータをナビゲートできる。
+
+---
+
 ### Phase 10: メインパネル - グラフビュー（react-force-graph）
 
 **目標**: アイテム間の関連をノードグラフで表示する。
