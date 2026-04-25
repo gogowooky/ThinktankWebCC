@@ -125,25 +125,25 @@ TTVault（保管庫）
 
 UI全体像は `docs/TT.pptx` の **Slide #1** を参照のこと。
 
-ThinktankPanelが左側（全高）、その右にOverviewPanelとToDoPanelが上段に横並び、
-その下段にWorkoutPanelが広がる構成。
+左から順に **ThinktankPanel → OverviewPanel → WorkoutPanel → ToDoPanel** が横並びに並ぶ構成。
+WorkoutPanelが最も広い主作業エリア。
 
 ```
-┌────────────────┬──────────────────────┬───────────────────┐
-│                │    OverviewPanel      │    ToDoPanel      │
-│  Thinktank     │  OverviewRibbon       │  ToDoRibbon       │
-│  Panel         │  ────────────────     │  ─────────────    │
-│                │  OverviewArea         │  ToDoArea         │
-│  Thinktank     │  [開閉]              │  [開閉]           │
-│  Ribbon        ├──────────────────────┴───────────────────┤
-│  ──────────    │                                           │
-│  Thinktank     │              WorkoutPanel                 │
-│  Area          │  [WA0.Ribbon|WA0.Area] [WA1.Ribbon|WA1.A]│
-│                │  ─────────────────────────────────────── │
-│  [開閉]        │  [WA2.Ribbon|WA2.Area] [WA3.Ribbon|WA3.A]│
-│                │  ─────────────────────────────────────── │
-│                │  [WA4.Ribbon|WA4.Area] [WA5.Ribbon|WA5.A]│
-└────────────────┴───────────────────────────────────────────┘
+┌──────────────┬──────────────┬──────────────────────────────┬──────────────┐
+│  Thinktank   │  Overview    │        Workout Panel         │    ToDo      │
+│  Panel       │  Panel       │                              │    Panel     │
+│              │              │  [WA0.Ribbon|WA0.Area]       │              │
+│  Thinktank   │  Overview    │              │               │    ToDo      │
+│  Ribbon      │  Ribbon      │  [WA1.Ribbon|WA1.Area]       │    Ribbon    │
+│  ──────────  │  ──────────  │──────────────────────────────│  ──────────  │
+│  Thinktank   │  Overview    │  [WA2.Ribbon|WA2.Area]       │    ToDo      │
+│  Area        │  Area        │              │               │    Area      │
+│              │              │  [WA3.Ribbon|WA3.Area]       │              │
+│  [開閉]      │  [開閉]      │──────────────────────────────│  [開閉]      │
+│              │              │  [WA4.Ribbon|WA4.Area]       │              │
+│              │              │              │               │              │
+│              │              │  [WA5.Ribbon|WA5.Area]       │              │
+└──────────────┴──────────────┴──────────────────────────────┴──────────────┘
 ```
 
 ### 開閉ボタン
