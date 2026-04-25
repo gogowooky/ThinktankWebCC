@@ -1,301 +1,188 @@
-import React from 'react'
-import { TTObject } from './models/TTObject'
-import { TTCollection } from './models/TTCollection'
-import { TTDataItem } from './models/TTDataItem'
-import { TTModels } from './models/TTModels'
-import { TTApplication } from './views/TTApplication'
-import { AppLayout } from './components/Layout/AppLayout'
-
 /**
- * Phase 5: AppLayout に切り替え済み。
- * Phase 2〜4 のテスト関数はデバッグ用としてファイル内に保持。
- * ブラウザコンソールで window.__runTests() を呼ぶと全テストを実行できる。
+ * App.tsx
+ * Phase 1-3 検証ページ
+ * - CSS変数カラースウォッチ
+ * - モード検出（window.__THINKTANK_MODE__）
+ * - TTVault / TTThink / TTModels の動作確認
  */
 
-// ── 型定義 ─────────────────────────────────────────────────────────────
+import { useEffect, useState } from 'react'
+import { TTThink } from './models/TTThink'
+import { TTVault } from './models/TTVault'
+import { TTModels } from './models/TTModels'
 
-interface TestResult {
-  name: string
-  passed: boolean
-  detail: string
-}
+// ── Phase 1-3 テスト ────────────────────────────────────────────────────
 
-// ── Phase 2 テスト ──────────────────────────────────────────────────────
-
-function runPhase2Tests(): TestResult[] {
-  const results: TestResult[] = []
-  const pass = (n: string, d: string) => results.push({ name: n, passed: true, detail: d })
-  const fail = (n: string, d: string) => results.push({ name: n, passed: false, detail: d })
-
-  const obj = new TTObject(); obj.ID = 'test-001'; obj.Name = 'TestItem'
-  pass('TTObject: インスタンス生成', `ID=${obj.ID}`)
-
-  let notified = 0
-  obj.AddOnUpdate('test', () => { notified++ })
-  obj.UpdateDate = '2000-01-01-000000'
-  obj.NotifyUpdated()
-  notified === 1 && obj.UpdateDate !== '2000-01-01-000000'
-    ? pass('TTObject: Observer 通知 + UpdateDate 更新', `UpdateDate=${obj.UpdateDate}`)
-    : fail('TTObject: Observer 通知', `notified=${notified}`)
-
-  obj.RemoveOnUpdate('test'); obj.NotifyUpdated()
-  notified === 1 ? pass('TTObject: Observer 削除', 'OK') : fail('TTObject: Observer 削除', `notified=${notified}`)
-
-  const col = new TTCollection(); col.ID = 'Col'
-  const i1 = new TTObject(); i1.ID = 'a001'; i1.Name = 'Alpha'
-  const i2 = new TTObject(); i2.ID = 'a002'; i2.Name = 'Beta'
-  const i3 = new TTObject(); i3.ID = 'a003'; i3.Name = 'Gamma'
-  col.AddItem(i1); col.AddItem(i2); col.AddItem(i3)
-  col.Count === 3 ? pass('TTCollection: AddItem × 3', `Count=${col.Count}`) : fail('TTCollection: AddItem', `Count=${col.Count}`)
-  col.GetItem('a002')?.Name === 'Beta' ? pass('TTCollection: GetItem', 'OK') : fail('TTCollection: GetItem', 'NG')
-  col.DeleteItem('a002')
-  col.Count === 2 ? pass('TTCollection: DeleteItem', 'Count=2') : fail('TTCollection: DeleteItem', `Count=${col.Count}`)
-
-  let colN = 0; col.AddOnUpdate('c', () => { colN++ })
-  i1.NotifyUpdated()
-  colN >= 1 ? pass('TTCollection: 子 → 親 伝播', `colN=${colN}`) : fail('TTCollection: 子 → 親 伝播', 'NG')
-
-  col.GetItems().length === 2 ? pass('TTCollection: GetItems', `length=2`) : fail('TTCollection: GetItems', 'NG')
-
-  col.ItemSaveProperties = 'ID,Name,UpdateDate'
-  const csv = col.SerializeToCsv()
-  const col2 = new TTCollection(); col2.ItemSaveProperties = 'ID,Name,UpdateDate'
-  col2.DeserializeFromCsv(csv)
-  col2.Count === 2 && col2.GetItem('a001')?.Name === 'Alpha'
-    ? pass('TTCollection: CSV 往復', `復元 Count=${col2.Count}`) : fail('TTCollection: CSV 往復', 'NG')
-
-  col.ClearItems()
-  col.Count === 0 ? pass('TTCollection: ClearItems', 'OK') : fail('TTCollection: ClearItems', `Count=${col.Count}`)
-
-  return results
-}
-
-// ── Phase 3 テスト ──────────────────────────────────────────────────────
-
-function runPhase3Tests(): TestResult[] {
+function runPhase3Tests(): string[] {
+  const results: string[] = []
   TTModels.resetInstance()
-  const results: TestResult[] = []
-  const pass = (n: string, d: string) => results.push({ name: n, passed: true, detail: d })
-  const fail = (n: string, d: string) => results.push({ name: n, passed: false, detail: d })
+  const models = TTModels.Instance
 
-  const m = TTModels.Instance
-  TTModels.Instance === m ? pass('TTModels: シングルトン', `ID=${m.ID}`) : fail('TTModels: シングルトン', 'NG')
-  m.Status && m.Actions && m.Events && m.Memos
-    ? pass('TTModels: コレクション初期化', 'OK') : fail('TTModels: 初期化', 'NG')
+  // 1. TTModels シングルトン
+  results.push(`[1] TTModels singleton: ${TTModels.Instance === models ? 'OK' : 'FAIL'}`)
 
-  const item = new TTDataItem(); item.ContentType = 'memo'; item.IsMetaOnly = true; item.DeviceId = 'pc-001'; item.SyncVersion = 1
-  item.ID !== '' && item.IsMetaOnly ? pass('TTDataItem: v4 フィールド', `DeviceId=${item.DeviceId}`) : fail('TTDataItem', 'NG')
+  // 2. TTVault 初期化
+  const vault = models.Vault
+  results.push(`[2] TTVault exists: ${vault instanceof TTVault ? 'OK' : 'FAIL'}`)
+  results.push(`[2] TTVault name: ${vault.VaultName}`)
 
-  item.Content = '# Phase3 テスト\n本文'
-  item.Name === 'Phase3 テスト' ? pass('TTDataItem: タイトル抽出', `Name="${item.Name}"`) : fail('TTDataItem: タイトル抽出', `Name="${item.Name}"`)
+  // 3. TTThink 追加（memo）
+  const memo = new TTThink()
+  memo.ContentType = 'memo'
+  memo.Content = '# テストメモ\nこれはテストです。'
+  vault.AddThink(memo)
+  results.push(`[3] AddThink(memo): ${vault.Count === 1 ? 'OK' : 'FAIL'} (count=${vault.Count})`)
+  results.push(`[3] VaultID auto-set: ${memo.VaultID === vault.ID ? 'OK' : 'FAIL'}`)
+  results.push(`[3] Title extracted: ${memo.Name}`)
 
-  item.IsDirty ? pass('TTDataItem: IsDirty=true', 'OK') : fail('TTDataItem: IsDirty', 'false')
-  item.markSaved(); !item.IsDirty ? pass('TTDataItem: markSaved', 'OK') : fail('TTDataItem: markSaved', 'NG')
+  // 4. ContentType 各種
+  const contentTypes = ['memo', 'thought', 'tables', 'links', 'chat', 'nettext'] as const
+  contentTypes.forEach(ct => {
+    const t = new TTThink()
+    t.ContentType = ct
+    t.Content = `${ct} コンテンツ`
+    vault.AddThink(t)
+  })
+  results.push(`[4] All ContentTypes added: count=${vault.Count}`)
 
-  let sn = 0; item.AddOnUpdate('s', () => { sn++ }); item.setContentSilent('# サイレント\n本文')
-  sn === 0 ? pass('TTDataItem: setContentSilent（通知なし）', 'OK') : fail('TTDataItem: setContentSilent', `sn=${sn}`)
+  // 5. TTThink（thought）テスト
+  const thought = new TTThink()
+  thought.ContentType = 'thought'
+  thought.Content = `# テストThought\n> メモ\n* ${memo.ID}`
+  vault.AddThink(thought)
 
-  const memo = new TTDataItem(); memo.Content = '# はじめてのメモ\n本文'
-  m.Memos.AddItem(memo)
-  m.Memos.Count === 1 && m.Memos.GetDataItem(memo.ID)?.Name === 'はじめてのメモ'
-    ? pass('TTModels.Memos: AddItem', `Count=${m.Memos.Count}`) : fail('TTModels.Memos: AddItem', 'NG')
+  // 6. GetThoughts()
+  const thoughts = vault.GetThoughts()
+  results.push(`[5] GetThoughts(): ${thoughts.length >= 1 ? 'OK' : 'FAIL'} (count=${thoughts.length})`)
 
-  m.Status.RegisterState('Test.Val', 'テスト', 'default')
-  m.Status.SetValue('Test.Val', 'changed')
-  m.Status.GetValue('Test.Val') === 'changed' ? pass('TTStatus: CRUD', 'OK') : fail('TTStatus: CRUD', 'NG')
+  // 7. GetThinksForThought()
+  const linkedThinks = vault.GetThinksForThought(thought.ID)
+  results.push(`[6] GetThinksForThought(): ${linkedThinks.length >= 1 ? 'OK' : 'FAIL'} (count=${linkedThinks.length})`)
 
-  let inv = false; m.Actions.Register('Test.Act', 'テスト', () => { inv = true }); m.Actions.GetItem('Test.Act')?.Invoke()
-  inv ? pass('TTActions: Register + Invoke', 'OK') : fail('TTActions: Register + Invoke', 'NG')
-
-  m.Events.Register('*-*-*', 'Control', 'S', 'Editor.Save')
-  m.Events.ResolveActionId('*-*-*', 'Control', 'S') === 'Editor.Save'
-    ? pass('TTEvents: Register + Resolve', 'Ctrl+S → Editor.Save') : fail('TTEvents: Register + Resolve', 'NG')
-
-  return results
-}
-
-// ── Phase 4 テスト ──────────────────────────────────────────────────────
-
-function runPhase4Tests(): TestResult[] {
-  TTApplication.resetInstance()
-  const results: TestResult[] = []
-  const pass = (n: string, d: string) => results.push({ name: n, passed: true, detail: d })
-  const fail = (n: string, d: string) => results.push({ name: n, passed: false, detail: d })
-
-  const app = TTApplication.Instance
-
-  // 1. シングルトン
-  TTApplication.Instance === app
-    ? pass('TTApplication: シングルトン', `AppMode=${app.AppMode}`)
-    : fail('TTApplication: シングルトン', 'NG')
-
-  // 2. パネル初期化確認
-  app.MainPanel && app.LeftPanel && app.RightPanel
-    ? pass('TTApplication: パネル初期化', 'MainPanel / LeftPanel / RightPanel OK')
-    : fail('TTApplication: パネル初期化', 'NG')
-
-  // 3. NewTab
-  const tab1 = app.MainPanel.NewTab('texteditor')
-  app.MainPanel.Tabs.length === 1 && app.MainPanel.ActiveTab?.ID === tab1.ID
-    ? pass('TTMainPanel: NewTab', `tabId=${tab1.ID.slice(0, 16)}...`)
-    : fail('TTMainPanel: NewTab', `length=${app.MainPanel.Tabs.length}`)
-
-  // 4. OpenTab（新規）
-  const memo = new TTDataItem(); memo.Content = '# タブテスト\n本文'
-  app.Models.Memos.AddItem(memo)
-  const tab2 = app.MainPanel.OpenTab(memo.ID, memo.Name, 'texteditor')
-  app.MainPanel.Tabs.length === 2 && tab2.ResourceID === memo.ID
-    ? pass('TTMainPanel: OpenTab（新規）', `ResourceID=${memo.ID.slice(0, 12)}...`)
-    : fail('TTMainPanel: OpenTab（新規）', `length=${app.MainPanel.Tabs.length}`)
-
-  // 5. OpenTab（重複防止）
-  const tab2b = app.MainPanel.OpenTab(memo.ID, memo.Name, 'texteditor')
-  app.MainPanel.Tabs.length === 2 && tab2b.ID === tab2.ID
-    ? pass('TTMainPanel: OpenTab（重複防止）', '既存タブにスイッチ')
-    : fail('TTMainPanel: OpenTab（重複防止）', `length=${app.MainPanel.Tabs.length}`)
-
-  // 6. SwitchTab
-  app.MainPanel.SwitchTab(tab1.ID)
-  app.MainPanel.ActiveTab?.ID === tab1.ID
-    ? pass('TTMainPanel: SwitchTab', `active=${tab1.ID.slice(0, 16)}...`)
-    : fail('TTMainPanel: SwitchTab', 'NG')
-
-  // 7. Observer 通知（タブ操作で NotifyUpdated が来る）
-  let mainNotified = 0
-  app.MainPanel.AddOnUpdate('test', () => { mainNotified++ })
-  app.MainPanel.NewTab('markdown')
-  mainNotified >= 1
-    ? pass('TTMainPanel: Observer 通知', `mainNotified=${mainNotified}`)
-    : fail('TTMainPanel: Observer 通知', 'NG')
-
-  // 8. CloseTab + アクティブ移動
-  const tabCount = app.MainPanel.Tabs.length
-  app.MainPanel.CloseTab(app.MainPanel.ActiveTab!.ID)
-  app.MainPanel.Tabs.length === tabCount - 1
-    ? pass('TTMainPanel: CloseTab', `残=${app.MainPanel.Tabs.length}タブ`)
-    : fail('TTMainPanel: CloseTab', `残=${app.MainPanel.Tabs.length}`)
-
-  // 9. IsDirty フラグ
-  app.MainPanel.SwitchTab(app.MainPanel.Tabs[0].ID)
-  app.MainPanel.SetActiveTabDirty(true)
-  app.MainPanel.ActiveTab?.IsDirty && app.MainPanel.ActiveTab.DisplayTitle.startsWith('●')
-    ? pass('TTMainPanel: IsDirty + DisplayTitle', `"${app.MainPanel.ActiveTab.DisplayTitle}"`)
-    : fail('TTMainPanel: IsDirty', 'NG')
-
-  // 10. TTLeftPanel: Toggle / SwitchTo / Filter
-  app.LeftPanel.Toggle()
-  const wasOpen = app.LeftPanel.IsOpen
-  app.LeftPanel.Toggle()
-  !wasOpen === app.LeftPanel.IsOpen // 最初 open → close → open で戻る (isOpen が true になる)
-    ? pass('TTLeftPanel: Toggle', `IsOpen=${app.LeftPanel.IsOpen}`)
-    : pass('TTLeftPanel: Toggle', `IsOpen=${app.LeftPanel.IsOpen}`) // どちらも成功扱い（構造確認）
-
-  app.LeftPanel.SwitchTo('filter')
-  app.LeftPanel.PanelType === 'filter' && app.LeftPanel.IsOpen
-    ? pass('TTLeftPanel: SwitchTo', `PanelType=${app.LeftPanel.PanelType}`)
-    : fail('TTLeftPanel: SwitchTo', 'NG')
-
-  app.LeftPanel.SetFilter('react AND typescript')
-  app.LeftPanel.Filter === 'react AND typescript'
-    ? pass('TTLeftPanel: SetFilter', `Filter="${app.LeftPanel.Filter}"`)
-    : fail('TTLeftPanel: SetFilter', 'NG')
-
-  // 11. TTRightPanel: AddChatMessage
-  app.RightPanel.AddChatMessage('user', 'こんにちは')
-  app.RightPanel.AddChatMessage('assistant', 'こんにちは！')
-  app.RightPanel.ChatMessages.length === 2 && app.RightPanel.IsOpen
-    ? pass('TTRightPanel: AddChatMessage', `messages=${app.RightPanel.ChatMessages.length}`)
-    : fail('TTRightPanel: AddChatMessage', `len=${app.RightPanel.ChatMessages.length}, open=${app.RightPanel.IsOpen}`)
-
-  // 12. TTApplication.OpenItem
-  const item2 = new TTDataItem(); item2.Content = '# OpenItemテスト\n本文'
-  app.Models.Memos.AddItem(item2)
-  const prevCount = app.MainPanel.Tabs.length
-  app.OpenItem(item2.ID, 'texteditor')
-  app.MainPanel.Tabs.length > prevCount && app.LeftPanel.SelectedItemID === item2.ID
-    ? pass('TTApplication: OpenItem', `SelectedItemID=${item2.ID.slice(0, 12)}...`)
-    : fail('TTApplication: OpenItem', 'NG')
-
-  // コンソール出力
-  console.group('[Phase 4] TTApplication / TTMainPanel / TTLeftPanel / TTRightPanel 検証')
-  results.forEach(r =>
-    r.passed ? console.log(`✅ ${r.name}: ${r.detail}`)
-             : console.error(`❌ ${r.name}: ${r.detail}`)
-  )
-  console.groupEnd()
+  // 8. IsDirty
+  const item = new TTThink()
+  item.Content = 'dirty test'
+  results.push(`[7] IsDirty before markSaved: ${item.IsDirty ? 'OK' : 'FAIL'}`)
+  item.markSaved()
+  results.push(`[7] IsDirty after markSaved: ${!item.IsDirty ? 'OK' : 'FAIL'}`)
 
   return results
 }
 
-// ── デバッグ用: コンソールからテストを実行できるようにする ──────────────
-// ブラウザコンソールで window.__runTests() を実行すると Phase 2〜4 テスト結果を表示
-if (typeof window !== 'undefined') {
-  (window as Window & { __runTests?: () => void }).__runTests = () => {
-    console.group('[Thinktank] Phase 2〜4 テスト実行')
-    const p2 = runPhase2Tests()
-    const p3 = runPhase3Tests()
-    const p4 = runPhase4Tests()
-    const all = [...p2, ...p3, ...p4]
-    const passed = all.filter(r => r.passed).length
-    console.log(`${passed}/${all.length} テスト通過`)
-    console.groupEnd()
-  }
-}
+// ── カラースウォッチ ───────────────────────────────────────────────────
 
-// ── Phase 6 テストデータ初期投入 ──────────────────────────────────────
-// 実際のデータが空の場合のみサンプルデータを追加する（Phase 13 で StorageManager に置き換え）
+const COLOR_THEMES = [
+  { name: 'ThinktankPanel', ribbon: 'var(--thinktank-ribbon-bg)', area: 'var(--thinktank-area-bg)', ribbonHex: '#073763', areaHex: '#E8F1F8' },
+  { name: 'OverviewPanel',  ribbon: 'var(--overview-ribbon-bg)',  area: 'var(--overview-area-bg)',  ribbonHex: '#3949AB', areaHex: '#F9FAFF' },
+  { name: 'WorkoutPanel',   ribbon: 'var(--workout-ribbon-bg)',   area: 'var(--workout-area-bg)',   ribbonHex: '#3F3F3F', areaHex: '#D0D0D0' },
+  { name: 'ToDoPanel',      ribbon: 'var(--todo-ribbon-bg)',      area: 'var(--todo-area-bg)',      ribbonHex: '#1E4620', areaHex: '#E2EFDA' },
+]
 
-function seedTestData(): void {
-  const memos = TTApplication.Instance.Models.Memos
-  if (memos.Count > 0) return  // 既にデータあり
+const BG_VARS = [
+  { name: '--bg-primary',   value: '#1e2030' },
+  { name: '--bg-secondary', value: '#1a1b26' },
+  { name: '--bg-panel',     value: '#24283b' },
+  { name: '--bg-hover',     value: '#2a3050' },
+  { name: '--bg-selected',  value: '#2e3460' },
+]
 
-  // ── 単体アイテムを先に作成して ID を確定させる ──────────────────────
-  const addItem = (content: string, contentType: TTDataItem['ContentType']) => {
-    const item = new TTDataItem()
-    item.ContentType = contentType
-    item.Content = content
-    item.markSaved()
-    memos.AddItem(item)
-    return item
-  }
+const TEXT_VARS = [
+  { name: '--text-primary',   value: '#c0caf5' },
+  { name: '--text-muted',     value: '#565f89' },
+  { name: '--text-accent',    value: '#7aa2f7' },
+  { name: '--text-highlight', value: '#e0af68' },
+  { name: '--text-success',   value: '#9ece6a' },
+  { name: '--text-warning',   value: '#ff9e64' },
+  { name: '--text-error',     value: '#f7768e' },
+]
 
-  const thinktank  = addItem('# Thinktank について\nThinktank は記憶・思考・判断を支援するアプリです。\n\n関連: [Memo:REACT_TS_ID] / [Memo:OBSERVER_ID]', 'memo')
-  const reactTs    = addItem('# React と TypeScript\nReact 18 + TypeScript 5 + Vite 5 の構成でフロントエンドを構築しています。', 'memo')
-  const phases     = addItem('# Phase 実装計画\n## Phase 1〜8 完了\n- Phase 1: プロジェクト初期化\n- Phase 2: TTObject/TTCollection\n- Phase 3: TTDataItem/TTModels\n- Phase 4: ビューモデル\n- Phase 5: レイアウトシェル\n- Phase 6: NavigatorView\n- Phase 7: TextEditorView\n- Phase 8: MarkdownView', 'memo')
-  const observer   = addItem('# Observer パターン\nTTObject は AddOnUpdate / RemoveOnUpdate / NotifyUpdated を持つ。\n\nこのパターンは [Memo:PHASES_ID] 全体で使われている。', 'memo')
-  const bigquery   = addItem('# BigQuery スキーマ\nfile_id, title, content, keywords, device_id, sync_version などのカラム。\n\n詳細は [Memo:STORAGE_ID] を参照。', 'memo')
-  const claudeApi  = addItem('# Claude API 連携\n@anthropic-ai/sdk を使ってSSEストリーミングでチャットを実装予定。', 'chat')
-  const wpf        = addItem('# WPF + WebView2\nLocal版はWPFシェルにWebView2を組み込んでReact SPAを表示する。', 'memo')
-  const virtual    = addItem('# 仮想スクロール\n@tanstack/react-virtual でナビゲーターリストを効率的にレンダリング。\n\n詳細は [Memo:REACT_TS_ID] も参照。', 'memo')
-  const sync       = addItem('# 同期アーキテクチャ\nメタデータ先行同期 → コンテンツはオンデマンドフェッチ。\n\n[Memo:BIGQUERY_ID] と [Memo:STORAGE_ID] を参照。', 'memo')
-  const storage    = addItem('# ストレージ抽象化\nIStorageBackend を介して PWA版（IndexedDB）とLocal版（C# API）を切り替える。', 'memo')
-
-  // ── ID が確定した後、[Memo:PLACEHOLDER] を実際の ID に差し替える ──
-  const replacePlaceholders = (content: string): string =>
-    content
-      .replace(/\[Memo:REACT_TS_ID\]/g,   `[Memo:${reactTs.ID}]`)
-      .replace(/\[Memo:OBSERVER_ID\]/g,    `[Memo:${observer.ID}]`)
-      .replace(/\[Memo:PHASES_ID\]/g,      `[Memo:${phases.ID}]`)
-      .replace(/\[Memo:BIGQUERY_ID\]/g,    `[Memo:${bigquery.ID}]`)
-      .replace(/\[Memo:STORAGE_ID\]/g,     `[Memo:${storage.ID}]`)
-
-  // クロスリファレンスを含むアイテムのコンテンツを更新
-  for (const item of [thinktank, observer, bigquery, virtual, sync]) {
-    const updated = replacePlaceholders(item.Content)
-    item.setContentSilent(updated)
-    item.markSaved()
-  }
-
-  // Claude API / WPF の未使用変数警告を抑止（参照されている）
-  void claudeApi; void wpf
-
-  console.log(`[Phase 6] テストデータ ${memos.Count} 件を追加しました`)
-}
-
-seedTestData()
-
-// ── メインコンポーネント ────────────────────────────────────────────────
+// ── コンポーネント ─────────────────────────────────────────────────────
 
 export default function App() {
-  return <AppLayout />
+  const mode = window.__THINKTANK_MODE__ ?? 'pwa'
+  const localApi = window.__THINKTANK_LOCAL_API__ ?? '(not injected)'
+  const [testResults, setTestResults] = useState<string[]>([])
+
+  useEffect(() => {
+    const results = runPhase3Tests()
+    setTestResults(results)
+    window.__runTests = () => {
+      TTModels.resetInstance()
+      const r = runPhase3Tests()
+      setTestResults(r)
+      console.log('[Tests]', r)
+    }
+  }, [])
+
+  const allPassed = testResults.every(r => !r.includes('FAIL'))
+
+  return (
+    <div style={{ padding: 24, overflowY: 'auto', height: '100%', background: 'var(--bg-primary)' }}>
+      <h1 style={{ color: 'var(--text-accent)', marginBottom: 24, fontSize: 20 }}>
+        Thinktank v5 — Phase 1-3 検証
+      </h1>
+
+      {/* モード検出 */}
+      <section style={{ marginBottom: 24 }}>
+        <h2 style={{ color: 'var(--text-highlight)', marginBottom: 8, fontSize: 14 }}>モード検出</h2>
+        <div style={{ background: 'var(--bg-panel)', padding: 12, borderRadius: 'var(--radius)', fontFamily: 'monospace', fontSize: 12 }}>
+          <div>__THINKTANK_MODE__ = <span style={{ color: 'var(--text-success)' }}>{mode}</span></div>
+          <div>__THINKTANK_LOCAL_API__ = <span style={{ color: 'var(--text-success)' }}>{localApi}</span></div>
+        </div>
+      </section>
+
+      {/* Phase 3 テスト結果 */}
+      <section style={{ marginBottom: 24 }}>
+        <h2 style={{ color: 'var(--text-highlight)', marginBottom: 8, fontSize: 14 }}>
+          Phase 3 テスト結果 {allPassed ? '✓ ALL PASS' : '✗ FAIL あり'}
+        </h2>
+        <div style={{ background: 'var(--bg-panel)', padding: 12, borderRadius: 'var(--radius)', fontFamily: 'monospace', fontSize: 12 }}>
+          {testResults.map((r, i) => (
+            <div key={i} style={{ color: r.includes('FAIL') ? 'var(--text-error)' : 'var(--text-success)' }}>{r}</div>
+          ))}
+        </div>
+      </section>
+
+      {/* パネルカラーテーマ */}
+      <section style={{ marginBottom: 24 }}>
+        <h2 style={{ color: 'var(--text-highlight)', marginBottom: 8, fontSize: 14 }}>パネル別カラーテーマ</h2>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          {COLOR_THEMES.map(t => (
+            <div key={t.name} style={{ borderRadius: 'var(--radius)', overflow: 'hidden', width: 160 }}>
+              <div style={{ background: t.ribbon, padding: '6px 10px', fontSize: 11, color: '#fff', fontWeight: 600 }}>
+                {t.name}<br /><span style={{ fontWeight: 400, opacity: 0.8 }}>{t.ribbonHex}</span>
+              </div>
+              <div style={{ background: t.area, padding: '6px 10px', fontSize: 11, color: '#333' }}>
+                Area<br />{t.areaHex}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 背景色パレット */}
+      <section style={{ marginBottom: 24 }}>
+        <h2 style={{ color: 'var(--text-highlight)', marginBottom: 8, fontSize: 14 }}>背景色パレット</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {BG_VARS.map(v => (
+            <div key={v.name} style={{ background: v.value, borderRadius: 4, padding: '8px 10px', fontSize: 10, color: 'var(--text-muted)', minWidth: 100 }}>
+              {v.name}<br />{v.value}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* テキスト色パレット */}
+      <section>
+        <h2 style={{ color: 'var(--text-highlight)', marginBottom: 8, fontSize: 14 }}>テキスト色パレット</h2>
+        <div style={{ background: 'var(--bg-panel)', padding: 12, borderRadius: 'var(--radius)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          {TEXT_VARS.map(v => (
+            <span key={v.name} style={{ color: v.value, fontSize: 12 }}>
+              {v.name.replace('--text-', '')}
+            </span>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
 }

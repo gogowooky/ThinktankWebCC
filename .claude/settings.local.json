@@ -64,7 +64,8 @@
       "Bash(python -m markitdown \"C:/Users/gogow/Documents/ThinktankReconst/docs/TT.pptx\")",
       "Bash(pip install *)",
       "Bash(python3 -c ' *)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in ['dependencies','devDependencies'] if k in d}, indent=2\\)\\)\")"
     ]
   }
 }

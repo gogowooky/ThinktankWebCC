@@ -1,86 +1,113 @@
 /**
  * TTVault.ts
- * 保管庫（ストレージ）の定義。
- * アプリは複数の保管庫を管理できるが、保管庫間のデータ移動は行わない。
+ * v5 保管庫クラス。TTCollection の派生クラス。
  *
- * Phase 9Ex1: 基本実装（メタデータ管理のみ）
- * Phase 13 以降: StorageManager と接続して LocalFS / BigQuery を切り替える
+ * データ階層: TTVault > Thoughts > Thought > Think
  *
- * LocalFS パス構造:
- *   {dataFolder}/{vaultName}/{contentType}/{id}.md
- *
- * BigQuery 構造:
- *   テーブル名 = vaultName
- *   カラム: file_type(.md), category(ContentType), id, title, content, ...
+ * LocalFS パス: ./../ThinktankLocal/vault/{ContentType}/{ID}.md
+ * BigQuery テーブル: thinktank.vault
  */
 
+import { TTCollection } from './TTCollection';
+import { TTThink } from './TTThink';
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 
-export type VaultBackendType = 'localfs' | 'bigquery';
+export class TTVault extends TTCollection {
+  /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
+  public VaultName: string = 'vault';
 
-export class TTVault extends TTObject {
-  /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル名）*/
-  public VaultName: string = '';
-
-  /** バックエンド種別 */
-  public BackendType: VaultBackendType = 'localfs';
-
-  /** LocalFS ルートフォルダパス（BackendType=localfs の場合のみ使用）*/
-  public DataFolder: string = '';
-
-  /** 表示名（UI 表示用、省略時は VaultName を使用）*/
-  public DisplayName: string = '';
+  /** LocalFS ルートフォルダパス（Local モード用）*/
+  public DataFolder: string = './../ThinktankLocal/vault';
 
   public override get ClassName(): string {
     return 'TTVault';
   }
 
-  constructor(vaultName: string = '', backendType: VaultBackendType = 'localfs') {
+  constructor(vaultName: string = 'vault') {
     super();
-    this.ID = vaultName || `vault-${Date.now()}`;
+    this.ID = vaultName;
     this.VaultName = vaultName;
-    this.BackendType = backendType;
     this.Name = vaultName;
+    this.ItemSaveProperties = 'ID,Name,ContentType,Keywords,VaultID,UpdateDate';
   }
 
-  /** UI 表示用の名前（DisplayName が設定されていれば優先）*/
-  public get Label(): string {
-    return this.DisplayName || this.VaultName || this.ID;
+  // ── 型付きアクセス ─────────────────────────────────────────────────
+
+  /** 全 TTThink を型付きで取得する */
+  public GetThinks(): TTThink[] {
+    return this.GetItems().filter((item): item is TTThink => item instanceof TTThink);
   }
 
   /**
-   * LocalFS のファイルパスを生成する。
-   * @param contentType  ContentType
-   * @param id           ファイルID（yyyy-MM-dd-hhmmss 形式）
+   * Thoughts を取得する（ContentType='thought' の TTThink 一覧）
+   * Thoughts = TTVault を ContentType='thought' でフィルターした集合
    */
+  public GetThoughts(): TTThink[] {
+    return this.GetThinks().filter(t => t.ContentType === 'thought');
+  }
+
+  /**
+   * 指定 Thought が参照する Think 群を返す。
+   * Thought 本文の ID リスト（`* ID`行）と Filter 文字列（`> filter`行）を両方処理する。
+   */
+  public GetThinksForThought(thoughtId: string): TTThink[] {
+    const thought = this.GetThink(thoughtId);
+    if (!thought || thought.ContentType !== 'thought') return [];
+
+    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+
+    const ids = thought.getThinkIds();
+    const filter = thought.getFilter().toLowerCase();
+
+    // ID リストが指定されている場合はそれを優先
+    if (ids.length > 0) {
+      return allThinks.filter(t => ids.includes(t.ID));
+    }
+
+    // Filter 文字列が指定されている場合はタイトル+キーワードで絞り込む
+    if (filter) {
+      return allThinks.filter(t => {
+        const text = `${t.Name} ${t.Keywords}`.toLowerCase();
+        return text.includes(filter);
+      });
+    }
+
+    // 両方空 = 全件対象
+    return allThinks;
+  }
+
+  /** ID で TTThink を取得する（型付き）*/
+  public GetThink(id: string): TTThink | undefined {
+    const item = this.GetItem(id);
+    return item instanceof TTThink ? item : undefined;
+  }
+
+  /** TTThink を追加する（VaultID を自動設定）*/
+  public AddThink(think: TTThink): TTThink {
+    think.VaultID = this.ID;
+    return this.AddItem(think) as TTThink;
+  }
+
+  protected override CreateChildInstance(): TTObject {
+    return new TTThink();
+  }
+
+  // ── LocalFS パスユーティリティ ─────────────────────────────────────
+
   public buildLocalPath(contentType: ContentType, id: string): string {
-    return `${this.DataFolder}/${this.VaultName}/${contentType}/${id}.md`;
+    return `${this.DataFolder}/${contentType}/${id}.md`;
   }
 
-  /**
-   * ファイルID を生成する（yyyy-MM-dd-hhmmss 形式）。
-   * 衝突チェックは呼び出し側が行い、衝突時は generateId(existingIds) を使用する。
-   */
+  // ── ID 生成 ────────────────────────────────────────────────────────
+
+  /** ファイルID を生成する（yyyy-MM-dd-hhmmss 形式）*/
   public static generateId(date: Date = new Date()): string {
     const pad = (n: number, len = 2) => String(n).padStart(len, '0');
-    return [
-      date.getFullYear(),
-      pad(date.getMonth() + 1),
-      pad(date.getDate()),
-      '-',
-      pad(date.getHours()),
-      pad(date.getMinutes()),
-      pad(date.getSeconds()),
-    ].join('').replace('-', '-'); // yyyy-MM-dd-hhmmss
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
   }
 
-  /**
-   * 衝突を避けたファイルIDを生成する。
-   * 同秒に衝突した場合、1秒ずつ遡って空いている ID を返す。
-   * @param existingIds  既存の ID セット
-   * @param maxRetries   最大遡りステップ数（デフォルト 60）
-   */
+  /** 衝突を避けた ID 生成（同秒衝突時は1秒遡る）*/
   public static generateUniqueId(
     existingIds: Set<string>,
     date: Date = new Date(),
@@ -90,9 +117,8 @@ export class TTVault extends TTObject {
     for (let i = 0; i < maxRetries; i++) {
       const id = TTVault.generateId(current);
       if (!existingIds.has(id)) return id;
-      current = new Date(current.getTime() - 1000); // 1秒遡る
+      current = new Date(current.getTime() - 1000);
     }
-    // フォールバック: ミリ秒付きランダム
     return `${TTVault.generateId(date)}-${Math.random().toString(36).slice(2, 6)}`;
   }
 }

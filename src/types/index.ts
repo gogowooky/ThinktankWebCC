@@ -1,17 +1,46 @@
 /**
  * types/index.ts
- * v4 共通型定義
- *
- * Phase 2: 基本型（ItemMeta, FileRecord, SyncStatus, AppMode）
- * Phase 13以降: IStorageBackend 関連型を追加予定
+ * v5 共通型定義
  */
 
 // ════════════════════════════════════════════════════════════════════════
 // #region アプリモード
 // ════════════════════════════════════════════════════════════════════════
 
-/** アプリの動作モード（window.__THINKTANK_MODE__ で切り替え） */
 export type AppMode = 'pwa' | 'local';
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
+// #region コンテンツ種別（v5）
+// ════════════════════════════════════════════════════════════════════════
+
+/**
+ * TTThink のコンテンツ種別（v5）
+ * v4: memo/chat/pickup/link/table
+ * v5: memo/thought/tables/links/chat/nettext
+ */
+export type ContentType =
+  | 'memo'     // テキストメモ（markdown含む）
+  | 'thought'  // Thinkの集合（ThinkIDリスト or Filter文字列を本文に持つ）
+  | 'tables'   // 複数テーブルを含むデータ（独自形式md）
+  | 'links'    // URL/ローカルURI等へのリンク集
+  | 'chat'     // AIとの対話記録
+  | 'nettext'; // ネット等からダウンロードしたテキスト
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
+// #region メディア種別（WorkoutArea表示形式）
+// ════════════════════════════════════════════════════════════════════════
+
+export type MediaType =
+  | 'texteditor'  // Monaco Editor
+  | 'markdown'    // Markdownレンダリング
+  | 'datagrid'    // テーブル形式一覧
+  | 'card'        // カード形式
+  | 'graph'       // ノードグラフ
+  | 'chat';       // AIチャット
 
 // #endregion
 
@@ -19,27 +48,18 @@ export type AppMode = 'pwa' | 'local';
 // #region ストレージ / データモデル
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * メタデータのみのレコード（起動時の差分同期で使用）
- * content を含まない軽量表現
- */
 export interface ItemMeta {
   file_id: string;
   title: string;
-  updated_at: string;    // ISO8601
-  created_at: string;    // ISO8601
-  file_type: string;     // 'memo' | 'chat' | 'file' | ...
-  category: string;      // BigQuery クラスタリングキー
-  is_meta_only: boolean; // true = content 未取得
+  updated_at: string;
+  created_at: string;
+  file_type: string;
+  category: string;
+  vault_id: string;
+  is_meta_only: boolean;
   is_deleted: boolean;
-  device_id: string;
-  sync_version: number;
 }
 
-/**
- * 完全なファイルレコード（本文込み）
- * BigQuery スキーマ / C# Local API レスポンスに対応
- */
 export interface FileRecord extends ItemMeta {
   content: string;
   keywords: string;
@@ -54,100 +74,28 @@ export interface FileRecord extends ItemMeta {
 // #region 同期ステータス
 // ════════════════════════════════════════════════════════════════════════
 
-/** 同期状態の種類 */
-export type SyncState = 'synced' | 'syncing' | 'pending' | 'offline' | 'error' | 'conflict';
+export type SyncState = 'synced' | 'syncing' | 'pending' | 'offline' | 'error';
 
-/**
- * 同期状態（SyncIndicator / タイトルバーに表示）
- */
 export interface SyncStatus {
   state: SyncState;
   pendingCount: number;
   isSyncing: boolean;
   isOnline: boolean;
-  lastSyncAt: string | null; // ISO8601 or null
+  lastSyncAt: string | null;
   errorMessage?: string;
 }
 
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
-// #region コンテンツ種別
+// #region チャット
 // ════════════════════════════════════════════════════════════════════════
 
-/** TTDataItem のコンテンツ種別 */
-export type ContentType =
-  | 'memo'    // テキストメモ
-  | 'chat'    // AIチャット会話（継続時は上書き保存）
-  | 'pickup'  // アイテム集合（フィルターまたはID一覧）
-  | 'link'    // URL/ローカルURI/Google Drive等へのリンク集
-  | 'table';  // 複数テーブルを含むデータ（独自形式md）
-
-// #endregion
-
-// ════════════════════════════════════════════════════════════════════════
-// #region View 関連
-// ════════════════════════════════════════════════════════════════════════
-
-/** メインパネルのビュー種別 */
-export type ViewType = 'texteditor' | 'markdown' | 'datagrid' | 'graph' | 'chat';
-
-/** 左パネルの表示種別（左端ツールバーの5ボタンに対応） */
-export type LeftPanelType =
-  | 'pickup-settings'   // ① フォーカスpickupタブの設定
-  | 'media-settings'    // ② フォーカスメディアの設定
-  | 'history'           // ③ 表示済みpickupタブの履歴
-  | 'filter'            // ④ 保管庫フィルタリング＋新規タブ作成
-  | 'fulltext-search';  // ⑤ 保管庫全文検索＋新規タブ作成
-
-/** 右パネルの表示種別 */
-export type RightPanelType = 'outline' | 'properties' | 'related' | 'chat';
-
-/** チャットメッセージ（RightPanel Chat / MainPanel ChatView 共通） */
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  timestamp: string; // ISO8601
-}
-
-// #endregion
-
-// ════════════════════════════════════════════════════════════════════════
-// #region アクション関連
-// ════════════════════════════════════════════════════════════════════════
-
-/**
- * アクション実行時のコンテキスト情報
- * Phase 30 以降で拡張予定
- */
-export interface ActionContext {
-  Mods?: string[];      // 修飾キー（例: ['Control', 'Shift']）
-  Key?: string;         // キー（例: 'S', 'ENTER'）
-  Sender?: unknown;     // 呼び出し元
-  [key: string]: unknown;
-}
-
-/** アクションのスクリプト関数型 */
-export type ActionScript =
-  (context: ActionContext) => void | boolean | Promise<void | boolean>;
-
-// #endregion
-
-// ════════════════════════════════════════════════════════════════════════
-// #region 状態管理関連
-// ════════════════════════════════════════════════════════════════════════
-
-/**
- * TTState の設定オブジェクト
- * Phase 30 以降で Apply / Watch / Calculate を活用予定
- */
-export interface TTStateConfig {
-  Default?: (id: string) => string;
-  Test?: (id: string, value: string) => boolean;
-  Apply?: (id: string, value: string) => void;
-  Watch?: (id: string) => void;
-  Calculate?: (id: string) => string;
+  timestamp: string;
 }
 
 // #endregion
@@ -156,7 +104,6 @@ export interface TTStateConfig {
 // #region ユーティリティ型
 // ════════════════════════════════════════════════════════════════════════
 
-/** CSV の値型 */
 export type CsvValue = string | undefined | null;
 
 // #endregion

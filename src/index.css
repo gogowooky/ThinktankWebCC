@@ -1,190 +1,79 @@
-/* ============================================================
-   Thinktank Global Styles
-   Design: Obsidian / Tokyo Night ライク
-   ============================================================ */
+/* Thinktank v5 グローバルスタイル */
 
-/* --- CSS変数: カラーパレット -------------------------------- */
 :root {
   /* 背景 */
-  --bg-primary:      #1e2030;   /* メイン背景 */
-  --bg-secondary:    #1a1b26;   /* サイドバー背景 */
-  --bg-panel:        #24283b;   /* カード・パネル背景 */
-  --bg-hover:        #2a3050;   /* ホバー背景 */
-  --bg-selected:     #2e3460;   /* 選択行背景 */
-  --bg-input:        #1e2030;   /* 入力欄背景 */
+  --bg-primary:       #1e2030;
+  --bg-secondary:     #1a1b26;
+  --bg-panel:         #24283b;
+  --bg-hover:         #2a3050;
+  --bg-selected:      #2e3460;
 
   /* テキスト */
-  --text-primary:    #c0caf5;   /* メインテキスト */
-  --text-muted:      #565f89;   /* 補助テキスト・ラベル */
-  --text-accent:     #7aa2f7;   /* リンク・アクセント */
-  --text-highlight:  #e0af68;   /* 見出しH1・強調 */
-  --text-success:    #9ece6a;   /* 成功・完了 */
-  --text-warning:    #ff9e64;   /* 警告・保留 */
-  --text-error:      #f7768e;   /* エラー */
+  --text-primary:     #c0caf5;
+  --text-muted:       #565f89;
+  --text-accent:      #7aa2f7;
+  --text-highlight:   #e0af68;
+  --text-success:     #9ece6a;
+  --text-warning:     #ff9e64;
+  --text-error:       #f7768e;
 
-  /* 見出し色（Markdown H1-H6）*/
-  --heading-h1:      #e0af68;
-  --heading-h2:      #7aa2f7;
-  --heading-h3:      #9ece6a;
-  --heading-h4:      #bb9af7;
-  --heading-h5:      #7dcfff;
-  --heading-h6:      #73daca;
+  /* ボーダー・UI */
+  --border:           #292e42;
+  --radius:           6px;
+  --transition-panel: 200ms ease;
 
-  /* ボーダー */
-  --border:          #292e42;   /* サブトルな区切り線 */
-  --border-focus:    #7aa2f7;   /* フォーカス枠 */
+  /* パネル別テーマ色（TT_Color.txt: blue-dark / indigo-dark / gray / green-dark）*/
+  --thinktank-ribbon-bg: #073763;
+  --thinktank-area-bg:   #E8F1F8;
+  --overview-ribbon-bg:  #3949AB;
+  --overview-area-bg:    #F9FAFF;
+  --workout-ribbon-bg:   #3F3F3F;
+  --workout-area-bg:     #D0D0D0;
+  --todo-ribbon-bg:      #1E4620;
+  --todo-area-bg:        #E2EFDA;
 
-  /* 形状 */
-  --radius:          6px;       /* 角丸の基本値 */
-  --radius-sm:       4px;
-  --radius-lg:       10px;
-
-  /* スペーシング */
-  --spacing-xs:      4px;
-  --spacing-sm:      8px;
-  --spacing-md:      12px;
-  --spacing-lg:      16px;
-  --spacing-xl:      24px;
-
-  /* サイズ */
-  --ribbon-width:    44px;
-  --panel-min-width: 100px;
-  --panel-default-width: 260px;
-  --tab-height:      36px;
-  --panel-header-height: 36px;
-  --splitter-width:  4px;
-
-  /* トランジション */
-  --transition-panel:  200ms ease;
-  --transition-hover:  120ms;
-
-  /* フォント */
-  --font-family:     'Inter', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui, sans-serif;
-  --font-size-base:  13px;
-  --font-size-sm:    11px;
-  --font-size-lg:    15px;
-  --font-mono:       'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-
-  /* 同期ステータス色 */
-  --sync-synced:     var(--text-muted);
-  --sync-pending:    var(--text-warning);
-  --sync-syncing:    var(--text-accent);
-  --sync-error:      var(--text-error);
+  /* 同期インジケーター */
+  --sync-synced:  var(--text-muted);
+  --sync-syncing: var(--text-accent);
+  --sync-error:   var(--text-error);
 }
 
-/* --- グローバルリセット ------------------------------------ */
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-html {
-  font-size: var(--font-size-base);
+html, body, #root {
   height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 body {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
   background-color: var(--bg-primary);
-  height: 100%;
-  overflow: hidden;
+  color: var(--text-primary);
+  font-family: 'Inter', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
 }
 
-/* --- スクロールバー --------------------------------------- */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* --- 基本要素 --------------------------------------------- */
 a {
   color: var(--text-accent);
   text-decoration: none;
 }
 
-a:hover {
-  text-decoration: underline;
-}
-
-button {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: inherit;
-}
-
-input,
-textarea {
-  font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  color: var(--text-primary);
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  outline: none;
-}
-
-input:focus,
-textarea:focus {
-  border-color: var(--border-focus);
-}
-
-::selection {
-  background: rgba(122, 162, 247, 0.3);
-}
-
-/* --- ユーティリティ --------------------------------------- */
-.text-muted    { color: var(--text-muted); }
-.text-accent   { color: var(--text-accent); }
-.text-success  { color: var(--text-success); }
-.text-warning  { color: var(--text-warning); }
-.text-error    { color: var(--text-error); }
-
-.ellipsis {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.flex-row {
-  display: flex;
-  align-items: center;
-}
-
-.gap-xs { gap: var(--spacing-xs); }
-.gap-sm { gap: var(--spacing-sm); }
-.gap-md { gap: var(--spacing-md); }
+/* スクロールバー */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
