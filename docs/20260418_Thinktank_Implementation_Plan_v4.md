@@ -1,4 +1,5 @@
 # Thinktank 実装プラン v4
+
 **作成日**: 2026-04-18  
 **変更点**: PWA版とLocal版の同時開発、ストレージ抽象化、メタデータ先行同期、同期キューを追加
 
@@ -202,6 +203,7 @@ SyncVersion: number  // NEW: 競合検出用
 ### ビューモデル（v3から継承）
 
 **TTTab**:
+
 ```typescript
 ViewType: 'texteditor' | 'markdown' | 'datagrid' | 'graph' | 'chat'
 ResourceID: string
@@ -275,12 +277,15 @@ ThinktankWebCC/                      ← Reactフロントエンド（共通）
 #### 前提条件
 
 **.NET 8 SDK のインストール**（未インストールの場合）:
+
 ```powershell
 winget install Microsoft.DotNet.SDK.8
 # インストール後、新しいターミナルを開いて確認
 dotnet --version  # → 8.x.xxx
 ```
+
 > ⚠ インストール直後は PATH が反映されない。新しいターミナルを開くか、PowerShell で以下を実行してから `dotnet` を呼び出す:
+>
 > ```powershell
 > $env:PATH = [System.Environment]::GetEnvironmentVariable("PATH","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("PATH","User")
 > ```
@@ -290,11 +295,13 @@ dotnet --version  # → 8.x.xxx
 #### 作業
 
 **① 既存コードの退避**
+
 - `reference/` 以外の既存ソースを `reference2/` に移動
 
 **② React プロジェクト初期化**
 
 `package.json` の主要依存関係（v4.0.0）:
+
 ```json
 {
   "dependencies": {
@@ -310,9 +317,11 @@ dotnet --version  # → 8.x.xxx
   }
 }
 ```
+
 > ⚠ `react-window` は削除。仮想スクロールは `@tanstack/react-virtual` に一本化。
 
 `tsconfig.json` の緩和設定（段階的な型整備のため）:
+
 ```json
 {
   "compilerOptions": {
@@ -323,6 +332,7 @@ dotnet --version  # → 8.x.xxx
 ```
 
 `src/vite-env.d.ts` に Window 拡張宣言を追加（モード検出に必要）:
+
 ```typescript
 /// <reference types="vite/client" />
 
@@ -335,12 +345,14 @@ interface Window {
 `src/index.css` にCSS変数（カラーパレット全量）を定義（Section 5 参照）。
 
 `src/App.tsx` に Phase 1 検証ページを作成:
+
 - `window.__THINKTANK_MODE__` / `window.__THINKTANK_LOCAL_API__` の読み取りと表示
 - CSS変数のカラースウォッチ表示（パレット確認用）
 
 **③ C# ソリューション作成**
 
 ディレクトリ構成:
+
 ```
 ThinktankLocal/
 ├── ThinktankLocal.sln
@@ -355,6 +367,7 @@ ThinktankLocal/
 ```
 
 **`ThinktankLocalApi.csproj` の重要設定**:
+
 ```xml
 <Project Sdk="Microsoft.NET.Sdk.Web">   <!-- ★ Microsoft.NET.Sdk では WebApplication が解決できないため必ず .Web を使用 -->
   <PropertyGroup>
@@ -372,6 +385,7 @@ ThinktankLocal/
 
 **`LocalApiServer.cs` を独立ファイルとして作成**:
 > ⚠ `LocalApiServer` クラスを `Program.cs` 内の `namespace { }` ブロックに書くと `CS0246: WebApplication が見つかりません` エラーになる。必ず独立ファイルに分離する。
+
 ```csharp
 // LocalApiServer.cs
 using Microsoft.AspNetCore.Builder;
@@ -405,6 +419,7 @@ public class LocalApiServer(int port = 8081)
 
 **`ThinktankLocal.csproj` のアイコン設定**:
 > ⚠ Phase 1 では `Resources/app.ico` が存在しないため、`ApplicationIcon` と `Resource` をコメントアウトする。Phase 43 で実装。
+
 ```xml
 <!-- <ApplicationIcon>Resources\app.ico</ApplicationIcon> -->  <!-- Phase 43 で追加 -->
 <!-- <Resource Include="Resources\**" /> -->                   <!-- Phase 43 で追加 -->
@@ -427,6 +442,7 @@ dotnet run --project ThinktankLocalApi
 ```
 
 APIレスポンスの確認:
+
 ```powershell
 Invoke-RestMethod http://localhost:5000/api/health
 # → { status: "ok", mode: "local", version: "4.0.0", timestamp: ... }
@@ -436,6 +452,7 @@ Invoke-RestMethod http://localhost:5000/api/sync/status
 ```
 
 ソリューション全体のビルド確認:
+
 ```powershell
 cd ThinktankLocal
 dotnet build ThinktankLocal.sln
@@ -449,6 +466,7 @@ dotnet build ThinktankLocal.sln
 **目標**: Observerパターンの基底クラスとコレクション管理クラスを実装する。
 
 **新規作成**:
+
 - `src/models/TTObject.ts`
 - `src/models/TTCollection.ts`
 - `src/utils/csv.ts`
@@ -463,6 +481,7 @@ dotnet build ThinktankLocal.sln
 **目標**: 統一コンテンツモデルとアプリ全体のモデルルートを構築する。
 
 **新規作成**:
+
 - `src/models/TTDataItem.ts`（`IsMetaOnly`, `DeviceId`, `SyncVersion` フィールドを含む）
 - `src/models/TTStatus.ts`
 - `src/models/TTAction.ts`
@@ -478,6 +497,7 @@ dotnet build ThinktankLocal.sln
 **目標**: 新UIアーキテクチャのビューモデルを実装する。
 
 **新規作成**:
+
 - `src/views/TTTab.ts` - ViewType・ResourceID・IsLoading・IsDirty・DisplayTitle
 - `src/views/TTMainPanel.ts` - タブ管理（OpenTab / CloseTab / SwitchTab / NewTab / CloseAllTabs / SetActiveTabDirty）
 - `src/views/TTLeftPanel.ts` - IsOpen / Width / PanelType / Filter / SelectedItemID（Open/Close/Toggle/SwitchTo/SetFilter/SelectItem/SetWidth）
@@ -487,6 +507,7 @@ dotnet build ThinktankLocal.sln
 - `src/hooks/useAppUpdate.ts` - TTObject Observer → React useReducer 接続
 
 **修正**:
+
 - `src/models/TTObject.ts` - `getNowString()` をミリ秒＋ランダムサフィックスに変更（ID重複防止）
 - `src/types/index.ts` - 以下の型を追加
   - `ViewType`: `'texteditor' | 'markdown' | 'datagrid' | 'graph' | 'chat'`
@@ -499,6 +520,7 @@ dotnet build ThinktankLocal.sln
 #### 実装詳細・仕様
 
 **TTTab**:
+
 ```typescript
 public get DisplayTitle(): string {
   return this.IsDirty ? `● ${this.Name}` : this.Name;
@@ -507,14 +529,17 @@ public get DisplayTitle(): string {
 ```
 
 **TTMainPanel.OpenTab()**:
+
 - 同一 `ResourceID` + 同一 `ViewType` のタブが既に存在する場合はスイッチのみ（重複防止）
 - 存在しない場合は新規タブを末尾に追加してアクティブにする
 
 **TTRightPanel.AddChatMessage()**:
+
 - メッセージ追加時に `IsOpen = true` を自動設定する（チャット送信でパネルを自動展開）
 - メッセージ ID: `msg-${Date.now()}-${Math.random().toString(36).slice(2,7)}`（重複防止のためランダムサフィックス付き）
 
 **TTApplication.OpenItem()**:
+
 ```typescript
 // Models.Memos.GetDataItem(resourceId) でアイテムを検索
 // → MainPanel.OpenTab() でタブを作成
@@ -523,6 +548,7 @@ public get DisplayTitle(): string {
 ```
 
 **useAppUpdate()**:
+
 ```typescript
 // TTObject の AddOnUpdate を購読し、通知を受けて React コンポーネントを強制再レンダリングする
 export function useAppUpdate(obj: TTObject): void
@@ -599,6 +625,7 @@ this.RightPanel._parent = this;
 **目標**: リボン・左右サブパネル・メインパネルの骨格UIと同期インジケーターを構築する。
 
 **新規作成**:
+
 - `src/components/UI/SyncIndicator.tsx + .css` - 同期状態バッジ（タブバー右端に常時表示）
 - `src/components/Layout/Splitter.tsx + .css` - ドラッグで幅変更するセパレーター
 - `src/components/Layout/Ribbon.tsx + .css` - 縦並びアイコンリボン（44px 幅）
@@ -612,6 +639,7 @@ this.RightPanel._parent = this;
 - `src/components/MainPanel/MainPanel.tsx + .css` - TabBar＋コンテンツエリア
 
 **変更**:
+
 - `src/App.tsx` - Phase 4 テストページ → `<AppLayout />` に切り替え。テスト関数はデバッグ用として保持。`window.__runTests()` でコンソールから実行可能。
 
 ---
@@ -619,9 +647,11 @@ this.RightPanel._parent = this;
 #### 実装詳細・仕様
 
 **AppLayout のレイアウト構成**:
+
 ```
 [Ribbon 44px固定][LeftPanel 可変][Splitter 4px][MainPanel flex:1][Splitter 4px][RightPanel 可変]
 ```
+
 - CSS Flexbox（`display: flex`）で横並び
 - LeftPanel / RightPanel は `IsOpen=false` のとき Splitter ごと非表示
 - Splitter は `IsOpen` が true のときのみレンダリングする（条件付き）
@@ -642,6 +672,7 @@ this.RightPanel._parent = this;
 - 同じアイコンを再クリックでパネルを閉じる（`SwitchTo()` の Toggle 仕様）
 
 **LeftPanel / RightPanel の開閉アニメーション**:
+
 ```tsx
 // IsOpen=false のとき width:0 へ CSS transition でアニメーション
 style={{
@@ -653,6 +684,7 @@ style={{
 ```
 
 **Splitter の実装**:
+
 - `mousedown` で `lastX` を記録し `document` に `mousemove` / `mouseup` を登録
 - `mousemove` で `delta = currentX - lastX` を計算し `onResize(delta)` を呼ぶ（delta 方式）
 - `mouseup` でリスナーを解除
@@ -675,6 +707,7 @@ style={{
 - Phase 15 以降で `StorageManager.getSyncStatus()` に接続して差し替える
 
 **TabBar の Props**:
+
 ```tsx
 interface Props {
   tabs: ReadonlyArray<TTTab>;
@@ -688,6 +721,7 @@ interface Props {
 ```
 
 **panel-header 共有スタイル**:
+
 - `.panel-header` / `.panel-header__title` / `.panel-header__close` を `LeftPanel.css` に定義
 - `RightPanelHeader` も同じ CSS クラスを使用（import は `LeftPanel.css` に依存しない独立スタイルとして実装するのが望ましい。次回は共通の `Panel.css` に抽出推奨）
 
@@ -760,16 +794,19 @@ interface Props {
 **目標**: 左パネルのナビゲーターにアイテム一覧を表示し、クリックでメインパネルで開く。
 
 **新規作成**:
+
 - `src/components/LeftPanel/NavigatorView.tsx` - @tanstack/react-virtual 仮想スクロールリスト
 - `src/components/LeftPanel/NavigatorView.css` - ナビゲーター・フィルタ・行スタイル
 
 **更新**:
+
 - `src/components/LeftPanel/LeftPanel.tsx` - `PanelType === 'navigator'` 時に NavigatorView をレンダー
 - `src/App.tsx` - `seedTestData()` 関数を追加（起動時に10件のサンプルアイテムを投入）
 - `src/views/TTLeftPanel.ts` - デフォルト幅を 260px → **330px** に変更
 - `src/views/TTRightPanel.ts` - デフォルト幅を 240px → **310px** に変更
 
 **仕様**:
+
 - 各行: `[アイコン] タイトル [更新日]` 形式、行高さ固定 **36px**
 - ContentTypeアイコン（lucide-react）: memo=FileText / chat=MessageCircle / file=Paperclip / photo=Image / email=Mail / drive=HardDrive / url=Link
 - フィルタ欄（AND/OR/NOT構文）: スペース区切り=AND、`OR` キーワード=OR、`NOT` キーワード=次トークンを除外
@@ -782,6 +819,7 @@ interface Props {
 - 仮想スクロール: `useVirtualizer`（overscan=5）で大量アイテムでもパフォーマンス維持
 
 **seedTestData() の仕様** (`src/App.tsx`):
+
 ```typescript
 function seedTestData(): void {
   const memos = TTApplication.Instance.Models.Memos
@@ -797,9 +835,11 @@ function seedTestData(): void {
 }
 seedTestData()  // モジュールレベルで呼び出し
 ```
+
 > ⚠ `memos.Count > 0` チェックが必須。HMR（Hot Module Replacement）でモジュールが再評価される際に重複投入されるのを防ぐ。
 
 **AND/OR/NOT フィルタ実装**:
+
 ```typescript
 function matchesFilter(item: TTDataItem, filter: string): boolean {
   if (!filter.trim()) return true;
@@ -818,6 +858,7 @@ function matchesFilter(item: TTDataItem, filter: string): boolean {
 ```
 
 **UpdateDate 表示フォーマット**:
+
 ```typescript
 function formatDate(updateDate: string): string {
   // "2026-04-19-153639-634-kv4l" → "04/19"
@@ -831,6 +872,7 @@ function formatDate(updateDate: string): string {
 
 1. **`useAppUpdate` を2回呼ぶ必要がある**  
    NavigatorView は `app.Models.Memos`（アイテム追加・削除で更新）と `app.LeftPanel`（フィルタ・選択状態で更新）の両方を購読しなければならない。どちらか一方だけだとフィルタ変更やアイテム追加が反映されない。
+
    ```tsx
    useAppUpdate(app.Models.Memos);
    useAppUpdate(app.LeftPanel);
@@ -838,6 +880,7 @@ function formatDate(updateDate: string): string {
 
 2. **仮想スクロールのコンテナは `position: relative` が必須**  
    `useVirtualizer` の各アイテムは `position: absolute; top: vItem.start` で配置されるため、外側ラッパーに `position: relative` と `height: virtualizer.getTotalSize()` が必要。
+
    ```tsx
    <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
      {virtualizer.getVirtualItems().map(vItem => (
@@ -851,6 +894,7 @@ function formatDate(updateDate: string): string {
    `TTLeftPanel.Width = 330` / `TTRightPanel.Width = 310` は 1920px 幅モニター基準。小さい画面では `SetWidth()` の clamp 範囲（左: 180〜600、右: 180〜500）内で調整する。
 
 **検証条件**:
+
 - [ ] 左パネルを開く（Ribbon ナビゲーターアイコン）と 10 件のサンプルアイテムが表示される
 - [ ] フィルタ欄に入力するとリアルタイムに絞り込まれ件数表示が更新される（例: "react" → 該当件数/10件）
 - [ ] `OR` 構文（例: "react OR vue"）・`NOT` 構文（例: "react NOT test"）が正しく動作する
@@ -865,9 +909,11 @@ function formatDate(updateDate: string): string {
 **目標**: Monaco Editorによるテキスト編集ビューを実装する。
 
 **新規作成**:
+
 - `src/components/MainPanel/views/TextEditorView.tsx`
 
 **仕様**:
+
 - `IsMetaOnly=true` のタブを開いた場合: スピナー表示 → コンテンツをオンデマンドフェッチ → 表示
 - Ctrl+S で保存（StorageManager経由）
 - 未保存変更: タブタイトルに `●` を表示
@@ -881,6 +927,7 @@ function formatDate(updateDate: string): string {
 **目標**: markedによるMarkdownレンダリングビューを実装する。
 
 **新規作成**:
+
 - `src/components/MainPanel/views/MarkdownView.tsx`
 - `src/components/MainPanel/views/MarkdownView.css`
 - `src/utils/markdownToHtml.ts`
@@ -888,6 +935,7 @@ function formatDate(updateDate: string): string {
 - `src/components/MainPanel/ViewToolbar.css`
 
 **更新**:
+
 - `src/components/MainPanel/MainPanel.tsx` - ViewToolbar + MarkdownView 分岐を追加
 - `src/views/TTMainPanel.ts` - `SetActiveTabViewType()` メソッドを追加
 - `src/App.tsx` - `seedTestData()` に `[Memo:ID]` クロスリファレンスを追加
@@ -895,6 +943,7 @@ function formatDate(updateDate: string): string {
 **仕様詳細**:
 
 **markdownToHtml.ts**:
+
 - `marked v18` の `parse()` を使用（同期でstring返却）
 - `[Memo:ID]` タグを **前処理** で `[title](memo://ID)` に変換してから marked に渡す
   - コードブロック（``` ``` ```）・コードスパン（`` ` `` ）内は変換しない（プレースホルダー退避方式）
@@ -911,9 +960,11 @@ export function markdownToHtml(markdown: string, options?: MarkdownToHtmlOptions
 ```
 
 **MarkdownView.tsx のアーキテクチャ**:
+
 - `MarkdownView`（外側） → `MarkdownBody`（内側サブコンポーネント）の2層構造
 - **重要**: `useAppUpdate(item)` を条件分岐の中で呼ぶと React の rules-of-hooks 違反になる。
   `item` が存在する場合のみマウントされる `MarkdownBody` コンポーネント内で `useAppUpdate` を呼ぶことで回避する。
+
   ```tsx
   // ❌ NG（hooks ルール違反）
   if (item) useAppUpdate(item);
@@ -928,15 +979,18 @@ export function markdownToHtml(markdown: string, options?: MarkdownToHtmlOptions
     return item ? <MarkdownBody item={item} /> : null;
   }
   ```
+
 - `[Memo:ID]` リンクのクリックはイベント委譲（`e.target.closest('a.md-memo-link')`）で処理し、`app.OpenItem(id, 'texteditor')` を呼ぶ
 
 **ViewToolbar.tsx**:
+
 - タブが開いている間、コンテンツエリア上部に常時表示
 - [編集]（Pencil アイコン）/ [プレビュー]（Eye アイコン）トグルボタン
 - クリックで `mp.SetActiveTabViewType(viewType)` を呼び出す
 - MainPanel.tsx の `main-panel__content` 内に配置（TabBar の下、エディタの上）
 
 **MainPanel.tsx の分岐ロジック**:
+
 ```tsx
 {mp.ActiveTab ? (
   <>
@@ -951,9 +1005,11 @@ export function markdownToHtml(markdown: string, options?: MarkdownToHtmlOptions
   </>
 ) : null}
 ```
+
 > `key={tab.ID}` でタブ切り替え時に必ず再マウントし、Monaco のコンテンツをリセットする。
 
 **TTMainPanel.SetActiveTabViewType()**:
+
 ```typescript
 public SetActiveTabViewType(viewType: ViewType): void {
   const tab = this.ActiveTab;
@@ -964,6 +1020,7 @@ public SetActiveTabViewType(viewType: ViewType): void {
 ```
 
 **MarkdownView.css の見出し色分け**:
+
 | 要素 | CSS 変数 | 色 |
 |---|---|---|
 | `h1` | `--text-highlight` | `#e0af68`（ゴールド） |
@@ -973,7 +1030,9 @@ public SetActiveTabViewType(viewType: ViewType): void {
 | `a.md-memo-link` | `--text-success` | グリーン・破線下線 |
 
 **seedTestData() のクロスリファレンス追加方法**:
+
 - TTDataItem の ID は生成時に確定するため、先にアイテムを全て生成してから ID を使って `[Memo:PLACEHOLDER]` を実 ID に差し替える方式を採用。
+
 ```typescript
 const reactTs = addItem('# React と TypeScript\n...', 'memo')
 const observer = addItem('# Observer パターン\n[Memo:PHASES_ID] 全体で使われている。', 'memo')
@@ -1009,6 +1068,7 @@ for (const item of [thinktank, observer, bigquery, virtual, sync]) {
    `mp.ActiveTab` の存在確認後に `<>ViewToolbar + View</>` をレンダーする構造にする。
 
 **検証条件**:
+
 - [ ] アイテムを開いて [プレビュー] ボタンをクリックすると Markdown がレンダリングされる
 - [ ] h1=ゴールド / h2=ブルー / h3=グリーンで色分けされている
 - [ ] `[Memo:ID]` リンクがグリーンの破線付きで表示される
@@ -1023,9 +1083,11 @@ for (const item of [thinktank, observer, bigquery, virtual, sync]) {
 **目標**: コレクション全体をテーブル形式で表示するビューを実装する。
 
 **新規作成**:
+
 - `src/components/MainPanel/views/DataGridView.tsx`
 
 **仕様**:
+
 - 列: チェックボックス・ContentType・タイトル・更新日時・同期状態
 - **同期状態列**: `IsMetaOnly=true` はグレー（未取得）、`dirty` はオレンジ（未送信）、正常は表示なし
 - チェックした複数アイテム→💬ボタンでAIチャット起動
@@ -1057,12 +1119,14 @@ for (const item of [thinktank, observer, bigquery, virtual, sync]) {
 ##### ファイルフォーマット（すべて `.md`）
 
 **memo**
+
 ```
 タイトル（1行目）
 （自由なmarkdownテキスト）
 ```
 
 **chat**
+
 ```
 タイトル（1行目）
 # ユーザー発話
@@ -1072,18 +1136,21 @@ AI発話（自由記載）
 ```
 
 **pickup**
+
 ```
 タイトル（1行目）
 > フィルター条件行（省略可）
 * アイテムID行（省略可）
 （その他自由記載）
 ```
+
 - `>` 行 = フィルター条件（保存された検索クエリ）
 - `*` 行 = 個別データのID
 - 両方共存可能
 - 空のpickup = フィルターなし = 全件対象
 
 **link**
+
 ```
 タイトル（1行目）
 * URL or URI（1件1行）
@@ -1091,6 +1158,7 @@ AI発話（自由記載）
 ```
 
 **table**
+
 ```
 タイトル（1行目）
 
@@ -1104,6 +1172,7 @@ AI発話（自由記載）
 
 ...（複数テーブル可）
 ```
+
 - `#` テーブルタイトル行の前後に空行
 - 列名csv行の前にも空行
 
@@ -1112,6 +1181,7 @@ AI発話（自由記載）
 ```
 yyyy-MM-dd-hhmmss
 ```
+
 - 同秒衝突時：1秒ずつ遡って空いているIDを割り当て
 
 ---
@@ -1138,28 +1208,33 @@ yyyy-MM-dd-hhmmss
 | ⑤ 全文検索 | 保管庫全文検索＋新規タブ作成 |
 
 ##### ①パネル（pickup設定）
+
 - フォーカスpickupタブに紐づくpickupデータの情報: ID / アイテム数 / タイトル
 - DataGrid Filter用: pulldown履歴付きtextbox
 - DataGrid: pickupデータの子アイテム一覧（カラム: チェック / ID / タイトル / ContentType / 更新日）
   - チェック列: タブで現在表示中のアイテムはチェック表示
 
 ##### ②パネル（メディア設定）
+
 - チェックボタン（変更不可）: フォーカスメディアの表示データがpickupに含まれるか示す
 - 表示データのタイトル
 - メディア選択ボタン: ContentTypeに対応する利用可能なメディアへの切り替えボタン群
 - ハイライト用: 履歴付きtextbox（表示中メディア内のキーワードハイライト）
 
 ##### ③パネル（履歴）
+
 - これまで表示したpickupタブの履歴一覧
 - アイテムを選択 → そのpickupを新規タブで生成・表示
 
 ##### ④パネル（フィルター）
+
 - 保管庫のpulldown選択肢
 - Filter用 pulldown履歴付きtextbox ＋「フィルター作成」ボタン
 - 保管庫の全データ表示用DataGrid（filterテキストでリアルタイム絞り込み）
 - 「フィルター作成」押下 → 絞り込まれたアイテム群から新規pickupファイルを作成し、新規タブで表示
 
 ##### ⑤パネル（全文検索）
+
 - 保管庫のpulldown選択肢
 - 検索キーワード用 履歴付きtextbox ＋「全文検索ヒット作成」ボタン
 - 全文検索ヒットアイテム表示用DataGrid
@@ -1184,11 +1259,13 @@ yyyy-MM-dd-hhmmss
 - タイトルバーの ← → で前後のアイテムに移動
 
 ##### 起動時タブ
+
 - 空のpickupファイルで1タブ作成
 - 空pickup = フィルターなし = 全保管庫・全データ対象
 - 初期表示メディア: DataGrid
 
 ##### タイトルバー（分割なし）
+
 - 左寄せ: ← → ボタン（表示データ履歴の行き来）
 
 ##### メディアとContentTypeの対応
@@ -1202,12 +1279,14 @@ yyyy-MM-dd-hhmmss
 | chat | chat（新規・既存継続） | CLI風表示 / 上部に履歴付きtextbox |
 
 ##### マルチペイン
+
 - 現フェーズはシングルペイン（1タブ1ペイン）
 - 将来フェーズで最大3列×2行に拡張予定
 
 ---
 
 **実装対象**:
+
 - `TTDataItem.ContentType` の型定義を `memo/chat/pickup/link/table` に変更
 - `TTVault` クラスの新規実装（`src/models/TTVault.ts`）
 - `LeftPanelType` の種別定義変更（5種類: pickup-settings / media-settings / history / filter / fulltext-search）
@@ -1224,9 +1303,11 @@ yyyy-MM-dd-hhmmss
 **目標**: アイテム間の関連をノードグラフで表示する。
 
 **新規作成**:
+
 - `src/components/MainPanel/views/GraphView.tsx`
 
 **仕様**:
+
 - `react-force-graph` を使用
 - ノード: TTDataItem（ContentTypeに応じた色分け）
 - エッジ: RelatedIDs / `[Memo:ID]` タグの解析から生成
@@ -1242,9 +1323,11 @@ yyyy-MM-dd-hhmmss
 **目標**: AIとのチャットビューを実装する（バックエンド未接続でUIのみ）。
 
 **新規作成**:
+
 - `src/components/MainPanel/views/ChatView.tsx`
 
 **仕様**:
+
 - ユーザー発言 `>` プレフィックス（右）/ AI応答 Markdownレンダリング（左）
 - ストリーミング表示（カーソル点滅）
 - 入力欄: 下部固定
@@ -1258,6 +1341,7 @@ yyyy-MM-dd-hhmmss
 **目標**: 右パネルの各ビューを実装する。
 
 **新規作成**:
+
 - `src/components/RightPanel/OutlineView.tsx` - Markdown見出し一覧。クリックでジャンプ
 - `src/components/RightPanel/PropertiesView.tsx` - ID・種別・日時・Keywords・同期状態・device_id
 - `src/components/RightPanel/RelatedView.tsx` - RelatedIDsを解析してリスト表示
@@ -1272,12 +1356,14 @@ yyyy-MM-dd-hhmmss
 **目標**: PWA版とLocal版でストレージバックエンドを切り替える抽象化レイヤーを実装する。
 
 **新規作成**:
+
 - `src/services/storage/IStorageBackend.ts` - インターフェース定義（`listMeta()`, `getContent()`, `save()`, `delete()`, `getSyncStatus()`）
 - `src/services/storage/PwaStorageBackend.ts` - IndexedDB + REST API経由BQ（後のフェーズで実装）
 - `src/services/storage/LocalStorageBackend.ts` - C# local API (`http://localhost:8081`) 経由
 - `src/services/storage/StorageManager.ts` - `window.__THINKTANK_MODE__` を読み取り、適切なバックエンドを返す
 
 **モード検出ロジック**:
+
 ```typescript
 const mode = (window as any).__THINKTANK_MODE__ === 'local' ? 'local' : 'pwa';
 const backend = mode === 'local'
@@ -1294,12 +1380,14 @@ const backend = mode === 'local'
 **目標**: REST APIサーバーとBigQueryストレージを構築する。
 
 **新規作成**:
+
 - `server/index.ts` - Express 5 + WebSocket（ポート8080）
 - `server/middleware/authMiddleware.ts` - HMAC-SHA256 Cookie認証
 - `server/services/BigQueryService.ts` - MERGE文Upsert・concurrent update自動リトライ
 - `server/routes/bigqueryRoutes.ts` - CRUD API
 
 **APIエンドポイント**:
+
 | メソッド | パス | 機能 |
 |---------|------|------|
 | GET | `/api/bq/meta` | **メタデータのみ**一覧（content除く、高速） |
@@ -1322,12 +1410,14 @@ const backend = mode === 'local'
 **目標**: PwaStorageBackend の実装を完成させる。IndexedDBキャッシュとWebSocket同期を構築する。
 
 **新規作成**:
+
 - `src/services/storage/IndexedDBService.ts` - DB名`thinktank` v3、`files_meta`（メタデータ）と `files_content`（本文）の2ストアに分離
 - `src/services/sync/WebSocketService.ts` - 指数バックオフ自動再接続
 - `src/services/sync/SyncManager.ts` - リモート更新→ローカル適用
 - `src/services/storage/SyncQueueStore.ts` - 未送信キュー（IndexedDB `sync_queue` ストア）
 
 **PwaStorageBackend の動作**:
+
 - `save()`: `files_meta` に即時保存（dirty=true）→ `sync_queue` に追加 → BQ非同期送信（成功でdirtyクリア）
 - `listMeta()`: IndexedDB `files_meta` から返す（BQ比較は差分同期フェーズで実施）
 - `getContent()`: IndexedDB `files_content` を確認 → なければ `/api/bq/files/:id/content` でフェッチ → キャッシュ
@@ -1341,10 +1431,12 @@ const backend = mode === 'local'
 **目標**: 起動時に軽量なメタデータのみを同期し、本文はオンデマンドで取得する仕組みを実装する。
 
 **修正**:
+
 - `server/routes/bigqueryRoutes.ts` - `GET /api/bq/versions?category=` を拡張（file_id + updated_at + device_idのみ返す）
 - `src/services/storage/StorageManager.ts` - `syncMeta(category?)` を追加
 
 **差分同期アルゴリズム**:
+
 ```
 1. BQから全アイテムの { file_id, updated_at } のみフェッチ（数KBオーダー）
 2. IndexedDB files_meta と比較
@@ -1362,9 +1454,11 @@ const backend = mode === 'local'
 **目標**: MemoとChatを統合するTTKnowledgeを実装する。既存BQデータ（category='Memo'）を新カテゴリ（'memos'）にマッピングする。
 
 **新規作成**:
+
 - `src/models/TTKnowledge.ts` - SyncCategories で複数カテゴリを集約
 
 **修正**:
+
 - `src/models/TTModels.ts` - `Knowledge: TTKnowledge` を追加
 - `src/models/TTCollection.ts` - chatsタイトルを正規化、`file_type='md'/'text'` → `'memo'` に正規化
 
@@ -1377,11 +1471,13 @@ const backend = mode === 'local'
 **目標**: Claude APIを使ったSSEストリーミングチャットAPIを実装する。
 
 **新規作成**:
+
 - `server/services/ChatService.ts` - @anthropic-ai/sdk、SSEストリーミング
 - `server/routes/chatRoutes.ts` - `POST /api/chat/:sessionId/messages`
 - `server/routes/fetchRoutes.ts` - `POST /api/fetch-urls`（URL内容取得プロキシ）
 
 **環境変数** (`server/.env`):
+
 - `ANTHROPIC_API_KEY`（override: true で読み込む）
 - `ANTHROPIC_MODEL`（デフォルト `claude-sonnet-4-6`）
 
@@ -1394,6 +1490,7 @@ const backend = mode === 'local'
 **目標**: DataGridビューでチェックしたアイテムをコンテキストとしてチャット起動。会話をメモとして保存する。
 
 **修正**:
+
 - `src/views/TTMainPanel.ts` - `StartChatWithContext(checkedIds, editorSelection)` 追加
 - `src/components/MainPanel/views/ChatView.tsx` - コンテキストバー表示。「メモに保存」ボタン。BQへの保存も実行
 - `src/views/TTApplication.ts` - メモ保存後にナビゲーターを更新
@@ -1407,11 +1504,13 @@ const backend = mode === 'local'
 **目標**: WPFアプリケーションのシェルを構築し、WebView2でThinktankPWAを表示する。
 
 **新規作成**:
+
 - `ThinktankLocal/ThinktankLocal/MainWindow.xaml` - フルスクリーンWebView2を持つシンプルなウィンドウ
 - `ThinktankLocal/ThinktankLocal/App.xaml.cs` - 起動時にC# local APIサーバーを別スレッドで起動
 - WebView2のNavigationCompletedイベントで `window.__THINKTANK_MODE__` と `window.__THINKTANK_LOCAL_API__` を注入
 
 **仕様**:
+
 - WebView2はビルド済みのReact SPA（`dist/` フォルダ）を `file://` または 内蔵ローカルサーバーで表示
 - WPF起動 → C# API起動（port 8081）→ WebView2で React SPA ロード → JS変数注入
 - タイトルバー: `Thinktank - {syncStatus}` をリアルタイム更新
@@ -1425,13 +1524,16 @@ const backend = mode === 'local'
 **目標**: C# ASP.NET Core minimal APIで、ReactからのAPI呼び出しをLocal FSのMarkdownファイル操作に変換する。
 
 **新規作成**:
+
 - `ThinktankLocal/ThinktankLocalApi/Program.cs` - ポート8081で起動。CORSはlocalhost許可
 - `ThinktankLocal/ThinktankLocalApi/Services/LocalFsService.cs`
 
 **Local FS仕様**:
+
 - Markdownファイルの格納先: `%USERPROFILE%\Documents\Thinktank\` （設定可能）
 - ファイル名: `{file_id}.md`（例: `2021-11-09-095808.md`）
 - メタデータはファイル先頭のFrontmatter（YAML）に格納
+
   ```yaml
   ---
   title: タイトル
@@ -1444,9 +1546,11 @@ const backend = mode === 'local'
   ---
   （本文）
   ```
+
 - `FileSystemWatcher` でフォルダを監視。外部ツールによる変更を検出してSync Queueに追加
 
 **APIエンドポイント（C# Local API）**:
+
 | メソッド | パス | 機能 |
 |---------|------|------|
 | GET | `/api/files/meta` | メタデータ一覧（Frontmatterのみ読み取り、高速） |
@@ -1464,6 +1568,7 @@ const backend = mode === 'local'
 **目標**: Local FSの変更を同期キューで管理し、バックグラウンドで自動的にクラウドバックエンドに同期する。
 
 **新規作成**:
+
 - `ThinktankLocal/ThinktankLocalApi/Services/SyncQueueService.cs`
   - 同期キューをSQLiteファイル（`sync_queue.db`）で管理
   - `Enqueue(fileId, operation)` で追加
@@ -1477,6 +1582,7 @@ const backend = mode === 'local'
   - 起動時にクラウドメタデータを取得し、クラウドが新しいアイテムをLocal FSに追加
 
 **同期ログ例**:
+
 ```
 [SyncQueue] 保存: 2026-04-18-093000 → キューに追加 (pending: 3)
 [SyncBg] ネット接続確認 → オンライン
@@ -1494,10 +1600,12 @@ const backend = mode === 'local'
 **目標**: 同一アイテムが複数デバイスで同時更新された場合の競合を検出・解決する。
 
 **新規作成**:
+
 - `ThinktankLocal/ThinktankLocalApi/Services/ConflictResolver.cs`
 - `src/services/storage/ConflictDetector.ts`（PWA側）
 
 **アルゴリズム**:
+
 ```
 1. デバイスID生成: 初回起動時に UUID を生成し、ファイル/localStorage に永続化
 2. 保存時: { file_id, device_id, sync_version, updated_at } を記録
@@ -1509,6 +1617,7 @@ const backend = mode === 'local'
 ```
 
 **修正**:
+
 - `src/components/UI/SyncIndicator.tsx` - 競合ファイルが存在する場合は `⚠ 競合あり` を表示
 
 **検証**: 同じアイテムを2デバイスで編集→同期→競合ファイルが生成され、UIに警告が表示される。
@@ -1520,11 +1629,13 @@ const backend = mode === 'local'
 **目標**: SyncIndicatorとPropertiesViewの同期状態表示を完成させる。
 
 **修正**:
+
 - `src/components/UI/SyncIndicator.tsx` - `StorageManager.getSyncStatus()` をObserverで購読してリアルタイム更新
 - `src/components/RightPanel/PropertiesView.tsx` - アイテムの同期状態詳細（device_id・sync_version・最終同期時刻）を表示
 - `src/components/MainPanel/TabBar.tsx` - 未送信件数バッジをタブバー右端に表示
 
 **Local版追加**:
+
 - `ThinktankLocal/ThinktankLocal/MainWindow.xaml.cs` - タイトルバーに同期状態を表示（`Thinktank - ✓ Synced` / `Thinktank - ● 3 pending`）
 
 **検証**: 保存→「● 1 pending」表示→同期完了→「✓ Synced」に戻る。オフライン時は「✗ Offline」表示。
@@ -1536,10 +1647,12 @@ const backend = mode === 'local'
 **目標**: Monaco Editor内のクリッカブルタグを実装する。
 
 **新規作成**:
+
 - `src/views/helpers/TagParser.ts`
 - `src/services/TagLinkProvider.ts`
 
 **タグ一覧**:
+
 | タグ | 動作 |
 |------|------|
 | `[Memo:yyyy-MM-dd-HHmmss]` | 当該メモをメインパネルで開く |
@@ -1557,9 +1670,11 @@ const backend = mode === 'local'
 **目標**: Monacoカスタムトークナイザによる見出し色分け、Folding、ビジュアルテーマを実装する。
 
 **新規作成**:
+
 - `src/services/ColorTheme.ts` - CSS変数テーマ定義
 
 **修正**:
+
 - `src/components/MainPanel/views/TextEditorView.tsx` - `tt-markdown` カスタム言語・FoldingRangeProvider登録
 
 **検証**: Markdown見出しがH1-H6で色分け表示。セクションFold/Unfold動作。
@@ -1571,9 +1686,11 @@ const backend = mode === 'local'
 **目標**: ナビゲーター・Markdownビュー・アウトラインにもキーワードハイライトを適用する。
 
 **新規作成**:
+
 - `src/utils/highlightSpans.tsx`
 
 **修正**:
+
 - `src/views/TTTab.ts` - `HighlightTargets` フラグ追加
 - Navigator / MarkdownView / OutlineView にハイライト対応
 
@@ -1586,6 +1703,7 @@ const backend = mode === 'local'
 **目標**: 左パネルの検索ビューでメモ・チャット横断の全文検索を実装する。
 
 **新規作成**:
+
 - `src/components/LeftPanel/SearchView.tsx`
 - `server/routes/searchRoutes.ts` + `server/services/SearchService.ts` - BigQuery全文検索
 - Local版: `ThinktankLocalApi` に `GET /api/files/search?q=` を追加（ローカルファイルをgrep）
@@ -1599,6 +1717,7 @@ const backend = mode === 'local'
 **目標**: 右パネルの関連ビューでアクティブアイテムに関連するアイテムを表示する。
 
 **新規作成**:
+
 - `server/routes/relatedRoutes.ts` + `server/services/RelatedService.ts`
 
 **検証**: アイテムを開くと関連アイテムがリスト表示される。
@@ -1610,11 +1729,13 @@ const backend = mode === 'local'
 **目標**: コンテキストベースのアクション管理を構築する。
 
 **新規作成**:
+
 - `src/controllers/DefaultStatus.ts`
 - `src/controllers/DefaultActions.ts`
 - `src/controllers/actions/` (ApplicationActions, NavigatorActions, EditorActions, TabActions)
 
 **修正**:
+
 - `src/views/TTApplication.ts` - `DispatchAction()`, `GetContext()` 追加
 
 ---
@@ -1624,10 +1745,12 @@ const backend = mode === 'local'
 **目標**: コンテキストに応じたキーバインドをTSVで管理する。
 
 **新規作成**:
+
 - `src/controllers/DefaultEvents.ts`
 - `ui-design/events.tsv`
 
 **主要ショートカット**:
+
 ```tsv
 *-*-*        Control  N    Tab.New
 *-*-*        Control  W    Tab.Close.Active
@@ -1640,6 +1763,7 @@ const backend = mode === 'local'
 ### Phase 32: コンテキストメニューとコマンドパレット
 
 **新規作成**:
+
 - `src/components/UI/ContextMenu.tsx`
 - `src/components/UI/CommandPalette.tsx`
 - `ui-design/menus.tsv`
@@ -1649,6 +1773,7 @@ const backend = mode === 'local'
 ### Phase 33: タグ一覧・最近のアイテムパネル
 
 **新規作成**:
+
 - `src/components/LeftPanel/TagsView.tsx` - Keywords抽出タグ一覧
 - `src/components/LeftPanel/RecentView.tsx` - UpdateDate降順（最近50件）
 
@@ -1657,6 +1782,7 @@ const backend = mode === 'local'
 ### Phase 34: レスポンシブ/モバイル対応（PWA版）
 
 **修正**:
+
 - メディアクエリで小画面では左右パネルを非表示、ボトムナビを表示
 - PWA版のみ対象（Local版はWindows専用）
 
@@ -1665,6 +1791,7 @@ const backend = mode === 'local'
 ### Phase 35: Google Drive連携
 
 **新規作成**:
+
 - `server/routes/driveRoutes.ts` + `server/services/DriveService.ts`
 
 ---
@@ -1672,6 +1799,7 @@ const backend = mode === 'local'
 ### Phase 36: Gmail連携
 
 **新規作成**:
+
 - `server/routes/gmailRoutes.ts` + `server/services/GmailService.ts`
 
 ---
@@ -1679,6 +1807,7 @@ const backend = mode === 'local'
 ### Phase 37: Google Photos連携
 
 **新規作成**:
+
 - `server/routes/photosRoutes.ts` + `server/services/PhotosService.ts`
 
 ---
@@ -1708,6 +1837,7 @@ const backend = mode === 'local'
 **目標**: アプリ状態（開いているタブ・パネル幅・フィルタ等）を永続化し、起動時に復元する。
 
 **修正**:
+
 - `src/views/TTMainPanel.ts` - タブ状態のシリアライズ/復元
 - `src/views/TTLeftPanel.ts` / `TTRightPanel.ts` - 幅・開閉状態の永続化（localStorage）
 - Local版: WPFの `Properties.Settings` に幅・状態を保存
@@ -1719,10 +1849,12 @@ const backend = mode === 'local'
 **目標**: PWA版をCloud Runにデプロイする。
 
 **新規作成**:
+
 - `Dockerfile` - バックエンドサーバーコンテナ（Express + TypeScript、`dist/` をビルドして同梱）
 - `cloudbuild.yaml` - Cloud Build設定
 
 **デプロイ構成**:
+
 ```
 Cloud Run (backend):
   - Express APIサーバー
@@ -1735,6 +1867,7 @@ Firebase Hosting or Cloud Run (frontend):
 ```
 
 **環境変数（Cloud Run）**:
+
 - `GOOGLE_CLOUD_PROJECT`
 - `BQ_DATASET`
 - `ANTHROPIC_API_KEY`
@@ -1749,12 +1882,14 @@ Firebase Hosting or Cloud Run (frontend):
 **目標**: 非ITユーザー向けに「解凍してexeをダブルクリックするだけ」で動くパッケージを作成する。
 
 **作業**:
+
 - `dotnet publish` で自己完結型の単一exeとしてビルド（.NET RuntimeをBundled）
 - Reactビルド成果物（`dist/`）をexeに埋め込み、または同梱フォルダとして配置
 - `setup.bat` を作成（初回のみ: 設定ファイル生成、APIキー入力）
 - ZIP圧縮して配布
 
 **配布物**:
+
 ```
 Thinktank_vX.X.zip
 ├── Thinktank.exe       ← 自己完結型（.NET Runtime内蔵）
@@ -1814,6 +1949,7 @@ Thinktank_vX.X.zip
 ## 11. 起動方法
 
 ### PWA版（開発）
+
 ```bash
 npm run dev
 # フロントエンド: http://localhost:5173
@@ -1821,12 +1957,14 @@ npm run dev
 ```
 
 ### PWA版（本番）
+
 ```bash
 # Cloud Runにデプロイ済みのURLにアクセス
 https://thinktank.example.com
 ```
 
 ### Local版（開発）
+
 ```bash
 # ターミナル1: クラウドバックエンド（任意）
 npm run server:dev
@@ -1840,6 +1978,7 @@ dotnet run --project ThinktankLocal
 ```
 
 ### Local版（配布）
+
 ```
 1. Thinktank_vX.X.zip を解凍
 2. setup.bat を実行（初回のみ）
