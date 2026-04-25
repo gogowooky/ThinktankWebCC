@@ -1,15 +1,15 @@
 /**
  * App.tsx
- * Phase 1-3 検証ページ
- * - CSS変数カラースウォッチ
- * - モード検出（window.__THINKTANK_MODE__）
- * - TTVault / TTThink / TTModels の動作確認
+ * Phase 1-4 検証ページ
+ * - Phase 1-3: CSS変数カラースウォッチ / モード検出 / TTVault / TTThink / TTModels
+ * - Phase 4: TTApplication / 4パネルビューモデル動作確認
  */
 
 import { useEffect, useState } from 'react'
 import { TTThink } from './models/TTThink'
 import { TTVault } from './models/TTVault'
 import { TTModels } from './models/TTModels'
+import { TTApplication } from './views/TTApplication'
 
 // ── Phase 1-3 テスト ────────────────────────────────────────────────────
 
@@ -18,15 +18,12 @@ function runPhase3Tests(): string[] {
   TTModels.resetInstance()
   const models = TTModels.Instance
 
-  // 1. TTModels シングルトン
   results.push(`[1] TTModels singleton: ${TTModels.Instance === models ? 'OK' : 'FAIL'}`)
 
-  // 2. TTVault 初期化
   const vault = models.Vault
   results.push(`[2] TTVault exists: ${vault instanceof TTVault ? 'OK' : 'FAIL'}`)
   results.push(`[2] TTVault name: ${vault.VaultName}`)
 
-  // 3. TTThink 追加（memo）
   const memo = new TTThink()
   memo.ContentType = 'memo'
   memo.Content = '# テストメモ\nこれはテストです。'
@@ -35,7 +32,6 @@ function runPhase3Tests(): string[] {
   results.push(`[3] VaultID auto-set: ${memo.VaultID === vault.ID ? 'OK' : 'FAIL'}`)
   results.push(`[3] Title extracted: ${memo.Name}`)
 
-  // 4. ContentType 各種
   const contentTypes = ['memo', 'thought', 'tables', 'links', 'chat', 'nettext'] as const
   contentTypes.forEach(ct => {
     const t = new TTThink()
@@ -45,26 +41,109 @@ function runPhase3Tests(): string[] {
   })
   results.push(`[4] All ContentTypes added: count=${vault.Count}`)
 
-  // 5. TTThink（thought）テスト
   const thought = new TTThink()
   thought.ContentType = 'thought'
   thought.Content = `# テストThought\n> メモ\n* ${memo.ID}`
   vault.AddThink(thought)
 
-  // 6. GetThoughts()
   const thoughts = vault.GetThoughts()
   results.push(`[5] GetThoughts(): ${thoughts.length >= 1 ? 'OK' : 'FAIL'} (count=${thoughts.length})`)
 
-  // 7. GetThinksForThought()
   const linkedThinks = vault.GetThinksForThought(thought.ID)
   results.push(`[6] GetThinksForThought(): ${linkedThinks.length >= 1 ? 'OK' : 'FAIL'} (count=${linkedThinks.length})`)
 
-  // 8. IsDirty
   const item = new TTThink()
   item.Content = 'dirty test'
   results.push(`[7] IsDirty before markSaved: ${item.IsDirty ? 'OK' : 'FAIL'}`)
   item.markSaved()
   results.push(`[7] IsDirty after markSaved: ${!item.IsDirty ? 'OK' : 'FAIL'}`)
+
+  return results
+}
+
+// ── Phase 4 テスト ──────────────────────────────────────────────────────
+
+function runPhase4Tests(): string[] {
+  const results: string[] = []
+
+  TTApplication.resetInstance()
+  const app = TTApplication.Instance
+
+  // 1. シングルトン
+  results.push(`[1] TTApplication singleton: ${TTApplication.Instance === app ? 'OK' : 'FAIL'}`)
+
+  // 2. 4パネル生成
+  results.push(`[2] ThinktankPanel: ${app.ThinktankPanel.ID === 'ThinktankPanel' ? 'OK' : 'FAIL'}`)
+  results.push(`[2] OverviewPanel:  ${app.OverviewPanel.ID  === 'OverviewPanel'  ? 'OK' : 'FAIL'}`)
+  results.push(`[2] WorkoutPanel:   ${app.WorkoutPanel.ID   === 'WorkoutPanel'   ? 'OK' : 'FAIL'}`)
+  results.push(`[2] ToDoPanel:      ${app.ToDoPanel.ID      === 'ToDoPanel'      ? 'OK' : 'FAIL'}`)
+
+  // 3. 各パネル開閉
+  app.ThinktankPanel.ToggleArea()
+  results.push(`[3] ThinktankPanel ToggleArea (close): ${!app.ThinktankPanel.IsAreaOpen ? 'OK' : 'FAIL'}`)
+  app.ThinktankPanel.ToggleArea()
+  results.push(`[3] ThinktankPanel ToggleArea (reopen): ${app.ThinktankPanel.IsAreaOpen ? 'OK' : 'FAIL'}`)
+  app.OverviewPanel.ToggleArea()
+  results.push(`[3] OverviewPanel ToggleArea (close): ${!app.OverviewPanel.IsAreaOpen ? 'OK' : 'FAIL'}`)
+  app.OverviewPanel.ToggleArea()
+  app.ToDoPanel.ToggleArea()
+  results.push(`[3] ToDoPanel ToggleArea (close): ${!app.ToDoPanel.IsAreaOpen ? 'OK' : 'FAIL'}`)
+  app.ToDoPanel.ToggleArea()
+
+  // 4. OpenThought: ThinktankPanel選択・OverviewPanel表示・ToDoPanel連携
+  const dummyThoughtId = '2026-04-26-120000'
+  app.OpenThought(dummyThoughtId)
+  results.push(`[4] OpenThought - ThinktankPanel.SelectedThoughtID: ${app.ThinktankPanel.SelectedThoughtID === dummyThoughtId ? 'OK' : 'FAIL'}`)
+  results.push(`[4] OpenThought - OverviewPanel.ThoughtID: ${app.OverviewPanel.ThoughtID === dummyThoughtId ? 'OK' : 'FAIL'}`)
+  results.push(`[4] OpenThought - ToDoPanel.LinkedThoughtID: ${app.ToDoPanel.LinkedThoughtID === dummyThoughtId ? 'OK' : 'FAIL'}`)
+  results.push(`[4] OpenThought - OverviewPanel.IsAreaOpen: ${app.OverviewPanel.IsAreaOpen ? 'OK' : 'FAIL'}`)
+
+  // 5. WorkoutPanel: Area追加・削除・グリッド再計算
+  const area0 = app.WorkoutPanel.AddArea('think-001', 'texteditor', 'メモ1')
+  const area1 = app.WorkoutPanel.AddArea('think-002', 'markdown',   'メモ2')
+  const area2 = app.WorkoutPanel.AddArea('think-003', 'datagrid',   'テーブル')
+  results.push(`[5] AddArea x3: count=${app.WorkoutPanel.Areas.length} ${app.WorkoutPanel.Areas.length === 3 ? 'OK' : 'FAIL'}`)
+  results.push(`[5] area0.Position: row=${area0!.Position.row} col=${area0!.Position.col}`)
+  results.push(`[5] area1.Position: row=${area1!.Position.row} col=${area1!.Position.col}`)
+  results.push(`[5] area2.RowSpan (datagrid→2): ${area2!.RowSpan === 2 ? 'OK' : 'FAIL'}`)
+  app.WorkoutPanel.RemoveArea(area1!.ID)
+  results.push(`[5] RemoveArea: count=${app.WorkoutPanel.Areas.length} ${app.WorkoutPanel.Areas.length === 2 ? 'OK' : 'FAIL'}`)
+  for (let i = 0; i < 4; i++) app.WorkoutPanel.AddArea(`think-fill-${i}`, 'texteditor')
+  results.push(`[5] IsFull (6 areas): ${app.WorkoutPanel.IsFull ? 'OK' : 'FAIL'}`)
+  const overflow = app.WorkoutPanel.AddArea('think-overflow', 'texteditor')
+  results.push(`[5] AddArea when full returns null: ${overflow === null ? 'OK' : 'FAIL'}`)
+
+  // 6. MoveArea（ドラッグ移動）
+  const areas = app.WorkoutPanel.Areas
+  if (areas.length >= 2) {
+    const id0 = areas[0].ID
+    const id1 = areas[1].ID
+    app.WorkoutPanel.MoveArea(id0, id1)
+    results.push(`[6] MoveArea: areas[0] swapped: ${app.WorkoutPanel.Areas[0].ID === id1 ? 'OK' : 'FAIL'}`)
+  }
+
+  // 7. ThinktankPanel フィルター・チェック
+  app.ThinktankPanel.SetFilter('テスト')
+  results.push(`[7] ThinktankPanel.Filter: ${app.ThinktankPanel.Filter === 'テスト' ? 'OK' : 'FAIL'}`)
+  app.ThinktankPanel.ToggleCheck('thought-001')
+  app.ThinktankPanel.ToggleCheck('thought-002')
+  results.push(`[7] CheckedThoughtIDs count=2: ${app.ThinktankPanel.CheckedThoughtIDs.length === 2 ? 'OK' : 'FAIL'}`)
+  app.ThinktankPanel.ToggleCheck('thought-001')
+  results.push(`[7] ToggleCheck off (count=1): ${app.ThinktankPanel.CheckedThoughtIDs.length === 1 ? 'OK' : 'FAIL'}`)
+
+  // 8. ToDoPanel チャット
+  app.ToDoPanel.AddUserMessage('テスト質問です')
+  app.ToDoPanel.AddAssistantMessage('テスト回答です')
+  results.push(`[8] ChatMessages count=2: ${app.ToDoPanel.ChatMessages.length === 2 ? 'OK' : 'FAIL'}`)
+  results.push(`[8] ChatMessages[0].role=user: ${app.ToDoPanel.ChatMessages[0].role === 'user' ? 'OK' : 'FAIL'}`)
+  app.ToDoPanel.ClearChat()
+  results.push(`[8] ClearChat: ${app.ToDoPanel.ChatMessages.length === 0 ? 'OK' : 'FAIL'}`)
+
+  // 9. App.Reset()
+  app.Reset()
+  results.push(`[9] Reset - WorkoutPanel empty: ${app.WorkoutPanel.Areas.length === 0 ? 'OK' : 'FAIL'}`)
+  results.push(`[9] Reset - SelectedThoughtID empty: ${app.ThinktankPanel.SelectedThoughtID === '' ? 'OK' : 'FAIL'}`)
+  results.push(`[9] Reset - ToDoPanel.LinkedThoughtID empty: ${app.ToDoPanel.LinkedThoughtID === '' ? 'OK' : 'FAIL'}`)
 
   return results
 }
@@ -101,25 +180,31 @@ const TEXT_VARS = [
 export default function App() {
   const mode = window.__THINKTANK_MODE__ ?? 'pwa'
   const localApi = window.__THINKTANK_LOCAL_API__ ?? '(not injected)'
-  const [testResults, setTestResults] = useState<string[]>([])
+  const [phase3Results, setPhase3Results] = useState<string[]>([])
+  const [phase4Results, setPhase4Results] = useState<string[]>([])
 
   useEffect(() => {
-    const results = runPhase3Tests()
-    setTestResults(results)
+    setPhase3Results(runPhase3Tests())
+    setPhase4Results(runPhase4Tests())
     window.__runTests = () => {
       TTModels.resetInstance()
-      const r = runPhase3Tests()
-      setTestResults(r)
-      console.log('[Tests]', r)
+      TTApplication.resetInstance()
+      const r3 = runPhase3Tests()
+      const r4 = runPhase4Tests()
+      setPhase3Results(r3)
+      setPhase4Results(r4)
+      console.log('[Phase3]', r3)
+      console.log('[Phase4]', r4)
     }
   }, [])
 
-  const allPassed = testResults.every(r => !r.includes('FAIL'))
+  const allPhase3Passed = phase3Results.every(r => !r.includes('FAIL'))
+  const allPhase4Passed = phase4Results.every(r => !r.includes('FAIL'))
 
   return (
     <div style={{ padding: 24, overflowY: 'auto', height: '100%', background: 'var(--bg-primary)' }}>
       <h1 style={{ color: 'var(--text-accent)', marginBottom: 24, fontSize: 20 }}>
-        Thinktank v5 — Phase 1-3 検証
+        Thinktank v5 — Phase 1-4 検証
       </h1>
 
       {/* モード検出 */}
@@ -134,10 +219,22 @@ export default function App() {
       {/* Phase 3 テスト結果 */}
       <section style={{ marginBottom: 24 }}>
         <h2 style={{ color: 'var(--text-highlight)', marginBottom: 8, fontSize: 14 }}>
-          Phase 3 テスト結果 {allPassed ? '✓ ALL PASS' : '✗ FAIL あり'}
+          Phase 3 テスト結果 {allPhase3Passed ? '✓ ALL PASS' : '✗ FAIL あり'}
         </h2>
         <div style={{ background: 'var(--bg-panel)', padding: 12, borderRadius: 'var(--radius)', fontFamily: 'monospace', fontSize: 12 }}>
-          {testResults.map((r, i) => (
+          {phase3Results.map((r, i) => (
+            <div key={i} style={{ color: r.includes('FAIL') ? 'var(--text-error)' : 'var(--text-success)' }}>{r}</div>
+          ))}
+        </div>
+      </section>
+
+      {/* Phase 4 テスト結果 */}
+      <section style={{ marginBottom: 24 }}>
+        <h2 style={{ color: 'var(--text-highlight)', marginBottom: 8, fontSize: 14 }}>
+          Phase 4 テスト結果 {allPhase4Passed ? '✓ ALL PASS' : '✗ FAIL あり'}
+        </h2>
+        <div style={{ background: 'var(--bg-panel)', padding: 12, borderRadius: 'var(--radius)', fontFamily: 'monospace', fontSize: 12 }}>
+          {phase4Results.map((r, i) => (
             <div key={i} style={{ color: r.includes('FAIL') ? 'var(--text-error)' : 'var(--text-success)' }}>{r}</div>
           ))}
         </div>
