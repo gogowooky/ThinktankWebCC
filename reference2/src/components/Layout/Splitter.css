@@ -1,9 +1,0 @@
-.splitter {
-  flex-shrink: 0;
-  background-color: var(--tt-border-color, #333);
-  transition: background-color 0.15s;
-}
-
-.splitter:hover {
-  background-color: var(--tt-title-bg, #0078d4);
-}

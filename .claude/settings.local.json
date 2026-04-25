@@ -59,7 +59,12 @@
       "Bash(node -e \"const m = require\\('C:/Users/gogow/Documents/ThinktankReconst/node_modules/marked'\\); console.log\\(Object.keys\\(m\\)\\); console.log\\(typeof m.marked\\); console.log\\(typeof m.parse\\);\")",
       "Bash(node -e \"const {parse} = require\\('C:/Users/gogow/Documents/ThinktankReconst/node_modules/marked'\\); const r = parse\\('# Hello\\\\n**bold**'\\); console.log\\(typeof r, r\\);\")",
       "Bash(node -e \"const {Renderer} = require\\('C:/Users/gogow/Documents/ThinktankReconst/node_modules/marked'\\); const r = new Renderer\\(\\); console.log\\(r.link.toString\\(\\).slice\\(0, 300\\)\\);\")",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(python -m markitdown TT.pptx)",
+      "Bash(python -m markitdown \"C:/Users/gogow/Documents/ThinktankReconst/docs/TT.pptx\")",
+      "Bash(pip install *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c ' *)"
     ]
   }
 }

@@ -1,56 +1,90 @@
-import { useEffect } from 'react'
-import { TTApplication } from './views/TTApplication'
-import { TTModels } from './models/TTModels'
-import { storageManager } from './services/storage/StorageManager'
-import { syncManager } from './services/sync/SyncManager'
-import { AppLayout } from './components/Layout/AppLayout'
-import { applyColorMode } from './services/ColorTheme'
-
-// カラーテーマを即時適用（Monaco描画前にCSS変数を確定させる）
-applyColorMode('DefaultOriginal')
+import { MainLayout } from './components/Layout/MainLayout';
+import { StatusBar } from './components/Status/StatusBar';
+import { ContextMenu } from './components/UI/ContextMenu';
+import { CommandPalette } from './components/UI/CommandPalette';
+import { TTApplication, CommandPaletteState } from './Views/TTApplication';
+import { useState, useEffect } from 'react';
 
 function App() {
-  useEffect(() => {
-    const app = TTApplication.Instance
-    app.Initialize()
+    const [contextMenu, setContextMenu] = useState(TTApplication.Instance.ContextMenu);
+    const [commandPalette, setCommandPalette] = useState<CommandPaletteState | null>(TTApplication.Instance.CommandPalette);
 
-    // デバッグ用: ブラウザコンソールから __app / __models でアクセス可能
-    // 例: __models.Status.SetValue('ChatMode', 'true')
-    ;(window as unknown as Record<string, unknown>).__app = app
-    ;(window as unknown as Record<string, unknown>).__models = TTModels.Instance
+    useEffect(() => {
+        const updateState = () => {
+            setContextMenu(TTApplication.Instance.ContextMenu);
+            setCommandPalette(TTApplication.Instance.CommandPalette);
+        };
+        TTApplication.Instance.AddOnUpdate('App', updateState);
+        return () => {
+            TTApplication.Instance.RemoveOnUpdate('App');
+        };
+    }, []);
 
-    // StorageManager初期化 → データロード → SyncManager開始
-    async function initStorage() {
-      await storageManager.initialize()
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            // 同一オリジンからのメッセージのみ受け付ける
+            if (event.origin !== window.location.origin) return;
 
-      const models = TTModels.Instance
-      // 各コレクションの初期化
-      await Promise.all([
-        models.Status.LoadCache(),
-        models.Actions.LoadCache(),
-        models.Events.LoadCache(),
-        models.Knowledge.LoadCache(),
-      ])
-      await models.LoadCache()
+            const data = event.data;
+            if (data && data.type === 'TT_WEBVIEW_ACTION' && data.event) {
+                const app = TTApplication.Instance;
+                app.UIRequestTriggeredAction(data.event);
+            }
+            // iframe内のSearchApp等からのナビゲーション通知 → WebView.Keywordに反映
+            if (data && data.type === 'TT_WEBVIEW_NAVIGATE' && data.url) {
+                const app = TTApplication.Instance;
+                const panel = app.ActivePanel;
+                if (panel && panel.Mode === 'WebView') {
+                    panel.WebView.ApplyUrl(data.url);
+                }
+            }
+        };
 
-      // SyncManager: WebSocket接続 + リモート更新受信
-      syncManager.start((fileId: string) => {
-        const item = models.Knowledge.GetItem(fileId)
-        if (item && 'applyRemoteUpdate' in item) {
-          return item as { applyRemoteUpdate: (content: string) => void }
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
+    const closeContextMenu = () => {
+        TTApplication.Instance.HideContextMenu();
+    };
+
+    const closeCommandPalette = () => {
+        TTApplication.Instance.HideCommandPalette();
+    };
+
+    const handleCommandSelect = (item: any) => { // Type as any or fix import if circular dependency
+        // item is CommandPaletteItem
+        if (commandPalette?.onSelect) {
+            commandPalette.onSelect(item);
+        } else {
+            item.onClick();
         }
-        return null
-      })
-    }
+    };
 
-    initStorage()
-
-    return () => {
-      syncManager.stop()
-    }
-  }, [])
-
-  return <AppLayout />
+    return (
+        <div className="app-container">
+            <main className="editor-area" style={{ padding: 0, paddingBottom: '22px' }}>
+                <MainLayout />
+            </main>
+            <StatusBar />
+            {contextMenu && (
+                <ContextMenu
+                    items={contextMenu.items}
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    onClose={closeContextMenu}
+                />
+            )}
+            {commandPalette && commandPalette.visible && (
+                <CommandPalette
+                    items={commandPalette.items}
+                    placeholder={commandPalette.placeholder}
+                    onSelect={handleCommandSelect}
+                    onClose={closeCommandPalette}
+                />
+            )}
+        </div>
+    )
 }
 
 export default App

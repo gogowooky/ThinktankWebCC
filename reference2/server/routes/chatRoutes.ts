@@ -1,60 +1,127 @@
 /**
  * chatRoutes.ts
- * チャットAPI - SSEストリーミング対応
+ * Phase 11 段122: AIチャット API ルート
  *
- * POST /api/chat/:sessionId/messages
- *   リクエスト: { message, history, systemPrompt? }
- *   レスポンス: SSE (text/event-stream)
+ * エンドポイント:
+ *   POST /api/chats/:id/messages
+ *     body: { message: string, systemPrompt?: string }
+ *     → Gemini/Claude API にメッセージを送信
+ *     → 返答と共にチャット履歴を BQ に保存
+ *     → { reply: string, provider: string } を返す
+ *
+ *   GET  /api/chats/:id
+ *     → BQ から該当チャットのメッセージ履歴を取得
+ *
+ * ※チャットデータは既存の /api/bq/files エンドポイント経由で保存される。
+ *   category='Chat' で識別する。
  */
 
 import { Router, Request, Response } from 'express';
-import { chatService, ChatTurn } from '../services/ChatService.js';
+import { geminiService, ChatTurn } from '../services/geminiService.js';
+import { bigqueryService } from '../services/BigQueryService.js';
 
 export function createChatRoutes(): Router {
-  const router = Router();
+    const router = Router();
 
-  // POST /api/chat/:sessionId/messages - ストリーミングチャット
-  router.post('/:sessionId/messages', async (req: Request, res: Response) => {
-    if (!chatService.isAvailable()) {
-      res.status(503).json({ error: 'Chat API not available. Set ANTHROPIC_API_KEY.' });
-      return;
-    }
+    /**
+     * GET /api/chats/:id
+     * 指定IDのチャット履歴を取得する
+     */
+    router.get('/:id', async (req: Request, res: Response) => {
+        try {
+            const chatId = req.params.id;
+            const result = await bigqueryService.getFile(chatId);
 
-    const { message, history, systemPrompt } = req.body as {
-      message?: string;
-      history?: ChatTurn[];
-      systemPrompt?: string;
-    };
+            if (!result.success) {
+                return res.status(500).json({ error: result.error });
+            }
+            if (!result.data || result.data.length === 0) {
+                return res.json({ chatId, messages: [] });
+            }
 
-    if (!message) {
-      res.status(400).json({ error: 'message is required' });
-      return;
-    }
+            const file = result.data[0];
+            let messages: ChatTurn[] = [];
+            try {
+                messages = JSON.parse(file.content || '[]');
+            } catch {
+                messages = [];
+            }
 
-    // 会話履歴を構築（最新メッセージを末尾に追加）
-    const messages: ChatTurn[] = [
-      ...(history || []),
-      { role: 'user', content: message },
-    ];
+            res.json({ chatId, title: file.title, messages });
+        } catch (error) {
+            console.error('[ChatRoutes] GET /:id error:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
+        }
+    });
 
-    // SSEヘッダー
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-    res.setHeader('X-Accel-Buffering', 'no');
-    res.flushHeaders();
+    /**
+     * POST /api/chats/:id/messages
+     * メッセージを送信してAIの返答を取得・保存する
+     */
+    router.post('/:id/messages', async (req: Request, res: Response) => {
+        try {
+            const chatId = req.params.id;
+            const { message, systemPrompt } = req.body;
 
-    try {
-      for await (const chunk of chatService.streamMessage(messages, systemPrompt)) {
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
-      }
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error('[ChatRoutes] Stream error:', msg);
-      res.write(`data: ${JSON.stringify({ type: 'error', text: msg })}\n\n`);
-    }
-    res.end();
-  });
+            if (!message || typeof message !== 'string') {
+                return res.status(400).json({ error: 'message は必須です' });
+            }
 
-  return router;
+            // 1. 既存のチャット履歴を取得
+            let existingMessages: ChatTurn[] = [];
+            const existing = await bigqueryService.getFile(chatId);
+            if (existing.success && existing.data && existing.data.length > 0) {
+                try {
+                    existingMessages = JSON.parse(existing.data[0].content || '[]');
+                } catch {
+                    existingMessages = [];
+                }
+            }
+
+            // 2. ユーザーメッセージを追加
+            const userMsg: ChatTurn = { role: 'user', content: message };
+            const allMessages: ChatTurn[] = [...existingMessages, userMsg];
+
+            // 3. AI API に送信
+            const aiResponse = await geminiService.sendMessage(allMessages, systemPrompt);
+
+            // 4. AI返答を追加
+            const assistantMsg: ChatTurn = { role: 'assistant', content: aiResponse.reply };
+            const updatedMessages = [...allMessages, assistantMsg];
+
+            // 5. BigQuery に保存（既存 /api/bq/files の保存ロジックを直接呼ぶ）
+            const title = existingMessages.length === 0
+                ? message.substring(0, 40) + (message.length > 40 ? '…' : '')
+                : (existing.data?.[0]?.title || chatId);
+
+            await bigqueryService.saveFile({
+                file_id: chatId,
+                title,
+                file_type: 'json',
+                category: 'Chat',
+                content: JSON.stringify(updatedMessages),
+                metadata: null,
+                size_bytes: null,
+                created_at: new Date(),
+                updated_at: new Date(),
+            });
+
+            res.json({
+                reply: aiResponse.reply,
+                provider: aiResponse.provider,
+                messageId: `${chatId}_${Date.now()}`,
+            });
+        } catch (error: any) {
+            console.error('[ChatRoutes] POST /:id/messages error:', error);
+            // ユーザー向けに簡潔なメッセージを返す（詳細はサーバーログで確認）
+            const status = error.status || 500;
+            let message = 'AIへの送信に失敗しました';
+            if (status === 429) message = 'APIのクォータ制限に達しました。しばらく待ってから再試行してください。';
+            else if (status === 401 || status === 403) message = 'APIキーが無効です。設定を確認してください。';
+            else if (error.message?.includes('API_KEY') || error.message?.includes('設定されていません')) message = error.message;
+            res.status(status < 600 ? status : 500).json({ error: message });
+        }
+    });
+
+    return router;
 }

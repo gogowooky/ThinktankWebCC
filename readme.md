@@ -1,5 +1,43 @@
 # ログ
 
+## 2026/04/25
+
+### 修正依頼
+
+1) ## 6. UIレイアウト（新4パネル構成） に 「UI全体像はdocs/TT.pptx の Slide #1 を参照のこと。」とあるが、この後に記載されている図は /TT.pptx のSlide #1とは異なる。ThinktankPanel,    OverviewPanel ,   WorkoutPanel,  ToDoPanel が左から右にならんでいる図になるべきです
+
+2) docs/TT.pptx の Slide #5～#18は色テーマの見本です。TT.pptxから情報収集してください。
+3) データ階層についてです。階層としては、保管庫(TTVault) > Thoughts > Thought > Think の順での包含関係になります。ここでThinkデータはTTDataItemデータに相当しますので、V5からはTTThinkというクラス名に変更してください。
+3-1) 全Thinkデータを含むのがTTVaultですが、これはTTCollectionの派生クラスになっていますでしょうか？
+3-2) ThoughtはThinkIDのリストまたはTTVaultに対するFilter文字列で、属性がthoughtのTTThinkクラスデータです。
+3-3) Thoughtsは全Thinkデータから Thoughtデータだけを集めたものですのでFilter文字列で実現されるものです。
+3-4) Thoughts,  Thought, Thinkには親であるTTValutのIDを持つようにしてください。
+
+### 大きく変更します
+
+実施することは、docs\TT.pptx と docs\20260418_Thinktank_Implementation_Plan_v4.md、をもとに、docs\20260418_Thinktank_Implementation_Plan_v5.md を作成することです。
+
+・ これまでは多機能メモアプリという感じでしたが、明確にAI支援による思考支援の枠組みをUIに組み込みます。UI案はdocs\TT.pptxの#1に記載しました。
+
+・ Local Applicationを先に作成する方針に変更しますが、PWAは後で作成します。　docs\TT.pptxの#2に記載しましたが、V4と大きく変わりません。
+　Google BigQueryのthinktank.files260425をそのまま使用してください。コピーですので内容変更も可能です。
+
+・ UIの想定機能は以下です。
+　ThinktankPanel：　データソース管理とそこからのデータ(Think)抽出、Thinkの集合(Thought)、Thoughtの集合(Thoughts)に関わる管理機能
+　OverviewPanel：　選ばれた1つのThought(Thinkの集合)に関わる閲覧・編集・分析機能
+　WorkoutPanel：　選ばれたいくつかのThinkデータに関わる閲覧・編集機能、
+　　Thinkデータの種別：memo,thought,tables,links,chat,nettext
+　　Thinkデータの表示：表形式、カード形式、テキストエディタ、マークダウン、グラフ形式
+　　表示は横2列3行まで、表形式・グラフ形式は丸1行使用、Title部分をマウスでつかんで枠移動可能。スプリッターでサイズ変更可能。
+　ToDoPanel：　選ばれたThought,Thinkの次の展開について分析
+
+・アプリケーションの色スタイル見本がdocs\TT.pptxの#5以降にあります。
+
+・ Ribbon上のアイコンは機能用ボタンです。アプリの基盤整備ができたらひとつづつ組み込みます。
+・ 開閉ボタンはThinktank/Overview/ToDoの各PanelのArea部分の表示・非表示にします。
+
+上記のV5内容と齟齬があるV4内容は破棄してください。またPWA版用の開発項目内容もいったん削除してください。
+
 ## 2026/04/23
 
 Phase9Ex1 の実装が完了しました。
