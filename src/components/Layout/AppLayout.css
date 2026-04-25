@@ -1,0 +1,65 @@
+/* AppLayout.css */
+
+/* ── メインコンテナ ────────────────────────────────────── */
+
+.app-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* ── 各パネルの共通スタイル ────────────────────────────── */
+
+.app-panel {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* WorkoutPanel だけ残余スペースを占有する */
+.app-panel--workout {
+  flex: 1;
+  flex-shrink: 1;
+  background: var(--workout-area-bg);
+  overflow: hidden;
+}
+
+/* ── プレースホルダー（Phase 6-10 実装前の仮コンテンツ）─ */
+
+.panel-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  opacity: 0.5;
+  user-select: none;
+}
+
+.panel-placeholder__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.panel-placeholder__desc {
+  font-size: 11px;
+  color: #444;
+}
+
+/* WorkoutPanel のプレースホルダーは別カラー（背景が明るい灰色）*/
+.panel-placeholder--workout {
+  width: 100%;
+  opacity: 0.4;
+}
+
+.panel-placeholder--workout .panel-placeholder__title,
+.panel-placeholder--workout .panel-placeholder__desc {
+  color: #222;
+}

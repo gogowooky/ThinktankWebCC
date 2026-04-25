@@ -1,0 +1,39 @@
+/* PanelArea.css */
+
+.panel-area {
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: width var(--transition-panel);
+  height: 100%;
+}
+
+.panel-area--closed {
+  width: 0 !important;
+}
+
+/* 内部ラッパー: 親のアニメーション中もコンテンツ幅を保持 */
+.panel-area__inner {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── パネル別エリア背景色 ────────────────────────────── */
+
+.panel-area--thinktank > .panel-area__inner {
+  background: var(--thinktank-area-bg);
+  color: #1a1a2e;
+}
+
+.panel-area--overview > .panel-area__inner {
+  background: var(--overview-area-bg);
+  color: #1a1a2e;
+}
+
+.panel-area--todo > .panel-area__inner {
+  background: var(--todo-area-bg);
+  color: #1a1a2e;
+}
+
+/* Workout エリアは WorkoutPanel が担当するため定義なし */

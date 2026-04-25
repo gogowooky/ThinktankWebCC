@@ -1,0 +1,74 @@
+/* PanelRibbon.css */
+
+.panel-ribbon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+  padding: 8px 0;
+  gap: 4px;
+  /* デフォルト背景（パネル別に上書き）*/
+  background: var(--bg-panel);
+  overflow: hidden;
+}
+
+/* ── パネル別テーマ色 ─────────────────────────────────── */
+
+.panel-ribbon--thinktank {
+  background: var(--thinktank-ribbon-bg);
+}
+
+.panel-ribbon--overview {
+  background: var(--overview-ribbon-bg);
+}
+
+.panel-ribbon--workout {
+  background: var(--workout-ribbon-bg);
+}
+
+.panel-ribbon--todo {
+  background: var(--todo-ribbon-bg);
+}
+
+/* ── 内部要素 ─────────────────────────────────────────── */
+
+.panel-ribbon__buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.panel-ribbon__spacer {
+  flex: 1;
+}
+
+/* 開閉トグルボタン */
+.panel-ribbon__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.panel-ribbon__toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Workout リボンはやや暗めなのでホバー色を調整 */
+.panel-ribbon--workout .panel-ribbon__toggle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.panel-ribbon--workout .panel-ribbon__toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
