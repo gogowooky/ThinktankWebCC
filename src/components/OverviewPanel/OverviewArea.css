@@ -1,0 +1,68 @@
+/* OverviewArea.css */
+
+.overview-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--overview-area-bg);
+}
+
+/* ── Thought セレクター ─────────────────────────────────── */
+
+.overview-area__selector {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--overview-area-bg) 85%, var(--overview-ribbon-bg) 15%);
+  border-bottom: 1px solid rgba(57, 73, 171, 0.2);
+  flex-shrink: 0;
+}
+
+.overview-area__selector-icon {
+  color: var(--overview-ribbon-bg);
+  flex-shrink: 0;
+}
+
+.overview-area__select {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid rgba(57, 73, 171, 0.3);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #2c3e6f;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 120ms ease;
+}
+
+.overview-area__select:focus {
+  border-color: var(--overview-ribbon-bg);
+}
+
+/* ── 本体（メディアコンポーネント格納）─────────────────── */
+
+.overview-area__body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── 未選択状態 ─────────────────────────────────────────── */
+
+.overview-area__empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(57, 73, 171, 0.5);
+  font-size: 12px;
+  padding: 24px;
+  text-align: center;
+}

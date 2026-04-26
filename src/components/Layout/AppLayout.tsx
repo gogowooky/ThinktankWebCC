@@ -1,6 +1,6 @@
 /**
  * AppLayout.tsx
- * Phase 6: ThinktankPanel を実装コンポーネントに差し替え。
+ * Phase 9: OverviewPanel を実装コンポーネントに差し替え。
  *
  * 左から順に:
  *   ThinktankPanel（Ribbon + Area） |
@@ -16,6 +16,7 @@ import { PanelRibbon } from './PanelRibbon';
 import { PanelArea } from './PanelArea';
 import { Splitter } from './Splitter';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
+import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
 import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
 import './AppLayout.css';
 
@@ -28,8 +29,7 @@ const MIN_PANEL_WIDTH = 120;
 export function AppLayout() {
   const app = TTApplication.Instance;
 
-  // OverviewPanel / ToDoPanel の開閉状態を購読（ThinktankPanel は内部で購読済み）
-  useAppUpdate(app.OverviewPanel);
+  // ToDoPanel の開閉状態を購読（ThinktankPanel / OverviewPanel は内部で購読済み）
   useAppUpdate(app.ToDoPanel);
 
   // Splitter でサイズ変更可能なパネル幅（ローカル state）
@@ -53,8 +53,7 @@ export function AppLayout() {
 
   // ── 開閉 ────────────────────────────────────────────────────────
 
-  const toggleOverview  = useCallback(() => app.OverviewPanel.ToggleArea(),  [app]);
-  const toggleToDo      = useCallback(() => app.ToDoPanel.ToggleArea(),      [app]);
+  const toggleToDo = useCallback(() => app.ToDoPanel.ToggleArea(), [app]);
 
   return (
     <div className="app-layout">
@@ -66,27 +65,13 @@ export function AppLayout() {
         onResize={onTtSplitter}
       />
 
-      {/* ── OverviewPanel ──────────────────────────────────────── */}
+      {/* ── OverviewPanel（Phase 9 実装済み）──────────────────── */}
       <div className="app-panel app-panel--overview">
-        <PanelRibbon
-          panelId="overview"
-          side="left"
-          isOpen={app.OverviewPanel.IsAreaOpen}
-          onToggle={toggleOverview}
-        />
-        <PanelArea
-          panelId="overview"
-          isOpen={app.OverviewPanel.IsAreaOpen}
+        <OverviewPanel
+          app={app}
           width={overviewWidth}
-        >
-          <div className="panel-placeholder">
-            <div className="panel-placeholder__title">OverviewPanel</div>
-            <div className="panel-placeholder__desc">Thought 表示（Phase 9）</div>
-          </div>
-        </PanelArea>
-        {app.OverviewPanel.IsAreaOpen && (
-          <Splitter onResize={onOverviewSplitter} />
-        )}
+          onResize={onOverviewSplitter}
+        />
       </div>
 
       {/* ── WorkoutPanel（Phase 7 実装済み）────────────────────── */}
