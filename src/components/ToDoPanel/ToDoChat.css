@@ -1,0 +1,179 @@
+/* ToDoChat.css — CLI ターミナル風スタイル（ToDo版）*/
+
+:root {
+  --td-bg:        #0f1a10;   /* 緑がかった黒 */
+  --td-bg-input:  #0f1a10;
+  --td-border:    #2d4a2f;
+  --td-prompt:    #56d364;   /* ユーザープロンプト: 緑 */
+  --td-user-text: #ddf2dd;   /* ユーザーテキスト */
+  --td-ai-prefix: #6fcf97;   /* AI プレフィックス: セージグリーン */
+  --td-ai-text:   #b8d4b8;   /* AI テキスト */
+  --td-dim:       #3a5a3c;
+  --td-ts:        #2d4a2f;
+  --td-cursor:    #56d364;
+  --td-font:      'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  --td-font-size: 12px;
+  --td-line-h:    1.65;
+}
+
+/* ── ルートコンテナ ──────────────────────────────── */
+.todo-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--td-bg);
+  font-family: var(--td-font);
+  font-size: var(--td-font-size);
+  line-height: var(--td-line-h);
+  color: var(--td-ai-text);
+}
+
+/* ── ログ出力エリア ───────────────────────────────── */
+.todo-chat__log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--td-border) transparent;
+}
+.todo-chat__log::-webkit-scrollbar { width: 6px; }
+.todo-chat__log::-webkit-scrollbar-track { background: transparent; }
+.todo-chat__log::-webkit-scrollbar-thumb {
+  background: var(--td-border);
+  border-radius: 3px;
+}
+
+/* ── 起動バナー ──────────────────────────────────── */
+.todo-chat__banner {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 8px;
+}
+.todo-chat__banner-line {
+  color: var(--td-dim);
+  font-size: 11px;
+}
+.todo-chat__banner-sep {
+  color: var(--td-border);
+  font-size: 11px;
+  letter-spacing: -0.5px;
+}
+.todo-chat__dim { color: var(--td-dim); }
+
+/* ── エントリ（1往復）──────────────────────────── */
+.todo-chat__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── ユーザー行 ──────────────────────────────────── */
+.todo-chat__user-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.todo-chat__prompt {
+  color: var(--td-prompt);
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+.todo-chat__user-text {
+  color: var(--td-user-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── AI 応答ブロック ─────────────────────────────── */
+.todo-chat__ai-block {
+  display: flex;
+  flex-direction: column;
+  padding-left: 2px;
+}
+.todo-chat__ai-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+.todo-chat__ai-prefix {
+  color: var(--td-ai-prefix);
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 28px;
+  user-select: none;
+}
+.todo-chat__ai-text {
+  color: var(--td-ai-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── タイムスタンプ ───────────────────────────────── */
+.todo-chat__ts {
+  color: var(--td-ts);
+  font-size: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+/* ── ブロックカーソル（点滅）──────────────────────── */
+.todo-chat__cursor {
+  color: var(--td-cursor);
+  animation: td-blink 1s step-end infinite;
+  font-size: 13px;
+}
+@keyframes td-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── 入力ライン ──────────────────────────────────── */
+.todo-chat__input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--td-border);
+  background: var(--td-bg-input);
+  flex-shrink: 0;
+}
+.todo-chat__input-prompt {
+  color: var(--td-prompt);
+  font-weight: 700;
+  font-family: var(--td-font);
+  font-size: var(--td-font-size);
+  line-height: var(--td-line-h);
+  flex-shrink: 0;
+  padding-top: 1px;
+  user-select: none;
+}
+.todo-chat__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--td-font);
+  font-size: var(--td-font-size);
+  line-height: var(--td-line-h);
+  color: var(--td-user-text);
+  caret-color: var(--td-prompt);
+  min-height: calc(var(--td-font-size) * var(--td-line-h));
+  max-height: 80px;
+  overflow-y: auto;
+  padding: 0;
+}
+.todo-chat__input::placeholder { color: var(--td-dim); }
+.todo-chat__input:disabled     { opacity: 0.4; cursor: not-allowed; }

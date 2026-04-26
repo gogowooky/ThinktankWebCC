@@ -1,6 +1,6 @@
 /**
  * AppLayout.tsx
- * Phase 9: OverviewPanel を実装コンポーネントに差し替え。
+ * Phase 10: ToDoPanel を実装コンポーネントに差し替え。
  *
  * 左から順に:
  *   ThinktankPanel（Ribbon + Area） |
@@ -11,13 +11,10 @@
 
 import { useCallback, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
-import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { PanelRibbon } from './PanelRibbon';
-import { PanelArea } from './PanelArea';
-import { Splitter } from './Splitter';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
 import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
+import { ToDoPanel } from '../ToDoPanel/ToDoPanel';
 import './AppLayout.css';
 
 // パネル幅の初期値・最小値
@@ -29,8 +26,7 @@ const MIN_PANEL_WIDTH = 120;
 export function AppLayout() {
   const app = TTApplication.Instance;
 
-  // ToDoPanel の開閉状態を購読（ThinktankPanel / OverviewPanel は内部で購読済み）
-  useAppUpdate(app.ToDoPanel);
+  // 各パネルは内部で購読済みのため、AppLayout 側の個別購読は不要
 
   // Splitter でサイズ変更可能なパネル幅（ローカル state）
   const [ttWidth,       setTtWidth]       = useState(THINKTANK_WIDTH);
@@ -51,9 +47,6 @@ export function AppLayout() {
     setTodoWidth(w => Math.max(MIN_PANEL_WIDTH, w - dx));
   }, []);
 
-  // ── 開閉 ────────────────────────────────────────────────────────
-
-  const toggleToDo = useCallback(() => app.ToDoPanel.ToggleArea(), [app]);
 
   return (
     <div className="app-layout">
@@ -79,26 +72,12 @@ export function AppLayout() {
         <WorkoutPanel app={app} />
       </div>
 
-      {/* ── ToDoPanel ──────────────────────────────────────────── */}
+      {/* ── ToDoPanel（Phase 10 実装済み）─────────────────────── */}
       <div className="app-panel app-panel--todo">
-        {app.ToDoPanel.IsAreaOpen && (
-          <Splitter onResize={onTodoSplitter} />
-        )}
-        <PanelArea
-          panelId="todo"
-          isOpen={app.ToDoPanel.IsAreaOpen}
+        <ToDoPanel
+          app={app}
           width={todoWidth}
-        >
-          <div className="panel-placeholder">
-            <div className="panel-placeholder__title">ToDoPanel</div>
-            <div className="panel-placeholder__desc">AI 相談（Phase 10）</div>
-          </div>
-        </PanelArea>
-        <PanelRibbon
-          panelId="todo"
-          side="right"
-          isOpen={app.ToDoPanel.IsAreaOpen}
-          onToggle={toggleToDo}
+          onResize={onTodoSplitter}
         />
       </div>
 
