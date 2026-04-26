@@ -13,6 +13,7 @@ import { useCallback, useRef, useState } from 'react';
 import { GripVertical } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
+import type { TTVault } from '../../models/TTVault';
 import type { LayoutNode, SplitNodeData } from '../../views/TTWorkoutPanel';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { Splitter } from '../Layout/Splitter';
@@ -27,6 +28,7 @@ import './WorkoutPanel.css';
 
 interface SharedProps {
   areas:          Map<string, TTWorkoutArea>;
+  vault:          TTVault;
   focusedAreaId:  string | null;
   dragId:         string | null;
   overAreaId:     string | null;
@@ -50,6 +52,7 @@ function LayoutView({ node, shared }: { node: LayoutNode; shared: SharedProps })
       <div className="workout-panel__leaf">
         <WorkoutArea
           area={area}
+          vault={shared.vault}
           isFocused={shared.focusedAreaId === area.ID}
           isDragging={shared.dragId === area.ID}
           isDropTarget={shared.overAreaId === area.ID}
@@ -212,6 +215,7 @@ export function WorkoutPanel({ app }: Props) {
 
   const shared: SharedProps = {
     areas:         areaMap,
+    vault:         app.Models.Vault,
     focusedAreaId: panel.FocusedAreaId,
     dragId,
     overAreaId,

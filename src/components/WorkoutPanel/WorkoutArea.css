@@ -35,11 +35,12 @@
     inset 0 0 0 9999px rgba(122, 162, 247, 0.10);
 }
 
-/* コンテンツエリア */
+/* コンテンツエリア（overflow は各メディアが管理する）*/
 .workout-area__content {
   flex: 1;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
+  min-height: 0;
 }
 
 /* Phase 8 前のプレースホルダー */

@@ -51,6 +51,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 未保存マーカー */
+.workout-area-ribbon__dirty {
+  color: #e07b3a;
+  font-size: 9px;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 /* MediaType ボタン群 */

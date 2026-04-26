@@ -23,12 +23,13 @@ const MEDIA_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }>
 interface Props {
   area:              TTWorkoutArea;
   isFocused:         boolean;
+  isDirty?:          boolean;
   onDragStart:       (e: React.MouseEvent) => void;
   onMediaTypeChange: (type: MediaType) => void;
   onClose:           () => void;
 }
 
-export function WorkoutAreaRibbon({ area, isFocused, onDragStart, onMediaTypeChange, onClose }: Props) {
+export function WorkoutAreaRibbon({ area, isFocused, isDirty = false, onDragStart, onMediaTypeChange, onClose }: Props) {
   return (
     <div className={[
       'workout-area-ribbon',
@@ -44,8 +45,9 @@ export function WorkoutAreaRibbon({ area, isFocused, onDragStart, onMediaTypeCha
         <GripVertical size={13} />
       </div>
 
-      {/* タイトル */}
+      {/* タイトル（未保存変更があれば ● を表示）*/}
       <span className="workout-area-ribbon__title" title={area.Title}>
+        {isDirty && <span className="workout-area-ribbon__dirty">●</span>}
         {area.Title || '（無題）'}
       </span>
 
