@@ -1,15 +1,12 @@
 /**
  * AppLayout.tsx
- * Phase 5: 4パネルグリッドレイアウト。
+ * Phase 6: ThinktankPanel を実装コンポーネントに差し替え。
  *
  * 左から順に:
  *   ThinktankPanel（Ribbon + Area） |
  *   OverviewPanel（Ribbon + Area）  |
  *   WorkoutPanel（中央、flex:1）    |
  *   ToDoPanel（Area + Ribbon）
- *
- * ThinktankPanel / OverviewPanel / ToDoPanel は Area を開閉可能。
- * WorkoutPanel は常時表示で中央を占有する。
  */
 
 import { useCallback, useState } from 'react';
@@ -18,6 +15,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelRibbon } from './PanelRibbon';
 import { PanelArea } from './PanelArea';
 import { Splitter } from './Splitter';
+import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import './AppLayout.css';
 
 // パネル幅の初期値・最小値
@@ -29,15 +27,14 @@ const MIN_PANEL_WIDTH = 120;
 export function AppLayout() {
   const app = TTApplication.Instance;
 
-  // 各パネルの開閉状態をビューモデルから購読
-  useAppUpdate(app.ThinktankPanel);
+  // OverviewPanel / ToDoPanel の開閉状態を購読（ThinktankPanel は内部で購読済み）
   useAppUpdate(app.OverviewPanel);
   useAppUpdate(app.ToDoPanel);
 
   // Splitter でサイズ変更可能なパネル幅（ローカル state）
-  const [ttWidth,      setTtWidth]      = useState(THINKTANK_WIDTH);
+  const [ttWidth,       setTtWidth]       = useState(THINKTANK_WIDTH);
   const [overviewWidth, setOverviewWidth] = useState(OVERVIEW_WIDTH);
-  const [todoWidth,    setTodoWidth]    = useState(TODO_WIDTH);
+  const [todoWidth,     setTodoWidth]     = useState(TODO_WIDTH);
 
   // ── Splitter ハンドラー ──────────────────────────────────────────
 
@@ -50,40 +47,23 @@ export function AppLayout() {
   }, []);
 
   const onTodoSplitter = useCallback((dx: number) => {
-    setTodoWidth(w => Math.max(MIN_PANEL_WIDTH, w - dx)); // Todo は右端なので逆方向
+    setTodoWidth(w => Math.max(MIN_PANEL_WIDTH, w - dx));
   }, []);
 
   // ── 開閉 ────────────────────────────────────────────────────────
 
-  const toggleThinktank = useCallback(() => app.ThinktankPanel.ToggleArea(), [app]);
   const toggleOverview  = useCallback(() => app.OverviewPanel.ToggleArea(),  [app]);
   const toggleToDo      = useCallback(() => app.ToDoPanel.ToggleArea(),      [app]);
 
   return (
     <div className="app-layout">
 
-      {/* ── ThinktankPanel ─────────────────────────────────────── */}
-      <div className="app-panel app-panel--thinktank">
-        <PanelRibbon
-          panelId="thinktank"
-          side="left"
-          isOpen={app.ThinktankPanel.IsAreaOpen}
-          onToggle={toggleThinktank}
-        />
-        <PanelArea
-          panelId="thinktank"
-          isOpen={app.ThinktankPanel.IsAreaOpen}
-          width={ttWidth}
-        >
-          <div className="panel-placeholder">
-            <div className="panel-placeholder__title">ThinktankPanel</div>
-            <div className="panel-placeholder__desc">Thoughts 一覧（Phase 6）</div>
-          </div>
-        </PanelArea>
-        {app.ThinktankPanel.IsAreaOpen && (
-          <Splitter onResize={onTtSplitter} />
-        )}
-      </div>
+      {/* ── ThinktankPanel（Phase 6 実装済み）─────────────────── */}
+      <ThinktankPanel
+        app={app}
+        width={ttWidth}
+        onResize={onTtSplitter}
+      />
 
       {/* ── OverviewPanel ──────────────────────────────────────── */}
       <div className="app-panel app-panel--overview">

@@ -1,0 +1,49 @@
+/* ThoughtsFilter.css */
+
+.thoughts-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.thoughts-filter__icon {
+  color: #555;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.thoughts-filter__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #1a1a2e;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.thoughts-filter__input::placeholder {
+  color: #888;
+}
+
+.thoughts-filter__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  color: #666;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.thoughts-filter__clear:hover {
+  background: rgba(0, 0, 0, 0.1);
+  opacity: 1;
+}

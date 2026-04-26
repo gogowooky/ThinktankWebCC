@@ -1,0 +1,9 @@
+/* ThinktankPanel.css */
+
+.thinktank-panel {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+}
