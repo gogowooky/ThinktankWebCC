@@ -131,18 +131,15 @@ WorkoutPanelが最も広い主作業エリア。
 ```
 ┌──────────────┬──────────────┬──────────────────────────────┬──────────────┐
 │  Thinktank   │  Overview    │        Workout Panel         │    ToDo      │
-│  Panel       │  Panel       │                              │    Panel     │
-│              │              │  [WA0.Ribbon|WA0.Area]       │              │
-│  Thinktank   │  Overview    │              │               │    ToDo      │
-│  Ribbon      │  Ribbon      │  [WA1.Ribbon|WA1.Area]       │    Ribbon    │
-│  ──────────  │  ──────────  │──────────────────────────────│  ──────────  │
-│  Thinktank   │  Overview    │  [WA2.Ribbon|WA2.Area]       │    ToDo      │
-│  Area        │  Area        │              │               │    Area      │
-│              │              │  [WA3.Ribbon|WA3.Area]       │              │
-│  [開閉]      │  [開閉]      │──────────────────────────────│  [開閉]      │
-│              │              │  [WA4.Ribbon|WA4.Area]       │              │
-│              │              │              │               │              │
-│              │              │  [WA5.Ribbon|WA5.Area]       │              │
+│  Panel       │  Panel       │  [PanelRibbon: 右に追加 |    │    Panel     │
+│              │              │              下に追加]        │              │
+│  Thinktank   │  Overview    │  ┌────────────┬─────────┐   │    ToDo      │
+│  Ribbon      │  Ribbon      │  │ WA0.Ribbon │WA1.Rib  │   │    Ribbon    │
+│  ──────────  │  ──────────  │  │ WA0.Area   ├─────────┤   │  ──────────  │
+│  Thinktank   │  Overview    │  │            │WA2.Rib  │   │    ToDo      │
+│  Area        │  Area        │  │            │WA2.Area │   │    Area      │
+│              │              │  └────────────┴─────────┘   │              │
+│  [開閉]      │  [開閉]      │  （BSPツリーで動的分割）      │  [開閉]      │
 └──────────────┴──────────────┴──────────────────────────────┴──────────────┘
 ```
 
@@ -192,14 +189,28 @@ WorkoutPanelが最も広い主作業エリア。
 
 **WorkoutArea構成**:
 
-- 最大 **2列 × 3行 = 6エリア**
+- エリア数・分割数に制限なし（BSP ツリーで動的管理）
 - 各WorkoutAreaは独立した Ribbon + Area を持つ
-- **表形式・グラフ形式** は1行全体（2列分）を使用
-- その他の形式は1セル（1列分）を使用
+- 初期状態は1エリアがパネル全体を占有
+- **右に追加**: フォーカス中エリアを縦分割して右側に新エリアを追加
+- **下に追加**: フォーカス中エリアを横分割して下側に新エリアを追加
+- メディア種別によるレイアウト特別ルールなし（すべて均等に分割）
+
+**レイアウト方式（BSP ツリー）**:
+
+- LayoutNode = LeafNode（単一エリア）または SplitNode（縦/横分割＋2子ノード）の再帰構造
+- 分割比率は Splitter ドラッグでリアルタイム変更（ポインターキャプチャ方式）
+- エリア削除時はツリーが自動縮小（兄弟ノードが親の位置を引き継ぐ）
+
+**フォーカス**:
+
+- クリックしたエリアがフォーカスエリアになる（Ribbonが青強調）
+- 「右に追加」「下に追加」はフォーカスエリアを分割する
+- 追加したエリアが自動的にフォーカスを引き継ぐ
 
 **表示ルール**:
 
-- 各WorkoutAreaのTitleをマウスでつかんで枠移動可能
+- 各WorkoutAreaのTitleをマウスでドラッグ → 他エリアにドロップでコンテンツ入れ替え
 - Splitterでエリアサイズ変更可能
 
 **表示形式（メディア）**:
@@ -563,16 +574,27 @@ v4の `memo / chat / pickup / link / table` を v5仕様に変更する：
   - `MediaType`: `'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'chat'`
   - `ResourceID`: 表示中のThinkデータID
   - `IsLoading`: コンテンツロード中
-  - `Position`: `{ row: number, col: number }` (0-indexed)
-  - `RowSpan`: 1 or 2（表形式・グラフ形式は2 = 行全体）
   - `Title`: 表示タイトル
+  - 位置情報は持たない（BSP ツリーが管理する）
 
-- `src/views/TTWorkoutPanel.ts` - WorkoutArea群の管理
-  - `Areas`: WorkoutArea[]（最大6個）
-  - `AddArea(resourceId, mediaType)`: Area追加
-  - `RemoveArea(areaId)`: Area削除
-  - `MoveArea(areaId, newPosition)`: ドラッグ移動
-  - `ReorderAreas()`: グリッドレイアウト再計算
+- `src/views/TTWorkoutPanel.ts` - WorkoutArea群の管理（BSP ツリー方式）
+  - `Areas`: WorkoutArea[]（上限なし）
+  - `Layout`: `LayoutNode | null` — BSP ツリーのルートノード
+  - `FocusedAreaId`: フォーカス中エリアID
+  - `AddFirst(resourceId, mediaType, title)`: 最初のエリアを追加（Layout=LeafNode）
+  - `AddRight(resourceId, mediaType, title)`: フォーカスエリアを縦分割して右に追加
+  - `AddBelow(resourceId, mediaType, title)`: フォーカスエリアを横分割して下に追加
+  - `RemoveArea(areaId)`: Area削除＋ツリー縮小＋フォーカス更新
+  - `FocusArea(areaId)`: フォーカス切り替え
+  - `SwapAreas(fromId, toId)`: ドラッグ&ドロップによるコンテンツ入れ替え
+  - `SetMediaType(areaId, mediaType)`: メディアタイプ変更
+
+  LayoutNode の型定義:
+  ```typescript
+  type LayoutNode = LeafNode | SplitNodeData;
+  interface LeafNode     { id: string; type: 'leaf'; areaId: string; }
+  interface SplitNodeData { id: string; type: 'split'; direction: 'v'|'h'; first: LayoutNode; second: LayoutNode; }
+  ```
 
 - `src/views/TTThinktankPanel.ts` - ThinktankPanel管理
   - `IsAreaOpen`: ThinktankArea開閉状態
@@ -682,55 +704,58 @@ v4の `memo / chat / pickup / link / table` を v5仕様に変更する：
 
 ### Phase 7: WorkoutPanel基盤実装
 
-**目標**: WorkoutAreaの動的管理、ドラッグ移動、スプリッターによるリサイズを実装する。
+**目標**: BSP ツリー型レイアウトによる WorkoutArea の動的分割管理、ドラッグ移動、スプリッターによるリサイズを実装する。
 
 **新規作成**:
 
-- `src/components/WorkoutPanel/WorkoutPanel.tsx + .css` - 2列グリッドコンテナ
-- `src/components/WorkoutPanel/WorkoutArea.tsx + .css` - 個別WorkoutArea（Ribbon+Area）
-- `src/components/WorkoutPanel/WorkoutAreaRibbon.tsx` - MediaType切り替え + ドラッグハンドル
-- `src/components/WorkoutPanel/WorkoutAreaEmpty.tsx` - 空Area（ドロップゾーン）
-- `src/components/WorkoutPanel/WorkoutSplitter.tsx` - Area間サイズ調整
+- `src/components/WorkoutPanel/WorkoutPanel.tsx + .css` - BSP ツリー再帰レンダリングコンテナ
+- `src/components/WorkoutPanel/WorkoutArea.tsx + .css` - 個別WorkoutArea（Ribbon+コンテンツ）
+- `src/components/WorkoutPanel/WorkoutAreaRibbon.tsx + .css` - MediaType切り替え + ドラッグハンドル + フォーカス表示
+- `src/components/WorkoutPanel/WorkoutAreaEmpty.tsx + .css` - エリアなし時の空表示
+- `src/components/WorkoutPanel/WorkoutPanelRibbon.tsx + .css` - 「右に追加」「下に追加」ボタンのパネルリボン
+- `src/components/WorkoutPanel/WorkoutHSplitter.tsx + .css` - 横分割用 Splitter
 
-**WorkoutAreaのグリッドレイアウト**:
-
-```
-┌────────────────────────────────────┐
-│  [Area 0, col:0]  │  [Area 1, col:1] │  ← row 0
-├───────────────────┼────────────────┤
-│  [Area 2, col:0]  │  [Area 3, col:1] │  ← row 1
-├───────────────────┼────────────────┤
-│  [Area 4, col:0]  │  [Area 5, col:1] │  ← row 2
-└────────────────────────────────────┘
-```
-
-表形式・グラフ形式は rowSpan:2（= 1行全体）として扱う:
+**BSP ツリーレンダリング構造**:
 
 ```
-┌────────────────────────────────────┐
-│         [Area 0, グラフ]           │  ← row 0 全体
-├───────────────────┼────────────────┤
-│  [Area 1, col:0]  │  [Area 2, col:1] │  ← row 1
-└────────────────────────────────────┘
+WorkoutPanel
+  └─ LayoutView（再帰コンポーネント）
+       ├─ node.type === 'leaf'  → WorkoutArea を直接レンダリング
+       └─ node.type === 'split' → SplitView（flex レイアウト）
+              ├─ split-pane（flex: ratio）+ LayoutView（再帰）
+              ├─ Splitter（direction:'v'）or WorkoutHSplitter（direction:'h'）
+              └─ split-pane（flex: 1-ratio）+ LayoutView（再帰）
 ```
+
+分割比率は `splitRatios: Record<nodeId, 0〜1>` として React state で管理し、Splitter の `onResize` デルタをコンテナサイズで正規化して更新する。
+
+**WorkoutPanelRibbon**:
+
+- 「右に追加」ボタン（SVGアイコン: 縦分割イメージ）: `AddRight` を呼ぶ
+- 「下に追加」ボタン（SVGアイコン: 横分割イメージ）: `AddBelow` を呼ぶ。エリアなし時は disabled
+- フォーカス中エリア名をリボン右端に表示
 
 **ドラッグ移動**:
 
-- WorkoutAreaのTitleバーをマウスでドラッグ
-- 他のArea位置にドロップで配置交換
-- `onMouseDown` → `document.mousemove/mouseup` パターン
+- WorkoutAreaのRibbonにあるドラッグハンドルをマウスでドラッグ
+- Ghost（カーソル追従タイトル表示）+ Drop target エリアを太枠（3px）で強調
+- ドロップで `SwapAreas(fromId, toId)` を呼びコンテンツを入れ替え
+- `overAreaIdRef`（useRef）で stale closure を回避
 
-**スプリッター**:
+**スプリッター（ポインターキャプチャ方式）**:
 
-- 行間・列間のSplitterをドラッグでサイズ変更
-- `delta`方式（v4 Splitter実装を流用）
+- `Splitter.tsx`（縦）・`WorkoutHSplitter.tsx`（横）ともに `setPointerCapture` を使用
+- カーソルがパネル枠外に出ても制御が維持される（枠外逃げなし）
 
 **検証**:
 
-- [ ] WorkoutAreaが最大6個まで追加できる
-- [ ] Titleドラッグでエリアを移動できる
-- [ ] Splitterドラッグでサイズが変更できる
-- [ ] 表・グラフ形式が1行全体を使用できる
+- [ ] 最初のエリアがパネル全体を占有して表示される
+- [ ] 「右に追加」でフォーカスエリアが縦分割される
+- [ ] 「下に追加」でフォーカスエリアが横分割される
+- [ ] クリックでフォーカスが切り替わり Ribbon が青強調される
+- [ ] エリア閉じでツリーが縮小し、残エリアが領域を引き継ぐ
+- [ ] Titleドラッグ＆ドロップでエリアコンテンツが入れ替わる
+- [ ] Splitterドラッグでサイズが変更できる（枠外逃げなし）
 
 ---
 
@@ -1026,7 +1051,7 @@ ANTHROPIC_MODEL=claude-sonnet-4-6
 |------|----|----|
 | 開発方針 | PWA版とLocal版の同時開発 | **Local Application First**（PWAは後続） |
 | UIパネル構成 | 左パネル・メインパネル（タブ）・右パネル | **4パネル**（Thinktank / Overview / Workout / ToDo）|
-| メインパネル | タブ方式（OpenItem → タブ追加） | **WorkoutArea方式**（最大6エリア、ドラッグ移動）|
+| メインパネル | タブ方式（OpenItem → タブ追加） | **WorkoutArea方式**（BSP ツリーで無制限分割、ドラッグ移動）|
 | ContentType | memo/chat/pickup/link/table | **memo/thought/tables/links/chat/nettext** |
 | データクラス | TTDataItem | **TTThink**（リネーム）|
 | データ概念 | なし | **TTVault > Thoughts > Thought > Think** の階層を明確化。VaultID追加 |
