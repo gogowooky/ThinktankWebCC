@@ -1,0 +1,68 @@
+/* WorkoutArea.css */
+
+.workout-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  transition: opacity 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  position: relative;
+  cursor: default;
+}
+
+/* フォーカス中 */
+.workout-area--focused {
+  border-color: rgba(122, 162, 247, 0.5);
+  box-shadow: inset 0 0 0 9999px rgba(122, 162, 247, 0.03);
+}
+
+/* ドラッグ中（薄く表示） */
+.workout-area--dragging {
+  opacity: 0.4;
+}
+
+/* Drop target: 太枠 + 青みがかった内側オーバーレイ */
+.workout-area--drop-target {
+  border: 3px solid #7aa2f7;
+  box-shadow:
+    0 0 0 4px rgba(122, 162, 247, 0.4),
+    inset 0 0 0 9999px rgba(122, 162, 247, 0.10);
+}
+
+/* コンテンツエリア */
+.workout-area__content {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+/* Phase 8 前のプレースホルダー */
+.workout-area__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 6px;
+  opacity: 0.4;
+  user-select: none;
+  padding: 12px;
+}
+
+.workout-area__placeholder-media {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+}
+
+.workout-area__placeholder-id {
+  font-size: 10px;
+  color: #666;
+  font-family: monospace;
+}

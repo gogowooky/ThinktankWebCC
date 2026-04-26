@@ -1,0 +1,92 @@
+/* WorkoutPanel.css */
+
+.workout-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--workout-area-bg);
+  position: relative;
+}
+
+/* ── BSP ツリー全体 ─────────────────────────────────────────── */
+.workout-panel__tree {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Split コンテナ ─────────────────────────────────────────── */
+.workout-panel__split {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 縦分割（左右） */
+.workout-panel__split--v {
+  flex-direction: row;
+}
+
+/* 横分割（上下） */
+.workout-panel__split--h {
+  flex-direction: column;
+}
+
+/* 各ペイン（flex の値は JS から style で設定）*/
+.workout-panel__split-pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Leaf（WorkoutArea を包む最小単位）──────────────────────── */
+.workout-panel__leaf {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Splitter の色 ───────────────────────────────────────────── */
+.workout-panel__split--v > .splitter {
+  background: rgba(0, 0, 0, 0.15);
+}
+.workout-panel__split--v > .splitter:hover {
+  background: var(--text-accent);
+}
+
+/* ────────────────────────────────────────
+   ドラッグ Ghost
+   position:fixed / pointer-events:none
+──────────────────────────────────────── */
+.workout-drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: var(--workout-ribbon-bg, #3f3f3f);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: rotate(-2deg) scale(1.04);
+  opacity: 0.92;
+  user-select: none;
+}

@@ -16,6 +16,7 @@ import { PanelRibbon } from './PanelRibbon';
 import { PanelArea } from './PanelArea';
 import { Splitter } from './Splitter';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
+import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
 import './AppLayout.css';
 
 // パネル幅の初期値・最小値
@@ -88,12 +89,9 @@ export function AppLayout() {
         )}
       </div>
 
-      {/* ── WorkoutPanel ───────────────────────────────────────── */}
+      {/* ── WorkoutPanel（Phase 7 実装済み）────────────────────── */}
       <div className="app-panel app-panel--workout">
-        <div className="panel-placeholder panel-placeholder--workout">
-          <div className="panel-placeholder__title">WorkoutPanel</div>
-          <div className="panel-placeholder__desc">WorkoutArea 群（Phase 7）</div>
-        </div>
+        <WorkoutPanel app={app} />
       </div>
 
       {/* ── ToDoPanel ──────────────────────────────────────────── */}

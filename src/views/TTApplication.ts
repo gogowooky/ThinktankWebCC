@@ -94,7 +94,8 @@ export class TTApplication extends TTObject {
     const vault = this.Models.Vault;
     const think = vault.GetThink(thinkId);
     const title = think?.Name ?? thinkId;
-    return this.WorkoutPanel.AddArea(thinkId, mediaType, title);
+    return this.WorkoutPanel.AddRight(thinkId, mediaType, title)
+        ?? this.WorkoutPanel.AddFirst(thinkId, mediaType, title);
   }
 
   /**

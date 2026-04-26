@@ -1,34 +1,34 @@
 /**
- * Splitter.tsx
- * ドラッグで隣接パネルの幅を変更するセパレーター（縦方向 col-resize）。
+ * WorkoutHSplitter.tsx
+ * Phase 7: WorkoutPanel の行間水平スプリッター（row-resize）。
  * pointer capture を使用してパネル外へのカーソル移動でもドラッグが途切れない。
  */
 
 import React, { useCallback, useRef } from 'react';
-import './Splitter.css';
+import './WorkoutHSplitter.css';
 
 interface Props {
-  onResize: (deltaX: number) => void;
+  onResize: (deltaY: number) => void;
   onResizeEnd?: () => void;
 }
 
-export function Splitter({ onResize, onResizeEnd }: Props) {
+export function WorkoutHSplitter({ onResize, onResizeEnd }: Props) {
   const dragging = useRef(false);
-  const lastX    = useRef(0);
+  const lastY    = useRef(0);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
-    e.currentTarget.setPointerCapture(e.pointerId);   // カーソルが外に出てもイベント受信継続
+    e.currentTarget.setPointerCapture(e.pointerId);
     dragging.current = true;
-    lastX.current    = e.clientX;
-    document.body.style.cursor    = 'col-resize';
+    lastY.current    = e.clientY;
+    document.body.style.cursor    = 'row-resize';
     document.body.style.userSelect = 'none';
   }, []);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragging.current) return;
-    const delta   = e.clientX - lastX.current;
-    lastX.current = e.clientX;
+    const delta   = e.clientY - lastY.current;
+    lastY.current = e.clientY;
     onResize(delta);
   }, [onResize]);
 
@@ -42,12 +42,12 @@ export function Splitter({ onResize, onResizeEnd }: Props) {
 
   return (
     <div
-      className="splitter"
+      className="workout-h-splitter"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      aria-label="パネル幅を変更"
+      aria-label="行の高さを変更"
     />
   );
 }
