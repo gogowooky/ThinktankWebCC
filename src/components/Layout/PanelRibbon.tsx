@@ -47,13 +47,7 @@ export function PanelRibbon({
       data-panel={panelId}
       data-side={side}
     >
-      {/* ユーザー定義ボタン（上部）*/}
-      {children && <div className="panel-ribbon__buttons">{children}</div>}
-
-      {/* スペーサー */}
-      <div className="panel-ribbon__spacer" />
-
-      {/* 開閉トグルボタン（末尾）*/}
+      {/* 開閉トグルボタン（先頭）*/}
       <button
         className="panel-ribbon__toggle"
         onClick={onToggle}
@@ -65,6 +59,12 @@ export function PanelRibbon({
           : <ChevronLeft size={14} />
         }
       </button>
+
+      {/* ユーザー定義ボタン */}
+      {children && <div className="panel-ribbon__buttons">{children}</div>}
+
+      {/* スペーサー */}
+      <div className="panel-ribbon__spacer" />
     </div>
   );
 }
