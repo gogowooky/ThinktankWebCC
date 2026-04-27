@@ -1,7 +1,7 @@
 /**
  * BigQueryService.ts (v5)
  * thinktank.vault テーブルに対する CRUD サービス
- * MERGE 文 Upsert + 並列更新エラー自動リトライ
+ * vault_id フィールド廃止済み。MERGE 文 Upsert + 並列更新エラー自動リトライ
  */
 
 import { BigQuery } from '@google-cloud/bigquery';
@@ -11,7 +11,6 @@ const TABLE_ID   = 'vault';
 
 export interface VaultRecord {
   file_id:     string;
-  vault_id:    string;
   file_type:   string;        // 固定値 "md"
   category:    string;        // ContentType (memo/thought/tables/links/chat/nettext)
   title:       string | null;
@@ -59,23 +58,7 @@ export class BigQueryService {
     const table   = dataset.table(TABLE_ID);
     const [exists] = await table.exists();
     if (exists) {
-      // v5 で追加されたカラムを ALTER TABLE IF NOT EXISTS で追加（既存テーブル対応）
-      const alterColumns = [
-        'vault_id    STRING',
-        'keywords    STRING',
-        'related_ids STRING',
-        'is_deleted  BOOL',
-      ];
-      for (const col of alterColumns) {
-        try {
-          await this.bigquery.query(
-            `ALTER TABLE \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\` ADD COLUMN IF NOT EXISTS ${col}`
-          );
-        } catch {
-          // 既に存在する場合などは無視
-        }
-      }
-      console.log(`[BigQueryService] Table ${DATASET_ID}.${TABLE_ID} confirmed (v5 columns ensured)`);
+      console.log(`[BigQueryService] Table ${DATASET_ID}.${TABLE_ID} confirmed`);
       return;
     }
 
@@ -86,14 +69,12 @@ export class BigQueryService {
     await dataset.createTable(TABLE_ID, {
       schema: [
         { name: 'file_id',     type: 'STRING',    mode: 'REQUIRED' },
-        { name: 'vault_id',    type: 'STRING',    mode: 'NULLABLE' },
         { name: 'file_type',   type: 'STRING',    mode: 'REQUIRED' },
         { name: 'category',    type: 'STRING',    mode: 'NULLABLE' },
         { name: 'title',       type: 'STRING',    mode: 'NULLABLE' },
         { name: 'content',     type: 'STRING',    mode: 'NULLABLE' },
         { name: 'keywords',    type: 'STRING',    mode: 'NULLABLE' },
         { name: 'related_ids', type: 'STRING',    mode: 'NULLABLE' },
-        { name: 'metadata',    type: 'JSON',      mode: 'NULLABLE' },
         { name: 'size_bytes',  type: 'INT64',     mode: 'NULLABLE' },
         { name: 'is_deleted',  type: 'BOOL',      mode: 'NULLABLE' },
         { name: 'created_at',  type: 'TIMESTAMP', mode: 'REQUIRED' },
@@ -106,24 +87,25 @@ export class BigQueryService {
 
   // ── メタ一覧（content なし）──────────────────────────────────────────
 
-  async listMeta(vaultId: string): Promise<BqResult> {
+  async listMeta(): Promise<BqResult> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
     try {
       const query = `
-        SELECT t.file_id, t.vault_id, t.file_type, t.category, t.title,
+        SELECT t.file_id, t.file_type, t.category, t.title,
                t.keywords, t.related_ids, t.size_bytes,
                COALESCE(t.is_deleted, FALSE) AS is_deleted,
                t.created_at, t.updated_at
         FROM ${this.tbl} t
         INNER JOIN (
           SELECT file_id, MAX(updated_at) AS max_upd
-          FROM ${this.tbl} WHERE vault_id = @vaultId AND COALESCE(is_deleted, FALSE) = FALSE
+          FROM ${this.tbl}
+          WHERE COALESCE(is_deleted, FALSE) = FALSE
           GROUP BY file_id
         ) latest ON t.file_id = latest.file_id AND t.updated_at = latest.max_upd
-        WHERE t.vault_id = @vaultId AND COALESCE(t.is_deleted, FALSE) = FALSE
+        WHERE COALESCE(t.is_deleted, FALSE) = FALSE
         ORDER BY t.updated_at DESC
       `;
-      const [rows] = await this.bigquery.query({ query, params: { vaultId } });
+      const [rows] = await this.bigquery.query({ query });
       return { success: true, data: rows as VaultRecord[] };
     } catch (e) {
       return { success: false, error: String(e) };
@@ -132,15 +114,15 @@ export class BigQueryService {
 
   // ── content のみ取得 ────────────────────────────────────────────────
 
-  async getContent(vaultId: string, fileId: string): Promise<BqResult<string | null>> {
+  async getContent(fileId: string): Promise<BqResult<string | null>> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
     try {
       const query = `
         SELECT content FROM ${this.tbl}
-        WHERE file_id = @fileId AND vault_id = @vaultId
+        WHERE file_id = @fileId
         ORDER BY updated_at DESC LIMIT 1
       `;
-      const [rows] = await this.bigquery.query({ query, params: { fileId, vaultId } });
+      const [rows] = await this.bigquery.query({ query, params: { fileId } });
       const row = (rows as Array<{ content: string | null }>)[0];
       return { success: true, data: row?.content ?? null };
     } catch (e) {
@@ -156,8 +138,8 @@ export class BigQueryService {
       const query = `
         MERGE ${this.tbl} AS target
         USING (
-          SELECT @file_id AS file_id, @vault_id AS vault_id,
-                 @file_type AS file_type, @category AS category,
+          SELECT @file_id AS file_id, @file_type AS file_type,
+                 @category AS category,
                  @title AS title, @content AS content,
                  @keywords AS keywords, @related_ids AS related_ids,
                  @size_bytes AS size_bytes,
@@ -165,7 +147,6 @@ export class BigQueryService {
                  @created_at AS created_at, @updated_at AS updated_at
         ) AS source ON target.file_id = source.file_id
         WHEN MATCHED THEN UPDATE SET
-          target.vault_id    = source.vault_id,
           target.category    = source.category,
           target.title       = source.title,
           target.content     = source.content,
@@ -175,16 +156,15 @@ export class BigQueryService {
           target.is_deleted  = source.is_deleted,
           target.updated_at  = source.updated_at
         WHEN NOT MATCHED THEN INSERT
-          (file_id, vault_id, file_type, category, title, content,
+          (file_id, file_type, category, title, content,
            keywords, related_ids, size_bytes, is_deleted, created_at, updated_at)
         VALUES
-          (source.file_id, source.vault_id, source.file_type, source.category,
+          (source.file_id, source.file_type, source.category,
            source.title, source.content, source.keywords, source.related_ids,
            source.size_bytes, source.is_deleted, source.created_at, source.updated_at)
       `;
       const params = {
         file_id:     record.file_id,
-        vault_id:    record.vault_id,
         file_type:   record.file_type,
         category:    record.category,
         title:       record.title,
@@ -197,7 +177,7 @@ export class BigQueryService {
         updated_at:  new Date(record.updated_at),
       };
       const types = {
-        file_id: 'STRING', vault_id: 'STRING', file_type: 'STRING', category: 'STRING',
+        file_id: 'STRING', file_type: 'STRING', category: 'STRING',
         title: 'STRING', content: 'STRING', keywords: 'STRING', related_ids: 'STRING',
         size_bytes: 'INT64', is_deleted: 'BOOL',
         created_at: 'TIMESTAMP', updated_at: 'TIMESTAMP',
@@ -219,14 +199,13 @@ export class BigQueryService {
 
   // ── 削除（論理削除） ───────────────────────────────────────────────
 
-  async delete(vaultId: string, fileId: string): Promise<BqResult<null>> {
+  async delete(fileId: string): Promise<BqResult<null>> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
     try {
       const now = new Date().toISOString();
-      // 既存レコードを is_deleted=true で上書き保存
-      const getResult = await this.getContent(vaultId, fileId);
+      const getResult = await this.getContent(fileId);
       const row: VaultRecord = {
-        file_id: fileId, vault_id: vaultId, file_type: 'md',
+        file_id: fileId, file_type: 'md',
         category: '', title: null, content: getResult.success ? getResult.data : null,
         keywords: null, related_ids: null, size_bytes: null,
         is_deleted: true, created_at: now, updated_at: now,
@@ -239,25 +218,26 @@ export class BigQueryService {
 
   // ── 全文検索 ─────────────────────────────────────────────────────────
 
-  async search(vaultId: string, q: string): Promise<BqResult> {
+  async search(q: string): Promise<BqResult> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
     try {
       const query = `
-        SELECT t.file_id, t.vault_id, t.file_type, t.category, t.title,
+        SELECT t.file_id, t.file_type, t.category, t.title,
                t.keywords, t.related_ids, t.size_bytes,
                COALESCE(t.is_deleted, FALSE) AS is_deleted,
                t.created_at, t.updated_at
         FROM ${this.tbl} t
         INNER JOIN (
           SELECT file_id, MAX(updated_at) AS max_upd
-          FROM ${this.tbl} WHERE vault_id = @vaultId AND COALESCE(is_deleted, FALSE) = FALSE
+          FROM ${this.tbl}
+          WHERE COALESCE(is_deleted, FALSE) = FALSE
           GROUP BY file_id
         ) latest ON t.file_id = latest.file_id AND t.updated_at = latest.max_upd
-        WHERE t.vault_id = @vaultId AND COALESCE(t.is_deleted, FALSE) = FALSE
+        WHERE COALESCE(t.is_deleted, FALSE) = FALSE
           AND CONTAINS_SUBSTR(CONCAT(COALESCE(t.title,''), ' ', COALESCE(t.content,'')), @q)
         ORDER BY t.updated_at DESC LIMIT 200
       `;
-      const [rows] = await this.bigquery.query({ query, params: { vaultId, q } });
+      const [rows] = await this.bigquery.query({ query, params: { q } });
       return { success: true, data: rows as VaultRecord[] };
     } catch (e) {
       return { success: false, error: String(e) };

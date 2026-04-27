@@ -98,15 +98,16 @@ export class TTVault extends TTCollection {
 
   public override async LoadCache(): Promise<void> {
     try {
-      const metas = await StorageManager.instance.listMeta(this.ID);
+      const metas = await StorageManager.instance.listMeta();
       for (const meta of metas) {
         const think = new TTThink();
         think.ID          = meta.id;
-        think.VaultID     = meta.vaultId || this.ID;
+        think.VaultID     = this.ID;
         think.ContentType = meta.contentType as ContentType;
         think.Keywords    = meta.keywords  ?? '';
         think.RelatedIDs  = meta.relatedIds ?? '';
         think.IsMetaOnly  = true;
+        think.UpdatedAt   = meta.updatedAt ?? '';
         think.setContentSilent(meta.title);
         think.markSaved();
         think._parent = this;

@@ -78,7 +78,15 @@
       "Bash(curl -s \"http://localhost:8080/api/bq/files/meta?vaultId=vault\")",
       "Bash(curl -s \"http://localhost:8080/api/health\")",
       "Bash(echo \"PID: $!\")",
-      "Bash(curl -s -X POST http://localhost:8080/api/bq/files -H 'Content-Type: application/json' -d '{\"id\":\"2026-04-27-100000\",\"vaultId\":\"vault\",\"contentType\":\"thought\",\"title\":\"テストThought\",\"content\":\"テスト本文\",\"keywords\":\"test\",\"relatedIds\":\"\"}')"
+      "Bash(curl -s -X POST http://localhost:8080/api/bq/files -H 'Content-Type: application/json' -d '{\"id\":\"2026-04-27-100000\",\"vaultId\":\"vault\",\"contentType\":\"thought\",\"title\":\"テストThought\",\"content\":\"テスト本文\",\"keywords\":\"test\",\"relatedIds\":\"\"}')",
+      "Bash(npx kill-port *)",
+      "Bash(Start-Sleep -Milliseconds 500)",
+      "Bash(curl -s http://localhost:8080/api/health)",
+      "Bash(curl -s http://localhost:8080/api/bq/files/meta)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f'件数: {len\\(data\\)}'\\)\")",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); console.log\\('件数:', JSON.parse\\(d\\).length\\)\")",
+      "Bash(curl -s \"http://localhost:8080/api/bq/files/meta\" -o /tmp/meta.json)",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/tmp/meta.json','utf8'\\); console.log\\('件数:', JSON.parse\\(d\\).length\\)\")"
     ]
   }
 }

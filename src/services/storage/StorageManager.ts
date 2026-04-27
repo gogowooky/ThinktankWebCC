@@ -40,23 +40,23 @@ export class StorageManager {
 
   // ── 公開メソッド（TTVault / TTThink から呼ぶ） ─────────────────────
 
-  public listMeta(vaultId: string): Promise<ThinkMeta[]> {
-    return this.backend.listMeta(vaultId);
+  public listMeta(): Promise<ThinkMeta[]> {
+    return this.backend.listMeta();
   }
 
-  public getContent(vaultId: string, id: string): Promise<string | null> {
-    return this.backend.getContent(vaultId, id);
+  public getContent(id: string): Promise<string | null> {
+    return this.backend.getContent(id);
   }
 
   public save(payload: SavePayload): Promise<ThinkMeta> {
     return this.backend.save(payload);
   }
 
-  public delete(vaultId: string, id: string): Promise<void> {
-    return this.backend.delete(vaultId, id);
+  public delete(id: string): Promise<void> {
+    return this.backend.delete(id);
   }
 
-  public search(vaultId: string, query: string): Promise<ThinkMeta[]> {
-    return this.backend.search(vaultId, query);
+  public search(query: string): Promise<ThinkMeta[]> {
+    return this.backend.search(query);
   }
 }

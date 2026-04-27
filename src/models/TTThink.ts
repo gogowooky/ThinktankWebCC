@@ -27,6 +27,9 @@ export class TTThink extends TTObject {
   /** true = メタデータのみ取得済み、content は未フェッチ */
   public IsMetaOnly: boolean = false;
 
+  /** 最終更新日時（ISO 8601文字列、ストレージから取得）*/
+  public UpdatedAt: string = '';
+
   // ── コンテンツ管理 ──────────────────────────────────────────────────
 
   private _content: string = '';
@@ -79,7 +82,7 @@ export class TTThink extends TTObject {
   public async LoadContent(): Promise<void> {
     if (!this.IsMetaOnly) return;
     try {
-      const body = await StorageManager.instance.getContent(this.VaultID, this.ID);
+      const body = await StorageManager.instance.getContent(this.ID);
       if (body !== null) {
         this.setContentSilent(this.Name + '\n' + body);
         this.markSaved();
@@ -95,7 +98,6 @@ export class TTThink extends TTObject {
     try {
       await StorageManager.instance.save({
         id:          this.ID,
-        vaultId:     this.VaultID,
         contentType: this.ContentType,
         fullContent: this.Content,
         keywords:    this.Keywords,

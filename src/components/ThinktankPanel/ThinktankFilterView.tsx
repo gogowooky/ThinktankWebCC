@@ -4,13 +4,12 @@
  */
 
 import { useState, useMemo } from 'react';
-import { TTVault } from '../../models/TTVault';
 import { ThoughtsList } from './ThoughtsList';
 import type { TTThink } from '../../models/TTThink';
 import './ThinktankFilterView.css';
 
 interface Props {
-  vault: TTVault;
+  thinks: TTThink[];
   selectedId: string;
   checkedIds: string[];
   onSelect: (id: string) => void;
@@ -18,27 +17,33 @@ interface Props {
 }
 
 export function ThinktankFilterView({
-  vault, selectedId, checkedIds, onSelect, onToggleCheck,
+  thinks, selectedId, checkedIds, onSelect, onToggleCheck,
 }: Props) {
   const [titleQuery, setTitleQuery] = useState('');
   const [dateFrom,   setDateFrom]   = useState('');
   const [dateTo,     setDateTo]     = useState('');
 
   const filtered = useMemo<TTThink[]>(() => {
-    let items = vault.GetThinks();
+    let items = thinks;
 
     if (titleQuery.trim()) {
       const q = titleQuery.trim().toLowerCase();
       items = items.filter(t => t.Name.toLowerCase().includes(q));
     }
     if (dateFrom) {
-      items = items.filter(t => t.ID >= dateFrom.replace(/-/g, '-').slice(0, 10));
+      items = items.filter(t => {
+        const d = t.UpdatedAt ? t.UpdatedAt.slice(0, 10) : t.ID.slice(0, 10);
+        return d >= dateFrom;
+      });
     }
     if (dateTo) {
-      items = items.filter(t => t.ID.slice(0, 10) <= dateTo);
+      items = items.filter(t => {
+        const d = t.UpdatedAt ? t.UpdatedAt.slice(0, 10) : t.ID.slice(0, 10);
+        return d <= dateTo;
+      });
     }
     return items;
-  }, [vault, titleQuery, dateFrom, dateTo]);
+  }, [thinks, titleQuery, dateFrom, dateTo]);
 
   return (
     <div className="tt-filter-view">

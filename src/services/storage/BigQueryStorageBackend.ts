@@ -15,16 +15,14 @@ function splitContent(fullContent: string): { title: string; body: string } {
 export class BigQueryStorageBackend implements IStorageBackend {
   private readonly base = '/api/bq';
 
-  async listMeta(vaultId: string): Promise<ThinkMeta[]> {
-    const res = await fetch(`${this.base}/files/meta?vaultId=${encodeURIComponent(vaultId)}`);
+  async listMeta(): Promise<ThinkMeta[]> {
+    const res = await fetch(`${this.base}/files/meta`);
     if (!res.ok) throw new Error(`BQ listMeta failed: ${res.status}`);
     return res.json() as Promise<ThinkMeta[]>;
   }
 
-  async getContent(vaultId: string, id: string): Promise<string | null> {
-    const res = await fetch(
-      `${this.base}/files/${encodeURIComponent(id)}/content?vaultId=${encodeURIComponent(vaultId)}`
-    );
+  async getContent(id: string): Promise<string | null> {
+    const res = await fetch(`${this.base}/files/${encodeURIComponent(id)}/content`);
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`BQ getContent failed: ${res.status}`);
     return res.json() as Promise<string>;
@@ -37,7 +35,6 @@ export class BigQueryStorageBackend implements IStorageBackend {
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
         id:          payload.id,
-        vaultId:     payload.vaultId,
         contentType: payload.contentType,
         title,
         content:     body,
@@ -49,17 +46,17 @@ export class BigQueryStorageBackend implements IStorageBackend {
     return res.json() as Promise<ThinkMeta>;
   }
 
-  async delete(vaultId: string, id: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     const res = await fetch(
-      `${this.base}/files/${encodeURIComponent(id)}?vaultId=${encodeURIComponent(vaultId)}`,
+      `${this.base}/files/${encodeURIComponent(id)}`,
       { method: 'DELETE' }
     );
     if (!res.ok && res.status !== 404) throw new Error(`BQ delete failed: ${res.status}`);
   }
 
-  async search(vaultId: string, query: string): Promise<ThinkMeta[]> {
+  async search(query: string): Promise<ThinkMeta[]> {
     const res = await fetch(
-      `${this.base}/files/search?vaultId=${encodeURIComponent(vaultId)}&q=${encodeURIComponent(query)}`
+      `${this.base}/files/search?q=${encodeURIComponent(query)}`
     );
     if (!res.ok) throw new Error(`BQ search failed: ${res.status}`);
     return res.json() as Promise<ThinkMeta[]>;

@@ -1,8 +1,7 @@
 /**
  * bigqueryRoutes.ts (v5)
  * thinktank.vault に対する CRUD API ルート
- * LocalFS API（C# port 8081）と同じ URL パターンに揃えることで
- * BigQueryStorageBackend と LocalStorageBackend のインターフェースを統一する
+ * vault_id フィールド廃止済み
  */
 
 import { Router } from 'express';
@@ -13,78 +12,70 @@ import type { VaultRecord } from '../services/BigQueryService.js';
 function toMeta(r: VaultRecord) {
   return {
     id:          r.file_id,
-    vaultId:     r.vault_id,
     contentType: r.category,
     title:       r.title ?? '',
     keywords:    r.keywords ?? '',
     relatedIds:  r.related_ids ?? '',
     sizeBytes:   r.size_bytes ?? 0,
     isDeleted:   r.is_deleted ?? false,
-    createdAt:   typeof r.created_at === 'object'
-                   ? (r.created_at as unknown as { value: string }).value
-                   : String(r.created_at),
-    updatedAt:   typeof r.updated_at === 'object'
-                   ? (r.updated_at as unknown as { value: string }).value
-                   : String(r.updated_at),
+    createdAt:   r.created_at == null ? '' :
+                   typeof r.created_at === 'object'
+                     ? (r.created_at as unknown as { value: string }).value
+                     : String(r.created_at),
+    updatedAt:   r.updated_at == null ? '' :
+                   typeof r.updated_at === 'object'
+                     ? (r.updated_at as unknown as { value: string }).value
+                     : String(r.updated_at),
   };
 }
 
 export function createBigQueryRoutes() {
   const router = Router();
 
-  // GET /api/bq/files/meta?vaultId=  ← メタデータのみ（content なし）
-  router.get('/files/meta', async (req: Request, res: Response) => {
-    const vaultId = req.query['vaultId'] as string;
-    if (!vaultId) { res.status(400).json({ error: 'vaultId required' }); return; }
-    const result = await bigqueryService.listMeta(vaultId);
+  // GET /api/bq/files/meta  ← メタデータのみ（content なし）
+  router.get('/files/meta', async (_req: Request, res: Response) => {
+    const result = await bigqueryService.listMeta();
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     res.json(result.data.map(toMeta));
   });
 
-  // GET /api/bq/files/search?vaultId=&q=  ← 全文検索
+  // GET /api/bq/files/search?q=  ← 全文検索
   router.get('/files/search', async (req: Request, res: Response) => {
-    const vaultId = req.query['vaultId'] as string;
-    const q       = (req.query['q'] as string) ?? '';
-    if (!vaultId) { res.status(400).json({ error: 'vaultId required' }); return; }
-    const result = await bigqueryService.search(vaultId, q);
+    const q = (req.query['q'] as string) ?? '';
+    const result = await bigqueryService.search(q);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     res.json(result.data.map(toMeta));
   });
 
-  // GET /api/bq/files/:id/content?vaultId=  ← 本文のみ取得
+  // GET /api/bq/files/:id/content  ← 本文のみ取得
   router.get('/files/:id/content', async (req: Request, res: Response) => {
-    const vaultId = req.query['vaultId'] as string;
-    const fileId  = Array.isArray(req.params['id']) ? req.params['id'][0] : req.params['id'];
-    if (!vaultId) { res.status(400).json({ error: 'vaultId required' }); return; }
-    const result = await bigqueryService.getContent(vaultId, fileId);
+    const fileId = Array.isArray(req.params['id']) ? req.params['id'][0] : req.params['id'];
+    const result = await bigqueryService.getContent(fileId);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     if (result.data === null) { res.status(404).json({ error: 'not found' }); return; }
     res.json(result.data);
   });
 
-  // GET /api/bq/files?vaultId=  ← フルレコード一覧（meta のみで代用）
-  router.get('/files', async (req: Request, res: Response) => {
-    const vaultId = req.query['vaultId'] as string;
-    if (!vaultId) { res.status(400).json({ error: 'vaultId required' }); return; }
-    const result = await bigqueryService.listMeta(vaultId);
+  // GET /api/bq/files  ← フルレコード一覧（meta のみで代用）
+  router.get('/files', async (_req: Request, res: Response) => {
+    const result = await bigqueryService.listMeta();
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     res.json(result.data.map(toMeta));
   });
 
   // POST /api/bq/files  ← 保存（Upsert）
   router.post('/files', async (req: Request, res: Response) => {
-    const { id, vaultId, contentType, title, content, keywords, relatedIds } = req.body as {
-      id: string; vaultId: string; contentType: string;
+    const { id, contentType, title, content, keywords, relatedIds } = req.body as {
+      id: string; contentType: string;
       title: string; content: string;
       keywords?: string; relatedIds?: string;
     };
-    if (!id || !vaultId || !contentType) {
-      res.status(400).json({ error: 'id, vaultId, contentType are required' }); return;
+    if (!id || !contentType) {
+      res.status(400).json({ error: 'id, contentType are required' }); return;
     }
     const now = new Date().toISOString();
     const record: VaultRecord = {
       file_id:     id,
-      vault_id:    vaultId,
       file_type:   'md',
       category:    contentType,
       title:       title ?? null,
@@ -101,12 +92,10 @@ export function createBigQueryRoutes() {
     res.json(toMeta(record));
   });
 
-  // DELETE /api/bq/files/:id?vaultId=  ← 削除（論理削除）
+  // DELETE /api/bq/files/:id  ← 削除（論理削除）
   router.delete('/files/:id', async (req: Request, res: Response) => {
-    const vaultId = req.query['vaultId'] as string;
-    const fileId  = Array.isArray(req.params['id']) ? req.params['id'][0] : req.params['id'];
-    if (!vaultId) { res.status(400).json({ error: 'vaultId required' }); return; }
-    const result = await bigqueryService.delete(vaultId, fileId);
+    const fileId = Array.isArray(req.params['id']) ? req.params['id'][0] : req.params['id'];
+    const result = await bigqueryService.delete(fileId);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     res.json({ success: true });
   });

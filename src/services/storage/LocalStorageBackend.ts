@@ -2,6 +2,7 @@
  * LocalStorageBackend.ts
  * C# LocalFS API（ThinktankLocalApi, port 8081）を呼ぶストレージバックエンド
  * window.__THINKTANK_LOCAL_API__ でベース URL を取得する
+ * C# 側 API は引き続き vaultId='vault' を受け取る（互換維持のため固定渡し）
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
@@ -21,10 +22,11 @@ interface CsThinkRecord {
   updatedAt:   string;
 }
 
+const VAULT_ID = 'vault';
+
 function toMeta(r: CsThinkRecord): ThinkMeta {
   return {
     id:          r.id,
-    vaultId:     r.vaultId,
     contentType: r.contentType,
     title:       r.title ?? '',
     keywords:    r.keywords ?? '',
@@ -46,20 +48,21 @@ export class LocalStorageBackend implements IStorageBackend {
   private readonly baseUrl: string;
 
   constructor(baseUrl: string) {
-    // 末尾スラッシュを除去
     this.baseUrl = baseUrl.replace(/\/$/, '');
   }
 
-  async listMeta(vaultId: string): Promise<ThinkMeta[]> {
-    const res = await fetch(`${this.baseUrl}/api/files/meta?vaultId=${encodeURIComponent(vaultId)}`);
+  async listMeta(): Promise<ThinkMeta[]> {
+    const res = await fetch(
+      `${this.baseUrl}/api/files/meta?vaultId=${encodeURIComponent(VAULT_ID)}`
+    );
     if (!res.ok) throw new Error(`listMeta failed: ${res.status}`);
     const data = (await res.json()) as CsThinkRecord[];
     return data.map(toMeta);
   }
 
-  async getContent(vaultId: string, id: string): Promise<string | null> {
+  async getContent(id: string): Promise<string | null> {
     const res = await fetch(
-      `${this.baseUrl}/api/files/${encodeURIComponent(id)}/content?vaultId=${encodeURIComponent(vaultId)}`
+      `${this.baseUrl}/api/files/${encodeURIComponent(id)}/content?vaultId=${encodeURIComponent(VAULT_ID)}`
     );
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`getContent failed: ${res.status}`);
@@ -68,36 +71,35 @@ export class LocalStorageBackend implements IStorageBackend {
 
   async save(payload: SavePayload): Promise<ThinkMeta> {
     const { title, body } = splitContent(payload.fullContent);
-    const body_ = {
-      id:          payload.id,
-      vaultId:     payload.vaultId,
-      contentType: payload.contentType,
-      title,
-      content:     body,
-      keywords:    payload.keywords || null,
-      relatedIds:  payload.relatedIds || null,
-    };
     const res = await fetch(`${this.baseUrl}/api/files`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(body_),
+      body:    JSON.stringify({
+        id:          payload.id,
+        vaultId:     VAULT_ID,
+        contentType: payload.contentType,
+        title,
+        content:     body,
+        keywords:    payload.keywords || null,
+        relatedIds:  payload.relatedIds || null,
+      }),
     });
     if (!res.ok) throw new Error(`save failed: ${res.status}`);
     const record = (await res.json()) as CsThinkRecord;
     return toMeta(record);
   }
 
-  async delete(vaultId: string, id: string): Promise<void> {
+  async delete(id: string): Promise<void> {
     const res = await fetch(
-      `${this.baseUrl}/api/files/${encodeURIComponent(id)}?vaultId=${encodeURIComponent(vaultId)}`,
+      `${this.baseUrl}/api/files/${encodeURIComponent(id)}?vaultId=${encodeURIComponent(VAULT_ID)}`,
       { method: 'DELETE' }
     );
     if (!res.ok && res.status !== 404) throw new Error(`delete failed: ${res.status}`);
   }
 
-  async search(vaultId: string, query: string): Promise<ThinkMeta[]> {
+  async search(query: string): Promise<ThinkMeta[]> {
     const res = await fetch(
-      `${this.baseUrl}/api/files/search?vaultId=${encodeURIComponent(vaultId)}&q=${encodeURIComponent(query)}`
+      `${this.baseUrl}/api/files/search?vaultId=${encodeURIComponent(VAULT_ID)}&q=${encodeURIComponent(query)}`
     );
     if (!res.ok) throw new Error(`search failed: ${res.status}`);
     const data = (await res.json()) as CsThinkRecord[];

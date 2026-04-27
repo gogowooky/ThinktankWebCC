@@ -17,6 +17,7 @@ import { ThoughtsList, applyFilter } from './ThoughtsList';
 import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchView } from './ThinktankSearchView';
 import { ThinktankAiView } from './ThinktankAiView';
+import { ThinktankSettingsView } from './ThinktankSettingsView';
 
 interface Props {
   app: TTApplication;
@@ -46,7 +47,7 @@ export function ThinktankArea({ app }: Props) {
   if (panel.ViewMode === 'filter') {
     return (
       <ThinktankFilterView
-        vault={vault}
+        thinks={vault.GetThinks()}
         selectedId={panel.SelectedThoughtID}
         checkedIds={panel.CheckedThoughtIDs}
         onSelect={handleSelect}
@@ -69,6 +70,10 @@ export function ThinktankArea({ app }: Props) {
 
   if (panel.ViewMode === 'ai') {
     return <ThinktankAiView />;
+  }
+
+  if (panel.ViewMode === 'settings') {
+    return <ThinktankSettingsView />;
   }
 
   // デフォルト: thoughts モード（ContentType='thought' のみ）

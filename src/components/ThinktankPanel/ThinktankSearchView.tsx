@@ -32,13 +32,13 @@ export function ThinktankSearchView({
     if (!q) return;
     setLoading(true);
     try {
-      const metas = await StorageManager.instance.search(vault.ID, q);
+      const metas = await StorageManager.instance.search(q);
       const thinks = metas.map(meta => {
         const existing = vault.GetThink(meta.id);
         if (existing) return existing;
         const t = new TTThink();
         t.ID          = meta.id;
-        t.VaultID     = meta.vaultId || vault.ID;
+        t.VaultID     = vault.ID;
         t.ContentType = meta.contentType as TTThink['ContentType'];
         t.Keywords    = meta.keywords ?? '';
         t.RelatedIDs  = meta.relatedIds ?? '';
