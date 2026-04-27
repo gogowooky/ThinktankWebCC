@@ -1,0 +1,15 @@
+/* ThinktankArea.css */
+
+.thinktank-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.thinktank-area__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

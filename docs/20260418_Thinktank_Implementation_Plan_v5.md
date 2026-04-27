@@ -1163,6 +1163,27 @@ ThinktankRibbonに上部4ボタン・下部3ボタンを追加した。
 
 ---
 
+#### 各エリアへのMenuRibbonの追加
+
+ThinktankArea・OverviewArea・ToDoArea の最上部に、パネルテーマ色を適用した水平リボン（MenuRibbon）を追加。WorkoutAreaRibbon の高さも同じ 30px に統一した。
+
+**共通ベースCSS** (`src/components/Layout/MenuRibbon.css`):
+
+- `height: 30px; flex-shrink: 0` の水平 flexbox
+- `.menu-ribbon__btn` / `.menu-ribbon__sep` / `.menu-ribbon__spacer` / `.menu-ribbon__label` ユーティリティクラスを定義
+
+**各パネルのMenuRibbon**:
+
+| コンポーネント | CSSクラス | 背景色 |
+|---|---|---|
+| `ThinktankMenuRibbon` | `.thinktank-menu-ribbon` | `color-mix(--thinktank-ribbon-bg 80%, --thinktank-area-bg 20%)` |
+| `OverviewMenuRibbon` | `.overview-menu-ribbon` | `color-mix(--overview-ribbon-bg 80%, --overview-area-bg 20%)` |
+| `ToDoMenuRibbon` | `.todo-menu-ribbon` | `color-mix(--todo-ribbon-bg 80%, --todo-area-bg 20%)` |
+
+各Areaコンポーネント（ThinktankArea / OverviewArea / ToDoArea）の return 先頭に対応するMenuRibbonを配置。WorkoutAreaRibbon は `height: 32px → 30px` に修正。
+
+---
+
 ### Phase 13: BigQueryバックエンド（Express + thinktank.vault）
 
 **目標**: クラウドバックエンドをBigQuery `thinktank.vault` に接続する。

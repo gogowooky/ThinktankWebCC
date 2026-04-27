@@ -7,17 +7,20 @@
  * filter   : タイトル・日時フィルター
  * search   : 全文検索
  * ai       : AI相談（Phase 14 で接続）
+ * settings : 保管庫設定
  */
 
 import { useCallback } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
 import { ThoughtsFilter } from './ThoughtsFilter';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
 import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchView } from './ThinktankSearchView';
 import { ThinktankAiView } from './ThinktankAiView';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
+import './ThinktankArea.css';
 
 interface Props {
   app: TTApplication;
@@ -42,10 +45,12 @@ export function ThinktankArea({ app }: Props) {
     panel.SetFilter(value);
   }, [panel]);
 
-  // ── モード別レンダリング ─────────────────────────────────────────────
+  // ── モード別コンテンツ ───────────────────────────────────────────────
+
+  let content: React.ReactNode;
 
   if (panel.ViewMode === 'filter') {
-    return (
+    content = (
       <ThinktankFilterView
         thinks={vault.GetThinks()}
         selectedId={panel.SelectedThoughtID}
@@ -54,10 +59,8 @@ export function ThinktankArea({ app }: Props) {
         onToggleCheck={handleToggleCheck}
       />
     );
-  }
-
-  if (panel.ViewMode === 'search') {
-    return (
+  } else if (panel.ViewMode === 'search') {
+    content = (
       <ThinktankSearchView
         vault={vault}
         selectedId={panel.SelectedThoughtID}
@@ -66,33 +69,37 @@ export function ThinktankArea({ app }: Props) {
         onToggleCheck={handleToggleCheck}
       />
     );
+  } else if (panel.ViewMode === 'ai') {
+    content = <ThinktankAiView />;
+  } else if (panel.ViewMode === 'settings') {
+    content = <ThinktankSettingsView />;
+  } else {
+    // デフォルト: thoughts モード（ContentType='thought' のみ）
+    const allThoughts = vault.GetThoughts();
+    const filtered    = applyFilter(allThoughts, panel.Filter);
+    content = (
+      <>
+        <ThoughtsFilter
+          value={panel.Filter}
+          onChange={handleFilterChange}
+        />
+        <ThoughtsList
+          thoughts={filtered}
+          selectedId={panel.SelectedThoughtID}
+          checkedIds={panel.CheckedThoughtIDs}
+          onSelect={handleSelect}
+          onToggleCheck={handleToggleCheck}
+        />
+      </>
+    );
   }
-
-  if (panel.ViewMode === 'ai') {
-    return <ThinktankAiView />;
-  }
-
-  if (panel.ViewMode === 'settings') {
-    return <ThinktankSettingsView />;
-  }
-
-  // デフォルト: thoughts モード（ContentType='thought' のみ）
-  const allThoughts = vault.GetThoughts();
-  const filtered    = applyFilter(allThoughts, panel.Filter);
 
   return (
-    <>
-      <ThoughtsFilter
-        value={panel.Filter}
-        onChange={handleFilterChange}
-      />
-      <ThoughtsList
-        thoughts={filtered}
-        selectedId={panel.SelectedThoughtID}
-        checkedIds={panel.CheckedThoughtIDs}
-        onSelect={handleSelect}
-        onToggleCheck={handleToggleCheck}
-      />
-    </>
+    <div className="thinktank-area">
+      <ThinktankMenuRibbon />
+      <div className="thinktank-area__body">
+        {content}
+      </div>
+    </div>
   );
 }

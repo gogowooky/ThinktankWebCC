@@ -3,7 +3,7 @@
 .workout-area-ribbon {
   display: flex;
   align-items: center;
-  height: 32px;
+  height: 30px;
   padding: 0 6px;
   background: var(--workout-ribbon-bg);
   color: rgba(255, 255, 255, 0.85);

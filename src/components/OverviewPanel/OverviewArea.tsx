@@ -11,6 +11,7 @@ import { useCallback } from 'react';
 import { BookOpen } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { MarkdownMedia } from '../WorkoutPanel/media/MarkdownMedia';
 import { DataGridMedia } from '../WorkoutPanel/media/DataGridMedia';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
@@ -42,6 +43,9 @@ export function OverviewArea({ app }: Props) {
 
   return (
     <div className="overview-area">
+
+      {/* ── メニューリボン ─────────────────────────────────────── */}
+      <OverviewMenuRibbon />
 
       {/* ── Thought セレクター ─────────────────────────────────── */}
       <div className="overview-area__selector">

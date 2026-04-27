@@ -1,0 +1,6 @@
+/* OverviewMenuRibbon.css */
+
+.overview-menu-ribbon {
+  background: color-mix(in srgb, var(--overview-ribbon-bg) 80%, var(--overview-area-bg) 20%);
+  color: rgba(255, 255, 255, 0.9);
+}

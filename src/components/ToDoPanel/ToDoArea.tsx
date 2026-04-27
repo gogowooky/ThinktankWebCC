@@ -10,6 +10,7 @@ import { BookOpen, FileText } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ToDoChat } from './ToDoChat';
+import { ToDoMenuRibbon } from './ToDoMenuRibbon';
 import './ToDoArea.css';
 
 interface Props {
@@ -32,6 +33,9 @@ export function ToDoArea({ app }: Props) {
 
   return (
     <div className="todo-area">
+
+      {/* ── メニューリボン ─────────────────────────────────────── */}
+      <ToDoMenuRibbon />
 
       {/* ── コンテキストバー ─────────────────────────────────── */}
       <div className={`todo-area__context${hasContext ? '' : ' todo-area__context--empty'}`}>

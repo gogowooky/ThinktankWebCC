@@ -1,0 +1,6 @@
+/* ToDoMenuRibbon.css */
+
+.todo-menu-ribbon {
+  background: color-mix(in srgb, var(--todo-ribbon-bg) 80%, var(--todo-area-bg) 20%);
+  color: rgba(255, 255, 255, 0.9);
+}

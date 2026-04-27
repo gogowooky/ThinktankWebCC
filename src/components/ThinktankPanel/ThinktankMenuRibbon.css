@@ -1,0 +1,6 @@
+/* ThinktankMenuRibbon.css */
+
+.thinktank-menu-ribbon {
+  background: color-mix(in srgb, var(--thinktank-ribbon-bg) 80%, var(--thinktank-area-bg) 20%);
+  color: rgba(255, 255, 255, 0.9);
+}
