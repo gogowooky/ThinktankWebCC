@@ -72,7 +72,13 @@
       "PowerShell(Stop-Process -Id 38724 -Force -ErrorAction SilentlyContinue)",
       "Bash(gh auth *)",
       "Bash(gh repo *)",
-      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\dotnet;\" + $env:PATH; $proc = Start-Process -FilePath \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" -ArgumentList \"run\",\"--project\",\"ThinktankLocalApi\\\\ThinktankLocalApi.csproj\",\"--urls\",\"http://localhost:8081\" -WorkingDirectory \"C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankLocal\" -WindowStyle Hidden -PassThru; Write-Output \"PID: $\\($proc.Id\\)\")"
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\dotnet;\" + $env:PATH; $proc = Start-Process -FilePath \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" -ArgumentList \"run\",\"--project\",\"ThinktankLocalApi\\\\ThinktankLocalApi.csproj\",\"--urls\",\"http://localhost:8081\" -WorkingDirectory \"C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankLocal\" -WindowStyle Hidden -PassThru; Write-Output \"PID: $\\($proc.Id\\)\")",
+      "Bash(npm run *)",
+      "Bash(echo \"Server PID: $!\")",
+      "Bash(curl -s \"http://localhost:8080/api/bq/files/meta?vaultId=vault\")",
+      "Bash(curl -s \"http://localhost:8080/api/health\")",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -X POST http://localhost:8080/api/bq/files -H 'Content-Type: application/json' -d '{\"id\":\"2026-04-27-100000\",\"vaultId\":\"vault\",\"contentType\":\"thought\",\"title\":\"テストThought\",\"content\":\"テスト本文\",\"keywords\":\"test\",\"relatedIds\":\"\"}')"
     ]
   }
 }

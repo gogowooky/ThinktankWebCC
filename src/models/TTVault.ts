@@ -12,6 +12,7 @@ import { TTCollection } from './TTCollection';
 import { TTThink } from './TTThink';
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
+import { StorageManager } from '../services/storage/StorageManager';
 
 export class TTVault extends TTCollection {
   /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
@@ -91,6 +92,34 @@ export class TTVault extends TTCollection {
 
   protected override CreateChildInstance(): TTObject {
     return new TTThink();
+  }
+
+  // ── ストレージ連携（Phase 13）────────────────────────────────────────
+
+  public override async LoadCache(): Promise<void> {
+    try {
+      const metas = await StorageManager.instance.listMeta(this.ID);
+      for (const meta of metas) {
+        const think = new TTThink();
+        think.ID          = meta.id;
+        think.VaultID     = meta.vaultId || this.ID;
+        think.ContentType = meta.contentType as ContentType;
+        think.Keywords    = meta.keywords  ?? '';
+        think.RelatedIDs  = meta.relatedIds ?? '';
+        think.IsMetaOnly  = true;
+        think.setContentSilent(meta.title);
+        think.markSaved();
+        think._parent = this;
+        this._children.set(think.ID, think);
+      }
+      this.Count    = this._children.size;
+      this.IsLoaded = true;
+      super.NotifyUpdated(false);
+      console.log(`[TTVault] LoadCache: ${this.Count} items loaded (vault=${this.ID})`);
+    } catch (e) {
+      console.error('[TTVault] LoadCache failed:', e);
+      this.IsLoaded = true;
+    }
   }
 
   // ── LocalFS パスユーティリティ ─────────────────────────────────────

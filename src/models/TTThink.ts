@@ -9,6 +9,7 @@
 
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
+import { StorageManager } from '../services/storage/StorageManager';
 
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
@@ -73,16 +74,37 @@ export class TTThink extends TTObject {
     this._savedContent = this._content;
   }
 
-  // ── ストレージ連携（Phase 12 で接続） ──────────────────────────────
+  // ── ストレージ連携（Phase 13）──────────────────────────────────────
 
   public async LoadContent(): Promise<void> {
+    if (!this.IsMetaOnly) return;
+    try {
+      const body = await StorageManager.instance.getContent(this.VaultID, this.ID);
+      if (body !== null) {
+        this.setContentSilent(this.Name + '\n' + body);
+        this.markSaved();
+      }
+    } catch (e) {
+      console.error(`[TTThink] LoadContent failed (${this.ID}):`, e);
+    }
     this.IsMetaOnly = false;
-    this._savedContent = this._content;
   }
 
   public async SaveContent(): Promise<void> {
     if (!this.IsDirty) return;
-    this.markSaved();
+    try {
+      await StorageManager.instance.save({
+        id:          this.ID,
+        vaultId:     this.VaultID,
+        contentType: this.ContentType,
+        fullContent: this.Content,
+        keywords:    this.Keywords,
+        relatedIds:  this.RelatedIDs,
+      });
+      this.markSaved();
+    } catch (e) {
+      console.error(`[TTThink] SaveContent failed (${this.ID}):`, e);
+    }
   }
 
   // ── ヘルパー ───────────────────────────────────────────────────────
