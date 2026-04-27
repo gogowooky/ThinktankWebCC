@@ -886,10 +886,43 @@ WorkoutPanel
 
 **目標**: WPFアプリケーションのシェルを構築し、WebView2でReact SPAを表示する。
 
-**新規作成/更新**（v4 Phase 20相当、引継ぎ・整備）:
+**前提条件**:
 
-- `ThinktankLocal/ThinktankLocal/MainWindow.xaml` - フルスクリーンWebView2
+- **.NET 8 SDK**（Windows x64）のインストールが必要
+  - ダウンロード: https://dotnet.microsoft.com/download/dotnet/8.0 → SDK → Windows → x64 インストーラー
+  - インストール後、PowerShellを再起動してPATHに `C:\Program Files\dotnet` が通っていることを確認
+  - 確認コマンド: `dotnet --version`
+- **NuGetパッケージ**: `Microsoft.Web.WebView2`（dotnet restoreで自動取得）
+
+**プロジェクト配置**:
+
+`ThinktankWebCC/` と同一親ディレクトリに `ThinktankLocal/` を作成する（兄弟関係）。
+
+```
+Documents/
+├── ThinktankWebCC/    ← React フロントエンド（本リポジトリ）
+└── ThinktankLocal/    ← C# ローカルアプリ（Phase 11 で新規作成）
+```
+
+**新規作成**:
+
+- `ThinktankLocal/ThinktankLocal.sln` - ソリューションファイル（ThinktankLocal + ThinktankLocalApi を含む）
+- `ThinktankLocal/ThinktankLocal/ThinktankLocal.csproj` - WPF プロジェクト（net8.0-windows、Microsoft.Web.WebView2参照）
+- `ThinktankLocal/ThinktankLocal/app.manifest` - DPI対応（PerMonitorV2）・UAC設定
+- `ThinktankLocal/ThinktankLocal/App.xaml` - Applicationエントリポイント（StartupUri不使用、OnStartupでMainWindowを生成）
 - `ThinktankLocal/ThinktankLocal/App.xaml.cs` - C# local API起動 → WebView2起動 → JS変数注入
+- `ThinktankLocal/ThinktankLocal/MainWindow.xaml` - フルスクリーンWebView2（WindowStyle="None"、WindowState="Maximized"）
+- `ThinktankLocal/ThinktankLocal/MainWindow.xaml.cs` - WebView2ナビゲーション＋NavigationCompletedでJS注入
+- `ThinktankLocal/ThinktankLocalApi/ThinktankLocalApi.csproj` - ASP.NET Core スタブ（Phase 12 で本実装）
+- `ThinktankLocal/ThinktankLocalApi/Program.cs` - `/api/health` のみのスタブ（ソリューションビルドを通すため必須）
+
+> **注意**: ソリューションに ThinktankLocalApi が含まれるため、Phase 12 実装前でも当プロジェクトのスタブが存在しないとビルドが通らない。
+
+**App.xaml.cs の起動シーケンス**:
+
+1. `ThinktankLocalApi.exe` が存在すれば起動（ない場合はスキップ）
+2. `MainWindow` を生成・表示
+3. WPF終了時に API プロセスを Kill
 
 **モード注入**:
 
@@ -899,9 +932,18 @@ window.__THINKTANK_MODE__ = 'local';
 window.__THINKTANK_LOCAL_API__ = 'http://localhost:8081';
 ```
 
+**ビルド・実行コマンド**:
+
+```powershell
+cd "C:\Users\{ユーザー名}\Documents\ThinktankLocal"
+dotnet build                                                   # ビルド
+dotnet run --project ThinktankLocal\ThinktankLocal.csproj     # 実行（Vite起動済みであること）
+```
+
 **検証**:
 
-- [ ] WPFアプリが起動してReact SPAが表示される
+- [ ] `dotnet build` が警告・エラー0で完了する
+- [ ] WPFアプリが起動してReact SPA（http://localhost:5173）が表示される
 - [ ] DevToolsでJS変数が注入されていることを確認
 
 ---
