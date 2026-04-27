@@ -8,6 +8,13 @@
 
 import { TTObject } from '../models/TTObject';
 
+/** ThinktankArea の表示モード */
+export type ThinktankViewMode =
+  | 'thoughts'  // Thoughtデータのみ表示（デフォルト）
+  | 'filter'    // タイトル・日時でフィルター
+  | 'search'    // 全文検索
+  | 'ai';       // AI相談（Phase 14 で接続）
+
 export class TTThinktankPanel extends TTObject {
   /** ThinktankAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
@@ -20,6 +27,9 @@ export class TTThinktankPanel extends TTObject {
 
   /** Thoughts絞り込みテキスト */
   public Filter: string = '';
+
+  /** ThinktankArea の表示モード */
+  public ViewMode: ThinktankViewMode = 'thoughts';
 
   public override get ClassName(): string {
     return 'TTThinktankPanel';
@@ -89,6 +99,14 @@ export class TTThinktankPanel extends TTObject {
   /** 全チェックをクリアする */
   public ClearChecks(): void {
     this.CheckedThoughtIDs = [];
+    this.NotifyUpdated();
+  }
+
+  // ── 表示モード ────────────────────────────────────────────────────────
+
+  /** 表示モードを切り替える */
+  public SetViewMode(mode: ThinktankViewMode): void {
+    this.ViewMode = mode;
     this.NotifyUpdated();
   }
 

@@ -1,28 +1,39 @@
 /**
  * ThinktankRibbon.tsx
- * Phase 6: ThinktankPanel の Ribbon ボタン群。
- * 下部に同期インジケーター・起動モード・設定アイコンを表示する。
+ * ThinktankPanel の Ribbon ボタン群。
+ *
+ * 上部: AI / Filter / Search / Thoughts の4モードボタン
+ * 下部: 同期インジケーター / 起動モード / 設定
  */
 
-import { Monitor, Globe, Settings, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock } from 'lucide-react';
+import {
+  Sparkles, Filter, Search, Brain,
+  Monitor, Globe, Settings,
+  CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock,
+} from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import { StorageManager } from '../../services/storage/StorageManager';
+import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
 import type { SyncState } from '../../types';
 import './ThinktankRibbon.css';
 
 interface Props {
   isOpen: boolean;
   onToggle: () => void;
+  viewMode: ThinktankViewMode;
+  onSetViewMode: (mode: ThinktankViewMode) => void;
   syncState?: SyncState;
 }
 
+// ── 同期インジケーター ──────────────────────────────────────────────────
+
 function SyncIcon({ state }: { state: SyncState }) {
   switch (state) {
-    case 'synced':   return <CheckCircle  size={15} />;
-    case 'syncing':  return <RefreshCw    size={15} className="spin" />;
-    case 'pending':  return <Clock        size={15} />;
-    case 'error':    return <AlertCircle  size={15} />;
-    case 'offline':  return <WifiOff      size={15} />;
+    case 'synced':  return <CheckCircle size={15} />;
+    case 'syncing': return <RefreshCw   size={15} className="spin" />;
+    case 'pending': return <Clock       size={15} />;
+    case 'error':   return <AlertCircle size={15} />;
+    case 'offline': return <WifiOff     size={15} />;
   }
 }
 
@@ -34,7 +45,28 @@ const SYNC_LABEL: Record<SyncState, string> = {
   offline: 'オフライン',
 };
 
-export function ThinktankRibbon({ isOpen, onToggle, syncState = 'synced' }: Props) {
+// ── メインボタン定義 ────────────────────────────────────────────────────
+
+const MODE_BUTTONS: {
+  mode: ThinktankViewMode;
+  icon: React.ReactNode;
+  label: string;
+}[] = [
+  { mode: 'ai',      icon: <Sparkles size={16} />, label: 'AI相談' },
+  { mode: 'filter',  icon: <Filter   size={16} />, label: 'フィルター（タイトル・日時）' },
+  { mode: 'search',  icon: <Search   size={16} />, label: '全文検索（内容）' },
+  { mode: 'thoughts',icon: <Brain    size={16} />, label: 'Thoughtsのみ表示' },
+];
+
+// ── コンポーネント ──────────────────────────────────────────────────────
+
+export function ThinktankRibbon({
+  isOpen,
+  onToggle,
+  viewMode,
+  onSetViewMode,
+  syncState = 'synced',
+}: Props) {
   const mode = StorageManager.instance.mode;
 
   return (
@@ -45,7 +77,6 @@ export function ThinktankRibbon({ isOpen, onToggle, syncState = 'synced' }: Prop
       onToggle={onToggle}
       bottomChildren={
         <>
-          {/* 同期インジケーター */}
           <button
             className={`ribbon-icon-btn ribbon-icon-btn--sync ribbon-icon-btn--${syncState}`}
             title={SYNC_LABEL[syncState]}
@@ -53,8 +84,6 @@ export function ThinktankRibbon({ isOpen, onToggle, syncState = 'synced' }: Prop
           >
             <SyncIcon state={syncState} />
           </button>
-
-          {/* 起動モード */}
           <button
             className="ribbon-icon-btn ribbon-icon-btn--mode"
             title={mode === 'local' ? 'Localモード' : 'PWAモード'}
@@ -62,8 +91,6 @@ export function ThinktankRibbon({ isOpen, onToggle, syncState = 'synced' }: Prop
           >
             {mode === 'local' ? <Monitor size={15} /> : <Globe size={15} />}
           </button>
-
-          {/* 設定 */}
           <button
             className="ribbon-icon-btn"
             title="設定"
@@ -74,7 +101,17 @@ export function ThinktankRibbon({ isOpen, onToggle, syncState = 'synced' }: Prop
         </>
       }
     >
-      {/* Phase 16 以降: Think 抽出、全文検索ボタンをここに追加 */}
+      {MODE_BUTTONS.map(({ mode: m, icon, label }) => (
+        <button
+          key={m}
+          className={`ribbon-icon-btn${viewMode === m ? ' ribbon-icon-btn--active' : ''}`}
+          title={label}
+          aria-label={label}
+          onClick={() => onSetViewMode(m)}
+        >
+          {icon}
+        </button>
+      ))}
     </PanelRibbon>
   );
 }

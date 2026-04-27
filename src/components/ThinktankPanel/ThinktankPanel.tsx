@@ -28,7 +28,11 @@ export function ThinktankPanel({ app, width, onResize }: Props) {
   const panel = app.ThinktankPanel;
   useAppUpdate(panel);
 
-  const handleToggle = useCallback(() => panel.ToggleArea(), [panel]);
+  const handleToggle     = useCallback(() => panel.ToggleArea(), [panel]);
+  const handleSetViewMode = useCallback(
+    (m: Parameters<typeof panel.SetViewMode>[0]) => panel.SetViewMode(m),
+    [panel]
+  );
 
   const handleResize = useCallback((dx: number) => {
     onResize(dx);
@@ -39,6 +43,8 @@ export function ThinktankPanel({ app, width, onResize }: Props) {
       <ThinktankRibbon
         isOpen={panel.IsAreaOpen}
         onToggle={handleToggle}
+        viewMode={panel.ViewMode}
+        onSetViewMode={handleSetViewMode}
       />
       <PanelArea
         panelId="thinktank"

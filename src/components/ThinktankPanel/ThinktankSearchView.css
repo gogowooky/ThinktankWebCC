@@ -1,0 +1,61 @@
+/* ThinktankSearchView.css */
+
+.tt-search-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.tt-search-view__bar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 8px 4px;
+  flex-shrink: 0;
+}
+
+.tt-search-view__input {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  font-size: 12px;
+  min-width: 0;
+}
+
+.tt-search-view__input:focus {
+  outline: none;
+  border-color: var(--thinktank-ribbon-bg);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tt-search-view__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background: var(--thinktank-ribbon-bg);
+  color: rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+  transition: opacity 150ms ease;
+}
+
+.tt-search-view__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tt-search-view__btn:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.tt-search-view__status {
+  padding: 16px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}

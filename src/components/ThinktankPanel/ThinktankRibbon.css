@@ -17,6 +17,12 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* アクティブ状態 */
+.ribbon-icon-btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
 /* 同期インジケーター状態別カラー */
 .ribbon-icon-btn--synced  { color: rgba(158, 206, 106, 0.75); }
 .ribbon-icon-btn--syncing { color: rgba(122, 162, 247, 0.9);  }
