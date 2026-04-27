@@ -111,3 +111,7 @@
 .tt-settings-paths__value strong {
   color: var(--text-primary);
 }
+
+.tt-settings-paths__dataset {
+  color: var(--text-muted);
+}

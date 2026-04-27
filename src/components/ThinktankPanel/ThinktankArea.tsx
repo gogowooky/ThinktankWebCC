@@ -2,15 +2,9 @@
  * ThinktankArea.tsx
  * ThinktankPanel のコンテンツエリア。
  * ViewMode に応じて表示を切り替える。
- *
- * thoughts : Thoughtデータのみ表示（デフォルト）
- * filter   : タイトル・日時フィルター
- * search   : 全文検索
- * ai       : AI相談（Phase 14 で接続）
- * settings : 保管庫設定
  */
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
@@ -20,6 +14,7 @@ import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchView } from './ThinktankSearchView';
 import { ThinktankAiView } from './ThinktankAiView';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
+import type { TTThink } from '../../models/TTThink';
 import './ThinktankArea.css';
 
 interface Props {
@@ -33,6 +28,24 @@ export function ThinktankArea({ app }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
+  // filter/search モードの可視アイテムはコールバックで受け取る
+  const [filterVisible, setFilterVisible] = useState<TTThink[]>([]);
+  const [searchVisible, setSearchVisible] = useState<TTThink[]>([]);
+
+  // thoughts モードの可視アイテムはレンダー時に直接計算（setState不要）
+  const allThoughts   = vault.GetThoughts();
+  const thoughtsBase  = applyFilter(allThoughts, panel.Filter);
+  const thoughtsVisible = panel.ShowCheckedOnly
+    ? thoughtsBase.filter(t => panel.CheckedThoughtIDs.includes(t.ID))
+    : thoughtsBase;
+
+  const visibleThinks =
+    panel.ViewMode === 'thoughts' ? thoughtsVisible :
+    panel.ViewMode === 'filter'   ? filterVisible   :
+    panel.ViewMode === 'search'   ? searchVisible   : [];
+
+  // ── ハンドラ ─────────────────────────────────────────────────────────
+
   const handleSelect = useCallback((id: string) => {
     app.OpenThought(id);
   }, [app]);
@@ -45,6 +58,32 @@ export function ThinktankArea({ app }: Props) {
     panel.SetFilter(value);
   }, [panel]);
 
+  const handleCheckAll = useCallback(() => {
+    panel.CheckAll(visibleThinks.map(t => t.ID));
+  }, [panel, visibleThinks]);
+
+  const handleClearChecks = useCallback(() => {
+    panel.ClearChecks();
+  }, [panel]);
+
+  const handleDeleteChecked = useCallback(async () => {
+    if (panel.CheckedThoughtIDs.length === 0) return;
+    if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
+    await vault.DeleteThinks(panel.CheckedThoughtIDs);
+    panel.ClearChecks();
+  }, [panel, vault]);
+
+  const handleToggleCheckedOnly = useCallback(() => {
+    panel.ToggleShowCheckedOnly();
+  }, [panel]);
+
+  const handleCreateThought = useCallback(async () => {
+    if (panel.CheckedThoughtIDs.length === 0) return;
+    const think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);
+    panel.ClearChecks();
+    app.OpenThought(think.ID);
+  }, [panel, vault, app]);
+
   // ── モード別コンテンツ ───────────────────────────────────────────────
 
   let content: React.ReactNode;
@@ -55,8 +94,10 @@ export function ThinktankArea({ app }: Props) {
         thinks={vault.GetThinks()}
         selectedId={panel.SelectedThoughtID}
         checkedIds={panel.CheckedThoughtIDs}
+        checkedOnly={panel.ShowCheckedOnly}
         onSelect={handleSelect}
         onToggleCheck={handleToggleCheck}
+        onVisibleChange={setFilterVisible}
       />
     );
   } else if (panel.ViewMode === 'search') {
@@ -74,9 +115,8 @@ export function ThinktankArea({ app }: Props) {
   } else if (panel.ViewMode === 'settings') {
     content = <ThinktankSettingsView />;
   } else {
-    // デフォルト: thoughts モード（ContentType='thought' のみ）
-    const allThoughts = vault.GetThoughts();
-    const filtered    = applyFilter(allThoughts, panel.Filter);
+    // デフォルト: thoughts モード
+    const displayed = thoughtsVisible;
     content = (
       <>
         <ThoughtsFilter
@@ -84,7 +124,7 @@ export function ThinktankArea({ app }: Props) {
           onChange={handleFilterChange}
         />
         <ThoughtsList
-          thoughts={filtered}
+          thoughts={displayed}
           selectedId={panel.SelectedThoughtID}
           checkedIds={panel.CheckedThoughtIDs}
           onSelect={handleSelect}
@@ -96,7 +136,16 @@ export function ThinktankArea({ app }: Props) {
 
   return (
     <div className="thinktank-area">
-      <ThinktankMenuRibbon />
+      <ThinktankMenuRibbon
+        visibleIds={visibleThinks.map(t => t.ID)}
+        checkedIds={panel.CheckedThoughtIDs}
+        showCheckedOnly={panel.ShowCheckedOnly}
+        onCheckAll={handleCheckAll}
+        onClearChecks={handleClearChecks}
+        onDeleteChecked={handleDeleteChecked}
+        onToggleCheckedOnly={handleToggleCheckedOnly}
+        onCreateThought={handleCreateThought}
+      />
       <div className="thinktank-area__body">
         {content}
       </div>

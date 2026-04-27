@@ -123,6 +123,46 @@ export class TTVault extends TTCollection {
     }
   }
 
+  /** チェックされた ID 群から thought を新規作成して保存する */
+  public async CreateThoughtFromIds(ids: string[], title?: string): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId = TTVault.generateUniqueId(existingIds);
+    const resolvedTitle = (title && title.trim()) ? title.trim() : `Thought ${newId.slice(0, 10)}`;
+    const body  = ids.map(id => `* ${id}`).join('\n');
+    const fullContent = `${resolvedTitle}\n${body}`;
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = 'thought';
+    think.IsMetaOnly  = false;
+    think.setContentSilent(fullContent);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: 'thought',
+      fullContent,
+      keywords:    '',
+      relatedIds:  ids.join(','),
+    });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
+  /** 指定 ID の Think を BQ から削除しメモリからも除去する */
+  public async DeleteThinks(ids: string[]): Promise<void> {
+    await Promise.all(ids.map(id => StorageManager.instance.delete(id)));
+    for (const id of ids) {
+      this._children.delete(id);
+    }
+    this.Count = this._children.size;
+    this.NotifyUpdated();
+  }
+
   // ── LocalFS パスユーティリティ ─────────────────────────────────────
 
   public buildLocalPath(contentType: ContentType, id: string): string {

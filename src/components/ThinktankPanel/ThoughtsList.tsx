@@ -127,9 +127,14 @@ export function ThoughtsList({
                 {thought.Name || '（無題）'}
               </span>
 
+              {/* 作成日(ID) */}
+              <span className="thoughts-list__date" title="作成日(ID)">
+                {thought.ID.slice(0, 10)}
+              </span>
+
               {/* 更新日 */}
-              <span className="thoughts-list__date">
-                {shortDate(thought.UpdateDate)}
+              <span className="thoughts-list__date thoughts-list__date--updated" title="更新日">
+                {thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}
               </span>
             </div>
           );

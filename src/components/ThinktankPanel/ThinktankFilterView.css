@@ -49,3 +49,17 @@
   color: var(--text-muted);
   flex-shrink: 0;
 }
+
+.tt-filter-view__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tt-filter-view__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

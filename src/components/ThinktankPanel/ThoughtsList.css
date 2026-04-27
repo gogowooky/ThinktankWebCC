@@ -78,8 +78,13 @@
   white-space: nowrap;
 }
 
+.thoughts-list__date--updated {
+  color: #888;
+  opacity: 0.75;
+}
+
 /* スクロールバー */
-.thoughts-list::-webkit-scrollbar        { width: 4px; }
+.thoughts-list::-webkit-scrollbar        { width: 8px; }
 .thoughts-list::-webkit-scrollbar-track  { background: transparent; }
-.thoughts-list::-webkit-scrollbar-thumb  { background: rgba(0,0,0,0.15); border-radius: 2px; }
-.thoughts-list::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+.thoughts-list::-webkit-scrollbar-thumb  { background: rgba(0,0,0,0.22); border-radius: 4px; }
+.thoughts-list::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.38); }

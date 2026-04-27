@@ -32,6 +32,9 @@ export class TTThinktankPanel extends TTObject {
   /** ThinktankArea の表示モード */
   public ViewMode: ThinktankViewMode = 'thoughts';
 
+  /** チェック済みアイテムのみ表示するフラグ */
+  public ShowCheckedOnly: boolean = false;
+
   public override get ClassName(): string {
     return 'TTThinktankPanel';
   }
@@ -86,6 +89,12 @@ export class TTThinktankPanel extends TTObject {
 
   // ── チェックボックス選択 ──────────────────────────────────────────────
 
+  /** 指定IDをすべてチェック状態にする */
+  public CheckAll(ids: string[]): void {
+    this.CheckedThoughtIDs = [...ids];
+    this.NotifyUpdated();
+  }
+
   /** ThoughtのチェックON/OFFを切り替える */
   public ToggleCheck(thoughtId: string): void {
     const idx = this.CheckedThoughtIDs.indexOf(thoughtId);
@@ -104,6 +113,12 @@ export class TTThinktankPanel extends TTObject {
   }
 
   // ── 表示モード ────────────────────────────────────────────────────────
+
+  /** チェックのみ表示を切り替える */
+  public ToggleShowCheckedOnly(): void {
+    this.ShowCheckedOnly = !this.ShowCheckedOnly;
+    this.NotifyUpdated();
+  }
 
   /** 表示モードを切り替える */
   public SetViewMode(mode: ThinktankViewMode): void {

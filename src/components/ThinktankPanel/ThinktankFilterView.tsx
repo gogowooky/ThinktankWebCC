@@ -1,77 +1,136 @@
 /**
  * ThinktankFilterView.tsx
- * タイトル・日時でThinkを絞り込む表示モード
+ * タイトル・作成日(ID)・更新日でThinkを絞り込む表示モード
+ * タイトル入力はプルダウン履歴付き
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ThoughtsList } from './ThoughtsList';
 import type { TTThink } from '../../models/TTThink';
 import './ThinktankFilterView.css';
+
+const LS_HISTORY_KEY = 'tt-filter-title-history';
+const DATALIST_ID    = 'tt-filter-title-list';
+const MAX_HISTORY    = 10;
+
+function loadHistory(): string[] {
+  try { return JSON.parse(localStorage.getItem(LS_HISTORY_KEY) ?? '[]'); }
+  catch { return []; }
+}
+
+function saveHistory(value: string): string[] {
+  const prev = loadHistory().filter(h => h !== value);
+  const next = [value, ...prev].slice(0, MAX_HISTORY);
+  localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(next));
+  return next;
+}
 
 interface Props {
   thinks: TTThink[];
   selectedId: string;
   checkedIds: string[];
+  checkedOnly?: boolean;
   onSelect: (id: string) => void;
   onToggleCheck: (id: string) => void;
+  onVisibleChange?: (items: TTThink[]) => void;
 }
 
 export function ThinktankFilterView({
-  thinks, selectedId, checkedIds, onSelect, onToggleCheck,
+  thinks, selectedId, checkedIds, checkedOnly = false,
+  onSelect, onToggleCheck, onVisibleChange,
 }: Props) {
-  const [titleQuery, setTitleQuery] = useState('');
-  const [dateFrom,   setDateFrom]   = useState('');
-  const [dateTo,     setDateTo]     = useState('');
+  const [titleQuery,  setTitleQuery]  = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo,   setCreatedTo]   = useState('');
+  const [updatedFrom, setUpdatedFrom] = useState('');
+  const [updatedTo,   setUpdatedTo]   = useState('');
+  const [history,     setHistory]     = useState(loadHistory);
 
   const filtered = useMemo<TTThink[]>(() => {
     let items = thinks;
-
     if (titleQuery.trim()) {
       const q = titleQuery.trim().toLowerCase();
       items = items.filter(t => t.Name.toLowerCase().includes(q));
     }
-    if (dateFrom) {
-      items = items.filter(t => {
-        const d = t.UpdatedAt ? t.UpdatedAt.slice(0, 10) : t.ID.slice(0, 10);
-        return d >= dateFrom;
-      });
-    }
-    if (dateTo) {
-      items = items.filter(t => {
-        const d = t.UpdatedAt ? t.UpdatedAt.slice(0, 10) : t.ID.slice(0, 10);
-        return d <= dateTo;
-      });
-    }
+    if (createdFrom) items = items.filter(t => t.ID.slice(0, 10) >= createdFrom);
+    if (createdTo)   items = items.filter(t => t.ID.slice(0, 10) <= createdTo);
+    if (updatedFrom) items = items.filter(t => (t.UpdatedAt || t.ID).slice(0, 10) >= updatedFrom);
+    if (updatedTo)   items = items.filter(t => (t.UpdatedAt || t.ID).slice(0, 10) <= updatedTo);
+    if (checkedOnly) items = items.filter(t => checkedIds.includes(t.ID));
     return items;
-  }, [thinks, titleQuery, dateFrom, dateTo]);
+  }, [thinks, titleQuery, createdFrom, createdTo, updatedFrom, updatedTo, checkedOnly, checkedIds]);
+
+  useEffect(() => {
+    onVisibleChange?.(filtered);
+  }, [filtered, onVisibleChange]);
+
+  const handleTitleBlur = () => {
+    const v = titleQuery.trim();
+    if (v) setHistory(saveHistory(v));
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      const v = titleQuery.trim();
+      if (v) setHistory(saveHistory(v));
+    }
+  };
 
   return (
     <div className="tt-filter-view">
       <div className="tt-filter-view__inputs">
-        <input
-          className="tt-filter-view__input"
-          type="text"
-          placeholder="タイトルで絞り込み…"
-          value={titleQuery}
-          onChange={e => setTitleQuery(e.target.value)}
-        />
-        <div className="tt-filter-view__date-row">
+
+        <div className="tt-filter-view__field">
+          <span className="tt-filter-view__label">タイトル</span>
+          <datalist id={DATALIST_ID}>
+            {history.map(h => <option key={h} value={h} />)}
+          </datalist>
           <input
-            className="tt-filter-view__input tt-filter-view__input--date"
-            type="date"
-            title="開始日"
-            value={dateFrom}
-            onChange={e => setDateFrom(e.target.value)}
-          />
-          <span className="tt-filter-view__date-sep">〜</span>
-          <input
-            className="tt-filter-view__input tt-filter-view__input--date"
-            type="date"
-            title="終了日"
-            value={dateTo}
-            onChange={e => setDateTo(e.target.value)}
+            className="tt-filter-view__input"
+            type="text"
+            list={DATALIST_ID}
+            placeholder="タイトルで絞り込み…"
+            value={titleQuery}
+            onChange={e => setTitleQuery(e.target.value)}
+            onBlur={handleTitleBlur}
+            onKeyDown={handleTitleKeyDown}
           />
         </div>
+
+        <div className="tt-filter-view__field">
+          <span className="tt-filter-view__label">作成日 (ID)</span>
+          <div className="tt-filter-view__date-row">
+            <input
+              className="tt-filter-view__input tt-filter-view__input--date"
+              type="date" title="作成日 開始"
+              value={createdFrom} onChange={e => setCreatedFrom(e.target.value)}
+            />
+            <span className="tt-filter-view__date-sep">〜</span>
+            <input
+              className="tt-filter-view__input tt-filter-view__input--date"
+              type="date" title="作成日 終了"
+              value={createdTo} onChange={e => setCreatedTo(e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="tt-filter-view__field">
+          <span className="tt-filter-view__label">更新日</span>
+          <div className="tt-filter-view__date-row">
+            <input
+              className="tt-filter-view__input tt-filter-view__input--date"
+              type="date" title="更新日 開始"
+              value={updatedFrom} onChange={e => setUpdatedFrom(e.target.value)}
+            />
+            <span className="tt-filter-view__date-sep">〜</span>
+            <input
+              className="tt-filter-view__input tt-filter-view__input--date"
+              type="date" title="更新日 終了"
+              value={updatedTo} onChange={e => setUpdatedTo(e.target.value)}
+            />
+          </div>
+        </div>
+
       </div>
       <ThoughtsList
         thoughts={filtered}

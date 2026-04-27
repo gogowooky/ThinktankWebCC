@@ -4,3 +4,12 @@
   background: color-mix(in srgb, var(--thinktank-ribbon-bg) 80%, var(--thinktank-area-bg) 20%);
   color: rgba(255, 255, 255, 0.9);
 }
+
+.menu-ribbon__btn--danger:not(:disabled) {
+  color: rgba(255, 180, 180, 0.9);
+}
+
+.menu-ribbon__btn--danger:not(:disabled):hover {
+  background: rgba(200, 50, 50, 0.25);
+  color: rgba(255, 200, 200, 1);
+}
