@@ -978,6 +978,86 @@ dotnet run --project ThinktankLocal\ThinktankLocal.csproj     # 実行（Vite起
 
 ---
 
+## Phase 12時点での想定状況
+
+### リポジトリ構成と役割分担
+
+| リポジトリ | 内容 | 主要技術 |
+|-----------|------|---------|
+| **ThinktankWebCC** | React SPA（UI全体）＋ Expressバックエンド（BigQuery/AI） | React 18, Vite, Node.js/Express, @anthropic-ai/sdk |
+| **ThinktankLocal** | WPFシェル（WebView2コンテナ）＋ LocalFS API | .NET 8, WPF, WebView2, ASP.NET Core |
+
+**依存関係**:
+- `ThinktankLocal` は `ThinktankWebCC` の React SPAを WebView2 で表示する。React SPA が先に動いている必要がある。
+- `ThinktankWebCC`（React SPA単体）は `ThinktankLocal` に依存しない。ブラウザで直接開いても動作する。
+- 両リポジトリは `Documents/` 配下に兄弟ディレクトリとして配置する。
+
+**PWA化との関連**:
+- React SPA（ThinktankWebCC）はそのままPWAとして配信可能。`ThinktankLocal` は不要になる。
+- PWAモードでは `window.__THINKTANK_MODE__` が未設定となり、`StorageManager` が `PwaStorageBackend`（BigQuery経由）に切り替わる（Phase 13実装）。
+
+---
+
+### 現在のアプリ起動方法
+
+**ローカルアプリモード（開発時）**:
+
+```
+① npm run dev:vite        # Vite dev server @ localhost:5173（ThinktankWebCC）
+② npm run server:dev      # Express server @ localhost:8080（BigQuery/AI API）
+③ dotnet run --project ThinktankLocalApi\ThinktankLocalApi.csproj
+                          # LocalFS API @ localhost:8081（ThinktankLocal）
+④ dotnet run --project ThinktankLocal\ThinktankLocal.csproj
+                          # WPF + WebView2 → localhost:5173 を表示
+```
+
+④の起動時に WebView2 が `window.__THINKTANK_MODE__ = 'local'` と `window.__THINKTANK_LOCAL_API__ = 'http://localhost:8081'` を注入する。
+
+**各サーバーの役割**:
+
+| ポート | プロセス | 役割 |
+|-------|---------|------|
+| 5173 | Vite (Node.js) | React SPA の配信 |
+| 8080 | Express (Node.js) | BigQuery CRUD・AI チャット API |
+| 8081 | ThinktankLocalApi (.NET) | LocalFS Markdown ファイルの読み書き |
+
+**PWA化で変わる点**:
+- ① Vite の代わりにクラウドホスティング（Cloud Run 等）から SPA を配信
+- ③④ ThinktankLocal の起動が不要になる
+- StorageManager が LocalStorageBackend → PwaStorageBackend に切り替わり、データアクセスはすべて ② の Express 経由（BigQuery）になる
+
+---
+
+### データの置き場所と同期
+
+```
+【LocalFSモード（現在）】
+  ThinktankLocal/vault/{vaultId}/{contentType}/{id}.md
+        ↑ 読み書き
+  LocalFsService（ASP.NET Core, port 8081）
+        ↑ REST API
+  React SPA（LocalStorageBackend ← Phase13で実装）
+
+【BigQueryモード（Phase13以降）】
+  Google BigQuery: thinktank.vault テーブル
+        ↑ MERGE Upsert
+  BigQueryService（Express, port 8080）
+        ↑ REST API
+  React SPA（PwaStorageBackend ← Phase13で実装）
+
+【同期（Phase15以降）】
+  LocalFS ──[SyncQueue]──► BigQuery（非同期・バックグラウンド）
+  起動時: BigQueryの更新日時チェック → 差分をLocalFSに取り込み
+```
+
+**Phase 12時点の状態**:
+- LocalFS の読み書きAPIは完成・検証済み
+- BigQuery接続・同期は未実装（Phase 13・15で実装予定）
+- React SPA の StorageManager / LocalStorageBackend は未実装（Phase 13で実装予定）
+- データはLocalFSにのみ存在し、BigQueryとは切り離された状態
+
+---
+
 ### Phase 13: BigQueryバックエンド（Express + thinktank.vault）
 
 **目標**: クラウドバックエンドをBigQuery `thinktank.vault` に接続する。
