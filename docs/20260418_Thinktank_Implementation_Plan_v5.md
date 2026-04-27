@@ -1058,6 +1058,44 @@ dotnet run --project ThinktankLocal\ThinktankLocal.csproj     # 実行（Vite起
 
 ---
 
+### Phase 13完了後の起動方法
+
+#### Localアプリとして起動
+
+```
+① npm run dev:vite        # Vite dev server @ localhost:5173
+② npm run server:dev      # Express server @ localhost:8080（BigQuery/AI API）
+③ dotnet run --project ThinktankLocalApi\ThinktankLocalApi.csproj
+                          # LocalFS API @ localhost:8081
+④ dotnet run --project ThinktankLocal\ThinktankLocal.csproj
+                          # WPF + WebView2 → localhost:5173 を表示
+```
+
+④起動時にWebView2が `window.__THINKTANK_MODE__ = 'local'` を注入 → StorageManagerがLocalStorageBackendを選択 → LocalFS（C# API経由）でデータ読み書き。
+
+#### PWAとして起動（開発時）
+
+```
+① npm run dev:vite        # Vite dev server @ localhost:5173
+② npm run server:dev      # Express server @ localhost:8080
+→ ブラウザで http://localhost:5173 を直接開く
+```
+
+`window.__THINKTANK_MODE__` が未注入 → StorageManagerがPwaStorageBackendを選択 → BigQuery（Express経由）でデータ読み書き。
+
+#### モード比較
+
+| | Localアプリ | PWA（開発時） |
+|---|---|---|
+| データ | LocalFS | BigQuery |
+| 入口 | WPF exe（WebView2） | ブラウザ直接 |
+| ③④の起動 | 必要 | 不要 |
+| モード判定 | `__THINKTANK_MODE__ = 'local'`（WebView2注入） | 未設定 |
+
+> **②のExpressサーバーはどちらのモードでも必要**（AIチャットAPIはPhase 14でExpressに実装されるため）。
+
+---
+
 ### Phase 13: BigQueryバックエンド（Express + thinktank.vault）
 
 **目標**: クラウドバックエンドをBigQuery `thinktank.vault` に接続する。
