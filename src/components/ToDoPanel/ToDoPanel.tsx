@@ -31,8 +31,7 @@ export function ToDoPanel({ app, width, onResize }: Props) {
   const handleClearChat = useCallback(() => panel.ClearChat(),  [panel]);
 
   const handleResize = useCallback((dx: number) => {
-    // 右パネルは delta を逆転（右端固定・左端が動く）
-    onResize(-dx);
+    onResize(dx);
   }, [onResize]);
 
   return (
