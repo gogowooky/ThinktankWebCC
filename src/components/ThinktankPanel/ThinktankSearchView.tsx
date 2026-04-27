@@ -11,22 +11,23 @@ import { ThoughtsList } from './ThoughtsList';
 import './ThinktankSearchView.css';
 
 interface Props {
-  selectedId:    string;
-  checkedIds:    string[];
-  checkedOnly:   boolean;
-  query:         string;
-  results:       TTThink[];
-  visibleResults: TTThink[];
-  loading:       boolean;
-  searched:      boolean;
-  onQueryChange: (q: string) => void;
-  onSearch:      () => void;
-  onSelect:      (id: string) => void;
-  onToggleCheck: (id: string) => void;
+  selectedId:      string;
+  checkedIds:      string[];
+  checkedOnly:     boolean;
+  query:           string;
+  results:         TTThink[];
+  visibleResults:  TTThink[];
+  totalVaultCount: number;
+  loading:         boolean;
+  searched:        boolean;
+  onQueryChange:   (q: string) => void;
+  onSearch:        () => void;
+  onSelect:        (id: string) => void;
+  onToggleCheck:   (id: string) => void;
 }
 
 export function ThinktankSearchView({
-  selectedId, checkedIds, query, results, visibleResults,
+  selectedId, checkedIds, query, results, visibleResults, totalVaultCount,
   loading, searched, onQueryChange, onSearch, onSelect, onToggleCheck,
 }: Props) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -35,26 +36,28 @@ export function ThinktankSearchView({
 
   return (
     <div className="tt-search-view">
+
+      {/* ThoughtsFilter と同じスタイルの検索バー */}
       <div className="tt-search-view__bar">
+        <button
+          className="tt-search-view__icon-btn"
+          onClick={onSearch}
+          disabled={loading || !query.trim()}
+          title="検索"
+        >
+          <Search size={12} />
+        </button>
         <input
           className="tt-search-view__input"
           type="text"
-          placeholder="内容を全文検索…"
+          placeholder="全文検索…"
           value={query}
           onChange={e => onQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <button
-          className="tt-search-view__btn"
-          onClick={onSearch}
-          disabled={loading || !query.trim()}
-          aria-label="検索"
-        >
-          <Search size={14} />
-        </button>
         {searched && !loading && (
           <span className="tt-search-view__count">
-            {visibleResults.length}/{results.length}
+            {results.length}/{totalVaultCount}
           </span>
         )}
       </div>

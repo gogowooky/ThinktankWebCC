@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, Filter, BookOpen } from 'lucide-react';
+import { CheckSquare, Square, Trash2, Filter, BookOpen, ListChecks } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -12,17 +12,19 @@ interface Props {
   visibleIds:          string[];
   checkedIds:          string[];
   showCheckedOnly:     boolean;
+  allVaultChecked:     boolean;
   onCheckAll:          () => void;
   onClearChecks:       () => void;
   onDeleteChecked:     () => void;
   onToggleCheckedOnly: () => void;
   onCreateThought:     () => void;
+  onToggleAllVault:    () => void;
 }
 
 export function ThinktankMenuRibbon({
-  visibleIds, checkedIds, showCheckedOnly,
+  visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   onCheckAll, onClearChecks, onDeleteChecked,
-  onToggleCheckedOnly, onCreateThought,
+  onToggleCheckedOnly, onCreateThought, onToggleAllVault,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -37,7 +39,7 @@ export function ThinktankMenuRibbon({
   return (
     <div className="menu-ribbon thinktank-menu-ribbon">
 
-      {/* CheckToggle: 全選択 / 全クリア */}
+      {/* CheckToggle: 表示中を全選択 / 全クリア */}
       <button
         className={`menu-ribbon__btn menu-ribbon__btn--icon${allChecked ? ' menu-ribbon__btn--active' : ''}`}
         onClick={handleToggleAll}
@@ -45,6 +47,15 @@ export function ThinktankMenuRibbon({
         disabled={visibleIds.length === 0}
       >
         {allChecked ? <CheckSquare size={14} /> : <Square size={14} />}
+      </button>
+
+      {/* AllVaultCheck: 表示・非表示にかかわらず全アイテムをチェック */}
+      <button
+        className={`menu-ribbon__btn menu-ribbon__btn--icon${allVaultChecked ? ' menu-ribbon__btn--active' : ''}`}
+        onClick={onToggleAllVault}
+        title={allVaultChecked ? '全チェックをクリア' : '全アイテムをチェック（非表示含む）'}
+      >
+        <ListChecks size={14} />
       </button>
 
       {/* CheckSelect: チェックのみ表示 */}

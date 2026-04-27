@@ -88,6 +88,13 @@ export function ThinktankArea({ app }: Props) {
     panel.ToggleShowCheckedOnly();
   }, [panel]);
 
+  const handleToggleAllVault = useCallback(() => {
+    const allIds = vault.GetThinks().map(t => t.ID);
+    const allChecked = allIds.length > 0 && allIds.every(id => panel.CheckedThoughtIDs.includes(id));
+    if (allChecked) panel.ClearChecks();
+    else panel.CheckAll(allIds);
+  }, [panel, vault]);
+
   const handleCreateThought = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
     const think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);
@@ -150,6 +157,7 @@ export function ThinktankArea({ app }: Props) {
         query={searchQuery}
         results={searchResults}
         visibleResults={searchVisible}
+        totalVaultCount={vault.Count}
         loading={searchLoading}
         searched={searchSearched}
         onQueryChange={setSearchQuery}
@@ -189,11 +197,13 @@ export function ThinktankArea({ app }: Props) {
         visibleIds={visibleThinks.map(t => t.ID)}
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={panel.ShowCheckedOnly}
+        allVaultChecked={vault.GetThinks().length > 0 && vault.GetThinks().every(t => panel.CheckedThoughtIDs.includes(t.ID))}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onCreateThought={handleCreateThought}
+        onToggleAllVault={handleToggleAllVault}
       />
       <div className="thinktank-area__body">
         {content}
