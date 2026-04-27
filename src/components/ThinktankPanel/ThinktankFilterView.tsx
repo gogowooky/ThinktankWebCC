@@ -78,60 +78,60 @@ export function ThinktankFilterView({
 
   return (
     <div className="tt-filter-view">
-      <div className="tt-filter-view__inputs">
 
-        <div className="tt-filter-view__field">
-          <span className="tt-filter-view__label">タイトル</span>
-          <datalist id={DATALIST_ID}>
-            {history.map(h => <option key={h} value={h} />)}
-          </datalist>
-          <input
-            className="tt-filter-view__input"
-            type="text"
-            list={DATALIST_ID}
-            placeholder="タイトルで絞り込み…"
-            value={titleQuery}
-            onChange={e => setTitleQuery(e.target.value)}
-            onBlur={handleTitleBlur}
-            onKeyDown={handleTitleKeyDown}
-          />
-        </div>
-
-        <div className="tt-filter-view__field">
-          <span className="tt-filter-view__label">作成日 (ID)</span>
-          <div className="tt-filter-view__date-row">
-            <input
-              className="tt-filter-view__input tt-filter-view__input--date"
-              type="date" title="作成日 開始"
-              value={createdFrom} onChange={e => setCreatedFrom(e.target.value)}
-            />
-            <span className="tt-filter-view__date-sep">〜</span>
-            <input
-              className="tt-filter-view__input tt-filter-view__input--date"
-              type="date" title="作成日 終了"
-              value={createdTo} onChange={e => setCreatedTo(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="tt-filter-view__field">
-          <span className="tt-filter-view__label">更新日</span>
-          <div className="tt-filter-view__date-row">
-            <input
-              className="tt-filter-view__input tt-filter-view__input--date"
-              type="date" title="更新日 開始"
-              value={updatedFrom} onChange={e => setUpdatedFrom(e.target.value)}
-            />
-            <span className="tt-filter-view__date-sep">〜</span>
-            <input
-              className="tt-filter-view__input tt-filter-view__input--date"
-              type="date" title="更新日 終了"
-              value={updatedTo} onChange={e => setUpdatedTo(e.target.value)}
-            />
-          </div>
-        </div>
-
+      {/* タイトル絞り込みバー */}
+      <div className="tt-filter-view__bar">
+        <span className="tt-filter-view__bar-label">タイトル</span>
+        <datalist id={DATALIST_ID}>
+          {history.map(h => <option key={h} value={h} />)}
+        </datalist>
+        <input
+          className="tt-filter-view__bar-input"
+          type="text"
+          list={DATALIST_ID}
+          placeholder="タイトルで絞り込み…"
+          value={titleQuery}
+          onChange={e => setTitleQuery(e.target.value)}
+          onBlur={handleTitleBlur}
+          onKeyDown={handleTitleKeyDown}
+        />
+        <span className="tt-filter-view__bar-count">
+          {filtered.length}/{thinks.length}
+        </span>
       </div>
+
+      {/* 作成日(ID) バー */}
+      <div className="tt-filter-view__bar">
+        <span className="tt-filter-view__bar-label">作成日(ID)</span>
+        <input
+          className="tt-filter-view__bar-date"
+          type="date" title="作成日 開始"
+          value={createdFrom} onChange={e => setCreatedFrom(e.target.value)}
+        />
+        <span className="tt-filter-view__bar-sep">〜</span>
+        <input
+          className="tt-filter-view__bar-date"
+          type="date" title="作成日 終了"
+          value={createdTo} onChange={e => setCreatedTo(e.target.value)}
+        />
+      </div>
+
+      {/* 更新日バー */}
+      <div className="tt-filter-view__bar">
+        <span className="tt-filter-view__bar-label">更新日</span>
+        <input
+          className="tt-filter-view__bar-date"
+          type="date" title="更新日 開始"
+          value={updatedFrom} onChange={e => setUpdatedFrom(e.target.value)}
+        />
+        <span className="tt-filter-view__bar-sep">〜</span>
+        <input
+          className="tt-filter-view__bar-date"
+          type="date" title="更新日 終了"
+          value={updatedTo} onChange={e => setUpdatedTo(e.target.value)}
+        />
+      </div>
+
       <ThoughtsList
         thoughts={filtered}
         selectedId={selectedId}
