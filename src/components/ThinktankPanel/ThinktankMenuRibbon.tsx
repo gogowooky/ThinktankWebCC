@@ -9,14 +9,14 @@ import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
 interface Props {
-  visibleIds:       string[];
-  checkedIds:       string[];
-  showCheckedOnly:  boolean;
-  onCheckAll:       () => void;
-  onClearChecks:    () => void;
-  onDeleteChecked:  () => void;
+  visibleIds:          string[];
+  checkedIds:          string[];
+  showCheckedOnly:     boolean;
+  onCheckAll:          () => void;
+  onClearChecks:       () => void;
+  onDeleteChecked:     () => void;
   onToggleCheckedOnly: () => void;
-  onCreateThought:  () => void;
+  onCreateThought:     () => void;
 }
 
 export function ThinktankMenuRibbon({
@@ -32,44 +32,49 @@ export function ThinktankMenuRibbon({
     else            onCheckAll();
   }, [allChecked, onCheckAll, onClearChecks]);
 
+  const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
+
   return (
     <div className="menu-ribbon thinktank-menu-ribbon">
 
-      {/* 全選択 / 全クリア */}
+      {/* CheckToggle: 全選択 / 全クリア */}
       <button
-        className={`menu-ribbon__btn${allChecked ? ' menu-ribbon__btn--active' : ''}`}
+        className={`menu-ribbon__btn menu-ribbon__btn--icon${allChecked ? ' menu-ribbon__btn--active' : ''}`}
         onClick={handleToggleAll}
         title={allChecked ? '全チェックをクリア' : '表示中を全てチェック'}
         disabled={visibleIds.length === 0}
       >
-        {allChecked ? <CheckSquare size={13} /> : <Square size={13} />}
-        <span>{allChecked ? '全クリア' : '全選択'}</span>
+        {allChecked ? <CheckSquare size={14} /> : <Square size={14} />}
       </button>
 
-      <div className="menu-ribbon__sep" />
-
-      {/* チェックのみ表示 */}
+      {/* CheckSelect: チェックのみ表示 */}
       <button
-        className={`menu-ribbon__btn${showCheckedOnly ? ' menu-ribbon__btn--active' : ''}`}
+        className={`menu-ribbon__btn menu-ribbon__btn--icon${showCheckedOnly ? ' menu-ribbon__btn--active' : ''}`}
         onClick={onToggleCheckedOnly}
         title="チェック済みアイテムのみ表示"
         disabled={!hasChecked && !showCheckedOnly}
       >
-        <Filter size={13} />
-        <span>チェックのみ</span>
+        <Filter size={14} />
       </button>
 
-      <div className="menu-ribbon__sep" />
-
-      {/* Thought作成 */}
+      {/* ChecktoThought: Thought作成 */}
       <button
-        className="menu-ribbon__btn"
+        className="menu-ribbon__btn menu-ribbon__btn--icon"
         onClick={onCreateThought}
         title="チェックアイテムからthoughtを作成"
         disabled={!hasChecked}
       >
-        <BookOpen size={13} />
-        <span>Thought作成</span>
+        <BookOpen size={14} />
+      </button>
+
+      {/* CheckDelete: 削除 */}
+      <button
+        className="menu-ribbon__btn menu-ribbon__btn--icon menu-ribbon__btn--danger"
+        onClick={onDeleteChecked}
+        title="チェック中のアイテムを削除"
+        disabled={!hasChecked}
+      >
+        <Trash2 size={14} />
       </button>
 
       <div className="menu-ribbon__spacer" />
@@ -77,20 +82,9 @@ export function ThinktankMenuRibbon({
       {/* チェック数カウント */}
       {hasChecked && (
         <span className="thinktank-ribbon__check-count">
-          {checkedIds.filter(id => visibleIds.includes(id)).length}/{checkedIds.length}
+          {visibleChecked}/{checkedIds.length}
         </span>
       )}
-
-      {/* 削除 */}
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--danger"
-        onClick={onDeleteChecked}
-        title="チェック中のアイテムを削除"
-        disabled={!hasChecked}
-      >
-        <Trash2 size={13} />
-        <span>削除{hasChecked ? ` (${checkedIds.length})` : ''}</span>
-      </button>
 
     </div>
   );

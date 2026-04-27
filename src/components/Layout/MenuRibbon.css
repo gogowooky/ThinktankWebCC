@@ -45,6 +45,12 @@
   cursor: not-allowed;
 }
 
+/* アイコンのみボタン（テキストなし） */
+.menu-ribbon__btn--icon {
+  padding: 3px 5px;
+  gap: 0;
+}
+
 /* ── セパレーター ── */
 
 .menu-ribbon__sep {
