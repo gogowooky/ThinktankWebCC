@@ -63,6 +63,16 @@
   color: #fff;
 }
 
+/* 下部固定エリア */
+.panel-ribbon__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding-bottom: 4px;
+}
+
 /* Workout リボンはやや暗めなのでホバー色を調整 */
 .panel-ribbon--workout .panel-ribbon__toggle {
   color: rgba(255, 255, 255, 0.6);

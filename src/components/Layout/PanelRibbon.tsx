@@ -24,8 +24,10 @@ interface Props {
   isOpen: boolean;
   /** 開閉トグルコールバック */
   onToggle: () => void;
-  /** Ribbon 内に表示する追加ボタン群 */
+  /** Ribbon 内（上部）に表示する追加ボタン群 */
   children?: ReactNode;
+  /** Ribbon 下部に固定表示するボタン群 */
+  bottomChildren?: ReactNode;
 }
 
 export function PanelRibbon({
@@ -34,6 +36,7 @@ export function PanelRibbon({
   isOpen,
   onToggle,
   children,
+  bottomChildren,
 }: Props) {
   // 開閉矢印の向きを決定
   // left  側 ribbon: 閉じているとき右向き▶（開く）、開いているとき左向き◀（閉じる）
@@ -65,6 +68,11 @@ export function PanelRibbon({
 
       {/* スペーサー */}
       <div className="panel-ribbon__spacer" />
+
+      {/* 下部固定ボタン群 */}
+      {bottomChildren && (
+        <div className="panel-ribbon__bottom">{bottomChildren}</div>
+      )}
     </div>
   );
 }
