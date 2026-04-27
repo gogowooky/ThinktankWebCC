@@ -1,64 +1,37 @@
 /**
  * ThinktankSearchView.tsx
- * 全文検索でThinkを選定する表示モード
+ * 全文検索でThinkを選定する表示モード（controlled component）
+ * 検索 state は ThinktankArea で保持し、ビュー切り替えで消えない。
  */
 
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Search } from 'lucide-react';
-import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
-import { StorageManager } from '../../services/storage/StorageManager';
 import { ThoughtsList } from './ThoughtsList';
 import './ThinktankSearchView.css';
 
 interface Props {
-  vault: TTVault;
-  selectedId: string;
-  checkedIds: string[];
-  onSelect: (id: string) => void;
+  selectedId:    string;
+  checkedIds:    string[];
+  checkedOnly:   boolean;
+  query:         string;
+  results:       TTThink[];
+  visibleResults: TTThink[];
+  loading:       boolean;
+  searched:      boolean;
+  onQueryChange: (q: string) => void;
+  onSearch:      () => void;
+  onSelect:      (id: string) => void;
   onToggleCheck: (id: string) => void;
 }
 
 export function ThinktankSearchView({
-  vault, selectedId, checkedIds, onSelect, onToggleCheck,
+  selectedId, checkedIds, query, results, visibleResults,
+  loading, searched, onQueryChange, onSearch, onSelect, onToggleCheck,
 }: Props) {
-  const [query,    setQuery]    = useState('');
-  const [results,  setResults]  = useState<TTThink[]>([]);
-  const [loading,  setLoading]  = useState(false);
-  const [searched, setSearched] = useState(false);
-
-  const handleSearch = useCallback(async () => {
-    const q = query.trim();
-    if (!q) return;
-    setLoading(true);
-    try {
-      const metas = await StorageManager.instance.search(q);
-      const thinks = metas.map(meta => {
-        const existing = vault.GetThink(meta.id);
-        if (existing) return existing;
-        const t = new TTThink();
-        t.ID          = meta.id;
-        t.VaultID     = vault.ID;
-        t.ContentType = meta.contentType as TTThink['ContentType'];
-        t.Keywords    = meta.keywords ?? '';
-        t.RelatedIDs  = meta.relatedIds ?? '';
-        t.IsMetaOnly  = true;
-        t.setContentSilent(meta.title);
-        return t;
-      });
-      setResults(thinks);
-    } catch (e) {
-      console.error('[ThinktankSearchView] search failed:', e);
-      setResults([]);
-    } finally {
-      setLoading(false);
-      setSearched(true);
-    }
-  }, [query, vault]);
-
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSearch();
-  }, [handleSearch]);
+    if (e.key === 'Enter') onSearch();
+  }, [onSearch]);
 
   return (
     <div className="tt-search-view">
@@ -68,17 +41,22 @@ export function ThinktankSearchView({
           type="text"
           placeholder="内容を全文検索…"
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={e => onQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         <button
           className="tt-search-view__btn"
-          onClick={handleSearch}
+          onClick={onSearch}
           disabled={loading || !query.trim()}
           aria-label="検索"
         >
           <Search size={14} />
         </button>
+        {searched && !loading && (
+          <span className="tt-search-view__count">
+            {visibleResults.length}/{results.length}
+          </span>
+        )}
       </div>
 
       {loading && (
@@ -87,9 +65,9 @@ export function ThinktankSearchView({
       {!loading && searched && results.length === 0 && (
         <p className="tt-search-view__status">該当するThinkが見つかりません</p>
       )}
-      {!loading && results.length > 0 && (
+      {!loading && visibleResults.length > 0 && (
         <ThoughtsList
-          thoughts={results}
+          thoughts={visibleResults}
           selectedId={selectedId}
           checkedIds={checkedIds}
           onSelect={onSelect}

@@ -7,6 +7,8 @@
 import { useCallback, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { TTThink } from '../../models/TTThink';
+import { StorageManager } from '../../services/storage/StorageManager';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
 import { ThoughtsFilter } from './ThoughtsFilter';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
@@ -14,7 +16,6 @@ import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchView } from './ThinktankSearchView';
 import { ThinktankAiView } from './ThinktankAiView';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
-import type { TTThink } from '../../models/TTThink';
 import './ThinktankArea.css';
 
 interface Props {
@@ -28,16 +29,26 @@ export function ThinktankArea({ app }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // filter/search モードの可視アイテムはコールバックで受け取る
+  // filter モードの可視アイテムはコールバックで受け取る
   const [filterVisible, setFilterVisible] = useState<TTThink[]>([]);
-  const [searchVisible, setSearchVisible] = useState<TTThink[]>([]);
 
-  // thoughts モードの可視アイテムはレンダー時に直接計算（setState不要）
-  const allThoughts   = vault.GetThoughts();
-  const thoughtsBase  = applyFilter(allThoughts, panel.Filter);
+  // 検索 state（ビュー切り替えで消えないよう ThinktankArea で保持）
+  const [searchQuery,    setSearchQuery]    = useState('');
+  const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);
+  const [searchLoading,  setSearchLoading]  = useState(false);
+  const [searchSearched, setSearchSearched] = useState(false);
+
+  // thoughts モードの可視アイテムはレンダー時に直接計算
+  const allThoughts    = vault.GetThoughts();
+  const thoughtsBase   = applyFilter(allThoughts, panel.Filter);
   const thoughtsVisible = panel.ShowCheckedOnly
     ? thoughtsBase.filter(t => panel.CheckedThoughtIDs.includes(t.ID))
     : thoughtsBase;
+
+  // 検索結果に ShowCheckedOnly を適用
+  const searchVisible = panel.ShowCheckedOnly
+    ? searchResults.filter(t => panel.CheckedThoughtIDs.includes(t.ID))
+    : searchResults;
 
   const visibleThinks =
     panel.ViewMode === 'thoughts' ? thoughtsVisible :
@@ -84,6 +95,36 @@ export function ThinktankArea({ app }: Props) {
     app.OpenThought(think.ID);
   }, [panel, vault, app]);
 
+  // 検索実行（state は ThinktankArea で保持）
+  const handleSearch = useCallback(async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchLoading(true);
+    try {
+      const metas = await StorageManager.instance.search(q);
+      const thinks = metas.map(meta => {
+        const existing = vault.GetThink(meta.id);
+        if (existing) return existing;
+        const t = new TTThink();
+        t.ID          = meta.id;
+        t.VaultID     = vault.ID;
+        t.ContentType = meta.contentType as TTThink['ContentType'];
+        t.Keywords    = meta.keywords  ?? '';
+        t.RelatedIDs  = meta.relatedIds ?? '';
+        t.IsMetaOnly  = true;
+        t.setContentSilent(meta.title);
+        return t;
+      });
+      setSearchResults(thinks);
+    } catch (e) {
+      console.error('[ThinktankArea] search failed:', e);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+      setSearchSearched(true);
+    }
+  }, [searchQuery, vault]);
+
   // ── モード別コンテンツ ───────────────────────────────────────────────
 
   let content: React.ReactNode;
@@ -103,9 +144,16 @@ export function ThinktankArea({ app }: Props) {
   } else if (panel.ViewMode === 'search') {
     content = (
       <ThinktankSearchView
-        vault={vault}
         selectedId={panel.SelectedThoughtID}
         checkedIds={panel.CheckedThoughtIDs}
+        checkedOnly={panel.ShowCheckedOnly}
+        query={searchQuery}
+        results={searchResults}
+        visibleResults={searchVisible}
+        loading={searchLoading}
+        searched={searchSearched}
+        onQueryChange={setSearchQuery}
+        onSearch={handleSearch}
         onSelect={handleSelect}
         onToggleCheck={handleToggleCheck}
       />
@@ -116,7 +164,6 @@ export function ThinktankArea({ app }: Props) {
     content = <ThinktankSettingsView />;
   } else {
     // デフォルト: thoughts モード
-    const displayed = thoughtsVisible;
     content = (
       <>
         <ThoughtsFilter
@@ -126,7 +173,7 @@ export function ThinktankArea({ app }: Props) {
           totalCount={allThoughts.length}
         />
         <ThoughtsList
-          thoughts={displayed}
+          thoughts={thoughtsVisible}
           selectedId={panel.SelectedThoughtID}
           checkedIds={panel.CheckedThoughtIDs}
           onSelect={handleSelect}
