@@ -1096,6 +1096,73 @@ dotnet run --project ThinktankLocal\ThinktankLocal.csproj     # 実行（Vite起
 
 ---
 
+### Phase 13完了後に追加実装した内容
+
+Phase 13（BigQueryバックエンド接続）完了後、以下の機能が追加実装された（当初プランへの記載なし）。
+
+#### ThinktankRibbon の拡張
+
+ThinktankRibbonに上部4ボタン・下部3ボタンを追加した。
+
+**上部（表示モードボタン）**:
+
+| ボタン | モード | 説明 |
+|--------|--------|------|
+| AI（Sparkles） | `ai` | VaultからThinkをAIと相談しながら選定（Phase 14接続予定） |
+| Filter（Filter） | `filter` | タイトル・日時でVault全データを絞り込み |
+| Search（Search） | `search` | BQ全文検索でコンテキストを含むデータを抽出 |
+| Thoughts（Brain） | `thoughts` | ContentType=`thought`のデータのみ表示（デフォルト） |
+
+**下部（状態・設定ボタン）**:
+
+| ボタン | 説明 |
+|--------|------|
+| 同期インジケーター | synced / syncing / pending / error / offline の5状態をアイコンで表示 |
+| 起動モード | Local（Monitor）/ PWA（Globe）を表示 |
+| 設定（Settings） | `settings` モードで保管庫設定画面を表示 |
+
+`ThinktankViewMode` 型: `'thoughts' | 'filter' | 'search' | 'ai' | 'settings'`
+
+---
+
+#### ThinktankArea 表示モード別ビュー
+
+| モード | コンポーネント | 概要 |
+|--------|---------------|------|
+| `thoughts`（デフォルト）| ThoughtsList | ContentType=`thought`のみ仮想スクロール一覧 |
+| `filter` | ThinktankFilterView | タイトルテキスト・日付範囲でVault全データを絞り込み。空フィルター時は全件表示 |
+| `search` | ThinktankSearchView | キーワードをBQ全文検索（`CONTAINS_SUBSTR`、最大200件） |
+| `ai` | ThinktankAiView | Phase 14接続予定プレースホルダー |
+| `settings` | ThinktankSettingsView | 保管庫名設定（履歴付きtextbox、localStorage保存、保存先パス表示） |
+
+---
+
+#### vault_id フィールドの廃止
+
+当初 `thinktank.vault` テーブルに `vault_id` カラムを追加・フィルターキーとして使用する予定だったが、既存の5000件超のデータが `vault_id = NULL` のまま取り込めない問題が発生。解決策として `vault_id` を完全廃止し、全データを対象とする方針に変更。
+
+- `IStorageBackend` / `StorageManager` のメソッドシグネチャから `vaultId` パラメーターを除去
+- `BigQueryStorageBackend` の全APIエンドポイントから `vaultId` クエリパラメーターを除去
+- `LocalStorageBackend` は C# API互換のため内部で `vaultId='vault'` を固定渡し
+- BQクエリの `WHERE vault_id = @vaultId` 条件を撤廃（全件対象）
+
+---
+
+#### TTThink.UpdatedAt の追加
+
+ストレージから取得した最終更新日時（ISO 8601文字列）を保持する `UpdatedAt: string` フィールドを `TTThink` に追加。`TTVault.LoadCache()` で `meta.updatedAt` からマッピング。`ThinktankFilterView` の日付フィルターで `UpdatedAt` を優先使用し、未設定時は ID の先頭10文字（作成日時）で代替。
+
+---
+
+#### WebView2 注入タイミングの修正（ThinktankLocal）
+
+`NavigationCompleted` イベントでの JS 変数注入を `CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync` に変更。
+
+- **問題**: `NavigationCompleted` はページ JS（React 初期化）より後に発火するため、`StorageManager` のシングルトン生成時に `window.__THINKTANK_MODE__` が未設定となり、Localモード起動時でも PWA（Globe）アイコンが表示される不具合が発生。
+- **修正**: `AddScriptToExecuteOnDocumentCreatedAsync` はページ JS より前に実行されるため、`StorageManager` 生成時に正しく `'local'` が参照される。
+
+---
+
 ### Phase 13: BigQueryバックエンド（Express + thinktank.vault）
 
 **目標**: クラウドバックエンドをBigQuery `thinktank.vault` に接続する。
