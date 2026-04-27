@@ -5,6 +5,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
+import { Type, CalendarDays, CalendarClock } from 'lucide-react';
 import { ThoughtsList } from './ThoughtsList';
 import type { TTThink } from '../../models/TTThink';
 import './ThinktankFilterView.css';
@@ -81,7 +82,7 @@ export function ThinktankFilterView({
 
       {/* タイトル絞り込みバー */}
       <div className="tt-filter-view__bar">
-        <span className="tt-filter-view__bar-label">タイトル</span>
+        <Type size={12} className="tt-filter-view__bar-icon" />
         <datalist id={DATALIST_ID}>
           {history.map(h => <option key={h} value={h} />)}
         </datalist>
@@ -102,7 +103,7 @@ export function ThinktankFilterView({
 
       {/* 作成日(ID) バー */}
       <div className="tt-filter-view__bar">
-        <span className="tt-filter-view__bar-label">作成日(ID)</span>
+        <CalendarDays size={12} className="tt-filter-view__bar-icon" />
         <input
           className="tt-filter-view__bar-date"
           type="date" title="作成日 開始"
@@ -118,7 +119,7 @@ export function ThinktankFilterView({
 
       {/* 更新日バー */}
       <div className="tt-filter-view__bar">
-        <span className="tt-filter-view__bar-label">更新日</span>
+        <CalendarClock size={12} className="tt-filter-view__bar-icon" />
         <input
           className="tt-filter-view__bar-date"
           type="date" title="更新日 開始"
