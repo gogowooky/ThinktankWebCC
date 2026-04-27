@@ -65,7 +65,14 @@
       "Bash(pip install *)",
       "Bash(python3 -c ' *)",
       "Bash(python -c ' *)",
-      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in ['dependencies','devDependencies'] if k in d}, indent=2\\)\\)\")"
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(json.dumps\\({k:d[k] for k in ['dependencies','devDependencies'] if k in d}, indent=2\\)\\)\")",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\dotnet\" -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem \"${env:LOCALAPPDATA}\\\\Microsoft\\\\dotnet\" -ErrorAction SilentlyContinue | Select-Object Name)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankLocal\" -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object FullName)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\dotnet;\" + $env:PATH; Set-Location \"C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankLocal\"; & \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" build 2>&1)",
+      "PowerShell(Stop-Process -Id 38724 -Force -ErrorAction SilentlyContinue)",
+      "Bash(gh auth *)",
+      "Bash(gh repo *)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\dotnet;\" + $env:PATH; $proc = Start-Process -FilePath \"C:\\\\Program Files\\\\dotnet\\\\dotnet.exe\" -ArgumentList \"run\",\"--project\",\"ThinktankLocalApi\\\\ThinktankLocalApi.csproj\",\"--urls\",\"http://localhost:8081\" -WorkingDirectory \"C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankLocal\" -WindowStyle Hidden -PassThru; Write-Output \"PID: $\\($proc.Id\\)\")"
     ]
   }
 }
