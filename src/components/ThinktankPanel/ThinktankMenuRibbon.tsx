@@ -74,6 +74,13 @@ export function ThinktankMenuRibbon({
 
       <div className="menu-ribbon__spacer" />
 
+      {/* チェック数カウント */}
+      {hasChecked && (
+        <span className="thinktank-ribbon__check-count">
+          {checkedIds.filter(id => visibleIds.includes(id)).length}/{checkedIds.length}
+        </span>
+      )}
+
       {/* 削除 */}
       <button
         className="menu-ribbon__btn menu-ribbon__btn--danger"

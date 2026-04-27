@@ -122,6 +122,8 @@ export function ThinktankArea({ app }: Props) {
         <ThoughtsFilter
           value={panel.Filter}
           onChange={handleFilterChange}
+          visibleCount={thoughtsVisible.length}
+          totalCount={allThoughts.length}
         />
         <ThoughtsList
           thoughts={displayed}

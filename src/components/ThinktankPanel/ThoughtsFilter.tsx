@@ -12,9 +12,11 @@ import './ThoughtsFilter.css';
 interface Props {
   value: string;
   onChange: (value: string) => void;
+  visibleCount?: number;
+  totalCount?: number;
 }
 
-export function ThoughtsFilter({ value, onChange }: Props) {
+export function ThoughtsFilter({ value, onChange, visibleCount, totalCount }: Props) {
   return (
     <div className="thoughts-filter">
       <Search size={12} className="thoughts-filter__icon" />
@@ -34,6 +36,11 @@ export function ThoughtsFilter({ value, onChange }: Props) {
         >
           <X size={11} />
         </button>
+      )}
+      {totalCount !== undefined && (
+        <span className="thoughts-filter__count">
+          {visibleCount ?? totalCount}/{totalCount}
+        </span>
       )}
     </div>
   );
