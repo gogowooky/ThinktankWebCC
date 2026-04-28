@@ -43,6 +43,15 @@
   min-height: 0;
 }
 
+.workout-area__loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 12px;
+  color: #999;
+}
+
 /* Phase 8 前のプレースホルダー */
 .workout-area__placeholder {
   display: flex;

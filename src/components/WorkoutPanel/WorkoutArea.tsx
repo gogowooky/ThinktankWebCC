@@ -38,12 +38,20 @@ export function WorkoutArea({
   area, vault, isFocused, isDragging, isDropTarget,
   onFocus, onDragStart, onDragEnter, onDragLeave, onMediaTypeChange, onClose,
 }: Props) {
-  const [isDirty, setIsDirty] = useState(false);
+  const [isDirty,       setIsDirty]       = useState(false);
+  const [contentReady,  setContentReady]  = useState(false);
 
-  // ResourceID が変わったら dirty リセット
+  // ResourceID が変わったら dirty リセット & IsMetaOnly ならコンテンツをロード
   useEffect(() => {
     setIsDirty(false);
-  }, [area.ResourceID]);
+    setContentReady(false);
+    const t = vault.GetThink(area.ResourceID);
+    if (!t || !t.IsMetaOnly) {
+      setContentReady(true);
+      return;
+    }
+    t.LoadContent().then(() => setContentReady(true));
+  }, [area.ResourceID]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 保存ハンドラー（TextEditorMedia から呼ばれる）
   const handleSave = useCallback((content: string) => {
@@ -95,7 +103,10 @@ export function WorkoutArea({
 
       {/* メディアコンテンツ */}
       <div className="workout-area__content">
-        {renderMedia()}
+        {contentReady
+          ? renderMedia()
+          : <div className="workout-area__loading">読み込み中…</div>
+        }
       </div>
     </div>
   );
