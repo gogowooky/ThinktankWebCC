@@ -11,18 +11,17 @@
  *   Settings    – Overview設定（Thoughtプロファイル詳細）下寄せ
  */
 
-import { Sparkles, LayoutList, BookUser, BarChart2, Settings, type LucideIcon } from 'lucide-react';
+import { Sparkles, LayoutList, BarChart2, Settings, type LucideIcon } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { MediaType } from '../../types';
 import './OverviewRibbon.css';
 
-type OverviewViewMode = 'chat' | 'datagrid' | 'markdown' | 'graph';
+type OverviewViewMode = 'chat' | 'datagrid' | 'graph';
 
 const VIEW_BUTTONS: Array<{ mode: OverviewViewMode; Icon: LucideIcon; title: string }> = [
-  { mode: 'chat',      Icon: Sparkles,    title: 'AI相談（データ分析）' },
-  { mode: 'datagrid',  Icon: LayoutList,  title: 'Think一覧' },
-  { mode: 'markdown',  Icon: BookUser,    title: 'Thoughtプロファイル' },
-  { mode: 'graph',     Icon: BarChart2,   title: 'Thought分析' },
+  { mode: 'chat',     Icon: Sparkles,   title: 'AI相談（データ分析）' },
+  { mode: 'datagrid', Icon: LayoutList, title: 'Think一覧' },
+  { mode: 'graph',    Icon: BarChart2,  title: 'Thought分析' },
 ];
 
 interface Props {

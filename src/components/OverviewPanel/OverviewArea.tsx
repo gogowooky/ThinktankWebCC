@@ -21,7 +21,6 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
 import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
-import { MarkdownMedia } from '../WorkoutPanel/media/MarkdownMedia';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
 import { ChatMedia } from '../WorkoutPanel/media/ChatMedia';
 import { ThoughtsFilter } from '../ThinktankPanel/ThoughtsFilter';
@@ -312,8 +311,6 @@ export function OverviewArea({ app, showSettings }: Props) {
           <div className="overview-area__empty">
             <span>Thought をドロップして選択してください</span>
           </div>
-        ) : panel.MediaType === 'markdown' ? (
-          <MarkdownMedia think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
         ) : panel.MediaType === 'graph' ? (
           <GraphMedia think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
         ) : panel.MediaType === 'chat' ? (
