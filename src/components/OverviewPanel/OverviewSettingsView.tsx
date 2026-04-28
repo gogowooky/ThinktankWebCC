@@ -16,15 +16,23 @@ interface Props {
 }
 
 export function OverviewSettingsView({ think, vault }: Props) {
-  const [titleValue, setTitleValue] = useState('');
-  const [saved,      setSaved]      = useState(false);
-  const [saving,     setSaving]     = useState(false);
+  const [titleValue,     setTitleValue]     = useState('');
+  const [saved,          setSaved]          = useState(false);
+  const [saving,         setSaving]         = useState(false);
+  const [contentLoaded,  setContentLoaded]  = useState(false);
 
-  // think が切り替わったら入力値をリセット
+  // think が切り替わったら入力値リセット & コンテンツをロード
   useEffect(() => {
     setTitleValue(think?.Name ?? '');
     setSaved(false);
-  }, [think?.ID]);
+    setContentLoaded(false);
+    if (!think) return;
+    if (think.IsMetaOnly) {
+      think.LoadContent().then(() => setContentLoaded(true));
+    } else {
+      setContentLoaded(true);
+    }
+  }, [think?.ID]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveTitle = useCallback(async () => {
     if (!think) return;
