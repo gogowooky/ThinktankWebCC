@@ -108,6 +108,11 @@ export function ThoughtsList({
           return (
             <div
               key={thought.ID}
+              draggable
+              onDragStart={e => {
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('application/x-thought-id', thought.ID);
+              }}
               className={[
                 'thoughts-list__row',
                 isSelected ? 'thoughts-list__row--selected' : '',

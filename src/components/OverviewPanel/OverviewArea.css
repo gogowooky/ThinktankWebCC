@@ -6,9 +6,10 @@
   height: 100%;
   overflow: hidden;
   background: var(--overview-area-bg);
+  position: relative;
 }
 
-/* ── Thought セレクター ─────────────────────────────────── */
+/* ── Thought セレクター（D&D target）────────────────────────────── */
 
 .overview-area__selector {
   display: flex;
@@ -18,6 +19,14 @@
   background: color-mix(in srgb, var(--overview-area-bg) 85%, var(--overview-ribbon-bg) 15%);
   border-bottom: 1px solid rgba(57, 73, 171, 0.2);
   flex-shrink: 0;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.overview-area__selector--drag-over {
+  background: rgba(57, 73, 171, 0.18);
+  border-color: rgba(57, 73, 171, 0.6);
+  outline: 2px dashed rgba(57, 73, 171, 0.5);
+  outline-offset: -2px;
 }
 
 .overview-area__selector-icon {
@@ -44,7 +53,76 @@
   border-color: var(--overview-ribbon-bg);
 }
 
-/* ── 本体（メディアコンポーネント格納）─────────────────── */
+/* ── 日付フィルターバー ──────────────────────────────────────────── */
+
+.overview-area__date-bars {
+  flex-shrink: 0;
+}
+
+.overview-area__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.overview-area__bar-icon {
+  flex-shrink: 0;
+  color: #555;
+  opacity: 0.6;
+}
+
+.overview-area__bar-date {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: #1a1a2e;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.overview-area__bar-date::-webkit-datetime-edit {
+  color: #888;
+}
+
+.overview-area__bar-date:not([value=""])::-webkit-datetime-edit {
+  color: #1a1a2e;
+}
+
+.overview-area__bar-date::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.overview-area__bar-date::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.8;
+}
+
+.overview-area__bar-range {
+  width: 58px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: #1a1a2e;
+  font-family: inherit;
+  text-align: right;
+}
+
+.overview-area__bar-range::placeholder {
+  color: #bbb;
+}
+
+.overview-area__bar-range--invalid {
+  color: #c0392b;
+}
+
+/* ── 本体（メディアコンポーネント格納）─────────────────────────── */
 
 .overview-area__body {
   flex: 1;
@@ -54,7 +132,7 @@
   min-height: 0;
 }
 
-/* ── 未選択状態 ─────────────────────────────────────────── */
+/* ── 未選択状態 ──────────────────────────────────────────────────── */
 
 .overview-area__empty {
   flex: 1;
