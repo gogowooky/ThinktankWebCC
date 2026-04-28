@@ -1,9 +1,11 @@
 /**
  * ColumnSortDialog.tsx
  * TTThink 一覧の表示カラムとソートを設定するダイアログ
+ * 行をドラッグ&ドロップして表示順を変更できる
  */
 
-import { X } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { X, GripVertical } from 'lucide-react';
 import './ColumnSortDialog.css';
 
 export type SortDir = 'asc' | 'desc';
@@ -39,6 +41,9 @@ interface Props {
 }
 
 export function ColumnSortDialog({ columns, sort, onColumnsChange, onSortChange, onClose }: Props) {
+  const dragIndexRef   = useRef<number | null>(null);
+  const [dragOver, setDragOver] = useState<number | null>(null);
+
   const toggleVisible = (field: string) => {
     onColumnsChange(columns.map(c => c.field === field ? { ...c, visible: !c.visible } : c));
   };
@@ -49,6 +54,35 @@ export function ColumnSortDialog({ columns, sort, onColumnsChange, onSortChange,
     } else {
       onSortChange({ field, dir });
     }
+  };
+
+  // ── ドラッグ&ドロップ並び替え ────────────────────────────────────────────
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    dragIndexRef.current = index;
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOver !== index) setDragOver(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    const from = dragIndexRef.current;
+    if (from === null || from === index) { cleanup(); return; }
+    const next = [...columns];
+    const [item] = next.splice(from, 1);
+    next.splice(index, 0, item);
+    onColumnsChange(next);
+    cleanup();
+  };
+
+  const cleanup = () => {
+    dragIndexRef.current = null;
+    setDragOver(null);
   };
 
   return (
@@ -63,6 +97,7 @@ export function ColumnSortDialog({ columns, sort, onColumnsChange, onSortChange,
         <table className="col-sort-dialog__table">
           <thead>
             <tr>
+              <th className="col-sort-dialog__th col-sort-dialog__th--grip" />
               <th className="col-sort-dialog__th col-sort-dialog__th--field">フィールド</th>
               <th className="col-sort-dialog__th">表示</th>
               <th className="col-sort-dialog__th">↑</th>
@@ -70,8 +105,22 @@ export function ColumnSortDialog({ columns, sort, onColumnsChange, onSortChange,
             </tr>
           </thead>
           <tbody>
-            {columns.map(col => (
-              <tr key={col.field} className="col-sort-dialog__row">
+            {columns.map((col, i) => (
+              <tr
+                key={col.field}
+                className={[
+                  'col-sort-dialog__row',
+                  dragOver === i ? 'col-sort-dialog__row--drag-over' : '',
+                ].join(' ')}
+                draggable
+                onDragStart={e => handleDragStart(e, i)}
+                onDragOver={e => handleDragOver(e, i)}
+                onDrop={e => handleDrop(e, i)}
+                onDragEnd={cleanup}
+              >
+                <td className="col-sort-dialog__td col-sort-dialog__td--grip">
+                  <GripVertical size={12} className="col-sort-dialog__grip-icon" />
+                </td>
                 <td className="col-sort-dialog__td col-sort-dialog__td--field">{col.label}</td>
                 <td className="col-sort-dialog__td col-sort-dialog__td--check">
                   <input

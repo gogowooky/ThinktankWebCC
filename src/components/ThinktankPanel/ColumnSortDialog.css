@@ -70,8 +70,22 @@
   padding-left: 10px;
 }
 
+.col-sort-dialog__th--grip {
+  width: 20px;
+  padding: 0;
+}
+
+.col-sort-dialog__row {
+  cursor: grab;
+}
+
 .col-sort-dialog__row:hover {
   background: rgba(0, 0, 0, 0.03);
+}
+
+.col-sort-dialog__row--drag-over {
+  background: rgba(7, 55, 99, 0.1);
+  border-top: 2px solid rgba(7, 55, 99, 0.5);
 }
 
 .col-sort-dialog__td {
@@ -83,8 +97,20 @@
   border-bottom: none;
 }
 
+.col-sort-dialog__td--grip {
+  padding: 0 4px;
+  text-align: center;
+  color: #bbb;
+}
+
+.col-sort-dialog__grip-icon {
+  display: block;
+  margin: auto;
+  cursor: grab;
+}
+
 .col-sort-dialog__td--field {
-  padding-left: 10px;
+  padding-left: 6px;
   color: #333;
   white-space: nowrap;
 }

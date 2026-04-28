@@ -11,7 +11,7 @@
  *   "-word" で NOT、"OR" キーワードは OR 接続（将来対応）。
  */
 
-import { useRef, useMemo } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { BookOpen } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
@@ -50,13 +50,24 @@ export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
   });
 }
 
-/** 日付文字列を短縮表示（yyyy-MM-dd 形式）*/
-function shortDate(dateStr: string): string {
-  if (!dateStr) return '';
-  // UpdateDate 形式: "yyyy-MM-dd-HHmmss-mmm-rand" → 先頭 10 文字
-  const parts = dateStr.split('-');
-  if (parts.length >= 3) return `${parts[0]}-${parts[1]}-${parts[2]}`;
-  return dateStr.slice(0, 10);
+
+function renderCell(col: ColumnConfig, thought: TTThink): ReactNode {
+  switch (col.field) {
+    case 'Name':
+      return <span key="Name" className="thoughts-list__title" title={thought.Name}>{thought.Name || '（無題）'}</span>;
+    case 'ID':
+      return <span key="ID" className="thoughts-list__date" title="作成日(ID)">{thought.ID.slice(0, 10)}</span>;
+    case 'UpdatedAt':
+      return <span key="UpdatedAt" className="thoughts-list__date thoughts-list__date--updated" title="更新日">{thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}</span>;
+    case 'ContentType':
+      return <span key="ContentType" className="thoughts-list__cell thoughts-list__cell--sm" title="種別">{thought.ContentType}</span>;
+    case 'Keywords':
+      return <span key="Keywords" className="thoughts-list__cell thoughts-list__cell--md" title={thought.Keywords}>{thought.Keywords}</span>;
+    case 'RelatedIDs':
+      return <span key="RelatedIDs" className="thoughts-list__cell thoughts-list__cell--md" title={thought.RelatedIDs}>{thought.RelatedIDs}</span>;
+    default:
+      return null;
+  }
 }
 
 export function ThoughtsList({
@@ -68,12 +79,7 @@ export function ThoughtsList({
   onToggleCheck,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
-
-  const vis = useMemo(() => {
-    const m: Record<string, boolean> = {};
-    columns.forEach(c => { m[c.field] = c.visible; });
-    return m;
-  }, [columns]);
+  const visibleCols = columns.filter(c => c.visible);
 
   const virtualizer = useVirtualizer({
     count: thoughts.length,
@@ -125,36 +131,7 @@ export function ThoughtsList({
                 aria-label={`${thought.Name} を選択`}
               />
               <BookOpen size={13} className="thoughts-list__icon" />
-              {vis['Name'] !== false && (
-                <span className="thoughts-list__title" title={thought.Name}>
-                  {thought.Name || '（無題）'}
-                </span>
-              )}
-              {vis['ContentType'] && (
-                <span className="thoughts-list__cell thoughts-list__cell--sm" title="種別">
-                  {thought.ContentType}
-                </span>
-              )}
-              {vis['Keywords'] && (
-                <span className="thoughts-list__cell thoughts-list__cell--md" title={thought.Keywords}>
-                  {thought.Keywords}
-                </span>
-              )}
-              {vis['RelatedIDs'] && (
-                <span className="thoughts-list__cell thoughts-list__cell--md" title={thought.RelatedIDs}>
-                  {thought.RelatedIDs}
-                </span>
-              )}
-              {vis['ID'] !== false && (
-                <span className="thoughts-list__date" title="作成日(ID)">
-                  {thought.ID.slice(0, 10)}
-                </span>
-              )}
-              {vis['UpdatedAt'] !== false && (
-                <span className="thoughts-list__date thoughts-list__date--updated" title="更新日">
-                  {thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}
-                </span>
-              )}
+              {visibleCols.map(col => renderCell(col, thought))}
             </div>
           );
         })}
