@@ -1,12 +1,11 @@
 /**
  * OverviewPanel.tsx
- * Phase 9: OverviewPanel 統合コンポーネント。
+ * OverviewPanel 統合コンポーネント。
  *
  * 構造: [OverviewRibbon] [PanelArea > OverviewArea] [Splitter]
- * 選択された Thought の内容を Markdown / DataGrid / Graph で表示する。
  */
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
@@ -27,26 +26,31 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   const panel = app.OverviewPanel;
   useAppUpdate(panel);
 
+  const [showSettings, setShowSettings] = useState(false);
+
   const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
   const handleMediaType = useCallback((type: Parameters<typeof panel.SetMediaType>[0]) => {
     panel.SetMediaType(type);
+    setShowSettings(false);
   }, [panel]);
+  const handleToggleSettings = useCallback(() => setShowSettings(v => !v), []);
 
   return (
     <div className="overview-panel">
       <OverviewRibbon
         isOpen={panel.IsAreaOpen}
         mediaType={panel.MediaType}
+        showSettings={showSettings}
         onToggle={handleToggle}
         onMediaType={handleMediaType}
-        onToggleSettings={() => {}}
+        onToggleSettings={handleToggleSettings}
       />
       <PanelArea
         panelId="overview"
         isOpen={panel.IsAreaOpen}
         width={Math.max(MIN_WIDTH, width)}
       >
-        <OverviewArea app={app} />
+        <OverviewArea app={app} showSettings={showSettings} />
       </PanelArea>
       {panel.IsAreaOpen && (
         <Splitter onResize={onResize} />

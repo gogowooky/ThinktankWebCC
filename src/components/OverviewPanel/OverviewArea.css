@@ -9,48 +9,47 @@
   position: relative;
 }
 
-/* ── Thought セレクター（D&D target）────────────────────────────── */
+/* ── Thought ストリップ（D&D ドロップターゲット）─────────────────── */
 
-.overview-area__selector {
+.overview-area__thought-strip {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 5px 10px;
   background: color-mix(in srgb, var(--overview-area-bg) 85%, var(--overview-ribbon-bg) 15%);
   border-bottom: 1px solid rgba(57, 73, 171, 0.2);
   flex-shrink: 0;
+  min-height: 26px;
   transition: background 120ms ease, border-color 120ms ease;
 }
 
-.overview-area__selector--drag-over {
+.overview-area__thought-strip--drop {
   background: rgba(57, 73, 171, 0.18);
   border-color: rgba(57, 73, 171, 0.6);
   outline: 2px dashed rgba(57, 73, 171, 0.5);
   outline-offset: -2px;
 }
 
-.overview-area__selector-icon {
+.overview-area__strip-icon {
   color: var(--overview-ribbon-bg);
   flex-shrink: 0;
+  opacity: 0.7;
 }
 
-.overview-area__select {
-  flex: 1;
-  min-width: 0;
-  background: #fff;
-  border: 1px solid rgba(57, 73, 171, 0.3);
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-size: 12px;
-  font-family: inherit;
+.overview-area__strip-name {
+  font-size: 11px;
+  font-weight: 500;
   color: #2c3e6f;
-  cursor: pointer;
-  outline: none;
-  transition: border-color 120ms ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.overview-area__select:focus {
-  border-color: var(--overview-ribbon-bg);
+.overview-area__strip-placeholder {
+  font-size: 11px;
+  color: rgba(57, 73, 171, 0.45);
+  white-space: nowrap;
 }
 
 /* ── 日付フィルターバー ──────────────────────────────────────────── */
@@ -122,7 +121,7 @@
   color: #c0392b;
 }
 
-/* ── 本体（メディアコンポーネント格納）─────────────────────────── */
+/* ── 本体 ────────────────────────────────────────────────────────── */
 
 .overview-area__body {
   flex: 1;
@@ -132,7 +131,7 @@
   min-height: 0;
 }
 
-/* ── 未選択状態 ──────────────────────────────────────────────────── */
+/* ── 未選択 / 空状態 ──────────────────────────────────────────────── */
 
 .overview-area__empty {
   flex: 1;

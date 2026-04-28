@@ -3,15 +3,15 @@
  * OverviewPanel の表示エリア。
  *
  * - メニューリボン: ThinktankMenuRibbon 相当のボタン群
- * - Thought セレクター: D&D対応・履歴プルダウン
- * - フィルターバー: タイトルフィルター
- * - 日付フィルターバー（showDateFilter が true のとき）
- * - ColumnSortDialog（showColumnDialog が true のとき）
+ * - Thought ストリップ: 選択中 Thought 名表示 + D&D ドロップターゲット
+ * - フィルター / 日付フィルターバー: Think一覧モード(datagrid)のみ表示
+ * - ColumnSortDialog
  * - 本体:
- *   - datagrid → フィルタリング済み Thought 一覧（ThoughtsList）
- *   - markdown → MarkdownMedia（選択 Thought のプロファイル）
- *   - graph    → GraphMedia（関係グラフ）
- *   - chat     → ChatMedia（AI チャット）
+ *   - settings  → OverviewSettingsView（Thought プロファイル）
+ *   - datagrid  → 選択 Thought 内の Think 一覧
+ *   - markdown  → MarkdownMedia
+ *   - graph     → GraphMedia
+ *   - chat      → ChatMedia
  */
 
 import { useCallback, useState } from 'react';
@@ -19,8 +19,8 @@ import { BookOpen, CalendarDays, CalendarClock } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
-import { StorageManager } from '../../services/storage/StorageManager';
 import { OverviewMenuRibbon } from './OverviewMenuRibbon';
+import { OverviewSettingsView } from './OverviewSettingsView';
 import { MarkdownMedia } from '../WorkoutPanel/media/MarkdownMedia';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
 import { ChatMedia } from '../WorkoutPanel/media/ChatMedia';
@@ -33,33 +33,31 @@ import './OverviewArea.css';
 
 const noop = () => {};
 
-interface HistoryEntry { id: string; name: string; }
-
 interface Props {
-  app: TTApplication;
+  app:          TTApplication;
+  showSettings: boolean;
 }
 
-export function OverviewArea({ app }: Props) {
+export function OverviewArea({ app, showSettings }: Props) {
   const panel = app.OverviewPanel;
   const vault = app.Models.Vault;
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // ── 履歴（セレクター / D&D で選んだ Thought を記録） ───────────────────────
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  // ── D&D ─────────────────────────────────────────────────────────────────
   const [isDragOver, setIsDragOver] = useState(false);
 
   // ── フィルター・チェック state ──────────────────────────────────────────────
-  const [filter,          setFilter]          = useState('');
-  const [checkedIds,      setCheckedIds]      = useState<string[]>([]);
-  const [showCheckedOnly, setShowCheckedOnly] = useState(false);
-  const [showDateFilter,  setShowDateFilter]  = useState(false);
-  const [createdDate,     setCreatedDate]     = useState('');
-  const [createdRange,    setCreatedRange]    = useState('');
-  const [updatedDate,     setUpdatedDate]     = useState('');
-  const [updatedRange,    setUpdatedRange]    = useState('');
-  const [columns,         setColumns]         = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
-  const [sort,            setSort]            = useState<SortConfig>(DEFAULT_SORT);
+  const [filter,           setFilter]           = useState('');
+  const [checkedIds,       setCheckedIds]       = useState<string[]>([]);
+  const [showCheckedOnly,  setShowCheckedOnly]  = useState(false);
+  const [showDateFilter,   setShowDateFilter]   = useState(false);
+  const [createdDate,      setCreatedDate]      = useState('');
+  const [createdRange,     setCreatedRange]     = useState('');
+  const [updatedDate,      setUpdatedDate]      = useState('');
+  const [updatedRange,     setUpdatedRange]     = useState('');
+  const [columns,          setColumns]          = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
   // ── ソート / 日付フィルター ────────────────────────────────────────────────
@@ -100,18 +98,11 @@ export function OverviewArea({ app }: Props) {
     });
   }
 
-  // ── 可視 Thought リスト（セレクター件数 / 非datagridモード用）────────────
-  const allThoughts = vault.GetThoughts();
-  const filteredBase = applyFilter(allThoughts, filter);
-  const visibleThoughts = applySort(applyDateFilter(
-    showCheckedOnly ? filteredBase.filter(t => checkedIds.includes(t.ID)) : filteredBase
-  ));
-
-  // ── Think一覧モード: 選択 Thought 内の Think 群 ────────────────────────
-  const isThinkListMode = panel.MediaType === 'datagrid';
-  const thinksInThought = isThinkListMode && panel.ThoughtID
+  // ── Think 一覧（選択 Thought 内の全 Think → フィルタ適用）──────────────────
+  const thinksInThought = panel.ThoughtID
     ? vault.GetThinksForThought(panel.ThoughtID)
     : [];
+
   const visibleThinks = applySort(applyDateFilter(
     applyFilter(
       showCheckedOnly ? thinksInThought.filter(t => checkedIds.includes(t.ID)) : thinksInThought,
@@ -119,17 +110,10 @@ export function OverviewArea({ app }: Props) {
     )
   ));
 
-  // ── Thought 選択（履歴に追加）────────────────────────────────────────────
+  // ── Thought 選択（D&D）────────────────────────────────────────────────────
   const selectThought = useCallback((id: string) => {
     panel.OpenThought(id, panel.MediaType);
-    const t = vault.GetThink(id);
-    if (t) {
-      setHistory(prev => {
-        const rest = prev.filter(h => h.id !== id);
-        return [{ id, name: t.Name || '（無題）' }, ...rest].slice(0, 20);
-      });
-    }
-  }, [panel, vault]);
+  }, [panel]);
 
   // ── D&D ハンドラ ─────────────────────────────────────────────────────────
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -154,8 +138,8 @@ export function OverviewArea({ app }: Props) {
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
   const handleCheckAll = useCallback(() => {
-    setCheckedIds((isThinkListMode ? visibleThinks : visibleThoughts).map(t => t.ID));
-  }, [isThinkListMode, visibleThinks, visibleThoughts]);
+    setCheckedIds(visibleThinks.map(t => t.ID));
+  }, [visibleThinks]);
 
   const handleClearChecks = useCallback(() => setCheckedIds([]), []);
 
@@ -167,10 +151,10 @@ export function OverviewArea({ app }: Props) {
   }, [checkedIds, vault]);
 
   const handleToggleAllVault = useCallback(() => {
-    const allIds = vault.GetThinks().map(t => t.ID);
+    const allIds = thinksInThought.map(t => t.ID);
     const allCheckedV = allIds.length > 0 && allIds.every(id => checkedIds.includes(id));
     setCheckedIds(allCheckedV ? [] : allIds);
-  }, [vault, checkedIds]);
+  }, [thinksInThought, checkedIds]);
 
   const handleCreateThought = useCallback(async () => {
     if (checkedIds.length === 0) return;
@@ -179,7 +163,8 @@ export function OverviewArea({ app }: Props) {
     app.OpenThought(think.ID);
   }, [checkedIds, vault, filter, app]);
 
-  const handleToggleCheckedOnly = useCallback(() => setShowCheckedOnly(v => !v), []);
+  const handleToggleCheckedOnly   = useCallback(() => setShowCheckedOnly(v => !v), []);
+  const handleToggleColumnDialog  = useCallback(() => setShowColumnDialog(v => !v), []);
 
   const handleToggleDateFilter = useCallback(() => {
     setShowDateFilter(v => {
@@ -191,26 +176,16 @@ export function OverviewArea({ app }: Props) {
     });
   }, []);
 
-  const handleToggleColumnDialog = useCallback(() => setShowColumnDialog(v => !v), []);
-
   const handleToggleCheck = useCallback((id: string) => {
     setCheckedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }, []);
 
-  // ── セレクター表示用の履歴リスト ──────────────────────────────────────────
+  // ── 算出値 ────────────────────────────────────────────────────────────────
   const think = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) ?? null : null;
+  const isThinkListMode = panel.MediaType === 'datagrid';
 
-  const displayHistory: HistoryEntry[] =
-    panel.ThoughtID && !history.find(h => h.id === panel.ThoughtID) && think
-      ? [{ id: think.ID, name: think.Name || '（無題）' }, ...history]
-      : history;
-
-  const allVaultIds = isThinkListMode
-    ? thinksInThought.map(t => t.ID)
-    : vault.GetThinks().map(t => t.ID);
+  const allVaultIds     = thinksInThought.map(t => t.ID);
   const allVaultChecked = allVaultIds.length > 0 && allVaultIds.every(id => checkedIds.includes(id));
-
-  const ribbonVisibleIds = (isThinkListMode ? visibleThinks : visibleThoughts).map(t => t.ID);
 
   const createdRangeInvalid = createdRange.trim() !== '' && !parseRange(createdRange.trim());
   const updatedRangeInvalid = updatedRange.trim() !== '' && !parseRange(updatedRange.trim());
@@ -220,7 +195,7 @@ export function OverviewArea({ app }: Props) {
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <OverviewMenuRibbon
-        visibleIds={ribbonVisibleIds}
+        visibleIds={visibleThinks.map(t => t.ID)}
         checkedIds={checkedIds}
         showCheckedOnly={showCheckedOnly}
         allVaultChecked={allVaultChecked}
@@ -247,90 +222,86 @@ export function OverviewArea({ app }: Props) {
         />
       )}
 
-      {/* ── Thought セレクター（D&D target）────────────────────── */}
+      {/* ── Thought ストリップ（D&D ターゲット）────────────────── */}
       <div
-        className={`overview-area__selector${isDragOver ? ' overview-area__selector--drag-over' : ''}`}
+        className={`overview-area__thought-strip${isDragOver ? ' overview-area__thought-strip--drop' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <BookOpen size={12} className="overview-area__selector-icon" />
-        <select
-          className="overview-area__select"
-          value={panel.ThoughtID || ''}
-          onChange={e => {
-            if (e.target.value) selectThought(e.target.value);
-            else panel.ClearThought();
-          }}
-        >
-          <option value="">— ドロップ or 履歴から選択 —</option>
-          {displayHistory.map(h => (
-            <option key={h.id} value={h.id}>{h.name}</option>
-          ))}
-        </select>
+        <BookOpen size={11} className="overview-area__strip-icon" />
+        {think
+          ? <span className="overview-area__strip-name">{think.Name || '（無題）'}</span>
+          : <span className="overview-area__strip-placeholder">Thought をドロップして選択</span>
+        }
       </div>
 
-      {/* ── フィルターバー ──────────────────────────────────────── */}
-      <ThoughtsFilter
-        value={filter}
-        onChange={setFilter}
-        visibleCount={visibleThoughts.length}
-        totalCount={allThoughts.length}
-      />
+      {/* ── フィルターバー（Think一覧モードのみ）────────────────── */}
+      {isThinkListMode && (
+        <>
+          <ThoughtsFilter
+            value={filter}
+            onChange={setFilter}
+            visibleCount={visibleThinks.length}
+            totalCount={thinksInThought.length}
+          />
 
-      {/* ── 日付フィルターバー ──────────────────────────────────── */}
-      {showDateFilter && (
-        <div className="overview-area__date-bars">
-          <div className="overview-area__bar">
-            <CalendarDays size={12} className="overview-area__bar-icon" />
-            <input
-              className="overview-area__bar-date"
-              type="date"
-              title="作成日(ID)"
-              value={createdDate}
-              onChange={e => setCreatedDate(e.target.value)}
-            />
-            <input
-              className={`overview-area__bar-range${createdRangeInvalid ? ' overview-area__bar-range--invalid' : ''}`}
-              type="text"
-              placeholder="+Nd"
-              title="範囲: +3d(以降) / -1m(以前) / +-2w(前後)  指定なし=1日"
-              value={createdRange}
-              onChange={e => setCreatedRange(e.target.value)}
-            />
-          </div>
-          <div className="overview-area__bar">
-            <CalendarClock size={12} className="overview-area__bar-icon" />
-            <input
-              className="overview-area__bar-date"
-              type="date"
-              title="更新日"
-              value={updatedDate}
-              onChange={e => setUpdatedDate(e.target.value)}
-            />
-            <input
-              className={`overview-area__bar-range${updatedRangeInvalid ? ' overview-area__bar-range--invalid' : ''}`}
-              type="text"
-              placeholder="+Nd"
-              title="範囲: +3d(以降) / -1m(以前) / +-2w(前後)  指定なし=1日"
-              value={updatedRange}
-              onChange={e => setUpdatedRange(e.target.value)}
-            />
-          </div>
-        </div>
+          {showDateFilter && (
+            <div className="overview-area__date-bars">
+              <div className="overview-area__bar">
+                <CalendarDays size={12} className="overview-area__bar-icon" />
+                <input
+                  className="overview-area__bar-date"
+                  type="date"
+                  title="作成日(ID)"
+                  value={createdDate}
+                  onChange={e => setCreatedDate(e.target.value)}
+                />
+                <input
+                  className={`overview-area__bar-range${createdRangeInvalid ? ' overview-area__bar-range--invalid' : ''}`}
+                  type="text"
+                  placeholder="+Nd"
+                  title="範囲: +3d(以降) / -1m(以前) / +-2w(前後)  指定なし=1日"
+                  value={createdRange}
+                  onChange={e => setCreatedRange(e.target.value)}
+                />
+              </div>
+              <div className="overview-area__bar">
+                <CalendarClock size={12} className="overview-area__bar-icon" />
+                <input
+                  className="overview-area__bar-date"
+                  type="date"
+                  title="更新日"
+                  value={updatedDate}
+                  onChange={e => setUpdatedDate(e.target.value)}
+                />
+                <input
+                  className={`overview-area__bar-range${updatedRangeInvalid ? ' overview-area__bar-range--invalid' : ''}`}
+                  type="text"
+                  placeholder="+Nd"
+                  title="範囲: +3d(以降) / -1m(以前) / +-2w(前後)  指定なし=1日"
+                  value={updatedRange}
+                  onChange={e => setUpdatedRange(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* ── 本体 ───────────────────────────────────────────────── */}
       <div className="overview-area__body">
-        {panel.MediaType === 'datagrid' ? (
+        {showSettings ? (
+          <OverviewSettingsView think={think} vault={vault} />
+        ) : isThinkListMode ? (
           !panel.ThoughtID ? (
             <div className="overview-area__empty">
-              <span>Thought を選択してください</span>
+              <span>Thought をドロップして選択してください</span>
             </div>
           ) : (
             <ThoughtsList
               thoughts={visibleThinks}
-              selectedId={''}
+              selectedId=""
               checkedIds={checkedIds}
               columns={columns}
               onSelect={id => app.OpenThought(id)}
@@ -339,7 +310,7 @@ export function OverviewArea({ app }: Props) {
           )
         ) : !think ? (
           <div className="overview-area__empty">
-            <span>Thought を選択してください</span>
+            <span>Thought をドロップして選択してください</span>
           </div>
         ) : panel.MediaType === 'markdown' ? (
           <MarkdownMedia think={think} vault={vault} onSave={noop} onDirtyChange={noop} />

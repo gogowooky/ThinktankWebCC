@@ -4,11 +4,11 @@
  *
  * ボタン構成（上から）:
  *   Sparkles    – AI相談（データ分析チャット）
- *   LayoutList  – Thought一覧
- *   BookUser    – Thoughtプロファイル
- *   BarChart2   – Thought分析
+ *   LayoutList  – Think一覧（選択Thought内のThinkリスト）
+ *   BookUser    – Thoughtプロファイル（Markdown表示）
+ *   BarChart2   – Thought分析（グラフ）
  * ─────────────────── (spacer) ───────────────────
- *   Settings    – Overview設定（下寄せ）
+ *   Settings    – Overview設定（Thoughtプロファイル詳細）下寄せ
  */
 
 import { Sparkles, LayoutList, BookUser, BarChart2, Settings, type LucideIcon } from 'lucide-react';
@@ -26,14 +26,17 @@ const VIEW_BUTTONS: Array<{ mode: OverviewViewMode; Icon: LucideIcon; title: str
 ];
 
 interface Props {
-  isOpen:           boolean;
-  mediaType:        MediaType;
-  onToggle:         () => void;
-  onMediaType:      (type: MediaType) => void;
+  isOpen:            boolean;
+  mediaType:         MediaType;
+  showSettings:      boolean;
+  onToggle:          () => void;
+  onMediaType:       (type: MediaType) => void;
   onToggleSettings?: () => void;
 }
 
-export function OverviewRibbon({ isOpen, mediaType, onToggle, onMediaType, onToggleSettings }: Props) {
+export function OverviewRibbon({
+  isOpen, mediaType, showSettings, onToggle, onMediaType, onToggleSettings,
+}: Props) {
   return (
     <PanelRibbon
       panelId="overview"
@@ -42,7 +45,7 @@ export function OverviewRibbon({ isOpen, mediaType, onToggle, onMediaType, onTog
       onToggle={onToggle}
       bottomChildren={
         <button
-          className="overview-ribbon__btn"
+          className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
           onClick={onToggleSettings}
           title="Overview設定"
         >
@@ -55,7 +58,7 @@ export function OverviewRibbon({ isOpen, mediaType, onToggle, onMediaType, onTog
           key={mode}
           className={[
             'overview-ribbon__btn',
-            mediaType === mode ? 'overview-ribbon__btn--active' : '',
+            !showSettings && mediaType === mode ? 'overview-ribbon__btn--active' : '',
           ].join(' ')}
           onClick={() => onMediaType(mode as MediaType)}
           title={title}
