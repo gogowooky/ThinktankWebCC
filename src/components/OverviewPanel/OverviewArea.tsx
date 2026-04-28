@@ -22,12 +22,13 @@ import { TTThink } from '../../models/TTThink';
 import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
-import { ChatMedia } from '../WorkoutPanel/media/ChatMedia';
+import { AiChatView } from '../ThinktankPanel/AiChatView';
 import { ThoughtsFilter } from '../ThinktankPanel/ThoughtsFilter';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import { computeDateRange, parseRange } from '../ThinktankPanel/ThinktankFilterView';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
+import type { ChatMessage } from '../../types';
 import './OverviewArea.css';
 
 const noop = () => {};
@@ -58,6 +59,10 @@ export function OverviewArea({ app, showSettings }: Props) {
   const [columns,          setColumns]          = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
+
+  // ── チャット state ─────────────────────────────────────────────────────
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatWaiting,  setChatWaiting]  = useState(false);
 
   // ── ソート / 日付フィルター ────────────────────────────────────────────────
 
@@ -179,6 +184,30 @@ export function OverviewArea({ app, showSettings }: Props) {
     setCheckedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   }, []);
 
+  const handleChatSend = useCallback((text: string) => {
+    const ts = new Date().toISOString();
+    setChatMessages(prev => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts }]);
+    setChatWaiting(true);
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, {
+        id:        `a-${Date.now()}`,
+        role:      'assistant',
+        content:   'Phase 14 でバックエンド接続後に応答します。\nSSE ストリーミングで逐次出力される予定です。',
+        timestamp: new Date().toISOString(),
+      }]);
+      setChatWaiting(false);
+    }, 800);
+  }, []);
+
+  const handleSaveChat = useCallback(async () => {
+    if (chatMessages.length === 0) return;
+    const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
+    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+    const body = chatMessages.map(m => m.role === 'user' ? `## ${m.content}` : m.content).join('\n');
+    await vault.CreateChatThink(`${title}\n${body}`, panel.ThoughtID ?? undefined);
+    setChatMessages([]);
+  }, [chatMessages, vault, panel]);
+
   // ── 算出値 ────────────────────────────────────────────────────────────────
   const think = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) ?? null : null;
   const isThinkListMode = panel.MediaType === 'datagrid';
@@ -200,6 +229,7 @@ export function OverviewArea({ app, showSettings }: Props) {
         allVaultChecked={allVaultChecked}
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
+        hasChatMessages={chatMessages.length > 0}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
@@ -208,6 +238,7 @@ export function OverviewArea({ app, showSettings }: Props) {
         onToggleAllVault={handleToggleAllVault}
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
+        onSaveChat={handleSaveChat}
       />
 
       {/* ── カラムソートダイアログ ─────────────────────────────── */}
@@ -307,14 +338,14 @@ export function OverviewArea({ app, showSettings }: Props) {
               onToggleCheck={handleToggleCheck}
             />
           )
+        ) : panel.MediaType === 'chat' ? (
+          <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
         ) : !think ? (
           <div className="overview-area__empty">
             <span>Thought をドロップして選択してください</span>
           </div>
         ) : panel.MediaType === 'graph' ? (
           <GraphMedia think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
-        ) : panel.MediaType === 'chat' ? (
-          <ChatMedia think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
         ) : null}
       </div>
 

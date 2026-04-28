@@ -153,6 +153,47 @@ export class TTVault extends TTCollection {
     return think;
   }
 
+  /** チャット会話を TTThink(ContentType='chat') として保存する。
+   *  thoughtId を渡すと、そのThoughtのIDリストに新しいThinkを追加する。 */
+  public async CreateChatThink(content: string, thoughtId?: string): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId = TTVault.generateUniqueId(existingIds);
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = 'chat';
+    think.IsMetaOnly  = false;
+    think.setContentSilent(content);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: 'chat',
+      fullContent: content,
+      keywords:    '',
+      relatedIds:  '',
+    });
+    think.markSaved();
+
+    if (thoughtId) {
+      const thought = this.GetThink(thoughtId);
+      if (thought && thought.ContentType === 'thought') {
+        if (thought.IsMetaOnly) await thought.LoadContent();
+        const existingIds2 = thought.getThinkIds();
+        const nonIdLines = thought.Content.split('\n').filter(l => !l.startsWith('* '));
+        const newContent  = [...nonIdLines, ...existingIds2.map(id => `* ${id}`), `* ${newId}`].join('\n');
+        thought.Content = newContent;
+        await thought.SaveContent();
+      }
+    }
+
+    this.NotifyUpdated();
+    return think;
+  }
+
   /** 指定 ID の Think を BQ から削除しメモリからも除去する */
   public async DeleteThinks(ids: string[]): Promise<void> {
     await Promise.all(ids.map(id => StorageManager.instance.delete(id)));

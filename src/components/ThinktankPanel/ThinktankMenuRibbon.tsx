@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, Filter, BookOpen, ListChecks, CalendarRange, SlidersHorizontal } from 'lucide-react';
+import { CheckSquare, Square, Trash2, Filter, BookOpen, ListChecks, CalendarRange, SlidersHorizontal, Save } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -23,11 +23,14 @@ interface Props {
   onToggleAllVault:      () => void;
   onToggleDateFilter:    () => void;
   onToggleColumnDialog:  () => void;
+  hasChatMessages?:      boolean;
+  onSaveChat?:           () => void;
 }
 
 export function ThinktankMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showDateFilter, showColumnDialog,
+  hasChatMessages, onSaveChat,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
@@ -111,6 +114,18 @@ export function ThinktankMenuRibbon({
       >
         <Trash2 size={14} />
       </button>
+
+      {/* SaveChat: チャット保存 */}
+      {onSaveChat && (
+        <button
+          className="menu-ribbon__btn menu-ribbon__btn--icon"
+          onClick={onSaveChat}
+          disabled={!hasChatMessages}
+          title="チャット内容をChatデータとして保存"
+        >
+          <Save size={14} />
+        </button>
+      )}
 
       <div className="menu-ribbon__spacer" />
 

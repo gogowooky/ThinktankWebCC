@@ -16,7 +16,8 @@ import { ThoughtsFilter } from './ThoughtsFilter';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
 import { ThinktankFilterView, computeDateRange, parseRange } from './ThinktankFilterView';
 import { ThinktankSearchView } from './ThinktankSearchView';
-import { ThinktankAiView } from './ThinktankAiView';
+import { AiChatView } from './AiChatView';
+import type { ChatMessage } from '../../types';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
@@ -56,6 +57,10 @@ export function ThinktankArea({ app }: Props) {
   const [createdRange, setCreatedRange] = useState('');
   const [updatedDate,  setUpdatedDate]  = useState('');
   const [updatedRange, setUpdatedRange] = useState('');
+
+  // チャット state
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatWaiting,  setChatWaiting]  = useState(false);
 
   // 検索 state（ビュー切り替えで消えないよう ThinktankArea で保持）
   const [searchQuery,    setSearchQuery]    = useState('');
@@ -130,6 +135,11 @@ export function ThinktankArea({ app }: Props) {
     app.OpenThought(id);
   }, [app]);
 
+  // Thought一覧モードのクリック: OverviewPanelには影響させずThinktankPanel内選択のみ
+  const handleSelectThought = useCallback((id: string) => {
+    panel.SelectThought(id);
+  }, [panel]);
+
   const handleToggleCheck = useCallback((id: string) => {
     panel.ToggleCheck(id);
   }, [panel]);
@@ -186,6 +196,31 @@ export function ThinktankArea({ app }: Props) {
     panel.ClearChecks();
     app.OpenThought(think.ID);
   }, [panel, vault, app]);
+
+  // チャット送信・保存
+  const handleChatSend = useCallback((text: string) => {
+    const ts = new Date().toISOString();
+    setChatMessages(prev => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts }]);
+    setChatWaiting(true);
+    setTimeout(() => {
+      setChatMessages(prev => [...prev, {
+        id:        `a-${Date.now()}`,
+        role:      'assistant',
+        content:   'Phase 14 でバックエンド接続後に応答します。\nSSE ストリーミングで逐次出力される予定です。',
+        timestamp: new Date().toISOString(),
+      }]);
+      setChatWaiting(false);
+    }, 800);
+  }, []);
+
+  const handleSaveChat = useCallback(async () => {
+    if (chatMessages.length === 0) return;
+    const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
+    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+    const body = chatMessages.map(m => m.role === 'user' ? `## ${m.content}` : m.content).join('\n');
+    await vault.CreateChatThink(`${title}\n${body}`);
+    setChatMessages([]);
+  }, [chatMessages, vault]);
 
   // 検索実行（state は ThinktankArea で保持）
   const handleSearch = useCallback(async () => {
@@ -258,7 +293,7 @@ export function ThinktankArea({ app }: Props) {
       />
     );
   } else if (panel.ViewMode === 'ai') {
-    content = <ThinktankAiView />;
+    content = <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
   } else if (panel.ViewMode === 'settings') {
     content = <ThinktankSettingsView />;
   } else {
@@ -276,7 +311,7 @@ export function ThinktankArea({ app }: Props) {
           selectedId={panel.SelectedThoughtID}
           checkedIds={panel.CheckedThoughtIDs}
           columns={columns}
-          onSelect={handleSelect}
+          onSelect={handleSelectThought}
           onToggleCheck={handleToggleCheck}
         />
       </>
@@ -296,6 +331,7 @@ export function ThinktankArea({ app }: Props) {
         allVaultChecked={vault.GetThinks().length > 0 && vault.GetThinks().every(t => panel.CheckedThoughtIDs.includes(t.ID))}
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
+        hasChatMessages={chatMessages.length > 0}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
@@ -304,6 +340,7 @@ export function ThinktankArea({ app }: Props) {
         onToggleAllVault={handleToggleAllVault}
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
+        onSaveChat={handleSaveChat}
       />
 
       {showColumnDialog && (
