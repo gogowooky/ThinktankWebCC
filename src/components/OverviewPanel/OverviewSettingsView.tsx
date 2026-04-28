@@ -1,10 +1,11 @@
 /**
  * OverviewSettingsView.tsx
  * OverviewPanel の設定ビュー。
- * ThinktankSettingsView と同じレイアウトで、選択中の Thought のプロファイルを表示する。
+ * 選択中の Thought のプロファイルを表示し、タイトルを編集・保存できる。
  */
 
-import { BookOpen } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
+import { Save, BookOpen } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 import './OverviewSettingsView.css';
@@ -15,6 +16,39 @@ interface Props {
 }
 
 export function OverviewSettingsView({ think, vault }: Props) {
+  const [titleValue, setTitleValue] = useState('');
+  const [saved,      setSaved]      = useState(false);
+  const [saving,     setSaving]     = useState(false);
+
+  // think が切り替わったら入力値をリセット
+  useEffect(() => {
+    setTitleValue(think?.Name ?? '');
+    setSaved(false);
+  }, [think?.ID]);
+
+  const handleSaveTitle = useCallback(async () => {
+    if (!think) return;
+    const newTitle = titleValue.trim();
+    if (!newTitle) return;
+    setSaving(true);
+    try {
+      if (think.IsMetaOnly) await think.LoadContent();
+      const lines  = think.Content.split('\n');
+      const prefix = lines[0]?.match(/^#+\s*/)?.[0] ?? '';
+      lines[0]     = prefix + newTitle;
+      think.Content = lines.join('\n');
+      await think.SaveContent();
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1500);
+    } finally {
+      setSaving(false);
+    }
+  }, [think, titleValue]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleSaveTitle();
+  }, [handleSaveTitle]);
+
   if (!think) {
     return (
       <div className="ov-settings-view ov-settings-view--empty">
@@ -34,8 +68,32 @@ export function OverviewSettingsView({ think, vault }: Props) {
       <section className="ov-settings-section">
         <h2 className="ov-settings-section__title">基本情報</h2>
         <dl className="ov-settings-dl">
+
           <dt>タイトル</dt>
-          <dd>{think.Name || '（無題）'}</dd>
+          <dd>
+            <div className="ov-settings-field">
+              <input
+                className="ov-settings-input"
+                type="text"
+                value={titleValue}
+                placeholder="（無題）"
+                onChange={e => { setTitleValue(e.target.value); setSaved(false); }}
+                onKeyDown={handleKeyDown}
+                spellCheck={false}
+              />
+              <button
+                className={`ov-settings-save-btn${saved ? ' ov-settings-save-btn--saved' : ''}`}
+                onClick={handleSaveTitle}
+                disabled={saving || !titleValue.trim()}
+                title="保存"
+                aria-label="保存"
+              >
+                <Save size={12} />
+                <span>{saved ? '保存済み' : '保存'}</span>
+              </button>
+            </div>
+          </dd>
+
           <dt>ID</dt>
           <dd><code>{think.ID}</code></dd>
           <dt>作成日</dt>

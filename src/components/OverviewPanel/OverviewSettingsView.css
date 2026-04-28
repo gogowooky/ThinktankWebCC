@@ -74,6 +74,65 @@
   color: #2c3e6f;
 }
 
+/* ── タイトル編集フィールド ── */
+
+.ov-settings-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ov-settings-input {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  font-size: 11px;
+  color: #2c3e6f;
+  background: rgba(57, 73, 171, 0.05);
+  border: 1px solid rgba(57, 73, 171, 0.2);
+  border-radius: 4px;
+  outline: none;
+}
+
+.ov-settings-input:focus {
+  border-color: rgba(57, 73, 171, 0.5);
+  background: #fff;
+}
+
+.ov-settings-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(57, 73, 171, 0.8);
+  background: rgba(57, 73, 171, 0.08);
+  border: 1px solid rgba(57, 73, 171, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ov-settings-save-btn:hover:not(:disabled) {
+  background: rgba(57, 73, 171, 0.15);
+  color: #3949ab;
+}
+
+.ov-settings-save-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ov-settings-save-btn--saved {
+  color: #2e7d32;
+  background: rgba(46, 125, 50, 0.1);
+  border-color: rgba(46, 125, 50, 0.3);
+}
+
 /* ── Think ID リスト ── */
 
 .ov-settings-id-list {
