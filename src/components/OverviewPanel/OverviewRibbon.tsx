@@ -43,15 +43,6 @@ export function OverviewRibbon({
       side="left"
       isOpen={isOpen}
       onToggle={onToggle}
-      bottomChildren={
-        <button
-          className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
-          onClick={onToggleSettings}
-          title="Overview設定"
-        >
-          <Settings size={14} />
-        </button>
-      }
     >
       {VIEW_BUTTONS.map(({ mode, Icon, title }) => (
         <button
@@ -66,6 +57,13 @@ export function OverviewRibbon({
           <Icon size={14} />
         </button>
       ))}
+      <button
+        className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
+        onClick={onToggleSettings}
+        title="Overview設定"
+      >
+        <Settings size={14} />
+      </button>
     </PanelRibbon>
   );
 }

@@ -91,14 +91,6 @@ export function ThinktankRibbon({
           >
             {mode === 'local' ? <Monitor size={15} /> : <Globe size={15} />}
           </button>
-          <button
-            className={`ribbon-icon-btn${viewMode === 'settings' ? ' ribbon-icon-btn--active' : ''}`}
-            title="設定"
-            aria-label="設定"
-            onClick={() => onSetViewMode('settings')}
-          >
-            <Settings size={15} />
-          </button>
         </>
       }
     >
@@ -113,6 +105,14 @@ export function ThinktankRibbon({
           {icon}
         </button>
       ))}
+      <button
+        className={`ribbon-icon-btn${viewMode === 'settings' ? ' ribbon-icon-btn--active' : ''}`}
+        title="設定"
+        aria-label="設定"
+        onClick={() => onSetViewMode('settings')}
+      >
+        <Settings size={15} />
+      </button>
     </PanelRibbon>
   );
 }
