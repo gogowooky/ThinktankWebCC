@@ -136,8 +136,11 @@ export function OverviewArea({ app, showSettings }: Props) {
     e.preventDefault();
     setIsDragOver(false);
     const id = e.dataTransfer.getData('application/x-thought-id');
-    if (id) selectThought(id);
-  }, [selectThought]);
+    if (!id) return;
+    // Thought（ContentType='thought'）のみ ThoughtPlace に設定する
+    const dropped = vault.GetThink(id);
+    if (!dropped || dropped.ContentType === 'thought') selectThought(id);
+  }, [selectThought, vault]);
 
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
@@ -334,7 +337,7 @@ export function OverviewArea({ app, showSettings }: Props) {
               selectedId=""
               checkedIds={checkedIds}
               columns={columns}
-              onSelect={id => app.OpenThought(id)}
+              onSelect={id => app.OpenThinkInWorkout(id)}
               onToggleCheck={handleToggleCheck}
             />
           )
