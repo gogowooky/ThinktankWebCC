@@ -15,6 +15,14 @@ import hljs from 'highlight.js';
 import type { MediaProps } from './types';
 import './MarkdownMedia.css';
 
+// [File:name](url) などのリンクを新しいタブで開くレンダラー
+const linkRenderer = {
+  link({ href, title, text }: { href: string; title?: string | null; text: string }) {
+    const titleAttr = title ? ` title="${title}"` : '';
+    return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+  },
+};
+
 // marked インスタンスを一度だけ構築
 const md = new Marked(
   markedHighlight({
@@ -23,7 +31,8 @@ const md = new Marked(
       const language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
     },
-  })
+  }),
+  { renderer: linkRenderer },
 );
 
 export function MarkdownMedia({ think }: MediaProps) {
