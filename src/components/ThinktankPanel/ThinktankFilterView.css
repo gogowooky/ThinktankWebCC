@@ -81,9 +81,23 @@
   opacity: 0.8;
 }
 
-/* 日付セパレーター */
-.tt-filter-view__bar-sep {
+/* 範囲指定テキスト入力 */
+.tt-filter-view__bar-range {
+  width: 58px;
   flex-shrink: 0;
+  background: transparent;
+  border: none;
+  outline: none;
   font-size: 11px;
-  color: #888;
+  color: #1a1a2e;
+  font-family: inherit;
+  text-align: right;
+}
+
+.tt-filter-view__bar-range::placeholder {
+  color: #bbb;
+}
+
+.tt-filter-view__bar-range--invalid {
+  color: #c0392b;
 }

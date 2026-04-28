@@ -4,27 +4,33 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, Filter, BookOpen, ListChecks } from 'lucide-react';
+import { CheckSquare, Square, Trash2, Filter, BookOpen, ListChecks, CalendarRange, SlidersHorizontal } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
 interface Props {
-  visibleIds:          string[];
-  checkedIds:          string[];
-  showCheckedOnly:     boolean;
-  allVaultChecked:     boolean;
-  onCheckAll:          () => void;
-  onClearChecks:       () => void;
-  onDeleteChecked:     () => void;
-  onToggleCheckedOnly: () => void;
-  onCreateThought:     () => void;
-  onToggleAllVault:    () => void;
+  visibleIds:            string[];
+  checkedIds:            string[];
+  showCheckedOnly:       boolean;
+  allVaultChecked:       boolean;
+  showDateFilter:        boolean;
+  showColumnDialog:      boolean;
+  onCheckAll:            () => void;
+  onClearChecks:         () => void;
+  onDeleteChecked:       () => void;
+  onToggleCheckedOnly:   () => void;
+  onCreateThought:       () => void;
+  onToggleAllVault:      () => void;
+  onToggleDateFilter:    () => void;
+  onToggleColumnDialog:  () => void;
 }
 
 export function ThinktankMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
+  showDateFilter, showColumnDialog,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
+  onToggleDateFilter, onToggleColumnDialog,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -66,6 +72,24 @@ export function ThinktankMenuRibbon({
         disabled={!hasChecked && !showCheckedOnly}
       >
         <Filter size={14} />
+      </button>
+
+      {/* DateFilter: 作成日(ID)・更新日フィルターの表示切替 */}
+      <button
+        className={`menu-ribbon__btn menu-ribbon__btn--icon${showDateFilter ? ' menu-ribbon__btn--active' : ''}`}
+        onClick={onToggleDateFilter}
+        title={showDateFilter ? '日付フィルターを非表示' : '日付フィルターを表示'}
+      >
+        <CalendarRange size={14} />
+      </button>
+
+      {/* ColumnSort: 表示項目とソート設定 */}
+      <button
+        className={`menu-ribbon__btn menu-ribbon__btn--icon${showColumnDialog ? ' menu-ribbon__btn--active' : ''}`}
+        onClick={onToggleColumnDialog}
+        title="表示項目とソート"
+      >
+        <SlidersHorizontal size={14} />
       </button>
 
       {/* ChecktoThought: Thought作成 */}

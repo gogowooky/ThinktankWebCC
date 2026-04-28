@@ -11,10 +11,12 @@
  *   "-word" で NOT、"OR" キーワードは OR 接続（将来対応）。
  */
 
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { BookOpen } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
+import { DEFAULT_COLUMNS } from './ColumnSortDialog';
+import type { ColumnConfig } from './ColumnSortDialog';
 import './ThoughtsList.css';
 
 const ROW_HEIGHT = 36;
@@ -24,6 +26,7 @@ interface Props {
   thoughts: TTThink[];
   selectedId: string;
   checkedIds: string[];
+  columns?: ColumnConfig[];
   onSelect: (id: string) => void;
   onToggleCheck: (id: string) => void;
 }
@@ -60,10 +63,17 @@ export function ThoughtsList({
   thoughts,
   selectedId,
   checkedIds,
+  columns = DEFAULT_COLUMNS,
   onSelect,
   onToggleCheck,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
+
+  const vis = useMemo(() => {
+    const m: Record<string, boolean> = {};
+    columns.forEach(c => { m[c.field] = c.visible; });
+    return m;
+  }, [columns]);
 
   const virtualizer = useVirtualizer({
     count: thoughts.length,
@@ -106,36 +116,45 @@ export function ThoughtsList({
               }}
               onClick={() => onSelect(thought.ID)}
             >
-              {/* チェックボックス */}
               <input
                 type="checkbox"
                 className="thoughts-list__check"
                 checked={isChecked}
-                onChange={e => {
-                  e.stopPropagation();
-                  onToggleCheck(thought.ID);
-                }}
+                onChange={e => { e.stopPropagation(); onToggleCheck(thought.ID); }}
                 onClick={e => e.stopPropagation()}
                 aria-label={`${thought.Name} を選択`}
               />
-
-              {/* アイコン */}
               <BookOpen size={13} className="thoughts-list__icon" />
-
-              {/* タイトル */}
-              <span className="thoughts-list__title" title={thought.Name}>
-                {thought.Name || '（無題）'}
-              </span>
-
-              {/* 作成日(ID) */}
-              <span className="thoughts-list__date" title="作成日(ID)">
-                {thought.ID.slice(0, 10)}
-              </span>
-
-              {/* 更新日 */}
-              <span className="thoughts-list__date thoughts-list__date--updated" title="更新日">
-                {thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}
-              </span>
+              {vis['Name'] !== false && (
+                <span className="thoughts-list__title" title={thought.Name}>
+                  {thought.Name || '（無題）'}
+                </span>
+              )}
+              {vis['ContentType'] && (
+                <span className="thoughts-list__cell thoughts-list__cell--sm" title="種別">
+                  {thought.ContentType}
+                </span>
+              )}
+              {vis['Keywords'] && (
+                <span className="thoughts-list__cell thoughts-list__cell--md" title={thought.Keywords}>
+                  {thought.Keywords}
+                </span>
+              )}
+              {vis['RelatedIDs'] && (
+                <span className="thoughts-list__cell thoughts-list__cell--md" title={thought.RelatedIDs}>
+                  {thought.RelatedIDs}
+                </span>
+              )}
+              {vis['ID'] !== false && (
+                <span className="thoughts-list__date" title="作成日(ID)">
+                  {thought.ID.slice(0, 10)}
+                </span>
+              )}
+              {vis['UpdatedAt'] !== false && (
+                <span className="thoughts-list__date thoughts-list__date--updated" title="更新日">
+                  {thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}
+                </span>
+              )}
             </div>
           );
         })}

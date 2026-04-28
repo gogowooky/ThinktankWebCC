@@ -1,0 +1,99 @@
+/* ColumnSortDialog.css */
+
+.col-sort-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+}
+
+.col-sort-dialog {
+  position: absolute;
+  top: 32px;
+  left: 4px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  min-width: 210px;
+  z-index: 101;
+  overflow: hidden;
+}
+
+.col-sort-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.col-sort-dialog__title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #333;
+}
+
+.col-sort-dialog__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  color: #888;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+}
+
+.col-sort-dialog__close:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.col-sort-dialog__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.col-sort-dialog__th {
+  padding: 4px 6px;
+  text-align: center;
+  color: #888;
+  font-weight: normal;
+  font-size: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.col-sort-dialog__th--field {
+  text-align: left;
+  padding-left: 10px;
+}
+
+.col-sort-dialog__row:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.col-sort-dialog__td {
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.col-sort-dialog__row:last-child .col-sort-dialog__td {
+  border-bottom: none;
+}
+
+.col-sort-dialog__td--field {
+  padding-left: 10px;
+  color: #333;
+  white-space: nowrap;
+}
+
+.col-sort-dialog__td--check {
+  text-align: center;
+}
+
+.col-sort-dialog__td--check input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #0737631a;
+}

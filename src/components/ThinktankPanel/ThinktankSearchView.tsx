@@ -8,6 +8,7 @@ import { useCallback } from 'react';
 import { Search } from 'lucide-react';
 import { TTThink } from '../../models/TTThink';
 import { ThoughtsList } from './ThoughtsList';
+import type { ColumnConfig } from './ColumnSortDialog';
 import './ThinktankSearchView.css';
 
 interface Props {
@@ -20,6 +21,7 @@ interface Props {
   totalVaultCount: number;
   loading:         boolean;
   searched:        boolean;
+  columns?:        ColumnConfig[];
   onQueryChange:   (q: string) => void;
   onSearch:        () => void;
   onSelect:        (id: string) => void;
@@ -28,7 +30,7 @@ interface Props {
 
 export function ThinktankSearchView({
   selectedId, checkedIds, query, results, visibleResults, totalVaultCount,
-  loading, searched, onQueryChange, onSearch, onSelect, onToggleCheck,
+  loading, searched, columns, onQueryChange, onSearch, onSelect, onToggleCheck,
 }: Props) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') onSearch();
@@ -73,6 +75,7 @@ export function ThinktankSearchView({
           thoughts={visibleResults}
           selectedId={selectedId}
           checkedIds={checkedIds}
+          columns={columns}
           onSelect={onSelect}
           onToggleCheck={onToggleCheck}
         />

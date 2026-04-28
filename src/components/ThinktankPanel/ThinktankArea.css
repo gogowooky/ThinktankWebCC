@@ -5,6 +5,11 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  position: relative;
+}
+
+.thinktank-area__date-bars {
+  flex-shrink: 0;
 }
 
 .thinktank-area__body {

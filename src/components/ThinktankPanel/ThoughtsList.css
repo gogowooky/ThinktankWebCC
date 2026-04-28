@@ -83,6 +83,23 @@
   opacity: 0.75;
 }
 
+.thoughts-list__cell {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thoughts-list__cell--sm {
+  width: 52px;
+}
+
+.thoughts-list__cell--md {
+  width: 90px;
+}
+
 /* スクロールバー */
 .thoughts-list::-webkit-scrollbar        { width: 8px; }
 .thoughts-list::-webkit-scrollbar-track  { background: transparent; }
