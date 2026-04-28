@@ -132,7 +132,7 @@ export function ThinktankArea({ app }: Props) {
   // ── ハンドラ ─────────────────────────────────────────────────────────────
 
   const handleSelect = useCallback((id: string) => {
-    app.OpenThought(id);
+    app.OpenThinkInWorkout(id);
   }, [app]);
 
   // Thought一覧モードのクリック: OverviewPanelには影響させずThinktankPanel内選択のみ
