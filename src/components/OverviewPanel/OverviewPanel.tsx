@@ -39,6 +39,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         mediaType={panel.MediaType}
         onToggle={handleToggle}
         onMediaType={handleMediaType}
+        onToggleSettings={() => {}}
       />
       <PanelArea
         panelId="overview"
