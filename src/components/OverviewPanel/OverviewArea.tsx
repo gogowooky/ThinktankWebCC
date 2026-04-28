@@ -100,11 +100,23 @@ export function OverviewArea({ app }: Props) {
     });
   }
 
-  // ── 可視 Thought リスト ───────────────────────────────────────────────────
+  // ── 可視 Thought リスト（セレクター件数 / 非datagridモード用）────────────
   const allThoughts = vault.GetThoughts();
   const filteredBase = applyFilter(allThoughts, filter);
   const visibleThoughts = applySort(applyDateFilter(
     showCheckedOnly ? filteredBase.filter(t => checkedIds.includes(t.ID)) : filteredBase
+  ));
+
+  // ── Think一覧モード: 選択 Thought 内の Think 群 ────────────────────────
+  const isThinkListMode = panel.MediaType === 'datagrid';
+  const thinksInThought = isThinkListMode && panel.ThoughtID
+    ? vault.GetThinksForThought(panel.ThoughtID)
+    : [];
+  const visibleThinks = applySort(applyDateFilter(
+    applyFilter(
+      showCheckedOnly ? thinksInThought.filter(t => checkedIds.includes(t.ID)) : thinksInThought,
+      filter
+    )
   ));
 
   // ── Thought 選択（履歴に追加）────────────────────────────────────────────
@@ -142,8 +154,8 @@ export function OverviewArea({ app }: Props) {
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
   const handleCheckAll = useCallback(() => {
-    setCheckedIds(visibleThoughts.map(t => t.ID));
-  }, [visibleThoughts]);
+    setCheckedIds((isThinkListMode ? visibleThinks : visibleThoughts).map(t => t.ID));
+  }, [isThinkListMode, visibleThinks, visibleThoughts]);
 
   const handleClearChecks = useCallback(() => setCheckedIds([]), []);
 
@@ -193,8 +205,12 @@ export function OverviewArea({ app }: Props) {
       ? [{ id: think.ID, name: think.Name || '（無題）' }, ...history]
       : history;
 
-  const allVaultIds   = vault.GetThinks().map(t => t.ID);
+  const allVaultIds = isThinkListMode
+    ? thinksInThought.map(t => t.ID)
+    : vault.GetThinks().map(t => t.ID);
   const allVaultChecked = allVaultIds.length > 0 && allVaultIds.every(id => checkedIds.includes(id));
+
+  const ribbonVisibleIds = (isThinkListMode ? visibleThinks : visibleThoughts).map(t => t.ID);
 
   const createdRangeInvalid = createdRange.trim() !== '' && !parseRange(createdRange.trim());
   const updatedRangeInvalid = updatedRange.trim() !== '' && !parseRange(updatedRange.trim());
@@ -204,7 +220,7 @@ export function OverviewArea({ app }: Props) {
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <OverviewMenuRibbon
-        visibleIds={visibleThoughts.map(t => t.ID)}
+        visibleIds={ribbonVisibleIds}
         checkedIds={checkedIds}
         showCheckedOnly={showCheckedOnly}
         allVaultChecked={allVaultChecked}
@@ -307,14 +323,20 @@ export function OverviewArea({ app }: Props) {
       {/* ── 本体 ───────────────────────────────────────────────── */}
       <div className="overview-area__body">
         {panel.MediaType === 'datagrid' ? (
-          <ThoughtsList
-            thoughts={visibleThoughts}
-            selectedId={panel.ThoughtID || ''}
-            checkedIds={checkedIds}
-            columns={columns}
-            onSelect={selectThought}
-            onToggleCheck={handleToggleCheck}
-          />
+          !panel.ThoughtID ? (
+            <div className="overview-area__empty">
+              <span>Thought を選択してください</span>
+            </div>
+          ) : (
+            <ThoughtsList
+              thoughts={visibleThinks}
+              selectedId={''}
+              checkedIds={checkedIds}
+              columns={columns}
+              onSelect={id => app.OpenThought(id)}
+              onToggleCheck={handleToggleCheck}
+            />
+          )
         ) : !think ? (
           <div className="overview-area__empty">
             <span>Thought を選択してください</span>

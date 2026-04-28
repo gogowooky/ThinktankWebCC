@@ -20,7 +20,7 @@ type OverviewViewMode = 'chat' | 'datagrid' | 'markdown' | 'graph';
 
 const VIEW_BUTTONS: Array<{ mode: OverviewViewMode; Icon: LucideIcon; title: string }> = [
   { mode: 'chat',      Icon: Sparkles,    title: 'AI相談（データ分析）' },
-  { mode: 'datagrid',  Icon: LayoutList,  title: 'Thought一覧' },
+  { mode: 'datagrid',  Icon: LayoutList,  title: 'Think一覧' },
   { mode: 'markdown',  Icon: BookUser,    title: 'Thoughtプロファイル' },
   { mode: 'graph',     Icon: BarChart2,   title: 'Thought分析' },
 ];

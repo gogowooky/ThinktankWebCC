@@ -55,7 +55,7 @@ const MODE_BUTTONS: {
   { mode: 'ai',      icon: <Sparkles size={16} />,          label: 'AI相談' },
   { mode: 'filter',  icon: <Filter   size={16} />,          label: 'フィルター（タイトル・日時）' },
   { mode: 'search',  icon: <Search   size={16} />,          label: '全文検索（内容）' },
-  { mode: 'thoughts',icon: <Brain    size={16} />,          label: 'Thoughtsのみ表示' },
+  { mode: 'thoughts',icon: <Brain    size={16} />,          label: 'Thought一覧' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────
