@@ -1,0 +1,11 @@
+.app-layout {
+  display: flex;
+  flex: 1;          /* #root (flex-direction:column) の中で縦方向に広がる */
+  min-height: 0;    /* flex 子要素が縮小できるよう必須 */
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+}

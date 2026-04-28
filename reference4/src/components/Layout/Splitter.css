@@ -1,0 +1,18 @@
+.splitter {
+  width: var(--splitter-width);
+  background: var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background var(--transition-hover);
+  position: relative;
+}
+
+.splitter::after {
+  content: '';
+  position: absolute;
+  inset: 0 -3px;  /* ヒット領域を広げる */
+}
+
+.splitter:hover {
+  background: var(--text-accent);
+}

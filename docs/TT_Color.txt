@@ -1,0 +1,162 @@
+# TT.pptx カラーテーマ一覧
+# Source: docs/TT.pptx Slide #5-#18
+# 各テーマは6色のグラデーション（Ribbon用ダーク色 → Area用ライト色）
+# 各パネルに異なるテーマを割り当てて視覚的に区別する
+
+============================================================
+
+[Slide #5] style-name: gray
+  Japanese: グレー
+  Colors (dark → light):
+    #3F3F3F  (Ribbon背景)
+    #7F7F7F  (中間色1)
+    #A5A5A5  (中間色2)
+    #BFBFBF  (中間色3)
+    #D0D0D0  (Area背景)
+
+[Slide #6] style-name: light-gray
+  Japanese: ライトグレー
+  Colors (dark → light):
+    #808080  (Ribbon背景)
+    #A0A0A0  (中間色1)
+    #CCCCCC  (中間色2)
+    #E8E8E8  (中間色3)
+    #F2F2F2  (Area背景)
+
+[Slide #7] style-name: yellow
+  Japanese: イエロー
+  Colors (dark → light):
+    #FBC02D  (Ribbon背景)
+    #FDD835  (中間色1)
+    #FFF59D  (中間色2)
+    #FFF9C4  (中間色3)
+    #FFFDE7  (Area背景)
+
+[Slide #8] style-name: indigo-dark
+  Japanese: インディゴ（ダーク）
+  Colors (dark → light):
+    #3949AB  (Ribbon背景)
+    #5C6BC0  (中間色1)
+    #C5CAE9  (中間色2)
+    #DDE3F0  (中間色3)
+    #E8EAF6  (中間色4)
+    #F9FAFF  (Area背景)
+
+[Slide #9] style-name: indigo-light
+  Japanese: インディゴ（ライト）
+  Colors (dark → light):
+    #5C6BC0  (Ribbon背景)
+    #7986CB  (中間色1)
+    #E8EAF6  (中間色2)
+    #F0F2F9  (中間色3)
+    #F5F6FA  (中間色4)
+    #FAFBFF  (Area背景)
+
+[Slide #10] style-name: purple
+  Japanese: パープル
+  Colors (dark → light):
+    #9575CD  (Ribbon背景)
+    #B388FF  (中間色1)
+    #E1D5FF  (中間色2)
+    #EFECFF  (中間色3)
+    #F0E6FF  (中間色4)
+    #F8F2FF  (Area背景)
+
+[Slide #11] style-name: rose
+  Japanese: ローズ/レッド
+  Colors (dark → light):
+    #994D4D  (Ribbon背景)
+    #CC6666  (中間色1)
+    #F2A7A7  (中間色2)
+    #FFCACA  (中間色3)
+    #FFF0F0  (中間色4)
+    #FFF5F5  (Area背景)
+
+[Slide #12] style-name: orange
+  Japanese: オレンジ
+  Colors (dark → light):
+    #E67E22  (Ribbon背景)
+    #F39C12  (中間色1)
+    #FAD7A0  (中間色2)
+    #FDEBD0  (中間色3)
+    #FFF5E0  (中間色4)
+    #FFFCF5  (Area背景)
+
+[Slide #13] style-name: green-dark
+  Japanese: ダークグリーン
+  Colors (dark → light):
+    #1E4620  (Ribbon背景)
+    #375623  (中間色1)
+    #548235  (中間色2)
+    #A9D08E  (中間色3)
+    #D1E7DD  (中間色4)
+    #E2EFDA  (Area背景)
+
+[Slide #14] style-name: green-sage
+  Japanese: セージグリーン
+  Colors (dark → light):
+    #4B6A4C  (Ribbon背景)
+    #5F784E  (中間色1)
+    #769C5C  (中間色2)
+    #C2DDB0  (中間色3)
+    #E8F3F0  (中間色4)
+    #F2F8F0  (Area背景)
+
+[Slide #15] style-name: blue-dark
+  Japanese: ダークブルー
+  Colors (dark → light):
+    #073763  (Ribbon背景)
+    #0B5394  (中間色1)
+    #3D85C6  (中間色2)
+    #9FC5E8  (中間色3)
+    #CFE2F3  (中間色4)
+    #E8F1F8  (Area背景)
+
+[Slide #16] style-name: blue-light
+  Japanese: ライトブルー
+  Colors (dark → light):
+    #3D85C6  (Ribbon背景)
+    #9FC5E8  (中間色1)
+    #CFE2F3  (中間色2)
+    #EBF3F9  (中間色3)
+    #F4F8FB  (Area背景)
+
+[Slide #17] style-name: orange-dark
+  Japanese: ダークオレンジ
+  Colors (dark → light):
+    #CC5200  (Ribbon背景)
+    #E67300  (中間色1)
+    #FF9933  (中間色2)
+    #FFCC99  (中間色3)
+    #FFE5CC  (中間色4)
+    #FFF2E6  (Area背景)
+
+[Slide #18] style-name: orange-light
+  Japanese: ライトオレンジ
+  Colors (dark → light):
+    #FF9933  (Ribbon背景)
+    #FFB366  (中間色1)
+    #FFCC99  (中間色2)
+    #FFE5CC  (中間色3)
+    #FFF2E6  (中間色4)
+    #FFFAF5  (Area背景)
+
+============================================================
+
+## パネル別テーマ割り当て案
+
+ThinktankPanel  → blue-dark   (#073763 Ribbon, #E8F1F8 Area)
+OverviewPanel   → indigo-dark (#3949AB Ribbon, #F9FAFF Area)
+WorkoutPanel    → gray        (#3F3F3F Ribbon, #D0D0D0 Area)
+ToDoPanel       → green-dark  (#1E4620 Ribbon, #E2EFDA Area)
+
+## CSS変数マッピング（採用テーマに合わせて変更すること）
+
+--thinktank-ribbon-bg: #073763;
+--thinktank-area-bg:   #E8F1F8;
+--overview-ribbon-bg:  #3949AB;
+--overview-area-bg:    #F9FAFF;
+--workout-ribbon-bg:   #3F3F3F;
+--workout-area-bg:     #D0D0D0;
+--todo-ribbon-bg:      #1E4620;
+--todo-area-bg:        #E2EFDA;

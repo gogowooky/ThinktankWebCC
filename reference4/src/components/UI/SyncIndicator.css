@@ -1,0 +1,40 @@
+.sync-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.sync-indicator--synced {
+  color: var(--sync-synced);
+}
+
+.sync-indicator--syncing {
+  color: var(--sync-syncing);
+}
+
+.sync-indicator--pending {
+  color: var(--sync-pending);
+}
+
+.sync-indicator--offline {
+  color: var(--text-muted);
+}
+
+.sync-indicator--error {
+  color: var(--sync-error);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.sync-spinner {
+  animation: spin 1s linear infinite;
+}

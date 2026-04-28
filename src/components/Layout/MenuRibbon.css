@@ -1,0 +1,77 @@
+/* MenuRibbon.css
+ * 各 Area 上部に配置する横向き共通 Ribbon の基底スタイル
+ */
+
+.menu-ribbon {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  padding: 0 6px;
+  height: 30px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+/* ── ボタン ── */
+
+.menu-ribbon__btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: inherit;
+  opacity: 0.75;
+  transition: opacity 120ms ease, background 120ms ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.menu-ribbon__btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.menu-ribbon__btn--active {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.menu-ribbon__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* アイコンのみボタン（テキストなし） */
+.menu-ribbon__btn--icon {
+  padding: 3px 5px;
+  gap: 0;
+}
+
+/* ── セパレーター ── */
+
+.menu-ribbon__sep {
+  width: 1px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.2);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+/* ── スペーサー ── */
+
+.menu-ribbon__spacer {
+  flex: 1;
+}
+
+/* ── ラベル ── */
+
+.menu-ribbon__label {
+  font-size: 11px;
+  opacity: 0.6;
+  padding: 0 4px;
+  white-space: nowrap;
+}

@@ -1,423 +1,248 @@
 /**
- * BigQueryService.ts
- * Google BigQuery API を使用したデータ操作サービス
- * サービスアカウント認証を使用
+ * BigQueryService.ts (v5)
+ * thinktank.vault テーブルに対する CRUD サービス
+ * vault_id フィールド廃止済み。MERGE 文 Upsert + 並列更新エラー自動リトライ
  */
 
-import { BigQuery, Table } from '@google-cloud/bigquery';
+import { BigQuery } from '@google-cloud/bigquery';
 
-// データセット名とテーブル名
 const DATASET_ID = 'thinktank';
-const TABLE_ID = 'files';
+const TABLE_ID   = 'vault';
 
-// ファイルレコードの型定義
-export interface FileRecord {
-    file_id: string;
-    title: string | null;
-    file_type: string;
-    category: string | null;
-    content: string | null;
-    metadata: Record<string, unknown> | null;
-    size_bytes: number | null;
-    created_at: Date;
-    updated_at: Date;
+export interface VaultRecord {
+  file_id:     string;
+  file_type:   string;        // 固定値 "md"
+  category:    string;        // ContentType (memo/thought/tables/links/chat/nettext)
+  title:       string | null;
+  content:     string | null; // タイトル行以降の本文
+  keywords:    string | null;
+  related_ids: string | null;
+  size_bytes:  number | null;
+  is_deleted:  boolean;
+  created_at:  string;
+  updated_at:  string;
 }
 
-// クエリ結果の型
-export interface QueryResult<T = Record<string, unknown>> {
-    success: boolean;
-    data?: T[];
-    error?: string;
-}
-
-// バージョン情報の型
-export interface VersionInfo {
-    file_id: string;
-    updated_at: Date;
-}
+type BqResult<T = VaultRecord[]> = { success: true; data: T } | { success: false; error: string };
 
 export class BigQueryService {
-    private bigquery: BigQuery | null = null;
-    private table: Table | null = null;
-    private projectId: string | undefined = undefined;
+  private bigquery: BigQuery | null = null;
+  private projectId: string | undefined;
 
-    /**
-     * サービスアカウント認証で BigQuery API を初期化
-     */
-    async initialize(): Promise<boolean> {
-        try {
-            // 環境変数から認証情報を取得
-            const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  async initialize(): Promise<boolean> {
+    try {
+      const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+      if (!credentials) {
+        console.error('[BigQueryService] GOOGLE_SERVICE_ACCOUNT_KEY not set');
+        return false;
+      }
+      const keyFile = JSON.parse(credentials);
+      this.projectId = keyFile.project_id as string | undefined;
+      this.bigquery = new BigQuery({ projectId: this.projectId, credentials: keyFile });
+      await this.ensureTableExists();
+      console.log(`[BigQueryService] Initialized (project: ${this.projectId}, table: ${DATASET_ID}.${TABLE_ID})`);
+      return true;
+    } catch (error) {
+      console.error('[BigQueryService] Initialization failed:', error);
+      return false;
+    }
+  }
 
-            if (!credentials) {
-                console.error('[BigQueryService] GOOGLE_SERVICE_ACCOUNT_KEY が設定されていません');
-                return false;
-            }
+  private get tbl(): string {
+    return `\`${this.projectId}.${DATASET_ID}.${TABLE_ID}\``;
+  }
 
-            const keyFile = JSON.parse(credentials);
-            this.projectId = keyFile.project_id || undefined;
-
-            this.bigquery = new BigQuery({
-                projectId: this.projectId,
-                credentials: keyFile
-            });
-
-            // テーブル参照を取得
-            const dataset = this.bigquery.dataset(DATASET_ID);
-            this.table = dataset.table(TABLE_ID);
-
-            // テーブルの存在確認（存在しない場合は作成）
-            await this.ensureTableExists();
-
-            console.log(`[BigQueryService] 初期化完了 (プロジェクト: ${this.projectId})`);
-            return true;
-        } catch (error) {
-            console.error('[BigQueryService] 初期化失敗:', error);
-            return false;
-        }
+  private async ensureTableExists(): Promise<void> {
+    if (!this.bigquery) return;
+    const dataset = this.bigquery.dataset(DATASET_ID);
+    const table   = dataset.table(TABLE_ID);
+    const [exists] = await table.exists();
+    if (exists) {
+      console.log(`[BigQueryService] Table ${DATASET_ID}.${TABLE_ID} confirmed`);
+      return;
     }
 
-    /**
-     * テーブルが存在しない場合は作成
-     */
-    private async ensureTableExists(): Promise<void> {
-        if (!this.bigquery || !this.table) return;
-
-        try {
-            const [exists] = await this.table.exists();
-            if (exists) {
-                console.log(`[BigQueryService] テーブル ${DATASET_ID}.${TABLE_ID} 確認済み`);
-                return;
-            }
-
-            // テーブルを作成
-            const schema = [
-                { name: 'file_id', type: 'STRING', mode: 'REQUIRED' },
-                { name: 'title', type: 'STRING', mode: 'NULLABLE' },
-                { name: 'file_type', type: 'STRING', mode: 'REQUIRED' },
-                { name: 'category', type: 'STRING', mode: 'NULLABLE' },
-                { name: 'content', type: 'STRING', mode: 'NULLABLE' },
-                { name: 'metadata', type: 'JSON', mode: 'NULLABLE' },
-                { name: 'size_bytes', type: 'INT64', mode: 'NULLABLE' },
-                { name: 'created_at', type: 'TIMESTAMP', mode: 'REQUIRED' },
-                { name: 'updated_at', type: 'TIMESTAMP', mode: 'REQUIRED' }
-            ];
-
-            const dataset = this.bigquery.dataset(DATASET_ID);
-
-            // データセットの存在確認
-            const [datasetExists] = await dataset.exists();
-            if (!datasetExists) {
-                await this.bigquery.createDataset(DATASET_ID, {
-                    location: 'asia-northeast1'
-                });
-                console.log(`[BigQueryService] データセット ${DATASET_ID} を作成しました`);
-            }
-
-            await dataset.createTable(TABLE_ID, { schema });
-            console.log(`[BigQueryService] テーブル ${DATASET_ID}.${TABLE_ID} を作成しました`);
-        } catch (error) {
-            console.error('[BigQueryService] テーブル作成失敗:', error);
-            throw error;
-        }
+    const [dsExists] = await dataset.exists();
+    if (!dsExists) {
+      await this.bigquery.createDataset(DATASET_ID, { location: 'asia-northeast1' });
     }
+    await dataset.createTable(TABLE_ID, {
+      schema: [
+        { name: 'file_id',     type: 'STRING',    mode: 'REQUIRED' },
+        { name: 'file_type',   type: 'STRING',    mode: 'REQUIRED' },
+        { name: 'category',    type: 'STRING',    mode: 'NULLABLE' },
+        { name: 'title',       type: 'STRING',    mode: 'NULLABLE' },
+        { name: 'content',     type: 'STRING',    mode: 'NULLABLE' },
+        { name: 'keywords',    type: 'STRING',    mode: 'NULLABLE' },
+        { name: 'related_ids', type: 'STRING',    mode: 'NULLABLE' },
+        { name: 'size_bytes',  type: 'INT64',     mode: 'NULLABLE' },
+        { name: 'is_deleted',  type: 'BOOL',      mode: 'NULLABLE' },
+        { name: 'created_at',  type: 'TIMESTAMP', mode: 'REQUIRED' },
+        { name: 'updated_at',  type: 'TIMESTAMP', mode: 'REQUIRED' },
+      ],
+      clustering: { fields: ['category'] },
+    });
+    console.log(`[BigQueryService] Created table ${DATASET_ID}.${TABLE_ID}`);
+  }
 
-    /**
-     * ファイルを取得（単一）
-     */
-    async getFile(fileId: string): Promise<QueryResult<FileRecord>> {
-        if (!this.bigquery) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
+  // ── メタ一覧（content なし）──────────────────────────────────────────
 
-        try {
-            const query = `
-                SELECT * FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-                WHERE file_id = @fileId
-                ORDER BY updated_at DESC
-                LIMIT 1
-            `;
-            const [rows] = await this.bigquery.query({
-                query,
-                params: { fileId }
-            });
-
-            return { success: true, data: rows as FileRecord[] };
-        } catch (error) {
-            console.error(`[BigQueryService] ファイル取得失敗 (${fileId}):`, error);
-            return { success: false, error: String(error) };
-        }
+  async listMeta(): Promise<BqResult> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        SELECT t.file_id, t.file_type, t.category, t.title,
+               t.keywords, t.related_ids, t.size_bytes,
+               COALESCE(t.is_deleted, FALSE) AS is_deleted,
+               t.created_at, t.updated_at
+        FROM ${this.tbl} t
+        INNER JOIN (
+          SELECT file_id, MAX(updated_at) AS max_upd
+          FROM ${this.tbl}
+          WHERE COALESCE(is_deleted, FALSE) = FALSE
+          GROUP BY file_id
+        ) latest ON t.file_id = latest.file_id AND t.updated_at = latest.max_upd
+        WHERE COALESCE(t.is_deleted, FALSE) = FALSE
+        ORDER BY t.updated_at DESC
+      `;
+      const [rows] = await this.bigquery.query({ query });
+      return { success: true, data: rows as VaultRecord[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
     }
+  }
 
-    /**
-     * ファイル一覧を取得
-     */
-    async listFiles(category?: string, since?: Date): Promise<QueryResult<FileRecord>> {
-        if (!this.bigquery) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
+  // ── content のみ取得 ────────────────────────────────────────────────
 
-        try {
-            // 重複排除: file_id + category ごとに最新のupdated_atを持つレコードのみを取得
-            // カテゴリがNULLの場合も考慮して空文字置換でグルーピング
-            let query = `
-                SELECT t.file_id, t.title, t.file_type, t.category, t.size_bytes, t.created_at, t.updated_at
-                FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\` t
-                INNER JOIN (
-                    SELECT file_id, IFNULL(category, '') as cat_key, MAX(updated_at) as max_updated_at
-                    FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-                    GROUP BY file_id, cat_key
-                ) latest ON t.file_id = latest.file_id 
-                    AND IFNULL(t.category, '') = latest.cat_key 
-                    AND t.updated_at = latest.max_updated_at
-            `;
-            const params: Record<string, any> = {};
-
-            const conditions: string[] = [];
-
-            if (category) {
-                conditions.push(`t.category = @category`);
-                params.category = category;
-            }
-
-            if (since) {
-                conditions.push(`t.updated_at > @since`);
-                params.since = since.toISOString();
-            }
-
-            if (conditions.length > 0) {
-                query += ` WHERE ${conditions.join(' AND ')}`;
-            }
-
-            query += ` ORDER BY t.updated_at DESC`;
-
-            const [rows] = await this.bigquery.query({ query, params });
-            return { success: true, data: rows as FileRecord[] };
-        } catch (error) {
-            console.error('[BigQueryService] ファイル一覧取得失敗:', error);
-            return { success: false, error: String(error) };
-        }
+  async getContent(fileId: string): Promise<BqResult<string | null>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        SELECT content FROM ${this.tbl}
+        WHERE file_id = @fileId
+        ORDER BY updated_at DESC LIMIT 1
+      `;
+      const [rows] = await this.bigquery.query({ query, params: { fileId } });
+      const row = (rows as Array<{ content: string | null }>)[0];
+      return { success: true, data: row?.content ?? null };
+    } catch (e) {
+      return { success: false, error: String(e) };
     }
-    /**
-     * ファイルを保存（Upsert: MERGE文を使用）
-     * file_id + category が一致するレコードがあれば更新、なければ挿入
-     */
-    async saveFile(record: FileRecord): Promise<QueryResult> {
-        if (!this.bigquery || !this.table) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
+  }
 
-        try {
-            const query = `
-                MERGE \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\` AS target
-                USING (
-                    SELECT
-                        @file_id AS file_id,
-                        @title AS title,
-                        @file_type AS file_type,
-                        @category AS category,
-                        @content AS content,
-                        IF(@metadata IS NULL, NULL, PARSE_JSON(@metadata)) AS metadata,
-                        @size_bytes AS size_bytes,
-                        @created_at AS created_at,
-                        @updated_at AS updated_at
-                ) AS source
-                ON target.file_id = source.file_id
-                   AND IFNULL(target.category, '') = IFNULL(source.category, '')
-                WHEN MATCHED THEN
-                    UPDATE SET
-                        target.title = source.title,
-                        target.file_type = source.file_type,
-                        target.content = source.content,
-                        target.metadata = source.metadata,
-                        target.size_bytes = source.size_bytes,
-                        target.updated_at = source.updated_at
-                WHEN NOT MATCHED THEN
-                    INSERT (file_id, title, file_type, category, content, metadata, size_bytes, created_at, updated_at)
-                    VALUES (source.file_id, source.title, source.file_type, source.category, source.content, source.metadata, source.size_bytes, source.created_at, source.updated_at)
-            `;
+  // ── Upsert（MERGE） ─────────────────────────────────────────────────
 
-            const params = {
-                file_id: record.file_id,
-                title: record.title || null,
-                file_type: record.file_type,
-                category: record.category || null,
-                content: record.content || null,
-                metadata: record.metadata ? JSON.stringify(record.metadata) : null,
-                size_bytes: record.size_bytes || null,
-                created_at: record.created_at ? new Date(record.created_at) : new Date(),
-                updated_at: record.updated_at ? new Date(record.updated_at) : new Date()
-            };
-
-            const types = {
-                file_id: 'STRING',
-                title: 'STRING',
-                file_type: 'STRING',
-                category: 'STRING',
-                content: 'STRING',
-                metadata: 'STRING',
-                size_bytes: 'INT64',
-                created_at: 'TIMESTAMP',
-                updated_at: 'TIMESTAMP'
-            };
-
-            await this.bigquery.query({
-                query,
-                params,
-                types
-            });
-
-            return { success: true };
-        } catch (error) {
-            console.error(`[BigQueryService] ファイル保存失敗 (${record.file_id}):`, error);
-            return { success: false, error: String(error) };
-        }
+  async save(record: VaultRecord, retries = 3): Promise<BqResult<null>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        MERGE ${this.tbl} AS target
+        USING (
+          SELECT @file_id AS file_id, @file_type AS file_type,
+                 @category AS category,
+                 @title AS title, @content AS content,
+                 @keywords AS keywords, @related_ids AS related_ids,
+                 @size_bytes AS size_bytes,
+                 @is_deleted AS is_deleted,
+                 @created_at AS created_at, @updated_at AS updated_at
+        ) AS source ON target.file_id = source.file_id
+        WHEN MATCHED THEN UPDATE SET
+          target.category    = source.category,
+          target.title       = source.title,
+          target.content     = source.content,
+          target.keywords    = source.keywords,
+          target.related_ids = source.related_ids,
+          target.size_bytes  = source.size_bytes,
+          target.is_deleted  = source.is_deleted,
+          target.updated_at  = source.updated_at
+        WHEN NOT MATCHED THEN INSERT
+          (file_id, file_type, category, title, content,
+           keywords, related_ids, size_bytes, is_deleted, created_at, updated_at)
+        VALUES
+          (source.file_id, source.file_type, source.category,
+           source.title, source.content, source.keywords, source.related_ids,
+           source.size_bytes, source.is_deleted, source.created_at, source.updated_at)
+      `;
+      const params = {
+        file_id:     record.file_id,
+        file_type:   record.file_type,
+        category:    record.category,
+        title:       record.title,
+        content:     record.content,
+        keywords:    record.keywords,
+        related_ids: record.related_ids,
+        size_bytes:  record.size_bytes,
+        is_deleted:  record.is_deleted ?? false,
+        created_at:  new Date(record.created_at),
+        updated_at:  new Date(record.updated_at),
+      };
+      const types = {
+        file_id: 'STRING', file_type: 'STRING', category: 'STRING',
+        title: 'STRING', content: 'STRING', keywords: 'STRING', related_ids: 'STRING',
+        size_bytes: 'INT64', is_deleted: 'BOOL',
+        created_at: 'TIMESTAMP', updated_at: 'TIMESTAMP',
+      };
+      await this.bigquery.query({ query, params, types });
+      return { success: true, data: null };
+    } catch (error) {
+      const err = error as { errors?: Array<{ reason: string }>; message?: string };
+      const isConcurrent = err?.errors?.[0]?.reason === 'invalidQuery' &&
+        String(err?.message).includes('concurrent update');
+      if (isConcurrent && retries > 0) {
+        const delay = (4 - retries) * 2000;
+        await new Promise(r => setTimeout(r, delay));
+        return this.save(record, retries - 1);
+      }
+      return { success: false, error: String(error) };
     }
+  }
 
-    /**
-     * ファイルを削除 (ID + Category指定が理想だが、現状API仕様上はIDのみ削除。
-     *  同じIDで複数カテゴリある場合はすべて消える挙動になるため、注意が必要だが、
-     *  既存インターフェースを変更しない範囲ではID指定削除のままとする)
-     */
-    async deleteFile(fileId: string): Promise<QueryResult> {
-        if (!this.bigquery) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
+  // ── 削除（論理削除） ───────────────────────────────────────────────
 
-        try {
-            const query = `
-                DELETE FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-                WHERE file_id = @fileId
-            `;
-            await this.bigquery.query({
-                query,
-                params: { fileId }
-            });
-
-            return { success: true };
-        } catch (error) {
-            console.error(`[BigQueryService] ファイル削除失敗 (${fileId}):`, error);
-            return { success: false, error: String(error) };
-        }
+  async delete(fileId: string): Promise<BqResult<null>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const now = new Date().toISOString();
+      const getResult = await this.getContent(fileId);
+      const row: VaultRecord = {
+        file_id: fileId, file_type: 'md',
+        category: '', title: null, content: getResult.success ? getResult.data : null,
+        keywords: null, related_ids: null, size_bytes: null,
+        is_deleted: true, created_at: now, updated_at: now,
+      };
+      return await this.save(row);
+    } catch (e) {
+      return { success: false, error: String(e) };
     }
+  }
 
-    /**
-     * 全文検索（SEARCH関数使用）
-     */
-    async search(queryText: string, category?: string): Promise<QueryResult<FileRecord>> {
-        if (!this.bigquery) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
+  // ── 全文検索 ─────────────────────────────────────────────────────────
 
-        try {
-            let query = `
-                SELECT file_id, title, file_type, category,
-                       content,
-                       updated_at
-                FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-                WHERE CONTAINS_SUBSTR(content, @queryText)
-            `;
-            const params: Record<string, string> = { queryText };
-
-            if (category) {
-                query += ` AND category = @category`;
-                params.category = category;
-            }
-
-            // 重複排除: file_id + category ごとに最新のレコードのみ返す
-            query += ` QUALIFY ROW_NUMBER() OVER (PARTITION BY file_id, IFNULL(category, '') ORDER BY updated_at DESC) = 1`;
-            query += ` ORDER BY updated_at DESC LIMIT 200`;
-
-            const [rows] = await this.bigquery.query({ query, params });
-            return { success: true, data: rows as FileRecord[] };
-        } catch (error) {
-            console.error('[BigQueryService] 全文検索失敗:', error);
-            return { success: false, error: String(error) };
-        }
+  async search(q: string): Promise<BqResult> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        SELECT t.file_id, t.file_type, t.category, t.title,
+               t.keywords, t.related_ids, t.size_bytes,
+               COALESCE(t.is_deleted, FALSE) AS is_deleted,
+               t.created_at, t.updated_at
+        FROM ${this.tbl} t
+        INNER JOIN (
+          SELECT file_id, MAX(updated_at) AS max_upd
+          FROM ${this.tbl}
+          WHERE COALESCE(is_deleted, FALSE) = FALSE
+          GROUP BY file_id
+        ) latest ON t.file_id = latest.file_id AND t.updated_at = latest.max_upd
+        WHERE COALESCE(t.is_deleted, FALSE) = FALSE
+          AND CONTAINS_SUBSTR(CONCAT(COALESCE(t.title,''), ' ', COALESCE(t.content,'')), @q)
+        ORDER BY t.updated_at DESC LIMIT 200
+      `;
+      const [rows] = await this.bigquery.query({ query, params: { q } });
+      return { success: true, data: rows as VaultRecord[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
     }
-
-    /**
-     * バージョン情報を取得（キャッシュ整合性チェック用）
-     * 重複排除: file_id ごとに最新の updated_at を1件だけ返す
-     */
-    async getVersions(): Promise<QueryResult<VersionInfo>> {
-        if (!this.bigquery) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
-
-        try {
-            const query = `
-                SELECT file_id, MAX(updated_at) as updated_at
-                FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-                GROUP BY file_id
-                ORDER BY updated_at DESC
-            `;
-            const [rows] = await this.bigquery.query({ query });
-            return { success: true, data: rows as VersionInfo[] };
-        } catch (error) {
-            console.error('[BigQueryService] バージョン情報取得失敗:', error);
-            return { success: false, error: String(error) };
-        }
-    }
-
-    /**
-     * 一括保存（Upsert: MERGE文を使用）
-     * 注意: BQのクエリサイズ制限や複雑さを考慮し、ここでは簡易的にループで処理するか、
-     * 一時テーブルを使ったMERGEを行うのが一般的ですが、
-     * 今回は件数が少ない前提でループ処理（Promise.all）で実装します。
-     * ※ 本格的なBulk Upsertが必要な場合は一時テーブル方式推奨
-     */
-    async bulkSave(records: FileRecord[]): Promise<QueryResult> {
-        if (!this.bigquery || !this.table) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
-
-        try {
-            // 並列でMERGEを実行 (件数が多い場合は制限に注意)
-            // BigQueryのConcurrent interactive queries quotaに引っかかる可能性があるので
-            // 直列実行またはバッチサイズ制御が望ましい
-            for (const record of records) {
-                await this.saveFile(record);
-            }
-
-            console.log(`[BigQueryService] ${records.length} 件のレコードを保存しました`);
-            return { success: true };
-        } catch (error) {
-            console.error('[BigQueryService] 一括保存失敗:', error);
-            return { success: false, error: String(error) };
-        }
-    }
-
-    /**
-     * 全データ取得（キャッシュ再構築用）- 重複排除
-     */
-    async getAllFiles(): Promise<QueryResult<FileRecord>> {
-        if (!this.bigquery) {
-            return { success: false, error: 'BigQuery未初期化' };
-        }
-
-        try {
-            const query = `
-                SELECT t.* 
-                FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\` t
-                INNER JOIN (
-                    SELECT file_id, IFNULL(category, '') as cat_key, MAX(updated_at) as max_updated_at
-                    FROM \`${this.projectId}.${DATASET_ID}.${TABLE_ID}\`
-                    GROUP BY file_id, cat_key
-                ) latest ON t.file_id = latest.file_id 
-                    AND IFNULL(t.category, '') = latest.cat_key
-                    AND t.updated_at = latest.max_updated_at
-                ORDER BY t.file_id
-            `;
-            const [rows] = await this.bigquery.query({ query });
-            return { success: true, data: rows as FileRecord[] };
-        } catch (error) {
-            console.error('[BigQueryService] 全データ取得失敗:', error);
-            return { success: false, error: String(error) };
-        }
-    }
+  }
 }
 
-// シングルトンインスタンス
 export const bigqueryService = new BigQueryService();
-

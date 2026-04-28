@@ -1,0 +1,103 @@
+/* ThinktankFilterView.css */
+
+.tt-filter-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ThoughtsFilter と同じ見た目の各フィルターバー */
+.tt-filter-view__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+/* バー内アイコン（ThoughtsFilter の Search アイコンと同スタイル） */
+.tt-filter-view__bar-icon {
+  flex-shrink: 0;
+  color: #555;
+  opacity: 0.6;
+}
+
+/* テキスト入力（タイトル） */
+.tt-filter-view__bar-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #1a1a2e;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.tt-filter-view__bar-input::placeholder {
+  color: #888;
+}
+
+/* 件数カウント */
+.tt-filter-view__bar-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+
+/* 日付 input — タイトル input と同じ文字色 */
+.tt-filter-view__bar-date {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: #1a1a2e;
+  font-family: inherit;
+  min-width: 0;
+}
+
+/* 空の日付フィールドのプレースホルダー文字色 */
+.tt-filter-view__bar-date::-webkit-datetime-edit {
+  color: #888;
+}
+
+/* 値が入力された後は title input と同じ色 */
+.tt-filter-view__bar-date:not([value=""])::-webkit-datetime-edit {
+  color: #1a1a2e;
+}
+
+/* カレンダーアイコンをアイコンの opacity と揃える */
+.tt-filter-view__bar-date::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.tt-filter-view__bar-date::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.8;
+}
+
+/* 範囲指定テキスト入力 */
+.tt-filter-view__bar-range {
+  width: 58px;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: #1a1a2e;
+  font-family: inherit;
+  text-align: right;
+}
+
+.tt-filter-view__bar-range::placeholder {
+  color: #bbb;
+}
+
+.tt-filter-view__bar-range--invalid {
+  color: #c0392b;
+}

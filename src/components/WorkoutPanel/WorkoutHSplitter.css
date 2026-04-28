@@ -1,0 +1,22 @@
+/* WorkoutHSplitter.css */
+
+.workout-h-splitter {
+  height: 3px;
+  background: var(--border);
+  cursor: row-resize;
+  flex-shrink: 0;
+  width: 100%;
+  transition: background 150ms ease;
+  position: relative;
+  z-index: 10;
+}
+
+.workout-h-splitter::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+
+.workout-h-splitter:hover {
+  background: var(--text-accent);
+}

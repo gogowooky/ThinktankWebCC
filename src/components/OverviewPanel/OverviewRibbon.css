@@ -1,0 +1,22 @@
+/* OverviewRibbon.css */
+
+.overview-ribbon__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.overview-ribbon__btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.overview-ribbon__btn--active {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}

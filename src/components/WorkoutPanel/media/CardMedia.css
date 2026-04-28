@@ -1,0 +1,150 @@
+/* CardMedia.css */
+
+.card-media {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #f5f5f7;
+}
+
+/* ── ツールバー ─────────────────────────────────────── */
+.card-media__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.card-media__filter {
+  flex: 1;
+  height: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 11px;
+  background: #fff;
+  outline: none;
+  min-width: 0;
+}
+
+.card-media__filter:focus {
+  border-color: #7aa2f7;
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.2);
+}
+
+.card-media__count {
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── グリッド ────────────────────────────────────────── */
+.card-media__grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 10px;
+  align-content: start;
+}
+
+/* ── カード ──────────────────────────────────────────── */
+.card-media__card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+  cursor: pointer;
+}
+
+.card-media__card:hover {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.card-media__card--focus {
+  border-color: rgba(122, 162, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.25);
+}
+
+/* カードヘッダー（上部カラーライン + アイコン + タイトル）*/
+.card-media__card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 6px;
+  border-top: 3px solid transparent;
+}
+
+.card-media__card-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.card-media__card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* 抜粋本文 */
+.card-media__card-body {
+  flex: 1;
+  padding: 0 10px 8px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  min-height: 36px;
+}
+
+/* フッター */
+.card-media__card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px 7px;
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 6px;
+  overflow: hidden;
+}
+
+.card-media__card-keywords {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  color: rgba(0, 0, 0, 0.25);
+  font-style: italic;
+}
+
+/* 空状態 */
+.card-media__empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.3);
+}

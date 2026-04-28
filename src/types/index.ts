@@ -1,154 +1,109 @@
 /**
  * types/index.ts
- * 共通型定義
+ * v5 共通型定義
  */
 
 // ════════════════════════════════════════════════════════════════════════
-// #region Panel 関連
+// #region アプリモード
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * パネルの表示モード
- */
-export type PanelMode = 'Editor' | 'Table' | 'WebView';
-
-/**
- * パネルのツール（フォーカス対象）
- */
-export type PanelTool = 'Main' | 'Keyword';
-
-/**
- * パネル名
- */
-export type PanelName = 'Library' | 'Index' | 'Shelf' | 'Desk' | 'System' | 'Chat' | 'Log';
-
-/**
- * すべてのパネル名の配列
- */
-export const PanelNames: readonly PanelName[] = ['Library', 'Index', 'Shelf', 'Desk', 'System', 'Chat', 'Log'] as const;
-
-/**
- * すべてのモードの配列
- */
-export const PanelModes: readonly PanelMode[] = ['Editor', 'Table', 'WebView'] as const;
-
-/**
- * すべてのツールの配列
- */
-export const PanelTools: readonly PanelTool[] = ['Main', 'Keyword'] as const;
+export type AppMode = 'pwa' | 'local';
 
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
-// #region Action 関連
+// #region コンテンツ種別（v5）
 // ════════════════════════════════════════════════════════════════════════
 
 /**
- * アクション実行時のコンテキスト情報
+ * TTThink のコンテンツ種別（v5）
+ * v4: memo/chat/pickup/link/table
+ * v5: memo/thought/tables/links/chat/nettext
  */
-export interface ActionContext {
-    // イベント共通情報
-    /** 押されている修飾キーの配列 (例: ['Control', 'Shift']) */
-    Mods?: string[];
-    /** イベントキー (キーボード: 'A', 'ENTER'等 / マウス: 'LEFT1', 'RIGHT1', 'LINK', 'DROP'等) */
-    Key?: string;
-    /** 呼び出し元 */
-    Sender?: unknown;
+export type ContentType =
+  | 'memo'     // テキストメモ（markdown含む）
+  | 'thought'  // Thinkの集合（ThinkIDリスト or Filter文字列を本文に持つ）
+  | 'tables'   // 複数テーブルを含むデータ（独自形式md）
+  | 'links'    // URL/ローカルURI等へのリンク集
+  | 'chat'     // AIとの対話記録
+  | 'nettext'; // ネット等からダウンロードしたテキスト
 
-    // パネル参照情報（ExPanel-ActivePanel間アクション用）
-    /** ソースパネル名（情報を読み取る側。ExMode時=ExCurrentPanel, 通常時=ActivePanel）*/
-    SourcePanel?: string;
-    /** ターゲットパネル名（操作を実行する側。常にActivePanel）*/
-    TargetPanel?: string;
+// #endregion
 
-    // マウス座標情報（オプショナル）
-    /** 画面X座標 */
-    ScreenX?: number;
-    /** 画面Y座標 */
-    ScreenY?: number;
-    /** ビューポート内X座標 */
-    ClientX?: number;
-    /** ビューポート内Y座標 */
-    ClientY?: number;
+// ════════════════════════════════════════════════════════════════════════
+// #region メディア種別（WorkoutArea表示形式）
+// ════════════════════════════════════════════════════════════════════════
 
-    // リンククリック情報（オプショナル）
-    /** マッチしたTTRequest ID */
-    RequestID?: string;
-    /** マッチしたテキスト (RequestTag) */
-    RequestTag?: string;
+export type MediaType =
+  | 'texteditor'  // Monaco Editor
+  | 'markdown'    // Markdownレンダリング
+  | 'datagrid'    // テーブル形式一覧
+  | 'card'        // カード形式
+  | 'graph'       // ノードグラフ
+  | 'chat';       // AIチャット
 
-    // ドロップ情報（オプショナル）
-    /** ドロップされたデータ */
-    DroppedData?: unknown;
+// #endregion
 
-    // その他の拡張用（後方互換性）
-    [key: string]: unknown;
+// ════════════════════════════════════════════════════════════════════════
+// #region ストレージ / データモデル
+// ════════════════════════════════════════════════════════════════════════
+
+export interface ItemMeta {
+  file_id: string;
+  title: string;
+  updated_at: string;
+  created_at: string;
+  file_type: string;
+  category: string;
+  vault_id: string;
+  is_meta_only: boolean;
+  is_deleted: boolean;
 }
 
-/**
- * マウスイベントキーの型定義
- */
-export type MouseEventKey =
-    | 'LEFT1' | 'LEFT2' | 'LEFT3'   // 左クリック（シングル/ダブル/トリプル）
-    | 'RIGHT1'                       // 右クリック
-    | 'MIDDLE1'                      // 中クリック
-    | 'LINK'                         // リンククリック（TTRequest Determinantマッチ時）
-    | 'DROP'                         // ドロップイベント
-    | 'TAP1' | 'TAP2'               // タッチ（シングルタップ/ダブルタップ）
-    | 'LONGPRESS'                    // 長押し
-    | 'SWIPE_LEFT' | 'SWIPE_RIGHT'  // 水平スワイプ
-    | 'SWIPE_UP' | 'SWIPE_DOWN';    // 垂直スワイプ
-
-/**
- * アクションのスクリプト関数型
- */
-export type ActionScript = (context: ActionContext) => void | boolean | Promise<void | boolean>;
-
-// #endregion
-
-// ════════════════════════════════════════════════════════════════════════
-// #region Table 関連
-// ════════════════════════════════════════════════════════════════════════
-
-/**
- * ソート方向
- */
-export type SortDirection = 'asc' | 'desc';
-
-// #endregion
-
-// ════════════════════════════════════════════════════════════════════════
-// #region Status 関連
-// ════════════════════════════════════════════════════════════════════════
-
-/**
- * 状態設定のコンフィグ
- */
-export interface StateConfig {
-    /** デフォルト値を返す関数 */
-    Default?: (id: string) => string;
-    /** 値の妥当性をチェックする関数 */
-    Test?: (id: string, value: string) => boolean;
-    /** 値をビューに適用する関数 */
-    Apply?: (id: string, value: string) => void;
-    /** ビューの変更を監視する関数 */
-    Watch?: (id: string) => void;
+export interface FileRecord extends ItemMeta {
+  content: string;
+  keywords: string;
+  related_ids: string;
+  size_bytes: number;
+  metadata?: Record<string, unknown>;
 }
 
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
-// #region Utility 型
+// #region 同期ステータス
 // ════════════════════════════════════════════════════════════════════════
 
-/**
- * CSV の値（文字列または undefined）
- */
+export type SyncState = 'synced' | 'syncing' | 'pending' | 'offline' | 'error';
+
+export interface SyncStatus {
+  state: SyncState;
+  pendingCount: number;
+  isSyncing: boolean;
+  isOnline: boolean;
+  lastSyncAt: string | null;
+  errorMessage?: string;
+}
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
+// #region チャット
+// ════════════════════════════════════════════════════════════════════════
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
+// #region ユーティリティ型
+// ════════════════════════════════════════════════════════════════════════
+
 export type CsvValue = string | undefined | null;
-
-/**
- * Record 型のキーを持つオブジェクトから、指定したプロパティの値を取得
- */
-export type PropertyValue<T, K extends keyof T> = T[K];
 
 // #endregion

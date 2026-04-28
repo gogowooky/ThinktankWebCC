@@ -1,0 +1,30 @@
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  color: var(--text-muted);
+  height: 100%;
+  user-select: none;
+}
+
+.empty-state__icon {
+  opacity: 0.3;
+}
+
+.empty-state__title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.empty-state__hint {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  opacity: 0.5;
+  text-align: center;
+  line-height: 1.6;
+}

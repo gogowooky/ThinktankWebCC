@@ -1,289 +1,62 @@
 /**
  * StorageManager.ts
- * ストレージサービスを管理するシングルトン
- * BigQuery + IndexedDB キャッシュ対応
+ * ストレージバックエンドのシングルトン管理クラス
+ *
+ * window.__THINKTANK_MODE__ === 'local'
+ *   → LocalStorageBackend（C# API @ window.__THINKTANK_LOCAL_API__）
+ * それ以外（PWA / ブラウザ直接）
+ *   → BigQueryStorageBackend（Express /api/bq/*）
  */
 
-import type { IStorageService, IStorageManager, StorageType } from './IStorageService';
-import { BigQueryStorageService, VersionInfo } from './BigQueryStorageService';
-import { IndexedDBStorageService } from './IndexedDBStorageService';
+import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import { LocalStorageBackend }    from './LocalStorageBackend';
+import { BigQueryStorageBackend } from './BigQueryStorageBackend';
 
-export type ConnectionStatus = 'online' | 'offline' | 'syncing';
+export class StorageManager {
+  private static _instance: StorageManager | null = null;
 
-// キャッシュバージョン情報（IndexedDB内に保存）
-const VERSION_KEY = '__bq_versions__';
+  public readonly backend: IStorageBackend;
+  public readonly mode: 'local' | 'pwa';
 
-class StorageManagerImpl implements IStorageManager {
-    private _bigquery: BigQueryStorageService;
-    private _local: IndexedDBStorageService;
-    private _connectionStatus: ConnectionStatus = 'online';
-    private statusListeners: Set<(status: ConnectionStatus) => void> = new Set();
-    private cachedVersions: Map<string, string> = new Map();
-
-    constructor() {
-        this._bigquery = new BigQueryStorageService();
-        this._local = new IndexedDBStorageService();
+  private constructor() {
+    if (window.__THINKTANK_MODE__ === 'local') {
+      const apiUrl = window.__THINKTANK_LOCAL_API__ ?? 'http://localhost:8081';
+      this.backend = new LocalStorageBackend(apiUrl);
+      this.mode    = 'local';
+      console.log(`[StorageManager] mode=local, api=${apiUrl}`);
+    } else {
+      this.backend = new BigQueryStorageBackend();
+      this.mode    = 'pwa';
+      console.log('[StorageManager] mode=pwa (BigQuery via Express)');
     }
+  }
 
-    /**
-     * BigQuery ストレージ
-     */
-    get bigquery(): BigQueryStorageService {
-        return this._bigquery;
+  public static get instance(): StorageManager {
+    if (!StorageManager._instance) {
+      StorageManager._instance = new StorageManager();
     }
+    return StorageManager._instance;
+  }
 
-    /**
-     * cache/drive は bigquery へのエイリアス（後方互換性）
-     */
-    get cache(): IStorageService {
-        return this._bigquery;
-    }
+  // ── 公開メソッド（TTVault / TTThink から呼ぶ） ─────────────────────
 
+  public listMeta(): Promise<ThinkMeta[]> {
+    return this.backend.listMeta();
+  }
 
+  public getContent(id: string): Promise<string | null> {
+    return this.backend.getContent(id);
+  }
 
-    /**
-     * ローカル IndexedDB ストレージ
-     */
-    get local(): IndexedDBStorageService {
-        return this._local;
-    }
+  public save(payload: SavePayload): Promise<ThinkMeta> {
+    return this.backend.save(payload);
+  }
 
-    /**
-     * 現在の接続ステータス
-     */
-    get connectionStatus(): ConnectionStatus {
-        return this._connectionStatus;
-    }
+  public delete(id: string): Promise<void> {
+    return this.backend.delete(id);
+  }
 
-    /**
-     * オンラインかどうか
-     */
-    get isOnline(): boolean {
-        return navigator.onLine;
-    }
-
-    getStorage(type: StorageType): IStorageService {
-        switch (type) {
-            case 'bigquery':
-                return this._bigquery;
-            case 'local':
-                return this._local;
-            default:
-                throw new Error(`Unknown storage type: ${type}`);
-        }
-    }
-
-    /**
-     * 初期化（IndexedDB を開き、バージョンチェックを実行）
-     */
-    async initialize(): Promise<void> {
-        await this._local.initialize();
-
-        // オンライン状態の監視を開始
-        window.addEventListener('online', () => this.handleOnline());
-        window.addEventListener('offline', () => this.handleOffline());
-
-        this._connectionStatus = navigator.onLine ? 'online' : 'offline';
-
-        // ローカルキャッシュからバージョン情報を読み込み
-        await this.loadCachedVersions();
-
-        // オンラインの場合はバージョンチェックを実行
-        if (this.isOnline) {
-            this.checkVersions();
-        }
-
-        console.log(`[StorageManager] Initialized (status: ${this._connectionStatus})`);
-    }
-
-    /**
-     * バージョン情報をローカルから読み込み
-     */
-    private async loadCachedVersions(): Promise<void> {
-        try {
-            const result = await this._local.load(VERSION_KEY);
-            if (result.success && result.data) {
-                const versions = JSON.parse(result.data);
-                this.cachedVersions = new Map(Object.entries(versions));
-            }
-        } catch (error) {
-            console.warn('[StorageManager] バージョン情報読み込み失敗:', error);
-        }
-    }
-
-    /**
-     * バージョン情報をローカルに保存
-     */
-    private async saveCachedVersions(): Promise<void> {
-        try {
-            const versions = Object.fromEntries(this.cachedVersions);
-            await this._local.save(VERSION_KEY, JSON.stringify(versions));
-        } catch (error) {
-            console.warn('[StorageManager] バージョン情報保存失敗:', error);
-        }
-    }
-
-    /**
-     * BigQueryとローカルキャッシュのバージョンを比較
-     */
-    async checkVersions(): Promise<string[]> {
-        if (!this.isOnline) return [];
-
-        try {
-            this.setStatus('syncing');
-            const result = await this._bigquery.getVersions();
-
-            if (!result.success || !result.data) {
-                this.setStatus('online');
-                return [];
-            }
-
-            const outdated: string[] = [];
-
-            for (const version of result.data as VersionInfo[]) {
-                const cachedVersion = this.cachedVersions.get(version.file_id);
-                if (!cachedVersion || cachedVersion !== version.updated_at) {
-                    outdated.push(version.file_id);
-                }
-            }
-
-            this.setStatus('online');
-            return outdated;
-        } catch (error) {
-            console.error('[StorageManager] バージョンチェック失敗:', error);
-            this.setStatus('online');
-            return [];
-        }
-    }
-
-    /**
-     * 指定されたファイルのローカルキャッシュを更新
-     */
-    async syncFile(fileId: string): Promise<boolean> {
-        if (!this.isOnline) return false;
-
-        try {
-            const result = await this._bigquery.load(`${fileId}.csv`);
-            if (result.success && result.data) {
-                await this._local.save(`${fileId}.csv`, result.data);
-
-                // バージョン情報を更新
-                const versions = await this._bigquery.getVersions();
-                if (versions.success && versions.data) {
-                    const fileVersion = (versions.data as VersionInfo[]).find(v => v.file_id === fileId);
-                    if (fileVersion) {
-                        this.cachedVersions.set(fileId, fileVersion.updated_at);
-                        await this.saveCachedVersions();
-                    }
-                }
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error(`[StorageManager] ファイル同期失敗 (${fileId}):`, error);
-            return false;
-        }
-    }
-
-    /**
-     * ローカルキャッシュをクリア
-     */
-    async clearCache(): Promise<void> {
-        try {
-            await this._local.clear();
-            this.cachedVersions.clear();
-            console.log('[StorageManager] キャッシュをクリアしました');
-        } catch (error) {
-            console.error('[StorageManager] キャッシュクリア失敗:', error);
-        }
-    }
-
-    /**
-     * キャッシュを再構築（BigQueryから全データ取得）
-     */
-    async rebuildCache(): Promise<void> {
-        if (!this.isOnline) {
-            console.warn('[StorageManager] オフラインのためキャッシュ再構築スキップ');
-            return;
-        }
-
-        try {
-            this.setStatus('syncing');
-            console.log('[StorageManager] キャッシュ再構築開始...');
-
-            // 既存キャッシュをクリア
-            await this._local.clear();
-            this.cachedVersions.clear();
-
-            // BigQueryから全データ取得
-            const result = await this._bigquery.getAllFiles();
-
-            if (result.success && result.data) {
-                for (const file of result.data) {
-                    // ローカルに保存
-                    if (file.content) {
-                        await this._local.save(file.file_id, file.content);
-                    }
-                    // バージョン情報を更新
-                    this.cachedVersions.set(file.file_id, file.updated_at);
-                }
-                await this.saveCachedVersions();
-                console.log(`[StorageManager] キャッシュ再構築完了: ${result.data.length} 件`);
-            }
-
-            this.setStatus('online');
-        } catch (error) {
-            console.error('[StorageManager] キャッシュ再構築失敗:', error);
-            this.setStatus('online');
-        }
-    }
-
-    /**
-     * 接続ステータスリスナーを追加
-     */
-    addStatusListener(callback: (status: ConnectionStatus) => void): void {
-        this.statusListeners.add(callback);
-    }
-
-    /**
-     * 接続ステータスリスナーを削除
-     */
-    removeStatusListener(callback: (status: ConnectionStatus) => void): void {
-        this.statusListeners.delete(callback);
-    }
-
-    private setStatus(status: ConnectionStatus): void {
-        this._connectionStatus = status;
-        this.statusListeners.forEach(cb => cb(status));
-    }
-
-    private handleOnline(): void {
-        console.log('[StorageManager] Online');
-        this.setStatus('online');
-        // オンライン復帰時にバージョンチェック
-        this.checkVersions();
-    }
-
-    private handleOffline(): void {
-        console.log('[StorageManager] Offline');
-        this.setStatus('offline');
-    }
+  public search(query: string): Promise<ThinkMeta[]> {
+    return this.backend.search(query);
+  }
 }
-
-/**
- * StorageManager のシングルトンインスタンス
- */
-export const StorageManager: IStorageManager & {
-    bigquery: BigQueryStorageService;
-    local: IndexedDBStorageService;
-    connectionStatus: ConnectionStatus;
-    isOnline: boolean;
-    initialize(): Promise<void>;
-    addStatusListener(callback: (status: ConnectionStatus) => void): void;
-    removeStatusListener(callback: (status: ConnectionStatus) => void): void;
-    checkVersions(): Promise<string[]>;
-    syncFile(fileId: string): Promise<boolean>;
-    clearCache(): Promise<void>;
-    rebuildCache(): Promise<void>;
-} = new StorageManagerImpl();
-

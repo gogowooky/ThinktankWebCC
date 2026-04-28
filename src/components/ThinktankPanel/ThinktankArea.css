@@ -1,0 +1,20 @@
+/* ThinktankArea.css */
+
+.thinktank-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.thinktank-area__date-bars {
+  flex-shrink: 0;
+}
+
+.thinktank-area__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

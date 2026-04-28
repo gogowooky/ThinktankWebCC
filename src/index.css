@@ -1,72 +1,79 @@
+/* Thinktank v5 グローバルスタイル */
+
 :root {
-  font-family: Meiryo, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  /* 背景 */
+  --bg-primary:       #1e2030;
+  --bg-secondary:     #1a1b26;
+  --bg-panel:         #24283b;
+  --bg-hover:         #2a3050;
+  --bg-selected:      #2e3460;
 
-  color: var(--tt-editor-fg, rgba(255, 255, 255, 0.87));
-  background-color: var(--tt-base-color, #242424);
+  /* テキスト */
+  --text-primary:     #c0caf5;
+  --text-muted:       #565f89;
+  --text-accent:      #7aa2f7;
+  --text-highlight:   #e0af68;
+  --text-success:     #9ece6a;
+  --text-warning:     #ff9e64;
+  --text-error:       #f7768e;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* ボーダー・UI */
+  --border:           #292e42;
+  --radius:           6px;
+  --transition-panel: 200ms ease;
+
+  /* パネル別テーマ色（TT_Color.txt: blue-dark / indigo-dark / gray / green-dark）*/
+  --thinktank-ribbon-bg: #073763;
+  --thinktank-area-bg:   #E8F1F8;
+  --overview-ribbon-bg:  #3949AB;
+  --overview-area-bg:    #F9FAFF;
+  --workout-ribbon-bg:   #3F3F3F;
+  --workout-area-bg:     #D0D0D0;
+  --todo-ribbon-bg:      #1E4620;
+  --todo-area-bg:        #E2EFDA;
+
+  /* 同期インジケーター */
+  --sync-synced:  var(--text-muted);
+  --sync-syncing: var(--text-accent);
+  --sync-error:   var(--text-error);
 }
 
-body {
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  padding: 0;
 }
 
-#root {
-  width: 100%;
-  height: 100vh;
-}
-
-.app-container {
-  display: flex;
-  flex-direction: column;
+html, body, #root {
   height: 100%;
-}
-
-.header {
-  padding: 1rem;
-  background-color: var(--tt-title-bg, #1a1a1a);
-  border-bottom: 1px solid var(--tt-border-color, #333);
-  color: var(--tt-title-fg, #cccccc);
-}
-
-.header h1 {
-  margin: 0;
-  font-size: 1.2rem;
-}
-
-.editor-area {
-  flex: 1;
-  padding: 1rem;
+  width: 100%;
   overflow: hidden;
 }
 
-/* Monaco Editor ホバーウィジェット（リンクポップアップ）の位置調整 */
-/* ビューポートの端で切れないようにする */
-.monaco-editor .monaco-hover {
-  /* ビューポート外にはみ出さないようにする */
-  max-height: calc(100vh - 50px) !important;
-  overflow-y: auto !important;
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* リンクウィジェット（Follow link等）の位置調整 */
-.monaco-editor .content-hover-widget {
-  /* ビューポートの上端に近い場合、下に表示されるようにする */
-  /* Monaco Editorは自動的に位置を調整するが、追加の制約を設定 */
-  max-height: calc(100vh - 50px) !important;
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
 }
 
-/* ホバーがビューポートの上部に表示される場合のフォールバック */
-.monaco-editor .monaco-hover-content {
-  /* ビューポート外にはみ出す場合でもスクロール可能にする */
-  overflow-y: auto !important;
-  max-height: 300px !important;
+a {
+  color: var(--text-accent);
+  text-decoration: none;
 }
+
+/* スクロールバー */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }

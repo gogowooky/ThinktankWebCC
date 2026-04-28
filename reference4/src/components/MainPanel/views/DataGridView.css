@@ -1,0 +1,209 @@
+/* DataGridView.css */
+
+.datagrid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+}
+
+/* ── ツールバー ─────────────────────────────────── */
+
+.datagrid__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: 6px var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+}
+
+.datagrid__count {
+  flex: 1;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.datagrid__chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-accent);
+  font-size: 11px;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background var(--transition-hover);
+}
+
+.datagrid__chat-btn:hover:not(.datagrid__chat-btn--disabled) {
+  background: var(--bg-hover);
+}
+
+.datagrid__chat-btn--disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── ヘッダー行 ─────────────────────────────────── */
+
+.datagrid__header {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-sm);
+  height: 30px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  user-select: none;
+}
+
+/* ── ボディ（仮想スクロール） ───────────────────── */
+
+.datagrid__body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.datagrid__body::-webkit-scrollbar { width: 6px; }
+.datagrid__body::-webkit-scrollbar-track { background: transparent; }
+.datagrid__body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.datagrid__empty {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+/* ── 行 ─────────────────────────────────────────── */
+
+.dg-row {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-sm);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition-hover);
+}
+
+.dg-row:hover {
+  background: var(--bg-hover);
+}
+
+.dg-row--selected {
+  background: var(--bg-selected);
+}
+
+.dg-row--meta-only {
+  opacity: 0.55;
+}
+
+/* ── 列定義 ─────────────────────────────────────── */
+
+.dg-col {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dg-col--check {
+  width: 32px;
+  justify-content: center;
+}
+
+.dg-col--type {
+  width: 32px;
+  justify-content: center;
+}
+
+.dg-col--title {
+  flex: 1;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.dg-col--date {
+  width: 90px;
+  justify-content: flex-end;
+}
+
+.dg-col--sync {
+  width: 60px;
+  justify-content: center;
+}
+
+/* ── セル内容 ───────────────────────────────────── */
+
+.dg-type-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.dg-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.dg-col--title:hover .dg-title {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.dg-date {
+  color: var(--text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* ── 同期状態バッジ ─────────────────────────────── */
+
+.dg-sync {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.dg-sync--meta {
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.dg-sync--dirty {
+  background: rgba(255, 158, 100, 0.15);
+  color: var(--text-warning);
+  border: 1px solid var(--text-warning);
+}
+
+/* ── チェックボックス スタイル統一 ──────────────── */
+
+.dg-col--check input[type="checkbox"],
+.datagrid__header input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--text-accent);
+  cursor: pointer;
+}

@@ -1,0 +1,67 @@
+/* ThinktankSearchView.css */
+
+.tt-search-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ThoughtsFilter と同じ見た目の検索バー */
+.tt-search-view__bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+/* 検索アイコン（クリック可能） */
+.tt-search-view__icon-btn {
+  display: flex;
+  align-items: center;
+  color: #555;
+  opacity: 0.6;
+  flex-shrink: 0;
+  transition: opacity 120ms ease;
+}
+
+.tt-search-view__icon-btn:not(:disabled):hover {
+  opacity: 1;
+}
+
+.tt-search-view__icon-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.tt-search-view__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #1a1a2e;
+  font-family: inherit;
+  min-width: 0;
+}
+
+.tt-search-view__input::placeholder {
+  color: #888;
+}
+
+.tt-search-view__count {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+
+.tt-search-view__status {
+  padding: 16px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}

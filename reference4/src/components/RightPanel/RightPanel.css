@@ -1,0 +1,22 @@
+.right-panel {
+  background: var(--bg-panel);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width var(--transition-panel), min-width var(--transition-panel);
+}
+
+.right-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+
+.right-panel__placeholder {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  padding: var(--spacing-md);
+  text-align: center;
+}

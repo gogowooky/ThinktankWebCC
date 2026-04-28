@@ -1,0 +1,64 @@
+.left-panel {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width var(--transition-panel), min-width var(--transition-panel);
+}
+
+/* 共有パネルヘッダースタイル（LeftPanel / RightPanel 共通） */
+.panel-header {
+  height: var(--panel-header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--spacing-sm) 0 var(--spacing-md);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.panel-header__title {
+  flex: 1;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel-header__close {
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-hover), color var(--transition-hover);
+}
+
+.panel-header__close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.left-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+
+.left-panel__placeholder {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  padding: var(--spacing-md);
+  text-align: center;
+}

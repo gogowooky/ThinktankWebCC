@@ -1,0 +1,112 @@
+/* WorkoutAreaRibbon.css */
+
+.workout-area-ribbon {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 6px;
+  background: var(--workout-ribbon-bg);
+  color: rgba(255, 255, 255, 0.85);
+  gap: 4px;
+  flex-shrink: 0;
+  user-select: none;
+  transition: background 120ms ease;
+  border-left: 3px solid transparent;
+}
+
+/* フォーカス中リボン */
+.workout-area-ribbon--focused {
+  background: color-mix(in srgb, var(--workout-ribbon-bg) 80%, #7aa2f7 20%);
+  border-left-color: #7aa2f7;
+}
+
+/* ドラッグハンドル */
+.workout-area-ribbon__drag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 24px;
+  cursor: grab;
+  color: rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.workout-area-ribbon__drag:active {
+  cursor: grabbing;
+}
+
+.workout-area-ribbon__drag:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* タイトル */
+.workout-area-ribbon__title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 未保存マーカー */
+.workout-area-ribbon__dirty {
+  color: #e07b3a;
+  font-size: 9px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* MediaType ボタン群 */
+.workout-area-ribbon__media {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.workout-area-ribbon__media-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.5);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.workout-area-ribbon__media-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.workout-area-ribbon__media-btn--active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* 閉じるボタン */
+.workout-area-ribbon__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.workout-area-ribbon__close:hover {
+  background: rgba(220, 60, 60, 0.5);
+  color: #fff;
+}
