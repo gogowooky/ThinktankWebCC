@@ -214,6 +214,14 @@ export class TTWorkoutPanel extends TTObject {
     this.NotifyUpdated();
   }
 
+  /** 指定 ResourceID がすでに開いているペインがあればフォーカスして true を返す */
+  public FocusExistingResource(resourceId: string): boolean {
+    const existing = this.Areas.find(a => a.ResourceID === resourceId);
+    if (!existing) return false;
+    this.FocusArea(existing.ID);
+    return true;
+  }
+
   // ── ドラッグ移動 ────────────────────────────────────────────────────────
 
   /** 2 つのペイン内容を入れ替える（ドラッグ&ドロップ完了時に呼ぶ）*/

@@ -38,19 +38,20 @@ export function WorkoutArea({
   area, vault, isFocused, isDragging, isDropTarget,
   onFocus, onDragStart, onDragEnter, onDragLeave, onMediaTypeChange, onClose,
 }: Props) {
-  const [isDirty,       setIsDirty]       = useState(false);
-  const [contentReady,  setContentReady]  = useState(false);
+  const [isDirty,         setIsDirty]         = useState(false);
+  // loadedResourceId がレンダリング時の area.ResourceID と一致したとき表示する。
+  // props 変化の瞬間（useEffect 実行前）から即座に loading 表示になりフラッシュしない。
+  const [loadedResourceId, setLoadedResourceId] = useState<string | null>(null);
+  const contentReady = loadedResourceId === area.ResourceID;
 
-  // ResourceID が変わったら dirty リセット & IsMetaOnly ならコンテンツをロード
   useEffect(() => {
     setIsDirty(false);
-    setContentReady(false);
     const t = vault.GetThink(area.ResourceID);
     if (!t || !t.IsMetaOnly) {
-      setContentReady(true);
+      setLoadedResourceId(area.ResourceID);
       return;
     }
-    t.LoadContent().then(() => setContentReady(true));
+    t.LoadContent().then(() => setLoadedResourceId(area.ResourceID));
   }, [area.ResourceID]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 保存ハンドラー（TextEditorMedia から呼ばれる）

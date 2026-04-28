@@ -91,6 +91,9 @@ export class TTApplication extends TTObject {
    * @returns 開いたTTWorkoutArea（満杯の場合はnull）
    */
   public OpenThinkInWorkout(thinkId: string, mediaType: MediaType = 'texteditor') {
+    // 既に開いているペインがあればそこにフォーカスを移すだけ
+    if (this.WorkoutPanel.FocusExistingResource(thinkId)) return;
+
     const vault = this.Models.Vault;
     const think = vault.GetThink(thinkId);
     const title = think?.Name ?? thinkId;
