@@ -31,10 +31,11 @@ interface Props {
   onToggle:          () => void;
   onMediaType:       (type: MediaType) => void;
   onToggleSettings?: () => void;
+  thoughtName?:      string;
 }
 
 export function OverviewRibbon({
-  isOpen, mediaType, showSettings, onToggle, onMediaType, onToggleSettings,
+  isOpen, mediaType, showSettings, onToggle, onMediaType, onToggleSettings, thoughtName,
 }: Props) {
   return (
     <PanelRibbon
@@ -42,6 +43,7 @@ export function OverviewRibbon({
       side="left"
       isOpen={isOpen}
       onToggle={onToggle}
+      bottomLabel={thoughtName}
     >
       {VIEW_BUTTONS.map(({ mode, Icon, title }) => (
         <button

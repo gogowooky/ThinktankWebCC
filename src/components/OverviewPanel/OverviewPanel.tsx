@@ -24,7 +24,9 @@ interface Props {
 
 export function OverviewPanel({ app, width, onResize }: Props) {
   const panel = app.OverviewPanel;
+  const vault = app.Models.Vault;
   useAppUpdate(panel);
+  useAppUpdate(vault);
 
   const [showSettings, setShowSettings] = useState(false);
 
@@ -44,6 +46,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         onToggle={handleToggle}
         onMediaType={handleMediaType}
         onToggleSettings={handleToggleSettings}
+        thoughtName={panel.ThoughtID ? (vault.GetThink(panel.ThoughtID)?.Name ?? panel.ThoughtID) : undefined}
       />
       <PanelArea
         panelId="overview"

@@ -26,6 +26,7 @@ interface Props {
 
 export function ThinktankPanel({ app, width, onResize }: Props) {
   const panel = app.ThinktankPanel;
+  const vault = app.Models.Vault;
   useAppUpdate(panel);
 
   const handleToggle     = useCallback(() => panel.ToggleArea(), [panel]);
@@ -45,6 +46,7 @@ export function ThinktankPanel({ app, width, onResize }: Props) {
         onToggle={handleToggle}
         viewMode={panel.ViewMode}
         onSetViewMode={handleSetViewMode}
+        vaultName={vault.VaultName}
       />
       <PanelArea
         panelId="thinktank"

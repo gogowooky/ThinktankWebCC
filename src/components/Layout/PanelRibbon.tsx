@@ -28,6 +28,8 @@ interface Props {
   children?: ReactNode;
   /** Ribbon 下部に固定表示するボタン群 */
   bottomChildren?: ReactNode;
+  /** Ribbon 最下部に縦書きで表示するラベル */
+  bottomLabel?: string;
 }
 
 export function PanelRibbon({
@@ -37,6 +39,7 @@ export function PanelRibbon({
   onToggle,
   children,
   bottomChildren,
+  bottomLabel,
 }: Props) {
   // 開閉矢印の向きを決定
   // left  側 ribbon: 閉じているとき右向き▶（開く）、開いているとき左向き◀（閉じる）
@@ -72,6 +75,13 @@ export function PanelRibbon({
       {/* 下部固定ボタン群 */}
       {bottomChildren && (
         <div className="panel-ribbon__bottom">{bottomChildren}</div>
+      )}
+
+      {/* 最下部ラベル（縦書き・下寄せ）*/}
+      {bottomLabel && (
+        <div className="panel-ribbon__label" title={bottomLabel}>
+          {bottomLabel}
+        </div>
       )}
     </div>
   );

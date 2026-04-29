@@ -23,6 +23,7 @@ interface Props {
   viewMode: ThinktankViewMode;
   onSetViewMode: (mode: ThinktankViewMode) => void;
   syncState?: SyncState;
+  vaultName?: string;
 }
 
 // ── 同期インジケーター ──────────────────────────────────────────────────
@@ -66,6 +67,7 @@ export function ThinktankRibbon({
   viewMode,
   onSetViewMode,
   syncState = 'synced',
+  vaultName,
 }: Props) {
   const mode = StorageManager.instance.mode;
 
@@ -75,6 +77,7 @@ export function ThinktankRibbon({
       side="left"
       isOpen={isOpen}
       onToggle={onToggle}
+      bottomLabel={vaultName}
       bottomChildren={
         <>
           <button
