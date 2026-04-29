@@ -37,7 +37,7 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
 
   const handleSaveTitle = useCallback(async () => {
     if (!think) return;
-    const newTitle = titleValue.trim();
+    const newTitle = titleValue.trim().slice(0, 100);
     if (!newTitle) return;
     setSaving(true);
     try {
@@ -86,7 +86,7 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
                 type="text"
                 value={titleValue}
                 placeholder="（無題）"
-                onChange={e => { setTitleValue(e.target.value); setSaved(false); }}
+                onChange={e => { setTitleValue(e.target.value.slice(0, 100)); setSaved(false); }}
                 onKeyDown={handleKeyDown}
                 spellCheck={false}
               />

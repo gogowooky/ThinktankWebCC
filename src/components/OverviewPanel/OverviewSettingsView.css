@@ -10,25 +10,13 @@
   gap: 16px;
   background: var(--overview-area-bg);
   scrollbar-width: thin;
-  scrollbar-color: rgba(57, 73, 171, 0.35) transparent;
+  scrollbar-color: rgba(0,0,0,0.22) transparent;
 }
 
-.ov-settings-view::-webkit-scrollbar {
-  width: 6px;
-}
-
-.ov-settings-view::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.ov-settings-view::-webkit-scrollbar-thumb {
-  background: rgba(57, 73, 171, 0.35);
-  border-radius: 3px;
-}
-
-.ov-settings-view::-webkit-scrollbar-thumb:hover {
-  background: rgba(57, 73, 171, 0.6);
-}
+.ov-settings-view::-webkit-scrollbar        { width: 8px; }
+.ov-settings-view::-webkit-scrollbar-track  { background: transparent; }
+.ov-settings-view::-webkit-scrollbar-thumb  { background: rgba(0,0,0,0.22); border-radius: 4px; }
+.ov-settings-view::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.38); }
 
 .ov-settings-view--empty {
   align-items: center;
