@@ -11,6 +11,7 @@
  *   Settings    – Overview設定（Thoughtプロファイル詳細）下寄せ
  */
 
+import { useCallback, useState } from 'react';
 import { Sparkles, LayoutList, BarChart2, Settings, type LucideIcon } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { MediaType } from '../../types';
@@ -19,9 +20,9 @@ import './OverviewRibbon.css';
 type OverviewViewMode = 'chat' | 'datagrid' | 'graph';
 
 const VIEW_BUTTONS: Array<{ mode: OverviewViewMode; Icon: LucideIcon; title: string }> = [
-  { mode: 'chat',     Icon: Sparkles,   title: 'AI相談（データ分析）' },
   { mode: 'datagrid', Icon: LayoutList, title: 'Think一覧' },
   { mode: 'graph',    Icon: BarChart2,  title: 'Thought分析' },
+  { mode: 'chat',     Icon: Sparkles,   title: 'AI相談（データ分析）' },
 ];
 
 interface Props {
@@ -32,11 +33,34 @@ interface Props {
   onMediaType:       (type: MediaType) => void;
   onToggleSettings?: () => void;
   thoughtName?:      string;
+  onThoughtDrop?:    (id: string) => void;
 }
 
 export function OverviewRibbon({
   isOpen, mediaType, showSettings, onToggle, onMediaType, onToggleSettings, thoughtName,
+  onThoughtDrop,
 }: Props) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (e.dataTransfer.types.includes('application/x-thought-id')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const id = e.dataTransfer.getData('application/x-thought-id');
+    if (id) onThoughtDrop?.(id);
+  }, [onThoughtDrop]);
+
   return (
     <PanelRibbon
       panelId="overview"
@@ -44,6 +68,10 @@ export function OverviewRibbon({
       isOpen={isOpen}
       onToggle={onToggle}
       bottomLabel={thoughtName}
+      isDragOver={isDragOver}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {VIEW_BUTTONS.map(({ mode, Icon, title }) => (
         <button
@@ -55,7 +83,7 @@ export function OverviewRibbon({
           onClick={() => onMediaType(mode as MediaType)}
           title={title}
         >
-          <Icon size={14} />
+          <Icon size={16} />
         </button>
       ))}
       <button
@@ -63,7 +91,7 @@ export function OverviewRibbon({
         onClick={onToggleSettings}
         title="Overview設定"
       >
-        <Settings size={14} />
+        <Settings size={16} />
       </button>
     </PanelRibbon>
   );

@@ -30,6 +30,11 @@ interface Props {
   bottomChildren?: ReactNode;
   /** Ribbon 最下部に縦書きで表示するラベル */
   bottomLabel?: string;
+  /** D&D ドロップ受け入れ中フラグ（ハイライト用）*/
+  isDragOver?: boolean;
+  onDragOver?: React.DragEventHandler<HTMLDivElement>;
+  onDragLeave?: React.DragEventHandler<HTMLDivElement>;
+  onDrop?: React.DragEventHandler<HTMLDivElement>;
 }
 
 export function PanelRibbon({
@@ -40,6 +45,10 @@ export function PanelRibbon({
   children,
   bottomChildren,
   bottomLabel,
+  isDragOver,
+  onDragOver,
+  onDragLeave,
+  onDrop,
 }: Props) {
   // 開閉矢印の向きを決定
   // left  側 ribbon: 閉じているとき右向き▶（開く）、開いているとき左向き◀（閉じる）
@@ -49,9 +58,12 @@ export function PanelRibbon({
 
   return (
     <div
-      className={`panel-ribbon panel-ribbon--${panelId}`}
+      className={`panel-ribbon panel-ribbon--${panelId}${isDragOver ? ' panel-ribbon--drag-over' : ''}`}
       data-panel={panelId}
       data-side={side}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       {/* 開閉トグルボタン（先頭）*/}
       <button
@@ -69,13 +81,13 @@ export function PanelRibbon({
       {/* ユーザー定義ボタン */}
       {children && <div className="panel-ribbon__buttons">{children}</div>}
 
-      {/* スペーサー */}
-      <div className="panel-ribbon__spacer" />
-
-      {/* 下部固定ボタン群 */}
+      {/* 上寄せ固定ボタン群（モードボタン直下）*/}
       {bottomChildren && (
         <div className="panel-ribbon__bottom">{bottomChildren}</div>
       )}
+
+      {/* スペーサー */}
+      <div className="panel-ribbon__spacer" />
 
       {/* 最下部ラベル（左90度・下寄せ）*/}
       {bottomLabel && (

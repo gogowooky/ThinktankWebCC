@@ -31,7 +31,16 @@ export function ThinktankPanel({ app, width, onResize }: Props) {
 
   const handleToggle     = useCallback(() => panel.ToggleArea(), [panel]);
   const handleSetViewMode = useCallback(
-    (m: Parameters<typeof panel.SetViewMode>[0]) => panel.SetViewMode(m),
+    (m: Parameters<typeof panel.SetViewMode>[0]) => {
+      if (!panel.IsAreaOpen) {
+        panel.SetViewMode(m);
+        panel.OpenArea();
+      } else if (panel.ViewMode === m) {
+        panel.CloseArea();
+      } else {
+        panel.SetViewMode(m);
+      }
+    },
     [panel]
   );
 

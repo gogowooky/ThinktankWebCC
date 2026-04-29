@@ -6,7 +6,7 @@
  * 入力内容は TTThinktankPanel.Filter に即時反映する。
  */
 
-import { Search, X } from 'lucide-react';
+import { Type, X } from 'lucide-react';
 import './ThoughtsFilter.css';
 
 interface Props {
@@ -19,13 +19,13 @@ interface Props {
 export function ThoughtsFilter({ value, onChange, visibleCount, totalCount }: Props) {
   return (
     <div className="thoughts-filter">
-      <Search size={12} className="thoughts-filter__icon" />
+      <Type size={12} className="thoughts-filter__icon" />
       <input
         className="thoughts-filter__input"
         type="text"
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder="フィルター…"
+        placeholder="タイトルで絞り込み..."
         spellCheck={false}
       />
       {value && (

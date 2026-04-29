@@ -53,10 +53,10 @@ const MODE_BUTTONS: {
   icon: React.ReactNode;
   label: string;
 }[] = [
-  { mode: 'ai',      icon: <Sparkles size={16} />,          label: 'AI相談' },
   { mode: 'filter',  icon: <LayoutList size={16} />,         label: 'Think一覧' },
   { mode: 'search',  icon: <Search   size={16} />,          label: '全文検索（内容）' },
   { mode: 'thoughts',icon: <Brain    size={16} />,          label: 'Thought一覧' },
+  { mode: 'ai',      icon: <Sparkles size={16} />,          label: 'AI相談' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────
