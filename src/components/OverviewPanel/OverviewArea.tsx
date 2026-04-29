@@ -14,7 +14,7 @@
  *   - chat      → ChatMedia
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Brain, CalendarDays, CalendarClock } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -114,9 +114,25 @@ export function OverviewArea({ app, showSettings }: Props) {
     )
   ));
 
+  // ── ThoughtID 変化時: 一覧状態リセット ＋ MetaOnly なら Content をロード ─
+  const prevThoughtIdRef = useRef(panel.ThoughtID);
+  useEffect(() => {
+    if (panel.ThoughtID === prevThoughtIdRef.current) return;
+    prevThoughtIdRef.current = panel.ThoughtID;
+    setFilter('');
+    setCheckedIds([]);
+    setShowCheckedOnly(false);
+
+    if (!panel.ThoughtID) return;
+    const thought = vault.GetThink(panel.ThoughtID);
+    if (thought?.IsMetaOnly) {
+      thought.LoadContent().then(() => vault.NotifyUpdated());
+    }
+  }, [panel.ThoughtID, vault]);
+
   // ── Thought 選択（D&D）────────────────────────────────────────────────────
   const selectThought = useCallback((id: string) => {
-    panel.OpenThought(id, panel.MediaType);
+    panel.OpenThought(id, 'datagrid');
   }, [panel]);
 
   // ── D&D ハンドラ ─────────────────────────────────────────────────────────

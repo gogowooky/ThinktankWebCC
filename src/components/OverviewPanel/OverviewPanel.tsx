@@ -33,7 +33,10 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
   const handleThoughtDrop = useCallback((id: string) => {
     const dropped = vault.GetThink(id);
-    if (!dropped || dropped.ContentType === 'thought') panel.OpenThought(id, panel.MediaType);
+    if (!dropped || dropped.ContentType === 'thought') {
+      panel.OpenThought(id, 'datagrid');
+      setShowSettings(false);
+    }
   }, [vault, panel]);
   const handleMediaType = useCallback((type: Parameters<typeof panel.SetMediaType>[0]) => {
     if (!panel.IsAreaOpen) {
