@@ -5,12 +5,10 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow-y: scroll;
+  overflow-y: auto;
   padding: 12px 10px;
   gap: 16px;
   background: var(--overview-area-bg);
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0,0,0,0.22) transparent;
 }
 
 .ov-settings-view::-webkit-scrollbar        { width: 8px; }
