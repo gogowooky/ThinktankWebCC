@@ -128,6 +128,20 @@ export class TTVault extends TTCollection {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
 
+    // thought種別のIDはそのコンテンツ内のIDsに展開する
+    const resolvedIds: string[] = [];
+    for (const id of ids) {
+      const think = this.GetThink(id);
+      if (think?.ContentType === 'thought') {
+        if (think.IsMetaOnly) await think.LoadContent();
+        const subIds = think.getThinkIds();
+        resolvedIds.push(...subIds);
+      } else {
+        resolvedIds.push(id);
+      }
+    }
+    const uniqueIds = [...new Set(resolvedIds)];
+
     let resolvedTitle: string;
     if (filter && filter.trim()) {
       resolvedTitle = `フィルター：${filter.trim()}`;
@@ -138,7 +152,7 @@ export class TTVault extends TTCollection {
       const names = ids.map(id => this._children.get(id)?.Name ?? id).join('・');
       resolvedTitle = `複合：${names}`;
     }
-    const body  = ids.map(id => `* ${id}`).join('\n');
+    const body  = uniqueIds.map(id => `* ${id}`).join('\n');
     const fullContent = `${resolvedTitle}\n${body}`;
 
     const think = new TTThink();
@@ -156,7 +170,7 @@ export class TTVault extends TTCollection {
       contentType: 'thought',
       fullContent,
       keywords:    '',
-      relatedIds:  ids.join(','),
+      relatedIds:  uniqueIds.join(','),
     });
     think.markSaved();
     this.NotifyUpdated();

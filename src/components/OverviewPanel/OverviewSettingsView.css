@@ -5,10 +5,29 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: scroll;
   padding: 12px 10px;
   gap: 16px;
   background: var(--overview-area-bg);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(57, 73, 171, 0.35) transparent;
+}
+
+.ov-settings-view::-webkit-scrollbar {
+  width: 6px;
+}
+
+.ov-settings-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ov-settings-view::-webkit-scrollbar-thumb {
+  background: rgba(57, 73, 171, 0.35);
+  border-radius: 3px;
+}
+
+.ov-settings-view::-webkit-scrollbar-thumb:hover {
+  background: rgba(57, 73, 171, 0.6);
 }
 
 .ov-settings-view--empty {

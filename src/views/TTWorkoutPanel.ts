@@ -222,6 +222,16 @@ export class TTWorkoutPanel extends TTObject {
     return true;
   }
 
+  /** フォーカスペインの内容を差し替える。ペインがなければ null を返す */
+  public ReplaceFocused(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
+    const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
+    const area = focusId ? this.Areas.find(a => a.ID === focusId) : null;
+    if (!area) return null;
+    area.OpenThink(resourceId, mediaType, title);
+    this.NotifyUpdated();
+    return area;
+  }
+
   // ── ドラッグ移動 ────────────────────────────────────────────────────────
 
   /** 2 つのペイン内容を入れ替える（ドラッグ&ドロップ完了時に呼ぶ）*/
