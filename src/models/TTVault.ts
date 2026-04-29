@@ -124,10 +124,20 @@ export class TTVault extends TTCollection {
   }
 
   /** チェックされた ID 群から thought を新規作成して保存する */
-  public async CreateThoughtFromIds(ids: string[], title?: string): Promise<TTThink> {
+  public async CreateThoughtFromIds(ids: string[], filter?: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
-    const resolvedTitle = (title && title.trim()) ? title.trim() : `Thought ${newId.slice(0, 10)}`;
+
+    let resolvedTitle: string;
+    if (filter && filter.trim()) {
+      resolvedTitle = `フィルター：${filter.trim()}`;
+    } else if (ids.length === 1) {
+      const firstName = this._children.get(ids[0])?.Name ?? ids[0];
+      resolvedTitle = `チェック：${firstName.slice(0, 10)}`;
+    } else {
+      const names = ids.map(id => this._children.get(id)?.Name ?? id).join('・');
+      resolvedTitle = `複合：${names}`;
+    }
     const body  = ids.map(id => `* ${id}`).join('\n');
     const fullContent = `${resolvedTitle}\n${body}`;
 

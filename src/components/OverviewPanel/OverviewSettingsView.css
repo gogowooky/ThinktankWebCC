@@ -134,6 +134,28 @@
   border-color: rgba(46, 125, 50, 0.3);
 }
 
+.ov-settings-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: rgba(57, 73, 171, 0.6);
+  background: rgba(57, 73, 171, 0.05);
+  border: 1px solid rgba(57, 73, 171, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ov-settings-clear-btn:hover {
+  background: rgba(183, 28, 28, 0.08);
+  color: #b71c1c;
+  border-color: rgba(183, 28, 28, 0.3);
+}
+
 /* ── Think ID リスト ── */
 
 .ov-settings-id-list {

@@ -79,7 +79,24 @@ export class TTApplication extends TTObject {
     // ToDoPanel: コンテキストを連携
     this.ToDoPanel.LinkThought(thoughtId);
 
+    // WorkoutPanel: thoughtに含まれないThinkのペインを削除
+    this._removeOutOfThoughtPanes(thoughtId);
+
     this.NotifyUpdated();
+  }
+
+  /** Thought に含まれない Think のペインを WorkoutPanel から削除する */
+  private _removeOutOfThoughtPanes(thoughtId: string): void {
+    const vault = this.Models.Vault;
+    const thinks = vault.GetThinksForThought(thoughtId);
+    const allowed = new Set(thinks.map(t => t.ID));
+    allowed.add(thoughtId);
+    const toRemove = this.WorkoutPanel.Areas
+      .filter(a => !allowed.has(a.ResourceID))
+      .map(a => a.ID);
+    for (const areaId of toRemove) {
+      this.WorkoutPanel.RemoveArea(areaId);
+    }
   }
 
   /**

@@ -14,15 +14,25 @@ import './TextEditorMedia.css';
 
 interface Toast { msg: string; type: 'success' | 'error'; }
 
+function extractBody(content: string): string {
+  const idx = content.indexOf('\n');
+  return idx === -1 ? '' : content.slice(idx + 1);
+}
+
+function reconstructContent(think: NonNullable<MediaProps['think']>, body: string): string {
+  const firstLine = think.Content.split('\n')[0] ?? '';
+  return body ? `${firstLine}\n${body}` : firstLine;
+}
+
 export function TextEditorMedia({ think, onSave, onDirtyChange }: MediaProps) {
-  const savedRef  = useRef(think?.Content ?? '');
+  const savedRef  = useRef(think ? extractBody(think.Content) : '');
   const editorRef = useRef<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [toast,      setToast]      = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    savedRef.current = think?.Content ?? '';
+    savedRef.current = think ? extractBody(think.Content) : '';
     onDirtyChange(false);
   }, [think?.ID, onDirtyChange]);
 
@@ -43,9 +53,10 @@ export function TextEditorMedia({ think, onSave, onDirtyChange }: MediaProps) {
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      const content = editor.getValue();
-      savedRef.current = content;
-      onSave(content);
+      if (!think) return;
+      const body = editor.getValue();
+      savedRef.current = body;
+      onSave(reconstructContent(think, body));
     });
   }, [onSave]);
 
@@ -108,9 +119,9 @@ export function TextEditorMedia({ think, onSave, onDirtyChange }: MediaProps) {
     >
       <Editor
         key={think.ID}
-        defaultValue={think.Content}
+        defaultValue={extractBody(think.Content)}
         language="markdown"
-        theme="vs-dark"
+        theme="vs"
         onMount={handleMount}
         onChange={handleChange}
         loading={<div className="text-editor-media__loading">エディタ読み込み中…</div>}

@@ -13,7 +13,7 @@
 
 import { useRef, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { BookOpen } from 'lucide-react';
+import { Brain, FileText, MessageSquare, Link, Table2, Globe, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -50,6 +50,19 @@ export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
   });
 }
 
+
+function getTypeIcon(contentType: string) {
+  switch (contentType.toLowerCase()) {
+    case 'thought':  return <Brain       size={13} className="thoughts-list__icon" />;
+    case 'memo':     return <FileText    size={13} className="thoughts-list__icon" />;
+    case 'chat':     return <MessageSquare size={13} className="thoughts-list__icon" />;
+    case 'links':    return <Link        size={13} className="thoughts-list__icon" />;
+    case 'tables':   return <Table2      size={13} className="thoughts-list__icon" />;
+    case 'nettext':  return <Globe       size={13} className="thoughts-list__icon" />;
+    case 'status':   return <Activity    size={13} className="thoughts-list__icon" />;
+    default:         return <File        size={13} className="thoughts-list__icon" />;
+  }
+}
 
 function renderCell(col: ColumnConfig, thought: TTThink): ReactNode {
   switch (col.field) {
@@ -135,7 +148,7 @@ export function ThoughtsList({
                 onClick={e => e.stopPropagation()}
                 aria-label={`${thought.Name} を選択`}
               />
-              <BookOpen size={13} className="thoughts-list__icon" />
+              {getTypeIcon(thought.ContentType)}
               {visibleCols.map(col => renderCell(col, thought))}
             </div>
           );

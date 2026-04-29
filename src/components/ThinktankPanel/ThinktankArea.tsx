@@ -45,7 +45,7 @@ export function ThinktankArea({ app }: Props) {
   }, []);
 
   // 日付フィルターバーの表示状態
-  const [showDateFilter, setShowDateFilter] = useState(true);
+  const [showDateFilter, setShowDateFilter] = useState(false);
 
   // 表示カラム・ソート設定
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
@@ -132,8 +132,13 @@ export function ThinktankArea({ app }: Props) {
   // ── ハンドラ ─────────────────────────────────────────────────────────────
 
   const handleSelect = useCallback((id: string) => {
+    const thoughtId = app.OverviewPanel.ThoughtID;
+    if (thoughtId) {
+      const thinks = vault.GetThinksForThought(thoughtId);
+      if (!thinks.some(t => t.ID === id)) return;
+    }
     app.OpenThinkInWorkout(id);
-  }, [app]);
+  }, [app, vault]);
 
   // Thought一覧モードのクリック: OverviewPanelには影響させずThinktankPanel内選択のみ
   const handleSelectThought = useCallback((id: string) => {

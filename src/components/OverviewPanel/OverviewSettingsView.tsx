@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Save, BookOpen } from 'lucide-react';
+import { Save, Brain, X } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 import './OverviewSettingsView.css';
@@ -13,9 +13,10 @@ import './OverviewSettingsView.css';
 interface Props {
   think: TTThink | null;
   vault: TTVault;
+  onClear: () => void;
 }
 
-export function OverviewSettingsView({ think, vault }: Props) {
+export function OverviewSettingsView({ think, vault, onClear }: Props) {
   const [titleValue,     setTitleValue]     = useState('');
   const [saved,          setSaved]          = useState(false);
   const [saving,         setSaving]         = useState(false);
@@ -60,7 +61,7 @@ export function OverviewSettingsView({ think, vault }: Props) {
   if (!think) {
     return (
       <div className="ov-settings-view ov-settings-view--empty">
-        <BookOpen size={24} className="ov-settings-view__empty-icon" />
+        <Brain size={24} className="ov-settings-view__empty-icon" />
         <span>Thoughtをドロップして選択してください</span>
       </div>
     );
@@ -97,7 +98,14 @@ export function OverviewSettingsView({ think, vault }: Props) {
                 aria-label="保存"
               >
                 <Save size={12} />
-                <span>{saved ? '保存済み' : '保存'}</span>
+              </button>
+              <button
+                className="ov-settings-clear-btn"
+                onClick={onClear}
+                title="Thoughtをクリア"
+                aria-label="Thoughtをクリア"
+              >
+                <X size={12} />
               </button>
             </div>
           </dd>

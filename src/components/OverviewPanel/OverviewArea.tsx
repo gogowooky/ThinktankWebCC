@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { BookOpen, CalendarDays, CalendarClock } from 'lucide-react';
+import { Brain, CalendarDays, CalendarClock } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
@@ -262,7 +262,7 @@ export function OverviewArea({ app, showSettings }: Props) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <BookOpen size={11} className="overview-area__strip-icon" />
+        <Brain size={11} className="overview-area__strip-icon" />
         {think
           ? <span className="overview-area__strip-name">{think.Name || '（無題）'}</span>
           : <span className="overview-area__strip-placeholder">Thought をドロップして選択</span>
@@ -325,7 +325,7 @@ export function OverviewArea({ app, showSettings }: Props) {
       {/* ── 本体 ───────────────────────────────────────────────── */}
       <div className="overview-area__body">
         {showSettings ? (
-          <OverviewSettingsView think={think} vault={vault} />
+          <OverviewSettingsView think={think} vault={vault} onClear={() => panel.ClearThought()} />
         ) : isThinkListMode ? (
           !panel.ThoughtID ? (
             <div className="overview-area__empty">
