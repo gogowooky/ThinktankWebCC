@@ -77,10 +77,10 @@ export function PanelRibbon({
         <div className="panel-ribbon__bottom">{bottomChildren}</div>
       )}
 
-      {/* 最下部ラベル（縦書き・下寄せ）*/}
+      {/* 最下部ラベル（左90度・下寄せ）*/}
       {bottomLabel && (
-        <div className="panel-ribbon__label" title={bottomLabel}>
-          {bottomLabel}
+        <div className="panel-ribbon__label-wrap" title={bottomLabel}>
+          <span className="panel-ribbon__label">{bottomLabel}</span>
         </div>
       )}
     </div>

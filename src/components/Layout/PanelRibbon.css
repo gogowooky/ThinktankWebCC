@@ -74,19 +74,31 @@
 }
 
 /* 最下部ラベル（縦書き・左90度） */
+.panel-ribbon__label-wrap {
+  flex-shrink: 0;
+  height: 130px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 4px;
+  box-sizing: border-box;
+}
+
 .panel-ribbon__label {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  font-size: 18px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: rgba(255, 255, 255, 0.45);
+  position: absolute;
+  width: 122px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(-90deg);
   white-space: nowrap;
   overflow: hidden;
-  max-height: 200px;
-  padding-bottom: 6px;
+  text-overflow: ellipsis;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
   user-select: none;
-  flex-shrink: 0;
 }
 
 /* Workout リボンはやや暗めなのでホバー色を調整 */
