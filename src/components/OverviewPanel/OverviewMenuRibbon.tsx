@@ -6,7 +6,7 @@
 
 import { useCallback } from 'react';
 import {
-  CheckSquare, Square, Trash2, Filter, BookOpen,
+  CheckSquare, Square, MinusCircle, Filter, BookOpen,
   ListChecks, CalendarRange, SlidersHorizontal, Save,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
@@ -21,7 +21,7 @@ interface Props {
   showColumnDialog:     boolean;
   onCheckAll:           () => void;
   onClearChecks:        () => void;
-  onDeleteChecked:      () => void;
+  onExcludeChecked:     () => void;
   onToggleCheckedOnly:  () => void;
   onCreateThought:      () => void;
   onToggleAllVault:     () => void;
@@ -35,7 +35,7 @@ export function OverviewMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showDateFilter, showColumnDialog,
   hasChatMessages, onSaveChat,
-  onCheckAll, onClearChecks, onDeleteChecked,
+  onCheckAll, onClearChecks, onExcludeChecked,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
 }: Props) {
@@ -105,11 +105,11 @@ export function OverviewMenuRibbon({
 
       <button
         className="menu-ribbon__btn menu-ribbon__btn--icon overview-ribbon__btn--danger"
-        onClick={onDeleteChecked}
-        title="チェック中のアイテムを削除"
+        onClick={onExcludeChecked}
+        title="チェック中のアイテムをThoughtから除外"
         disabled={!hasChecked}
       >
-        <Trash2 size={14} />
+        <MinusCircle size={14} />
       </button>
 
       {/* SaveChat: チャット保存 */}

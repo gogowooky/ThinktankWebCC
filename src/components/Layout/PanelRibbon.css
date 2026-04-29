@@ -76,6 +76,7 @@
 /* 最下部ラベル（縦書き・左90度） */
 .panel-ribbon__label {
   writing-mode: vertical-rl;
+  transform: rotate(180deg);
   font-size: 18px;
   font-weight: 500;
   letter-spacing: 0.05em;
@@ -86,10 +87,6 @@
   padding-bottom: 6px;
   user-select: none;
   flex-shrink: 0;
-}
-
-.panel-ribbon--thinktank .panel-ribbon__label {
-  transform: rotate(180deg);
 }
 
 /* Workout リボンはやや暗めなのでホバー色を調整 */

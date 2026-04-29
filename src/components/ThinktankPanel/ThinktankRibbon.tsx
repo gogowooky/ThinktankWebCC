@@ -7,7 +7,7 @@
  */
 
 import {
-  Sparkles, Filter, Search, Brain,
+  Sparkles, LayoutList, Search, Brain,
   Monitor, Globe, Settings,
   CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock,
 } from 'lucide-react';
@@ -54,7 +54,7 @@ const MODE_BUTTONS: {
   label: string;
 }[] = [
   { mode: 'ai',      icon: <Sparkles size={16} />,          label: 'AI相談' },
-  { mode: 'filter',  icon: <Filter   size={16} />,          label: 'フィルター（タイトル・日時）' },
+  { mode: 'filter',  icon: <LayoutList size={16} />,         label: 'Think一覧' },
   { mode: 'search',  icon: <Search   size={16} />,          label: '全文検索（内容）' },
   { mode: 'thoughts',icon: <Brain    size={16} />,          label: 'Thought一覧' },
 ];

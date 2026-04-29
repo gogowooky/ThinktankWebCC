@@ -150,12 +150,17 @@ export function OverviewArea({ app, showSettings }: Props) {
 
   const handleClearChecks = useCallback(() => setCheckedIds([]), []);
 
-  const handleDeleteChecked = useCallback(async () => {
-    if (checkedIds.length === 0) return;
-    if (!window.confirm(`${checkedIds.length} 件を削除しますか？`)) return;
-    await vault.DeleteThinks(checkedIds);
+  const handleExcludeChecked = useCallback(async () => {
+    if (checkedIds.length === 0 || !panel.ThoughtID) return;
+    const thought = vault.GetThink(panel.ThoughtID);
+    if (!thought || thought.ContentType !== 'thought') return;
+    if (thought.IsMetaOnly) await thought.LoadContent();
+    const remaining = thought.getThinkIds().filter(id => !checkedIds.includes(id));
+    const nonIdLines = thought.Content.split('\n').filter(l => !l.startsWith('* '));
+    thought.Content = [...nonIdLines, ...remaining.map(id => `* ${id}`)].join('\n');
+    await thought.SaveContent();
     setCheckedIds([]);
-  }, [checkedIds, vault]);
+  }, [checkedIds, panel.ThoughtID, vault]);
 
   const handleToggleAllVault = useCallback(() => {
     const allIds = thinksInThought.map(t => t.ID);
@@ -235,7 +240,7 @@ export function OverviewArea({ app, showSettings }: Props) {
         hasChatMessages={chatMessages.length > 0}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
-        onDeleteChecked={handleDeleteChecked}
+        onExcludeChecked={handleExcludeChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onCreateThought={handleCreateThought}
         onToggleAllVault={handleToggleAllVault}
