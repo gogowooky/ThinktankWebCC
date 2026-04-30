@@ -28,11 +28,15 @@ function formatTime(iso: string): string {
   return `${hh}:${mm}`;
 }
 
+function resizeToContent(ta: HTMLTextAreaElement) {
+  ta.style.height = 'auto';
+  ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
+}
+
 export function AiChatView({ messages, isWaiting, onSend }: Props) {
-  const [input,   setInput]   = useState(HINT_TEXT);
-  const [isHint,  setIsHint]  = useState(true);
-  const logRef                = useRef<HTMLDivElement>(null);
-  const textareaRef           = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = useState('');
+  const logRef            = useRef<HTMLDivElement>(null);
+  const textareaRef       = useRef<HTMLTextAreaElement>(null);
 
   // 新メッセージ到着時に最下部へスクロール
   useEffect(() => {
@@ -40,30 +44,33 @@ export function AiChatView({ messages, isWaiting, onSend }: Props) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, isWaiting]);
 
-  // input 変化時にテキストエリアの高さを再計算
+  // マウント時: placeholder 相当のヒントテキストで高さを計測して初期サイズを設定
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
-    ta.style.height = 'auto';
-    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
-  }, [input]);
+    ta.value = HINT_TEXT;
+    resizeToContent(ta);
+    ta.value = '';
+    // React の value 制御とズレないよう強制同期
+    setInput('');
+  }, []);
 
   const handleSend = useCallback(() => {
-    if (isHint) return;
     const text = input.trim();
     if (!text || isWaiting) return;
     onSend(text);
     // テキストボックスは消去しない
-  }, [input, isHint, isWaiting, onSend]);
+  }, [input, isWaiting, onSend]);
 
   const handleClear = useCallback(() => {
-    setInput(HINT_TEXT);
-    setIsHint(true);
+    setInput('');
+    // 消去後もヒントと同じ高さに戻す
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.value = HINT_TEXT;
+    resizeToContent(ta);
+    ta.value = '';
   }, []);
-
-  const handleFocus = useCallback(() => {
-    if (isHint) textareaRef.current?.select();
-  }, [isHint]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -73,8 +80,8 @@ export function AiChatView({ messages, isWaiting, onSend }: Props) {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (isHint) setIsHint(false);
     setInput(e.target.value);
+    resizeToContent(e.target);
   };
 
   return (
@@ -84,11 +91,11 @@ export function AiChatView({ messages, isWaiting, onSend }: Props) {
       <div className="ai-chat-view__input-area">
         <textarea
           ref={textareaRef}
-          className={`ai-chat-view__input${isHint ? ' ai-chat-view__input--hint' : ''}`}
+          className="ai-chat-view__input"
           value={input}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
+          placeholder={HINT_TEXT}
           disabled={isWaiting}
         />
         <button

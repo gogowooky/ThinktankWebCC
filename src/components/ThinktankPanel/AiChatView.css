@@ -48,10 +48,6 @@
   background: #fff;
 }
 
-.ai-chat-view__input--hint {
-  color: rgba(57, 73, 171, 0.4);
-}
-
 .ai-chat-view__input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
