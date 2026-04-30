@@ -25,18 +25,14 @@ export function useHighlight(): HighlightState {
 }
 
 export function HighlightProvider({ children }: { children: React.ReactNode }) {
-  const app     = TTApplication.Instance;
-  const vault   = app.Models.Vault;
+  const app      = TTApplication.Instance;
   const overview = app.OverviewPanel;
   const workout  = app.WorkoutPanel;
 
   useAppUpdate(overview);
   useAppUpdate(workout);
-  useAppUpdate(vault);
 
-  const overviewThoughtIds = overview.ThoughtID
-    ? vault.GetThinksForThought(overview.ThoughtID).map(t => t.ID)
-    : [];
+  const overviewThoughtIds = overview.ThoughtID ? [overview.ThoughtID] : [];
 
   const workoutIds = workout.Areas.map(a => a.ResourceID).filter(Boolean);
 
