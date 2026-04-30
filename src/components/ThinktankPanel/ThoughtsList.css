@@ -47,10 +47,8 @@
   background: rgba(7, 55, 99, 0.06);
 }
 
-.thoughts-list__row--workout .thoughts-list__title {
-  text-decoration: underline;
-  text-decoration-color: currentColor;
-  text-underline-offset: 2px;
+.thoughts-list__row--workout {
+  background: rgba(57, 73, 171, 0.08);
 }
 
 /* ── 行内要素 ─────────────────────────────────────────── */
