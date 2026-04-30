@@ -11,7 +11,7 @@
  *   "-word" で NOT、"OR" キーワードは OR 接続（将来対応）。
  */
 
-import { useRef, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Brain, FileText, MessageSquare, Link, Table2, Globe, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
@@ -94,6 +94,7 @@ export function ThoughtsList({
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const { overviewThoughtIds, workoutIds } = useHighlight();
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const visibleCols = columns.filter(c => c.visible);
 
   const virtualizer = useVirtualizer({
@@ -102,6 +103,18 @@ export function ThoughtsList({
     estimateSize: () => ROW_HEIGHT,
     overscan: OVERSCAN,
   });
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const dir = e.key === 'ArrowDown' ? 1 : -1;
+    const cur = focusedId ? thoughts.findIndex(t => t.ID === focusedId) : -1;
+    const next = cur < 0
+      ? (dir > 0 ? 0 : thoughts.length - 1)
+      : Math.max(0, Math.min(thoughts.length - 1, cur + dir));
+    setFocusedId(thoughts[next]?.ID ?? null);
+    virtualizer.scrollToIndex(next, { align: 'auto' });
+  };
 
   if (thoughts.length === 0) {
     return (
@@ -112,7 +125,13 @@ export function ThoughtsList({
   }
 
   return (
-    <div className="thoughts-list" ref={parentRef}>
+    <div
+      className="thoughts-list"
+      ref={parentRef}
+      tabIndex={0}
+      onKeyDown={handleKeyDown}
+      onMouseLeave={() => setFocusedId(null)}
+    >
       {/* 仮想スクロールの高さ確保用コンテナ */}
       <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
         {virtualizer.getVirtualItems().map(vItem => {
@@ -121,6 +140,7 @@ export function ThoughtsList({
           const isChecked         = checkedIds.includes(thought.ID);
           const isOverviewThought = overviewThoughtIds.includes(thought.ID);
           const isInWorkout       = workoutIds.includes(thought.ID);
+          const isFocused         = thought.ID === focusedId;
 
           return (
             <div
@@ -136,6 +156,7 @@ export function ThoughtsList({
                 isChecked         ? 'thoughts-list__row--checked'          : '',
                 isOverviewThought ? 'thoughts-list__row--overview-thought' : '',
                 isInWorkout       ? 'thoughts-list__row--workout'          : '',
+                isFocused         ? 'thoughts-list__row--focused'          : '',
               ].join(' ')}
               style={{
                 position: 'absolute',
@@ -144,6 +165,7 @@ export function ThoughtsList({
                 right:  0,
                 height: ROW_HEIGHT,
               }}
+              onMouseEnter={() => setFocusedId(thought.ID)}
               onClick={() => onSelect(thought.ID)}
             >
               <input

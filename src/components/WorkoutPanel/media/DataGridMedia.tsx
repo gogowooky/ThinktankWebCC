@@ -51,6 +51,7 @@ function formatDate(dateStr: string): string {
 export function DataGridMedia({ think, vault }: MediaProps) {
   const [filter, setFilter]     = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const scrollRef               = useRef<HTMLDivElement>(null);
   const { overviewThoughtIds, workoutIds } = useHighlight();
 
@@ -89,6 +90,18 @@ export function DataGridMedia({ think, vault }: MediaProps) {
     });
   }, []);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    e.preventDefault();
+    const dir = e.key === 'ArrowDown' ? 1 : -1;
+    const cur = focusedId ? filtered.findIndex(t => t.ID === focusedId) : -1;
+    const next = cur < 0
+      ? (dir > 0 ? 0 : filtered.length - 1)
+      : Math.max(0, Math.min(filtered.length - 1, cur + dir));
+    setFocusedId(filtered[next]?.ID ?? null);
+    rowVirtualizer.scrollToIndex(next, { align: 'auto' });
+  };
+
   return (
     <div className="datagrid-media">
 
@@ -113,7 +126,13 @@ export function DataGridMedia({ think, vault }: MediaProps) {
       </div>
 
       {/* 仮想スクロール本体 */}
-      <div className="datagrid-media__scroll" ref={scrollRef}>
+      <div
+        className="datagrid-media__scroll"
+        ref={scrollRef}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        onMouseLeave={() => setFocusedId(null)}
+      >
         <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
           {rowVirtualizer.getVirtualItems().map(virtualRow => {
             const item   = filtered[virtualRow.index];
@@ -122,6 +141,7 @@ export function DataGridMedia({ think, vault }: MediaProps) {
             const isFocus           = think?.ID === item.ID;
             const isOverviewThought = overviewThoughtIds.includes(item.ID);
             const isInWorkout       = workoutIds.includes(item.ID);
+            const isFocused         = item.ID === focusedId;
 
             return (
               <div
@@ -132,7 +152,9 @@ export function DataGridMedia({ think, vault }: MediaProps) {
                   isFocus           ? 'datagrid-media__row--focus'           : '',
                   isOverviewThought ? 'datagrid-media__row--overview-thought' : '',
                   isInWorkout       ? 'datagrid-media__row--workout'         : '',
+                  isFocused         ? 'datagrid-media__row--focused'         : '',
                 ].join(' ')}
+                onMouseEnter={() => setFocusedId(item.ID)}
                 style={{
                   position:  'absolute',
                   top:       0,
