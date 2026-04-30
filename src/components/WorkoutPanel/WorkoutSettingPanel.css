@@ -78,6 +78,52 @@
   cursor: not-allowed;
 }
 
+/* ── 方向アイコン文字 ──────────────────────────────── */
+.ws-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  transform-origin: center center;
+}
+
+/* ── アイコンボタン行（4×1）──────────────────────── */
+.workout-setting-panel__icon-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.workout-setting-panel__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background 100ms ease, color 100ms ease;
+  cursor: pointer;
+}
+
+.workout-setting-panel__icon-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.workout-setting-panel__icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── セクション区切り ──────────────────────────────── */
+.workout-setting-panel__divider {
+  height: 1px;
+  margin: 6px 8px;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
 /* ── プレースホルダー ──────────────────────────────── */
 .workout-setting-panel__placeholder {
   padding: 12px;

@@ -55,29 +55,30 @@ export function collectAreaIds(node: LayoutNode): string[] {
 
 /**
  * focusedAreaId を持つ LeafNode を分割して新しい LeafNode を追加する。
- * direction: 'v' = 縦分割（右に追加）, 'h' = 横分割（下に追加）
+ * direction: 'v' = 縦分割（左右）, 'h' = 横分割（上下）
+ * position:  'second' = 新ペインを右/下に追加（既定）
+ *            'first'  = 新ペインを左/上に追加
  */
 export function addToFocused(
   node: LayoutNode,
   focusedAreaId: string,
   newAreaId: string,
   direction: 'v' | 'h',
+  position: 'first' | 'second' = 'second',
 ): LayoutNode {
   if (node.type === 'leaf') {
     if (node.areaId !== focusedAreaId) return node;
-    // このリーフを分割する
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: newAreaId };
     return {
       id: newNodeId(),
       type: 'split',
       direction,
-      first: node,
-      second: newLeaf,
+      first:  position === 'first'  ? newLeaf : node,
+      second: position === 'second' ? newLeaf : node,
     } satisfies SplitNodeData;
   }
-  // split node: 再帰的に探す
-  const newFirst  = addToFocused(node.first,  focusedAreaId, newAreaId, direction);
-  const newSecond = addToFocused(node.second, focusedAreaId, newAreaId, direction);
+  const newFirst  = addToFocused(node.first,  focusedAreaId, newAreaId, direction, position);
+  const newSecond = addToFocused(node.second, focusedAreaId, newAreaId, direction, position);
   if (newFirst === node.first && newSecond === node.second) return node;
   return { ...node, first: newFirst, second: newSecond };
 }
@@ -181,6 +182,86 @@ export class TTWorkoutPanel extends TTObject {
 
     const area = this._createArea(resourceId, mediaType, title);
     this.Layout = addToFocused(this.Layout, focusId, area.ID, 'h');
+    this.FocusedAreaId = area.ID;
+    this.NotifyUpdated();
+    return area;
+  }
+
+  /** フォーカスペインを縦分割して左にエリアを追加 */
+  public AddLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
+    const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
+    if (!focusId || !this.Layout) return null;
+
+    const area = this._createArea(resourceId, mediaType, title);
+    this.Layout = addToFocused(this.Layout, focusId, area.ID, 'v', 'first');
+    this.FocusedAreaId = area.ID;
+    this.NotifyUpdated();
+    return area;
+  }
+
+  /** フォーカスペインを横分割して上にエリアを追加 */
+  public AddAbove(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
+    const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
+    if (!focusId || !this.Layout) return null;
+
+    const area = this._createArea(resourceId, mediaType, title);
+    this.Layout = addToFocused(this.Layout, focusId, area.ID, 'h', 'first');
+    this.FocusedAreaId = area.ID;
+    this.NotifyUpdated();
+    return area;
+  }
+
+  /** レイアウト全体の左端に新エリアを追加（ルートを縦分割）*/
+  public AddToLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
+    const area = this._createArea(resourceId, mediaType, title);
+    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
+    if (this.Layout === null) {
+      this.Layout = newLeaf;
+    } else {
+      this.Layout = { id: newNodeId(), type: 'split', direction: 'v', first: newLeaf, second: this.Layout };
+    }
+    this.FocusedAreaId = area.ID;
+    this.NotifyUpdated();
+    return area;
+  }
+
+  /** レイアウト全体の右端に新エリアを追加（ルートを縦分割）*/
+  public AddToRight(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
+    const area = this._createArea(resourceId, mediaType, title);
+    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
+    if (this.Layout === null) {
+      this.Layout = newLeaf;
+    } else {
+      this.Layout = { id: newNodeId(), type: 'split', direction: 'v', first: this.Layout, second: newLeaf };
+    }
+    this.FocusedAreaId = area.ID;
+    this.NotifyUpdated();
+    return area;
+  }
+
+  /** レイアウト全体の上端に新エリアを追加（ルートを横分割）*/
+  public AddToTop(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
+    const area = this._createArea(resourceId, mediaType, title);
+    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
+    if (this.Layout === null) {
+      this.Layout = newLeaf;
+    } else {
+      this.Layout = { id: newNodeId(), type: 'split', direction: 'h', first: newLeaf, second: this.Layout };
+    }
+    this.FocusedAreaId = area.ID;
+    this.NotifyUpdated();
+    return area;
+  }
+
+  /** レイアウト全体の下端に新エリアを追加（ルートを横分割）*/
+  public AddToBottom(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
+    const area = this._createArea(resourceId, mediaType, title);
+    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
+    if (this.Layout === null) {
+      this.Layout = newLeaf;
+    } else {
+      this.Layout = { id: newNodeId(), type: 'split', direction: 'h', first: this.Layout, second: newLeaf };
+    }
     this.FocusedAreaId = area.ID;
     this.NotifyUpdated();
     return area;

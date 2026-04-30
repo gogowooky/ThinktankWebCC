@@ -1,11 +1,5 @@
 /**
  * WorkoutSettingPanel.tsx
- * WorkoutRibbon の各設定ボタンに対応する設定パネル。
- *
- * - 上部: 設定名ヘッダー
- * - 本体: activeSettings タイプ別コンテンツ
- *   - workout   : エリア追加ボタン（右に追加 / 下に追加）
- *   - その他    : 将来の設定 UI 用プレースホルダー
  */
 
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
@@ -13,35 +7,53 @@ import type { SettingsType } from './WorkoutRibbon';
 import { WORKOUT_SETTINGS } from './WorkoutRibbon';
 import './WorkoutSettingPanel.css';
 
-function SplitRightIcon() {
+// ── 方向アイコン ──────────────────────────────────────────────────────────
+
+type Dir = 'right' | 'left' | 'up' | 'down';
+
+const DIR_DEG: Record<Dir, number> = { right: 0, left: 180, up: -90, down: 90 };
+
+/** ⏩ を回転して分割方向を示す */
+function SplitIcon({ dir }: { dir: Dir }) {
   return (
-    <svg width="18" height="13" viewBox="0 0 20 14" fill="currentColor">
-      <rect x="0"  y="0" width="8"  height="14" rx="1" opacity="0.85" />
-      <rect x="12" y="0" width="8"  height="14" rx="1" opacity="0.55" />
-      <line x1="10" y1="2" x2="10" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-    </svg>
+    <span className="ws-icon" style={{ transform: `rotate(${DIR_DEG[dir]}deg)` }}>
+      ⏩
+    </span>
   );
 }
 
-function SplitBelowIcon() {
+/** ⏯ を回転して追加方向を示す */
+function AddIcon({ dir }: { dir: Dir }) {
   return (
-    <svg width="18" height="13" viewBox="0 0 20 14" fill="currentColor">
-      <rect x="0" y="0"  width="20" height="5"  rx="1" opacity="0.85" />
-      <rect x="0" y="9"  width="20" height="5"  rx="1" opacity="0.55" />
-      <line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-    </svg>
+    <span className="ws-icon" style={{ transform: `rotate(${DIR_DEG[dir]}deg)` }}>
+      ⏯
+    </span>
   );
 }
+
+// ── Props ────────────────────────────────────────────────────────────────
 
 interface Props {
   activeSettings: SettingsType;
   panel:          TTWorkoutPanel;
   width:          number;
+  onSplitLeft:    () => void;
+  onSplitRight:   () => void;
+  onSplitAbove:   () => void;
+  onSplitBelow:   () => void;
+  onAddLeft:      () => void;
   onAddRight:     () => void;
-  onAddBelow:     () => void;
+  onAddTop:       () => void;
+  onAddBottom:    () => void;
 }
 
-export function WorkoutSettingPanel({ activeSettings, panel, width, onAddRight, onAddBelow }: Props) {
+// ── Component ────────────────────────────────────────────────────────────
+
+export function WorkoutSettingPanel({
+  activeSettings, panel, width,
+  onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
+  onAddLeft, onAddRight, onAddTop, onAddBottom,
+}: Props) {
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
   const panelName = entry?.name ?? '';
@@ -49,37 +61,87 @@ export function WorkoutSettingPanel({ activeSettings, panel, width, onAddRight, 
   return (
     <div className="workout-setting-panel" style={{ width }}>
 
-      {/* ヘッダー */}
-      <div className="workout-setting-panel__header">
-        {panelName}
-      </div>
+      <div className="workout-setting-panel__header">{panelName}</div>
 
-      {/* コンテンツ */}
       <div className="workout-setting-panel__body">
         {activeSettings === 'workout' ? (
-          <div className="workout-setting-panel__section">
-            <span className="workout-setting-panel__section-label">エリア追加</span>
-            <button
-              className="workout-setting-panel__btn"
-              onClick={onAddRight}
-              title="右にエリア追加（縦分割）"
-            >
-              <SplitRightIcon />
-              <span>右に追加</span>
-            </button>
-            <button
-              className={[
-                'workout-setting-panel__btn',
-                !hasFocus ? 'workout-setting-panel__btn--disabled' : '',
-              ].join(' ')}
-              onClick={hasFocus ? onAddBelow : undefined}
-              disabled={!hasFocus}
-              title="下にエリア追加（横分割）"
-            >
-              <SplitBelowIcon />
-              <span>下に追加</span>
-            </button>
-          </div>
+          <>
+            {/* エリア分割 */}
+            <div className="workout-setting-panel__section">
+              <span className="workout-setting-panel__section-label">エリア分割</span>
+              <div className="workout-setting-panel__icon-row">
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={hasFocus ? onSplitLeft : undefined}
+                  disabled={!hasFocus}
+                  title="左に分割"
+                >
+                  <SplitIcon dir="left" />
+                </button>
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={hasFocus ? onSplitRight : undefined}
+                  disabled={!hasFocus}
+                  title="右に分割"
+                >
+                  <SplitIcon dir="right" />
+                </button>
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={hasFocus ? onSplitAbove : undefined}
+                  disabled={!hasFocus}
+                  title="上に分割"
+                >
+                  <SplitIcon dir="up" />
+                </button>
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={hasFocus ? onSplitBelow : undefined}
+                  disabled={!hasFocus}
+                  title="下に分割"
+                >
+                  <SplitIcon dir="down" />
+                </button>
+              </div>
+            </div>
+
+            <div className="workout-setting-panel__divider" />
+
+            {/* エリア追加 */}
+            <div className="workout-setting-panel__section">
+              <span className="workout-setting-panel__section-label">エリア追加</span>
+              <div className="workout-setting-panel__icon-row">
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={onAddLeft}
+                  title="左端に追加"
+                >
+                  <AddIcon dir="left" />
+                </button>
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={onAddRight}
+                  title="右端に追加"
+                >
+                  <AddIcon dir="right" />
+                </button>
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={onAddTop}
+                  title="上端に追加"
+                >
+                  <AddIcon dir="up" />
+                </button>
+                <button
+                  className="workout-setting-panel__icon-btn"
+                  onClick={onAddBottom}
+                  title="下端に追加"
+                >
+                  <AddIcon dir="down" />
+                </button>
+              </div>
+            </div>
+          </>
         ) : (
           <div className="workout-setting-panel__placeholder">
             {panelName} の設定は今後追加予定です。
