@@ -2,8 +2,8 @@
  * WorkoutPanel.tsx
  * BSP ツリー型レイアウトで WorkoutArea を再帰的にレンダリングする。
  *
- * レイアウト構造:
- *   [WorkoutRibbon (左縦)] [WorkoutSettingPanel? (可変幅)] [コンテンツ (flex:1)]
+ * レイアウト構造（左→右）:
+ *   [WorkoutRibbon 40px] [WorkoutSettingPanel? + Splitter] [コンテンツ flex:1]
  */
 
 import { useCallback, useRef, useState } from 'react';
@@ -19,8 +19,13 @@ import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutRibbon } from './WorkoutRibbon';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
+import type { SettingsType } from './WorkoutRibbon';
 import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
+
+const DEFAULT_SETTINGS_WIDTH = 180;
+const MIN_SETTINGS_WIDTH     = 120;
+const MAX_SETTINGS_WIDTH     = 400;
 
 // ── shared props（再帰コンポーネントに引き回す）───────────────────────
 
@@ -112,10 +117,13 @@ interface Props {
 
 export function WorkoutPanel({ app }: Props) {
   const panel = app.WorkoutPanel;
+  const vault = app.Models.Vault;
   useAppUpdate(panel);
+  useAppUpdate(vault);
 
-  // 設定パネル開閉状態
-  const [showSettings, setShowSettings] = useState(false);
+  // 設定パネル: どのタイプの設定を表示するか（null = 非表示）
+  const [activeSettings,    setActiveSettings]    = useState<SettingsType | null>(null);
+  const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
 
   // split 比率（node.id → 0〜1）
   const [splitRatios, setSplitRatios] = useState<Record<string, number>>({});
@@ -129,10 +137,22 @@ export function WorkoutPanel({ app }: Props) {
   const [dragTitle, setDragTitle] = useState<string | null>(null);
   const [dragPos,   setDragPos]   = useState<{ x: number; y: number } | null>(null);
 
+  // ── フォーカスペインの Think タイトル ──────────────────────────────
+  const focusedArea   = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+  const focusedThinkTitle = focusedArea
+    ? (vault.GetThink(focusedArea.ResourceID)?.Name ?? '')
+    : '';
+
   // ── ハンドラー ──────────────────────────────────────────────────────
 
-  const handleToggleSettings = useCallback(() => {
-    setShowSettings(v => !v);
+  const handleSetActiveSettings = useCallback((type: SettingsType | null) => {
+    setActiveSettings(type);
+  }, []);
+
+  const handleSettingsResize = useCallback((delta: number) => {
+    setSettingsPanelWidth(prev =>
+      Math.max(MIN_SETTINGS_WIDTH, Math.min(MAX_SETTINGS_WIDTH, prev + delta))
+    );
   }, []);
 
   const handleFocus = useCallback((areaId: string) => {
@@ -144,7 +164,6 @@ export function WorkoutPanel({ app }: Props) {
   }, []);
 
   const handleAddRight = useCallback(() => {
-    const vault      = app.Models.Vault;
     const thinks     = vault.GetThinks().filter(t => t.ContentType !== 'thought');
     const resourceId = thinks[panel.Areas.length % Math.max(thinks.length, 1)]?.ID ?? '';
     const title      = vault.GetThink(resourceId)?.Name ?? '新しいエリア';
@@ -153,10 +172,9 @@ export function WorkoutPanel({ app }: Props) {
     } else {
       panel.AddRight(resourceId, 'texteditor', title);
     }
-  }, [app, panel]);
+  }, [vault, panel]);
 
   const handleAddBelow = useCallback(() => {
-    const vault      = app.Models.Vault;
     const thinks     = vault.GetThinks().filter(t => t.ContentType !== 'thought');
     const resourceId = thinks[panel.Areas.length % Math.max(thinks.length, 1)]?.ID ?? '';
     const title      = vault.GetThink(resourceId)?.Name ?? '新しいエリア';
@@ -165,14 +183,7 @@ export function WorkoutPanel({ app }: Props) {
     } else {
       panel.AddBelow(resourceId, 'texteditor', title);
     }
-  }, [app, panel]);
-
-  // フォーカスペインのメディアタイプを変更
-  const handleSetMediaType = useCallback((type: MediaType) => {
-    if (panel.FocusedAreaId) {
-      panel.SetMediaType(panel.FocusedAreaId, type);
-    }
-  }, [panel]);
+  }, [vault, panel]);
 
   const handleDragStart = useCallback((e: React.MouseEvent, areaId: string) => {
     e.preventDefault();
@@ -227,7 +238,7 @@ export function WorkoutPanel({ app }: Props) {
 
   const shared: SharedProps = {
     areas:         areaMap,
-    vault:         app.Models.Vault,
+    vault,
     focusedAreaId: panel.FocusedAreaId,
     dragId,
     overAreaId,
@@ -248,19 +259,23 @@ export function WorkoutPanel({ app }: Props) {
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
       <WorkoutRibbon
-        panel={panel}
-        showSettings={showSettings}
-        onToggleSettings={handleToggleSettings}
-        onSetMediaType={handleSetMediaType}
+        activeSettings={activeSettings}
+        thinkTitle={focusedThinkTitle}
+        onSetActiveSettings={handleSetActiveSettings}
       />
 
-      {/* ── 設定パネル（開閉）────────────────────────────────── */}
-      {showSettings && (
-        <WorkoutSettingPanel
-          panel={panel}
-          onAddRight={handleAddRight}
-          onAddBelow={handleAddBelow}
-        />
+      {/* ── 設定パネル + Splitter ────────────────────────────── */}
+      {activeSettings !== null && (
+        <>
+          <WorkoutSettingPanel
+            activeSettings={activeSettings}
+            panel={panel}
+            width={settingsPanelWidth}
+            onAddRight={handleAddRight}
+            onAddBelow={handleAddBelow}
+          />
+          <Splitter onResize={handleSettingsResize} />
+        </>
       )}
 
       {/* ── コンテンツ領域 ────────────────────────────────────── */}

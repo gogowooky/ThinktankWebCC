@@ -1,13 +1,16 @@
 /**
  * WorkoutSettingPanel.tsx
- * WorkoutPanel の設定パネル（WorkoutRibbon の開閉ボタンで表示/非表示）。
+ * WorkoutRibbon の各設定ボタンに対応する設定パネル。
  *
- * 内容:
- *   - 右にエリア追加（縦分割）
- *   - 下にエリア追加（横分割）
+ * - 上部: 設定名ヘッダー
+ * - 本体: activeSettings タイプ別コンテンツ
+ *   - workout   : エリア追加ボタン（右に追加 / 下に追加）
+ *   - その他    : 将来の設定 UI 用プレースホルダー
  */
 
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
+import type { SettingsType } from './WorkoutRibbon';
+import { WORKOUT_SETTINGS } from './WorkoutRibbon';
 import './WorkoutSettingPanel.css';
 
 function SplitRightIcon() {
@@ -31,39 +34,59 @@ function SplitBelowIcon() {
 }
 
 interface Props {
-  panel:      TTWorkoutPanel;
-  onAddRight: () => void;
-  onAddBelow: () => void;
+  activeSettings: SettingsType;
+  panel:          TTWorkoutPanel;
+  width:          number;
+  onAddRight:     () => void;
+  onAddBelow:     () => void;
 }
 
-export function WorkoutSettingPanel({ panel, onAddRight, onAddBelow }: Props) {
-  const hasFocus = panel.Layout !== null;
+export function WorkoutSettingPanel({ activeSettings, panel, width, onAddRight, onAddBelow }: Props) {
+  const hasFocus  = panel.Layout !== null;
+  const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
+  const panelName = entry?.name ?? '';
 
   return (
-    <div className="workout-setting-panel">
-      <div className="workout-setting-panel__section">
-        <span className="workout-setting-panel__label">エリア追加</span>
-        <button
-          className="workout-setting-panel__btn"
-          onClick={onAddRight}
-          title="右にエリア追加（縦分割）"
-        >
-          <SplitRightIcon />
-          <span>右に追加</span>
-        </button>
-        <button
-          className={[
-            'workout-setting-panel__btn',
-            !hasFocus ? 'workout-setting-panel__btn--disabled' : '',
-          ].join(' ')}
-          onClick={hasFocus ? onAddBelow : undefined}
-          disabled={!hasFocus}
-          title="下にエリア追加（横分割）"
-        >
-          <SplitBelowIcon />
-          <span>下に追加</span>
-        </button>
+    <div className="workout-setting-panel" style={{ width }}>
+
+      {/* ヘッダー */}
+      <div className="workout-setting-panel__header">
+        {panelName}
       </div>
+
+      {/* コンテンツ */}
+      <div className="workout-setting-panel__body">
+        {activeSettings === 'workout' ? (
+          <div className="workout-setting-panel__section">
+            <span className="workout-setting-panel__section-label">エリア追加</span>
+            <button
+              className="workout-setting-panel__btn"
+              onClick={onAddRight}
+              title="右にエリア追加（縦分割）"
+            >
+              <SplitRightIcon />
+              <span>右に追加</span>
+            </button>
+            <button
+              className={[
+                'workout-setting-panel__btn',
+                !hasFocus ? 'workout-setting-panel__btn--disabled' : '',
+              ].join(' ')}
+              onClick={hasFocus ? onAddBelow : undefined}
+              disabled={!hasFocus}
+              title="下にエリア追加（横分割）"
+            >
+              <SplitBelowIcon />
+              <span>下に追加</span>
+            </button>
+          </div>
+        ) : (
+          <div className="workout-setting-panel__placeholder">
+            {panelName} の設定は今後追加予定です。
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
