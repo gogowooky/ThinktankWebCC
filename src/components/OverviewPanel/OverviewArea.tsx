@@ -360,7 +360,7 @@ export function OverviewArea({ app, showSettings }: Props) {
               selectedId=""
               checkedIds={checkedIds}
               columns={columns}
-              onSelect={id => app.OpenThinkInWorkout(id)}
+              onOpen={id => app.OpenThinkInWorkout(id)}
               onToggleCheck={handleToggleCheck}
             />
           )

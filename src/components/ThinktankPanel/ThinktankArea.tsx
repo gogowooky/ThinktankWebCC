@@ -273,7 +273,7 @@ export function ThinktankArea({ app }: Props) {
         updatedDate={updatedDate}
         updatedRange={updatedRange}
         columns={columns}
-        onSelect={handleSelect}
+        onOpen={handleSelect}
         onToggleCheck={handleToggleCheck}
         onVisibleChange={handleFilterVisibleChange}
       />
@@ -293,7 +293,7 @@ export function ThinktankArea({ app }: Props) {
         columns={columns}
         onQueryChange={setSearchQuery}
         onSearch={handleSearch}
-        onSelect={handleSelect}
+        onOpen={handleSelect}
         onToggleCheck={handleToggleCheck}
       />
     );
@@ -316,7 +316,7 @@ export function ThinktankArea({ app }: Props) {
           selectedId={panel.SelectedThoughtID}
           checkedIds={panel.CheckedThoughtIDs}
           columns={columns}
-          onSelect={handleSelectThought}
+          onOpen={id => app.OpenThought(id)}
           onToggleCheck={handleToggleCheck}
         />
       </>

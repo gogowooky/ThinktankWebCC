@@ -28,7 +28,7 @@ interface Props {
   selectedId: string;
   checkedIds: string[];
   columns?: ColumnConfig[];
-  onSelect: (id: string) => void;
+  onOpen: (id: string) => void;
   onToggleCheck: (id: string) => void;
 }
 
@@ -89,7 +89,7 @@ export function ThoughtsList({
   selectedId,
   checkedIds,
   columns = DEFAULT_COLUMNS,
-  onSelect,
+  onOpen,
   onToggleCheck,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -105,15 +105,18 @@ export function ThoughtsList({
   });
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
-    e.preventDefault();
-    const dir = e.key === 'ArrowDown' ? 1 : -1;
-    const cur = focusedId ? thoughts.findIndex(t => t.ID === focusedId) : -1;
-    const next = cur < 0
-      ? (dir > 0 ? 0 : thoughts.length - 1)
-      : Math.max(0, Math.min(thoughts.length - 1, cur + dir));
-    setFocusedId(thoughts[next]?.ID ?? null);
-    virtualizer.scrollToIndex(next, { align: 'auto' });
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const dir = e.key === 'ArrowDown' ? 1 : -1;
+      const cur = focusedId ? thoughts.findIndex(t => t.ID === focusedId) : -1;
+      const next = cur < 0
+        ? (dir > 0 ? 0 : thoughts.length - 1)
+        : Math.max(0, Math.min(thoughts.length - 1, cur + dir));
+      setFocusedId(thoughts[next]?.ID ?? null);
+      virtualizer.scrollToIndex(next, { align: 'auto' });
+    } else if (e.key === 'Enter') {
+      if (focusedId) onOpen(focusedId);
+    }
   };
 
   if (thoughts.length === 0) {
@@ -130,7 +133,6 @@ export function ThoughtsList({
       ref={parentRef}
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      onMouseLeave={() => setFocusedId(null)}
     >
       {/* 仮想スクロールの高さ確保用コンテナ */}
       <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
@@ -165,8 +167,8 @@ export function ThoughtsList({
                 right:  0,
                 height: ROW_HEIGHT,
               }}
-              onMouseEnter={() => setFocusedId(thought.ID)}
-              onClick={() => onSelect(thought.ID)}
+              onClick={() => setFocusedId(thought.ID)}
+              onDoubleClick={() => onOpen(thought.ID)}
             >
               <input
                 type="checkbox"

@@ -24,13 +24,13 @@ interface Props {
   columns?:        ColumnConfig[];
   onQueryChange:   (q: string) => void;
   onSearch:        () => void;
-  onSelect:        (id: string) => void;
+  onOpen:          (id: string) => void;
   onToggleCheck:   (id: string) => void;
 }
 
 export function ThinktankSearchView({
   selectedId, checkedIds, query, results, visibleResults, totalVaultCount,
-  loading, searched, columns, onQueryChange, onSearch, onSelect, onToggleCheck,
+  loading, searched, columns, onQueryChange, onSearch, onOpen, onToggleCheck,
 }: Props) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') onSearch();
@@ -76,7 +76,7 @@ export function ThinktankSearchView({
           selectedId={selectedId}
           checkedIds={checkedIds}
           columns={columns}
-          onSelect={onSelect}
+          onOpen={onOpen}
           onToggleCheck={onToggleCheck}
         />
       )}

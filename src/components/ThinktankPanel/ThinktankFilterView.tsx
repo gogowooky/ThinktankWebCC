@@ -88,7 +88,7 @@ interface Props {
   updatedDate:  string;
   updatedRange: string;
   columns?: ColumnConfig[];
-  onSelect: (id: string) => void;
+  onOpen: (id: string) => void;
   onToggleCheck: (id: string) => void;
   onVisibleChange?: (items: TTThink[]) => void;
 }
@@ -97,7 +97,7 @@ export function ThinktankFilterView({
   thinks, selectedId, checkedIds, checkedOnly = false,
   createdDate, createdRange, updatedDate, updatedRange,
   columns,
-  onSelect, onToggleCheck, onVisibleChange,
+  onOpen, onToggleCheck, onVisibleChange,
 }: Props) {
   // タイトル検索はこのビュー固有のローカル state
   const [titleQuery, setTitleQuery] = useState('');
@@ -168,7 +168,7 @@ export function ThinktankFilterView({
         selectedId={selectedId}
         checkedIds={checkedIds}
         columns={columns}
-        onSelect={onSelect}
+        onOpen={onOpen}
         onToggleCheck={onToggleCheck}
       />
     </div>
