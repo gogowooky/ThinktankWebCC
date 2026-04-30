@@ -18,6 +18,7 @@ import {
 import type { TTThink } from '../../../models/TTThink';
 import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
+import { useHighlight } from '../../../contexts/HighlightContext';
 import './DataGridMedia.css';
 
 // ContentType アイコンマッピング
@@ -51,6 +52,7 @@ export function DataGridMedia({ think, vault }: MediaProps) {
   const [filter, setFilter]     = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const scrollRef               = useRef<HTMLDivElement>(null);
+  const { overviewThoughtIds, workoutIds } = useHighlight();
 
   // 表示対象アイテム
   const allItems = useMemo<TTThink[]>(() => {
@@ -116,16 +118,20 @@ export function DataGridMedia({ think, vault }: MediaProps) {
           {rowVirtualizer.getVirtualItems().map(virtualRow => {
             const item   = filtered[virtualRow.index];
             const Icon   = CONTENT_ICONS[item.ContentType] ?? FileText;
-            const isSelected = selected.has(item.ID);
-            const isFocus    = think?.ID === item.ID;
+            const isSelected        = selected.has(item.ID);
+            const isFocus           = think?.ID === item.ID;
+            const isOverviewThought = overviewThoughtIds.includes(item.ID);
+            const isInWorkout       = workoutIds.includes(item.ID);
 
             return (
               <div
                 key={virtualRow.key}
                 className={[
                   'datagrid-media__row',
-                  isSelected ? 'datagrid-media__row--selected' : '',
-                  isFocus    ? 'datagrid-media__row--focus'    : '',
+                  isSelected        ? 'datagrid-media__row--selected'        : '',
+                  isFocus           ? 'datagrid-media__row--focus'           : '',
+                  isOverviewThought ? 'datagrid-media__row--overview-thought' : '',
+                  isInWorkout       ? 'datagrid-media__row--workout'         : '',
                 ].join(' ')}
                 style={{
                   position:  'absolute',

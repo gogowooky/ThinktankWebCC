@@ -17,6 +17,7 @@ import { Brain, FileText, MessageSquare, Link, Table2, Globe, Activity, File } f
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
+import { useHighlight } from '../../contexts/HighlightContext';
 import './ThoughtsList.css';
 
 const ROW_HEIGHT = 36;
@@ -27,7 +28,6 @@ interface Props {
   selectedId: string;
   checkedIds: string[];
   columns?: ColumnConfig[];
-  workoutIds?: string[];
   onSelect: (id: string) => void;
   onToggleCheck: (id: string) => void;
 }
@@ -89,11 +89,11 @@ export function ThoughtsList({
   selectedId,
   checkedIds,
   columns = DEFAULT_COLUMNS,
-  workoutIds = [],
   onSelect,
   onToggleCheck,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const { overviewThoughtIds, workoutIds } = useHighlight();
   const visibleCols = columns.filter(c => c.visible);
 
   const virtualizer = useVirtualizer({
@@ -117,9 +117,10 @@ export function ThoughtsList({
       <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
         {virtualizer.getVirtualItems().map(vItem => {
           const thought = thoughts[vItem.index];
-          const isSelected = thought.ID === selectedId;
-          const isChecked  = checkedIds.includes(thought.ID);
-          const isInWorkout = workoutIds.includes(thought.ID);
+          const isSelected        = thought.ID === selectedId;
+          const isChecked         = checkedIds.includes(thought.ID);
+          const isOverviewThought = overviewThoughtIds.includes(thought.ID);
+          const isInWorkout       = workoutIds.includes(thought.ID);
 
           return (
             <div
@@ -131,9 +132,10 @@ export function ThoughtsList({
               }}
               className={[
                 'thoughts-list__row',
-                isSelected  ? 'thoughts-list__row--selected' : '',
-                isChecked   ? 'thoughts-list__row--checked'  : '',
-                isInWorkout ? 'thoughts-list__row--workout'  : '',
+                isSelected        ? 'thoughts-list__row--selected'        : '',
+                isChecked         ? 'thoughts-list__row--checked'          : '',
+                isOverviewThought ? 'thoughts-list__row--overview-thought' : '',
+                isInWorkout       ? 'thoughts-list__row--workout'          : '',
               ].join(' ')}
               style={{
                 position: 'absolute',

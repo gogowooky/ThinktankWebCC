@@ -47,8 +47,12 @@
   background: rgba(7, 55, 99, 0.06);
 }
 
+.thoughts-list__row--overview-thought {
+  background: rgba(220, 53, 69, 0.10);
+}
+
 .thoughts-list__row--workout {
-  background: rgba(57, 73, 171, 0.08);
+  background: rgba(220, 53, 69, 0.05);
 }
 
 /* ── 行内要素 ─────────────────────────────────────────── */

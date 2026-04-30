@@ -11,6 +11,7 @@
 
 import { useCallback, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
+import { HighlightProvider } from '../../contexts/HighlightContext';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
 import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
@@ -49,6 +50,7 @@ export function AppLayout() {
 
 
   return (
+    <HighlightProvider>
     <div className="app-layout">
 
       {/* ── ThinktankPanel（Phase 6 実装済み）─────────────────── */}
@@ -82,5 +84,6 @@ export function AppLayout() {
       </div>
 
     </div>
+    </HighlightProvider>
   );
 }

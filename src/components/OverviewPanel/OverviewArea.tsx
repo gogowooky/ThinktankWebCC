@@ -39,14 +39,10 @@ interface Props {
 }
 
 export function OverviewArea({ app, showSettings }: Props) {
-  const panel   = app.OverviewPanel;
-  const vault   = app.Models.Vault;
-  const workout = app.WorkoutPanel;
+  const panel = app.OverviewPanel;
+  const vault = app.Models.Vault;
   useAppUpdate(panel);
   useAppUpdate(vault);
-  useAppUpdate(workout);
-
-  const workoutIds = workout.Areas.map(a => a.ResourceID).filter(Boolean);
 
   // ── D&D ─────────────────────────────────────────────────────────────────
   const [isDragOver, setIsDragOver] = useState(false);
@@ -364,7 +360,6 @@ export function OverviewArea({ app, showSettings }: Props) {
               selectedId=""
               checkedIds={checkedIds}
               columns={columns}
-              workoutIds={workoutIds}
               onSelect={id => app.OpenThinkInWorkout(id)}
               onToggleCheck={handleToggleCheck}
             />

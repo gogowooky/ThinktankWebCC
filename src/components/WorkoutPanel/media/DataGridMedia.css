@@ -93,6 +93,14 @@
   font-weight: 500;
 }
 
+.datagrid-media__row--overview-thought {
+  background: rgba(220, 53, 69, 0.10);
+}
+
+.datagrid-media__row--workout {
+  background: rgba(220, 53, 69, 0.05);
+}
+
 /* ── セル ────────────────────────────────────────────── */
 .datagrid-media__cell {
   display: flex;
