@@ -124,6 +124,8 @@ export function WorkoutPanel({ app }: Props) {
   // 設定パネル: どのタイプの設定を表示するか（null = 非表示）
   const [activeSettings,    setActiveSettings]    = useState<SettingsType | null>(null);
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
+  // 最後に開いた設定タイプを記憶（トグルボタンで再オープン用）
+  const lastSettingsRef = useRef<SettingsType>('workout');
 
   // split 比率（node.id → 0〜1）
   const [splitRatios, setSplitRatios] = useState<Record<string, number>>({});
@@ -146,7 +148,15 @@ export function WorkoutPanel({ app }: Props) {
   // ── ハンドラー ──────────────────────────────────────────────────────
 
   const handleSetActiveSettings = useCallback((type: SettingsType | null) => {
+    if (type !== null) lastSettingsRef.current = type;
     setActiveSettings(type);
+  }, []);
+
+  const handleToggle = useCallback(() => {
+    setActiveSettings(prev => {
+      if (prev !== null) return null;
+      return lastSettingsRef.current;
+    });
   }, []);
 
   const handleSettingsResize = useCallback((delta: number) => {
@@ -261,6 +271,7 @@ export function WorkoutPanel({ app }: Props) {
       <WorkoutRibbon
         activeSettings={activeSettings}
         thinkTitle={focusedThinkTitle}
+        onToggle={handleToggle}
         onSetActiveSettings={handleSetActiveSettings}
       />
 

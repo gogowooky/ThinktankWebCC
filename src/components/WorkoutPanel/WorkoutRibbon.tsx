@@ -12,7 +12,7 @@
  * - 下部: フォーカスペインの Think タイトル（縦書き）
  */
 
-import { Layers, FileText, Eye, Table, LayoutGrid, Share2, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, FileText, Eye, Table, LayoutGrid, Share2, type LucideIcon } from 'lucide-react';
 import type { MediaType } from '../../types';
 import './WorkoutRibbon.css';
 
@@ -34,15 +34,14 @@ export const WORKOUT_SETTINGS: SettingsEntry[] = [
 ];
 
 interface Props {
-  activeSettings:    SettingsType | null;
-  thinkTitle:        string;
+  activeSettings:      SettingsType | null;
+  thinkTitle:          string;
+  onToggle:            () => void;
   onSetActiveSettings: (type: SettingsType | null) => void;
 }
 
-export function WorkoutRibbon({ activeSettings, thinkTitle, onSetActiveSettings }: Props) {
-  const activeName = activeSettings
-    ? WORKOUT_SETTINGS.find(s => s.type === activeSettings)?.name ?? ''
-    : '';
+export function WorkoutRibbon({ activeSettings, thinkTitle, onToggle, onSetActiveSettings }: Props) {
+  const isOpen = activeSettings !== null;
 
   const handleClick = (type: SettingsType) => {
     onSetActiveSettings(activeSettings === type ? null : type);
@@ -51,10 +50,15 @@ export function WorkoutRibbon({ activeSettings, thinkTitle, onSetActiveSettings 
   return (
     <div className="workout-ribbon">
 
-      {/* 上部: アクティブ設定名（縦書き）*/}
-      <div className="workout-ribbon__top-wrap" title={activeName}>
-        <span className="workout-ribbon__top-label">{activeName}</span>
-      </div>
+      {/* 最上部: 開閉トグルボタン */}
+      <button
+        className="workout-ribbon__toggle"
+        onClick={onToggle}
+        title={isOpen ? '設定パネルを閉じる' : '設定パネルを開く'}
+        aria-label={isOpen ? '設定パネルを閉じる' : '設定パネルを開く'}
+      >
+        {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+      </button>
 
       {/* 設定ボタン群 */}
       <div className="workout-ribbon__buttons">
