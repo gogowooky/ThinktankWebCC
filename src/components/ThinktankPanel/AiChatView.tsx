@@ -8,7 +8,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { Send } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { ChatMessage } from '../../types';
 import './AiChatView.css';
 
@@ -17,6 +17,8 @@ interface Props {
   isWaiting:        boolean;
   onSend:           (text: string) => void;
 }
+
+const HINT_TEXT = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
 
 function formatTime(iso: string): string {
   if (!iso) return '';
@@ -27,9 +29,10 @@ function formatTime(iso: string): string {
 }
 
 export function AiChatView({ messages, isWaiting, onSend }: Props) {
-  const [input, setInput] = useState('');
-  const logRef            = useRef<HTMLDivElement>(null);
-  const textareaRef       = useRef<HTMLTextAreaElement>(null);
+  const [input,   setInput]   = useState(HINT_TEXT);
+  const [isHint,  setIsHint]  = useState(true);
+  const logRef                = useRef<HTMLDivElement>(null);
+  const textareaRef           = useRef<HTMLTextAreaElement>(null);
 
   // 新メッセージ到着時に最下部へスクロール
   useEffect(() => {
@@ -37,14 +40,30 @@ export function AiChatView({ messages, isWaiting, onSend }: Props) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, isWaiting]);
 
+  // input 変化時にテキストエリアの高さを再計算
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = 'auto';
+    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
+  }, [input]);
+
   const handleSend = useCallback(() => {
+    if (isHint) return;
     const text = input.trim();
     if (!text || isWaiting) return;
     onSend(text);
-    setInput('');
-    const ta = textareaRef.current;
-    if (ta) { ta.style.height = 'auto'; }
-  }, [input, isWaiting, onSend]);
+    // テキストボックスは消去しない
+  }, [input, isHint, isWaiting, onSend]);
+
+  const handleClear = useCallback(() => {
+    setInput(HINT_TEXT);
+    setIsHint(true);
+  }, []);
+
+  const handleFocus = useCallback(() => {
+    if (isHint) textareaRef.current?.select();
+  }, [isHint]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -54,10 +73,8 @@ export function AiChatView({ messages, isWaiting, onSend }: Props) {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (isHint) setIsHint(false);
     setInput(e.target.value);
-    const ta = e.target;
-    ta.style.height = 'auto';
-    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
   };
 
   return (
@@ -67,22 +84,21 @@ export function AiChatView({ messages, isWaiting, onSend }: Props) {
       <div className="ai-chat-view__input-area">
         <textarea
           ref={textareaRef}
-          className="ai-chat-view__input"
+          className={`ai-chat-view__input${isHint ? ' ai-chat-view__input--hint' : ''}`}
           value={input}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          placeholder="メッセージを入力…　(Enter=送信 / Shift+Enter=改行)"
-          rows={1}
+          onFocus={handleFocus}
           disabled={isWaiting}
         />
         <button
-          className="ai-chat-view__send-btn"
-          onClick={handleSend}
-          disabled={isWaiting || !input.trim()}
-          title="送信"
-          aria-label="送信"
+          className="ai-chat-view__clear-btn"
+          onClick={handleClear}
+          disabled={isWaiting}
+          title="消去"
+          aria-label="消去"
         >
-          <Send size={13} />
+          <X size={13} />
         </button>
       </div>
 
