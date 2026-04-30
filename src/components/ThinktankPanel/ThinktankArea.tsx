@@ -316,7 +316,7 @@ export function ThinktankArea({ app }: Props) {
           selectedId={panel.SelectedThoughtID}
           checkedIds={panel.CheckedThoughtIDs}
           columns={columns}
-          onOpen={id => app.OpenThought(id)}
+          onOpen={id => app.OpenThought(id, 'datagrid')}
           onToggleCheck={handleToggleCheck}
         />
       </>
