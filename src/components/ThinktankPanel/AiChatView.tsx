@@ -8,7 +8,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 import type { ChatMessage } from '../../types';
 import './AiChatView.css';
 
@@ -16,6 +16,7 @@ interface Props {
   messages:         ChatMessage[];
   isWaiting:        boolean;
   onSend:           (text: string) => void;
+  onSave?:          () => void;
 }
 
 const HINT_TEXT = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
@@ -40,7 +41,7 @@ function resizeToContent(ta: HTMLTextAreaElement) {
   }
 }
 
-export function AiChatView({ messages, isWaiting, onSend }: Props) {
+export function AiChatView({ messages, isWaiting, onSend, onSave }: Props) {
   const [input, setInput] = useState('');
   const logRef            = useRef<HTMLDivElement>(null);
   const textareaRef       = useRef<HTMLTextAreaElement>(null);
@@ -105,15 +106,28 @@ export function AiChatView({ messages, isWaiting, onSend }: Props) {
           placeholder={HINT_TEXT}
           disabled={isWaiting}
         />
-        <button
-          className="ai-chat-view__clear-btn"
-          onClick={handleClear}
-          disabled={isWaiting}
-          title="消去"
-          aria-label="消去"
-        >
-          <X size={13} />
-        </button>
+        <div className="ai-chat-view__btn-stack">
+          <button
+            className="ai-chat-view__clear-btn"
+            onClick={handleClear}
+            disabled={isWaiting}
+            title="消去"
+            aria-label="消去"
+          >
+            <X size={13} />
+          </button>
+          {onSave && (
+            <button
+              className="ai-chat-view__save-btn"
+              onClick={onSave}
+              disabled={isWaiting || messages.length === 0}
+              title="Chatを保管庫に保存"
+              aria-label="Chatを保管庫に保存"
+            >
+              <Save size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── 会話ログ ─────────────────────────────────────────────── */}

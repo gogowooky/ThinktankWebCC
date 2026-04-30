@@ -365,7 +365,7 @@ export function OverviewArea({ app, showSettings }: Props) {
             />
           )
         ) : panel.MediaType === 'chat' ? (
-          <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
+          <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} onSave={handleSaveChat} />
         ) : !think ? (
           <div className="overview-area__empty">
             <span>Thought をドロップして選択してください</span>

@@ -53,6 +53,13 @@
   cursor: not-allowed;
 }
 
+.ai-chat-view__btn-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
 .ai-chat-view__clear-btn {
   display: flex;
   align-items: center;
@@ -76,6 +83,31 @@
 
 .ai-chat-view__clear-btn:disabled {
   opacity: 0.3;
+  cursor: default;
+}
+
+.ai-chat-view__save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: transparent;
+  color: rgba(57, 73, 171, 0.55);
+  border: 1px solid rgba(57, 73, 171, 0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.ai-chat-view__save-btn:hover:not(:disabled) {
+  background: rgba(57, 73, 171, 0.12);
+  color: rgba(57, 73, 171, 0.9);
+}
+
+.ai-chat-view__save-btn:disabled {
+  opacity: 0.25;
   cursor: default;
 }
 

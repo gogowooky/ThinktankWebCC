@@ -298,7 +298,7 @@ export function ThinktankArea({ app }: Props) {
       />
     );
   } else if (panel.ViewMode === 'ai') {
-    content = <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
+    content = <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} onSave={handleSaveChat} />;
   } else if (panel.ViewMode === 'settings') {
     content = <ThinktankSettingsView />;
   } else {
