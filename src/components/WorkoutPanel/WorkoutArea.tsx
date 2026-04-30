@@ -72,6 +72,7 @@ export function WorkoutArea({
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
     switch (area.MediaType) {
+      case 'workout':    return <TextEditorMedia {...mediaProps} />;
       case 'texteditor': return <TextEditorMedia {...mediaProps} />;
       case 'markdown':   return <MarkdownMedia   {...mediaProps} />;
       case 'datagrid':   return <DataGridMedia   {...mediaProps} />;

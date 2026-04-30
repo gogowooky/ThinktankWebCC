@@ -1,0 +1,23 @@
+/* WorkoutRibbon.css */
+
+.workout-ribbon__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.workout-ribbon__btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.workout-ribbon__btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}

@@ -35,6 +35,7 @@ export type ContentType =
 // ════════════════════════════════════════════════════════════════════════
 
 export type MediaType =
+  | 'workout'     // Workoutスタイル（複合ビュー）
   | 'texteditor'  // Monaco Editor
   | 'markdown'    // Markdownレンダリング
   | 'datagrid'    // テーブル形式一覧

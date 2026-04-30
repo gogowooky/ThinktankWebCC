@@ -1,0 +1,56 @@
+/* WorkoutSettingPanel.css */
+
+.workout-setting-panel {
+  width: 160px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--workout-ribbon-bg, #2a2a2a);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.workout-setting-panel__section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.workout-setting-panel__label {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  padding: 0 4px 4px;
+  flex-shrink: 0;
+}
+
+.workout-setting-panel__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  border-radius: 4px;
+  transition: background 100ms ease, color 100ms ease;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.workout-setting-panel__btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.workout-setting-panel__btn:disabled,
+.workout-setting-panel__btn--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

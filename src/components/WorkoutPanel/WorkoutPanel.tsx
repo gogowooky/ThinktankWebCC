@@ -2,11 +2,8 @@
  * WorkoutPanel.tsx
  * BSP ツリー型レイアウトで WorkoutArea を再帰的にレンダリングする。
  *
- * - AddRight: フォーカスペインを縦分割して右に追加
- * - AddBelow: フォーカスペインを横分割して下に追加
- * - Splitter: ポインターキャプチャ方式（枠外逃げなし）
- * - Drag&Drop: Ghost タイトル追従 + drop target 枠強調
- * - splitRatios: splitNode の id をキーにした 0-1 の比率
+ * レイアウト構造:
+ *   [WorkoutRibbon (左縦)] [WorkoutSettingPanel? (可変幅)] [コンテンツ (flex:1)]
  */
 
 import { useCallback, useRef, useState } from 'react';
@@ -20,7 +17,8 @@ import { Splitter } from '../Layout/Splitter';
 import { WorkoutHSplitter } from './WorkoutHSplitter';
 import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
-import { WorkoutPanelRibbon } from './WorkoutPanelRibbon';
+import { WorkoutRibbon } from './WorkoutRibbon';
+import { WorkoutSettingPanel } from './WorkoutSettingPanel';
 import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
 
@@ -116,6 +114,9 @@ export function WorkoutPanel({ app }: Props) {
   const panel = app.WorkoutPanel;
   useAppUpdate(panel);
 
+  // 設定パネル開閉状態
+  const [showSettings, setShowSettings] = useState(false);
+
   // split 比率（node.id → 0〜1）
   const [splitRatios, setSplitRatios] = useState<Record<string, number>>({});
 
@@ -129,6 +130,10 @@ export function WorkoutPanel({ app }: Props) {
   const [dragPos,   setDragPos]   = useState<{ x: number; y: number } | null>(null);
 
   // ── ハンドラー ──────────────────────────────────────────────────────
+
+  const handleToggleSettings = useCallback(() => {
+    setShowSettings(v => !v);
+  }, []);
 
   const handleFocus = useCallback((areaId: string) => {
     panel.FocusArea(areaId);
@@ -161,6 +166,13 @@ export function WorkoutPanel({ app }: Props) {
       panel.AddBelow(resourceId, 'texteditor', title);
     }
   }, [app, panel]);
+
+  // フォーカスペインのメディアタイプを変更
+  const handleSetMediaType = useCallback((type: MediaType) => {
+    if (panel.FocusedAreaId) {
+      panel.SetMediaType(panel.FocusedAreaId, type);
+    }
+  }, [panel]);
 
   const handleDragStart = useCallback((e: React.MouseEvent, areaId: string) => {
     e.preventDefault();
@@ -234,23 +246,33 @@ export function WorkoutPanel({ app }: Props) {
   return (
     <div className="workout-panel">
 
-      {/* ── パネルリボン ─────────────────────────────────────── */}
-      <WorkoutPanelRibbon
+      {/* ── 左縦リボン ───────────────────────────────────────── */}
+      <WorkoutRibbon
         panel={panel}
-        onAddRight={handleAddRight}
-        onAddBelow={handleAddBelow}
+        showSettings={showSettings}
+        onToggleSettings={handleToggleSettings}
+        onSetMediaType={handleSetMediaType}
       />
 
-      {/* ── 空状態 ───────────────────────────────────────────── */}
-      {panel.Layout === null ? (
-        <WorkoutAreaEmpty isFullPanel onAdd={handleAddRight} />
-      ) : (
-
-        /* ── BSP ツリーレンダリング ────────────────────────── */
-        <div className="workout-panel__tree">
-          <LayoutView node={panel.Layout} shared={shared} />
-        </div>
+      {/* ── 設定パネル（開閉）────────────────────────────────── */}
+      {showSettings && (
+        <WorkoutSettingPanel
+          panel={panel}
+          onAddRight={handleAddRight}
+          onAddBelow={handleAddBelow}
+        />
       )}
+
+      {/* ── コンテンツ領域 ────────────────────────────────────── */}
+      <div className="workout-panel__body">
+        {panel.Layout === null ? (
+          <WorkoutAreaEmpty isFullPanel onAdd={handleAddRight} />
+        ) : (
+          <div className="workout-panel__tree">
+            <LayoutView node={panel.Layout} shared={shared} />
+          </div>
+        )}
+      </div>
 
       {/* ── ドラッグ Ghost ────────────────────────────────────── */}
       {dragId && dragTitle && dragPos && (
