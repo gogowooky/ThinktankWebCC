@@ -27,6 +27,7 @@ interface Props {
   selectedId: string;
   checkedIds: string[];
   columns?: ColumnConfig[];
+  workoutIds?: string[];
   onSelect: (id: string) => void;
   onToggleCheck: (id: string) => void;
 }
@@ -88,6 +89,7 @@ export function ThoughtsList({
   selectedId,
   checkedIds,
   columns = DEFAULT_COLUMNS,
+  workoutIds = [],
   onSelect,
   onToggleCheck,
 }: Props) {
@@ -117,6 +119,7 @@ export function ThoughtsList({
           const thought = thoughts[vItem.index];
           const isSelected = thought.ID === selectedId;
           const isChecked  = checkedIds.includes(thought.ID);
+          const isInWorkout = workoutIds.includes(thought.ID);
 
           return (
             <div
@@ -128,8 +131,9 @@ export function ThoughtsList({
               }}
               className={[
                 'thoughts-list__row',
-                isSelected ? 'thoughts-list__row--selected' : '',
-                isChecked  ? 'thoughts-list__row--checked'  : '',
+                isSelected  ? 'thoughts-list__row--selected' : '',
+                isChecked   ? 'thoughts-list__row--checked'  : '',
+                isInWorkout ? 'thoughts-list__row--workout'  : '',
               ].join(' ')}
               style={{
                 position: 'absolute',
