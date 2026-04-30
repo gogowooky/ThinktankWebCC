@@ -30,7 +30,14 @@ function formatTime(iso: string): string {
 
 function resizeToContent(ta: HTMLTextAreaElement) {
   ta.style.height = 'auto';
-  ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`;
+  const sh = ta.scrollHeight;
+  if (sh >= 120) {
+    ta.style.height = '120px';
+    ta.style.overflowY = 'auto';
+  } else {
+    ta.style.height = `${sh}px`;
+    ta.style.overflowY = 'hidden';
+  }
 }
 
 export function AiChatView({ messages, isWaiting, onSend }: Props) {
