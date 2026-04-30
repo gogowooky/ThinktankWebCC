@@ -3,18 +3,14 @@
  * ThinktankPanel の Ribbon ボタン群。
  *
  * 上部: AI / Filter / Search / Thoughts の4モードボタン
- * 下部: 同期インジケーター / 起動モード / 設定
+ * 下部: 設定
  */
 
 import {
-  Sparkles, LayoutList, Search, Brain,
-  Monitor, Globe, Settings,
-  CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock,
+  Sparkles, LayoutList, Search, Brain, Settings,
 } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
-import { StorageManager } from '../../services/storage/StorageManager';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
-import type { SyncState } from '../../types';
 import './ThinktankRibbon.css';
 
 interface Props {
@@ -22,29 +18,8 @@ interface Props {
   onToggle: () => void;
   viewMode: ThinktankViewMode;
   onSetViewMode: (mode: ThinktankViewMode) => void;
-  syncState?: SyncState;
   vaultName?: string;
 }
-
-// ── 同期インジケーター ──────────────────────────────────────────────────
-
-function SyncIcon({ state }: { state: SyncState }) {
-  switch (state) {
-    case 'synced':  return <CheckCircle size={15} />;
-    case 'syncing': return <RefreshCw   size={15} className="spin" />;
-    case 'pending': return <Clock       size={15} />;
-    case 'error':   return <AlertCircle size={15} />;
-    case 'offline': return <WifiOff     size={15} />;
-  }
-}
-
-const SYNC_LABEL: Record<SyncState, string> = {
-  synced:  '同期済み',
-  syncing: '同期中…',
-  pending: '同期待ち',
-  error:   '同期エラー',
-  offline: 'オフライン',
-};
 
 // ── メインボタン定義 ────────────────────────────────────────────────────
 
@@ -66,11 +41,8 @@ export function ThinktankRibbon({
   onToggle,
   viewMode,
   onSetViewMode,
-  syncState = 'synced',
   vaultName,
 }: Props) {
-  const mode = StorageManager.instance.mode;
-
   return (
     <PanelRibbon
       panelId="thinktank"
@@ -78,24 +50,6 @@ export function ThinktankRibbon({
       isOpen={isOpen}
       onToggle={onToggle}
       bottomLabel={vaultName}
-      bottomChildren={
-        <>
-          <button
-            className={`ribbon-icon-btn ribbon-icon-btn--sync ribbon-icon-btn--${syncState}`}
-            title={SYNC_LABEL[syncState]}
-            aria-label={SYNC_LABEL[syncState]}
-          >
-            <SyncIcon state={syncState} />
-          </button>
-          <button
-            className="ribbon-icon-btn ribbon-icon-btn--mode"
-            title={mode === 'local' ? 'Localモード' : 'PWAモード'}
-            aria-label={mode === 'local' ? 'Localモード' : 'PWAモード'}
-          >
-            {mode === 'local' ? <Monitor size={15} /> : <Globe size={15} />}
-          </button>
-        </>
-      }
     >
       {MODE_BUTTONS.map(({ mode: m, icon, label }) => (
         <button

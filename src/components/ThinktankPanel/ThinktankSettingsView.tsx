@@ -5,8 +5,32 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Save } from 'lucide-react';
+import { Save, Monitor, Globe, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock } from 'lucide-react';
+import { StorageManager } from '../../services/storage/StorageManager';
+import type { SyncState } from '../../types';
 import './ThinktankSettingsView.css';
+
+const SYNC_LABEL: Record<SyncState, string> = {
+  synced:  '同期済み',
+  syncing: '同期中…',
+  pending: '同期待ち',
+  error:   '同期エラー',
+  offline: 'オフライン',
+};
+
+function SyncIcon({ state }: { state: SyncState }) {
+  switch (state) {
+    case 'synced':  return <CheckCircle size={13} />;
+    case 'syncing': return <RefreshCw   size={13} className="tt-settings-spin" />;
+    case 'pending': return <Clock       size={13} />;
+    case 'error':   return <AlertCircle size={13} />;
+    case 'offline': return <WifiOff     size={13} />;
+  }
+}
+
+interface Props {
+  syncState?: SyncState;
+}
 
 const LS_KEY_VALUE   = 'tt-vault-name';
 const LS_KEY_HISTORY = 'tt-vault-name-history';
@@ -33,7 +57,8 @@ function saveValue(name: string): string[] {
   return next;
 }
 
-export function ThinktankSettingsView() {
+export function ThinktankSettingsView({ syncState = 'synced' }: Props) {
+  const mode = StorageManager.instance.mode;
   const [value,   setValue]   = useState(loadValue);
   const [history, setHistory] = useState(loadHistory);
   const [saved,   setSaved]   = useState(false);
@@ -54,6 +79,26 @@ export function ThinktankSettingsView() {
 
   return (
     <div className="tt-settings-view">
+      <section className="tt-settings-section">
+        <h2 className="tt-settings-section__title">状態</h2>
+        <dl className="tt-settings-status">
+          <dt className="tt-settings-status__label">モード</dt>
+          <dd className="tt-settings-status__value">
+            <span className="tt-settings-status__badge tt-settings-status__badge--mode">
+              {mode === 'local' ? <Monitor size={12} /> : <Globe size={12} />}
+              {mode === 'local' ? 'Local' : 'PWA'}
+            </span>
+          </dd>
+          <dt className="tt-settings-status__label">同期</dt>
+          <dd className="tt-settings-status__value">
+            <span className={`tt-settings-status__badge tt-settings-status__badge--sync tt-settings-status__badge--${syncState}`}>
+              <SyncIcon state={syncState} />
+              {SYNC_LABEL[syncState]}
+            </span>
+          </dd>
+        </dl>
+      </section>
+
       <section className="tt-settings-section">
         <h2 className="tt-settings-section__title">保管庫名</h2>
         <p className="tt-settings-section__desc">

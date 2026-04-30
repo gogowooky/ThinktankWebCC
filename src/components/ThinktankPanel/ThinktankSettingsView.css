@@ -33,6 +33,56 @@
   line-height: 1.5;
 }
 
+/* ── 状態 ── */
+
+.tt-settings-status {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 8px;
+  align-items: center;
+}
+
+.tt-settings-status__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tt-settings-status__value {
+  margin: 0;
+}
+
+.tt-settings-status__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.tt-settings-status__badge--mode {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, var(--text-muted));
+}
+
+.tt-settings-status__badge--synced  { color: var(--color-success, #4caf50); background: rgba(76,175,80,0.12); }
+.tt-settings-status__badge--syncing { color: var(--color-info, #64b5f6);    background: rgba(100,181,246,0.12); }
+.tt-settings-status__badge--pending { color: var(--text-muted);             background: rgba(255,255,255,0.07); }
+.tt-settings-status__badge--error   { color: var(--color-error, #ef5350);   background: rgba(239,83,80,0.12); }
+.tt-settings-status__badge--offline { color: var(--text-muted);             background: rgba(255,255,255,0.07); }
+
+.tt-settings-spin {
+  animation: tt-settings-spin 1s linear infinite;
+}
+
+@keyframes tt-settings-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── 入力フィールド ── */
 
 .tt-settings-field {
