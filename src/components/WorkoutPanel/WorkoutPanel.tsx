@@ -16,13 +16,38 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { Splitter } from '../Layout/Splitter';
 import { PanelArea } from '../Layout/PanelArea';
 import { WorkoutHSplitter } from './WorkoutHSplitter';
-import { WorkoutArea } from './WorkoutArea';
+import { WorkoutArea, type DropEdgeDir } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutRibbon } from './WorkoutRibbon';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
 import type { SettingsType } from './WorkoutRibbon';
 import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
+
+// Think の ContentType → MediaType マッピング
+function contentTypeToMediaType(contentType: string): MediaType {
+  switch (contentType) {
+    case 'markdown': return 'markdown';
+    case 'thought':  return 'datagrid';
+    case 'chat':     return 'chat';
+    default:         return 'texteditor';
+  }
+}
+
+// エッジ方向検出（threshold px 以内なら方向を返す）
+function getEdgeDir(e: React.DragEvent, el: HTMLElement, threshold: number): DropEdgeDir | null {
+  const rect = el.getBoundingClientRect();
+  const dl = e.clientX - rect.left;
+  const dr = rect.width  - (e.clientX - rect.left);
+  const du = e.clientY - rect.top;
+  const dd = rect.height - (e.clientY - rect.top);
+  const min = Math.min(dl, dr, du, dd);
+  if (min > threshold) return null;
+  if (min === dl) return 'left';
+  if (min === dr) return 'right';
+  if (min === du) return 'up';
+  return 'down';
+}
 
 const DEFAULT_SETTINGS_WIDTH = 180;
 const MIN_SETTINGS_WIDTH     = 120;
@@ -31,19 +56,20 @@ const MAX_SETTINGS_WIDTH     = 400;
 // ── shared props（再帰コンポーネントに引き回す）───────────────────────
 
 interface SharedProps {
-  areas:          Map<string, TTWorkoutArea>;
-  vault:          TTVault;
-  focusedAreaId:  string | null;
-  dragId:         string | null;
-  overAreaId:     string | null;
-  splitRatios:    Record<string, number>;
-  onFocus:        (areaId: string) => void;
-  onDragStart:    (e: React.MouseEvent, areaId: string) => void;
-  onDragEnter:    (areaId: string) => void;
-  onDragLeave:    () => void;
-  onMediaType:    (areaId: string, type: MediaType) => void;
-  onClose:        (areaId: string) => void;
-  onSplitRatio:   (nodeId: string, ratio: number) => void;
+  areas:            Map<string, TTWorkoutArea>;
+  vault:            TTVault;
+  focusedAreaId:    string | null;
+  dragId:           string | null;
+  overAreaId:       string | null;
+  splitRatios:      Record<string, number>;
+  onFocus:          (areaId: string) => void;
+  onDragStart:      (e: React.MouseEvent, areaId: string) => void;
+  onDragEnter:      (areaId: string) => void;
+  onDragLeave:      () => void;
+  onMediaType:      (areaId: string, type: MediaType) => void;
+  onClose:          (areaId: string) => void;
+  onSplitRatio:     (nodeId: string, ratio: number) => void;
+  onExternalDrop:   (dir: DropEdgeDir, thinkId: string, areaId: string) => void;
 }
 
 // ── LayoutView（再帰）───────────────────────────────────────────────────
@@ -66,6 +92,7 @@ function LayoutView({ node, shared }: { node: LayoutNode; shared: SharedProps })
           onDragLeave={shared.onDragLeave}
           onMediaTypeChange={shared.onMediaType}
           onClose={shared.onClose}
+          onExternalDrop={shared.onExternalDrop}
         />
       </div>
     );
@@ -124,6 +151,8 @@ export function WorkoutPanel({ app }: Props) {
 
   // 設定パネル: どのタイプの設定を表示するか（null = 非表示）
   const [activeSettings,    setActiveSettings]    = useState<SettingsType | null>(null);
+  // 外側エッジ D&D
+  const [outerDropDir, setOuterDropDir] = useState<DropEdgeDir | null>(null);
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
   // 最後に開いた設定タイプを記憶（トグルボタンで再オープン用）
   const lastSettingsRef = useRef<SettingsType>('workout');
@@ -230,6 +259,50 @@ export function WorkoutPanel({ app }: Props) {
     panel.ClearAll();
   }, [panel]);
 
+  // ── 外側エッジ D&D（WorkoutPanel 全体の辺から15px）──────────────────
+  const handleOuterDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('application/x-thought-id')) return;
+    const dir = getEdgeDir(e, e.currentTarget as HTMLElement, 15);
+    if (dir) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setOuterDropDir(dir);
+    } else {
+      setOuterDropDir(null);
+    }
+  }, []);
+
+  const handleOuterDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setOuterDropDir(null);
+  }, []);
+
+  const handleOuterDrop = useCallback((e: React.DragEvent) => {
+    const id  = e.dataTransfer.getData('application/x-thought-id');
+    const dir = getEdgeDir(e, e.currentTarget as HTMLElement, 15);
+    setOuterDropDir(null);
+    if (!id || !dir) return;
+    e.preventDefault();
+    const think     = vault.GetThink(id);
+    const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
+    const title     = think?.Name ?? '';
+    if (dir === 'left')  panel.AddToLeft(id,   mediaType, title);
+    else if (dir === 'right') panel.AddToRight(id,  mediaType, title);
+    else if (dir === 'up')    panel.AddToTop(id,    mediaType, title);
+    else                      panel.AddToBottom(id, mediaType, title);
+  }, [panel, vault]);
+
+  // ── 各 Pane 内側エッジ D&D（辺から30px → 分割して新エリア追加）────────
+  const handleExternalDrop = useCallback((dir: DropEdgeDir, thinkId: string, areaId: string) => {
+    const think     = vault.GetThink(thinkId);
+    const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
+    const title     = think?.Name ?? '';
+    panel.FocusArea(areaId);
+    if (dir === 'left')  panel.AddLeft(thinkId,  mediaType, title);
+    else if (dir === 'right') panel.AddRight(thinkId, mediaType, title);
+    else if (dir === 'up')    panel.AddAbove(thinkId, mediaType, title);
+    else                      panel.AddBelow(thinkId, mediaType, title);
+  }, [panel, vault]);
+
   const handleDragStart = useCallback((e: React.MouseEvent, areaId: string) => {
     e.preventDefault();
     const area  = panel.GetArea(areaId);
@@ -282,19 +355,20 @@ export function WorkoutPanel({ app }: Props) {
   const areaMap = new Map<string, TTWorkoutArea>(panel.Areas.map(a => [a.ID, a]));
 
   const shared: SharedProps = {
-    areas:         areaMap,
+    areas:           areaMap,
     vault,
-    focusedAreaId: panel.FocusedAreaId,
+    focusedAreaId:   panel.FocusedAreaId,
     dragId,
     overAreaId,
     splitRatios,
-    onFocus:       handleFocus,
-    onDragStart:   handleDragStart,
-    onDragEnter:   handleDragEnter,
-    onDragLeave:   handleDragLeave,
-    onMediaType:   handleMediaType,
-    onClose:       handleClose,
-    onSplitRatio:  handleSplitRatio,
+    onFocus:         handleFocus,
+    onDragStart:     handleDragStart,
+    onDragEnter:     handleDragEnter,
+    onDragLeave:     handleDragLeave,
+    onMediaType:     handleMediaType,
+    onClose:         handleClose,
+    onSplitRatio:    handleSplitRatio,
+    onExternalDrop:  handleExternalDrop,
   };
 
   // ── レンダリング ──────────────────────────────────────────────────
@@ -337,13 +411,23 @@ export function WorkoutPanel({ app }: Props) {
       )}
 
       {/* ── コンテンツ領域 ────────────────────────────────────── */}
-      <div className="workout-panel__body">
+      <div
+        className="workout-panel__body"
+        onDragOver={handleOuterDragOver}
+        onDragLeave={handleOuterDragLeave}
+        onDrop={handleOuterDrop}
+      >
         {panel.Layout === null ? (
           <WorkoutAreaEmpty isFullPanel onAdd={handleAddRight} />
         ) : (
           <div className="workout-panel__tree">
             <LayoutView node={panel.Layout} shared={shared} />
           </div>
+        )}
+
+        {/* 外側エッジ D&D オーバーレイ（15px）*/}
+        {outerDropDir && (
+          <div className={`workout-panel__outer-drop workout-panel__outer-drop--${outerDropDir}`} />
         )}
       </div>
 
