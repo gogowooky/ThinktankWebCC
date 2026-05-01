@@ -16,13 +16,15 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { Splitter } from '../Layout/Splitter';
 import { PanelArea } from '../Layout/PanelArea';
 import { WorkoutHSplitter } from './WorkoutHSplitter';
-import { WorkoutArea, type DropEdgeDir } from './WorkoutArea';
+import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutRibbon } from './WorkoutRibbon';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
 import type { SettingsType } from './WorkoutRibbon';
 import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
+
+type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
 
 // Think の ContentType → MediaType マッピング
 function contentTypeToMediaType(contentType: string): MediaType {
@@ -34,21 +36,6 @@ function contentTypeToMediaType(contentType: string): MediaType {
   }
 }
 
-// エッジ方向検出（threshold px 以内なら方向を返す）
-function getEdgeDir(e: React.DragEvent, el: HTMLElement, threshold: number): DropEdgeDir | null {
-  const rect = el.getBoundingClientRect();
-  const dl = e.clientX - rect.left;
-  const dr = rect.width  - (e.clientX - rect.left);
-  const du = e.clientY - rect.top;
-  const dd = rect.height - (e.clientY - rect.top);
-  const min = Math.min(dl, dr, du, dd);
-  if (min > threshold) return null;
-  if (min === dl) return 'left';
-  if (min === dr) return 'right';
-  if (min === du) return 'up';
-  return 'down';
-}
-
 const DEFAULT_SETTINGS_WIDTH = 180;
 const MIN_SETTINGS_WIDTH     = 120;
 const MAX_SETTINGS_WIDTH     = 400;
@@ -56,20 +43,19 @@ const MAX_SETTINGS_WIDTH     = 400;
 // ── shared props（再帰コンポーネントに引き回す）───────────────────────
 
 interface SharedProps {
-  areas:            Map<string, TTWorkoutArea>;
-  vault:            TTVault;
-  focusedAreaId:    string | null;
-  dragId:           string | null;
-  overAreaId:       string | null;
-  splitRatios:      Record<string, number>;
-  onFocus:          (areaId: string) => void;
-  onDragStart:      (e: React.MouseEvent, areaId: string) => void;
-  onDragEnter:      (areaId: string) => void;
-  onDragLeave:      () => void;
-  onMediaType:      (areaId: string, type: MediaType) => void;
-  onClose:          (areaId: string) => void;
-  onSplitRatio:     (nodeId: string, ratio: number) => void;
-  onExternalDrop:   (dir: DropEdgeDir, thinkId: string, areaId: string) => void;
+  areas:          Map<string, TTWorkoutArea>;
+  vault:          TTVault;
+  focusedAreaId:  string | null;
+  dragId:         string | null;
+  overAreaId:     string | null;
+  splitRatios:    Record<string, number>;
+  onFocus:        (areaId: string) => void;
+  onDragStart:    (e: React.MouseEvent, areaId: string) => void;
+  onDragEnter:    (areaId: string) => void;
+  onDragLeave:    () => void;
+  onMediaType:    (areaId: string, type: MediaType) => void;
+  onClose:        (areaId: string) => void;
+  onSplitRatio:   (nodeId: string, ratio: number) => void;
 }
 
 // ── LayoutView（再帰）───────────────────────────────────────────────────
@@ -92,7 +78,6 @@ function LayoutView({ node, shared }: { node: LayoutNode; shared: SharedProps })
           onDragLeave={shared.onDragLeave}
           onMediaTypeChange={shared.onMediaType}
           onClose={shared.onClose}
-          onExternalDrop={shared.onExternalDrop}
         />
       </div>
     );
@@ -151,8 +136,6 @@ export function WorkoutPanel({ app }: Props) {
 
   // 設定パネル: どのタイプの設定を表示するか（null = 非表示）
   const [activeSettings,    setActiveSettings]    = useState<SettingsType | null>(null);
-  // 外側エッジ D&D
-  const [outerDropDir, setOuterDropDir] = useState<DropEdgeDir | null>(null);
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
   // 最後に開いた設定タイプを記憶（トグルボタンで再オープン用）
   const lastSettingsRef = useRef<SettingsType>('workout');
@@ -168,6 +151,17 @@ export function WorkoutPanel({ app }: Props) {
   // Ghost アニメーション
   const [dragTitle, setDragTitle] = useState<string | null>(null);
   const [dragPos,   setDragPos]   = useState<{ x: number; y: number } | null>(null);
+
+  // D&D オーバーレイ（アイテムドロップ時の新Paneプレビュー）
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  interface DropOverlay {
+    type:   'add' | 'split';
+    dir:    DropEdgeDir;
+    style:  React.CSSProperties;
+    areaId?: string;
+  }
+  const [dropOverlay, setDropOverlay] = useState<DropOverlay | null>(null);
 
   // ── フォーカスペインの Think タイトル ──────────────────────────────
   const focusedArea   = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
@@ -203,52 +197,88 @@ export function WorkoutPanel({ app }: Props) {
     setSplitRatios(prev => ({ ...prev, [nodeId]: ratio }));
   }, []);
 
-  // ── エリア分割 (focused pane split) ─────────────────────────────────
+  // ── エリア分割（FocusPaneと同じ内容）────────────────────────────────
 
   const handleSplitRight = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
-    else panel.AddRight(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddFirst(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddRight(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
   const handleSplitBelow = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
-    else panel.AddBelow(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddFirst(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddBelow(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
   const handleSplitLeft = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
-    else panel.AddLeft(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddFirst(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddLeft(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
   const handleSplitAbove = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
-    else panel.AddAbove(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddFirst(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddAbove(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
-  // ── エリア追加 (panel-level edge addition) ─────────────────────────
+  // ── エリア追加（FocusPaneと同じ内容、空のとき新規）────────────────────
 
   const handleAddRight = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    panel.AddToRight(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddToRight(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddToRight(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
   const handleAddBelow = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    panel.AddToBottom(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddToBottom(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddToBottom(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
   const handleAddLeft = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    panel.AddToLeft(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddToLeft(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddToLeft(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
   const handleAddTop = useCallback(async () => {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
-    panel.AddToTop(think.ID, 'texteditor', think.Name);
+    if (panel.Layout === null) {
+      const t = await vault.CreateBlankThink('memo', '新規メモ');
+      panel.AddToTop(t.ID, 'texteditor', t.Name);
+    } else {
+      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+      if (f) panel.AddToTop(f.ResourceID, f.MediaType, f.Title);
+    }
   }, [vault, panel]);
 
   const handleRemoveFocused = useCallback(() => {
@@ -259,49 +289,98 @@ export function WorkoutPanel({ app }: Props) {
     panel.ClearAll();
   }, [panel]);
 
-  // ── 外側エッジ D&D（WorkoutPanel 全体の辺から15px）──────────────────
-  const handleOuterDragOver = useCallback((e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('application/x-thought-id')) return;
-    const dir = getEdgeDir(e, e.currentTarget as HTMLElement, 15);
-    if (dir) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-      setOuterDropDir(dir);
-    } else {
-      setOuterDropDir(null);
+  // ── D&D オーバーレイ計算（ドロップ後の新Pane位置をプレビュー）──────────
+
+  const OUTER_RATIO   = 0.22; // パネル外縁20%以内 → エリア追加
+  const NEW_PANE_FRAC = 0.35; // 追加時の新ペイン幅/高さ比率
+
+  const computeDropOverlay = useCallback((e: React.DragEvent) => {
+    const bodyEl = bodyRef.current;
+    if (!bodyEl) return null;
+    const br   = bodyEl.getBoundingClientRect();
+    const px   = (e.clientX - br.left) / br.width;
+    const py   = (e.clientY - br.top)  / br.height;
+    const dl   = px;
+    const dr   = 1 - px;
+    const du   = py;
+    const dd   = 1 - py;
+    const min  = Math.min(dl, dr, du, dd);
+    const dir: DropEdgeDir =
+      min === dl ? 'left' : min === dr ? 'right' : min === du ? 'up' : 'down';
+    const isOuter = min < OUTER_RATIO;
+
+    if (isOuter || panel.Layout === null) {
+      const fw = br.width  * NEW_PANE_FRAC;
+      const fh = br.height * NEW_PANE_FRAC;
+      const s: React.CSSProperties =
+        dir === 'left'  ? { left: 0,   top: 0, width: fw, height: br.height } :
+        dir === 'right' ? { right: 0,  top: 0, width: fw, height: br.height } :
+        dir === 'up'    ? { left: 0,   top: 0, width: br.width, height: fh } :
+                          { left: 0, bottom: 0, width: br.width, height: fh };
+      return { type: 'add' as const, dir, style: s };
     }
+
+    // 内側 → 各ペインで分割
+    const els    = document.elementsFromPoint(e.clientX, e.clientY);
+    const areaEl = els.find(el => el.classList.contains('workout-area')) as HTMLElement | undefined;
+    if (!areaEl) return null;
+    const areaId = areaEl.getAttribute('data-area-id');
+    if (!areaId) return null;
+
+    const ar  = areaEl.getBoundingClientRect();
+    const ax  = (e.clientX - ar.left) / ar.width  - 0.5;
+    const ay  = (e.clientY - ar.top)  / ar.height - 0.5;
+    const splitDir: DropEdgeDir =
+      Math.abs(ax) > Math.abs(ay)
+        ? (ax < 0 ? 'left' : 'right')
+        : (ay < 0 ? 'up'   : 'down');
+
+    const aLeft = ar.left - br.left;
+    const aTop  = ar.top  - br.top;
+    const aW    = ar.width;
+    const aH    = ar.height;
+    const s: React.CSSProperties =
+      splitDir === 'left'  ? { left: aLeft,        top: aTop, width: aW/2, height: aH } :
+      splitDir === 'right' ? { left: aLeft + aW/2,  top: aTop, width: aW/2, height: aH } :
+      splitDir === 'up'    ? { left: aLeft,          top: aTop, width: aW,   height: aH/2 } :
+                              { left: aLeft, top: aTop + aH/2,  width: aW,   height: aH/2 };
+
+    return { type: 'split' as const, dir: splitDir, areaId, style: s };
+  }, [panel]);
+
+  const handleBodyDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('application/x-thought-id')) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setDropOverlay(computeDropOverlay(e));
+  }, [computeDropOverlay]);
+
+  const handleBodyDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropOverlay(null);
   }, []);
 
-  const handleOuterDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) setOuterDropDir(null);
-  }, []);
-
-  const handleOuterDrop = useCallback((e: React.DragEvent) => {
-    const id  = e.dataTransfer.getData('application/x-thought-id');
-    const dir = getEdgeDir(e, e.currentTarget as HTMLElement, 15);
-    setOuterDropDir(null);
-    if (!id || !dir) return;
+  const handleBodyDrop = useCallback((e: React.DragEvent) => {
+    const id      = e.dataTransfer.getData('application/x-thought-id');
+    const overlay = computeDropOverlay(e);
+    setDropOverlay(null);
+    if (!id || !overlay) return;
     e.preventDefault();
     const think     = vault.GetThink(id);
     const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
     const title     = think?.Name ?? '';
-    if (dir === 'left')  panel.AddToLeft(id,   mediaType, title);
-    else if (dir === 'right') panel.AddToRight(id,  mediaType, title);
-    else if (dir === 'up')    panel.AddToTop(id,    mediaType, title);
-    else                      panel.AddToBottom(id, mediaType, title);
-  }, [panel, vault]);
-
-  // ── 各 Pane 内側エッジ D&D（辺から30px → 分割して新エリア追加）────────
-  const handleExternalDrop = useCallback((dir: DropEdgeDir, thinkId: string, areaId: string) => {
-    const think     = vault.GetThink(thinkId);
-    const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
-    const title     = think?.Name ?? '';
-    panel.FocusArea(areaId);
-    if (dir === 'left')  panel.AddLeft(thinkId,  mediaType, title);
-    else if (dir === 'right') panel.AddRight(thinkId, mediaType, title);
-    else if (dir === 'up')    panel.AddAbove(thinkId, mediaType, title);
-    else                      panel.AddBelow(thinkId, mediaType, title);
-  }, [panel, vault]);
+    if (overlay.type === 'add') {
+      if (overlay.dir === 'left')  panel.AddToLeft(id,   mediaType, title);
+      else if (overlay.dir === 'right') panel.AddToRight(id,  mediaType, title);
+      else if (overlay.dir === 'up')    panel.AddToTop(id,    mediaType, title);
+      else                              panel.AddToBottom(id, mediaType, title);
+    } else {
+      if (overlay.areaId) panel.FocusArea(overlay.areaId);
+      if (overlay.dir === 'left')  panel.AddLeft(id,  mediaType, title);
+      else if (overlay.dir === 'right') panel.AddRight(id, mediaType, title);
+      else if (overlay.dir === 'up')    panel.AddAbove(id, mediaType, title);
+      else                              panel.AddBelow(id, mediaType, title);
+    }
+  }, [computeDropOverlay, panel, vault]);
 
   const handleDragStart = useCallback((e: React.MouseEvent, areaId: string) => {
     e.preventDefault();
@@ -355,20 +434,19 @@ export function WorkoutPanel({ app }: Props) {
   const areaMap = new Map<string, TTWorkoutArea>(panel.Areas.map(a => [a.ID, a]));
 
   const shared: SharedProps = {
-    areas:           areaMap,
+    areas:         areaMap,
     vault,
-    focusedAreaId:   panel.FocusedAreaId,
+    focusedAreaId: panel.FocusedAreaId,
     dragId,
     overAreaId,
     splitRatios,
-    onFocus:         handleFocus,
-    onDragStart:     handleDragStart,
-    onDragEnter:     handleDragEnter,
-    onDragLeave:     handleDragLeave,
-    onMediaType:     handleMediaType,
-    onClose:         handleClose,
-    onSplitRatio:    handleSplitRatio,
-    onExternalDrop:  handleExternalDrop,
+    onFocus:       handleFocus,
+    onDragStart:   handleDragStart,
+    onDragEnter:   handleDragEnter,
+    onDragLeave:   handleDragLeave,
+    onMediaType:   handleMediaType,
+    onClose:       handleClose,
+    onSplitRatio:  handleSplitRatio,
   };
 
   // ── レンダリング ──────────────────────────────────────────────────
@@ -412,10 +490,11 @@ export function WorkoutPanel({ app }: Props) {
 
       {/* ── コンテンツ領域 ────────────────────────────────────── */}
       <div
+        ref={bodyRef}
         className="workout-panel__body"
-        onDragOver={handleOuterDragOver}
-        onDragLeave={handleOuterDragLeave}
-        onDrop={handleOuterDrop}
+        onDragOver={handleBodyDragOver}
+        onDragLeave={handleBodyDragLeave}
+        onDrop={handleBodyDrop}
       >
         {panel.Layout === null ? (
           <WorkoutAreaEmpty isFullPanel onAdd={handleAddRight} />
@@ -425,9 +504,12 @@ export function WorkoutPanel({ app }: Props) {
           </div>
         )}
 
-        {/* 外側エッジ D&D オーバーレイ（15px）*/}
-        {outerDropDir && (
-          <div className={`workout-panel__outer-drop workout-panel__outer-drop--${outerDropDir}`} />
+        {/* D&D ドロップ位置プレビューオーバーレイ */}
+        {dropOverlay && (
+          <div
+            className={`workout-panel__drop-overlay workout-panel__drop-overlay--${dropOverlay.type}`}
+            style={{ position: 'absolute', pointerEvents: 'none', ...dropOverlay.style }}
+          />
         )}
       </div>
 

@@ -344,7 +344,7 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, editorSettings }
           scrollBeyondLastLine: false,
           fontFamily:         "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
           padding:            { top: 10, bottom: 10 },
-          renderLineHighlight: 'gutter',
+          renderLineHighlight: 'line',
           smoothScrolling:    true,
           folding:            true,
           showFoldingControls: 'always',

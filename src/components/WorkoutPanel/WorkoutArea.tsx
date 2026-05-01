@@ -20,22 +20,6 @@ import { GraphMedia }      from './media/GraphMedia';
 import { ChatMedia }       from './media/ChatMedia';
 import './WorkoutArea.css';
 
-export type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
-
-function getEdgeDir(e: React.DragEvent, el: HTMLElement, threshold: number): DropEdgeDir | null {
-  const rect = el.getBoundingClientRect();
-  const dl = e.clientX - rect.left;
-  const dr = rect.width  - (e.clientX - rect.left);
-  const du = e.clientY - rect.top;
-  const dd = rect.height - (e.clientY - rect.top);
-  const min = Math.min(dl, dr, du, dd);
-  if (min > threshold) return null;
-  if (min === dl) return 'left';
-  if (min === dr) return 'right';
-  if (min === du) return 'up';
-  return 'down';
-}
-
 interface Props {
   area:              TTWorkoutArea;
   vault:             TTVault;
@@ -48,17 +32,14 @@ interface Props {
   onDragLeave:       () => void;
   onMediaTypeChange: (areaId: string, type: MediaType) => void;
   onClose:           (areaId: string) => void;
-  onExternalDrop:    (dir: DropEdgeDir, thinkId: string, areaId: string) => void;
 }
 
 export function WorkoutArea({
   area, vault, isFocused, isDragging, isDropTarget,
   onFocus, onDragStart, onDragEnter, onDragLeave, onMediaTypeChange, onClose,
-  onExternalDrop,
 }: Props) {
   const [isDirty,         setIsDirty]         = useState(false);
   const [loadedResourceId, setLoadedResourceId] = useState<string | null>(null);
-  const [innerDropDir,    setInnerDropDir]    = useState<DropEdgeDir | null>(null);
   const contentReady = loadedResourceId === area.ResourceID;
 
   useEffect(() => {
@@ -130,33 +111,6 @@ export function WorkoutArea({
     }
   };
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('application/x-thought-id')) return;
-    const dir = getEdgeDir(e, e.currentTarget as HTMLElement, 30);
-    if (dir) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.dataTransfer.dropEffect = 'copy';
-      setInnerDropDir(dir);
-    } else {
-      setInnerDropDir(null);
-    }
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) setInnerDropDir(null);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    const id = e.dataTransfer.getData('application/x-thought-id');
-    const dir = getEdgeDir(e, e.currentTarget as HTMLElement, 30);
-    setInnerDropDir(null);
-    if (!id || !dir) return;
-    e.preventDefault();
-    e.stopPropagation();
-    onExternalDrop(dir, id, area.ID);
-  }, [area.ID, onExternalDrop]);
-
   return (
     <div
       className={[
@@ -165,12 +119,10 @@ export function WorkoutArea({
         isDragging   ? 'workout-area--dragging'    : '',
         isDropTarget ? 'workout-area--drop-target' : '',
       ].join(' ')}
+      data-area-id={area.ID}
       onMouseDown={onFocus}
       onMouseEnter={() => onDragEnter(area.ID)}
       onMouseLeave={onDragLeave}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
     >
       <WorkoutAreaRibbon
         area={area}
@@ -189,10 +141,6 @@ export function WorkoutArea({
         }
       </div>
 
-      {/* 内側エッジD&Dオーバーレイ */}
-      {innerDropDir && (
-        <div className={`workout-area__edge-overlay workout-area__edge-overlay--${innerDropDir}`} />
-      )}
     </div>
   );
 }
