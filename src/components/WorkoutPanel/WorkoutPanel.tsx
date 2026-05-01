@@ -6,7 +6,7 @@
  *   [WorkoutRibbon 40px] [WorkoutSettingPanel? + Splitter] [コンテンツ flex:1]
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GripVertical } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
@@ -26,6 +26,49 @@ import './WorkoutPanel.css';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
 
+// 幅均等化: v-split ノードに対して、両サブツリーの「幅スロット数」の比率を計算してセット
+// 幅スロット数: v-split は加算、h-split は両側同幅なので max
+function countWidthSlots(node: import('../../views/TTWorkoutPanel').LayoutNode): number {
+  if (node.type === 'leaf') return 1;
+  if (node.direction === 'v') return countWidthSlots(node.first) + countWidthSlots(node.second);
+  return Math.max(countWidthSlots(node.first), countWidthSlots(node.second));
+}
+
+// 高さ均等化: h-split ノードに対して、両サブツリーの「高さスロット数」の比率を計算してセット
+function countHeightSlots(node: import('../../views/TTWorkoutPanel').LayoutNode): number {
+  if (node.type === 'leaf') return 1;
+  if (node.direction === 'h') return countHeightSlots(node.first) + countHeightSlots(node.second);
+  return Math.max(countHeightSlots(node.first), countHeightSlots(node.second));
+}
+
+function computeEqualWidthRatios(
+  node: import('../../views/TTWorkoutPanel').LayoutNode,
+  out: Record<string, number>,
+): void {
+  if (node.type === 'leaf') return;
+  if (node.direction === 'v') {
+    const f = countWidthSlots(node.first);
+    const s = countWidthSlots(node.second);
+    out[node.id] = f / (f + s);
+  }
+  computeEqualWidthRatios(node.first, out);
+  computeEqualWidthRatios(node.second, out);
+}
+
+function computeEqualHeightRatios(
+  node: import('../../views/TTWorkoutPanel').LayoutNode,
+  out: Record<string, number>,
+): void {
+  if (node.type === 'leaf') return;
+  if (node.direction === 'h') {
+    const f = countHeightSlots(node.first);
+    const s = countHeightSlots(node.second);
+    out[node.id] = f / (f + s);
+  }
+  computeEqualHeightRatios(node.first, out);
+  computeEqualHeightRatios(node.second, out);
+}
+
 // Think の ContentType → MediaType マッピング
 function contentTypeToMediaType(contentType: string): MediaType {
   switch (contentType) {
@@ -43,19 +86,20 @@ const MAX_SETTINGS_WIDTH     = 400;
 // ── shared props（再帰コンポーネントに引き回す）───────────────────────
 
 interface SharedProps {
-  areas:          Map<string, TTWorkoutArea>;
-  vault:          TTVault;
-  focusedAreaId:  string | null;
-  dragId:         string | null;
-  overAreaId:     string | null;
-  splitRatios:    Record<string, number>;
-  onFocus:        (areaId: string) => void;
-  onDragStart:    (e: React.MouseEvent, areaId: string) => void;
-  onDragEnter:    (areaId: string) => void;
-  onDragLeave:    () => void;
-  onMediaType:    (areaId: string, type: MediaType) => void;
-  onClose:        (areaId: string) => void;
-  onSplitRatio:   (nodeId: string, ratio: number) => void;
+  areas:            Map<string, TTWorkoutArea>;
+  vault:            TTVault;
+  focusedAreaId:    string | null;
+  dragId:           string | null;
+  overAreaId:       string | null;
+  splitRatios:      Record<string, number>;
+  isExternalDrag:   boolean;
+  onFocus:          (areaId: string) => void;
+  onDragStart:      (e: React.MouseEvent, areaId: string) => void;
+  onDragEnter:      (areaId: string) => void;
+  onDragLeave:      () => void;
+  onMediaType:      (areaId: string, type: MediaType) => void;
+  onClose:          (areaId: string) => void;
+  onSplitRatio:     (nodeId: string, ratio: number) => void;
 }
 
 // ── LayoutView（再帰）───────────────────────────────────────────────────
@@ -72,6 +116,7 @@ function LayoutView({ node, shared }: { node: LayoutNode; shared: SharedProps })
           isFocused={shared.focusedAreaId === area.ID}
           isDragging={shared.dragId === area.ID}
           isDropTarget={shared.overAreaId === area.ID}
+          isExternalDrag={shared.isExternalDrag}
           onFocus={() => shared.onFocus(area.ID)}
           onDragStart={shared.onDragStart}
           onDragEnter={shared.onDragEnter}
@@ -152,8 +197,25 @@ export function WorkoutPanel({ app }: Props) {
   const [dragTitle, setDragTitle] = useState<string | null>(null);
   const [dragPos,   setDragPos]   = useState<{ x: number; y: number } | null>(null);
 
+  // 外部D&D中フラグ（Monaco のイベント横取りを防ぐドラッグシールド用）
+  const [isExternalDrag, setIsExternalDrag] = useState(false);
+
   // D&D オーバーレイ（アイテムドロップ時の新Paneプレビュー）
   const bodyRef = useRef<HTMLDivElement>(null);
+
+  // dragend / drop が body 外で終了したときのクリーンアップ
+  useEffect(() => {
+    const cleanup = () => {
+      setDropOverlay(null);
+      setIsExternalDrag(false);
+    };
+    document.addEventListener('dragend', cleanup);
+    document.addEventListener('drop',    cleanup);
+    return () => {
+      document.removeEventListener('dragend', cleanup);
+      document.removeEventListener('drop',    cleanup);
+    };
+  }, []);
 
   interface DropOverlay {
     type:   'add' | 'split';
@@ -289,9 +351,27 @@ export function WorkoutPanel({ app }: Props) {
     panel.ClearAll();
   }, [panel]);
 
+  const handleEqualizeWidths = useCallback(() => {
+    if (!panel.Layout) return;
+    setSplitRatios(prev => {
+      const next = { ...prev };
+      computeEqualWidthRatios(panel.Layout!, next);
+      return next;
+    });
+  }, [panel]);
+
+  const handleEqualizeHeights = useCallback(() => {
+    if (!panel.Layout) return;
+    setSplitRatios(prev => {
+      const next = { ...prev };
+      computeEqualHeightRatios(panel.Layout!, next);
+      return next;
+    });
+  }, [panel]);
+
   // ── D&D オーバーレイ計算（ドロップ後の新Pane位置をプレビュー）──────────
 
-  const OUTER_RATIO   = 0.22; // パネル外縁20%以内 → エリア追加
+  const OUTER_RATIO   = 0.15; // パネル外縁15%以内 → エリア追加
   const NEW_PANE_FRAC = 0.35; // 追加時の新ペイン幅/高さ比率
 
   const computeDropOverlay = useCallback((e: React.DragEvent) => {
@@ -352,17 +432,22 @@ export function WorkoutPanel({ app }: Props) {
     if (!e.dataTransfer.types.includes('application/x-thought-id')) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+    setIsExternalDrag(true);
     setDropOverlay(computeDropOverlay(e));
   }, [computeDropOverlay]);
 
   const handleBodyDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) setDropOverlay(null);
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDropOverlay(null);
+      setIsExternalDrag(false);
+    }
   }, []);
 
   const handleBodyDrop = useCallback((e: React.DragEvent) => {
     const id      = e.dataTransfer.getData('application/x-thought-id');
     const overlay = computeDropOverlay(e);
     setDropOverlay(null);
+    setIsExternalDrag(false);
     if (!id || !overlay) return;
     e.preventDefault();
     const think     = vault.GetThink(id);
@@ -434,19 +519,20 @@ export function WorkoutPanel({ app }: Props) {
   const areaMap = new Map<string, TTWorkoutArea>(panel.Areas.map(a => [a.ID, a]));
 
   const shared: SharedProps = {
-    areas:         areaMap,
+    areas:           areaMap,
     vault,
-    focusedAreaId: panel.FocusedAreaId,
+    focusedAreaId:   panel.FocusedAreaId,
     dragId,
     overAreaId,
     splitRatios,
-    onFocus:       handleFocus,
-    onDragStart:   handleDragStart,
-    onDragEnter:   handleDragEnter,
-    onDragLeave:   handleDragLeave,
-    onMediaType:   handleMediaType,
-    onClose:       handleClose,
-    onSplitRatio:  handleSplitRatio,
+    isExternalDrag,
+    onFocus:         handleFocus,
+    onDragStart:     handleDragStart,
+    onDragEnter:     handleDragEnter,
+    onDragLeave:     handleDragLeave,
+    onMediaType:     handleMediaType,
+    onClose:         handleClose,
+    onSplitRatio:    handleSplitRatio,
   };
 
   // ── レンダリング ──────────────────────────────────────────────────
@@ -482,6 +568,8 @@ export function WorkoutPanel({ app }: Props) {
           onAddBottom={handleAddBelow}
           onRemoveFocused={handleRemoveFocused}
           onClearAll={handleClearAll}
+          onEqualizeWidths={handleEqualizeWidths}
+          onEqualizeHeights={handleEqualizeHeights}
         />
       </PanelArea>
       {activeSettings !== null && (

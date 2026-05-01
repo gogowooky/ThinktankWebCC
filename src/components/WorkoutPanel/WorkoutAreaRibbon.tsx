@@ -6,6 +6,7 @@
  * isFocused=true のとき青みがかった背景で強調表示。
  */
 
+import { useState, useCallback } from 'react';
 import { GripVertical, FileText, Eye, Table, LayoutGrid, Share2, MessageCircle, X, type LucideIcon } from 'lucide-react';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { MediaType } from '../../types';
@@ -27,14 +28,43 @@ interface Props {
   onDragStart:       (e: React.MouseEvent) => void;
   onMediaTypeChange: (type: MediaType) => void;
   onClose:           () => void;
+  onResourceDrop:    (thinkId: string) => void;
 }
 
-export function WorkoutAreaRibbon({ area, isFocused, isDirty = false, onDragStart, onMediaTypeChange, onClose }: Props) {
+export function WorkoutAreaRibbon({ area, isFocused, isDirty = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop }: Props) {
+  const [isDropTarget, setIsDropTarget] = useState(false);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes('application/x-thought-id')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDropTarget(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDropTarget(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDropTarget(false);
+    const id = e.dataTransfer.getData('application/x-thought-id');
+    if (id) onResourceDrop(id);
+  }, [onResourceDrop]);
+
   return (
-    <div className={[
-      'workout-area-ribbon',
-      isFocused ? 'workout-area-ribbon--focused' : '',
-    ].join(' ')}>
+    <div
+      className={[
+        'workout-area-ribbon',
+        isFocused    ? 'workout-area-ribbon--focused'     : '',
+        isDropTarget ? 'workout-area-ribbon--drop-target' : '',
+      ].join(' ')}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
 
       {/* ドラッグハンドル */}
       <div

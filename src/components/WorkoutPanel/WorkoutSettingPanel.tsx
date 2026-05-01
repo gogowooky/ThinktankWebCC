@@ -11,6 +11,7 @@ import {
   PanelBottomDashed,
   SquareX,
   CopyX,
+  ChevronsLeftRightEllipsis,
   ChevronDown,
   ChevronRight,
   X
@@ -47,19 +48,21 @@ function AddIcon({ dir }: { dir: Dir }) {
 // ── Props ────────────────────────────────────────────────────────────────
 
 interface Props {
-  activeSettings: SettingsType;
-  panel:          TTWorkoutPanel;
-  width:          number;
-  onSplitLeft:    () => void;
-  onSplitRight:   () => void;
-  onSplitAbove:   () => void;
-  onSplitBelow:   () => void;
-  onAddLeft:      () => void;
-  onAddRight:     () => void;
-  onAddTop:       () => void;
-  onAddBottom:    () => void;
-  onRemoveFocused:() => void;
-  onClearAll:     () => void;
+  activeSettings:   SettingsType;
+  panel:            TTWorkoutPanel;
+  width:            number;
+  onSplitLeft:      () => void;
+  onSplitRight:     () => void;
+  onSplitAbove:     () => void;
+  onSplitBelow:     () => void;
+  onAddLeft:        () => void;
+  onAddRight:       () => void;
+  onAddTop:         () => void;
+  onAddBottom:      () => void;
+  onRemoveFocused:  () => void;
+  onClearAll:       () => void;
+  onEqualizeWidths: () => void;
+  onEqualizeHeights:() => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -68,15 +71,15 @@ export function WorkoutSettingPanel({
   activeSettings, panel, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
-  onRemoveFocused, onClearAll,
+  onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
 }: Props) {
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
   const panelName = entry?.name ?? '';
 
-  const [isAreaSettingsOpen, setIsAreaSettingsOpen] = useState(true);
+  const [isAreaSettingsOpen,    setIsAreaSettingsOpen]    = useState(true);
   const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(true);
-  const [isColorSettingsOpen, setIsColorSettingsOpen] = useState(true);
+  const [isColorSettingsOpen,   setIsColorSettingsOpen]   = useState(true);
   const [isHighlightSettingsOpen, setIsHighlightSettingsOpen] = useState(true);
 
   return (
@@ -174,7 +177,7 @@ export function WorkoutSettingPanel({
                   </div>
 
                   {/* 消去 */}
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>消去</span>
                     <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
                       <button
@@ -191,6 +194,29 @@ export function WorkoutSettingPanel({
                         title="すべてのペインを全消去"
                       >
                         <CopyX size={16} className="ws-icon" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 均等 */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>均等</span>
+                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={hasFocus ? onEqualizeWidths : undefined}
+                        disabled={!hasFocus}
+                        title="幅を均等化"
+                      >
+                        <ChevronsLeftRightEllipsis size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={hasFocus ? onEqualizeHeights : undefined}
+                        disabled={!hasFocus}
+                        title="高さを均等化"
+                      >
+                        <ChevronsLeftRightEllipsis size={16} className="ws-icon" style={{ transform: 'rotate(90deg)' }} />
                       </button>
                     </div>
                   </div>

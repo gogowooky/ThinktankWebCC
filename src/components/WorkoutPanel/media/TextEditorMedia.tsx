@@ -289,11 +289,11 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, editorSettings }
   }, []);
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
     setIsDragOver(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
+    e.preventDefault();
+    e.stopPropagation();
 
     for (const file of files) {
       showToast(`アップロード中: ${file.name}`, 'success');

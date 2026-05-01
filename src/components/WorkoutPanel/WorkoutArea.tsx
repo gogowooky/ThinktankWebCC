@@ -26,6 +26,7 @@ interface Props {
   isFocused:         boolean;
   isDragging:        boolean;
   isDropTarget:      boolean;
+  isExternalDrag:    boolean;
   onFocus:           () => void;
   onDragStart:       (e: React.MouseEvent, areaId: string) => void;
   onDragEnter:       (areaId: string) => void;
@@ -35,7 +36,7 @@ interface Props {
 }
 
 export function WorkoutArea({
-  area, vault, isFocused, isDragging, isDropTarget,
+  area, vault, isFocused, isDragging, isDropTarget, isExternalDrag,
   onFocus, onDragStart, onDragEnter, onDragLeave, onMediaTypeChange, onClose,
 }: Props) {
   const [isDirty,         setIsDirty]         = useState(false);
@@ -51,6 +52,21 @@ export function WorkoutArea({
     }
     t.LoadContent().then(() => setLoadedResourceId(area.ResourceID));
   }, [area.ResourceID]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // タイトルへのD&Dで表示内容を差し替える
+  const handleResourceDrop = useCallback((thinkId: string) => {
+    const think = vault.GetThink(thinkId);
+    let mediaType: import('../../types').MediaType = 'texteditor';
+    if (think) {
+      switch (think.ContentType) {
+        case 'thought': mediaType = 'datagrid'; break;
+        case 'chat':    mediaType = 'chat';     break;
+        default:        mediaType = 'texteditor'; break;
+      }
+    }
+    const title = think?.Name ?? thinkId;
+    area.OpenThink(thinkId, mediaType, title);
+  }, [vault, area]);
 
   // 保存ハンドラー（TextEditorMedia から呼ばれる）
   const handleSave = useCallback((content: string) => {
@@ -131,6 +147,7 @@ export function WorkoutArea({
         onDragStart={e => onDragStart(e, area.ID)}
         onMediaTypeChange={type => onMediaTypeChange(area.ID, type)}
         onClose={() => onClose(area.ID)}
+        onResourceDrop={handleResourceDrop}
       />
 
       {/* メディアコンテンツ */}
@@ -139,6 +156,13 @@ export function WorkoutArea({
           ? renderMedia()
           : <div className="workout-area__loading">読み込み中…</div>
         }
+        {/* Monaco の dragover 横取りを防ぐシールド */}
+        {isExternalDrag && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            zIndex: 10, pointerEvents: 'auto',
+          }} />
+        )}
       </div>
 
     </div>

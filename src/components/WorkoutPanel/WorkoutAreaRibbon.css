@@ -20,6 +20,12 @@
   border-left-color: #7aa2f7;
 }
 
+/* アイテムD&Dドロップ受け入れ中 */
+.workout-area-ribbon--drop-target {
+  background: color-mix(in srgb, var(--workout-ribbon-bg) 60%, #4ec9b0 40%);
+  border-left-color: #4ec9b0;
+}
+
 /* ドラッグハンドル */
 .workout-area-ribbon__drag {
   display: flex;
