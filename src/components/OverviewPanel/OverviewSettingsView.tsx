@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Save, Library, X } from 'lucide-react';
+import { Save, Library, X, ChevronDown, ChevronRight } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 import './OverviewSettingsView.css';
@@ -21,6 +21,8 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
   const [saved,          setSaved]          = useState(false);
   const [saving,         setSaving]         = useState(false);
   const [contentLoaded,  setContentLoaded]  = useState(false);
+  const [isBasicOpen,    setIsBasicOpen]    = useState(true);
+  const [isReferenceOpen,setIsReferenceOpen]= useState(true);
 
   // think が切り替わったら入力値リセット & コンテンツをロード
   useEffect(() => {
@@ -75,82 +77,92 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
     <div className="ov-settings-view">
 
       <section className="ov-settings-section">
-        <h2 className="ov-settings-section__title">基本情報</h2>
-        <dl className="ov-settings-dl">
+        <div className="ov-settings-section__header" onClick={() => setIsBasicOpen(v => !v)}>
+          {isBasicOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="ov-settings-section__title">基本情報</h2>
+        </div>
+        {isBasicOpen && (
+          <dl className="ov-settings-dl">
 
-          <dt>タイトル</dt>
-          <dd>
-            <div className="ov-settings-field">
-              <input
-                className="ov-settings-input"
-                type="text"
-                value={titleValue}
-                placeholder="（無題）"
-                onChange={e => { setTitleValue(e.target.value.slice(0, 100)); setSaved(false); }}
-                onKeyDown={handleKeyDown}
-                spellCheck={false}
-              />
-              <button
-                className={`ov-settings-save-btn${saved ? ' ov-settings-save-btn--saved' : ''}`}
-                onClick={handleSaveTitle}
-                disabled={saving || !titleValue.trim()}
-                title="保存"
-                aria-label="保存"
-              >
-                <Save size={12} />
-              </button>
-              <button
-                className="ov-settings-clear-btn"
-                onClick={onClear}
-                title="Thoughtをクリア"
-                aria-label="Thoughtをクリア"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          </dd>
+            <dt>タイトル</dt>
+            <dd>
+              <div className="ov-settings-field">
+                <input
+                  className="ov-settings-input"
+                  type="text"
+                  value={titleValue}
+                  placeholder="（無題）"
+                  onChange={e => { setTitleValue(e.target.value.slice(0, 100)); setSaved(false); }}
+                  onKeyDown={handleKeyDown}
+                  spellCheck={false}
+                />
+                <button
+                  className={`ov-settings-save-btn${saved ? ' ov-settings-save-btn--saved' : ''}`}
+                  onClick={handleSaveTitle}
+                  disabled={saving || !titleValue.trim()}
+                  title="保存"
+                  aria-label="保存"
+                >
+                  <Save size={12} />
+                </button>
+                <button
+                  className="ov-settings-clear-btn"
+                  onClick={onClear}
+                  title="Thoughtをクリア"
+                  aria-label="Thoughtをクリア"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </dd>
 
-          <dt>ID</dt>
-          <dd><code>{think.ID}</code></dd>
-          <dt>作成日</dt>
-          <dd>{think.ID.slice(0, 10)}</dd>
-          <dt>更新日</dt>
-          <dd>{think.UpdatedAt ? think.UpdatedAt.slice(0, 10) : '—'}</dd>
-          <dt>種別</dt>
-          <dd><code>{think.ContentType}</code></dd>
-        </dl>
+            <dt>ID</dt>
+            <dd><code>{think.ID}</code></dd>
+            <dt>作成日</dt>
+            <dd>{think.ID.slice(0, 10)}</dd>
+            <dt>更新日</dt>
+            <dd>{think.UpdatedAt ? think.UpdatedAt.slice(0, 10) : '—'}</dd>
+            <dt>種別</dt>
+            <dd><code>{think.ContentType}</code></dd>
+          </dl>
+        )}
       </section>
 
       <section className="ov-settings-section">
-        <h2 className="ov-settings-section__title">参照 Think</h2>
-        <dl className="ov-settings-dl">
-          <dt>Think 数</dt>
-          <dd>{thinks.length} 件</dd>
-          {filterStr && (
-            <>
-              <dt>Filter</dt>
-              <dd><code>{filterStr}</code></dd>
-            </>
-          )}
-          {thinkIds.length > 0 && (
-            <>
-              <dt>ID リスト</dt>
-              <dd>
-                <ul className="ov-settings-id-list">
-                  {thinkIds.map(id => {
-                    const t = vault.GetThink(id);
-                    return (
-                      <li key={id}>
-                        <code className="ov-settings-id-list__id">{id.slice(0, 10)}</code>
-                        {t && <span className="ov-settings-id-list__name">{t.Name || '（無題）'}</span>}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </dd>
-            </>
-          )}
-        </dl>
+        <div className="ov-settings-section__header" onClick={() => setIsReferenceOpen(v => !v)}>
+          {isReferenceOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="ov-settings-section__title">参照 Think</h2>
+        </div>
+        {isReferenceOpen && (
+          <dl className="ov-settings-dl">
+            <dt>Think 数</dt>
+            <dd>{thinks.length} 件</dd>
+            {filterStr && (
+              <>
+                <dt>Filter</dt>
+                <dd><code>{filterStr}</code></dd>
+              </>
+            )}
+            {thinkIds.length > 0 && (
+              <>
+                <dt>ID リスト</dt>
+                <dd>
+                  <ul className="ov-settings-id-list">
+                    {thinkIds.map(id => {
+                      const t = vault.GetThink(id);
+                      return (
+                        <li key={id}>
+                          <code className="ov-settings-id-list__id">{id.slice(0, 10)}</code>
+                          {t && <span className="ov-settings-id-list__name">{t.Name || '（無題）'}</span>}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </dd>
+              </>
+            )}
+          </dl>
+        )}
       </section>
 
       {(think.Keywords || think.RelatedIDs) && (

@@ -47,6 +47,26 @@
   border-bottom: 1px solid rgba(57, 73, 171, 0.15);
 }
 
+.ov-settings-section__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(57, 73, 171, 0.15);
+  color: rgba(57, 73, 171, 0.55);
+}
+
+.ov-settings-section__header .ov-settings-section__title {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.ov-settings-section__header:hover .ov-settings-section__title {
+  color: rgba(57, 73, 171, 0.8);
+}
+
 /* ── 定義リスト ── */
 
 .ov-settings-dl {

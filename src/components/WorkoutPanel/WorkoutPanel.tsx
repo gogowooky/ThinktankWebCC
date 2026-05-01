@@ -226,6 +226,10 @@ export function WorkoutPanel({ app }: Props) {
     if (panel.FocusedAreaId) panel.RemoveArea(panel.FocusedAreaId);
   }, [panel]);
 
+  const handleClearAll = useCallback(() => {
+    panel.ClearAll();
+  }, [panel]);
+
   const handleDragStart = useCallback((e: React.MouseEvent, areaId: string) => {
     e.preventDefault();
     const area  = panel.GetArea(areaId);
@@ -325,6 +329,7 @@ export function WorkoutPanel({ app }: Props) {
           onAddTop={handleAddTop}
           onAddBottom={handleAddBelow}
           onRemoveFocused={handleRemoveFocused}
+          onClearAll={handleClearAll}
         />
       </PanelArea>
       {activeSettings !== null && (

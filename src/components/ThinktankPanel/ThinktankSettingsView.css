@@ -26,6 +26,45 @@
   border-bottom: 1px solid var(--border);
 }
 
+.tt-settings-section__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.tt-settings-section__header .tt-settings-section__title {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.tt-settings-section__header:hover .tt-settings-section__title {
+  color: var(--text-secondary, #999);
+}
+
+.tt-settings-sub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.tt-settings-sub-section__title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
 .tt-settings-section__desc {
   font-size: 11px;
   color: var(--text-muted);

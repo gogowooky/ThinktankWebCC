@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Save, Monitor, Globe, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock } from 'lucide-react';
+import { Save, Monitor, Globe, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
 import type { SyncState } from '../../types';
 import './ThinktankSettingsView.css';
@@ -59,9 +59,11 @@ function saveValue(name: string): string[] {
 
 export function ThinktankSettingsView({ syncState = 'synced' }: Props) {
   const mode = StorageManager.instance.mode;
-  const [value,   setValue]   = useState(loadValue);
-  const [history, setHistory] = useState(loadHistory);
-  const [saved,   setSaved]   = useState(false);
+  const [value,        setValue]        = useState(loadValue);
+  const [history,      setHistory]      = useState(loadHistory);
+  const [saved,        setSaved]        = useState(false);
+  const [isStatusOpen, setIsStatusOpen] = useState(true);
+  const [isVaultOpen,  setIsVaultOpen]  = useState(true);
 
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';
@@ -80,69 +82,81 @@ export function ThinktankSettingsView({ syncState = 'synced' }: Props) {
   return (
     <div className="tt-settings-view">
       <section className="tt-settings-section">
-        <h2 className="tt-settings-section__title">状態</h2>
-        <dl className="tt-settings-status">
-          <dt className="tt-settings-status__label">モード</dt>
-          <dd className="tt-settings-status__value">
-            <span className="tt-settings-status__badge tt-settings-status__badge--mode">
-              {mode === 'local' ? <Monitor size={12} /> : <Globe size={12} />}
-              {mode === 'local' ? 'Local' : 'PWA'}
-            </span>
-          </dd>
-          <dt className="tt-settings-status__label">同期</dt>
-          <dd className="tt-settings-status__value">
-            <span className={`tt-settings-status__badge tt-settings-status__badge--sync tt-settings-status__badge--${syncState}`}>
-              <SyncIcon state={syncState} />
-              {SYNC_LABEL[syncState]}
-            </span>
-          </dd>
-        </dl>
-      </section>
-
-      <section className="tt-settings-section">
-        <h2 className="tt-settings-section__title">保管庫名</h2>
-        <p className="tt-settings-section__desc">
-          データの保存先に使われる識別名です。
-        </p>
-
-        <div className="tt-settings-field">
-          <datalist id={DATALIST_ID}>
-            {history.map(h => <option key={h} value={h} />)}
-          </datalist>
-          <input
-            className="tt-settings-input"
-            type="text"
-            list={DATALIST_ID}
-            value={value}
-            placeholder="vault"
-            onChange={e => { setValue(e.target.value); setSaved(false); }}
-            onKeyDown={handleKeyDown}
-            spellCheck={false}
-          />
-          <button
-            className={`tt-settings-save-btn${saved ? ' tt-settings-save-btn--saved' : ''}`}
-            onClick={handleSave}
-            title="保存"
-            aria-label="保存"
-          >
-            <Save size={13} />
-            <span>{saved ? '保存済み' : '保存'}</span>
-          </button>
+        <div className="tt-settings-section__header" onClick={() => setIsStatusOpen(v => !v)}>
+          {isStatusOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="tt-settings-section__title">状態</h2>
         </div>
+        {isStatusOpen && (
+          <dl className="tt-settings-status">
+            <dt className="tt-settings-status__label">モード</dt>
+            <dd className="tt-settings-status__value">
+              <span className="tt-settings-status__badge tt-settings-status__badge--mode">
+                {mode === 'local' ? <Monitor size={12} /> : <Globe size={12} />}
+                {mode === 'local' ? 'Local' : 'PWA'}
+              </span>
+            </dd>
+            <dt className="tt-settings-status__label">同期</dt>
+            <dd className="tt-settings-status__value">
+              <span className={`tt-settings-status__badge tt-settings-status__badge--sync tt-settings-status__badge--${syncState}`}>
+                <SyncIcon state={syncState} />
+                {SYNC_LABEL[syncState]}
+              </span>
+            </dd>
+          </dl>
+        )}
       </section>
 
       <section className="tt-settings-section">
-        <h2 className="tt-settings-section__title">保存先</h2>
-        <dl className="tt-settings-paths">
-          <dt className="tt-settings-paths__label">Local</dt>
-          <dd className="tt-settings-paths__value">
-            <code>ThinktankLocal/<strong>{vaultName}</strong>/&#123;contentType&#125;/&#123;id&#125;.md</code>
-          </dd>
-          <dt className="tt-settings-paths__label">BigQuery</dt>
-          <dd className="tt-settings-paths__value">
-            <code><span className="tt-settings-paths__dataset">thinktank</span>.<strong>{vaultName}</strong></code>
-          </dd>
-        </dl>
+        <div className="tt-settings-section__header" onClick={() => setIsVaultOpen(v => !v)}>
+          {isVaultOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="tt-settings-section__title">保管庫名</h2>
+        </div>
+        {isVaultOpen && (
+          <>
+            <p className="tt-settings-section__desc">
+              データの保存先に使われる識別名です。
+            </p>
+
+            <div className="tt-settings-field">
+              <datalist id={DATALIST_ID}>
+                {history.map(h => <option key={h} value={h} />)}
+              </datalist>
+              <input
+                className="tt-settings-input"
+                type="text"
+                list={DATALIST_ID}
+                value={value}
+                placeholder="vault"
+                onChange={e => { setValue(e.target.value); setSaved(false); }}
+                onKeyDown={handleKeyDown}
+                spellCheck={false}
+              />
+              <button
+                className={`tt-settings-save-btn${saved ? ' tt-settings-save-btn--saved' : ''}`}
+                onClick={handleSave}
+                title="保存"
+                aria-label="保存"
+              >
+                <Save size={13} />
+                <span>{saved ? '保存済み' : '保存'}</span>
+              </button>
+            </div>
+
+            <div className="tt-settings-sub-section">
+              <h3 className="tt-settings-sub-section__title">保存先</h3>
+              <dl className="tt-settings-paths">
+                <dt className="tt-settings-paths__label">Local</dt>
+                <dd className="tt-settings-paths__value">
+                  <code>ThinktankLocal/<strong>{vaultName}</strong>/&#123;contentType&#125;/&#123;id&#125;.md</code>
+                </dd>
+                <dt className="tt-settings-paths__label">BigQuery</dt>
+                <dd className="tt-settings-paths__value">
+                  <code><span className="tt-settings-paths__dataset">thinktank</span>.<strong>{vaultName}</strong></code>
+                </dd>
+              </dl>
+            </div>
+          </>
+        )}
       </section>
     </div>
   );
