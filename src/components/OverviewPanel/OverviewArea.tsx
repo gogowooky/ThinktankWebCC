@@ -15,7 +15,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Brain, CalendarDays, CalendarClock } from 'lucide-react';
+import { Library, CalendarDays, CalendarClock, X } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
@@ -253,7 +253,6 @@ export function OverviewArea({ app, showSettings }: Props) {
         allVaultChecked={allVaultChecked}
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
-        hasChatMessages={chatMessages.length > 0}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}
@@ -262,7 +261,6 @@ export function OverviewArea({ app, showSettings }: Props) {
         onToggleAllVault={handleToggleAllVault}
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
-        onSaveChat={handleSaveChat}
       />
 
       {/* ── カラムソートダイアログ ─────────────────────────────── */}
@@ -283,11 +281,22 @@ export function OverviewArea({ app, showSettings }: Props) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <Brain size={11} className="overview-area__strip-icon" />
-        {think
-          ? <span className="overview-area__strip-name">{think.Name || '（無題）'}</span>
-          : <span className="overview-area__strip-placeholder">Thought をドロップして選択</span>
-        }
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1 }}>
+          <Library size={11} className="overview-area__strip-icon" />
+          {think
+            ? <span className="overview-area__strip-name">{think.Name || '（無題）'}</span>
+            : <span className="overview-area__strip-placeholder">Thought をドロップして選択</span>
+          }
+        </div>
+        {think && (
+          <button
+            className="overview-area__strip-clear-btn"
+            onClick={(e) => { e.stopPropagation(); panel.ClearThought(); }}
+            title="選択解除"
+          >
+            <X size={12} />
+          </button>
+        )}
       </div>
 
       {/* ── フィルターバー（Think一覧モードのみ）────────────────── */}

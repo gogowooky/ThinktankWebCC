@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, Filter, BookOpen, ListChecks, CalendarRange, SlidersHorizontal, Save } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, LibrarySquare, ListChecks, List, CalendarDays, ArrowDownAZ } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -23,14 +23,11 @@ interface Props {
   onToggleAllVault:      () => void;
   onToggleDateFilter:    () => void;
   onToggleColumnDialog:  () => void;
-  hasChatMessages?:      boolean;
-  onSaveChat?:           () => void;
 }
 
 export function ThinktankMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showDateFilter, showColumnDialog,
-  hasChatMessages, onSaveChat,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
@@ -64,7 +61,7 @@ export function ThinktankMenuRibbon({
         onClick={onToggleAllVault}
         title={allVaultChecked ? '全チェックをクリア' : '全アイテムをチェック（非表示含む）'}
       >
-        <ListChecks size={14} />
+        {allVaultChecked ? <ListChecks size={14} /> : <List size={14} />}
       </button>
 
       {/* CheckSelect: チェックのみ表示 */}
@@ -74,7 +71,7 @@ export function ThinktankMenuRibbon({
         title="チェック済みアイテムのみ表示"
         disabled={!hasChecked && !showCheckedOnly}
       >
-        <Filter size={14} />
+        <ListCheck size={14} />
       </button>
 
       {/* DateFilter: 作成日(ID)・更新日フィルターの表示切替 */}
@@ -83,7 +80,7 @@ export function ThinktankMenuRibbon({
         onClick={onToggleDateFilter}
         title={showDateFilter ? '日付フィルターを非表示' : '日付フィルターを表示'}
       >
-        <CalendarRange size={14} />
+        <CalendarDays size={14} />
       </button>
 
       {/* ColumnSort: 表示項目とソート設定 */}
@@ -92,7 +89,7 @@ export function ThinktankMenuRibbon({
         onClick={onToggleColumnDialog}
         title="表示項目とソート"
       >
-        <SlidersHorizontal size={14} />
+        <ArrowDownAZ size={14} />
       </button>
 
       {/* ChecktoThought: Thought作成 */}
@@ -102,7 +99,7 @@ export function ThinktankMenuRibbon({
         title="チェックアイテムからthoughtを作成"
         disabled={!hasChecked}
       >
-        <BookOpen size={14} />
+        <LibrarySquare size={14} />
       </button>
 
       {/* CheckDelete: 削除 */}
@@ -114,18 +111,6 @@ export function ThinktankMenuRibbon({
       >
         <Trash2 size={14} />
       </button>
-
-      {/* SaveChat: チャット保存 */}
-      {onSaveChat && (
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onSaveChat}
-          disabled={!hasChatMessages}
-          title="チャット内容をChatデータとして保存"
-        >
-          <Save size={14} />
-        </button>
-      )}
 
       <div className="menu-ribbon__spacer" />
 

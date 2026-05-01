@@ -6,8 +6,8 @@
 
 import { useCallback } from 'react';
 import {
-  CheckSquare, Square, MinusCircle, Filter, BookOpen,
-  ListChecks, CalendarRange, SlidersHorizontal, Save,
+  CheckSquare, Square, FileMinus, ListCheck, LibrarySquare,
+  ListChecks, List, CalendarDays, ArrowDownAZ,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './OverviewMenuRibbon.css';
@@ -27,14 +27,11 @@ interface Props {
   onToggleAllVault:     () => void;
   onToggleDateFilter:   () => void;
   onToggleColumnDialog: () => void;
-  hasChatMessages?:     boolean;
-  onSaveChat?:          () => void;
 }
 
 export function OverviewMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showDateFilter, showColumnDialog,
-  hasChatMessages, onSaveChat,
   onCheckAll, onClearChecks, onExcludeChecked,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
@@ -66,7 +63,7 @@ export function OverviewMenuRibbon({
         onClick={onToggleAllVault}
         title={allVaultChecked ? '全チェックをクリア' : '全アイテムをチェック（非表示含む）'}
       >
-        <ListChecks size={14} />
+        {allVaultChecked ? <ListChecks size={14} /> : <List size={14} />}
       </button>
 
       <button
@@ -75,7 +72,7 @@ export function OverviewMenuRibbon({
         title="チェック済みアイテムのみ表示"
         disabled={!hasChecked && !showCheckedOnly}
       >
-        <Filter size={14} />
+        <ListCheck size={14} />
       </button>
 
       <button
@@ -83,7 +80,7 @@ export function OverviewMenuRibbon({
         onClick={onToggleDateFilter}
         title={showDateFilter ? '日付フィルターを非表示' : '日付フィルターを表示'}
       >
-        <CalendarRange size={14} />
+        <CalendarDays size={14} />
       </button>
 
       <button
@@ -91,7 +88,7 @@ export function OverviewMenuRibbon({
         onClick={onToggleColumnDialog}
         title="表示項目とソート"
       >
-        <SlidersHorizontal size={14} />
+        <ArrowDownAZ size={14} />
       </button>
 
       <button
@@ -100,7 +97,7 @@ export function OverviewMenuRibbon({
         title="チェックアイテムからthoughtを作成"
         disabled={!hasChecked}
       >
-        <BookOpen size={14} />
+        <LibrarySquare size={14} />
       </button>
 
       <button
@@ -109,20 +106,8 @@ export function OverviewMenuRibbon({
         title="チェック中のアイテムをThoughtから除外"
         disabled={!hasChecked}
       >
-        <MinusCircle size={14} />
+        <FileMinus size={14} />
       </button>
-
-      {/* SaveChat: チャット保存 */}
-      {onSaveChat && (
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onSaveChat}
-          disabled={!hasChatMessages}
-          title="チャット内容をChatデータとして保存（選択中Thoughtに追加）"
-        >
-          <Save size={14} />
-        </button>
-      )}
 
       <div className="menu-ribbon__spacer" />
 

@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { Save, Brain, X } from 'lucide-react';
+import { Save, Library, X } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 import './OverviewSettingsView.css';
@@ -61,7 +61,7 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
   if (!think) {
     return (
       <div className="ov-settings-view ov-settings-view--empty">
-        <Brain size={24} className="ov-settings-view__empty-icon" />
+        <Library size={24} className="ov-settings-view__empty-icon" />
         <span>Thoughtをドロップして選択してください</span>
       </div>
     );

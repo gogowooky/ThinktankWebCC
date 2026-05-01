@@ -7,7 +7,7 @@
  */
 
 import {
-  Sparkles, LayoutList, Search, Brain, Settings,
+  Ghost, Files, SearchCheck, Library, Settings,
 } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
@@ -28,10 +28,10 @@ const MODE_BUTTONS: {
   icon: React.ReactNode;
   label: string;
 }[] = [
-  { mode: 'filter',  icon: <LayoutList size={16} />,         label: 'Think一覧' },
-  { mode: 'search',  icon: <Search   size={16} />,          label: '全文検索（内容）' },
-  { mode: 'thoughts',icon: <Brain    size={16} />,          label: 'Thought一覧' },
-  { mode: 'ai',      icon: <Sparkles size={16} />,          label: 'AI相談' },
+  { mode: 'filter',  icon: <Files      size={16} />,         label: 'Think一覧' },
+  { mode: 'search',  icon: <SearchCheck size={16} />,          label: '全文検索（内容）' },
+  { mode: 'thoughts',icon: <Library     size={16} />,          label: 'Thought一覧' },
+  { mode: 'ai',      icon: <Ghost         size={16} />,          label: 'AI相談' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────

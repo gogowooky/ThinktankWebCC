@@ -7,31 +7,18 @@
  *   - 下にエリア追加（フォーカスペインを横分割）
  */
 
+import { LogOut } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import './WorkoutPanelRibbon.css';
 
 // ── 縦分割アイコン（右に追加） ────────────────────────────────────────
 function SplitRightIcon() {
-  return (
-    <svg width="20" height="14" viewBox="0 0 20 14" fill="currentColor">
-      <rect x="0" y="0" width="8"  height="14" rx="1" opacity="0.85" />
-      <rect x="12" y="0" width="8" height="14" rx="1" opacity="0.55" />
-      {/* 分割線 */}
-      <line x1="10" y1="2" x2="10" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-    </svg>
-  );
+  return <LogOut size={16} />;
 }
 
 // ── 横分割アイコン（下に追加） ────────────────────────────────────────
 function SplitBelowIcon() {
-  return (
-    <svg width="20" height="14" viewBox="0 0 20 14" fill="currentColor">
-      <rect x="0" y="0"  width="20" height="5"  rx="1" opacity="0.85" />
-      <rect x="0" y="9"  width="20" height="5"  rx="1" opacity="0.55" />
-      {/* 分割線 */}
-      <line x1="2" y1="7" x2="18" y2="7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-    </svg>
-  );
+  return <LogOut size={16} style={{ transform: 'rotate(90deg)' }} />;
 }
 
 interface Props {

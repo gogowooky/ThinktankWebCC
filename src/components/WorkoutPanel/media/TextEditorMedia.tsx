@@ -24,7 +24,56 @@ function reconstructContent(think: NonNullable<MediaProps['think']>, body: strin
   return body ? `${firstLine}\n${body}` : firstLine;
 }
 
-export function TextEditorMedia({ think, onSave, onDirtyChange }: MediaProps) {
+let isMarkdownFoldingRegistered = false;
+
+function registerMarkdownFolding(monaco: any) {
+  if (isMarkdownFoldingRegistered) return;
+  isMarkdownFoldingRegistered = true;
+
+  monaco.languages.registerFoldingRangeProvider('markdown', {
+    provideFoldingRanges: (model: any) => {
+      const ranges: any[] = [];
+      const linesCount = model.getLineCount();
+      const stack: { level: number; startLine: number }[] = [];
+
+      for (let i = 1; i <= linesCount; i++) {
+        const line = model.getLineContent(i);
+        const match = line.match(/^(#+)\s/);
+        
+        if (match) {
+          const level = match[1].length;
+          
+          while (stack.length > 0 && stack[stack.length - 1].level >= level) {
+            const popped = stack.pop()!;
+            const endLine = i - 1;
+            if (endLine > popped.startLine) {
+              ranges.push({
+                start: popped.startLine,
+                end: endLine,
+                kind: monaco.languages.FoldingRangeKind.Region
+              });
+            }
+          }
+          stack.push({ level, startLine: i });
+        }
+      }
+
+      while (stack.length > 0) {
+        const popped = stack.pop()!;
+        if (linesCount > popped.startLine) {
+          ranges.push({
+            start: popped.startLine,
+            end: linesCount,
+            kind: monaco.languages.FoldingRangeKind.Region
+          });
+        }
+      }
+      return ranges;
+    }
+  });
+}
+
+export function TextEditorMedia({ think, onSave, onDirtyChange, editorSettings }: MediaProps) {
   const savedRef  = useRef(think ? extractBody(think.Content) : '');
   const editorRef = useRef<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -52,13 +101,178 @@ export function TextEditorMedia({ think, onSave, onDirtyChange }: MediaProps) {
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
+    registerMarkdownFolding(monaco);
+    decorationsCollectionRef.current = editor.createDecorationsCollection();
+    
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (!think) return;
       const body = editor.getValue();
       savedRef.current = body;
       onSave(reconstructContent(think, body));
     });
-  }, [onSave]);
+
+    updateDecorations();
+  }, [onSave, think]); // updateDecorations は後で依存に追加
+
+  // ── 動的スタイルの生成 ───────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!editorSettings) return;
+
+    // 動的テーマの適用
+    if (editorRef.current) {
+      const monaco = (window as any).monaco;
+      if (monaco) {
+        monaco.editor.defineTheme('custom-markdown-theme', {
+          base: 'vs-dark',
+          inherit: true,
+          rules: [
+            { token: '', foreground: editorSettings.foreground.replace('#', '') }
+          ],
+          colors: {
+            'editor.background': editorSettings.background
+          }
+        });
+        monaco.editor.setTheme('custom-markdown-theme');
+      }
+    }
+
+    // 見出し用CSSの注入
+    let styleEl = document.getElementById('text-editor-custom-styles');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'text-editor-custom-styles';
+      document.head.appendChild(styleEl);
+    }
+
+    const cssRules = editorSettings.headingStyles.map((style, index) => {
+      const level = index + 1;
+      return `
+        .custom-heading-${level} {
+          color: ${style.color} !important;
+          ${style.bold ? 'font-weight: bold !important;' : ''}
+          ${style.underline ? 'text-decoration: underline !important;' : ''}
+        }
+      `;
+    }).join('\n');
+
+    styleEl.innerHTML = cssRules;
+
+    updateDecorations();
+
+  }, [editorSettings]);
+
+  // ── 見出しデコレーションの更新 ──────────────────────────────────────────
+
+  const decorationsCollectionRef = useRef<any>(null);
+
+  const updateDecorations = useCallback(() => {
+    const editor = editorRef.current;
+    if (!editor || !decorationsCollectionRef.current || !editorSettings) return;
+
+    const model = editor.getModel();
+    if (!model) return;
+
+    // --- ハイライトグループの動的スタイル注入 ---
+    let highlightStyleEl = document.getElementById('text-editor-highlight-styles');
+    if (!highlightStyleEl) {
+      highlightStyleEl = document.createElement('style');
+      highlightStyleEl.id = 'text-editor-highlight-styles';
+      document.head.appendChild(highlightStyleEl);
+    }
+    const highlightStylesCss = editorSettings.highlightStyles.map((style, index) => {
+      return `.custom-highlight-g${index + 1} {
+  background-color: ${style.backgroundColor};
+  color: ${style.color} !important;
+  border-radius: 2px;
+}`;
+    }).join('\n');
+    highlightStyleEl.textContent = highlightStylesCss;
+
+    const newDecorations: any[] = [];
+    const linesCount = model.getLineCount();
+
+    for (let i = 1; i <= linesCount; i++) {
+      const lineContent = model.getLineContent(i);
+      
+      // 見出しの装飾
+      const match = lineContent.match(/^(\s{0,3})(#{1,5})\s/);
+      if (match) {
+        const level = match[2].length;
+        const style = editorSettings.headingStyles[level - 1];
+        
+        const minimapOptions = style?.color ? {
+          color: style.color,
+          position: 1 // (window as any).monaco.editor.MinimapPosition.Inline
+        } : undefined;
+
+        newDecorations.push({
+          range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
+          options: {
+            isWholeLine: true,
+            inlineClassName: `custom-heading-${level}`,
+            minimap: minimapOptions
+          }
+        });
+      }
+
+      // 全角スペースの装飾
+      if (editorSettings.showFullWidthSpace) {
+        let regex = /\u3000/g;
+        let spaceMatch;
+        while ((spaceMatch = regex.exec(lineContent)) !== null) {
+          const startCol = spaceMatch.index + 1;
+          const endCol = startCol + 1;
+          newDecorations.push({
+            range: new (window as any).monaco.Range(i, startCol, i, endCol),
+            options: {
+              inlineClassName: 'full-width-space-decoration'
+            }
+          });
+        }
+      }
+
+      // 単語ハイライトの装飾（複数グループ対応）
+      if (editorSettings.highlightWord) {
+        // カンマでグループ分割 (最大5つ)
+        const groups = editorSettings.highlightWord.split(',').slice(0, 5);
+        groups.forEach((groupStr, groupIndex) => {
+          // 半角スペースで単語分割
+          const words = groupStr.split(' ').map(w => w.trim()).filter(w => w.length > 0);
+          if (words.length === 0) return;
+
+          const groupStyle = editorSettings.highlightStyles[groupIndex];
+
+          words.forEach(word => {
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            let regex = new RegExp(escapedWord, 'g');
+            let wordMatch;
+            while ((wordMatch = regex.exec(lineContent)) !== null) {
+              const startCol = wordMatch.index + 1;
+              const endCol = startCol + word.length;
+              newDecorations.push({
+                range: new (window as any).monaco.Range(i, startCol, i, endCol),
+                options: {
+                  inlineClassName: `custom-highlight-g${groupIndex + 1}`,
+                  minimap: groupStyle?.backgroundColor ? {
+                    color: groupStyle.backgroundColor,
+                    position: 1 // Inline
+                  } : undefined
+                }
+              });
+            }
+          });
+        });
+      }
+    }
+
+    decorationsCollectionRef.current.set(newDecorations);
+  }, [editorSettings]);
+
+  const handleChange = useCallback((value: string | undefined) => {
+    onDirtyChange((value ?? '') !== savedRef.current);
+    updateDecorations();
+  }, [onDirtyChange, updateDecorations]);
 
   // ── ファイルドロップ ──────────────────────────────────────────────────────
 
@@ -98,10 +312,6 @@ export function TextEditorMedia({ think, onSave, onDirtyChange }: MediaProps) {
     }
   }, [showToast, insertAtCursor]);
 
-  const handleChange = useCallback((value: string | undefined) => {
-    onDirtyChange((value ?? '') !== savedRef.current);
-  }, [onDirtyChange]);
-
   if (!think) {
     return (
       <div className="media-empty">
@@ -121,21 +331,31 @@ export function TextEditorMedia({ think, onSave, onDirtyChange }: MediaProps) {
         key={think.ID}
         defaultValue={extractBody(think.Content)}
         language="markdown"
-        theme="vs"
+        theme={editorSettings ? "custom-markdown-theme" : "vs-dark"}
         onMount={handleMount}
         onChange={handleChange}
         loading={<div className="text-editor-media__loading">エディタ読み込み中…</div>}
         options={{
-          minimap:            { enabled: false },
+          minimap:            { enabled: editorSettings?.minimap ?? false },
           fontSize:           13,
           lineHeight:         20,
-          lineNumbers:        'on',
-          wordWrap:           'on',
+          lineNumbers:        (editorSettings?.lineNumbers ?? true) ? 'on' : 'off',
+          wordWrap:           (editorSettings?.wordWrap ?? true) ? 'on' : 'off',
           scrollBeyondLastLine: false,
           fontFamily:         "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
           padding:            { top: 10, bottom: 10 },
           renderLineHighlight: 'gutter',
           smoothScrolling:    true,
+          folding:            true,
+          showFoldingControls: 'always',
+          unicodeHighlight: {
+            ambiguousCharacters: editorSettings?.unicodeHighlight ?? true,
+            invisibleCharacters: editorSettings?.unicodeHighlight ?? true,
+          },
+          bracketPairColorization: {
+            enabled: editorSettings?.bracketPairColorization ?? true
+          },
+          matchBrackets: (editorSettings?.bracketPairColorization ?? true) ? 'always' : 'never',
         }}
       />
 

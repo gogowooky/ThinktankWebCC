@@ -14,6 +14,7 @@ import type { TTVault } from '../../models/TTVault';
 import type { LayoutNode, SplitNodeData } from '../../views/TTWorkoutPanel';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { Splitter } from '../Layout/Splitter';
+import { PanelArea } from '../Layout/PanelArea';
 import { WorkoutHSplitter } from './WorkoutHSplitter';
 import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
@@ -173,60 +174,57 @@ export function WorkoutPanel({ app }: Props) {
     setSplitRatios(prev => ({ ...prev, [nodeId]: ratio }));
   }, []);
 
-  const _pickResource = useCallback(() => {
-    const thinks     = vault.GetThinks().filter(t => t.ContentType !== 'thought');
-    const resourceId = thinks[panel.Areas.length % Math.max(thinks.length, 1)]?.ID ?? '';
-    const title      = vault.GetThink(resourceId)?.Name ?? '新しいエリア';
-    return { resourceId, title };
-  }, [vault, panel]);
-
   // ── エリア分割 (focused pane split) ─────────────────────────────────
 
-  const handleSplitRight = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    if (panel.Layout === null) panel.AddFirst(resourceId, 'texteditor', title);
-    else panel.AddRight(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleSplitRight = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
+    else panel.AddRight(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
 
-  const handleSplitBelow = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    if (panel.Layout === null) panel.AddFirst(resourceId, 'texteditor', title);
-    else panel.AddBelow(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleSplitBelow = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
+    else panel.AddBelow(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
 
-  const handleSplitLeft = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    if (panel.Layout === null) panel.AddFirst(resourceId, 'texteditor', title);
-    else panel.AddLeft(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleSplitLeft = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
+    else panel.AddLeft(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
 
-  const handleSplitAbove = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    if (panel.Layout === null) panel.AddFirst(resourceId, 'texteditor', title);
-    else panel.AddAbove(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleSplitAbove = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    if (panel.Layout === null) panel.AddFirst(think.ID, 'texteditor', think.Name);
+    else panel.AddAbove(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
 
   // ── エリア追加 (panel-level edge addition) ─────────────────────────
 
-  const handleAddRight = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    panel.AddToRight(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleAddRight = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    panel.AddToRight(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
 
-  const handleAddBelow = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    panel.AddToBottom(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleAddBelow = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    panel.AddToBottom(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
 
-  const handleAddLeft = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    panel.AddToLeft(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleAddLeft = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    panel.AddToLeft(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
 
-  const handleAddTop = useCallback(() => {
-    const { resourceId, title } = _pickResource();
-    panel.AddToTop(resourceId, 'texteditor', title);
-  }, [_pickResource, panel]);
+  const handleAddTop = useCallback(async () => {
+    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    panel.AddToTop(think.ID, 'texteditor', think.Name);
+  }, [vault, panel]);
+
+  const handleRemoveFocused = useCallback(() => {
+    if (panel.FocusedAreaId) panel.RemoveArea(panel.FocusedAreaId);
+  }, [panel]);
 
   const handleDragStart = useCallback((e: React.MouseEvent, areaId: string) => {
     e.preventDefault();
@@ -309,23 +307,28 @@ export function WorkoutPanel({ app }: Props) {
       />
 
       {/* ── 設定パネル + Splitter ────────────────────────────── */}
+      <PanelArea
+        panelId="workout"
+        isOpen={activeSettings !== null}
+        width={settingsPanelWidth}
+      >
+        <WorkoutSettingPanel
+          activeSettings={activeSettings ?? lastSettingsRef.current}
+          panel={panel}
+          width={settingsPanelWidth}
+          onSplitLeft={handleSplitLeft}
+          onSplitRight={handleSplitRight}
+          onSplitAbove={handleSplitAbove}
+          onSplitBelow={handleSplitBelow}
+          onAddLeft={handleAddLeft}
+          onAddRight={handleAddRight}
+          onAddTop={handleAddTop}
+          onAddBottom={handleAddBelow}
+          onRemoveFocused={handleRemoveFocused}
+        />
+      </PanelArea>
       {activeSettings !== null && (
-        <>
-          <WorkoutSettingPanel
-            activeSettings={activeSettings}
-            panel={panel}
-            width={settingsPanelWidth}
-            onSplitLeft={handleSplitLeft}
-            onSplitRight={handleSplitRight}
-            onSplitAbove={handleSplitAbove}
-            onSplitBelow={handleSplitBelow}
-            onAddLeft={handleAddLeft}
-            onAddRight={handleAddRight}
-            onAddTop={handleAddTop}
-            onAddBottom={handleAddBelow}
-          />
-          <Splitter onResize={handleSettingsResize} />
-        </>
+        <Splitter onResize={handleSettingsResize} />
       )}
 
       {/* ── コンテンツ領域 ────────────────────────────────────── */}

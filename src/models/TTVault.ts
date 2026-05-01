@@ -177,6 +177,33 @@ export class TTVault extends TTCollection {
     return think;
   }
 
+  /** 新規の空Thinkを作成して保存する */
+  public async CreateBlankThink(contentType: ContentType, initialName: string = ''): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId = TTVault.generateUniqueId(existingIds);
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = contentType;
+    think.IsMetaOnly  = false;
+    think.setContentSilent(initialName);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: contentType,
+      fullContent: initialName,
+      keywords:    '',
+      relatedIds:  '',
+    });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
   /** チャット会話を TTThink(ContentType='chat') として保存する。
    *  thoughtId を渡すと、そのThoughtのIDリストに新しいThinkを追加する。 */
   public async CreateChatThink(content: string, thoughtId?: string): Promise<TTThink> {

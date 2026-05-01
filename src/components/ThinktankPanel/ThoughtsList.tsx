@@ -13,7 +13,7 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Brain, FileText, MessageSquare, Link, Table2, Globe, Activity, File } from 'lucide-react';
+import { Library, FileText, MessageSquare, Link, Table2, Globe, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -54,7 +54,7 @@ export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
 
 function getTypeIcon(contentType: string) {
   switch (contentType.toLowerCase()) {
-    case 'thought':  return <Brain       size={13} className="thoughts-list__icon" />;
+    case 'thought':  return <Library       size={13} className="thoughts-list__icon" />;
     case 'memo':     return <FileText    size={13} className="thoughts-list__icon" />;
     case 'chat':     return <MessageSquare size={13} className="thoughts-list__icon" />;
     case 'links':    return <Link        size={13} className="thoughts-list__icon" />;

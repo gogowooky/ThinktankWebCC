@@ -147,6 +147,63 @@ export class TTWorkoutPanel extends TTObject {
     this.Name = 'WorkoutPanel';
   }
 
+  // ── TextEditor 設定 ───────────────────────────────────────────────────
+
+  public EditorLineNumbers: boolean = true;
+  public EditorWordWrap: boolean = true;
+  public EditorMinimap: boolean = false;
+  public EditorShowFullWidthSpace: boolean = false;
+  public EditorUnicodeHighlight: boolean = true;
+  public EditorBracketPairColorization: boolean = true;
+  public EditorHighlightWord: string = '';
+  public EditorHighlightHistory: string[] = [];
+
+  public EditorBackground: string = '#1e1e1e';
+  public EditorForeground: string = '#d4d4d4';
+  public EditorHeadingStyles: { color: string; bold: boolean; underline: boolean }[] = [
+    { color: '#569cd6', bold: true, underline: false }, // H1
+    { color: '#4ec9b0', bold: true, underline: false }, // H2
+    { color: '#ce9178', bold: true, underline: false }, // H3
+    { color: '#dcdcaa', bold: true, underline: false }, // H4
+    { color: '#c586c0', bold: true, underline: false }, // H5
+  ];
+
+  public EditorHighlightStyles: { backgroundColor: string; color: string }[] = [
+    { backgroundColor: '#fff0b3', color: '#1a1a1a' }, // G1: 淡い黄
+    { backgroundColor: '#ffb3b3', color: '#1a1a1a' }, // G2: 淡い赤
+    { backgroundColor: '#b3e0ff', color: '#1a1a1a' }, // G3: 明るい水色
+    { backgroundColor: '#b3ffb3', color: '#1a1a1a' }, // G4: 淡い緑
+    { backgroundColor: '#e6b3ff', color: '#1a1a1a' }, // G5: 淡い紫
+  ];
+
+  public SetEditorLineNumbers(v: boolean) { this.EditorLineNumbers = v; this.NotifyUpdated(); }
+  public SetEditorWordWrap(v: boolean) { this.EditorWordWrap = v; this.NotifyUpdated(); }
+  public SetEditorMinimap(v: boolean) { this.EditorMinimap = v; this.NotifyUpdated(); }
+  public SetEditorShowFullWidthSpace(v: boolean) { this.EditorShowFullWidthSpace = v; this.NotifyUpdated(); }
+  public SetEditorUnicodeHighlight(v: boolean) { this.EditorUnicodeHighlight = v; this.NotifyUpdated(); }
+  public SetEditorBracketPairColorization(v: boolean) { this.EditorBracketPairColorization = v; this.NotifyUpdated(); }
+  public SetEditorHighlightWord(v: string) { this.EditorHighlightWord = v; this.NotifyUpdated(); }
+  public AddEditorHighlightHistory(v: string) {
+    if (!v.trim()) return;
+    // 重複を削除して先頭に追加し、最大10件まで保持
+    this.EditorHighlightHistory = [v, ...this.EditorHighlightHistory.filter(h => h !== v)].slice(0, 10);
+    this.NotifyUpdated();
+  }
+
+  public SetEditorBackground(color: string) { this.EditorBackground = color; this.NotifyUpdated(); }
+  public SetEditorForeground(color: string) { this.EditorForeground = color; this.NotifyUpdated(); }
+  public SetEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
+    if (level < 1 || level > 5) return;
+    this.EditorHeadingStyles[level - 1] = { ...this.EditorHeadingStyles[level - 1], ...style };
+    this.NotifyUpdated();
+  }
+  public SetEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string }>) {
+    if (groupIndex >= 0 && groupIndex <= 4) {
+      this.EditorHighlightStyles[groupIndex] = { ...this.EditorHighlightStyles[groupIndex], ...style };
+      this.NotifyUpdated();
+    }
+  }
+
   // ── Area CRUD ──────────────────────────────────────────────────────────
 
   /** 最初のエリアを追加（Layout がある場合は右分割） */

@@ -12,7 +12,7 @@
  * - 下部: フォーカスペインの Think タイトル（縦書き）
  */
 
-import { ChevronLeft, ChevronRight, Layers, FileText, Eye, Table, LayoutGrid, Share2, type LucideIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, type LucideIcon } from 'lucide-react';
 import type { MediaType } from '../../types';
 import './WorkoutRibbon.css';
 
@@ -25,12 +25,12 @@ interface SettingsEntry {
 }
 
 export const WORKOUT_SETTINGS: SettingsEntry[] = [
-  { type: 'workout',    Icon: Layers,      name: 'Workout設定' },
-  { type: 'texteditor', Icon: FileText,    name: 'TextEditor設定' },
-  { type: 'markdown',   Icon: Eye,         name: 'Markdown設定' },
-  { type: 'datagrid',   Icon: Table,       name: 'DataGrid設定' },
-  { type: 'card',       Icon: LayoutGrid,  name: 'Card設定' },
-  { type: 'graph',      Icon: Share2,      name: 'Graph設定' },
+  { type: 'workout',    Icon: PanelLeftDashed, name: 'Workout設定' },
+  { type: 'texteditor', Icon: NotebookPen,     name: 'TextEditor設定' },
+  { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定' },
+  { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定' },
+  { type: 'card',       Icon: IdCard,          name: 'Card設定' },
+  { type: 'graph',      Icon: Share2,          name: 'Graph設定' },
 ];
 
 interface Props {

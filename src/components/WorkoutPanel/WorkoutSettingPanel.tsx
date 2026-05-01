@@ -2,6 +2,18 @@
  * WorkoutSettingPanel.tsx
  */
 
+import { useState } from 'react';
+import {
+  GalleryThumbnails,
+  PanelLeftDashed,
+  PanelRightDashed,
+  PanelTopDashed,
+  PanelBottomDashed,
+  SquareX,
+  ChevronDown,
+  ChevronRight,
+  X
+} from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { SettingsType } from './WorkoutRibbon';
 import { WORKOUT_SETTINGS } from './WorkoutRibbon';
@@ -11,24 +23,24 @@ import './WorkoutSettingPanel.css';
 
 type Dir = 'right' | 'left' | 'up' | 'down';
 
-const DIR_DEG: Record<Dir, number> = { right: 0, left: 180, up: -90, down: 90 };
-
-/** ⏩ を回転して分割方向を示す */
 function SplitIcon({ dir }: { dir: Dir }) {
-  return (
-    <span className="ws-icon" style={{ transform: `rotate(${DIR_DEG[dir]}deg)` }}>
-      ⏩
-    </span>
-  );
+  switch (dir) {
+    case 'left': return <PanelRightDashed size={16} className="ws-icon" />;
+    case 'right': return <PanelLeftDashed size={16} className="ws-icon" />;
+    case 'up': return <PanelBottomDashed size={16} className="ws-icon" />;
+    case 'down': return <PanelTopDashed size={16} className="ws-icon" />;
+  }
 }
 
-/** ⏯ を回転して追加方向を示す */
 function AddIcon({ dir }: { dir: Dir }) {
-  return (
-    <span className="ws-icon" style={{ transform: `rotate(${DIR_DEG[dir]}deg)` }}>
-      ⏯
-    </span>
-  );
+  let transform = '';
+  switch (dir) {
+    case 'left': transform = 'rotate(-90deg)'; break;
+    case 'right': transform = 'rotate(90deg)'; break;
+    case 'up': transform = 'none'; break;
+    case 'down': transform = 'rotate(180deg)'; break;
+  }
+  return <GalleryThumbnails size={16} className="ws-icon" style={{ transform }} />;
 }
 
 // ── Props ────────────────────────────────────────────────────────────────
@@ -45,6 +57,7 @@ interface Props {
   onAddRight:     () => void;
   onAddTop:       () => void;
   onAddBottom:    () => void;
+  onRemoveFocused:() => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -53,10 +66,16 @@ export function WorkoutSettingPanel({
   activeSettings, panel, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
+  onRemoveFocused,
 }: Props) {
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
   const panelName = entry?.name ?? '';
+
+  const [isAreaSettingsOpen, setIsAreaSettingsOpen] = useState(true);
+  const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(true);
+  const [isColorSettingsOpen, setIsColorSettingsOpen] = useState(true);
+  const [isHighlightSettingsOpen, setIsHighlightSettingsOpen] = useState(true);
 
   return (
     <div className="workout-setting-panel" style={{ width }}>
@@ -66,80 +85,327 @@ export function WorkoutSettingPanel({
       <div className="workout-setting-panel__body">
         {activeSettings === 'workout' ? (
           <>
-            {/* エリア分割 */}
+            {/* エリア管理 */}
             <div className="workout-setting-panel__section">
-              <span className="workout-setting-panel__section-label">エリア分割</span>
-              <div className="workout-setting-panel__icon-row">
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={hasFocus ? onSplitLeft : undefined}
-                  disabled={!hasFocus}
-                  title="左に分割"
-                >
-                  <SplitIcon dir="left" />
-                </button>
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={hasFocus ? onSplitRight : undefined}
-                  disabled={!hasFocus}
-                  title="右に分割"
-                >
-                  <SplitIcon dir="right" />
-                </button>
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={hasFocus ? onSplitAbove : undefined}
-                  disabled={!hasFocus}
-                  title="上に分割"
-                >
-                  <SplitIcon dir="up" />
-                </button>
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={hasFocus ? onSplitBelow : undefined}
-                  disabled={!hasFocus}
-                  title="下に分割"
-                >
-                  <SplitIcon dir="down" />
-                </button>
+              <div 
+                className="workout-setting-panel__section-header"
+                onClick={() => setIsAreaSettingsOpen(!isAreaSettingsOpen)}
+              >
+                {isAreaSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>エリア</span>
               </div>
-            </div>
+              
+              {isAreaSettingsOpen && (
+                <div className="workout-setting-panel__section-content">
+                  {/* 分割 */}
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>分割</span>
+                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={hasFocus ? onSplitLeft : undefined}
+                        disabled={!hasFocus}
+                        title="左に分割して新Pane追加"
+                      >
+                        <SplitIcon dir="left" />
+                      </button>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={hasFocus ? onSplitRight : undefined}
+                        disabled={!hasFocus}
+                        title="右に分割して新Pane追加"
+                      >
+                        <SplitIcon dir="right" />
+                      </button>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={hasFocus ? onSplitAbove : undefined}
+                        disabled={!hasFocus}
+                        title="上に分割して新Pane追加"
+                      >
+                        <SplitIcon dir="up" />
+                      </button>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={hasFocus ? onSplitBelow : undefined}
+                        disabled={!hasFocus}
+                        title="下に分割して新Pane追加"
+                      >
+                        <SplitIcon dir="down" />
+                      </button>
+                    </div>
+                  </div>
 
+                  {/* 追加 */}
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>追加</span>
+                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={onAddLeft}
+                        title="左端に追加"
+                      >
+                        <AddIcon dir="left" />
+                      </button>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={onAddRight}
+                        title="右端に追加"
+                      >
+                        <AddIcon dir="right" />
+                      </button>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={onAddTop}
+                        title="上端に追加"
+                      >
+                        <AddIcon dir="up" />
+                      </button>
+                      <button
+                        className="workout-setting-panel__icon-btn"
+                        onClick={onAddBottom}
+                        title="下端に追加"
+                      >
+                        <AddIcon dir="down" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 削除 */}
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>削除</span>
+                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-panel__icon-btn workout-setting-panel__icon-btn--danger"
+                        onClick={hasFocus ? onRemoveFocused : undefined}
+                        disabled={!hasFocus}
+                        title="フォーカスペインを削除"
+                      >
+                        <SquareX size={16} className="ws-icon" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="workout-setting-panel__divider" />
 
-            {/* エリア追加 */}
+            {/* ハイライト設定 */}
             <div className="workout-setting-panel__section">
-              <span className="workout-setting-panel__section-label">エリア追加</span>
-              <div className="workout-setting-panel__icon-row">
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={onAddLeft}
-                  title="左端に追加"
-                >
-                  <AddIcon dir="left" />
-                </button>
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={onAddRight}
-                  title="右端に追加"
-                >
-                  <AddIcon dir="right" />
-                </button>
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={onAddTop}
-                  title="上端に追加"
-                >
-                  <AddIcon dir="up" />
-                </button>
-                <button
-                  className="workout-setting-panel__icon-btn"
-                  onClick={onAddBottom}
-                  title="下端に追加"
-                >
-                  <AddIcon dir="down" />
-                </button>
+              <div 
+                className="workout-setting-panel__section-header"
+                onClick={() => setIsHighlightSettingsOpen(!isHighlightSettingsOpen)}
+              >
+                {isHighlightSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>ハイライト設定</span>
               </div>
+
+              {isHighlightSettingsOpen && (
+                <div className="workout-setting-panel__section-content">
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px', lineHeight: 1.3 }}>
+                    半角カンマで文字グループを区切る<br/>
+                    半角スペースで単語を区切る
+                  </div>
+                  <div className="workout-setting-panel__input-with-clear">
+                    <input
+                      type="text"
+                      className="workout-setting-panel__text-input"
+                      placeholder="例: todo fixme, error warn, info"
+                      value={panel.EditorHighlightWord}
+                      list="highlight-history-list"
+                      onChange={e => panel.SetEditorHighlightWord(e.target.value)}
+                      onBlur={(e) => panel.AddEditorHighlightHistory(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          panel.AddEditorHighlightHistory(e.currentTarget.value);
+                          e.currentTarget.blur();
+                        }
+                      }}
+                    />
+                    {panel.EditorHighlightWord && (
+                      <button 
+                        className="workout-setting-panel__clear-btn"
+                        onClick={() => panel.SetEditorHighlightWord('')}
+                        title="クリア"
+                      >
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <datalist id="highlight-history-list">
+                    {panel.EditorHighlightHistory.map((history, i) => (
+                      <option key={i} value={history} />
+                    ))}
+                  </datalist>
+
+                  <div style={{ marginTop: '8px' }}>
+                    <span className="workout-setting-panel__section-label" style={{ marginBottom: 4, display: 'block' }}>ハイライトグループ色</span>
+                    {[1, 2, 3, 4, 5].map(group => {
+                      const style = panel.EditorHighlightStyles[group - 1];
+                      return (
+                        <div key={group} className="workout-setting-panel__color-row" style={{ padding: '2px 0px' }}>
+                          <span className="workout-setting-panel__color-label">グループ{group}</span>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>背景</span>
+                            <input
+                              type="color"
+                              className="workout-setting-panel__color-picker"
+                              value={style.backgroundColor}
+                              onChange={e => panel.SetEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
+                              title={`グループ${group}の背景色`}
+                            />
+                            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>文字</span>
+                            <input
+                              type="color"
+                              className="workout-setting-panel__color-picker"
+                              value={style.color}
+                              onChange={e => panel.SetEditorHighlightStyle(group - 1, { color: e.target.value })}
+                              title={`グループ${group}の文字色`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : activeSettings === 'texteditor' ? (
+          <>
+            <div className="workout-setting-panel__section">
+              <div 
+                className="workout-setting-panel__section-header"
+                onClick={() => setIsDisplaySettingsOpen(!isDisplaySettingsOpen)}
+              >
+                {isDisplaySettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>表示設定</span>
+              </div>
+              
+              {isDisplaySettingsOpen && (
+                <div className="workout-setting-panel__section-content">
+                  <label className="workout-setting-panel__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={panel.EditorLineNumbers}
+                      onChange={e => panel.SetEditorLineNumbers(e.target.checked)}
+                    />
+                    <span className="workout-setting-panel__checkbox-text">行番号を表示する</span>
+                  </label>
+                  
+                  <label className="workout-setting-panel__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={panel.EditorWordWrap}
+                      onChange={e => panel.SetEditorWordWrap(e.target.checked)}
+                    />
+                    <span className="workout-setting-panel__checkbox-text">右端で折り返す (WordWrap)</span>
+                  </label>
+
+                  <label className="workout-setting-panel__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={panel.EditorMinimap}
+                      onChange={e => panel.SetEditorMinimap(e.target.checked)}
+                    />
+                    <span className="workout-setting-panel__checkbox-text">ミニマップを表示する</span>
+                  </label>
+
+                  <label className="workout-setting-panel__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={panel.EditorShowFullWidthSpace}
+                      onChange={e => panel.SetEditorShowFullWidthSpace(e.target.checked)}
+                    />
+                    <span className="workout-setting-panel__checkbox-text">全角スペースを表示する</span>
+                  </label>
+
+                  <label className="workout-setting-panel__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={panel.EditorUnicodeHighlight}
+                      onChange={e => panel.SetEditorUnicodeHighlight(e.target.checked)}
+                    />
+                    <span className="workout-setting-panel__checkbox-text">特殊文字の警告表示</span>
+                  </label>
+
+                  <label className="workout-setting-panel__checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={panel.EditorBracketPairColorization}
+                      onChange={e => panel.SetEditorBracketPairColorization(e.target.checked)}
+                    />
+                    <span className="workout-setting-panel__checkbox-text">括弧対応表示</span>
+                  </label>
+                </div>
+              )}
+            </div>
+            <div className="workout-setting-panel__divider" />
+
+            <div className="workout-setting-panel__section">
+              <div 
+                className="workout-setting-panel__section-header"
+                onClick={() => setIsColorSettingsOpen(!isColorSettingsOpen)}
+              >
+                {isColorSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>色設定</span>
+              </div>
+
+              {isColorSettingsOpen && (
+                <div className="workout-setting-panel__section-content">
+                  <div className="workout-setting-panel__color-row">
+                    <span className="workout-setting-panel__color-label">背景色</span>
+                    <input
+                      type="color"
+                      className="workout-setting-panel__color-picker"
+                      value={panel.EditorBackground}
+                      onChange={e => panel.SetEditorBackground(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="workout-setting-panel__color-row">
+                    <span className="workout-setting-panel__color-label">通常文字色</span>
+                    <input
+                      type="color"
+                      className="workout-setting-panel__color-picker"
+                      value={panel.EditorForeground}
+                      onChange={e => panel.SetEditorForeground(e.target.value)}
+                    />
+                  </div>
+
+                  {[1, 2, 3, 4, 5].map(level => {
+                    const style = panel.EditorHeadingStyles[level - 1];
+                    return (
+                      <div key={level} className="workout-setting-panel__heading-style-row">
+                        <span className="workout-setting-panel__heading-style-label">セクション{level}段目</span>
+                        <input
+                          type="color"
+                          className="workout-setting-panel__color-picker"
+                          value={style.color}
+                          onChange={e => panel.SetEditorHeadingStyle(level, { color: e.target.value })}
+                          title={`セクション${level}の文字色`}
+                        />
+                        <label className="workout-setting-panel__small-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={style.bold}
+                            onChange={e => panel.SetEditorHeadingStyle(level, { bold: e.target.checked })}
+                          />
+                          B
+                        </label>
+                        <label className="workout-setting-panel__small-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={style.underline}
+                            onChange={e => panel.SetEditorHeadingStyle(level, { underline: e.target.checked })}
+                          />
+                          U
+                        </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </>
         ) : (

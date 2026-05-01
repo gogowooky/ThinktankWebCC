@@ -52,6 +52,41 @@
   flex-shrink: 0;
 }
 
+.workout-setting-panel__section-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  padding: 4px;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.15s ease;
+  user-select: none;
+}
+
+.workout-setting-panel__section-header:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.workout-setting-panel__section-header .workout-setting-panel__section-label {
+  margin-bottom: 0;
+  padding: 0;
+  color: inherit;
+}
+
+.workout-setting-panel__section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 6px;
+  animation: fadeSlideIn 0.2s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .workout-setting-panel__btn {
   display: flex;
   align-items: center;
@@ -130,4 +165,129 @@
   font-size: 11px;
   color: rgba(255, 255, 255, 0.3);
   line-height: 1.5;
+}
+
+/* ── チェックボックス ──────────────────────────────── */
+.workout-setting-panel__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.workout-setting-panel__checkbox-label input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.workout-setting-panel__checkbox-text {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  user-select: none;
+}
+
+/* ── 色設定 ──────────────────────────────────── */
+.workout-setting-panel__color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+}
+
+.workout-setting-panel__color-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.workout-setting-panel__color-picker {
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+}
+
+.workout-setting-panel__color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.workout-setting-panel__color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+.workout-setting-panel__heading-style-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+}
+
+.workout-setting-panel__heading-style-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  flex: 1;
+}
+
+.workout-setting-panel__small-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+.workout-setting-panel__small-checkbox input {
+  margin: 0;
+  cursor: pointer;
+}
+
+/* ── ハイライト設定 ──────────────────────────────────── */
+.workout-setting-panel__input-with-clear {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.workout-setting-panel__text-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-radius: 4px;
+  padding: 6px 24px 6px 8px; /* 右側にボタン用の余白 */
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.workout-setting-panel__text-input:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.workout-setting-panel__clear-btn {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: color 0.1s ease, background 0.1s ease;
+}
+
+.workout-setting-panel__clear-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
 }

@@ -336,7 +336,6 @@ export function ThinktankArea({ app }: Props) {
         allVaultChecked={vault.GetThinks().length > 0 && vault.GetThinks().every(t => panel.CheckedThoughtIDs.includes(t.ID))}
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
-        hasChatMessages={chatMessages.length > 0}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
@@ -345,7 +344,6 @@ export function ThinktankArea({ app }: Props) {
         onToggleAllVault={handleToggleAllVault}
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
-        onSaveChat={handleSaveChat}
       />
 
       {showColumnDialog && (

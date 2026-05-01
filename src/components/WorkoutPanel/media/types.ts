@@ -15,4 +15,18 @@ export interface MediaProps {
   onSave:        (content: string) => void;
   /** エディタの変更状態が変わったときに呼ばれる */
   onDirtyChange: (dirty: boolean) => void;
+  /** TextEditor 用の設定 */
+  editorSettings?: {
+    lineNumbers: boolean;
+    wordWrap: boolean;
+    minimap: boolean;
+    showFullWidthSpace: boolean;
+    unicodeHighlight: boolean;
+    bracketPairColorization: boolean;
+    highlightWord: string;
+    highlightStyles: { backgroundColor: string; color: string }[];
+    background: string;
+    foreground: string;
+    headingStyles: { color: string; bold: boolean; underline: boolean }[];
+  };
 }

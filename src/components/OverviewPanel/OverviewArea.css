@@ -52,6 +52,25 @@
   white-space: nowrap;
 }
 
+.overview-area__strip-clear-btn {
+  background: none;
+  border: none;
+  color: rgba(57, 73, 171, 0.5);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.1s ease, background 0.1s ease;
+  margin-left: auto;
+}
+
+.overview-area__strip-clear-btn:hover {
+  color: rgba(57, 73, 171, 1);
+  background: rgba(57, 73, 171, 0.1);
+}
+
 /* ── 日付フィルターバー ──────────────────────────────────────────── */
 
 .overview-area__date-bars {

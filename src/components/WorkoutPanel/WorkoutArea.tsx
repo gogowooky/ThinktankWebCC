@@ -67,7 +67,38 @@ export function WorkoutArea({
   const think = vault.GetThink(area.ResourceID) ?? null;
 
   // メディア共通 props
-  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty };
+  const panel = area._parent as import('../../views/TTWorkoutPanel').TTWorkoutPanel;
+  const mediaProps = {
+    think,
+    vault,
+    onSave: handleSave,
+    onDirtyChange: setIsDirty,
+    editorSettings: {
+      lineNumbers:   panel?.EditorLineNumbers ?? true,
+      wordWrap:      panel?.EditorWordWrap ?? true,
+      minimap:       panel?.EditorMinimap ?? false,
+      showFullWidthSpace: panel?.EditorShowFullWidthSpace ?? false,
+      unicodeHighlight: panel?.EditorUnicodeHighlight ?? true,
+      bracketPairColorization: panel?.EditorBracketPairColorization ?? true,
+      highlightWord: panel?.EditorHighlightWord ?? '',
+      highlightStyles: panel?.EditorHighlightStyles ?? [
+        { backgroundColor: '#ffff00', color: '#000000' },
+        { backgroundColor: '#ff0000', color: '#ffffff' },
+        { backgroundColor: '#0000ff', color: '#ffffff' },
+        { backgroundColor: '#008000', color: '#ffffff' },
+        { backgroundColor: '#800080', color: '#ffffff' },
+      ],
+      background:    panel?.EditorBackground ?? '#1e1e1e',
+      foreground:    panel?.EditorForeground ?? '#d4d4d4',
+      headingStyles: panel?.EditorHeadingStyles ?? [
+        { color: '#569cd6', bold: true, underline: false },
+        { color: '#4ec9b0', bold: true, underline: false },
+        { color: '#ce9178', bold: true, underline: false },
+        { color: '#dcdcaa', bold: true, underline: false },
+        { color: '#c586c0', bold: true, underline: false },
+      ],
+    }
+  };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
