@@ -204,12 +204,22 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
     else panel.CheckAll(allIds);
   }, [panel, vault]);
 
+  const canCreateThought =
+    panel.ViewMode === 'search'
+      ? searchQuery.trim() !== ''
+      : panel.CheckedThoughtIDs.length > 0;
+
   const handleCreateThought = useCallback(async () => {
-    if (panel.CheckedThoughtIDs.length === 0) return;
-    const think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);
+    let think;
+    if (panel.ViewMode === 'search' && searchQuery.trim() !== '') {
+      think = await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs);
+    } else {
+      if (panel.CheckedThoughtIDs.length === 0) return;
+      think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);
+    }
     panel.ClearChecks();
     panel.SelectThought(think.ID);
-  }, [panel, vault]);
+  }, [panel, vault, searchQuery]);
 
   // チャット送信・保存
   const handleChatSend = useCallback((text: string) => {
@@ -349,6 +359,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
+        canCreateThought={canCreateThought}
         onCreateThought={handleCreateThought}
         onToggleAllVault={handleToggleAllVault}
         onToggleDateFilter={handleToggleDateFilter}

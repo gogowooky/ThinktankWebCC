@@ -177,6 +177,46 @@ export class TTVault extends TTCollection {
     return think;
   }
 
+  /** 全文検索クエリからthoughtを新規作成して保存する */
+  public async CreateThoughtFromSearch(query: string, ids: string[]): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId = TTVault.generateUniqueId(existingIds);
+
+    const title = `検索：${query}`;
+    let body: string;
+    let relatedIds: string;
+
+    if (ids.length === 0) {
+      body      = `>> ${query}`;
+      relatedIds = '';
+    } else {
+      body      = ids.map(id => `* ${id}`).join('\n');
+      relatedIds = ids.join(',');
+    }
+    const fullContent = `${title}\n${body}`;
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = 'thought';
+    think.IsMetaOnly  = false;
+    think.setContentSilent(fullContent);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: 'thought',
+      fullContent,
+      keywords:    '',
+      relatedIds,
+    });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
   /** 新規の空Thinkを作成して保存する */
   public async CreateBlankThink(contentType: ContentType, initialName: string = ''): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());

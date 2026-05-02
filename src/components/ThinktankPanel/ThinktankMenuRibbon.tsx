@@ -19,6 +19,7 @@ interface Props {
   onClearChecks:         () => void;
   onDeleteChecked:       () => void;
   onToggleCheckedOnly:   () => void;
+  canCreateThought:      boolean;
   onCreateThought:       () => void;
   onToggleAllVault:      () => void;
   onToggleDateFilter:    () => void;
@@ -29,7 +30,7 @@ export function ThinktankMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showDateFilter, showColumnDialog,
   onCheckAll, onClearChecks, onDeleteChecked,
-  onToggleCheckedOnly, onCreateThought, onToggleAllVault,
+  onToggleCheckedOnly, canCreateThought, onCreateThought, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
@@ -97,7 +98,7 @@ export function ThinktankMenuRibbon({
         className="menu-ribbon__btn menu-ribbon__btn--icon"
         onClick={onCreateThought}
         title="チェックアイテムからthoughtを作成"
-        disabled={!hasChecked}
+        disabled={!canCreateThought}
       >
         <LibrarySquare size={14} />
       </button>
