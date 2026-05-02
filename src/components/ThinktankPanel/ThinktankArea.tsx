@@ -12,11 +12,11 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
-import { ThoughtsFilter } from './ThoughtsFilter';
+import { UnifiedFilterPanel } from './UnifiedFilterPanel';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
 import { ThinktankFilterView } from './ThinktankFilterView';
-import { computeDateRange, parseRange } from '../../utils/dateUtils';
 import { ThinktankSearchView } from './ThinktankSearchView';
+import { computeDateRange, parseRange } from '../../utils/dateUtils';
 import { AiChatView } from './AiChatView';
 import type { ChatMessage } from '../../types';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
@@ -304,7 +304,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         onOpen={handleSelect}
         onToggleCheck={handleToggleCheck}
         onVisibleChange={handleFilterVisibleChange}
-        onTitleQueryChange={setFilterTitleQuery}
+        titleQuery={filterTitleQuery}
       />
     );
   } else if (panel.ViewMode === 'search') {
@@ -313,16 +313,12 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         selectedId={panel.SelectedThoughtID}
         checkedIds={panel.CheckedThoughtIDs}
         checkedOnly={panel.ShowCheckedOnly}
-        query={searchQuery}
         results={searchResults}
         visibleResults={searchVisible}
         totalVaultCount={vault.Count}
         loading={searchLoading}
         searched={searchSearched}
         columns={columns}
-        history={searchHistory}
-        onQueryChange={setSearchQuery}
-        onSearch={handleSearch}
         onOpen={handleSelect}
         onToggleCheck={handleToggleCheck}
       />
@@ -334,22 +330,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   } else {
     // デフォルト: thoughts モード
     content = (
-      <>
-        <ThoughtsFilter
-          value={panel.Filter}
-          onChange={handleFilterChange}
-          visibleCount={thoughtsVisible.length}
-          totalCount={allThoughts.length}
-        />
-        <ThoughtsList
-          thoughts={thoughtsVisible}
-          selectedId={panel.SelectedThoughtID}
-          checkedIds={panel.CheckedThoughtIDs}
-          columns={columns}
-          onOpen={id => app.OpenThought(id, 'datagrid')}
-          onToggleCheck={handleToggleCheck}
-        />
-      </>
+      <ThoughtsList
+        thoughts={thoughtsVisible}
+        selectedId={panel.SelectedThoughtID}
+        checkedIds={panel.CheckedThoughtIDs}
+        columns={columns}
+        onOpen={id => app.OpenThought(id, 'datagrid')}
+        onToggleCheck={handleToggleCheck}
+      />
     );
   }
 
@@ -387,48 +375,38 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         />
       )}
 
-      {showDateBars && (
-        <div className="thinktank-area__date-bars">
-          <div className="tt-filter-view__bar">
-            <CalendarDays size={12} className="tt-filter-view__bar-icon" />
-            <input
-              className="tt-filter-view__bar-date"
-              type="date"
-              title="作成日(ID)"
-              value={createdDate}
-              onChange={e => setCreatedDate(e.target.value)}
-              disabled={createdRange.trim().startsWith('@')}
-            />
-            <input
-              className={`tt-filter-view__bar-range${createdRangeInvalid ? ' tt-filter-view__bar-range--invalid' : ''}`}
-              type="text"
-              placeholder="+Nd / @N"
-              title="範囲: +3d(以降) / -1m(以前) / +-2w(前後) / @3d(現在から3日遡・日付無効)  指定なし=1日"
-              value={createdRange}
-              onChange={e => setCreatedRange(e.target.value)}
-            />
-          </div>
-          <div className="tt-filter-view__bar">
-            <CalendarClock size={12} className="tt-filter-view__bar-icon" />
-            <input
-              className="tt-filter-view__bar-date"
-              type="date"
-              title="更新日"
-              value={updatedDate}
-              onChange={e => setUpdatedDate(e.target.value)}
-              disabled={updatedRange.trim().startsWith('@')}
-            />
-            <input
-              className={`tt-filter-view__bar-range${updatedRangeInvalid ? ' tt-filter-view__bar-range--invalid' : ''}`}
-              type="text"
-              placeholder="+Nd / @N"
-              title="範囲: +3d(以降) / -1m(以前) / +-2w(前後) / @3d(現在から3日遡・日付無効)  指定なし=1日"
-              value={updatedRange}
-              onChange={e => setUpdatedRange(e.target.value)}
-            />
-          </div>
-        </div>
-      )}
+      <UnifiedFilterPanel
+        historyKey={panel.ViewMode === 'search' ? 'tt-search' : 'tt-filter'}
+        textValue={
+          panel.ViewMode === 'search' ? searchQuery :
+          panel.ViewMode === 'filter' ? filterTitleQuery :
+          panel.Filter
+        }
+        onTextChange={
+          panel.ViewMode === 'search' ? setSearchQuery :
+          panel.ViewMode === 'filter' ? setFilterTitleQuery :
+          handleFilterChange
+        }
+        createdDate={createdDate}
+        onCreatedDateChange={setCreatedDate}
+        createdRange={createdRange}
+        onCreatedRangeChange={setCreatedRange}
+        updatedDate={updatedDate}
+        onUpdatedDateChange={setUpdatedDate}
+        updatedRange={updatedRange}
+        onUpdatedRangeChange={setUpdatedRange}
+        visibleCount={
+          panel.ViewMode === 'search' ? searchVisible.length :
+          panel.ViewMode === 'filter' ? thoughtsVisible.length :
+          thoughtsVisible.length
+        }
+        totalCount={
+          panel.ViewMode === 'search' ? searchResults.length :
+          panel.ViewMode === 'filter' ? allThoughts.length :
+          allThoughts.length
+        }
+        showDateFilters={showDateFilter && ['thoughts', 'filter', 'search'].includes(panel.ViewMode)}
+      />
 
       <div className="thinktank-area__body">
         {content}

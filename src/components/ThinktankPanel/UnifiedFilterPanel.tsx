@@ -1,0 +1,167 @@
+import React, { useState } from 'react';
+import { Type, CalendarDays, CalendarClock, ChevronDown, X } from 'lucide-react';
+import { parseRange } from '../../utils/dateUtils';
+import { FilterHistoryPulldown } from './FilterHistoryPulldown';
+import { saveHistory } from '../../utils/historyUtils';
+import './UnifiedFilterPanel.css';
+
+interface Props {
+  historyKey:       string;
+  textValue:        string;
+  onTextChange:     (v: string) => void;
+  
+  createdDate:      string;
+  onCreatedDateChange: (v: string) => void;
+  createdRange:     string;
+  onCreatedRangeChange: (v: string) => void;
+  
+  updatedDate:      string;
+  onUpdatedDateChange: (v: string) => void;
+  updatedRange:     string;
+  onUpdatedRangeChange: (v: string) => void;
+  
+  visibleCount?:    number;
+  totalCount?:      number;
+  
+  showDateFilters?: boolean;
+}
+
+export const UnifiedFilterPanel = React.memo(({
+  historyKey,
+  textValue, onTextChange,
+  createdDate, onCreatedDateChange,
+  createdRange, onCreatedRangeChange,
+  updatedDate, onUpdatedDateChange,
+  updatedRange, onUpdatedRangeChange,
+  visibleCount, totalCount,
+  showDateFilters = true,
+}: Props) => {
+  const [showHistory, setShowHistory] = useState(false);
+
+  const handleTextKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && textValue.trim()) {
+      saveHistory(historyKey, textValue.trim());
+      setShowHistory(false);
+    }
+  };
+
+  const cRangeInvalid = createdRange.trim() !== '' && !parseRange(createdRange.trim());
+  const uRangeInvalid = updatedRange.trim() !== '' && !parseRange(updatedRange.trim());
+
+  return (
+    <div className="unified-filter-panel">
+      {/* 1行目: テキストフィルタ */}
+      <div className="unified-filter-row">
+        <div className="unified-filter-row-left">
+          <Type size={12} className="unified-filter-icon" />
+          <div className="unified-filter-text-wrapper">
+            <input
+              className="unified-filter-text-input"
+              type="text"
+              value={textValue}
+              onChange={e => onTextChange(e.target.value)}
+              onKeyDown={handleTextKeyDown}
+              placeholder="タイトル・キーワードで絞り込み..."
+              spellCheck={false}
+            />
+            <ChevronDown 
+              size={12} 
+              className={`unified-filter-pulldown-icon ${showHistory ? 'unified-filter-pulldown-icon--active' : ''}`}
+              onClick={() => setShowHistory(!showHistory)}
+            />
+            {showHistory && (
+              <FilterHistoryPulldown 
+                historyKey={historyKey} 
+                onSelect={onTextChange} 
+                onClose={() => setShowHistory(false)} 
+              />
+            )}
+          </div>
+        </div>
+        <div className="unified-filter-row-right">
+          <button 
+            className="unified-filter-btn unified-filter-btn--clear"
+            onClick={() => onTextChange('')}
+            title="消去"
+            disabled={!textValue}
+          >
+            <X size={12} />
+          </button>
+          {totalCount !== undefined && (
+            <span className="unified-filter-count">
+              {visibleCount ?? totalCount}/{totalCount}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {showDateFilters && (
+        <>
+          {/* 2行目: 作成日フィルタ */}
+          <div className="unified-filter-row">
+            <div className="unified-filter-row-left">
+              <CalendarDays size={12} className="unified-filter-icon" />
+              <input
+                className="unified-filter-date-input"
+                type="date"
+                value={createdDate}
+                onChange={e => onCreatedDateChange(e.target.value)}
+                disabled={createdRange.trim().startsWith('@')}
+              />
+              <input
+                className={`unified-filter-range-input ${cRangeInvalid ? 'unified-filter-range-input--invalid' : ''}`}
+                type="text"
+                value={createdRange}
+                onChange={e => onCreatedRangeChange(e.target.value)}
+                placeholder="+Nd / @N"
+                title="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+              />
+            </div>
+            <div className="unified-filter-row-right">
+              <button 
+                className="unified-filter-btn unified-filter-btn--clear"
+                onClick={() => { onCreatedDateChange(''); onCreatedRangeChange(''); }}
+                title="条件をクリア"
+                disabled={!createdDate && !createdRange}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          </div>
+
+          {/* 3行目: 更新日フィルタ */}
+          <div className="unified-filter-row">
+            <div className="unified-filter-row-left">
+              <CalendarClock size={12} className="unified-filter-icon" />
+              <input
+                className="unified-filter-date-input"
+                type="date"
+                value={updatedDate}
+                onChange={e => onUpdatedDateChange(e.target.value)}
+                disabled={updatedRange.trim().startsWith('@')}
+              />
+              <input
+                className={`unified-filter-range-input ${uRangeInvalid ? 'unified-filter-range-input--invalid' : ''}`}
+                type="text"
+                value={updatedRange}
+                onChange={e => onUpdatedRangeChange(e.target.value)}
+                placeholder="+Nd / @N"
+                title="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+              />
+            </div>
+            <div className="unified-filter-row-right">
+              <button 
+                className="unified-filter-btn unified-filter-btn--clear"
+                onClick={() => { onUpdatedDateChange(''); onUpdatedRangeChange(''); }}
+                title="条件をクリア"
+                disabled={!updatedDate && !updatedRange}
+              >
+                <X size={12} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+});

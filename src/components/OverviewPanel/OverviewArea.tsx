@@ -23,7 +23,7 @@ import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
-import { ThoughtsFilter } from '../ThinktankPanel/ThoughtsFilter';
+import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import { computeDateRange, parseRange } from '../../utils/dateUtils';
@@ -312,59 +312,24 @@ export function OverviewArea({ app, showSettings }: Props) {
         )}
       </div>
 
-      {/* ── フィルターバー（Think一覧モードのみ）────────────────── */}
+      {/* ── フィルターパネル（Think一覧モードのみ）────────────────── */}
       {isThinkListMode && (
-        <>
-          <ThoughtsFilter
-            value={filter}
-            onChange={setFilter}
-            visibleCount={visibleThinks.length}
-            totalCount={thinksInThought.length}
-          />
-
-          {showDateFilter && (
-            <div className="overview-area__date-bars">
-              <div className="overview-area__bar">
-                <CalendarDays size={12} className="overview-area__bar-icon" />
-                <input
-                  className="overview-area__bar-date"
-                  type="date"
-                  title="作成日(ID)"
-                  value={createdDate}
-                  onChange={e => setCreatedDate(e.target.value)}
-                  disabled={createdRange.trim().startsWith('@')}
-                />
-                <input
-                  className={`overview-area__bar-range${createdRangeInvalid ? ' overview-area__bar-range--invalid' : ''}`}
-                  type="text"
-                  placeholder="+Nd / @N"
-                  title="範囲: +3d(以降) / -1m(以前) / +-2w(前後) / @3d(現在から3日遡・日付無効)  指定なし=1日"
-                  value={createdRange}
-                  onChange={e => setCreatedRange(e.target.value)}
-                />
-              </div>
-              <div className="overview-area__bar">
-                <CalendarClock size={12} className="overview-area__bar-icon" />
-                <input
-                  className="overview-area__bar-date"
-                  type="date"
-                  title="更新日"
-                  value={updatedDate}
-                  onChange={e => setUpdatedDate(e.target.value)}
-                  disabled={updatedRange.trim().startsWith('@')}
-                />
-                <input
-                  className={`overview-area__bar-range${updatedRangeInvalid ? ' overview-area__bar-range--invalid' : ''}`}
-                  type="text"
-                  placeholder="+Nd / @N"
-                  title="範囲: +3d(以降) / -1m(以前) / +-2w(前後) / @3d(現在から3日遡・日付無効)  指定なし=1日"
-                  value={updatedRange}
-                  onChange={e => setUpdatedRange(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-        </>
+        <UnifiedFilterPanel
+          historyKey="ov-filter"
+          textValue={filter}
+          onTextChange={setFilter}
+          createdDate={createdDate}
+          onCreatedDateChange={setCreatedDate}
+          createdRange={createdRange}
+          onCreatedRangeChange={setCreatedRange}
+          updatedDate={updatedDate}
+          onUpdatedDateChange={setUpdatedDate}
+          updatedRange={updatedRange}
+          onUpdatedRangeChange={setUpdatedRange}
+          visibleCount={visibleThinks.length}
+          totalCount={thinksInThought.length}
+          showDateFilters={showDateFilter}
+        />
       )}
 
       {/* ── 本体 ───────────────────────────────────────────────── */}

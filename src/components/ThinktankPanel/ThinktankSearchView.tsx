@@ -1,11 +1,8 @@
 /**
  * ThinktankSearchView.tsx
- * 全文検索でThinkを選定する表示モード（controlled component）
- * 検索 state は ThinktankArea で保持し、ビュー切り替えで消えない。
+ * 全文検索でThinkを選定する表示モード（表示専用）
  */
 
-import { useCallback } from 'react';
-import { Search } from 'lucide-react';
 import { TTThink } from '../../models/TTThink';
 import { ThoughtsList } from './ThoughtsList';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -15,60 +12,23 @@ interface Props {
   selectedId:      string;
   checkedIds:      string[];
   checkedOnly:     boolean;
-  query:           string;
   results:         TTThink[];
   visibleResults:  TTThink[];
   totalVaultCount: number;
   loading:         boolean;
   searched:        boolean;
   columns?:        ColumnConfig[];
-  history:         string[];
-  onQueryChange:   (q: string) => void;
-  onSearch:        () => void;
   onOpen:          (id: string) => void;
   onToggleCheck:   (id: string | string[], force?: boolean) => void;
 }
 
 export function ThinktankSearchView({
-  selectedId, checkedIds, query, results, visibleResults, totalVaultCount,
-  loading, searched, columns, history, onQueryChange, onSearch, onOpen, onToggleCheck,
+  selectedId, checkedIds, results, visibleResults, totalVaultCount,
+  loading, searched, columns, onOpen, onToggleCheck,
 }: Props) {
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') onSearch();
-  }, [onSearch]);
 
   return (
     <div className="tt-search-view">
-
-      {/* ThoughtsFilter と同じスタイルの検索バー */}
-      <div className="tt-search-view__bar">
-        <button
-          className="tt-search-view__icon-btn"
-          onClick={onSearch}
-          disabled={loading || !query.trim()}
-          title="検索"
-        >
-          <Search size={12} />
-        </button>
-        <input
-          className="tt-search-view__input"
-          type="text"
-          placeholder="全文検索…"
-          value={query}
-          list="search-history-list"
-          onChange={e => onQueryChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
-        <datalist id="search-history-list">
-          {history.map((h, i) => <option key={i} value={h} />)}
-        </datalist>
-        {searched && !loading && (
-          <span className="tt-search-view__count">
-            {results.length}/{totalVaultCount}
-          </span>
-        )}
-      </div>
-
       {loading && (
         <p className="tt-search-view__status">検索中…</p>
       )}
