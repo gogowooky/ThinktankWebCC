@@ -78,6 +78,59 @@ export class TTVault extends TTCollection {
     return allThinks;
   }
 
+  /**
+   * 指定 Thought が参照する Think 群を非同期で返す（全文検索も含む）。
+   * Step 1: `* {id}` 行から ID を収集
+   * Step 2: getFilter() でキーワードフィルター（Name に含むものを追加）
+   * Step 3: getSearchQuery() で全文検索し、thought 以外の結果を追加
+   * 重複排除して TTThink[] を返す。
+   */
+  public async GetThinksForThoughtAsync(thoughtId: string): Promise<TTThink[]> {
+    const thought = this.GetThink(thoughtId);
+    if (!thought || thought.ContentType !== 'thought') return [];
+
+    if (thought.IsMetaOnly) await thought.LoadContent();
+
+    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+    const idSet = new Set<string>();
+
+    // Step 1: collect IDs from `* {id}` lines
+    for (const id of thought.getThinkIds()) {
+      idSet.add(id);
+    }
+
+    // Step 2: keyword filter — search all Think Names containing the keyword
+    const filter = thought.getFilter().toLowerCase();
+    if (filter) {
+      for (const t of allThinks) {
+        const text = `${t.Name} ${t.Keywords}`.toLowerCase();
+        if (text.includes(filter)) idSet.add(t.ID);
+      }
+    }
+
+    // Step 3: full-text search — call StorageManager.instance.search(query)
+    const query = thought.getSearchQuery();
+    if (query) {
+      try {
+        const metas = await StorageManager.instance.search(query);
+        for (const meta of metas) {
+          if (meta.contentType !== 'thought') idSet.add(meta.id);
+        }
+      } catch (e) {
+        console.error('[TTVault] GetThinksForThoughtAsync search failed:', e);
+      }
+    }
+
+    // If nothing was specified at all, return all non-thought thinks
+    if (idSet.size === 0 && !filter && !query && thought.getThinkIds().length === 0) {
+      return allThinks;
+    }
+
+    // Deduplicate and return TTThink[] for matching IDs
+    const idMap = new Map(allThinks.map(t => [t.ID, t]));
+    return [...idSet].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+  }
+
   /** ID で TTThink を取得する（型付き）*/
   public GetThink(id: string): TTThink | undefined {
     const item = this.GetItem(id);
@@ -139,10 +192,11 @@ export class TTVault extends TTCollection {
       }
     }
     const uniqueIds = [...new Set(perThought.flatMap(p => p.thinkIds))];
-    const counts = perThought.map(p => `${p.thinkIds.length}件`).join('＋');
-    const names  = perThought.map(p => p.name).join('＋');
+    const totalUniqueIds = uniqueIds.length;
+    const namesJoined = perThought.map(p => p.name).join('＋');
+    const namesTruncated = namesJoined.length > 100 ? namesJoined.slice(0, 100) : namesJoined;
     return this._createThought(
-      `${counts}：${names}`,
+      `${totalUniqueIds}件：${namesTruncated}`,
       uniqueIds.map(id => `* ${id}`).join('\n'),
       uniqueIds.join(','),
     );
@@ -251,7 +305,7 @@ export class TTVault extends TTCollection {
    */
   public async CreateThoughtFromFilter(keyword: string, ids: string[]): Promise<TTThink> {
     if (ids.length === 0) {
-      return this._createThought(`フィルター：${keyword}`, `> ${keyword}`, '');
+      return this._createThought(`フィルタ：${keyword}`, `> ${keyword}`, '');
     }
     return this._createThought(
       `${ids.length}件：${keyword}`,

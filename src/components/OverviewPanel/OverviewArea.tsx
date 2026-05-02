@@ -103,9 +103,13 @@ export function OverviewArea({ app, showSettings }: Props) {
   }
 
   // ── Think 一覧（選択 Thought 内の全 Think → フィルタ適用）──────────────────
-  const thinksInThought = panel.ThoughtID
-    ? vault.GetThinksForThought(panel.ThoughtID)
-    : [];
+  const [thinksInThought, setThinksInThought] = useState<TTThink[]>(() =>
+    panel.ThoughtID ? vault.GetThinksForThought(panel.ThoughtID) : []
+  );
+  useEffect(() => {
+    if (!panel.ThoughtID) { setThinksInThought([]); return; }
+    vault.GetThinksForThoughtAsync(panel.ThoughtID).then(setThinksInThought);
+  }, [panel.ThoughtID, vault]);
 
   const visibleThinks = applySort(applyDateFilter(
     applyFilter(

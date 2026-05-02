@@ -9,7 +9,7 @@
  * - 行クリックで選択（複数選択対応）
  */
 
-import { useRef, useState, useMemo, useCallback } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   FileText, Lightbulb, Table, Link, MessageCircle, Globe,
@@ -55,13 +55,19 @@ export function DataGridMedia({ think, vault }: MediaProps) {
   const scrollRef               = useRef<HTMLDivElement>(null);
   const { overviewThoughtIds, workoutIds } = useHighlight();
 
-  // 表示対象アイテム
-  const allItems = useMemo<TTThink[]>(() => {
-    if (think?.ContentType === 'thought') {
-      return vault.GetThinksForThought(think.ID);
-    }
+  // 表示対象アイテム（初期値は同期取得、非同期更新で全文検索も反映）
+  const [allItems, setAllItems] = useState<TTThink[]>(() => {
+    if (think?.ContentType === 'thought') return vault.GetThinksForThought(think.ID);
     return vault.GetThinks().filter(t => t.ContentType !== 'thought');
-  }, [think, vault]);
+  });
+
+  useEffect(() => {
+    if (think?.ContentType !== 'thought') {
+      setAllItems(vault.GetThinks().filter(t => t.ContentType !== 'thought'));
+      return;
+    }
+    vault.GetThinksForThoughtAsync(think.ID).then(setAllItems);
+  }, [think?.ID, vault]);
 
   // フィルター適用
   const filtered = useMemo<TTThink[]>(() => {

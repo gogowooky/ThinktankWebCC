@@ -361,15 +361,15 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         allVaultChecked={vault.GetThinks().length > 0 && vault.GetThinks().every(t => panel.CheckedThoughtIDs.includes(t.ID))}
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
+        canCreateThought={canCreateThought}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
-        canCreateThought={canCreateThought}
-        onCreateThought={handleCreateThought}
         onToggleAllVault={handleToggleAllVault}
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
+        onCreateThought={handleCreateThought}
       />
 
       {showColumnDialog && (

@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, LibrarySquare, ListChecks, List, CalendarDays, ArrowDownAZ } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, CalendarDays, ArrowDownAZ, LibrarySquare } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -15,23 +15,25 @@ interface Props {
   allVaultChecked:       boolean;
   showDateFilter:        boolean;
   showColumnDialog:      boolean;
+  canCreateThought:      boolean;
   onCheckAll:            () => void;
   onClearChecks:         () => void;
   onDeleteChecked:       () => void;
   onToggleCheckedOnly:   () => void;
-  canCreateThought:      boolean;
-  onCreateThought:       () => void;
   onToggleAllVault:      () => void;
   onToggleDateFilter:    () => void;
   onToggleColumnDialog:  () => void;
+  onCreateThought:       () => void;
 }
 
 export function ThinktankMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showDateFilter, showColumnDialog,
+  canCreateThought,
   onCheckAll, onClearChecks, onDeleteChecked,
-  onToggleCheckedOnly, canCreateThought, onCreateThought, onToggleAllVault,
+  onToggleCheckedOnly, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
+  onCreateThought,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
