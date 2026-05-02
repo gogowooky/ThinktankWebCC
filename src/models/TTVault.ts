@@ -125,23 +125,24 @@ export class TTVault extends TTCollection {
 
   /** 複数 thought を合成した新 thought を作成する
    *  各 thought の ThinkID を展開・重複排除して `* id` 行にまとめる
-   *  タイトル: 合成：{name1}＋{name2}＋...
+   *  タイトル: {count1}件＋{count2}件：{name1}＋{name2}＋...
    */
   public async CreateThoughtFromThoughts(ids: string[]): Promise<TTThink> {
-    const resolvedIds: string[] = [];
+    const perThought: { name: string; thinkIds: string[] }[] = [];
     for (const id of ids) {
       const think = this.GetThink(id);
       if (think?.ContentType === 'thought') {
         if (think.IsMetaOnly) await think.LoadContent();
-        resolvedIds.push(...think.getThinkIds());
+        perThought.push({ name: think.Name, thinkIds: think.getThinkIds() });
       } else {
-        resolvedIds.push(id);
+        perThought.push({ name: think?.Name ?? id, thinkIds: [id] });
       }
     }
-    const uniqueIds = [...new Set(resolvedIds)];
-    const names = ids.map(id => this._children.get(id)?.Name ?? id).join('＋');
+    const uniqueIds = [...new Set(perThought.flatMap(p => p.thinkIds))];
+    const counts = perThought.map(p => `${p.thinkIds.length}件`).join('＋');
+    const names  = perThought.map(p => p.name).join('＋');
     return this._createThought(
-      `合成：${names}`,
+      `${counts}：${names}`,
       uniqueIds.map(id => `* ${id}`).join('\n'),
       uniqueIds.join(','),
     );
@@ -230,30 +231,30 @@ export class TTVault extends TTCollection {
   }
 
   /** 全文検索クエリからthoughtを新規作成して保存する
-   *  ids なし → 検索：{query} / >> {query}
-   *  ids あり → 一覧：{query}  / * {id}...
+   *  ids なし → 検索：{query}      / >> {query}
+   *  ids あり → {件数}件：{query}  / * {id}...
    */
   public async CreateThoughtFromSearch(query: string, ids: string[]): Promise<TTThink> {
     if (ids.length === 0) {
       return this._createThought(`検索：${query}`, `>> ${query}`, '');
     }
     return this._createThought(
-      `一覧：${query}`,
+      `${ids.length}件：${query}`,
       ids.map(id => `* ${id}`).join('\n'),
       ids.join(','),
     );
   }
 
   /** フィルターキーワードからthoughtを新規作成して保存する
-   *  ids なし → フィルター：{keyword} / > {keyword}
-   *  ids あり → 一覧：{keyword}      / * {id}...
+   *  ids なし → フィルター：{keyword}    / > {keyword}
+   *  ids あり → {件数}件：{keyword}      / * {id}...
    */
   public async CreateThoughtFromFilter(keyword: string, ids: string[]): Promise<TTThink> {
     if (ids.length === 0) {
       return this._createThought(`フィルター：${keyword}`, `> ${keyword}`, '');
     }
     return this._createThought(
-      `一覧：${keyword}`,
+      `${ids.length}件：${keyword}`,
       ids.map(id => `* ${id}`).join('\n'),
       ids.join(','),
     );
