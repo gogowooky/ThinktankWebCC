@@ -14,7 +14,8 @@ import { StorageManager } from '../../services/storage/StorageManager';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
 import { ThoughtsFilter } from './ThoughtsFilter';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
-import { ThinktankFilterView, computeDateRange, parseRange } from './ThinktankFilterView';
+import { ThinktankFilterView } from './ThinktankFilterView';
+import { computeDateRange, parseRange } from '../../utils/dateUtils';
 import { ThinktankSearchView } from './ThinktankSearchView';
 import { AiChatView } from './AiChatView';
 import type { ChatMessage } from '../../types';
@@ -151,8 +152,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
     panel.SelectThought(id);
   }, [panel]);
 
-  const handleToggleCheck = useCallback((id: string) => {
-    panel.ToggleCheck(id);
+  const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
+    panel.ToggleCheck(id, force);
   }, [panel]);
 
   const handleFilterChange = useCallback((value: string) => {
@@ -170,14 +171,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const handleDeleteChecked = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
     if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
-    const deletedIds = new Set(panel.CheckedThoughtIDs);
+    app.RemoveThinksFromWorkout(panel.CheckedThoughtIDs);
     await vault.DeleteThinks(panel.CheckedThoughtIDs);
-    // 削除したアイテムを表示している WorkoutPane を閉じる
-    const workoutPanel = TTApplication.Instance.WorkoutPanel;
-    const toRemove = workoutPanel.Areas.filter(a => deletedIds.has(a.ResourceID)).map(a => a.ID);
-    for (const areaId of toRemove) workoutPanel.RemoveArea(areaId);
     panel.ClearChecks();
-  }, [panel, vault]);
+  }, [app, panel, vault]);
 
   const handleToggleCheckedOnly = useCallback(() => {
     panel.ToggleShowCheckedOnly();
@@ -216,20 +213,21 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
       : panel.CheckedThoughtIDs.length > 0;
 
   const handleCreateThought = useCallback(async () => {
+    const dates = { createdDate, createdRange, updatedDate, updatedRange };
     let think;
     if (panel.ViewMode === 'search' && searchQuery.trim() !== '') {
-      think = await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs);
+      think = await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs, dates);
     } else if (panel.ViewMode === 'filter') {
-      think = await vault.CreateThoughtFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs);
+      think = await vault.CreateThoughtFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs, dates);
     } else if (panel.ViewMode === 'thoughts' && panel.CheckedThoughtIDs.length > 1) {
       think = await vault.CreateThoughtFromThoughts(panel.CheckedThoughtIDs);
     } else {
       if (panel.CheckedThoughtIDs.length === 0) return;
-      think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, '');
+      think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, filterTitleQuery.trim(), dates);
     }
     panel.ClearChecks();
-    panel.SelectThought(think.ID);
-  }, [panel, vault, searchQuery, filterTitleQuery]);
+    // panel.SelectThought(think.ID); // Overviewモードへの自動登録を停止
+  }, [panel, vault, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
 
   // チャット送信・保存
   const handleChatSend = useCallback((text: string) => {

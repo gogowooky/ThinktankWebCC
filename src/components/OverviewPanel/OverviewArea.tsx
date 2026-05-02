@@ -26,7 +26,7 @@ import { AiChatView } from '../ThinktankPanel/AiChatView';
 import { ThoughtsFilter } from '../ThinktankPanel/ThoughtsFilter';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
-import { computeDateRange, parseRange } from '../ThinktankPanel/ThinktankFilterView';
+import { computeDateRange, parseRange } from '../../utils/dateUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage } from '../../types';
 import './OverviewArea.css';
@@ -208,8 +208,17 @@ export function OverviewArea({ app, showSettings }: Props) {
     });
   }, []);
 
-  const handleToggleCheck = useCallback((id: string) => {
-    setCheckedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
+    const ids = Array.isArray(id) ? id : [id];
+    setCheckedIds(prev => {
+      const nextSet = new Set(prev);
+      ids.forEach(tid => {
+        const next = (force !== undefined) ? force : !nextSet.has(tid);
+        if (next) nextSet.add(tid);
+        else nextSet.delete(tid);
+      });
+      return Array.from(nextSet);
+    });
   }, []);
 
   const handleChatSend = useCallback((text: string) => {

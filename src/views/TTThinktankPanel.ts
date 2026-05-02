@@ -95,14 +95,23 @@ export class TTThinktankPanel extends TTObject {
     this.NotifyUpdated();
   }
 
-  /** ThoughtのチェックON/OFFを切り替える */
-  public ToggleCheck(thoughtId: string): void {
-    const idx = this.CheckedThoughtIDs.indexOf(thoughtId);
-    if (idx === -1) {
-      this.CheckedThoughtIDs = [...this.CheckedThoughtIDs, thoughtId];
-    } else {
-      this.CheckedThoughtIDs = this.CheckedThoughtIDs.filter(id => id !== thoughtId);
-    }
+  /** 指定した ID (群) のチェック状態を切り替える / 指定する */
+  public ToggleCheck(id: string | string[], forceChecked?: boolean): void {
+    const ids = Array.isArray(id) ? id : [id];
+    const current = new Set(this.CheckedThoughtIDs);
+
+    ids.forEach(targetId => {
+      const isChecked = current.has(targetId);
+      const nextChecked = (forceChecked !== undefined) ? forceChecked : !isChecked;
+
+      if (nextChecked) {
+        current.add(targetId);
+      } else {
+        current.delete(targetId);
+      }
+    });
+
+    this.CheckedThoughtIDs = Array.from(current);
     this.NotifyUpdated();
   }
 

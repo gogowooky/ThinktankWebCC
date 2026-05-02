@@ -70,7 +70,7 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
   }
 
   const thinkIds  = think.getThinkIds();
-  const filterStr = think.getFilter();
+  const filterStr = think.Content.split('\n').slice(1).find(l => l.startsWith('> '))?.slice(2).trim() ?? '';
   const thinks    = vault.GetThinksForThought(think.ID);
 
   return (

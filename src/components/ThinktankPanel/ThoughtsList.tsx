@@ -29,7 +29,7 @@ interface Props {
   checkedIds: string[];
   columns?: ColumnConfig[];
   onOpen: (id: string) => void;
-  onToggleCheck: (id: string) => void;
+  onToggleCheck: (id: string | string[], force?: boolean) => void;
 }
 
 /** フィルタートークンを適用して TTThink[] を絞り込む */
@@ -119,6 +119,27 @@ export function ThoughtsList({
     }
   };
 
+  const handleCheckClick = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const isCurrentlyChecked = checkedIds.includes(id);
+    const nextChecked = !isCurrentlyChecked;
+
+    if (e.shiftKey && focusedId && focusedId !== id) {
+      const fromIdx = thoughts.findIndex(t => t.ID === focusedId);
+      const toIdx = thoughts.findIndex(t => t.ID === id);
+      if (fromIdx !== -1 && toIdx !== -1) {
+        const start = Math.min(fromIdx, toIdx);
+        const end = Math.max(fromIdx, toIdx);
+        const idsInRange = thoughts.slice(start, end + 1).map(t => t.ID);
+        onToggleCheck(idsInRange, nextChecked);
+        setFocusedId(id);
+        return;
+      }
+    }
+    onToggleCheck(id);
+    setFocusedId(id);
+  };
+
   if (thoughts.length === 0) {
     return (
       <div className="thoughts-list thoughts-list--empty">
@@ -174,8 +195,8 @@ export function ThoughtsList({
                 type="checkbox"
                 className="thoughts-list__check"
                 checked={isChecked}
-                onChange={e => { e.stopPropagation(); onToggleCheck(thought.ID); }}
-                onClick={e => e.stopPropagation()}
+                onChange={() => { /* onChangeはonClickで処理するため空 */ }}
+                onClick={e => handleCheckClick(e, thought.ID)}
                 aria-label={`${thought.Name} を選択`}
               />
               {getTypeIcon(thought.ContentType)}

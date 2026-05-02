@@ -99,6 +99,17 @@ export class TTApplication extends TTObject {
     }
   }
 
+  /** 指定した ID の Think ペインを WorkoutPanel から削除する */
+  public RemoveThinksFromWorkout(ids: string[]): void {
+    const idSet = new Set(ids);
+    const toRemove = this.WorkoutPanel.Areas
+      .filter(a => idSet.has(a.ResourceID))
+      .map(a => a.ID);
+    for (const areaId of toRemove) {
+      this.WorkoutPanel.RemoveArea(areaId);
+    }
+  }
+
   /**
    * ThinkをWorkoutAreaで開く。
    * 既存のAreaが満杯（6個）の場合はnullを返す。

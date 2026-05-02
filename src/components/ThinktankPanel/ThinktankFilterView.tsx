@@ -31,49 +31,7 @@ function saveHistory(value: string): string[] {
   return next;
 }
 
-// ── 日付範囲ユーティリティ（ThinktankArea でも import して使用） ─────────────
-
-type RangeSign = '+' | '-' | '+-' | '@';
-type RangeUnit = 'y' | 'm' | 'w' | 'd';
-
-interface ParsedRange { sign: RangeSign; value: number; unit: RangeUnit; }
-
-export function parseRange(s: string): ParsedRange | null {
-  const m = s.match(/^(\+\-|\+|\-|@)(\d+)([ymwd])$/);
-  if (!m) return null;
-  return { sign: m[1] as RangeSign, value: parseInt(m[2], 10), unit: m[3] as RangeUnit };
-}
-
-function shiftDate(base: Date, delta: number, unit: RangeUnit): Date {
-  const d = new Date(base);
-  if (unit === 'y') d.setFullYear(d.getFullYear() + delta);
-  else if (unit === 'm') d.setMonth(d.getMonth() + delta);
-  else if (unit === 'w') d.setDate(d.getDate() + delta * 7);
-  else d.setDate(d.getDate() + delta);
-  return d;
-}
-
-function toStr(d: Date): string { return d.toISOString().slice(0, 10); }
-
-export function computeDateRange(dateStr: string, rangeStr: string): { from: string; to: string } | null {
-  const trimmed = rangeStr.trim();
-  const r = parseRange(trimmed);
-  // @N{unit}: 現在日を起点に N 単位遡り。dateStr は無視。
-  if (r?.sign === '@') {
-    const now = new Date();
-    return { from: toStr(shiftDate(now, -r.value, r.unit)), to: toStr(now) };
-  }
-  if (!dateStr) return null;
-  const base = new Date(dateStr + 'T00:00:00');
-  if (!trimmed) return { from: dateStr, to: dateStr };
-  if (!r) return { from: dateStr, to: dateStr };
-  if (r.sign === '+')  return { from: dateStr, to: toStr(shiftDate(base,  r.value, r.unit)) };
-  if (r.sign === '-')  return { from: toStr(shiftDate(base, -r.value, r.unit)), to: dateStr };
-  return {
-    from: toStr(shiftDate(base, -r.value, r.unit)),
-    to:   toStr(shiftDate(base,  r.value, r.unit)),
-  };
-}
+import { parseRange, computeDateRange } from '../../utils/dateUtils';
 
 // ── コンポーネント ───────────────────────────────────────────────────────────
 
@@ -89,7 +47,7 @@ interface Props {
   updatedRange: string;
   columns?: ColumnConfig[];
   onOpen: (id: string) => void;
-  onToggleCheck: (id: string) => void;
+  onToggleCheck: (id: string | string[], force?: boolean) => void;
   onVisibleChange?: (items: TTThink[]) => void;
   onTitleQueryChange?: (q: string) => void;
 }

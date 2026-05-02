@@ -130,20 +130,6 @@ export class TTThink extends TTObject {
       .filter(Boolean);
   }
 
-  /** thought本文からFilter文字列を取得する（ContentType='thought'専用）`> `行 */
-  public getFilter(): string {
-    if (this.ContentType !== 'thought') return '';
-    const line = this._content.split('\n').find(l => /^> (?!>)/.test(l));
-    return line ? line.slice(2).trim() : '';
-  }
-
-  /** thought本文から全文検索クエリを取得する（ContentType='thought'専用）`>> `行 */
-  public getSearchQuery(): string {
-    if (this.ContentType !== 'thought') return '';
-    const line = this._content.split('\n').find(l => l.startsWith('>> '));
-    return line ? line.slice(3).trim() : '';
-  }
-
   private _extractTitle(): void {
     if (!this._content) {
       this.Name = '新しいメモ';

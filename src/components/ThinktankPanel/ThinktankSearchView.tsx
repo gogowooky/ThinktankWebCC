@@ -26,7 +26,7 @@ interface Props {
   onQueryChange:   (q: string) => void;
   onSearch:        () => void;
   onOpen:          (id: string) => void;
-  onToggleCheck:   (id: string) => void;
+  onToggleCheck:   (id: string | string[], force?: boolean) => void;
 }
 
 export function ThinktankSearchView({
