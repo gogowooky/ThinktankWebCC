@@ -207,12 +207,16 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const canCreateThought =
     panel.ViewMode === 'search'
       ? searchQuery.trim() !== ''
+      : panel.ViewMode === 'filter'
+      ? panel.Filter.trim() !== ''
       : panel.CheckedThoughtIDs.length > 0;
 
   const handleCreateThought = useCallback(async () => {
     let think;
     if (panel.ViewMode === 'search' && searchQuery.trim() !== '') {
       think = await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs);
+    } else if (panel.ViewMode === 'filter' && panel.Filter.trim() !== '') {
+      think = await vault.CreateThoughtFromFilter(panel.Filter.trim(), panel.CheckedThoughtIDs);
     } else {
       if (panel.CheckedThoughtIDs.length === 0) return;
       think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);

@@ -177,22 +177,10 @@ export class TTVault extends TTCollection {
     return think;
   }
 
-  /** 全文検索クエリからthoughtを新規作成して保存する */
-  public async CreateThoughtFromSearch(query: string, ids: string[]): Promise<TTThink> {
+  /** thought新規作成の共通ロジック */
+  private async _createThought(title: string, body: string, relatedIds: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
-
-    const title = `検索：${query}`;
-    let body: string;
-    let relatedIds: string;
-
-    if (ids.length === 0) {
-      body      = `>> ${query}`;
-      relatedIds = '';
-    } else {
-      body      = ids.map(id => `* ${id}`).join('\n');
-      relatedIds = ids.join(',');
-    }
     const fullContent = `${title}\n${body}`;
 
     const think = new TTThink();
@@ -215,6 +203,36 @@ export class TTVault extends TTCollection {
     think.markSaved();
     this.NotifyUpdated();
     return think;
+  }
+
+  /** 全文検索クエリからthoughtを新規作成して保存する
+   *  ids なし → 検索：{query} / >> {query}
+   *  ids あり → 一覧：{query}  / * {id}...
+   */
+  public async CreateThoughtFromSearch(query: string, ids: string[]): Promise<TTThink> {
+    if (ids.length === 0) {
+      return this._createThought(`検索：${query}`, `>> ${query}`, '');
+    }
+    return this._createThought(
+      `一覧：${query}`,
+      ids.map(id => `* ${id}`).join('\n'),
+      ids.join(','),
+    );
+  }
+
+  /** フィルターキーワードからthoughtを新規作成して保存する
+   *  ids なし → フィルター：{keyword} / > {keyword}
+   *  ids あり → 一覧：{keyword}      / * {id}...
+   */
+  public async CreateThoughtFromFilter(keyword: string, ids: string[]): Promise<TTThink> {
+    if (ids.length === 0) {
+      return this._createThought(`フィルター：${keyword}`, `> ${keyword}`, '');
+    }
+    return this._createThought(
+      `一覧：${keyword}`,
+      ids.map(id => `* ${id}`).join('\n'),
+      ids.join(','),
+    );
   }
 
   /** 新規の空Thinkを作成して保存する */
