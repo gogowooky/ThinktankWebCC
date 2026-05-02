@@ -7,16 +7,16 @@
  */
 
 import { useState, useCallback } from 'react';
-import { GripVertical, FileText, Eye, Table, LayoutGrid, Share2, MessageCircle, X, type LucideIcon } from 'lucide-react';
+import { GripVertical, NotebookPen, BookOpenText, Table, IdCard, Share2, MessageCircle, X, type LucideIcon } from 'lucide-react';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { MediaType } from '../../types';
 import './WorkoutAreaRibbon.css';
 
 const MEDIA_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
-  { type: 'texteditor',  Icon: FileText,       title: 'テキストエディタ' },
-  { type: 'markdown',    Icon: Eye,            title: 'Markdown' },
+  { type: 'texteditor',  Icon: NotebookPen,    title: 'テキストエディタ' },
+  { type: 'markdown',    Icon: BookOpenText,   title: 'Markdown' },
   { type: 'datagrid',    Icon: Table,          title: 'テーブル' },
-  { type: 'card',        Icon: LayoutGrid,     title: 'カード' },
+  { type: 'card',        Icon: IdCard,         title: 'カード' },
   { type: 'graph',       Icon: Share2,         title: 'グラフ' },
   { type: 'chat',        Icon: MessageCircle,  title: 'チャット' },
 ];

@@ -13,6 +13,7 @@ import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
 import { ThinktankRibbon } from './ThinktankRibbon';
 import { ThinktankArea } from './ThinktankArea';
+import type { LayoutMode } from '../Layout/AppLayout';
 import './ThinktankPanel.css';
 
 const DEFAULT_WIDTH = 240;
@@ -22,9 +23,11 @@ interface Props {
   app: TTApplication;
   width: number;
   onResize: (delta: number) => void;
+  layoutMode: LayoutMode;
+  onLayoutModeChange: (mode: LayoutMode) => void;
 }
 
-export function ThinktankPanel({ app, width, onResize }: Props) {
+export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeChange }: Props) {
   const panel = app.ThinktankPanel;
   const vault = app.Models.Vault;
   useAppUpdate(panel);
@@ -62,7 +65,11 @@ export function ThinktankPanel({ app, width, onResize }: Props) {
         isOpen={panel.IsAreaOpen}
         width={Math.max(MIN_WIDTH, width)}
       >
-        <ThinktankArea app={app} />
+        <ThinktankArea
+          app={app}
+          layoutMode={layoutMode}
+          onLayoutModeChange={onLayoutModeChange}
+        />
       </PanelArea>
       {panel.IsAreaOpen && (
         <Splitter onResize={handleResize} />

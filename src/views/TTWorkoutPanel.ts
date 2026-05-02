@@ -149,17 +149,17 @@ export class TTWorkoutPanel extends TTObject {
 
   // ── TextEditor 設定 ───────────────────────────────────────────────────
 
-  public EditorLineNumbers: boolean = true;
+  public EditorLineNumbers: boolean = false;
   public EditorWordWrap: boolean = true;
   public EditorMinimap: boolean = false;
   public EditorShowFullWidthSpace: boolean = false;
-  public EditorUnicodeHighlight: boolean = true;
+  public EditorUnicodeHighlight: boolean = false;
   public EditorBracketPairColorization: boolean = true;
   public EditorHighlightWord: string = '';
   public EditorHighlightHistory: string[] = [];
 
-  public EditorBackground: string = '#1e1e1e';
-  public EditorForeground: string = '#d4d4d4';
+  public EditorBackground: string = '#f5f5f5';
+  public EditorForeground: string = '#1e1e1e';
   public EditorHeadingStyles: { color: string; bold: boolean; underline: boolean }[] = [
     { color: '#569cd6', bold: true, underline: false }, // H1
     { color: '#4ec9b0', bold: true, underline: false }, // H2

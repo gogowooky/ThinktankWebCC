@@ -96,18 +96,27 @@ export class TTThink extends TTObject {
   public async SaveContent(): Promise<void> {
     if (!this.IsDirty) return;
     try {
-      await StorageManager.instance.save({
+      const meta = await StorageManager.instance.save({
         id:          this.ID,
         contentType: this.ContentType,
         fullContent: this.Content,
         keywords:    this.Keywords,
         relatedIds:  this.RelatedIDs,
       });
+      // 保存成功後: サーバーが返した updatedAt を反映
+      if (meta.updatedAt) {
+        this.UpdatedAt = meta.updatedAt;
+      }
       this.markSaved();
+      // 親 Vault に通知してDataGridを再描画させる（UpdateDateは自分自身では更新しない）
+      if (this._parent) {
+        this._parent.NotifyUpdated(false);
+      }
     } catch (e) {
       console.error(`[TTThink] SaveContent failed (${this.ID}):`, e);
     }
   }
+
 
   // ── ヘルパー ───────────────────────────────────────────────────────
 

@@ -6,7 +6,7 @@
  * side="right" でパネルの右端に配置。
  */
 
-import { Trash2 } from 'lucide-react';
+import { Trash2, MessageCircle } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import './ToDoRibbon.css';
 
@@ -24,6 +24,13 @@ export function ToDoRibbon({ isOpen, onToggle, onClearChat }: Props) {
       isOpen={isOpen}
       onToggle={onToggle}
     >
+      <button
+        className="todo-ribbon__btn todo-ribbon__btn--chat"
+        title="チャット"
+        aria-label="チャット"
+      >
+        <MessageCircle size={14} />
+      </button>
       <button
         className="todo-ribbon__btn"
         onClick={onClearChat}

@@ -377,7 +377,24 @@ export function WorkoutPanel({ app }: Props) {
   const computeDropOverlay = useCallback((e: React.DragEvent) => {
     const bodyEl = bodyRef.current;
     if (!bodyEl) return null;
+
+    // タイトルバー（WorkoutAreaRibbon）上にいる場合はオーバーレイを表示しない
+    const elemsUnderCursor = document.elementsFromPoint(e.clientX, e.clientY);
+    if (elemsUnderCursor.some(el => el.classList.contains('workout-area-ribbon'))) {
+      return null;
+    }
+
     const br   = bodyEl.getBoundingClientRect();
+
+    // ── エリアが1つも無い場合：全面を緑オーバーレイ ──
+    if (panel.Layout === null) {
+      return {
+        type: 'add' as const,
+        dir: 'right' as DropEdgeDir,
+        style: { left: 0, top: 0, width: br.width, height: br.height } as React.CSSProperties,
+      };
+    }
+
     const px   = (e.clientX - br.left) / br.width;
     const py   = (e.clientY - br.top)  / br.height;
     const dl   = px;
@@ -389,7 +406,7 @@ export function WorkoutPanel({ app }: Props) {
       min === dl ? 'left' : min === dr ? 'right' : min === du ? 'up' : 'down';
     const isOuter = min < OUTER_RATIO;
 
-    if (isOuter || panel.Layout === null) {
+    if (isOuter) {
       const fw = br.width  * NEW_PANE_FRAC;
       const fh = br.height * NEW_PANE_FRAC;
       const s: React.CSSProperties =
@@ -425,7 +442,9 @@ export function WorkoutPanel({ app }: Props) {
       splitDir === 'up'    ? { left: aLeft,          top: aTop, width: aW,   height: aH/2 } :
                               { left: aLeft, top: aTop + aH/2,  width: aW,   height: aH/2 };
 
-    return { type: 'split' as const, dir: splitDir, areaId, style: s };
+    // ── エリアが1つだけのとき：split→addに統一（緑オーバーレイ）──
+    const overlayType = panel.Areas.length <= 1 ? 'add' as const : 'split' as const;
+    return { type: overlayType, dir: splitDir, areaId, style: s };
   }, [panel]);
 
   const handleBodyDragOver = useCallback((e: React.DragEvent) => {

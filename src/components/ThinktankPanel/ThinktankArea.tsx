@@ -23,11 +23,15 @@ import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDia
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import './ThinktankArea.css';
 
+import type { LayoutMode } from '../Layout/AppLayout';
+
 interface Props {
   app: TTApplication;
+  layoutMode: LayoutMode;
+  onLayoutModeChange: (mode: LayoutMode) => void;
 }
 
-export function ThinktankArea({ app }: Props) {
+export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const panel = app.ThinktankPanel;
   const vault = app.Models.Vault;
 
@@ -300,7 +304,7 @@ export function ThinktankArea({ app }: Props) {
   } else if (panel.ViewMode === 'ai') {
     content = <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} onSave={handleSaveChat} />;
   } else if (panel.ViewMode === 'settings') {
-    content = <ThinktankSettingsView />;
+    content = <ThinktankSettingsView layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
   } else {
     // デフォルト: thoughts モード
     content = (

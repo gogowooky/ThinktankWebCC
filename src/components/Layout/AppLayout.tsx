@@ -7,6 +7,10 @@
  *   OverviewPanel（Ribbon + Area）  |
  *   WorkoutPanel（中央、flex:1）    |
  *   ToDoPanel（Area + Ribbon）
+ *
+ * レイアウトモード:
+ *   'sipoc'  … 全パネル表示（デフォルト）
+ *   'simple' … OverviewPanel / ToDoPanel を非表示
  */
 
 import { useCallback, useState } from 'react';
@@ -24,6 +28,15 @@ const OVERVIEW_WIDTH  = 260;
 const TODO_WIDTH      = 260;
 const MIN_PANEL_WIDTH = 120;
 
+export type LayoutMode = 'sipoc' | 'simple';
+
+const LS_LAYOUT_MODE = 'tt-layout-mode';
+
+function loadLayoutMode(): LayoutMode {
+  const v = localStorage.getItem(LS_LAYOUT_MODE);
+  return v === 'simple' ? 'simple' : 'sipoc';
+}
+
 export function AppLayout() {
   const app = TTApplication.Instance;
 
@@ -33,6 +46,14 @@ export function AppLayout() {
   const [ttWidth,       setTtWidth]       = useState(THINKTANK_WIDTH);
   const [overviewWidth, setOverviewWidth] = useState(OVERVIEW_WIDTH);
   const [todoWidth,     setTodoWidth]     = useState(TODO_WIDTH);
+
+  // レイアウトモード（sipoc / simple）
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadLayoutMode);
+
+  const handleLayoutModeChange = useCallback((mode: LayoutMode) => {
+    setLayoutMode(mode);
+    localStorage.setItem(LS_LAYOUT_MODE, mode);
+  }, []);
 
   // ── Splitter ハンドラー ──────────────────────────────────────────
 
@@ -48,6 +69,7 @@ export function AppLayout() {
     setTodoWidth(w => Math.max(MIN_PANEL_WIDTH, w - dx));
   }, []);
 
+  const showSidePanels = layoutMode === 'sipoc';
 
   return (
     <HighlightProvider>
@@ -58,10 +80,12 @@ export function AppLayout() {
         app={app}
         width={ttWidth}
         onResize={onTtSplitter}
+        layoutMode={layoutMode}
+        onLayoutModeChange={handleLayoutModeChange}
       />
 
       {/* ── OverviewPanel（Phase 9 実装済み）──────────────────── */}
-      <div className="app-panel app-panel--overview">
+      <div className="app-panel app-panel--overview" style={showSidePanels ? undefined : { display: 'none' }}>
         <OverviewPanel
           app={app}
           width={overviewWidth}
@@ -75,7 +99,7 @@ export function AppLayout() {
       </div>
 
       {/* ── ToDoPanel（Phase 10 実装済み）─────────────────────── */}
-      <div className="app-panel app-panel--todo">
+      <div className="app-panel app-panel--todo" style={showSidePanels ? undefined : { display: 'none' }}>
         <ToDoPanel
           app={app}
           width={todoWidth}

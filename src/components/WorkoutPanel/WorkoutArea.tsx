@@ -68,14 +68,19 @@ export function WorkoutArea({
     area.OpenThink(thinkId, mediaType, title);
   }, [vault, area]);
 
-  // 保存ハンドラー（TextEditorMedia から呼ばれる）
+  // 保存ハンドラー（TextEditorMedia から Ctrl+S で呼ばれる）
   const handleSave = useCallback((content: string) => {
     const think = vault.GetThink(area.ResourceID);
     if (!think) return;
     think.Content = content;
-    think.markSaved();
-    setIsDirty(false);
+    // BigQuery へ保存し、updated_at をサーバーから受け取って DataGrid に反映する
+    think.SaveContent().then(() => {
+      setIsDirty(false);
+    }).catch(e => {
+      console.error('[WorkoutArea] SaveContent failed:', e);
+    });
   }, [vault, area.ResourceID]);
+
 
   // think データ取得
   const think = vault.GetThink(area.ResourceID) ?? null;
@@ -88,11 +93,11 @@ export function WorkoutArea({
     onSave: handleSave,
     onDirtyChange: setIsDirty,
     editorSettings: {
-      lineNumbers:   panel?.EditorLineNumbers ?? true,
+      lineNumbers:   panel?.EditorLineNumbers ?? false,
       wordWrap:      panel?.EditorWordWrap ?? true,
       minimap:       panel?.EditorMinimap ?? false,
       showFullWidthSpace: panel?.EditorShowFullWidthSpace ?? false,
-      unicodeHighlight: panel?.EditorUnicodeHighlight ?? true,
+      unicodeHighlight: panel?.EditorUnicodeHighlight ?? false,
       bracketPairColorization: panel?.EditorBracketPairColorization ?? true,
       highlightWord: panel?.EditorHighlightWord ?? '',
       highlightStyles: panel?.EditorHighlightStyles ?? [
@@ -102,8 +107,8 @@ export function WorkoutArea({
         { backgroundColor: '#008000', color: '#ffffff' },
         { backgroundColor: '#800080', color: '#ffffff' },
       ],
-      background:    panel?.EditorBackground ?? '#1e1e1e',
-      foreground:    panel?.EditorForeground ?? '#d4d4d4',
+      background:    panel?.EditorBackground ?? '#f5f5f5',
+      foreground:    panel?.EditorForeground ?? '#1e1e1e',
       headingStyles: panel?.EditorHeadingStyles ?? [
         { color: '#569cd6', bold: true, underline: false },
         { color: '#4ec9b0', bold: true, underline: false },

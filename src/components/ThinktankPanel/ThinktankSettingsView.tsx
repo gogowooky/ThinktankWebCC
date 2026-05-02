@@ -1,13 +1,13 @@
 /**
  * ThinktankSettingsView.tsx
- * 保管庫名を設定するビュー。
- * 履歴付きtextboxで vault 名を入力・保存する。
+ * 保管庫名・アプリケーション状態・データ編集モードを設定するビュー。
  */
 
 import { useState, useCallback } from 'react';
-import { Save, Monitor, Globe, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight } from 'lucide-react';
+import { Save, Monitor, Globe, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight, Columns4, Columns2 } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
 import type { SyncState } from '../../types';
+import type { LayoutMode } from '../Layout/AppLayout';
 import './ThinktankSettingsView.css';
 
 const SYNC_LABEL: Record<SyncState, string> = {
@@ -30,6 +30,8 @@ function SyncIcon({ state }: { state: SyncState }) {
 
 interface Props {
   syncState?: SyncState;
+  layoutMode: LayoutMode;
+  onLayoutModeChange: (mode: LayoutMode) => void;
 }
 
 const LS_KEY_VALUE   = 'tt-vault-name';
@@ -57,13 +59,14 @@ function saveValue(name: string): string[] {
   return next;
 }
 
-export function ThinktankSettingsView({ syncState = 'synced' }: Props) {
+export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayoutModeChange }: Props) {
   const mode = StorageManager.instance.mode;
-  const [value,        setValue]        = useState(loadValue);
-  const [history,      setHistory]      = useState(loadHistory);
-  const [saved,        setSaved]        = useState(false);
-  const [isStatusOpen, setIsStatusOpen] = useState(true);
-  const [isVaultOpen,  setIsVaultOpen]  = useState(true);
+  const [value,          setValue]          = useState(loadValue);
+  const [history,        setHistory]        = useState(loadHistory);
+  const [saved,          setSaved]          = useState(false);
+  const [isStatusOpen,   setIsStatusOpen]   = useState(true);
+  const [isVaultOpen,    setIsVaultOpen]    = useState(true);
+  const [isEditModeOpen, setIsEditModeOpen] = useState(true);
 
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';
@@ -81,10 +84,53 @@ export function ThinktankSettingsView({ syncState = 'synced' }: Props) {
 
   return (
     <div className="tt-settings-view">
+
+      {/* ── データ編集 ── */}
+      <section className="tt-settings-section">
+        <div className="tt-settings-section__header" onClick={() => setIsEditModeOpen(v => !v)}>
+          {isEditModeOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="tt-settings-section__title">データ編集</h2>
+        </div>
+        {isEditModeOpen && (
+          <div className="tt-settings-layout-modes">
+            <p className="tt-settings-section__desc">
+              画面のレイアウトモードを選択します。
+            </p>
+            <label className={`tt-settings-mode-option${layoutMode === 'sipoc' ? ' tt-settings-mode-option--active' : ''}`}>
+              <input
+                type="radio"
+                name="layout-mode"
+                value="sipoc"
+                checked={layoutMode === 'sipoc'}
+                onChange={() => onLayoutModeChange('sipoc')}
+                className="tt-settings-mode-radio"
+              />
+              <Columns4 size={13} className="tt-settings-mode-icon" />
+              <span className="tt-settings-mode-label">SIPOCモード</span>
+              <span className="tt-settings-mode-desc">全パネルを表示する標準モード</span>
+            </label>
+            <label className={`tt-settings-mode-option${layoutMode === 'simple' ? ' tt-settings-mode-option--active' : ''}`}>
+              <input
+                type="radio"
+                name="layout-mode"
+                value="simple"
+                checked={layoutMode === 'simple'}
+                onChange={() => onLayoutModeChange('simple')}
+                className="tt-settings-mode-radio"
+              />
+              <Columns2 size={13} className="tt-settings-mode-icon" />
+              <span className="tt-settings-mode-label">簡易モード</span>
+              <span className="tt-settings-mode-desc">OverviewとToDoPanelを非表示</span>
+            </label>
+          </div>
+        )}
+      </section>
+
+      {/* ── アプリケーションの状態 ── */}
       <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsStatusOpen(v => !v)}>
           {isStatusOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">状態</h2>
+          <h2 className="tt-settings-section__title">アプリケーションの状態</h2>
         </div>
         {isStatusOpen && (
           <dl className="tt-settings-status">
@@ -106,6 +152,8 @@ export function ThinktankSettingsView({ syncState = 'synced' }: Props) {
         )}
       </section>
 
+
+      {/* ── 保管庫名 ── */}
       <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsVaultOpen(v => !v)}>
           {isVaultOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
