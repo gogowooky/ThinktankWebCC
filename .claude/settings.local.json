@@ -86,7 +86,8 @@
       "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); print\\(f'件数: {len\\(data\\)}'\\)\")",
       "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); console.log\\('件数:', JSON.parse\\(d\\).length\\)\")",
       "Bash(curl -s \"http://localhost:8080/api/bq/files/meta\" -o /tmp/meta.json)",
-      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/tmp/meta.json','utf8'\\); console.log\\('件数:', JSON.parse\\(d\\).length\\)\")"
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/tmp/meta.json','utf8'\\); console.log\\('件数:', JSON.parse\\(d\\).length\\)\")",
+      "Bash(node -e \"const l = require\\('C:/Users/gogow/Documents/ThinktankWebCC/node_modules/lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('chevrons'\\)\\).join\\('\\\\n'\\)\\)\")"
     ]
   }
 }
