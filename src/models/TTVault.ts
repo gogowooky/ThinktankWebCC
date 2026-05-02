@@ -230,12 +230,12 @@ export class TTVault extends TTCollection {
   }
 
   /** 全文検索クエリからthoughtを新規作成して保存する
-   *  ids なし → 検索：{query} / >> {query}
+   *  ids なし → 検索：{query} / > {query}
    *  ids あり → 一覧：{query}  / * {id}...
    */
   public async CreateThoughtFromSearch(query: string, ids: string[]): Promise<TTThink> {
     if (ids.length === 0) {
-      return this._createThought(`検索：${query}`, `>> ${query}`, '');
+      return this._createThought(`検索：${query}`, `> ${query}`, '');
     }
     return this._createThought(
       `一覧：${query}`,
