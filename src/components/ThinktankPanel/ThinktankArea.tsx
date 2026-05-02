@@ -217,6 +217,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
       think = await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs);
     } else if (panel.ViewMode === 'filter' && panel.Filter.trim() !== '') {
       think = await vault.CreateThoughtFromFilter(panel.Filter.trim(), panel.CheckedThoughtIDs);
+    } else if (panel.ViewMode === 'thoughts' && panel.CheckedThoughtIDs.length > 1) {
+      think = await vault.CreateThoughtFromThoughts(panel.CheckedThoughtIDs);
     } else {
       if (panel.CheckedThoughtIDs.length === 0) return;
       think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);

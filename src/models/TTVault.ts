@@ -123,6 +123,30 @@ export class TTVault extends TTCollection {
     }
   }
 
+  /** 複数 thought を合成した新 thought を作成する
+   *  各 thought の ThinkID を展開・重複排除して `* id` 行にまとめる
+   *  タイトル: 合成：{name1}＋{name2}＋...
+   */
+  public async CreateThoughtFromThoughts(ids: string[]): Promise<TTThink> {
+    const resolvedIds: string[] = [];
+    for (const id of ids) {
+      const think = this.GetThink(id);
+      if (think?.ContentType === 'thought') {
+        if (think.IsMetaOnly) await think.LoadContent();
+        resolvedIds.push(...think.getThinkIds());
+      } else {
+        resolvedIds.push(id);
+      }
+    }
+    const uniqueIds = [...new Set(resolvedIds)];
+    const names = ids.map(id => this._children.get(id)?.Name ?? id).join('＋');
+    return this._createThought(
+      `合成：${names}`,
+      uniqueIds.map(id => `* ${id}`).join('\n'),
+      uniqueIds.join(','),
+    );
+  }
+
   /** チェックされた ID 群から thought を新規作成して保存する */
   public async CreateThoughtFromIds(ids: string[], filter?: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
