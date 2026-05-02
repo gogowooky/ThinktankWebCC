@@ -208,8 +208,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
     if (panel.CheckedThoughtIDs.length === 0) return;
     const think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);
     panel.ClearChecks();
-    app.OpenThought(think.ID);
-  }, [panel, vault, app]);
+    panel.SelectThought(think.ID);
+  }, [panel, vault]);
 
   // チャット送信・保存
   const handleChatSend = useCallback((text: string) => {
