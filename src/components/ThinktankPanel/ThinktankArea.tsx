@@ -168,7 +168,12 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const handleDeleteChecked = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
     if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
+    const deletedIds = new Set(panel.CheckedThoughtIDs);
     await vault.DeleteThinks(panel.CheckedThoughtIDs);
+    // 削除したアイテムを表示している WorkoutPane を閉じる
+    const workoutPanel = TTApplication.Instance.WorkoutPanel;
+    const toRemove = workoutPanel.Areas.filter(a => deletedIds.has(a.ResourceID)).map(a => a.ID);
+    for (const areaId of toRemove) workoutPanel.RemoveArea(areaId);
     panel.ClearChecks();
   }, [panel, vault]);
 
