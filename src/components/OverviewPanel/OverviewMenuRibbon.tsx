@@ -6,7 +6,7 @@
 
 import { useCallback } from 'react';
 import {
-  CheckSquare, Square, FileMinus, ListCheck, LibrarySquare,
+  CheckSquare, Square, ListX, ListCheck, LibrarySquare,
   ListChecks, List, CalendarDays, ArrowDownAZ,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
@@ -106,7 +106,7 @@ export function OverviewMenuRibbon({
         title="チェック中のアイテムをThoughtから除外"
         disabled={!hasChecked}
       >
-        <FileMinus size={14} />
+        <ListX size={14} />
       </button>
 
       <div className="menu-ribbon__spacer" />

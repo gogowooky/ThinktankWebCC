@@ -38,8 +38,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // filter モードの可視アイテムはコールバックで受け取る
-  const [filterVisible, setFilterVisible] = useState<TTThink[]>([]);
+  // filter モードの可視アイテムとタイトルクエリはコールバックで受け取る
+  const [filterVisible,    setFilterVisible]    = useState<TTThink[]>([]);
+  const [filterTitleQuery, setFilterTitleQuery] = useState('');
 
   const handleFilterVisibleChange = useCallback((items: TTThink[]) => {
     setFilterVisible(prev => {
@@ -71,6 +72,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);
   const [searchLoading,  setSearchLoading]  = useState(false);
   const [searchSearched, setSearchSearched] = useState(false);
+  const [searchHistory,  setSearchHistory]  = useState<string[]>([]);
 
   // ── ソート適用 ────────────────────────────────────────────────────────────
 
@@ -208,24 +210,26 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
     panel.ViewMode === 'search'
       ? searchQuery.trim() !== ''
       : panel.ViewMode === 'filter'
-      ? panel.Filter.trim() !== ''
+      ? true
+      : panel.ViewMode === 'thoughts'
+      ? true
       : panel.CheckedThoughtIDs.length > 0;
 
   const handleCreateThought = useCallback(async () => {
     let think;
     if (panel.ViewMode === 'search' && searchQuery.trim() !== '') {
       think = await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs);
-    } else if (panel.ViewMode === 'filter' && panel.Filter.trim() !== '') {
-      think = await vault.CreateThoughtFromFilter(panel.Filter.trim(), panel.CheckedThoughtIDs);
+    } else if (panel.ViewMode === 'filter') {
+      think = await vault.CreateThoughtFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs);
     } else if (panel.ViewMode === 'thoughts' && panel.CheckedThoughtIDs.length > 1) {
       think = await vault.CreateThoughtFromThoughts(panel.CheckedThoughtIDs);
     } else {
       if (panel.CheckedThoughtIDs.length === 0) return;
-      think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, panel.Filter);
+      think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, '');
     }
     panel.ClearChecks();
     panel.SelectThought(think.ID);
-  }, [panel, vault, searchQuery]);
+  }, [panel, vault, searchQuery, filterTitleQuery]);
 
   // チャット送信・保存
   const handleChatSend = useCallback((text: string) => {
@@ -256,6 +260,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (!q) return;
+    setSearchHistory(prev => prev.includes(q) ? prev : [q, ...prev].slice(0, 20));
     setSearchLoading(true);
     try {
       const metas = await StorageManager.instance.search(q);
@@ -301,6 +306,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         onOpen={handleSelect}
         onToggleCheck={handleToggleCheck}
         onVisibleChange={handleFilterVisibleChange}
+        onTitleQueryChange={setFilterTitleQuery}
       />
     );
   } else if (panel.ViewMode === 'search') {
@@ -316,6 +322,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         loading={searchLoading}
         searched={searchSearched}
         columns={columns}
+        history={searchHistory}
         onQueryChange={setSearchQuery}
         onSearch={handleSearch}
         onOpen={handleSelect}

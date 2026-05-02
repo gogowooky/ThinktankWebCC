@@ -91,13 +91,14 @@ interface Props {
   onOpen: (id: string) => void;
   onToggleCheck: (id: string) => void;
   onVisibleChange?: (items: TTThink[]) => void;
+  onTitleQueryChange?: (q: string) => void;
 }
 
 export function ThinktankFilterView({
   thinks, selectedId, checkedIds, checkedOnly = false,
   createdDate, createdRange, updatedDate, updatedRange,
   columns,
-  onOpen, onToggleCheck, onVisibleChange,
+  onOpen, onToggleCheck, onVisibleChange, onTitleQueryChange,
 }: Props) {
   // タイトル検索はこのビュー固有のローカル state
   const [titleQuery, setTitleQuery] = useState('');
@@ -154,7 +155,7 @@ export function ThinktankFilterView({
           list={DATALIST_ID}
           placeholder="タイトルで絞り込み…"
           value={titleQuery}
-          onChange={e => setTitleQuery(e.target.value)}
+          onChange={e => { setTitleQuery(e.target.value); onTitleQueryChange?.(e.target.value); }}
           onBlur={handleTitleBlur}
           onKeyDown={handleTitleKeyDown}
         />

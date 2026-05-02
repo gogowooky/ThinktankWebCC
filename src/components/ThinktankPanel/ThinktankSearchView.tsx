@@ -22,6 +22,7 @@ interface Props {
   loading:         boolean;
   searched:        boolean;
   columns?:        ColumnConfig[];
+  history:         string[];
   onQueryChange:   (q: string) => void;
   onSearch:        () => void;
   onOpen:          (id: string) => void;
@@ -30,7 +31,7 @@ interface Props {
 
 export function ThinktankSearchView({
   selectedId, checkedIds, query, results, visibleResults, totalVaultCount,
-  loading, searched, columns, onQueryChange, onSearch, onOpen, onToggleCheck,
+  loading, searched, columns, history, onQueryChange, onSearch, onOpen, onToggleCheck,
 }: Props) {
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter') onSearch();
@@ -54,9 +55,13 @@ export function ThinktankSearchView({
           type="text"
           placeholder="全文検索…"
           value={query}
+          list="search-history-list"
           onChange={e => onQueryChange(e.target.value)}
           onKeyDown={handleKeyDown}
         />
+        <datalist id="search-history-list">
+          {history.map((h, i) => <option key={i} value={h} />)}
+        </datalist>
         {searched && !loading && (
           <span className="tt-search-view__count">
             {results.length}/{totalVaultCount}

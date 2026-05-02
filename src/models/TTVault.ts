@@ -181,22 +181,25 @@ export class TTVault extends TTCollection {
    *  タイトル: {count1}件＋{count2}件：{name1}＋{name2}＋...
    */
   public async CreateThoughtFromThoughts(ids: string[]): Promise<TTThink> {
-    const perThought: { name: string; thinkIds: string[] }[] = [];
+    const names: string[] = [];
+    const allThinkIds = new Set<string>();
     for (const id of ids) {
       const think = this.GetThink(id);
       if (think?.ContentType === 'thought') {
         if (think.IsMetaOnly) await think.LoadContent();
-        perThought.push({ name: think.Name, thinkIds: think.getThinkIds() });
+        names.push(think.Name);
+        const thinks = await this.GetThinksForThoughtAsync(id);
+        for (const t of thinks) allThinkIds.add(t.ID);
       } else {
-        perThought.push({ name: think?.Name ?? id, thinkIds: [id] });
+        names.push(think?.Name ?? id);
+        allThinkIds.add(id);
       }
     }
-    const uniqueIds = [...new Set(perThought.flatMap(p => p.thinkIds))];
-    const totalUniqueIds = uniqueIds.length;
-    const namesJoined = perThought.map(p => p.name).join('＋');
+    const uniqueIds = [...allThinkIds];
+    const namesJoined = names.join('＋');
     const namesTruncated = namesJoined.length > 100 ? namesJoined.slice(0, 100) : namesJoined;
     return this._createThought(
-      `${totalUniqueIds}件：${namesTruncated}`,
+      `${uniqueIds.length}件：${namesTruncated}`,
       uniqueIds.map(id => `* ${id}`).join('\n'),
       uniqueIds.join(','),
     );
