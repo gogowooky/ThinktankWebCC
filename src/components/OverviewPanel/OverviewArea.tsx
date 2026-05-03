@@ -14,11 +14,10 @@
  *   - chat      → ChatMedia
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Library, CalendarDays, CalendarClock, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Library, X } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { TTThink } from '../../models/TTThink';
 import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
@@ -26,7 +25,8 @@ import { AiChatView } from '../ThinktankPanel/AiChatView';
 import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
-import { computeDateRange, parseRange } from '../../utils/dateUtils';
+import { applySort, applyDateFilter } from '../../utils/sortUtils';
+import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage } from '../../types';
 import './OverviewArea.css';
@@ -70,46 +70,8 @@ export function OverviewArea({ app, showSettings }: Props) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
 
-  // ── ソート / 日付フィルター ────────────────────────────────────────────────
-
-  function getFieldValue(t: TTThink, field: string): string {
-    switch (field) {
-      case 'Name':        return t.Name.toLowerCase();
-      case 'ID':          return t.ID;
-      case 'UpdatedAt':   return t.UpdatedAt || t.ID;
-      case 'ContentType': return t.ContentType;
-      case 'Keywords':    return t.Keywords.toLowerCase();
-      case 'RelatedIDs':  return t.RelatedIDs;
-      default:            return '';
-    }
-  }
-
-  function applySort(items: TTThink[]): TTThink[] {
-    if (!sort.field || !sort.dir) return items;
-    const { field, dir } = sort;
-    return [...items].sort((a, b) => {
-      const av = getFieldValue(a, field);
-      const bv = getFieldValue(b, field);
-      if (av < bv) return dir === 'asc' ? -1 : 1;
-      if (av > bv) return dir === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
-
-  function applyDateFilter(items: TTThink[]): TTThink[] {
-    if (!showDateFilter) return items;
-    const cR = computeDateRange(createdDate, createdRange);
-    const uR = computeDateRange(updatedDate, updatedRange);
-    if (!cR && !uR) return items;
-    return items.filter(t => {
-      if (cR) { const d = t.ID.slice(0, 10); if (d < cR.from || d > cR.to) return false; }
-      if (uR) { const d = (t.UpdatedAt || t.ID).slice(0, 10); if (d < uR.from || d > uR.to) return false; }
-      return true;
-    });
-  }
-
   // ── Think 一覧（選択 Thought 内の全 Think → フィルタ適用）──────────────────
-  const [thinksInThought, setThinksInThought] = useState<TTThink[]>(() =>
+  const [thinksInThought, setThinksInThought] = useState(() =>
     panel.ThoughtID ? vault.GetThinksForThought(panel.ThoughtID) : []
   );
   useEffect(() => {
@@ -117,12 +79,28 @@ export function OverviewArea({ app, showSettings }: Props) {
     vault.GetThinksForThoughtAsync(panel.ThoughtID).then(setThinksInThought);
   }, [panel.ThoughtID, vault]);
 
-  const visibleThinks = applySort(applyDateFilter(
-    applyFilter(
-      showCheckedOnly ? thinksInThought.filter(t => checkedIds.includes(t.ID)) : thinksInThought,
-      filter
-    )
-  ));
+  // ── メモ化済み計算 ────────────────────────────────────────────────────────
+
+  const dateFilter = useMemo<DateFilterState>(() => ({
+    show: showDateFilter,
+    createdDate, createdRange, updatedDate, updatedRange,
+  }), [showDateFilter, createdDate, createdRange, updatedDate, updatedRange]);
+
+  const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
+
+  const visibleThinks = useMemo(() => {
+    const base = showCheckedOnly
+      ? thinksInThought.filter(t => checkedSet.has(t.ID))
+      : thinksInThought;
+    return applySort(applyDateFilter(applyFilter(base, filter), dateFilter), sort);
+  }, [thinksInThought, showCheckedOnly, checkedSet, filter, dateFilter, sort]);
+
+  const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
+
+  const allVaultChecked = useMemo(
+    () => thinksInThought.length > 0 && thinksInThought.every(t => checkedSet.has(t.ID)),
+    [thinksInThought, checkedSet],
+  );
 
   // ── ThoughtID 変化時: 一覧状態リセット ＋ MetaOnly なら Content をロード ─
   const prevThoughtIdRef = useRef(panel.ThoughtID);
@@ -163,7 +141,6 @@ export function OverviewArea({ app, showSettings }: Props) {
     setIsDragOver(false);
     const id = e.dataTransfer.getData('application/x-thought-id');
     if (!id) return;
-    // Thought（ContentType='thought'）のみ ThoughtPlace に設定する
     const dropped = vault.GetThink(id);
     if (!dropped || dropped.ContentType === 'thought') selectThought(id);
   }, [selectThought, vault]);
@@ -171,8 +148,8 @@ export function OverviewArea({ app, showSettings }: Props) {
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
   const handleCheckAll = useCallback(() => {
-    setCheckedIds(visibleThinks.map(t => t.ID));
-  }, [visibleThinks]);
+    setCheckedIds(visibleIds);
+  }, [visibleIds]);
 
   const handleClearChecks = useCallback(() => setCheckedIds([]), []);
 
@@ -189,10 +166,9 @@ export function OverviewArea({ app, showSettings }: Props) {
   }, [checkedIds, panel.ThoughtID, vault]);
 
   const handleToggleAllVault = useCallback(() => {
-    const allIds = thinksInThought.map(t => t.ID);
-    const allCheckedV = allIds.length > 0 && allIds.every(id => checkedIds.includes(id));
-    setCheckedIds(allCheckedV ? [] : allIds);
-  }, [thinksInThought, checkedIds]);
+    const allChecked = thinksInThought.length > 0 && thinksInThought.every(t => checkedSet.has(t.ID));
+    setCheckedIds(allChecked ? [] : thinksInThought.map(t => t.ID));
+  }, [thinksInThought, checkedSet]);
 
   const handleCreateThought = useCallback(async () => {
     if (checkedIds.length === 0) return;
@@ -227,6 +203,10 @@ export function OverviewArea({ app, showSettings }: Props) {
     });
   }, []);
 
+  const handleOpenThinkInWorkout = useCallback((id: string) => {
+    app.OpenThinkInWorkout(id);
+  }, [app]);
+
   const handleChatSend = useCallback((text: string) => {
     const ts = new Date().toISOString();
     setChatMessages(prev => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts }]);
@@ -255,12 +235,6 @@ export function OverviewArea({ app, showSettings }: Props) {
   const think = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) ?? null : null;
   const isThinkListMode = panel.MediaType === 'datagrid';
 
-  const allVaultIds     = thinksInThought.map(t => t.ID);
-  const allVaultChecked = allVaultIds.length > 0 && allVaultIds.every(id => checkedIds.includes(id));
-
-  const createdRangeInvalid = createdRange.trim() !== '' && !parseRange(createdRange.trim());
-  const updatedRangeInvalid = updatedRange.trim() !== '' && !parseRange(updatedRange.trim());
-
   const overviewModeLabel = showSettings
     ? '設定'
     : (OVERVIEW_MODE_NAMES[panel.MediaType] ?? panel.MediaType);
@@ -275,7 +249,7 @@ export function OverviewArea({ app, showSettings }: Props) {
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <OverviewMenuRibbon
-        visibleIds={visibleThinks.map(t => t.ID)}
+        visibleIds={visibleIds}
         checkedIds={checkedIds}
         showCheckedOnly={showCheckedOnly}
         allVaultChecked={allVaultChecked}
@@ -362,7 +336,7 @@ export function OverviewArea({ app, showSettings }: Props) {
               selectedId=""
               checkedIds={checkedIds}
               columns={columns}
-              onOpen={id => app.OpenThinkInWorkout(id)}
+              onOpen={handleOpenThinkInWorkout}
               onToggleCheck={handleToggleCheck}
             />
           )

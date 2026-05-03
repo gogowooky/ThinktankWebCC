@@ -5,8 +5,7 @@
  * 日付フィルターは全モード共通で適用される。
  */
 
-import { useCallback, useState } from 'react';
-import { CalendarDays, CalendarClock } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
@@ -16,7 +15,8 @@ import { UnifiedFilterPanel } from './UnifiedFilterPanel';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
 import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchView } from './ThinktankSearchView';
-import { computeDateRange, parseRange } from '../../utils/dateUtils';
+import { applySort, applyDateFilter } from '../../utils/sortUtils';
+import type { DateFilterState } from '../../utils/sortUtils';
 import { AiChatView } from './AiChatView';
 import type { ChatMessage } from '../../types';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
@@ -83,66 +83,55 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const [searchSearched, setSearchSearched] = useState(false);
   const [searchHistory,  setSearchHistory]  = useState<string[]>([]);
 
-  // ── ソート適用 ────────────────────────────────────────────────────────────
+  // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
-  function getFieldValue(t: TTThink, field: string): string {
-    switch (field) {
-      case 'Name':        return t.Name.toLowerCase();
-      case 'ID':          return t.ID;
-      case 'UpdatedAt':   return t.UpdatedAt || t.ID;
-      case 'ContentType': return t.ContentType;
-      case 'Keywords':    return t.Keywords.toLowerCase();
-      case 'RelatedIDs':  return t.RelatedIDs;
-      default:            return '';
-    }
-  }
+  const dateFilter = useMemo<DateFilterState>(() => ({
+    show: showDateFilter,
+    createdDate, createdRange, updatedDate, updatedRange,
+  }), [showDateFilter, createdDate, createdRange, updatedDate, updatedRange]);
 
-  function applySort(items: TTThink[]): TTThink[] {
-    if (!sort.field || !sort.dir) return items;
-    const { field, dir } = sort;
-    return [...items].sort((a, b) => {
-      const av = getFieldValue(a, field);
-      const bv = getFieldValue(b, field);
-      if (av < bv) return dir === 'asc' ? -1 : 1;
-      if (av > bv) return dir === 'asc' ? 1 : -1;
-      return 0;
-    });
-  }
+  // vault.Count が変わったとき（追加・削除）のみ再取得
+  const allThoughts = useMemo(() => vault.GetThoughts(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
+  const allThinks   = useMemo(() => vault.GetThinks(),   [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── 日付範囲フィルター適用 ────────────────────────────────────────────────
+  const thoughtsBase = useMemo(
+    () => applyFilter(allThoughts, panel.Filter),
+    [allThoughts, panel.Filter],
+  );
 
-  function applyDateFilter(items: TTThink[]): TTThink[] {
-    if (!showDateFilter) return items;
-    const cR = computeDateRange(createdDate, createdRange);
-    const uR = computeDateRange(updatedDate, updatedRange);
-    if (!cR && !uR) return items;
-    return items.filter(t => {
-      if (cR) { const d = t.ID.slice(0, 10); if (d < cR.from || d > cR.to) return false; }
-      if (uR) { const d = (t.UpdatedAt || t.ID).slice(0, 10); if (d < uR.from || d > uR.to) return false; }
-      return true;
-    });
-  }
+  const checkedSet = useMemo(
+    () => new Set(panel.CheckedThoughtIDs),
+    [panel.CheckedThoughtIDs],
+  );
 
-  // ── 各モードの可視アイテム計算 ────────────────────────────────────────────
+  const thoughtsVisible = useMemo(() => {
+    const base = panel.ShowCheckedOnly
+      ? thoughtsBase.filter(t => checkedSet.has(t.ID))
+      : thoughtsBase;
+    return applySort(applyDateFilter(base, dateFilter), sort);
+  }, [thoughtsBase, panel.ShowCheckedOnly, checkedSet, dateFilter, sort]);
 
-  const allThoughts   = vault.GetThoughts();
-  const thoughtsBase  = applyFilter(allThoughts, panel.Filter);
-  const thoughtsVisible = applySort(applyDateFilter(
-    panel.ShowCheckedOnly
-      ? thoughtsBase.filter(t => panel.CheckedThoughtIDs.includes(t.ID))
-      : thoughtsBase
-  ));
+  const searchVisible = useMemo(() => {
+    const base = panel.ShowCheckedOnly
+      ? searchResults.filter(t => checkedSet.has(t.ID))
+      : searchResults;
+    return applySort(applyDateFilter(base, dateFilter), sort);
+  }, [searchResults, panel.ShowCheckedOnly, checkedSet, dateFilter, sort]);
 
-  const searchVisible = applySort(applyDateFilter(
-    panel.ShowCheckedOnly
-      ? searchResults.filter(t => panel.CheckedThoughtIDs.includes(t.ID))
-      : searchResults
-  ));
+  // filter モードで ThinktankFilterView に渡すソート済み全件
+  const sortedAllThinks = useMemo(() => applySort(allThinks, sort), [allThinks, sort]);
 
   const visibleThinks =
     panel.ViewMode === 'thoughts' ? thoughtsVisible :
     panel.ViewMode === 'filter'   ? filterVisible   :
     panel.ViewMode === 'search'   ? searchVisible   : [];
+
+  const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
+
+  const allVaultChecked = useMemo(
+    () => allThinks.length > 0 && allThinks.every(t => checkedSet.has(t.ID)),
+    [allThinks, checkedSet],
+  );
 
   // ── ハンドラ ─────────────────────────────────────────────────────────────
 
@@ -169,8 +158,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   }, [panel]);
 
   const handleCheckAll = useCallback(() => {
-    panel.CheckAll(visibleThinks.map(t => t.ID));
-  }, [panel, visibleThinks]);
+    panel.CheckAll(visibleIds);
+  }, [panel, visibleIds]);
 
   const handleClearChecks = useCallback(() => {
     panel.ClearChecks();
@@ -205,11 +194,15 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   }, []);
 
   const handleToggleAllVault = useCallback(() => {
-    const allIds = vault.GetThinks().map(t => t.ID);
-    const allChecked = allIds.length > 0 && allIds.every(id => panel.CheckedThoughtIDs.includes(id));
+    const allIds = allThinks.map(t => t.ID);
+    const allChecked = allIds.length > 0 && allIds.every(id => checkedSet.has(id));
     if (allChecked) panel.ClearChecks();
     else panel.CheckAll(allIds);
-  }, [panel, vault]);
+  }, [panel, allThinks, checkedSet]);
+
+  const handleOpenThought = useCallback((id: string) => {
+    app.OpenThought(id, 'datagrid');
+  }, [app]);
 
   const canCreateThought =
     panel.ViewMode === 'search'
@@ -300,7 +293,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   if (panel.ViewMode === 'filter') {
     content = (
       <ThinktankFilterView
-        thinks={applySort(vault.GetThinks())}
+        thinks={sortedAllThinks}
         selectedId={panel.SelectedThoughtID}
         checkedIds={panel.CheckedThoughtIDs}
         checkedOnly={panel.ShowCheckedOnly}
@@ -343,15 +336,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         selectedId={panel.SelectedThoughtID}
         checkedIds={panel.CheckedThoughtIDs}
         columns={columns}
-        onOpen={id => app.OpenThought(id, 'datagrid')}
+        onOpen={handleOpenThought}
         onToggleCheck={handleToggleCheck}
       />
     );
   }
-
-  const showDateBars = showDateFilter && ['thoughts', 'filter', 'search'].includes(panel.ViewMode);
-  const createdRangeInvalid = createdRange.trim() !== '' && !parseRange(createdRange.trim());
-  const updatedRangeInvalid = updatedRange.trim() !== '' && !parseRange(updatedRange.trim());
 
   return (
     <div className="thinktank-area">
@@ -359,10 +348,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         Thinktank&gt;{THINKTANK_MODE_NAMES[panel.ViewMode] ?? panel.ViewMode}
       </div>
       <ThinktankMenuRibbon
-        visibleIds={visibleThinks.map(t => t.ID)}
+        visibleIds={visibleIds}
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={panel.ShowCheckedOnly}
-        allVaultChecked={vault.GetThinks().length > 0 && vault.GetThinks().every(t => panel.CheckedThoughtIDs.includes(t.ID))}
+        allVaultChecked={allVaultChecked}
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
         canCreateThought={canCreateThought}

@@ -7,7 +7,7 @@
  * - TextEditorMedia の dirty 状態を WorkoutAreaRibbon の ● 表示に連携
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
@@ -85,39 +85,40 @@ export function WorkoutArea({
   // think データ取得
   const think = vault.GetThink(area.ResourceID) ?? null;
 
-  // メディア共通 props
   const panel = area._parent as import('../../views/TTWorkoutPanel').TTWorkoutPanel;
-  const mediaProps = {
-    think,
-    vault,
-    onSave: handleSave,
-    onDirtyChange: setIsDirty,
-    editorSettings: {
-      lineNumbers:   panel?.EditorLineNumbers ?? false,
-      wordWrap:      panel?.EditorWordWrap ?? true,
-      minimap:       panel?.EditorMinimap ?? false,
-      showFullWidthSpace: panel?.EditorShowFullWidthSpace ?? false,
-      unicodeHighlight: panel?.EditorUnicodeHighlight ?? false,
-      bracketPairColorization: panel?.EditorBracketPairColorization ?? true,
-      highlightWord: panel?.EditorHighlightWord ?? '',
-      highlightStyles: panel?.EditorHighlightStyles ?? [
-        { backgroundColor: '#ffff00', color: '#000000' },
-        { backgroundColor: '#ff0000', color: '#ffffff' },
-        { backgroundColor: '#0000ff', color: '#ffffff' },
-        { backgroundColor: '#008000', color: '#ffffff' },
-        { backgroundColor: '#800080', color: '#ffffff' },
-      ],
-      background:    panel?.EditorBackground ?? '#f5f5f5',
-      foreground:    panel?.EditorForeground ?? '#1e1e1e',
-      headingStyles: panel?.EditorHeadingStyles ?? [
-        { color: '#569cd6', bold: true, underline: false },
-        { color: '#4ec9b0', bold: true, underline: false },
-        { color: '#ce9178', bold: true, underline: false },
-        { color: '#dcdcaa', bold: true, underline: false },
-        { color: '#c586c0', bold: true, underline: false },
-      ],
-    }
-  };
+
+  const editorSettings = useMemo(() => ({
+    lineNumbers:   panel?.EditorLineNumbers ?? false,
+    wordWrap:      panel?.EditorWordWrap ?? true,
+    minimap:       panel?.EditorMinimap ?? false,
+    showFullWidthSpace: panel?.EditorShowFullWidthSpace ?? false,
+    unicodeHighlight: panel?.EditorUnicodeHighlight ?? false,
+    bracketPairColorization: panel?.EditorBracketPairColorization ?? true,
+    highlightWord: panel?.EditorHighlightWord ?? '',
+    highlightStyles: panel?.EditorHighlightStyles ?? [
+      { backgroundColor: '#ffff00', color: '#000000' },
+      { backgroundColor: '#ff0000', color: '#ffffff' },
+      { backgroundColor: '#0000ff', color: '#ffffff' },
+      { backgroundColor: '#008000', color: '#ffffff' },
+      { backgroundColor: '#800080', color: '#ffffff' },
+    ],
+    background:    panel?.EditorBackground ?? '#f5f5f5',
+    foreground:    panel?.EditorForeground ?? '#1e1e1e',
+    headingStyles: panel?.EditorHeadingStyles ?? [
+      { color: '#569cd6', bold: true, underline: false },
+      { color: '#4ec9b0', bold: true, underline: false },
+      { color: '#ce9178', bold: true, underline: false },
+      { color: '#dcdcaa', bold: true, underline: false },
+      { color: '#c586c0', bold: true, underline: false },
+    ],
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [panel?.EditorLineNumbers, panel?.EditorWordWrap, panel?.EditorMinimap,
+       panel?.EditorShowFullWidthSpace, panel?.EditorUnicodeHighlight,
+       panel?.EditorBracketPairColorization, panel?.EditorHighlightWord,
+       panel?.EditorHighlightStyles, panel?.EditorBackground, panel?.EditorForeground,
+       panel?.EditorHeadingStyles]);
+
+  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, editorSettings };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
@@ -132,26 +133,33 @@ export function WorkoutArea({
     }
   };
 
+  const handleDragStart    = useCallback((e: React.MouseEvent) => onDragStart(e, area.ID),      [onDragStart, area.ID]);
+  const handleMediaChange  = useCallback((type: MediaType)     => onMediaTypeChange(area.ID, type), [onMediaTypeChange, area.ID]);
+  const handleClose        = useCallback(()                     => onClose(area.ID),              [onClose, area.ID]);
+  const handleDragEnter    = useCallback(()                     => onDragEnter(area.ID),           [onDragEnter, area.ID]);
+
+  const className = [
+    'workout-area',
+    isFocused    && 'workout-area--focused',
+    isDragging   && 'workout-area--dragging',
+    isDropTarget && 'workout-area--drop-target',
+  ].filter(Boolean).join(' ');
+
   return (
     <div
-      className={[
-        'workout-area',
-        isFocused    ? 'workout-area--focused'     : '',
-        isDragging   ? 'workout-area--dragging'    : '',
-        isDropTarget ? 'workout-area--drop-target' : '',
-      ].join(' ')}
+      className={className}
       data-area-id={area.ID}
       onMouseDown={onFocus}
-      onMouseEnter={() => onDragEnter(area.ID)}
+      onMouseEnter={handleDragEnter}
       onMouseLeave={onDragLeave}
     >
       <WorkoutAreaRibbon
         area={area}
         isFocused={isFocused}
         isDirty={isDirty}
-        onDragStart={e => onDragStart(e, area.ID)}
-        onMediaTypeChange={type => onMediaTypeChange(area.ID, type)}
-        onClose={() => onClose(area.ID)}
+        onDragStart={handleDragStart}
+        onMediaTypeChange={handleMediaChange}
+        onClose={handleClose}
         onResourceDrop={handleResourceDrop}
       />
 

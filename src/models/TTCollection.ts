@@ -11,6 +11,7 @@ import { toCsv, parseCsv } from '../utils/csv';
 
 export class TTCollection extends TTObject {
   protected _children: Map<string, TTObject> = new Map();
+  private _itemsCache: TTObject[] | null = null;
   public Count: number = 0;
   public Description: string = 'Collection';
 
@@ -42,10 +43,16 @@ export class TTCollection extends TTObject {
     return this._children.get(id);
   }
 
+  public override NotifyUpdated(updateDate: boolean = true): void {
+    this._itemsCache = null;
+    super.NotifyUpdated(updateDate);
+  }
+
   public AddItem(item: TTObject): TTObject {
     item._parent = this;
     this._children.set(item.ID, item);
     this.Count = this._children.size;
+    this._itemsCache = null;
     this.NotifyUpdated();
     return item;
   }
@@ -56,16 +63,21 @@ export class TTCollection extends TTObject {
     item._parent = null;
     this._children.delete(id);
     this.Count = this._children.size;
+    this._itemsCache = null;
     this.NotifyUpdated();
   }
 
   public GetItems(): TTObject[] {
-    return Array.from(this._children.values());
+    if (!this._itemsCache) {
+      this._itemsCache = Array.from(this._children.values());
+    }
+    return this._itemsCache;
   }
 
   public ClearItems(): void {
     this._children.forEach(item => { item._parent = null; });
     this._children.clear();
+    this._itemsCache = null;
     this.Count = 0;
     this.NotifyUpdated();
   }
