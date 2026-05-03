@@ -24,7 +24,7 @@ export class TTOverviewPanel extends TTObject {
    * - 'datagrid': Think一覧（表形式）
    * - 'graph': Thinkの関係グラフ
    */
-  public MediaType: MediaType = 'markdown';
+  public MediaType: MediaType = 'datagrid';
 
   /** 全文検索テキスト */
   public SearchQuery: string = '';

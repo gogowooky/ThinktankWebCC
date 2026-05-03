@@ -1,5 +1,9 @@
 /* ToDoArea.css */
 
+.todo-area__title-row {
+  background: var(--todo-ribbon-bg);
+}
+
 .todo-area {
   display: flex;
   flex-direction: column;

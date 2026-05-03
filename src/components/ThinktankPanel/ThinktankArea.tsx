@@ -26,6 +26,14 @@ import './ThinktankArea.css';
 
 import type { LayoutMode } from '../Layout/AppLayout';
 
+const THINKTANK_MODE_NAMES: Record<string, string> = {
+  filter:   'Think一覧',
+  search:   '検索',
+  thoughts: 'Thought一覧',
+  ai:       'AI相談',
+  settings: '設定',
+};
+
 interface Props {
   app: TTApplication;
   layoutMode: LayoutMode;
@@ -347,6 +355,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
 
   return (
     <div className="thinktank-area">
+      <div className="panel-title-row thinktank-area__title-row">
+        Thinktank&gt;{THINKTANK_MODE_NAMES[panel.ViewMode] ?? panel.ViewMode}
+      </div>
       <ThinktankMenuRibbon
         visibleIds={visibleThinks.map(t => t.ID)}
         checkedIds={panel.CheckedThoughtIDs}

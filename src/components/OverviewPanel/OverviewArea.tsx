@@ -31,6 +31,12 @@ import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialo
 import type { ChatMessage } from '../../types';
 import './OverviewArea.css';
 
+const OVERVIEW_MODE_NAMES: Record<string, string> = {
+  datagrid: 'Think一覧',
+  graph:    'Thought分析',
+  chat:     'AI相談',
+};
+
 const noop = () => {};
 
 interface Props {
@@ -255,8 +261,17 @@ export function OverviewArea({ app, showSettings }: Props) {
   const createdRangeInvalid = createdRange.trim() !== '' && !parseRange(createdRange.trim());
   const updatedRangeInvalid = updatedRange.trim() !== '' && !parseRange(updatedRange.trim());
 
+  const overviewModeLabel = showSettings
+    ? '設定'
+    : (OVERVIEW_MODE_NAMES[panel.MediaType] ?? panel.MediaType);
+
   return (
     <div className="overview-area">
+
+      {/* ── タイトル行 ────────────────────────────────────────── */}
+      <div className="panel-title-row overview-area__title-row">
+        Overview&gt;{overviewModeLabel}
+      </div>
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <OverviewMenuRibbon

@@ -6,12 +6,12 @@
  * Think/Thought の次の展開について AI と相談するパネル。
  */
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
-import { ToDoRibbon } from './ToDoRibbon';
+import { ToDoRibbon, type ToDoViewMode } from './ToDoRibbon';
 import { ToDoArea } from './ToDoArea';
 import './ToDoPanel.css';
 
@@ -27,8 +27,11 @@ export function ToDoPanel({ app, width, onResize }: Props) {
   const panel = app.ToDoPanel;
   useAppUpdate(panel);
 
+  const [viewMode, setViewMode] = useState<ToDoViewMode>('chat');
+
   const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
   const handleClearChat = useCallback(() => panel.ClearChat(),  [panel]);
+  const handleSetMode   = useCallback((mode: ToDoViewMode) => setViewMode(mode), []);
 
   const handleResize = useCallback((dx: number) => {
     onResize(dx);
@@ -44,11 +47,13 @@ export function ToDoPanel({ app, width, onResize }: Props) {
         isOpen={panel.IsAreaOpen}
         width={Math.max(MIN_WIDTH, width)}
       >
-        <ToDoArea app={app} />
+        <ToDoArea app={app} viewMode={viewMode} />
       </PanelArea>
       <ToDoRibbon
         isOpen={panel.IsAreaOpen}
+        viewMode={viewMode}
         onToggle={handleToggle}
+        onSetMode={handleSetMode}
         onClearChat={handleClearChat}
       />
     </div>

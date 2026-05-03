@@ -11,13 +11,21 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ToDoChat } from './ToDoChat';
 import { ToDoMenuRibbon } from './ToDoMenuRibbon';
+import type { ToDoViewMode } from './ToDoRibbon';
+import '../../components/Layout/MenuRibbon.css';
 import './ToDoArea.css';
 
+const TODO_MODE_NAMES: Record<ToDoViewMode, string> = {
+  chat:     'AI相談',
+  settings: '設定',
+};
+
 interface Props {
-  app: TTApplication;
+  app:      TTApplication;
+  viewMode: ToDoViewMode;
 }
 
-export function ToDoArea({ app }: Props) {
+export function ToDoArea({ app, viewMode }: Props) {
   const panel = app.ToDoPanel;
   useAppUpdate(panel);
 
@@ -33,6 +41,11 @@ export function ToDoArea({ app }: Props) {
 
   return (
     <div className="todo-area">
+
+      {/* ── タイトル行 ────────────────────────────────────────── */}
+      <div className="panel-title-row todo-area__title-row">
+        ToDo&gt;{TODO_MODE_NAMES[viewMode]}
+      </div>
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <ToDoMenuRibbon />
@@ -58,9 +71,15 @@ export function ToDoArea({ app }: Props) {
         )}
       </div>
 
-      {/* ── チャット ─────────────────────────────────────────── */}
+      {/* ── コンテンツ ───────────────────────────────────────── */}
       <div className="todo-area__chat">
-        <ToDoChat panel={panel} />
+        {viewMode === 'settings' ? (
+          <div style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+            ToDo設定は今後追加予定です。
+          </div>
+        ) : (
+          <ToDoChat panel={panel} />
+        )}
       </div>
 
     </div>

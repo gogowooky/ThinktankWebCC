@@ -20,9 +20,9 @@ import './OverviewRibbon.css';
 type OverviewViewMode = 'chat' | 'datagrid' | 'graph';
 
 const VIEW_BUTTONS: Array<{ mode: OverviewViewMode; Icon: LucideIcon; title: string }> = [
-  { mode: 'datagrid', Icon: Files, title: 'Think一覧' },
-  { mode: 'graph',    Icon: Microscope,  title: 'Thought分析' },
-  { mode: 'chat',     Icon: MessageCircle, title: 'AI相談（データ分析）' },
+  { mode: 'datagrid', Icon: Files,        title: 'Think一覧' },
+  { mode: 'graph',    Icon: Microscope,   title: 'Thought分析' },
+  { mode: 'chat',     Icon: MessageCircle, title: 'AI相談' },
 ];
 
 interface Props {
@@ -89,7 +89,7 @@ export function OverviewRibbon({
       <button
         className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
         onClick={onToggleSettings}
-        title="Overview設定"
+        title="設定"
       >
         <Settings size={16} />
       </button>

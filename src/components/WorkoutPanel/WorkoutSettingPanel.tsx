@@ -85,7 +85,7 @@ export function WorkoutSettingPanel({
   return (
     <div className="workout-setting-panel" style={{ width }}>
 
-      <div className="workout-setting-panel__header">{panelName}</div>
+      <div className="workout-setting-panel__header">Workout&gt;{panelName}</div>
 
       <div className="workout-setting-panel__body">
         {activeSettings === 'workout' ? (

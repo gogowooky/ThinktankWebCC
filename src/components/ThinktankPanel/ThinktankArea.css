@@ -1,5 +1,9 @@
 /* ThinktankArea.css */
 
+.thinktank-area__title-row {
+  background: var(--thinktank-ribbon-bg);
+}
+
 .thinktank-area {
   display: flex;
   flex-direction: column;

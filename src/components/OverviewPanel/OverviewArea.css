@@ -1,5 +1,9 @@
 /* OverviewArea.css */
 
+.overview-area__title-row {
+  background: var(--overview-ribbon-bg);
+}
+
 .overview-area {
   display: flex;
   flex-direction: column;
