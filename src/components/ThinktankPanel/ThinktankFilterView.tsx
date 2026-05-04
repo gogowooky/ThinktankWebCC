@@ -8,6 +8,7 @@ import { ThoughtsList, applyFilter } from './ThoughtsList';
 import type { TTThink } from '../../models/TTThink';
 import type { ColumnConfig } from './ColumnSortDialog';
 import { computeDateRange } from '../../utils/dateUtils';
+import './ThinktankFilterView.css';
 
 interface Props {
   thinks: TTThink[];
