@@ -5,7 +5,7 @@
  * 日付フィルターは全モード共通で適用される。
  */
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
@@ -19,6 +19,7 @@ import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import type { DateFilterState } from '../../utils/sortUtils';
 import { AiChatView } from './AiChatView';
 import type { ChatMessage } from '../../types';
+import { streamChat } from '../../services/ChatApiService';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
@@ -75,6 +76,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   // チャット state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
+  const chatAbortRef                    = useRef<AbortController | null>(null);
+  const chatAccumulatedRef              = useRef('');
 
   // 検索 state（ビュー切り替えで消えないよう ThinktankArea で保持）
   const [searchQuery,    setSearchQuery]    = useState('');
@@ -231,20 +234,44 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   }, [panel, vault, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
 
   // チャット送信・保存
-  const handleChatSend = useCallback((text: string) => {
+  const handleChatSend = useCallback(async (text: string) => {
     const ts = new Date().toISOString();
-    setChatMessages(prev => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts }]);
+    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
+    const aiId = `a-${Date.now() + 1}`;
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+
+    setChatMessages(prev => [...prev, userMsg, aiMsg]);
     setChatWaiting(true);
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        id:        `a-${Date.now()}`,
-        role:      'assistant',
-        content:   'Phase 14 でバックエンド接続後に応答します。\nSSE ストリーミングで逐次出力される予定です。',
-        timestamp: new Date().toISOString(),
-      }]);
-      setChatWaiting(false);
-    }, 800);
-  }, []);
+    chatAccumulatedRef.current = '';
+
+    chatAbortRef.current = new AbortController();
+
+    // 末尾の空アシスタントメッセージを除いた会話履歴
+    const history = [...chatMessages, userMsg].map(m => ({
+      role:    m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    await streamChat(
+      history,
+      'あなたは Thinktank の AI アシスタントです。ユーザーの Think（メモ・アイデア）の整理や分析を日本語で手伝ってください。',
+      {
+        onDelta: (delta) => {
+          chatAccumulatedRef.current += delta;
+          const accumulated = chatAccumulatedRef.current;
+          setChatMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
+        },
+        onDone:  () => { setChatWaiting(false); },
+        onError: (message) => {
+          setChatMessages(prev => prev.map(m =>
+            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
+          ));
+          setChatWaiting(false);
+        },
+      },
+      chatAbortRef.current.signal,
+    );
+  }, [chatMessages]);
 
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0) return;
@@ -405,6 +432,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
           panel.ViewMode === 'filter' ? allThoughts.length :
           allThoughts.length
         }
+        showTextFilter={panel.ViewMode !== 'ai'}
         showDateFilters={showDateFilter && ['thoughts', 'filter', 'search'].includes(panel.ViewMode)}
       />
 

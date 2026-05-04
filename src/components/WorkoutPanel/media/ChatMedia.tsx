@@ -1,22 +1,18 @@
 /**
  * ChatMedia.tsx
- * CLI 風ターミナル表示のAIチャットメディア。
+ * Phase 14: CLI 風ターミナル表示の AI チャットメディア。
+ * Anthropic SSE ストリーミング対応。
  *
- * - 黒背景・等幅フォントのターミナル UI
- * - ユーザー行: `> ` プロンプト（緑）
- * - AI 行: `AI▸ ` プレフィックス（シアン）
- * - 待機中: ブロックカーソル点滅
- * - Enter で送信 / Shift+Enter で改行
  * - think.Content が ContentType='chat' なら既存履歴をパース
- * - Phase 14 でバックエンド（SSEストリーミング）接続予定
+ * - think データをシステムプロンプトのコンテキストとして渡す
  */
 
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import type { ChatMessage } from '../../../types';
 import type { MediaProps } from './types';
+import { streamChat } from '../../../services/ChatApiService';
 import './ChatMedia.css';
 
-// think.Content（chat形式）をメッセージ配列にパース
 function parseChatContent(content: string): ChatMessage[] {
   const messages: ChatMessage[] = [];
   const lines = content.split('\n');
@@ -45,14 +41,13 @@ function parseChatContent(content: string): ChatMessage[] {
   return messages;
 }
 
-const PLACEHOLDER_RESPONSES = [
-  'Phase 14 でバックエンド接続後に応答します。\nSSE ストリーミングで逐次出力される予定です。',
-  'その点については詳しく分析が必要です。\n[AI 接続待機中]',
-  '興味深い観点です。\nバックエンド実装 (Phase 14) をお待ちください。',
-];
-let _resIdx = 0;
-function nextPlaceholder(): string {
-  return PLACEHOLDER_RESPONSES[_resIdx++ % PLACEHOLDER_RESPONSES.length];
+function buildSystemPrompt(thinkName: string, thinkContent: string): string {
+  return (
+    'あなたは Thinktank の AI アシスタントです。' +
+    'ユーザーの Think（メモ・アイデア）について分析・整理・提案を日本語で行ってください。' +
+    (thinkName ? `\n\n## 現在の Think\nタイトル: ${thinkName}` : '') +
+    (thinkContent ? `\n内容:\n${thinkContent.slice(0, 2000)}` : '')
+  );
 }
 
 function formatTime(iso: string): string {
@@ -68,42 +63,75 @@ export function ChatMedia({ think }: MediaProps) {
   const initialMessages = useMemo<ChatMessage[]>(() => {
     if (!think || think.ContentType !== 'chat') return [];
     return parseChatContent(think.Content);
-  }, [think?.ID]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [think?.ID]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [messages, setMessages]   = useState<ChatMessage[]>(initialMessages);
-  const [input, setInput]         = useState('');
+  const [messages,  setMessages]  = useState<ChatMessage[]>(initialMessages);
+  const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
   const bottomRef                 = useRef<HTMLDivElement>(null);
   const inputRef                  = useRef<HTMLTextAreaElement>(null);
+  const abortRef                  = useRef<AbortController | null>(null);
+  const accumulatedRef            = useRef('');
 
   useEffect(() => {
     setMessages(initialMessages);
     setInput('');
-  }, [think?.ID]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [think?.ID]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isWaiting]);
 
-  const handleSend = () => {
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
+
+  const systemPrompt = useMemo(
+    () => buildSystemPrompt(think?.Name ?? '', think?.Content ?? ''),
+    [think?.Name, think?.Content], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+
+  const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || isWaiting) return;
 
     const ts = new Date().toISOString();
-    setMessages(prev => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts }]);
+    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
+    const aiId = `a-${Date.now() + 1}`;
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+
+    setMessages(prev => [...prev, userMsg, aiMsg]);
     setInput('');
     setIsWaiting(true);
+    accumulatedRef.current = '';
 
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id:        `a-${Date.now()}`,
-        role:      'assistant',
-        content:   nextPlaceholder(),
-        timestamp: new Date().toISOString(),
-      }]);
-      setIsWaiting(false);
-    }, 800);
-  };
+    abortRef.current = new AbortController();
+
+    const history = [...messages, userMsg].map(m => ({
+      role:    m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    await streamChat(
+      history,
+      systemPrompt,
+      {
+        onDelta: (delta) => {
+          accumulatedRef.current += delta;
+          const accumulated = accumulatedRef.current;
+          setMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
+        },
+        onDone: () => {
+          setIsWaiting(false);
+        },
+        onError: (message) => {
+          setMessages(prev => prev.map(m =>
+            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
+          ));
+          setIsWaiting(false);
+        },
+      },
+      abortRef.current.signal,
+    );
+  }, [input, isWaiting, messages, systemPrompt]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -111,6 +139,8 @@ export function ChatMedia({ think }: MediaProps) {
       handleSend();
     }
   };
+
+  const lastMsg = messages[messages.length - 1];
 
   return (
     <div className="chat-media">
@@ -128,18 +158,15 @@ export function ChatMedia({ think }: MediaProps) {
       {/* ログ出力エリア */}
       <div className="chat-media__log">
 
-        {/* 起動バナー */}
         <div className="chat-media__banner">
-          <span className="chat-media__banner-line">Thinktank AI v5  [Phase 14 pending]</span>
+          <span className="chat-media__banner-line">Thinktank AI v5</span>
           <span className="chat-media__banner-line chat-media__dim">Type your message and press Enter to send.</span>
           <span className="chat-media__banner-sep">{'─'.repeat(48)}</span>
         </div>
 
-        {/* メッセージ */}
         {messages.map(msg => (
           <div key={msg.id} className="chat-media__entry">
             {msg.role === 'user' ? (
-              /* ユーザー行 */
               <div className="chat-media__user-line">
                 <span className="chat-media__prompt">{'>'}</span>
                 <span className="chat-media__user-text">{msg.content}</span>
@@ -148,13 +175,12 @@ export function ChatMedia({ think }: MediaProps) {
                 )}
               </div>
             ) : (
-              /* AI 応答行（複数行対応）*/
               <div className="chat-media__ai-block">
-                {msg.content.split('\n').map((line, li) => (
+                {(msg.content || ' ').split('\n').map((line, li) => (
                   <div key={li} className="chat-media__ai-line">
                     <span className="chat-media__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
                     <span className="chat-media__ai-text">{line}</span>
-                    {li === 0 && msg.timestamp && (
+                    {li === 0 && msg.timestamp && !isWaiting && (
                       <span className="chat-media__ts">{formatTime(msg.timestamp)}</span>
                     )}
                   </div>
@@ -164,8 +190,8 @@ export function ChatMedia({ think }: MediaProps) {
           </div>
         ))}
 
-        {/* 待機中カーソル */}
-        {isWaiting && (
+        {/* ストリーム開始前の待機カーソル */}
+        {isWaiting && lastMsg?.role === 'assistant' && lastMsg.content === '' && (
           <div className="chat-media__ai-block">
             <div className="chat-media__ai-line">
               <span className="chat-media__ai-prefix">AI▸</span>

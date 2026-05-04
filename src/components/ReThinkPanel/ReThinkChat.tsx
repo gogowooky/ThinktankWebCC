@@ -1,71 +1,114 @@
 /**
  * ReThinkChat.tsx
- * Phase 10: ReThinkPanel の AI チャット UI。
- *
- * - ChatMedia と同じ CLI ターミナル風スタイル
- * - メッセージ履歴は TTReThinkPanel の ChatMessages（ビューモデル管理）
- * - 送信: panel.AddUserMessage() → モック応答（Phase 14 で AI API に置き換え）
- * - Enter 送信 / Shift+Enter 改行
+ * Phase 14: ReThinkPanel の AI チャット UI。
+ * Anthropic SSE ストリーミング対応。
  */
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import { X } from 'lucide-react';
 import type { TTReThinkPanel } from '../../views/TTReThinkPanel';
+import { streamChat } from '../../services/ChatApiService';
 import './ReThinkChat.css';
 
-// ── モックレスポンス（Phase 14 で AI API に置き換え）──────────────────
-
-const MOCK_RESPONSES = [
-  'ご質問を承りました。\nPhase 14 で AI バックエンド接続後に実際の応答が届きます。',
-  'その点について考察します。\n[AI 接続待機中 — Phase 14]',
-  '興味深い視点です。\nSSE ストリーミングで逐次応答する予定です。',
-];
-let _mockIdx = 0;
-function nextMock(): string {
-  return MOCK_RESPONSES[_mockIdx++ % MOCK_RESPONSES.length];
-}
-
-// ── タイムスタンプ ────────────────────────────────────────────────────
+const HINT_TEXT = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
 
 function formatTime(iso: string): string {
   if (!iso) return '';
-  const d  = new Date(iso);
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-// ── コンポーネント ────────────────────────────────────────────────────
+function resizeToContent(ta: HTMLTextAreaElement) {
+  ta.style.height = 'auto';
+  const sh = ta.scrollHeight;
+  if (sh >= 120) {
+    ta.style.height = '120px';
+    ta.style.overflowY = 'auto';
+  } else {
+    ta.style.height = `${sh}px`;
+    ta.style.overflowY = 'hidden';
+  }
+}
 
 interface Props {
-  panel: TTReThinkPanel;
+  panel:        TTReThinkPanel;
+  systemPrompt: string;
 }
 
-export function ReThinkChat({ panel }: Props) {
+export function ReThinkChat({ panel, systemPrompt }: Props) {
   const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
-  const bottomRef                 = useRef<HTMLDivElement>(null);
-  const inputRef                  = useRef<HTMLTextAreaElement>(null);
+  const logRef                    = useRef<HTMLDivElement>(null);
+  const textareaRef               = useRef<HTMLTextAreaElement>(null);
+  const abortRef                  = useRef<AbortController | null>(null);
+  const accumulatedRef            = useRef('');
 
-  // メッセージ更新時に最下部へスクロール
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [panel.ChatMessages, isWaiting]);
 
-  const handleSend = () => {
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.value = HINT_TEXT;
+    resizeToContent(ta);
+    ta.value = '';
+    setInput('');
+  }, []);
+
+  // アンマウント時にストリームを中断
+  useEffect(() => () => { abortRef.current?.abort(); }, []);
+
+  const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || isWaiting) return;
 
     panel.AddUserMessage(text);
-    setInput('');
     setIsWaiting(true);
+    accumulatedRef.current = '';
 
-    // Phase 14 でここを AI API 呼び出しに置き換える
-    setTimeout(() => {
-      panel.AddAssistantMessage(nextMock());
-      setIsWaiting(false);
-    }, 900);
-  };
+    const assistantId = panel.AddAssistantMessage('');
+    panel.SetStreaming(true);
+
+    abortRef.current = new AbortController();
+
+    // 末尾の空アシスタントメッセージを除いた履歴を送信
+    const history = panel.ChatMessages.slice(0, -1).map(m => ({
+      role:    m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    await streamChat(
+      history,
+      systemPrompt,
+      {
+        onDelta: (delta) => {
+          accumulatedRef.current += delta;
+          panel.UpdateMessage(assistantId, accumulatedRef.current);
+        },
+        onDone: () => {
+          panel.SetStreaming(false);
+          setIsWaiting(false);
+        },
+        onError: (message) => {
+          panel.UpdateMessage(assistantId, `[エラー] ${message}`);
+          panel.SetStreaming(false);
+          setIsWaiting(false);
+        },
+      },
+      abortRef.current.signal,
+    );
+  }, [input, isWaiting, panel, systemPrompt]);
+
+  const handleClear = useCallback(() => {
+    setInput('');
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.value = HINT_TEXT;
+    resizeToContent(ta);
+    ta.value = '';
+  }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -74,22 +117,51 @@ export function ReThinkChat({ panel }: Props) {
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+    resizeToContent(e.target);
+  };
+
+  const lastMsg = panel.ChatMessages[panel.ChatMessages.length - 1];
+
   return (
     <div className="rethink-chat">
 
-      {/* ログ出力エリア */}
-      <div className="rethink-chat__log">
+      {/* ── 入力エリア（最上位）─────────────────────────────────── */}
+      <div className="rethink-chat__input-area">
+        <textarea
+          ref={textareaRef}
+          className="rethink-chat__input"
+          value={input}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder={HINT_TEXT}
+          disabled={isWaiting}
+        />
+        <div className="rethink-chat__btn-stack">
+          <button
+            className="rethink-chat__clear-btn"
+            onClick={handleClear}
+            disabled={isWaiting}
+            title="消去"
+            aria-label="消去"
+          >
+            <X size={13} />
+          </button>
+        </div>
+      </div>
 
-        {/* 起動バナー */}
+      {/* ── ログ出力エリア ───────────────────────────────── */}
+      <div className="rethink-chat__log" ref={logRef}>
+
         <div className="rethink-chat__banner">
-          <span className="rethink-chat__banner-line">Thinktank AI  [Phase 14 pending]</span>
+          <span className="rethink-chat__banner-line">Thinktank AI</span>
           <span className="rethink-chat__banner-line rethink-chat__dim">
             Thought / Think のコンテキストで AI と相談できます。
           </span>
           <span className="rethink-chat__banner-sep">{'─'.repeat(44)}</span>
         </div>
 
-        {/* メッセージ履歴 */}
         {panel.ChatMessages.map(msg => (
           <div key={msg.id} className="rethink-chat__entry">
             {msg.role === 'user' ? (
@@ -102,11 +174,11 @@ export function ReThinkChat({ panel }: Props) {
               </div>
             ) : (
               <div className="rethink-chat__ai-block">
-                {msg.content.split('\n').map((line, li) => (
+                {(msg.content || ' ').split('\n').map((line, li) => (
                   <div key={li} className="rethink-chat__ai-line">
                     <span className="rethink-chat__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
-                    <span className="rethink-chat__ai-text">{line}</span>
-                    {li === 0 && msg.timestamp && (
+                    <span className="rethink-chat__ai-text">{line || ' '}</span>
+                    {li === 0 && msg.timestamp && !isWaiting && (
                       <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
                     )}
                   </div>
@@ -116,8 +188,8 @@ export function ReThinkChat({ panel }: Props) {
           </div>
         ))}
 
-        {/* 待機中カーソル */}
-        {isWaiting && (
+        {/* ストリーム開始前の待機カーソル（空メッセージが最後にある間） */}
+        {isWaiting && lastMsg?.role === 'assistant' && lastMsg.content === '' && (
           <div className="rethink-chat__ai-block">
             <div className="rethink-chat__ai-line">
               <span className="rethink-chat__ai-prefix">AI▸</span>
@@ -126,24 +198,7 @@ export function ReThinkChat({ panel }: Props) {
           </div>
         )}
 
-        <div ref={bottomRef} />
       </div>
-
-      {/* 入力ライン */}
-      <div className="rethink-chat__input-row">
-        <span className="rethink-chat__input-prompt">{'>'}</span>
-        <textarea
-          ref={inputRef}
-          className="rethink-chat__input"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="コマンドを入力…　(Enter=送信 / Shift+Enter=改行)"
-          rows={1}
-          disabled={isWaiting}
-        />
-      </div>
-
     </div>
   );
 }

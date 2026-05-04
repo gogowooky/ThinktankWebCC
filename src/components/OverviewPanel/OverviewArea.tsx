@@ -29,6 +29,7 @@ import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage } from '../../types';
+import { streamChat } from '../../services/ChatApiService';
 import './OverviewArea.css';
 
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
@@ -69,6 +70,8 @@ export function OverviewArea({ app, showSettings }: Props) {
   // ── チャット state ─────────────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
+  const chatAbortRef                    = useRef<AbortController | null>(null);
+  const chatAccumulatedRef              = useRef('');
 
   // ── Think 一覧（選択 Thought 内の全 Think → フィルタ適用）──────────────────
   const [thinksInThought, setThinksInThought] = useState(() =>
@@ -207,20 +210,59 @@ export function OverviewArea({ app, showSettings }: Props) {
     app.OpenThinkInWorkout(id);
   }, [app]);
 
-  const handleChatSend = useCallback((text: string) => {
+  const handleChatSend = useCallback(async (text: string) => {
     const ts = new Date().toISOString();
-    setChatMessages(prev => [...prev, { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts }]);
+    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
+    const aiId = `a-${Date.now() + 1}`;
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+
+    setChatMessages(prev => [...prev, userMsg, aiMsg]);
     setChatWaiting(true);
-    setTimeout(() => {
-      setChatMessages(prev => [...prev, {
-        id:        `a-${Date.now()}`,
-        role:      'assistant',
-        content:   'Phase 14 でバックエンド接続後に応答します。\nSSE ストリーミングで逐次出力される予定です。',
-        timestamp: new Date().toISOString(),
-      }]);
-      setChatWaiting(false);
-    }, 800);
-  }, []);
+    chatAccumulatedRef.current = '';
+
+    chatAbortRef.current = new AbortController();
+
+    // 選択中 Thought のコンテキストをシステムプロンプトに含める
+    const thoughtThink = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) : null;
+    const contextLines: string[] = [
+      'あなたは Thinktank の AI アシスタントです。ユーザーの Thought（テーマ集合）について分析・整理・提案を日本語で行ってください。',
+    ];
+    if (thoughtThink) {
+      contextLines.push(`\n## 選択中の Thought\nタイトル: ${thoughtThink.Name}`);
+      const thinksInThoughtNow = vault.GetThinksForThought(panel.ThoughtID);
+      if (thinksInThoughtNow.length > 0) {
+        contextLines.push(
+          '含まれる Think:\n' + thinksInThoughtNow.map(t => `- ${t.Name}`).join('\n'),
+        );
+      }
+    }
+    const systemPrompt = contextLines.join('\n');
+
+    const history = [...chatMessages, userMsg].map(m => ({
+      role:    m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    await streamChat(
+      history,
+      systemPrompt,
+      {
+        onDelta: (delta) => {
+          chatAccumulatedRef.current += delta;
+          const accumulated = chatAccumulatedRef.current;
+          setChatMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
+        },
+        onDone:  () => { setChatWaiting(false); },
+        onError: (message) => {
+          setChatMessages(prev => prev.map(m =>
+            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
+          ));
+          setChatWaiting(false);
+        },
+      },
+      chatAbortRef.current.signal,
+    );
+  }, [chatMessages, panel, vault]);
 
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0) return;
