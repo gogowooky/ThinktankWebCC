@@ -17,14 +17,19 @@ export async function streamChatResponse(
   messages: ChatRequestMessage[],
   systemPrompt: string,
   res: Response,
-  signal?: AbortSignal,
 ): Promise<void> {
   const client = new Anthropic({ apiKey: process.env['ANTHROPIC_API_KEY'] });
 
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
+
+  const writeSSE = (payload: object): boolean => {
+    if (res.writableEnded) return false;
+    return res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  };
 
   try {
     const stream = client.messages.stream({
@@ -32,26 +37,21 @@ export async function streamChatResponse(
       max_tokens: 4096,
       ...(systemPrompt ? { system: systemPrompt } : {}),
       messages: messages.map(m => ({ role: m.role, content: m.content })),
-    }, { signal });
+    });
 
-    for await (const event of stream) {
-      if (signal?.aborted) break;
-      if (
-        event.type === 'content_block_delta' &&
-        event.delta.type === 'text_delta'
-      ) {
-        res.write(`data: ${JSON.stringify({ type: 'delta', text: event.delta.text })}\n\n`);
-      }
-    }
+    // .on('text') で逐次テキストデルタを受け取る
+    stream.on('text', (textDelta) => {
+      writeSSE({ type: 'delta', text: textDelta });
+    });
 
-    if (!signal?.aborted) {
-      res.write(`data: ${JSON.stringify({ type: 'done' })}\n\n`);
-    }
+    // ストリーム完了まで待つ
+    await stream.finalMessage();
+
+    writeSSE({ type: 'done' });
   } catch (err) {
-    if (signal?.aborted) return;
     const message = err instanceof Error ? err.message : 'Unknown error';
     console.error('[ChatService] stream error:', message);
-    res.write(`data: ${JSON.stringify({ type: 'error', message })}\n\n`);
+    writeSSE({ type: 'error', message });
   } finally {
     res.end();
   }

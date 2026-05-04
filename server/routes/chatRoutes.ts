@@ -26,10 +26,7 @@ export function createChatRoutes(): Router {
       return;
     }
 
-    const ac = new AbortController();
-    req.on('close', () => ac.abort());
-
-    await streamChatResponse(messages, systemPrompt, res, ac.signal);
+    await streamChatResponse(messages, systemPrompt, res);
   });
 
   return router;
