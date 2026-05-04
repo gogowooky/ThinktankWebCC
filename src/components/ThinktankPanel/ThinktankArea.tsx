@@ -18,6 +18,7 @@ import { ThinktankSearchView } from './ThinktankSearchView';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import type { DateFilterState } from '../../utils/sortUtils';
 import { AiChatView } from './AiChatView';
+import type { AiChatViewRef } from './AiChatView';
 import type { ChatMessage } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
@@ -78,6 +79,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const [chatWaiting,  setChatWaiting]  = useState(false);
   const chatAbortRef                    = useRef<AbortController | null>(null);
   const chatAccumulatedRef              = useRef('');
+  const aiChatViewRef                   = useRef<AiChatViewRef>(null);
+
+  const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
+  const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
 
   // 検索 state（ビュー切り替えで消えないよう ThinktankArea で保持）
   const [searchQuery,    setSearchQuery]    = useState('');
@@ -352,7 +357,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
       />
     );
   } else if (panel.ViewMode === 'ai') {
-    content = <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} onSave={handleSaveChat} />;
+    content = <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
   } else if (panel.ViewMode === 'settings') {
     content = <ThinktankSettingsView layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
   } else {
@@ -375,6 +380,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         Thinktank&gt;{THINKTANK_MODE_NAMES[panel.ViewMode] ?? panel.ViewMode}
       </div>
       <ThinktankMenuRibbon
+        viewMode={panel.ViewMode}
         visibleIds={visibleIds}
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={panel.ShowCheckedOnly}
@@ -382,6 +388,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
         canCreateThought={canCreateThought}
+        canSaveChat={chatMessages.length > 0 && !chatWaiting}
+        onScrollPrev={handleScrollPrev}
+        onScrollNext={handleScrollNext}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
@@ -390,6 +399,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
         onCreateThought={handleCreateThought}
+        onSaveChat={handleSaveChat}
       />
 
       {showColumnDialog && (

@@ -23,6 +23,7 @@ interface Props {
   visibleCount?:    number;
   totalCount?:      number;
   
+  showTextFilter?:  boolean;
   showDateFilters?: boolean;
 }
 
@@ -34,6 +35,7 @@ export const UnifiedFilterPanel = React.memo(({
   updatedDate, onUpdatedDateChange,
   updatedRange, onUpdatedRangeChange,
   visibleCount, totalCount,
+  showTextFilter = true,
   showDateFilters = true,
 }: Props) => {
   const [showHistory, setShowHistory] = useState(false);
@@ -51,49 +53,51 @@ export const UnifiedFilterPanel = React.memo(({
   return (
     <div className="unified-filter-panel">
       {/* 1行目: テキストフィルタ */}
-      <div className="unified-filter-row">
-        <div className="unified-filter-row-left">
-          <Type size={12} className="unified-filter-icon" />
-          <div className="unified-filter-text-wrapper">
-            <input
-              className="unified-filter-text-input"
-              type="text"
-              value={textValue}
-              onChange={e => onTextChange(e.target.value)}
-              onKeyDown={handleTextKeyDown}
-              placeholder="タイトル・キーワードで絞り込み..."
-              spellCheck={false}
-            />
-            <ChevronDown 
-              size={12} 
-              className={`unified-filter-pulldown-icon ${showHistory ? 'unified-filter-pulldown-icon--active' : ''}`}
-              onClick={() => setShowHistory(!showHistory)}
-            />
-            {showHistory && (
-              <FilterHistoryPulldown 
-                historyKey={historyKey} 
-                onSelect={onTextChange} 
-                onClose={() => setShowHistory(false)} 
+      {showTextFilter && (
+        <div className="unified-filter-row">
+          <div className="unified-filter-row-left">
+            <Type size={12} className="unified-filter-icon" />
+            <div className="unified-filter-text-wrapper">
+              <input
+                className="unified-filter-text-input"
+                type="text"
+                value={textValue}
+                onChange={e => onTextChange(e.target.value)}
+                onKeyDown={handleTextKeyDown}
+                placeholder="タイトル・キーワードで絞り込み..."
+                spellCheck={false}
               />
+              <ChevronDown 
+                size={12} 
+                className={`unified-filter-pulldown-icon ${showHistory ? 'unified-filter-pulldown-icon--active' : ''}`}
+                onClick={() => setShowHistory(!showHistory)}
+              />
+              {showHistory && (
+                <FilterHistoryPulldown 
+                  historyKey={historyKey} 
+                  onSelect={onTextChange} 
+                  onClose={() => setShowHistory(false)} 
+                />
+              )}
+            </div>
+          </div>
+          <div className="unified-filter-row-right">
+            <button 
+              className="unified-filter-btn unified-filter-btn--clear"
+              onClick={() => onTextChange('')}
+              title="消去"
+              disabled={!textValue}
+            >
+              <X size={12} />
+            </button>
+            {totalCount !== undefined && (
+              <span className="unified-filter-count">
+                {visibleCount ?? totalCount}/{totalCount}
+              </span>
             )}
           </div>
         </div>
-        <div className="unified-filter-row-right">
-          <button 
-            className="unified-filter-btn unified-filter-btn--clear"
-            onClick={() => onTextChange('')}
-            title="消去"
-            disabled={!textValue}
-          >
-            <X size={12} />
-          </button>
-          {totalCount !== undefined && (
-            <span className="unified-filter-count">
-              {visibleCount ?? totalCount}/{totalCount}
-            </span>
-          )}
-        </div>
-      </div>
+      )}
 
       {showDateFilters && (
         <>

@@ -18,6 +18,9 @@ export class TTWorkoutArea extends TTObject {
   /** コンテンツロード中フラグ */
   public IsLoading: boolean = false;
 
+  /** エディタに未保存変更があるフラグ（WorkoutArea.tsx が同期する）*/
+  public IsDirty: boolean = false;
+
   /** Area 表示タイトル */
   public Title: string = '';
 

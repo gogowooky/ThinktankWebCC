@@ -2,15 +2,22 @@
  * ReThinkChat.tsx
  * Phase 14: ReThinkPanel の AI チャット UI。
  * Anthropic SSE ストリーミング対応。
+ * - 入力欄は下部固定（Claude Code スタイル）
+ * - 送信後は入力欄をクリア
+ * - ユーザーメッセージは緑系背景で識別
  */
 
-import { useRef, useState, useEffect, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { TTReThinkPanel } from '../../views/TTReThinkPanel';
 import { streamChat } from '../../services/ChatApiService';
 import './ReThinkChat.css';
 
-const HINT_TEXT = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
+export interface ReThinkChatRef {
+  scrollToPrevUser: () => void;
+  scrollToNextUser: () => void;
+}
+
+const PLACEHOLDER = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
 
 function formatTime(iso: string): string {
   if (!iso) return '';
@@ -18,16 +25,11 @@ function formatTime(iso: string): string {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-function resizeToContent(ta: HTMLTextAreaElement) {
+function resetHeight(ta: HTMLTextAreaElement) {
   ta.style.height = 'auto';
   const sh = ta.scrollHeight;
-  if (sh >= 120) {
-    ta.style.height = '120px';
-    ta.style.overflowY = 'auto';
-  } else {
-    ta.style.height = `${sh}px`;
-    ta.style.overflowY = 'hidden';
-  }
+  ta.style.height    = sh >= 120 ? '120px' : `${sh}px`;
+  ta.style.overflowY = sh >= 120 ? 'auto' : 'hidden';
 }
 
 interface Props {
@@ -35,7 +37,16 @@ interface Props {
   systemPrompt: string;
 }
 
-export function ReThinkChat({ panel, systemPrompt }: Props) {
+function topInContainer(el: HTMLElement, container: HTMLElement): number {
+  const elRect = el.getBoundingClientRect();
+  const cRect  = container.getBoundingClientRect();
+  return elRect.top - cRect.top + container.scrollTop;
+}
+
+export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkChat(
+  { panel, systemPrompt },
+  ref,
+) {
   const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
   const logRef                    = useRef<HTMLDivElement>(null);
@@ -43,19 +54,44 @@ export function ReThinkChat({ panel, systemPrompt }: Props) {
   const abortRef                  = useRef<AbortController | null>(null);
   const accumulatedRef            = useRef('');
 
+  useImperativeHandle(ref, () => ({
+    scrollToPrevUser: () => {
+      const log = logRef.current;
+      if (!log) return;
+      const blocks = Array.from(
+        log.querySelectorAll<HTMLElement>('.rethink-chat__user-block'),
+      );
+      const current = log.scrollTop;
+      for (let i = blocks.length - 1; i >= 0; i--) {
+        const top = topInContainer(blocks[i], log);
+        if (top < current - 5) {
+          log.scrollTo({ top, behavior: 'smooth' });
+          return;
+        }
+      }
+      log.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    scrollToNextUser: () => {
+      const log = logRef.current;
+      if (!log) return;
+      const blocks = Array.from(
+        log.querySelectorAll<HTMLElement>('.rethink-chat__user-block'),
+      );
+      const current = log.scrollTop;
+      for (const el of blocks) {
+        const top = topInContainer(el, log);
+        if (top > current + 5) {
+          log.scrollTo({ top, behavior: 'smooth' });
+          return;
+        }
+      }
+    },
+  }), []);
+
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [panel.ChatMessages, isWaiting]);
-
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.value = HINT_TEXT;
-    resizeToContent(ta);
-    ta.value = '';
-    setInput('');
-  }, []);
 
   // アンマウント時にストリームを中断
   useEffect(() => () => { abortRef.current?.abort(); }, []);
@@ -65,6 +101,12 @@ export function ReThinkChat({ panel, systemPrompt }: Props) {
     if (!text || isWaiting) return;
 
     panel.AddUserMessage(text);
+    setInput('');
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height    = 'auto';
+      ta.style.overflowY = 'hidden';
+    }
     setIsWaiting(true);
     accumulatedRef.current = '';
 
@@ -101,15 +143,6 @@ export function ReThinkChat({ panel, systemPrompt }: Props) {
     );
   }, [input, isWaiting, panel, systemPrompt]);
 
-  const handleClear = useCallback(() => {
-    setInput('');
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.value = HINT_TEXT;
-    resizeToContent(ta);
-    ta.value = '';
-  }, []);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -119,37 +152,13 @@ export function ReThinkChat({ panel, systemPrompt }: Props) {
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-    resizeToContent(e.target);
+    resetHeight(e.target);
   };
 
   const lastMsg = panel.ChatMessages[panel.ChatMessages.length - 1];
 
   return (
     <div className="rethink-chat">
-
-      {/* ── 入力エリア（最上位）─────────────────────────────────── */}
-      <div className="rethink-chat__input-area">
-        <textarea
-          ref={textareaRef}
-          className="rethink-chat__input"
-          value={input}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={HINT_TEXT}
-          disabled={isWaiting}
-        />
-        <div className="rethink-chat__btn-stack">
-          <button
-            className="rethink-chat__clear-btn"
-            onClick={handleClear}
-            disabled={isWaiting}
-            title="消去"
-            aria-label="消去"
-          >
-            <X size={13} />
-          </button>
-        </div>
-      </div>
 
       {/* ── ログ出力エリア ───────────────────────────────── */}
       <div className="rethink-chat__log" ref={logRef}>
@@ -165,7 +174,7 @@ export function ReThinkChat({ panel, systemPrompt }: Props) {
         {panel.ChatMessages.map(msg => (
           <div key={msg.id} className="rethink-chat__entry">
             {msg.role === 'user' ? (
-              <div className="rethink-chat__user-line">
+              <div className="rethink-chat__user-block">
                 <span className="rethink-chat__prompt">{'>'}</span>
                 <span className="rethink-chat__user-text">{msg.content}</span>
                 {msg.timestamp && (
@@ -199,6 +208,22 @@ export function ReThinkChat({ panel, systemPrompt }: Props) {
         )}
 
       </div>
+
+      {/* ── 入力エリア（下部固定）────────────────────────────── */}
+      <div className="rethink-chat__input-area">
+        <span className="rethink-chat__input-prompt">{'>'}</span>
+        <textarea
+          ref={textareaRef}
+          className="rethink-chat__input"
+          value={input}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder={PLACEHOLDER}
+          disabled={isWaiting}
+          rows={2}
+        />
+      </div>
+
     </div>
   );
-}
+});

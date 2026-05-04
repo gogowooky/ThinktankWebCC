@@ -289,12 +289,19 @@ export class TTVault extends TTCollection {
       }
       this.Count    = this._children.size;
       this.IsLoaded = true;
-      super.NotifyUpdated(false);
+      this.NotifyRefresh();
       console.log(`[TTVault] LoadCache: ${this.Count} items loaded (vault=${this.ID})`);
     } catch (e) {
       console.error('[TTVault] LoadCache failed:', e);
       this.IsLoaded = true;
     }
+  }
+
+  /** 全データをストレージから再ロードしリスナーを発火する（表示更新用）*/
+  public async ReloadAll(): Promise<void> {
+    this.ClearItemsSilent();
+    this.IsLoaded = false;
+    await this.LoadCache();
   }
 
   /** 複数 thought を合成した新 thought を作成する

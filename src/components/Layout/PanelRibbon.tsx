@@ -69,7 +69,7 @@ export function PanelRibbon({
       <button
         className="panel-ribbon__toggle"
         onClick={onToggle}
-        title={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
+        data-tip={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
         aria-label={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
       >
         {showChevronRight

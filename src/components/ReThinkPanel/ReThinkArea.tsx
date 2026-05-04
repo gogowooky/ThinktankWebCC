@@ -6,11 +6,12 @@
  * - 下部: ReThinkChat（AI との CLI ターミナル風チャット）
  */
 
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { BookOpen, FileText } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ReThinkChat } from './ReThinkChat';
+import type { ReThinkChatRef } from './ReThinkChat';
 import { ReThinkMenuRibbon } from './ReThinkMenuRibbon';
 import type { ReThinkViewMode } from './ReThinkRibbon';
 import '../../components/Layout/MenuRibbon.css';
@@ -46,6 +47,20 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const hasContext = !!thoughtName || !!thinkName;
 
   // コンテキスト付きシステムプロンプトを生成
+  const reThinkChatRef = useRef<ReThinkChatRef>(null);
+  const handleScrollPrev = useCallback(() => reThinkChatRef.current?.scrollToPrevUser(), []);
+  const handleScrollNext = useCallback(() => reThinkChatRef.current?.scrollToNextUser(), []);
+
+  const handleSaveChat = useCallback(async () => {
+    const msgs = panel.ChatMessages;
+    if (msgs.length === 0) return;
+    const firstUser = msgs.find(m => m.role === 'user')?.content ?? '';
+    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+    const body  = msgs.map(m => m.role === 'user' ? `## ${m.content}` : m.content).join('\n');
+    await vault.CreateChatThink(`${title}\n${body}`, panel.LinkedThoughtID ?? undefined);
+    panel.ClearChat();
+  }, [panel, vault]);
+
   const systemPrompt = useMemo(() => {
     const parts: string[] = [BASE_SYSTEM_PROMPT];
 
@@ -83,7 +98,12 @@ export function ReThinkArea({ app, viewMode }: Props) {
       </div>
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
-      <ReThinkMenuRibbon />
+      <ReThinkMenuRibbon
+        canSaveChat={panel.ChatMessages.length > 0 && !panel.IsStreaming}
+        onSaveChat={handleSaveChat}
+        onScrollPrev={handleScrollPrev}
+        onScrollNext={handleScrollNext}
+      />
 
       {/* ── コンテキストバー ─────────────────────────────────── */}
       <div className={`rethink-area__context${hasContext ? '' : ' rethink-area__context--empty'}`}>
@@ -113,7 +133,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
             ReThink設定は今後追加予定です。
           </div>
         ) : (
-          <ReThinkChat panel={panel} systemPrompt={systemPrompt} />
+          <ReThinkChat ref={reThinkChatRef} panel={panel} systemPrompt={systemPrompt} />
         )}
       </div>
 

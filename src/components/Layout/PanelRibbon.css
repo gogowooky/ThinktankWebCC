@@ -10,7 +10,14 @@
   gap: 4px;
   /* デフォルト背景（パネル別に上書き）*/
   background: var(--bg-panel);
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+
+/* ホバー時にリボン全体を最前面へ */
+.panel-ribbon:has(button:hover) {
+  z-index: 9999;
 }
 
 /* ── パネル別テーマ色 ─────────────────────────────────── */
@@ -36,6 +43,42 @@
   background: rgba(255, 255, 255, 0.18) !important;
   outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: -2px;
+}
+
+/* ── カスタムツールチップ（title 属性から自動生成）── */
+
+.panel-ribbon button[data-tip]:not([data-tip='']) {
+  position: relative;
+}
+
+.panel-ribbon button[data-tip]:not([data-tip=''])::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + 14px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(15, 15, 20, 0.88);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  font-family: system-ui, sans-serif;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 9999;
+  transition: opacity 0.12s ease;
+}
+
+.panel-ribbon button[data-tip]:not([data-tip='']):hover::after {
+  opacity: 1;
+}
+
+/* 右側パネル（ReThink）: ツールチップを左に */
+.panel-ribbon[data-side="right"] button[data-tip]:not([data-tip=''])::after {
+  left: auto;
+  right: calc(100% + 14px);
 }
 
 /* ── 内部要素 ─────────────────────────────────────────── */

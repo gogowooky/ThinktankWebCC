@@ -47,9 +47,13 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
     [panel]
   );
 
-  const handleResize = useCallback((dx: number) => {
+  const handleResize  = useCallback((dx: number) => {
     onResize(dx);
   }, [onResize]);
+
+  const handleRefresh = useCallback(() => {
+    app.RefreshAll().catch(e => console.error('[ThinktankPanel] RefreshAll failed:', e));
+  }, [app]);
 
   return (
     <div className="thinktank-panel">
@@ -58,6 +62,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
         onToggle={handleToggle}
         viewMode={panel.ViewMode}
         onSetViewMode={handleSetViewMode}
+        onRefresh={handleRefresh}
         vaultName={vault.VaultName}
       />
       <PanelArea

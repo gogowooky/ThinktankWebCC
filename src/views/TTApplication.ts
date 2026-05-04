@@ -136,6 +136,28 @@ export class TTApplication extends TTObject {
 
   // ── パネル全体リセット ────────────────────────────────────────────────
 
+  /**
+   * 全データをストレージから再ロードして表示を更新する（表示更新ボタン用）。
+   * 未保存のエディタ変更がある場合は確認ダイアログを出す。
+   */
+  public async RefreshAll(): Promise<void> {
+    const dirtyArea = this.WorkoutPanel.Areas.find(a => a.IsDirty);
+    if (dirtyArea) {
+      const ok = window.confirm(
+        `「${dirtyArea.Title || dirtyArea.ResourceID}」に未保存の変更があります。\n更新すると変更が失われます。続けますか？`,
+      );
+      if (!ok) return;
+    }
+
+    this.ThinktankPanel.ClearSelection();
+    this.ThinktankPanel.ClearChecks();
+    this.OverviewPanel.ClearThought();
+    this.WorkoutPanel.ClearAll();
+    this.ReThinkPanel.ClearLink();
+
+    await this.Models.Vault.ReloadAll();
+  }
+
   /** 全パネルの状態をリセットする */
   public Reset(): void {
     this.ThinktankPanel.ClearSelection();

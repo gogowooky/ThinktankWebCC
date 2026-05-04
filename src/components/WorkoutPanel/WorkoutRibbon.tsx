@@ -54,7 +54,7 @@ export function WorkoutRibbon({ activeSettings, thinkTitle, onToggle, onSetActiv
       <button
         className="workout-ribbon__toggle"
         onClick={onToggle}
-        title={isOpen ? '設定パネルを閉じる' : '設定パネルを開く'}
+        data-tip={isOpen ? '設定パネルを閉じる' : '設定パネルを開く'}
         aria-label={isOpen ? '設定パネルを閉じる' : '設定パネルを開く'}
       >
         {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
@@ -70,7 +70,7 @@ export function WorkoutRibbon({ activeSettings, thinkTitle, onToggle, onSetActiv
               activeSettings === type ? 'workout-ribbon__btn--active' : '',
             ].join(' ')}
             onClick={() => handleClick(type)}
-            title={name}
+            data-tip={name}
             aria-label={name}
           >
             <Icon size={16} />

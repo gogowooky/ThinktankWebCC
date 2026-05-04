@@ -2,24 +2,28 @@
  * AiChatView.tsx
  * ThinktankPanel / OverviewPanel 共通 AI チャットビュー。
  *
- * - 最上位に可変サイズのテキストエリア（ユーザー入力）
- * - 下部にスクロール可能な会話ログ（CLI 風）
- * - Mac 風タイトルバーなし
+ * - 下部に固定の入力エリア（Claude Code スタイル）
+ * - 上部にスクロール可能な会話ログ（CLI 風）
+ * - Enter 送信後は入力欄を自動クリア
+ * - forwardRef でスクロールメソッドを公開（MonitorUp/Down ボタン用）
  */
 
-import { useRef, useEffect, useState, useCallback } from 'react';
-import { X, Save } from 'lucide-react';
+import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { ChatMessage } from '../../types';
 import './AiChatView.css';
 
-interface Props {
-  messages:         ChatMessage[];
-  isWaiting:        boolean;
-  onSend:           (text: string) => void;
-  onSave?:          () => void;
+export interface AiChatViewRef {
+  scrollToPrevUser: () => void;
+  scrollToNextUser: () => void;
 }
 
-const HINT_TEXT = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
+interface Props {
+  messages:  ChatMessage[];
+  isWaiting: boolean;
+  onSend:    (text: string) => void;
+}
+
+const PLACEHOLDER = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
 
 function formatTime(iso: string): string {
   if (!iso) return '';
@@ -29,56 +33,77 @@ function formatTime(iso: string): string {
   return `${hh}:${mm}`;
 }
 
-function resizeToContent(ta: HTMLTextAreaElement) {
+function resetHeight(ta: HTMLTextAreaElement) {
   ta.style.height = 'auto';
   const sh = ta.scrollHeight;
-  if (sh >= 120) {
-    ta.style.height = '120px';
-    ta.style.overflowY = 'auto';
-  } else {
-    ta.style.height = `${sh}px`;
-    ta.style.overflowY = 'hidden';
-  }
+  ta.style.height    = sh >= 120 ? '120px' : `${sh}px`;
+  ta.style.overflowY = sh >= 120 ? 'auto' : 'hidden';
 }
 
-export function AiChatView({ messages, isWaiting, onSend, onSave }: Props) {
+function topInContainer(el: HTMLElement, container: HTMLElement): number {
+  const elRect  = el.getBoundingClientRect();
+  const cRect   = container.getBoundingClientRect();
+  return elRect.top - cRect.top + container.scrollTop;
+}
+
+export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
+  { messages, isWaiting, onSend },
+  ref,
+) {
   const [input, setInput] = useState('');
   const logRef            = useRef<HTMLDivElement>(null);
   const textareaRef       = useRef<HTMLTextAreaElement>(null);
 
-  // 新メッセージ到着時に最下部へスクロール
+  useImperativeHandle(ref, () => ({
+    scrollToPrevUser: () => {
+      const log = logRef.current;
+      if (!log) return;
+      const blocks = Array.from(
+        log.querySelectorAll<HTMLElement>('.ai-chat-view__user-block'),
+      );
+      const current = log.scrollTop;
+      for (let i = blocks.length - 1; i >= 0; i--) {
+        const top = topInContainer(blocks[i], log);
+        if (top < current - 5) {
+          log.scrollTo({ top, behavior: 'smooth' });
+          return;
+        }
+      }
+      log.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    scrollToNextUser: () => {
+      const log = logRef.current;
+      if (!log) return;
+      const blocks = Array.from(
+        log.querySelectorAll<HTMLElement>('.ai-chat-view__user-block'),
+      );
+      const current = log.scrollTop;
+      for (const el of blocks) {
+        const top = topInContainer(el, log);
+        if (top > current + 5) {
+          log.scrollTo({ top, behavior: 'smooth' });
+          return;
+        }
+      }
+    },
+  }), []);
+
   useEffect(() => {
     const el = logRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, isWaiting]);
 
-  // マウント時: placeholder 相当のヒントテキストで高さを計測して初期サイズを設定
-  useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.value = HINT_TEXT;
-    resizeToContent(ta);
-    ta.value = '';
-    // React の value 制御とズレないよう強制同期
-    setInput('');
-  }, []);
-
   const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text || isWaiting) return;
     onSend(text);
-    // テキストボックスは消去しない
-  }, [input, isWaiting, onSend]);
-
-  const handleClear = useCallback(() => {
     setInput('');
-    // 消去後もヒントと同じ高さに戻す
     const ta = textareaRef.current;
-    if (!ta) return;
-    ta.value = HINT_TEXT;
-    resizeToContent(ta);
-    ta.value = '';
-  }, []);
+    if (ta) {
+      ta.style.height    = 'auto';
+      ta.style.overflowY = 'hidden';
+    }
+  }, [input, isWaiting, onSend]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -89,46 +114,11 @@ export function AiChatView({ messages, isWaiting, onSend, onSave }: Props) {
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
-    resizeToContent(e.target);
+    resetHeight(e.target);
   };
 
   return (
     <div className="ai-chat-view">
-
-      {/* ── 入力エリア（最上位）────────────────────────────────────── */}
-      <div className="ai-chat-view__input-area">
-        <textarea
-          ref={textareaRef}
-          className="ai-chat-view__input"
-          value={input}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={HINT_TEXT}
-          disabled={isWaiting}
-        />
-        <div className="ai-chat-view__btn-stack">
-          <button
-            className="ai-chat-view__clear-btn"
-            onClick={handleClear}
-            disabled={isWaiting}
-            title="消去"
-            aria-label="消去"
-          >
-            <X size={13} />
-          </button>
-          {onSave && (
-            <button
-              className="ai-chat-view__save-btn"
-              onClick={onSave}
-              disabled={isWaiting || messages.length === 0}
-              title="Chatを保管庫に保存"
-              aria-label="Chatを保管庫に保存"
-            >
-              <Save size={13} />
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* ── 会話ログ ─────────────────────────────────────────────── */}
       <div className="ai-chat-view__log" ref={logRef}>
@@ -142,7 +132,7 @@ export function AiChatView({ messages, isWaiting, onSend, onSave }: Props) {
         {messages.map(msg => (
           <div key={msg.id} className="ai-chat-view__entry">
             {msg.role === 'user' ? (
-              <div className="ai-chat-view__user-line">
+              <div className="ai-chat-view__user-block">
                 <span className="ai-chat-view__prompt">{'>'}</span>
                 <span className="ai-chat-view__user-text">{msg.content}</span>
                 {msg.timestamp && (
@@ -154,7 +144,7 @@ export function AiChatView({ messages, isWaiting, onSend, onSave }: Props) {
                 {msg.content.split('\n').map((line, li) => (
                   <div key={li} className="ai-chat-view__ai-line">
                     <span className="ai-chat-view__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
-                    <span className="ai-chat-view__ai-text">{line || ' '}</span>
+                    <span className="ai-chat-view__ai-text">{line || ' '}</span>
                     {li === 0 && msg.timestamp && (
                       <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
                     )}
@@ -165,7 +155,6 @@ export function AiChatView({ messages, isWaiting, onSend, onSave }: Props) {
           </div>
         ))}
 
-        {/* 待機中カーソル */}
         {isWaiting && (
           <div className="ai-chat-view__ai-block">
             <div className="ai-chat-view__ai-line">
@@ -176,6 +165,22 @@ export function AiChatView({ messages, isWaiting, onSend, onSave }: Props) {
         )}
 
       </div>
+
+      {/* ── 入力エリア（下部固定）────────────────────────────────── */}
+      <div className="ai-chat-view__input-area">
+        <span className="ai-chat-view__input-prompt">{'>'}</span>
+        <textarea
+          ref={textareaRef}
+          className="ai-chat-view__input"
+          value={input}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          placeholder={PLACEHOLDER}
+          disabled={isWaiting}
+          rows={2}
+        />
+      </div>
+
     </div>
   );
-}
+});

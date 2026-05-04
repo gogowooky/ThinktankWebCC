@@ -3,13 +3,42 @@
  * ReThinkArea 上部の横向きリボン
  */
 
+import { Save, MonitorUp, MonitorDown } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ReThinkMenuRibbon.css';
 
-export function ReThinkMenuRibbon() {
+interface Props {
+  canSaveChat:  boolean;
+  onSaveChat:   () => void;
+  onScrollPrev: () => void;
+  onScrollNext: () => void;
+}
+
+export function ReThinkMenuRibbon({ canSaveChat, onSaveChat, onScrollPrev, onScrollNext }: Props) {
   return (
     <div className="menu-ribbon rethink-menu-ribbon">
-      {/* 今後ここにボタンを追加 */}
+      <button
+        className="menu-ribbon__btn menu-ribbon__btn--icon"
+        onClick={onScrollPrev}
+        data-tip="前のユーザーメッセージへ"
+      >
+        <MonitorUp size={14} />
+      </button>
+      <button
+        className="menu-ribbon__btn menu-ribbon__btn--icon"
+        onClick={onScrollNext}
+        data-tip="次のユーザーメッセージへ"
+      >
+        <MonitorDown size={14} />
+      </button>
+      <button
+        className="menu-ribbon__btn menu-ribbon__btn--icon"
+        onClick={onSaveChat}
+        data-tip="Chatを保管庫に保存"
+        disabled={!canSaveChat}
+      >
+        <Save size={14} />
+      </button>
     </div>
   );
 }

@@ -20,3 +20,10 @@
   white-space: nowrap;
   padding: 0 4px;
 }
+
+.thinktank-ribbon__mode-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  padding: 0 4px;
+}

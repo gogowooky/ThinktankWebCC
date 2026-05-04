@@ -22,6 +22,7 @@ import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
+import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
@@ -72,6 +73,10 @@ export function OverviewArea({ app, showSettings }: Props) {
   const [chatWaiting,  setChatWaiting]  = useState(false);
   const chatAbortRef                    = useRef<AbortController | null>(null);
   const chatAccumulatedRef              = useRef('');
+  const aiChatViewRef                   = useRef<AiChatViewRef>(null);
+
+  const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
+  const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
 
   // ── Think 一覧（選択 Thought 内の全 Think → フィルタ適用）──────────────────
   const [thinksInThought, setThinksInThought] = useState(() =>
@@ -291,12 +296,16 @@ export function OverviewArea({ app, showSettings }: Props) {
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <OverviewMenuRibbon
+        mediaType={panel.MediaType}
         visibleIds={visibleIds}
         checkedIds={checkedIds}
         showCheckedOnly={showCheckedOnly}
         allVaultChecked={allVaultChecked}
         showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
+        canSaveChat={chatMessages.length > 0 && !chatWaiting}
+        onScrollPrev={handleScrollPrev}
+        onScrollNext={handleScrollNext}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}
@@ -305,6 +314,7 @@ export function OverviewArea({ app, showSettings }: Props) {
         onToggleAllVault={handleToggleAllVault}
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
+        onSaveChat={handleSaveChat}
       />
 
       {/* ── カラムソートダイアログ ─────────────────────────────── */}
@@ -383,7 +393,7 @@ export function OverviewArea({ app, showSettings }: Props) {
             />
           )
         ) : panel.MediaType === 'chat' ? (
-          <AiChatView messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} onSave={handleSaveChat} />
+          <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
         ) : !think ? (
           <div className="overview-area__empty">
             <span>Thought をドロップして選択してください</span>

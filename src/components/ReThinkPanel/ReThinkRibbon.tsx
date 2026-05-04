@@ -31,7 +31,7 @@ export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearCh
       <button
         className={`rethink-ribbon__btn${viewMode === 'chat' ? ' rethink-ribbon__btn--active' : ''}`}
         onClick={() => onSetMode('chat')}
-        title="AI相談"
+        data-tip="AI相談"
         aria-label="AI相談"
       >
         <MessageCircle size={16} />
@@ -39,7 +39,7 @@ export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearCh
       <button
         className={`rethink-ribbon__btn${viewMode === 'settings' ? ' rethink-ribbon__btn--active' : ''}`}
         onClick={() => onSetMode('settings')}
-        title="設定"
+        data-tip="設定"
         aria-label="設定"
       >
         <Settings size={16} />
@@ -47,7 +47,7 @@ export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearCh
       <button
         className="rethink-ribbon__btn"
         onClick={onClearChat}
-        title="会話をクリア"
+        data-tip="会話をクリア"
         aria-label="会話をクリア"
       >
         <Trash2 size={14} />

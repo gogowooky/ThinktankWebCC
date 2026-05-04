@@ -44,6 +44,10 @@ export function WorkoutArea({
   const contentReady = loadedResourceId === area.ResourceID;
 
   useEffect(() => {
+    area.IsDirty = isDirty;
+  }, [area, isDirty]);
+
+  useEffect(() => {
     setIsDirty(false);
     const t = vault.GetThink(area.ResourceID);
     if (!t || !t.IsMetaOnly) {

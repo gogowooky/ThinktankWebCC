@@ -7,7 +7,7 @@
  */
 
 import {
-  MessageCircle, Files, SearchCheck, Library, Settings,
+  MessageCircle, Files, SearchCheck, Library, Settings, ListRestart,
 } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
@@ -18,6 +18,7 @@ interface Props {
   onToggle: () => void;
   viewMode: ThinktankViewMode;
   onSetViewMode: (mode: ThinktankViewMode) => void;
+  onRefresh: () => void;
   vaultName?: string;
 }
 
@@ -41,6 +42,7 @@ export function ThinktankRibbon({
   onToggle,
   viewMode,
   onSetViewMode,
+  onRefresh,
   vaultName,
 }: Props) {
   return (
@@ -55,7 +57,7 @@ export function ThinktankRibbon({
         <button
           key={m}
           className={`ribbon-icon-btn${viewMode === m ? ' ribbon-icon-btn--active' : ''}`}
-          title={label}
+          data-tip={label}
           aria-label={label}
           onClick={() => onSetViewMode(m)}
         >
@@ -63,8 +65,16 @@ export function ThinktankRibbon({
         </button>
       ))}
       <button
+        className="ribbon-icon-btn"
+        data-tip="表示更新"
+        aria-label="表示更新"
+        onClick={onRefresh}
+      >
+        <ListRestart size={16} />
+      </button>
+      <button
         className={`ribbon-icon-btn${viewMode === 'settings' ? ' ribbon-icon-btn--active' : ''}`}
-        title="設定"
+        data-tip="設定"
         aria-label="設定"
         onClick={() => onSetViewMode('settings')}
       >

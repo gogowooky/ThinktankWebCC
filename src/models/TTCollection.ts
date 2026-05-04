@@ -45,7 +45,24 @@ export class TTCollection extends TTObject {
 
   public override NotifyUpdated(updateDate: boolean = true): void {
     this._itemsCache = null;
-    super.NotifyUpdated(updateDate);
+    if (updateDate) {
+      super.NotifyUpdated(true);
+    }
+    // updateDate=false (child propagation): invalidate cache only, no listener fire
+  }
+
+  /** リスナーを明示的に発火する（表示更新ボタンなど手動リフレッシュ用）*/
+  public NotifyRefresh(): void {
+    this._itemsCache = null;
+    super.NotifyUpdated(false);
+  }
+
+  /** リスナー通知なしで全アイテムをクリアする（ReloadAll 用）*/
+  protected ClearItemsSilent(): void {
+    this._children.forEach(item => { item._parent = null; });
+    this._children.clear();
+    this._itemsCache = null;
+    this.Count = 0;
   }
 
   public AddItem(item: TTObject): TTObject {

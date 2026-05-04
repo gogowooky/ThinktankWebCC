@@ -81,7 +81,8 @@ export function OverviewRibbon({
             !showSettings && mediaType === mode ? 'overview-ribbon__btn--active' : '',
           ].join(' ')}
           onClick={() => onMediaType(mode as MediaType)}
-          title={title}
+          data-tip={title}
+          aria-label={title}
         >
           <Icon size={16} />
         </button>
@@ -89,7 +90,8 @@ export function OverviewRibbon({
       <button
         className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
         onClick={onToggleSettings}
-        title="設定"
+        data-tip="設定"
+        aria-label="設定"
       >
         <Settings size={16} />
       </button>
