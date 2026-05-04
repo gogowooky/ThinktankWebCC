@@ -8,13 +8,18 @@ import '../../components/Layout/MenuRibbon.css';
 import './ReThinkMenuRibbon.css';
 
 interface Props {
+  viewMode:     string;
   canSaveChat:  boolean;
   onSaveChat:   () => void;
   onScrollPrev: () => void;
   onScrollNext: () => void;
 }
 
-export function ReThinkMenuRibbon({ canSaveChat, onSaveChat, onScrollPrev, onScrollNext }: Props) {
+export function ReThinkMenuRibbon({ viewMode, canSaveChat, onSaveChat, onScrollPrev, onScrollNext }: Props) {
+  if (viewMode === 'settings') {
+    return <div className="menu-ribbon rethink-menu-ribbon" />;
+  }
+
   return (
     <div className="menu-ribbon rethink-menu-ribbon">
       <button

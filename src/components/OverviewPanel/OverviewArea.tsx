@@ -296,6 +296,7 @@ export function OverviewArea({ app, showSettings }: Props) {
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <OverviewMenuRibbon
+        showSettings={showSettings}
         mediaType={panel.MediaType}
         visibleIds={visibleIds}
         checkedIds={checkedIds}

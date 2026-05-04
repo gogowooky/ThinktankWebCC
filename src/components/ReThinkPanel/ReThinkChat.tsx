@@ -211,7 +211,6 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
 
       {/* ── 入力エリア（下部固定）────────────────────────────── */}
       <div className="rethink-chat__input-area">
-        <span className="rethink-chat__input-prompt">{'>'}</span>
         <textarea
           ref={textareaRef}
           className="rethink-chat__input"

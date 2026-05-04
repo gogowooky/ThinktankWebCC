@@ -13,6 +13,7 @@ import '../../components/Layout/MenuRibbon.css';
 import './OverviewMenuRibbon.css';
 
 interface Props {
+  showSettings:         boolean;
   mediaType:            string;
   visibleIds:           string[];
   checkedIds:           string[];
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export function OverviewMenuRibbon({
+  showSettings,
   mediaType,
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showDateFilter, showColumnDialog,
@@ -54,6 +56,11 @@ export function OverviewMenuRibbon({
   }, [allChecked, onCheckAll, onClearChecks]);
 
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
+
+  /* ── 設定モード: ボタンなし ─────────────────────────────── */
+  if (showSettings) {
+    return <div className="menu-ribbon overview-menu-ribbon" />;
+  }
 
   /* ── チャットモード: 保存ボタンのみ ─────────────────────── */
   if (mediaType === 'chat') {

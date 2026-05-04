@@ -434,12 +434,12 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         onUpdatedRangeChange={setUpdatedRange}
         visibleCount={
           panel.ViewMode === 'search' ? searchVisible.length :
-          panel.ViewMode === 'filter' ? thoughtsVisible.length :
+          panel.ViewMode === 'filter' ? filterVisible.length :
           thoughtsVisible.length
         }
         totalCount={
           panel.ViewMode === 'search' ? searchResults.length :
-          panel.ViewMode === 'filter' ? allThoughts.length :
+          panel.ViewMode === 'filter' ? allThinks.length :
           allThoughts.length
         }
         showTextFilter={panel.ViewMode !== 'ai'}

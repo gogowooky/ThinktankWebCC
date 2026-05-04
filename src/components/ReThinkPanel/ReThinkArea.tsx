@@ -99,6 +99,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <ReThinkMenuRibbon
+        viewMode={viewMode}
         canSaveChat={panel.ChatMessages.length > 0 && !panel.IsStreaming}
         onSaveChat={handleSaveChat}
         onScrollPrev={handleScrollPrev}

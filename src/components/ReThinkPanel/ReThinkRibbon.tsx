@@ -6,21 +6,20 @@
  * ボタン: AI相談 / 設定 / 会話クリア
  */
 
-import { Trash2, MessageCircle, Settings } from 'lucide-react';
+import { MessageCircle, Settings } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import './ReThinkRibbon.css';
 
 export type ReThinkViewMode = 'chat' | 'settings';
 
 interface Props {
-  isOpen:      boolean;
-  viewMode:    ReThinkViewMode;
-  onToggle:    () => void;
-  onSetMode:   (mode: ReThinkViewMode) => void;
-  onClearChat: () => void;
+  isOpen:    boolean;
+  viewMode:  ReThinkViewMode;
+  onToggle:  () => void;
+  onSetMode: (mode: ReThinkViewMode) => void;
 }
 
-export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearChat }: Props) {
+export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode }: Props) {
   return (
     <PanelRibbon
       panelId="rethink"
@@ -44,14 +43,7 @@ export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearCh
       >
         <Settings size={16} />
       </button>
-      <button
-        className="rethink-ribbon__btn"
-        onClick={onClearChat}
-        data-tip="会話をクリア"
-        aria-label="会話をクリア"
-      >
-        <Trash2 size={14} />
-      </button>
+
     </PanelRibbon>
   );
 }

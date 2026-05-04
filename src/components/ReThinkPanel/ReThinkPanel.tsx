@@ -29,9 +29,8 @@ export function ReThinkPanel({ app, width, onResize }: Props) {
 
   const [viewMode, setViewMode] = useState<ReThinkViewMode>('chat');
 
-  const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
-  const handleClearChat = useCallback(() => panel.ClearChat(),  [panel]);
-  const handleSetMode   = useCallback((mode: ReThinkViewMode) => setViewMode(mode), []);
+  const handleToggle  = useCallback(() => panel.ToggleArea(), [panel]);
+  const handleSetMode = useCallback((mode: ReThinkViewMode) => setViewMode(mode), []);
 
   const handleResize = useCallback((dx: number) => {
     onResize(dx);
@@ -54,7 +53,6 @@ export function ReThinkPanel({ app, width, onResize }: Props) {
         viewMode={viewMode}
         onToggle={handleToggle}
         onSetMode={handleSetMode}
-        onClearChat={handleClearChat}
       />
     </div>
   );

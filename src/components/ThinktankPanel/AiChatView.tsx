@@ -168,7 +168,6 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
 
       {/* ── 入力エリア（下部固定）────────────────────────────────── */}
       <div className="ai-chat-view__input-area">
-        <span className="ai-chat-view__input-prompt">{'>'}</span>
         <textarea
           ref={textareaRef}
           className="ai-chat-view__input"
