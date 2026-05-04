@@ -22,7 +22,8 @@ interface Props {
   
   visibleCount?:    number;
   totalCount?:      number;
-  
+
+  onSearch?:        () => void;
   showTextFilter?:  boolean;
   showDateFilters?: boolean;
 }
@@ -35,6 +36,7 @@ export const UnifiedFilterPanel = React.memo(({
   updatedDate, onUpdatedDateChange,
   updatedRange, onUpdatedRangeChange,
   visibleCount, totalCount,
+  onSearch,
   showTextFilter = true,
   showDateFilters = true,
 }: Props) => {
@@ -44,6 +46,7 @@ export const UnifiedFilterPanel = React.memo(({
     if (e.key === 'Enter' && textValue.trim()) {
       saveHistory(historyKey, textValue.trim());
       setShowHistory(false);
+      onSearch?.();
     }
   };
 

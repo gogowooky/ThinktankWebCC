@@ -442,6 +442,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
           panel.ViewMode === 'filter' ? allThinks.length :
           allThoughts.length
         }
+        onSearch={panel.ViewMode === 'search' ? handleSearch : undefined}
         showTextFilter={panel.ViewMode !== 'ai'}
         showDateFilters={showDateFilter && ['thoughts', 'filter', 'search'].includes(panel.ViewMode)}
       />

@@ -129,40 +129,46 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
           </div>
         )}
 
-        {messages.map(msg => (
-          <div key={msg.id} className="ai-chat-view__entry">
-            {msg.role === 'user' ? (
-              <div className="ai-chat-view__user-block">
-                <span className="ai-chat-view__prompt">{'>'}</span>
-                <span className="ai-chat-view__user-text">{msg.content}</span>
-                {msg.timestamp && (
-                  <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
-                )}
-              </div>
-            ) : (
-              <div className="ai-chat-view__ai-block">
-                {msg.content.split('\n').map((line, li) => (
-                  <div key={li} className="ai-chat-view__ai-line">
-                    <span className="ai-chat-view__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
-                    <span className="ai-chat-view__ai-text">{line || ' '}</span>
-                    {li === 0 && msg.timestamp && (
-                      <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {isWaiting && (
-          <div className="ai-chat-view__ai-block">
-            <div className="ai-chat-view__ai-line">
-              <span className="ai-chat-view__ai-prefix">AI▸</span>
-              <span className="ai-chat-view__cursor">▋</span>
+        {messages.map((msg, index) => {
+          const isLastStreaming = isWaiting && index === messages.length - 1 && msg.role === 'assistant';
+          return (
+            <div key={msg.id} className="ai-chat-view__entry">
+              {msg.role === 'user' ? (
+                <div className="ai-chat-view__user-block">
+                  <span className="ai-chat-view__prompt">{'>'}</span>
+                  <span className="ai-chat-view__user-text">{msg.content}</span>
+                  {msg.timestamp && (
+                    <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="ai-chat-view__ai-block">
+                  {msg.content === '' && isLastStreaming ? (
+                    <div className="ai-chat-view__ai-line">
+                      <span className="ai-chat-view__ai-prefix">AI▸</span>
+                      <span className="ai-chat-view__cursor">▋</span>
+                    </div>
+                  ) : (
+                    msg.content.split('\n').map((line, li, arr) => (
+                      <div key={li} className="ai-chat-view__ai-line">
+                        <span className="ai-chat-view__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
+                        <span className="ai-chat-view__ai-text">
+                          {line || ' '}
+                          {isLastStreaming && li === arr.length - 1 && (
+                            <span className="ai-chat-view__cursor">▋</span>
+                          )}
+                        </span>
+                        {li === 0 && msg.timestamp && (
+                          <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })}
 
       </div>
 

@@ -155,8 +155,6 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
     resetHeight(e.target);
   };
 
-  const lastMsg = panel.ChatMessages[panel.ChatMessages.length - 1];
-
   return (
     <div className="rethink-chat">
 
@@ -171,41 +169,46 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
           <span className="rethink-chat__banner-sep">{'─'.repeat(44)}</span>
         </div>
 
-        {panel.ChatMessages.map(msg => (
-          <div key={msg.id} className="rethink-chat__entry">
-            {msg.role === 'user' ? (
-              <div className="rethink-chat__user-block">
-                <span className="rethink-chat__prompt">{'>'}</span>
-                <span className="rethink-chat__user-text">{msg.content}</span>
-                {msg.timestamp && (
-                  <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
-                )}
-              </div>
-            ) : (
-              <div className="rethink-chat__ai-block">
-                {(msg.content || ' ').split('\n').map((line, li) => (
-                  <div key={li} className="rethink-chat__ai-line">
-                    <span className="rethink-chat__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
-                    <span className="rethink-chat__ai-text">{line || ' '}</span>
-                    {li === 0 && msg.timestamp && !isWaiting && (
-                      <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* ストリーム開始前の待機カーソル（空メッセージが最後にある間） */}
-        {isWaiting && lastMsg?.role === 'assistant' && lastMsg.content === '' && (
-          <div className="rethink-chat__ai-block">
-            <div className="rethink-chat__ai-line">
-              <span className="rethink-chat__ai-prefix">AI▸</span>
-              <span className="rethink-chat__cursor">▋</span>
+        {panel.ChatMessages.map((msg, index) => {
+          const isLastStreaming = isWaiting && index === panel.ChatMessages.length - 1 && msg.role === 'assistant';
+          return (
+            <div key={msg.id} className="rethink-chat__entry">
+              {msg.role === 'user' ? (
+                <div className="rethink-chat__user-block">
+                  <span className="rethink-chat__prompt">{'>'}</span>
+                  <span className="rethink-chat__user-text">{msg.content}</span>
+                  {msg.timestamp && (
+                    <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
+                  )}
+                </div>
+              ) : (
+                <div className="rethink-chat__ai-block">
+                  {msg.content === '' && isLastStreaming ? (
+                    <div className="rethink-chat__ai-line">
+                      <span className="rethink-chat__ai-prefix">AI▸</span>
+                      <span className="rethink-chat__cursor">▋</span>
+                    </div>
+                  ) : (
+                    msg.content.split('\n').map((line, li, arr) => (
+                      <div key={li} className="rethink-chat__ai-line">
+                        <span className="rethink-chat__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
+                        <span className="rethink-chat__ai-text">
+                          {line || ' '}
+                          {isLastStreaming && li === arr.length - 1 && (
+                            <span className="rethink-chat__cursor">▋</span>
+                          )}
+                        </span>
+                        {li === 0 && msg.timestamp && !isWaiting && (
+                          <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          );
+        })}
 
       </div>
 
