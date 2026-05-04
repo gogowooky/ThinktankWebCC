@@ -27,8 +27,8 @@
   background: var(--workout-ribbon-bg);
 }
 
-.panel-ribbon--todo {
-  background: var(--todo-ribbon-bg);
+.panel-ribbon--rethink {
+  background: var(--rethink-ribbon-bg);
 }
 
 /* D&D ドロップ受け入れ中 */

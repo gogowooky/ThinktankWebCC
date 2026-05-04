@@ -1,16 +1,16 @@
 /**
- * ToDoChat.tsx
- * Phase 10: ToDoPanel の AI チャット UI。
+ * ReThinkChat.tsx
+ * Phase 10: ReThinkPanel の AI チャット UI。
  *
  * - ChatMedia と同じ CLI ターミナル風スタイル
- * - メッセージ履歴は TTToDoPanel の ChatMessages（ビューモデル管理）
+ * - メッセージ履歴は TTReThinkPanel の ChatMessages（ビューモデル管理）
  * - 送信: panel.AddUserMessage() → モック応答（Phase 14 で AI API に置き換え）
  * - Enter 送信 / Shift+Enter 改行
  */
 
 import { useRef, useState, useEffect } from 'react';
-import type { TTToDoPanel } from '../../views/TTToDoPanel';
-import './ToDoChat.css';
+import type { TTReThinkPanel } from '../../views/TTReThinkPanel';
+import './ReThinkChat.css';
 
 // ── モックレスポンス（Phase 14 で AI API に置き換え）──────────────────
 
@@ -38,10 +38,10 @@ function formatTime(iso: string): string {
 // ── コンポーネント ────────────────────────────────────────────────────
 
 interface Props {
-  panel: TTToDoPanel;
+  panel: TTReThinkPanel;
 }
 
-export function ToDoChat({ panel }: Props) {
+export function ReThinkChat({ panel }: Props) {
   const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
   const bottomRef                 = useRef<HTMLDivElement>(null);
@@ -75,39 +75,39 @@ export function ToDoChat({ panel }: Props) {
   };
 
   return (
-    <div className="todo-chat">
+    <div className="rethink-chat">
 
       {/* ログ出力エリア */}
-      <div className="todo-chat__log">
+      <div className="rethink-chat__log">
 
         {/* 起動バナー */}
-        <div className="todo-chat__banner">
-          <span className="todo-chat__banner-line">Thinktank AI  [Phase 14 pending]</span>
-          <span className="todo-chat__banner-line todo-chat__dim">
+        <div className="rethink-chat__banner">
+          <span className="rethink-chat__banner-line">Thinktank AI  [Phase 14 pending]</span>
+          <span className="rethink-chat__banner-line rethink-chat__dim">
             Thought / Think のコンテキストで AI と相談できます。
           </span>
-          <span className="todo-chat__banner-sep">{'─'.repeat(44)}</span>
+          <span className="rethink-chat__banner-sep">{'─'.repeat(44)}</span>
         </div>
 
         {/* メッセージ履歴 */}
         {panel.ChatMessages.map(msg => (
-          <div key={msg.id} className="todo-chat__entry">
+          <div key={msg.id} className="rethink-chat__entry">
             {msg.role === 'user' ? (
-              <div className="todo-chat__user-line">
-                <span className="todo-chat__prompt">{'>'}</span>
-                <span className="todo-chat__user-text">{msg.content}</span>
+              <div className="rethink-chat__user-line">
+                <span className="rethink-chat__prompt">{'>'}</span>
+                <span className="rethink-chat__user-text">{msg.content}</span>
                 {msg.timestamp && (
-                  <span className="todo-chat__ts">{formatTime(msg.timestamp)}</span>
+                  <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
                 )}
               </div>
             ) : (
-              <div className="todo-chat__ai-block">
+              <div className="rethink-chat__ai-block">
                 {msg.content.split('\n').map((line, li) => (
-                  <div key={li} className="todo-chat__ai-line">
-                    <span className="todo-chat__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
-                    <span className="todo-chat__ai-text">{line}</span>
+                  <div key={li} className="rethink-chat__ai-line">
+                    <span className="rethink-chat__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
+                    <span className="rethink-chat__ai-text">{line}</span>
                     {li === 0 && msg.timestamp && (
-                      <span className="todo-chat__ts">{formatTime(msg.timestamp)}</span>
+                      <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
                     )}
                   </div>
                 ))}
@@ -118,10 +118,10 @@ export function ToDoChat({ panel }: Props) {
 
         {/* 待機中カーソル */}
         {isWaiting && (
-          <div className="todo-chat__ai-block">
-            <div className="todo-chat__ai-line">
-              <span className="todo-chat__ai-prefix">AI▸</span>
-              <span className="todo-chat__cursor">▋</span>
+          <div className="rethink-chat__ai-block">
+            <div className="rethink-chat__ai-line">
+              <span className="rethink-chat__ai-prefix">AI▸</span>
+              <span className="rethink-chat__cursor">▋</span>
             </div>
           </div>
         )}
@@ -130,11 +130,11 @@ export function ToDoChat({ panel }: Props) {
       </div>
 
       {/* 入力ライン */}
-      <div className="todo-chat__input-row">
-        <span className="todo-chat__input-prompt">{'>'}</span>
+      <div className="rethink-chat__input-row">
+        <span className="rethink-chat__input-prompt">{'>'}</span>
         <textarea
           ref={inputRef}
-          className="todo-chat__input"
+          className="rethink-chat__input"
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}

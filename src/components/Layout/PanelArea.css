@@ -31,8 +31,8 @@
   color: #1a1a2e;
 }
 
-.panel-area--todo > .panel-area__inner {
-  background: var(--todo-area-bg);
+.panel-area--rethink > .panel-area__inner {
+  background: var(--rethink-area-bg);
   color: #1a1a2e;
 }
 

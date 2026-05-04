@@ -382,7 +382,7 @@ export function WorkoutSettingPanel({
                     <input
                       type="text"
                       className="workout-setting-panel__text-input"
-                      placeholder="例: todo fixme, error warn, info"
+                      placeholder="例: rethink fixme, error warn, info"
                       value={panel.EditorHighlightWord}
                       list="highlight-history-list"
                       onChange={e => panel.SetEditorHighlightWord(e.target.value)}

@@ -1,6 +1,6 @@
-/* ToDoRibbon.css */
+/* ReThinkRibbon.css */
 
-.todo-ribbon__btn {
+.rethink-ribbon__btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,7 +11,7 @@
   transition: background 120ms ease, color 120ms ease;
 }
 
-.todo-ribbon__btn:hover {
+.rethink-ribbon__btn:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }

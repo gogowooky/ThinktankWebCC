@@ -1,8 +1,8 @@
 /**
- * ToDoPanel.tsx
- * Phase 10: ToDoPanel 統合コンポーネント。
+ * ReThinkPanel.tsx
+ * Phase 10: ReThinkPanel 統合コンポーネント。
  *
- * 構造（右側パネル）: [Splitter] [PanelArea > ToDoArea] [ToDoRibbon]
+ * 構造（右側パネル）: [Splitter] [PanelArea > ReThinkArea] [ReThinkRibbon]
  * Think/Thought の次の展開について AI と相談するパネル。
  */
 
@@ -11,9 +11,9 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
-import { ToDoRibbon, type ToDoViewMode } from './ToDoRibbon';
-import { ToDoArea } from './ToDoArea';
-import './ToDoPanel.css';
+import { ReThinkRibbon, type ReThinkViewMode } from './ReThinkRibbon';
+import { ReThinkArea } from './ReThinkArea';
+import './ReThinkPanel.css';
 
 const MIN_WIDTH = 160;
 
@@ -23,33 +23,33 @@ interface Props {
   onResize: (delta: number) => void;
 }
 
-export function ToDoPanel({ app, width, onResize }: Props) {
-  const panel = app.ToDoPanel;
+export function ReThinkPanel({ app, width, onResize }: Props) {
+  const panel = app.ReThinkPanel;
   useAppUpdate(panel);
 
-  const [viewMode, setViewMode] = useState<ToDoViewMode>('chat');
+  const [viewMode, setViewMode] = useState<ReThinkViewMode>('chat');
 
   const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
   const handleClearChat = useCallback(() => panel.ClearChat(),  [panel]);
-  const handleSetMode   = useCallback((mode: ToDoViewMode) => setViewMode(mode), []);
+  const handleSetMode   = useCallback((mode: ReThinkViewMode) => setViewMode(mode), []);
 
   const handleResize = useCallback((dx: number) => {
     onResize(dx);
   }, [onResize]);
 
   return (
-    <div className="todo-panel">
+    <div className="rethink-panel">
       {panel.IsAreaOpen && (
         <Splitter onResize={handleResize} />
       )}
       <PanelArea
-        panelId="todo"
+        panelId="rethink"
         isOpen={panel.IsAreaOpen}
         width={Math.max(MIN_WIDTH, width)}
       >
-        <ToDoArea app={app} viewMode={viewMode} />
+        <ReThinkArea app={app} viewMode={viewMode} />
       </PanelArea>
-      <ToDoRibbon
+      <ReThinkRibbon
         isOpen={panel.IsAreaOpen}
         viewMode={viewMode}
         onToggle={handleToggle}

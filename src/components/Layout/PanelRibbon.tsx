@@ -17,7 +17,7 @@ export type PanelSide = 'left' | 'right';
 
 interface Props {
   /** パネル識別子（CSS クラス名 & data 属性用）*/
-  panelId: 'thinktank' | 'overview' | 'workout' | 'todo';
+  panelId: 'thinktank' | 'overview' | 'workout' | 'rethink';
   /** Ribbon を表示するパネルの向き（Area が ribbon のどちら側にあるか）*/
   side?: PanelSide;
   /** Area の開閉状態 */

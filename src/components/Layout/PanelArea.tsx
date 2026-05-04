@@ -16,7 +16,7 @@ interface Props {
   /** 開いているときの幅（px）。デフォルト 240 */
   width?: number;
   /** パネル識別子（テーマ色 CSS クラス用）*/
-  panelId: 'thinktank' | 'overview' | 'workout' | 'todo';
+  panelId: 'thinktank' | 'overview' | 'workout' | 'rethink';
   children?: ReactNode;
 }
 

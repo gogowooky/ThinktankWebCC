@@ -1,40 +1,40 @@
-/* ToDoArea.css */
+/* ReThinkArea.css */
 
-.todo-area__title-row {
-  background: var(--todo-ribbon-bg);
+.rethink-area__title-row {
+  background: var(--rethink-ribbon-bg);
 }
 
-.todo-area {
+.rethink-area {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--todo-area-bg);
+  background: var(--rethink-area-bg);
 }
 
 /* ── コンテキストバー ─────────────────────────────── */
 
-.todo-area__context {
+.rethink-area__context {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
-  background: color-mix(in srgb, var(--todo-area-bg) 75%, var(--todo-ribbon-bg) 25%);
+  background: color-mix(in srgb, var(--rethink-area-bg) 75%, var(--rethink-ribbon-bg) 25%);
   border-bottom: 1px solid rgba(30, 70, 32, 0.25);
   flex-shrink: 0;
   min-height: 28px;
 }
 
-.todo-area__context--empty {
-  background: color-mix(in srgb, var(--todo-area-bg) 90%, var(--todo-ribbon-bg) 10%);
+.rethink-area__context--empty {
+  background: color-mix(in srgb, var(--rethink-area-bg) 90%, var(--rethink-ribbon-bg) 10%);
 }
 
-.todo-area__context-icon {
-  color: var(--todo-ribbon-bg);
+.rethink-area__context-icon {
+  color: var(--rethink-ribbon-bg);
   flex-shrink: 0;
 }
 
-.todo-area__context-label {
+.rethink-area__context-label {
   font-size: 11px;
   font-weight: 600;
   color: #1a3d1c;
@@ -45,7 +45,7 @@
   min-width: 0;
 }
 
-.todo-area__context-none {
+.rethink-area__context-none {
   font-size: 11px;
   color: rgba(30, 70, 32, 0.45);
   font-style: italic;
@@ -53,7 +53,7 @@
 
 /* ── チャット ─────────────────────────────────────── */
 
-.todo-area__chat {
+.rethink-area__chat {
   flex: 1;
   overflow: hidden;
   display: flex;

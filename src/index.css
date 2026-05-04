@@ -29,8 +29,8 @@
   --overview-area-bg:    #F9FAFF;
   --workout-ribbon-bg:   #3F3F3F;
   --workout-area-bg:     #D0D0D0;
-  --todo-ribbon-bg:      #1E4620;
-  --todo-area-bg:        #E2EFDA;
+  --rethink-ribbon-bg:  #1E4620;
+  --rethink-area-bg:    #E2EFDA;
 
   /* 同期インジケーター */
   --sync-synced:  var(--text-muted);

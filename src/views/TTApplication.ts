@@ -2,7 +2,7 @@
  * TTApplication.ts
  * Phase 4: アプリケーションルートビューモデル（更新版）。
  *
- * 4パネル構成（ThinktankPanel / OverviewPanel / WorkoutPanel / ToDoPanel）を統合管理。
+ * 4パネル構成（ThinktankPanel / OverviewPanel / WorkoutPanel / ReThinkPanel）を統合管理。
  * TTModelsのデータ層と各パネルビューモデルを橋渡しする。
  */
 
@@ -11,7 +11,7 @@ import { TTModels } from '../models/TTModels';
 import { TTThinktankPanel } from './TTThinktankPanel';
 import { TTOverviewPanel } from './TTOverviewPanel';
 import { TTWorkoutPanel } from './TTWorkoutPanel';
-import { TTToDoPanel } from './TTToDoPanel';
+import { TTReThinkPanel } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 
 export class TTApplication extends TTObject {
@@ -19,7 +19,7 @@ export class TTApplication extends TTObject {
   public ThinktankPanel: TTThinktankPanel;
   public OverviewPanel: TTOverviewPanel;
   public WorkoutPanel: TTWorkoutPanel;
-  public ToDoPanel: TTToDoPanel;
+  public ReThinkPanel: TTReThinkPanel;
 
   /** データ層（シングルトン参照）*/
   public get Models(): TTModels {
@@ -40,13 +40,13 @@ export class TTApplication extends TTObject {
     this.ThinktankPanel = new TTThinktankPanel();
     this.OverviewPanel  = new TTOverviewPanel();
     this.WorkoutPanel   = new TTWorkoutPanel();
-    this.ToDoPanel      = new TTToDoPanel();
+    this.ReThinkPanel   = new TTReThinkPanel();
 
     // 子パネルの親を自身に設定（通知伝播用）
     this.ThinktankPanel._parent = this;
     this.OverviewPanel._parent  = this;
     this.WorkoutPanel._parent   = this;
-    this.ToDoPanel._parent      = this;
+    this.ReThinkPanel._parent   = this;
   }
 
   public static get Instance(): TTApplication {
@@ -64,7 +64,7 @@ export class TTApplication extends TTObject {
 
   /**
    * ThoughtをOverviewPanelで開く。
-   * 同時にThinktankPanelの選択状態とToDoPanelのコンテキストも更新する。
+   * 同時にThinktankPanelの選択状態とReThinkPanelのコンテキストも更新する。
    *
    * @param thoughtId ThoughtのID
    * @param mediaType 表示形式（省略時はmarkdown）
@@ -76,8 +76,8 @@ export class TTApplication extends TTObject {
     // OverviewPanel: Thoughtを表示
     this.OverviewPanel.OpenThought(thoughtId, mediaType);
 
-    // ToDoPanel: コンテキストを連携
-    this.ToDoPanel.LinkThought(thoughtId);
+    // ReThinkPanel: コンテキストを連携
+    this.ReThinkPanel.LinkThought(thoughtId);
 
     // WorkoutPanel: thoughtに含まれないThinkのペインを削除
     this._removeOutOfThoughtPanes(thoughtId);
@@ -128,10 +128,10 @@ export class TTApplication extends TTObject {
   }
 
   /**
-   * ThinkをToDoPanelのコンテキストとして連携する。
+   * ThinkをReThinkPanelのコンテキストとして連携する。
    */
-  public LinkThinkToToDo(thinkId: string): void {
-    this.ToDoPanel.LinkThink(thinkId);
+  public LinkThinkToReThink(thinkId: string): void {
+    this.ReThinkPanel.LinkThink(thinkId);
   }
 
   // ── パネル全体リセット ────────────────────────────────────────────────
@@ -143,8 +143,8 @@ export class TTApplication extends TTObject {
     this.ThinktankPanel.ClearFilter();
     this.OverviewPanel.ClearThought();
     this.WorkoutPanel.ClearAll();
-    this.ToDoPanel.ClearLink();
-    this.ToDoPanel.ClearChat();
+    this.ReThinkPanel.ClearLink();
+    this.ReThinkPanel.ClearChat();
     this.NotifyUpdated();
   }
 }

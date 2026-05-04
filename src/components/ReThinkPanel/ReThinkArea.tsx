@@ -1,32 +1,32 @@
 /**
- * ToDoArea.tsx
- * Phase 10: ToDoPanel のメインエリア。
+ * ReThinkArea.tsx
+ * Phase 10: ReThinkPanel のメインエリア。
  *
  * - 上部コンテキストバー: 連携中 Thought / Think 名を表示
- * - 下部: ToDoChat（AI との CLI ターミナル風チャット）
+ * - 下部: ReThinkChat（AI との CLI ターミナル風チャット）
  */
 
 import { BookOpen, FileText } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { ToDoChat } from './ToDoChat';
-import { ToDoMenuRibbon } from './ToDoMenuRibbon';
-import type { ToDoViewMode } from './ToDoRibbon';
+import { ReThinkChat } from './ReThinkChat';
+import { ReThinkMenuRibbon } from './ReThinkMenuRibbon';
+import type { ReThinkViewMode } from './ReThinkRibbon';
 import '../../components/Layout/MenuRibbon.css';
-import './ToDoArea.css';
+import './ReThinkArea.css';
 
-const TODO_MODE_NAMES: Record<ToDoViewMode, string> = {
+const RETHINK_MODE_NAMES: Record<ReThinkViewMode, string> = {
   chat:     'AI相談',
   settings: '設定',
 };
 
 interface Props {
   app:      TTApplication;
-  viewMode: ToDoViewMode;
+  viewMode: ReThinkViewMode;
 }
 
-export function ToDoArea({ app, viewMode }: Props) {
-  const panel = app.ToDoPanel;
+export function ReThinkArea({ app, viewMode }: Props) {
+  const panel = app.ReThinkPanel;
   useAppUpdate(panel);
 
   const vault         = app.Models.Vault;
@@ -40,45 +40,45 @@ export function ToDoArea({ app, viewMode }: Props) {
   const hasContext = !!thoughtName || !!thinkName;
 
   return (
-    <div className="todo-area">
+    <div className="rethink-area">
 
       {/* ── タイトル行 ────────────────────────────────────────── */}
-      <div className="panel-title-row todo-area__title-row">
-        ToDo&gt;{TODO_MODE_NAMES[viewMode]}
+      <div className="panel-title-row rethink-area__title-row">
+        ReThink&gt;{RETHINK_MODE_NAMES[viewMode]}
       </div>
 
       {/* ── メニューリボン ─────────────────────────────────────── */}
-      <ToDoMenuRibbon />
+      <ReThinkMenuRibbon />
 
       {/* ── コンテキストバー ─────────────────────────────────── */}
-      <div className={`todo-area__context${hasContext ? '' : ' todo-area__context--empty'}`}>
+      <div className={`rethink-area__context${hasContext ? '' : ' rethink-area__context--empty'}`}>
         {thoughtName ? (
           <>
-            <BookOpen size={11} className="todo-area__context-icon" />
-            <span className="todo-area__context-label" title={thoughtName}>
+            <BookOpen size={11} className="rethink-area__context-icon" />
+            <span className="rethink-area__context-label" title={thoughtName}>
               {thoughtName}
             </span>
           </>
         ) : thinkName ? (
           <>
-            <FileText size={11} className="todo-area__context-icon" />
-            <span className="todo-area__context-label" title={thinkName}>
+            <FileText size={11} className="rethink-area__context-icon" />
+            <span className="rethink-area__context-label" title={thinkName}>
               {thinkName}
             </span>
           </>
         ) : (
-          <span className="todo-area__context-none">コンテキスト未設定</span>
+          <span className="rethink-area__context-none">コンテキスト未設定</span>
         )}
       </div>
 
       {/* ── コンテンツ ───────────────────────────────────────── */}
-      <div className="todo-area__chat">
+      <div className="rethink-area__chat">
         {viewMode === 'settings' ? (
           <div style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
-            ToDo設定は今後追加予定です。
+            ReThink設定は今後追加予定です。
           </div>
         ) : (
-          <ToDoChat panel={panel} />
+          <ReThinkChat panel={panel} />
         )}
       </div>
 

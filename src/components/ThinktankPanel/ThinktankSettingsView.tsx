@@ -120,7 +120,7 @@ export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayo
               />
               <Columns2 size={13} className="tt-settings-mode-icon" />
               <span className="tt-settings-mode-label">簡易モード</span>
-              <span className="tt-settings-mode-desc">OverviewとToDoPanelを非表示</span>
+              <span className="tt-settings-mode-desc">OverviewとReThinkPanelを非表示</span>
             </label>
           </div>
         )}

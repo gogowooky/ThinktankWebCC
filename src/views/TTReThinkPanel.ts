@@ -1,9 +1,9 @@
 /**
- * TTToDoPanel.ts
- * Phase 4: ToDoPanelのビューモデル。
+ * TTReThinkPanel.ts
+ * Phase 4: ReThinkPanelのビューモデル。
  *
  * Think/Thoughtsの次の展開についてAIと相談するパネル。
- * ToDoAreaの開閉状態とAI会話履歴を管理する。
+ * ReThinkAreaの開閉状態とAI会話履歴を管理する。
  */
 
 import { TTObject } from '../models/TTObject';
@@ -16,8 +16,8 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-export class TTToDoPanel extends TTObject {
-  /** ToDoAreaの開閉状態（true=開いている）*/
+export class TTReThinkPanel extends TTObject {
+  /** ReThinkAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
 
   /** 連携中のThoughtID（空 = 未設定）*/
@@ -33,24 +33,24 @@ export class TTToDoPanel extends TTObject {
   public IsStreaming: boolean = false;
 
   public override get ClassName(): string {
-    return 'TTToDoPanel';
+    return 'TTReThinkPanel';
   }
 
   constructor() {
     super();
-    this.ID = 'ToDoPanel';
-    this.Name = 'ToDoPanel';
+    this.ID = 'ReThinkPanel';
+    this.Name = 'ReThinkPanel';
   }
 
   // ── Area開閉 ──────────────────────────────────────────────────────────
 
-  /** ToDoAreaの開閉を切り替える */
+  /** ReThinkAreaの開閉を切り替える */
   public ToggleArea(): void {
     this.IsAreaOpen = !this.IsAreaOpen;
     this.NotifyUpdated();
   }
 
-  /** ToDoAreaを開く */
+  /** ReThinkAreaを開く */
   public OpenArea(): void {
     if (!this.IsAreaOpen) {
       this.IsAreaOpen = true;
@@ -58,7 +58,7 @@ export class TTToDoPanel extends TTObject {
     }
   }
 
-  /** ToDoAreaを閉じる */
+  /** ReThinkAreaを閉じる */
   public CloseArea(): void {
     if (this.IsAreaOpen) {
       this.IsAreaOpen = false;
@@ -69,7 +69,7 @@ export class TTToDoPanel extends TTObject {
   // ── コンテキスト連携 ──────────────────────────────────────────────────
 
   /**
-   * ThoughtをToDoPanelのコンテキストとして連携する。
+   * ThoughtをReThinkPanelのコンテキストとして連携する。
    * Areaが閉じていれば自動的に開く。
    */
   public LinkThought(thoughtId: string): void {
@@ -82,7 +82,7 @@ export class TTToDoPanel extends TTObject {
   }
 
   /**
-   * ThinkをToDoPanelのコンテキストとして連携する。
+   * ThinkをReThinkPanelのコンテキストとして連携する。
    */
   public LinkThink(thinkId: string): void {
     this.LinkedThinkID = thinkId;

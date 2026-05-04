@@ -1,6 +1,6 @@
 /**
- * ToDoRibbon.tsx
- * Phase 10: ToDoPanel の Ribbon。
+ * ReThinkRibbon.tsx
+ * Phase 10: ReThinkPanel の Ribbon。
  *
  * side="right" でパネルの右端に配置。
  * ボタン: AI相談 / 設定 / 会話クリア
@@ -8,28 +8,28 @@
 
 import { Trash2, MessageCircle, Settings } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
-import './ToDoRibbon.css';
+import './ReThinkRibbon.css';
 
-export type ToDoViewMode = 'chat' | 'settings';
+export type ReThinkViewMode = 'chat' | 'settings';
 
 interface Props {
   isOpen:      boolean;
-  viewMode:    ToDoViewMode;
+  viewMode:    ReThinkViewMode;
   onToggle:    () => void;
-  onSetMode:   (mode: ToDoViewMode) => void;
+  onSetMode:   (mode: ReThinkViewMode) => void;
   onClearChat: () => void;
 }
 
-export function ToDoRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearChat }: Props) {
+export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearChat }: Props) {
   return (
     <PanelRibbon
-      panelId="todo"
+      panelId="rethink"
       side="right"
       isOpen={isOpen}
       onToggle={onToggle}
     >
       <button
-        className={`todo-ribbon__btn${viewMode === 'chat' ? ' todo-ribbon__btn--active' : ''}`}
+        className={`rethink-ribbon__btn${viewMode === 'chat' ? ' rethink-ribbon__btn--active' : ''}`}
         onClick={() => onSetMode('chat')}
         title="AI相談"
         aria-label="AI相談"
@@ -37,7 +37,7 @@ export function ToDoRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearChat 
         <MessageCircle size={16} />
       </button>
       <button
-        className={`todo-ribbon__btn${viewMode === 'settings' ? ' todo-ribbon__btn--active' : ''}`}
+        className={`rethink-ribbon__btn${viewMode === 'settings' ? ' rethink-ribbon__btn--active' : ''}`}
         onClick={() => onSetMode('settings')}
         title="設定"
         aria-label="設定"
@@ -45,7 +45,7 @@ export function ToDoRibbon({ isOpen, viewMode, onToggle, onSetMode, onClearChat 
         <Settings size={16} />
       </button>
       <button
-        className="todo-ribbon__btn"
+        className="rethink-ribbon__btn"
         onClick={onClearChat}
         title="会話をクリア"
         aria-label="会話をクリア"
