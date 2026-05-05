@@ -77,8 +77,7 @@
 .workout-setting-panel__section-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding-left: 6px;
+  gap: 2px;
   animation: fadeSlideIn 0.2s ease-out;
 }
 
@@ -172,7 +171,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
+  padding: 2px 8px;
   cursor: pointer;
 }
 
@@ -182,7 +181,7 @@
 }
 
 .workout-setting-panel__checkbox-text {
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
   user-select: none;
 }
@@ -192,11 +191,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 8px;
+  padding: 2px 8px;
 }
 
 .workout-setting-panel__color-label {
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -224,11 +223,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
+  padding: 2px 8px;
 }
 
 .workout-setting-panel__heading-style-label {
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
   flex: 1;
 }
