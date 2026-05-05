@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X } from 'lucide-react';
+import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import './WorkoutToolBar.css';
@@ -36,8 +36,9 @@ interface Props {
 export function WorkoutToolBar({ panel }: Props) {
   useAppUpdate(panel);
 
-  const [mode, setMode] = useState<ToolMode>('highlight');
-  const [text, setText] = useState(() => panel.EditorHighlightWord);
+  const [mode,       setMode]       = useState<ToolMode>('highlight');
+  const [text,       setText]       = useState(() => panel.EditorHighlightWord);
+  const [isExpanded, setIsExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // panel.EditorHighlightWord が外部から変わったときに Highlight モードのテキストを同期
@@ -76,7 +77,7 @@ export function WorkoutToolBar({ panel }: Props) {
   const current = MODES.find(m => m.id === mode)!;
 
   return (
-    <div className="workout-toolbar">
+    <div className={`workout-toolbar${isExpanded ? ' workout-toolbar--expanded' : ''}`}>
       {/* テキスト入力欄 */}
       <input
         ref={inputRef}
@@ -123,6 +124,34 @@ export function WorkoutToolBar({ panel }: Props) {
             {m.icon}
           </button>
         ))}
+      </div>
+
+      {/* ユーティリティボタン群 */}
+      <div className="workout-toolbar__sep" />
+      <div className="workout-toolbar__utils">
+        <button
+          className="workout-toolbar__util-btn"
+          title="作成者"
+          aria-label="作成者"
+        >
+          <Copyright size={14} />
+        </button>
+        <button
+          className={`workout-toolbar__util-btn${isExpanded ? '' : ' workout-toolbar__util-btn--active'}`}
+          onClick={() => setIsExpanded(false)}
+          title="ツールバー縮小"
+          aria-label="ツールバー縮小"
+        >
+          <ChevronsRightLeft size={14} />
+        </button>
+        <button
+          className={`workout-toolbar__util-btn${isExpanded ? ' workout-toolbar__util-btn--active' : ''}`}
+          onClick={() => setIsExpanded(true)}
+          title="ツールバー拡大"
+          aria-label="ツールバー拡大"
+        >
+          <ChevronsLeftRight size={14} />
+        </button>
       </div>
     </div>
   );

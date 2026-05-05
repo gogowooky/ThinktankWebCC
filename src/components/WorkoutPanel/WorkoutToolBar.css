@@ -82,3 +82,49 @@
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
+
+/* ── セパレーター ── */
+.workout-toolbar__sep {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  margin: 0 2px;
+}
+
+/* ── ユーティリティボタン群 ── */
+.workout-toolbar__utils {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.workout-toolbar__util-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.45);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.workout-toolbar__util-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.workout-toolbar__util-btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* ── 拡大状態 ── */
+.workout-toolbar--expanded {
+  height: 48px;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+}
