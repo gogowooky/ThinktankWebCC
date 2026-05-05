@@ -1,8 +1,8 @@
 /**
  * WorkoutToolBar.tsx
  * WorkoutPanel 最下段の横型ツールバー。
- * 左: モードアイコン（押下で吹き出し型プルダウン）
- * 右: テキスト入力欄（モードに応じた機能）
+ * 左: テキスト入力欄（モードに応じた機能）
+ * 右: モードアイコン群（全表示・クリックで選択）
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -14,19 +14,19 @@ import './WorkoutToolBar.css';
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
 
 interface ModeEntry {
-  id:    ToolMode;
-  icon:  React.ReactNode;
-  label: string;
+  id:          ToolMode;
+  icon:        React.ReactNode;
+  label:       string;
   placeholder: string;
 }
 
 const MODES: ModeEntry[] = [
-  { id: 'status',    icon: <Info        size={14} />, label: 'Status',     placeholder: 'Status...' },
+  { id: 'status',    icon: <Info        size={14} />, label: 'Status',      placeholder: 'Status...' },
   { id: 'highlight', icon: <Highlighter size={14} />, label: 'Highlighter', placeholder: '例: rethink fixme, error warn, info' },
-  { id: 'keyaction', icon: <Keyboard    size={14} />, label: 'KeyAction',  placeholder: 'KeyAction...' },
-  { id: 'command',   icon: <Terminal    size={14} />, label: 'Command',    placeholder: 'Command...' },
-  { id: 'translate', icon: <BookA       size={14} />, label: 'Translate',  placeholder: 'Translate...' },
-  { id: 'reminder',  icon: <Bell        size={14} />, label: 'Reminder',   placeholder: 'Reminder...' },
+  { id: 'keyaction', icon: <Keyboard    size={14} />, label: 'KeyAction',   placeholder: 'KeyAction...' },
+  { id: 'command',   icon: <Terminal    size={14} />, label: 'Command',     placeholder: 'Command...' },
+  { id: 'translate', icon: <BookA       size={14} />, label: 'Translate',   placeholder: 'Translate...' },
+  { id: 'reminder',  icon: <Bell        size={14} />, label: 'Reminder',    placeholder: 'Reminder...' },
 ];
 
 interface Props {
@@ -36,32 +36,19 @@ interface Props {
 export function WorkoutToolBar({ panel }: Props) {
   useAppUpdate(panel);
 
-  const [mode,      setMode]      = useState<ToolMode>('highlight');
-  const [showModes, setShowModes] = useState(false);
-  const [text,      setText]      = useState(() => panel.EditorHighlightWord);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const [mode, setMode] = useState<ToolMode>('highlight');
+  const [text, setText] = useState(() => panel.EditorHighlightWord);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // panel.EditorHighlightWord が外部から変わったときにHLモードのテキストを同期
+  // panel.EditorHighlightWord が外部から変わったときに Highlight モードのテキストを同期
   useEffect(() => {
     if (mode === 'highlight') setText(panel.EditorHighlightWord);
   }, [panel.EditorHighlightWord, mode]);
 
-  // ポップオーバー外クリックで閉じる
-  useEffect(() => {
-    if (!showModes) return;
-    const handler = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setShowModes(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showModes]);
-
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
-    setShowModes(false);
     setText(m === 'highlight' ? panel.EditorHighlightWord : '');
+    inputRef.current?.focus();
   }, [panel]);
 
   const handleTextChange = useCallback((v: string) => {
@@ -90,36 +77,9 @@ export function WorkoutToolBar({ panel }: Props) {
 
   return (
     <div className="workout-toolbar">
-      {/* モードアイコン（吹き出しポップオーバー） */}
-      <div className="workout-toolbar__mode-wrap" ref={wrapRef}>
-        <button
-          className="workout-toolbar__mode-btn"
-          onClick={() => setShowModes(v => !v)}
-          data-tip={current.label}
-          aria-label={current.label}
-        >
-          {current.icon}
-        </button>
-
-        {showModes && (
-          <div className="workout-toolbar__popover">
-            {MODES.map(m => (
-              <button
-                key={m.id}
-                className={`workout-toolbar__pop-btn${mode === m.id ? ' workout-toolbar__pop-btn--active' : ''}`}
-                onClick={() => handleModeSelect(m.id)}
-                data-tip={m.label}
-                aria-label={m.label}
-              >
-                {m.icon}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
       {/* テキスト入力欄 */}
       <input
+        ref={inputRef}
         className="workout-toolbar__input"
         type="text"
         value={text}
@@ -149,6 +109,21 @@ export function WorkoutToolBar({ panel }: Props) {
           <X size={12} />
         </button>
       )}
+
+      {/* モードアイコン群（右端・全表示）*/}
+      <div className="workout-toolbar__modes">
+        {MODES.map(m => (
+          <button
+            key={m.id}
+            className={`workout-toolbar__mode-btn${mode === m.id ? ' workout-toolbar__mode-btn--active' : ''}`}
+            onClick={() => handleModeSelect(m.id)}
+            title={m.label}
+            aria-label={m.label}
+          >
+            {m.icon}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
