@@ -110,7 +110,7 @@ export function WorkoutToolBar({ panel }: Props) {
         </button>
       )}
 
-      {/* モードアイコン群（右端・全表示）*/}
+      {/* モードアイコン群（右端・横並び・全表示）*/}
       <div className="workout-toolbar__modes">
         {MODES.map(m => (
           <button
