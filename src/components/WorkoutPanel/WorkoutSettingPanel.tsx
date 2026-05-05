@@ -378,7 +378,7 @@ export function WorkoutSettingPanel({
                     const style = panel.EditorHighlightStyles[group - 1];
                     const fw = ['１', '２', '３', '４', '５'][group - 1];
                     return (
-                      <div key={group} className="workout-setting-panel__color-row" style={{ padding: '2px 0px' }}>
+                      <div key={group} className="workout-setting-panel__color-row">
                         <span className="workout-setting-panel__color-label">グループ{fw}</span>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>背景</span>
