@@ -1,0 +1,116 @@
+/* WorkoutToolBar.css */
+
+.workout-toolbar {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--workout-ribbon-bg, #2d2d2d);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0 6px;
+  gap: 4px;
+  position: relative;
+  z-index: 10;
+}
+
+/* ── モードボタン wrap（ポップオーバーの基点）── */
+.workout-toolbar__mode-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* モードアイコンボタン */
+.workout-toolbar__mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.workout-toolbar__mode-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* ── 吹き出しポップオーバー（上方向）── */
+.workout-toolbar__popover {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: var(--workout-ribbon-bg, #2d2d2d);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 5px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+/* ポップオーバー内の各モードボタン */
+.workout-toolbar__pop-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background 80ms ease, color 80ms ease;
+}
+
+.workout-toolbar__pop-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.workout-toolbar__pop-btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* ── テキスト入力 ── */
+.workout-toolbar__input {
+  flex: 1;
+  height: 20px;
+  padding: 0 6px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  outline: none;
+  min-width: 0;
+}
+
+.workout-toolbar__input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.workout-toolbar__input:focus {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* ── クリアボタン ── */
+.workout-toolbar__clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.45);
+  flex-shrink: 0;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.workout-toolbar__clear-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}

@@ -14,7 +14,6 @@ import {
   ChevronsLeftRightEllipsis,
   ChevronDown,
   ChevronRight,
-  X
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { SettingsType } from './WorkoutRibbon';
@@ -80,7 +79,6 @@ export function WorkoutSettingPanel({
   const [isAreaSettingsOpen,    setIsAreaSettingsOpen]    = useState(true);
   const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(true);
   const [isColorSettingsOpen,   setIsColorSettingsOpen]   = useState(true);
-  const [isHighlightSettingsOpen, setIsHighlightSettingsOpen] = useState(true);
 
   return (
     <div className="workout-setting-panel" style={{ width }}>
@@ -358,89 +356,6 @@ export function WorkoutSettingPanel({
                       </div>
                     );
                   })}
-                </div>
-              )}
-            </div>
-            <div className="workout-setting-panel__divider" />
-
-            {/* ハイライト設定 */}
-            <div className="workout-setting-panel__section">
-              <div
-                className="workout-setting-panel__section-header"
-                onClick={() => setIsHighlightSettingsOpen(!isHighlightSettingsOpen)}
-              >
-                {isHighlightSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>ハイライト設定</span>
-              </div>
-
-              {isHighlightSettingsOpen && (
-                <div className="workout-setting-panel__section-content">
-                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginBottom: '4px', lineHeight: 1.3 }}>
-                    半角カンマで文字グループを区切る<br/>
-                    半角スペースで単語を区切る
-                  </div>
-                  <div className="workout-setting-panel__input-with-clear">
-                    <input
-                      type="text"
-                      className="workout-setting-panel__text-input"
-                      placeholder="例: rethink fixme, error warn, info"
-                      value={panel.EditorHighlightWord}
-                      list="highlight-history-list"
-                      onChange={e => panel.SetEditorHighlightWord(e.target.value)}
-                      onBlur={(e) => panel.AddEditorHighlightHistory(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          panel.AddEditorHighlightHistory(e.currentTarget.value);
-                          e.currentTarget.blur();
-                        }
-                      }}
-                    />
-                    {panel.EditorHighlightWord && (
-                      <button
-                        className="workout-setting-panel__clear-btn"
-                        onClick={() => panel.SetEditorHighlightWord('')}
-                        title="クリア"
-                      >
-                        <X size={12} />
-                      </button>
-                    )}
-                  </div>
-                  <datalist id="highlight-history-list">
-                    {panel.EditorHighlightHistory.map((history, i) => (
-                      <option key={i} value={history} />
-                    ))}
-                  </datalist>
-
-                  <div style={{ marginTop: '8px' }}>
-                    <span className="workout-setting-panel__section-label" style={{ marginBottom: 4, display: 'block' }}>ハイライトグループ色</span>
-                    {[1, 2, 3, 4, 5].map(group => {
-                      const style = panel.EditorHighlightStyles[group - 1];
-                      const fw = ['１', '２', '３', '４', '５'][group - 1];
-                      return (
-                        <div key={group} className="workout-setting-panel__color-row" style={{ padding: '2px 0px' }}>
-                          <span className="workout-setting-panel__color-label">グループ{fw}</span>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>背景</span>
-                            <input
-                              type="color"
-                              className="workout-setting-panel__color-picker"
-                              value={style.backgroundColor}
-                              onChange={e => panel.SetEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
-                              title={`グループ${fw}の背景色`}
-                            />
-                            <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>文字</span>
-                            <input
-                              type="color"
-                              className="workout-setting-panel__color-picker"
-                              value={style.color}
-                              onChange={e => panel.SetEditorHighlightStyle(group - 1, { color: e.target.value })}
-                              title={`グループ${fw}の文字色`}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
                 </div>
               )}
             </div>

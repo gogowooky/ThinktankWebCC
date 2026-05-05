@@ -20,6 +20,7 @@ import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutRibbon } from './WorkoutRibbon';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
+import { WorkoutToolBar } from './WorkoutToolBar';
 import type { SettingsType } from './WorkoutRibbon';
 import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
@@ -618,6 +619,9 @@ export function WorkoutPanel({ app }: Props) {
             style={{ position: 'absolute', pointerEvents: 'none', ...dropOverlay.style }}
           />
         )}
+
+        {/* ── ツールバー（最下段）────────────────────────────── */}
+        <WorkoutToolBar panel={panel} />
       </div>
 
       {/* ── ドラッグ Ghost ────────────────────────────────────── */}
