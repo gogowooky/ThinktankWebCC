@@ -11,6 +11,7 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
+import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutAreaRibbon } from './WorkoutAreaRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
@@ -90,6 +91,7 @@ export function WorkoutArea({
   const think = vault.GetThink(area.ResourceID) ?? null;
 
   const panel = area._parent as import('../../views/TTWorkoutPanel').TTWorkoutPanel;
+  useAppUpdate(panel);
 
   const editorSettings = useMemo(() => ({
     lineNumbers:   panel?.EditorLineNumbers ?? false,

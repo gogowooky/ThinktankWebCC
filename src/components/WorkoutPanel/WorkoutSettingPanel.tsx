@@ -243,16 +243,16 @@ export function WorkoutSettingPanel({
                       checked={panel.EditorLineNumbers}
                       onChange={e => panel.SetEditorLineNumbers(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">行番号を表示する</span>
+                    <span className="workout-setting-panel__checkbox-text">行番号</span>
                   </label>
-                  
+
                   <label className="workout-setting-panel__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.EditorWordWrap}
                       onChange={e => panel.SetEditorWordWrap(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">右端で折り返す (WordWrap)</span>
+                    <span className="workout-setting-panel__checkbox-text">Wordwrap</span>
                   </label>
 
                   <label className="workout-setting-panel__checkbox-label">
@@ -261,7 +261,7 @@ export function WorkoutSettingPanel({
                       checked={panel.EditorMinimap}
                       onChange={e => panel.SetEditorMinimap(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">ミニマップを表示する</span>
+                    <span className="workout-setting-panel__checkbox-text">ミニマップ</span>
                   </label>
 
                   <label className="workout-setting-panel__checkbox-label">
@@ -270,7 +270,7 @@ export function WorkoutSettingPanel({
                       checked={panel.EditorShowFullWidthSpace}
                       onChange={e => panel.SetEditorShowFullWidthSpace(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">全角スペースを表示する</span>
+                    <span className="workout-setting-panel__checkbox-text">全角スペース</span>
                   </label>
 
                   <label className="workout-setting-panel__checkbox-label">
@@ -279,7 +279,7 @@ export function WorkoutSettingPanel({
                       checked={panel.EditorUnicodeHighlight}
                       onChange={e => panel.SetEditorUnicodeHighlight(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">特殊文字の警告表示</span>
+                    <span className="workout-setting-panel__checkbox-text">特殊文字警告</span>
                   </label>
 
                   <label className="workout-setting-panel__checkbox-label">
@@ -288,7 +288,7 @@ export function WorkoutSettingPanel({
                       checked={panel.EditorBracketPairColorization}
                       onChange={e => panel.SetEditorBracketPairColorization(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">括弧対応表示</span>
+                    <span className="workout-setting-panel__checkbox-text">括弧対応</span>
                   </label>
                 </div>
               )}
@@ -301,13 +301,13 @@ export function WorkoutSettingPanel({
                 onClick={() => setIsColorSettingsOpen(!isColorSettingsOpen)}
               >
                 {isColorSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>色設定</span>
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>文字設定</span>
               </div>
 
               {isColorSettingsOpen && (
                 <div className="workout-setting-panel__section-content">
                   <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">背景色</span>
+                    <span className="workout-setting-panel__color-label">背景</span>
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
@@ -317,7 +317,7 @@ export function WorkoutSettingPanel({
                   </div>
 
                   <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">通常文字色</span>
+                    <span className="workout-setting-panel__color-label">文字</span>
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
@@ -328,15 +328,16 @@ export function WorkoutSettingPanel({
 
                   {[1, 2, 3, 4, 5].map(level => {
                     const style = panel.EditorHeadingStyles[level - 1];
+                    const fw = ['１', '２', '３', '４', '５'][level - 1];
                     return (
                       <div key={level} className="workout-setting-panel__heading-style-row">
-                        <span className="workout-setting-panel__heading-style-label">セクション{level}段目</span>
+                        <span className="workout-setting-panel__heading-style-label">セクション{fw}</span>
                         <input
                           type="color"
                           className="workout-setting-panel__color-picker"
                           value={style.color}
                           onChange={e => panel.SetEditorHeadingStyle(level, { color: e.target.value })}
-                          title={`セクション${level}の文字色`}
+                          title={`セクション${fw}の文字色`}
                         />
                         <label className="workout-setting-panel__small-checkbox">
                           <input
@@ -414,9 +415,10 @@ export function WorkoutSettingPanel({
                     <span className="workout-setting-panel__section-label" style={{ marginBottom: 4, display: 'block' }}>ハイライトグループ色</span>
                     {[1, 2, 3, 4, 5].map(group => {
                       const style = panel.EditorHighlightStyles[group - 1];
+                      const fw = ['１', '２', '３', '４', '５'][group - 1];
                       return (
                         <div key={group} className="workout-setting-panel__color-row" style={{ padding: '2px 0px' }}>
-                          <span className="workout-setting-panel__color-label">グループ{group}</span>
+                          <span className="workout-setting-panel__color-label">グループ{fw}</span>
                           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>背景</span>
                             <input
@@ -424,7 +426,7 @@ export function WorkoutSettingPanel({
                               className="workout-setting-panel__color-picker"
                               value={style.backgroundColor}
                               onChange={e => panel.SetEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
-                              title={`グループ${group}の背景色`}
+                              title={`グループ${fw}の背景色`}
                             />
                             <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>文字</span>
                             <input
@@ -432,7 +434,7 @@ export function WorkoutSettingPanel({
                               className="workout-setting-panel__color-picker"
                               value={style.color}
                               onChange={e => panel.SetEditorHighlightStyle(group - 1, { color: e.target.value })}
-                              title={`グループ${group}の文字色`}
+                              title={`グループ${fw}の文字色`}
                             />
                           </div>
                         </div>
