@@ -13,6 +13,17 @@
   z-index: 10;
 }
 
+/* 拡大時: アプリ全体の最下段に fixed 表示 */
+.workout-toolbar--expanded {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  z-index: 9999;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 /* ── テキスト入力 ── */
 .workout-toolbar__input {
   flex: 1;
@@ -54,9 +65,10 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* ── モードアイコン群（右端）── */
+/* ── モードアイコン群 ── */
 .workout-toolbar__modes {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 1px;
   flex-shrink: 0;
@@ -83,18 +95,10 @@
   color: #fff;
 }
 
-/* ── セパレーター ── */
-.workout-toolbar__sep {
-  width: 1px;
-  height: 14px;
-  background: rgba(255, 255, 255, 0.15);
-  flex-shrink: 0;
-  margin: 0 2px;
-}
-
 /* ── ユーティリティボタン群 ── */
 .workout-toolbar__utils {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 1px;
   flex-shrink: 0;
@@ -114,17 +118,4 @@
 .workout-toolbar__util-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
-}
-
-.workout-toolbar__util-btn--active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
-}
-
-/* ── 拡大状態 ── */
-.workout-toolbar--expanded {
-  height: 48px;
-  flex-wrap: wrap;
-  align-items: center;
-  align-content: center;
 }

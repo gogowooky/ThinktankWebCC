@@ -2,7 +2,10 @@
  * WorkoutToolBar.tsx
  * WorkoutPanel 最下段の横型ツールバー。
  * 左: テキスト入力欄（モードに応じた機能）
- * 右: モードアイコン群（全表示・クリックで選択）
+ * 右: モードアイコン群 + ユーティリティボタン
+ *
+ * 縮小時: WorkoutPanel 内下段に表示（ChevronsLeftRight アイコン）
+ * 拡大時: アプリ全体の最下段に固定表示（ChevronsRightLeft アイコン）
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -41,7 +44,6 @@ export function WorkoutToolBar({ panel }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // panel.EditorHighlightWord が外部から変わったときに Highlight モードのテキストを同期
   useEffect(() => {
     if (mode === 'highlight') setText(panel.EditorHighlightWord);
   }, [panel.EditorHighlightWord, mode]);
@@ -111,7 +113,7 @@ export function WorkoutToolBar({ panel }: Props) {
         </button>
       )}
 
-      {/* モードアイコン群（右端・横並び・全表示）*/}
+      {/* モードアイコン群 */}
       <div className="workout-toolbar__modes">
         {MODES.map(m => (
           <button
@@ -126,8 +128,7 @@ export function WorkoutToolBar({ panel }: Props) {
         ))}
       </div>
 
-      {/* ユーティリティボタン群 */}
-      <div className="workout-toolbar__sep" />
+      {/* ユーティリティボタン */}
       <div className="workout-toolbar__utils">
         <button
           className="workout-toolbar__util-btn"
@@ -137,20 +138,12 @@ export function WorkoutToolBar({ panel }: Props) {
           <Copyright size={14} />
         </button>
         <button
-          className={`workout-toolbar__util-btn${isExpanded ? '' : ' workout-toolbar__util-btn--active'}`}
-          onClick={() => setIsExpanded(false)}
-          title="ツールバー縮小"
-          aria-label="ツールバー縮小"
+          className="workout-toolbar__util-btn"
+          onClick={() => setIsExpanded(v => !v)}
+          title={isExpanded ? 'ツールバー縮小' : 'ツールバー拡大'}
+          aria-label={isExpanded ? 'ツールバー縮小' : 'ツールバー拡大'}
         >
-          <ChevronsRightLeft size={14} />
-        </button>
-        <button
-          className={`workout-toolbar__util-btn${isExpanded ? ' workout-toolbar__util-btn--active' : ''}`}
-          onClick={() => setIsExpanded(true)}
-          title="ツールバー拡大"
-          aria-label="ツールバー拡大"
-        >
-          <ChevronsLeftRight size={14} />
+          {isExpanded ? <ChevronsRightLeft size={14} /> : <ChevronsLeftRight size={14} />}
         </button>
       </div>
     </div>
