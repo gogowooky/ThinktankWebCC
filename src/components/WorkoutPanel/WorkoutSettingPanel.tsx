@@ -76,9 +76,10 @@ export function WorkoutSettingPanel({
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
   const panelName = entry?.name ?? '';
 
-  const [isAreaSettingsOpen,    setIsAreaSettingsOpen]    = useState(true);
-  const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(true);
-  const [isColorSettingsOpen,   setIsColorSettingsOpen]   = useState(true);
+  const [isAreaSettingsOpen,      setIsAreaSettingsOpen]      = useState(true);
+  const [isDisplaySettingsOpen,   setIsDisplaySettingsOpen]   = useState(true);
+  const [isColorSettingsOpen,     setIsColorSettingsOpen]     = useState(true);
+  const [isHighlightColorOpen,    setIsHighlightColorOpen]    = useState(true);
 
   return (
     <div className="workout-setting-panel" style={{ width }}>
@@ -353,6 +354,50 @@ export function WorkoutSettingPanel({
                           />
                           U
                         </label>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="workout-setting-panel__divider" />
+
+            {/* ハイライトグループ色設定 */}
+            <div className="workout-setting-panel__section">
+              <div
+                className="workout-setting-panel__section-header"
+                onClick={() => setIsHighlightColorOpen(!isHighlightColorOpen)}
+              >
+                {isHighlightColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>ハイライト色</span>
+              </div>
+
+              {isHighlightColorOpen && (
+                <div className="workout-setting-panel__section-content">
+                  {[1, 2, 3, 4, 5].map(group => {
+                    const style = panel.EditorHighlightStyles[group - 1];
+                    const fw = ['１', '２', '３', '４', '５'][group - 1];
+                    return (
+                      <div key={group} className="workout-setting-panel__color-row" style={{ padding: '2px 0px' }}>
+                        <span className="workout-setting-panel__color-label">グループ{fw}</span>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>背景</span>
+                          <input
+                            type="color"
+                            className="workout-setting-panel__color-picker"
+                            value={style.backgroundColor}
+                            onChange={e => panel.SetEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
+                            title={`グループ${fw}の背景色`}
+                          />
+                          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>文字</span>
+                          <input
+                            type="color"
+                            className="workout-setting-panel__color-picker"
+                            value={style.color}
+                            onChange={e => panel.SetEditorHighlightStyle(group - 1, { color: e.target.value })}
+                            title={`グループ${fw}の文字色`}
+                          />
+                        </div>
                       </div>
                     );
                   })}
