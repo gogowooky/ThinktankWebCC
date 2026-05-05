@@ -194,12 +194,16 @@ export class TTWorkoutPanel extends TTObject {
   public SetEditorForeground(color: string) { this.EditorForeground = color; this.NotifyUpdated(); }
   public SetEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
     if (level < 1 || level > 5) return;
-    this.EditorHeadingStyles[level - 1] = { ...this.EditorHeadingStyles[level - 1], ...style };
+    this.EditorHeadingStyles = this.EditorHeadingStyles.map((s, i) =>
+      i === level - 1 ? { ...s, ...style } : s,
+    );
     this.NotifyUpdated();
   }
   public SetEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string }>) {
     if (groupIndex >= 0 && groupIndex <= 4) {
-      this.EditorHighlightStyles[groupIndex] = { ...this.EditorHighlightStyles[groupIndex], ...style };
+      this.EditorHighlightStyles = this.EditorHighlightStyles.map((s, i) =>
+        i === groupIndex ? { ...s, ...style } : s,
+      );
       this.NotifyUpdated();
     }
   }
