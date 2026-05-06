@@ -1,6 +1,6 @@
 'use strict';
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   storage: {
@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     search:         (query)     => ipcRenderer.invoke('storage:search', query),
     syncFromServer: (serverUrl) => ipcRenderer.invoke('storage:syncFromServer', serverUrl),
   },
+  getPathForFile: (file) => webUtils.getPathForFile(file),
 });

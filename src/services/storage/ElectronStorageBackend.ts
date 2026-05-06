@@ -20,6 +20,7 @@ declare global {
         search:         (q: string)       => Promise<ThinkMeta[]>;
         syncFromServer: (url: string)     => Promise<SyncResult>;
       };
+      getPathForFile: (file: File) => string;
     };
   }
 }

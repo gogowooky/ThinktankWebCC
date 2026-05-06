@@ -319,10 +319,10 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
 
     for (const file of files) {
       if (isElectron) {
-        // Electron: file.path でローカルパスを直接取得
-        const electronPath = (file as File & { path?: string }).path;
-        const plainPath    = e.dataTransfer.getData('text/plain').trim();
-        const localPath    = electronPath ?? plainPath ?? file.name;
+        // Electron: webUtils.getPathForFile 経由でローカルパスを取得（Electron 32+対応）
+        const byApi     = window.electronAPI?.getPathForFile(file);
+        const byPlain   = e.dataTransfer.getData('text/plain').trim() || undefined;
+        const localPath = byApi ?? byPlain ?? file.name;
         insertAtCursor(`[File:${file.name}](${localPath})`);
       } else {
         // PWA: Google Drive にアップロード

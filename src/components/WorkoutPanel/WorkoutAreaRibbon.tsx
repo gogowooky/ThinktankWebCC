@@ -82,7 +82,8 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
   //    フルパス取得優先順: Electron file.path > text/plain のパス > file:// URI変換 > file.name
   if (e.dataTransfer.files.length > 0) {
     const file         = e.dataTransfer.files[0];
-    const electronPath = (file as File & { path?: string }).path;
+    // Electron 32+: webUtils.getPathForFile 経由（file.path は非推奨）
+    const electronPath = window.electronAPI?.getPathForFile(file) ?? undefined;
     const plainText    = e.dataTransfer.getData('text/plain').trim();
     const uriFirst     = e.dataTransfer.getData('text/uri-list')
                           .split(/\r?\n/).find(l => l.trim() && !l.startsWith('#'))?.trim() ?? '';
