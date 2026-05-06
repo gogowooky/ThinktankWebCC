@@ -2,30 +2,31 @@
  * DataGridMedia.tsx
  * テーブル形式一覧メディア。
  *
- * - @tanstack/react-virtual で仮想スクロール
+ * - think.ContentType === 'table' → TableGridView でスプレッドシート表示
  * - think が Thought → GetThinksForThought の結果を表示
  * - それ以外 → Vault の全 Think（thought 除く）を表示
- * - 上部フィルターテキストボックスでタイトル/キーワード絞り込み
- * - 行クリックで選択（複数選択対応）
  */
 
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   FileText, Lightbulb, Table, Link, MessageCircle, Globe,
+  ChevronUp, ChevronDown, ChevronsUpDown, Plus,
   type LucideIcon,
 } from 'lucide-react';
 import type { TTThink } from '../../../models/TTThink';
 import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
+import type { TableSection } from '../../../utils/tableFormat';
 import { useHighlight } from '../../../contexts/HighlightContext';
+import { parseTableContent, sectionsToTableContent } from '../../../utils/tableFormat';
 import './DataGridMedia.css';
 
 // ContentType アイコンマッピング
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo:    FileText,
   thought: Lightbulb,
-  tables:  Table,
+  table:   Table,
   links:   Link,
   chat:    MessageCircle,
   nettext: Globe,
@@ -34,7 +35,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
 const CONTENT_LABELS: Record<ContentType, string> = {
   memo:    'メモ',
   thought: '思考',
-  tables:  'テーブル',
+  table:   'テーブル',
   links:   'リンク',
   chat:    'チャット',
   nettext: 'Web文書',
@@ -42,20 +43,285 @@ const CONTENT_LABELS: Record<ContentType, string> = {
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '';
-  // yyyy-MM-dd-hhmmss 形式
   const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (m) return `${m[1]}/${m[2]}/${m[3]}`;
   return dateStr.slice(0, 10);
 }
 
-export function DataGridMedia({ think, vault }: MediaProps) {
-  const [filter, setFilter]     = useState('');
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+// ── TableGridView ────────────────────────────────────────────────────────────
+
+const COL_WIDTH    = 120;
+const ROWNUM_WIDTH = 40;
+
+type SortDir  = 'asc' | 'desc';
+interface SortState { col: number; dir: SortDir; }
+interface EditState { rowIdx: number; col: number; value: string; }
+type DisplayRow = { rowIdx: number; row: string[] };
+
+interface TableGridViewProps {
+  think:          TTThink;
+  onSave?:        (content: string) => void;
+  onDirtyChange?: (dirty: boolean) => void;
+}
+
+function TableGridView({ think, onSave, onDirtyChange }: TableGridViewProps) {
+  const [sections,   setSections]   = useState<TableSection[]>(() => parseTableContent(think.Content));
+  const [activeIdx,  setActiveIdx]  = useState(0);
+  const [filter,     setFilter]     = useState('');
+  const [sortState,  setSortState]  = useState<SortState | null>(null);
+  const [editState,  setEditState]  = useState<EditState | null>(null);
+  const [isDirty,    setIsDirty]    = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // think 切り替え時にリセット
+  useEffect(() => {
+    setSections(parseTableContent(think.Content));
+    setActiveIdx(0);
+    setFilter('');
+    setSortState(null);
+    setEditState(null);
+    setIsDirty(false);
+  }, [think.ID]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
+
+  const section  = sections[Math.min(activeIdx, sections.length - 1)] ?? null;
+  const colCount = section?.columns.length ?? 0;
+  const innerWidth = ROWNUM_WIDTH + colCount * COL_WIDTH;
+
+  const displayRows = useMemo<DisplayRow[]>(() => {
+    if (!section) return [];
+    const q = filter.trim().toLowerCase();
+    let rows: DisplayRow[] = section.rows.map((row, rowIdx) => ({ rowIdx, row }));
+    if (q) rows = rows.filter(({ row }) => row.some(cell => cell.toLowerCase().includes(q)));
+    if (sortState) {
+      const { col, dir } = sortState;
+      rows = [...rows].sort((a, b) => {
+        const av = a.row[col] ?? '';
+        const bv = b.row[col] ?? '';
+        const cmp = av.localeCompare(bv, undefined, { numeric: true, sensitivity: 'base' });
+        return dir === 'asc' ? cmp : -cmp;
+      });
+    }
+    return rows;
+  }, [section, filter, sortState]);
+
+  const rowVirtualizer = useVirtualizer({
+    count:            displayRows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize:     () => 28,
+    overscan:         8,
+  });
+
+  // ── ハンドラー ─────────────────────────────────────────────────────────
+
+  const handleSave = useCallback(() => {
+    if (!onSave) return;
+    onSave(sectionsToTableContent(think.Name, sections));
+    setIsDirty(false);
+  }, [onSave, think.Name, sections]);
+
+  const handleSortToggle = useCallback((col: number) => {
+    setSortState(prev => {
+      if (!prev || prev.col !== col) return { col, dir: 'asc' };
+      if (prev.dir === 'asc') return { col, dir: 'desc' };
+      return null;
+    });
+  }, []);
+
+  const commitEdit = useCallback((rowIdx: number, col: number, value: string) => {
+    setSections(prev => prev.map((s, si) => {
+      if (si !== activeIdx) return s;
+      return {
+        ...s,
+        rows: s.rows.map((row, ri) => {
+          if (ri !== rowIdx) return row;
+          const next = [...row];
+          next[col] = value;
+          return next;
+        }),
+      };
+    }));
+    setIsDirty(true);
+    setEditState(null);
+  }, [activeIdx]);
+
+  const handleCellClick = useCallback((rowIdx: number, col: number, value: string) => {
+    setEditState({ rowIdx, col, value });
+  }, []);
+
+  const handleAddRow = useCallback(() => {
+    setSections(prev => prev.map((s, si) => {
+      if (si !== activeIdx) return s;
+      return { ...s, rows: [...s.rows, Array(s.columns.length).fill('')] };
+    }));
+    setIsDirty(true);
+    setTimeout(() => {
+      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }, 50);
+  }, [activeIdx]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      if (editState) commitEdit(editState.rowIdx, editState.col, editState.value);
+      handleSave();
+    }
+  }, [editState, commitEdit, handleSave]);
+
+  if (sections.length === 0) {
+    return (
+      <div className="table-grid__empty-full">
+        テーブルデータがありません。TextEditor で以下の形式で入力してください：<br />
+        <code>## セクション名</code><br />
+        <code>&gt; 列名1,列名2,列名3</code><br />
+        <code>値1,値2,値3</code>
+      </div>
+    );
+  }
+
+  return (
+    <div className="table-grid" onKeyDown={handleKeyDown}>
+
+      {/* セクションタブ */}
+      {sections.length > 1 && (
+        <div className="table-grid__tabs">
+          {sections.map((s, i) => (
+            <button
+              key={i}
+              className={`table-grid__tab${i === activeIdx ? ' table-grid__tab--active' : ''}`}
+              onClick={() => setActiveIdx(i)}
+            >
+              {s.title || `テーブル${i + 1}`}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* フィルター */}
+      <div className="table-grid__toolbar">
+        <input
+          className="table-grid__filter"
+          type="text"
+          placeholder="絞り込み…"
+          value={filter}
+          onChange={e => setFilter(e.target.value)}
+        />
+        <span className="table-grid__count">{displayRows.length} 行</span>
+        {isDirty && (
+          <button className="table-grid__save-btn" onClick={handleSave} title="保存 (Ctrl+S)">
+            保存
+          </button>
+        )}
+      </div>
+
+      {/* スクロール領域 */}
+      <div className="table-grid__scroll" ref={scrollRef}>
+        <div style={{ minWidth: innerWidth }}>
+
+          {/* 固定ヘッダー */}
+          <div className="table-grid__header-row">
+            <div className="table-grid__rownum-cell" />
+            {section?.columns.map((col, ci) => {
+              const sorted = sortState?.col === ci ? sortState.dir : null;
+              return (
+                <div
+                  key={ci}
+                  className="table-grid__header-cell table-grid__header-cell--sortable"
+                  style={{ width: COL_WIDTH }}
+                  title={col}
+                  onClick={() => handleSortToggle(ci)}
+                >
+                  <span className="table-grid__header-text">{col}</span>
+                  <span className="table-grid__sort-icon">
+                    {sorted === 'asc'  ? <ChevronUp   size={11} /> :
+                     sorted === 'desc' ? <ChevronDown size={11} /> :
+                                         <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* 仮想スクロール本体 */}
+          <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
+            {rowVirtualizer.getVirtualItems().map(vRow => {
+              const { rowIdx, row } = displayRows[vRow.index];
+              return (
+                <div
+                  key={vRow.key}
+                  className="table-grid__data-row"
+                  style={{
+                    position: 'absolute', top: 0, left: 0,
+                    width: '100%', height: vRow.size,
+                    transform: `translateY(${vRow.start}px)`,
+                  }}
+                >
+                  <div className="table-grid__rownum-cell">{vRow.index + 1}</div>
+                  {Array.from({ length: colCount }, (_, ci) => {
+                    const isEditing = editState?.rowIdx === rowIdx && editState?.col === ci;
+                    const cellVal   = row?.[ci] ?? '';
+                    return isEditing ? (
+                      <input
+                        key={ci}
+                        className="table-grid__cell-input"
+                        style={{ width: COL_WIDTH }}
+                        value={editState.value}
+                        autoFocus
+                        onChange={e => setEditState(prev => prev ? { ...prev, value: e.target.value } : null)}
+                        onBlur={() => commitEdit(rowIdx, ci, editState.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') { e.preventDefault(); commitEdit(rowIdx, ci, editState.value); }
+                          if (e.key === 'Escape') setEditState(null);
+                        }}
+                      />
+                    ) : (
+                      <div
+                        key={ci}
+                        className="table-grid__data-cell"
+                        style={{ width: COL_WIDTH }}
+                        title={cellVal}
+                        onClick={() => handleCellClick(rowIdx, ci, cellVal)}
+                      >
+                        {cellVal}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+
+        </div>
+
+        {displayRows.length === 0 && (
+          <div className="table-grid__empty">
+            {filter ? '一致する行はありません' : 'データ行がありません'}
+          </div>
+        )}
+      </div>
+
+      {/* フッター：行追加 */}
+      <div className="table-grid__footer">
+        <button className="table-grid__add-row-btn" onClick={handleAddRow}>
+          <Plus size={12} />
+          行を追加
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
+// ── ThinkListMedia（thought/vault 一覧）────────────────────────────────────
+
+function ThinkListMedia({ think, vault }: MediaProps) {
+  const [filter,    setFilter]   = useState('');
+  const [selected,  setSelected] = useState<Set<string>>(new Set());
   const [focusedId, setFocusedId] = useState<string | null>(null);
-  const scrollRef               = useRef<HTMLDivElement>(null);
+  const scrollRef                = useRef<HTMLDivElement>(null);
   const { overviewThoughtIds, workoutIds } = useHighlight();
 
-  // 表示対象アイテム（初期値は同期取得、非同期更新で全文検索も反映）
   const [allItems, setAllItems] = useState<TTThink[]>(() => {
     if (think?.ContentType === 'thought') return vault.GetThinksForThought(think.ID);
     return vault.GetThinks().filter(t => t.ContentType !== 'thought');
@@ -69,7 +335,6 @@ export function DataGridMedia({ think, vault }: MediaProps) {
     vault.GetThinksForThoughtAsync(think.ID).then(setAllItems);
   }, [think?.ID, vault]);
 
-  // フィルター適用
   const filtered = useMemo<TTThink[]>(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return allItems;
@@ -79,7 +344,6 @@ export function DataGridMedia({ think, vault }: MediaProps) {
     );
   }, [allItems, filter]);
 
-  // 仮想スクロール
   const rowVirtualizer = useVirtualizer({
     count:            filtered.length,
     getScrollElement: () => scrollRef.current,
@@ -111,7 +375,6 @@ export function DataGridMedia({ think, vault }: MediaProps) {
   return (
     <div className="datagrid-media">
 
-      {/* フィルター */}
       <div className="datagrid-media__toolbar">
         <input
           className="datagrid-media__filter"
@@ -123,7 +386,6 @@ export function DataGridMedia({ think, vault }: MediaProps) {
         <span className="datagrid-media__count">{filtered.length} 件</span>
       </div>
 
-      {/* ヘッダー */}
       <div className="datagrid-media__header">
         <div className="datagrid-media__cell datagrid-media__cell--check" />
         <div className="datagrid-media__cell datagrid-media__cell--type">種別</div>
@@ -131,7 +393,6 @@ export function DataGridMedia({ think, vault }: MediaProps) {
         <div className="datagrid-media__cell datagrid-media__cell--date">更新日</div>
       </div>
 
-      {/* 仮想スクロール本体 */}
       <div
         className="datagrid-media__scroll"
         ref={scrollRef}
@@ -163,15 +424,13 @@ export function DataGridMedia({ think, vault }: MediaProps) {
                 onMouseEnter={() => setFocusedId(item.ID)}
                 style={{
                   position:  'absolute',
-                  top:       0,
-                  left:      0,
+                  top: 0, left: 0,
                   width:     '100%',
                   height:    virtualRow.size,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
                 onClick={() => setSelected(new Set([item.ID]))}
               >
-                {/* チェックボックス */}
                 <div className="datagrid-media__cell datagrid-media__cell--check">
                   <input
                     type="checkbox"
@@ -180,19 +439,13 @@ export function DataGridMedia({ think, vault }: MediaProps) {
                     onClick={e => toggleSelect(item.ID, e)}
                   />
                 </div>
-
-                {/* 種別アイコン */}
                 <div className="datagrid-media__cell datagrid-media__cell--type">
                   <Icon size={12} />
                   <span>{CONTENT_LABELS[item.ContentType]}</span>
                 </div>
-
-                {/* タイトル */}
                 <div className="datagrid-media__cell datagrid-media__cell--title" title={item.Name}>
                   {item.Name}
                 </div>
-
-                {/* 更新日 */}
                 <div className="datagrid-media__cell datagrid-media__cell--date">
                   {formatDate(item.UpdateDate)}
                 </div>
@@ -202,7 +455,6 @@ export function DataGridMedia({ think, vault }: MediaProps) {
         </div>
       </div>
 
-      {/* 空状態 */}
       {filtered.length === 0 && (
         <div className="datagrid-media__empty">
           {filter ? '一致するアイテムはありません' : 'データがありません'}
@@ -210,4 +462,19 @@ export function DataGridMedia({ think, vault }: MediaProps) {
       )}
     </div>
   );
+}
+
+// ── DataGridMedia ──────────────────────────────────────────────────────────
+
+export function DataGridMedia(props: MediaProps) {
+  if (props.think?.ContentType === 'table') {
+    return (
+      <TableGridView
+        think={props.think}
+        onSave={props.onSave}
+        onDirtyChange={props.onDirtyChange}
+      />
+    );
+  }
+  return <ThinkListMedia {...props} />;
 }

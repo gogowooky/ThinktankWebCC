@@ -10,6 +10,7 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
+import { StorageManager } from '../../../services/storage/StorageManager';
 import './TextEditorMedia.css';
 
 interface Toast { msg: string; type: 'success' | 'error'; }
@@ -19,7 +20,14 @@ function extractBody(content: string): string {
   return idx === -1 ? '' : content.slice(idx + 1);
 }
 
+function getEditorValue(think: NonNullable<MediaProps['think']>): string {
+  return (think.ContentType === 'thought' || think.ContentType === 'table' || think.ContentType === 'memo')
+    ? (think.Content ?? '')
+    : extractBody(think.Content);
+}
+
 function reconstructContent(think: NonNullable<MediaProps['think']>, body: string): string {
+  if (think.ContentType === 'thought' || think.ContentType === 'table' || think.ContentType === 'memo') return body;
   const firstLine = think.Content.split('\n')[0] ?? '';
   return body ? `${firstLine}\n${body}` : firstLine;
 }
@@ -73,15 +81,17 @@ function registerMarkdownFolding(monaco: any) {
   });
 }
 
-export function TextEditorMedia({ think, onSave, onDirtyChange, editorSettings }: MediaProps) {
-  const savedRef  = useRef(think ? extractBody(think.Content) : '');
-  const editorRef = useRef<any>(null);
+export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey }: MediaProps) {
+  const savedRef    = useRef(think ? getEditorValue(think) : '');
+  const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
+  const editorRef   = useRef<any>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [toast,      setToast]      = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    savedRef.current = think ? extractBody(think.Content) : '';
+    savedRef.current   = think ? getEditorValue(think) : '';
+    firstLineRef.current = think?.Content.split('\n')[0] ?? '';
     onDirtyChange(false);
   }, [think?.ID, onDirtyChange]);
 
@@ -270,9 +280,19 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, editorSettings }
   }, [editorSettings]);
 
   const handleChange = useCallback((value: string | undefined) => {
-    onDirtyChange((value ?? '') !== savedRef.current);
+    const v = value ?? '';
+    onDirtyChange(v !== savedRef.current);
     updateDecorations();
-  }, [onDirtyChange, updateDecorations]);
+    // thought / table / memo は第一行がタイトル → リアルタイム同期
+    if (onTitleChange && think &&
+        (think.ContentType === 'thought' || think.ContentType === 'table' || think.ContentType === 'memo')) {
+      const newFirst = v.split('\n')[0] ?? '';
+      if (newFirst !== firstLineRef.current) {
+        firstLineRef.current = newFirst;
+        onTitleChange(newFirst);
+      }
+    }
+  }, [onDirtyChange, updateDecorations, onTitleChange, think]);
 
   // ── ファイルドロップ ──────────────────────────────────────────────────────
 
@@ -295,19 +315,30 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, editorSettings }
     e.preventDefault();
     e.stopPropagation();
 
+    const isElectron = StorageManager.instance.mode === 'electron';
+
     for (const file of files) {
-      showToast(`アップロード中: ${file.name}`, 'success');
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('date', new Date().toISOString().slice(0, 10));
-        const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
-        if (!res.ok) throw new Error(await res.text());
-        const { webViewLink } = await res.json() as { fileId: string; webViewLink: string };
-        insertAtCursor(`[File:${file.name}](${webViewLink})`);
-        showToast(`✓ 保存完了: ${file.name}`, 'success');
-      } catch (err) {
-        showToast(`✗ アップロード失敗: ${String(err)}`, 'error');
+      if (isElectron) {
+        // Electron: file.path でローカルパスを直接取得
+        const electronPath = (file as File & { path?: string }).path;
+        const plainPath    = e.dataTransfer.getData('text/plain').trim();
+        const localPath    = electronPath ?? plainPath ?? file.name;
+        insertAtCursor(`[File:${file.name}](${localPath})`);
+      } else {
+        // PWA: Google Drive にアップロード
+        showToast(`アップロード中: ${file.name}`, 'success');
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('date', new Date().toISOString().slice(0, 10));
+          const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
+          if (!res.ok) throw new Error(await res.text());
+          const { webViewLink } = await res.json() as { fileId: string; webViewLink: string };
+          insertAtCursor(`[File:${file.name}](${webViewLink})`);
+          showToast(`✓ 保存完了: ${file.name}`, 'success');
+        } catch (err) {
+          showToast(`✗ アップロード失敗: ${String(err)}`, 'error');
+        }
       }
     }
   }, [showToast, insertAtCursor]);
@@ -328,8 +359,8 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, editorSettings }
       onDrop={handleDrop}
     >
       <Editor
-        key={think.ID}
-        defaultValue={extractBody(think.Content)}
+        key={`${think.ID}-${refreshKey ?? 0}`}
+        defaultValue={getEditorValue(think)}
         language="markdown"
         theme={editorSettings ? "custom-markdown-theme" : "vs-dark"}
         onMount={handleMount}

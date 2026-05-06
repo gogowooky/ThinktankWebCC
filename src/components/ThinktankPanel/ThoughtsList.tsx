@@ -58,7 +58,7 @@ function getTypeIcon(contentType: string) {
     case 'memo':     return <FileText    size={13} className="thoughts-list__icon" />;
     case 'chat':     return <MessageSquare size={13} className="thoughts-list__icon" />;
     case 'links':    return <Link        size={13} className="thoughts-list__icon" />;
-    case 'tables':   return <Table2      size={13} className="thoughts-list__icon" />;
+    case 'table':    return <Table2      size={13} className="thoughts-list__icon" />;
     case 'nettext':  return <Globe       size={13} className="thoughts-list__icon" />;
     case 'status':   return <Activity    size={13} className="thoughts-list__icon" />;
     default:         return <File        size={13} className="thoughts-list__icon" />;

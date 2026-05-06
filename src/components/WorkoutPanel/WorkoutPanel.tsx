@@ -21,6 +21,8 @@ import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutRibbon } from './WorkoutRibbon';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
 import { WorkoutToolBar } from './WorkoutToolBar';
+import { extractLinkDrop } from './WorkoutAreaRibbon';
+import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
 import type { SettingsType } from './WorkoutRibbon';
 import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
@@ -75,6 +77,7 @@ function contentTypeToMediaType(contentType: string): MediaType {
   switch (contentType) {
     case 'markdown': return 'markdown';
     case 'thought':  return 'datagrid';
+    case 'table':    return 'datagrid';
     case 'chat':     return 'chat';
     default:         return 'texteditor';
   }
@@ -348,6 +351,116 @@ export function WorkoutPanel({ app }: Props) {
     if (panel.FocusedAreaId) panel.RemoveArea(panel.FocusedAreaId);
   }, [panel]);
 
+  const handleCreateMemo = useCallback(async () => {
+    const t = await vault.CreateBlankThink('memo', '新規メモ');
+    panel.AddToRight(t.ID, 'texteditor', t.Name);
+  }, [vault, panel]);
+
+  const handleReadMemo = useCallback(() => {
+    const input = document.createElement('input');
+    input.type   = 'file';
+    input.accept = '.txt,.md,.xdoc';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const title   = file.name.replace(/\.[^/.]+$/, '');
+      const text    = await file.text();
+      const content = `${title}\n${text}`;
+      const t = await vault.CreateBlankThink('memo', title);
+      t.Content = content;
+      await t.SaveContent();
+      panel.AddToRight(t.ID, 'markdown', t.Name);
+    };
+    input.click();
+  }, [vault, panel]);
+
+  const handleSaveMemo = useCallback(() => {
+    const focusedArea = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+    if (!focusedArea) return;
+    const think = vault.GetThink(focusedArea.ResourceID);
+    if (!think || think.ContentType !== 'memo') return;
+    const blob = new Blob([think.Content], { type: 'text/markdown;charset=utf-8' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `${think.Name}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [panel, vault]);
+
+  const handleCreateTable = useCallback(async () => {
+    const t = await vault.CreateBlankThink('table', '新規テーブル');
+    panel.AddToRight(t.ID, 'texteditor', t.Name);
+  }, [vault, panel]);
+
+  const handleReadTable = useCallback(() => {
+    const input = document.createElement('input');
+    input.type   = 'file';
+    input.accept = '.csv,.xlsx,.xls';
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const title = file.name.replace(/\.[^/.]+$/, '');
+
+      let sections: { title: string; columns: string[]; rows: string[][] }[] = [];
+
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text  = await file.text();
+        const lines = text.replace(/^﻿/, '').split(/\r?\n/).filter(l => l.trim());
+        if (lines.length > 0) {
+          const columns = parseCsvLine(lines[0]);
+          const rows    = lines.slice(1).map(parseCsvLine);
+          sections      = [{ title: 'データ', columns, rows }];
+        }
+      } else {
+        // XLSX / XLS: SheetJS で読み取り
+        const XLSX    = await import('xlsx');
+        const buffer  = await file.arrayBuffer();
+        const wb      = XLSX.read(buffer, { type: 'array' });
+        for (const sheetName of wb.SheetNames) {
+          const ws   = wb.Sheets[sheetName];
+          const data = XLSX.utils.sheet_to_json<string[]>(ws, { header: 1, defval: '' });
+          if (data.length > 0) {
+            const columns = data[0].map(String);
+            const rows    = data.slice(1).map(r => r.map(String));
+            sections.push({ title: sheetName, columns, rows });
+          }
+        }
+      }
+
+      if (sections.length === 0) return;
+      const fullContent = sectionsToTableContent(title, sections);
+      const t = await vault.CreateBlankThink('table', title);
+      t.Content = fullContent;
+      await t.SaveContent();
+      panel.AddToRight(t.ID, 'datagrid', t.Name);
+    };
+    input.click();
+  }, [vault, panel]);
+
+  const handleSaveTable = useCallback(() => {
+    const focusedArea = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+    if (!focusedArea) return;
+    const think = vault.GetThink(focusedArea.ResourceID);
+    if (!think || think.ContentType !== 'table') return;
+
+    const sections = parseTableContent(think.Content);
+    if (sections.length === 0) return;
+
+    for (const section of sections) {
+      const csv  = '﻿' + sectionToCsv(section);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = sections.length > 1
+        ? `${think.Name}_${section.title}.csv`
+        : `${think.Name}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }, [panel, vault]);
+
   const handleClearAll = useCallback(() => {
     panel.ClearAll();
   }, [panel]);
@@ -449,7 +562,10 @@ export function WorkoutPanel({ app }: Props) {
   }, [panel]);
 
   const handleBodyDragOver = useCallback((e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('application/x-thought-id')) return;
+    const types = e.dataTransfer.types;
+    const hasThink = types.includes('application/x-thought-id');
+    const hasLink  = types.includes('text/uri-list') || types.includes('Files') || types.includes('text/plain');
+    if (!hasThink && !hasLink) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
     setIsExternalDrag(true);
@@ -463,27 +579,52 @@ export function WorkoutPanel({ app }: Props) {
     }
   }, []);
 
-  const handleBodyDrop = useCallback((e: React.DragEvent) => {
-    const id      = e.dataTransfer.getData('application/x-thought-id');
+  const handleBodyDrop = useCallback(async (e: React.DragEvent) => {
     const overlay = computeDropOverlay(e);
     setDropOverlay(null);
     setIsExternalDrag(false);
-    if (!id || !overlay) return;
+    if (!overlay) return;
     e.preventDefault();
-    const think     = vault.GetThink(id);
-    const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
-    const title     = think?.Name ?? '';
-    if (overlay.type === 'add') {
-      if (overlay.dir === 'left')  panel.AddToLeft(id,   mediaType, title);
-      else if (overlay.dir === 'right') panel.AddToRight(id,  mediaType, title);
-      else if (overlay.dir === 'up')    panel.AddToTop(id,    mediaType, title);
-      else                              panel.AddToBottom(id, mediaType, title);
-    } else {
-      if (overlay.areaId) panel.FocusArea(overlay.areaId);
-      if (overlay.dir === 'left')  panel.AddLeft(id,  mediaType, title);
-      else if (overlay.dir === 'right') panel.AddRight(id, mediaType, title);
-      else if (overlay.dir === 'up')    panel.AddAbove(id, mediaType, title);
-      else                              panel.AddBelow(id, mediaType, title);
+
+    // Think D&D
+    const thinkId = e.dataTransfer.getData('application/x-thought-id');
+    if (thinkId) {
+      const think     = vault.GetThink(thinkId);
+      const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
+      const title     = think?.Name ?? '';
+      if (overlay.type === 'add') {
+        if (overlay.dir === 'left')       panel.AddToLeft(thinkId,   mediaType, title);
+        else if (overlay.dir === 'right') panel.AddToRight(thinkId,  mediaType, title);
+        else if (overlay.dir === 'up')    panel.AddToTop(thinkId,    mediaType, title);
+        else                              panel.AddToBottom(thinkId, mediaType, title);
+      } else {
+        if (overlay.areaId) panel.FocusArea(overlay.areaId);
+        if (overlay.dir === 'left')       panel.AddLeft(thinkId,  mediaType, title);
+        else if (overlay.dir === 'right') panel.AddRight(thinkId, mediaType, title);
+        else if (overlay.dir === 'up')    panel.AddAbove(thinkId, mediaType, title);
+        else                              panel.AddBelow(thinkId, mediaType, title);
+      }
+      return;
+    }
+
+    // URL / path D&D → links Think を新規作成
+    const link = extractLinkDrop(e);
+    if (link) {
+      const newThink = await vault.CreateLinksThink(link.title, link.url);
+      const id    = newThink.ID;
+      const title = newThink.Name;
+      if (overlay.type === 'add') {
+        if (overlay.dir === 'left')       panel.AddToLeft(id,   'texteditor', title);
+        else if (overlay.dir === 'right') panel.AddToRight(id,  'texteditor', title);
+        else if (overlay.dir === 'up')    panel.AddToTop(id,    'texteditor', title);
+        else                              panel.AddToBottom(id, 'texteditor', title);
+      } else {
+        if (overlay.areaId) panel.FocusArea(overlay.areaId);
+        if (overlay.dir === 'left')       panel.AddLeft(id,  'texteditor', title);
+        else if (overlay.dir === 'right') panel.AddRight(id, 'texteditor', title);
+        else if (overlay.dir === 'up')    panel.AddAbove(id, 'texteditor', title);
+        else                              panel.AddBelow(id, 'texteditor', title);
+      }
     }
   }, [computeDropOverlay, panel, vault]);
 
@@ -590,6 +731,12 @@ export function WorkoutPanel({ app }: Props) {
           onClearAll={handleClearAll}
           onEqualizeWidths={handleEqualizeWidths}
           onEqualizeHeights={handleEqualizeHeights}
+          onCreateMemo={handleCreateMemo}
+          onReadMemo={handleReadMemo}
+          onSaveMemo={handleSaveMemo}
+          onCreateTable={handleCreateTable}
+          onReadTable={handleReadTable}
+          onSaveTable={handleSaveTable}
         />
       </PanelArea>
       {activeSettings !== null && (

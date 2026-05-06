@@ -40,7 +40,8 @@ export function MarkdownMedia({ think }: MediaProps) {
 
   useEffect(() => {
     if (!think) { setHtml(''); return; }
-    const result = md.parse(think.Content ?? '');
+    const body = (think.Content ?? '').replace(/^[^\n]*\n?/, '');
+    const result = md.parse(body);
     // marked v18: parse は string | Promise<string>
     if (typeof result === 'string') {
       setHtml(result);

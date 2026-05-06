@@ -3,9 +3,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
+  base: process.env.ELECTRON_BUILD === 'true' ? './' : '/',
   server: {
     port: 5173,
-    open: true,
+    open: process.env.ELECTRON_DEV !== 'true',
     proxy: {
       '/api': {
         target: 'http://localhost:8080',

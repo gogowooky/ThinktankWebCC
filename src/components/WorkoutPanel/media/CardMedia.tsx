@@ -21,7 +21,7 @@ import './CardMedia.css';
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo:    FileText,
   thought: Lightbulb,
-  tables:  Table,
+  table:   Table,
   links:   Link,
   chat:    MessageCircle,
   nettext: Globe,
@@ -30,7 +30,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
 const CONTENT_COLORS: Record<ContentType, string> = {
   memo:    '#3b78c4',
   thought: '#c9a227',
-  tables:  '#2e7d32',
+  table:   '#2e7d32',
   links:   '#7b1fa2',
   chat:    '#d32f2f',
   nettext: '#00838f',

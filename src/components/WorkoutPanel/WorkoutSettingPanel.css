@@ -191,7 +191,8 @@
 .workout-setting-panel__color-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8px;
   padding: 2px 8px;
 }
 
@@ -230,7 +231,6 @@
 .workout-setting-panel__heading-style-label {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
-  flex: 1;
 }
 
 .workout-setting-panel__small-checkbox {
@@ -317,3 +317,4 @@
   background: rgba(239, 83, 80, 0.2);
   color: #ef5350;
 }
+

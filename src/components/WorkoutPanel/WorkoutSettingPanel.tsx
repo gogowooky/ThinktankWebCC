@@ -14,6 +14,9 @@ import {
   ChevronsLeftRightEllipsis,
   ChevronDown,
   ChevronRight,
+  FilePlus,
+  FileSpreadsheet,
+  Save,
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { SettingsType } from './WorkoutRibbon';
@@ -62,6 +65,12 @@ interface Props {
   onClearAll:       () => void;
   onEqualizeWidths: () => void;
   onEqualizeHeights:() => void;
+  onCreateMemo:     () => void;
+  onReadMemo:       () => void;
+  onSaveMemo:       () => void;
+  onCreateTable:    () => void;
+  onReadTable:      () => void;
+  onSaveTable:      () => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -71,6 +80,8 @@ export function WorkoutSettingPanel({
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
   onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
+  onCreateMemo, onReadMemo, onSaveMemo,
+  onCreateTable, onReadTable, onSaveTable,
 }: Props) {
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
@@ -80,6 +91,8 @@ export function WorkoutSettingPanel({
   const [isDisplaySettingsOpen,   setIsDisplaySettingsOpen]   = useState(true);
   const [isColorSettingsOpen,     setIsColorSettingsOpen]     = useState(true);
   const [isHighlightColorOpen,    setIsHighlightColorOpen]    = useState(true);
+  const [isMemoSettingsOpen,      setIsMemoSettingsOpen]      = useState(true);
+  const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
 
   return (
     <div className="workout-setting-panel" style={{ width }}>
@@ -401,6 +414,100 @@ export function WorkoutSettingPanel({
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+            <div className="workout-setting-panel__divider" />
+
+            {/* メモ操作 */}
+            <div className="workout-setting-panel__section">
+              <div
+                className="workout-setting-panel__section-header"
+                onClick={() => setIsMemoSettingsOpen(!isMemoSettingsOpen)}
+              >
+                {isMemoSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>メモ</span>
+              </div>
+
+              {isMemoSettingsOpen && (
+                <div className="workout-setting-panel__section-content">
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
+                    <button
+                      className="workout-setting-panel__icon-btn"
+                      onClick={onCreateMemo}
+                      title="新規メモファイルを作成（TextEditor）"
+                    >
+                      <FilePlus size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
+                    <button
+                      className="workout-setting-panel__icon-btn"
+                      onClick={onReadMemo}
+                      title="txt / md / xdoc ファイルを読み取って新規メモを作成"
+                    >
+                      <FileSpreadsheet size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
+                    <button
+                      className="workout-setting-panel__icon-btn"
+                      onClick={onSaveMemo}
+                      title="表示中のメモを .md ファイルで保存"
+                    >
+                      <Save size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        ) : activeSettings === 'datagrid' ? (
+          <>
+            <div className="workout-setting-panel__section">
+              <div
+                className="workout-setting-panel__section-header"
+                onClick={() => setIsTableSettingsOpen(!isTableSettingsOpen)}
+              >
+                {isTableSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>テーブル</span>
+              </div>
+
+              {isTableSettingsOpen && (
+                <div className="workout-setting-panel__section-content">
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
+                    <button
+                      className="workout-setting-panel__icon-btn"
+                      onClick={onCreateTable}
+                      title="新規テーブルファイルを作成（TextEditor）"
+                    >
+                      <FilePlus size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
+                    <button
+                      className="workout-setting-panel__icon-btn"
+                      onClick={onReadTable}
+                      title="CSV / XLSX ファイルを読み取って新規テーブルを作成"
+                    >
+                      <FileSpreadsheet size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
+                    <button
+                      className="workout-setting-panel__icon-btn"
+                      onClick={onSaveTable}
+                      title="表示中のテーブルデータを CSV で保存"
+                    >
+                      <Save size={16} className="ws-icon" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

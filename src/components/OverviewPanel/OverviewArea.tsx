@@ -44,9 +44,10 @@ const noop = () => {};
 interface Props {
   app:          TTApplication;
   showSettings: boolean;
+  refreshKey?:  number;
 }
 
-export function OverviewArea({ app, showSettings }: Props) {
+export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const panel = app.OverviewPanel;
   const vault = app.Models.Vault;
   useAppUpdate(panel);
@@ -85,7 +86,7 @@ export function OverviewArea({ app, showSettings }: Props) {
   useEffect(() => {
     if (!panel.ThoughtID) { setThinksInThought([]); return; }
     vault.GetThinksForThoughtAsync(panel.ThoughtID).then(setThinksInThought);
-  }, [panel.ThoughtID, vault]);
+  }, [panel.ThoughtID, vault, refreshKey]);
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 

@@ -11,15 +11,20 @@
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
 import { LocalStorageBackend }    from './LocalStorageBackend';
 import { BigQueryStorageBackend } from './BigQueryStorageBackend';
+import { ElectronStorageBackend, type SyncResult } from './ElectronStorageBackend';
 
 export class StorageManager {
   private static _instance: StorageManager | null = null;
 
   public readonly backend: IStorageBackend;
-  public readonly mode: 'local' | 'pwa';
+  public readonly mode: 'electron' | 'local' | 'pwa';
 
   private constructor() {
-    if (window.__THINKTANK_MODE__ === 'local') {
+    if (window.electronAPI) {
+      this.backend = new ElectronStorageBackend();
+      this.mode    = 'electron';
+      console.log('[StorageManager] mode=electron (IPC fs)');
+    } else if (window.__THINKTANK_MODE__ === 'local') {
       const apiUrl = window.__THINKTANK_LOCAL_API__ ?? 'http://localhost:8081';
       this.backend = new LocalStorageBackend(apiUrl);
       this.mode    = 'local';
@@ -58,5 +63,12 @@ export class StorageManager {
 
   public search(query: string): Promise<ThinkMeta[]> {
     return this.backend.search(query);
+  }
+
+  public syncFromServer(serverUrl = 'http://localhost:8080'): Promise<SyncResult> {
+    if (this.mode !== 'electron') {
+      return Promise.reject(new Error('[StorageManager] syncFromServer は Electron モードのみ利用可能'));
+    }
+    return (this.backend as ElectronStorageBackend).syncFromServer(serverUrl);
   }
 }

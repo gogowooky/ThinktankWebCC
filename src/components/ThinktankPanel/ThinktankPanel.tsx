@@ -9,6 +9,7 @@
 import { useCallback } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { StorageManager } from '../../services/storage/StorageManager';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
 import { ThinktankRibbon } from './ThinktankRibbon';
@@ -55,6 +56,16 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
     app.RefreshAll().catch(e => console.error('[ThinktankPanel] RefreshAll failed:', e));
   }, [app]);
 
+  const isElectron = StorageManager.instance.mode === 'electron';
+  const handleSync = useCallback(() => {
+    StorageManager.instance.syncFromServer()
+      .then(r => {
+        console.log(`[Sync] done: +${r.added} updated:${r.updated} skip:${r.skipped}`);
+        app.RefreshAll();
+      })
+      .catch(e => console.error('[Sync] failed:', e));
+  }, [app]);
+
   return (
     <div className="thinktank-panel">
       <ThinktankRibbon
@@ -63,6 +74,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
         viewMode={panel.ViewMode}
         onSetViewMode={handleSetViewMode}
         onRefresh={handleRefresh}
+        onSync={isElectron ? handleSync : undefined}
         vaultName={vault.VaultName}
       />
       <PanelArea

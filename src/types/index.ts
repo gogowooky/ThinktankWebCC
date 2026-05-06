@@ -18,12 +18,12 @@ export type AppMode = 'pwa' | 'local';
 /**
  * TTThink のコンテンツ種別（v5）
  * v4: memo/chat/pickup/link/table
- * v5: memo/thought/tables/links/chat/nettext
+ * v5: memo/thought/table/links/chat/nettext
  */
 export type ContentType =
   | 'memo'     // テキストメモ（markdown含む）
   | 'thought'  // Thinkの集合（ThinkIDリスト or Filter文字列を本文に持つ）
-  | 'tables'   // 複数テーブルを含むデータ（独自形式md）
+  | 'table'    // テーブルデータ（独自形式md）
   | 'links'    // URL/ローカルURI等へのリンク集
   | 'chat'     // AIとの対話記録
   | 'nettext'; // ネット等からダウンロードしたテキスト

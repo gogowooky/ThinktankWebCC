@@ -45,7 +45,12 @@ app.use('/api/chat', createChatRoutes());
 app.use(express.static(path.join(projectRoot, 'dist')));
 app.get(/.*/, (req, res) => {
   if (req.path.startsWith('/api/')) { res.status(404).json({ error: 'Not found' }); return; }
-  res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
+  const indexPath = path.join(projectRoot, 'dist', 'index.html');
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).send('<p>Dev mode: open <a href="http://localhost:5173">http://localhost:5173</a></p>');
+  }
 });
 
 async function start() {

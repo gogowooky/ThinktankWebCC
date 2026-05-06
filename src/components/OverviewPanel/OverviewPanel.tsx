@@ -29,6 +29,11 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   useAppUpdate(vault);
 
   const [showSettings, setShowSettings] = useState(false);
+  const [refreshKey,   setRefreshKey]   = useState(0);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshKey(k => k + 1);
+  }, []);
 
   const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
   const handleThoughtDrop = useCallback((id: string) => {
@@ -70,6 +75,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         onToggle={handleToggle}
         onMediaType={handleMediaType}
         onToggleSettings={handleToggleSettings}
+        onRefresh={handleRefresh}
         thoughtName={panel.ThoughtID ? (vault.GetThink(panel.ThoughtID)?.Name ?? panel.ThoughtID) : undefined}
         onThoughtDrop={handleThoughtDrop}
       />
@@ -78,7 +84,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         isOpen={panel.IsAreaOpen}
         width={Math.max(MIN_WIDTH, width)}
       >
-        <OverviewArea app={app} showSettings={showSettings} />
+        <OverviewArea app={app} showSettings={showSettings} refreshKey={refreshKey} />
       </PanelArea>
       {panel.IsAreaOpen && (
         <Splitter onResize={onResize} />

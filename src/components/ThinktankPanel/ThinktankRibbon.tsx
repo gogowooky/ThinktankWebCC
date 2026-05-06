@@ -7,7 +7,7 @@
  */
 
 import {
-  MessageCircle, Files, SearchCheck, Library, Settings, ListRestart,
+  MessageCircle, Files, SearchCheck, Library, Settings, ListRestart, RefreshCw,
 } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
@@ -19,6 +19,7 @@ interface Props {
   viewMode: ThinktankViewMode;
   onSetViewMode: (mode: ThinktankViewMode) => void;
   onRefresh: () => void;
+  onSync?: () => void;
   vaultName?: string;
 }
 
@@ -43,6 +44,7 @@ export function ThinktankRibbon({
   viewMode,
   onSetViewMode,
   onRefresh,
+  onSync,
   vaultName,
 }: Props) {
   return (
@@ -72,6 +74,16 @@ export function ThinktankRibbon({
       >
         <ListRestart size={16} />
       </button>
+      {onSync && (
+        <button
+          className="ribbon-icon-btn"
+          data-tip="BigQuery同期"
+          aria-label="BigQuery同期"
+          onClick={onSync}
+        >
+          <RefreshCw size={16} />
+        </button>
+      )}
       <button
         className={`ribbon-icon-btn${viewMode === 'settings' ? ' ribbon-icon-btn--active' : ''}`}
         data-tip="設定"

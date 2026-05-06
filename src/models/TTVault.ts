@@ -118,9 +118,9 @@ export class TTVault extends TTCollection {
           } else if (body.startsWith('更新日：')) {
             const [d, r] = body.slice(4).split(',').map(v => v.trim());
             filterUpdatedRange = computeDateRange(d, r);
-          } else if (body.includes('：')) {
-            // 他のパラメータ
-          } else {
+          } else if (body.startsWith('Keyword：')) {
+            filterKeyword = body.slice('Keyword：'.length).trim();
+          } else if (!body.includes('：')) {
             filterKeyword = body;
           }
         }
@@ -219,6 +219,8 @@ export class TTVault extends TTCollection {
           } else if (body.startsWith('更新日：')) {
             const [d, r] = body.slice(4).split(',').map(v => v.trim());
             filterUpdatedRange = computeDateRange(d, r);
+          } else if (body.startsWith('Keyword：')) {
+            filterKeyword = body.slice('Keyword：'.length).trim();
           } else if (!body.includes('：')) {
             filterKeyword = body;
           }
@@ -459,6 +461,34 @@ export class TTVault extends TTCollection {
       id:          newId,
       contentType: contentType,
       fullContent: initialName,
+      keywords:    '',
+      relatedIds:  '',
+    });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
+  /** links データ（URL/path リンク集）を作成して保存する */
+  public async CreateLinksThink(title: string, url: string): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId       = TTVault.generateUniqueId(existingIds);
+    const fullContent = `${title}\n* [${title}](${url})`;
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = 'links';
+    think.IsMetaOnly  = false;
+    think.setContentSilent(fullContent);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: 'links',
+      fullContent,
       keywords:    '',
       relatedIds:  '',
     });

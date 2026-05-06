@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { Save, Monitor, Globe, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight, Columns4, Columns2 } from 'lucide-react';
+import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight, Columns4, Columns2 } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
 import type { SyncState } from '../../types';
 import type { LayoutMode } from '../Layout/AppLayout';
@@ -137,8 +137,8 @@ export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayo
             <dt className="tt-settings-status__label">モード</dt>
             <dd className="tt-settings-status__value">
               <span className="tt-settings-status__badge tt-settings-status__badge--mode">
-                {mode === 'local' ? <Monitor size={12} /> : <Globe size={12} />}
-                {mode === 'local' ? 'Local' : 'PWA'}
+                {mode === 'electron' ? <Laptop size={12} /> : mode === 'local' ? <Monitor size={12} /> : <Globe size={12} />}
+                {mode === 'electron' ? 'Electron' : mode === 'local' ? 'Local' : 'PWA'}
               </span>
             </dd>
             <dt className="tt-settings-status__label">同期</dt>

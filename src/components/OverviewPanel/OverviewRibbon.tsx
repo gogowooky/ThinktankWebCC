@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { MessageCircle, Files, Microscope, Settings, type LucideIcon } from 'lucide-react';
+import { MessageCircle, Files, Microscope, Settings, ListRestart, type LucideIcon } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { MediaType } from '../../types';
 import './OverviewRibbon.css';
@@ -32,12 +32,13 @@ interface Props {
   onToggle:          () => void;
   onMediaType:       (type: MediaType) => void;
   onToggleSettings?: () => void;
+  onRefresh?:        () => void;
   thoughtName?:      string;
   onThoughtDrop?:    (id: string) => void;
 }
 
 export function OverviewRibbon({
-  isOpen, mediaType, showSettings, onToggle, onMediaType, onToggleSettings, thoughtName,
+  isOpen, mediaType, showSettings, onToggle, onMediaType, onToggleSettings, onRefresh, thoughtName,
   onThoughtDrop,
 }: Props) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -87,6 +88,14 @@ export function OverviewRibbon({
           <Icon size={16} />
         </button>
       ))}
+      <button
+        className="overview-ribbon__btn"
+        onClick={onRefresh}
+        data-tip="表示更新"
+        aria-label="表示更新"
+      >
+        <ListRestart size={16} />
+      </button>
       <button
         className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
         onClick={onToggleSettings}

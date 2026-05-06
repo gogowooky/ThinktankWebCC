@@ -11,13 +11,16 @@
   flex-shrink: 0;
   user-select: none;
   transition: background 120ms ease;
-  border-left: 3px solid transparent;
 }
 
-/* フォーカス中リボン */
+/* フォーカス中リボン: タイトル下線のみ（背景色変更なし）*/
 .workout-area-ribbon--focused {
-  background: color-mix(in srgb, var(--workout-ribbon-bg) 80%, #7aa2f7 20%);
-  border-left-color: #7aa2f7;
+}
+
+.workout-area-ribbon--focused .workout-area-ribbon__title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(255, 255, 255, 0.6);
 }
 
 /* アイテムD&Dドロップ受け入れ中 */

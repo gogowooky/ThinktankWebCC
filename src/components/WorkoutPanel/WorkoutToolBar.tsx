@@ -45,6 +45,15 @@ export function WorkoutToolBar({ panel }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (isExpanded) {
+      document.body.classList.add('toolbar-expanded');
+    } else {
+      document.body.classList.remove('toolbar-expanded');
+    }
+    return () => { document.body.classList.remove('toolbar-expanded'); };
+  }, [isExpanded]);
+
+  useEffect(() => {
     if (mode === 'highlight') setText(panel.EditorHighlightWord);
   }, [panel.EditorHighlightWord, mode]);
 

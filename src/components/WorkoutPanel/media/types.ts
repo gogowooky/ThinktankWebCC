@@ -15,6 +15,10 @@ export interface MediaProps {
   onSave:        (content: string) => void;
   /** エディタの変更状態が変わったときに呼ばれる */
   onDirtyChange: (dirty: boolean) => void;
+  /** 第一行目（タイトル行）が変更されたときに呼ばれる */
+  onTitleChange?: (title: string) => void;
+  /** 外部からコンテンツが変更されたときにエディタを再マウントするためのカウンター */
+  refreshKey?: number;
   /** TextEditor 用の設定 */
   editorSettings?: {
     lineNumbers: boolean;

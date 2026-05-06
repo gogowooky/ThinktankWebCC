@@ -12,7 +12,7 @@ import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { WorkoutAreaRibbon } from './WorkoutAreaRibbon';
+import { WorkoutAreaRibbon, extractLinkDrop } from './WorkoutAreaRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import { DataGridMedia }   from './media/DataGridMedia';
@@ -44,6 +44,8 @@ export function WorkoutArea({
   const [loadedResourceId, setLoadedResourceId] = useState<string | null>(null);
   const contentReady = loadedResourceId === area.ResourceID;
 
+  const panel = area._parent as import('../../views/TTWorkoutPanel').TTWorkoutPanel;
+
   useEffect(() => {
     area.IsDirty = isDirty;
   }, [area, isDirty]);
@@ -58,6 +60,45 @@ export function WorkoutArea({
     t.LoadContent().then(() => setLoadedResourceId(area.ResourceID));
   }, [area.ResourceID]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // タイトルへの URL/path D&D → 常に新規 links Think を作成して表示
+  const handleUrlDrop = useCallback(async (url: string, title: string) => {
+    const newThink = await vault.CreateLinksThink(title, url);
+    area.OpenThink(newThink.ID, 'texteditor', newThink.Name);
+  }, [vault, area]);
+
+  // コンテンツ領域への URL/path D&D（links ペインのみ）→ 追記
+  const [isContentLinkDrop, setIsContentLinkDrop] = useState(false);
+  const [contentRefreshKey, setContentRefreshKey] = useState(0);
+
+  // キャプチャフェーズで処理: links ペイン上の URL/path ドロップを Monaco より先に捕捉する
+  const handleContentDragOver = useCallback((e: React.DragEvent) => {
+    const current = vault.GetThink(area.ResourceID);
+    if (current?.ContentType !== 'links') return;
+    const types = e.dataTransfer.types;
+    if (!types.includes('text/uri-list') && !types.includes('Files') && !types.includes('text/plain')) return;
+    e.preventDefault();
+    e.stopPropagation(); // Monaco に渡さない
+    e.dataTransfer.dropEffect = 'copy';
+    setIsContentLinkDrop(true);
+  }, [vault, area.ResourceID]);
+
+  const handleContentDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsContentLinkDrop(false);
+  }, []);
+
+  const handleContentDrop = useCallback(async (e: React.DragEvent) => {
+    const current = vault.GetThink(area.ResourceID);
+    if (current?.ContentType !== 'links') return;
+    const link = extractLinkDrop(e);
+    if (!link) return;
+    e.preventDefault();
+    e.stopPropagation(); // TextEditorMedia / Monaco に渡さない
+    setIsContentLinkDrop(false);
+    current.Content = current.Content.trimEnd() + `\n\n* [${link.title}](${link.url})`;
+    await current.SaveContent();
+    setContentRefreshKey(k => k + 1);
+  }, [vault, area.ResourceID]);
+
   // タイトルへのD&Dで表示内容を差し替える
   const handleResourceDrop = useCallback((thinkId: string) => {
     const think = vault.GetThink(thinkId);
@@ -65,6 +106,7 @@ export function WorkoutArea({
     if (think) {
       switch (think.ContentType) {
         case 'thought': mediaType = 'datagrid'; break;
+        case 'table':   mediaType = 'datagrid'; break;
         case 'chat':    mediaType = 'chat';     break;
         default:        mediaType = 'texteditor'; break;
       }
@@ -78,19 +120,30 @@ export function WorkoutArea({
     const think = vault.GetThink(area.ResourceID);
     if (!think) return;
     think.Content = content;
-    // BigQuery へ保存し、updated_at をサーバーから受け取って DataGrid に反映する
+    // タイトル行が変わっていればペインタイトルも更新
+    if (area.Title !== think.Name) {
+      area.Title = think.Name;
+      panel.NotifyUpdated();
+    }
     think.SaveContent().then(() => {
       setIsDirty(false);
     }).catch(e => {
       console.error('[WorkoutArea] SaveContent failed:', e);
     });
-  }, [vault, area.ResourceID]);
+  }, [vault, area.ResourceID, area, panel]);
+
+  // リアルタイムタイトル同期（thought / table の第一行編集時）
+  const handleTitleChange = useCallback((title: string) => {
+    const think = vault.GetThink(area.ResourceID);
+    if (!think) return;
+    think.Name  = title;
+    area.Title  = title;
+    panel.NotifyUpdated();
+  }, [vault, area, panel]);
 
 
   // think データ取得
   const think = vault.GetThink(area.ResourceID) ?? null;
-
-  const panel = area._parent as import('../../views/TTWorkoutPanel').TTWorkoutPanel;
   useAppUpdate(panel);
 
   const editorSettings = useMemo(() => ({
@@ -124,7 +177,7 @@ export function WorkoutArea({
        panel?.EditorHighlightStyles, panel?.EditorBackground, panel?.EditorForeground,
        panel?.EditorHeadingStyles]);
 
-  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, editorSettings };
+  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
@@ -161,16 +214,23 @@ export function WorkoutArea({
     >
       <WorkoutAreaRibbon
         area={area}
+        contentType={think?.ContentType}
         isFocused={isFocused}
         isDirty={isDirty}
         onDragStart={handleDragStart}
         onMediaTypeChange={handleMediaChange}
         onClose={handleClose}
         onResourceDrop={handleResourceDrop}
+        onUrlDrop={handleUrlDrop}
       />
 
       {/* メディアコンテンツ */}
-      <div className="workout-area__content">
+      <div
+        className="workout-area__content"
+        onDragOverCapture={handleContentDragOver}
+        onDragLeaveCapture={handleContentDragLeave}
+        onDropCapture={handleContentDrop}
+      >
         {contentReady
           ? renderMedia()
           : <div className="workout-area__loading">読み込み中…</div>
@@ -181,6 +241,17 @@ export function WorkoutArea({
             position: 'absolute', inset: 0,
             zIndex: 10, pointerEvents: 'auto',
           }} />
+        )}
+        {/* links ペインへのリンク追記ドロップオーバーレイ */}
+        {isContentLinkDrop && (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
+            background: 'rgba(80, 200, 120, 0.15)',
+            border: '2px dashed rgba(80, 200, 120, 0.7)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ color: 'rgba(80,200,120,0.9)', fontSize: 12, fontWeight: 600 }}>リンクを追記</span>
+          </div>
         )}
       </div>
 
