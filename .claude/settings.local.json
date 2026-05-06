@@ -87,7 +87,17 @@
       "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); console.log\\('件数:', JSON.parse\\(d\\).length\\)\")",
       "Bash(curl -s \"http://localhost:8080/api/bq/files/meta\" -o /tmp/meta.json)",
       "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/tmp/meta.json','utf8'\\); console.log\\('件数:', JSON.parse\\(d\\).length\\)\")",
-      "Bash(node -e \"const l = require\\('C:/Users/gogow/Documents/ThinktankWebCC/node_modules/lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('chevrons'\\)\\).join\\('\\\\n'\\)\\)\")"
+      "Bash(node -e \"const l = require\\('C:/Users/gogow/Documents/ThinktankWebCC/node_modules/lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('chevrons'\\)\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(xargs grep *)",
+      "Bash(node -e \"const a = require\\('./node_modules/@anthropic-ai/sdk/dist/index.js'\\); console.log\\(Object.keys\\(a\\)\\)\")",
+      "Bash(cat C:\\\\\\\\Users\\\\\\\\gogow\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\\\\\a4c03b96-e53f-49e8-aa4c-acebc736054d\\\\\\\\tasks\\\\\\\\b4s9wf4ke.output)",
+      "PowerShell(Stop-Process -Id 23836, 14864 -Force -ErrorAction SilentlyContinue)",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\gogow\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\\\\\a4c03b96-e53f-49e8-aa4c-acebc736054d\\\\\\\\tasks\\\\\\\\b2ouqx9s2.output\")",
+      "Read(//c/Users/gogow/AppData/Roaming/**)",
+      "Read(//c/Users/gogow/AppData/Roaming/Electron/**)",
+      "Bash(node scripts/import-local-vault.cjs)",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\gogow\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\\\\\fc950bd0-1423-432f-a6a1-c237cab6b369\\\\\\\\tasks\\\\\\\\bca8tdxtc.output\")",
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\gogow\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\\\\\fc950bd0-1423-432f-a6a1-c237cab6b369\\\\\\\\tasks\\\\\\\\bngo2iezr.output\")"
     ]
   }
 }
