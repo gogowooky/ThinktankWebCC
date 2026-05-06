@@ -11,6 +11,11 @@
   background: var(--bg-primary);
 }
 
+/* ToolBar 拡大時: 各パネルがツールバーと重ならないよう高さを縮める */
+body.toolbar-expanded .app-layout {
+  height: calc(100vh - 28px);
+}
+
 /* ── 各パネルの共通スタイル ────────────────────────────── */
 
 .app-panel {
