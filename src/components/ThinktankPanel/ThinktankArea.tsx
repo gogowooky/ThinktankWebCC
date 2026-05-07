@@ -21,6 +21,8 @@ import { AiChatView } from './AiChatView';
 import type { AiChatViewRef } from './AiChatView';
 import type { ChatMessage } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
+import { semanticSearch } from '../../services/EmbeddingApiService';
+import type { SemanticSearchResult } from '../../services/EmbeddingApiService';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
@@ -90,6 +92,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
   const [searchLoading,  setSearchLoading]  = useState(false);
   const [searchSearched, setSearchSearched] = useState(false);
   const [searchHistory,  setSearchHistory]  = useState<string[]>([]);
+  // Phase 15: 検索モード切替
+  type SearchMode = 'fulltext' | 'semantic' | 'hybrid';
+  const [searchMode, setSearchMode] = useState<SearchMode>('fulltext');
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
@@ -294,6 +299,27 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
     setSearchHistory(prev => prev.includes(q) ? prev : [q, ...prev].slice(0, 20));
     setSearchLoading(true);
     try {
+      if (searchMode === 'semantic' || searchMode === 'hybrid') {
+        const results: SemanticSearchResult[] = await semanticSearch(q, 30, searchMode === 'hybrid');
+        const thinks = results.map(r => {
+          const existing = vault.GetThink(r.id);
+          if (existing) return existing;
+          const t = new TTThink();
+          t.ID          = r.id;
+          t.VaultID     = vault.ID;
+          t.ContentType = r.contentType as TTThink['ContentType'];
+          t.Keywords    = r.keywords;
+          t.RelatedIDs  = r.relatedIds;
+          t.IsMetaOnly  = true;
+          t.setContentSilent(r.title);
+          return t;
+        });
+        setSearchResults(thinks);
+        setSearchLoading(false);
+        setSearchSearched(true);
+        return;
+      }
+
       const metas = await StorageManager.instance.search(q);
       const thinks = metas.map(meta => {
         const existing = vault.GetThink(meta.id);
@@ -316,7 +342,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
       setSearchLoading(false);
       setSearchSearched(true);
     }
-  }, [searchQuery, vault]);
+  }, [searchQuery, searchMode, vault]);
 
   // ── モード別コンテンツ ───────────────────────────────────────────────────
 
@@ -352,6 +378,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         loading={searchLoading}
         searched={searchSearched}
         columns={columns}
+        searchMode={searchMode}
+        onSearchModeChange={setSearchMode}
         onOpen={handleSelect}
         onToggleCheck={handleToggleCheck}
       />

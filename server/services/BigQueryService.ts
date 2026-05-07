@@ -48,6 +48,9 @@ export class BigQueryService {
     }
   }
 
+  getBigQuery(): BigQuery | null { return this.bigquery; }
+  getProjectId(): string | undefined { return this.projectId; }
+
   private get tbl(): string {
     return `\`${this.projectId}.${DATASET_ID}.${TABLE_ID}\``;
   }

@@ -1,17 +1,20 @@
 /**
- * server/index.ts (v5)
+ * server/index.ts (v6)
  * Express サーバーエントリポイント
- * port 8080: BigQuery CRUD API + AI チャット API（Phase 14）
+ * port 8080: BigQuery CRUD API + AI チャット API + Embedding/セマンティック検索 API（Phase 15）
  */
 
 import express from 'express';
 import path    from 'path';
 import { fileURLToPath } from 'url';
-import { createBigQueryRoutes } from './routes/bigqueryRoutes.js';
-import { bigqueryService }      from './services/BigQueryService.js';
-import { createDriveRoutes }    from './routes/driveRoutes.js';
-import { driveService }         from './services/driveService.js';
-import { createChatRoutes }     from './routes/chatRoutes.js';
+import { createBigQueryRoutes }   from './routes/bigqueryRoutes.js';
+import { bigqueryService }        from './services/BigQueryService.js';
+import { createDriveRoutes }      from './routes/driveRoutes.js';
+import { driveService }           from './services/driveService.js';
+import { createChatRoutes }       from './routes/chatRoutes.js';
+import { createEmbeddingRoutes }  from './routes/embeddingRoutes.js';
+import { embeddingService }       from './services/EmbeddingService.js';
+import { vectorStoreService }     from './services/VectorStoreService.js';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
@@ -41,6 +44,9 @@ app.use('/api/drive', createDriveRoutes());
 // AI チャット（Phase 14）
 app.use('/api/chat', createChatRoutes());
 
+// Embedding / セマンティック検索（Phase 15）
+app.use('/api/embeddings', createEmbeddingRoutes());
+
 // 静的ファイル（本番ビルド）
 app.use(express.static(path.join(projectRoot, 'dist')));
 app.get(/.*/, (req, res) => {
@@ -56,14 +62,23 @@ app.get(/.*/, (req, res) => {
 async function start() {
   const key = process.env['GOOGLE_SERVICE_ACCOUNT_KEY'];
   if (key) {
-    const [bqOk, driveOk] = await Promise.all([
+    const [bqOk, driveOk, embOk] = await Promise.all([
       bigqueryService.initialize(),
       driveService.initialize(),
+      embeddingService.initialize(),
     ]);
-    console.log(bqOk    ? '[Server] BigQuery initialized'    : '[Server] BigQuery init failed');
-    console.log(driveOk ? '[Server] Drive initialized'       : '[Server] Drive init failed');
+    console.log(bqOk    ? '[Server] BigQuery initialized'     : '[Server] BigQuery init failed');
+    console.log(driveOk ? '[Server] Drive initialized'        : '[Server] Drive init failed');
+    console.log(embOk   ? '[Server] Embedding initialized'    : '[Server] Embedding init failed');
+
+    if (bqOk && embOk) {
+      const bq  = bigqueryService.getBigQuery()!;
+      const pid = bigqueryService.getProjectId()!;
+      await vectorStoreService.initialize(bq, pid);
+      console.log('[Server] VectorStore initialized');
+    }
   } else {
-    console.log('[Server] GOOGLE_SERVICE_ACCOUNT_KEY not set — BigQuery/Drive disabled');
+    console.log('[Server] GOOGLE_SERVICE_ACCOUNT_KEY not set — BigQuery/Drive/Embedding disabled');
   }
   app.listen(PORT, () => {
     console.log(`[Server] Listening on http://localhost:${PORT}`);

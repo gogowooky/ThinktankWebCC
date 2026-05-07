@@ -12,7 +12,7 @@
     "server:dev": "node --input-type=module -e \"import { readFileSync } from 'fs'; import { config } from 'dotenv'; config({ path: 'server/.env', override: true }); const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE; if (keyPath) process.env.GOOGLE_SERVICE_ACCOUNT_KEY = readFileSync(keyPath, 'utf8'); await import('./dist-server/index.js');\"",
     "start": "node dist-server/index.js",
     "preview": "vite preview",
-    "electron:dev": "concurrently -k -n vite,electron -c green,yellow \"cross-env ELECTRON_DEV=true vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
+    "electron:dev": "concurrently -k -n server,vite,electron -c blue,green,yellow \"npm run server:dev\" \"wait-on http://localhost:8080/api/health && cross-env ELECTRON_DEV=true vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
     "electron:build": "cross-env ELECTRON_BUILD=true tsc -p tsconfig.json && cross-env ELECTRON_BUILD=true vite build"
   },
   "dependencies": {

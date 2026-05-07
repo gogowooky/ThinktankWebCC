@@ -275,3 +275,27 @@
   color: var(--text-muted);
   line-height: 1.4;
 }
+
+/* Phase 15: Embedding セクション */
+.tt-settings-embed {
+  padding: 6px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tt-settings-embed__progress {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.tt-settings-embed__error {
+  color: #dc2626;
+}
+
+.tt-settings-embed__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
