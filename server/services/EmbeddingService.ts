@@ -12,20 +12,12 @@ const DIMENSIONS = 768;
 const MAX_CHARS  = 8000;
 
 // Gemini API (AI Studio) エンドポイント — 無料枠あり、API キーのみで利用可能
-const GEMINI_ENDPOINT = (model: string) =>
-  `https://generativelanguage.googleapis.com/v1/models/${model}:batchEmbedContents`;
+const GEMINI_SINGLE = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1/models/${model}:embedContent`;
 
 // Vertex AI エンドポイント — Vertex AI API の有効化が必要
 const VERTEX_ENDPOINT = (project: string, region: string, model: string) =>
   `https://${region}-aiplatform.googleapis.com/v1/projects/${project}/locations/${region}/publishers/google/models/${model}:predict`;
-
-interface GeminiEmbedRequest {
-  requests: Array<{ model: string; content: { parts: Array<{ text: string }> }; taskType?: string }>;
-}
-
-interface GeminiEmbedResponse {
-  embeddings: Array<{ values: number[] }>;
-}
 
 interface VertexEmbedResponse {
   predictions: Array<{ embeddings: { values: number[] } }>;
@@ -81,35 +73,33 @@ export class EmbeddingService {
     throw new Error('[EmbeddingService] Not initialized. Set GEMINI_API_KEY in server/.env');
   }
 
-  // ── Gemini API (batchEmbedContents) ──────────────────────────────────────
+  // ── Gemini API (embedContent を並列呼び出し) ─────────────────────────────
 
   private async embedGemini(texts: string[]): Promise<number[][]> {
-    const CHUNK = 100; // Gemini の batchEmbedContents 上限
-    const results: number[][] = [];
+    const CONCURRENCY = 10; // 同時リクエスト数
+    const results: number[][] = new Array(texts.length);
 
-    for (let offset = 0; offset < texts.length; offset += CHUNK) {
-      const chunk = texts.slice(offset, offset + CHUNK);
-      const body: GeminiEmbedRequest = {
-        requests: chunk.map(t => ({
-          model:    `models/${MODEL}`,
-          content:  { parts: [{ text: t.substring(0, MAX_CHARS) }] },
-          taskType: 'RETRIEVAL_DOCUMENT',
-        })),
-      };
-
-      const res = await fetch(`${GEMINI_ENDPOINT(MODEL)}?key=${this.geminiApiKey}`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`[EmbeddingService] Gemini API error ${res.status}: ${errText}`);
-      }
-
-      const data = await res.json() as GeminiEmbedResponse;
-      for (const emb of data.embeddings) results.push(emb.values);
+    for (let offset = 0; offset < texts.length; offset += CONCURRENCY) {
+      const chunk = texts.slice(offset, offset + CONCURRENCY);
+      const batch = await Promise.all(
+        chunk.map(async (t) => {
+          const res = await fetch(`${GEMINI_SINGLE(MODEL)}?key=${this.geminiApiKey}`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              content:  { parts: [{ text: t.substring(0, MAX_CHARS) }] },
+              taskType: 'RETRIEVAL_DOCUMENT',
+            }),
+          });
+          if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(`[EmbeddingService] Gemini API error ${res.status}: ${errText}`);
+          }
+          const data = await res.json() as { embedding: { values: number[] } };
+          return data.embedding.values;
+        }),
+      );
+      batch.forEach((vec, i) => { results[offset + i] = vec; });
     }
     return results;
   }
