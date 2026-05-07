@@ -21,7 +21,7 @@ export function createEmbeddingRoutes(): Router {
   router.get('/status', async (_req, res) => {
     try {
       const count = await vectorStoreService.count();
-      res.json({ count, model: 'text-embedding-004', dimensions: embeddingService.dimensions });
+      res.json({ count, model: embeddingService.modelName, dimensions: embeddingService.dimensions });
     } catch (e) {
       res.status(500).json({ error: String(e) });
     }

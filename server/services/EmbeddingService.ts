@@ -1,19 +1,19 @@
 /**
  * EmbeddingService.ts
- * Phase 15: Google Generative Language API (text-embedding-004) でテキストをベクトル化する。
- * 768次元。GEMINI_API_KEY 環境変数で認証。
+ * Phase 15: Google Generative Language API (gemini-embedding-001) でテキストをベクトル化する。
+ * 3072次元。GEMINI_API_KEY 環境変数で認証。
  * フォールバック: Vertex AI (GOOGLE_SERVICE_ACCOUNT_KEY) も対応。
  */
 
 import { GoogleAuth } from 'google-auth-library';
 
-const MODEL      = 'text-embedding-004';
-const DIMENSIONS = 768;
+const MODEL      = 'gemini-embedding-001';
+const DIMENSIONS = 3072;
 const MAX_CHARS  = 8000;
 
-// Gemini API (AI Studio) エンドポイント — 無料枠あり、API キーのみで利用可能
+// Gemini API (AI Studio) エンドポイント — text-embedding-004 は v1beta が必要
 const GEMINI_SINGLE = (model: string) =>
-  `https://generativelanguage.googleapis.com/v1/models/${model}:embedContent`;
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:embedContent`;
 
 // Vertex AI エンドポイント — Vertex AI API の有効化が必要
 const VERTEX_ENDPOINT = (project: string, region: string, model: string) =>
@@ -29,6 +29,7 @@ export class EmbeddingService {
   private vertexProjectId: string | undefined;
   private vertexRegion = 'us-central1';
   public readonly dimensions = DIMENSIONS;
+  public readonly modelName  = MODEL;
   private mode: 'gemini' | 'vertex' | 'none' = 'none';
 
   async initialize(): Promise<boolean> {
@@ -76,32 +77,43 @@ export class EmbeddingService {
   // ── Gemini API (embedContent を並列呼び出し) ─────────────────────────────
 
   private async embedGemini(texts: string[]): Promise<number[][]> {
-    const CONCURRENCY = 10; // 同時リクエスト数
+    const REQUEST_INTERVAL = 700; // リクエスト間隔 ms（≒85 RPM、課金後も安全圏）
     const results: number[][] = new Array(texts.length);
 
-    for (let offset = 0; offset < texts.length; offset += CONCURRENCY) {
-      const chunk = texts.slice(offset, offset + CONCURRENCY);
-      const batch = await Promise.all(
-        chunk.map(async (t) => {
-          const res = await fetch(`${GEMINI_SINGLE(MODEL)}?key=${this.geminiApiKey}`, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              content:  { parts: [{ text: t.substring(0, MAX_CHARS) }] },
-              taskType: 'RETRIEVAL_DOCUMENT',
-            }),
-          });
-          if (!res.ok) {
-            const errText = await res.text();
-            throw new Error(`[EmbeddingService] Gemini API error ${res.status}: ${errText}`);
-          }
-          const data = await res.json() as { embedding: { values: number[] } };
-          return data.embedding.values;
-        }),
-      );
-      batch.forEach((vec, i) => { results[offset + i] = vec; });
+    for (let i = 0; i < texts.length; i++) {
+      results[i] = await this.embedSingle(texts[i]);
+      if (i + 1 < texts.length) {
+        await new Promise(r => setTimeout(r, REQUEST_INTERVAL));
+      }
     }
     return results;
+  }
+
+  private async embedSingle(text: string, retries = 8): Promise<number[]> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const res = await fetch(`${GEMINI_SINGLE(MODEL)}?key=${this.geminiApiKey}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model:    `models/${MODEL}`,
+          content:  { parts: [{ text: text.substring(0, MAX_CHARS) }] },
+          taskType: 'RETRIEVAL_DOCUMENT',
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json() as { embedding: { values: number[] } };
+        return data.embedding.values;
+      }
+      if (res.status === 429 && attempt < retries) {
+        const wait = Math.min(2000 * 2 ** attempt, 60000); // 2s → 4s → 8s … 最大60s
+        console.warn(`[EmbeddingService] Rate limited (429). Retrying in ${wait}ms (attempt ${attempt + 1}/${retries})`);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
+      const errText = await res.text();
+      throw new Error(`[EmbeddingService] Gemini API error ${res.status}: ${errText}`);
+    }
+    throw new Error('[EmbeddingService] Max retries exceeded');
   }
 
   // ── Vertex AI ──────────────────────────────────────────────────────────

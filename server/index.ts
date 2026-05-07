@@ -60,29 +60,32 @@ app.get(/.*/, (req, res) => {
 });
 
 async function start() {
-  const key = process.env['GOOGLE_SERVICE_ACCOUNT_KEY'];
-  if (key) {
-    const [bqOk, driveOk, embOk] = await Promise.all([
-      bigqueryService.initialize(),
-      driveService.initialize(),
-      embeddingService.initialize(),
-    ]);
-    console.log(bqOk    ? '[Server] BigQuery initialized'     : '[Server] BigQuery init failed');
-    console.log(driveOk ? '[Server] Drive initialized'        : '[Server] Drive init failed');
-    console.log(embOk   ? '[Server] Embedding initialized'    : '[Server] Embedding init failed');
-
-    if (bqOk && embOk) {
-      const bq  = bigqueryService.getBigQuery()!;
-      const pid = bigqueryService.getProjectId()!;
-      await vectorStoreService.initialize(bq, pid);
-      console.log('[Server] VectorStore initialized');
-    }
-  } else {
-    console.log('[Server] GOOGLE_SERVICE_ACCOUNT_KEY not set — BigQuery/Drive/Embedding disabled');
-  }
+  // 先に listen してリクエストを受け付ける（初期化完了を待たない）
   app.listen(PORT, () => {
     console.log(`[Server] Listening on http://localhost:${PORT}`);
   });
+
+  const key = process.env['GOOGLE_SERVICE_ACCOUNT_KEY'];
+  if (!key) {
+    console.log('[Server] GOOGLE_SERVICE_ACCOUNT_KEY not set — BigQuery/Drive/Embedding disabled');
+    return;
+  }
+
+  const [bqOk, driveOk, embOk] = await Promise.all([
+    bigqueryService.initialize(),
+    driveService.initialize(),
+    embeddingService.initialize(),
+  ]);
+  console.log(bqOk    ? '[Server] BigQuery initialized'  : '[Server] BigQuery init failed');
+  console.log(driveOk ? '[Server] Drive initialized'     : '[Server] Drive init failed');
+  console.log(embOk   ? '[Server] Embedding initialized' : '[Server] Embedding init failed');
+
+  if (bqOk && embOk) {
+    const bq  = bigqueryService.getBigQuery()!;
+    const pid = bigqueryService.getProjectId()!;
+    await vectorStoreService.initialize(bq, pid);
+    console.log('[Server] VectorStore initialized');
+  }
 }
 
 start();

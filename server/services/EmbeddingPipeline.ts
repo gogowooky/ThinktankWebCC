@@ -58,20 +58,32 @@ export class EmbeddingPipeline {
     for (let i = 0; i < entries.length; i += BATCH_SIZE) {
       const chunk = entries.slice(i, i + BATCH_SIZE);
 
-      // content を取得しながら embedding テキストを組み立て
-      const texts = await Promise.all(
+      // content を取得しながら embedding テキストを組み立て（空コンテンツはスキップ）
+      const textsRaw = await Promise.all(
         chunk.map(async e => {
           const contentRes = await bigqueryService.getContent(e.file_id);
           const body = contentRes.success ? (contentRes.data ?? '') : '';
           return `${e.title ?? ''}\n${body}`.trim();
         }),
       );
+      const validIndices = textsRaw.map((t, i) => t.length > 0 ? i : -1).filter(i => i >= 0);
+      const skipped = chunk.length - validIndices.length;
+      if (skipped > 0) {
+        console.warn(`[EmbeddingPipeline] Skipping ${skipped} empty entries in chunk at offset ${i}`);
+        progress.processed += skipped; // 空エントリーは処理済み扱い
+      }
+      if (validIndices.length === 0) {
+        onProgress?.(progress);
+        continue;
+      }
+      const validChunk = validIndices.map(idx => chunk[idx]);
+      const texts      = validIndices.map(idx => textsRaw[idx]);
 
       try {
         const vectors = await embeddingService.embedBatch(texts);
-        const batch = chunk.map((e, idx) => ({ entryId: e.file_id, vector: vectors[idx] }));
+        const batch = validChunk.map((e, idx) => ({ entryId: e.file_id, vector: vectors[idx] }));
         await vectorStoreService.upsertBatch(batch);
-        progress.processed += chunk.length;
+        progress.processed += validChunk.length;
       } catch (err) {
         const msg = String(err);
         console.error(`[EmbeddingPipeline] Batch failed at offset ${i}:`, msg);

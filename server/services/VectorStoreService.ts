@@ -30,67 +30,87 @@ export class VectorStoreService {
     return `\`${this.projectId}.${DATASET_ID}.${TABLE_ID}\``;
   }
 
+  private readonly EXPECTED_SCHEMA = [
+    { name: 'entry_id',    type: 'STRING',    mode: 'REQUIRED' },
+    { name: 'embedding',   type: 'FLOAT64',   mode: 'REPEATED' },
+    { name: 'model_name',  type: 'STRING',    mode: 'NULLABLE' },
+    { name: 'created_at',  type: 'TIMESTAMP', mode: 'REQUIRED' },
+  ];
+
   private async ensureTableExists(): Promise<void> {
     if (!this.bigquery) return;
     const dataset = this.bigquery.dataset(DATASET_ID);
     const table   = dataset.table(TABLE_ID);
     const [exists] = await table.exists();
-    if (exists) return;
 
-    await dataset.createTable(TABLE_ID, {
-      schema: [
-        { name: 'entry_id',    type: 'STRING',    mode: 'REQUIRED' },
-        { name: 'embedding',   type: 'FLOAT64',   mode: 'REPEATED' },
-        { name: 'model_name',  type: 'STRING',    mode: 'NULLABLE' },
-        { name: 'created_at',  type: 'TIMESTAMP', mode: 'REQUIRED' },
-      ],
-    });
+    if (exists) {
+      const [meta] = await table.getMetadata() as unknown as [{ schema?: { fields?: Array<{ name: string; mode?: string }> } }];
+      const fields = meta.schema?.fields ?? [];
+      const expectedNames = new Set(this.EXPECTED_SCHEMA.map(f => f.name));
+      // 期待外の REQUIRED フィールドがある場合は旧スキーマと判定して再作成
+      const hasExtraRequired = fields.some(f => f.mode === 'REQUIRED' && !expectedNames.has(f.name));
+      const hasEmbedding     = fields.some(f => f.name === 'embedding');
+      if (hasEmbedding && !hasExtraRequired) return;
+
+      console.warn(`[VectorStoreService] Incompatible schema detected. Dropping and recreating ${DATASET_ID}.${TABLE_ID}`);
+      await table.delete();
+    }
+
+    await dataset.createTable(TABLE_ID, { schema: this.EXPECTED_SCHEMA });
     console.log(`[VectorStoreService] Created table ${DATASET_ID}.${TABLE_ID}`);
   }
 
-  async upsert(entryId: string, vector: number[], modelName = 'text-embedding-004'): Promise<void> {
+  async upsert(entryId: string, vector: number[], modelName = 'gemini-embedding-001'): Promise<void> {
     if (!this.bigquery) throw new Error('[VectorStoreService] Not initialized');
-
-    // DELETE + INSERT で upsert（BigQuery は行レベルの MERGE が重いため）
-    const deleteQuery = `DELETE FROM ${this.tbl} WHERE entry_id = @entryId`;
-    await this.bigquery.query({ query: deleteQuery, params: { entryId } });
-
     const row = {
       entry_id:   entryId,
       embedding:  vector,
       model_name: modelName,
-      created_at: new Date().toISOString(),
+      created_at: new Date(),
     };
-    await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).insert([row]);
+    await this.insertRows([row]);
   }
 
   async upsertBatch(
     entries: Array<{ entryId: string; vector: number[] }>,
-    modelName = 'text-embedding-004',
+    modelName = 'gemini-embedding-001',
   ): Promise<void> {
     if (!this.bigquery || entries.length === 0) return;
-
-    const ids = entries.map(e => e.entryId);
-
-    // 既存行を一括削除
-    const inList = ids.map((_, i) => `@id${i}`).join(',');
-    const params: Record<string, string> = {};
-    ids.forEach((id, i) => { params[`id${i}`] = id; });
-    await this.bigquery.query({
-      query: `DELETE FROM ${this.tbl} WHERE entry_id IN (${inList})`,
-      params,
-    });
 
     const rows = entries.map(e => ({
       entry_id:   e.entryId,
       embedding:  e.vector,
       model_name: modelName,
-      created_at: new Date().toISOString(),
+      created_at: new Date(),
     }));
 
-    // BigQuery insert は 1 万行が上限なので 5000 件ずつに分割
-    for (let i = 0; i < rows.length; i += 5000) {
-      await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).insert(rows.slice(i, i + 5000));
+    for (let i = 0; i < rows.length; i += 500) {
+      await this.insertRows(rows.slice(i, i + 500));
+    }
+  }
+
+  private async insertRows(rows: Array<Record<string, unknown>>): Promise<void> {
+    if (!this.bigquery) return;
+    // BigQuery v8: raw モードで insertId を明示指定しないと "Missing required field: id" になる
+    const rawRows = rows.map((row, i) => ({
+      insertId: `${String(row['entry_id'])}-${Date.now()}-${i}`,
+      json: row,
+    }));
+    try {
+      await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).insert(rawRows, { raw: true });
+    } catch (err: unknown) {
+      const pfe = err as { name?: string; errors?: Array<{ errors?: Array<{ reason?: string; location?: string; message?: string }>; row?: Record<string, unknown> }> };
+      if (pfe.name === 'PartialFailureError' && Array.isArray(pfe.errors)) {
+        const details = pfe.errors.slice(0, 5).map(e => ({
+          reason:   e.errors?.[0]?.reason,
+          location: e.errors?.[0]?.location,
+          message:  e.errors?.[0]?.message,
+          entryId:  e.row?.['entry_id'],
+        }));
+        console.error('[VectorStoreService] PartialFailureError details:', JSON.stringify(details));
+        throw new Error(`PartialFailureError: ${JSON.stringify(details)}`);
+      }
+      throw err;
     }
   }
 
