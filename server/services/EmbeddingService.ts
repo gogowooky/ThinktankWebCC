@@ -13,7 +13,7 @@ const MAX_CHARS  = 8000;
 
 // Gemini API (AI Studio) エンドポイント — 無料枠あり、API キーのみで利用可能
 const GEMINI_ENDPOINT = (model: string) =>
-  `https://generativelanguage.googleapis.com/v1beta/models/${model}:batchEmbedContents`;
+  `https://generativelanguage.googleapis.com/v1/models/${model}:batchEmbedContents`;
 
 // Vertex AI エンドポイント — Vertex AI API の有効化が必要
 const VERTEX_ENDPOINT = (project: string, region: string, model: string) =>
