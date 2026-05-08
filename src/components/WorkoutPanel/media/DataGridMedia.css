@@ -54,7 +54,7 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   flex-shrink: 0;
   font-weight: 600;
-  color: rgba(0, 0, 0, 0.5);
+  color: #333;
   font-size: 11px;
 }
 
@@ -125,7 +125,7 @@
 .datagrid-media__cell--type {
   width: 68px;
   flex-shrink: 0;
-  color: rgba(0, 0, 0, 0.5);
+  color: #555;
   font-size: 11px;
 }
 
@@ -133,12 +133,13 @@
   flex: 1;
   min-width: 0;
   font-size: 12px;
+  color: #111;
 }
 
 .datagrid-media__cell--date {
   width: 72px;
   flex-shrink: 0;
-  color: rgba(0, 0, 0, 0.4);
+  color: #555;
   font-size: 11px;
   justify-content: flex-end;
 }
@@ -256,7 +257,7 @@
   align-items: center;
   font-weight: 600;
   font-size: 11px;
-  color: rgba(0,0,0,0.55);
+  color: #333;
 }
 
 /* 行番号列 */
@@ -266,7 +267,7 @@
   text-align: right;
   padding: 0 6px 0 4px;
   font-size: 10px;
-  color: rgba(0,0,0,0.3);
+  color: #777;
   border-right: 1px solid rgba(0,0,0,0.08);
   user-select: none;
 }
@@ -317,6 +318,7 @@
   display: flex;
   align-items: center;
   font-size: 12px;
+  color: #111;
 }
 
 /* 空状態（データなし） */
@@ -437,4 +439,17 @@
 .table-grid__add-row-btn:hover {
   background: rgba(0,0,0,0.07);
   color: rgba(0,0,0,0.8);
+}
+
+/* ── ハイライト ───────────────────────────────────────── */
+.custom-highlight-g1 { background-color: #ffff00; color: #000000; border-radius: 2px; }
+.custom-highlight-g2 { background-color: #ff0000; color: #ffffff; border-radius: 2px; }
+.custom-highlight-g3 { background-color: #0000ff; color: #ffffff; border-radius: 2px; }
+.custom-highlight-g4 { background-color: #008000; color: #ffffff; border-radius: 2px; }
+.custom-highlight-g5 { background-color: #800080; color: #ffffff; border-radius: 2px; }
+
+/* インラインハイライト用（DataGrid内のテキスト用） */
+.datagrid-highlight {
+  padding: 0 1px;
+  margin: 0 -1px;
 }
