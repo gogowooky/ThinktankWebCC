@@ -13,6 +13,8 @@
   background: rgba(0, 0, 0, 0.04); /* 極薄いグレーで境界のみ作る */
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   position: relative;
+  overflow: visible;
+  z-index: 10;
 }
 
 .unified-filter-row-left {

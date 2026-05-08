@@ -100,7 +100,8 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
                   className={`ov-settings-save-btn${saved ? ' ov-settings-save-btn--saved' : ''}`}
                   onClick={handleSaveTitle}
                   disabled={saving || !titleValue.trim()}
-                  title="保存"
+                  data-tip="保存"
+                  data-tip-side="left"
                   aria-label="保存"
                 >
                   <Save size={12} />
@@ -108,7 +109,8 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
                 <button
                   className="ov-settings-clear-btn"
                   onClick={onClear}
-                  title="Thoughtをクリア"
+                  data-tip="Thoughtをクリア"
+                  data-tip-side="left"
                   aria-label="Thoughtをクリア"
                 >
                   <X size={12} />

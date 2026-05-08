@@ -6,9 +6,11 @@
   flex: 1;
   min-height: 0;
   background: var(--workout-ribbon-bg, #2a2a2a);
-  overflow: hidden;
+  overflow: visible;
   min-width: 120px;
   max-width: 400px;
+  position: relative;
+  z-index: 50;
 }
 
 /* ── ヘッダー ────────────────────────────────────────── */
@@ -31,7 +33,7 @@
 .workout-setting-panel__body {
   flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible;
   padding: 8px 0;
 }
 
@@ -41,6 +43,11 @@
   flex-direction: column;
   gap: 2px;
   padding: 0 8px;
+  position: relative;
+}
+
+.workout-setting-panel__section:hover {
+  z-index: 100;
 }
 
 .workout-setting-panel__section-label {
@@ -91,9 +98,10 @@
 .workout-setting-panel__btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 0 8px;
+  gap: 8px;
+  padding: 0 10px;
   height: 28px;
+  width: 100%;
   font-size: 11px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.65);
@@ -101,6 +109,12 @@
   transition: background 100ms ease, color 100ms ease;
   cursor: pointer;
   white-space: nowrap;
+  text-align: left;
+}
+
+.workout-setting-panel__btn .lucide {
+  flex-shrink: 0;
+  width: 14px;
 }
 
 .workout-setting-panel__btn:hover:not(:disabled) {

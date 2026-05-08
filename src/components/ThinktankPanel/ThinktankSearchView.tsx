@@ -49,7 +49,7 @@ export function ThinktankSearchView({
             key={mode}
             className={`tt-search-view__mode-btn${searchMode === mode ? ' tt-search-view__mode-btn--active' : ''}`}
             onClick={() => onSearchModeChange(mode)}
-            title={mode === 'semantic' ? 'Vertex AI text-embedding-004 によるセマンティック検索' : mode === 'hybrid' ? 'AI意味 + 全文のハイブリッド検索' : '通常のキーワード全文検索'}
+            data-tip={mode === 'semantic' ? 'Vertex AI text-embedding-004 によるセマンティック検索' : mode === 'hybrid' ? 'AI意味 + 全文のハイブリッド検索' : '通常のキーワード全文検索'}
           >
             {SEARCH_MODE_LABELS[mode]}
           </button>

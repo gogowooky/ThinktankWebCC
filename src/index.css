@@ -77,3 +77,82 @@ a {
 ::-webkit-scrollbar-track { background: var(--bg-secondary); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── カスタムツールチップ ─────────────────────────────────── */
+/* [data-tip] を持つ要素に対して暗い色のツールチップを表示する */
+
+[data-tip] {
+  position: relative;
+}
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  /* デフォルトは上表示 */
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  
+  background: rgba(15, 15, 20, 0.95);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  font-family: system-ui, sans-serif;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 20000;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  pointer-events: none;
+  text-align: center;
+}
+
+/* ホバーされている要素自体も前面に */
+[data-tip]:hover {
+  z-index: 20001;
+}
+
+[data-tip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 表示位置の制御 [data-tip-side] */
+[data-tip-side="right"]::after {
+  bottom: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(50%);
+}
+
+[data-tip-side="left"]::after {
+  bottom: 50%;
+  right: calc(100% + 8px);
+  left: auto;
+  transform: translateY(50%);
+}
+
+[data-tip-side="bottom"]::after {
+  top: calc(100% + 8px);
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* 無効なボタンでもツールチップを表示するためのラッパー用 */
+.tooltip-wrapper {
+  display: inline-flex;
+  position: relative;
+}
+
+/* SettingPanel内など、100%幅が必要な場所用 */
+.workout-setting-panel__section-content .tooltip-wrapper {
+  display: flex;
+  width: 100%;
+}
+.workout-setting-panel__section-content .tooltip-wrapper > button {
+  width: 100%;
+}

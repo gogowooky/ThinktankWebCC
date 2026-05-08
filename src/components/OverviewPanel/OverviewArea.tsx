@@ -348,7 +348,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
           <button
             className="overview-area__strip-clear-btn"
             onClick={(e) => { e.stopPropagation(); panel.ClearThought(); }}
-            title="選択解除"
+            data-tip="選択解除"
+            data-tip-side="bottom"
           >
             <X size={12} />
           </button>

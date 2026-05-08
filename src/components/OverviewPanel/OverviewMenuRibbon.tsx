@@ -80,14 +80,15 @@ export function OverviewMenuRibbon({
         >
           <MonitorDown size={14} />
         </button>
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onSaveChat}
-          data-tip="Chatを保管庫に保存"
-          disabled={!canSaveChat}
-        >
-          <Save size={14} />
-        </button>
+        <div className="tooltip-wrapper" data-tip="Chatを保管庫に保存" data-tip-side="left">
+          <button
+            className="menu-ribbon__btn menu-ribbon__btn--icon"
+            onClick={onSaveChat}
+            disabled={!canSaveChat}
+          >
+            <Save size={14} />
+          </button>
+        </div>
       </div>
     );
   }
@@ -95,31 +96,34 @@ export function OverviewMenuRibbon({
   return (
     <div className="menu-ribbon overview-menu-ribbon">
 
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${allChecked ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={handleToggleAll}
-        data-tip={allChecked ? '全チェックをクリア' : '表示中を全てチェック'}
-        disabled={visibleIds.length === 0}
-      >
-        {allChecked ? <CheckSquare size={14} /> : <Square size={14} />}
-      </button>
+      <div className="tooltip-wrapper" data-tip={allChecked ? '全チェックをクリア' : '表示中を全てチェック'} data-tip-side="right">
+        <button
+          className={`menu-ribbon__btn menu-ribbon__btn--icon${allChecked ? ' menu-ribbon__btn--active' : ''}`}
+          onClick={handleToggleAll}
+          disabled={visibleIds.length === 0}
+        >
+          {allChecked ? <CheckSquare size={14} /> : <Square size={14} />}
+        </button>
+      </div>
 
       <button
         className={`menu-ribbon__btn menu-ribbon__btn--icon${allVaultChecked ? ' menu-ribbon__btn--active' : ''}`}
         onClick={onToggleAllVault}
         data-tip={allVaultChecked ? '全チェックをクリア' : '全アイテムをチェック（非表示含む）'}
+        data-tip-side="right"
       >
         {allVaultChecked ? <ListChecks size={14} /> : <List size={14} />}
       </button>
 
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${showCheckedOnly ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={onToggleCheckedOnly}
-        data-tip="チェック済みアイテムのみ表示"
-        disabled={!hasChecked && !showCheckedOnly}
-      >
-        <ListCheck size={14} />
-      </button>
+      <div className="tooltip-wrapper" data-tip="チェック済みアイテムのみ表示">
+        <button
+          className={`menu-ribbon__btn menu-ribbon__btn--icon${showCheckedOnly ? ' menu-ribbon__btn--active' : ''}`}
+          onClick={onToggleCheckedOnly}
+          disabled={!hasChecked && !showCheckedOnly}
+        >
+          <ListCheck size={14} />
+        </button>
+      </div>
 
       <button
         className={`menu-ribbon__btn menu-ribbon__btn--icon${showDateFilter ? ' menu-ribbon__btn--active' : ''}`}
@@ -137,23 +141,25 @@ export function OverviewMenuRibbon({
         <ArrowDownAZ size={14} />
       </button>
 
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--icon"
-        onClick={onCreateThought}
-        data-tip="チェックアイテムからthoughtを作成"
-        disabled={!hasChecked}
-      >
-        <LibrarySquare size={14} />
-      </button>
+      <div className="tooltip-wrapper" data-tip="チェックアイテムからthoughtを作成">
+        <button
+          className="menu-ribbon__btn menu-ribbon__btn--icon"
+          onClick={onCreateThought}
+          disabled={!hasChecked}
+        >
+          <LibrarySquare size={14} />
+        </button>
+      </div>
 
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--icon overview-ribbon__btn--danger"
-        onClick={onExcludeChecked}
-        data-tip="チェック中のアイテムをThoughtから除外"
-        disabled={!hasChecked}
-      >
-        <ListX size={14} />
-      </button>
+      <div className="tooltip-wrapper" data-tip="チェック中のアイテムをThoughtから除外" data-tip-side="left">
+        <button
+          className="menu-ribbon__btn menu-ribbon__btn--icon overview-ribbon__btn--danger"
+          onClick={onExcludeChecked}
+          disabled={!hasChecked}
+        >
+          <ListX size={14} />
+        </button>
+      </div>
 
       <div className="menu-ribbon__spacer" />
 

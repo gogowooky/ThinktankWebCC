@@ -189,13 +189,14 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
       <div
         className="workout-area-ribbon__drag"
         onMouseDown={onDragStart}
-        title="ドラッグして移動"
+        data-tip="ドラッグして移動"
+        data-tip-side="bottom"
       >
         {(() => { const Icon = CONTENT_TYPE_ICONS[contentType ?? ''] ?? FileText; return <Icon size={13} />; })()}
       </div>
 
       {/* タイトル（未保存変更があれば ● を表示）*/}
-      <span className="workout-area-ribbon__title" title={area.Title}>
+      <span className="workout-area-ribbon__title" data-tip={area.Title} data-tip-side="bottom">
         {isDirty && <span className="workout-area-ribbon__dirty">●</span>}
         {area.Title || '（無題）'}
       </span>
@@ -207,7 +208,8 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
             key={type}
             className={`workout-area-ribbon__media-btn${area.MediaType === type ? ' workout-area-ribbon__media-btn--active' : ''}`}
             onClick={() => onMediaTypeChange(type)}
-            title={title}
+            data-tip={title}
+            data-tip-side="bottom"
           >
             <Icon size={12} />
           </button>
@@ -218,7 +220,8 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
       <button
         className="workout-area-ribbon__close"
         onClick={onClose}
-        title="閉じる"
+        data-tip="閉じる"
+        data-tip-side="bottom"
       >
         <X size={12} />
       </button>

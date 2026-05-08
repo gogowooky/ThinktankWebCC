@@ -222,20 +222,22 @@ export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayo
               <button
                 className="tt-settings-save-btn"
                 onClick={handleLoadEmbedStatus}
-                title="件数を確認"
+                data-tip="件数を確認"
+                data-tip-side="left"
               >
                 <RefreshCw size={13} />
                 <span>件数確認</span>
               </button>
-              <button
-                className="tt-settings-save-btn"
-                onClick={handleBatchEmbed}
-                disabled={embedRunning}
-                title="未登録エントリーを一括ベクトル化"
-              >
-                <Brain size={13} />
-                <span>{embedRunning ? '処理中…' : '一括生成'}</span>
-              </button>
+              <div className="tooltip-wrapper" data-tip="未登録エントリーを一括ベクトル化" data-tip-side="left">
+                <button
+                  className="tt-settings-save-btn"
+                  onClick={handleBatchEmbed}
+                  disabled={embedRunning}
+                >
+                  <Brain size={13} />
+                  <span>{embedRunning ? '処理中…' : '一括生成'}</span>
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -270,7 +272,8 @@ export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayo
               <button
                 className={`tt-settings-save-btn${saved ? ' tt-settings-save-btn--saved' : ''}`}
                 onClick={handleSave}
-                title="保存"
+                data-tip="保存"
+                data-tip-side="left"
                 aria-label="保存"
               >
                 <Save size={13} />

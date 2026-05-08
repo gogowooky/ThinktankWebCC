@@ -83,7 +83,7 @@ export function WorkoutRibbon({ activeSettings, thinkTitle, onToggle, onSetActiv
 
       {/* 下部: Think タイトル（縦書き）*/}
       {thinkTitle && (
-        <div className="workout-ribbon__label-wrap" title={thinkTitle}>
+        <div className="workout-ribbon__label-wrap" data-tip={thinkTitle} data-tip-side="right">
           <span className="workout-ribbon__label">{thinkTitle}</span>
         </div>
       )}

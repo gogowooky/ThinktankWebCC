@@ -45,40 +45,9 @@
   outline-offset: -2px;
 }
 
-/* ── カスタムツールチップ（title 属性から自動生成）── */
-
+/* ── カスタムツールチップ（global に移行済み） ── */
 .panel-ribbon button[data-tip]:not([data-tip='']) {
-  position: relative;
-}
-
-.panel-ribbon button[data-tip]:not([data-tip=''])::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: calc(100% + 14px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(15, 15, 20, 0.88);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 400;
-  font-family: system-ui, sans-serif;
-  white-space: nowrap;
-  padding: 3px 7px;
-  border-radius: 4px;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 9999;
-  transition: opacity 0.12s ease;
-}
-
-.panel-ribbon button[data-tip]:not([data-tip='']):hover::after {
-  opacity: 1;
-}
-
-/* 右側パネル（ReThink）: ツールチップを左に */
-.panel-ribbon[data-side="right"] button[data-tip]:not([data-tip=''])::after {
-  left: auto;
-  right: calc(100% + 14px);
+  /* index.css の定義を利用 */
 }
 
 /* ── 内部要素 ─────────────────────────────────────────── */
@@ -130,7 +99,7 @@
   height: 33.333%;
   width: 100%;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   box-sizing: border-box;
 }
 

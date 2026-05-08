@@ -68,17 +68,17 @@ function getTypeIcon(contentType: string) {
 function renderCell(col: ColumnConfig, thought: TTThink): ReactNode {
   switch (col.field) {
     case 'Name':
-      return <span key="Name" className="thoughts-list__title" title={thought.Name}>{thought.Name || '（無題）'}</span>;
+      return <span key="Name" className="thoughts-list__title" data-tip={thought.Name} data-tip-side="left">{thought.Name || '（無題）'}</span>;
     case 'ID':
-      return <span key="ID" className="thoughts-list__date" title="作成日(ID)">{thought.ID.slice(0, 10)}</span>;
+      return <span key="ID" className="thoughts-list__date" data-tip="作成日(ID)" data-tip-side="left">{thought.ID.slice(0, 10)}</span>;
     case 'UpdatedAt':
-      return <span key="UpdatedAt" className="thoughts-list__date thoughts-list__date--updated" title="更新日">{thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}</span>;
+      return <span key="UpdatedAt" className="thoughts-list__date thoughts-list__date--updated" data-tip="更新日" data-tip-side="left">{thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}</span>;
     case 'ContentType':
-      return <span key="ContentType" className="thoughts-list__cell thoughts-list__cell--sm" title="種別">{thought.ContentType}</span>;
+      return <span key="ContentType" className="thoughts-list__cell thoughts-list__cell--sm" data-tip="種別" data-tip-side="left">{thought.ContentType}</span>;
     case 'Keywords':
-      return <span key="Keywords" className="thoughts-list__cell thoughts-list__cell--md" title={thought.Keywords}>{thought.Keywords}</span>;
+      return <span key="Keywords" className="thoughts-list__cell thoughts-list__cell--md" data-tip={thought.Keywords} data-tip-side="left">{thought.Keywords}</span>;
     case 'RelatedIDs':
-      return <span key="RelatedIDs" className="thoughts-list__cell thoughts-list__cell--md" title={thought.RelatedIDs}>{thought.RelatedIDs}</span>;
+      return <span key="RelatedIDs" className="thoughts-list__cell thoughts-list__cell--md" data-tip={thought.RelatedIDs} data-tip-side="left">{thought.RelatedIDs}</span>;
     default:
       return null;
   }

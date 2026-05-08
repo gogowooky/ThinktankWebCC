@@ -85,14 +85,15 @@ export const UnifiedFilterPanel = React.memo(({
             </div>
           </div>
           <div className="unified-filter-row-right">
-            <button 
-              className="unified-filter-btn unified-filter-btn--clear"
-              onClick={() => onTextChange('')}
-              title="消去"
-              disabled={!textValue}
-            >
-              <X size={12} />
-            </button>
+            <div className="tooltip-wrapper" data-tip="消去" data-tip-side="left">
+              <button 
+                className="unified-filter-btn unified-filter-btn--clear"
+                onClick={() => onTextChange('')}
+                disabled={!textValue}
+              >
+                <X size={12} />
+              </button>
+            </div>
             {totalCount !== undefined && (
               <span className="unified-filter-count">
                 {visibleCount ?? totalCount}/{totalCount}
@@ -121,18 +122,20 @@ export const UnifiedFilterPanel = React.memo(({
                 value={createdRange}
                 onChange={e => onCreatedRangeChange(e.target.value)}
                 placeholder="+Nd / @N"
-                title="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+                data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+                data-tip-side="left"
               />
             </div>
             <div className="unified-filter-row-right">
-              <button 
-                className="unified-filter-btn unified-filter-btn--clear"
-                onClick={() => { onCreatedDateChange(''); onCreatedRangeChange(''); }}
-                title="条件をクリア"
-                disabled={!createdDate && !createdRange}
-              >
-                <X size={12} />
-              </button>
+              <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">
+                <button 
+                  className="unified-filter-btn unified-filter-btn--clear"
+                  onClick={() => { onCreatedDateChange(''); onCreatedRangeChange(''); }}
+                  disabled={!createdDate && !createdRange}
+                >
+                  <X size={12} />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -153,18 +156,20 @@ export const UnifiedFilterPanel = React.memo(({
                 value={updatedRange}
                 onChange={e => onUpdatedRangeChange(e.target.value)}
                 placeholder="+Nd / @N"
-                title="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+                data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+                data-tip-side="left"
               />
             </div>
             <div className="unified-filter-row-right">
-              <button 
-                className="unified-filter-btn unified-filter-btn--clear"
-                onClick={() => { onUpdatedDateChange(''); onUpdatedRangeChange(''); }}
-                title="条件をクリア"
-                disabled={!updatedDate && !updatedRange}
-              >
-                <X size={12} />
-              </button>
+              <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">
+                <button 
+                  className="unified-filter-btn unified-filter-btn--clear"
+                  onClick={() => { onUpdatedDateChange(''); onUpdatedRangeChange(''); }}
+                  disabled={!updatedDate && !updatedRange}
+                >
+                  <X size={12} />
+                </button>
+              </div>
             </div>
           </div>
         </>

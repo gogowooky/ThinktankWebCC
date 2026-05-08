@@ -75,14 +75,15 @@ export function ThinktankMenuRibbon({
         >
           <MonitorDown size={14} />
         </button>
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onSaveChat}
-          data-tip="Chatを保管庫に保存"
-          disabled={!canSaveChat}
-        >
-          <Save size={14} />
-        </button>
+        <div className="tooltip-wrapper" data-tip="Chatを保管庫に保存" data-tip-side="left">
+          <button
+            className="menu-ribbon__btn menu-ribbon__btn--icon"
+            onClick={onSaveChat}
+            disabled={!canSaveChat}
+          >
+            <Save size={14} />
+          </button>
+        </div>
       </div>
     );
   }
@@ -92,33 +93,36 @@ export function ThinktankMenuRibbon({
     <div className="menu-ribbon thinktank-menu-ribbon">
 
       {/* CheckToggle: 表示中を全選択 / 全クリア */}
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${allChecked ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={handleToggleAll}
-        data-tip={allChecked ? '全チェックをクリア' : '表示中を全てチェック'}
-        disabled={visibleIds.length === 0}
-      >
-        {allChecked ? <CheckSquare size={14} /> : <Square size={14} />}
-      </button>
+      <div className="tooltip-wrapper" data-tip={allChecked ? '全チェックをクリア' : '表示中を全てチェック'} data-tip-side="right">
+        <button
+          className={`menu-ribbon__btn menu-ribbon__btn--icon${allChecked ? ' menu-ribbon__btn--active' : ''}`}
+          onClick={handleToggleAll}
+          disabled={visibleIds.length === 0}
+        >
+          {allChecked ? <CheckSquare size={14} /> : <Square size={14} />}
+        </button>
+      </div>
 
       {/* AllVaultCheck: 表示・非表示にかかわらず全アイテムをチェック */}
       <button
         className={`menu-ribbon__btn menu-ribbon__btn--icon${allVaultChecked ? ' menu-ribbon__btn--active' : ''}`}
         onClick={onToggleAllVault}
         data-tip={allVaultChecked ? '全チェックをクリア' : '全アイテムをチェック（非表示含む）'}
+        data-tip-side="right"
       >
         {allVaultChecked ? <ListChecks size={14} /> : <List size={14} />}
       </button>
 
       {/* CheckSelect: チェックのみ表示 */}
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${showCheckedOnly ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={onToggleCheckedOnly}
-        data-tip="チェック済みアイテムのみ表示"
-        disabled={!hasChecked && !showCheckedOnly}
-      >
-        <ListCheck size={14} />
-      </button>
+      <div className="tooltip-wrapper" data-tip="チェック済みアイテムのみ表示">
+        <button
+          className={`menu-ribbon__btn menu-ribbon__btn--icon${showCheckedOnly ? ' menu-ribbon__btn--active' : ''}`}
+          onClick={onToggleCheckedOnly}
+          disabled={!hasChecked && !showCheckedOnly}
+        >
+          <ListCheck size={14} />
+        </button>
+      </div>
 
       {/* DateFilter: 作成日(ID)・更新日フィルターの表示切替 */}
       <button
@@ -139,24 +143,26 @@ export function ThinktankMenuRibbon({
       </button>
 
       {/* ChecktoThought: Thought作成 */}
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--icon"
-        onClick={onCreateThought}
-        data-tip="チェックアイテムからthoughtを作成"
-        disabled={!canCreateThought}
-      >
-        <LibrarySquare size={14} />
-      </button>
+      <div className="tooltip-wrapper" data-tip="チェックアイテムからthoughtを作成">
+        <button
+          className="menu-ribbon__btn menu-ribbon__btn--icon"
+          onClick={onCreateThought}
+          disabled={!canCreateThought}
+        >
+          <LibrarySquare size={14} />
+        </button>
+      </div>
 
       {/* CheckDelete: 削除 */}
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--icon menu-ribbon__btn--danger"
-        onClick={onDeleteChecked}
-        data-tip="チェック中のアイテムを削除"
-        disabled={!hasChecked}
-      >
-        <Trash2 size={14} />
-      </button>
+      <div className="tooltip-wrapper" data-tip="チェック中のアイテムを削除" data-tip-side="left">
+        <button
+          className="menu-ribbon__btn menu-ribbon__btn--icon menu-ribbon__btn--danger"
+          onClick={onDeleteChecked}
+          disabled={!hasChecked}
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
 
       <div className="menu-ribbon__spacer" />
 

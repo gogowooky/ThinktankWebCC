@@ -13,7 +13,7 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.15);
   overflow: visible;
   position: relative;
-  z-index: 10;
+  z-index: 1000;
 }
 
 /* ホバー時にリボン全体を最前面へ */
@@ -38,29 +38,9 @@
   position: relative;
 }
 
-/* ── カスタムツールチップ（data-tip 属性から自動生成）── */
-.menu-ribbon__btn[data-tip]:not([data-tip=''])::after {
-  content: attr(data-tip);
-  position: absolute;
-  left: calc(100% + 14px);
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(15, 15, 20, 0.88);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 400;
-  font-family: system-ui, sans-serif;
-  white-space: nowrap;
-  padding: 3px 7px;
-  border-radius: 4px;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 9999;
-  transition: opacity 0.12s ease;
-}
-
-.menu-ribbon__btn[data-tip]:not([data-tip='']):hover::after {
-  opacity: 1;
+/* ── カスタムツールチップ（global に移行済み） ── */
+.menu-ribbon__btn[data-tip]:not([data-tip='']) {
+  /* index.css の定義を利用 */
 }
 
 .menu-ribbon__btn:hover {

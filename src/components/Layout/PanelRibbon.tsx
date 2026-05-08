@@ -91,7 +91,7 @@ export function PanelRibbon({
 
       {/* 最下部ラベル（左90度・下寄せ）*/}
       {bottomLabel && (
-        <div className="panel-ribbon__label-wrap" title={bottomLabel}>
+        <div className="panel-ribbon__label-wrap" data-tip={bottomLabel} data-tip-side={side === 'left' ? 'right' : 'left'}>
           <span className="panel-ribbon__label">{bottomLabel}</span>
         </div>
       )}

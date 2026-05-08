@@ -37,7 +37,8 @@ export function WorkoutPanelRibbon({ panel, onAddRight, onAddBelow }: Props) {
       <button
         className="workout-panel-ribbon__add-btn"
         onClick={onAddRight}
-        title="右にエリア追加（縦分割）"
+        data-tip="右にエリア追加（縦分割）"
+        data-tip-side="bottom"
         disabled={false}
       >
         <SplitRightIcon />
@@ -51,7 +52,8 @@ export function WorkoutPanelRibbon({ panel, onAddRight, onAddBelow }: Props) {
           !hasFocus ? 'workout-panel-ribbon__add-btn--disabled' : '',
         ].join(' ')}
         onClick={hasFocus ? onAddBelow : undefined}
-        title="下にエリア追加（横分割）"
+        data-tip="下にエリア追加（横分割）"
+        data-tip-side="bottom"
         disabled={!hasFocus}
       >
         <SplitBelowIcon />

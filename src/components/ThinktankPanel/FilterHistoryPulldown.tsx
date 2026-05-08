@@ -47,7 +47,8 @@ export function FilterHistoryPulldown({ historyKey, onSelect, onClose }: Props) 
                 removeHistoryItem(historyKey, h);
                 onClose();
               }}
-              title="削除"
+              data-tip="削除"
+              data-tip-side="left"
             >
               <Trash2 size={10} />
             </button>

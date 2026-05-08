@@ -118,38 +118,42 @@ export function WorkoutSettingPanel({
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>分割</span>
                     <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
-                      <button
-                        className="workout-setting-panel__icon-btn"
-                        onClick={hasFocus ? onSplitLeft : undefined}
-                        disabled={!hasFocus}
-                        title="左に分割して新Pane追加"
-                      >
-                        <SplitIcon dir="left" />
-                      </button>
-                      <button
-                        className="workout-setting-panel__icon-btn"
-                        onClick={hasFocus ? onSplitRight : undefined}
-                        disabled={!hasFocus}
-                        title="右に分割して新Pane追加"
-                      >
-                        <SplitIcon dir="right" />
-                      </button>
-                      <button
-                        className="workout-setting-panel__icon-btn"
-                        onClick={hasFocus ? onSplitAbove : undefined}
-                        disabled={!hasFocus}
-                        title="上に分割して新Pane追加"
-                      >
-                        <SplitIcon dir="up" />
-                      </button>
-                      <button
-                        className="workout-setting-panel__icon-btn"
-                        onClick={hasFocus ? onSplitBelow : undefined}
-                        disabled={!hasFocus}
-                        title="下に分割して新Pane追加"
-                      >
-                        <SplitIcon dir="down" />
-                      </button>
+                      <div className="tooltip-wrapper" data-tip="左に分割して新Pane追加">
+                        <button
+                          className="workout-setting-panel__icon-btn"
+                          onClick={hasFocus ? onSplitLeft : undefined}
+                          disabled={!hasFocus}
+                        >
+                          <SplitIcon dir="left" />
+                        </button>
+                      </div>
+                      <div className="tooltip-wrapper" data-tip="右に分割して新Pane追加">
+                        <button
+                          className="workout-setting-panel__icon-btn"
+                          onClick={hasFocus ? onSplitRight : undefined}
+                          disabled={!hasFocus}
+                        >
+                          <SplitIcon dir="right" />
+                        </button>
+                      </div>
+                      <div className="tooltip-wrapper" data-tip="上に分割して新Pane追加">
+                        <button
+                          className="workout-setting-panel__icon-btn"
+                          onClick={hasFocus ? onSplitAbove : undefined}
+                          disabled={!hasFocus}
+                        >
+                          <SplitIcon dir="up" />
+                        </button>
+                      </div>
+                      <div className="tooltip-wrapper" data-tip="下に分割して新Pane追加">
+                        <button
+                          className="workout-setting-panel__icon-btn"
+                          onClick={hasFocus ? onSplitBelow : undefined}
+                          disabled={!hasFocus}
+                        >
+                          <SplitIcon dir="down" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -160,28 +164,28 @@ export function WorkoutSettingPanel({
                       <button
                         className="workout-setting-panel__icon-btn"
                         onClick={onAddLeft}
-                        title="左端に追加"
+                        data-tip="左端に追加"
                       >
                         <AddIcon dir="left" />
                       </button>
                       <button
                         className="workout-setting-panel__icon-btn"
                         onClick={onAddRight}
-                        title="右端に追加"
+                        data-tip="右端に追加"
                       >
                         <AddIcon dir="right" />
                       </button>
                       <button
                         className="workout-setting-panel__icon-btn"
                         onClick={onAddTop}
-                        title="上端に追加"
+                        data-tip="上端に追加"
                       >
                         <AddIcon dir="up" />
                       </button>
                       <button
                         className="workout-setting-panel__icon-btn"
                         onClick={onAddBottom}
-                        title="下端に追加"
+                        data-tip="下端に追加"
                       >
                         <AddIcon dir="down" />
                       </button>
@@ -192,18 +196,19 @@ export function WorkoutSettingPanel({
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>消去</span>
                     <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
-                      <button
-                        className="workout-setting-panel__icon-btn workout-setting-panel__icon-btn--danger"
-                        onClick={hasFocus ? onRemoveFocused : undefined}
-                        disabled={!hasFocus}
-                        title="フォーカスペインを消去"
-                      >
-                        <SquareX size={16} className="ws-icon" />
-                      </button>
+                      <div className="tooltip-wrapper" data-tip="フォーカスペインを消去">
+                        <button
+                          className="workout-setting-panel__icon-btn workout-setting-panel__icon-btn--danger"
+                          onClick={hasFocus ? onRemoveFocused : undefined}
+                          disabled={!hasFocus}
+                        >
+                          <SquareX size={16} className="ws-icon" />
+                        </button>
+                      </div>
                       <button
                         className="workout-setting-panel__icon-btn workout-setting-panel__icon-btn--danger"
                         onClick={onClearAll}
-                        title="すべてのペインを全消去"
+                        data-tip="すべてのペインを全消去"
                       >
                         <CopyX size={16} className="ws-icon" />
                       </button>
@@ -214,22 +219,24 @@ export function WorkoutSettingPanel({
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>均等</span>
                     <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
-                      <button
-                        className="workout-setting-panel__icon-btn"
-                        onClick={hasFocus ? onEqualizeWidths : undefined}
-                        disabled={!hasFocus}
-                        title="幅を均等化"
-                      >
-                        <ChevronsLeftRightEllipsis size={16} className="ws-icon" />
-                      </button>
-                      <button
-                        className="workout-setting-panel__icon-btn"
-                        onClick={hasFocus ? onEqualizeHeights : undefined}
-                        disabled={!hasFocus}
-                        title="高さを均等化"
-                      >
-                        <ChevronsLeftRightEllipsis size={16} className="ws-icon" style={{ transform: 'rotate(90deg)' }} />
-                      </button>
+                      <div className="tooltip-wrapper" data-tip="幅を均等化">
+                        <button
+                          className="workout-setting-panel__icon-btn"
+                          onClick={hasFocus ? onEqualizeWidths : undefined}
+                          disabled={!hasFocus}
+                        >
+                          <ChevronsLeftRightEllipsis size={16} className="ws-icon" />
+                        </button>
+                      </div>
+                      <div className="tooltip-wrapper" data-tip="高さを均等化">
+                        <button
+                          className="workout-setting-panel__icon-btn"
+                          onClick={hasFocus ? onEqualizeHeights : undefined}
+                          disabled={!hasFocus}
+                        >
+                          <ChevronsLeftRightEllipsis size={16} className="ws-icon" style={{ transform: 'rotate(90deg)' }} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -349,7 +356,7 @@ export function WorkoutSettingPanel({
                           className="workout-setting-panel__color-picker"
                           value={style.color}
                           onChange={e => panel.SetEditorHeadingStyle(level, { color: e.target.value })}
-                          title={`セクション${fw}の文字色`}
+                          data-tip={`セクション${fw}の文字色`}
                         />
                         <label className="workout-setting-panel__small-checkbox">
                           <input
@@ -400,7 +407,8 @@ export function WorkoutSettingPanel({
                             className="workout-setting-panel__color-picker"
                             value={style.backgroundColor}
                             onChange={e => panel.SetEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
-                            title={`グループ${fw}の背景色`}
+                            data-tip={`グループ${fw}の背景色`}
+                            data-tip-side="left"
                           />
                           <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>文字</span>
                           <input
@@ -408,7 +416,8 @@ export function WorkoutSettingPanel({
                             className="workout-setting-panel__color-picker"
                             value={style.color}
                             onChange={e => panel.SetEditorHighlightStyle(group - 1, { color: e.target.value })}
-                            title={`グループ${fw}の文字色`}
+                            data-tip={`グループ${fw}の文字色`}
+                            data-tip-side="left"
                           />
                         </div>
                       </div>
@@ -436,7 +445,7 @@ export function WorkoutSettingPanel({
                     <button
                       className="workout-setting-panel__icon-btn"
                       onClick={onCreateMemo}
-                      title="新規メモファイルを作成（TextEditor）"
+                      data-tip="新規メモファイルを作成"
                     >
                       <FilePlus size={16} className="ws-icon" />
                     </button>
@@ -446,7 +455,7 @@ export function WorkoutSettingPanel({
                     <button
                       className="workout-setting-panel__icon-btn"
                       onClick={onReadMemo}
-                      title="txt / md / xdoc ファイルを読み取って新規メモを作成"
+                      data-tip="txt / md / xdoc を読み取って新規メモを作成"
                     >
                       <FileSpreadsheet size={16} className="ws-icon" />
                     </button>
@@ -456,7 +465,7 @@ export function WorkoutSettingPanel({
                     <button
                       className="workout-setting-panel__icon-btn"
                       onClick={onSaveMemo}
-                      title="表示中のメモを .md ファイルで保存"
+                      data-tip="表示中のメモを .md ファイルで保存"
                     >
                       <Save size={16} className="ws-icon" />
                     </button>
@@ -483,7 +492,7 @@ export function WorkoutSettingPanel({
                     <button
                       className="workout-setting-panel__icon-btn"
                       onClick={onCreateTable}
-                      title="新規テーブルファイルを作成（TextEditor）"
+                      data-tip="新規テーブルファイルを作成"
                     >
                       <FilePlus size={16} className="ws-icon" />
                     </button>
@@ -493,7 +502,7 @@ export function WorkoutSettingPanel({
                     <button
                       className="workout-setting-panel__icon-btn"
                       onClick={onReadTable}
-                      title="CSV / XLSX ファイルを読み取って新規テーブルを作成"
+                      data-tip="CSV / XLSX を読み取って新規テーブルを作成"
                     >
                       <FileSpreadsheet size={16} className="ws-icon" />
                     </button>
@@ -503,7 +512,7 @@ export function WorkoutSettingPanel({
                     <button
                       className="workout-setting-panel__icon-btn"
                       onClick={onSaveTable}
-                      title="表示中のテーブルデータを CSV で保存"
+                      data-tip="表示中のテーブルデータを CSV で保存"
                     >
                       <Save size={16} className="ws-icon" />
                     </button>

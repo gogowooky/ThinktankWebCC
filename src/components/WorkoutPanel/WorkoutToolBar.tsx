@@ -115,7 +115,7 @@ export function WorkoutToolBar({ panel }: Props) {
         <button
           className="workout-toolbar__clear-btn"
           onClick={handleClear}
-          title="クリア"
+          data-tip="クリア"
           aria-label="クリア"
         >
           <X size={12} />
@@ -129,7 +129,7 @@ export function WorkoutToolBar({ panel }: Props) {
             key={m.id}
             className={`workout-toolbar__mode-btn${mode === m.id ? ' workout-toolbar__mode-btn--active' : ''}`}
             onClick={() => handleModeSelect(m.id)}
-            title={m.label}
+            data-tip={m.label}
             aria-label={m.label}
           >
             {m.icon}
@@ -141,7 +141,8 @@ export function WorkoutToolBar({ panel }: Props) {
       <div className="workout-toolbar__utils">
         <button
           className="workout-toolbar__util-btn"
-          title="作成者"
+          data-tip="作成者"
+          data-tip-side="left"
           aria-label="作成者"
         >
           <Copyright size={14} />
@@ -149,7 +150,8 @@ export function WorkoutToolBar({ panel }: Props) {
         <button
           className="workout-toolbar__util-btn"
           onClick={() => setIsExpanded(v => !v)}
-          title={isExpanded ? 'ツールバー縮小' : 'ツールバー拡大'}
+          data-tip={isExpanded ? 'ツールバー縮小' : 'ツールバー拡大'}
+          data-tip-side="left"
           aria-label={isExpanded ? 'ツールバー縮小' : 'ツールバー拡大'}
         >
           {isExpanded ? <ChevronsRightLeft size={14} /> : <ChevronsLeftRight size={14} />}
