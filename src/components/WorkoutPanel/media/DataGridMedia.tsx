@@ -128,7 +128,14 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   const [isDirty,    setIsDirty]    = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // think 切り替え時にリセット
+  // カラム入れ替え用
+  const [columnOrder, setColumnOrder] = useState<number[]>([]);
+  const [draggingCol, setDraggingCol] = useState<number | null>(null);
+  const [dropTargetCol, setDropTargetCol] = useState<number | null>(null);
+
+  const section  = sections[Math.min(activeIdx, sections.length - 1)] ?? null;
+
+  // think 切り替え時、および section のカラム数変更時にリセット
   useEffect(() => {
     setSections(parseTableContent(think.Content));
     setActiveIdx(0);
@@ -138,9 +145,16 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     setIsDirty(false);
   }, [think.ID]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (section) {
+      setColumnOrder(Array.from({ length: section.columns.length }, (_, i) => i));
+    } else {
+      setColumnOrder([]);
+    }
+  }, [section?.columns.length, activeIdx, think.ID]);
+
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
-  const section  = sections[Math.min(activeIdx, sections.length - 1)] ?? null;
   const colCount = section?.columns.length ?? 0;
   const innerWidth = ROWNUM_WIDTH + colCount * COL_WIDTH;
 
@@ -172,9 +186,24 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
 
   const handleSave = useCallback(() => {
     if (!onSave) return;
-    onSave(sectionsToTableContent(think.Name, sections));
+    
+    // 現在の表示順序（columnOrder）に従って sections を物理的に並び替える
+    const reorderedSections = sections.map((s, si) => {
+      if (si !== activeIdx) return s;
+      return {
+        ...s,
+        columns: columnOrder.map(i => s.columns[i]),
+        rows:    s.rows.map(row => columnOrder.map(i => row[i]))
+      };
+    });
+
+    onSave(sectionsToTableContent(think.Name, reorderedSections));
+    
+    // データが書き換わったのでステートを更新し、order をリセット
+    setSections(reorderedSections);
+    setColumnOrder(Array.from({ length: reorderedSections[activeIdx]?.columns.length ?? 0 }, (_, i) => i));
     setIsDirty(false);
-  }, [onSave, think.Name, sections]);
+  }, [onSave, think.Name, sections, activeIdx, columnOrder]);
 
   const handleSortToggle = useCallback((col: number) => {
     setSortState(prev => {
@@ -208,6 +237,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   const handleAddRow = useCallback(() => {
     setSections(prev => prev.map((s, si) => {
       if (si !== activeIdx) return s;
+      // 物理的な並び順に合わせて追加する
       return { ...s, rows: [...s.rows, Array(s.columns.length).fill('')] };
     }));
     setIsDirty(true);
@@ -215,6 +245,38 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
       if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }, 50);
   }, [activeIdx]);
+
+  // ── カラムドラッグ＆ドロップ ──────────────────────────────────────────
+
+  const handleColumnDragStart = (e: React.DragEvent, idx: number) => {
+    setDraggingCol(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleColumnDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (draggingCol === null || draggingCol === idx) return;
+    setDropTargetCol(idx);
+  };
+
+  const handleColumnDrop = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (draggingCol === null || draggingCol === targetIdx) {
+      setDraggingCol(null);
+      setDropTargetCol(null);
+      return;
+    }
+
+    const nextOrder = [...columnOrder];
+    const dragItem = nextOrder[draggingCol];
+    nextOrder.splice(draggingCol, 1);
+    nextOrder.splice(targetIdx, 0, dragItem);
+    
+    setColumnOrder(nextOrder);
+    setIsDirty(true);
+    setDraggingCol(null);
+    setDropTargetCol(null);
+  };
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -277,15 +339,35 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
           {/* 固定ヘッダー */}
           <div className="table-grid__header-row">
             <div className="table-grid__rownum-cell" />
-            {section?.columns.map((col, ci) => {
-              const sorted = sortState?.col === ci ? sortState.dir : null;
+            {columnOrder.map((colIdx, displayIdx) => {
+              const col = section?.columns[colIdx];
+              const sorted = sortState?.col === colIdx ? sortState.dir : null;
+              const isDragging = draggingCol === displayIdx;
+              const isDropTarget = dropTargetCol === displayIdx;
+              
+              // ドラッグ方向に応じてガイドの位置（左か右か）を決める
+              const dropSide = isDropTarget 
+                ? (displayIdx < (draggingCol ?? 0) ? 'left' : 'right')
+                : null;
+
               return (
                 <div
-                  key={ci}
-                  className="table-grid__header-cell table-grid__header-cell--sortable"
+                  key={`${colIdx}-${displayIdx}`}
+                  className={[
+                    "table-grid__header-cell",
+                    "table-grid__header-cell--sortable",
+                    isDragging && "table-grid__header-cell--dragging",
+                    dropSide === 'left' && "table-grid__header-cell--drop-target",
+                    dropSide === 'right' && "table-grid__header-cell--drop-target-right",
+                  ].filter(Boolean).join(" ")}
                   style={{ width: COL_WIDTH }}
                   title={col}
-                  onClick={() => handleSortToggle(ci)}
+                  draggable
+                  onDragStart={(e) => handleColumnDragStart(e, displayIdx)}
+                  onDragOver={(e) => handleColumnDragOver(e, displayIdx)}
+                  onDragEnd={() => { setDraggingCol(null); setDropTargetCol(null); }}
+                  onDrop={(e) => handleColumnDrop(e, displayIdx)}
+                  onClick={() => handleSortToggle(colIdx)}
                 >
                   <span className="table-grid__header-text">{col}</span>
                   <span className="table-grid__sort-icon">
@@ -313,30 +395,30 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                   }}
                 >
                   <div className="table-grid__rownum-cell">{vRow.index + 1}</div>
-                  {Array.from({ length: colCount }, (_, ci) => {
-                    const isEditing = editState?.rowIdx === rowIdx && editState?.col === ci;
-                    const cellVal   = row?.[ci] ?? '';
+                  {columnOrder.map((colIdx) => {
+                    const isEditing = editState?.rowIdx === rowIdx && editState?.col === colIdx;
+                    const cellVal   = row?.[colIdx] ?? '';
                     return isEditing ? (
                       <input
-                        key={ci}
+                        key={colIdx}
                         className="table-grid__cell-input"
                         style={{ width: COL_WIDTH }}
                         value={editState.value}
                         autoFocus
                         onChange={e => setEditState(prev => prev ? { ...prev, value: e.target.value } : null)}
-                        onBlur={() => commitEdit(rowIdx, ci, editState.value)}
+                        onBlur={() => commitEdit(rowIdx, colIdx, editState.value)}
                         onKeyDown={e => {
-                          if (e.key === 'Enter') { e.preventDefault(); commitEdit(rowIdx, ci, editState.value); }
+                          if (e.key === 'Enter') { e.preventDefault(); commitEdit(rowIdx, colIdx, editState.value); }
                           if (e.key === 'Escape') setEditState(null);
                         }}
                       />
                     ) : (
                       <div
-                        key={ci}
+                        key={colIdx}
                         className="table-grid__data-cell"
                         style={{ width: COL_WIDTH }}
                         title={cellVal}
-                        onClick={() => handleCellClick(rowIdx, ci, cellVal)}
+                        onClick={() => handleCellClick(rowIdx, colIdx, cellVal)}
                       >
                         <HighlightedText text={cellVal} editorSettings={editorSettings} />
                       </div>
