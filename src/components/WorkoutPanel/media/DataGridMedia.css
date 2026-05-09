@@ -286,6 +286,22 @@
   position: relative;
 }
 
+.table-grid__resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  transition: background 150ms;
+}
+
+.table-grid__resizer:hover,
+.table-grid__resizer--resizing {
+  background: rgba(122, 162, 247, 0.5);
+}
+
 .table-grid__header-cell--dragging {
   opacity: 0.4;
   background: rgba(122, 162, 247, 0.2);

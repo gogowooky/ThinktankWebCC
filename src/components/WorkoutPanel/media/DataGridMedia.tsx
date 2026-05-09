@@ -133,6 +133,10 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   const [draggingCol, setDraggingCol] = useState<number | null>(null);
   const [dropTargetCol, setDropTargetCol] = useState<number | null>(null);
 
+  // カラム幅管理
+  const [columnWidths, setColumnWidths] = useState<number[]>([]);
+  const [resizingCol, setResizingCol] = useState<number | null>(null);
+
   const section  = sections[Math.min(activeIdx, sections.length - 1)] ?? null;
 
   // think 切り替え時、および section のカラム数変更時にリセット
@@ -148,15 +152,17 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   useEffect(() => {
     if (section) {
       setColumnOrder(Array.from({ length: section.columns.length }, (_, i) => i));
+      setColumnWidths(Array.from({ length: section.columns.length }, () => COL_WIDTH));
     } else {
       setColumnOrder([]);
+      setColumnWidths([]);
     }
   }, [section?.columns.length, activeIdx, think.ID]);
 
   useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
 
   const colCount = section?.columns.length ?? 0;
-  const innerWidth = ROWNUM_WIDTH + colCount * COL_WIDTH;
+  const innerWidth = ROWNUM_WIDTH + columnWidths.reduce((sum, w) => sum + w, 0);
 
   const displayRows = useMemo<DisplayRow[]>(() => {
     if (!section) return [];
@@ -278,6 +284,35 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     setDropTargetCol(null);
   };
 
+  // ── カラムリサイズ ──────────────────────────────────────────
+
+  const handleResizeStart = (e: React.MouseEvent, colIdx: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizingCol(colIdx);
+
+    const startX = e.pageX;
+    const startWidth = columnWidths[colIdx];
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const delta = moveEvent.pageX - startX;
+      setColumnWidths(prev => {
+        const next = [...prev];
+        next[colIdx] = Math.max(40, startWidth + delta);
+        return next;
+      });
+    };
+
+    const onMouseUp = () => {
+      setResizingCol(null);
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
@@ -360,9 +395,9 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                     dropSide === 'left' && "table-grid__header-cell--drop-target",
                     dropSide === 'right' && "table-grid__header-cell--drop-target-right",
                   ].filter(Boolean).join(" ")}
-                  style={{ width: COL_WIDTH }}
+                  style={{ width: columnWidths[colIdx] }}
                   title={col}
-                  draggable
+                  draggable={resizingCol === null}
                   onDragStart={(e) => handleColumnDragStart(e, displayIdx)}
                   onDragOver={(e) => handleColumnDragOver(e, displayIdx)}
                   onDragEnd={() => { setDraggingCol(null); setDropTargetCol(null); }}
@@ -375,6 +410,11 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                      sorted === 'desc' ? <ChevronDown size={11} /> :
                                          <ChevronsUpDown size={11} style={{ opacity: 0.3 }} />}
                   </span>
+                  <div
+                    className={`table-grid__resizer ${resizingCol === colIdx ? 'table-grid__resizer--resizing' : ''}`}
+                    onMouseDown={(e) => handleResizeStart(e, colIdx)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
                 </div>
               );
             })}
@@ -402,7 +442,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                       <input
                         key={colIdx}
                         className="table-grid__cell-input"
-                        style={{ width: COL_WIDTH }}
+                        style={{ width: columnWidths[colIdx] }}
                         value={editState.value}
                         autoFocus
                         onChange={e => setEditState(prev => prev ? { ...prev, value: e.target.value } : null)}
@@ -416,7 +456,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                       <div
                         key={colIdx}
                         className="table-grid__data-cell"
-                        style={{ width: COL_WIDTH }}
+                        style={{ width: columnWidths[colIdx] }}
                         title={cellVal}
                         onClick={() => handleCellClick(rowIdx, colIdx, cellVal)}
                       >
