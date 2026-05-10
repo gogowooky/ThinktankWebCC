@@ -402,7 +402,7 @@ export function WorkoutPanel({ app }: Props) {
       if (!file) return;
       const title = file.name.replace(/\.[^/.]+$/, '');
 
-      let sections: { title: string; columns: string[]; rows: string[][] }[] = [];
+      let sections: import('../../utils/tableFormat').TableSection[] = [];
 
       if (file.name.toLowerCase().endsWith('.csv')) {
         const text  = await file.text();
@@ -410,7 +410,7 @@ export function WorkoutPanel({ app }: Props) {
         if (lines.length > 0) {
           const columns = parseCsvLine(lines[0]);
           const rows    = lines.slice(1).map(parseCsvLine);
-          sections      = [{ title: 'データ', columns, rows }];
+          sections      = [{ title: 'データ', columns, rows, rawLines: [] }];
         }
       } else {
         // XLSX / XLS: SheetJS で読み取り
@@ -423,7 +423,7 @@ export function WorkoutPanel({ app }: Props) {
           if (data.length > 0) {
             const columns = data[0].map(String);
             const rows    = data.slice(1).map(r => r.map(String));
-            sections.push({ title: sheetName, columns, rows });
+            sections.push({ title: sheetName, columns, rows, rawLines: [] });
           }
         }
       }

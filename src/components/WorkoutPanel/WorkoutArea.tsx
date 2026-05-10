@@ -19,6 +19,8 @@ import { DataGridMedia }   from './media/DataGridMedia';
 import { CardMedia }       from './media/CardMedia';
 import { GraphMedia }      from './media/GraphMedia';
 import { ChatMedia }       from './media/ChatMedia';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
+import { TTShortcutManager } from '../../views/TTShortcutManager';
 import './WorkoutArea.css';
 
 interface Props {
@@ -127,6 +129,9 @@ export function WorkoutArea({
     }
     think.SaveContent().then(() => {
       setIsDirty(false);
+      // システム Think の保存を各マネージャーに通知
+      TTUIStateManager.instance.onThinkSaved(think.ID, content);
+      TTShortcutManager.instance.onThinkSaved(think.ID, content);
     }).catch(e => {
       console.error('[WorkoutArea] SaveContent failed:', e);
     });

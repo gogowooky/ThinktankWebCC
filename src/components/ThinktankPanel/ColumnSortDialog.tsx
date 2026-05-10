@@ -88,16 +88,15 @@ export function ColumnSortDialog({ columns, sort, onColumnsChange, onSortChange,
   return (
     <div className="col-sort-dialog__backdrop" onClick={onClose}>
       <div className="col-sort-dialog" onClick={e => e.stopPropagation()}>
-        <div className="col-sort-dialog__header">
-          <span className="col-sort-dialog__title">表示・ソート設定</span>
-          <button className="col-sort-dialog__close" onClick={onClose}>
-            <X size={12} />
-          </button>
-        </div>
+        {/* ヘッダーを削除し、テーブル内に × を配置 */}
         <table className="col-sort-dialog__table">
           <thead>
             <tr>
-              <th className="col-sort-dialog__th col-sort-dialog__th--grip" />
+              <th className="col-sort-dialog__th col-sort-dialog__th--grip">
+                <button className="col-sort-dialog__close-in-table" onClick={onClose}>
+                  <X size={10} />
+                </button>
+              </th>
               <th className="col-sort-dialog__th col-sort-dialog__th--field">フィールド</th>
               <th className="col-sort-dialog__th">表示</th>
               <th className="col-sort-dialog__th">↑</th>

@@ -538,6 +538,33 @@ export class TTVault extends TTCollection {
     return think;
   }
 
+  /**
+   * 固定 ID・初期コンテンツ付きで Think を作成/上書きする。
+   * __tt_ui_state__ / __tt_shortcuts__ などのシステム Think 用。
+   */
+  public async AddThinkWithContent(
+    id: string,
+    name: string,
+    contentType: ContentType,
+    keywords: string,
+    fullContent: string,
+  ): Promise<TTThink> {
+    const think = new TTThink();
+    think.ID          = id;
+    think.VaultID     = this.ID;
+    think.ContentType = contentType;
+    think.Keywords    = keywords;
+    think.IsMetaOnly  = false;
+    think.setContentSilent(fullContent);
+    think._parent     = this;
+    this._children.set(id, think);
+    this.Count = this._children.size;
+    await StorageManager.instance.save({ id, contentType, fullContent, keywords, relatedIds: '' });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
   /** 指定 ID の Think を BQ から削除しメモリからも除去する */
   public async DeleteThinks(ids: string[]): Promise<void> {
     await Promise.all(ids.map(id => StorageManager.instance.delete(id)));

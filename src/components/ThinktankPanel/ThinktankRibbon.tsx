@@ -66,14 +66,6 @@ export function ThinktankRibbon({
           {icon}
         </button>
       ))}
-      <button
-        className="ribbon-icon-btn"
-        data-tip="表示更新"
-        aria-label="表示更新"
-        onClick={onRefresh}
-      >
-        <ListRestart size={16} />
-      </button>
       {onSync && (
         <button
           className="ribbon-icon-btn"

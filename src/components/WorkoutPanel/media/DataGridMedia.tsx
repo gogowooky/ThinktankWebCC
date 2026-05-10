@@ -208,14 +208,14 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
       rawLines: section.rawLines,
     };
 
-    // rawLines のコメント行・空行を保持したまま書き出し（列順は identity で OK、物理並び替え済み）
-    onSave(tableSectionToContent(think.Name, reorderedSection));
+    // section.title を使う（think.Name は _extractTitle で # が剥ぎ取られる場合があるため）
+    onSave(tableSectionToContent(section.title, reorderedSection));
 
     // state を並び替え後の section で更新し、columnOrder をリセット
     setSections([reorderedSection]);
     setColumnOrder(Array.from({ length: reorderedSection.columns.length }, (_, i) => i));
     setIsDirty(false);
-  }, [onSave, think.Name, section, columnOrder]);
+  }, [onSave, section, columnOrder]);
 
   const handleSortToggle = useCallback((col: number) => {
     setSortState(prev => {

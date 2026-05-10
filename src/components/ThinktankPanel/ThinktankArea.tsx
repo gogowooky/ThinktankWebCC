@@ -42,9 +42,10 @@ interface Props {
   app: TTApplication;
   layoutMode: LayoutMode;
   onLayoutModeChange: (mode: LayoutMode) => void;
+  onRefresh: () => void;
 }
 
-export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
+export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }: Props) {
   const panel = app.ThinktankPanel;
   const vault = app.Models.Vault;
 
@@ -428,6 +429,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange }: Props) {
         onToggleColumnDialog={handleToggleColumnDialog}
         onCreateThought={handleCreateThought}
         onSaveChat={handleSaveChat}
+        onRefresh={onRefresh}
       />
 
       {showColumnDialog && (

@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, CalendarDays, ArrowDownAZ, LibrarySquare, Save, MonitorUp, MonitorDown } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, CalendarDays, ArrowDownAZ, LibrarySquare, Save, MonitorUp, MonitorDown, ListRestart } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -29,6 +29,7 @@ interface Props {
   onToggleColumnDialog:  () => void;
   onCreateThought:       () => void;
   onSaveChat:            () => void;
+  onRefresh:             () => void;
 }
 
 export function ThinktankMenuRibbon({
@@ -40,7 +41,7 @@ export function ThinktankMenuRibbon({
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
-  onCreateThought, onSaveChat,
+  onCreateThought, onSaveChat, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -172,6 +173,16 @@ export function ThinktankMenuRibbon({
           {visibleChecked}/{checkedIds.length}
         </span>
       )}
+
+      {/* 表示更新 */}
+      <button
+        className="menu-ribbon__btn menu-ribbon__btn--icon"
+        onClick={onRefresh}
+        data-tip="表示更新"
+        data-tip-side="left"
+      >
+        <ListRestart size={14} />
+      </button>
 
     </div>
   );

@@ -86,6 +86,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
           app={app}
           layoutMode={layoutMode}
           onLayoutModeChange={onLayoutModeChange}
+          onRefresh={handleRefresh}
         />
       </PanelArea>
       {panel.IsAreaOpen && (

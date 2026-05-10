@@ -7,7 +7,7 @@
 import { useCallback } from 'react';
 import {
   CheckSquare, Square, ListX, ListCheck, LibrarySquare,
-  ListChecks, List, CalendarDays, ArrowDownAZ, Save, MonitorUp, MonitorDown,
+  ListChecks, List, CalendarDays, ArrowDownAZ, Save, MonitorUp, MonitorDown, ListRestart,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './OverviewMenuRibbon.css';
@@ -33,6 +33,7 @@ interface Props {
   onToggleDateFilter:   () => void;
   onToggleColumnDialog: () => void;
   onSaveChat:           () => void;
+  onRefresh:            () => void;
 }
 
 export function OverviewMenuRibbon({
@@ -45,7 +46,7 @@ export function OverviewMenuRibbon({
   onCheckAll, onClearChecks, onExcludeChecked,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
   onToggleDateFilter, onToggleColumnDialog,
-  onSaveChat,
+  onSaveChat, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -62,33 +63,49 @@ export function OverviewMenuRibbon({
     return <div className="menu-ribbon overview-menu-ribbon" />;
   }
 
-  /* ── チャットモード: 保存ボタンのみ ─────────────────────── */
-  if (mediaType === 'chat') {
+  /* ── チャット・グラフモード ─────────────────────────────────── */
+  if (mediaType === 'chat' || mediaType === 'graph') {
     return (
       <div className="menu-ribbon overview-menu-ribbon">
+        {mediaType === 'chat' && (
+          <>
+            <button
+              className="menu-ribbon__btn menu-ribbon__btn--icon"
+              onClick={onScrollPrev}
+              data-tip="前のユーザーメッセージへ"
+            >
+              <MonitorUp size={14} />
+            </button>
+            <button
+              className="menu-ribbon__btn menu-ribbon__btn--icon"
+              onClick={onScrollNext}
+              data-tip="次のユーザーメッセージへ"
+            >
+              <MonitorDown size={14} />
+            </button>
+            <div className="tooltip-wrapper" data-tip="Chatを保管庫に保存" data-tip-side="left">
+              <button
+                className="menu-ribbon__btn menu-ribbon__btn--icon"
+                onClick={onSaveChat}
+                disabled={!canSaveChat}
+              >
+                <Save size={14} />
+              </button>
+            </div>
+          </>
+        )}
+        
+        <div className="menu-ribbon__spacer" />
+
+        {/* 表示更新 */}
         <button
           className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onScrollPrev}
-          data-tip="前のユーザーメッセージへ"
+          onClick={onRefresh}
+          data-tip="表示更新"
+          data-tip-side="left"
         >
-          <MonitorUp size={14} />
+          <ListRestart size={14} />
         </button>
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onScrollNext}
-          data-tip="次のユーザーメッセージへ"
-        >
-          <MonitorDown size={14} />
-        </button>
-        <div className="tooltip-wrapper" data-tip="Chatを保管庫に保存" data-tip-side="left">
-          <button
-            className="menu-ribbon__btn menu-ribbon__btn--icon"
-            onClick={onSaveChat}
-            disabled={!canSaveChat}
-          >
-            <Save size={14} />
-          </button>
-        </div>
       </div>
     );
   }
@@ -168,6 +185,16 @@ export function OverviewMenuRibbon({
           {visibleChecked}/{checkedIds.length}
         </span>
       )}
+
+      {/* 表示更新 */}
+      <button
+        className="menu-ribbon__btn menu-ribbon__btn--icon"
+        onClick={onRefresh}
+        data-tip="表示更新"
+        data-tip-side="left"
+      >
+        <ListRestart size={14} />
+      </button>
 
     </div>
   );

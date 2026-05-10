@@ -33,7 +33,8 @@ export function OverviewPanel({ app, width, onResize }: Props) {
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
-  }, []);
+    app.RefreshAll().catch(e => console.error('[OverviewPanel] RefreshAll failed:', e));
+  }, [app]);
 
   const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
   const handleThoughtDrop = useCallback((id: string) => {
@@ -75,7 +76,6 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         onToggle={handleToggle}
         onMediaType={handleMediaType}
         onToggleSettings={handleToggleSettings}
-        onRefresh={handleRefresh}
         thoughtName={panel.ThoughtID ? (vault.GetThink(panel.ThoughtID)?.Name ?? panel.ThoughtID) : undefined}
         onThoughtDrop={handleThoughtDrop}
       />

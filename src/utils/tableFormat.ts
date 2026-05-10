@@ -120,7 +120,15 @@ export function tableSectionToContent(
     return out.trimEnd();
   }
 
+  // rawLines に columns エントリが存在するか確認
+  const hasColumnsEntry = section.rawLines.some(r => r.type === 'columns');
+
   let result = title + '\n';
+
+  // columns エントリが rawLines に無い場合はファイル先頭に出力する
+  if (!hasColumnsEntry && section.columns.length > 0) {
+    result += '> ' + order.map(i => escapeCsv(section.columns[i] ?? '')).join(',') + '\n';
+  }
 
   for (const raw of section.rawLines) {
     switch (raw.type) {

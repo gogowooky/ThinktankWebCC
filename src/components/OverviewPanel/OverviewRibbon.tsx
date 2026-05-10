@@ -89,14 +89,6 @@ export function OverviewRibbon({
         </button>
       ))}
       <button
-        className="overview-ribbon__btn"
-        onClick={onRefresh}
-        data-tip="表示更新"
-        aria-label="表示更新"
-      >
-        <ListRestart size={16} />
-      </button>
-      <button
         className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
         onClick={onToggleSettings}
         data-tip="設定"

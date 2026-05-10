@@ -43,7 +43,7 @@
   flex-shrink: 0;
 }
 
-/* ── グリッド ────────────────────────────────────────── */
+/* ── グリッド（Think一覧カード用 / 2列固定）────────── */
 .card-media__grid {
   flex: 1;
   overflow-y: auto;
@@ -54,7 +54,12 @@
   align-content: start;
 }
 
-/* ── カード ──────────────────────────────────────────── */
+/* テーブルカード用グリッド（幅に応じて1〜3列） */
+.card-media__grid--table {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* ── カード（Think一覧用）────────────────────────────── */
 .card-media__card {
   display: flex;
   flex-direction: column;
@@ -138,7 +143,60 @@
   font-style: italic;
 }
 
-/* 空状態 */
+/* ── テーブルカード（1行1カード）──────────────────────── */
+.card-media__card--table {
+  cursor: default;
+  padding: 10px 12px;
+}
+
+.card-media__card--table:hover {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* フィールド一覧（col: val のリスト）*/
+.card-media__table-fields {
+  display: grid;
+  /* ラベル列: コンテンツ幅に合わせつつ最大40% / 値列: 残り */
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 3px;
+  width: 100%;
+}
+
+/* 各フィールド行 */
+.card-media__field {
+  display: contents;
+}
+
+/* ラベル */
+.card-media__field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 1px;
+  /* ラベルを右揃えにしてコロン付きで表示 */
+  text-align: right;
+}
+
+.card-media__field-label::after {
+  content: ':';
+}
+
+/* 値 */
+.card-media__field-value {
+  font-size: 11px;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* ── 空状態 ───────────────────────────────────────────── */
 .card-media__empty {
   grid-column: 1 / -1;
   display: flex;
@@ -147,4 +205,15 @@
   padding: 40px;
   font-size: 12px;
   color: rgba(0, 0, 0, 0.3);
+}
+
+.card-media__empty-full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.35);
+  text-align: center;
+  line-height: 1.7;
 }

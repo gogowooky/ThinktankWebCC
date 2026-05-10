@@ -153,6 +153,10 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     const dropped = vault.GetThink(id);
     if (!dropped || dropped.ContentType === 'thought') selectThought(id);
   }, [selectThought, vault]);
+  
+  const handleRefresh = useCallback(() => {
+    app.RefreshAll().catch(e => console.error('[OverviewArea] RefreshAll failed:', e));
+  }, [app]);
 
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
@@ -317,6 +321,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
         onSaveChat={handleSaveChat}
+        onRefresh={handleRefresh}
       />
 
       {/* ── カラムソートダイアログ ─────────────────────────────── */}
