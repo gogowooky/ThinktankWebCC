@@ -16,7 +16,7 @@
  *   SwapAreas  … ドラッグ&ドロップでペイン内容を交換
  */
 
-import { TTObject } from '../models/TTObject';
+import { TTUIItem } from '../models/TTUIItem';
 import { TTWorkoutArea } from './TTWorkoutArea';
 import type { MediaType } from '../types';
 
@@ -127,7 +127,7 @@ export function swapLeafs(
 
 // ── TTWorkoutPanel ────────────────────────────────────────────────────
 
-export class TTWorkoutPanel extends TTObject {
+export class TTWorkoutPanel extends TTUIItem {
   /** WorkoutArea 一覧 */
   public Areas: TTWorkoutArea[] = [];
 

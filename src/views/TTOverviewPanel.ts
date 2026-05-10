@@ -6,10 +6,10 @@
  * OverviewAreaの開閉状態を管理する。
  */
 
-import { TTObject } from '../models/TTObject';
+import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
 
-export class TTOverviewPanel extends TTObject {
+export class TTOverviewPanel extends TTUIItem {
   /** OverviewAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
 

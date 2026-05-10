@@ -6,7 +6,7 @@
  * TTModelsのデータ層と各パネルビューモデルを橋渡しする。
  */
 
-import { TTObject } from '../models/TTObject';
+import { TTUIItem } from '../models/TTUIItem';
 import { TTModels } from '../models/TTModels';
 import { TTThinktankPanel } from './TTThinktankPanel';
 import { TTOverviewPanel } from './TTOverviewPanel';
@@ -14,7 +14,7 @@ import { TTWorkoutPanel } from './TTWorkoutPanel';
 import { TTReThinkPanel } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 
-export class TTApplication extends TTObject {
+export class TTApplication extends TTUIItem {
   /** 4パネルのビューモデル */
   public ThinktankPanel: TTThinktankPanel;
   public OverviewPanel: TTOverviewPanel;

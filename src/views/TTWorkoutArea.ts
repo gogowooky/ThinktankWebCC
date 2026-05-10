@@ -5,10 +5,10 @@
  * 位置情報は BSP ツリーが管理するため、このクラスは持たない。
  */
 
-import { TTObject } from '../models/TTObject';
+import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
 
-export class TTWorkoutArea extends TTObject {
+export class TTWorkoutArea extends TTUIItem {
   /** 表示形式 */
   public MediaType: MediaType = 'texteditor';
 

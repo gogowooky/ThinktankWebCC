@@ -6,7 +6,7 @@
  * ReThinkAreaの開閉状態とAI会話履歴を管理する。
  */
 
-import { TTObject } from '../models/TTObject';
+import { TTUIItem } from '../models/TTUIItem';
 
 /** AIチャットのメッセージ */
 export interface ChatMessage {
@@ -16,7 +16,7 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-export class TTReThinkPanel extends TTObject {
+export class TTReThinkPanel extends TTUIItem {
   /** ReThinkAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
 

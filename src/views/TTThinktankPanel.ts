@@ -6,7 +6,7 @@
  * ThinktankAreaの開閉状態を管理する。
  */
 
-import { TTObject } from '../models/TTObject';
+import { TTUIItem } from '../models/TTUIItem';
 
 /** ThinktankArea の表示モード */
 export type ThinktankViewMode =
@@ -16,7 +16,7 @@ export type ThinktankViewMode =
   | 'ai'        // AI相談（Phase 14 で接続）
   | 'settings'; // 保管庫設定
 
-export class TTThinktankPanel extends TTObject {
+export class TTThinktankPanel extends TTUIItem {
   /** ThinktankAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
 
