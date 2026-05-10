@@ -43,12 +43,9 @@ export class TTCollection extends TTObject {
     return this._children.get(id);
   }
 
-  public override NotifyUpdated(updateDate: boolean = true): void {
+  public override NotifyUpdated(updateProperty: boolean = true): void {
     this._itemsCache = null;
-    if (updateDate) {
-      super.NotifyUpdated(true);
-    }
-    // updateDate=false (child propagation): invalidate cache only, no listener fire
+    super.NotifyUpdated(updateProperty);
   }
 
   /** リスナーを明示的に発火する（表示更新ボタンなど手動リフレッシュ用）*/

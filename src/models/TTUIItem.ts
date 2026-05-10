@@ -25,7 +25,14 @@ export class TTUIItem extends TTNotifyBase {
    * UI の変更を通知する。
    * TTObject と異なり、タイムスタンプ更新（文字列生成）を行わないため軽量。
    */
-  public override NotifyUpdated(): void {
-    super.NotifyUpdated(true);
+  public override NotifyUpdated(propagateParent: boolean = true): void {
+    super.NotifyUpdated(propagateParent);
+  }
+
+  /** ID生成用の現在時刻文字列を取得 (yyyy-MM-dd-HHmmss) */
+  protected getNowString(): string {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
   }
 }

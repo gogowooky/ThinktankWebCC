@@ -15,9 +15,9 @@ export class TTNotifyBase {
   public NotifyUpdated(propagateParent: boolean = true): void {
     this._updateListeners.forEach(cb => cb());
     
-    // 親への伝播
+    // 親への伝播（親ノード自体のプロパティ更新は不要なので false を渡す）
     if (propagateParent && this._parent) {
-      this._parent.NotifyUpdated(true);
+      this._parent.NotifyUpdated(false);
     }
   }
 

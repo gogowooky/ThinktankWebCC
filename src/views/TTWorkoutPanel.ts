@@ -1,19 +1,6 @@
 /**
  * TTWorkoutPanel.ts
  * WorkoutArea 群を BSP ツリーで管理するビューモデル。
- *
- * レイアウト構造:
- *   LayoutNode = LeafNode | SplitNodeData
- *   LeafNode   … 単一の WorkoutArea を表示
- *   SplitNode  … 2 つの子ノードを縦（v）または横（h）に分割
- *
- * 操作:
- *   AddFirst  … 最初のエリアを追加（Layout = LeafNode）
- *   AddRight  … フォーカスペインを縦分割して右に追加
- *   AddBelow  … フォーカスペインを横分割して下に追加
- *   RemoveArea … エリア削除 + ツリー縮小
- *   FocusArea  … フォーカス切り替え
- *   SwapAreas  … ドラッグ&ドロップでペイン内容を交換
  */
 
 import { TTUIItem } from '../models/TTUIItem';
@@ -47,18 +34,11 @@ function newNodeId(): string {
 
 // ── 純粋ツリー操作関数 ────────────────────────────────────────────────
 
-/** ツリー内のすべての areaId を収集する */
 export function collectAreaIds(node: LayoutNode): string[] {
   if (node.type === 'leaf') return [node.areaId];
   return [...collectAreaIds(node.first), ...collectAreaIds(node.second)];
 }
 
-/**
- * focusedAreaId を持つ LeafNode を分割して新しい LeafNode を追加する。
- * direction: 'v' = 縦分割（左右）, 'h' = 横分割（上下）
- * position:  'second' = 新ペインを右/下に追加（既定）
- *            'first'  = 新ペインを左/上に追加
- */
 export function addToFocused(
   node: LayoutNode,
   focusedAreaId: string,
@@ -83,10 +63,6 @@ export function addToFocused(
   return { ...node, first: newFirst, second: newSecond };
 }
 
-/**
- * areaId を持つ LeafNode をツリーから削除し、兄弟ノードで置き換える。
- * ルートを削除した場合は null を返す。
- */
 export function removeLeaf(
   node: LayoutNode,
   areaId: string,
@@ -94,7 +70,6 @@ export function removeLeaf(
   if (node.type === 'leaf') {
     return node.areaId === areaId ? null : node;
   }
-  // split node
   if (node.first.type === 'leaf' && node.first.areaId === areaId) return node.second;
   if (node.second.type === 'leaf' && node.second.areaId === areaId) return node.first;
 
@@ -106,9 +81,6 @@ export function removeLeaf(
   return { ...node, first: newFirst, second: newSecond };
 }
 
-/**
- * 2 つの LeafNode の areaId を交換する（ドラッグ&ドロップ）。
- */
 export function swapLeafs(
   node: LayoutNode,
   fromAreaId: string,
@@ -128,18 +100,11 @@ export function swapLeafs(
 // ── TTWorkoutPanel ────────────────────────────────────────────────────
 
 export class TTWorkoutPanel extends TTUIItem {
-  /** WorkoutArea 一覧 */
   public Areas: TTWorkoutArea[] = [];
-
-  /** BSP レイアウトツリー（null = エリアなし）*/
   public Layout: LayoutNode | null = null;
-
-  /** 現在フォーカスされている areaId（null = なし）*/
   public FocusedAreaId: string | null = null;
 
-  public override get ClassName(): string {
-    return 'TTWorkoutPanel';
-  }
+  public override get ClassName(): string { return 'TTWorkoutPanel'; }
 
   constructor() {
     super();
@@ -148,7 +113,6 @@ export class TTWorkoutPanel extends TTUIItem {
   }
 
   // ── TextEditor 設定 ───────────────────────────────────────────────────
-
   public EditorLineNumbers: boolean = false;
   public EditorWordWrap: boolean = true;
   public EditorMinimap: boolean = false;
@@ -169,11 +133,11 @@ export class TTWorkoutPanel extends TTUIItem {
   ];
 
   public EditorHighlightStyles: { backgroundColor: string; color: string }[] = [
-    { backgroundColor: '#fff0b3', color: '#1a1a1a' }, // G1: 淡い黄
-    { backgroundColor: '#ffb3b3', color: '#1a1a1a' }, // G2: 淡い赤
-    { backgroundColor: '#b3e0ff', color: '#1a1a1a' }, // G3: 明るい水色
-    { backgroundColor: '#b3ffb3', color: '#1a1a1a' }, // G4: 淡い緑
-    { backgroundColor: '#e6b3ff', color: '#1a1a1a' }, // G5: 淡い紫
+    { backgroundColor: '#fff0b3', color: '#1a1a1a' }, 
+    { backgroundColor: '#ffb3b3', color: '#1a1a1a' }, 
+    { backgroundColor: '#b3e0ff', color: '#1a1a1a' }, 
+    { backgroundColor: '#b3ffb3', color: '#1a1a1a' }, 
+    { backgroundColor: '#e6b3ff', color: '#1a1a1a' }, 
   ];
 
   public SetEditorLineNumbers(v: boolean) { this.EditorLineNumbers = v; this.NotifyUpdated(); }
@@ -185,7 +149,6 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetEditorHighlightWord(v: string) { this.EditorHighlightWord = v; this.NotifyUpdated(); }
   public AddEditorHighlightHistory(v: string) {
     if (!v.trim()) return;
-    // 重複を削除して先頭に追加し、最大10件まで保持
     this.EditorHighlightHistory = [v, ...this.EditorHighlightHistory.filter(h => h !== v)].slice(0, 10);
     this.NotifyUpdated();
   }
@@ -194,41 +157,34 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetEditorForeground(color: string) { this.EditorForeground = color; this.NotifyUpdated(); }
   public SetEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
     if (level < 1 || level > 5) return;
-    this.EditorHeadingStyles = this.EditorHeadingStyles.map((s, i) =>
-      i === level - 1 ? { ...s, ...style } : s,
-    );
+    this.EditorHeadingStyles = this.EditorHeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);
     this.NotifyUpdated();
   }
   public SetEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string }>) {
     if (groupIndex >= 0 && groupIndex <= 4) {
-      this.EditorHighlightStyles = this.EditorHighlightStyles.map((s, i) =>
-        i === groupIndex ? { ...s, ...style } : s,
-      );
+      this.EditorHighlightStyles = this.EditorHighlightStyles.map((s, i) => i === groupIndex ? { ...s, ...style } : s);
       this.NotifyUpdated();
     }
   }
 
   // ── Area CRUD ──────────────────────────────────────────────────────────
 
-  /** 最初のエリアを追加（Layout がある場合は右分割） */
   public AddFirst(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
     const area = this._createArea(resourceId, mediaType, title);
     if (this.Layout === null) {
       this.Layout = { id: newNodeId(), type: 'leaf', areaId: area.ID };
     } else {
-      // 既にレイアウトがある場合はフォーカスペインの右に追加
-      this.Layout = addToFocused(this.Layout, this.FocusedAreaId ?? collectAreaIds(this.Layout)[0], area.ID, 'v');
+      const focusId = this.FocusedAreaId ?? collectAreaIds(this.Layout)[0];
+      this.Layout = addToFocused(this.Layout, focusId, area.ID, 'v');
     }
     this.FocusedAreaId = area.ID;
     this.NotifyUpdated();
     return area;
   }
 
-  /** フォーカスペインを縦分割して右にエリアを追加 */
   public AddRight(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
-
     const area = this._createArea(resourceId, mediaType, title);
     this.Layout = addToFocused(this.Layout, focusId, area.ID, 'v');
     this.FocusedAreaId = area.ID;
@@ -236,11 +192,9 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** フォーカスペインを横分割して下にエリアを追加 */
   public AddBelow(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
-
     const area = this._createArea(resourceId, mediaType, title);
     this.Layout = addToFocused(this.Layout, focusId, area.ID, 'h');
     this.FocusedAreaId = area.ID;
@@ -248,11 +202,9 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** フォーカスペインを縦分割して左にエリアを追加 */
   public AddLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
-
     const area = this._createArea(resourceId, mediaType, title);
     this.Layout = addToFocused(this.Layout, focusId, area.ID, 'v', 'first');
     this.FocusedAreaId = area.ID;
@@ -260,11 +212,9 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** フォーカスペインを横分割して上にエリアを追加 */
   public AddAbove(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
-
     const area = this._createArea(resourceId, mediaType, title);
     this.Layout = addToFocused(this.Layout, focusId, area.ID, 'h', 'first');
     this.FocusedAreaId = area.ID;
@@ -272,7 +222,6 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** レイアウト全体の左端に新エリアを追加（ルートを縦分割）*/
   public AddToLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
@@ -286,7 +235,6 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** レイアウト全体の右端に新エリアを追加（ルートを縦分割）*/
   public AddToRight(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
@@ -300,7 +248,6 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** レイアウト全体の上端に新エリアを追加（ルートを横分割）*/
   public AddToTop(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
@@ -314,7 +261,6 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** レイアウト全体の下端に新エリアを追加（ルートを横分割）*/
   public AddToBottom(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
@@ -328,27 +274,22 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  /** 指定 ID の Area を削除し、ツリーを縮小する */
   public RemoveArea(areaId: string): void {
     this.Areas = this.Areas.filter(a => a.ID !== areaId);
     if (this.Layout) {
       this.Layout = removeLeaf(this.Layout, areaId);
     }
-    // フォーカスが消えたら残存エリアの先頭へ
     if (this.FocusedAreaId === areaId) {
       this.FocusedAreaId = this.Layout ? (collectAreaIds(this.Layout)[0] ?? null) : null;
     }
     this.NotifyUpdated();
   }
 
-  /** ID で Area を取得する */
   public GetArea(areaId: string): TTWorkoutArea | undefined {
     return this.Areas.find(a => a.ID === areaId);
   }
 
   // ── フォーカス ─────────────────────────────────────────────────────────
-
-  /** フォーカスエリアを設定する */
   public FocusArea(areaId: string): void {
     if (this.FocusedAreaId === areaId) return;
     if (!this.Areas.find(a => a.ID === areaId)) return;
@@ -356,7 +297,6 @@ export class TTWorkoutPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
-  /** 指定 ResourceID がすでに開いているペインがあればフォーカスして true を返す */
   public FocusExistingResource(resourceId: string): boolean {
     const existing = this.Areas.find(a => a.ResourceID === resourceId);
     if (!existing) return false;
@@ -364,7 +304,6 @@ export class TTWorkoutPanel extends TTUIItem {
     return true;
   }
 
-  /** フォーカスペインの内容を差し替える。ペインがなければ null を返す */
   public ReplaceFocused(resourceId: string, mediaType: MediaType, title: string = ''): TTWorkoutArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     const area = focusId ? this.Areas.find(a => a.ID === focusId) : null;
@@ -374,18 +313,12 @@ export class TTWorkoutPanel extends TTUIItem {
     return area;
   }
 
-  // ── ドラッグ移動 ────────────────────────────────────────────────────────
-
-  /** 2 つのペイン内容を入れ替える（ドラッグ&ドロップ完了時に呼ぶ）*/
   public SwapAreas(fromId: string, toId: string): void {
     if (!this.Layout || fromId === toId) return;
     this.Layout = swapLeafs(this.Layout, fromId, toId);
     this.NotifyUpdated();
   }
 
-  // ── MediaType 変更 ─────────────────────────────────────────────────────
-
-  /** エリアのメディアタイプを変更する */
   public SetMediaType(areaId: string, mediaType: MediaType): void {
     const area = this.GetArea(areaId);
     if (!area) return;
@@ -393,9 +326,6 @@ export class TTWorkoutPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
-  // ── クリア ────────────────────────────────────────────────────────────
-
-  /** 全 Area をクリアする */
   public ClearAll(): void {
     this.Areas         = [];
     this.Layout        = null;
@@ -404,12 +334,12 @@ export class TTWorkoutPanel extends TTUIItem {
   }
 
   // ── 内部ヘルパー ──────────────────────────────────────────────────────
-
   private _createArea(resourceId: string, mediaType: MediaType, title: string): TTWorkoutArea {
     const area   = new TTWorkoutArea();
     area._parent = this;
     area.OpenThink(resourceId, mediaType, title);
-    this.Areas.push(area);
+    // 配列の更新もイミュータブルに行う
+    this.Areas = [...this.Areas, area];
     return area;
   }
 }

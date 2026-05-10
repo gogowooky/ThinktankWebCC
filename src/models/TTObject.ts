@@ -22,15 +22,11 @@ export class TTObject extends TTNotifyBase {
     return 'TTObject';
   }
 
-  /**
-   * 変更を通知し、UpdateDate を更新する。
-   * @param updateDate true（デフォルト）の場合は UpdateDate を現在時刻に更新してから通知する。
-   */
-  public override NotifyUpdated(updateDate: boolean = true): void {
-    if (updateDate) {
+  public override NotifyUpdated(updateProperty: boolean = true): void {
+    if (updateProperty) {
       this.UpdateDate = this.getNowString();
     }
-    // 親への通知伝播も含めて委譲。親が TTObject なら UpdateDate 更新が連鎖する
+    // 親への通知を継続。
     super.NotifyUpdated(true);
   }
 

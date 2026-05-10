@@ -87,6 +87,7 @@ export class TTApplication extends TTUIItem {
 
   /** Thought に含まれない Think のペインを WorkoutPanel から削除する */
   private _removeOutOfThoughtPanes(thoughtId: string): void {
+    if (!thoughtId) return; // 何も選択されていない時は削除しない
     const vault = this.Models.Vault;
     const thinks = vault.GetThinksForThought(thoughtId);
     const allowed = new Set(thinks.map(t => t.ID));
