@@ -97,7 +97,10 @@
       "Read(//c/Users/gogow/AppData/Roaming/Electron/**)",
       "Bash(node scripts/import-local-vault.cjs)",
       "Bash(cat \"C:\\\\\\\\Users\\\\\\\\gogow\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\\\\\fc950bd0-1423-432f-a6a1-c237cab6b369\\\\\\\\tasks\\\\\\\\bca8tdxtc.output\")",
-      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\gogow\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\\\\\fc950bd0-1423-432f-a6a1-c237cab6b369\\\\\\\\tasks\\\\\\\\bngo2iezr.output\")"
+      "Bash(cat \"C:\\\\\\\\Users\\\\\\\\gogow\\\\\\\\AppData\\\\\\\\Local\\\\\\\\Temp\\\\\\\\claude\\\\\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\\\\\fc950bd0-1423-432f-a6a1-c237cab6b369\\\\\\\\tasks\\\\\\\\bngo2iezr.output\")",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\" -Recurse -Directory)",
+      "Bash(Select-Object FullName)",
+      "Bash(Select-Object -ExpandProperty FullName)"
     ]
   }
 }

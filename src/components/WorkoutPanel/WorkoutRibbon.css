@@ -24,10 +24,12 @@
   /* index.css の定義を利用 */
 }
 
-.workout-ribbon button[data-tip]:not([data-tip=''])::after {
-  bottom: 50%;
-  left: calc(100% + 12px);
-  transform: translateY(50%);
+.workout-ribbon [data-tip]::after {
+  bottom: 50% !important;
+  left: calc(100% + 10px) !important;
+  right: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
 }
 
 /* ── 開閉トグルボタン ────────────────────────────── */

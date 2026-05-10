@@ -50,6 +50,23 @@
   /* index.css の定義を利用 */
 }
 
+/* ツールチップの表示位置制御: リボン内のボタンは横側に表示する */
+.panel-ribbon[data-side="left"] [data-tip]::after {
+  bottom: 50% !important;
+  left: calc(100% + 10px) !important;
+  right: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
+}
+
+.panel-ribbon[data-side="right"] [data-tip]::after {
+  bottom: 50% !important;
+  right: calc(100% + 10px) !important;
+  left: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
+}
+
 /* ── 内部要素 ─────────────────────────────────────────── */
 
 .panel-ribbon__buttons {
