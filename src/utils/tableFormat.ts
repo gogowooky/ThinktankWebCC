@@ -4,16 +4,30 @@
  *
  * フォーマット仕様:
  *   1行目: タイトル
- *   ## セクション名
- *   > 列名csv（1行）
- *   データcsv行...
- *   # で始まる行はスキップ（コメント・見出し扱い）
+ *   > 列名csv（行頭が > の行、最初の1行のみ列定義として有効）
+ *   値csv行...（通常のCSV行はデータ行）
+ *   # で始まる行はコメント行（保存時も保持、データとして扱わない）
+ *   ; で始まる行はコメント行（保存時も保持、データとして扱わない）
+ *
+ * 保存ルール:
+ *   - filter/sort による表示順変更はファイルのデータ行位置を変更しない
+ *   - カラム順変更は保存時に各データ行の列順を更新する
+ *   - 新規追加行はファイル末尾に追加する
  */
 
+export type RawLineType = 'columns' | 'data' | 'comment' | 'empty';
+
+export interface RawLine {
+  type:    RawLineType;
+  text:    string;
+  rowIdx?: number;  // type === 'data' のときのみ、rows[] のインデックス
+}
+
 export interface TableSection {
-  title:   string;
-  columns: string[];
-  rows:    string[][];
+  title:    string;
+  columns:  string[];
+  rows:     string[][];
+  rawLines: RawLine[];  // タイトル行以外の全行（コメント・空行を含む）
 }
 
 /** RFC 4180 準拠の CSV 行パーサー */
@@ -40,48 +54,105 @@ export function parseCsvLine(line: string): string[] {
   return result;
 }
 
-/** table Content 文字列をセクション配列にパース */
+/** CSV セル値エスケープ */
+function escapeCsv(cell: string): string {
+  return cell.includes(',') || cell.includes('"') || cell.includes('\n')
+    ? `"${cell.replace(/"/g, '""')}"` : cell;
+}
+
+/**
+ * table Content 文字列を TableSection 配列にパース。
+ * 新フォーマット: > で列定義（最初のみ有効）、# と ; はコメント行。
+ * 戻り値は 0 または 1 要素の配列。
+ */
 export function parseTableContent(content: string): TableSection[] {
-  const lines = content.split('\n').slice(1); // 1行目(タイトル)はスキップ
-  const sections: TableSection[] = [];
-  let current: TableSection | null = null;
+  const allLines = content.split('\n');
+  const title    = allLines[0] ?? '';
+  const lines    = allLines.slice(1);
+
+  const columns:  string[]   = [];
+  const rows:     string[][] = [];
+  const rawLines: RawLine[]  = [];
 
   for (const line of lines) {
-    if (line.startsWith('## ')) {
-      if (current) sections.push(current);
-      current = { title: line.slice(3).trim(), columns: [], rows: [] };
-    } else if (line.startsWith('>') && current && current.columns.length === 0) {
-      current.columns = parseCsvLine(line.slice(1).trim());
-    } else if (line.startsWith('#')) {
-      // コメント/見出し行 → スキップ
-    } else if (current && line.trim()) {
-      current.rows.push(parseCsvLine(line));
+    if (line.startsWith('>') && columns.length === 0) {
+      // 最初の > 行を列定義として採用
+      const cols = parseCsvLine(line.slice(1).trim());
+      columns.push(...cols);
+      rawLines.push({ type: 'columns', text: line });
+    } else if (line.startsWith('>')) {
+      // 2番目以降の > 行はコメント扱いで保持
+      rawLines.push({ type: 'comment', text: line });
+    } else if (line.startsWith('#') || line.startsWith(';')) {
+      rawLines.push({ type: 'comment', text: line });
+    } else if (!line.trim()) {
+      rawLines.push({ type: 'empty', text: line });
+    } else {
+      const rowIdx = rows.length;
+      rows.push(parseCsvLine(line));
+      rawLines.push({ type: 'data', text: line, rowIdx });
     }
   }
-  if (current) sections.push(current);
-  return sections;
+
+  if (columns.length === 0 && rows.length === 0) return [];
+  return [{ title, columns, rows, rawLines }];
+}
+
+/**
+ * TableSection を Content 文字列に変換。
+ * rawLines の順序を維持し、コメント・空行をそのまま保持する。
+ * columnOrder を指定すると、列定義行とデータ行の列順を変換して書き出す。
+ */
+export function tableSectionToContent(
+  title:       string,
+  section:     TableSection,
+  columnOrder?: number[],
+): string {
+  const order = columnOrder ?? section.columns.map((_, i) => i);
+
+  // rawLines がない（XLSX インポート等）場合はシンプルに生成
+  if (!section.rawLines || section.rawLines.length === 0) {
+    let out = title + '\n';
+    if (section.columns.length > 0)
+      out += '> ' + section.columns.map(escapeCsv).join(',') + '\n';
+    for (const row of section.rows)
+      out += row.map(escapeCsv).join(',') + '\n';
+    return out.trimEnd();
+  }
+
+  let result = title + '\n';
+
+  for (const raw of section.rawLines) {
+    switch (raw.type) {
+      case 'columns':
+        result += '> ' + order.map(i => escapeCsv(section.columns[i] ?? '')).join(',') + '\n';
+        break;
+      case 'data': {
+        const row = section.rows[raw.rowIdx!] ?? [];
+        result += order.map(i => escapeCsv(row[i] ?? '')).join(',') + '\n';
+        break;
+      }
+      default:
+        result += raw.text + '\n';
+    }
+  }
+
+  return result.trimEnd();
+}
+
+/**
+ * セクション配列を Content 文字列に変換（後方互換 / XLSX インポート用）。
+ * rawLines がない Section にも対応する。
+ */
+export function sectionsToTableContent(title: string, sections: TableSection[]): string {
+  if (sections.length === 0) return title;
+  return tableSectionToContent(title, sections[0]);
 }
 
 /** セクションを CSV 文字列に変換（BOM なし） */
 export function sectionToCsv(section: TableSection): string {
-  const esc = (cell: string) =>
-    cell.includes(',') || cell.includes('"') || cell.includes('\n')
-      ? `"${cell.replace(/"/g, '""')}"` : cell;
   return [
-    section.columns.map(esc).join(','),
-    ...section.rows.map(row => row.map(esc).join(',')),
+    section.columns.map(escapeCsv).join(','),
+    ...section.rows.map(row => row.map(escapeCsv).join(',')),
   ].join('\r\n');
-}
-
-/** セクション配列を table Content 文字列に変換 */
-export function sectionsToTableContent(title: string, sections: TableSection[]): string {
-  const esc = (cell: string) =>
-    cell.includes(',') || cell.includes('"') ? `"${cell.replace(/"/g, '""')}"` : cell;
-  let result = title + '\n';
-  for (const s of sections) {
-    result += `## ${s.title}\n`;
-    result += `> ${s.columns.map(esc).join(',')}\n`;
-    for (const row of s.rows) result += row.map(esc).join(',') + '\n';
-  }
-  return result.trimEnd();
 }

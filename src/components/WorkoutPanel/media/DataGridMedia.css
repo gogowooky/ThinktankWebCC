@@ -471,6 +471,49 @@
   color: rgba(0,0,0,0.8);
 }
 
+/* 新規入力行 */
+.table-grid__new-row {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  background: rgba(122, 162, 247, 0.06);
+  border-bottom: 2px solid rgba(122, 162, 247, 0.35);
+  position: sticky;
+  top: 28px;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.table-grid__rownum-cell--new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(122, 162, 247, 0.65);
+}
+
+.table-grid__new-row-cell {
+  flex-shrink: 0;
+  height: 100%;
+  padding: 0 6px;
+  border: none;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  background: transparent;
+  font-size: 12px;
+  outline: none;
+  box-sizing: border-box;
+  color: #111;
+}
+
+.table-grid__new-row-cell:focus {
+  background: rgba(122, 162, 247, 0.12);
+  border-bottom: 2px solid #7aa2f7;
+}
+
+.table-grid__new-row-cell::placeholder {
+  color: rgba(0, 0, 0, 0.2);
+  font-size: 11px;
+}
+
 /* ── ハイライト ───────────────────────────────────────── */
 .custom-highlight-g1 { background-color: #ffff00; color: #000000; border-radius: 2px; }
 .custom-highlight-g2 { background-color: #ff0000; color: #ffffff; border-radius: 2px; }

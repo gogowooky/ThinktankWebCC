@@ -17,9 +17,9 @@ import {
 import type { TTThink } from '../../../models/TTThink';
 import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
-import type { TableSection } from '../../../utils/tableFormat';
+import type { TableSection, RawLine } from '../../../utils/tableFormat';
 import { useHighlight } from '../../../contexts/HighlightContext';
-import { parseTableContent, sectionsToTableContent } from '../../../utils/tableFormat';
+import { parseTableContent, tableSectionToContent } from '../../../utils/tableFormat';
 import './DataGridMedia.css';
 
 // ContentType アイコンマッピング
@@ -139,6 +139,11 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
 
   const section  = sections[Math.min(activeIdx, sections.length - 1)] ?? null;
 
+  // 新規入力行
+  const [newRowValues, setNewRowValues] = useState<string[]>(() =>
+    Array(section?.columns.length ?? 0).fill('')
+  );
+
   // think 切り替え時、および section のカラム数変更時にリセット
   useEffect(() => {
     setSections(parseTableContent(think.Content));
@@ -153,9 +158,11 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     if (section) {
       setColumnOrder(Array.from({ length: section.columns.length }, (_, i) => i));
       setColumnWidths(Array.from({ length: section.columns.length }, () => COL_WIDTH));
+      setNewRowValues(Array.from({ length: section.columns.length }, () => ''));
     } else {
       setColumnOrder([]);
       setColumnWidths([]);
+      setNewRowValues([]);
     }
   }, [section?.columns.length, activeIdx, think.ID]);
 
@@ -191,25 +198,24 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   // ── ハンドラー ─────────────────────────────────────────────────────────
 
   const handleSave = useCallback(() => {
-    if (!onSave) return;
-    
-    // 現在の表示順序（columnOrder）に従って sections を物理的に並び替える
-    const reorderedSections = sections.map((s, si) => {
-      if (si !== activeIdx) return s;
-      return {
-        ...s,
-        columns: columnOrder.map(i => s.columns[i]),
-        rows:    s.rows.map(row => columnOrder.map(i => row[i]))
-      };
-    });
+    if (!onSave || !section) return;
 
-    onSave(sectionsToTableContent(think.Name, reorderedSections));
-    
-    // データが書き換わったのでステートを更新し、order をリセット
-    setSections(reorderedSections);
-    setColumnOrder(Array.from({ length: reorderedSections[activeIdx]?.columns.length ?? 0 }, (_, i) => i));
+    // columnOrder に従って列を物理的に並び替えた section を作成
+    const reorderedSection: TableSection = {
+      ...section,
+      columns: columnOrder.map(i => section.columns[i] ?? ''),
+      rows:    section.rows.map(row => columnOrder.map(i => row[i] ?? '')),
+      rawLines: section.rawLines,
+    };
+
+    // rawLines のコメント行・空行を保持したまま書き出し（列順は identity で OK、物理並び替え済み）
+    onSave(tableSectionToContent(think.Name, reorderedSection));
+
+    // state を並び替え後の section で更新し、columnOrder をリセット
+    setSections([reorderedSection]);
+    setColumnOrder(Array.from({ length: reorderedSection.columns.length }, (_, i) => i));
     setIsDirty(false);
-  }, [onSave, think.Name, sections, activeIdx, columnOrder]);
+  }, [onSave, think.Name, section, columnOrder]);
 
   const handleSortToggle = useCallback((col: number) => {
     setSortState(prev => {
@@ -240,11 +246,40 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     setEditState({ rowIdx, col, value });
   }, []);
 
+  const handleNewRowChange = useCallback((colIdx: number, value: string) => {
+    setNewRowValues(prev => {
+      const next = [...prev];
+      next[colIdx] = value;
+      return next;
+    });
+  }, []);
+
+  const handleNewRowCommit = useCallback(() => {
+    if (!section || newRowValues.every(v => v === '')) return;
+    setSections(prev => prev.map((s, si) => {
+      if (si !== activeIdx) return s;
+      const newRowIdx = s.rows.length;
+      const newRaw: RawLine = { type: 'data', text: '', rowIdx: newRowIdx };
+      return {
+        ...s,
+        rows:     [...s.rows, newRowValues],      // ファイル末尾に追加
+        rawLines: [...s.rawLines, newRaw],
+      };
+    }));
+    setNewRowValues(Array(section.columns.length).fill(''));
+    setIsDirty(true);
+  }, [newRowValues, activeIdx, section]);
+
   const handleAddRow = useCallback(() => {
     setSections(prev => prev.map((s, si) => {
       if (si !== activeIdx) return s;
-      // 物理的な並び順に合わせて追加する
-      return { ...s, rows: [...s.rows, Array(s.columns.length).fill('')] };
+      const newRowIdx = s.rows.length;
+      const newRaw: RawLine = { type: 'data', text: '', rowIdx: newRowIdx };
+      return {
+        ...s,
+        rows:     [...s.rows, Array(s.columns.length).fill('')],  // ファイル末尾に追加
+        rawLines: [...s.rawLines, newRaw],
+      };
     }));
     setIsDirty(true);
     setTimeout(() => {
@@ -325,9 +360,9 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     return (
       <div className="table-grid__empty-full">
         テーブルデータがありません。TextEditor で以下の形式で入力してください：<br />
-        <code>## セクション名</code><br />
         <code>&gt; 列名1,列名2,列名3</code><br />
-        <code>値1,値2,値3</code>
+        <code>値1,値2,値3</code><br />
+        <code># コメント行（# または ; で始まる行は保存時も保持）</code>
       </div>
     );
   }
@@ -419,6 +454,34 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
               );
             })}
           </div>
+
+          {/* 新規入力行 */}
+          {colCount > 0 && (
+            <div className="table-grid__new-row">
+              <div className="table-grid__rownum-cell table-grid__rownum-cell--new">
+                <Plus size={12} />
+              </div>
+              {columnOrder.map((colIdx) => (
+                <input
+                  key={colIdx}
+                  className="table-grid__new-row-cell"
+                  style={{ width: columnWidths[colIdx] }}
+                  value={newRowValues[colIdx] ?? ''}
+                  placeholder={section?.columns[colIdx]}
+                  onChange={e => handleNewRowChange(colIdx, e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleNewRowCommit();
+                    }
+                    if (e.key === 'Escape') {
+                      setNewRowValues(Array(colCount).fill(''));
+                    }
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* 仮想スクロール本体 */}
           <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
