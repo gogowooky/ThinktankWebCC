@@ -8,12 +8,16 @@
  *    → 更新ボタンで UI の現在値をファイルに反映
  * ③ Undo/Redo（メモリ内スタック、最大50件）
  *
+ * 【設計】
+ * キーごとの全情報（読み取り・書き込み・メタデータ）を PROP_SPECS に一元集約。
+ * 新しいUI設定項目を追加する場合は PROP_SPECS にオブジェクトを1つ追加するだけでよい。
+ *
  * 列構成: key, current, default, type, candidates, restore, description
  *   key:        変数名
  *   current:    現在値（編集→保存でUIに反映）
  *   default:    デフォルト値（参照用）
  *   type:       データ型 (boolean/string/color/json)
- *   candidates: 設定可能な値・範囲
+ *   candidates: 設定可能な値・範囲（boolean は true,false,toggle）
  *   restore:    保存値（currentと常に同期、起動時の復元に使用）
  *   description:説明
  */
@@ -25,6 +29,8 @@ import { parseTableContent, tableSectionToContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { MediaType } from '../types';
 
+// ── PropDef: serialize() が返すテーブル行の型 ────────────────────────────────
+
 interface PropDef {
   key:         string;
   current:     string;
@@ -35,6 +41,32 @@ interface PropDef {
   description: string;
 }
 
+// ── PropSpec: キーごとの定義を一元管理するオブジェクト ──────────────────────
+//
+// 各エントリに以下をすべて記述する：
+//   panel       : 変更通知先のパネル識別子
+//   default     : デフォルト値（文字列）
+//   type        : データ型
+//   candidates  : 設定可能な値・範囲（boolean は "true,false,toggle" を統一とする）
+//   description : 説明
+//   get(app)    : TTApplication から現在値を文字列で読み取る
+//   set(app, v) : 文字列値 v を TTApplication のプロパティに書き込む
+//
+// ※ set() 内で NotifyUpdated() は呼ばない。_applyContent() がまとめて呼ぶ。
+
+type PanelKey = 'ThinktankPanel' | 'OverviewPanel' | 'WorkoutPanel' | 'ReThinkPanel';
+
+interface PropSpec {
+  panel:       PanelKey;
+  default:     string;
+  type:        PropDef['type'];
+  candidates:  string;
+  description: string;
+  get: (app: TTApplication) => string;
+  set: (app: TTApplication, value: string) => void;
+}
+
+// デフォルト値（JSON型のみ長いためここで定義）
 const DEFAULT_HEADING_STYLES = JSON.stringify([
   { color: '#569cd6', bold: true,  underline: false },
   { color: '#4ec9b0', bold: true,  underline: false },
@@ -51,24 +83,135 @@ const DEFAULT_HIGHLIGHT_STYLES = JSON.stringify([
   { backgroundColor: '#800080', color: '#ffffff' },
 ]);
 
-const PROP_META: Record<string, { defaultVal: string; candidates: string }> = {
-  'ThinktankPanel.IsAreaOpen':              { defaultVal: 'true',                    candidates: 'true,false,toggle' },
-  'ThinktankPanel.ViewMode':                { defaultVal: 'thoughts',                candidates: 'thoughts,filter,search,ai,settings' },
-  'OverviewPanel.IsAreaOpen':               { defaultVal: 'false',                   candidates: 'true,false,toggle' },
-  'OverviewPanel.MediaType':                { defaultVal: 'datagrid',                candidates: 'datagrid,markdown,graph' },
-  'WorkoutPanel.EditorLineNumbers':         { defaultVal: 'false',                   candidates: 'true,false,toggle' },
-  'WorkoutPanel.EditorWordWrap':            { defaultVal: 'true',                    candidates: 'true,false,toggle' },
-  'WorkoutPanel.EditorMinimap':             { defaultVal: 'false',                   candidates: 'true,false,toggle' },
-  'WorkoutPanel.EditorShowFullWidthSpace':  { defaultVal: 'false',                   candidates: 'true,false,toggle' },
-  'WorkoutPanel.EditorUnicodeHighlight':    { defaultVal: 'false',                   candidates: 'true,false,toggle' },
-  'WorkoutPanel.EditorBracketPairColorization': { defaultVal: 'true',               candidates: 'true,false,toggle' },
-  'WorkoutPanel.EditorHighlightWord':       { defaultVal: '',                        candidates: 'スペース区切りで複数単語,グループはカンマ区切り' },
-  'WorkoutPanel.EditorBackground':          { defaultVal: '#f5f5f5',                 candidates: '#rrggbb (16進カラー)' },
-  'WorkoutPanel.EditorForeground':          { defaultVal: '#1e1e1e',                 candidates: '#rrggbb (16進カラー)' },
-  'WorkoutPanel.EditorHeadingStyles':       { defaultVal: DEFAULT_HEADING_STYLES,    candidates: 'JSON array [{color,bold,underline}×5]' },
-  'WorkoutPanel.EditorHighlightStyles':     { defaultVal: DEFAULT_HIGHLIGHT_STYLES,  candidates: 'JSON array [{backgroundColor,color}×5]' },
-  'ReThinkPanel.IsAreaOpen':                { defaultVal: 'true',                    candidates: 'true,false,toggle' },
+/**
+ * PROP_SPECS
+ * UI設定の全項目定義。新規項目の追加はここにオブジェクトを1つ追記するだけでよい。
+ * _getProps() / _applyProp() はこの定義を参照するため個別修正不要。
+ */
+const PROP_SPECS: Record<string, PropSpec> = {
+
+  // ── ThinktankPanel ──────────────────────────────────────────────────────
+  'ThinktankPanel.IsAreaOpen': {
+    panel: 'ThinktankPanel',
+    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    description: '左パネル表示',
+    get: (app) => String(app.ThinktankPanel.IsAreaOpen),
+    set: (app, v) => { app.ThinktankPanel.IsAreaOpen = parseBool(v, app.ThinktankPanel.IsAreaOpen); },
+  },
+  'ThinktankPanel.ViewMode': {
+    panel: 'ThinktankPanel',
+    default: 'thoughts', type: 'string', candidates: 'thoughts,filter,search,ai,settings',
+    description: '左パネルモード',
+    get: (app) => app.ThinktankPanel.ViewMode,
+    set: (app, v) => { app.ThinktankPanel.ViewMode = v as ThinktankViewMode; },
+  },
+
+  // ── OverviewPanel ────────────────────────────────────────────────────────
+  'OverviewPanel.IsAreaOpen': {
+    panel: 'OverviewPanel',
+    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    description: '上部パネル表示',
+    get: (app) => String(app.OverviewPanel.IsAreaOpen),
+    set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
+  },
+  'OverviewPanel.MediaType': {
+    panel: 'OverviewPanel',
+    default: 'datagrid', type: 'string', candidates: 'datagrid,markdown,graph',
+    description: '上部パネルメディア',
+    get: (app) => app.OverviewPanel.MediaType,
+    set: (app, v) => { app.OverviewPanel.MediaType = v as MediaType; },
+  },
+
+  // ── WorkoutPanel（エディタ設定）────────────────────────────────────────
+  'WorkoutPanel.EditorLineNumbers': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    description: '行番号表示',
+    get: (app) => String(app.WorkoutPanel.EditorLineNumbers),
+    set: (app, v) => { app.WorkoutPanel.EditorLineNumbers = parseBool(v, app.WorkoutPanel.EditorLineNumbers); },
+  },
+  'WorkoutPanel.EditorWordWrap': {
+    panel: 'WorkoutPanel',
+    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    description: '折り返し',
+    get: (app) => String(app.WorkoutPanel.EditorWordWrap),
+    set: (app, v) => { app.WorkoutPanel.EditorWordWrap = parseBool(v, app.WorkoutPanel.EditorWordWrap); },
+  },
+  'WorkoutPanel.EditorMinimap': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    description: 'ミニマップ',
+    get: (app) => String(app.WorkoutPanel.EditorMinimap),
+    set: (app, v) => { app.WorkoutPanel.EditorMinimap = parseBool(v, app.WorkoutPanel.EditorMinimap); },
+  },
+  'WorkoutPanel.EditorShowFullWidthSpace': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    description: '全角スペース表示',
+    get: (app) => String(app.WorkoutPanel.EditorShowFullWidthSpace),
+    set: (app, v) => { app.WorkoutPanel.EditorShowFullWidthSpace = parseBool(v, app.WorkoutPanel.EditorShowFullWidthSpace); },
+  },
+  'WorkoutPanel.EditorUnicodeHighlight': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    description: 'Unicode強調',
+    get: (app) => String(app.WorkoutPanel.EditorUnicodeHighlight),
+    set: (app, v) => { app.WorkoutPanel.EditorUnicodeHighlight = parseBool(v, app.WorkoutPanel.EditorUnicodeHighlight); },
+  },
+  'WorkoutPanel.EditorBracketPairColorization': {
+    panel: 'WorkoutPanel',
+    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    description: '括弧ペア色分け',
+    get: (app) => String(app.WorkoutPanel.EditorBracketPairColorization),
+    set: (app, v) => { app.WorkoutPanel.EditorBracketPairColorization = parseBool(v, app.WorkoutPanel.EditorBracketPairColorization); },
+  },
+  'WorkoutPanel.EditorHighlightWord': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: 'スペース区切りで複数単語,グループはカンマ区切り',
+    description: 'ハイライトキーワード',
+    get: (app) => app.WorkoutPanel.EditorHighlightWord,
+    set: (app, v) => { app.WorkoutPanel.EditorHighlightWord = v; },
+  },
+  'WorkoutPanel.EditorBackground': {
+    panel: 'WorkoutPanel',
+    default: '#f5f5f5', type: 'color', candidates: '#rrggbb (16進カラー)',
+    description: '背景色',
+    get: (app) => app.WorkoutPanel.EditorBackground,
+    set: (app, v) => { app.WorkoutPanel.EditorBackground = v; },
+  },
+  'WorkoutPanel.EditorForeground': {
+    panel: 'WorkoutPanel',
+    default: '#1e1e1e', type: 'color', candidates: '#rrggbb (16進カラー)',
+    description: '前景色',
+    get: (app) => app.WorkoutPanel.EditorForeground,
+    set: (app, v) => { app.WorkoutPanel.EditorForeground = v; },
+  },
+  'WorkoutPanel.EditorHeadingStyles': {
+    panel: 'WorkoutPanel',
+    default: DEFAULT_HEADING_STYLES, type: 'json', candidates: 'JSON array [{color,bold,underline}×5]',
+    description: '見出しスタイル',
+    get: (app) => JSON.stringify(app.WorkoutPanel.EditorHeadingStyles),
+    set: (app, v) => { try { app.WorkoutPanel.EditorHeadingStyles = JSON.parse(v); } catch { /* ignore */ } },
+  },
+  'WorkoutPanel.EditorHighlightStyles': {
+    panel: 'WorkoutPanel',
+    default: DEFAULT_HIGHLIGHT_STYLES, type: 'json', candidates: 'JSON array [{backgroundColor,color}×5]',
+    description: 'ハイライトスタイル',
+    get: (app) => JSON.stringify(app.WorkoutPanel.EditorHighlightStyles),
+    set: (app, v) => { try { app.WorkoutPanel.EditorHighlightStyles = JSON.parse(v); } catch { /* ignore */ } },
+  },
+
+  // ── ReThinkPanel ─────────────────────────────────────────────────────────
+  'ReThinkPanel.IsAreaOpen': {
+    panel: 'ReThinkPanel',
+    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    description: '右パネル表示',
+    get: (app) => String(app.ReThinkPanel.IsAreaOpen),
+    set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
+  },
 };
+
+// ── TTUIStateManager ──────────────────────────────────────────────────────────
 
 export class TTUIStateManager {
   static readonly THINK_ID = '__tt_ui_state__';
@@ -121,10 +264,8 @@ export class TTUIStateManager {
     } else {
       if (think.IsMetaOnly) await think.LoadContent();
       if (!localStorage.getItem(TTUIStateManager.LS_KEY)) {
-        // localStorage が空なら保存済み Think から復元
         this.onThinkSaved(think.ID, think.Content);
       } else {
-        // localStorage 側が優先 → Think 内容を現状に合わせる（構造保持）
         this._vaultThink = think;
         think.setContentSilent(this._serializePreservingStructure(this._app));
       }
@@ -147,18 +288,14 @@ export class TTUIStateManager {
     this._applying = true;
     try {
       this._applyProp(key, value);
-      const panel = key.split('.')[0];
-      const app = this._app;
-      if (panel === 'ThinktankPanel') app.ThinktankPanel.NotifyUpdated();
-      else if (panel === 'OverviewPanel') app.OverviewPanel.NotifyUpdated();
-      else if (panel === 'WorkoutPanel') app.WorkoutPanel.NotifyUpdated();
-      else if (panel === 'ReThinkPanel') app.ReThinkPanel.NotifyUpdated();
-      app.NotifyUpdated(false);
+      const panel = PROP_SPECS[key]?.panel ?? (key.split('.')[0] as PanelKey);
+      this._notifyPanel(this._app, panel);
+      this._app.NotifyUpdated(false);
     } finally {
       this._applying = false;
     }
     this._saveToLocalStorage();
-    if (this._app && this._vaultThink) {
+    if (this._vaultThink) {
       this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
     }
   }
@@ -176,7 +313,7 @@ export class TTUIStateManager {
     const prev = this._undoStack.pop()!;
     this._applyContent(prev);
     this._saveToLocalStorage();
-    if (this._vaultThink && this._app) {
+    if (this._vaultThink) {
       this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
     }
     return true;
@@ -189,10 +326,79 @@ export class TTUIStateManager {
     const next = this._redoStack.pop()!;
     this._applyContent(next);
     this._saveToLocalStorage();
-    if (this._vaultThink && this._app) {
+    if (this._vaultThink) {
       this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
     }
     return true;
+  }
+
+  // ── プライベート ──────────────────────────────────────────────────────────
+
+  /**
+   * PROP_SPECS から PropDef 配列を生成する。
+   * 新規項目は PROP_SPECS への追加のみで自動反映される。
+   */
+  private _getProps(app: TTApplication): PropDef[] {
+    return Object.entries(PROP_SPECS).map(([key, spec]) => {
+      const current = spec.get(app);
+      return {
+        key,
+        current,
+        default:     spec.default,
+        type:        spec.type,
+        candidates:  spec.candidates,
+        restore:     current,
+        description: spec.description,
+      };
+    });
+  }
+
+  /**
+   * 文字列キーと値をパネルプロパティに書き込む。
+   * PROP_SPECS のルックアップのみで動作し、switch 文は不要。
+   * NotifyUpdated() は呼ばない（_applyContent がまとめて呼ぶ）。
+   */
+  private _applyProp(key: string, value: string): void {
+    if (!this._app) return;
+    const spec = PROP_SPECS[key];
+    if (!spec) return;
+    spec.set(this._app, value);
+  }
+
+  /**
+   * テーブル形式のコンテンツを解析して全プロパティを適用する。
+   * current 列を優先し、旧 value 列にフォールバック（後方互換）。
+   * 影響パネルをまとめて NotifyUpdated() することで無駄な再レンダリングを防ぐ。
+   */
+  private _applyContent(content: string): void {
+    if (!this._app) return;
+    this._applying = true;
+    try {
+      const sections = parseTableContent(content);
+      const section = sections[0];
+      if (!section) return;
+      const keyIdx = section.columns.findIndex(c => c === 'key');
+      const curIdx = section.columns.findIndex(c => c === 'current');
+      const valIdx = section.columns.findIndex(c => c === 'value');
+      const applyIdx = curIdx >= 0 ? curIdx : valIdx; // current 優先、旧 value にフォールバック
+      if (keyIdx < 0 || applyIdx < 0) return;
+
+      const dirtyPanels = new Set<PanelKey>();
+      for (const row of section.rows) {
+        const key = row[keyIdx]?.trim() ?? '';
+        const val = row[applyIdx] ?? '';
+        if (!key) continue;
+        this._applyProp(key, val);
+        const panel = PROP_SPECS[key]?.panel;
+        if (panel) dirtyPanels.add(panel);
+      }
+
+      const app = this._app;
+      dirtyPanels.forEach(panel => this._notifyPanel(app, panel));
+      if (dirtyPanels.size > 0) app.NotifyUpdated(false);
+    } finally {
+      this._applying = false;
+    }
   }
 
   /**
@@ -209,20 +415,17 @@ export class TTUIStateManager {
         const keyIdx = section.columns.findIndex(c => c === 'key');
         const curIdx = section.columns.findIndex(c => c === 'current');
         const resIdx = section.columns.findIndex(c => c === 'restore');
-        // 旧 value 列との互換
-        const valIdx = section.columns.findIndex(c => c === 'value');
-
+        const valIdx = section.columns.findIndex(c => c === 'value'); // 旧列フォールバック
         const writeIdx = curIdx >= 0 ? curIdx : valIdx;
         if (keyIdx >= 0 && writeIdx >= 0) {
-          const props = this._getProps(app);
-          const propMap = new Map(props.map(p => [p.key, p]));
           const newRows = section.rows.map(row => {
-            const key = row[keyIdx]?.trim() ?? '';
-            const prop = propMap.get(key);
-            if (!prop) return row;
+            const key  = row[keyIdx]?.trim() ?? '';
+            const spec = PROP_SPECS[key];
+            if (!spec) return row;
+            const newVal = spec.get(app);
             const newRow = [...row];
-            newRow[writeIdx] = prop.current;
-            if (resIdx >= 0) newRow[resIdx] = prop.current;
+            newRow[writeIdx] = newVal;
+            if (resIdx >= 0) newRow[resIdx] = newVal;
             return newRow;
           });
           return tableSectionToContent(section.title, { ...section, rows: newRows });
@@ -256,122 +459,13 @@ export class TTUIStateManager {
     return lines.join('\n');
   }
 
-  // ── プライベート ──────────────────────────────────────────────────────
-
-  private _getProps(app: TTApplication): PropDef[] {
-    const wp = app.WorkoutPanel;
-    const tp = app.ThinktankPanel;
-    const op = app.OverviewPanel;
-    const rp = app.ReThinkPanel;
-
-    const make = (
-      key: string,
-      current: string,
-      type: PropDef['type'],
-      description: string,
-    ): PropDef => {
-      const meta = PROP_META[key] ?? { defaultVal: '', candidates: '' };
-      return {
-        key,
-        current,
-        default:     meta.defaultVal,
-        type,
-        candidates:  meta.candidates,
-        restore:     current,
-        description,
-      };
-    };
-
-    return [
-      make('ThinktankPanel.IsAreaOpen',              String(tp.IsAreaOpen),                  'boolean', '左パネル表示'),
-      make('ThinktankPanel.ViewMode',                tp.ViewMode,                            'string',  '左パネルモード'),
-      make('OverviewPanel.IsAreaOpen',               String(op.IsAreaOpen),                  'boolean', '上部パネル表示'),
-      make('OverviewPanel.MediaType',                op.MediaType,                           'string',  '上部パネルメディア'),
-      make('WorkoutPanel.EditorLineNumbers',         String(wp.EditorLineNumbers),           'boolean', '行番号表示'),
-      make('WorkoutPanel.EditorWordWrap',            String(wp.EditorWordWrap),              'boolean', '折り返し'),
-      make('WorkoutPanel.EditorMinimap',             String(wp.EditorMinimap),               'boolean', 'ミニマップ'),
-      make('WorkoutPanel.EditorShowFullWidthSpace',  String(wp.EditorShowFullWidthSpace),    'boolean', '全角スペース表示'),
-      make('WorkoutPanel.EditorUnicodeHighlight',    String(wp.EditorUnicodeHighlight),      'boolean', 'Unicode強調'),
-      make('WorkoutPanel.EditorBracketPairColorization', String(wp.EditorBracketPairColorization), 'boolean', '括弧ペア色分け'),
-      make('WorkoutPanel.EditorHighlightWord',       wp.EditorHighlightWord,                 'string',  'ハイライトキーワード'),
-      make('WorkoutPanel.EditorBackground',          wp.EditorBackground,                    'color',   '背景色'),
-      make('WorkoutPanel.EditorForeground',          wp.EditorForeground,                    'color',   '前景色'),
-      make('WorkoutPanel.EditorHeadingStyles',       JSON.stringify(wp.EditorHeadingStyles), 'json',    '見出しスタイル'),
-      make('WorkoutPanel.EditorHighlightStyles',     JSON.stringify(wp.EditorHighlightStyles), 'json',  'ハイライトスタイル'),
-      make('ReThinkPanel.IsAreaOpen',                String(rp.IsAreaOpen),                  'boolean', '右パネル表示'),
-    ];
-  }
-
-  private _applyContent(content: string): void {
-    if (!this._app) return;
-    this._applying = true;
-    try {
-      const sections = parseTableContent(content);
-      const section = sections[0];
-      if (!section) return;
-      const keyIdx = section.columns.findIndex(c => c === 'key');
-      // current 列優先、なければ旧 value 列にフォールバック
-      const curIdx = section.columns.findIndex(c => c === 'current');
-      const valIdx = section.columns.findIndex(c => c === 'value');
-      const applyIdx = curIdx >= 0 ? curIdx : valIdx;
-      if (keyIdx < 0 || applyIdx < 0) return;
-
-      const dirtyPanels = new Set<string>();
-      for (const row of section.rows) {
-        const key = row[keyIdx]?.trim() ?? '';
-        const val = row[applyIdx] ?? '';
-        if (!key) continue;
-        this._applyProp(key, val);
-        dirtyPanels.add(key.split('.')[0]);
-      }
-
-      const app = this._app;
-      if (dirtyPanels.has('ThinktankPanel')) app.ThinktankPanel.NotifyUpdated();
-      if (dirtyPanels.has('OverviewPanel'))  app.OverviewPanel.NotifyUpdated();
-      if (dirtyPanels.has('WorkoutPanel'))   app.WorkoutPanel.NotifyUpdated();
-      if (dirtyPanels.has('ReThinkPanel'))   app.ReThinkPanel.NotifyUpdated();
-      if (dirtyPanels.size > 0) app.NotifyUpdated(false);
-    } finally {
-      this._applying = false;
-    }
-  }
-
-  private _applyProp(key: string, value: string): void {
-    if (!this._app) return;
-    const app = this._app;
-    switch (key) {
-      case 'ThinktankPanel.IsAreaOpen':
-        app.ThinktankPanel.IsAreaOpen = parseBool(value, app.ThinktankPanel.IsAreaOpen); break;
-      case 'ThinktankPanel.ViewMode':
-        app.ThinktankPanel.ViewMode = value as ThinktankViewMode; break;
-      case 'OverviewPanel.IsAreaOpen':
-        app.OverviewPanel.IsAreaOpen = parseBool(value, app.OverviewPanel.IsAreaOpen); break;
-      case 'OverviewPanel.MediaType':
-        app.OverviewPanel.MediaType = value as MediaType; break;
-      case 'WorkoutPanel.EditorLineNumbers':
-        app.WorkoutPanel.EditorLineNumbers = parseBool(value, app.WorkoutPanel.EditorLineNumbers); break;
-      case 'WorkoutPanel.EditorWordWrap':
-        app.WorkoutPanel.EditorWordWrap = parseBool(value, app.WorkoutPanel.EditorWordWrap); break;
-      case 'WorkoutPanel.EditorMinimap':
-        app.WorkoutPanel.EditorMinimap = parseBool(value, app.WorkoutPanel.EditorMinimap); break;
-      case 'WorkoutPanel.EditorShowFullWidthSpace':
-        app.WorkoutPanel.EditorShowFullWidthSpace = parseBool(value, app.WorkoutPanel.EditorShowFullWidthSpace); break;
-      case 'WorkoutPanel.EditorUnicodeHighlight':
-        app.WorkoutPanel.EditorUnicodeHighlight = parseBool(value, app.WorkoutPanel.EditorUnicodeHighlight); break;
-      case 'WorkoutPanel.EditorBracketPairColorization':
-        app.WorkoutPanel.EditorBracketPairColorization = parseBool(value, app.WorkoutPanel.EditorBracketPairColorization); break;
-      case 'WorkoutPanel.EditorHighlightWord':
-        app.WorkoutPanel.EditorHighlightWord = value; break;
-      case 'WorkoutPanel.EditorBackground':
-        app.WorkoutPanel.EditorBackground = value; break;
-      case 'WorkoutPanel.EditorForeground':
-        app.WorkoutPanel.EditorForeground = value; break;
-      case 'WorkoutPanel.EditorHeadingStyles':
-        try { app.WorkoutPanel.EditorHeadingStyles = JSON.parse(value); } catch { /* ignore */ } break;
-      case 'WorkoutPanel.EditorHighlightStyles':
-        try { app.WorkoutPanel.EditorHighlightStyles = JSON.parse(value); } catch { /* ignore */ } break;
-      case 'ReThinkPanel.IsAreaOpen':
-        app.ReThinkPanel.IsAreaOpen = parseBool(value, app.ReThinkPanel.IsAreaOpen); break;
+  /** パネル識別子に対応する NotifyUpdated() を呼ぶ */
+  private _notifyPanel(app: TTApplication, panel: PanelKey): void {
+    switch (panel) {
+      case 'ThinktankPanel': app.ThinktankPanel.NotifyUpdated(); break;
+      case 'OverviewPanel':  app.OverviewPanel.NotifyUpdated();  break;
+      case 'WorkoutPanel':   app.WorkoutPanel.NotifyUpdated();   break;
+      case 'ReThinkPanel':   app.ReThinkPanel.NotifyUpdated();   break;
     }
   }
 
@@ -404,6 +498,8 @@ export class TTUIStateManager {
     if (stored) this._applyContent(stored);
   }
 }
+
+// ── ユーティリティ ────────────────────────────────────────────────────────────
 
 function parseBool(value: string, current: boolean): boolean {
   if (value === 'toggle') return !current;
