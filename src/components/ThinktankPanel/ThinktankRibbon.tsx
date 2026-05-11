@@ -33,7 +33,7 @@ const MODE_BUTTONS: {
   { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧' },
   { mode: 'search',  icon: <SearchCheck size={16} />, label: '検索' },
   { mode: 'thoughts',icon: <Library     size={16} />, label: 'Thought一覧' },
-  { mode: 'ai',      icon: <MessageCircle size={16} />, label: 'AI相談' },
+  { mode: 'chat',    icon: <MessageCircle size={16} />, label: 'AI相談' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────

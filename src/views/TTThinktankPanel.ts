@@ -13,7 +13,7 @@ export type ThinktankViewMode =
   | 'thoughts'  // Thoughtデータのみ表示（デフォルト）
   | 'filter'    // タイトル・日時でフィルター
   | 'search'    // 全文検索
-  | 'ai'        // AI相談（Phase 14 で接続）
+  | 'chat'      // AI相談
   | 'settings'; // 保管庫設定
 
 export class TTThinktankPanel extends TTUIItem {

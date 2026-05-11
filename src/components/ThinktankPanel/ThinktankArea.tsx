@@ -385,7 +385,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onToggleCheck={handleToggleCheck}
       />
     );
-  } else if (panel.ViewMode === 'ai') {
+  } else if (panel.ViewMode === 'chat') {
     content = <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
   } else if (panel.ViewMode === 'settings') {
     content = <ThinktankSettingsView layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
@@ -473,7 +473,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           allThoughts.length
         }
         onSearch={panel.ViewMode === 'search' ? handleSearch : undefined}
-        showTextFilter={panel.ViewMode !== 'ai'}
+        showTextFilter={panel.ViewMode !== 'chat'}
         showDateFilters={showDateFilter && ['thoughts', 'filter', 'search'].includes(panel.ViewMode)}
       />
 

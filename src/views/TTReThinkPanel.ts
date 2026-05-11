@@ -8,6 +8,8 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 
+export type ReThinkViewMode = 'chat' | 'settings';
+
 /** AIチャットのメッセージ */
 export interface ChatMessage {
   id: string;
@@ -19,6 +21,9 @@ export interface ChatMessage {
 export class TTReThinkPanel extends TTUIItem {
   /** ReThinkAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
+
+  /** 表示モード */
+  public ViewMode: ReThinkViewMode = 'chat';
 
   /** 連携中のThoughtID（空 = 未設定）*/
   public LinkedThoughtID: string = '';
@@ -64,6 +69,12 @@ export class TTReThinkPanel extends TTUIItem {
       this.IsAreaOpen = false;
       this.NotifyUpdated();
     }
+  }
+
+  /** 表示モードを切り替える */
+  public SetViewMode(mode: ReThinkViewMode): void {
+    this.ViewMode = mode;
+    this.NotifyUpdated();
   }
 
   // ── コンテキスト連携 ──────────────────────────────────────────────────

@@ -12,25 +12,24 @@
  */
 
 import { useCallback, useState } from 'react';
-import { MessageCircle, Files, Microscope, Settings, ListRestart, type LucideIcon } from 'lucide-react';
+import { MessageCircle, Files, Microscope, Settings, type LucideIcon } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
-import type { MediaType } from '../../types';
+import type { OverviewViewMode } from '../../views/TTOverviewPanel';
 import './OverviewRibbon.css';
 
-type OverviewViewMode = 'chat' | 'datagrid' | 'graph';
+type OverviewContentMode = Exclude<OverviewViewMode, 'settings'>;
 
-const VIEW_BUTTONS: Array<{ mode: OverviewViewMode; Icon: LucideIcon; title: string }> = [
-  { mode: 'datagrid', Icon: Files,        title: 'Think一覧' },
-  { mode: 'graph',    Icon: Microscope,   title: 'Thought分析' },
+const VIEW_BUTTONS: Array<{ mode: OverviewContentMode; Icon: LucideIcon; title: string }> = [
+  { mode: 'datagrid', Icon: Files,         title: 'Think一覧' },
+  { mode: 'graph',    Icon: Microscope,    title: 'Thought分析' },
   { mode: 'chat',     Icon: MessageCircle, title: 'AI相談' },
 ];
 
 interface Props {
   isOpen:            boolean;
-  mediaType:         MediaType;
-  showSettings:      boolean;
+  viewMode:          OverviewViewMode;
   onToggle:          () => void;
-  onMediaType:       (type: MediaType) => void;
+  onViewMode:        (mode: OverviewViewMode) => void;
   onToggleSettings?: () => void;
   onRefresh?:        () => void;
   thoughtName?:      string;
@@ -38,7 +37,7 @@ interface Props {
 }
 
 export function OverviewRibbon({
-  isOpen, mediaType, showSettings, onToggle, onMediaType, onToggleSettings, onRefresh, thoughtName,
+  isOpen, viewMode, onToggle, onViewMode, onToggleSettings, onRefresh, thoughtName,
   onThoughtDrop,
 }: Props) {
   const [isDragOver, setIsDragOver] = useState(false);
@@ -79,9 +78,9 @@ export function OverviewRibbon({
           key={mode}
           className={[
             'overview-ribbon__btn',
-            !showSettings && mediaType === mode ? 'overview-ribbon__btn--active' : '',
+            viewMode === mode ? 'overview-ribbon__btn--active' : '',
           ].join(' ')}
-          onClick={() => onMediaType(mode as MediaType)}
+          onClick={() => onViewMode(mode)}
           data-tip={title}
           aria-label={title}
         >
@@ -89,7 +88,7 @@ export function OverviewRibbon({
         </button>
       ))}
       <button
-        className={`overview-ribbon__btn${showSettings ? ' overview-ribbon__btn--active' : ''}`}
+        className={`overview-ribbon__btn${viewMode === 'settings' ? ' overview-ribbon__btn--active' : ''}`}
         onClick={onToggleSettings}
         data-tip="設定"
         aria-label="設定"

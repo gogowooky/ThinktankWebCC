@@ -28,53 +28,41 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  const [showSettings, setShowSettings] = useState(false);
-  const [refreshKey,   setRefreshKey]   = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleRefresh = useCallback(() => {
     setRefreshKey(k => k + 1);
     app.RefreshAll().catch(e => console.error('[OverviewPanel] RefreshAll failed:', e));
   }, [app]);
 
-  const handleToggle    = useCallback(() => panel.ToggleArea(), [panel]);
+  const handleToggle = useCallback(() => panel.ToggleArea(), [panel]);
   const handleThoughtDrop = useCallback((id: string) => {
     const dropped = vault.GetThink(id);
     if (!dropped || dropped.ContentType === 'thought') {
       panel.OpenThought(id, 'datagrid');
-      setShowSettings(false);
     }
   }, [vault, panel]);
-  const handleMediaType = useCallback((type: Parameters<typeof panel.SetMediaType>[0]) => {
+  const handleViewMode = useCallback((mode: Parameters<typeof panel.SetViewMode>[0]) => {
     if (!panel.IsAreaOpen) {
-      panel.SetMediaType(type);
+      panel.SetViewMode(mode);
       panel.OpenArea();
-      setShowSettings(false);
-    } else if (!showSettings && panel.MediaType === type) {
+    } else if (panel.ViewMode === mode) {
       panel.CloseArea();
     } else {
-      panel.SetMediaType(type);
-      setShowSettings(false);
+      panel.SetViewMode(mode);
     }
-  }, [panel, showSettings]);
+  }, [panel]);
   const handleToggleSettings = useCallback(() => {
-    if (!panel.IsAreaOpen) {
-      setShowSettings(true);
-      panel.OpenArea();
-    } else if (showSettings) {
-      panel.CloseArea();
-    } else {
-      setShowSettings(true);
-    }
-  }, [panel, showSettings]);
+    handleViewMode('settings');
+  }, [handleViewMode]);
 
   return (
     <div className="overview-panel">
       <OverviewRibbon
         isOpen={panel.IsAreaOpen}
-        mediaType={panel.MediaType}
-        showSettings={showSettings}
+        viewMode={panel.ViewMode}
         onToggle={handleToggle}
-        onMediaType={handleMediaType}
+        onViewMode={handleViewMode}
         onToggleSettings={handleToggleSettings}
         thoughtName={panel.ThoughtID ? (vault.GetThink(panel.ThoughtID)?.Name ?? panel.ThoughtID) : undefined}
         onThoughtDrop={handleThoughtDrop}
@@ -84,7 +72,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         isOpen={panel.IsAreaOpen}
         width={Math.max(MIN_WIDTH, width)}
       >
-        <OverviewArea app={app} showSettings={showSettings} refreshKey={refreshKey} />
+        <OverviewArea app={app} showSettings={panel.ViewMode === 'settings'} refreshKey={refreshKey} />
       </PanelArea>
       {panel.IsAreaOpen && (
         <Splitter onResize={onResize} />

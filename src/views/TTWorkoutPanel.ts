@@ -112,6 +112,13 @@ export class TTWorkoutPanel extends TTUIItem {
     this.Name = 'WorkoutPanel';
   }
 
+  // ── エリア表示 ────────────────────────────────────────────────────────
+  public IsAreaOpen: boolean = true;
+
+  public ToggleArea(): void { this.IsAreaOpen = !this.IsAreaOpen; this.NotifyUpdated(); }
+  public OpenArea():   void { if (!this.IsAreaOpen) { this.IsAreaOpen = true;  this.NotifyUpdated(); } }
+  public CloseArea():  void { if (this.IsAreaOpen)  { this.IsAreaOpen = false; this.NotifyUpdated(); } }
+
   // ── TextEditor 設定 ───────────────────────────────────────────────────
   public EditorLineNumbers: boolean = false;
   public EditorWordWrap: boolean = true;

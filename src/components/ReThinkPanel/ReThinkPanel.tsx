@@ -6,7 +6,7 @@
  * Think/Thought の次の展開について AI と相談するパネル。
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
@@ -27,10 +27,8 @@ export function ReThinkPanel({ app, width, onResize }: Props) {
   const panel = app.ReThinkPanel;
   useAppUpdate(panel);
 
-  const [viewMode, setViewMode] = useState<ReThinkViewMode>('chat');
-
   const handleToggle  = useCallback(() => panel.ToggleArea(), [panel]);
-  const handleSetMode = useCallback((mode: ReThinkViewMode) => setViewMode(mode), []);
+  const handleSetMode = useCallback((mode: ReThinkViewMode) => panel.SetViewMode(mode), [panel]);
 
   const handleResize = useCallback((dx: number) => {
     onResize(dx);
@@ -46,11 +44,11 @@ export function ReThinkPanel({ app, width, onResize }: Props) {
         isOpen={panel.IsAreaOpen}
         width={Math.max(MIN_WIDTH, width)}
       >
-        <ReThinkArea app={app} viewMode={viewMode} />
+        <ReThinkArea app={app} viewMode={panel.ViewMode} />
       </PanelArea>
       <ReThinkRibbon
         isOpen={panel.IsAreaOpen}
-        viewMode={viewMode}
+        viewMode={panel.ViewMode}
         onToggle={handleToggle}
         onSetMode={handleSetMode}
       />

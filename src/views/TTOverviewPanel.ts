@@ -9,6 +9,8 @@
 import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
 
+export type OverviewViewMode = 'datagrid' | 'graph' | 'chat' | 'settings';
+
 export class TTOverviewPanel extends TTUIItem {
   /** OverviewAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
@@ -16,15 +18,13 @@ export class TTOverviewPanel extends TTUIItem {
   /** 表示中のThoughtID（空 = 未選択）*/
   public ThoughtID: string = '';
 
-  /**
-   * 表示形式。
-   * OverviewPanelで使用可能なMediaType:
-   * - 'texteditor': テキスト編集
-   * - 'markdown': Markdownレンダリング
-   * - 'datagrid': Think一覧（表形式）
-   * - 'graph': Thinkの関係グラフ
-   */
-  public MediaType: MediaType = 'datagrid';
+  /** 表示モード（datagrid/graph/chat/settings）*/
+  public ViewMode: OverviewViewMode = 'datagrid';
+
+  /** MediaTypeの後方互換ゲッター（ViewModeから導出）*/
+  public get MediaType(): MediaType {
+    return (this.ViewMode === 'settings' ? 'datagrid' : this.ViewMode) as MediaType;
+  }
 
   /** 全文検索テキスト */
   public SearchQuery: string = '';
@@ -69,9 +69,11 @@ export class TTOverviewPanel extends TTUIItem {
    * ThoughtをOverviewAreaで開く。
    * Areaが閉じていれば自動的に開く。
    */
-  public OpenThought(thoughtId: string, mediaType: MediaType = 'markdown'): void {
+  public OpenThought(thoughtId: string, mediaType: MediaType = 'datagrid'): void {
     this.ThoughtID = thoughtId;
-    this.MediaType = mediaType;
+    if (mediaType !== 'settings' as string) {
+      this.ViewMode = mediaType as OverviewViewMode;
+    }
     if (!this.IsAreaOpen) {
       this.IsAreaOpen = true;
     }
@@ -84,11 +86,17 @@ export class TTOverviewPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
-  // ── 表示形式 ──────────────────────────────────────────────────────────
+  // ── 表示モード ────────────────────────────────────────────────────────
 
-  /** 表示形式を切り替える */
+  /** 表示モードを切り替える */
+  public SetViewMode(mode: OverviewViewMode): void {
+    this.ViewMode = mode;
+    this.NotifyUpdated();
+  }
+
+  /** 後方互換：MediaTypeで表示モードを設定（settingsモード以外） */
   public SetMediaType(mediaType: MediaType): void {
-    this.MediaType = mediaType;
+    this.ViewMode = mediaType as OverviewViewMode;
     this.NotifyUpdated();
   }
 

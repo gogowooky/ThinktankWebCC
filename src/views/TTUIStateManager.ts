@@ -27,6 +27,8 @@ import type { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
 import { parseTableContent, tableSectionToContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
+import type { OverviewViewMode } from './TTOverviewPanel';
+import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 
 // ── PropDef: serialize() が返すテーブル行の型 ────────────────────────────────
@@ -100,7 +102,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'ThinktankPanel.ViewMode': {
     panel: 'ThinktankPanel',
-    default: 'thoughts', type: 'string', candidates: 'thoughts,filter,search,ai,settings',
+    default: 'thoughts', type: 'string', candidates: 'thoughts,filter,search,chat,settings',
     description: '左パネルモード',
     get: (app) => app.ThinktankPanel.ViewMode,
     set: (app, v) => { app.ThinktankPanel.ViewMode = v as ThinktankViewMode; },
@@ -114,12 +116,21 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.OverviewPanel.IsAreaOpen),
     set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
   },
-  'OverviewPanel.MediaType': {
+  'OverviewPanel.ViewMode': {
     panel: 'OverviewPanel',
-    default: 'datagrid', type: 'string', candidates: 'datagrid,markdown,graph',
-    description: '上部パネルメディア',
-    get: (app) => app.OverviewPanel.MediaType,
-    set: (app, v) => { app.OverviewPanel.MediaType = v as MediaType; },
+    default: 'datagrid', type: 'string', candidates: 'datagrid,graph,chat,settings',
+    description: '上部パネル表示モード',
+    get: (app) => app.OverviewPanel.ViewMode,
+    set: (app, v) => { app.OverviewPanel.SetViewMode(v as OverviewViewMode); },
+  },
+
+  // ── WorkoutPanel ─────────────────────────────────────────────────────
+  'WorkoutPanel.IsAreaOpen': {
+    panel: 'WorkoutPanel',
+    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    description: 'ワークアウトパネル表示',
+    get: (app) => String(app.WorkoutPanel.IsAreaOpen),
+    set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
   },
 
   // ── WorkoutPanel（エディタ設定）────────────────────────────────────────
@@ -208,6 +219,13 @@ const PROP_SPECS: Record<string, PropSpec> = {
     description: '右パネル表示',
     get: (app) => String(app.ReThinkPanel.IsAreaOpen),
     set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
+  },
+  'ReThinkPanel.ViewMode': {
+    panel: 'ReThinkPanel',
+    default: 'chat', type: 'string', candidates: 'chat,settings',
+    description: '右パネル表示モード',
+    get: (app) => app.ReThinkPanel.ViewMode,
+    set: (app, v) => { app.ReThinkPanel.SetViewMode(v as ReThinkViewMode); },
   },
 };
 

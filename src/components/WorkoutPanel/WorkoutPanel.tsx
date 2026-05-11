@@ -183,11 +183,9 @@ export function WorkoutPanel({ app }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // 設定パネル: どのタイプの設定を表示するか（null = 非表示）
-  const [activeSettings,    setActiveSettings]    = useState<SettingsType | null>(null);
+  // 設定パネル: 開閉は panel.IsAreaOpen、表示中のタイプを管理
+  const [settingsType,       setSettingsType]      = useState<SettingsType>('workout');
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
-  // 最後に開いた設定タイプを記憶（トグルボタンで再オープン用）
-  const lastSettingsRef = useRef<SettingsType>('workout');
 
   // split 比率（node.id → 0〜1）
   const [splitRatios, setSplitRatios] = useState<Record<string, number>>({});
@@ -238,16 +236,17 @@ export function WorkoutPanel({ app }: Props) {
   // ── ハンドラー ──────────────────────────────────────────────────────
 
   const handleSetActiveSettings = useCallback((type: SettingsType | null) => {
-    if (type !== null) lastSettingsRef.current = type;
-    setActiveSettings(type);
-  }, []);
+    if (type !== null) {
+      setSettingsType(type);
+      panel.OpenArea();
+    } else {
+      panel.CloseArea();
+    }
+  }, [panel]);
 
   const handleToggle = useCallback(() => {
-    setActiveSettings(prev => {
-      if (prev !== null) return null;
-      return lastSettingsRef.current;
-    });
-  }, []);
+    panel.ToggleArea();
+  }, [panel]);
 
   const handleSettingsResize = useCallback((delta: number) => {
     setSettingsPanelWidth(prev =>
@@ -703,7 +702,7 @@ export function WorkoutPanel({ app }: Props) {
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
       <WorkoutRibbon
-        activeSettings={activeSettings}
+        activeSettings={panel.IsAreaOpen ? settingsType : null}
         thinkTitle={focusedThinkTitle}
         onToggle={handleToggle}
         onSetActiveSettings={handleSetActiveSettings}
@@ -712,11 +711,11 @@ export function WorkoutPanel({ app }: Props) {
       {/* ── 設定パネル + Splitter ────────────────────────────── */}
       <PanelArea
         panelId="workout"
-        isOpen={activeSettings !== null}
+        isOpen={panel.IsAreaOpen}
         width={settingsPanelWidth}
       >
         <WorkoutSettingPanel
-          activeSettings={activeSettings ?? lastSettingsRef.current}
+          activeSettings={settingsType}
           panel={panel}
           width={settingsPanelWidth}
           onSplitLeft={handleSplitLeft}
@@ -739,7 +738,7 @@ export function WorkoutPanel({ app }: Props) {
           onSaveTable={handleSaveTable}
         />
       </PanelArea>
-      {activeSettings !== null && (
+      {panel.IsAreaOpen && (
         <Splitter onResize={handleSettingsResize} />
       )}
 

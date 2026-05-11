@@ -10,7 +10,7 @@ import { MessageCircle, Settings } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import './ReThinkRibbon.css';
 
-export type ReThinkViewMode = 'chat' | 'settings';
+export type { ReThinkViewMode } from '../../views/TTReThinkPanel';
 
 interface Props {
   isOpen:    boolean;

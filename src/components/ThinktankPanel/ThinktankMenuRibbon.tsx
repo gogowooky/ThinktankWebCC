@@ -59,7 +59,7 @@ export function ThinktankMenuRibbon({
   }
 
   /* ── AI モード: 保存ボタンのみ ──────────────────────────── */
-  if (viewMode === 'ai') {
+  if (viewMode === 'chat') {
     return (
       <div className="menu-ribbon thinktank-menu-ribbon">
         <button
