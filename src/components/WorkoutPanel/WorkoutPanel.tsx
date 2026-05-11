@@ -11,7 +11,7 @@ import { GripVertical } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
-import type { LayoutNode, SplitNodeData } from '../../views/TTWorkoutPanel';
+import type { LayoutNode, SplitNodeData, WorkoutViewMode } from '../../views/TTWorkoutPanel';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { Splitter } from '../Layout/Splitter';
 import { PanelArea } from '../Layout/PanelArea';
@@ -183,8 +183,7 @@ export function WorkoutPanel({ app }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // 設定パネル: 開閉は panel.IsAreaOpen、表示中のタイプを管理
-  const [settingsType,       setSettingsType]      = useState<SettingsType>('workout');
+  // 設定パネル: 開閉は panel.IsAreaOpen
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
 
   // split 比率（node.id → 0〜1）
@@ -237,7 +236,7 @@ export function WorkoutPanel({ app }: Props) {
 
   const handleSetActiveSettings = useCallback((type: SettingsType | null) => {
     if (type !== null) {
-      setSettingsType(type);
+      panel.SetViewMode(type as WorkoutViewMode);
       panel.OpenArea();
     } else {
       panel.CloseArea();
@@ -702,7 +701,7 @@ export function WorkoutPanel({ app }: Props) {
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
       <WorkoutRibbon
-        activeSettings={panel.IsAreaOpen ? settingsType : null}
+        activeSettings={panel.IsAreaOpen ? panel.ViewMode : null}
         thinkTitle={focusedThinkTitle}
         onToggle={handleToggle}
         onSetActiveSettings={handleSetActiveSettings}
@@ -715,7 +714,7 @@ export function WorkoutPanel({ app }: Props) {
         width={settingsPanelWidth}
       >
         <WorkoutSettingPanel
-          activeSettings={settingsType}
+          activeSettings={panel.ViewMode}
           panel={panel}
           width={settingsPanelWidth}
           onSplitLeft={handleSplitLeft}

@@ -7,6 +7,8 @@ import { TTUIItem } from '../models/TTUIItem';
 import { TTWorkoutArea } from './TTWorkoutArea';
 import type { MediaType } from '../types';
 
+export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph';
+
 // ── BSP ノード型 ──────────────────────────────────────────────────────
 
 export interface LeafNode {
@@ -110,6 +112,15 @@ export class TTWorkoutPanel extends TTUIItem {
     super();
     this.ID   = 'WorkoutPanel';
     this.Name = 'WorkoutPanel';
+  }
+
+  // ── 表示モード ────────────────────────────────────────────────────────
+  /** 設定パネルの表示モード */
+  public ViewMode: WorkoutViewMode = 'workout';
+
+  public SetViewMode(mode: WorkoutViewMode): void {
+    this.ViewMode = mode;
+    this.NotifyUpdated();
   }
 
   // ── エリア表示 ────────────────────────────────────────────────────────

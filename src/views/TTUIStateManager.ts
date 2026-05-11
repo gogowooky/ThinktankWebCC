@@ -12,13 +12,12 @@
  * キーごとの全情報（読み取り・書き込み・メタデータ）を PROP_SPECS に一元集約。
  * 新しいUI設定項目を追加する場合は PROP_SPECS にオブジェクトを1つ追加するだけでよい。
  *
- * 列構成: key, current, default, type, candidates, restore, description
+ * 列構成: key, current, default, type, candidates, description
  *   key:        変数名
  *   current:    現在値（編集→保存でUIに反映）
  *   default:    デフォルト値（参照用）
  *   type:       データ型 (boolean/string/color/json)
- *   candidates: 設定可能な値・範囲（boolean は true,false,toggle）
- *   restore:    保存値（currentと常に同期、起動時の復元に使用）
+ *   candidates: 正規表現（値変更前の照合に使用）。特別な値: toggle, next, prev
  *   description:説明
  */
 
@@ -28,6 +27,7 @@ import { TTThink } from '../models/TTThink';
 import { parseTableContent, tableSectionToContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
+import type { WorkoutViewMode } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 
@@ -39,7 +39,6 @@ interface PropDef {
   default:     string;
   type:        'boolean' | 'string' | 'color' | 'json';
   candidates:  string;
-  restore:     string;
   description: string;
 }
 
@@ -49,11 +48,12 @@ interface PropDef {
 //   panel       : 変更通知先のパネル識別子
 //   default     : デフォルト値（文字列）
 //   type        : データ型
-//   candidates  : 設定可能な値・範囲（boolean は "true,false,toggle" を統一とする）
+//   candidates  : 値変更前の照合に使う正規表現。値を抽出して next/prev で循環
 //   description : 説明
 //   get(app)    : TTApplication から現在値を文字列で読み取る
 //   set(app, v) : 文字列値 v を TTApplication のプロパティに書き込む
 //
+// 特別な値: toggle (boolean のみ), next (列挙型), prev (列挙型)
 // ※ set() 内で NotifyUpdated() は呼ばない。_applyContent() がまとめて呼ぶ。
 
 type PanelKey = 'ThinktankPanel' | 'OverviewPanel' | 'WorkoutPanel' | 'ReThinkPanel';
@@ -95,14 +95,14 @@ const PROP_SPECS: Record<string, PropSpec> = {
   // ── ThinktankPanel ──────────────────────────────────────────────────────
   'ThinktankPanel.IsAreaOpen': {
     panel: 'ThinktankPanel',
-    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '左パネル表示',
     get: (app) => String(app.ThinktankPanel.IsAreaOpen),
     set: (app, v) => { app.ThinktankPanel.IsAreaOpen = parseBool(v, app.ThinktankPanel.IsAreaOpen); },
   },
   'ThinktankPanel.ViewMode': {
     panel: 'ThinktankPanel',
-    default: 'thoughts', type: 'string', candidates: 'thoughts,filter,search,chat,settings',
+    default: 'thoughts', type: 'string', candidates: '^(thoughts|filter|search|chat|settings)$',
     description: '左パネルモード',
     get: (app) => app.ThinktankPanel.ViewMode,
     set: (app, v) => { app.ThinktankPanel.ViewMode = v as ThinktankViewMode; },
@@ -111,14 +111,14 @@ const PROP_SPECS: Record<string, PropSpec> = {
   // ── OverviewPanel ────────────────────────────────────────────────────────
   'OverviewPanel.IsAreaOpen': {
     panel: 'OverviewPanel',
-    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '上部パネル表示',
     get: (app) => String(app.OverviewPanel.IsAreaOpen),
     set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
   },
   'OverviewPanel.ViewMode': {
     panel: 'OverviewPanel',
-    default: 'datagrid', type: 'string', candidates: 'datagrid,graph,chat,settings',
+    default: 'datagrid', type: 'string', candidates: '^(datagrid|graph|chat|settings)$',
     description: '上部パネル表示モード',
     get: (app) => app.OverviewPanel.ViewMode,
     set: (app, v) => { app.OverviewPanel.SetViewMode(v as OverviewViewMode); },
@@ -127,86 +127,93 @@ const PROP_SPECS: Record<string, PropSpec> = {
   // ── WorkoutPanel ─────────────────────────────────────────────────────
   'WorkoutPanel.IsAreaOpen': {
     panel: 'WorkoutPanel',
-    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'ワークアウトパネル表示',
     get: (app) => String(app.WorkoutPanel.IsAreaOpen),
     set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
+  },
+  'WorkoutPanel.ViewMode': {
+    panel: 'WorkoutPanel',
+    default: 'workout', type: 'string', candidates: '^(workout|texteditor|markdown|datagrid|card|graph)$',
+    description: 'ワークアウト設定パネルモード',
+    get: (app) => app.WorkoutPanel.ViewMode,
+    set: (app, v) => { app.WorkoutPanel.SetViewMode(v as WorkoutViewMode); },
   },
 
   // ── WorkoutPanel（エディタ設定）────────────────────────────────────────
   'WorkoutPanel.EditorLineNumbers': {
     panel: 'WorkoutPanel',
-    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '行番号表示',
     get: (app) => String(app.WorkoutPanel.EditorLineNumbers),
     set: (app, v) => { app.WorkoutPanel.EditorLineNumbers = parseBool(v, app.WorkoutPanel.EditorLineNumbers); },
   },
   'WorkoutPanel.EditorWordWrap': {
     panel: 'WorkoutPanel',
-    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '折り返し',
     get: (app) => String(app.WorkoutPanel.EditorWordWrap),
     set: (app, v) => { app.WorkoutPanel.EditorWordWrap = parseBool(v, app.WorkoutPanel.EditorWordWrap); },
   },
   'WorkoutPanel.EditorMinimap': {
     panel: 'WorkoutPanel',
-    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: 'ミニマップ',
     get: (app) => String(app.WorkoutPanel.EditorMinimap),
     set: (app, v) => { app.WorkoutPanel.EditorMinimap = parseBool(v, app.WorkoutPanel.EditorMinimap); },
   },
   'WorkoutPanel.EditorShowFullWidthSpace': {
     panel: 'WorkoutPanel',
-    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '全角スペース表示',
     get: (app) => String(app.WorkoutPanel.EditorShowFullWidthSpace),
     set: (app, v) => { app.WorkoutPanel.EditorShowFullWidthSpace = parseBool(v, app.WorkoutPanel.EditorShowFullWidthSpace); },
   },
   'WorkoutPanel.EditorUnicodeHighlight': {
     panel: 'WorkoutPanel',
-    default: 'false', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: 'Unicode強調',
     get: (app) => String(app.WorkoutPanel.EditorUnicodeHighlight),
     set: (app, v) => { app.WorkoutPanel.EditorUnicodeHighlight = parseBool(v, app.WorkoutPanel.EditorUnicodeHighlight); },
   },
   'WorkoutPanel.EditorBracketPairColorization': {
     panel: 'WorkoutPanel',
-    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '括弧ペア色分け',
     get: (app) => String(app.WorkoutPanel.EditorBracketPairColorization),
     set: (app, v) => { app.WorkoutPanel.EditorBracketPairColorization = parseBool(v, app.WorkoutPanel.EditorBracketPairColorization); },
   },
   'WorkoutPanel.EditorHighlightWord': {
     panel: 'WorkoutPanel',
-    default: '', type: 'string', candidates: 'スペース区切りで複数単語,グループはカンマ区切り',
+    default: '', type: 'string', candidates: '.*',
     description: 'ハイライトキーワード',
     get: (app) => app.WorkoutPanel.EditorHighlightWord,
     set: (app, v) => { app.WorkoutPanel.EditorHighlightWord = v; },
   },
   'WorkoutPanel.EditorBackground': {
     panel: 'WorkoutPanel',
-    default: '#f5f5f5', type: 'color', candidates: '#rrggbb (16進カラー)',
+    default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
     description: '背景色',
     get: (app) => app.WorkoutPanel.EditorBackground,
     set: (app, v) => { app.WorkoutPanel.EditorBackground = v; },
   },
   'WorkoutPanel.EditorForeground': {
     panel: 'WorkoutPanel',
-    default: '#1e1e1e', type: 'color', candidates: '#rrggbb (16進カラー)',
+    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
     description: '前景色',
     get: (app) => app.WorkoutPanel.EditorForeground,
     set: (app, v) => { app.WorkoutPanel.EditorForeground = v; },
   },
   'WorkoutPanel.EditorHeadingStyles': {
     panel: 'WorkoutPanel',
-    default: DEFAULT_HEADING_STYLES, type: 'json', candidates: 'JSON array [{color,bold,underline}×5]',
+    default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '^\\[.*\\]$',
     description: '見出しスタイル',
     get: (app) => JSON.stringify(app.WorkoutPanel.EditorHeadingStyles),
     set: (app, v) => { try { app.WorkoutPanel.EditorHeadingStyles = JSON.parse(v); } catch { /* ignore */ } },
   },
   'WorkoutPanel.EditorHighlightStyles': {
     panel: 'WorkoutPanel',
-    default: DEFAULT_HIGHLIGHT_STYLES, type: 'json', candidates: 'JSON array [{backgroundColor,color}×5]',
+    default: DEFAULT_HIGHLIGHT_STYLES, type: 'json', candidates: '^\\[.*\\]$',
     description: 'ハイライトスタイル',
     get: (app) => JSON.stringify(app.WorkoutPanel.EditorHighlightStyles),
     set: (app, v) => { try { app.WorkoutPanel.EditorHighlightStyles = JSON.parse(v); } catch { /* ignore */ } },
@@ -215,14 +222,14 @@ const PROP_SPECS: Record<string, PropSpec> = {
   // ── ReThinkPanel ─────────────────────────────────────────────────────────
   'ReThinkPanel.IsAreaOpen': {
     panel: 'ReThinkPanel',
-    default: 'true', type: 'boolean', candidates: 'true,false,toggle',
+    default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '右パネル表示',
     get: (app) => String(app.ReThinkPanel.IsAreaOpen),
     set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
   },
   'ReThinkPanel.ViewMode': {
     panel: 'ReThinkPanel',
-    default: 'chat', type: 'string', candidates: 'chat,settings',
+    default: 'chat', type: 'string', candidates: '^(chat|settings)$',
     description: '右パネル表示モード',
     get: (app) => app.ReThinkPanel.ViewMode,
     set: (app, v) => { app.ReThinkPanel.SetViewMode(v as ReThinkViewMode); },
@@ -365,7 +372,6 @@ export class TTUIStateManager {
         default:     spec.default,
         type:        spec.type,
         candidates:  spec.candidates,
-        restore:     current,
         description: spec.description,
       };
     });
@@ -373,14 +379,45 @@ export class TTUIStateManager {
 
   /**
    * 文字列キーと値をパネルプロパティに書き込む。
-   * PROP_SPECS のルックアップのみで動作し、switch 文は不要。
+   * candidates 正規表現で値を検証し、toggle/next/prev の特別コマンドを処理する。
    * NotifyUpdated() は呼ばない（_applyContent がまとめて呼ぶ）。
    */
   private _applyProp(key: string, value: string): void {
     if (!this._app) return;
     const spec = PROP_SPECS[key];
     if (!spec) return;
-    spec.set(this._app, value);
+
+    const current = spec.get(this._app);
+    const pattern = new RegExp(spec.candidates);
+
+    // toggle/next/prev コマンド処理
+    if (value === 'toggle') {
+      if (spec.type === 'boolean') {
+        const newVal = current === 'true' ? 'false' : 'true';
+        spec.set(this._app, newVal);
+      }
+      return;
+    }
+
+    const candidates = extractValuesFromPattern(spec.candidates);
+    if (value === 'next' && candidates.length > 0) {
+      const idx = candidates.indexOf(current);
+      const nextIdx = (idx + 1) % candidates.length;
+      spec.set(this._app, candidates[nextIdx]);
+      return;
+    }
+
+    if (value === 'prev' && candidates.length > 0) {
+      const idx = candidates.indexOf(current);
+      const prevIdx = (idx - 1 + candidates.length) % candidates.length;
+      spec.set(this._app, candidates[prevIdx]);
+      return;
+    }
+
+    // 通常の値変更：正規表現で検証
+    if (pattern.test(value)) {
+      spec.set(this._app, value);
+    }
   }
 
   /**
@@ -421,7 +458,7 @@ export class TTUIStateManager {
 
   /**
    * 現在の think 構造（コメント行・空行・rawLines）を維持しながら
-   * current・restore 列だけを現在のアプリ状態で更新してシリアライズ。
+   * current 列だけを現在のアプリ状態で更新してシリアライズ。
    * _vaultThink が未設定またはパース不能な場合は serialize() にフォールバック。
    */
   private _serializePreservingStructure(app: TTApplication): string {
@@ -432,7 +469,6 @@ export class TTUIStateManager {
       if (section) {
         const keyIdx = section.columns.findIndex(c => c === 'key');
         const curIdx = section.columns.findIndex(c => c === 'current');
-        const resIdx = section.columns.findIndex(c => c === 'restore');
         const valIdx = section.columns.findIndex(c => c === 'value'); // 旧列フォールバック
         const writeIdx = curIdx >= 0 ? curIdx : valIdx;
         if (keyIdx >= 0 && writeIdx >= 0) {
@@ -443,7 +479,6 @@ export class TTUIStateManager {
             const newVal = spec.get(app);
             const newRow = [...row];
             newRow[writeIdx] = newVal;
-            if (resIdx >= 0) newRow[resIdx] = newVal;
             return newRow;
           });
           return tableSectionToContent(section.title, { ...section, rows: newRows });
@@ -461,7 +496,7 @@ export class TTUIStateManager {
       '# current列を編集 → Ctrl+S 保存でUIに反映 / 更新ボタンでUIからファイルに反映',
       '# Undo: Ctrl+Shift+Z  /  Redo: Ctrl+Shift+Y',
       '',
-      '> key,current,default,type,candidates,restore,description',
+      '> key,current,default,type,candidates,description',
       ...props.map(p =>
         [
           p.key,
@@ -469,7 +504,6 @@ export class TTUIStateManager {
           csvEscape(p.default),
           p.type,
           csvEscape(p.candidates),
-          csvEscape(p.restore),
           csvEscape(p.description),
         ].join(',')
       ),
@@ -518,6 +552,12 @@ export class TTUIStateManager {
 }
 
 // ── ユーティリティ ────────────────────────────────────────────────────────────
+
+function extractValuesFromPattern(pattern: string): string[] {
+  const match = pattern.match(/\^?\(([^)]+)\)\$?/);
+  if (!match) return [];
+  return match[1].split('|').map(v => v.trim());
+}
 
 function parseBool(value: string, current: boolean): boolean {
   if (value === 'toggle') return !current;
