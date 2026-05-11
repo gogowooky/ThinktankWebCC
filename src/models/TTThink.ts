@@ -54,15 +54,6 @@ export class TTThink extends TTObject {
   public set Content(value: string) {
     const normalized = TTThink.normalize(value);
     if (TTThink.normalize(this._content) === normalized) return;
-    // [DEBUG] UI Settings の Content setter 経由の上書きを追跡
-    if (this.ID === '__tt_ui_state__') {
-      const before = this._content.split('\n').slice(0, 8).join(' / ');
-      const after  = value.split('\n').slice(0, 8).join(' / ');
-      console.log('[Content setter] UI Settings 上書き');
-      console.log('  BEFORE:', before);
-      console.log('  AFTER :', after);
-      console.log('  STACK :', new Error().stack);
-    }
     this._content = value;
     this._extractTitle();
     this.NotifyUpdated();
@@ -72,15 +63,6 @@ export class TTThink extends TTObject {
   public setContentSilent(value: string): void {
     const stripped = value.startsWith('\uFEFF') ? value.slice(1) : value;
     if (TTThink.normalize(this._content) === TTThink.normalize(stripped)) return;
-    // [DEBUG] UI Settings \u306E\u4E0A\u66F8\u304D\u3092\u8FFD\u8DE1
-    if (this.ID === '__tt_ui_state__') {
-      const before = this._content.split('\n').slice(0, 8).join(' / ');
-      const after  = stripped.split('\n').slice(0, 8).join(' / ');
-      console.log('[setContentSilent] UI Settings \u4E0A\u66F8\u304D');
-      console.log('  BEFORE:', before);
-      console.log('  AFTER :', after);
-      console.log('  STACK :', new Error().stack);
-    }
     this._content = stripped;
     this._extractTitle();
   }

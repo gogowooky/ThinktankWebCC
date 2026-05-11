@@ -128,20 +128,13 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
   // 注意: savedRef は外部からの think.Content 更新（_scheduleSave 等）で stale になりうるため、
   //       think.Content を直接比較に使う。これにより未保存編集の見落としを防ぐ。
   useEffect(() => {
-    console.log('[autoSave useEffect] register/cleanup; autoSaveRef=', autoSaveRef ? 'PROVIDED' : 'UNDEFINED', 'think.ID=', think?.ID);
     if (!autoSaveRef) return;
     autoSaveRef.current = () => {
       const editor = editorRef.current;
-      console.log('[autoSave CALLED] think.ID=', think?.ID, 'editor=', editor ? 'OK' : 'NULL');
       if (!editor || !think) return;
       const body = editor.getValue();
       const currentSaved = getEditorValue(think);
-      const bodyHead = body.split('\n').slice(0, 8).join(' / ');
-      const savedHead = currentSaved.split('\n').slice(0, 8).join(' / ');
-      console.log('[autoSave] body  :', bodyHead);
-      console.log('[autoSave] saved :', savedHead);
-      console.log('[autoSave] equal?', body === currentSaved);
-      if (body === currentSaved) return;
+      if (body === currentSaved) return; // think.Content と一致 → 保存不要
       savedRef.current = body;
       onSave(reconstructContent(think, body));
     };

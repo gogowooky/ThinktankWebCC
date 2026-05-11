@@ -200,8 +200,6 @@ export function WorkoutArea({
 
   const handleDragStart    = useCallback((e: React.MouseEvent) => onDragStart(e, area.ID),      [onDragStart, area.ID]);
   const handleMediaChange  = useCallback((type: MediaType) => {
-    // [DEBUG]
-    console.log('[handleMediaChange] from=', area.MediaType, 'to=', type, 'autoSaveRef.current=', autoSaveRef.current ? 'SET' : 'NULL');
     // TextEditor から離れるとき、未保存の内容を自動保存する（isDirty 不問、内部で差分チェック）
     if (area.MediaType === 'texteditor' || area.MediaType === 'workout') {
       autoSaveRef.current?.();
