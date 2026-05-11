@@ -209,7 +209,7 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
             className={`workout-area-ribbon__media-btn${area.MediaType === type ? ' workout-area-ribbon__media-btn--active' : ''}`}
             onClick={() => onMediaTypeChange(type)}
             data-tip={title}
-            data-tip-side="bottom"
+            data-tip-side="left"
           >
             <Icon size={12} />
           </button>

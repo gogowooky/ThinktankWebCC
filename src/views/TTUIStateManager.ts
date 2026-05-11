@@ -4,8 +4,18 @@
  *
  * ① localStorageへの高速起動時ロード/保存
  * ② __tt_ui_state__ Think (ContentType='table') との同期
- *    → DataGrid で value 列を編集→Ctrl+S 保存で即 UI に反映
+ *    → DataGrid/Card で current 列を編集→Ctrl+S 保存で即 UI に反映
+ *    → 更新ボタンで UI の現在値をファイルに反映
  * ③ Undo/Redo（メモリ内スタック、最大50件）
+ *
+ * 列構成: key, current, default, type, candidates, restore, description
+ *   key:        変数名
+ *   current:    現在値（編集→保存でUIに反映）
+ *   default:    デフォルト値（参照用）
+ *   type:       データ型 (boolean/string/color/json)
+ *   candidates: 設定可能な値・範囲
+ *   restore:    保存値（currentと常に同期、起動時の復元に使用）
+ *   description:説明
  */
 
 import type { TTApplication } from './TTApplication';
@@ -16,11 +26,49 @@ import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { MediaType } from '../types';
 
 interface PropDef {
-  key: string;
-  value: string;
-  type: 'boolean' | 'string' | 'color' | 'json';
+  key:         string;
+  current:     string;
+  default:     string;
+  type:        'boolean' | 'string' | 'color' | 'json';
+  candidates:  string;
+  restore:     string;
   description: string;
 }
+
+const DEFAULT_HEADING_STYLES = JSON.stringify([
+  { color: '#569cd6', bold: true,  underline: false },
+  { color: '#4ec9b0', bold: true,  underline: false },
+  { color: '#ce9178', bold: true,  underline: false },
+  { color: '#dcdcaa', bold: true,  underline: false },
+  { color: '#c586c0', bold: true,  underline: false },
+]);
+
+const DEFAULT_HIGHLIGHT_STYLES = JSON.stringify([
+  { backgroundColor: '#ffff00', color: '#000000' },
+  { backgroundColor: '#ff0000', color: '#ffffff' },
+  { backgroundColor: '#0000ff', color: '#ffffff' },
+  { backgroundColor: '#008000', color: '#ffffff' },
+  { backgroundColor: '#800080', color: '#ffffff' },
+]);
+
+const PROP_META: Record<string, { defaultVal: string; candidates: string }> = {
+  'ThinktankPanel.IsAreaOpen':              { defaultVal: 'true',                    candidates: 'true,false,toggle' },
+  'ThinktankPanel.ViewMode':                { defaultVal: 'thoughts',                candidates: 'thoughts,filter,search,ai,settings' },
+  'OverviewPanel.IsAreaOpen':               { defaultVal: 'false',                   candidates: 'true,false,toggle' },
+  'OverviewPanel.MediaType':                { defaultVal: 'datagrid',                candidates: 'datagrid,markdown,graph' },
+  'WorkoutPanel.EditorLineNumbers':         { defaultVal: 'false',                   candidates: 'true,false,toggle' },
+  'WorkoutPanel.EditorWordWrap':            { defaultVal: 'true',                    candidates: 'true,false,toggle' },
+  'WorkoutPanel.EditorMinimap':             { defaultVal: 'false',                   candidates: 'true,false,toggle' },
+  'WorkoutPanel.EditorShowFullWidthSpace':  { defaultVal: 'false',                   candidates: 'true,false,toggle' },
+  'WorkoutPanel.EditorUnicodeHighlight':    { defaultVal: 'false',                   candidates: 'true,false,toggle' },
+  'WorkoutPanel.EditorBracketPairColorization': { defaultVal: 'true',               candidates: 'true,false,toggle' },
+  'WorkoutPanel.EditorHighlightWord':       { defaultVal: '',                        candidates: 'スペース区切りで複数単語,グループはカンマ区切り' },
+  'WorkoutPanel.EditorBackground':          { defaultVal: '#f5f5f5',                 candidates: '#rrggbb (16進カラー)' },
+  'WorkoutPanel.EditorForeground':          { defaultVal: '#1e1e1e',                 candidates: '#rrggbb (16進カラー)' },
+  'WorkoutPanel.EditorHeadingStyles':       { defaultVal: DEFAULT_HEADING_STYLES,    candidates: 'JSON array [{color,bold,underline}×5]' },
+  'WorkoutPanel.EditorHighlightStyles':     { defaultVal: DEFAULT_HIGHLIGHT_STYLES,  candidates: 'JSON array [{backgroundColor,color}×5]' },
+  'ReThinkPanel.IsAreaOpen':                { defaultVal: 'true',                    candidates: 'true,false,toggle' },
+};
 
 export class TTUIStateManager {
   static readonly THINK_ID = '__tt_ui_state__';
@@ -84,7 +132,7 @@ export class TTUIStateManager {
     this._vaultThink = think;
   }
 
-  /** DataGrid が UIState Think を保存したときのフック（WorkoutArea から呼ぶ）*/
+  /** DataGrid/Card が UIState Think を保存したときのフック（WorkoutArea から呼ぶ）*/
   onThinkSaved(thinkId: string, content: string): void {
     if (thinkId !== TTUIStateManager.THINK_ID) return;
     this._pushUndo();
@@ -115,6 +163,12 @@ export class TTUIStateManager {
     }
   }
 
+  /** 現在のアプリ状態を構造保持でシリアライズして返す（更新ボタン用） */
+  getLatestContent(): string | null {
+    if (!this._app) return null;
+    return this._serializePreservingStructure(this._app);
+  }
+
   undo(): boolean {
     if (this._undoStack.length === 0 || !this._app) return false;
     const current = this.serialize(this._app);
@@ -143,18 +197,23 @@ export class TTUIStateManager {
 
   /**
    * 現在の think 構造（コメント行・空行・rawLines）を維持しながら
-   * データ行の value 列だけを現在のアプリ状態で更新してシリアライズ。
+   * current・restore 列だけを現在のアプリ状態で更新してシリアライズ。
    * _vaultThink が未設定またはパース不能な場合は serialize() にフォールバック。
    */
   private _serializePreservingStructure(app: TTApplication): string {
-    const currentContent = this._vaultThink?.Content;
-    if (currentContent) {
-      const sections = parseTableContent(currentContent);
+    const savedContent = this._vaultThink?.Content;
+    if (savedContent) {
+      const sections = parseTableContent(savedContent);
       const section = sections[0];
       if (section) {
         const keyIdx = section.columns.findIndex(c => c === 'key');
+        const curIdx = section.columns.findIndex(c => c === 'current');
+        const resIdx = section.columns.findIndex(c => c === 'restore');
+        // 旧 value 列との互換
         const valIdx = section.columns.findIndex(c => c === 'value');
-        if (keyIdx >= 0 && valIdx >= 0) {
+
+        const writeIdx = curIdx >= 0 ? curIdx : valIdx;
+        if (keyIdx >= 0 && writeIdx >= 0) {
           const props = this._getProps(app);
           const propMap = new Map(props.map(p => [p.key, p]));
           const newRows = section.rows.map(row => {
@@ -162,7 +221,8 @@ export class TTUIStateManager {
             const prop = propMap.get(key);
             if (!prop) return row;
             const newRow = [...row];
-            newRow[valIdx] = prop.value;
+            newRow[writeIdx] = prop.current;
+            if (resIdx >= 0) newRow[resIdx] = prop.current;
             return newRow;
           });
           return tableSectionToContent(section.title, { ...section, rows: newRows });
@@ -172,17 +232,25 @@ export class TTUIStateManager {
     return this.serialize(app);
   }
 
-  /** TTApplication 状態をテーブル形式にシリアライズ */
+  /** TTApplication 状態をテーブル形式にシリアライズ（新列構成）*/
   serialize(app: TTApplication): string {
     const props = this._getProps(app);
     const lines = [
       'UI Settings',
-      '# DataGridで value 列を編集 → Ctrl+S 保存でUIに即反映',
+      '# current列を編集 → Ctrl+S 保存でUIに反映 / 更新ボタンでUIからファイルに反映',
       '# Undo: Ctrl+Shift+Z  /  Redo: Ctrl+Shift+Y',
       '',
-      '> key,value,type,description',
+      '> key,current,default,type,candidates,restore,description',
       ...props.map(p =>
-        `${p.key},${csvEscape(p.value)},${p.type},${csvEscape(p.description)}`
+        [
+          p.key,
+          csvEscape(p.current),
+          csvEscape(p.default),
+          p.type,
+          csvEscape(p.candidates),
+          csvEscape(p.restore),
+          csvEscape(p.description),
+        ].join(',')
       ),
     ];
     return lines.join('\n');
@@ -195,23 +263,42 @@ export class TTUIStateManager {
     const tp = app.ThinktankPanel;
     const op = app.OverviewPanel;
     const rp = app.ReThinkPanel;
+
+    const make = (
+      key: string,
+      current: string,
+      type: PropDef['type'],
+      description: string,
+    ): PropDef => {
+      const meta = PROP_META[key] ?? { defaultVal: '', candidates: '' };
+      return {
+        key,
+        current,
+        default:     meta.defaultVal,
+        type,
+        candidates:  meta.candidates,
+        restore:     current,
+        description,
+      };
+    };
+
     return [
-      { key: 'ThinktankPanel.IsAreaOpen',  value: String(tp.IsAreaOpen), type: 'boolean', description: '左パネル表示' },
-      { key: 'ThinktankPanel.ViewMode',    value: tp.ViewMode,           type: 'string',  description: '左パネルモード(thoughts/filter/search/ai/settings)' },
-      { key: 'OverviewPanel.IsAreaOpen',   value: String(op.IsAreaOpen), type: 'boolean', description: '上部パネル表示' },
-      { key: 'OverviewPanel.MediaType',    value: op.MediaType,          type: 'string',  description: '上部パネルメディア(datagrid/markdown/graph)' },
-      { key: 'WorkoutPanel.EditorLineNumbers',             value: String(wp.EditorLineNumbers),             type: 'boolean', description: '行番号表示' },
-      { key: 'WorkoutPanel.EditorWordWrap',                value: String(wp.EditorWordWrap),                type: 'boolean', description: '折り返し' },
-      { key: 'WorkoutPanel.EditorMinimap',                 value: String(wp.EditorMinimap),                 type: 'boolean', description: 'ミニマップ' },
-      { key: 'WorkoutPanel.EditorShowFullWidthSpace',      value: String(wp.EditorShowFullWidthSpace),      type: 'boolean', description: '全角スペース表示' },
-      { key: 'WorkoutPanel.EditorUnicodeHighlight',        value: String(wp.EditorUnicodeHighlight),        type: 'boolean', description: 'Unicode強調' },
-      { key: 'WorkoutPanel.EditorBracketPairColorization', value: String(wp.EditorBracketPairColorization), type: 'boolean', description: '括弧ペア色分け' },
-      { key: 'WorkoutPanel.EditorHighlightWord',           value: wp.EditorHighlightWord,                   type: 'string',  description: 'ハイライトキーワード' },
-      { key: 'WorkoutPanel.EditorBackground',              value: wp.EditorBackground,                      type: 'color',   description: '背景色' },
-      { key: 'WorkoutPanel.EditorForeground',              value: wp.EditorForeground,                      type: 'color',   description: '前景色' },
-      { key: 'WorkoutPanel.EditorHeadingStyles',           value: JSON.stringify(wp.EditorHeadingStyles),   type: 'json',    description: '見出しスタイル(JSON)' },
-      { key: 'WorkoutPanel.EditorHighlightStyles',         value: JSON.stringify(wp.EditorHighlightStyles), type: 'json',    description: 'ハイライトスタイル(JSON)' },
-      { key: 'ReThinkPanel.IsAreaOpen',    value: String(rp.IsAreaOpen), type: 'boolean', description: '右パネル表示' },
+      make('ThinktankPanel.IsAreaOpen',              String(tp.IsAreaOpen),                  'boolean', '左パネル表示'),
+      make('ThinktankPanel.ViewMode',                tp.ViewMode,                            'string',  '左パネルモード'),
+      make('OverviewPanel.IsAreaOpen',               String(op.IsAreaOpen),                  'boolean', '上部パネル表示'),
+      make('OverviewPanel.MediaType',                op.MediaType,                           'string',  '上部パネルメディア'),
+      make('WorkoutPanel.EditorLineNumbers',         String(wp.EditorLineNumbers),           'boolean', '行番号表示'),
+      make('WorkoutPanel.EditorWordWrap',            String(wp.EditorWordWrap),              'boolean', '折り返し'),
+      make('WorkoutPanel.EditorMinimap',             String(wp.EditorMinimap),               'boolean', 'ミニマップ'),
+      make('WorkoutPanel.EditorShowFullWidthSpace',  String(wp.EditorShowFullWidthSpace),    'boolean', '全角スペース表示'),
+      make('WorkoutPanel.EditorUnicodeHighlight',    String(wp.EditorUnicodeHighlight),      'boolean', 'Unicode強調'),
+      make('WorkoutPanel.EditorBracketPairColorization', String(wp.EditorBracketPairColorization), 'boolean', '括弧ペア色分け'),
+      make('WorkoutPanel.EditorHighlightWord',       wp.EditorHighlightWord,                 'string',  'ハイライトキーワード'),
+      make('WorkoutPanel.EditorBackground',          wp.EditorBackground,                    'color',   '背景色'),
+      make('WorkoutPanel.EditorForeground',          wp.EditorForeground,                    'color',   '前景色'),
+      make('WorkoutPanel.EditorHeadingStyles',       JSON.stringify(wp.EditorHeadingStyles), 'json',    '見出しスタイル'),
+      make('WorkoutPanel.EditorHighlightStyles',     JSON.stringify(wp.EditorHighlightStyles), 'json',  'ハイライトスタイル'),
+      make('ReThinkPanel.IsAreaOpen',                String(rp.IsAreaOpen),                  'boolean', '右パネル表示'),
     ];
   }
 
@@ -223,13 +310,16 @@ export class TTUIStateManager {
       const section = sections[0];
       if (!section) return;
       const keyIdx = section.columns.findIndex(c => c === 'key');
+      // current 列優先、なければ旧 value 列にフォールバック
+      const curIdx = section.columns.findIndex(c => c === 'current');
       const valIdx = section.columns.findIndex(c => c === 'value');
-      if (keyIdx < 0 || valIdx < 0) return;
+      const applyIdx = curIdx >= 0 ? curIdx : valIdx;
+      if (keyIdx < 0 || applyIdx < 0) return;
 
       const dirtyPanels = new Set<string>();
       for (const row of section.rows) {
         const key = row[keyIdx]?.trim() ?? '';
-        const val = row[valIdx] ?? '';
+        const val = row[applyIdx] ?? '';
         if (!key) continue;
         this._applyProp(key, val);
         dirtyPanels.add(key.split('.')[0]);

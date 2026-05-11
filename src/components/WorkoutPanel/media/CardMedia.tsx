@@ -7,15 +7,17 @@
  * - それ以外 → Vault の全 Think（thought 除く）カード
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   FileText, Lightbulb, Table, Link, MessageCircle, Globe,
+  RefreshCcw, ChevronDown, ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
 import type { TTThink } from '../../../models/TTThink';
 import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
 import { parseTableContent } from '../../../utils/tableFormat';
+import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import './CardMedia.css';
 
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
@@ -36,13 +38,12 @@ const CONTENT_COLORS: Record<ContentType, string> = {
   nettext: '#00838f',
 };
 
-function excerpt(content: string, maxLen = 90): string {
-  const text = content
+function plainText(content: string): string {
+  return content
     .replace(/^#+\s*/gm, '')
     .replace(/[*_`>]/g, '')
     .replace(/\n+/g, ' ')
     .trim();
-  return text.length > maxLen ? text.slice(0, maxLen) + '…' : text;
 }
 
 function formatDate(dateStr: string): string {
@@ -50,13 +51,99 @@ function formatDate(dateStr: string): string {
   return m ? `${m[1]}/${m[2]}/${m[3]}` : dateStr.slice(0, 10);
 }
 
+// ── CollapsibleValue ────────────────────────────────────────────────────────
+
+const COLLAPSE_THRESHOLD = 100;
+
+function CollapsibleValue({ value }: { value: string }) {
+  const [expanded, setExpanded] = useState(false);
+  if (value.length <= COLLAPSE_THRESHOLD) {
+    return <span className="card-media__field-value">{value}</span>;
+  }
+  return (
+    <span className="card-media__field-value card-media__field-value--collapsible">
+      <span className="card-media__field-value-text">
+        {expanded ? value : value.slice(0, COLLAPSE_THRESHOLD) + '…'}
+      </span>
+      <button
+        className="card-media__expand-btn"
+        onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+      >
+        {expanded ? '折りたたむ' : 'もっと見る'}
+      </button>
+    </span>
+  );
+}
+
+// ── ThinkCard（個別カード、展開状態を持つ）──────────────────────────────
+
+const BODY_COLLAPSE_THRESHOLD = 150;
+
+function ThinkCard({ item, isFocus }: { item: TTThink; isFocus: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const Icon  = CONTENT_ICONS[item.ContentType] ?? FileText;
+  const color = CONTENT_COLORS[item.ContentType] ?? '#666';
+  const body  = plainText(item.Content);
+  const isLong = body.length > BODY_COLLAPSE_THRESHOLD;
+
+  return (
+    <div
+      className={['card-media__card', isFocus ? 'card-media__card--focus' : ''].join(' ')}
+    >
+      <div className="card-media__card-header" style={{ borderTopColor: color }}>
+        <span className="card-media__card-icon" style={{ color }}>
+          <Icon size={13} />
+        </span>
+        <span className="card-media__card-title" title={item.Name}>
+          {item.Name}
+        </span>
+      </div>
+      <div className="card-media__card-body">
+        {isLong && !expanded
+          ? body.slice(0, BODY_COLLAPSE_THRESHOLD) + '…'
+          : body}
+        {isLong && (
+          <button
+            className="card-media__body-expand-btn"
+            onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
+          >
+            {expanded ? <ChevronRight size={10} /> : <ChevronDown size={10} />}
+            {expanded ? '折りたたむ' : 'もっと見る'}
+          </button>
+        )}
+      </div>
+      <div className="card-media__card-footer">
+        <span>{formatDate(item.UpdateDate)}</span>
+        {item.Keywords && (
+          <span className="card-media__card-keywords">
+            {item.Keywords.split(',').slice(0, 2).map(k => k.trim()).filter(Boolean).join(' · ')}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── TableCardView ─────────────────────────────────────────────────────────────
 
-function TableCardView({ think }: { think: TTThink }) {
-  const [filter, setFilter] = useState('');
+interface TableCardViewProps {
+  think:   TTThink;
+  onSave?: (content: string) => void;
+}
 
-  const sections = useMemo(() => parseTableContent(think.Content), [think.Content]);
-  const section  = sections[0] ?? null;
+function TableCardView({ think, onSave }: TableCardViewProps) {
+  const [filter, setFilter] = useState('');
+  const isUISettings = think.ID === TTUIStateManager.THINK_ID;
+
+  const [sections, setSections] = useState(() => parseTableContent(think.Content));
+  const section = sections[0] ?? null;
+
+  const handleRefresh = useCallback(() => {
+    const content = TTUIStateManager.instance.getLatestContent();
+    if (!content) return;
+    setSections(parseTableContent(content));
+    onSave?.(content);
+  }, [onSave]);
 
   const filteredRows = useMemo<string[][]>(() => {
     if (!section) return [];
@@ -88,7 +175,19 @@ function TableCardView({ think }: { think: TTThink }) {
           value={filter}
           onChange={e => setFilter(e.target.value)}
         />
-        <span className="card-media__count">{filteredRows.length} 件</span>
+        {isUISettings && (
+          <button
+            className="card-media__refresh-btn"
+            onClick={handleRefresh}
+            data-tip="UIから更新"
+            data-tip-side="left"
+          >
+            <RefreshCcw size={13} />
+          </button>
+        )}
+        <span className="card-media__count">
+          {filteredRows.length}/{section.rows.length}
+        </span>
       </div>
 
       {/* カードグリッド */}
@@ -99,9 +198,7 @@ function TableCardView({ think }: { think: TTThink }) {
               {section.columns.map((col, ci) => (
                 <div key={ci} className="card-media__field">
                   <span className="card-media__field-label">{col}</span>
-                  <span className="card-media__field-value" title={row[ci] ?? ''}>
-                    {row[ci] ?? ''}
-                  </span>
+                  <CollapsibleValue value={row[ci] ?? ''} />
                 </div>
               ))}
             </div>
@@ -149,42 +246,19 @@ function ThinkCardView({ think, vault }: MediaProps) {
           value={filter}
           onChange={e => setFilter(e.target.value)}
         />
-        <span className="card-media__count">{filtered.length} 件</span>
+        <span className="card-media__count">
+          {filtered.length}/{allItems.length}
+        </span>
       </div>
 
       <div className="card-media__grid">
-        {filtered.map(item => {
-          const Icon  = CONTENT_ICONS[item.ContentType] ?? FileText;
-          const color = CONTENT_COLORS[item.ContentType] ?? '#666';
-          const isFocus = think?.ID === item.ID;
-
-          return (
-            <div
-              key={item.ID}
-              className={['card-media__card', isFocus ? 'card-media__card--focus' : ''].join(' ')}
-            >
-              <div className="card-media__card-header" style={{ borderTopColor: color }}>
-                <span className="card-media__card-icon" style={{ color }}>
-                  <Icon size={13} />
-                </span>
-                <span className="card-media__card-title" title={item.Name}>
-                  {item.Name}
-                </span>
-              </div>
-              <div className="card-media__card-body">
-                {excerpt(item.Content)}
-              </div>
-              <div className="card-media__card-footer">
-                <span>{formatDate(item.UpdateDate)}</span>
-                {item.Keywords && (
-                  <span className="card-media__card-keywords">
-                    {item.Keywords.split(',').slice(0, 2).map(k => k.trim()).filter(Boolean).join(' · ')}
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {filtered.map(item => (
+          <ThinkCard
+            key={item.ID}
+            item={item}
+            isFocus={think?.ID === item.ID}
+          />
+        ))}
 
         {filtered.length === 0 && (
           <div className="card-media__empty">
@@ -200,7 +274,7 @@ function ThinkCardView({ think, vault }: MediaProps) {
 
 export function CardMedia(props: MediaProps) {
   if (props.think?.ContentType === 'table') {
-    return <TableCardView think={props.think} />;
+    return <TableCardView think={props.think} onSave={props.onSave} />;
   }
   return <ThinkCardView {...props} />;
 }

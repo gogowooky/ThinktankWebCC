@@ -11,9 +11,10 @@ import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   FileText, Lightbulb, Table, Link, MessageCircle, Globe,
-  ChevronUp, ChevronDown, ChevronsUpDown, Plus,
+  ChevronUp, ChevronDown, ChevronsUpDown, Plus, RefreshCcw,
   type LucideIcon,
 } from 'lucide-react';
+import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import type { TTThink } from '../../../models/TTThink';
 import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
@@ -50,8 +51,17 @@ function formatDate(dateStr: string): string {
 
 // ── TableGridView ────────────────────────────────────────────────────────────
 
-const COL_WIDTH    = 120;
-const ROWNUM_WIDTH = 40;
+const ROWNUM_WIDTH  = 40;
+const AUTO_CHAR_W   = 7;   // 12px フォントのおおよその文字幅(px)
+const AUTO_MIN_W    = 60;
+const AUTO_CAP_CHARS = 40; // 極端に長い値にはカラム幅を合わせない
+
+function calcColumnWidth(col: string, rows: string[][], colIdx: number): number {
+  const headerLen  = col.length;
+  const maxDataLen = rows.reduce((max, row) => Math.max(max, (row[colIdx] ?? '').length), 0);
+  const effLen     = Math.max(headerLen, Math.min(maxDataLen, AUTO_CAP_CHARS));
+  return Math.max(AUTO_MIN_W, effLen * AUTO_CHAR_W + 28); // +28: ソートアイコン+パディング
+}
 
 type SortDir  = 'asc' | 'desc';
 interface SortState { col: number; dir: SortDir; }
@@ -157,7 +167,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   useEffect(() => {
     if (section) {
       setColumnOrder(Array.from({ length: section.columns.length }, (_, i) => i));
-      setColumnWidths(Array.from({ length: section.columns.length }, () => COL_WIDTH));
+      setColumnWidths(section.columns.map((col, ci) => calcColumnWidth(col, section.rows, ci)));
       setNewRowValues(Array.from({ length: section.columns.length }, () => ''));
     } else {
       setColumnOrder([]);
@@ -196,6 +206,15 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   });
 
   // ── ハンドラー ─────────────────────────────────────────────────────────
+
+  const isUISettings = think.ID === TTUIStateManager.THINK_ID;
+
+  const handleRefresh = useCallback(() => {
+    const content = TTUIStateManager.instance.getLatestContent();
+    if (!content) return;
+    setSections(parseTableContent(content));
+    onSave?.(content);
+  }, [onSave]);
 
   const handleSave = useCallback(() => {
     if (!onSave || !section) return;
@@ -394,7 +413,12 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
           value={filter}
           onChange={e => setFilter(e.target.value)}
         />
-        <span className="table-grid__count">{displayRows.length} 行</span>
+        {isUISettings && (
+          <button className="table-grid__refresh-btn" onClick={handleRefresh} data-tip="UIから更新" data-tip-side="left">
+            <RefreshCcw size={12} />
+          </button>
+        )}
+        <span className="table-grid__count">{displayRows.length}/{section?.rows.length ?? 0}</span>
         {isDirty && (
           <button className="table-grid__save-btn" onClick={handleSave} title="保存 (Ctrl+S)">
             保存
@@ -431,7 +455,8 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                     dropSide === 'right' && "table-grid__header-cell--drop-target-right",
                   ].filter(Boolean).join(" ")}
                   style={{ width: columnWidths[colIdx] }}
-                  title={col}
+                  data-tip={col}
+                  data-tip-side="bottom"
                   draggable={resizingCol === null}
                   onDragStart={(e) => handleColumnDragStart(e, displayIdx)}
                   onDragOver={(e) => handleColumnDragOver(e, displayIdx)}
@@ -623,7 +648,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
           value={filter}
           onChange={e => setFilter(e.target.value)}
         />
-        <span className="datagrid-media__count">{filtered.length} 件</span>
+        <span className="datagrid-media__count">{filtered.length}/{allItems.length}</span>
       </div>
 
       <div className="datagrid-media__header">
