@@ -3,6 +3,7 @@
  * 全メディアコンポーネント共通の Props インターフェース。
  */
 
+import type React from 'react';
 import type { TTThink } from '../../../models/TTThink';
 import type { TTVault } from '../../../models/TTVault';
 
@@ -19,6 +20,8 @@ export interface MediaProps {
   onTitleChange?: (title: string) => void;
   /** 外部からコンテンツが変更されたときにエディタを再マウントするためのカウンター */
   refreshKey?: number;
+  /** ビュー切り替え時に TextEditorMedia が自動保存を実行するための関数を登録するRef */
+  autoSaveRef?: React.MutableRefObject<(() => void) | null>;
   /** TextEditor 用の設定 */
   editorSettings?: {
     lineNumbers: boolean;

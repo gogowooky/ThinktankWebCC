@@ -81,7 +81,7 @@ function registerMarkdownFolding(monaco: any) {
   });
 }
 
-export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey }: MediaProps) {
+export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
   const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
   const editorRef   = useRef<any>(null);
@@ -113,7 +113,7 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
     editorRef.current = editor;
     registerMarkdownFolding(monaco);
     decorationsCollectionRef.current = editor.createDecorationsCollection();
-    
+
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (!think) return;
       const body = editor.getValue();
@@ -123,6 +123,30 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
 
     updateDecorations();
   }, [onSave, think]); // updateDecorations は後で依存に追加
+
+  // ビュー切り替え時の自動保存関数を autoSaveRef に登録
+  // 注意: savedRef は外部からの think.Content 更新（_scheduleSave 等）で stale になりうるため、
+  //       think.Content を直接比較に使う。これにより未保存編集の見落としを防ぐ。
+  useEffect(() => {
+    console.log('[autoSave useEffect] register/cleanup; autoSaveRef=', autoSaveRef ? 'PROVIDED' : 'UNDEFINED', 'think.ID=', think?.ID);
+    if (!autoSaveRef) return;
+    autoSaveRef.current = () => {
+      const editor = editorRef.current;
+      console.log('[autoSave CALLED] think.ID=', think?.ID, 'editor=', editor ? 'OK' : 'NULL');
+      if (!editor || !think) return;
+      const body = editor.getValue();
+      const currentSaved = getEditorValue(think);
+      const bodyHead = body.split('\n').slice(0, 8).join(' / ');
+      const savedHead = currentSaved.split('\n').slice(0, 8).join(' / ');
+      console.log('[autoSave] body  :', bodyHead);
+      console.log('[autoSave] saved :', savedHead);
+      console.log('[autoSave] equal?', body === currentSaved);
+      if (body === currentSaved) return;
+      savedRef.current = body;
+      onSave(reconstructContent(think, body));
+    };
+    return () => { autoSaveRef.current = null; };
+  }, [autoSaveRef, think, onSave]);
 
   // ── 動的スタイルの生成 ───────────────────────────────────────────────────
 

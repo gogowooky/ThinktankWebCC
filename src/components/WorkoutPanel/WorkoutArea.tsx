@@ -7,7 +7,7 @@
  * - TextEditorMedia の dirty 状態を WorkoutAreaRibbon の ● 表示に連携
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
@@ -44,6 +44,7 @@ export function WorkoutArea({
 }: Props) {
   const [isDirty,         setIsDirty]         = useState(false);
   const [loadedResourceId, setLoadedResourceId] = useState<string | null>(null);
+  const autoSaveRef = useRef<(() => void) | null>(null);
   const contentReady = loadedResourceId === area.ResourceID;
 
   const panel = area._parent as import('../../views/TTWorkoutPanel').TTWorkoutPanel;
@@ -182,7 +183,7 @@ export function WorkoutArea({
        panel?.EditorHighlightStyles, panel?.EditorBackground, panel?.EditorForeground,
        panel?.EditorHeadingStyles]);
 
-  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey };
+  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
@@ -198,7 +199,15 @@ export function WorkoutArea({
   };
 
   const handleDragStart    = useCallback((e: React.MouseEvent) => onDragStart(e, area.ID),      [onDragStart, area.ID]);
-  const handleMediaChange  = useCallback((type: MediaType)     => onMediaTypeChange(area.ID, type), [onMediaTypeChange, area.ID]);
+  const handleMediaChange  = useCallback((type: MediaType) => {
+    // [DEBUG]
+    console.log('[handleMediaChange] from=', area.MediaType, 'to=', type, 'autoSaveRef.current=', autoSaveRef.current ? 'SET' : 'NULL');
+    // TextEditor から離れるとき、未保存の内容を自動保存する（isDirty 不問、内部で差分チェック）
+    if (area.MediaType === 'texteditor' || area.MediaType === 'workout') {
+      autoSaveRef.current?.();
+    }
+    onMediaTypeChange(area.ID, type);
+  }, [area.MediaType, area.ID, onMediaTypeChange]);
   const handleClose        = useCallback(()                     => onClose(area.ID),              [onClose, area.ID]);
   const handleDragEnter    = useCallback(()                     => onDragEnter(area.ID),           [onDragEnter, area.ID]);
 

@@ -11,7 +11,7 @@
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
-import { parseTableContent } from '../utils/tableFormat';
+import { parseTableContent, tableSectionToContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { MediaType } from '../types';
 
@@ -76,8 +76,9 @@ export class TTUIStateManager {
         // localStorage が空なら保存済み Think から復元
         this.onThinkSaved(think.ID, think.Content);
       } else {
-        // localStorage 側が優先 → Think 内容を現状に合わせる
-        think.setContentSilent(this.serialize(this._app));
+        // localStorage 側が優先 → Think 内容を現状に合わせる（構造保持）
+        this._vaultThink = think;
+        think.setContentSilent(this._serializePreservingStructure(this._app));
       }
     }
     this._vaultThink = think;
@@ -110,7 +111,7 @@ export class TTUIStateManager {
     }
     this._saveToLocalStorage();
     if (this._app && this._vaultThink) {
-      this._vaultThink.setContentSilent(this.serialize(this._app));
+      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
     }
   }
 
@@ -122,7 +123,7 @@ export class TTUIStateManager {
     this._applyContent(prev);
     this._saveToLocalStorage();
     if (this._vaultThink && this._app) {
-      this._vaultThink.setContentSilent(this.serialize(this._app));
+      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
     }
     return true;
   }
@@ -135,9 +136,40 @@ export class TTUIStateManager {
     this._applyContent(next);
     this._saveToLocalStorage();
     if (this._vaultThink && this._app) {
-      this._vaultThink.setContentSilent(this.serialize(this._app));
+      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
     }
     return true;
+  }
+
+  /**
+   * 現在の think 構造（コメント行・空行・rawLines）を維持しながら
+   * データ行の value 列だけを現在のアプリ状態で更新してシリアライズ。
+   * _vaultThink が未設定またはパース不能な場合は serialize() にフォールバック。
+   */
+  private _serializePreservingStructure(app: TTApplication): string {
+    const currentContent = this._vaultThink?.Content;
+    if (currentContent) {
+      const sections = parseTableContent(currentContent);
+      const section = sections[0];
+      if (section) {
+        const keyIdx = section.columns.findIndex(c => c === 'key');
+        const valIdx = section.columns.findIndex(c => c === 'value');
+        if (keyIdx >= 0 && valIdx >= 0) {
+          const props = this._getProps(app);
+          const propMap = new Map(props.map(p => [p.key, p]));
+          const newRows = section.rows.map(row => {
+            const key = row[keyIdx]?.trim() ?? '';
+            const prop = propMap.get(key);
+            if (!prop) return row;
+            const newRow = [...row];
+            newRow[valIdx] = prop.value;
+            return newRow;
+          });
+          return tableSectionToContent(section.title, { ...section, rows: newRows });
+        }
+      }
+    }
+    return this.serialize(app);
   }
 
   /** TTApplication 状態をテーブル形式にシリアライズ */
@@ -267,7 +299,7 @@ export class TTUIStateManager {
     this._debounceTimer = setTimeout(() => {
       this._saveToLocalStorage();
       if (this._app && this._vaultThink) {
-        this._vaultThink.setContentSilent(this.serialize(this._app));
+        this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
       }
     }, 500);
   }
