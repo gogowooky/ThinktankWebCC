@@ -84,7 +84,10 @@ export class TTThink extends TTObject {
     try {
       const body = await StorageManager.instance.getContent(this.ID);
       if (body !== null) {
-        this.setContentSilent(this.Name + '\n' + body);
+        // _content at this point is the raw title line from LoadCache (e.g. "# My Memo")
+        // Use it directly instead of this.Name which has the # prefix stripped
+        const titleLine = this._content.split('\n')[0];
+        this.setContentSilent(titleLine + '\n' + body);
         this.markSaved();
       }
     } catch (e) {
