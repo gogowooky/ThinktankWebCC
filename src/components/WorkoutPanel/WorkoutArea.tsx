@@ -153,23 +153,23 @@ export function WorkoutArea({
   useAppUpdate(panel);
 
   const editorSettings = useMemo(() => ({
-    lineNumbers:   panel?.EditorLineNumbers ?? false,
-    wordWrap:      panel?.EditorWordWrap ?? true,
-    minimap:       panel?.EditorMinimap ?? false,
-    showFullWidthSpace: panel?.EditorShowFullWidthSpace ?? false,
-    unicodeHighlight: panel?.EditorUnicodeHighlight ?? false,
-    bracketPairColorization: panel?.EditorBracketPairColorization ?? true,
-    highlightWord: panel?.EditorHighlightWord ?? '',
-    highlightStyles: panel?.EditorHighlightStyles ?? [
+    lineNumbers:   panel?.TextEditor.LineNumbers.IsVisible ?? false,
+    wordWrap:      panel?.TextEditor.WordWrap.IsVisible ?? true,
+    minimap:       panel?.TextEditor.Minimap.IsVisible ?? false,
+    showFullWidthSpace: panel?.TextEditor.FullWidthSpace.IsVisible ?? false,
+    unicodeHighlight: panel?.TextEditor.UnicodeHighlight.IsVisible ?? false,
+    bracketPairColorization: panel?.TextEditor.BracketPairColorization.IsVisible ?? true,
+    highlightWord: panel?.HighlightWord ?? '',
+    highlightStyles: panel?.TextEditor.HighlightStyles ?? [
       { backgroundColor: '#ffff00', color: '#000000' },
       { backgroundColor: '#ff0000', color: '#ffffff' },
       { backgroundColor: '#0000ff', color: '#ffffff' },
       { backgroundColor: '#008000', color: '#ffffff' },
       { backgroundColor: '#800080', color: '#ffffff' },
     ],
-    background:    panel?.EditorBackground ?? '#f5f5f5',
-    foreground:    panel?.EditorForeground ?? '#1e1e1e',
-    headingStyles: panel?.EditorHeadingStyles ?? [
+    background:    panel?.TextEditor.Background ?? '#f5f5f5',
+    foreground:    panel?.TextEditor.Foreground ?? '#1e1e1e',
+    headingStyles: panel?.TextEditor.HeadingStyles ?? [
       { color: '#569cd6', bold: true, underline: false },
       { color: '#4ec9b0', bold: true, underline: false },
       { color: '#ce9178', bold: true, underline: false },
@@ -177,11 +177,11 @@ export function WorkoutArea({
       { color: '#c586c0', bold: true, underline: false },
     ],
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [panel?.EditorLineNumbers, panel?.EditorWordWrap, panel?.EditorMinimap,
-       panel?.EditorShowFullWidthSpace, panel?.EditorUnicodeHighlight,
-       panel?.EditorBracketPairColorization, panel?.EditorHighlightWord,
-       panel?.EditorHighlightStyles, panel?.EditorBackground, panel?.EditorForeground,
-       panel?.EditorHeadingStyles]);
+  }), [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
+       panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
+       panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,
+       panel?.TextEditor.HighlightStyles, panel?.TextEditor.Background, panel?.TextEditor.Foreground,
+       panel?.TextEditor.HeadingStyles]);
 
   const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
 

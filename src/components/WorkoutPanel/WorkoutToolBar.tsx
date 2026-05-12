@@ -40,7 +40,7 @@ export function WorkoutToolBar({ panel }: Props) {
   useAppUpdate(panel);
 
   const [mode,       setMode]       = useState<ToolMode>('highlight');
-  const [text,       setText]       = useState(() => panel.EditorHighlightWord);
+  const [text,       setText]       = useState(() => panel.HighlightWord);
   const [isExpanded, setIsExpanded] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -54,35 +54,35 @@ export function WorkoutToolBar({ panel }: Props) {
   }, [isExpanded]);
 
   useEffect(() => {
-    if (mode === 'highlight') setText(panel.EditorHighlightWord);
-  }, [panel.EditorHighlightWord, mode]);
+    if (mode === 'highlight') setText(panel.HighlightWord);
+  }, [panel.HighlightWord, mode]);
 
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
-    setText(m === 'highlight' ? panel.EditorHighlightWord : '');
+    setText(m === 'highlight' ? panel.HighlightWord : '');
     inputRef.current?.focus();
   }, [panel]);
 
   const handleTextChange = useCallback((v: string) => {
     setText(v);
-    if (mode === 'highlight') panel.SetEditorHighlightWord(v);
+    if (mode === 'highlight') panel.SetHighlightWord(v);
   }, [mode, panel]);
 
   const handleBlur = useCallback(() => {
     if (mode === 'highlight' && text.trim()) {
-      panel.AddEditorHighlightHistory(text.trim());
+      panel.AddHighlightHistory(text.trim());
     }
   }, [mode, panel, text]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && mode === 'highlight' && text.trim()) {
-      panel.AddEditorHighlightHistory(text.trim());
+      panel.AddHighlightHistory(text.trim());
     }
   }, [mode, panel, text]);
 
   const handleClear = useCallback(() => {
     setText('');
-    if (mode === 'highlight') panel.SetEditorHighlightWord('');
+    if (mode === 'highlight') panel.SetHighlightWord('');
   }, [mode, panel]);
 
   const current = MODES.find(m => m.id === mode)!;
@@ -104,7 +104,7 @@ export function WorkoutToolBar({ panel }: Props) {
       />
       {mode === 'highlight' && (
         <datalist id="toolbar-highlight-history">
-          {panel.EditorHighlightHistory.map((h, i) => (
+          {panel.HighlightHistory.map((h: string, i: number) => (
             <option key={i} value={h} />
           ))}
         </datalist>

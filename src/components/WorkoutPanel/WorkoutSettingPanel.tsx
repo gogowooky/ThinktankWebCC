@@ -259,8 +259,8 @@ export function WorkoutSettingPanel({
                   <label className="workout-setting-panel__checkbox-label">
                     <input
                       type="checkbox"
-                      checked={panel.EditorLineNumbers}
-                      onChange={e => panel.SetEditorLineNumbers(e.target.checked)}
+                      checked={panel.TextEditor.LineNumbers.IsVisible}
+                      onChange={e => panel.SetTextEditorLineNumbersVisible(e.target.checked)}
                     />
                     <span className="workout-setting-panel__checkbox-text">行番号</span>
                   </label>
@@ -268,8 +268,8 @@ export function WorkoutSettingPanel({
                   <label className="workout-setting-panel__checkbox-label">
                     <input
                       type="checkbox"
-                      checked={panel.EditorWordWrap}
-                      onChange={e => panel.SetEditorWordWrap(e.target.checked)}
+                      checked={panel.TextEditor.WordWrap.IsVisible}
+                      onChange={e => panel.SetTextEditorWordWrapVisible(e.target.checked)}
                     />
                     <span className="workout-setting-panel__checkbox-text">Wordwrap</span>
                   </label>
@@ -277,8 +277,8 @@ export function WorkoutSettingPanel({
                   <label className="workout-setting-panel__checkbox-label">
                     <input
                       type="checkbox"
-                      checked={panel.EditorMinimap}
-                      onChange={e => panel.SetEditorMinimap(e.target.checked)}
+                      checked={panel.TextEditor.Minimap.IsVisible}
+                      onChange={e => panel.SetTextEditorMinimapVisible(e.target.checked)}
                     />
                     <span className="workout-setting-panel__checkbox-text">ミニマップ</span>
                   </label>
@@ -286,8 +286,8 @@ export function WorkoutSettingPanel({
                   <label className="workout-setting-panel__checkbox-label">
                     <input
                       type="checkbox"
-                      checked={panel.EditorShowFullWidthSpace}
-                      onChange={e => panel.SetEditorShowFullWidthSpace(e.target.checked)}
+                      checked={panel.TextEditor.FullWidthSpace.IsVisible}
+                      onChange={e => panel.SetTextEditorFullWidthSpaceVisible(e.target.checked)}
                     />
                     <span className="workout-setting-panel__checkbox-text">全角スペース</span>
                   </label>
@@ -295,8 +295,8 @@ export function WorkoutSettingPanel({
                   <label className="workout-setting-panel__checkbox-label">
                     <input
                       type="checkbox"
-                      checked={panel.EditorUnicodeHighlight}
-                      onChange={e => panel.SetEditorUnicodeHighlight(e.target.checked)}
+                      checked={panel.TextEditor.UnicodeHighlight.IsVisible}
+                      onChange={e => panel.SetTextEditorUnicodeHighlightVisible(e.target.checked)}
                     />
                     <span className="workout-setting-panel__checkbox-text">特殊文字警告</span>
                   </label>
@@ -304,8 +304,8 @@ export function WorkoutSettingPanel({
                   <label className="workout-setting-panel__checkbox-label">
                     <input
                       type="checkbox"
-                      checked={panel.EditorBracketPairColorization}
-                      onChange={e => panel.SetEditorBracketPairColorization(e.target.checked)}
+                      checked={panel.TextEditor.BracketPairColorization.IsVisible}
+                      onChange={e => panel.SetTextEditorBracketPairColorizationVisible(e.target.checked)}
                     />
                     <span className="workout-setting-panel__checkbox-text">括弧対応</span>
                   </label>
@@ -330,8 +330,8 @@ export function WorkoutSettingPanel({
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
-                      value={panel.EditorBackground}
-                      onChange={e => panel.SetEditorBackground(e.target.value)}
+                      value={panel.TextEditor.Background}
+                      onChange={e => panel.SetTextEditorBackground(e.target.value)}
                     />
                   </div>
 
@@ -340,13 +340,13 @@ export function WorkoutSettingPanel({
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
-                      value={panel.EditorForeground}
-                      onChange={e => panel.SetEditorForeground(e.target.value)}
+                      value={panel.TextEditor.Foreground}
+                      onChange={e => panel.SetTextEditorForeground(e.target.value)}
                     />
                   </div>
 
                   {[1, 2, 3, 4, 5].map(level => {
-                    const style = panel.EditorHeadingStyles[level - 1];
+                    const style = panel.TextEditor.HeadingStyles[level - 1];
                     const fw = ['１', '２', '３', '４', '５'][level - 1];
                     return (
                       <div key={level} className="workout-setting-panel__heading-style-row">
@@ -355,14 +355,14 @@ export function WorkoutSettingPanel({
                           type="color"
                           className="workout-setting-panel__color-picker"
                           value={style.color}
-                          onChange={e => panel.SetEditorHeadingStyle(level, { color: e.target.value })}
+                          onChange={e => panel.SetTextEditorHeadingStyle(level, { color: e.target.value })}
                           data-tip={`セクション${fw}の文字色`}
                         />
                         <label className="workout-setting-panel__small-checkbox">
                           <input
                             type="checkbox"
                             checked={style.bold}
-                            onChange={e => panel.SetEditorHeadingStyle(level, { bold: e.target.checked })}
+                            onChange={e => panel.SetTextEditorHeadingStyle(level, { bold: e.target.checked })}
                           />
                           B
                         </label>
@@ -370,7 +370,7 @@ export function WorkoutSettingPanel({
                           <input
                             type="checkbox"
                             checked={style.underline}
-                            onChange={e => panel.SetEditorHeadingStyle(level, { underline: e.target.checked })}
+                            onChange={e => panel.SetTextEditorHeadingStyle(level, { underline: e.target.checked })}
                           />
                           U
                         </label>
@@ -395,7 +395,7 @@ export function WorkoutSettingPanel({
               {isHighlightColorOpen && (
                 <div className="workout-setting-panel__section-content">
                   {[1, 2, 3, 4, 5].map(group => {
-                    const style = panel.EditorHighlightStyles[group - 1];
+                    const style = panel.TextEditor.HighlightStyles[group - 1];
                     const fw = ['１', '２', '３', '４', '５'][group - 1];
                     return (
                       <div key={group} className="workout-setting-panel__color-row">
@@ -406,7 +406,7 @@ export function WorkoutSettingPanel({
                             type="color"
                             className="workout-setting-panel__color-picker"
                             value={style.backgroundColor}
-                            onChange={e => panel.SetEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
+                            onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
                             data-tip={`グループ${fw}の背景色`}
                             data-tip-side="left"
                           />
@@ -415,7 +415,7 @@ export function WorkoutSettingPanel({
                             type="color"
                             className="workout-setting-panel__color-picker"
                             value={style.color}
-                            onChange={e => panel.SetEditorHighlightStyle(group - 1, { color: e.target.value })}
+                            onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { color: e.target.value })}
                             data-tip={`グループ${fw}の文字色`}
                             data-tip-side="left"
                           />

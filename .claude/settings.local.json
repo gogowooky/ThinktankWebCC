@@ -102,7 +102,11 @@
       "Bash(Select-Object FullName)",
       "Bash(Select-Object -ExpandProperty FullName)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\" -Directory)",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(findstr \":5173\")",
+      "Bash(node C:\\\\Users\\\\gogow\\\\test_patterns.js)",
+      "Read(//c/Users/gogow/**)",
+      "Bash(node test_patterns.js)"
     ]
   }
 }

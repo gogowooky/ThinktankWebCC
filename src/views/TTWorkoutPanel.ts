@@ -9,6 +9,34 @@ import type { MediaType } from '../types';
 
 export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph';
 
+// ── TextEditorSettings ────────────────────────────────────────────────────
+
+export class TextEditorSettings {
+  LineNumbers = { IsVisible: false };
+  WordWrap = { IsVisible: true };
+  Minimap = { IsVisible: false };
+  FullWidthSpace = { IsVisible: false };
+  UnicodeHighlight = { IsVisible: false };
+  BracketPairColorization = { IsVisible: true };
+
+  Background: string = '#f5f5f5';
+  Foreground: string = '#1e1e1e';
+  HeadingStyles: { color: string; bold: boolean; underline: boolean }[] = [
+    { color: '#569cd6', bold: true, underline: false }, // H1
+    { color: '#4ec9b0', bold: true, underline: false }, // H2
+    { color: '#ce9178', bold: true, underline: false }, // H3
+    { color: '#dcdcaa', bold: true, underline: false }, // H4
+    { color: '#c586c0', bold: true, underline: false }, // H5
+  ];
+  HighlightStyles: { backgroundColor: string; color: string }[] = [
+    { backgroundColor: '#fff0b3', color: '#1a1a1a' },
+    { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
+    { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
+    { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
+    { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
+  ];
+}
+
 // ── BSP ノード型 ──────────────────────────────────────────────────────
 
 export interface LeafNode {
@@ -131,56 +159,37 @@ export class TTWorkoutPanel extends TTUIItem {
   public CloseArea():  void { if (this.IsAreaOpen)  { this.IsAreaOpen = false; this.NotifyUpdated(); } }
 
   // ── TextEditor 設定 ───────────────────────────────────────────────────
-  public EditorLineNumbers: boolean = false;
-  public EditorWordWrap: boolean = true;
-  public EditorMinimap: boolean = false;
-  public EditorShowFullWidthSpace: boolean = false;
-  public EditorUnicodeHighlight: boolean = false;
-  public EditorBracketPairColorization: boolean = true;
-  public EditorHighlightWord: string = '';
-  public EditorHighlightHistory: string[] = [];
+  public TextEditor: TextEditorSettings = new TextEditorSettings();
 
-  public EditorBackground: string = '#f5f5f5';
-  public EditorForeground: string = '#1e1e1e';
-  public EditorHeadingStyles: { color: string; bold: boolean; underline: boolean }[] = [
-    { color: '#569cd6', bold: true, underline: false }, // H1
-    { color: '#4ec9b0', bold: true, underline: false }, // H2
-    { color: '#ce9178', bold: true, underline: false }, // H3
-    { color: '#dcdcaa', bold: true, underline: false }, // H4
-    { color: '#c586c0', bold: true, underline: false }, // H5
-  ];
+  // ── ハイライト設定（全Pane共通） ─────────────────────────────────────────
+  public HighlightWord: string = '';
+  public HighlightHistory: string[] = [];
 
-  public EditorHighlightStyles: { backgroundColor: string; color: string }[] = [
-    { backgroundColor: '#fff0b3', color: '#1a1a1a' }, 
-    { backgroundColor: '#ffb3b3', color: '#1a1a1a' }, 
-    { backgroundColor: '#b3e0ff', color: '#1a1a1a' }, 
-    { backgroundColor: '#b3ffb3', color: '#1a1a1a' }, 
-    { backgroundColor: '#e6b3ff', color: '#1a1a1a' }, 
-  ];
-
-  public SetEditorLineNumbers(v: boolean) { this.EditorLineNumbers = v; this.NotifyUpdated(); }
-  public SetEditorWordWrap(v: boolean) { this.EditorWordWrap = v; this.NotifyUpdated(); }
-  public SetEditorMinimap(v: boolean) { this.EditorMinimap = v; this.NotifyUpdated(); }
-  public SetEditorShowFullWidthSpace(v: boolean) { this.EditorShowFullWidthSpace = v; this.NotifyUpdated(); }
-  public SetEditorUnicodeHighlight(v: boolean) { this.EditorUnicodeHighlight = v; this.NotifyUpdated(); }
-  public SetEditorBracketPairColorization(v: boolean) { this.EditorBracketPairColorization = v; this.NotifyUpdated(); }
-  public SetEditorHighlightWord(v: string) { this.EditorHighlightWord = v; this.NotifyUpdated(); }
-  public AddEditorHighlightHistory(v: string) {
+  public SetHighlightWord(v: string) { this.HighlightWord = v; this.NotifyUpdated(); }
+  public AddHighlightHistory(v: string) {
     if (!v.trim()) return;
-    this.EditorHighlightHistory = [v, ...this.EditorHighlightHistory.filter(h => h !== v)].slice(0, 10);
+    this.HighlightHistory = [v, ...this.HighlightHistory.filter(h => h !== v)].slice(0, 10);
     this.NotifyUpdated();
   }
 
-  public SetEditorBackground(color: string) { this.EditorBackground = color; this.NotifyUpdated(); }
-  public SetEditorForeground(color: string) { this.EditorForeground = color; this.NotifyUpdated(); }
-  public SetEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
+  // ── TextEditor ヘルパーメソッド ─────────────────────────────────────────
+  public SetTextEditorLineNumbersVisible(v: boolean) { this.TextEditor.LineNumbers.IsVisible = v; this.NotifyUpdated(); }
+  public SetTextEditorWordWrapVisible(v: boolean) { this.TextEditor.WordWrap.IsVisible = v; this.NotifyUpdated(); }
+  public SetTextEditorMinimapVisible(v: boolean) { this.TextEditor.Minimap.IsVisible = v; this.NotifyUpdated(); }
+  public SetTextEditorFullWidthSpaceVisible(v: boolean) { this.TextEditor.FullWidthSpace.IsVisible = v; this.NotifyUpdated(); }
+  public SetTextEditorUnicodeHighlightVisible(v: boolean) { this.TextEditor.UnicodeHighlight.IsVisible = v; this.NotifyUpdated(); }
+  public SetTextEditorBracketPairColorizationVisible(v: boolean) { this.TextEditor.BracketPairColorization.IsVisible = v; this.NotifyUpdated(); }
+
+  public SetTextEditorBackground(color: string) { this.TextEditor.Background = color; this.NotifyUpdated(); }
+  public SetTextEditorForeground(color: string) { this.TextEditor.Foreground = color; this.NotifyUpdated(); }
+  public SetTextEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
     if (level < 1 || level > 5) return;
-    this.EditorHeadingStyles = this.EditorHeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);
+    this.TextEditor.HeadingStyles = this.TextEditor.HeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);
     this.NotifyUpdated();
   }
-  public SetEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string }>) {
+  public SetTextEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string }>) {
     if (groupIndex >= 0 && groupIndex <= 4) {
-      this.EditorHighlightStyles = this.EditorHighlightStyles.map((s, i) => i === groupIndex ? { ...s, ...style } : s);
+      this.TextEditor.HighlightStyles = this.TextEditor.HighlightStyles.map((s, i) => i === groupIndex ? { ...s, ...style } : s);
       this.NotifyUpdated();
     }
   }

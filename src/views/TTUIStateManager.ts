@@ -140,83 +140,85 @@ const PROP_SPECS: Record<string, PropSpec> = {
     set: (app, v) => { app.WorkoutPanel.SetViewMode(v as WorkoutViewMode); },
   },
 
-  // ── WorkoutPanel（エディタ設定）────────────────────────────────────────
-  'WorkoutPanel.EditorLineNumbers': {
+  // ── TextEditor（テキストエディタ設定）──────────────────────────────────────
+  'TextEditor.LineNumbers.IsVisible': {
     panel: 'WorkoutPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '行番号表示',
-    get: (app) => String(app.WorkoutPanel.EditorLineNumbers),
-    set: (app, v) => { app.WorkoutPanel.EditorLineNumbers = parseBool(v, app.WorkoutPanel.EditorLineNumbers); },
+    get: (app) => String(app.WorkoutPanel.TextEditor.LineNumbers.IsVisible),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.LineNumbers.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.LineNumbers.IsVisible); },
   },
-  'WorkoutPanel.EditorWordWrap': {
+  'TextEditor.WordWrap.IsVisible': {
     panel: 'WorkoutPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '折り返し',
-    get: (app) => String(app.WorkoutPanel.EditorWordWrap),
-    set: (app, v) => { app.WorkoutPanel.EditorWordWrap = parseBool(v, app.WorkoutPanel.EditorWordWrap); },
+    get: (app) => String(app.WorkoutPanel.TextEditor.WordWrap.IsVisible),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.WordWrap.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.WordWrap.IsVisible); },
   },
-  'WorkoutPanel.EditorMinimap': {
+  'TextEditor.Minimap.IsVisible': {
     panel: 'WorkoutPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: 'ミニマップ',
-    get: (app) => String(app.WorkoutPanel.EditorMinimap),
-    set: (app, v) => { app.WorkoutPanel.EditorMinimap = parseBool(v, app.WorkoutPanel.EditorMinimap); },
+    get: (app) => String(app.WorkoutPanel.TextEditor.Minimap.IsVisible),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Minimap.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.Minimap.IsVisible); },
   },
-  'WorkoutPanel.EditorShowFullWidthSpace': {
+  'TextEditor.FullWidthSpace.IsVisible': {
     panel: 'WorkoutPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '全角スペース表示',
-    get: (app) => String(app.WorkoutPanel.EditorShowFullWidthSpace),
-    set: (app, v) => { app.WorkoutPanel.EditorShowFullWidthSpace = parseBool(v, app.WorkoutPanel.EditorShowFullWidthSpace); },
+    get: (app) => String(app.WorkoutPanel.TextEditor.FullWidthSpace.IsVisible),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.FullWidthSpace.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.FullWidthSpace.IsVisible); },
   },
-  'WorkoutPanel.EditorUnicodeHighlight': {
+  'TextEditor.UnicodeHighlight.IsVisible': {
     panel: 'WorkoutPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: 'Unicode強調',
-    get: (app) => String(app.WorkoutPanel.EditorUnicodeHighlight),
-    set: (app, v) => { app.WorkoutPanel.EditorUnicodeHighlight = parseBool(v, app.WorkoutPanel.EditorUnicodeHighlight); },
+    get: (app) => String(app.WorkoutPanel.TextEditor.UnicodeHighlight.IsVisible),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.UnicodeHighlight.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.UnicodeHighlight.IsVisible); },
   },
-  'WorkoutPanel.EditorBracketPairColorization': {
+  'TextEditor.BracketPairColorization.IsVisible': {
     panel: 'WorkoutPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '括弧ペア色分け',
-    get: (app) => String(app.WorkoutPanel.EditorBracketPairColorization),
-    set: (app, v) => { app.WorkoutPanel.EditorBracketPairColorization = parseBool(v, app.WorkoutPanel.EditorBracketPairColorization); },
+    get: (app) => String(app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible); },
   },
-  'WorkoutPanel.EditorHighlightWord': {
+  'TextEditor.Background': {
+    panel: 'WorkoutPanel',
+    default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
+    description: 'テキストエディタ背景色',
+    get: (app) => app.WorkoutPanel.TextEditor.Background,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Background = v; },
+  },
+  'TextEditor.Foreground': {
+    panel: 'WorkoutPanel',
+    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
+    description: 'テキストエディタ前景色',
+    get: (app) => app.WorkoutPanel.TextEditor.Foreground,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Foreground = v; },
+  },
+  'TextEditor.HeadingStyles': {
+    panel: 'WorkoutPanel',
+    default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '^\\[.*\\]$',
+    description: 'テキストエディタ見出しスタイル',
+    get: (app) => JSON.stringify(app.WorkoutPanel.TextEditor.HeadingStyles),
+    set: (app, v) => { try { app.WorkoutPanel.TextEditor.HeadingStyles = JSON.parse(v); } catch { /* ignore */ } },
+  },
+  'TextEditor.HighlightStyles': {
+    panel: 'WorkoutPanel',
+    default: DEFAULT_HIGHLIGHT_STYLES, type: 'json', candidates: '^\\[.*\\]$',
+    description: 'テキストエディタハイライトスタイル',
+    get: (app) => JSON.stringify(app.WorkoutPanel.TextEditor.HighlightStyles),
+    set: (app, v) => { try { app.WorkoutPanel.TextEditor.HighlightStyles = JSON.parse(v); } catch { /* ignore */ } },
+  },
+
+  // ── ハイライト設定（全Pane共通） ────────────────────────────────────────
+  'WorkoutPanel.HighlightWord': {
     panel: 'WorkoutPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'ハイライトキーワード',
-    get: (app) => app.WorkoutPanel.EditorHighlightWord,
-    set: (app, v) => { app.WorkoutPanel.EditorHighlightWord = v; },
-  },
-  'WorkoutPanel.EditorBackground': {
-    panel: 'WorkoutPanel',
-    default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
-    description: '背景色',
-    get: (app) => app.WorkoutPanel.EditorBackground,
-    set: (app, v) => { app.WorkoutPanel.EditorBackground = v; },
-  },
-  'WorkoutPanel.EditorForeground': {
-    panel: 'WorkoutPanel',
-    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
-    description: '前景色',
-    get: (app) => app.WorkoutPanel.EditorForeground,
-    set: (app, v) => { app.WorkoutPanel.EditorForeground = v; },
-  },
-  'WorkoutPanel.EditorHeadingStyles': {
-    panel: 'WorkoutPanel',
-    default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '^\\[.*\\]$',
-    description: '見出しスタイル',
-    get: (app) => JSON.stringify(app.WorkoutPanel.EditorHeadingStyles),
-    set: (app, v) => { try { app.WorkoutPanel.EditorHeadingStyles = JSON.parse(v); } catch { /* ignore */ } },
-  },
-  'WorkoutPanel.EditorHighlightStyles': {
-    panel: 'WorkoutPanel',
-    default: DEFAULT_HIGHLIGHT_STYLES, type: 'json', candidates: '^\\[.*\\]$',
-    description: 'ハイライトスタイル',
-    get: (app) => JSON.stringify(app.WorkoutPanel.EditorHighlightStyles),
-    set: (app, v) => { try { app.WorkoutPanel.EditorHighlightStyles = JSON.parse(v); } catch { /* ignore */ } },
+    get: (app) => app.WorkoutPanel.HighlightWord,
+    set: (app, v) => { app.WorkoutPanel.HighlightWord = v; },
   },
 
   // ── ReThinkPanel ─────────────────────────────────────────────────────────
