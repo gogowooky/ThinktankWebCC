@@ -28,7 +28,19 @@ export function ReThinkPanel({ app, width, onResize }: Props) {
   useAppUpdate(panel);
 
   const handleToggle  = useCallback(() => panel.ToggleArea(), [panel]);
-  const handleSetMode = useCallback((mode: ReThinkViewMode) => panel.SetViewMode(mode), [panel]);
+  const handleSetMode = useCallback(
+    (mode: ReThinkViewMode) => {
+      if (!panel.IsAreaOpen) {
+        panel.SetViewMode(mode);
+        panel.OpenArea();
+      } else if (panel.ViewMode === mode) {
+        panel.CloseArea();
+      } else {
+        panel.SetViewMode(mode);
+      }
+    },
+    [panel]
+  );
 
   const handleResize = useCallback((dx: number) => {
     onResize(dx);

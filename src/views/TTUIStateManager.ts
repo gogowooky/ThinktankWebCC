@@ -306,6 +306,9 @@ export class TTUIStateManager {
     this._pushUndo();
     this._applyContent(content);
     this._saveToLocalStorage();
+    if (this._app && this._vaultThink) {
+      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
+    }
   }
 
   /** ショートカット等からの単一プロパティ変更 */
