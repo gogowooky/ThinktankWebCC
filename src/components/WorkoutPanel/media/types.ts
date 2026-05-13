@@ -34,6 +34,8 @@ export interface MediaProps {
     highlightStyles: { backgroundColor: string; color: string }[];
     background: string;
     foreground: string;
+    selectionBackground: string;
+    selectionForeground: string;
     headingStyles: { color: string; bold: boolean; underline: boolean }[];
   };
 }

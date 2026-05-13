@@ -64,6 +64,7 @@ interface PropSpec {
   type:        PropDef['type'];
   candidates:  string;
   description: string;
+  isConst?:    boolean;
   get: (app: TTApplication) => string;
   set: (app: TTApplication, value: string) => void;
 }
@@ -217,6 +218,78 @@ const PROP_SPECS: Record<string, PropSpec> = {
     description: 'テキストエディタ見出しスタイル',
     get: (app) => JSON.stringify(app.WorkoutPanel.TextEditor.HeadingStyles),
     set: (app, v) => { try { app.WorkoutPanel.TextEditor.HeadingStyles = JSON.parse(v); } catch { /* ignore */ } },
+  },
+  'TextEditor.Style.Section': {
+    panel: 'WorkoutPanel',
+    default: 'TextEditor.SectionStyle.Preset1', type: 'string',
+    candidates: '^TextEditor\\.SectionStyle\\.Preset[1-5]$',
+    description: 'セクションスタイル',
+    get: (app) => app.WorkoutPanel.TextEditor.SectionStyleKey,
+    set: (app, v) => {
+      app.WorkoutPanel.TextEditor.SectionStyleKey = v;
+      const preset = app.WorkoutPanel.TextEditor.SectionPresets[v];
+      if (preset) app.WorkoutPanel.TextEditor.HeadingStyles = [...preset];
+    },
+  },
+  'TextEditor.SectionStyle.Preset1': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
+    description: 'セクションスタイルプリセット1',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset1'] = s;
+      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset1')
+        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'TextEditor.SectionStyle.Preset2': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
+    description: 'セクションスタイルプリセット2',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset2'] = s;
+      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset2')
+        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'TextEditor.SectionStyle.Preset3': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
+    description: 'セクションスタイルプリセット3',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset3'] = s;
+      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset3')
+        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'TextEditor.SectionStyle.Preset4': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
+    description: 'セクションスタイルプリセット4',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset4'] = s;
+      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset4')
+        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'TextEditor.SectionStyle.Preset5': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
+    description: 'セクションスタイルプリセット5',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset5'] = s;
+      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset5')
+        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
+    } catch { /* ignore */ } },
   },
   'TextEditor.HighlightStyles': {
     panel: 'WorkoutPanel',
@@ -453,18 +526,32 @@ export class TTUIStateManager {
       if (!section) return;
       const keyIdx = section.columns.findIndex(c => c === 'key');
       const curIdx = section.columns.findIndex(c => c === 'current');
+      const defIdx = section.columns.findIndex(c => c === 'default');
       const valIdx = section.columns.findIndex(c => c === 'value');
       const applyIdx = curIdx >= 0 ? curIdx : valIdx; // current 優先、旧 value にフォールバック
       if (keyIdx < 0 || applyIdx < 0) return;
 
       const dirtyPanels = new Set<PanelKey>();
+
+      // 1st pass: const エントリ → default 列の値を適用（ファイルで編集可能なプリセットデータを読み込む）
+      for (const row of section.rows) {
+        const key  = row[keyIdx]?.trim() ?? '';
+        const spec = PROP_SPECS[key];
+        if (!spec?.isConst) continue;
+        const defaultVal = defIdx >= 0 ? (row[defIdx] ?? spec.default) : spec.default;
+        this._applyProp(key, defaultVal);
+        dirtyPanels.add(spec.panel);
+      }
+
+      // 2nd pass: 通常エントリ → current 列の値を適用
       for (const row of section.rows) {
         const key = row[keyIdx]?.trim() ?? '';
         const val = row[applyIdx] ?? '';
         if (!key) continue;
+        const spec = PROP_SPECS[key];
+        if (spec?.isConst) continue;
         this._applyProp(key, val);
-        const panel = PROP_SPECS[key]?.panel;
-        if (panel) dirtyPanels.add(panel);
+        if (spec?.panel) dirtyPanels.add(spec.panel);
       }
 
       const app = this._app;
@@ -495,6 +582,7 @@ export class TTUIStateManager {
             const key  = row[keyIdx]?.trim() ?? '';
             const spec = PROP_SPECS[key];
             if (!spec) return row;
+            if (spec.isConst) return row; // const エントリ: current 列を "const" のまま維持
             const newVal = spec.get(app);
             const newRow = [...row];
             newRow[writeIdx] = newVal;

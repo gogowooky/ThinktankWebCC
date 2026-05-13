@@ -4,6 +4,9 @@ UI Settings
 
 > key,current,type,description,candidates,restore,default
 
+> current 列に `const` と記載されているエントリは固定値プロパティです。
+> default 値は変更可能ですが、ファイルを更新しても current 列は常に `const` のまま書き換えないでください。
+
 # Panel
 
 ThinktankPanel.IsAreaOpen,false,boolean,Thinktankパネル表示,(true|false|toggle),current,false
@@ -25,6 +28,14 @@ TextEditor.FullWidthSpace.IsVisible,            false,  boolean,    全角スペ
 TextEditor.UnicodeHighlight.IsVisible,          false,  boolean,    Unicode強調,(true|false|toggle),current,false
 TextEditor.BracketPairColorization.IsVisible,   true,   boolean,    括弧ペア色分け,(true|false|toggle),current,false
 WorkoutPanel.HighlightWord,                     "Is, false",string, ハイライトキーワード,".*",current,""
+
+TextEditor.Style.Section,TextEditor.SectionStyle.Preset1,string,セクションスタイル,"TextEditor.SectionStyle.Preset[1-5]",current,"TextEditor.SectionStyle.Preset1"
+
+TextEditor.SectionStyle.Preset1,const,json,セクションスタイルプリセット1,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset2,const,json,セクションスタイルプリセット2,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset3,const,json,セクションスタイルプリセット3,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset4,const,json,セクションスタイルプリセット4,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset5,const,json,セクションスタイルプリセット5,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
 
 # --- 挿入
 

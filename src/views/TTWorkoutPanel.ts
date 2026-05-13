@@ -11,6 +11,18 @@ export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid'
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
 
+type SectionStyle = { color: string; bold: boolean; underline: boolean };
+
+function _defaultSectionStyles(): SectionStyle[] {
+  return [
+    { color: '#569cd6', bold: true, underline: false },
+    { color: '#4ec9b0', bold: true, underline: false },
+    { color: '#ce9178', bold: true, underline: false },
+    { color: '#dcdcaa', bold: true, underline: false },
+    { color: '#c586c0', bold: true, underline: false },
+  ];
+}
+
 export class TextEditorSettings {
   LineNumbers = { IsVisible: false };
   WordWrap = { IsVisible: true };
@@ -21,13 +33,7 @@ export class TextEditorSettings {
 
   Text = { Background: '#f5f5f5', Foreground: '#1e1e1e' };
   Selection = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
-  HeadingStyles: { color: string; bold: boolean; underline: boolean }[] = [
-    { color: '#569cd6', bold: true, underline: false }, // H1
-    { color: '#4ec9b0', bold: true, underline: false }, // H2
-    { color: '#ce9178', bold: true, underline: false }, // H3
-    { color: '#dcdcaa', bold: true, underline: false }, // H4
-    { color: '#c586c0', bold: true, underline: false }, // H5
-  ];
+  HeadingStyles: SectionStyle[] = _defaultSectionStyles();
   HighlightStyles: { backgroundColor: string; color: string }[] = [
     { backgroundColor: '#fff0b3', color: '#1a1a1a' },
     { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
@@ -35,6 +41,15 @@ export class TextEditorSettings {
     { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
     { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
   ];
+
+  SectionStyleKey: string = 'TextEditor.SectionStyle.Preset1';
+  SectionPresets: Record<string, SectionStyle[]> = {
+    'TextEditor.SectionStyle.Preset1': _defaultSectionStyles(),
+    'TextEditor.SectionStyle.Preset2': _defaultSectionStyles(),
+    'TextEditor.SectionStyle.Preset3': _defaultSectionStyles(),
+    'TextEditor.SectionStyle.Preset4': _defaultSectionStyles(),
+    'TextEditor.SectionStyle.Preset5': _defaultSectionStyles(),
+  };
 }
 
 // ── BSP ノード型 ──────────────────────────────────────────────────────
