@@ -364,12 +364,14 @@ Windows: C:\Users\{ユーザー名}\AppData\Roaming\thinktank\vault\
 ### 9.3 データファイルのフォーマット（保存・表示形式）
 
 **memo / nettext**（自由テキスト）
+
 ```
 タイトル（1行目）
 （以降は自由なMarkdownテキスト）
 ```
 
 **thought**（Thinkの集合体）
+
 ```
 タイトル（1行目）
 > フィルター条件式（省略可）
@@ -378,16 +380,18 @@ Windows: C:\Users\{ユーザー名}\AppData\Roaming\thinktank\vault\
 ```
 
 **table**（表データ）
+
 ```
 タイトル（1行目）
 > 列1,列2,列3  ← > が行頭のCSV、最初の1行のみ列定義として有効
 値A,値B,値C    ← CSVデータ行（複数行記載可）
 値D,値E,値F
 # コメント行    ← # が行頭の行はコメント。データとして扱わないが保存時も残す
-; コメント行    ← ; が行頭の行もコメント。同上
+; コメント行    ← ; が行頭の行もコメント。同上  
 ```
 
 **table データの保存ルール**:
+
 - filter/sort で表示順を変えてもファイルのデータ行位置は変更しない（コメント行が挟まれるため）
 - カラム位置（並び順）を変更して保存すると、各データ行の列順をファイル上で更新する
 - カラム幅（リサイズ）は表示上の設定であり、ファイルには保存されない（現在の表示中のみ有効）
@@ -395,6 +399,7 @@ Windows: C:\Users\{ユーザー名}\AppData\Roaming\thinktank\vault\
 - `#` / `;` はtableデータとしてはコメント行（非データ行）だが、TextEditorでは `#` = Section行、`;` = コメント行 として扱われる
 
 **links**（URLリスト）
+
 ```
 タイトル（1行目）
 * https://example.com
@@ -403,6 +408,7 @@ Windows: C:\Users\{ユーザー名}\AppData\Roaming\thinktank\vault\
 ```
 
 **chat**（AI対話記録）
+
 ```
 タイトル（1行目）
 ## ユーザーの発言
@@ -429,6 +435,7 @@ yyyy-MM-dd-hhmmss
 **使用場所**: ReThinkPanel、WorkoutPanelのChatMediaビュー
 
 **動作の仕組み**:
+
 1. ユーザーがメッセージを送信
 2. 現在選択中のThought/Thinkデータをシステムプロンプトとしてコンテキストに含める
 3. Claude APIにリクエスト
@@ -442,6 +449,7 @@ yyyy-MM-dd-hhmmss
 **使用場所**: ThinktankPanelのSearchモード
 
 **動作の仕組み**:
+
 1. データを保存するとき、Gemini APIがデータの「意味ベクトル」（3072次元の数値列）を生成
 2. ベクトルはBigQueryの `tt_embeddings` テーブルに保存
 3. 検索するとき、検索語の意味ベクトルを生成
@@ -455,6 +463,7 @@ yyyy-MM-dd-hhmmss
 ### 10.3 Embedding（埋め込み）生成のレート制限
 
 Gemini APIのレート制限（約85リクエスト/分）に対応するため：
+
 - 1リクエストあたり700msの間隔を確保
 - バッチ処理（全データの一括埋め込み生成）はSSEで進捗をリアルタイム表示
 
@@ -554,6 +563,7 @@ npm run electron:dev
 ```
 
 このコマンドで以下が同時に起動します：
+
 - Viteデブサーバー（ポート5173、React UI）
 - Expressサーバー（ポート8080、BigQuery/AI API）
 - Electronアプリ（デスクトップウィンドウ）
@@ -677,6 +687,7 @@ Expressサーバー:     dist-server/ を Cloud Run にデプロイ
 - `WorkoutAreaEmpty` — エリアなし時の空表示
 
 **BSPツリーの内部構造**:
+
 ```
 type LayoutNode = 
   | { type: 'leaf'; areaId: string }           ← 単一エリア
@@ -771,6 +782,7 @@ type LayoutNode =
 - `LocalStorageBackend` — C# API経由（レガシー互換）
 
 **バックエンド選択ロジック**:
+
 ```
 window.electronAPI が存在する → ElectronStorageBackend（ローカルJSON）
 window.electronAPI が存在しない → BigQueryStorageBackend（クラウド）
@@ -820,6 +832,7 @@ Driveのフォルダ構成: `マイドライブ / Thinktank / {yyyy-MM-dd} / {�
 - `ChatApiService.ts`（フロントエンド）— SSEクライアント
 
 **API仕様**:
+
 ```
 POST /api/chat/messages
 Request: { messages: ChatMessage[], systemPrompt?: string }
@@ -829,6 +842,7 @@ Response: SSEストリーム（text/event-stream）
 ```
 
 **環境変数**:
+
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 ```
@@ -878,6 +892,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 **レート制限対応**: 700ms間隔・最大85 RPM・エラー時バッチレベルリカバリー
 
 **環境変数**:
+
 ```
 GEMINI_API_KEY=AIza...
 ```
@@ -910,7 +925,8 @@ Addons（選択式）
   └── ExternalAI        ← OpenAI/Gemini等の外部AI切り替え（将来）
 ```
 
-**メリット**: 
+**メリット**:
+
 - 使わない機能によるAPIキー漏洩リスクをゼロにできる
 - 必要なAddonだけをインストールすることで起動を軽量化
 - コミュニティ製Addonの受け入れが可能になる

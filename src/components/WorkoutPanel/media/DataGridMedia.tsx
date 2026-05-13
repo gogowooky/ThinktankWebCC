@@ -7,7 +7,7 @@
  * - それ以外 → Vault の全 Think（thought 除く）を表示
  */
 
-import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect, useLayoutEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   FileText, Lightbulb, Table, Link, MessageCircle, Globe,
@@ -50,6 +50,174 @@ function formatDate(dateStr: string): string {
 }
 
 // ── TableGridView ────────────────────────────────────────────────────────────
+
+const COLOR_REGEX = /^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/;
+function isColorValue(v: string): boolean { return COLOR_REGEX.test(v.trim()); }
+
+// ── カラー変換ユーティリティ ──────────────────────────────────────────────────
+
+function hexToHsv(hex: string): { h: number; s: number; v: number; a: number } {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const a = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === r)      h = ((g - b) / d + 6) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else                h = (r - g) / d + 4;
+    h *= 60;
+  }
+  return { h, s: max === 0 ? 0 : d / max, v: max, a };
+}
+
+function hsvToHex(h: number, s: number, v: number, a = 1, withAlpha = false): string {
+  const f  = (n: number) => { const k = (n + h / 60) % 6; return v - v * s * Math.max(0, Math.min(k, 4 - k, 1)); };
+  const x2 = (n: number) => Math.round(n * 255).toString(16).padStart(2, '0');
+  return `#${x2(f(5))}${x2(f(3))}${x2(f(1))}${withAlpha ? x2(a) : ''}`;
+}
+
+// ── ColorSelectorPopup ───────────────────────────────────────────────────────
+
+function ColorSelectorPopup({ value, rect, onChange, onClose }: {
+  value: string; rect: DOMRect;
+  onChange: (c: string) => void; onClose: () => void;
+}) {
+  const hasAlpha  = value.length === 9;
+  const [init]    = useState(() => hexToHsv(value));
+  const [h, setH] = useState(init.h);
+  const [s, setS] = useState(init.s);
+  const [v, setV] = useState(init.v);
+  const [a, setA] = useState(init.a);
+  const [hexInput, setHexInput] = useState(value);
+
+  // drag 中に最新値を参照するためのref
+  const hR = useRef(init.h), sR = useRef(init.s), vR = useRef(init.v), aR = useRef(init.a);
+
+  const popupRef  = useRef<HTMLDivElement>(null);
+  const squareRef = useRef<HTMLDivElement>(null);
+  const hueRef    = useRef<HTMLDivElement>(null);
+  const alphaRef  = useRef<HTMLDivElement>(null);
+  const [pos, setPos] = useState({ top: rect.bottom + 4, left: rect.left });
+
+  useLayoutEffect(() => {
+    if (!popupRef.current) return;
+    const { height, width } = popupRef.current.getBoundingClientRect();
+    setPos({
+      top:  rect.bottom + 4 + height > window.innerHeight ? rect.top - height - 4 : rect.bottom + 4,
+      left: Math.max(4, Math.min(rect.left, window.innerWidth - width - 4)),
+    });
+  }, [rect]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  const emit = useCallback((nh: number, ns: number, nv: number, na: number) => {
+    const c = hsvToHex(nh, ns, nv, na, hasAlpha);
+    setHexInput(c);
+    onChange(c);
+  }, [onChange, hasAlpha]);
+
+  const makeDragger = (fn: (e: MouseEvent) => void) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    fn(e.nativeEvent);
+    const mv = (ev: MouseEvent) => fn(ev);
+    const up = () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up); };
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', up);
+  };
+
+  const onSquare = makeDragger(e => {
+    if (!squareRef.current) return;
+    const r = squareRef.current.getBoundingClientRect();
+    const ns = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    const nv = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+    sR.current = ns; vR.current = nv; setS(ns); setV(nv);
+    emit(hR.current, ns, nv, aR.current);
+  });
+
+  const onHue = makeDragger(e => {
+    if (!hueRef.current) return;
+    const r  = hueRef.current.getBoundingClientRect();
+    const nh = Math.max(0, Math.min(360, (e.clientX - r.left) / r.width * 360));
+    hR.current = nh; setH(nh);
+    emit(nh, sR.current, vR.current, aR.current);
+  });
+
+  const onAlpha = makeDragger(e => {
+    if (!alphaRef.current) return;
+    const r  = alphaRef.current.getBoundingClientRect();
+    const na = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    aR.current = na; setA(na);
+    emit(hR.current, sR.current, vR.current, na);
+  });
+
+  const onHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setHexInput(val);
+    if (COLOR_REGEX.test(val)) {
+      const p = hexToHsv(val);
+      hR.current = p.h; sR.current = p.s; vR.current = p.v; aR.current = p.a;
+      setH(p.h); setS(p.s); setV(p.v); setA(p.a);
+      onChange(val);
+    }
+  };
+
+  const hueColor     = `hsl(${h}, 100%, 50%)`;
+  const previewColor = hsvToHex(h, s, v, a, hasAlpha);
+
+  return (
+    <div
+      ref={popupRef}
+      className="color-selector-popup"
+      style={{ top: pos.top, left: pos.left }}
+      onMouseDown={e => e.stopPropagation()}
+    >
+      {/* グラデーション正方形 */}
+      <div
+        ref={squareRef}
+        className="color-selector-popup__square"
+        style={{ background: `linear-gradient(to bottom, transparent, #000), linear-gradient(to right, #fff, ${hueColor})` }}
+        onMouseDown={onSquare}
+      >
+        <div className="color-selector-popup__dot" style={{ left: `${s * 100}%`, top: `${(1 - v) * 100}%` }} />
+      </div>
+
+      {/* 色相スライダー */}
+      <div ref={hueRef} className="color-selector-popup__slider" onMouseDown={onHue}>
+        <div className="color-selector-popup__hue-track" />
+        <div className="color-selector-popup__thumb" style={{ left: `${h / 360 * 100}%` }} />
+      </div>
+
+      {/* 透明度スライダー（8桁hexのみ） */}
+      {hasAlpha && (
+        <div ref={alphaRef} className="color-selector-popup__slider" onMouseDown={onAlpha}>
+          <div className="color-selector-popup__checker" />
+          <div className="color-selector-popup__alpha-track" style={{ background: `linear-gradient(to right, transparent, ${hsvToHex(h, s, v)})` }} />
+          <div className="color-selector-popup__thumb" style={{ left: `${a * 100}%` }} />
+        </div>
+      )}
+
+      {/* プレビュー + hex入力 */}
+      <div className="color-selector-popup__bottom">
+        <div className="color-selector-popup__preview" style={{ backgroundColor: previewColor }} />
+        <input
+          className="color-selector-popup__hex"
+          value={hexInput}
+          onChange={onHexChange}
+          spellCheck={false}
+          maxLength={9}
+        />
+      </div>
+    </div>
+  );
+}
 
 const ROWNUM_WIDTH  = 40;
 const AUTO_CHAR_W   = 7;   // 12px フォントのおおよその文字幅(px)
@@ -136,6 +304,9 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   const [sortState,  setSortState]  = useState<SortState | null>(null);
   const [editState,  setEditState]  = useState<EditState | null>(null);
   const [isDirty,    setIsDirty]    = useState(false);
+  const [colorPicker, setColorPicker] = useState<{
+    rect: DOMRect; value: string; onChange: (c: string) => void;
+  } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // カラム入れ替え用
@@ -288,23 +459,6 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     setNewRowValues(Array(section.columns.length).fill(''));
     setIsDirty(true);
   }, [newRowValues, activeIdx, section]);
-
-  const handleAddRow = useCallback(() => {
-    setSections(prev => prev.map((s, si) => {
-      if (si !== activeIdx) return s;
-      const newRowIdx = s.rows.length;
-      const newRaw: RawLine = { type: 'data', text: '', rowIdx: newRowIdx };
-      return {
-        ...s,
-        rows:     [...s.rows, Array(s.columns.length).fill('')],  // ファイル末尾に追加
-        rawLines: [...s.rawLines, newRaw],
-      };
-    }));
-    setIsDirty(true);
-    setTimeout(() => {
-      if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }, 50);
-  }, [activeIdx]);
 
   // ── カラムドラッグ＆ドロップ ──────────────────────────────────────────
 
@@ -495,13 +649,8 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                   placeholder={section?.columns[colIdx]}
                   onChange={e => handleNewRowChange(colIdx, e.target.value)}
                   onKeyDown={e => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleNewRowCommit();
-                    }
-                    if (e.key === 'Escape') {
-                      setNewRowValues(Array(colCount).fill(''));
-                    }
+                    if (e.key === 'Enter') { e.preventDefault(); handleNewRowCommit(); }
+                    if (e.key === 'Escape') setNewRowValues(Array(colCount).fill(''));
                   }}
                 />
               ))}
@@ -526,6 +675,36 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                   {columnOrder.map((colIdx) => {
                     const isEditing = editState?.rowIdx === rowIdx && editState?.col === colIdx;
                     const cellVal   = row?.[colIdx] ?? '';
+                    if (isEditing && isColorValue(editState.value)) {
+                      const alpha = editState.value.length === 9 ? editState.value.slice(7) : '';
+                      return (
+                        <div key={colIdx} className="table-grid__cell-color-wrap" style={{ width: columnWidths[colIdx] }}>
+                          <button
+                            type="button"
+                            className="table-grid__cell-color-btn"
+                            style={{ backgroundColor: editState.value.slice(0, 7) }}
+                            onMouseDown={e => e.preventDefault()}
+                            onClick={e => setColorPicker({
+                              rect: e.currentTarget.getBoundingClientRect(),
+                              value: editState.value,
+                              onChange: c => setEditState(prev => prev ? { ...prev, value: c + alpha } : null),
+                            })}
+                          />
+                          <input
+                            type="text"
+                            className="table-grid__cell-color-text"
+                            autoFocus
+                            value={editState.value}
+                            onChange={e => setEditState(prev => prev ? { ...prev, value: e.target.value } : null)}
+                            onBlur={() => commitEdit(rowIdx, colIdx, editState.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') { e.preventDefault(); commitEdit(rowIdx, colIdx, editState.value); }
+                              if (e.key === 'Escape') setEditState(null);
+                            }}
+                          />
+                        </div>
+                      );
+                    }
                     return isEditing ? (
                       <input
                         key={colIdx}
@@ -548,6 +727,22 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                         title={cellVal}
                         onClick={() => handleCellClick(rowIdx, colIdx, cellVal)}
                       >
+                        {isColorValue(cellVal) && (
+                          <button
+                            type="button"
+                            className="table-grid__color-swatch table-grid__color-swatch--btn"
+                            style={{ backgroundColor: cellVal }}
+                            onClick={e => {
+                              e.stopPropagation();
+                              const alpha = cellVal.length === 9 ? cellVal.slice(7) : '';
+                              setColorPicker({
+                                rect: e.currentTarget.getBoundingClientRect(),
+                                value: cellVal,
+                                onChange: c => commitEdit(rowIdx, colIdx, c + alpha),
+                              });
+                            }}
+                          />
+                        )}
                         <HighlightedText text={cellVal} editorSettings={editorSettings} />
                       </div>
                     );
@@ -566,13 +761,15 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
         )}
       </div>
 
-      {/* フッター：行追加 */}
-      <div className="table-grid__footer">
-        <button className="table-grid__add-row-btn" onClick={handleAddRow}>
-          <Plus size={12} />
-          行を追加
-        </button>
-      </div>
+
+      {colorPicker && (
+        <ColorSelectorPopup
+          value={colorPicker.value}
+          rect={colorPicker.rect}
+          onChange={colorPicker.onChange}
+          onClose={() => setColorPicker(null)}
+        />
+      )}
 
     </div>
   );

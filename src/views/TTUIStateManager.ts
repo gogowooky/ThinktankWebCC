@@ -183,19 +183,33 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible),
     set: (app, v) => { app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible); },
   },
-  'TextEditor.Background': {
+  'TextEditor.Text.Background': {
     panel: 'WorkoutPanel',
-    default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
-    description: 'テキストエディタ背景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Background,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Background = v; },
+    default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'テキスト背景色',
+    get: (app) => app.WorkoutPanel.TextEditor.Text.Background,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Text.Background = v; },
   },
-  'TextEditor.Foreground': {
+  'TextEditor.Text.Foreground': {
     panel: 'WorkoutPanel',
-    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6}$',
-    description: 'テキストエディタ前景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Foreground,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Foreground = v; },
+    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'テキスト前景色',
+    get: (app) => app.WorkoutPanel.TextEditor.Text.Foreground,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Text.Foreground = v; },
+  },
+  'TextEditor.Selection.Background': {
+    panel: 'WorkoutPanel',
+    default: '#c6e6c6ff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: '選択範囲背景色',
+    get: (app) => app.WorkoutPanel.TextEditor.Selection.Background,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Selection.Background = v; },
+  },
+  'TextEditor.Selection.Foreground': {
+    panel: 'WorkoutPanel',
+    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: '選択範囲前景色',
+    get: (app) => app.WorkoutPanel.TextEditor.Selection.Foreground,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Selection.Foreground = v; },
   },
   'TextEditor.HeadingStyles': {
     panel: 'WorkoutPanel',

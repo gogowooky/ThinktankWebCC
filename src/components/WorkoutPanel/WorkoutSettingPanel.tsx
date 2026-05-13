@@ -330,8 +330,8 @@ export function WorkoutSettingPanel({
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
-                      value={panel.TextEditor.Background}
-                      onChange={e => panel.SetTextEditorBackground(e.target.value)}
+                      value={panel.TextEditor.Text.Background}
+                      onChange={e => panel.SetTextEditorTextBackground(e.target.value)}
                     />
                   </div>
 
@@ -340,8 +340,28 @@ export function WorkoutSettingPanel({
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
-                      value={panel.TextEditor.Foreground}
-                      onChange={e => panel.SetTextEditorForeground(e.target.value)}
+                      value={panel.TextEditor.Text.Foreground}
+                      onChange={e => panel.SetTextEditorTextForeground(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="workout-setting-panel__color-row">
+                    <span className="workout-setting-panel__color-label">選択背景</span>
+                    <input
+                      type="color"
+                      className="workout-setting-panel__color-picker"
+                      value={panel.TextEditor.Selection.Background.slice(0, 7)}
+                      onChange={e => panel.SetTextEditorSelectionBackground(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="workout-setting-panel__color-row">
+                    <span className="workout-setting-panel__color-label">選択文字</span>
+                    <input
+                      type="color"
+                      className="workout-setting-panel__color-picker"
+                      value={panel.TextEditor.Selection.Foreground.slice(0, 7)}
+                      onChange={e => panel.SetTextEditorSelectionForeground(e.target.value)}
                     />
                   </div>
 

@@ -446,6 +446,179 @@
   background: #5a82d7;
 }
 
+/* カラースウォッチ（表示モード） */
+.table-grid__color-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  margin-right: 5px;
+}
+
+.table-grid__color-swatch--btn {
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 100ms, box-shadow 100ms;
+}
+
+.table-grid__color-swatch--btn:hover {
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.35);
+}
+
+/* カラーピッカーラッパー（編集モード・新規行） */
+.table-grid__cell-color-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+  padding: 0 4px;
+  background: #f0f5ff;
+  border-bottom: 2px solid #7aa2f7;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+
+.table-grid__cell-color-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 100ms, box-shadow 100ms;
+}
+
+.table-grid__cell-color-btn:hover {
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.3);
+}
+
+/* カラーセレクターポップアップ */
+.color-selector-popup {
+  position: fixed;
+  width: 220px;
+  padding: 10px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 99999;
+  user-select: none;
+}
+
+.color-selector-popup__square {
+  width: 100%;
+  height: 150px;
+  border-radius: 4px;
+  position: relative;
+  cursor: crosshair;
+  margin-bottom: 10px;
+}
+
+.color-selector-popup__dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.color-selector-popup__slider {
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  position: relative;
+  cursor: ew-resize;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.color-selector-popup__hue-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+}
+
+.color-selector-popup__checker {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+  background-image: repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%);
+  background-size: 8px 8px;
+}
+
+.color-selector-popup__alpha-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 6px;
+}
+
+.color-selector-popup__thumb {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+.color-selector-popup__bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.color-selector-popup__preview {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+
+.color-selector-popup__hex {
+  flex: 1;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+}
+
+.color-selector-popup__hex:focus {
+  border-color: #7aa2f7;
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.2);
+}
+
+.table-grid__cell-color-text {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  font-family: monospace;
+  outline: none;
+  color: #111;
+}
+
 /* セル編集入力 */
 .table-grid__cell-input {
   flex-shrink: 0;
@@ -468,33 +641,6 @@
   background: rgba(122,162,247,0.08);
 }
 
-/* フッター（行追加） */
-.table-grid__footer {
-  display: flex;
-  align-items: center;
-  height: 28px;
-  padding: 0 8px;
-  border-top: 1px solid rgba(0,0,0,0.08);
-  background: #f7f8fa;
-  flex-shrink: 0;
-}
-
-.table-grid__add-row-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  font-size: 11px;
-  color: rgba(0,0,0,0.5);
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background 100ms, color 100ms;
-}
-
-.table-grid__add-row-btn:hover {
-  background: rgba(0,0,0,0.07);
-  color: rgba(0,0,0,0.8);
-}
 
 /* 新規入力行 */
 .table-grid__new-row {

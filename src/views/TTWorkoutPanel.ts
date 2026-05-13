@@ -19,8 +19,8 @@ export class TextEditorSettings {
   UnicodeHighlight = { IsVisible: false };
   BracketPairColorization = { IsVisible: true };
 
-  Background: string = '#f5f5f5';
-  Foreground: string = '#1e1e1e';
+  Text = { Background: '#f5f5f5', Foreground: '#1e1e1e' };
+  Selection = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
   HeadingStyles: { color: string; bold: boolean; underline: boolean }[] = [
     { color: '#569cd6', bold: true, underline: false }, // H1
     { color: '#4ec9b0', bold: true, underline: false }, // H2
@@ -180,8 +180,10 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetTextEditorUnicodeHighlightVisible(v: boolean) { this.TextEditor.UnicodeHighlight.IsVisible = v; this.NotifyUpdated(); }
   public SetTextEditorBracketPairColorizationVisible(v: boolean) { this.TextEditor.BracketPairColorization.IsVisible = v; this.NotifyUpdated(); }
 
-  public SetTextEditorBackground(color: string) { this.TextEditor.Background = color; this.NotifyUpdated(); }
-  public SetTextEditorForeground(color: string) { this.TextEditor.Foreground = color; this.NotifyUpdated(); }
+  public SetTextEditorTextBackground(color: string)      { this.TextEditor.Text.Background       = color; this.NotifyUpdated(); }
+  public SetTextEditorTextForeground(color: string)      { this.TextEditor.Text.Foreground       = color; this.NotifyUpdated(); }
+  public SetTextEditorSelectionBackground(color: string) { this.TextEditor.Selection.Background  = color; this.NotifyUpdated(); }
+  public SetTextEditorSelectionForeground(color: string) { this.TextEditor.Selection.Foreground  = color; this.NotifyUpdated(); }
   public SetTextEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
     if (level < 1 || level > 5) return;
     this.TextEditor.HeadingStyles = this.TextEditor.HeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);

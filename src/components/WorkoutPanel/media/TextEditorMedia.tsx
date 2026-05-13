@@ -157,7 +157,9 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
             { token: '', foreground: editorSettings.foreground.replace('#', '') }
           ],
           colors: {
-            'editor.background': editorSettings.background
+            'editor.background':         editorSettings.background,
+            'editor.selectionBackground': editorSettings.selectionBackground,
+            'editor.selectionForeground': editorSettings.selectionForeground,
           }
         });
         monaco.editor.setTheme('custom-markdown-theme');

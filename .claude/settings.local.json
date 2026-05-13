@@ -106,7 +106,8 @@
       "Bash(findstr \":5173\")",
       "Bash(node C:\\\\Users\\\\gogow\\\\test_patterns.js)",
       "Read(//c/Users/gogow/**)",
-      "Bash(node test_patterns.js)"
+      "Bash(node test_patterns.js)",
+      "Bash(dir \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\\\\electron\" /b)"
     ]
   }
 }
