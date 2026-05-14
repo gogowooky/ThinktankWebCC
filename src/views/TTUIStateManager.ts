@@ -27,7 +27,8 @@ import { TTThink } from '../models/TTThink';
 import { parseTableContent, tableSectionToContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
-import type { WorkoutViewMode } from './TTWorkoutPanel';
+import type { WorkoutViewMode, SectionStyle, HighlightStyle } from './TTWorkoutPanel';
+import { SECTION_STYLE_DEFAULTS, HIGHLIGHT_STYLE_DEFAULTS } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 
@@ -69,30 +70,41 @@ interface PropSpec {
   set: (app: TTApplication, value: string) => void;
 }
 
-// デフォルト値（JSON型のみ長いためここで定義）
-const DEFAULT_HEADING_STYLES = JSON.stringify([
-  { color: '#569cd6', bold: true,  underline: false },
-  { color: '#4ec9b0', bold: true,  underline: false },
-  { color: '#ce9178', bold: true,  underline: false },
-  { color: '#dcdcaa', bold: true,  underline: false },
-  { color: '#c586c0', bold: true,  underline: false },
-]);
+// プリセットデフォルト JSON（TTWorkoutPanel の定数から生成）
+const SECTION_STYLE_DEFAULT_JSON   = JSON.stringify(SECTION_STYLE_DEFAULTS);
+const HIGHLIGHT_STYLE_DEFAULT_JSON = JSON.stringify(HIGHLIGHT_STYLE_DEFAULTS);
 
-const DEFAULT_HIGHLIGHT_STYLES = JSON.stringify([
-  { backgroundColor: '#ffff00', color: '#000000' },
-  { backgroundColor: '#ff0000', color: '#ffffff' },
-  { backgroundColor: '#0000ff', color: '#ffffff' },
-  { backgroundColor: '#008000', color: '#ffffff' },
-  { backgroundColor: '#800080', color: '#ffffff' },
-]);
+function makeSectionPresetSpec(n: number): PropSpec {
+  const key = `TextEditor.SectionStyle.Preset${n}`;
+  return {
+    panel: 'WorkoutPanel',
+    isConst: true, default: SECTION_STYLE_DEFAULT_JSON, type: 'json', candidates: '.*',
+    description: `セクションスタイルプリセット${n}`,
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v) as SectionStyle[];
+      app.WorkoutPanel.TextEditor.SectionPresets[key] = s;
+      if (app.WorkoutPanel.TextEditor.SectionStyleKey === key)
+        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
+    } catch { /* ignore */ } },
+  };
+}
 
-const DEFAULT_HIGHLIGHT_STYLE_PRESET = JSON.stringify([
-  { backgroundColor: '#fff0b3', color: '#1a1a1a' },
-  { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
-  { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
-  { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
-  { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
-]);
+function makeHighlightPresetSpec(n: number): PropSpec {
+  const key = `WorkoutPanel.HighlightStyle.Preset${n}`;
+  return {
+    panel: 'WorkoutPanel',
+    isConst: true, default: HIGHLIGHT_STYLE_DEFAULT_JSON, type: 'json', candidates: '.*',
+    description: `ハイライトスタイルプリセット${n}`,
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v) as HighlightStyle[];
+      app.WorkoutPanel.TextEditor.HighlightPresets[key] = s;
+      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === key)
+        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
+    } catch { /* ignore */ } },
+  };
+}
 
 /**
  * PROP_SPECS
@@ -220,13 +232,6 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => app.WorkoutPanel.TextEditor.Color.Occurrence,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Occurrence = v; },
   },
-  'TextEditor.HeadingStyles': {
-    panel: 'WorkoutPanel',
-    default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '^\\[.*\\]$',
-    description: 'テキストエディタ見出しスタイル',
-    get: (app) => JSON.stringify(app.WorkoutPanel.TextEditor.HeadingStyles),
-    set: (app, v) => { try { app.WorkoutPanel.TextEditor.HeadingStyles = JSON.parse(v); } catch { /* ignore */ } },
-  },
   'TextEditor.Style.Section': {
     panel: 'WorkoutPanel',
     default: 'TextEditor.SectionStyle.Preset1', type: 'string',
@@ -239,73 +244,8 @@ const PROP_SPECS: Record<string, PropSpec> = {
       if (preset) app.WorkoutPanel.TextEditor.HeadingStyles = [...preset];
     },
   },
-  'TextEditor.SectionStyle.Preset1': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
-    description: 'セクションスタイルプリセット1',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset1'] = s;
-      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset1')
-        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'TextEditor.SectionStyle.Preset2': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
-    description: 'セクションスタイルプリセット2',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset2'] = s;
-      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset2')
-        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'TextEditor.SectionStyle.Preset3': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
-    description: 'セクションスタイルプリセット3',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset3'] = s;
-      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset3')
-        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'TextEditor.SectionStyle.Preset4': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
-    description: 'セクションスタイルプリセット4',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset4'] = s;
-      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset4')
-        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'TextEditor.SectionStyle.Preset5': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HEADING_STYLES, type: 'json', candidates: '.*',
-    description: 'セクションスタイルプリセット5',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.SectionPresets['TextEditor.SectionStyle.Preset5'] = s;
-      if (app.WorkoutPanel.TextEditor.SectionStyleKey === 'TextEditor.SectionStyle.Preset5')
-        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'TextEditor.HighlightStyles': {
-    panel: 'WorkoutPanel',
-    default: DEFAULT_HIGHLIGHT_STYLES, type: 'json', candidates: '^\\[.*\\]$',
-    description: 'テキストエディタハイライトスタイル',
-    get: (app) => JSON.stringify(app.WorkoutPanel.TextEditor.HighlightStyles),
-    set: (app, v) => { try { app.WorkoutPanel.TextEditor.HighlightStyles = JSON.parse(v); } catch { /* ignore */ } },
-  },
+  ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`TextEditor.SectionStyle.Preset${n}`, makeSectionPresetSpec(n)])),
+
   'WorkoutPanel.Style.Highlight': {
     panel: 'WorkoutPanel',
     default: 'WorkoutPanel.HighlightStyle.Preset1', type: 'string',
@@ -318,66 +258,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
       if (preset) app.WorkoutPanel.TextEditor.HighlightStyles = [...preset];
     },
   },
-  'WorkoutPanel.HighlightStyle.Preset1': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
-    description: 'ハイライトスタイルプリセット1',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset1'] = s;
-      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset1')
-        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'WorkoutPanel.HighlightStyle.Preset2': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
-    description: 'ハイライトスタイルプリセット2',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset2'] = s;
-      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset2')
-        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'WorkoutPanel.HighlightStyle.Preset3': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
-    description: 'ハイライトスタイルプリセット3',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset3'] = s;
-      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset3')
-        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'WorkoutPanel.HighlightStyle.Preset4': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
-    description: 'ハイライトスタイルプリセット4',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset4'] = s;
-      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset4')
-        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
-    } catch { /* ignore */ } },
-  },
-  'WorkoutPanel.HighlightStyle.Preset5': {
-    panel: 'WorkoutPanel',
-    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
-    description: 'ハイライトスタイルプリセット5',
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v);
-      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset5'] = s;
-      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset5')
-        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
-    } catch { /* ignore */ } },
-  },
+  ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`WorkoutPanel.HighlightStyle.Preset${n}`, makeHighlightPresetSpec(n)])),
 
   // ── ハイライト設定（全Pane共通） ────────────────────────────────────────
   'WorkoutPanel.Highlight.KeyWord': {

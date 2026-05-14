@@ -11,29 +11,25 @@ export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid'
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
 
-type SectionStyle = { color: string; bold: boolean; underline: boolean };
+export type SectionStyle = { color: string; bold: boolean; underline: boolean };
 
-function _defaultSectionStyles(): SectionStyle[] {
-  return [
-    { color: '#569cd6', bold: true, underline: false },
-    { color: '#4ec9b0', bold: true, underline: false },
-    { color: '#ce9178', bold: true, underline: false },
-    { color: '#dcdcaa', bold: true, underline: false },
-    { color: '#c586c0', bold: true, underline: false },
-  ];
-}
+export const SECTION_STYLE_DEFAULTS: SectionStyle[] = [
+  { color: '#569cd6', bold: true, underline: false },
+  { color: '#4ec9b0', bold: true, underline: false },
+  { color: '#ce9178', bold: true, underline: false },
+  { color: '#dcdcaa', bold: true, underline: false },
+  { color: '#c586c0', bold: true, underline: false },
+];
 
-type HighlightStyle = { backgroundColor: string; color: string };
+export type HighlightStyle = { backgroundColor: string; color: string };
 
-function _defaultHighlightStyles(): HighlightStyle[] {
-  return [
-    { backgroundColor: '#fff0b3', color: '#1a1a1a' },
-    { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
-    { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
-    { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
-    { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
-  ];
-}
+export const HIGHLIGHT_STYLE_DEFAULTS: HighlightStyle[] = [
+  { backgroundColor: '#fff0b3', color: '#1a1a1a' },
+  { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
+  { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
+  { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
+  { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
+];
 
 export class TextEditorSettings {
   LineNumbers = { IsVisible: false };
@@ -44,25 +40,25 @@ export class TextEditorSettings {
   BracketPairColorization = { IsVisible: true };
 
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };
-  HeadingStyles: SectionStyle[] = _defaultSectionStyles();
-  HighlightStyles: HighlightStyle[] = _defaultHighlightStyles();
+  HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];
+  HighlightStyles: HighlightStyle[] = [...HIGHLIGHT_STYLE_DEFAULTS];
 
   SectionStyleKey: string = 'TextEditor.SectionStyle.Preset1';
   SectionPresets: Record<string, SectionStyle[]> = {
-    'TextEditor.SectionStyle.Preset1': _defaultSectionStyles(),
-    'TextEditor.SectionStyle.Preset2': _defaultSectionStyles(),
-    'TextEditor.SectionStyle.Preset3': _defaultSectionStyles(),
-    'TextEditor.SectionStyle.Preset4': _defaultSectionStyles(),
-    'TextEditor.SectionStyle.Preset5': _defaultSectionStyles(),
+    'TextEditor.SectionStyle.Preset1': [...SECTION_STYLE_DEFAULTS],
+    'TextEditor.SectionStyle.Preset2': [...SECTION_STYLE_DEFAULTS],
+    'TextEditor.SectionStyle.Preset3': [...SECTION_STYLE_DEFAULTS],
+    'TextEditor.SectionStyle.Preset4': [...SECTION_STYLE_DEFAULTS],
+    'TextEditor.SectionStyle.Preset5': [...SECTION_STYLE_DEFAULTS],
   };
 
   HighlightStyleKey: string = 'WorkoutPanel.HighlightStyle.Preset1';
   HighlightPresets: Record<string, HighlightStyle[]> = {
-    'WorkoutPanel.HighlightStyle.Preset1': _defaultHighlightStyles(),
-    'WorkoutPanel.HighlightStyle.Preset2': _defaultHighlightStyles(),
-    'WorkoutPanel.HighlightStyle.Preset3': _defaultHighlightStyles(),
-    'WorkoutPanel.HighlightStyle.Preset4': _defaultHighlightStyles(),
-    'WorkoutPanel.HighlightStyle.Preset5': _defaultHighlightStyles(),
+    'WorkoutPanel.HighlightStyle.Preset1': [...HIGHLIGHT_STYLE_DEFAULTS],
+    'WorkoutPanel.HighlightStyle.Preset2': [...HIGHLIGHT_STYLE_DEFAULTS],
+    'WorkoutPanel.HighlightStyle.Preset3': [...HIGHLIGHT_STYLE_DEFAULTS],
+    'WorkoutPanel.HighlightStyle.Preset4': [...HIGHLIGHT_STYLE_DEFAULTS],
+    'WorkoutPanel.HighlightStyle.Preset5': [...HIGHLIGHT_STYLE_DEFAULTS],
   };
 }
 
