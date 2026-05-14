@@ -16,8 +16,7 @@ import copywriteRaw from '../../../docs/copywrite.txt?raw';
 import './WorkoutToolBar.css';
 
 const _cw = JSON.parse(copywriteRaw);
-const _commitDate = (_cw.commitDateTime as string).split('-').slice(0, 3).join('-');
-const AUTHOR_TEXT = `${_cw.appName} ver.${_cw.version} (${_commitDate}), ${_cw.copyright.holder}(${_cw.copyright.year}).`;
+const AUTHOR_TEXT = `${_cw.appName} ver.${_cw.version} (${_cw.commitDateTime}), ${_cw.copyright.holder}(${_cw.copyright.year}).`;
 
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
 
@@ -63,14 +62,6 @@ export function WorkoutToolBar({ panel }: Props) {
     if (mode === 'highlight') setText(panel.HighlightWord);
   }, [panel.HighlightWord, mode]);
 
-  useEffect(() => {
-    if (isAuthorOpen) {
-      setText(AUTHOR_TEXT);
-    } else {
-      setText(mode === 'highlight' ? panel.HighlightWord : '');
-    }
-  }, [isAuthorOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
     setIsAuthorOpen(false);
@@ -104,38 +95,50 @@ export function WorkoutToolBar({ panel }: Props) {
 
   return (
     <div className={`workout-toolbar${isExpanded ? ' workout-toolbar--expanded' : ''}`}>
-      {/* テキスト入力欄 */}
-      <input
-        ref={inputRef}
-        className="workout-toolbar__input"
-        type="text"
-        value={text}
-        list={!isAuthorOpen && mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
-        readOnly={isAuthorOpen}
-        onChange={e => handleTextChange(e.target.value)}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        placeholder={isAuthorOpen ? '' : current.placeholder}
-        spellCheck={false}
-      />
-      {mode === 'highlight' && (
-        <datalist id="toolbar-highlight-history">
-          {panel.HighlightHistory.map((h: string, i: number) => (
-            <option key={i} value={h} />
-          ))}
-        </datalist>
-      )}
 
-      {/* クリアボタン */}
-      {!isAuthorOpen && text && (
-        <button
-          className="workout-toolbar__clear-btn"
-          onClick={handleClear}
-          data-tip="クリア"
-          aria-label="クリア"
+      {/* 作成者バナー / テキスト入力欄 */}
+      {isAuthorOpen ? (
+        <div
+          className="workout-toolbar__author-banner"
+          onClick={() => setIsAuthorOpen(false)}
+          title="クリックで戻る"
         >
-          <X size={12} />
-        </button>
+          <span className="workout-toolbar__author-banner-text">
+            {AUTHOR_TEXT}&emsp;&emsp;{AUTHOR_TEXT}
+          </span>
+        </div>
+      ) : (
+        <>
+          <input
+            ref={inputRef}
+            className="workout-toolbar__input"
+            type="text"
+            value={text}
+            list={mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
+            onChange={e => handleTextChange(e.target.value)}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            placeholder={current.placeholder}
+            spellCheck={false}
+          />
+          {mode === 'highlight' && (
+            <datalist id="toolbar-highlight-history">
+              {panel.HighlightHistory.map((h: string, i: number) => (
+                <option key={i} value={h} />
+              ))}
+            </datalist>
+          )}
+          {text && (
+            <button
+              className="workout-toolbar__clear-btn"
+              onClick={handleClear}
+              data-tip="クリア"
+              aria-label="クリア"
+            >
+              <X size={12} />
+            </button>
+          )}
+        </>
       )}
 
       {/* モードアイコン群 */}

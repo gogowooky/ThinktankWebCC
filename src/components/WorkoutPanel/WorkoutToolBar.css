@@ -124,3 +124,25 @@
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
+
+/* ── 作成者バナー ── */
+.workout-toolbar__author-banner {
+  flex: 1;
+  height: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.workout-toolbar__author-banner-text {
+  display: inline-block;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  animation: author-banner-scroll 18s linear infinite;
+}
+
+@keyframes author-banner-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
