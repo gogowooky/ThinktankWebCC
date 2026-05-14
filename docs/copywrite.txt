@@ -1,0 +1,11 @@
+{
+  "appName": "Thinktank",
+  "projectName": "ThinktankWebCC",
+  "commitId": "87e6dff",
+  "commitDateTime": "2026-05-14-133601",
+  "copyright": {
+    "holder": "Shinichiro Egashira",
+    "holderJa": "江頭　慎一郎",
+    "year": 2026
+  }
+}
