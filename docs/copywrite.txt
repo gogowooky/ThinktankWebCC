@@ -2,8 +2,9 @@
   "appName": "Thinktank",
   "projectName": "ThinktankWebCC",
   "commitId": "06d8c03",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "commitDateTime": "2026-05-14-163503",
+  "commitMessage": "feat: 作成者バナーを循環スクロール表示に変更",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",

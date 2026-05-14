@@ -16,7 +16,10 @@ import copywriteRaw from '../../../docs/copywrite.txt?raw';
 import './WorkoutToolBar.css';
 
 const _cw = JSON.parse(copywriteRaw);
-const AUTHOR_TEXT = `${_cw.appName} ver.${_cw.version} (${_cw.commitDateTime}), ${_cw.copyright.holder}(${_cw.copyright.year}).`;
+const AUTHOR_TEXT = `${_cw.appName} ver.${_cw.version} (${_cw.commitDateTime}), ${_cw.copyright.holder}(${_cw.copyright.year}). --- ${_cw.commitMessage}`;
+const AUTHOR_BANNER_TEXT = AUTHOR_TEXT + ' '.repeat(100);
+
+type AuthorState = 'off' | 'banner' | 'static';
 
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
 
@@ -43,10 +46,10 @@ interface Props {
 export function WorkoutToolBar({ panel }: Props) {
   useAppUpdate(panel);
 
-  const [mode,         setMode]         = useState<ToolMode>('highlight');
-  const [text,         setText]         = useState(() => panel.HighlightWord);
-  const [isExpanded,   setIsExpanded]   = useState(false);
-  const [isAuthorOpen, setIsAuthorOpen] = useState(false);
+  const [mode,        setMode]        = useState<ToolMode>('highlight');
+  const [text,        setText]        = useState(() => panel.HighlightWord);
+  const [isExpanded,  setIsExpanded]  = useState(false);
+  const [authorState, setAuthorState] = useState<AuthorState>('off');
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -62,9 +65,17 @@ export function WorkoutToolBar({ panel }: Props) {
     if (mode === 'highlight') setText(panel.HighlightWord);
   }, [panel.HighlightWord, mode]);
 
+  const handleAuthorToggle = useCallback(() => {
+    setAuthorState(s => s === 'off' ? 'banner' : 'off');
+  }, []);
+
+  const handleBannerClick = useCallback(() => {
+    setAuthorState('static');
+  }, []);
+
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
-    setIsAuthorOpen(false);
+    setAuthorState('off');
     setText(m === 'highlight' ? panel.HighlightWord : '');
     inputRef.current?.focus();
   }, [panel]);
@@ -92,19 +103,20 @@ export function WorkoutToolBar({ panel }: Props) {
   }, [mode, panel]);
 
   const current = MODES.find(m => m.id === mode)!;
+  const isAuthorOn = authorState !== 'off';
 
   return (
     <div className={`workout-toolbar${isExpanded ? ' workout-toolbar--expanded' : ''}`}>
 
-      {/* 作成者バナー / テキスト入力欄 */}
-      {isAuthorOpen ? (
+      {/* 作成者バナー / 作成者静的表示 / 通常入力欄 */}
+      {authorState === 'banner' ? (
         <div
           className="workout-toolbar__author-banner"
-          onClick={() => setIsAuthorOpen(false)}
-          title="クリックで戻る"
+          onClick={handleBannerClick}
+          title="クリックで静的表示"
         >
           <span className="workout-toolbar__author-banner-text">
-            {AUTHOR_TEXT}&emsp;&emsp;{AUTHOR_TEXT}
+            {AUTHOR_BANNER_TEXT}
           </span>
         </div>
       ) : (
@@ -113,22 +125,23 @@ export function WorkoutToolBar({ panel }: Props) {
             ref={inputRef}
             className="workout-toolbar__input"
             type="text"
-            value={text}
-            list={mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
+            value={authorState === 'static' ? AUTHOR_TEXT : text}
+            readOnly={authorState === 'static'}
+            list={authorState === 'off' && mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
             onChange={e => handleTextChange(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             placeholder={current.placeholder}
             spellCheck={false}
           />
-          {mode === 'highlight' && (
+          {authorState === 'off' && mode === 'highlight' && (
             <datalist id="toolbar-highlight-history">
               {panel.HighlightHistory.map((h: string, i: number) => (
                 <option key={i} value={h} />
               ))}
             </datalist>
           )}
-          {text && (
+          {authorState === 'off' && text && (
             <button
               className="workout-toolbar__clear-btn"
               onClick={handleClear}
@@ -146,7 +159,7 @@ export function WorkoutToolBar({ panel }: Props) {
         {MODES.map(m => (
           <button
             key={m.id}
-            className={`workout-toolbar__mode-btn${!isAuthorOpen && mode === m.id ? ' workout-toolbar__mode-btn--active' : ''}`}
+            className={`workout-toolbar__mode-btn${!isAuthorOn && mode === m.id ? ' workout-toolbar__mode-btn--active' : ''}`}
             onClick={() => handleModeSelect(m.id)}
             data-tip={m.label}
             aria-label={m.label}
@@ -159,8 +172,8 @@ export function WorkoutToolBar({ panel }: Props) {
       {/* ユーティリティボタン */}
       <div className="workout-toolbar__utils">
         <button
-          className={`workout-toolbar__util-btn${isAuthorOpen ? ' workout-toolbar__util-btn--active' : ''}`}
-          onClick={() => setIsAuthorOpen(v => !v)}
+          className={`workout-toolbar__util-btn${isAuthorOn ? ' workout-toolbar__util-btn--active' : ''}`}
+          onClick={handleAuthorToggle}
           data-tip="作成者"
           data-tip-side="left"
           aria-label="作成者"
