@@ -44,7 +44,8 @@ export class TextEditorSettings {
   BracketPairColorization = { IsVisible: true };
 
   Text = { Background: '#f5f5f5', Foreground: '#1e1e1e' };
-  Selection = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
+  Selection  = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
+  Occurrence = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
   HeadingStyles: SectionStyle[] = _defaultSectionStyles();
   HighlightStyles: HighlightStyle[] = _defaultHighlightStyles();
 
