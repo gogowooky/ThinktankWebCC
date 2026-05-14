@@ -39,9 +39,10 @@ interface Props {
 export function WorkoutToolBar({ panel }: Props) {
   useAppUpdate(panel);
 
-  const [mode,       setMode]       = useState<ToolMode>('highlight');
-  const [text,       setText]       = useState(() => panel.HighlightWord);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [mode,         setMode]         = useState<ToolMode>('highlight');
+  const [text,         setText]         = useState(() => panel.HighlightWord);
+  const [isExpanded,   setIsExpanded]   = useState(false);
+  const [isAuthorOpen, setIsAuthorOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -140,7 +141,8 @@ export function WorkoutToolBar({ panel }: Props) {
       {/* ユーティリティボタン */}
       <div className="workout-toolbar__utils">
         <button
-          className="workout-toolbar__util-btn"
+          className={`workout-toolbar__util-btn${isAuthorOpen ? ' workout-toolbar__util-btn--active' : ''}`}
+          onClick={() => setIsAuthorOpen(v => !v)}
           data-tip="作成者"
           data-tip-side="left"
           aria-label="作成者"
