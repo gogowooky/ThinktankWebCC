@@ -16,8 +16,7 @@ import copywriteRaw from '../../../docs/copywrite.txt?raw';
 import './WorkoutToolBar.css';
 
 const _cw = JSON.parse(copywriteRaw);
-const AUTHOR_TEXT = `${_cw.appName} ver.${_cw.version} (${_cw.commitDateTime}), ${_cw.copyright.holder}(${_cw.copyright.year}). --- ${_cw.commitMessage}`;
-const AUTHOR_BANNER_TEXT = AUTHOR_TEXT + ' '.repeat(100);
+const AUTHOR_BANNER_TEXT = `${_cw.appName} ver.${_cw.version}, ${_cw.copyright.holder}(${_cw.copyright.year}). --- [${_cw.projectName}:${_cw.commitId}](${_cw.commitDateTime}) --- ${_cw.commitMessage}`;
 
 type AuthorState = 'off' | 'banner' | 'static';
 
@@ -125,7 +124,7 @@ export function WorkoutToolBar({ panel }: Props) {
             ref={inputRef}
             className="workout-toolbar__input"
             type="text"
-            value={authorState === 'static' ? AUTHOR_TEXT : text}
+            value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
             readOnly={authorState === 'static'}
             list={authorState === 'off' && mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
             onChange={e => handleTextChange(e.target.value)}
