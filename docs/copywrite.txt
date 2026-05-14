@@ -1,10 +1,10 @@
 {
   "appName": "Thinktank",
   "projectName": "ThinktankWebCC",
-  "commitId": "4750969",
+  "commitId": "4de99c7",
   "version": "1.0.3",
-  "commitDateTime": "2026-05-14-165748",
-  "commitMessage": "chore: version 1.0.3",
+  "commitDateTime": "2026-05-15-084339",
+  "commitMessage": "refactor: 状態変数定義の重複を解消 — PROP_SPECS のプリセット生成をヘルパー関数に統一",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
