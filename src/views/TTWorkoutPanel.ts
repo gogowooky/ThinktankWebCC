@@ -23,6 +23,18 @@ function _defaultSectionStyles(): SectionStyle[] {
   ];
 }
 
+type HighlightStyle = { backgroundColor: string; color: string };
+
+function _defaultHighlightStyles(): HighlightStyle[] {
+  return [
+    { backgroundColor: '#fff0b3', color: '#1a1a1a' },
+    { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
+    { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
+    { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
+    { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
+  ];
+}
+
 export class TextEditorSettings {
   LineNumbers = { IsVisible: false };
   WordWrap = { IsVisible: true };
@@ -34,13 +46,7 @@ export class TextEditorSettings {
   Text = { Background: '#f5f5f5', Foreground: '#1e1e1e' };
   Selection = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
   HeadingStyles: SectionStyle[] = _defaultSectionStyles();
-  HighlightStyles: { backgroundColor: string; color: string }[] = [
-    { backgroundColor: '#fff0b3', color: '#1a1a1a' },
-    { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
-    { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
-    { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
-    { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
-  ];
+  HighlightStyles: HighlightStyle[] = _defaultHighlightStyles();
 
   SectionStyleKey: string = 'TextEditor.SectionStyle.Preset1';
   SectionPresets: Record<string, SectionStyle[]> = {
@@ -49,6 +55,15 @@ export class TextEditorSettings {
     'TextEditor.SectionStyle.Preset3': _defaultSectionStyles(),
     'TextEditor.SectionStyle.Preset4': _defaultSectionStyles(),
     'TextEditor.SectionStyle.Preset5': _defaultSectionStyles(),
+  };
+
+  HighlightStyleKey: string = 'WorkoutPanel.HighlightStyle.Preset1';
+  HighlightPresets: Record<string, HighlightStyle[]> = {
+    'WorkoutPanel.HighlightStyle.Preset1': _defaultHighlightStyles(),
+    'WorkoutPanel.HighlightStyle.Preset2': _defaultHighlightStyles(),
+    'WorkoutPanel.HighlightStyle.Preset3': _defaultHighlightStyles(),
+    'WorkoutPanel.HighlightStyle.Preset4': _defaultHighlightStyles(),
+    'WorkoutPanel.HighlightStyle.Preset5': _defaultHighlightStyles(),
   };
 }
 

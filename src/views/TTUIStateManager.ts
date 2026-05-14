@@ -86,6 +86,14 @@ const DEFAULT_HIGHLIGHT_STYLES = JSON.stringify([
   { backgroundColor: '#800080', color: '#ffffff' },
 ]);
 
+const DEFAULT_HIGHLIGHT_STYLE_PRESET = JSON.stringify([
+  { backgroundColor: '#fff0b3', color: '#1a1a1a' },
+  { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
+  { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
+  { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
+  { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
+]);
+
 /**
  * PROP_SPECS
  * UI設定の全項目定義。新規項目の追加はここにオブジェクトを1つ追記するだけでよい。
@@ -298,9 +306,81 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => JSON.stringify(app.WorkoutPanel.TextEditor.HighlightStyles),
     set: (app, v) => { try { app.WorkoutPanel.TextEditor.HighlightStyles = JSON.parse(v); } catch { /* ignore */ } },
   },
+  'WorkoutPanel.Style.Highlight': {
+    panel: 'WorkoutPanel',
+    default: 'WorkoutPanel.HighlightStyle.Preset1', type: 'string',
+    candidates: '^WorkoutPanel\\.HighlightStyle\\.Preset[1-5]$',
+    description: 'ハイライトスタイル',
+    get: (app) => app.WorkoutPanel.TextEditor.HighlightStyleKey,
+    set: (app, v) => {
+      app.WorkoutPanel.TextEditor.HighlightStyleKey = v;
+      const preset = app.WorkoutPanel.TextEditor.HighlightPresets[v];
+      if (preset) app.WorkoutPanel.TextEditor.HighlightStyles = [...preset];
+    },
+  },
+  'WorkoutPanel.HighlightStyle.Preset1': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
+    description: 'ハイライトスタイルプリセット1',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset1'] = s;
+      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset1')
+        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'WorkoutPanel.HighlightStyle.Preset2': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
+    description: 'ハイライトスタイルプリセット2',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset2'] = s;
+      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset2')
+        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'WorkoutPanel.HighlightStyle.Preset3': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
+    description: 'ハイライトスタイルプリセット3',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset3'] = s;
+      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset3')
+        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'WorkoutPanel.HighlightStyle.Preset4': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
+    description: 'ハイライトスタイルプリセット4',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset4'] = s;
+      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset4')
+        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
+    } catch { /* ignore */ } },
+  },
+  'WorkoutPanel.HighlightStyle.Preset5': {
+    panel: 'WorkoutPanel',
+    isConst: true, default: DEFAULT_HIGHLIGHT_STYLE_PRESET, type: 'json', candidates: '.*',
+    description: 'ハイライトスタイルプリセット5',
+    get: (_app) => 'const',
+    set: (app, v) => { try {
+      const s = JSON.parse(v);
+      app.WorkoutPanel.TextEditor.HighlightPresets['WorkoutPanel.HighlightStyle.Preset5'] = s;
+      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === 'WorkoutPanel.HighlightStyle.Preset5')
+        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
+    } catch { /* ignore */ } },
+  },
 
   // ── ハイライト設定（全Pane共通） ────────────────────────────────────────
-  'WorkoutPanel.HighlightWord': {
+  'WorkoutPanel.Highlight.KeyWord': {
     panel: 'WorkoutPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'ハイライトキーワード',
