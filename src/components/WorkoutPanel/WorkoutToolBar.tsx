@@ -60,6 +60,7 @@ export function WorkoutToolBar({ panel }: Props) {
 
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
+    setIsAuthorOpen(false);
     setText(m === 'highlight' ? panel.HighlightWord : '');
     inputRef.current?.focus();
   }, [panel]);
@@ -128,7 +129,7 @@ export function WorkoutToolBar({ panel }: Props) {
         {MODES.map(m => (
           <button
             key={m.id}
-            className={`workout-toolbar__mode-btn${mode === m.id ? ' workout-toolbar__mode-btn--active' : ''}`}
+            className={`workout-toolbar__mode-btn${!isAuthorOpen && mode === m.id ? ' workout-toolbar__mode-btn--active' : ''}`}
             onClick={() => handleModeSelect(m.id)}
             data-tip={m.label}
             aria-label={m.label}
