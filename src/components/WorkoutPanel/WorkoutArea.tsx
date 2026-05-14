@@ -170,9 +170,7 @@ export function WorkoutArea({
     background:          panel?.TextEditor.Text.Background      ?? '#f5f5f5',
     foreground:          panel?.TextEditor.Text.Foreground      ?? '#1e1e1e',
     selectionBackground:  panel?.TextEditor.Selection.Background  ?? '#c6e6c6ff',
-    selectionForeground:  panel?.TextEditor.Selection.Foreground  ?? '#1e1e1e',
     occurrenceBackground: panel?.TextEditor.Occurrence.Background ?? '#c6e6c6ff',
-    occurrenceForeground: panel?.TextEditor.Occurrence.Foreground ?? '#1e1e1e',
     headingStyles: panel?.TextEditor.HeadingStyles ?? [
       { color: '#569cd6', bold: true, underline: false },
       { color: '#4ec9b0', bold: true, underline: false },
@@ -186,8 +184,8 @@ export function WorkoutArea({
        panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,
        panel?.TextEditor.HighlightStyles,
        panel?.TextEditor.Text.Background, panel?.TextEditor.Text.Foreground,
-       panel?.TextEditor.Selection.Background, panel?.TextEditor.Selection.Foreground,
-       panel?.TextEditor.Occurrence.Background, panel?.TextEditor.Occurrence.Foreground,
+       panel?.TextEditor.Selection.Background,
+       panel?.TextEditor.Occurrence.Background,
        panel?.TextEditor.HeadingStyles]);
 
   const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };

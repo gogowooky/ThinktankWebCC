@@ -355,16 +355,6 @@ export function WorkoutSettingPanel({
                     />
                   </div>
 
-                  <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">選択文字</span>
-                    <input
-                      type="color"
-                      className="workout-setting-panel__color-picker"
-                      value={panel.TextEditor.Selection.Foreground.slice(0, 7)}
-                      onChange={e => panel.SetTextEditorSelectionForeground(e.target.value)}
-                    />
-                  </div>
-
                   {[1, 2, 3, 4, 5].map(level => {
                     const style = panel.TextEditor.HeadingStyles[level - 1];
                     const fw = ['１', '２', '３', '４', '５'][level - 1];

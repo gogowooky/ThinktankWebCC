@@ -213,26 +213,12 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => app.WorkoutPanel.TextEditor.Selection.Background,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Selection.Background = v; },
   },
-  'TextEditor.Selection.Foreground': {
-    panel: 'WorkoutPanel',
-    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '選択範囲前景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Selection.Foreground,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Selection.Foreground = v; },
-  },
   'TextEditor.Occurrence.Background': {
     panel: 'WorkoutPanel',
     default: '#728872ff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
     description: '同テキスト背景色',
     get: (app) => app.WorkoutPanel.TextEditor.Occurrence.Background,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Occurrence.Background = v; },
-  },
-  'TextEditor.Occurrence.Foreground': {
-    panel: 'WorkoutPanel',
-    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '同テキスト前景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Occurrence.Foreground,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Occurrence.Foreground = v; },
   },
   'TextEditor.HeadingStyles': {
     panel: 'WorkoutPanel',

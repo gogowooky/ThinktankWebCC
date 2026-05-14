@@ -44,8 +44,8 @@ export class TextEditorSettings {
   BracketPairColorization = { IsVisible: true };
 
   Text = { Background: '#f5f5f5', Foreground: '#1e1e1e' };
-  Selection  = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
-  Occurrence = { Background: '#c6e6c6ff', Foreground: '#1e1e1e' };
+  Selection  = { Background: '#c6e6c6ff' };
+  Occurrence = { Background: '#c6e6c6ff' };
   HeadingStyles: SectionStyle[] = _defaultSectionStyles();
   HighlightStyles: HighlightStyle[] = _defaultHighlightStyles();
 
@@ -214,7 +214,6 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetTextEditorTextBackground(color: string)      { this.TextEditor.Text.Background       = color; this.NotifyUpdated(); }
   public SetTextEditorTextForeground(color: string)      { this.TextEditor.Text.Foreground       = color; this.NotifyUpdated(); }
   public SetTextEditorSelectionBackground(color: string) { this.TextEditor.Selection.Background  = color; this.NotifyUpdated(); }
-  public SetTextEditorSelectionForeground(color: string) { this.TextEditor.Selection.Foreground  = color; this.NotifyUpdated(); }
   public SetTextEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
     if (level < 1 || level > 5) return;
     this.TextEditor.HeadingStyles = this.TextEditor.HeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);
