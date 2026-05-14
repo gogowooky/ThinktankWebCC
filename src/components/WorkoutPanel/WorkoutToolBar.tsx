@@ -12,7 +12,12 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
+import copywriteRaw from '../../../docs/copywrite.txt?raw';
 import './WorkoutToolBar.css';
+
+const _cw = JSON.parse(copywriteRaw);
+const _commitDate = (_cw.commitDateTime as string).split('-').slice(0, 3).join('-');
+const AUTHOR_TEXT = `${_cw.appName} ver.${_cw.version} (${_commitDate}), ${_cw.copyright.holder}(${_cw.copyright.year}).`;
 
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
 
@@ -58,6 +63,14 @@ export function WorkoutToolBar({ panel }: Props) {
     if (mode === 'highlight') setText(panel.HighlightWord);
   }, [panel.HighlightWord, mode]);
 
+  useEffect(() => {
+    if (isAuthorOpen) {
+      setText(AUTHOR_TEXT);
+    } else {
+      setText(mode === 'highlight' ? panel.HighlightWord : '');
+    }
+  }, [isAuthorOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
     setIsAuthorOpen(false);
@@ -97,11 +110,12 @@ export function WorkoutToolBar({ panel }: Props) {
         className="workout-toolbar__input"
         type="text"
         value={text}
-        list={mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
+        list={!isAuthorOpen && mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
+        readOnly={isAuthorOpen}
         onChange={e => handleTextChange(e.target.value)}
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
-        placeholder={current.placeholder}
+        placeholder={isAuthorOpen ? '' : current.placeholder}
         spellCheck={false}
       />
       {mode === 'highlight' && (
@@ -113,7 +127,7 @@ export function WorkoutToolBar({ panel }: Props) {
       )}
 
       {/* クリアボタン */}
-      {text && (
+      {!isAuthorOpen && text && (
         <button
           className="workout-toolbar__clear-btn"
           onClick={handleClear}
