@@ -326,32 +326,42 @@ export function WorkoutSettingPanel({
               {isColorSettingsOpen && (
                 <div className="workout-setting-panel__section-content">
                   <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">背景</span>
+                    <span className="workout-setting-panel__color-label">背景色</span>
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
-                      value={panel.TextEditor.Text.Background}
-                      onChange={e => panel.SetTextEditorTextBackground(e.target.value)}
+                      value={panel.TextEditor.Color.Background.slice(0, 7)}
+                      onChange={e => panel.SetTextEditorColorBackground(e.target.value)}
                     />
                   </div>
 
                   <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">文字</span>
+                    <span className="workout-setting-panel__color-label">文字色</span>
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
-                      value={panel.TextEditor.Text.Foreground}
-                      onChange={e => panel.SetTextEditorTextForeground(e.target.value)}
+                      value={panel.TextEditor.Color.Text.slice(0, 7)}
+                      onChange={e => panel.SetTextEditorColorText(e.target.value)}
                     />
                   </div>
 
                   <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">選択背景</span>
+                    <span className="workout-setting-panel__color-label">選択色</span>
                     <input
                       type="color"
                       className="workout-setting-panel__color-picker"
-                      value={panel.TextEditor.Selection.Background.slice(0, 7)}
-                      onChange={e => panel.SetTextEditorSelectionBackground(e.target.value)}
+                      value={panel.TextEditor.Color.Selection.slice(0, 7)}
+                      onChange={e => panel.SetTextEditorColorSelection(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="workout-setting-panel__color-row">
+                    <span className="workout-setting-panel__color-label">一致色</span>
+                    <input
+                      type="color"
+                      className="workout-setting-panel__color-picker"
+                      value={panel.TextEditor.Color.Occurrence.slice(0, 7)}
+                      onChange={e => panel.SetTextEditorColorOccurrence(e.target.value)}
                     />
                   </div>
 

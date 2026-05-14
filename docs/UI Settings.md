@@ -29,6 +29,11 @@ TextEditor.UnicodeHighlight.IsVisible,          false,  boolean,    Unicode強�
 TextEditor.BracketPairColorization.IsVisible,   true,   boolean,    括弧ペア色分け,(true|false|toggle),current,false
 WorkoutPanel.HighlightWord,                     "Is, false",string, ハイライトキーワード,".*",current,""
 
+TextEditor.Color.Background,#f5f5f5,color,背景色,"#[a-f0-9]+",current,#f5f5f5
+TextEditor.Color.Text,#1e1e1e,color,文字色,"#[a-f0-9]+",current,#1e1e1e
+TextEditor.Color.Selection,#c6e6c6ff,color,選択色,"#[a-f0-9]+",current,#c6e6c6ff
+TextEditor.Color.Occurrence,#aac6aaff,color,一致色,"#[a-f0-9]+",current,#adceadff
+
 TextEditor.Style.Section,TextEditor.SectionStyle.Preset1,string,セクションスタイル,"TextEditor.SectionStyle.Preset[1-5]",current,"TextEditor.SectionStyle.Preset1"
 
 TextEditor.SectionStyle.Preset1,const,json,セクションスタイルプリセット1,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"

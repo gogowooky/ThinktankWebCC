@@ -167,10 +167,10 @@ export function WorkoutArea({
       { backgroundColor: '#008000', color: '#ffffff' },
       { backgroundColor: '#800080', color: '#ffffff' },
     ],
-    background:          panel?.TextEditor.Text.Background      ?? '#f5f5f5',
-    foreground:          panel?.TextEditor.Text.Foreground      ?? '#1e1e1e',
-    selectionBackground:  panel?.TextEditor.Selection.Background  ?? '#c6e6c6ff',
-    occurrenceBackground: panel?.TextEditor.Occurrence.Background ?? '#c6e6c6ff',
+    background:          panel?.TextEditor.Color.Background  ?? '#f5f5f5',
+    foreground:          panel?.TextEditor.Color.Text        ?? '#1e1e1e',
+    selectionBackground: panel?.TextEditor.Color.Selection   ?? '#c6e6c6ff',
+    occurrenceBackground: panel?.TextEditor.Color.Occurrence ?? '#aac6aaff',
     headingStyles: panel?.TextEditor.HeadingStyles ?? [
       { color: '#569cd6', bold: true, underline: false },
       { color: '#4ec9b0', bold: true, underline: false },
@@ -183,9 +183,8 @@ export function WorkoutArea({
        panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
        panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,
        panel?.TextEditor.HighlightStyles,
-       panel?.TextEditor.Text.Background, panel?.TextEditor.Text.Foreground,
-       panel?.TextEditor.Selection.Background,
-       panel?.TextEditor.Occurrence.Background,
+       panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
+       panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.HeadingStyles]);
 
   const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };

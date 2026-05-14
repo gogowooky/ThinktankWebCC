@@ -192,33 +192,33 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible),
     set: (app, v) => { app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible); },
   },
-  'TextEditor.Text.Background': {
+  'TextEditor.Color.Background': {
     panel: 'WorkoutPanel',
     default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'テキスト背景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Text.Background,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Text.Background = v; },
+    description: '背景色',
+    get: (app) => app.WorkoutPanel.TextEditor.Color.Background,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Background = v; },
   },
-  'TextEditor.Text.Foreground': {
+  'TextEditor.Color.Text': {
     panel: 'WorkoutPanel',
     default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'テキスト前景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Text.Foreground,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Text.Foreground = v; },
+    description: '文字色',
+    get: (app) => app.WorkoutPanel.TextEditor.Color.Text,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Text = v; },
   },
-  'TextEditor.Selection.Background': {
+  'TextEditor.Color.Selection': {
     panel: 'WorkoutPanel',
     default: '#c6e6c6ff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '選択範囲背景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Selection.Background,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Selection.Background = v; },
+    description: '選択色',
+    get: (app) => app.WorkoutPanel.TextEditor.Color.Selection,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Selection = v; },
   },
-  'TextEditor.Occurrence.Background': {
+  'TextEditor.Color.Occurrence': {
     panel: 'WorkoutPanel',
-    default: '#728872ff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '同テキスト背景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Occurrence.Background,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Occurrence.Background = v; },
+    default: '#aac6aaff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: '一致色',
+    get: (app) => app.WorkoutPanel.TextEditor.Color.Occurrence,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Occurrence = v; },
   },
   'TextEditor.HeadingStyles': {
     panel: 'WorkoutPanel',
