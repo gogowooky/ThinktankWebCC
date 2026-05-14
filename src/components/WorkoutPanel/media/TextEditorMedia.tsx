@@ -157,10 +157,11 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
             { token: '', foreground: editorSettings.foreground.replace('#', '') }
           ],
           colors: {
-            'editor.background':                   editorSettings.background,
-            'editor.selectionBackground':           editorSettings.selectionBackground,
-            'editor.wordHighlightBackground':       editorSettings.occurrenceBackground,
-            'editor.wordHighlightStrongBackground': editorSettings.occurrenceBackground,
+            'editor.background':                    editorSettings.background,
+            'editor.selectionBackground':            editorSettings.selectionBackground,
+            'editor.wordHighlightBackground':        editorSettings.occurrenceBackground,
+            'editor.wordHighlightStrongBackground':  editorSettings.occurrenceBackground,
+            'editor.selectionHighlightBackground':   editorSettings.occurrenceBackground,
           }
         });
         monaco.editor.setTheme('custom-markdown-theme');
@@ -407,6 +408,7 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
             enabled: editorSettings?.bracketPairColorization ?? true
           },
           matchBrackets: (editorSettings?.bracketPairColorization ?? true) ? 'always' : 'never',
+          occurrencesHighlight: 'singleFile',
         }}
       />
 
