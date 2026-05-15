@@ -169,6 +169,22 @@
   flex-shrink: 0;
 }
 
+.workout-toolbar__ka-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.workout-toolbar__ka-value--focus {
+  color: #7dd3c0;
+  background: rgba(125, 211, 192, 0.12);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── 作成者バナー ── */
 .workout-toolbar__author-banner {
   flex: 1;

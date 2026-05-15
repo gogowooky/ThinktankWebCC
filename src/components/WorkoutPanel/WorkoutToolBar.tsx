@@ -25,8 +25,29 @@ interface KAState {
   key:       string;
   mouse:     string;
   touch:     string;
+  focus:     string;
 }
-const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-' };
+const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-', focus: '-' };
+
+/** フォーカス要素から最近傍の BEM ブロッククラスを PascalCase に変換して返す */
+function getFocusName(el: Element | null): string {
+  if (!el || el === document.body || el === document.documentElement) return 'document';
+  let cur: Element | null = el;
+  while (cur && cur !== document.body) {
+    // BEM ブロック = __ も -- も含まない、5文字以上のクラス
+    const block = [...cur.classList].find(c => !c.includes('__') && !c.includes('--') && c.length > 4);
+    if (block) {
+      const name = block
+        .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
+        .replace(/^[a-z]/, c => c.toUpperCase());
+      const aria = el.getAttribute('aria-label');
+      return aria ? `${name}[${aria}]` : name;
+    }
+    cur = cur.parentElement;
+  }
+  const aria = el.getAttribute('aria-label');
+  return aria ? `${el.tagName.toLowerCase()}[${aria}]` : el.tagName.toLowerCase();
+}
 
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
 
@@ -106,6 +127,16 @@ export function WorkoutToolBar({ panel }: Props) {
       setKaState(s => ({ ...s, touch: `${e.type}(${count})` }));
     };
 
+    const onFocusIn = (e: FocusEvent) => {
+      setKaState(s => ({ ...s, focus: getFocusName(e.target as Element) }));
+    };
+    const onWindowBlur = () => {
+      setKaState(s => ({ ...s, focus: '-' }));
+    };
+
+    // 初期フォーカス
+    setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
+
     window.addEventListener('keyup',      onKeyUp);
     window.addEventListener('mousedown',  onMouse);
     window.addEventListener('mouseup',    onMouse);
@@ -114,6 +145,8 @@ export function WorkoutToolBar({ panel }: Props) {
     window.addEventListener('touchstart', onTouch, { passive: true });
     window.addEventListener('touchmove',  onTouch, { passive: true });
     window.addEventListener('touchend',   onTouch, { passive: true });
+    window.addEventListener('focusin',    onFocusIn);
+    window.addEventListener('blur',       onWindowBlur);
 
     return () => {
       window.removeEventListener('keyup',      onKeyUp);
@@ -124,6 +157,8 @@ export function WorkoutToolBar({ panel }: Props) {
       window.removeEventListener('touchstart', onTouch);
       window.removeEventListener('touchmove',  onTouch);
       window.removeEventListener('touchend',   onTouch);
+      window.removeEventListener('focusin',    onFocusIn);
+      window.removeEventListener('blur',       onWindowBlur);
       cancelAnimationFrame(rafRef.current);
     };
   }, [mode]);
@@ -184,6 +219,11 @@ export function WorkoutToolBar({ panel }: Props) {
         </div>
       ) : mode === 'keyaction' && authorState === 'off' ? (
         <div className="workout-toolbar__keyaction">
+          <span className="workout-toolbar__ka-field">
+            <span className="workout-toolbar__ka-label">focus</span>
+            <span className="workout-toolbar__ka-value workout-toolbar__ka-value--focus">{kaState.focus}</span>
+          </span>
+          <span className="workout-toolbar__ka-divider" />
           <span className="workout-toolbar__ka-field">
             <span className="workout-toolbar__ka-label">mod</span>
             <span className="workout-toolbar__ka-value">{kaState.modifiers}</span>
