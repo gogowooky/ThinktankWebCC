@@ -125,6 +125,50 @@
   color: #fff;
 }
 
+/* ── KeyAction イベントモニター ── */
+.workout-toolbar__keyaction {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.workout-toolbar__ka-field {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.workout-toolbar__ka-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.workout-toolbar__ka-value {
+  font-size: 11px;
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  padding: 0 4px;
+  min-width: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.workout-toolbar__ka-sep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
 /* ── 作成者バナー ── */
 .workout-toolbar__author-banner {
   flex: 1;

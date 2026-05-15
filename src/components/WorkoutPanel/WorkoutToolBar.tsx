@@ -20,6 +20,14 @@ const AUTHOR_BANNER_TEXT = `${_cw.appName} ver.${_cw.version}, ${_cw.copyright.h
 
 type AuthorState = 'off' | 'banner' | 'static';
 
+interface KAState {
+  modifiers: string;
+  key:       string;
+  mouse:     string;
+  touch:     string;
+}
+const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-' };
+
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
 
 interface ModeEntry {
@@ -49,7 +57,9 @@ export function WorkoutToolBar({ panel }: Props) {
   const [text,        setText]        = useState(() => panel.HighlightWord);
   const [isExpanded,  setIsExpanded]  = useState(false);
   const [authorState, setAuthorState] = useState<AuthorState>('off');
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [kaState,     setKaState]     = useState<KAState>(KA_INIT);
+  const inputRef       = useRef<HTMLInputElement>(null);
+  const rafRef         = useRef<number>(0);
 
   useEffect(() => {
     if (isExpanded) {
@@ -63,6 +73,60 @@ export function WorkoutToolBar({ panel }: Props) {
   useEffect(() => {
     if (mode === 'highlight') setText(panel.HighlightWord);
   }, [panel.HighlightWord, mode]);
+
+  // KeyAction モード: window 全体のイベントをウォッチ
+  useEffect(() => {
+    if (mode !== 'keyaction') { setKaState(KA_INIT); return; }
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      const mods = [
+        e.ctrlKey  && 'Ctrl',
+        e.altKey   && 'Alt',
+        e.shiftKey && 'Shift',
+        e.metaKey  && 'Meta',
+      ].filter(Boolean).join('+') || '-';
+      const k = e.key === ' ' ? 'Space' : (e.key.length === 1 ? e.key.toUpperCase() : e.key);
+      setKaState(s => ({ ...s, modifiers: mods, key: k }));
+    };
+
+    const onMouse = (e: MouseEvent) => {
+      const label = `${e.type}(${Math.round(e.clientX)},${Math.round(e.clientY)})`;
+      if (e.type === 'mousemove') {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = requestAnimationFrame(() =>
+          setKaState(s => ({ ...s, mouse: label }))
+        );
+      } else {
+        setKaState(s => ({ ...s, mouse: label }));
+      }
+    };
+
+    const onTouch = (e: TouchEvent) => {
+      const count = e.type === 'touchend' ? e.changedTouches.length : e.touches.length;
+      setKaState(s => ({ ...s, touch: `${e.type}(${count})` }));
+    };
+
+    window.addEventListener('keyup',      onKeyUp);
+    window.addEventListener('mousedown',  onMouse);
+    window.addEventListener('mouseup',    onMouse);
+    window.addEventListener('click',      onMouse);
+    window.addEventListener('mousemove',  onMouse, { passive: true });
+    window.addEventListener('touchstart', onTouch, { passive: true });
+    window.addEventListener('touchmove',  onTouch, { passive: true });
+    window.addEventListener('touchend',   onTouch, { passive: true });
+
+    return () => {
+      window.removeEventListener('keyup',      onKeyUp);
+      window.removeEventListener('mousedown',  onMouse);
+      window.removeEventListener('mouseup',    onMouse);
+      window.removeEventListener('click',      onMouse);
+      window.removeEventListener('mousemove',  onMouse);
+      window.removeEventListener('touchstart', onTouch);
+      window.removeEventListener('touchmove',  onTouch);
+      window.removeEventListener('touchend',   onTouch);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, [mode]);
 
   const handleAuthorToggle = useCallback(() => {
     setAuthorState(s => s === 'off' ? 'banner' : 'off');
@@ -116,6 +180,28 @@ export function WorkoutToolBar({ panel }: Props) {
         >
           <span className="workout-toolbar__author-banner-text">
             {AUTHOR_BANNER_TEXT}
+          </span>
+        </div>
+      ) : mode === 'keyaction' && authorState === 'off' ? (
+        <div className="workout-toolbar__keyaction">
+          <span className="workout-toolbar__ka-field">
+            <span className="workout-toolbar__ka-label">mod</span>
+            <span className="workout-toolbar__ka-value">{kaState.modifiers}</span>
+          </span>
+          <span className="workout-toolbar__ka-sep">·</span>
+          <span className="workout-toolbar__ka-field">
+            <span className="workout-toolbar__ka-label">key</span>
+            <span className="workout-toolbar__ka-value">{kaState.key}</span>
+          </span>
+          <span className="workout-toolbar__ka-sep">·</span>
+          <span className="workout-toolbar__ka-field">
+            <span className="workout-toolbar__ka-label">mouse</span>
+            <span className="workout-toolbar__ka-value">{kaState.mouse}</span>
+          </span>
+          <span className="workout-toolbar__ka-sep">·</span>
+          <span className="workout-toolbar__ka-field">
+            <span className="workout-toolbar__ka-label">touch</span>
+            <span className="workout-toolbar__ka-value">{kaState.touch}</span>
           </span>
         </div>
       ) : (
