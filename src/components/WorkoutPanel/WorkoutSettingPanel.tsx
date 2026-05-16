@@ -87,6 +87,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
   onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
 }: Props, ref) {
+  const panelRef           = useRef<HTMLDivElement>(null);
   const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
   const firstTexteditorRef = useRef<HTMLInputElement>(null);
   const firstDatagridRef   = useRef<HTMLButtonElement>(null);
@@ -94,9 +95,17 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
   useImperativeHandle(ref, () => ({
     focus: () => {
       switch (activeSettings) {
-        case 'workout':    firstWorkoutRef.current?.focus();    break;
+        case 'workout':
+          // disabled の可能性があるためフォーカスできなければパネル自体へ
+          if (firstWorkoutRef.current && !firstWorkoutRef.current.disabled) {
+            firstWorkoutRef.current.focus();
+          } else {
+            panelRef.current?.focus();
+          }
+          break;
         case 'texteditor': firstTexteditorRef.current?.focus(); break;
         case 'datagrid':   firstDatagridRef.current?.focus();   break;
+        default:           panelRef.current?.focus();           break;
       }
     },
   }));
@@ -113,7 +122,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
 
   return (
-    <div className="workout-setting-panel" style={{ width }}>
+    <div ref={panelRef} className="workout-setting-panel" style={{ width }} tabIndex={-1}>
 
       <div className="workout-setting-panel__header">Workout&gt;{panelName}</div>
 
