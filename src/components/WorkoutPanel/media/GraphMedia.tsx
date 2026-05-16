@@ -8,8 +8,10 @@
  * - コンテナサイズに追従（ResizeObserver）
  */
 
-import { useRef, useState, useEffect, useMemo } from 'react';
+import { useRef, useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
 import type { MediaProps } from './types';
+
+export interface GraphMediaRef { focus: () => void; }
 import './GraphMedia.css';
 
 // react-force-graph のデフォルトエクスポートは各形式のコンポーネント
@@ -52,8 +54,10 @@ function nodeLabel(node: GraphNode): string {
   return node.name.length > 18 ? node.name.slice(0, 18) + '…' : node.name;
 }
 
-export function GraphMedia({ think, vault }: MediaProps) {
+export const GraphMedia = forwardRef<GraphMediaRef, MediaProps>(function GraphMedia({ think, vault }, ref) {
+  const checkboxRef  = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  useImperativeHandle(ref, () => ({ focus: () => checkboxRef.current?.focus() }));
   const [size, setSize]         = useState({ w: 400, h: 300 });
   const [loaded, setLoaded]     = useState(false);
   const [, forceUpdate]         = useState(0);
@@ -120,6 +124,9 @@ export function GraphMedia({ think, vault }: MediaProps) {
 
   return (
     <div ref={containerRef} className="graph-media">
+      {/* フォーカス受け取り用の非表示チェックボックス */}
+      <input ref={checkboxRef} type="checkbox" aria-hidden="true"
+        style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
       {loaded && ForceGraph2D ? (
         <ForceGraph2D
           graphData={graphData}
@@ -150,4 +157,4 @@ export function GraphMedia({ think, vault }: MediaProps) {
       </div>
     </div>
   );
-}
+});

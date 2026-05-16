@@ -22,6 +22,7 @@ import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
 import type { OverviewSettingsViewRef } from './OverviewSettingsView';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
+import type { GraphMediaRef } from '../WorkoutPanel/media/GraphMedia';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
 import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
@@ -79,6 +80,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const aiChatViewRef                   = useRef<AiChatViewRef>(null);
   const filterPanelRef                  = useRef<UnifiedFilterPanelRef>(null);
   const settingsViewRef                 = useRef<OverviewSettingsViewRef>(null);
+  const graphMediaRef                   = useRef<GraphMediaRef>(null);
 
   const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
   const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
@@ -140,6 +142,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         filterPanelRef.current?.focus();
       } else if (panel.MediaType === 'chat') {
         aiChatViewRef.current?.focus();
+      } else if (panel.MediaType === 'graph') {
+        graphMediaRef.current?.focus();
       }
     }, 50);
     return () => clearTimeout(timer);
@@ -426,7 +430,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             <span>Thought をドロップして選択してください</span>
           </div>
         ) : panel.MediaType === 'graph' ? (
-          <GraphMedia think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
+          <GraphMedia ref={graphMediaRef} think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
         ) : null}
       </div>
 

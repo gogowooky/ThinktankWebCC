@@ -47,14 +47,16 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const hasContext = !!thoughtName || !!thinkName;
 
   // コンテキスト付きシステムプロンプトを生成
-  const reThinkChatRef = useRef<ReThinkChatRef>(null);
+  const reThinkChatRef     = useRef<ReThinkChatRef>(null);
+  const settingsCheckRef   = useRef<HTMLInputElement>(null);
   const handleScrollPrev = useCallback(() => reThinkChatRef.current?.scrollToPrevUser(), []);
   const handleScrollNext = useCallback(() => reThinkChatRef.current?.scrollToNextUser(), []);
 
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (viewMode === 'chat') reThinkChatRef.current?.focus();
+      if (viewMode === 'chat')     reThinkChatRef.current?.focus();
+      if (viewMode === 'settings') settingsCheckRef.current?.focus();
     }, 50);
     return () => clearTimeout(timer);
   }, [viewMode]);
@@ -138,7 +140,9 @@ export function ReThinkArea({ app, viewMode }: Props) {
       {/* ── コンテンツ ───────────────────────────────────────── */}
       <div className="rethink-area__chat">
         {viewMode === 'settings' ? (
-          <div style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+          <div style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)', position: 'relative' }}>
+            <input ref={settingsCheckRef} type="checkbox" aria-hidden="true"
+              style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
             ReThink設定は今後追加予定です。
           </div>
         ) : (
