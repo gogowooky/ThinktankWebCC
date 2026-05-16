@@ -7,11 +7,13 @@
  * - think.ID が変わると editor を再マウント（key prop で制御）
  */
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
 import { StorageManager } from '../../../services/storage/StorageManager';
 import './TextEditorMedia.css';
+
+export interface TextEditorMediaRef { focus: () => void; }
 
 interface Toast { msg: string; type: 'success' | 'error'; }
 
@@ -81,10 +83,12 @@ function registerMarkdownFolding(monaco: any) {
   });
 }
 
-export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps) {
+export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
   const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
   const editorRef   = useRef<any>(null);
+
+  useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focus() }));
   const [isDragOver, setIsDragOver] = useState(false);
   const [toast,      setToast]      = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -427,4 +431,4 @@ export function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, e
       )}
     </div>
   );
-}
+});

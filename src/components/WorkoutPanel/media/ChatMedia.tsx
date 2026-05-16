@@ -7,7 +7,7 @@
  * - think データをシステムプロンプトのコンテキストとして渡す
  */
 
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import type { ChatMessage } from '../../../types';
 import type { MediaProps } from './types';
 import { streamChat } from '../../../services/ChatApiService';
@@ -59,7 +59,9 @@ function formatTime(iso: string): string {
   return `${hh}:${mm}:${ss}`;
 }
 
-export function ChatMedia({ think }: MediaProps) {
+export interface ChatMediaRef { focus: () => void; }
+
+export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think }: MediaProps, ref) {
   const initialMessages = useMemo<ChatMessage[]>(() => {
     if (!think || think.ContentType !== 'chat') return [];
     return parseChatContent(think.Content);
@@ -72,6 +74,8 @@ export function ChatMedia({ think }: MediaProps) {
   const inputRef                  = useRef<HTMLTextAreaElement>(null);
   const abortRef                  = useRef<AbortController | null>(null);
   const accumulatedRef            = useRef('');
+
+  useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
 
   useEffect(() => {
     setMessages(initialMessages);
@@ -220,4 +224,4 @@ export function ChatMedia({ think }: MediaProps) {
 
     </div>
   );
-}
+});

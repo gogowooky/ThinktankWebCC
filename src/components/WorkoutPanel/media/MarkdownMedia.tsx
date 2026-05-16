@@ -8,7 +8,7 @@
  * - 読み取り専用（編集は TextEditorMedia）
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
@@ -35,8 +35,26 @@ const md = new Marked(
   { renderer: linkRenderer },
 );
 
-export function MarkdownMedia({ think }: MediaProps) {
+export interface MarkdownMediaRef { focus: () => void; }
+
+export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function MarkdownMedia({ think }: MediaProps, ref) {
   const [html, setHtml] = useState('');
+  const mdRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      const el = mdRef.current;
+      if (!el) return;
+      el.focus();
+      const first = el.firstElementChild;
+      if (!first) return;
+      const range = document.createRange();
+      range.selectNodeContents(first);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    },
+  }));
 
   useEffect(() => {
     if (!think) { setHtml(''); return; }
@@ -56,9 +74,11 @@ export function MarkdownMedia({ think }: MediaProps) {
 
   return (
     <div
+      ref={mdRef}
+      tabIndex={-1}
       className="markdown-media"
       // biome-ignore lint/security/noDangerouslySetInnerHtml: marked でサニタイズ済み
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
-}
+});

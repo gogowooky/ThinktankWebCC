@@ -14,11 +14,19 @@ import type { MediaType } from '../../types';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutAreaRibbon, extractLinkDrop } from './WorkoutAreaRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
+import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
+import type { MarkdownMediaRef }   from './media/MarkdownMedia';
 import { DataGridMedia }   from './media/DataGridMedia';
+import type { DataGridMediaRef }   from './media/DataGridMedia';
 import { CardMedia }       from './media/CardMedia';
+import type { CardMediaRef }       from './media/CardMedia';
 import { GraphMedia }      from './media/GraphMedia';
+import type { GraphMediaRef }      from './media/GraphMedia';
 import { ChatMedia }       from './media/ChatMedia';
+import type { ChatMediaRef }       from './media/ChatMedia';
+
+type AnyMediaRef = TextEditorMediaRef | MarkdownMediaRef | DataGridMediaRef | CardMediaRef | GraphMediaRef | ChatMediaRef;
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import './WorkoutArea.css';
@@ -45,6 +53,7 @@ export function WorkoutArea({
   const [isDirty,         setIsDirty]         = useState(false);
   const [loadedResourceId, setLoadedResourceId] = useState<string | null>(null);
   const autoSaveRef = useRef<(() => void) | null>(null);
+  const mediaRef = useRef<AnyMediaRef | null>(null);
   const contentReady = loadedResourceId === area.ResourceID;
 
   const panel = area._parent as import('../../views/TTWorkoutPanel').TTWorkoutPanel;
@@ -148,6 +157,12 @@ export function WorkoutArea({
   }, [vault, area, panel]);
 
 
+  useEffect(() => {
+    if (!isFocused) return;
+    const timer = setTimeout(() => mediaRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
+  }, [isFocused]);
+
   // think データ取得
   const think = vault.GetThink(area.ResourceID) ?? null;
   useAppUpdate(panel);
@@ -192,13 +207,13 @@ export function WorkoutArea({
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
     switch (area.MediaType) {
-      case 'workout':    return <TextEditorMedia {...mediaProps} />;
-      case 'texteditor': return <TextEditorMedia {...mediaProps} />;
-      case 'markdown':   return <MarkdownMedia   {...mediaProps} />;
-      case 'datagrid':   return <DataGridMedia   {...mediaProps} />;
-      case 'card':       return <CardMedia       {...mediaProps} />;
-      case 'graph':      return <GraphMedia      {...mediaProps} />;
-      case 'chat':       return <ChatMedia       {...mediaProps} />;
+      case 'workout':    return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
+      case 'texteditor': return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
+      case 'markdown':   return <MarkdownMedia   ref={mediaRef as React.Ref<MarkdownMediaRef>}   {...mediaProps} />;
+      case 'datagrid':   return <DataGridMedia   ref={mediaRef as React.Ref<DataGridMediaRef>}   {...mediaProps} />;
+      case 'card':       return <CardMedia       ref={mediaRef as React.Ref<CardMediaRef>}       {...mediaProps} />;
+      case 'graph':      return <GraphMedia      ref={mediaRef as React.Ref<GraphMediaRef>}      {...mediaProps} />;
+      case 'chat':       return <ChatMedia       ref={mediaRef as React.Ref<ChatMediaRef>}       {...mediaProps} />;
     }
   };
 

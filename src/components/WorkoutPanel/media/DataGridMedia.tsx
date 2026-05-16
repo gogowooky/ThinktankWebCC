@@ -7,7 +7,7 @@
  * - それ以外 → Vault の全 Think（thought 除く）を表示
  */
 
-import { useRef, useState, useMemo, useCallback, useEffect, useLayoutEffect } from 'react';
+import { useRef, useState, useMemo, useCallback, useEffect, useLayoutEffect, forwardRef, useImperativeHandle } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   FileText, Lightbulb, Table, Link, MessageCircle, Globe,
@@ -928,16 +928,35 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
 
 // ── DataGridMedia ──────────────────────────────────────────────────────────
 
-export function DataGridMedia(props: MediaProps) {
+export interface DataGridMediaRef { focus: () => void; }
+
+export const DataGridMedia = forwardRef<DataGridMediaRef, MediaProps>(function DataGridMedia(props, ref) {
+  const datagridRootRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      const input = datagridRootRef.current?.querySelector<HTMLInputElement>(
+        '.table-grid__filter, .datagrid-media__filter'
+      );
+      input?.focus();
+    },
+  }));
+
   if (props.think?.ContentType === 'table') {
     return (
-      <TableGridView
-        think={props.think}
-        onSave={props.onSave}
-        onDirtyChange={props.onDirtyChange}
-        editorSettings={props.editorSettings}
-      />
+      <div ref={datagridRootRef} style={{ display: 'contents' }}>
+        <TableGridView
+          think={props.think}
+          onSave={props.onSave}
+          onDirtyChange={props.onDirtyChange}
+          editorSettings={props.editorSettings}
+        />
+      </div>
     );
   }
-  return <ThinkListMedia {...props} />;
-}
+  return (
+    <div ref={datagridRootRef} style={{ display: 'contents' }}>
+      <ThinkListMedia {...props} />
+    </div>
+  );
+});

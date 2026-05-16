@@ -7,7 +7,7 @@
  * - それ以外 → Vault の全 Think（thought 除く）カード
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
   FileText, Lightbulb, Table, Link, MessageCircle, Globe,
   RefreshCcw, ChevronDown, ChevronRight,
@@ -272,9 +272,28 @@ function ThinkCardView({ think, vault }: MediaProps) {
 
 // ── CardMedia ─────────────────────────────────────────────────────────────────
 
-export function CardMedia(props: MediaProps) {
+export interface CardMediaRef { focus: () => void; }
+
+export const CardMedia = forwardRef<CardMediaRef, MediaProps>(function CardMedia(props, ref) {
+  const cardRootRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      const input = cardRootRef.current?.querySelector<HTMLInputElement>('.card-media__filter');
+      input?.focus();
+    },
+  }));
+
   if (props.think?.ContentType === 'table') {
-    return <TableCardView think={props.think} onSave={props.onSave} />;
+    return (
+      <div ref={cardRootRef} style={{ display: 'contents' }}>
+        <TableCardView think={props.think} onSave={props.onSave} />
+      </div>
+    );
   }
-  return <ThinkCardView {...props} />;
-}
+  return (
+    <div ref={cardRootRef} style={{ display: 'contents' }}>
+      <ThinkCardView {...props} />
+    </div>
+  );
+});
