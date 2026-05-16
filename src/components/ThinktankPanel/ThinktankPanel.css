@@ -8,11 +8,7 @@
   overflow: hidden;
 }
 
-/* パネル内にフォーカスがある間、開閉ボタンとタイトルに下線を表示 */
-.thinktank-panel:focus-within .panel-ribbon--thinktank .panel-ribbon__toggle {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.6);
-}
-
+/* パネル内にフォーカスがある間、タイトルに下線を表示 */
 .thinktank-panel:focus-within .thinktank-area__title-row {
   text-decoration: underline;
 }
