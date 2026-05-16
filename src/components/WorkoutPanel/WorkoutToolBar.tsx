@@ -33,8 +33,16 @@ const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-', foc
 function getFocusName(el: Element | null): string {
   if (!el || el === document.body || el === document.documentElement) return 'None';
 
-  // WorkoutArea (active content pane)
-  if (el.closest('.workout-area')) return 'Workout.ActivePane';
+  // WorkoutArea (active content pane) — メディアタイプで細分化
+  const wa = el.closest('.workout-area');
+  if (wa) {
+    if (wa.querySelector('.text-editor-media')) return 'Workout.TextEditor';
+    if (wa.querySelector('.markdown-media'))     return 'Workout.Markdown';
+    if (wa.querySelector('.datagrid-media'))     return 'Workout.DataGrid';
+    if (wa.querySelector('.card-media'))         return 'Workout.Card';
+    if (wa.querySelector('.chat-media'))         return 'Workout.Chat';
+    return 'Workout.ActivePane';
+  }
 
   // WorkoutSettingPanel
   const ws = el.closest('.workout-setting-panel');
