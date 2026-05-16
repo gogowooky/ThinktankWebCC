@@ -19,7 +19,7 @@ import './ReThinkArea.css';
 
 const RETHINK_MODE_NAMES: Record<ReThinkViewMode, string> = {
   chat:     'AI相談',
-  settings: '設定',
+  settings: 'Setting',
 };
 
 const BASE_SYSTEM_PROMPT =

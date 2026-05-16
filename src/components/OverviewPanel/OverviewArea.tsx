@@ -36,8 +36,8 @@ import { streamChat } from '../../services/ChatApiService';
 import './OverviewArea.css';
 
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
-  datagrid: 'Think一覧',
-  graph:    'Thought分析',
+  datagrid: 'Thinks',
+  graph:    'Analyze',
   chat:     'AI相談',
 };
 
@@ -306,7 +306,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const isThinkListMode = panel.MediaType === 'datagrid';
 
   const overviewModeLabel = showSettings
-    ? '設定'
+    ? 'Setting'
     : (OVERVIEW_MODE_NAMES[panel.MediaType] ?? panel.MediaType);
 
   return (
