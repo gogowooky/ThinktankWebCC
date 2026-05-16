@@ -7,3 +7,8 @@
   overflow: hidden;
   flex-shrink: 0;
 }
+
+/* パネル内にフォーカスがある間、タイトルに下線を表示 */
+.overview-panel:focus-within .overview-area__title-row {
+  text-decoration: underline;
+}

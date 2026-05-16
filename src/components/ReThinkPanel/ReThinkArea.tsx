@@ -6,7 +6,7 @@
  * - 下部: ReThinkChat（AI との CLI ターミナル風チャット）
  */
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { BookOpen, FileText } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -50,6 +50,14 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const reThinkChatRef = useRef<ReThinkChatRef>(null);
   const handleScrollPrev = useCallback(() => reThinkChatRef.current?.scrollToPrevUser(), []);
   const handleScrollNext = useCallback(() => reThinkChatRef.current?.scrollToNextUser(), []);
+
+  // モード切り替え時に対応する入力要素へフォーカス
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (viewMode === 'chat') reThinkChatRef.current?.focus();
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [viewMode]);
 
   const handleSaveChat = useCallback(async () => {
     const msgs = panel.ChatMessages;

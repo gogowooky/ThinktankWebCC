@@ -20,10 +20,12 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
+import type { OverviewSettingsViewRef } from './OverviewSettingsView';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
 import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
+import type { UnifiedFilterPanelRef } from '../ThinktankPanel/UnifiedFilterPanel';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
@@ -75,6 +77,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const chatAbortRef                    = useRef<AbortController | null>(null);
   const chatAccumulatedRef              = useRef('');
   const aiChatViewRef                   = useRef<AiChatViewRef>(null);
+  const filterPanelRef                  = useRef<UnifiedFilterPanelRef>(null);
+  const settingsViewRef                 = useRef<OverviewSettingsViewRef>(null);
 
   const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
   const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
@@ -126,6 +130,20 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       thought.LoadContent().then(() => vault.NotifyUpdated());
     }
   }, [panel.ThoughtID, vault]);
+
+  // モード切り替え時に対応する入力要素へフォーカス
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (showSettings) {
+        settingsViewRef.current?.focus();
+      } else if (panel.MediaType === 'datagrid') {
+        filterPanelRef.current?.focus();
+      } else if (panel.MediaType === 'chat') {
+        aiChatViewRef.current?.focus();
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [showSettings, panel.MediaType]);
 
   // ── Thought 選択（D&D）────────────────────────────────────────────────────
   const selectThought = useCallback((id: string) => {
@@ -364,6 +382,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       {/* ── フィルターパネル（Think一覧モードのみ）────────────────── */}
       {isThinkListMode && (
         <UnifiedFilterPanel
+          ref={filterPanelRef}
           historyKey="ov-filter"
           textValue={filter}
           onTextChange={setFilter}
@@ -384,7 +403,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       {/* ── 本体 ───────────────────────────────────────────────── */}
       <div className="overview-area__body">
         {showSettings ? (
-          <OverviewSettingsView think={think} vault={vault} onClear={() => panel.ClearThought()} />
+          <OverviewSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearThought()} />
         ) : isThinkListMode ? (
           !panel.ThoughtID ? (
             <div className="overview-area__empty">

@@ -4,11 +4,15 @@
  * 選択中の Thought のプロファイルを表示し、タイトルを編集・保存できる。
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Save, Library, X, ChevronDown, ChevronRight } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 import './OverviewSettingsView.css';
+
+export interface OverviewSettingsViewRef {
+  focus: () => void;
+}
 
 interface Props {
   think: TTThink | null;
@@ -16,7 +20,11 @@ interface Props {
   onClear: () => void;
 }
 
-export function OverviewSettingsView({ think, vault, onClear }: Props) {
+export const OverviewSettingsView = forwardRef<OverviewSettingsViewRef, Props>(function OverviewSettingsView({ think, vault, onClear }: Props, ref) {
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => ({
+    focus: () => titleInputRef.current?.focus(),
+  }));
   const [titleValue,     setTitleValue]     = useState('');
   const [saved,          setSaved]          = useState(false);
   const [saving,         setSaving]         = useState(false);
@@ -88,6 +96,7 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
             <dd>
               <div className="ov-settings-field">
                 <input
+                  ref={titleInputRef}
                   className="ov-settings-input"
                   type="text"
                   value={titleValue}
@@ -189,4 +198,4 @@ export function OverviewSettingsView({ think, vault, onClear }: Props) {
 
     </div>
   );
-}
+});

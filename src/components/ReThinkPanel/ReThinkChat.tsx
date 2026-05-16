@@ -15,6 +15,7 @@ import './ReThinkChat.css';
 export interface ReThinkChatRef {
   scrollToPrevUser: () => void;
   scrollToNextUser: () => void;
+  focus:            () => void;
 }
 
 const PLACEHOLDER = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
@@ -86,6 +87,7 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
         }
       }
     },
+    focus: () => { textareaRef.current?.focus(); },
   }), []);
 
   useEffect(() => {
