@@ -29,24 +29,58 @@ interface KAState {
 }
 const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-', focus: '-' };
 
-/** フォーカス要素から最近傍の BEM ブロッククラスを PascalCase に変換して返す */
+/** フォーカス要素からコンポーネント名を返す */
 function getFocusName(el: Element | null): string {
-  if (!el || el === document.body || el === document.documentElement) return 'document';
-  let cur: Element | null = el;
-  while (cur && cur !== document.body) {
-    // BEM ブロック = __ も -- も含まない、5文字以上のクラス
-    const block = [...cur.classList].find(c => !c.includes('__') && !c.includes('--') && c.length > 4);
-    if (block) {
-      const name = block
-        .replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
-        .replace(/^[a-z]/, c => c.toUpperCase());
-      const aria = el.getAttribute('aria-label');
-      return aria ? `${name}[${aria}]` : name;
-    }
-    cur = cur.parentElement;
+  if (!el || el === document.body || el === document.documentElement) return 'None';
+
+  // WorkoutArea (active content pane)
+  if (el.closest('.workout-area')) return 'Workout.ActivePane';
+
+  // WorkoutSettingPanel
+  const ws = el.closest('.workout-setting-panel');
+  if (ws) {
+    const txt = ws.querySelector('.workout-setting-panel__header')?.textContent?.toLowerCase() ?? '';
+    if (txt.includes('texteditor')) return 'WorkoutSetting.TextEditor';
+    if (txt.includes('markdown'))   return 'WorkoutSetting.Markdown';
+    if (txt.includes('datagrid'))   return 'WorkoutSetting.DataGrid';
+    if (txt.includes('card'))       return 'WorkoutSetting.Card';
+    if (txt.includes('graph'))      return 'WorkoutSetting.Graph';
+    return 'WorkoutSetting.Workout';
   }
-  const aria = el.getAttribute('aria-label');
-  return aria ? `${el.tagName.toLowerCase()}[${aria}]` : el.tagName.toLowerCase();
+
+  // ThinktankPanel
+  const tt = el.closest('.thinktank-panel, .thinktank-area');
+  if (tt) {
+    const panel = tt.closest('.thinktank-panel') ?? tt.parentElement ?? tt;
+    const label = panel.querySelector('.ribbon-icon-btn--active')?.getAttribute('aria-label') ?? '';
+    if (label === '検索')        return 'Thinktank.Search';
+    if (label === 'Thought一覧') return 'Thinktank.Thoughts';
+    if (label === 'AI相談')      return 'Thinktank.Chat';
+    if (label === '設定')        return 'Thinktank.Setting';
+    return 'Thinktank.Thinks';
+  }
+
+  // OverviewPanel
+  const ov = el.closest('.overview-panel, .overview-area');
+  if (ov) {
+    const panel = ov.closest('.overview-panel') ?? ov.parentElement ?? ov;
+    const label = panel.querySelector('.ribbon-icon-btn--active')?.getAttribute('aria-label') ?? '';
+    if (label === 'AI相談') return 'Overview.Chat';
+    if (label === '設定')   return 'Overview.Setting';
+    if (ov.querySelector('.ai-chat-view')) return 'Overview.Chat';
+    return 'Overview.Thinks.Analyze';
+  }
+
+  // ReThinkPanel
+  const rt = el.closest('.rethink-panel, .rethink-area');
+  if (rt) {
+    const panel = rt.closest('.rethink-panel') ?? rt.parentElement ?? rt;
+    const label = panel.querySelector('.ribbon-icon-btn--active')?.getAttribute('aria-label') ?? '';
+    if (label === '設定') return 'ReThink.Setting';
+    return 'ReThink.Chat';
+  }
+
+  return 'None';
 }
 
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
@@ -99,7 +133,7 @@ export function WorkoutToolBar({ panel }: Props) {
   useEffect(() => {
     if (mode !== 'keyaction') { setKaState(KA_INIT); return; }
 
-    const onKeyUp = (e: KeyboardEvent) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       const mods = [
         e.ctrlKey  && 'Ctrl',
         e.altKey   && 'Alt',
@@ -137,7 +171,7 @@ export function WorkoutToolBar({ panel }: Props) {
     // 初期フォーカス
     setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
 
-    window.addEventListener('keyup',      onKeyUp);
+    window.addEventListener('keydown',    onKeyDown);
     window.addEventListener('mousedown',  onMouse);
     window.addEventListener('mouseup',    onMouse);
     window.addEventListener('click',      onMouse);
@@ -149,7 +183,7 @@ export function WorkoutToolBar({ panel }: Props) {
     window.addEventListener('blur',       onWindowBlur);
 
     return () => {
-      window.removeEventListener('keyup',      onKeyUp);
+      window.removeEventListener('keydown',    onKeyDown);
       window.removeEventListener('mousedown',  onMouse);
       window.removeEventListener('mouseup',    onMouse);
       window.removeEventListener('click',      onMouse);
