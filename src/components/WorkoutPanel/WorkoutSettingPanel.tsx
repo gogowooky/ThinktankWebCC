@@ -2,7 +2,7 @@
  * WorkoutSettingPanel.tsx
  */
 
-import { useState } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import {
   GalleryThumbnails,
   PanelLeftDashed,
@@ -47,6 +47,10 @@ function AddIcon({ dir }: { dir: Dir }) {
   return <GalleryThumbnails size={16} className="ws-icon" style={{ transform }} />;
 }
 
+// ── Ref ─────────────────────────────────────────────────────────────────
+
+export interface WorkoutSettingPanelRef { focus: () => void; }
+
 // ── Props ────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -75,14 +79,28 @@ interface Props {
 
 // ── Component ────────────────────────────────────────────────────────────
 
-export function WorkoutSettingPanel({
+export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(function WorkoutSettingPanel({
   activeSettings, panel, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
   onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
   onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
-}: Props) {
+}: Props, ref) {
+  const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
+  const firstTexteditorRef = useRef<HTMLInputElement>(null);
+  const firstDatagridRef   = useRef<HTMLButtonElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      switch (activeSettings) {
+        case 'workout':    firstWorkoutRef.current?.focus();    break;
+        case 'texteditor': firstTexteditorRef.current?.focus(); break;
+        case 'datagrid':   firstDatagridRef.current?.focus();   break;
+      }
+    },
+  }));
+
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
   const panelName = entry?.name ?? '';
@@ -120,6 +138,7 @@ export function WorkoutSettingPanel({
                     <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="左に分割して新Pane追加">
                         <button
+                          ref={firstWorkoutRef}
                           className="workout-setting-panel__icon-btn"
                           onClick={hasFocus ? onSplitLeft : undefined}
                           disabled={!hasFocus}
@@ -258,6 +277,7 @@ export function WorkoutSettingPanel({
                 <div className="workout-setting-panel__section-content">
                   <label className="workout-setting-panel__checkbox-label">
                     <input
+                      ref={firstTexteditorRef}
                       type="checkbox"
                       checked={panel.TextEditor.LineNumbers.IsVisible}
                       onChange={e => panel.SetTextEditorLineNumbersVisible(e.target.checked)}
@@ -510,6 +530,7 @@ export function WorkoutSettingPanel({
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
                     <button
+                      ref={firstDatagridRef}
                       className="workout-setting-panel__icon-btn"
                       onClick={onCreateTable}
                       data-tip="新規テーブルファイルを作成"
@@ -550,4 +571,4 @@ export function WorkoutSettingPanel({
 
     </div>
   );
-}
+});

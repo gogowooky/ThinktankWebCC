@@ -20,6 +20,7 @@ import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutRibbon } from './WorkoutRibbon';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
+import type { WorkoutSettingPanelRef } from './WorkoutSettingPanel';
 import { WorkoutToolBar } from './WorkoutToolBar';
 import { extractLinkDrop } from './WorkoutAreaRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
@@ -185,6 +186,14 @@ export function WorkoutPanel({ app }: Props) {
 
   // 設定パネル: 開閉は panel.IsAreaOpen
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
+  const settingPanelRef = useRef<WorkoutSettingPanelRef>(null);
+
+  // 設定パネルが開いた時・モード切替時に対応要素へフォーカス
+  useEffect(() => {
+    if (!panel.IsAreaOpen) return;
+    const timer = setTimeout(() => settingPanelRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
+  }, [panel.IsAreaOpen, panel.ViewMode]);
 
   // split 比率（node.id → 0〜1）
   const [splitRatios, setSplitRatios] = useState<Record<string, number>>({});
@@ -714,6 +723,7 @@ export function WorkoutPanel({ app }: Props) {
         width={settingsPanelWidth}
       >
         <WorkoutSettingPanel
+          ref={settingPanelRef}
           activeSettings={panel.ViewMode}
           panel={panel}
           width={settingsPanelWidth}

@@ -1,5 +1,10 @@
 /* WorkoutSettingPanel.css */
 
+/* パネル内にフォーカスがある間、ヘッダーに下線を表示 */
+.workout-setting-panel:focus-within .workout-setting-panel__header {
+  text-decoration: underline;
+}
+
 .workout-setting-panel {
   display: flex;
   flex-direction: column;
