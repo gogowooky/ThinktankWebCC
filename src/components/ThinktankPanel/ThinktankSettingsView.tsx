@@ -3,7 +3,7 @@
  * 保管庫名・アプリケーション状態・データ編集モードを設定するビュー。
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight, Columns4, Columns2, Brain } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { batchGenerateEmbeddings, getEmbeddingStatus } from '../../services/EmbeddingApiService';
@@ -28,6 +28,10 @@ function SyncIcon({ state }: { state: SyncState }) {
     case 'error':   return <AlertCircle size={13} />;
     case 'offline': return <WifiOff     size={13} />;
   }
+}
+
+export interface ThinktankSettingsViewRef {
+  focus: () => void;
 }
 
 interface Props {
@@ -61,7 +65,15 @@ function saveValue(name: string): string[] {
   return next;
 }
 
-export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayoutModeChange }: Props) {
+export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>(function ThinktankSettingsView(
+  { syncState = 'synced', layoutMode, onLayoutModeChange }: Props,
+  ref,
+) {
+  const firstRadioRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => ({
+    focus: () => firstRadioRef.current?.focus(),
+  }));
+
   const mode = StorageManager.instance.mode;
   const [value,          setValue]          = useState(loadValue);
   const [history,        setHistory]        = useState(loadHistory);
@@ -128,6 +140,7 @@ export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayo
             </p>
             <label className={`tt-settings-mode-option${layoutMode === 'sipoc' ? ' tt-settings-mode-option--active' : ''}`}>
               <input
+                ref={firstRadioRef}
                 type="radio"
                 name="layout-mode"
                 value="sipoc"
@@ -299,4 +312,4 @@ export function ThinktankSettingsView({ syncState = 'synced', layoutMode, onLayo
       </section>
     </div>
   );
-}
+});

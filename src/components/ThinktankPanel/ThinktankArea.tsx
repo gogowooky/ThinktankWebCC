@@ -5,13 +5,14 @@
  * 日付フィルターは全モード共通で適用される。
  */
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
 import { UnifiedFilterPanel } from './UnifiedFilterPanel';
+import type { UnifiedFilterPanelRef } from './UnifiedFilterPanel';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
 import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchView } from './ThinktankSearchView';
@@ -24,6 +25,7 @@ import { streamChat } from '../../services/ChatApiService';
 import { semanticSearch } from '../../services/EmbeddingApiService';
 import type { SemanticSearchResult } from '../../services/EmbeddingApiService';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
+import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import './ThinktankArea.css';
@@ -86,6 +88,29 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
   const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
+
+  const filterPanelRef   = useRef<UnifiedFilterPanelRef>(null);
+  const settingsViewRef  = useRef<ThinktankSettingsViewRef>(null);
+
+  // mode 切り替え時: 適切な入力要素に自動フォーカス
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      switch (panel.ViewMode) {
+        case 'filter':
+        case 'search':
+        case 'thoughts':
+          filterPanelRef.current?.focus();
+          break;
+        case 'chat':
+          aiChatViewRef.current?.focus();
+          break;
+        case 'settings':
+          settingsViewRef.current?.focus();
+          break;
+      }
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [panel.ViewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 検索 state（ビュー切り替えで消えないよう ThinktankArea で保持）
   const [searchQuery,    setSearchQuery]    = useState('');
@@ -388,7 +413,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   } else if (panel.ViewMode === 'chat') {
     content = <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
   } else if (panel.ViewMode === 'settings') {
-    content = <ThinktankSettingsView layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
+    content = <ThinktankSettingsView ref={settingsViewRef} layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
   } else {
     // デフォルト: thoughts モード
     content = (
@@ -443,6 +468,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       )}
 
       <UnifiedFilterPanel
+        ref={filterPanelRef}
         historyKey={panel.ViewMode === 'search' ? 'tt-search' : 'tt-filter'}
         textValue={
           panel.ViewMode === 'search' ? searchQuery :
@@ -473,7 +499,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           allThoughts.length
         }
         onSearch={panel.ViewMode === 'search' ? handleSearch : undefined}
-        showTextFilter={panel.ViewMode !== 'chat'}
+        showTextFilter={panel.ViewMode !== 'chat' && panel.ViewMode !== 'settings'}
         showDateFilters={showDateFilter && ['thoughts', 'filter', 'search'].includes(panel.ViewMode)}
       />
 

@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Type, CalendarDays, CalendarClock, ChevronDown, X } from 'lucide-react';
 import { parseRange } from '../../utils/dateUtils';
 import { FilterHistoryPulldown } from './FilterHistoryPulldown';
 import { saveHistory } from '../../utils/historyUtils';
 import './UnifiedFilterPanel.css';
+
+export interface UnifiedFilterPanelRef {
+  focus: () => void;
+}
 
 interface Props {
   historyKey:       string;
@@ -28,7 +32,7 @@ interface Props {
   showDateFilters?: boolean;
 }
 
-export const UnifiedFilterPanel = React.memo(({
+export const UnifiedFilterPanel = React.memo(forwardRef<UnifiedFilterPanelRef, Props>(function UnifiedFilterPanel({
   historyKey,
   textValue, onTextChange,
   createdDate, onCreatedDateChange,
@@ -39,8 +43,12 @@ export const UnifiedFilterPanel = React.memo(({
   onSearch,
   showTextFilter = true,
   showDateFilters = true,
-}: Props) => {
+}, ref) {
   const [showHistory, setShowHistory] = useState(false);
+  const textInputRef = useRef<HTMLInputElement>(null);
+  useImperativeHandle(ref, () => ({
+    focus: () => textInputRef.current?.focus(),
+  }));
 
   const handleTextKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && textValue.trim()) {
@@ -62,6 +70,7 @@ export const UnifiedFilterPanel = React.memo(({
             <Type size={12} className="unified-filter-icon" />
             <div className="unified-filter-text-wrapper">
               <input
+                ref={textInputRef}
                 className="unified-filter-text-input"
                 type="text"
                 value={textValue}
@@ -176,4 +185,4 @@ export const UnifiedFilterPanel = React.memo(({
       )}
     </div>
   );
-});
+}));

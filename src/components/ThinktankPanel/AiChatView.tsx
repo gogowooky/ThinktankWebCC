@@ -15,6 +15,7 @@ import './AiChatView.css';
 export interface AiChatViewRef {
   scrollToPrevUser: () => void;
   scrollToNextUser: () => void;
+  focus:            () => void;
 }
 
 interface Props {
@@ -86,6 +87,7 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
         }
       }
     },
+    focus: () => { textareaRef.current?.focus(); },
   }), []);
 
   useEffect(() => {
