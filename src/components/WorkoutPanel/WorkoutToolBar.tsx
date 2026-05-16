@@ -60,26 +60,22 @@ function getFocusName(el: Element | null): string {
     return 'Thinktank.Thinks';
   }
 
-  // OverviewPanel
+  // OverviewPanel — レンダリング済みの子コンポーネントのクラスで判別
   const ov = el.closest('.overview-panel, .overview-area');
   if (ov) {
-    const panel = ov.closest('.overview-panel') ?? ov.parentElement ?? ov;
-    const label = panel.querySelector('.ribbon-icon-btn--active')?.getAttribute('aria-label') ?? '';
-    if (label === 'AI相談') return 'Overview.Chat';
-    if (label === '設定')   return 'Overview.Setting';
-    if (ov.querySelector('.ai-chat-view')) return 'Overview.Chat';
-    const titleText = panel.querySelector('.overview-area__title-row')?.textContent ?? '';
-    if (titleText.includes('Thought分析')) return 'Overview.Analyze';
+    const root = ov.closest('.overview-panel') ?? ov;
+    if (root.querySelector('.ov-settings-view')) return 'Overview.Setting';
+    if (root.querySelector('.ai-chat-view'))      return 'Overview.Chat';
+    if (root.querySelector('.graph-media'))        return 'Overview.Analyze';
     return 'Overview.Thinks';
   }
 
-  // ReThinkPanel
+  // ReThinkPanel — .rethink-chat の有無でモードを判別
   const rt = el.closest('.rethink-panel, .rethink-area');
   if (rt) {
-    const panel = rt.closest('.rethink-panel') ?? rt.parentElement ?? rt;
-    const label = panel.querySelector('.ribbon-icon-btn--active')?.getAttribute('aria-label') ?? '';
-    if (label === '設定') return 'ReThink.Setting';
-    return 'ReThink.Chat';
+    const root = rt.closest('.rethink-panel') ?? rt;
+    if (root.querySelector('.rethink-chat')) return 'ReThink.Chat';
+    return 'ReThink.Setting';
   }
 
   return 'None';
@@ -163,8 +159,11 @@ export function WorkoutToolBar({ panel }: Props) {
       setKaState(s => ({ ...s, touch: `${e.type}(${count})` }));
     };
 
-    const onFocusIn = (e: FocusEvent) => {
-      setKaState(s => ({ ...s, focus: getFocusName(e.target as Element) }));
+    const onFocusIn = () => {
+      // rAF でReact再描画後に判定（リボンボタン等のクリック直後にモードが確定する）
+      requestAnimationFrame(() => {
+        setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
+      });
     };
     const onWindowBlur = () => {
       setKaState(s => ({ ...s, focus: '-' }));
