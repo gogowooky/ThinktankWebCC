@@ -68,7 +68,9 @@ function getFocusName(el: Element | null): string {
     if (label === 'AI相談') return 'Overview.Chat';
     if (label === '設定')   return 'Overview.Setting';
     if (ov.querySelector('.ai-chat-view')) return 'Overview.Chat';
-    return 'Overview.Thinks.Analyze';
+    const titleText = panel.querySelector('.overview-area__title-row')?.textContent ?? '';
+    if (titleText.includes('Thought分析')) return 'Overview.Analyze';
+    return 'Overview.Thinks';
   }
 
   // ReThinkPanel
