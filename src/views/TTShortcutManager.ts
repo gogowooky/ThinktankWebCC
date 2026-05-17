@@ -27,6 +27,8 @@
  *   キーボード: {ctrl|alt|shift|meta}+{key}  ※ 順不同・小文字
  *   マウス:     left1 / left2 / right1 / wheelup / wheeldown（修飾付き可）
  *   コード入力: Ctrl+K Z のようにスペース区切り2打鍵（* フォーカスのみ）
+ *   複数指定:   | 区切りで複数キーを同一アクションに割り当て可能
+ *               | 自体を指定したい場合は "" でくくる（例: "ctrl+|"）
  */
 
 import type { TTApplication } from './TTApplication';
@@ -54,6 +56,33 @@ const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   { focus: '*', exmode: '', key: 'ctrl+shift+w', action: 'TextEditor.WordWrap.IsVisible:toggle',       description: '折り返し切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+m', action: 'TextEditor.Minimap.IsVisible:toggle',        description: 'ミニマップ切り替え' },
 ];
+
+// ── キー複数指定パーサー ──────────────────────────────────────────────────
+
+/**
+ * key フィールドの複数値を | で分割して返す。
+ * ダブルクォートで囲まれた部分の | はリテラルとして扱う。
+ * 例: 'ctrl+z|"ctrl+|"' → ['ctrl+z', 'ctrl+|']
+ */
+function parseMultiKey(raw: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuote = false;
+  for (const ch of raw) {
+    if (ch === '"') {
+      inQuote = !inQuote;
+    } else if (ch === '|' && !inQuote) {
+      const k = normalizeKeyStr(current);
+      if (k) result.push(k);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  const k = normalizeKeyStr(current);
+  if (k) result.push(k);
+  return result;
+}
 
 // ── キー正規化ユーティリティ ──────────────────────────────────────────────
 
@@ -415,7 +444,7 @@ export class TTShortcutManager {
       'Keyboard Shortcuts',
       '# focus: フォーカス名（*=すべて、Workout*=Workout内すべて）',
       '# exmode: ExMode名（空=ExModeなし）',
-      '# key: {ctrl|alt|shift|meta}+{key}  マウス: left1 / left2 / right1 / wheelup / wheeldown',
+      '# key: {ctrl|alt|shift|meta}+{key}  マウス: left1/left2/right1/wheelup/wheeldown  複数: | 区切り（| 自体は ""でくくる）',
       '# action: ActionID または {状態変数}:{設定値} または ExMode:{name}',
       '',
       '> focus,exmode,key,action,description',
@@ -447,15 +476,16 @@ export class TTShortcutManager {
       return;
     }
 
-    this._shortcuts = section.rows
-      .map(row => ({
-        focus:       focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*',
-        exmode:      emIdx  >= 0 ? (row[emIdx]?.trim()  ?? '') : '',
-        key:         normalizeKeyStr(row[keyIdx]?.trim() ?? ''),
-        action:      row[actIdx]?.trim() ?? '',
-        description: dscIdx >= 0 ? (row[dscIdx]?.trim() ?? '') : '',
-      }))
-      .filter(s => s.key && s.action);
+    this._shortcuts = section.rows.flatMap(row => {
+      const focus       = focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*';
+      const exmode      = emIdx  >= 0 ? (row[emIdx]?.trim()  ?? '') : '';
+      const action      = row[actIdx]?.trim() ?? '';
+      const description = dscIdx >= 0 ? (row[dscIdx]?.trim() ?? '') : '';
+      const keys        = parseMultiKey(row[keyIdx]?.trim() ?? '');
+      return keys
+        .filter(k => k && action)
+        .map(key => ({ focus, exmode, key, action, description }));
+    });
 
     this._buildKeyIndex();
   }
