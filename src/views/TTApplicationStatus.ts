@@ -1,0 +1,43 @@
+/**
+ * TTApplicationStatus.ts
+ * アプリケーション全体の特殊状態を管理するビューモデル。
+ *
+ * ExMode: モディファイアキーを保持している間だけ有効な一時モード。
+ *   - _exMode    : 現在の ExMode 名（空文字 = 非アクティブ）
+ *   - _exModeModKey : ExMode 設定時に押下されていたモディファイアキー文字列
+ *   - SetExMode(name, modKey) : ExMode を開始する
+ *   - ClearExMode()           : ExMode を終了する
+ */
+
+import { TTNotifyBase } from '../models/TTNotifyBase';
+
+export class TTApplicationStatus extends TTNotifyBase {
+  private _exMode:            string = '';
+  private _exModeModKey:      string = '';
+  private _lastActionDisplay: string = '';
+
+  get ExMode():            string { return this._exMode; }
+  get ExModeModKey():      string { return this._exModeModKey; }
+  get LastActionDisplay(): string { return this._lastActionDisplay; }
+
+  /** ExMode を開始する。modKey には設定時点で押下中のモディファイア文字列を渡す。 */
+  SetExMode(name: string, modKey: string): void {
+    this._exMode       = name;
+    this._exModeModKey = modKey;
+    this.NotifyUpdated();
+  }
+
+  /** ExMode を終了してクリアする。すでに非アクティブな場合は何もしない。 */
+  ClearExMode(): void {
+    if (!this._exMode) return;
+    this._exMode       = '';
+    this._exModeModKey = '';
+    this.NotifyUpdated();
+  }
+
+  /** 直近のアクション表示文字列を更新する（KeyAction パネルにリアルタイム表示）。 */
+  SetLastActionDisplay(v: string): void {
+    this._lastActionDisplay = v;
+    this.NotifyUpdated();
+  }
+}

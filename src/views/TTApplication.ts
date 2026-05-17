@@ -12,6 +12,7 @@ import { TTThinktankPanel } from './TTThinktankPanel';
 import { TTOverviewPanel } from './TTOverviewPanel';
 import { TTWorkoutPanel } from './TTWorkoutPanel';
 import { TTReThinkPanel } from './TTReThinkPanel';
+import { TTApplicationStatus } from './TTApplicationStatus';
 import type { MediaType } from '../types';
 
 export class TTApplication extends TTUIItem {
@@ -20,6 +21,9 @@ export class TTApplication extends TTUIItem {
   public OverviewPanel: TTOverviewPanel;
   public WorkoutPanel: TTWorkoutPanel;
   public ReThinkPanel: TTReThinkPanel;
+
+  /** アプリケーション全体の特殊状態 */
+  public readonly Status: TTApplicationStatus;
 
   /** データ層（シングルトン参照）*/
   public get Models(): TTModels {
@@ -41,12 +45,14 @@ export class TTApplication extends TTUIItem {
     this.OverviewPanel  = new TTOverviewPanel();
     this.WorkoutPanel   = new TTWorkoutPanel();
     this.ReThinkPanel   = new TTReThinkPanel();
+    this.Status         = new TTApplicationStatus();
 
     // 子パネルの親を自身に設定（通知伝播用）
     this.ThinktankPanel._parent = this;
     this.OverviewPanel._parent  = this;
     this.WorkoutPanel._parent   = this;
     this.ReThinkPanel._parent   = this;
+    this.Status._parent         = this;
   }
 
   public static get Instance(): TTApplication {

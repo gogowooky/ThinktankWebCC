@@ -185,6 +185,20 @@
   text-overflow: ellipsis;
 }
 
+.workout-toolbar__ka-value--exmode {
+  color: #f9a825;
+  background: rgba(249, 168, 37, 0.15);
+  font-weight: 600;
+}
+
+.workout-toolbar__ka-value--action {
+  color: #aaa;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ── 作成者バナー ── */
 .workout-toolbar__author-banner {
   flex: 1;

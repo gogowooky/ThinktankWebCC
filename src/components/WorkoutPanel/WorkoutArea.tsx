@@ -163,6 +163,12 @@ export function WorkoutArea({
     return () => clearTimeout(timer);
   }, [isFocused]);
 
+  // メディアタイプ切り替え時に対応する入力要素へフォーカス
+  useEffect(() => {
+    const timer = setTimeout(() => mediaRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
+  }, [area.MediaType]);
+
   // think データ取得
   const think = vault.GetThink(area.ResourceID) ?? null;
   useAppUpdate(panel);
@@ -258,6 +264,7 @@ export function WorkoutArea({
       {/* メディアコンテンツ */}
       <div
         className="workout-area__content"
+        data-media-type={area.MediaType}
         onDragOverCapture={handleContentDragOver}
         onDragLeaveCapture={handleContentDragLeave}
         onDropCapture={handleContentDrop}

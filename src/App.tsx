@@ -11,6 +11,7 @@ import { TTModels } from './models/TTModels'
 import { TTApplication } from './views/TTApplication'
 import { TTUIStateManager } from './views/TTUIStateManager'
 import { TTShortcutManager } from './views/TTShortcutManager'
+import { getFocusName } from './utils/getFocusName'
 
 export default function App() {
   useEffect(() => {
@@ -38,10 +39,28 @@ export default function App() {
       })
     }
 
-    // ③ グローバルキーボードショートカットリスナー登録
-    const handleKeyDown = (e: KeyboardEvent) =>
-      TTShortcutManager.instance.handleKeyDown(e)
-    document.addEventListener('keydown', handleKeyDown)
+    // ③ グローバルキーボード / マウス / ホイールショートカットリスナー登録
+    const handleKeyDown   = (e: KeyboardEvent) => TTShortcutManager.instance.handleKeyDown(e)
+    const handleClick     = (e: MouseEvent)    => TTShortcutManager.instance.handleMouseEvent('click',       e)
+    const handleDblClick  = (e: MouseEvent)    => TTShortcutManager.instance.handleMouseEvent('dblclick',    e)
+    const handleCtxMenu   = (e: MouseEvent)    => TTShortcutManager.instance.handleMouseEvent('contextmenu', e)
+    const handleWheel     = (e: WheelEvent)    => TTShortcutManager.instance.handleWheelEvent(e)
+    let _focusRaf = 0
+    const handleFocusIn   = () => {
+      cancelAnimationFrame(_focusRaf)
+      _focusRaf = requestAnimationFrame(() => {
+        TTShortcutManager.instance.onFocusChange(getFocusName(document.activeElement))
+      })
+    }
+
+    // capture: true でキャプチャフェーズ登録 → テキストボックス・Monaco 含む
+    // あらゆる要素より先に実行されるため ExMode ショートカット等が必ず発動する
+    document.addEventListener('keydown',     handleKeyDown,  { capture: true })
+    document.addEventListener('click',       handleClick)
+    document.addEventListener('dblclick',    handleDblClick)
+    document.addEventListener('contextmenu', handleCtxMenu)
+    document.addEventListener('wheel',       handleWheel,    { passive: false })
+    document.addEventListener('focusin',     handleFocusIn)
 
     // デバッグ用リセット関数
     window.__runTests = () => {
@@ -51,7 +70,13 @@ export default function App() {
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keydown',     handleKeyDown,  { capture: true })
+      document.removeEventListener('click',       handleClick)
+      document.removeEventListener('dblclick',    handleDblClick)
+      document.removeEventListener('contextmenu', handleCtxMenu)
+      document.removeEventListener('wheel',       handleWheel)
+      document.removeEventListener('focusin',     handleFocusIn)
+      cancelAnimationFrame(_focusRaf)
     }
   }, [])
 

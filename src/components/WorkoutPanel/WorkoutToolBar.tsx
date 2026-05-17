@@ -11,6 +11,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { TTApplication } from '../../views/TTApplication';
+import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import copywriteRaw from '../../../docs/copywrite.txt?raw';
 import './WorkoutToolBar.css';
@@ -28,66 +30,6 @@ interface KAState {
   focus:     string;
 }
 const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-', focus: '-' };
-
-/** フォーカス要素からコンポーネント名を返す */
-function getFocusName(el: Element | null): string {
-  if (!el || el === document.body || el === document.documentElement) return 'None';
-
-  // WorkoutArea (active content pane) — メディアタイプで細分化
-  const wa = el.closest('.workout-area');
-  if (wa) {
-    if (wa.querySelector('.text-editor-media')) return 'Workout.TextEditor';
-    if (wa.querySelector('.markdown-media'))     return 'Workout.Markdown';
-    if (wa.querySelector('.datagrid-media'))     return 'Workout.DataGrid';
-    if (wa.querySelector('.card-media'))         return 'Workout.Card';
-    if (wa.querySelector('.chat-media'))         return 'Workout.Chat';
-    return 'Workout.ActivePane';
-  }
-
-  // WorkoutSettingPanel
-  const ws = el.closest('.workout-setting-panel');
-  if (ws) {
-    const txt = ws.querySelector('.workout-setting-panel__header')?.textContent?.toLowerCase() ?? '';
-    if (txt.includes('texteditor')) return 'WorkoutSetting.TextEditor';
-    if (txt.includes('markdown'))   return 'WorkoutSetting.Markdown';
-    if (txt.includes('datagrid'))   return 'WorkoutSetting.DataGrid';
-    if (txt.includes('card'))       return 'WorkoutSetting.Card';
-    if (txt.includes('graph'))      return 'WorkoutSetting.Graph';
-    return 'WorkoutSetting.Workout';
-  }
-
-  // ThinktankPanel
-  const tt = el.closest('.thinktank-panel, .thinktank-area');
-  if (tt) {
-    const panel = tt.closest('.thinktank-panel') ?? tt.parentElement ?? tt;
-    const label = panel.querySelector('.ribbon-icon-btn--active')?.getAttribute('aria-label') ?? '';
-    if (label === '検索')        return 'Thinktank.Search';
-    if (label === 'Thought一覧') return 'Thinktank.Thoughts';
-    if (label === 'AI相談')      return 'Thinktank.Chat';
-    if (label === '設定')        return 'Thinktank.Setting';
-    return 'Thinktank.Thinks';
-  }
-
-  // OverviewPanel — レンダリング済みの子コンポーネントのクラスで判別
-  const ov = el.closest('.overview-panel, .overview-area');
-  if (ov) {
-    const root = ov.closest('.overview-panel') ?? ov;
-    if (root.querySelector('.ov-settings-view')) return 'Overview.Setting';
-    if (root.querySelector('.ai-chat-view'))      return 'Overview.Chat';
-    if (root.querySelector('.graph-media'))        return 'Overview.Analyze';
-    return 'Overview.Thinks';
-  }
-
-  // ReThinkPanel — .rethink-chat の有無でモードを判別
-  const rt = el.closest('.rethink-panel, .rethink-area');
-  if (rt) {
-    const root = rt.closest('.rethink-panel') ?? rt;
-    if (root.querySelector('.rethink-chat')) return 'ReThink.Chat';
-    return 'ReThink.Setting';
-  }
-
-  return 'None';
-}
 
 type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
 
@@ -113,11 +55,13 @@ interface Props {
 
 export function WorkoutToolBar({ panel }: Props) {
   useAppUpdate(panel);
+  const status = TTApplication.Instance.Status;
+  useAppUpdate(status);
 
   const [mode,        setMode]        = useState<ToolMode>('highlight');
   const [text,        setText]        = useState(() => panel.HighlightWord);
   const [isExpanded,  setIsExpanded]  = useState(false);
-  const [authorState, setAuthorState] = useState<AuthorState>('off');
+  const [authorState, setAuthorState] = useState<AuthorState>('static');
   const [kaState,     setKaState]     = useState<KAState>(KA_INIT);
   const inputRef       = useRef<HTMLInputElement>(null);
   const rafRef         = useRef<number>(0);
@@ -135,6 +79,17 @@ export function WorkoutToolBar({ panel }: Props) {
     if (mode === 'highlight') setText(panel.HighlightWord);
   }, [panel.HighlightWord, mode]);
 
+  // ExMode: モディファイアキーがすべて離されたら自動クリア（常時監視）
+  useEffect(() => {
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (!status.ExMode) return;
+      const anyModHeld = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+      if (!anyModHeld) status.ClearExMode();
+    };
+    window.addEventListener('keyup', onKeyUp);
+    return () => window.removeEventListener('keyup', onKeyUp);
+  }, [status]);
+
   // KeyAction モード: window 全体のイベントをウォッチ
   useEffect(() => {
     if (mode !== 'keyaction') { setKaState(KA_INIT); return; }
@@ -148,6 +103,17 @@ export function WorkoutToolBar({ panel }: Props) {
       ].filter(Boolean).join('+') || '-';
       const k = e.key === ' ' ? 'Space' : (e.key.length === 1 ? e.key.toUpperCase() : e.key);
       setKaState(s => ({ ...s, modifiers: mods, key: k }));
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      // 離した後に残っているモディファイアキーを再計算、KEYはクリア
+      const mods = [
+        e.ctrlKey  && 'Ctrl',
+        e.altKey   && 'Alt',
+        e.shiftKey && 'Shift',
+        e.metaKey  && 'Meta',
+      ].filter(Boolean).join('+') || '-';
+      setKaState(s => ({ ...s, modifiers: mods, key: '-' }));
     };
 
     const onMouse = (e: MouseEvent) => {
@@ -181,6 +147,7 @@ export function WorkoutToolBar({ panel }: Props) {
     setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
 
     window.addEventListener('keydown',    onKeyDown);
+    window.addEventListener('keyup',      onKeyUp);
     window.addEventListener('mousedown',  onMouse);
     window.addEventListener('mouseup',    onMouse);
     window.addEventListener('click',      onMouse);
@@ -193,6 +160,7 @@ export function WorkoutToolBar({ panel }: Props) {
 
     return () => {
       window.removeEventListener('keydown',    onKeyDown);
+      window.removeEventListener('keyup',      onKeyUp);
       window.removeEventListener('mousedown',  onMouse);
       window.removeEventListener('mouseup',    onMouse);
       window.removeEventListener('click',      onMouse);
@@ -285,6 +253,27 @@ export function WorkoutToolBar({ panel }: Props) {
           <span className="workout-toolbar__ka-field">
             <span className="workout-toolbar__ka-label">touch</span>
             <span className="workout-toolbar__ka-value">{kaState.touch}</span>
+          </span>
+          <span className="workout-toolbar__ka-divider" />
+          <span className="workout-toolbar__ka-field">
+            <span className="workout-toolbar__ka-label">exmode</span>
+            <span className={`workout-toolbar__ka-value${status.ExMode ? ' workout-toolbar__ka-value--exmode' : ''}`}>
+              {status.ExMode || '-'}
+            </span>
+          </span>
+          {status.ExMode && (
+            <>
+              <span className="workout-toolbar__ka-sep">·</span>
+              <span className="workout-toolbar__ka-field">
+                <span className="workout-toolbar__ka-label">exmod</span>
+                <span className="workout-toolbar__ka-value">{status.ExModeModKey}</span>
+              </span>
+            </>
+          )}
+          <span className="workout-toolbar__ka-divider" />
+          <span className="workout-toolbar__ka-field">
+            <span className="workout-toolbar__ka-label">action</span>
+            <span className="workout-toolbar__ka-value workout-toolbar__ka-value--action">{status.LastActionDisplay || '-'}</span>
           </span>
         </div>
       ) : (
