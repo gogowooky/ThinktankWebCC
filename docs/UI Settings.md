@@ -4,9 +4,6 @@ UI Settings
 
 > key,current,type,description,candidates,restore,default
 
-> current 列に `const` と記載されているエントリは固定値プロパティです。
-> default 値は変更可能ですが、ファイルを更新しても current 列は常に `const` のまま書き換えないでください。
-
 # Panel
 
 ThinktankPanel.IsAreaOpen,false,boolean,Thinktankパネル表示,(true|false|toggle),current,false
@@ -14,41 +11,43 @@ OverviewPanel.IsAreaOpen,false,boolean,Overviewパネル表示,(true|false|toggl
 ReThinkPanel.IsAreaOpen,true,boolean,ReThinkパネル表示,(true|false|toggle),current,false
 WorkoutPanel.IsAreaOpen,false,boolean,Workoutパネル表示,(true|false|toggle),current,false
 
-ThinktankPanel.ViewMode,chat,string,Thinktankパネルモード,(thoughts|filter|search|chat|settings|next|prev),current,filter
-OverviewPanel.ViewMode,graph,string,Overviewパネルモード,(datagrid|graph|chat|settings|next|prev),current,filter
-ReThinkPanel.ViewMode,settings,string,Overviewパネルモード,(chat|settings|next|prev),current,chat
-WorkoutPanel.ViewMode,texteditor,string,ToDoパネルモード,(workout|texteditor|markdown|datagrid|card|graph|next|prev),current,workout
+ThinktankPanel.ViewMode,filter,string,Thinktankパネルモード,(thoughts|filter|search|chat|settings|next|prev),current,filter
+OverviewPanel.ViewMode,datagrid,string,Overviewパネルモード,(datagrid|graph|chat|settings|next|prev),current,filter
+ReThinkPanel.ViewMode,chat,string,Overviewパネルモード,(chat|settings|next|prev),current,chat
+WorkoutPanel.ViewMode,workout,string,ToDoパネルモード,(workout|texteditor|markdown|datagrid|card|graph|next|prev),current,workout
 
 # TextEditor
 
-TextEditor.LineNumbers.IsVisible,               true,   boolean,    行番号表示,(true|false|toggle),current,false
-TextEditor.WordWrap.IsVisible,                  true,   boolean,    折り返し,(true|false|toggle),current,false
-TextEditor.Minimap.IsVisible,                   false,  boolean,    ミニマップ,(true|false|toggle),current,false
-TextEditor.FullWidthSpace.IsVisible,            false,  boolean,    全角スペース表示,(true|false|toggle),current,false
-TextEditor.UnicodeHighlight.IsVisible,          false,  boolean,    Unicode強調,(true|false|toggle),current,false
-TextEditor.BracketPairColorization.IsVisible,   true,   boolean,    括弧ペア色分け,(true|false|toggle),current,false
-WorkoutPanel.HighlightWord,                     "Is, false",string, ハイライトキーワード,".*",current,""
+TextEditor.LineNumbers.IsVisible,false,   boolean,    行番号表示,(true|false|toggle),current,false
+TextEditor.WordWrap.IsVisible,true,   boolean,    折り返し,(true|false|toggle),current,false
+TextEditor.Minimap.IsVisible,false,  boolean,    ミニマップ,(true|false|toggle),current,false
+TextEditor.FullWidthSpace.IsVisible,false,  boolean,    全角スペース表示,(true|false|toggle),current,false
+TextEditor.UnicodeHighlight.IsVisible,false,  boolean,    Unicode強調,(true|false|toggle),current,false
+TextEditor.BracketPairColorization.IsVisible,true,   boolean,    括弧ペア色分け,(true|false|toggle),current,false
 
-TextEditor.Color.Background,#f5f5f5,color,背景色,"#[a-f0-9]+",current,#f5f5f5
-TextEditor.Color.Text,#1e1e1e,color,文字色,"#[a-f0-9]+",current,#1e1e1e
-TextEditor.Color.Selection,#c6e6c6ff,color,選択色,"#[a-f0-9]+",current,#c6e6c6ff
-TextEditor.Color.Occurrence,#aac6aaff,color,一致色,"#[a-f0-9]+",current,#adceadff
+TextEditor.Text.Background,#f5f5f5, color, 文字背景色, #[a-f0-9]+, current, #f5f5f5
+TextEditor.Text.Foreground,#1e1e1e, color, 文字前景色, #[a-f0-9]+, current, #1e1e1e
+TextEditor.Selection.Background, #c6e6c6ff, color, 選択範囲背景色, #[a-f0-9]+, current, #c6e6c6ff
+TextEditor.Occurrence.Background, #aac6aaff, color, 一致文字背景色, #[a-f0-9]+, current, #adceadff
 
-TextEditor.Style.Section,TextEditor.SectionStyle.Preset1,string,セクションスタイル,"TextEditor.SectionStyle.Preset[1-5]",current,"TextEditor.SectionStyle.Preset1"
+# TextEditor: Section
 
-TextEditor.SectionStyle.Preset1,const,json,セクションスタイルプリセット1,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
-TextEditor.SectionStyle.Preset2,const,json,セクションスタイルプリセット2,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
-TextEditor.SectionStyle.Preset3,const,json,セクションスタイルプリセット3,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
-TextEditor.SectionStyle.Preset4,const,json,セクションスタイルプリセット4,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
-TextEditor.SectionStyle.Preset5,const,json,セクションスタイルプリセット5,".*",default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.Style.Section,TextEditor.SectionStyle.Preset1,string,セクションスタイル,TextEditor.SectionStyle.Preset[1-5],current,TextEditor.SectionStyle.Preset1
 
-# --- 挿入
+TextEditor.SectionStyle.Preset1,const,json,セクションスタイルプリセット1,.*,default,"[{""color"":""#351dbeff"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset2,const,json,セクションスタイルプリセット2,.*,default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset3,const,json,セクションスタイルプリセット3,.*,default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset4,const,json,セクションスタイルプリセット4,.*,default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
+TextEditor.SectionStyle.Preset5,const,json,セクションスタイルプリセット5,.*,default,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]"
 
-;
-;
-;
-;
-# WorkoutPanel.EditorBackground,#f5f5f5,color,背景色,#f5f5f5,#f5f5f5,
-# WorkoutPanel.EditorForeground,#1e1e1e,color,前景色,#1e1e1e,#1e1e1e,
-# WorkoutPanel.EditorHeadingStyles,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]",json,見出しスタイル(JSON),"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]","[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]",
-# WorkoutPanel.EditorHighlightStyles,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]",json,ハイライトスタイル(JSON),"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]","[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]",
+# Highlight
+
+WorkoutPanel.Highlight.KeyWord,,string, ハイライトキーワード,.*,current,
+
+WorkoutPanel.Style.Highlight,WorkoutPanel.HighlightStyle.Preset1,string,ハイライトスタイル,WorkoutPanel.HighlightStyle.Preset[1-5],current,WorkoutPanel.HighlightStyle.Preset1
+
+WorkoutPanel.HighlightStyle.Preset1,const,json,セクションスタイルプリセット1,.*,default,"[{""backgroundColor"":""#ae123eff"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]"
+WorkoutPanel.HighlightStyle.Preset2,const,json,セクションスタイルプリセット2,.*,default,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]"
+WorkoutPanel.HighlightStyle.Preset3,const,json,セクションスタイルプリセット3,.*,default,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]"
+WorkoutPanel.HighlightStyle.Preset4,const,json,セクションスタイルプリセット4,.*,default,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]"
+WorkoutPanel.HighlightStyle.Preset5,const,json,セクションスタイルプリセット5,.*,default,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]"

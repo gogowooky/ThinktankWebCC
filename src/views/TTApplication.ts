@@ -25,6 +25,9 @@ export class TTApplication extends TTUIItem {
   /** アプリケーション全体の特殊状態 */
   public readonly Status: TTApplicationStatus;
 
+  /** フォーカス中のカラム名 */
+  public FocusedColumn: string = 'Thinktank';
+
   /** データ層（シングルトン参照）*/
   public get Models(): TTModels {
     return TTModels.Instance;

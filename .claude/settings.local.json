@@ -107,7 +107,10 @@
       "Bash(node C:\\\\Users\\\\gogow\\\\test_patterns.js)",
       "Read(//c/Users/gogow/**)",
       "Bash(node test_patterns.js)",
-      "Bash(dir \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\\\\electron\" /b)"
+      "Bash(dir \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\\\\electron\" /b)",
+      "Bash(python)",
+      "Bash(git revert *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)"
     ]
   }
 }

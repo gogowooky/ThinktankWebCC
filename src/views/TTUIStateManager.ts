@@ -57,7 +57,7 @@ interface PropDef {
 // 特別な値: toggle (boolean のみ), next (列挙型), prev (列挙型)
 // ※ set() 内で NotifyUpdated() は呼ばない。_applyContent() がまとめて呼ぶ。
 
-type PanelKey = 'ThinktankPanel' | 'OverviewPanel' | 'WorkoutPanel' | 'ReThinkPanel';
+type PanelKey = 'ThinktankPanel' | 'OverviewPanel' | 'WorkoutPanel' | 'ReThinkPanel' | 'Application';
 
 interface PropSpec {
   panel:       PanelKey;
@@ -267,6 +267,35 @@ const PROP_SPECS: Record<string, PropSpec> = {
     description: 'ハイライトキーワード',
     get: (app) => app.WorkoutPanel.HighlightWord,
     set: (app, v) => { app.WorkoutPanel.HighlightWord = v; },
+  },
+
+  // ── Application ──────────────────────────────────────────────────────────
+  'Application.FocusedColumn': {
+    panel: 'Application',
+    default: 'Thinktank', type: 'string',
+    candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
+    description: 'フォーカスカラム',
+    get: (app) => app.FocusedColumn,
+    set: (app, v) => {
+      app.FocusedColumn = v;
+      const SELECTORS: Record<string, string> = {
+        'Thinktank':      '.thinktank-panel, .thinktank-area',
+        'Overview':       '.overview-panel, .overview-area',
+        'WorkoutSetting': '.workout-setting-panel',
+        'Workout':        '.workout-area',
+        'ReThink':        '.rethink-panel, .rethink-area',
+      };
+      const sel = SELECTORS[v];
+      if (!sel) return;
+      requestAnimationFrame(() => {
+        const root = document.querySelector<HTMLElement>(sel);
+        if (!root) return;
+        const focusable = root.querySelector<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])'
+        );
+        (focusable ?? root).focus({ preventScroll: true });
+      });
+    },
   },
 
   // ── ReThinkPanel ─────────────────────────────────────────────────────────
@@ -586,6 +615,7 @@ export class TTUIStateManager {
       case 'OverviewPanel':  app.OverviewPanel.NotifyUpdated();  break;
       case 'WorkoutPanel':   app.WorkoutPanel.NotifyUpdated();   break;
       case 'ReThinkPanel':   app.ReThinkPanel.NotifyUpdated();   break;
+      case 'Application':    /* app.NotifyUpdated(false) is called by applyProperty */ break;
     }
   }
 
