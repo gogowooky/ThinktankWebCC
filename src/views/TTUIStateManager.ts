@@ -260,6 +260,16 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`WorkoutPanel.HighlightStyle.Preset${n}`, makeHighlightPresetSpec(n)])),
 
+  // ── ToolBar 表示モード ────────────────────────────────────────────────
+  'WorkoutPanel.ToolBarMode': {
+    panel: 'WorkoutPanel',
+    default: 'Copyright', type: 'string',
+    candidates: '^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$',
+    description: 'Toolバー表示モード',
+    get: (app) => app.WorkoutPanel.ToolBarMode,
+    set: (app, v) => { app.WorkoutPanel.ToolBarMode = v; },
+  },
+
   // ── ハイライト設定（全Pane共通） ────────────────────────────────────────
   'WorkoutPanel.Highlight.KeyWord': {
     panel: 'WorkoutPanel',
