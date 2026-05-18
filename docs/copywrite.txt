@@ -7,7 +7,7 @@
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitId": "324ad59",
-  "commitDateTime": "2026-05-18-232553",
-  "commitMessage": "docs: UI設定およびキーボードショートカット設定の更新"
+  "commitId": "25029e6",
+  "commitDateTime": "2026-05-18-233353",
+  "commitMessage": "docs: UI設定・キーボードショートカット設定の更新"
 }
