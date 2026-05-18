@@ -68,6 +68,8 @@ interface PropSpec {
   isConst?:    boolean;
   get: (app: TTApplication) => string;
   set: (app: TTApplication, value: string) => void;
+  /** next/prev で循環する値リストを動的に返す（省略時は candidates から抽出） */
+  getValues?: (app: TTApplication) => string[];
 }
 
 // プリセットデフォルト JSON（TTWorkoutPanel の定数から生成）
@@ -285,6 +287,9 @@ const PROP_SPECS: Record<string, PropSpec> = {
     default: 'Thinktank', type: 'string',
     candidates: '^(Thinktank|Overview|WorkoutSetting|ReThink)$',
     description: 'フォーカスカラム',
+    getValues: (_app) => localStorage.getItem('tt-layout-mode') === 'simple'
+      ? ['Thinktank', 'WorkoutSetting']
+      : ['Thinktank', 'Overview', 'WorkoutSetting', 'ReThink'],
     get: (app) => app.FocusedColumn,
     set: (app, v) => {
       app.FocusedColumn = v;
@@ -491,7 +496,7 @@ export class TTUIStateManager {
       return;
     }
 
-    const candidates = extractValuesFromPattern(spec.candidates);
+    const candidates = spec.getValues ? spec.getValues(this._app) : extractValuesFromPattern(spec.candidates);
     if (value === 'next' && candidates.length > 0) {
       const idx = candidates.indexOf(current);
       const nextIdx = (idx + 1) % candidates.length;
