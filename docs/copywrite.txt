@@ -7,7 +7,7 @@
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitId": "25029e6",
-  "commitDateTime": "2026-05-18-233353",
-  "commitMessage": "docs: UI設定・キーボードショートカット設定の更新"
+  "commitId": "2c1aa5e",
+  "commitDateTime": "2026-05-19-080108",
+  "commitMessage": "Update FocusedColumn transition based on layout mode and add monaco-editor.txt"
 }
