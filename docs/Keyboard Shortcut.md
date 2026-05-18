@@ -30,11 +30,8 @@ Workout*,ExOpt,Ctrl+O,WorkoutPanel.IsAreaOpen:toggle,WorkoutSettingパネル開�
 Workout*,ExOpt,P,WorkoutPanel.ViewMode:prev,WorkoutSettingパネルモード前
 Workout*,ExOpt,N,WorkoutPanel.ViewMode:next,WorkoutSettingパネルモード次
 
-*,ExOpt,T,Application.FocusedColumn:Thinktank,Thinktankカラム
-*,ExOpt,O,Application.FocusedColumn:Overview,Overviewカラム
-*,ExOpt,W,Application.FocusedColumn:WorkoutSetting,WorkoutSettingカラム
-*,ExOpt,E,Application.FocusedColumn:Workout,Workoutカラム
-*,ExOpt,R,Application.FocusedColumn:ReThink,ReThinkカラム
+*,ExOpt,L,WorkoutPanel.ToolBarMode:next,Workoutツールバー次
+*,ExOpt,Shift+L,WorkoutPanel.ToolBarMode:prev,Workoutツールバー前
 
 # Editor
 
