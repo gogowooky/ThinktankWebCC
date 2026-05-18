@@ -12,3 +12,9 @@
 .overview-panel:focus-within .overview-area__title-row {
   text-decoration: underline;
 }
+
+/* パネル内にフォーカスがある間、開閉ボタンを枠でくくる */
+.overview-panel:focus-within .panel-ribbon__toggle {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}

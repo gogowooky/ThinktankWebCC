@@ -123,7 +123,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'ThinktankPanel.ViewMode': {
     panel: 'ThinktankPanel',
-    default: 'thoughts', type: 'string', candidates: '^(thoughts|filter|search|chat|settings)$',
+    default: 'thoughts', type: 'string', candidates: '^(filter|search|thoughts|chat|settings)$',
     description: '左パネルモード',
     get: (app) => app.ThinktankPanel.ViewMode,
     set: (app, v) => { app.ThinktankPanel.ViewMode = v as ThinktankViewMode; },
@@ -273,7 +273,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   'Application.FocusedColumn': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
-    candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
+    candidates: '^(Thinktank|Overview|WorkoutSetting|ReThink)$',
     description: 'フォーカスカラム',
     get: (app) => app.FocusedColumn,
     set: (app, v) => {

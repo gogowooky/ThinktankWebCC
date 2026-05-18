@@ -6,24 +6,24 @@ UI Settings
 
 # Application
 
-Application.FocusedColumn,Workout,string,フォーカスカラム,(Thinktank|Overview|WorkoutSetting|Workout|ReThink|next|prev),current,Thinktank
+Application.FocusedColumn,WorkoutSetting,string,フォーカスカラム,(Thinktank|Overview|WorkoutSetting|Workout|ReThink|next|prev),current,Thinktank
 
 # Panel
 
 ThinktankPanel.IsAreaOpen,true,boolean,Thinktankパネル表示,(true|false|toggle),current,false
 OverviewPanel.IsAreaOpen,false,boolean,Overviewパネル表示,(true|false|toggle),current,false
-ReThinkPanel.IsAreaOpen,true,boolean,ReThinkパネル表示,(true|false|toggle),current,false
+ReThinkPanel.IsAreaOpen,false,boolean,ReThinkパネル表示,(true|false|toggle),current,false
 WorkoutPanel.IsAreaOpen,true,boolean,Workoutパネル表示,(true|false|toggle),current,false
 
 ThinktankPanel.ViewMode,filter,string,Thinktankパネルモード,(thoughts|filter|search|chat|settings|next|prev),current,filter
-OverviewPanel.ViewMode,datagrid,string,Overviewパネルモード,(datagrid|graph|chat|settings|next|prev),current,filter
-ReThinkPanel.ViewMode,chat,string,Overviewパネルモード,(chat|settings|next|prev),current,chat
-WorkoutPanel.ViewMode,texteditor,string,ToDoパネルモード,(workout|texteditor|markdown|datagrid|card|graph|next|prev),current,workout
+OverviewPanel.ViewMode,settings,string,Overviewパネルモード,(datagrid|graph|chat|settings|next|prev),current,filter
+ReThinkPanel.ViewMode,settings,string,Overviewパネルモード,(chat|settings|next|prev),current,chat
+WorkoutPanel.ViewMode,workout,string,ToDoパネルモード,(workout|texteditor|markdown|datagrid|card|graph|next|prev),current,workout
 
 # TextEditor
 
 TextEditor.LineNumbers.IsVisible,false,   boolean,    行番号表示,(true|false|toggle),current,false
-TextEditor.WordWrap.IsVisible,false,   boolean,    折り返し,(true|false|toggle),current,false
+TextEditor.WordWrap.IsVisible,true,   boolean,    折り返し,(true|false|toggle),current,false
 TextEditor.Minimap.IsVisible,false,  boolean,    ミニマップ,(true|false|toggle),current,false
 TextEditor.FullWidthSpace.IsVisible,true,  boolean,    全角スペース表示,(true|false|toggle),current,false
 TextEditor.UnicodeHighlight.IsVisible,false,  boolean,    Unicode強調,(true|false|toggle),current,false
