@@ -10,8 +10,8 @@
   position: relative;
 }
 
-/* WorkoutSettingPanel にフォーカスがある間、開閉ボタンを枠でくくる */
-.workout-panel:has(.workout-setting-panel:focus-within) .workout-ribbon__toggle {
+/* WorkoutSetting にフォーカスがある間、開閉ボタンを枠でくくる */
+body[data-focus-column="WorkoutSetting"] .workout-ribbon__toggle {
   outline: 1px solid rgba(255, 255, 255, 0.7);
   outline-offset: 1px;
 }

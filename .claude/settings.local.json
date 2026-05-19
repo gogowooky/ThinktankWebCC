@@ -118,7 +118,8 @@
       "WebFetch(domain:microsoft.github.io)",
       "WebFetch(domain:code.visualstudio.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "Bash(node --input-type=module)"
+      "Bash(node --input-type=module)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankWebCC\\\\src\" -Recurse -Filter \"*.tsx\" -o Name)"
     ]
   }
 }

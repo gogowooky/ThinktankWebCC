@@ -49,8 +49,13 @@ export default function App() {
     const handleFocusIn   = () => {
       cancelAnimationFrame(_focusRaf)
       _focusRaf = requestAnimationFrame(() => {
-        TTShortcutManager.instance.onFocusChange(getFocusName(document.activeElement))
+        const name = getFocusName(document.activeElement)
+        TTShortcutManager.instance.onFocusChange(name)
+        document.body.dataset.focusColumn = name.split('.')[0]
       })
+    }
+    const handleWindowBlur = () => {
+      delete document.body.dataset.focusColumn
     }
 
     // capture: true でキャプチャフェーズ登録 → テキストボックス・Monaco 含む
@@ -61,6 +66,7 @@ export default function App() {
     document.addEventListener('contextmenu', handleCtxMenu)
     document.addEventListener('wheel',       handleWheel,    { passive: false })
     document.addEventListener('focusin',     handleFocusIn)
+    window.addEventListener('blur',          handleWindowBlur)
 
     // デバッグ用リセット関数
     window.__runTests = () => {
@@ -76,6 +82,7 @@ export default function App() {
       document.removeEventListener('contextmenu', handleCtxMenu)
       document.removeEventListener('wheel',       handleWheel)
       document.removeEventListener('focusin',     handleFocusIn)
+      window.removeEventListener('blur',          handleWindowBlur)
       cancelAnimationFrame(_focusRaf)
     }
   }, [])

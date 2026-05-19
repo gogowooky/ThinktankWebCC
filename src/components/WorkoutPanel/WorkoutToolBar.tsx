@@ -84,6 +84,9 @@ export function WorkoutToolBar({ panel }: Props) {
       if (mapped) {
         setMode(mapped);
         setAuthorState('off');
+        if (mapped !== 'keyaction') {
+          requestAnimationFrame(() => inputRef.current?.focus());
+        }
       }
     }
   }, [panel.ToolBarMode]);

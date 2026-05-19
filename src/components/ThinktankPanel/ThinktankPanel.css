@@ -8,13 +8,13 @@
   overflow: hidden;
 }
 
-/* パネル内にフォーカスがある間、タイトルに下線を表示 */
-.thinktank-panel:focus-within .thinktank-area__title-row {
+/* Thinktank にフォーカスがある間、タイトルに下線を表示 */
+body[data-focus-column="Thinktank"] .thinktank-area__title-row {
   text-decoration: underline;
 }
 
-/* パネル内にフォーカスがある間、開閉ボタンを枠でくくる */
-.thinktank-panel:focus-within .panel-ribbon__toggle {
+/* Thinktank にフォーカスがある間、開閉ボタンを枠でくくる */
+body[data-focus-column="Thinktank"] .thinktank-panel .panel-ribbon__toggle {
   outline: 1px solid rgba(255, 255, 255, 0.7);
   outline-offset: 1px;
 }
