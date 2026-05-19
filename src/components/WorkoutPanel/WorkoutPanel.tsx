@@ -710,7 +710,8 @@ export function WorkoutPanel({ app }: Props) {
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
       <WorkoutRibbon
-        activeSettings={panel.IsAreaOpen ? panel.ViewMode : null}
+        activeSettings={panel.ViewMode}
+        isOpen={panel.IsAreaOpen}
         thinkTitle={focusedThinkTitle}
         onToggle={handleToggle}
         onSetActiveSettings={handleSetActiveSettings}

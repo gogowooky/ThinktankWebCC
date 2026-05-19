@@ -10,6 +10,9 @@
 export function getFocusName(el: Element | null): string {
   if (!el || el === document.body || el === document.documentElement) return 'None';
 
+  // WorkoutRibbon（設定パネル開閉ボタン群）
+  if (el.closest('.workout-ribbon')) return 'WorkoutSetting.Ribbon';
+
   // WorkoutToolBar
   if (el.closest('.workout-toolbar')) return 'Workout.ToolBar';
 

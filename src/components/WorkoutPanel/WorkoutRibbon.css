@@ -50,6 +50,11 @@
   color: #fff;
 }
 
+.workout-ribbon__toggle:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}
+
 /* ── ボタン群 ─────────────────────────────────────── */
 .workout-ribbon__buttons {
   display: flex;
@@ -81,6 +86,11 @@
 .workout-ribbon__btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
+}
+
+.workout-ribbon__btn:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
 }
 
 /* ── スペーサー ──────────────────────────────────── */

@@ -34,17 +34,16 @@ export const WORKOUT_SETTINGS: SettingsEntry[] = [
 ];
 
 interface Props {
-  activeSettings:      SettingsType | null;
+  activeSettings:      SettingsType;
+  isOpen:              boolean;
   thinkTitle:          string;
   onToggle:            () => void;
   onSetActiveSettings: (type: SettingsType | null) => void;
 }
 
-export function WorkoutRibbon({ activeSettings, thinkTitle, onToggle, onSetActiveSettings }: Props) {
-  const isOpen = activeSettings !== null;
-
+export function WorkoutRibbon({ activeSettings, isOpen, thinkTitle, onToggle, onSetActiveSettings }: Props) {
   const handleClick = (type: SettingsType) => {
-    onSetActiveSettings(activeSettings === type ? null : type);
+    onSetActiveSettings(isOpen && activeSettings === type ? null : type);
   };
 
   return (

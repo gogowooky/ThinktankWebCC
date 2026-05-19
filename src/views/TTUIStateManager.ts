@@ -300,15 +300,25 @@ const PROP_SPECS: Record<string, PropSpec> = {
         'Workout':        '.workout-area',
         'ReThink':        '.rethink-panel, .rethink-area',
       };
-      const sel = SELECTORS[v];
-      if (!sel) return;
+      // WorkoutSetting: パネルが閉じている場合は開閉トグルにフォーカス
+      const effectiveSel = (v === 'WorkoutSetting' && !app.WorkoutPanel.IsAreaOpen)
+        ? '.workout-ribbon__toggle'
+        : SELECTORS[v];
+      if (!effectiveSel) return;
+      const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
       requestAnimationFrame(() => {
-        const root = document.querySelector<HTMLElement>(sel);
+        const root = document.querySelector<HTMLElement>(effectiveSel);
         if (!root) return;
-        const focusable = root.querySelector<HTMLElement>(
-          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])'
-        );
-        (focusable ?? root).focus({ preventScroll: true });
+        // root 自体がフォーカス可能かつ非 inert なら直接フォーカス
+        if (root.matches(FOCUSABLE) && !root.closest('[inert]')) {
+          root.focus({ preventScroll: true });
+          return;
+        }
+        // inert コンテナ内の要素を除いて最初のフォーカス可能要素を検索
+        const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
+          .find(el => !el.closest('[inert]'));
+        if (focusable) focusable.focus({ preventScroll: true });
+        else if (!root.closest('[inert]')) root.focus({ preventScroll: true });
       });
     },
   },

@@ -12,7 +12,8 @@
       "name": "backend",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "server:dev"],
-      "port": 8080
+      "port": 8080,
+      "autoPort": true
     }
   ]
 }

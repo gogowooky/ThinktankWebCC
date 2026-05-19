@@ -25,6 +25,7 @@ export function PanelArea({ isOpen, width = 240, panelId, children }: Props) {
     <div
       className={`panel-area panel-area--${panelId}${isOpen ? '' : ' panel-area--closed'}`}
       style={{ width: isOpen ? width : 0 }}
+      {...(!isOpen ? { inert: '' } : {})}
     >
       {/* 内部ラッパーで幅を固定し、親のアニメーション中もレイアウト崩れを防ぐ */}
       <div className="panel-area__inner" style={{ width }}>
