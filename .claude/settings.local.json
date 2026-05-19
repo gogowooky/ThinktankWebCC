@@ -110,7 +110,8 @@
       "Bash(dir \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\\\\electron\" /b)",
       "Bash(python)",
       "Bash(git revert *)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(git pull *)"
     ]
   }
 }
