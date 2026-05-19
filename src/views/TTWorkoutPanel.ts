@@ -171,6 +171,9 @@ export class TTWorkoutPanel extends TTUIItem {
   /** 設定パネルの表示モード */
   public ViewMode: WorkoutViewMode = 'workout';
 
+  /** ToolBar の表示モード */
+  public ToolBarMode: string = 'Copyright';
+
   public SetViewMode(mode: WorkoutViewMode): void {
     this.ViewMode = mode;
     this.NotifyUpdated();

@@ -68,6 +68,8 @@ interface PropSpec {
   isConst?:    boolean;
   get: (app: TTApplication) => string;
   set: (app: TTApplication, value: string) => void;
+  /** next/prev で循環する値リストを動的に返す（省略時は candidates から抽出） */
+  getValues?: (app: TTApplication) => string[];
 }
 
 // プリセットデフォルト JSON（TTWorkoutPanel の定数から生成）
@@ -123,7 +125,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'ThinktankPanel.ViewMode': {
     panel: 'ThinktankPanel',
-    default: 'thoughts', type: 'string', candidates: '^(thoughts|filter|search|chat|settings)$',
+    default: 'thoughts', type: 'string', candidates: '^(filter|search|thoughts|chat|settings)$',
     description: '左パネルモード',
     get: (app) => app.ThinktankPanel.ViewMode,
     set: (app, v) => { app.ThinktankPanel.ViewMode = v as ThinktankViewMode; },
@@ -260,6 +262,16 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`WorkoutPanel.HighlightStyle.Preset${n}`, makeHighlightPresetSpec(n)])),
 
+  // ── ToolBar 表示モード ────────────────────────────────────────────────
+  'WorkoutPanel.ToolBarMode': {
+    panel: 'WorkoutPanel',
+    default: 'Copyright', type: 'string',
+    candidates: '^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$',
+    description: 'Toolバー表示モード',
+    get: (app) => app.WorkoutPanel.ToolBarMode,
+    set: (app, v) => { app.WorkoutPanel.ToolBarMode = v; },
+  },
+
   // ── ハイライト設定（全Pane共通） ────────────────────────────────────────
   'WorkoutPanel.Highlight.KeyWord': {
     panel: 'WorkoutPanel',
@@ -273,8 +285,11 @@ const PROP_SPECS: Record<string, PropSpec> = {
   'Application.FocusedColumn': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
-    candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
+    candidates: '^(Thinktank|Overview|WorkoutSetting|ReThink)$',
     description: 'フォーカスカラム',
+    getValues: (_app) => localStorage.getItem('tt-layout-mode') === 'simple'
+      ? ['Thinktank', 'WorkoutSetting']
+      : ['Thinktank', 'Overview', 'WorkoutSetting', 'ReThink'],
     get: (app) => app.FocusedColumn,
     set: (app, v) => {
       app.FocusedColumn = v;
@@ -481,7 +496,7 @@ export class TTUIStateManager {
       return;
     }
 
-    const candidates = extractValuesFromPattern(spec.candidates);
+    const candidates = spec.getValues ? spec.getValues(this._app) : extractValuesFromPattern(spec.candidates);
     if (value === 'next' && candidates.length > 0) {
       const idx = candidates.indexOf(current);
       const nextIdx = (idx + 1) % candidates.length;

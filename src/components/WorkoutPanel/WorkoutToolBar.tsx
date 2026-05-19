@@ -49,6 +49,14 @@ const MODES: ModeEntry[] = [
   { id: 'reminder',  icon: <Bell        size={14} />, label: 'Reminder',    placeholder: 'Reminder...' },
 ];
 
+const TOOLBAR_TO_MODE: Record<string, ToolMode> = Object.fromEntries(
+  MODES.map(m => [m.label, m.id])
+) as Record<string, ToolMode>;
+
+const MODE_TO_TOOLBAR: Record<ToolMode, string> = Object.fromEntries(
+  MODES.map(m => [m.id, m.label])
+) as Record<ToolMode, string>;
+
 interface Props {
   panel: TTWorkoutPanel;
 }
@@ -58,13 +66,27 @@ export function WorkoutToolBar({ panel }: Props) {
   const status = TTApplication.Instance.Status;
   useAppUpdate(status);
 
-  const [mode,        setMode]        = useState<ToolMode>('highlight');
+  const [mode,        setMode]        = useState<ToolMode>(() => TOOLBAR_TO_MODE[panel.ToolBarMode] ?? 'highlight');
   const [text,        setText]        = useState(() => panel.HighlightWord);
   const [isExpanded,  setIsExpanded]  = useState(false);
-  const [authorState, setAuthorState] = useState<AuthorState>('static');
+  const [authorState, setAuthorState] = useState<AuthorState>(() => panel.ToolBarMode === 'Copyright' ? 'static' : 'off');
   const [kaState,     setKaState]     = useState<KAState>(KA_INIT);
   const inputRef       = useRef<HTMLInputElement>(null);
   const rafRef         = useRef<number>(0);
+
+  // panel.ToolBarMode 変化（外部からの設定変更）をローカル state に反映
+  useEffect(() => {
+    const tbm = panel.ToolBarMode;
+    if (tbm === 'Copyright') {
+      setAuthorState(s => s === 'off' ? 'static' : s);
+    } else {
+      const mapped = TOOLBAR_TO_MODE[tbm];
+      if (mapped) {
+        setMode(mapped);
+        setAuthorState('off');
+      }
+    }
+  }, [panel.ToolBarMode]);
 
   useEffect(() => {
     if (isExpanded) {
@@ -175,18 +197,27 @@ export function WorkoutToolBar({ panel }: Props) {
   }, [mode]);
 
   const handleAuthorToggle = useCallback(() => {
-    setAuthorState(s => s === 'off' ? 'banner' : 'off');
-  }, []);
+    setAuthorState(s => {
+      const next = s === 'off' ? 'banner' : 'off';
+      panel.ToolBarMode = next !== 'off' ? 'Copyright' : MODE_TO_TOOLBAR[mode] ?? 'Highlighter';
+      panel.NotifyUpdated(false);
+      return next;
+    });
+  }, [mode, panel]);
 
   const handleBannerClick = useCallback(() => {
     setAuthorState('static');
-  }, []);
+    panel.ToolBarMode = 'Copyright';
+    panel.NotifyUpdated(false);
+  }, [panel]);
 
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
     setAuthorState('off');
     setText(m === 'highlight' ? panel.HighlightWord : '');
     inputRef.current?.focus();
+    panel.ToolBarMode = MODE_TO_TOOLBAR[m] ?? 'Highlighter';
+    panel.NotifyUpdated(false);
   }, [panel]);
 
   const handleTextChange = useCallback((v: string) => {
@@ -331,9 +362,9 @@ export function WorkoutToolBar({ panel }: Props) {
         <button
           className={`workout-toolbar__util-btn${isAuthorOn ? ' workout-toolbar__util-btn--active' : ''}`}
           onClick={handleAuthorToggle}
-          data-tip="作成者"
+          data-tip="Copyright"
           data-tip-side="left"
-          aria-label="作成者"
+          aria-label="Copyright"
         >
           <Copyright size={14} />
         </button>

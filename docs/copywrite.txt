@@ -1,13 +1,13 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.3",
+  "version": "1.0.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitId": "4de99c7",
-  "commitDateTime": "2026-05-15-084339",
-  "commitMessage": "refactor: 状態変数定義の重複を解消 — PROP_SPECS のプリセット生成をヘルパー関数に統一"
+  "commitId": "2c1aa5e",
+  "commitDateTime": "2026-05-19-080108",
+  "commitMessage": "Update FocusedColumn transition based on layout mode and add monaco-editor.txt"
 }

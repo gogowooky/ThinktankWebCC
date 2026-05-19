@@ -111,7 +111,14 @@
       "Bash(python)",
       "Bash(git revert *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
-      "Bash(git pull *)"
+      "Bash(git pull *)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\\\\src\" -Recurse -File -Include \"*.ts\", \"*.tsx\", \"*.js\", \"*.jsx\")",
+      "Bash(Select-Object -First 20)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:microsoft.github.io)",
+      "WebFetch(domain:code.visualstudio.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(node --input-type=module)"
     ]
   }
 }
