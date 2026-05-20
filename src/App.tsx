@@ -11,6 +11,7 @@ import { TTModels } from './models/TTModels'
 import { TTApplication } from './views/TTApplication'
 import { TTUIStateManager } from './views/TTUIStateManager'
 import { TTShortcutManager } from './views/TTShortcutManager'
+import { registerFocusedPanelActions } from './views/TTFocusedPanelActions'
 import { getFocusName } from './utils/getFocusName'
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
     // ① UI状態マネージャー初期化（localStorage から即時復元）
     TTUIStateManager.instance.init(app)
     TTShortcutManager.instance.init(app)
+    registerFocusedPanelActions(app)
 
     // Vault ロード完了後にシステム Think を作成/同期
     const initManagers = async () => {

@@ -55,6 +55,9 @@ const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   { focus: '*', exmode: '', key: 'ctrl+shift+l', action: 'TextEditor.LineNumbers.IsVisible:toggle',    description: '行番号切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+w', action: 'TextEditor.WordWrap.IsVisible:toggle',       description: '折り返し切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+m', action: 'TextEditor.Minimap.IsVisible:toggle',        description: 'ミニマップ切り替え' },
+  { focus: '*', exmode: 'ExPanel', key: 'o', action: 'FocusedPanel.ToggleAreaVisibility', description: 'フォーカスパネル開閉' },
+  { focus: '*', exmode: 'ExPanel', key: 'p', action: 'FocusedPanel.SetViewModePrev',      description: 'フォーカスパネルモード前' },
+  { focus: '*', exmode: 'ExPanel', key: 'n', action: 'FocusedPanel.SetViewModeNext',      description: 'フォーカスパネルモード次' },
 ];
 
 // ── キー複数指定パーサー ──────────────────────────────────────────────────
@@ -454,6 +457,7 @@ export class TTShortcutManager {
     );
     return [...header, ...rows].join('\n');
   }
+
 
   private _loadFromContent(content: string): void {
     const sections = parseTableContent(content);
