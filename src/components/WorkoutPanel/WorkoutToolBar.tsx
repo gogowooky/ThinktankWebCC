@@ -14,7 +14,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTApplication } from '../../views/TTApplication';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
-import copywriteRaw from '../../../docs/copywrite.txt?raw';
+import copywriteRaw from '../../../docs/copyright.txt?raw';
 import './WorkoutToolBar.css';
 
 const _cw = JSON.parse(copywriteRaw);
