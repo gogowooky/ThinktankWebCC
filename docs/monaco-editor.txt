@@ -25,13 +25,13 @@ Ctrl+Shift+Enter	                    editor.action.insertLineBefore
 Ctrl+Shift+K	                        editor.action.deleteLines
 Alt+↑ / Alt+↓	                        editor.action.moveLinesUp/Down
 Shift+Alt+↑ / Shift+Alt+↓	            editor.action.copyLinesUp/Down
-Ctrl+L	expandLineSelection
+Ctrl+L	                                expandLineSelection
 
 ③ コピー・貼り付け
 キー	                                アクションID
 Ctrl+C	                                editor.action.clipboardCopyAction
-Ctrl+X	editor.action.clipboardCutAction
-Ctrl+V	editor.action.clipboardPasteAction
+Ctrl+X	                                editor.action.clipboardCutAction
+Ctrl+V	                                editor.action.clipboardPasteAction
 
 ④ 検索・置換
 キー	                                アクションID
