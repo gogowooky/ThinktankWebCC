@@ -8,7 +8,8 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden;
+  /* overflow: hidden を外す: SearchBar等のtooltipがクリップされるため */
+  /* スクロール制御は .thinktank-area__body で行う */
   position: relative;
 }
 

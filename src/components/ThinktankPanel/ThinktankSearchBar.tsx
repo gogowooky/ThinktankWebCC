@@ -105,7 +105,6 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
             key={m}
             className={`tt-search-bar__mode-radio${searchMode === m ? ' tt-search-bar__mode-radio--active' : ''}`}
             data-tip={SEARCH_MODE_TIPS[m]}
-            data-tip-side="bottom"
           >
             <input
               type="radio"
