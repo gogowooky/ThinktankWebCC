@@ -34,7 +34,9 @@
     "react-dom": "^18.3.1",
     "react-force-graph": "^1.47.6",
     "ws": "^8.19.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "@google/generative-ai": "^0.21.0",
+    "openai": "^4.78.0"
   },
   "devDependencies": {
     "@types/express": "^5.0.0",
