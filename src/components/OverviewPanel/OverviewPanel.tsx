@@ -36,12 +36,38 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   }, [app]);
 
   const handleToggle = useCallback(() => panel.ToggleArea(), [panel]);
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const handleThoughtDrop = useCallback((id: string) => {
     const dropped = vault.GetThink(id);
     if (!dropped || dropped.ContentType === 'thought') {
       panel.OpenThought(id, 'datagrid');
     }
   }, [vault, panel]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('application/x-thought-id')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const id = e.dataTransfer.getData('application/x-thought-id');
+    if (id) {
+      handleThoughtDrop(id);
+    }
+  }, [handleThoughtDrop]);
+
   const handleViewMode = useCallback((mode: Parameters<typeof panel.SetViewMode>[0]) => {
     if (!panel.IsAreaOpen) {
       panel.SetViewMode(mode);
@@ -57,7 +83,12 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   }, [handleViewMode]);
 
   return (
-    <div className="overview-panel">
+    <div
+      className={`overview-panel${isDragOver ? ' overview-panel--drag-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <OverviewRibbon
         isOpen={panel.IsAreaOpen}
         viewMode={panel.ViewMode}
@@ -65,7 +96,6 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         onViewMode={handleViewMode}
         onToggleSettings={handleToggleSettings}
         thoughtName={panel.ThoughtID ? (vault.GetThink(panel.ThoughtID)?.Name ?? panel.ThoughtID) : undefined}
-        onThoughtDrop={handleThoughtDrop}
       />
       <PanelArea
         panelId="overview"

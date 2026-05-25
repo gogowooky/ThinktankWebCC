@@ -387,19 +387,21 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     onSave?.(content);
   }, [onSave]);
 
-  const handleSave = useCallback(() => {
-    if (!onSave || !section) return;
+  const handleSave = useCallback((overrideSection?: TableSection | React.MouseEvent) => {
+    if (!onSave) return;
+    const activeSection = (overrideSection && 'rows' in overrideSection) ? overrideSection : section;
+    if (!activeSection) return;
 
     // columnOrder に従って列を物理的に並び替えた section を作成
     const reorderedSection: TableSection = {
-      ...section,
-      columns: columnOrder.map(i => section.columns[i] ?? ''),
-      rows:    section.rows.map(row => columnOrder.map(i => row[i] ?? '')),
-      rawLines: section.rawLines,
+      ...activeSection,
+      columns: columnOrder.map(i => activeSection.columns[i] ?? ''),
+      rows:    activeSection.rows.map(row => columnOrder.map(i => row[i] ?? '')),
+      rawLines: activeSection.rawLines,
     };
 
     // section.title を使う（think.Name は _extractTitle で # が剥ぎ取られる場合があるため）
-    onSave(tableSectionToContent(section.title, reorderedSection));
+    onSave(tableSectionToContent(activeSection.title, reorderedSection));
 
     // state を並び替え後の section で更新し、columnOrder をリセット
     setSections([reorderedSection]);
@@ -416,6 +418,12 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   }, []);
 
   const commitEdit = useCallback((rowIdx: number, col: number, value: string) => {
+    const currentSection = sections[activeIdx];
+    const oldVal = currentSection?.rows[rowIdx]?.[col];
+    if (oldVal !== value) {
+      setIsDirty(true);
+    }
+
     setSections(prev => prev.map((s, si) => {
       if (si !== activeIdx) return s;
       return {
@@ -428,9 +436,8 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
         }),
       };
     }));
-    setIsDirty(true);
     setEditState(null);
-  }, [activeIdx]);
+  }, [activeIdx, sections]);
 
   const handleCellClick = useCallback((rowIdx: number, col: number, value: string) => {
     setEditState({ rowIdx, col, value });
@@ -524,10 +531,26 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
-      if (editState) commitEdit(editState.rowIdx, editState.col, editState.value);
+      if (editState) {
+        commitEdit(editState.rowIdx, editState.col, editState.value);
+        if (section) {
+          const updatedRows = section.rows.map((row, ri) => {
+            if (ri !== editState.rowIdx) return row;
+            const next = [...row];
+            next[editState.col] = editState.value;
+            return next;
+          });
+          const overrideSection = {
+            ...section,
+            rows: updatedRows,
+          };
+          handleSave(overrideSection);
+          return;
+        }
+      }
       handleSave();
     }
-  }, [editState, commitEdit, handleSave]);
+  }, [editState, commitEdit, handleSave, section]);
 
   if (sections.length === 0) {
     return (

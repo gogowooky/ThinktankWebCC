@@ -33,34 +33,11 @@ interface Props {
   onToggleSettings?: () => void;
   onRefresh?:        () => void;
   thoughtName?:      string;
-  onThoughtDrop?:    (id: string) => void;
 }
 
 export function OverviewRibbon({
   isOpen, viewMode, onToggle, onViewMode, onToggleSettings, onRefresh, thoughtName,
-  onThoughtDrop,
 }: Props) {
-  const [isDragOver, setIsDragOver] = useState(false);
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (e.dataTransfer.types.includes('application/x-thought-id')) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-      setIsDragOver(true);
-    }
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const id = e.dataTransfer.getData('application/x-thought-id');
-    if (id) onThoughtDrop?.(id);
-  }, [onThoughtDrop]);
-
   return (
     <PanelRibbon
       panelId="overview"
@@ -68,10 +45,6 @@ export function OverviewRibbon({
       isOpen={isOpen}
       onToggle={onToggle}
       bottomLabel={thoughtName}
-      isDragOver={isDragOver}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
     >
       {VIEW_BUTTONS.map(({ mode, Icon, title }) => (
         <button
