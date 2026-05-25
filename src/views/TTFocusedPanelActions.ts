@@ -14,7 +14,7 @@ import { TTActions } from './TTActions';
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
-  Thinktank:      ['thoughts', 'filter', 'search', 'chat', 'settings'],
+  Thinktank:      ['filter', 'chat', 'settings'],
   Overview:       ['datagrid', 'graph', 'chat', 'settings'],
   WorkoutSetting: ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
   ReThink:        ['chat', 'settings'],

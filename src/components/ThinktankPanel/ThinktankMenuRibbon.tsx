@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, CalendarDays, ArrowDownAZ, LibrarySquare, Save, MonitorUp, MonitorDown, ListRestart } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, ArrowDownAZ, LibrarySquare, Save, MonitorUp, MonitorDown, ListRestart } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -14,10 +14,11 @@ interface Props {
   checkedIds:            string[];
   showCheckedOnly:       boolean;
   allVaultChecked:       boolean;
-  showDateFilter:        boolean;
   showColumnDialog:      boolean;
   canCreateThought:      boolean;
   canSaveChat:           boolean;
+  visibleCount?:         number;
+  totalCount?:           number;
   onScrollPrev:          () => void;
   onScrollNext:          () => void;
   onCheckAll:            () => void;
@@ -25,7 +26,6 @@ interface Props {
   onDeleteChecked:       () => void;
   onToggleCheckedOnly:   () => void;
   onToggleAllVault:      () => void;
-  onToggleDateFilter:    () => void;
   onToggleColumnDialog:  () => void;
   onCreateThought:       () => void;
   onSaveChat:            () => void;
@@ -35,12 +35,13 @@ interface Props {
 export function ThinktankMenuRibbon({
   viewMode,
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
-  showDateFilter, showColumnDialog,
+  showColumnDialog,
   canCreateThought, canSaveChat,
+  visibleCount, totalCount,
   onScrollPrev, onScrollNext,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly, onToggleAllVault,
-  onToggleDateFilter, onToggleColumnDialog,
+  onToggleColumnDialog,
   onCreateThought, onSaveChat, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
@@ -93,6 +94,16 @@ export function ThinktankMenuRibbon({
   return (
     <div className="menu-ribbon thinktank-menu-ribbon">
 
+      {/* 表示更新（左寄せ）*/}
+      <button
+        className="menu-ribbon__btn menu-ribbon__btn--icon"
+        onClick={onRefresh}
+        data-tip="表示更新"
+        data-tip-side="right"
+      >
+        <ListRestart size={14} />
+      </button>
+
       {/* CheckToggle: 表示中を全選択 / 全クリア */}
       <div className="tooltip-wrapper" data-tip={allChecked ? '全チェックをクリア' : '表示中を全てチェック'} data-tip-side="right">
         <button
@@ -124,15 +135,6 @@ export function ThinktankMenuRibbon({
           <ListCheck size={14} />
         </button>
       </div>
-
-      {/* DateFilter: 作成日(ID)・更新日フィルターの表示切替 */}
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${showDateFilter ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={onToggleDateFilter}
-        data-tip={showDateFilter ? '日付フィルターを非表示' : '日付フィルターを表示'}
-      >
-        <CalendarDays size={14} />
-      </button>
 
       {/* ColumnSort: 表示項目とソート設定 */}
       <button
@@ -174,15 +176,12 @@ export function ThinktankMenuRibbon({
         </span>
       )}
 
-      {/* 表示更新 */}
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--icon"
-        onClick={onRefresh}
-        data-tip="表示更新"
-        data-tip-side="left"
-      >
-        <ListRestart size={14} />
-      </button>
+      {/* 表示件数 / 全件数（右寄せ）*/}
+      {totalCount !== undefined && (
+        <span className="thinktank-ribbon__count">
+          {visibleCount ?? totalCount}/{totalCount}
+        </span>
+      )}
 
     </div>
   );

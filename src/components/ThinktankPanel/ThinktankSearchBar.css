@@ -1,0 +1,118 @@
+/* ThinktankSearchBar.css */
+
+.tt-search-bar {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 検索オプション（ラジオボタン）─────────────────── */
+.tt-search-bar__modes {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tt-search-bar__mode-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: #666;
+  cursor: pointer;
+}
+
+.tt-search-bar__mode-radio input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin: 0;
+  border: 1px solid #999;
+  border-radius: 50%;
+  background: #fff;
+  position: relative;
+  cursor: pointer;
+}
+
+.tt-search-bar__mode-radio input[type="radio"]:checked {
+  border-color: rgba(7, 55, 99, 0.6);
+}
+
+/* ON: 内側に小さい● */
+.tt-search-bar__mode-radio input[type="radio"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(7, 55, 99, 0.6);
+}
+
+.tt-search-bar__mode-radio--active {
+  color: #4a627e;
+  font-weight: 600;
+}
+
+/* ── 種別選択ボタン ─────────────────────────────── */
+.tt-search-bar__types {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-start; /* 左寄せ */
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tt-search-bar__type-btn {
+  flex: none; /* 伸縮させず内容幅に */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 5px;
+  border: 1px solid transparent; /* 枠なし（レイアウトずれ防止に透明枠を確保）*/
+  border-radius: 4px;
+  background: transparent;
+  color: #999;
+  cursor: pointer;
+}
+
+.tt-search-bar__type-btn:hover {
+  color: #555;
+}
+
+/* ON: 背景を濃いめ・線を薄め（反転）*/
+.tt-search-bar__type-btn--active {
+  background: rgba(7, 55, 99, 0.45);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+}
+
+/* 全選択 / 全クリア ボタン */
+.tt-search-bar__type-all {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #777;
+  cursor: pointer;
+}
+
+.tt-search-bar__type-all:hover {
+  color: #333;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.tt-search-bar__type-all--right {
+  margin-left: auto; /* 右端に配置 */
+}

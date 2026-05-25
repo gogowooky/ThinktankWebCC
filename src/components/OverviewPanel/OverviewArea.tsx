@@ -15,9 +15,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Library, X } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { TTThink } from '../../models/TTThink';
+import { StorageManager } from '../../services/storage/StorageManager';
 import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
 import type { OverviewSettingsViewRef } from './OverviewSettingsView';
@@ -27,14 +28,20 @@ import { AiChatView } from '../ThinktankPanel/AiChatView';
 import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
 import type { UnifiedFilterPanelRef } from '../ThinktankPanel/UnifiedFilterPanel';
+import { ThinktankSearchBar } from '../ThinktankPanel/ThinktankSearchBar';
+import type { SearchMode } from '../ThinktankPanel/ThinktankSearchBar';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
-import type { ChatMessage } from '../../types';
+import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
+import { semanticSearch } from '../../services/EmbeddingApiService';
+import type { SemanticSearchResult } from '../../services/EmbeddingApiService';
 import './OverviewArea.css';
+
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
 
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
   datagrid: 'Think一覧',
@@ -56,14 +63,10 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // ── D&D ─────────────────────────────────────────────────────────────────
-  const [isDragOver, setIsDragOver] = useState(false);
-
   // ── フィルター・チェック state ──────────────────────────────────────────────
   const [filter,           setFilter]           = useState('');
   const [checkedIds,       setCheckedIds]       = useState<string[]>([]);
   const [showCheckedOnly,  setShowCheckedOnly]  = useState(false);
-  const [showDateFilter,   setShowDateFilter]   = useState(false);
   const [createdDate,      setCreatedDate]      = useState('');
   const [createdRange,     setCreatedRange]     = useState('');
   const [updatedDate,      setUpdatedDate]      = useState('');
@@ -71,6 +74,16 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const [columns,          setColumns]          = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
+
+  // 一覧表示する種別（初期は全種別ON）
+  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(ALL_CONTENT_TYPES));
+
+  // 検索 state（保管庫全体への全文/AI検索）
+  const [searchQuery,    setSearchQuery]    = useState('');
+  const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);
+  const [searchLoading,  setSearchLoading]  = useState(false);
+  const [searchSearched, setSearchSearched] = useState(false);
+  const [searchMode,     setSearchMode]     = useState<SearchMode>('fulltext');
 
   // ── チャット state ─────────────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -97,18 +110,26 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
   const dateFilter = useMemo<DateFilterState>(() => ({
-    show: showDateFilter,
+    show: true,
     createdDate, createdRange, updatedDate, updatedRange,
-  }), [showDateFilter, createdDate, createdRange, updatedDate, updatedRange]);
+  }), [createdDate, createdRange, updatedDate, updatedRange]);
 
   const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
 
+  // 母集合: 検索語があれば検索結果、なければ選択 Thought 内の Think
+  const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : thinksInThought;
+
+  const typeFilteredBase = useMemo(
+    () => searchBase.filter(t => visibleTypes.has(t.ContentType)),
+    [searchBase, visibleTypes],
+  );
+
   const visibleThinks = useMemo(() => {
     const base = showCheckedOnly
-      ? thinksInThought.filter(t => checkedSet.has(t.ID))
-      : thinksInThought;
+      ? typeFilteredBase.filter(t => checkedSet.has(t.ID))
+      : typeFilteredBase;
     return applySort(applyDateFilter(applyFilter(base, filter), dateFilter), sort);
-  }, [thinksInThought, showCheckedOnly, checkedSet, filter, dateFilter, sort]);
+  }, [typeFilteredBase, showCheckedOnly, checkedSet, filter, dateFilter, sort]);
 
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
 
@@ -125,6 +146,9 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     setFilter('');
     setCheckedIds([]);
     setShowCheckedOnly(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchSearched(false);
 
     if (!panel.ThoughtID) return;
     const thought = vault.GetThink(panel.ThoughtID);
@@ -149,33 +173,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     return () => clearTimeout(timer);
   }, [showSettings, panel.MediaType]);
 
-  // ── Thought 選択（D&D）────────────────────────────────────────────────────
-  const selectThought = useCallback((id: string) => {
-    panel.OpenThought(id, 'datagrid');
-  }, [panel]);
-
-  // ── D&D ハンドラ ─────────────────────────────────────────────────────────
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (e.dataTransfer.types.includes('application/x-thought-id')) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'copy';
-      setIsDragOver(true);
-    }
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-    const id = e.dataTransfer.getData('application/x-thought-id');
-    if (!id) return;
-    const dropped = vault.GetThink(id);
-    if (!dropped || dropped.ContentType === 'thought') selectThought(id);
-  }, [selectThought, vault]);
-  
   const handleRefresh = useCallback(() => {
     app.RefreshAll().catch(e => console.error('[OverviewArea] RefreshAll failed:', e));
   }, [app]);
@@ -215,15 +212,71 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const handleToggleCheckedOnly   = useCallback(() => setShowCheckedOnly(v => !v), []);
   const handleToggleColumnDialog  = useCallback(() => setShowColumnDialog(v => !v), []);
 
-  const handleToggleDateFilter = useCallback(() => {
-    setShowDateFilter(v => {
-      if (v) {
-        setCreatedDate(''); setCreatedRange('');
-        setUpdatedDate(''); setUpdatedRange('');
-      }
-      return !v;
+  const handleDeleteChecked = useCallback(async () => {
+    if (checkedIds.length === 0) return;
+    if (!window.confirm(`${checkedIds.length} 件を削除しますか？`)) return;
+    app.RemoveThinksFromWorkout(checkedIds);
+    await vault.DeleteThinks(checkedIds);
+    setCheckedIds([]);
+  }, [app, vault, checkedIds]);
+
+  const handleToggleType = useCallback((t: ContentType) => {
+    setVisibleTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
     });
   }, []);
+
+  const handleSelectAllTypes = useCallback(() => setVisibleTypes(new Set(ALL_CONTENT_TYPES)), []);
+  const handleClearAllTypes  = useCallback(() => setVisibleTypes(new Set()), []);
+
+  const handleSearchQueryChange = useCallback((v: string) => {
+    setSearchQuery(v);
+    setSearchSearched(false);
+  }, []);
+
+  const handleSearch = useCallback(async () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchLoading(true);
+    try {
+      if (searchMode === 'semantic' || searchMode === 'hybrid') {
+        const results: SemanticSearchResult[] = await semanticSearch(q, 30, searchMode === 'hybrid');
+        setSearchResults(results.map(r => {
+          const existing = vault.GetThink(r.id);
+          if (existing) return existing;
+          const t = new TTThink();
+          t.ID = r.id; t.VaultID = vault.ID;
+          t.ContentType = r.contentType as TTThink['ContentType'];
+          t.Keywords = r.keywords; t.RelatedIDs = r.relatedIds;
+          t.IsMetaOnly = true; t.setContentSilent(r.title);
+          return t;
+        }));
+        setSearchSearched(true);
+        setSearchLoading(false);
+        return;
+      }
+      const metas = await StorageManager.instance.search(q);
+      setSearchResults(metas.map(meta => {
+        const existing = vault.GetThink(meta.id);
+        if (existing) return existing;
+        const t = new TTThink();
+        t.ID = meta.id; t.VaultID = vault.ID;
+        t.ContentType = meta.contentType as TTThink['ContentType'];
+        t.Keywords = meta.keywords ?? ''; t.RelatedIDs = meta.relatedIds ?? '';
+        t.IsMetaOnly = true; t.setContentSilent(meta.title);
+        return t;
+      }));
+    } catch (e) {
+      console.error('[OverviewArea] search failed:', e);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+      setSearchSearched(true);
+    }
+  }, [searchQuery, searchMode, vault]);
 
   const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
     const ids = Array.isArray(id) ? id : [id];
@@ -329,18 +382,19 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         checkedIds={checkedIds}
         showCheckedOnly={showCheckedOnly}
         allVaultChecked={allVaultChecked}
-        showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
+        visibleCount={visibleThinks.length}
+        totalCount={typeFilteredBase.length}
         onScrollPrev={handleScrollPrev}
         onScrollNext={handleScrollNext}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}
+        onDeleteChecked={handleDeleteChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onCreateThought={handleCreateThought}
         onToggleAllVault={handleToggleAllVault}
-        onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
         onSaveChat={handleSaveChat}
         onRefresh={handleRefresh}
@@ -357,51 +411,37 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         />
       )}
 
-      {/* ── Thought ストリップ（D&D ターゲット）────────────────── */}
-      <div
-        className={`overview-area__thought-strip${isDragOver ? ' overview-area__thought-strip--drop' : ''}`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden', flex: 1 }}>
-          <Library size={11} className="overview-area__strip-icon" />
-          {think
-            ? <span className="overview-area__strip-name">{think.Name || '（無題）'}</span>
-            : <span className="overview-area__strip-placeholder">Thought をドロップして選択</span>
-          }
-        </div>
-        {think && (
-          <button
-            className="overview-area__strip-clear-btn"
-            onClick={(e) => { e.stopPropagation(); panel.ClearThought(); }}
-            data-tip="選択解除"
-            data-tip-side="bottom"
-          >
-            <X size={12} />
-          </button>
-        )}
-      </div>
-
-      {/* ── フィルターパネル（Think一覧モードのみ）────────────────── */}
+      {/* ── フィルターパネル + 検索バー（Think一覧モードのみ）────────── */}
       {isThinkListMode && (
-        <UnifiedFilterPanel
-          ref={filterPanelRef}
-          historyKey="ov-filter"
-          textValue={filter}
-          onTextChange={setFilter}
-          createdDate={createdDate}
-          onCreatedDateChange={setCreatedDate}
-          createdRange={createdRange}
-          onCreatedRangeChange={setCreatedRange}
-          updatedDate={updatedDate}
-          onUpdatedDateChange={setUpdatedDate}
-          updatedRange={updatedRange}
-          onUpdatedRangeChange={setUpdatedRange}
-          visibleCount={visibleThinks.length}
-          totalCount={thinksInThought.length}
-          showDateFilters={showDateFilter}
-        />
+        <>
+          <UnifiedFilterPanel
+            ref={filterPanelRef}
+            historyKey="ov-filter"
+            textValue={filter}
+            onTextChange={setFilter}
+            createdDate={createdDate}
+            onCreatedDateChange={setCreatedDate}
+            createdRange={createdRange}
+            onCreatedRangeChange={setCreatedRange}
+            updatedDate={updatedDate}
+            onUpdatedDateChange={setUpdatedDate}
+            updatedRange={updatedRange}
+            onUpdatedRangeChange={setUpdatedRange}
+            showDateFilters={true}
+          />
+          <ThinktankSearchBar
+            searchQuery={searchQuery}
+            onSearchQueryChange={handleSearchQueryChange}
+            onSearch={handleSearch}
+            searchMode={searchMode}
+            onSearchModeChange={setSearchMode}
+            loading={searchLoading}
+            visibleTypes={visibleTypes}
+            onToggleType={handleToggleType}
+            onSelectAllTypes={handleSelectAllTypes}
+            onClearAllTypes={handleClearAllTypes}
+          />
+        </>
       )}
 
       {/* ── 本体 ───────────────────────────────────────────────── */}

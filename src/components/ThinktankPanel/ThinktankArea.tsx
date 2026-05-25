@@ -2,7 +2,12 @@
  * ThinktankArea.tsx
  * ThinktankPanel のコンテンツエリア。
  * ViewMode に応じて表示を切り替える。
- * 日付フィルターは全モード共通で適用される。
+ *
+ * Think一覧（filter）モードは「検索」「Thought一覧」を統合したもの:
+ *   - 上部: タイトル/キーワードによる絞り込み欄
+ *   - 日付フィルター（常時表示）
+ *   - 全文/AI 検索のキーワード欄＋検索オプション
+ *   - 一覧表示する種別（ContentType）の選択ボタン
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -13,14 +18,13 @@ import { StorageManager } from '../../services/storage/StorageManager';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
 import { UnifiedFilterPanel } from './UnifiedFilterPanel';
 import type { UnifiedFilterPanelRef } from './UnifiedFilterPanel';
-import { ThoughtsList, applyFilter } from './ThoughtsList';
 import { ThinktankFilterView } from './ThinktankFilterView';
-import { ThinktankSearchView } from './ThinktankSearchView';
-import { applySort, applyDateFilter } from '../../utils/sortUtils';
-import type { DateFilterState } from '../../utils/sortUtils';
+import { ThinktankSearchBar } from './ThinktankSearchBar';
+import type { SearchMode } from './ThinktankSearchBar';
+import { applySort } from '../../utils/sortUtils';
 import { AiChatView } from './AiChatView';
 import type { AiChatViewRef } from './AiChatView';
-import type { ChatMessage } from '../../types';
+import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { semanticSearch } from '../../services/EmbeddingApiService';
 import type { SemanticSearchResult } from '../../services/EmbeddingApiService';
@@ -34,11 +38,11 @@ import type { LayoutMode } from '../Layout/AppLayout';
 
 const THINKTANK_MODE_NAMES: Record<string, string> = {
   filter:   'Think一覧',
-  search:   '検索',
-  thoughts: 'Thought一覧',
-  ai:       'AI相談',
+  chat:     'AI相談',
   settings: '設定',
 };
+
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
 
 interface Props {
   app: TTApplication;
@@ -65,19 +69,19 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     });
   }, []);
 
-  // 日付フィルターバーの表示状態
-  const [showDateFilter, setShowDateFilter] = useState(false);
-
   // 表示カラム・ソート設定
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
-  // 日付フィルター state（全モード共通）
+  // 日付フィルター state（常時表示）
   const [createdDate,  setCreatedDate]  = useState('');
   const [createdRange, setCreatedRange] = useState('');
   const [updatedDate,  setUpdatedDate]  = useState('');
   const [updatedRange, setUpdatedRange] = useState('');
+
+  // 一覧表示する種別（初期は全種別ON）
+  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(ALL_CONTENT_TYPES));
 
   // チャット state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -97,8 +101,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     const timer = setTimeout(() => {
       switch (panel.ViewMode) {
         case 'filter':
-        case 'search':
-        case 'thoughts':
           filterPanelRef.current?.focus();
           break;
         case 'chat':
@@ -117,54 +119,32 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);
   const [searchLoading,  setSearchLoading]  = useState(false);
   const [searchSearched, setSearchSearched] = useState(false);
-  const [searchHistory,  setSearchHistory]  = useState<string[]>([]);
-  // Phase 15: 検索モード切替
-  type SearchMode = 'fulltext' | 'semantic' | 'hybrid';
-  const [searchMode, setSearchMode] = useState<SearchMode>('fulltext');
+  const [searchMode,     setSearchMode]     = useState<SearchMode>('fulltext');
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
-  const dateFilter = useMemo<DateFilterState>(() => ({
-    show: showDateFilter,
-    createdDate, createdRange, updatedDate, updatedRange,
-  }), [showDateFilter, createdDate, createdRange, updatedDate, updatedRange]);
-
   // vault.Count が変わったとき（追加・削除）のみ再取得
-  const allThoughts = useMemo(() => vault.GetThoughts(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
-  const allThinks   = useMemo(() => vault.GetThinks(),   [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
+  const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const thoughtsBase = useMemo(
-    () => applyFilter(allThoughts, panel.Filter),
-    [allThoughts, panel.Filter],
+  // 母集合: 検索語があれば検索結果、なければ全 Think
+  const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : allThinks;
+
+  // 種別フィルター → ソート（タイトル/日付/チェックは FilterView 側で適用）
+  const typeFilteredBase = useMemo(
+    () => searchBase.filter(t => visibleTypes.has(t.ContentType)),
+    [searchBase, visibleTypes],
   );
+  const sortedBase = useMemo(() => applySort(typeFilteredBase, sort), [typeFilteredBase, sort]);
 
   const checkedSet = useMemo(
     () => new Set(panel.CheckedThoughtIDs),
     [panel.CheckedThoughtIDs],
   );
 
-  const thoughtsVisible = useMemo(() => {
-    const base = panel.ShowCheckedOnly
-      ? thoughtsBase.filter(t => checkedSet.has(t.ID))
-      : thoughtsBase;
-    return applySort(applyDateFilter(base, dateFilter), sort);
-  }, [thoughtsBase, panel.ShowCheckedOnly, checkedSet, dateFilter, sort]);
+  // chat / settings 以外はすべて Think一覧（filter）として扱う（旧モードの残存値対策）
+  const isFilterMode = panel.ViewMode !== 'chat' && panel.ViewMode !== 'settings';
 
-  const searchVisible = useMemo(() => {
-    const base = panel.ShowCheckedOnly
-      ? searchResults.filter(t => checkedSet.has(t.ID))
-      : searchResults;
-    return applySort(applyDateFilter(base, dateFilter), sort);
-  }, [searchResults, panel.ShowCheckedOnly, checkedSet, dateFilter, sort]);
-
-  // filter モードで ThinktankFilterView に渡すソート済み全件
-  const sortedAllThinks = useMemo(() => applySort(allThinks, sort), [allThinks, sort]);
-
-  const visibleThinks =
-    panel.ViewMode === 'thoughts' ? thoughtsVisible :
-    panel.ViewMode === 'filter'   ? filterVisible   :
-    panel.ViewMode === 'search'   ? searchVisible   : [];
-
+  const visibleThinks = isFilterMode ? filterVisible : [];
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
 
   const allVaultChecked = useMemo(
@@ -183,17 +163,18 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     app.OpenThinkInWorkout(id);
   }, [app, vault]);
 
-  // Thought一覧モードのクリック: OverviewPanelには影響させずThinktankPanel内選択のみ
-  const handleSelectThought = useCallback((id: string) => {
-    panel.SelectThought(id);
-  }, [panel]);
+  // Thought 種別はその場で Overview へ、それ以外は Workout へ
+  const handleOpenItem = useCallback((id: string) => {
+    const t = vault.GetThink(id);
+    if (t?.ContentType === 'thought') {
+      app.OpenThought(id, 'datagrid');
+    } else {
+      handleSelect(id);
+    }
+  }, [app, vault, handleSelect]);
 
   const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
     panel.ToggleCheck(id, force);
-  }, [panel]);
-
-  const handleFilterChange = useCallback((value: string) => {
-    panel.SetFilter(value);
   }, [panel]);
 
   const handleCheckAll = useCallback(() => {
@@ -220,18 +201,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     setShowColumnDialog(v => !v);
   }, []);
 
-  const handleToggleDateFilter = useCallback(() => {
-    setShowDateFilter(v => {
-      if (v) {
-        setCreatedDate('');
-        setCreatedRange('');
-        setUpdatedDate('');
-        setUpdatedRange('');
-      }
-      return !v;
-    });
-  }, []);
-
   const handleToggleAllVault = useCallback(() => {
     const allIds = allThinks.map(t => t.ID);
     const allChecked = allIds.length > 0 && allIds.every(id => checkedSet.has(id));
@@ -239,35 +208,35 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     else panel.CheckAll(allIds);
   }, [panel, allThinks, checkedSet]);
 
-  const handleOpenThought = useCallback((id: string) => {
-    app.OpenThought(id, 'datagrid');
-  }, [app]);
+  const handleToggleType = useCallback((t: ContentType) => {
+    setVisibleTypes(prev => {
+      const next = new Set(prev);
+      if (next.has(t)) next.delete(t);
+      else next.add(t);
+      return next;
+    });
+  }, []);
 
-  const canCreateThought =
-    panel.ViewMode === 'search'
-      ? searchQuery.trim() !== ''
-      : panel.ViewMode === 'filter'
-      ? true
-      : panel.ViewMode === 'thoughts'
-      ? true
-      : panel.CheckedThoughtIDs.length > 0;
+  const handleSelectAllTypes = useCallback(() => setVisibleTypes(new Set(ALL_CONTENT_TYPES)), []);
+  const handleClearAllTypes  = useCallback(() => setVisibleTypes(new Set()), []);
+
+  const handleSearchQueryChange = useCallback((v: string) => {
+    setSearchQuery(v);
+    // 入力変更時は検索確定状態を解除（Enter で再検索するまで母集合は全件）
+    setSearchSearched(false);
+  }, []);
+
+  const canCreateThought = true;
 
   const handleCreateThought = useCallback(async () => {
     const dates = { createdDate, createdRange, updatedDate, updatedRange };
-    let think;
-    if (panel.ViewMode === 'search' && searchQuery.trim() !== '') {
-      think = await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs, dates);
-    } else if (panel.ViewMode === 'filter') {
-      think = await vault.CreateThoughtFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs, dates);
-    } else if (panel.ViewMode === 'thoughts' && panel.CheckedThoughtIDs.length > 1) {
-      think = await vault.CreateThoughtFromThoughts(panel.CheckedThoughtIDs);
+    if (searchSearched && searchQuery.trim() !== '') {
+      await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs, dates);
     } else {
-      if (panel.CheckedThoughtIDs.length === 0) return;
-      think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, filterTitleQuery.trim(), dates);
+      await vault.CreateThoughtFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs, dates);
     }
     panel.ClearChecks();
-    // panel.SelectThought(think.ID); // Overviewモードへの自動登録を停止
-  }, [panel, vault, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
+  }, [panel, vault, searchSearched, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
 
   // チャット送信・保存
   const handleChatSend = useCallback(async (text: string) => {
@@ -282,7 +251,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
     chatAbortRef.current = new AbortController();
 
-    // 末尾の空アシスタントメッセージを除いた会話履歴
     const history = [...chatMessages, userMsg].map(m => ({
       role:    m.role as 'user' | 'assistant',
       content: m.content,
@@ -322,7 +290,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (!q) return;
-    setSearchHistory(prev => prev.includes(q) ? prev : [q, ...prev].slice(0, 20));
     setSearchLoading(true);
     try {
       if (searchMode === 'semantic' || searchMode === 'hybrid') {
@@ -341,8 +308,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           return t;
         });
         setSearchResults(thinks);
-        setSearchLoading(false);
         setSearchSearched(true);
+        setSearchLoading(false);
         return;
       }
 
@@ -374,10 +341,15 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   let content: React.ReactNode;
 
-  if (panel.ViewMode === 'filter') {
+  if (panel.ViewMode === 'chat') {
+    content = <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
+  } else if (panel.ViewMode === 'settings') {
+    content = <ThinktankSettingsView ref={settingsViewRef} layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
+  } else {
+    // filter モード（検索・Thought一覧を統合）
     content = (
       <ThinktankFilterView
-        thinks={sortedAllThinks}
+        thinks={sortedBase}
         selectedId={panel.SelectedThoughtID}
         checkedIds={panel.CheckedThoughtIDs}
         checkedOnly={panel.ShowCheckedOnly}
@@ -386,44 +358,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         updatedDate={updatedDate}
         updatedRange={updatedRange}
         columns={columns}
-        onOpen={handleSelect}
+        onOpen={handleOpenItem}
         onToggleCheck={handleToggleCheck}
         onVisibleChange={handleFilterVisibleChange}
         titleQuery={filterTitleQuery}
-      />
-    );
-  } else if (panel.ViewMode === 'search') {
-    content = (
-      <ThinktankSearchView
-        selectedId={panel.SelectedThoughtID}
-        checkedIds={panel.CheckedThoughtIDs}
-        checkedOnly={panel.ShowCheckedOnly}
-        results={searchResults}
-        visibleResults={searchVisible}
-        totalVaultCount={vault.Count}
-        loading={searchLoading}
-        searched={searchSearched}
-        columns={columns}
-        searchMode={searchMode}
-        onSearchModeChange={setSearchMode}
-        onOpen={handleSelect}
-        onToggleCheck={handleToggleCheck}
-      />
-    );
-  } else if (panel.ViewMode === 'chat') {
-    content = <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
-  } else if (panel.ViewMode === 'settings') {
-    content = <ThinktankSettingsView ref={settingsViewRef} layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
-  } else {
-    // デフォルト: thoughts モード
-    content = (
-      <ThoughtsList
-        thoughts={thoughtsVisible}
-        selectedId={panel.SelectedThoughtID}
-        checkedIds={panel.CheckedThoughtIDs}
-        columns={columns}
-        onOpen={handleOpenThought}
-        onToggleCheck={handleToggleCheck}
       />
     );
   }
@@ -439,10 +377,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={panel.ShowCheckedOnly}
         allVaultChecked={allVaultChecked}
-        showDateFilter={showDateFilter}
         showColumnDialog={showColumnDialog}
         canCreateThought={canCreateThought}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
+        visibleCount={filterVisible.length}
+        totalCount={allThinks.length}
         onScrollPrev={handleScrollPrev}
         onScrollNext={handleScrollNext}
         onCheckAll={handleCheckAll}
@@ -450,7 +389,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onDeleteChecked={handleDeleteChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onToggleAllVault={handleToggleAllVault}
-        onToggleDateFilter={handleToggleDateFilter}
         onToggleColumnDialog={handleToggleColumnDialog}
         onCreateThought={handleCreateThought}
         onSaveChat={handleSaveChat}
@@ -467,41 +405,38 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         />
       )}
 
-      <UnifiedFilterPanel
-        ref={filterPanelRef}
-        historyKey={panel.ViewMode === 'search' ? 'tt-search' : 'tt-filter'}
-        textValue={
-          panel.ViewMode === 'search' ? searchQuery :
-          panel.ViewMode === 'filter' ? filterTitleQuery :
-          panel.Filter
-        }
-        onTextChange={
-          panel.ViewMode === 'search' ? setSearchQuery :
-          panel.ViewMode === 'filter' ? setFilterTitleQuery :
-          handleFilterChange
-        }
-        createdDate={createdDate}
-        onCreatedDateChange={setCreatedDate}
-        createdRange={createdRange}
-        onCreatedRangeChange={setCreatedRange}
-        updatedDate={updatedDate}
-        onUpdatedDateChange={setUpdatedDate}
-        updatedRange={updatedRange}
-        onUpdatedRangeChange={setUpdatedRange}
-        visibleCount={
-          panel.ViewMode === 'search' ? searchVisible.length :
-          panel.ViewMode === 'filter' ? filterVisible.length :
-          thoughtsVisible.length
-        }
-        totalCount={
-          panel.ViewMode === 'search' ? searchResults.length :
-          panel.ViewMode === 'filter' ? allThinks.length :
-          allThoughts.length
-        }
-        onSearch={panel.ViewMode === 'search' ? handleSearch : undefined}
-        showTextFilter={panel.ViewMode !== 'chat' && panel.ViewMode !== 'settings'}
-        showDateFilters={showDateFilter && ['thoughts', 'filter', 'search'].includes(panel.ViewMode)}
-      />
+      {isFilterMode && (
+        <>
+          <UnifiedFilterPanel
+            ref={filterPanelRef}
+            historyKey="tt-filter"
+            textValue={filterTitleQuery}
+            onTextChange={setFilterTitleQuery}
+            createdDate={createdDate}
+            onCreatedDateChange={setCreatedDate}
+            createdRange={createdRange}
+            onCreatedRangeChange={setCreatedRange}
+            updatedDate={updatedDate}
+            onUpdatedDateChange={setUpdatedDate}
+            updatedRange={updatedRange}
+            onUpdatedRangeChange={setUpdatedRange}
+            showTextFilter={true}
+            showDateFilters={true}
+          />
+          <ThinktankSearchBar
+            searchQuery={searchQuery}
+            onSearchQueryChange={handleSearchQueryChange}
+            onSearch={handleSearch}
+            searchMode={searchMode}
+            onSearchModeChange={setSearchMode}
+            loading={searchLoading}
+            visibleTypes={visibleTypes}
+            onToggleType={handleToggleType}
+            onSelectAllTypes={handleSelectAllTypes}
+            onClearAllTypes={handleClearAllTypes}
+          />
+        </>
+      )}
 
       <div className="thinktank-area__body">
         {content}

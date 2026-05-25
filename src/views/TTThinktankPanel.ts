@@ -10,9 +10,7 @@ import { TTUIItem } from '../models/TTUIItem';
 
 /** ThinktankArea の表示モード */
 export type ThinktankViewMode =
-  | 'thoughts'  // Thoughtデータのみ表示（デフォルト）
-  | 'filter'    // タイトル・日時でフィルター
-  | 'search'    // 全文検索
+  | 'filter'    // Think一覧（タイトル/日時/種別フィルター・全文/AI検索を統合）
   | 'chat'      // AI相談
   | 'settings'; // 保管庫設定
 
@@ -30,7 +28,7 @@ export class TTThinktankPanel extends TTUIItem {
   public Filter: string = '';
 
   /** ThinktankArea の表示モード */
-  public ViewMode: ThinktankViewMode = 'thoughts';
+  public ViewMode: ThinktankViewMode = 'filter';
 
   /** チェック済みアイテムのみ表示するフラグ */
   public ShowCheckedOnly: boolean = false;

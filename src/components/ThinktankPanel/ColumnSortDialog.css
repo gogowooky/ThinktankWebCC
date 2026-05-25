@@ -115,10 +115,12 @@
   padding-left: 6px;
   color: #333;
   white-space: nowrap;
+  cursor: grab;
 }
 
 .col-sort-dialog__td--check {
   text-align: center;
+  cursor: pointer;
 }
 
 .col-sort-dialog__td--check input[type="checkbox"] {

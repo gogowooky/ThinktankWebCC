@@ -1,5 +1,6 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Type, CalendarDays, CalendarClock, ChevronDown, X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { parseRange } from '../../utils/dateUtils';
 import { FilterHistoryPulldown } from './FilterHistoryPulldown';
 import { saveHistory } from '../../utils/historyUtils';
@@ -30,6 +31,11 @@ interface Props {
   onSearch?:        () => void;
   showTextFilter?:  boolean;
   showDateFilters?: boolean;
+
+  /** テキスト入力欄のガイド（プレースホルダ）。省略時は既定文言 */
+  textPlaceholder?: string;
+  /** テキスト入力欄の先頭アイコン。省略時は Type */
+  textIcon?:        LucideIcon;
 }
 
 export const UnifiedFilterPanel = React.memo(forwardRef<UnifiedFilterPanelRef, Props>(function UnifiedFilterPanel({
@@ -43,6 +49,8 @@ export const UnifiedFilterPanel = React.memo(forwardRef<UnifiedFilterPanelRef, P
   onSearch,
   showTextFilter = true,
   showDateFilters = true,
+  textPlaceholder = 'タイトル・キーワードで絞り込み...',
+  textIcon: TextIcon = Type,
 }, ref) {
   const [showHistory, setShowHistory] = useState(false);
   const textInputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +75,7 @@ export const UnifiedFilterPanel = React.memo(forwardRef<UnifiedFilterPanelRef, P
       {showTextFilter && (
         <div className="unified-filter-row">
           <div className="unified-filter-row-left">
-            <Type size={12} className="unified-filter-icon" />
+            <TextIcon size={12} className="unified-filter-icon" />
             <div className="unified-filter-text-wrapper">
               <input
                 ref={textInputRef}
@@ -76,7 +84,7 @@ export const UnifiedFilterPanel = React.memo(forwardRef<UnifiedFilterPanelRef, P
                 value={textValue}
                 onChange={e => onTextChange(e.target.value)}
                 onKeyDown={handleTextKeyDown}
-                placeholder="タイトル・キーワードで絞り込み..."
+                placeholder={textPlaceholder}
                 spellCheck={false}
               />
               <ChevronDown 

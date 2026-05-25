@@ -2,12 +2,12 @@
  * ThinktankRibbon.tsx
  * ThinktankPanel の Ribbon ボタン群。
  *
- * 上部: AI / Filter / Search / Thoughts の4モードボタン
+ * 上部: Think一覧（検索・Thought一覧を統合）/ AI相談
  * 下部: 設定
  */
 
 import {
-  MessageCircle, Files, SearchCheck, Library, Settings, ListRestart, RefreshCw,
+  MessageCircle, Files, Settings, RefreshCw,
 } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
@@ -31,8 +31,6 @@ const MODE_BUTTONS: {
   label: string;
 }[] = [
   { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧' },
-  { mode: 'search',  icon: <SearchCheck size={16} />, label: '検索' },
-  { mode: 'thoughts',icon: <Library     size={16} />, label: 'Thought一覧' },
   { mode: 'chat',    icon: <MessageCircle size={16} />, label: 'AI相談' },
 ];
 

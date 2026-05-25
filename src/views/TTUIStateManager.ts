@@ -125,7 +125,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'ThinktankPanel.ViewMode': {
     panel: 'ThinktankPanel',
-    default: 'thoughts', type: 'string', candidates: '^(filter|search|thoughts|chat|settings)$',
+    default: 'filter', type: 'string', candidates: '^(filter|chat|settings)$',
     description: '左パネルモード',
     get: (app) => app.ThinktankPanel.ViewMode,
     set: (app, v) => { app.ThinktankPanel.ViewMode = v as ThinktankViewMode; },
