@@ -105,6 +105,7 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
             key={m}
             className={`tt-search-bar__mode-radio${searchMode === m ? ' tt-search-bar__mode-radio--active' : ''}`}
             data-tip={SEARCH_MODE_TIPS[m]}
+            data-tip-side="bottom"
           >
             <input
               type="radio"
@@ -141,6 +142,7 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
               className="tt-search-bar__type-all tt-search-bar__type-all--right"
               onClick={allSelected ? onClearAllTypes : onSelectAllTypes}
               data-tip={allSelected ? '全種別をクリア' : '全種別を選択'}
+              data-tip-side="left"
               aria-label={allSelected ? '全種別をクリア' : '全種別を選択'}
             >
               {allSelected ? <X size={12} /> : <SquareCheck size={12} />}
