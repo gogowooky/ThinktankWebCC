@@ -5,7 +5,7 @@
  * ② 一覧表示する種別（ContentType）の選択ボタン
  */
 
-import React, { useImperativeHandle, forwardRef, useRef } from 'react';
+import React, { useId, useImperativeHandle, forwardRef, useRef } from 'react';
 import { TextSearch, X, FileText, Library, Table, Link, MessageCircle, Globe, SquareCheck, type LucideIcon } from 'lucide-react';
 import type { ContentType } from '../../types';
 import './UnifiedFilterPanel.css';
@@ -59,6 +59,7 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
+  const radioGroupName = `tt-search-mode-${useId()}`;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchQuery.trim()) onSearch();
@@ -107,7 +108,7 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
           >
             <input
               type="radio"
-              name="tt-search-mode"
+              name={radioGroupName}
               checked={searchMode === m}
               onChange={() => onSearchModeChange(m)}
             />
