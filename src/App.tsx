@@ -28,6 +28,24 @@ export default function App() {
     const initManagers = async () => {
       await TTUIStateManager.instance.ensureThinkExists(vault)
       await TTShortcutManager.instance.ensureThinkExists(vault)
+
+      // 昨日更新されたがスナップショットが未作成のものをチェックし、作成確認する
+      try {
+        const missing = await vault.GetMissingYesterdaySnapshots();
+        if (missing.length > 0) {
+          const names = missing.slice(0, 3).map(t => `「${t.Name}」`).join(', ') + (missing.length > 3 ? ` など他${missing.length - 3}件` : '');
+          const ok = window.confirm(
+            `昨日編集した以下のメモのスナップショット（履歴）が作成されていません。作成しますか？\n${names}`
+          );
+          if (ok) {
+            await vault.CreateSnapshotsForYesterday(missing, '前日の未作成スナップショット自動補完');
+            alert(`${missing.length}件のスナップショットを作成しました。`);
+            vault.NotifyUpdated();
+          }
+        }
+      } catch (e) {
+        console.error('[App] Startup snapshot check failed:', e);
+      }
     }
 
     if (vault.IsLoaded) {

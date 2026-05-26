@@ -614,6 +614,42 @@ export class TTVault extends TTCollection {
     return count;
   }
 
+  /** 昨日更新されたが、スナップショットが未作成のThinkをスキャンしてリストアップする */
+  public async GetMissingYesterdaySnapshots(): Promise<TTThink[]> {
+    const yesterdayStr = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const modifiedYesterday = this.GetThinks().filter(t => {
+      const compareDate = (t.UpdatedAt || t.ID).slice(0, 10);
+      return compareDate === yesterdayStr && t.ContentType !== 'thought';
+    });
+
+    const missing: TTThink[] = [];
+    for (const think of modifiedYesterday) {
+      const historyMetas = await this.LoadHistoryMeta(think.ID);
+      const hasYesterdaySnapshot = historyMetas.some(meta => meta.timestamp.slice(0, 10) === yesterdayStr);
+      if (!hasYesterdaySnapshot) {
+        missing.push(think);
+      }
+    }
+    return missing;
+  }
+
+  /** 指定したThink群に対して、昨日の日付メタデータ付きでスナップショットを一括生成する */
+  public async CreateSnapshotsForYesterday(thinks: TTThink[], summary?: string): Promise<void> {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    yesterday.setHours(23, 59, 59, 999);
+    const tsStr = yesterday.toISOString();
+
+    for (const think of thinks) {
+      if (think.IsMetaOnly) await think.LoadContent();
+      await StorageManager.instance.saveHistory({
+        thinkId:     think.ID,
+        timestamp:   tsStr,
+        fullContent: think.Content,
+        summary:     summary || '自動スナップショット（昨日分漏れ）',
+      });
+    }
+  }
+
   // ── LocalFS パスユーティリティ ─────────────────────────────────────
 
   public buildLocalPath(contentType: ContentType, id: string): string {

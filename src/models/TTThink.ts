@@ -10,6 +10,7 @@
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
+import { getAddedText } from '../utils/diffUtils';
 
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
@@ -124,13 +125,36 @@ export class TTThink extends TTObject {
   public async CreateSnapshot(summary?: string): Promise<void> {
     try {
       const nowStr = new Date().toISOString();
+      let finalSummary = summary || '';
+
+      // summary が空の場合に、前回の履歴スナップショットとの差分から自動抽出する
+      if (!finalSummary && this._parent) {
+        const vault = this._parent as any; // TTVault の依存循環回避のためのキャスト
+        if (typeof vault.LoadHistoryMeta === 'function' && typeof vault.GetHistoryContent === 'function') {
+          const histories = await vault.LoadHistoryMeta(this.ID);
+          if (histories.length > 0) {
+            const lastHistory = histories[0]; // 直近の履歴
+            const lastContent = await vault.GetHistoryContent(lastHistory.historyId);
+            if (lastContent !== null) {
+              const diffText = getAddedText(lastContent, this.Content);
+              const trimmed = diffText.trim().replace(/\s+/g, ' ');
+              finalSummary = trimmed.length > 100 ? trimmed.slice(0, 100) + '...' : trimmed;
+            }
+          }
+        }
+      }
+
+      if (!finalSummary) {
+        finalSummary = 'スナップショット生成';
+      }
+
       await StorageManager.instance.saveHistory({
         thinkId:     this.ID,
         timestamp:   nowStr,
         fullContent: this.Content,
-        summary:     summary,
+        summary:     finalSummary,
       });
-      console.log(`[TTThink] Snapshot created for ${this.ID} at ${nowStr}`);
+      console.log(`[TTThink] Snapshot created for ${this.ID} at ${nowStr} (summary: ${finalSummary})`);
     } catch (e) {
       console.error(`[TTThink] CreateSnapshot failed (${this.ID}):`, e);
     }
