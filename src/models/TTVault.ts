@@ -1,0 +1,681 @@
+/**
+ * TTVault.ts
+ * v5 保管庫クラス。TTCollection の派生クラス。
+ *
+ * データ階層: TTVault > Thoughts > Thought > Think
+ *
+ * LocalFS パス: ./../ThinktankLocal/vault/{ContentType}/{ID}.md
+ * BigQuery テーブル: thinktank.vault
+ */
+
+import { TTCollection } from './TTCollection';
+import { TTThink } from './TTThink';
+import { TTObject } from './TTObject';
+import type { ContentType } from '../types';
+import { TTModels } from './TTModels';
+import { formatDateRangeJapanese, computeDateRange } from '../utils/dateUtils';
+import { StorageManager } from '../services/storage/StorageManager';
+
+export class TTVault extends TTCollection {
+  /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
+  public VaultName: string = 'vault';
+
+  /** LocalFS ルートフォルダパス（Local モード用）*/
+  public DataFolder: string = './../ThinktankLocal/vault';
+
+  public override get ClassName(): string {
+    return 'TTVault';
+  }
+
+  constructor(vaultName: string = 'vault') {
+    super();
+    this.ID = vaultName;
+    this.VaultName = vaultName;
+    this.Name = vaultName;
+    this.ItemSaveProperties = 'ID,Name,ContentType,Keywords,VaultID,UpdateDate';
+  }
+
+  // ── 型付きアクセス ─────────────────────────────────────────────────
+
+  /** 全 TTThink を型付きで取得する */
+  public GetThinks(): TTThink[] {
+    return this.GetItems().filter((item): item is TTThink => item instanceof TTThink);
+  }
+
+  /**
+   * Thoughts を取得する（ContentType='thought' の TTThink 一覧）
+   * Thoughts = TTVault を ContentType='thought' でフィルターした集合
+   */
+  public GetThoughts(): TTThink[] {
+    return this.GetThinks().filter(t => t.ContentType === 'thought');
+  }
+
+
+  /**
+   * 指定 Thought が参照する Think 群を非同期で返す（全文検索も含む）。
+   * 複数 thought File がある場合はタイトル行以外の行をすべてマージする。
+   * - `>` 行: Keyword、作成日、更新日で Filter
+   * - `>>` 行: 検索語、作成日、更新日で全文検索
+   * - `*` 行: 直接 ID 指定
+   * 重複排除して TTThink[] を返す。
+   */
+  public async GetThinksForThoughtAsync(thoughtId: string): Promise<TTThink[]> {
+    const rootThought = this.GetThink(thoughtId);
+    if (!rootThought || rootThought.ContentType !== 'thought') return [];
+
+    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+    const finalIds = new Set<string>();
+
+    // 解析用パラメータ
+    let filterKeyword = '';
+    let filterCreatedRange: { from: string; to: string } | null = null;
+    let filterUpdatedRange: { from: string; to: string } | null = null;
+    
+    let searchQuery = '';
+    let searchCreatedRange: { from: string; to: string } | null = null;
+    let searchUpdatedRange: { from: string; to: string } | null = null;
+
+    // 再帰的にパラメータを収集
+    const collectParams = async (tid: string, visited: Set<string>) => {
+      if (visited.has(tid)) return;
+      visited.add(tid);
+
+      const t = this.GetThink(tid);
+      if (!t || t.ContentType !== 'thought') return;
+      if (t.IsMetaOnly) await t.LoadContent();
+
+      const lines = t.Content.split('\n').slice(1); // タイトル行除外
+
+      for (const line of lines) {
+        const s = line.trim();
+        if (s.startsWith('* ')) {
+          const id = s.slice(2).trim();
+          if (id) {
+            const sub = this.GetThink(id);
+            if (sub?.ContentType === 'thought') {
+              await collectParams(id, visited);
+            } else {
+              finalIds.add(id);
+            }
+          }
+        } else if (s.startsWith('>> ')) {
+          // 全文検索パラメータ
+          const body = s.slice(3).trim();
+          if (body.startsWith('検索語：')) searchQuery = body.slice(4).trim();
+          else if (body.startsWith('作成日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            searchCreatedRange = computeDateRange(d, r);
+          } else if (body.startsWith('更新日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            searchUpdatedRange = computeDateRange(d, r);
+          }
+        } else if (s.startsWith('> ')) {
+          // フィルターパラメータ
+          const body = s.slice(2).trim();
+          if (body.startsWith('作成日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            filterCreatedRange = computeDateRange(d, r);
+          } else if (body.startsWith('更新日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            filterUpdatedRange = computeDateRange(d, r);
+          } else if (body.startsWith('Keyword：')) {
+            filterKeyword = body.slice('Keyword：'.length).trim();
+          } else if (!body.includes('：')) {
+            filterKeyword = body;
+          }
+        }
+      }
+    };
+
+    await collectParams(thoughtId, new Set());
+
+    // 1. フィルター実行
+    if (filterKeyword || filterCreatedRange || filterUpdatedRange) {
+      const q = filterKeyword.toLowerCase();
+      for (const t of allThinks) {
+        if (q && !`${t.Name} ${t.Keywords}`.toLowerCase().includes(q)) continue;
+        if (filterCreatedRange) {
+          const range = filterCreatedRange as { from: string; to: string };
+          const d = t.ID.slice(0, 10);
+          if (d < range.from || d > range.to) continue;
+        }
+        if (filterUpdatedRange) {
+          const range = filterUpdatedRange as { from: string; to: string };
+          const d = (t.UpdatedAt || t.ID).slice(0, 10);
+          if (d < range.from || d > range.to) continue;
+        }
+        finalIds.add(t.ID);
+      }
+    }
+
+    // 2. 全文検索実行
+    if (searchQuery || searchCreatedRange || searchUpdatedRange) {
+      try {
+        const metas = await StorageManager.instance.search(searchQuery);
+        for (const meta of metas) {
+          if (meta.contentType === 'thought') continue;
+          
+          // 日付条件チェック
+          if (searchCreatedRange) {
+            const range = searchCreatedRange as { from: string; to: string };
+            const d = meta.id.slice(0, 10);
+            if (d < range.from || d > range.to) continue;
+          }
+          if (searchUpdatedRange) {
+            const range = searchUpdatedRange as { from: string; to: string };
+            const d = (meta.updatedAt || meta.id).slice(0, 10);
+            if (d < range.from || d > range.to) continue;
+          }
+          finalIds.add(meta.id);
+        }
+      } catch (e) {
+        console.error('[TTVault] GetThinksForThoughtAsync search failed:', e);
+      }
+    }
+
+    // デフォルト: 何も指定がなければ全データ
+    if (finalIds.size === 0 && !filterKeyword && !searchQuery && !filterCreatedRange && !filterUpdatedRange && !searchCreatedRange && !searchUpdatedRange) {
+      return allThinks;
+    }
+
+    const idMap = new Map(allThinks.map(t => [t.ID, t]));
+    return [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+  }
+
+  /** GetThinksForThoughtAsync の同期版（非同期ロードや検索はスキップ）*/
+  public GetThinksForThought(thoughtId: string): TTThink[] {
+    const rootThought = this.GetThink(thoughtId);
+    if (!rootThought || rootThought.ContentType !== 'thought') return [];
+    if (rootThought.IsMetaOnly) return []; // 未ロードなら空
+
+    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+    const finalIds = new Set<string>();
+
+    let filterKeyword = '';
+    let filterCreatedRange: { from: string; to: string } | null = null;
+    let filterUpdatedRange: { from: string; to: string } | null = null;
+
+    const collectParamsSync = (tid: string, visited: Set<string>) => {
+      if (visited.has(tid)) return;
+      visited.add(tid);
+      const t = this.GetThink(tid);
+      if (!t || t.ContentType !== 'thought' || t.IsMetaOnly) return;
+
+      const lines = t.Content.split('\n').slice(1);
+      for (const line of lines) {
+        const s = line.trim();
+        if (s.startsWith('* ')) {
+          const id = s.slice(2).trim();
+          if (id) {
+            const sub = this.GetThink(id);
+            if (sub?.ContentType === 'thought') collectParamsSync(id, visited);
+            else finalIds.add(id);
+          }
+        } else if (s.startsWith('> ') && !s.startsWith('>> ')) {
+          const body = s.slice(2).trim();
+          if (body.startsWith('作成日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            filterCreatedRange = computeDateRange(d, r);
+          } else if (body.startsWith('更新日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            filterUpdatedRange = computeDateRange(d, r);
+          } else if (body.startsWith('Keyword：')) {
+            filterKeyword = body.slice('Keyword：'.length).trim();
+          } else if (!body.includes('：')) {
+            filterKeyword = body;
+          }
+        }
+      }
+    };
+
+    collectParamsSync(thoughtId, new Set());
+
+    if (filterKeyword || filterCreatedRange || filterUpdatedRange) {
+      const q = filterKeyword.toLowerCase();
+      for (const t of allThinks) {
+        if (q && !`${t.Name} ${t.Keywords}`.toLowerCase().includes(q)) continue;
+        if (filterCreatedRange) {
+          const range = filterCreatedRange as { from: string; to: string };
+          const d = t.ID.slice(0, 10);
+          if (d < range.from || d > range.to) continue;
+        }
+        if (filterUpdatedRange) {
+          const range = filterUpdatedRange as { from: string; to: string };
+          const d = (t.UpdatedAt || t.ID).slice(0, 10);
+          if (d < range.from || d > range.to) continue;
+        }
+        finalIds.add(t.ID);
+      }
+    }
+
+    if (finalIds.size === 0 && !filterKeyword && !filterCreatedRange && !filterUpdatedRange) return allThinks;
+
+    const idMap = new Map(allThinks.map(t => [t.ID, t]));
+    return [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+  }
+
+  /** ID で TTThink を取得する（型付き）*/
+  public GetThink(id: string): TTThink | undefined {
+    const item = this.GetItem(id);
+    return item instanceof TTThink ? item : undefined;
+  }
+
+  /** TTThink を追加する（VaultID を自動設定）*/
+  public AddThink(think: TTThink): TTThink {
+    think.VaultID = this.ID;
+    return this.AddItem(think) as TTThink;
+  }
+
+  protected override CreateChildInstance(): TTObject {
+    return new TTThink();
+  }
+
+  // ── ストレージ連携（Phase 13）────────────────────────────────────────
+
+  public override async LoadCache(): Promise<void> {
+    try {
+      const metas = await StorageManager.instance.listMeta();
+      for (const meta of metas) {
+        const think = new TTThink();
+        think.ID          = meta.id;
+        think.VaultID     = this.ID;
+        think.ContentType = meta.contentType as ContentType;
+        think.Keywords    = meta.keywords  ?? '';
+        think.RelatedIDs  = meta.relatedIds ?? '';
+        think.IsMetaOnly  = true;
+        think.UpdatedAt   = meta.updatedAt ?? '';
+        think.setContentSilent(meta.title);
+        think.markSaved();
+        think._parent = this;
+        this._children.set(think.ID, think);
+      }
+      this.Count    = this._children.size;
+      this.IsLoaded = true;
+      this.NotifyRefresh();
+      console.log(`[TTVault] LoadCache: ${this.Count} items loaded (vault=${this.ID})`);
+    } catch (e) {
+      console.error('[TTVault] LoadCache failed:', e);
+      this.IsLoaded = true;
+    }
+  }
+
+  /** 全データをストレージから再ロードしリスナーを発火する（表示更新用）*/
+  public async ReloadAll(): Promise<void> {
+    this.ClearItemsSilent();
+    this.IsLoaded = false;
+    await this.LoadCache();
+  }
+
+  /** 複数 thought を合成した新 thought を作成する
+   *  各 thought の ThinkID を展開・重複排除して `* id` 行にまとめる
+   *  タイトル: {count1}件＋{count2}件：{name1}＋{name2}＋...
+   */
+  /** Thought一覧モード: 複数 thought を合成した新 thought を作成する */
+  public async CreateThoughtFromThoughts(ids: string[]): Promise<TTThink> {
+    const titles: string[] = [];
+    const allThinkIds = new Set<string>();
+    for (const id of ids) {
+      const think = this.GetThink(id);
+      if (think) {
+        titles.push(think.Name);
+        allThinkIds.add(id);
+      }
+    }
+    const uniqueIds = [...allThinkIds];
+    const title = `${uniqueIds.length}件：Thoughtファイルの連結（${uniqueIds.join(' x ')}）`;
+    
+    return this._createThought({
+      prefix: '',
+      title,
+      ids: uniqueIds
+    });
+  }
+
+  /** Think一覧モード (Filter): チェック済みアイテムまたは条件から作成 */
+  public async CreateThoughtFromIds(ids: string[], filter?: string, dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
+    const titles: string[] = [];
+    if (ids.length > 0) {
+      const firstName = this.GetThink(ids[0])?.Name ?? ids[0];
+      titles.push(`${ids.length}件：含む「${firstName}」`);
+    } else {
+      if (filter) titles.push(`フィルター：${filter}`);
+      if (dates?.updatedDate || dates?.updatedRange) titles.push(`更新：${formatDateRangeJapanese(dates.updatedDate || '', dates.updatedRange || '')}`);
+      if (dates?.createdDate || dates?.createdRange) titles.push(`作成：${formatDateRangeJapanese(dates.createdDate || '', dates.createdRange || '')}`);
+    }
+
+    return this._createThought({
+      prefix: '> ',
+      title: titles.join(' / '),
+      filterKeyword: filter,
+      ids,
+      dates
+    });
+  }
+
+  /** thought新規作成の共通ロジック */
+  private async _createThought(options: {
+    prefix: string,
+    title: string,
+    searchQuery?: string,
+    filterKeyword?: string,
+    dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string },
+    ids?: string[]
+  }): Promise<TTThink> {
+    const { prefix, title, searchQuery, filterKeyword, dates, ids = [] } = options;
+    const existingIds = new Set(this._children.keys());
+    const newId = TTVault.generateUniqueId(existingIds);
+
+    let body = '';
+    
+    if (prefix === '>> ') {
+      // 全文検索モード
+      if (searchQuery) body += `>> 検索語：${searchQuery}\n`;
+      if (dates?.createdDate || dates?.createdRange) {
+        body += `>> 作成日：${dates.createdDate || ''}, ${dates.createdRange || ''}\n`;
+      }
+      if (dates?.updatedDate || dates?.updatedRange) {
+        body += `>> 更新日：${dates.updatedDate || ''}, ${dates.updatedRange || ''}\n`;
+      }
+    } else if (prefix === '> ') {
+      // フィルターモード
+      if (filterKeyword) body += `> Keyword：${filterKeyword}\n`;
+      if (dates?.createdDate || dates?.createdRange) {
+        body += `> 作成日：${dates.createdDate || ''}, ${dates.createdRange || ''}\n`;
+      }
+      if (dates?.updatedDate || dates?.updatedRange) {
+        body += `> 更新日：${dates.updatedDate || ''}, ${dates.updatedRange || ''}\n`;
+      }
+    }
+
+    // ID セクション
+    if (ids.length > 0) {
+      body += ids.map(id => `* ${id}`).join('\n') + '\n';
+    }
+
+    const fullContent = `${prefix}${title}\n${body.trim()}`;
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = 'thought';
+    think.IsMetaOnly  = false;
+    think.setContentSilent(fullContent);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: 'thought',
+      fullContent,
+      keywords:    '',
+      relatedIds:  ids.join(','),
+    });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
+  /** 全文検索モード: 検索語と条件から作成 */
+  public async CreateThoughtFromSearch(query: string, ids: string[], dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
+    const titles: string[] = [];
+    if (ids.length > 0) {
+      const firstName = this.GetThink(ids[0])?.Name ?? ids[0];
+      titles.push(`${ids.length}件：含む「${firstName}」`);
+    } else {
+      if (query) titles.push(`検索語：${query}`);
+      if (dates?.updatedDate || dates?.updatedRange) titles.push(`更新：${formatDateRangeJapanese(dates.updatedDate || '', dates.updatedRange || '')}`);
+      if (dates?.createdDate || dates?.createdRange) titles.push(`作成：${formatDateRangeJapanese(dates.createdDate || '', dates.createdRange || '')}`);
+    }
+
+    return this._createThought({
+      prefix: '>> ',
+      title: titles.join(' / '),
+      searchQuery: query,
+      ids,
+      dates
+    });
+  }
+
+  /** フィルターキーワードからthoughtを新規作成して保存する */
+  public async CreateThoughtFromFilter(keyword: string, ids: string[], dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
+    return this.CreateThoughtFromIds(ids, keyword, dates);
+  }
+
+  /** 新規の空Thinkを作成して保存する */
+  public async CreateBlankThink(contentType: ContentType, initialName: string = ''): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId = TTVault.generateUniqueId(existingIds);
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = contentType;
+    think.IsMetaOnly  = false;
+    think.setContentSilent(initialName);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: contentType,
+      fullContent: initialName,
+      keywords:    '',
+      relatedIds:  '',
+    });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
+  /** links データ（URL/path リンク集）を作成して保存する */
+  public async CreateLinksThink(title: string, url: string): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId       = TTVault.generateUniqueId(existingIds);
+    const fullContent = `${title}\n* [${title}](${url})`;
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = 'links';
+    think.IsMetaOnly  = false;
+    think.setContentSilent(fullContent);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: 'links',
+      fullContent,
+      keywords:    '',
+      relatedIds:  '',
+    });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
+  /** チャット会話を TTThink(ContentType='chat') として保存する。
+   *  thoughtId を渡すと、そのThoughtのIDリストに新しいThinkを追加する。 */
+  public async CreateChatThink(content: string, thoughtId?: string): Promise<TTThink> {
+    const existingIds = new Set(this._children.keys());
+    const newId = TTVault.generateUniqueId(existingIds);
+
+    const think = new TTThink();
+    think.ID          = newId;
+    think.VaultID     = this.ID;
+    think.ContentType = 'chat';
+    think.IsMetaOnly  = false;
+    think.setContentSilent(content);
+    think._parent     = this;
+    this._children.set(newId, think);
+    this.Count = this._children.size;
+
+    await StorageManager.instance.save({
+      id:          newId,
+      contentType: 'chat',
+      fullContent: content,
+      keywords:    '',
+      relatedIds:  '',
+    });
+    think.markSaved();
+
+    if (thoughtId) {
+      const thought = this.GetThink(thoughtId);
+      if (thought && thought.ContentType === 'thought') {
+        if (thought.IsMetaOnly) await thought.LoadContent();
+        const existingIds2 = thought.getThinkIds();
+        const nonIdLines = thought.Content.split('\n').filter(l => !l.startsWith('* '));
+        const newContent  = [...nonIdLines, ...existingIds2.map(id => `* ${id}`), `* ${newId}`].join('\n');
+        thought.Content = newContent;
+        await thought.SaveContent();
+      }
+    }
+
+    this.NotifyUpdated();
+    return think;
+  }
+
+  /**
+   * 固定 ID・初期コンテンツ付きで Think を作成/上書きする。
+   * __tt_ui_state__ / __tt_shortcuts__ などのシステム Think 用。
+   */
+  public async AddThinkWithContent(
+    id: string,
+    name: string,
+    contentType: ContentType,
+    keywords: string,
+    fullContent: string,
+  ): Promise<TTThink> {
+    const think = new TTThink();
+    think.ID          = id;
+    think.VaultID     = this.ID;
+    think.ContentType = contentType;
+    think.Keywords    = keywords;
+    think.IsMetaOnly  = false;
+    think.setContentSilent(fullContent);
+    think._parent     = this;
+    this._children.set(id, think);
+    this.Count = this._children.size;
+    await StorageManager.instance.save({ id, contentType, fullContent, keywords, relatedIds: '' });
+    think.markSaved();
+    this.NotifyUpdated();
+    return think;
+  }
+
+  /** 指定 ID の Think を BQ から削除しメモリからも除去する */
+  public async DeleteThinks(ids: string[]): Promise<void> {
+    await Promise.all(ids.map(id => StorageManager.instance.delete(id)));
+    for (const id of ids) {
+      this._children.delete(id);
+    }
+    this.Count = this._children.size;
+    this.NotifyUpdated();
+  }
+
+  // ── 履歴（タイムライン）操作 ───────────────────────────────────────
+
+  /** 指定したThinkの履歴メタデータ一覧を取得する */
+  public async LoadHistoryMeta(thinkId: string) {
+    try {
+      return await StorageManager.instance.listHistoryMeta(thinkId);
+    } catch (e) {
+      console.error(`[TTVault] LoadHistoryMeta failed for ${thinkId}:`, e);
+      return [];
+    }
+  }
+
+  /** 指定した履歴IDの本文を取得する */
+  public async GetHistoryContent(historyId: string): Promise<string | null> {
+    try {
+      return await StorageManager.instance.getHistoryContent(historyId);
+    } catch (e) {
+      console.error(`[TTVault] GetHistoryContent failed for ${historyId}:`, e);
+      return null;
+    }
+  }
+
+  /** 本日更新されたすべてのThinkのスナップショットを生成する（日末半自動用） */
+  public async CreateSnapshotsForModifiedToday(summary?: string): Promise<number> {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const modifiedThinks = this.GetThinks().filter(t => {
+      const compareDate = (t.UpdatedAt || t.ID).slice(0, 10);
+      return compareDate === todayStr && t.ContentType !== 'thought';
+    });
+
+    let count = 0;
+    for (const think of modifiedThinks) {
+      if (think.IsMetaOnly) await think.LoadContent();
+      await think.CreateSnapshot(summary);
+      count++;
+    }
+    return count;
+  }
+
+  /** 昨日更新されたが、スナップショットが未作成のThinkをスキャンしてリストアップする */
+  public async GetMissingYesterdaySnapshots(): Promise<TTThink[]> {
+    const yesterdayStr = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const modifiedYesterday = this.GetThinks().filter(t => {
+      const compareDate = (t.UpdatedAt || t.ID).slice(0, 10);
+      return compareDate === yesterdayStr && t.ContentType !== 'thought';
+    });
+
+    const missing: TTThink[] = [];
+    for (const think of modifiedYesterday) {
+      const historyMetas = await this.LoadHistoryMeta(think.ID);
+      const hasYesterdaySnapshot = historyMetas.some(meta => meta.timestamp.slice(0, 10) === yesterdayStr);
+      if (!hasYesterdaySnapshot) {
+        missing.push(think);
+      }
+    }
+    return missing;
+  }
+
+  /** 指定したThink群に対して、昨日の日付メタデータ付きでスナップショットを一括生成する */
+  public async CreateSnapshotsForYesterday(thinks: TTThink[], summary?: string): Promise<void> {
+    const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    yesterday.setHours(23, 59, 59, 999);
+    const tsStr = yesterday.toISOString();
+
+    for (const think of thinks) {
+      if (think.IsMetaOnly) await think.LoadContent();
+      await StorageManager.instance.saveHistory({
+        thinkId:     think.ID,
+        timestamp:   tsStr,
+        fullContent: think.Content,
+        summary:     summary || '自動スナップショット（昨日分漏れ）',
+      });
+    }
+  }
+
+  // ── LocalFS パスユーティリティ ─────────────────────────────────────
+
+  public buildLocalPath(contentType: ContentType, id: string): string {
+    return `${this.DataFolder}/${contentType}/${id}.md`;
+  }
+
+  // ── ID 生成 ────────────────────────────────────────────────────────
+
+  /** ファイルID を生成する（yyyy-MM-dd-hhmmss 形式）*/
+  public static generateId(date: Date = new Date()): string {
+    const pad = (n: number, len = 2) => String(n).padStart(len, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+  }
+
+  /** 衝突を避けた ID 生成（同秒衝突時は1秒遡る）*/
+  public static generateUniqueId(
+    existingIds: Set<string>,
+    date: Date = new Date(),
+    maxRetries = 60
+  ): string {
+    let current = new Date(date);
+    for (let i = 0; i < maxRetries; i++) {
+      const id = TTVault.generateId(current);
+      if (!existingIds.has(id)) return id;
+      current = new Date(current.getTime() - 1000);
+    }
+    return `${TTVault.generateId(date)}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+}

@@ -1,0 +1,22 @@
+/* Splitter.css */
+
+.splitter {
+  width: 3px;
+  background: var(--border);
+  cursor: col-resize;
+  flex-shrink: 0;
+  transition: background 150ms ease;
+  position: relative;
+  z-index: 10;
+}
+
+/* ヒット領域を左右に広げる */
+.splitter::after {
+  content: '';
+  position: absolute;
+  inset: 0 -4px;
+}
+
+.splitter:hover {
+  background: var(--text-accent);
+}

@@ -1,0 +1,124 @@
+/* WorkoutRibbon.css */
+
+.workout-ribbon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+  padding: 8px 0;
+  gap: 0;
+  background: var(--workout-ribbon-bg);
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+
+/* ホバー時にリボン全体を最前面へ */
+.workout-ribbon:has(button:hover) {
+  z-index: 9999;
+}
+
+/* ── カスタムツールチップ（global に移行済み） ── */
+.workout-ribbon button[data-tip]:not([data-tip='']) {
+  /* index.css の定義を利用 */
+}
+
+.workout-ribbon [data-tip]::after {
+  bottom: 50% !important;
+  left: calc(100% + 10px) !important;
+  right: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
+}
+
+/* ── 開閉トグルボタン ────────────────────────────── */
+.workout-ribbon__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.workout-ribbon__toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.workout-ribbon__toggle:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}
+
+/* ── ボタン群 ─────────────────────────────────────── */
+.workout-ribbon__buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+
+.workout-ribbon__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.workout-ribbon__btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.workout-ribbon__btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.workout-ribbon__btn:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}
+
+/* ── スペーサー ──────────────────────────────────── */
+.workout-ribbon__spacer {
+  flex: 1;
+}
+
+/* ── 下部: Think タイトル（縦書き）──────────────── */
+.workout-ribbon__label-wrap {
+  flex-shrink: 0;
+  height: 33.333%;
+  width: 100%;
+  position: relative;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.workout-ribbon__label {
+  position: absolute;
+  left: calc(50% + 10px);
+  bottom: 4px;
+  width: 400px;
+  transform-origin: left bottom;
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+}

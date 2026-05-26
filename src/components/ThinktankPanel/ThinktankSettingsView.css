@@ -1,0 +1,301 @@
+/* ThinktankSettingsView.css */
+
+.tt-settings-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 10px;
+  gap: 16px;
+}
+
+.tt-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tt-settings-section__title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin: 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tt-settings-section__header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  user-select: none;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.tt-settings-section__header .tt-settings-section__title {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.tt-settings-section__header:hover .tt-settings-section__title {
+  color: var(--text-secondary, #999);
+}
+
+.tt-settings-sub-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.tt-settings-sub-section__title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.tt-settings-section__desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ── 状態 ── */
+
+.tt-settings-status {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 8px;
+  align-items: center;
+}
+
+.tt-settings-status__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tt-settings-status__value {
+  margin: 0;
+}
+
+.tt-settings-status__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.tt-settings-status__badge--mode {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary, var(--text-muted));
+}
+
+.tt-settings-status__badge--synced  { color: var(--color-success, #4caf50); background: rgba(76,175,80,0.12); }
+.tt-settings-status__badge--syncing { color: var(--color-info, #64b5f6);    background: rgba(100,181,246,0.12); }
+.tt-settings-status__badge--pending { color: var(--text-muted);             background: rgba(255,255,255,0.07); }
+.tt-settings-status__badge--error   { color: var(--color-error, #ef5350);   background: rgba(239,83,80,0.12); }
+.tt-settings-status__badge--offline { color: var(--text-muted);             background: rgba(255,255,255,0.07); }
+
+.tt-settings-spin {
+  animation: tt-settings-spin 1s linear infinite;
+}
+
+@keyframes tt-settings-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── 入力フィールド ── */
+
+.tt-settings-field {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tt-settings-input {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  font-size: 12px;
+  min-width: 0;
+}
+
+.tt-settings-input:focus {
+  outline: none;
+  border-color: var(--thinktank-ribbon-bg);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.tt-settings-save-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--thinktank-ribbon-bg);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 150ms ease, background 200ms ease;
+}
+
+.tt-settings-save-btn:hover {
+  opacity: 0.85;
+}
+
+.tt-settings-save-btn--saved {
+  background: var(--color-success, #2e7d32);
+}
+
+/* ── 保存先 ── */
+
+.tt-settings-paths {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  align-items: baseline;
+}
+
+.tt-settings-paths__label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.tt-settings-paths__value {
+  margin: 0;
+}
+
+.tt-settings-paths__value code {
+  font-size: 10px;
+  color: var(--text-secondary, var(--text-muted));
+  word-break: break-all;
+  line-height: 1.5;
+}
+
+.tt-settings-paths__value strong {
+  color: var(--text-primary);
+}
+
+.tt-settings-paths__dataset {
+  color: var(--text-muted);
+}
+
+/* ── データ編集モード選択 ── */
+
+.tt-settings-layout-modes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tt-settings-mode-option {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  row-gap: 1px;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  user-select: none;
+}
+
+.tt-settings-mode-option:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.tt-settings-mode-option--active {
+  border-color: var(--thinktank-ribbon-bg);
+  background: rgba(7, 55, 99, 0.25);
+}
+
+.tt-settings-mode-radio {
+  grid-row: 1 / 3;
+  grid-column: 1;
+  margin: 0;
+  width: 13px;
+  height: 13px;
+  accent-color: var(--thinktank-ribbon-bg);
+  cursor: pointer;
+}
+
+.tt-settings-mode-icon {
+  grid-row: 1;
+  grid-column: 2;
+  color: var(--text-muted);
+}
+
+.tt-settings-mode-option--active .tt-settings-mode-icon {
+  color: var(--text-accent);
+}
+
+.tt-settings-mode-label {
+  grid-row: 1;
+  grid-column: 3;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tt-settings-mode-desc {
+  grid-row: 2;
+  grid-column: 2 / 4;
+  font-size: 10px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Phase 15: Embedding セクション */
+.tt-settings-embed {
+  padding: 6px 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tt-settings-embed__progress {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 0;
+}
+
+.tt-settings-embed__error {
+  color: #dc2626;
+}
+
+.tt-settings-embed__actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

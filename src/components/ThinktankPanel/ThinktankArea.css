@@ -1,0 +1,26 @@
+/* ThinktankArea.css */
+
+.thinktank-area__title-row {
+  background: var(--thinktank-ribbon-bg);
+}
+
+.thinktank-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  /* overflow: hidden を外す: SearchBar等のtooltipがクリップされるため */
+  /* スクロール制御は .thinktank-area__body で行う */
+  position: relative;
+}
+
+.thinktank-area__date-bars {
+  flex-shrink: 0;
+}
+
+.thinktank-area__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}

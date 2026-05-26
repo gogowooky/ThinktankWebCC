@@ -1,50 +1,46 @@
-export class TTObject {
-    public _parent: TTObject | null = null;
-    protected _flag: string = 'false';
-    public ID: string = '';
-    public Name: string = '';
-    public UpdateDate: string = '';
+/**
+ * TTObject.ts
+ * データ永続化用の基底クラス。
+ * ID / Name / UpdateDate 等の共通プロパティを提供し、変更時にタイムスタンプを更新する。
+ */
 
-    private _updateListeners: Map<string, () => void> = new Map();
+import { TTNotifyBase } from './TTNotifyBase';
 
-    constructor() {
-        this.ID = this.ClassName.replace(/^TT/, '');
-        this.Name = this.ClassName.replace(/^TT/, '');
-        this.UpdateDate = this.getNowString();
+export class TTObject extends TTNotifyBase {
+  public ID: string = '';
+  public Name: string = '';
+  public UpdateDate: string = '';
+
+  constructor() {
+    super();
+    this.ID = this.ClassName.replace(/^TT/, '');
+    this.Name = this.ClassName.replace(/^TT/, '');
+    this.UpdateDate = this.getNowString();
+  }
+
+  public get ClassName(): string {
+    return 'TTObject';
+  }
+
+  public override NotifyUpdated(updateProperty: boolean = true): void {
+    if (updateProperty) {
+      this.UpdateDate = this.getNowString();
     }
+    // 親への通知を継続。
+    super.NotifyUpdated(true);
+  }
 
-    public get ClassName(): string {
-        return 'TTObject';
-    }
-
-    public NotifyUpdated(updateDate: boolean = true): void {
-        if (updateDate) {
-            this.UpdateDate = this.getNowString();
-        }
-        // Notify listeners
-        this._updateListeners.forEach(callback => callback());
-        // 親コレクションにも通知を伝播（Tableの更新などに必要）
-        if (this._parent) {
-            this._parent.NotifyUpdated();
-        }
-    }
-
-    public AddOnUpdate(key: string, callback: () => void): void {
-        this._updateListeners.set(key, callback);
-    }
-
-    public RemoveOnUpdate(key: string): void {
-        this._updateListeners.delete(key);
-    }
-
-    protected getNowString(): string {
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        const hh = String(now.getHours()).padStart(2, '0');
-        const min = String(now.getMinutes()).padStart(2, '0');
-        const ss = String(now.getSeconds()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}-${hh}${min}${ss}`;
-    }
+  /** 現在時刻を "yyyy-MM-dd-HHmmss-mmm-rand" 形式の文字列で返す */
+  protected getNowString(): string {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const hh = String(now.getHours()).padStart(2, '0');
+    const min = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
+    const ms = String(now.getMilliseconds()).padStart(3, '0');
+    const rand = Math.random().toString(36).slice(2, 6);
+    return `${yyyy}-${mm}-${dd}-${hh}${min}${ss}-${ms}-${rand}`;
+  }
 }

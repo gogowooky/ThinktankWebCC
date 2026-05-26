@@ -1,243 +1,182 @@
+/**
+ * TTCollection.ts
+ * TTObject を子として管理するコレクション基底クラス。
+ *
+ * Phase 2: CRUD + CSV シリアライズ（StorageManager 非依存）
+ * Phase 13: LoadCache / FlushCache を StorageManager に接続予定
+ */
+
 import { TTObject } from './TTObject';
-import { StorageManager } from '../services/storage';
 import { toCsv, parseCsv } from '../utils/csv';
 
-
 export class TTCollection extends TTObject {
-    protected _children: Map<string, TTObject>;
-    public Count: number;
-    public Description: string;
+  protected _children: Map<string, TTObject> = new Map();
+  private _itemsCache: TTObject[] | null = null;
+  public Count: number = 0;
+  public Description: string = 'Collection';
 
-    // 設定用プロパティ
-    public ItemSaveProperties: string = "";
-    public ListPropertiesMin: string = "";
-    public ListProperties: string = "";
-    public ColumnMapping: string = "";
-    public ColumnMaxWidth: string = "";  // 列ごとの最大幅（例: "ID:20,Name:-1"）。-1は無制限
+  /**
+   * ロード完了フラグ。
+   * false の間は FlushCache による書き込みをスキップし、データ消失を防ぐ。
+   */
+  public IsLoaded: boolean = false;
 
-    private _saveTimer: number | null = null;
+  // 設定プロパティ（Phase 13: StorageManager 連携時に使用）
+  /** 保存対象のプロパティ名をカンマ区切りで指定（例: "ID,Name,UpdateDate"） */
+  public ItemSaveProperties: string = '';
+  /** ナビゲーター最小表示列（例: "ID,Name"） */
+  public ListPropertiesMin: string = '';
+  /** ナビゲーター通常表示列 */
+  public ListProperties: string = '';
 
-    constructor() {
-        super();
-        this._children = new Map();
-        this.Count = 0;
-        this.Description = 'Template';
+  public override get ClassName(): string {
+    return 'TTCollection';
+  }
+
+  public get ItemClassName(): string {
+    return this.CreateChildInstance().ClassName;
+  }
+
+  // ── CRUD ────────────────────────────────────────────────────────────
+
+  public GetItem(id: string): TTObject | undefined {
+    return this._children.get(id);
+  }
+
+  public override NotifyUpdated(updateProperty: boolean = true): void {
+    this._itemsCache = null;
+    super.NotifyUpdated(updateProperty);
+  }
+
+  /** リスナーを明示的に発火する（表示更新ボタンなど手動リフレッシュ用）*/
+  public NotifyRefresh(): void {
+    this._itemsCache = null;
+    super.NotifyUpdated(false);
+  }
+
+  /** リスナー通知なしで全アイテムをクリアする（ReloadAll 用）*/
+  protected ClearItemsSilent(): void {
+    this._children.forEach(item => { item._parent = null; });
+    this._children.clear();
+    this._itemsCache = null;
+    this.Count = 0;
+  }
+
+  public AddItem(item: TTObject): TTObject {
+    item._parent = this;
+    this._children.set(item.ID, item);
+    this.Count = this._children.size;
+    this._itemsCache = null;
+    this.NotifyUpdated();
+    return item;
+  }
+
+  public DeleteItem(id: string): void {
+    const item = this._children.get(id);
+    if (!item) return;
+    item._parent = null;
+    this._children.delete(id);
+    this.Count = this._children.size;
+    this._itemsCache = null;
+    this.NotifyUpdated();
+  }
+
+  public GetItems(): TTObject[] {
+    if (!this._itemsCache) {
+      this._itemsCache = Array.from(this._children.values());
+    }
+    return this._itemsCache;
+  }
+
+  public ClearItems(): void {
+    this._children.forEach(item => { item._parent = null; });
+    this._children.clear();
+    this._itemsCache = null;
+    this.Count = 0;
+    this.NotifyUpdated();
+  }
+
+  // ── CSV シリアライズ ─────────────────────────────────────────────────
+
+  /**
+   * ItemSaveProperties に指定したプロパティを CSV 文字列にシリアライズする。
+   */
+  public SerializeToCsv(): string {
+    if (!this.ItemSaveProperties) return '';
+    const props = this.ItemSaveProperties.split(',').map(p => p.trim());
+    const items = Array.from(this._children.values()).map(item => {
+      const obj: Record<string, unknown> = {};
+      props.forEach(prop => {
+        obj[prop] = (item as unknown as Record<string, unknown>)[prop];
+      });
+      return obj;
+    });
+    return toCsv(items, props);
+  }
+
+  /**
+   * CSV 文字列からアイテムを復元する。
+   * 既存アイテムは上書き、新規アイテムは CreateChildInstance() で生成する。
+   * ロード完了後に super.NotifyUpdated(false) を呼ぶ（保存トリガーなしで View のみ更新）。
+   */
+  public DeserializeFromCsv(content: string): void {
+    const rows = parseCsv(content);
+    if (rows.length === 0) return;
+
+    const headers = rows[0];
+    const propIdx = new Map<string, number>();
+    headers.forEach((h, i) => propIdx.set(h.trim(), i));
+
+    if (!propIdx.has('ID')) {
+      console.error(`[TTCollection] CSV に ID 列がありません (${this.ID})`);
+      return;
     }
 
-    public get ItemClassName(): string {
-        return this.CreateChildInstance().ClassName;
-    }
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row.length !== headers.length) continue;
+      const id = row[propIdx.get('ID')!];
+      if (!id) continue;
 
-    public override get ClassName(): string {
-        return 'TTCollection';
-    }
-
-    public NotifyUpdated(): void {
-        super.NotifyUpdated();
-        this.SaveCache();
-    }
-
-    private async SaveCache(): Promise<void> {
-        if (!this.ItemSaveProperties) return;
-
-        if (this._saveTimer) {
-            clearTimeout(this._saveTimer);
-        }
-
-        this._saveTimer = window.setTimeout(() => {
-            this._DoSave();
-        }, 5000); // 5秒の遅延（リクエストがあるたびにリセットされる）
-    }
-
-    /**
-     * キャッシュを強制的に即時保存します。
-     */
-    public async FlushCache(): Promise<void> {
-        if (!this.ItemSaveProperties) return;
-        if (this._saveTimer) {
-            clearTimeout(this._saveTimer);
-            this._saveTimer = null;
-        }
-        await this._DoSave();
-    }
-
-    private _isSaving: boolean = false;
-    private _nextSaveScheduled: boolean = false;
-
-    public IsLoaded: boolean = false;
-
-    private async _DoSave(): Promise<void> {
-        if (this._isSaving) {
-            // 保存中に次のリクエストが来たら、完了後に再実行フラグを立てる
-            this._nextSaveScheduled = true;
-            return;
-        }
-
-        this._isSaving = true;
-        this._nextSaveScheduled = false;
-
-        // ロード未完了の場合は保存しない（データ消失防止）
-        if (!this.IsLoaded) {
-            // ロード完了を待つために再スケジュールして終了
-            // finallyブロックで _isSaving = false になり、_nextSaveScheduled = true なので SaveCache() が呼ばれる
-            this._nextSaveScheduled = true;
-            this._isSaving = false; // ここでfalseにしないとfinallyまで行かない（returnするので）
-            // returnする前にfinallyに行く？いや明示的にfalseにする必要
-            // try-finallyではないので、ここでreturnするとfinallyは実行されない（この関数全体がtryに入っていない）
-            // LoadCache完了を待つ
-            return;
-        }
-
-        const props = this.ItemSaveProperties.split(',').map(p => p.trim());
-        if (props.length === 0) {
-            this._isSaving = false;
-            return;
-        }
-
-        // CSV ユーティリティを使用してシリアライズ
-        const items = Array.from(this._children.values()).map(item => {
-            const obj: Record<string, unknown> = {};
-            props.forEach(prop => {
-                obj[prop] = (item as unknown as Record<string, unknown>)[prop];
-            });
-            return obj;
-        });
-        const content = toCsv(items, props);
-        const fileName = `${this.ID}.csv`;
-
-        try {
-            // ローカルキャッシュに保存
-            await StorageManager.local.save(fileName, content);
-
-            // BigQueryにも保存
-            const bqResult = await StorageManager.bigquery.save(fileName, content);
-            if (bqResult.success) {
-                console.log(`Saved to BigQuery: ${fileName}`);
-            } else {
-                console.warn(`Failed to save to BigQuery: ${fileName}`, bqResult.error);
-            }
-        } catch (error) {
-            console.error(`Failed to save cache ${fileName}:`, error);
-        } finally {
-            this._isSaving = false;
-
-            // 保存中にリクエストがあった場合は再実行
-            if (this._nextSaveScheduled) {
-                this.SaveCache(); // タイマー経由で再スケジュール
-            }
-        }
-    }
-
-    public GetItem(id: string): TTObject | undefined {
-        return this._children.get(id);
-    }
-
-    public AddItem(item: TTObject): TTObject {
+      let item = this.GetItem(id);
+      if (!item) {
+        item = this.CreateChildInstance();
+        item.ID = id;
         item._parent = this;
-        this._children.set(item.ID, item);
-        this.Count = this._children.size;
-        this.NotifyUpdated();
-        return item;
+        this._children.set(id, item);
+      }
+      propIdx.forEach((idx, prop) => {
+        (item as unknown as Record<string, unknown>)[prop] = row[idx];
+      });
     }
 
-    public DeleteItem(id: string): void {
-        if (this._children.has(id)) {
-            const item = this._children.get(id);
-            if (item) {
-                item._parent = null;
-            }
-            this._children.delete(id);
-            this.Count = this._children.size;
-            this.NotifyUpdated();
-        }
-    }
+    this.Count = this._children.size;
+    this.IsLoaded = true;
+    // 保存を再トリガーせず View 更新通知のみ行う
+    super.NotifyUpdated(false);
+  }
 
-    public GetItems(): TTObject[] {
-        return Array.from(this._children.values());
-    }
+  // ── ストレージフック（Phase 13 でオーバーライド） ────────────────────
 
-    public ClearItems(): void {
-        this._children.forEach(item => {
-            item._parent = null;
-        });
-        this._children.clear();
-        this.Count = 0;
-        this.NotifyUpdated();
-    }
+  /**
+   * ストレージからロードする（Phase 13 で StorageManager に接続予定）。
+   * デフォルト実装は IsLoaded を true にするだけ。
+   */
+  public async LoadCache(): Promise<void> {
+    this.IsLoaded = true;
+  }
 
-    public async LoadCache(): Promise<void> {
-        if (!this.ItemSaveProperties) return;
-        const fileName = `${this.ID}.csv`;
+  /**
+   * ストレージへ即時書き込みする（Phase 13 で StorageManager に接続予定）。
+   */
+  public async FlushCache(): Promise<void> {
+    // Phase 13 で実装
+  }
 
-        try {
-            // まずローカルキャッシュから読み込み
-            let result = await StorageManager.local.load(fileName);
+  // ── サブクラス拡張点 ────────────────────────────────────────────────
 
-            // ローカルにない場合はBigQueryから取得
-            if (!result.success || !result.data) {
-                result = await StorageManager.bigquery.load(fileName);
-                if (result.success && result.data) {
-                    // BigQueryから取得したデータをローカルにキャッシュ
-                    await StorageManager.local.save(fileName, result.data);
-                    console.log(`Loaded from BigQuery and cached locally: ${fileName}`);
-                }
-            }
-
-            if (!result.success || !result.data) return;
-
-            // CSV ユーティリティを使用してパース
-            const rows = parseCsv(result.data);
-            if (rows.length === 0) return;
-
-            const headers = rows[0];
-            const propertyMap = new Map<string, number>();
-            headers.forEach((h: string, i: number) => propertyMap.set(h.trim(), i));
-
-            if (!propertyMap.has('ID')) {
-                console.error(`Cache for ${this.ID} missing ID column`);
-                return;
-            }
-
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                if (row.length !== headers.length) continue;
-
-                const id = row[propertyMap.get('ID')!];
-                if (!id) continue;
-
-                let item = this.GetItem(id);
-                if (!item) {
-                    item = this.CreateChildInstance();
-                    item.ID = id;
-                    item._parent = this;
-                    this._children.set(id, item);
-                }
-
-                propertyMap.forEach((index, prop) => {
-                    const val = row[index];
-                    (item as unknown as Record<string, unknown>)[prop] = val;
-                });
-            }
-
-            this.Count = this._children.size;
-
-            // ロード完了フラグを立てる
-            this.IsLoaded = true;
-
-            // ロード中に保存リクエストがあった場合は、ここで保存を実行する
-            if (this._nextSaveScheduled) {
-                this.SaveCache();
-            }
-
-            // NotifyUpdatedを呼ぶと保存がトリガーされるので、直接親メソッドを呼ぶ
-            // ただし上記でSaveCacheを呼んでいるので、ここでは純粋にView更新通知のみを行う
-            super.NotifyUpdated();
-        } catch (error) {
-            console.error(`Failed to load cache for ${this.ID}:`, error);
-        }
-    }
-
-    protected CreateChildInstance(): TTObject {
-        return new TTObject();
-    }
+  /** サブクラスでオーバーライドして適切な子インスタンスを返す */
+  protected CreateChildInstance(): TTObject {
+    return new TTObject();
+  }
 }

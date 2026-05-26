@@ -1,0 +1,123 @@
+Monaco Editor 内蔵ショートカット一覧（249件）
+Win はMac環境では Cmd に相当します。
+
+① カーソル移動
+キー	                                アクションID
+← / → / ↑ / ↓	                        cursorLeft/Right/Up/Down
+Shift+←/→/↑/↓	                        カーソル選択
+Ctrl+← / Ctrl+→	                        cursorWordLeft / cursorWordEndRight
+Ctrl+Shift+←/→	                        単語選択
+Home / End	                            cursorHome / cursorEnd
+Ctrl+Home / Ctrl+End	                cursorTop / cursorBottom
+PageUp / PageDown	                    cursorPageUp/Down
+Ctrl+U	                                cursorUndo（カーソル操作を元に戻す）
+
+② 編集・削除
+キー	                                アクションID
+Backspace / Delete	                    deleteLeft / deleteRight
+Ctrl+Backspace	                        deleteWordLeft
+Ctrl+Delete	                            deleteWordRight
+Ctrl+Z	                                undo
+Ctrl+Y / Ctrl+Shift+Z	                redo
+Tab / Shift+Tab	                        tab / outdent
+Ctrl+Enter	                            editor.action.insertLineAfter
+Ctrl+Shift+Enter	                    editor.action.insertLineBefore
+Ctrl+Shift+K	                        editor.action.deleteLines
+Alt+↑ / Alt+↓	                        editor.action.moveLinesUp/Down
+Shift+Alt+↑ / Shift+Alt+↓	            editor.action.copyLinesUp/Down
+Ctrl+L	                                expandLineSelection
+
+③ コピー・貼り付け
+キー	                                アクションID
+Ctrl+C	                                editor.action.clipboardCopyAction
+Ctrl+X	                                editor.action.clipboardCutAction
+Ctrl+V	                                editor.action.clipboardPasteAction
+
+④ 検索・置換
+キー	                                アクションID
+Ctrl+F	                                検索パネル（startFindAction）
+Ctrl+H	                                startFindReplaceAction
+F3 / Shift+F3	                        次/前の検索結果
+Ctrl+D	                                editor.action.addSelectionToNextFindMatch
+Ctrl+Shift+L	                        editor.action.selectHighlights（全一致を選択）
+Ctrl+F2	                                editor.action.changeAll（全一致にカーソル）
+
+⑤ マルチカーソル
+キー	                                アクションID
+Ctrl+Alt+↑ / Ctrl+Alt+↓	                editor.action.insertCursorAbove/Below
+Shift+Alt+I	                            editor.action.insertCursorAtEndOfEachLineSelected
+Ctrl+Shift+Alt+↑/↓/←/→	                列選択カーソル各種
+
+⑥ コメント
+キー	                                アクションID
+Ctrl+/	                                editor.action.commentLine（行コメント）
+Shift+Alt+A / Ctrl+Shift+A	            editor.action.blockComment
+
+⑦ フォールディング（折りたたみ）
+キー	                                アクションID
+Ctrl+Shift+[	                        editor.fold
+Ctrl+Shift+]	                        editor.unfold
+Ctrl+K → Ctrl+0	                        editor.foldAll
+Ctrl+K → Ctrl+J	                        editor.unfoldAll
+
+⑧ フォーマット・リネーム
+キー	                                アクションID
+Shift+Alt+F	                            editor.action.formatDocument
+Ctrl+K → Ctrl+F	                        editor.action.formatSelection
+F2	                                    editor.action.rename
+
+⑨ 定義ジャンプ・参照
+キー	                                アクションID
+F12	                                    editor.action.revealDefinition
+Shift+F12	                            editor.action.goToReferences
+Alt+F12	                                editor.action.peekDefinition
+F8 / Shift+F8	                        editor.action.marker.nextInFiles / prevInFiles
+F4 / Shift+F4	                        goToNextReference / goToPreviousReference
+
+⑩ サジェスト・IntelliSense
+キー	                                    アクションID
+Ctrl+Space	                            editor.action.triggerSuggest
+Ctrl+Shift+Space	                    editor.action.triggerParameterHints
+Tab / Enter	                            acceptSelectedSuggestion
+Escape	                                hideSuggestWidget
+
+⑪ スクロール
+キー	                                アクションID
+Ctrl+↑ / Ctrl+↓	                        scrollLineUp / scrollLineDown
+Ctrl+PageUp / Ctrl+PageDown	            scrollPageUp / scrollPageDown
+
+⑫ 選択補助
+キー	                                アクションID
+Ctrl+A	                                editor.action.selectAll
+Shift+Alt+→	                            editor.action.smartSelect.expand
+Shift+Alt+←	                            editor.action.smartSelect.shrink
+Ctrl+Shift+\	                        editor.action.jumpToBracket
+
+
+
+
+
+
+② 設定済みアクション（ショートカットなしのもの含む主要一覧）
+アクションID	                                                        内容
+editor.action.selectAll	                                                全選択
+editor.action.sortLinesAscending/Descending	                            行の昇順/降順ソート
+editor.action.removeDuplicateLines	                                    重複行の削除
+editor.action.trimTrailingWhitespace	                                末尾空白の削除
+editor.action.transformToUppercase/Lowercase/TitleCase	                大文字/小文字変換
+editor.action.transformToSnakecase/Camelcase/Pascalcase/Kebabcase	    ケース変換各種
+editor.action.duplicateSelection	                                    選択内容の複製
+editor.action.transpose	                                                文字の入れ替え
+editor.action.joinLines	                                                行の結合
+editor.action.indentLines / outdentLines	                            インデント追加/削除
+editor.action.linkedEditing	                                            リンク編集（Ctrl+Shift+F2）
+editor.action.wordHighlight.next/prev	                                単語ハイライトナビ（F7/Shift+F7）
+editor.action.showContextMenu	                                        コンテキストメニュー（Shift+F10）
+editor.action.toggleHighContrast	                                    ハイコントラスト切替
+editor.action.inspectTokens	                                            トークン検査（Developer）
+editor.action.inPlaceReplace.up/down	                                インプレース置換（Ctrl+Shift+,/.）
+editor.action.fontZoomIn/Out/Reset	                                    フォントズーム
+editor.action.forceRetokenize	                                        強制再トークナイズ
+editor.action.pasteAs / pasteAsText	                                    形式を指定して貼り付け
+codelens.showLensesInCurrentLine	                                    CodeLens表示
+editor.action.showOrFocusStandaloneColorPicker	                        カラーピッカー表示

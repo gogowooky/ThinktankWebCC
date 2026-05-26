@@ -1,0 +1,147 @@
+/* PanelRibbon.css */
+
+.panel-ribbon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+  padding: 8px 0;
+  gap: 4px;
+  /* デフォルト背景（パネル別に上書き）*/
+  background: var(--bg-panel);
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+
+/* ホバー時にリボン全体を最前面へ */
+.panel-ribbon:has(button:hover) {
+  z-index: 9999;
+}
+
+/* ── パネル別テーマ色 ─────────────────────────────────── */
+
+.panel-ribbon--thinktank {
+  background: var(--thinktank-ribbon-bg);
+}
+
+.panel-ribbon--overview {
+  background: var(--overview-ribbon-bg);
+}
+
+.panel-ribbon--workout {
+  background: var(--workout-ribbon-bg);
+}
+
+.panel-ribbon--rethink {
+  background: var(--rethink-ribbon-bg);
+}
+
+/* D&D ドロップ受け入れ中 */
+.panel-ribbon--drag-over {
+  background: rgba(255, 255, 255, 0.18) !important;
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: -2px;
+}
+
+/* ── カスタムツールチップ（global に移行済み） ── */
+.panel-ribbon button[data-tip]:not([data-tip='']) {
+  /* index.css の定義を利用 */
+}
+
+/* ツールチップの表示位置制御: リボン内のボタンは横側に表示する */
+.panel-ribbon[data-side="left"] [data-tip]::after {
+  bottom: 50% !important;
+  left: calc(100% + 10px) !important;
+  right: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
+}
+
+.panel-ribbon[data-side="right"] [data-tip]::after {
+  bottom: 50% !important;
+  right: calc(100% + 10px) !important;
+  left: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
+}
+
+/* ── 内部要素 ─────────────────────────────────────────── */
+
+.panel-ribbon__buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.panel-ribbon__spacer {
+  flex: 1;
+}
+
+/* 開閉トグルボタン */
+.panel-ribbon__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.panel-ribbon__toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* 下部固定エリア */
+.panel-ribbon__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+/* 最下部ラベル（縦書き・左90度） */
+.panel-ribbon__label-wrap {
+  flex-shrink: 0;
+  height: 33.333%;
+  width: 100%;
+  position: relative;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.panel-ribbon__label {
+  position: absolute;
+  /* Pivot at left-bottom so text anchors to wrapper bottom and extends upward */
+  left: calc(50% + 10px);
+  bottom: 4px;
+  width: 400px;
+  transform-origin: left bottom;
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+}
+
+/* Workout リボンはやや暗めなのでホバー色を調整 */
+.panel-ribbon--workout .panel-ribbon__toggle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.panel-ribbon--workout .panel-ribbon__toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}

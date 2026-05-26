@@ -1,0 +1,175 @@
+=== Slide 1 ===
+ThinktankPanel
+OverviewPanel
+WorkoutPanel
+
+ToDoPanel
+分析
+開閉ボタン
+開閉ボタン
+開閉ボタン
+thinkデータの分析
+thoughtの次の展開・することの相談
+thoughtデータの分析
+think抽出とthoughtデータ作成
+LocalPC/ThinktankPanel からのD&D
+ThinktankRibbon
+ThinktankArea
+OverviewRibbon
+OverviewArea
+WorkoutAreas[0..5]
+WorkoutAreas[0].Ribbon
+WorkoutAreas[0].Area
+ToDoArea
+ToDoRibbon
+Filterとチェックで選択
+Thoughts(thoughtの一覧)
+表形式の編集、閲覧
+グラフ形式の閲覧
+テキストエディタ
+マークダウン
+選択基準
+全文検索で選択
+設定
+設定
+設定
+memo（text,md）
+thought (pile of think)
+filter or list (text,md,grid)
+thinkデータと種別
+tables (text,md,grid,card)
+links  (text,md,card)
+カード形式の編集、閲覧
+アプリ全体/ think抽出→thought / thought一覧
+thoughtの閲覧・編集・分析
+thinkの閲覧・編集
+think/thoughtsの展開・することの考察
+chat（text,md）
+Thinkの一覧
+表示ルール：最大2列3行。表とグラフは行全体を使用する。
+■ アプリケーション構成図
+download text（text,md）
+
+=== Slide 2 ===
+Google BigQuery
+thinktank.files260425
+外部AI
+Mail Server
+ThinktankLocal（WPF exe）
+Backend Server（Express / Cloud Run）
+REST API + WebSocket + 差分同期エンドポイント
+WebView2
+ThinktankPWA (同上)
+C# Local API(ASP.NET Core)
+Local FS
+(5,500 Markdown files)
+Sync Queue
+API Call
+ThinktankWeb（Browser）
+ThinktankPWA
+(React SPA)
+localhost:8081
+IndexedDB
+Local Cache
+Sync（非同期）
+① 開発予定のWebアプリ版（赤文字）との整合を考えているが、まずは、色がついているLocalアプリ版を構築する
+■ システム構成図
+File Server
+
+=== Slide 3 ===
+
+=== Slide 4 ===
+色見本
+
+=== Slide 5 ===
+
+=== Slide 6 ===
+
+=== Slide 7 ===
+
+=== Slide 8 ===
+
+=== Slide 9 ===
+
+=== Slide 10 ===
+
+=== Slide 11 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+
+=== Slide 12 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+
+=== Slide 13 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+
+=== Slide 14 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+
+=== Slide 15 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+
+=== Slide 16 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+
+=== Slide 17 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+
+=== Slide 18 ===
+Thinktank Panel
+アプリ全体/ topic一覧
+Overview Panel
+Topic分析
+Workout Panel
+
+Brainstorm Panel
+結論
+

@@ -5,6 +5,9 @@ node_modules/
 dist/
 dist-server/
 
+# Reference code (backup)
+reference2/node_modules/
+
 # Cache
 cache/
 
@@ -28,3 +31,11 @@ npm-debug.log*
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Claude AI worktrees（Gitの追跡対象外）
+.claude/worktrees/
+
+# C# build artifacts
+bin/
+obj/
+*.user

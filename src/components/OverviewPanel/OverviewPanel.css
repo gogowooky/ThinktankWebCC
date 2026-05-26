@@ -1,0 +1,32 @@
+/* OverviewPanel.css */
+
+.overview-panel {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* ドラッグオーバー中のオーバーレイ表示 */
+.overview-panel--drag-over::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(78, 201, 176, 0.15);
+  border: 2px dashed #4ec9b0;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* Overview にフォーカスがある間、タイトルに下線を表示 */
+body[data-focus-column="Overview"] .overview-area__title-row {
+  text-decoration: underline;
+}
+
+/* Overview にフォーカスがある間、開閉ボタンを枠でくくる */
+body[data-focus-column="Overview"] .overview-panel .panel-ribbon__toggle {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}

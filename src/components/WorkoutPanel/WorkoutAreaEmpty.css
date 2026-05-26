@@ -1,0 +1,41 @@
+/* WorkoutAreaEmpty.css */
+
+.workout-area-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.03);
+  border: 2px dashed rgba(0, 0, 0, 0.12);
+  border-radius: 4px;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.workout-area-empty--full {
+  border: none;
+  background: transparent;
+  opacity: 0.5;
+}
+
+.workout-area-empty--target {
+  border-color: var(--text-accent);
+  background: rgba(122, 162, 247, 0.08);
+}
+
+.workout-area-empty__add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #555;
+  font-size: 12px;
+  padding: 16px;
+  border-radius: 6px;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.workout-area-empty__add:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: #222;
+}

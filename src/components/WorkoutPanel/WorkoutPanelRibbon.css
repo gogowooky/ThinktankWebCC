@@ -1,0 +1,55 @@
+/* WorkoutPanelRibbon.css */
+
+.workout-panel-ribbon {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 6px;
+  background: var(--workout-ribbon-bg, #2a2a2a);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+/* ── 追加ボタン（右に/下に）────────────────────────────────── */
+.workout-panel-ribbon__add-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  height: 22px;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  transition: background 100ms ease, color 100ms ease, opacity 100ms ease;
+  cursor: pointer;
+}
+
+.workout-panel-ribbon__add-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.workout-panel-ribbon__add-btn:disabled,
+.workout-panel-ribbon__add-btn--disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── スペーサー ──────────────────────────────────────────────── */
+.workout-panel-ribbon__spacer {
+  flex: 1;
+}
+
+/* ── フォーカス中エリア名 ──────────────────────────────────── */
+.workout-panel-ribbon__focus-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+  user-select: none;
+}

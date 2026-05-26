@@ -1,0 +1,235 @@
+/* ChatMedia.css — CLI ターミナル風スタイル */
+
+:root {
+  --cli-bg:        #0d1117;
+  --cli-bg-header: #161b22;
+  --cli-bg-input:  #0d1117;
+  --cli-border:    #30363d;
+  --cli-prompt:    #56d364;   /* ユーザープロンプト: 緑 */
+  --cli-user-text: #e6edf3;   /* ユーザーテキスト: 明灰白 */
+  --cli-ai-prefix: #58a6ff;   /* AI プレフィックス: 青 */
+  --cli-ai-text:   #c9d1d9;   /* AI テキスト: 明灰 */
+  --cli-dim:       #484f58;   /* 薄い装飾テキスト */
+  --cli-ts:        #3d444d;   /* タイムスタンプ */
+  --cli-cursor:    #58a6ff;   /* ブロックカーソル */
+  --cli-font:      'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  --cli-font-size: 12px;
+  --cli-line-h:    1.65;
+}
+
+/* ── ルートコンテナ ──────────────────────────────── */
+.chat-media {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--cli-bg);
+  font-family: var(--cli-font);
+  font-size: var(--cli-font-size);
+  line-height: var(--cli-line-h);
+  color: var(--cli-ai-text);
+}
+
+/* ── ターミナルタイトルバー ──────────────────────── */
+.chat-media__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 12px;
+  background: var(--cli-bg-header);
+  border-bottom: 1px solid var(--cli-border);
+  flex-shrink: 0;
+}
+
+/* macOS 風ドット */
+.chat-media__header-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.chat-media__header-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cli-border);
+}
+.chat-media__header-dots span:nth-child(1) { background: #ff5f57; }
+.chat-media__header-dots span:nth-child(2) { background: #febc2e; }
+.chat-media__header-dots span:nth-child(3) { background: #28c840; }
+
+.chat-media__header-title {
+  font-size: 11px;
+  color: var(--cli-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  text-align: center;
+}
+
+/* ── ログ出力エリア ───────────────────────────────── */
+.chat-media__log {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  /* ターミナル風スクロールバー */
+  scrollbar-width: thin;
+  scrollbar-color: var(--cli-border) transparent;
+}
+.chat-media__log::-webkit-scrollbar { width: 6px; }
+.chat-media__log::-webkit-scrollbar-track { background: transparent; }
+.chat-media__log::-webkit-scrollbar-thumb {
+  background: var(--cli-border);
+  border-radius: 3px;
+}
+
+/* ── 起動バナー ──────────────────────────────────── */
+.chat-media__banner {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 8px;
+}
+.chat-media__banner-line {
+  color: var(--cli-dim);
+  font-size: 11px;
+}
+.chat-media__banner-sep {
+  color: var(--cli-border);
+  font-size: 11px;
+  letter-spacing: -0.5px;
+}
+.chat-media__dim { color: var(--cli-dim); }
+
+/* ── エントリ（1往復）──────────────────────────── */
+.chat-media__entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ── ユーザー行 ──────────────────────────────────── */
+.chat-media__user-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.chat-media__prompt {
+  color: var(--cli-prompt);
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.chat-media__user-text {
+  color: var(--cli-user-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── AI 応答ブロック ─────────────────────────────── */
+.chat-media__ai-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding-left: 2px;
+}
+
+.chat-media__ai-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.chat-media__ai-prefix {
+  color: var(--cli-ai-prefix);
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 28px;           /* 'AI▸' と '   ' の幅を揃える */
+  user-select: none;
+}
+
+.chat-media__ai-text {
+  color: var(--cli-ai-text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── タイムスタンプ ───────────────────────────────── */
+.chat-media__ts {
+  color: var(--cli-ts);
+  font-size: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+/* ── ブロックカーソル（点滅）──────────────────────── */
+.chat-media__cursor {
+  color: var(--cli-cursor);
+  animation: cli-blink 1s step-end infinite;
+  font-size: 13px;
+}
+
+@keyframes cli-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── 入力ライン ──────────────────────────────────── */
+.chat-media__input-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 8px 14px 10px;
+  border-top: 1px solid var(--cli-border);
+  background: var(--cli-bg-input);
+  flex-shrink: 0;
+}
+
+.chat-media__input-prompt {
+  color: var(--cli-prompt);
+  font-weight: 700;
+  font-family: var(--cli-font);
+  font-size: var(--cli-font-size);
+  line-height: var(--cli-line-h);
+  flex-shrink: 0;
+  padding-top: 1px;
+  user-select: none;
+}
+
+.chat-media__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: var(--cli-font);
+  font-size: var(--cli-font-size);
+  line-height: var(--cli-line-h);
+  color: var(--cli-user-text);
+  caret-color: var(--cli-prompt);
+  min-height: calc(var(--cli-font-size) * var(--cli-line-h));
+  max-height: 80px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.chat-media__input::placeholder {
+  color: var(--cli-dim);
+}
+
+.chat-media__input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

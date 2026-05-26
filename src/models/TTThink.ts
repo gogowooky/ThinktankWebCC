@@ -1,0 +1,189 @@
+/**
+ * TTThink.ts
+ * v5 個別データアイテム（旧 TTDataItem を v5 仕様にリネーム・更新）
+ *
+ * データ階層: TTVault > Thoughts > Thought > Think
+ * Think = 個別データアイテム（BigQueryの1レコード）
+ * Thought = ContentType='thought' の TTThink（ThinkIDリスト or Filter文字列を本文に持つ）
+ */
+
+import { TTObject } from './TTObject';
+import type { ContentType } from '../types';
+import { StorageManager } from '../services/storage/StorageManager';
+import { getAddedText } from '../utils/diffUtils';
+
+export class TTThink extends TTObject {
+  /** コンテンツ種別 */
+  public ContentType: ContentType = 'memo';
+
+  /** 所属TTVaultのID（データ階層のための必須フィールド）*/
+  public VaultID: string = '';
+
+  /** 検索用キーワード（カンマ区切り） */
+  public Keywords: string = '';
+
+  /** 関連アイテム ID 群（カンマ区切り） */
+  public RelatedIDs: string = '';
+
+  /** true = メタデータのみ取得済み、content は未フェッチ */
+  public IsMetaOnly: boolean = false;
+
+  /** 最終更新日時（ISO 8601文字列、ストレージから取得）*/
+  public UpdatedAt: string = '';
+
+  // ── コンテンツ管理 ──────────────────────────────────────────────────
+
+  private _content: string = '';
+  private _savedContent: string = '';
+
+  public override get ClassName(): string {
+    return 'TTThink';
+  }
+
+  constructor() {
+    super();
+    this.ID = this.UpdateDate;
+    this.Name = '新しいメモ';
+  }
+
+  // ── Content プロパティ ─────────────────────────────────────────────
+
+  public get Content(): string {
+    return this._content;
+  }
+
+  public set Content(value: string) {
+    const normalized = TTThink.normalize(value);
+    if (TTThink.normalize(this._content) === normalized) return;
+    this._content = value;
+    this._extractTitle();
+    this.NotifyUpdated();
+  }
+
+  /** 通知なしでコンテンツをセット（外部ロード・メタデータ同期用）*/
+  public setContentSilent(value: string): void {
+    const stripped = value.startsWith('\uFEFF') ? value.slice(1) : value;
+    if (TTThink.normalize(this._content) === TTThink.normalize(stripped)) return;
+    this._content = stripped;
+    this._extractTitle();
+  }
+
+  // ── 変更検出 ───────────────────────────────────────────────────────
+
+  public get IsDirty(): boolean {
+    return TTThink.normalize(this._content) !== TTThink.normalize(this._savedContent);
+  }
+
+  public markSaved(): void {
+    this._savedContent = this._content;
+  }
+
+  // ── ストレージ連携（Phase 13）──────────────────────────────────────
+
+  public async LoadContent(): Promise<void> {
+    if (!this.IsMetaOnly) return;
+    try {
+      const body = await StorageManager.instance.getContent(this.ID);
+      if (body !== null) {
+        // _content at this point is the raw title line from LoadCache (e.g. "# My Memo")
+        // Use it directly instead of this.Name which has the # prefix stripped
+        const titleLine = this._content.split('\n')[0];
+        this.setContentSilent(titleLine + '\n' + body);
+        this.markSaved();
+      }
+    } catch (e) {
+      console.error(`[TTThink] LoadContent failed (${this.ID}):`, e);
+    }
+    this.IsMetaOnly = false;
+  }
+
+  public async SaveContent(): Promise<void> {
+    if (!this.IsDirty) return;
+    try {
+      const meta = await StorageManager.instance.save({
+        id:          this.ID,
+        contentType: this.ContentType,
+        fullContent: this.Content,
+        keywords:    this.Keywords,
+        relatedIds:  this.RelatedIDs,
+      });
+      // 保存成功後: サーバーが返した updatedAt を反映
+      if (meta.updatedAt) {
+        this.UpdatedAt = meta.updatedAt;
+      }
+      this.markSaved();
+      // 親 Vault に通知してDataGridを再描画させる（UpdateDateは自分自身では更新しない）
+      if (this._parent) {
+        this._parent.NotifyUpdated(false);
+      }
+    } catch (e) {
+      console.error(`[TTThink] SaveContent failed (${this.ID}):`, e);
+    }
+  }
+
+  /** 現在のコンテンツ状態から履歴スナップショット（本日分など）を作成して保存する */
+  public async CreateSnapshot(summary?: string): Promise<void> {
+    try {
+      const nowStr = new Date().toISOString();
+      let finalSummary = summary || '';
+
+      // summary が空の場合に、前回の履歴スナップショットとの差分から自動抽出する
+      if (!finalSummary && this._parent) {
+        const vault = this._parent as any; // TTVault の依存循環回避のためのキャスト
+        if (typeof vault.LoadHistoryMeta === 'function' && typeof vault.GetHistoryContent === 'function') {
+          const histories = await vault.LoadHistoryMeta(this.ID);
+          if (histories.length > 0) {
+            const lastHistory = histories[0]; // 直近の履歴
+            const lastContent = await vault.GetHistoryContent(lastHistory.historyId);
+            if (lastContent !== null) {
+              const diffText = getAddedText(lastContent, this.Content);
+              const trimmed = diffText.trim().replace(/\s+/g, ' ');
+              finalSummary = trimmed.length > 100 ? trimmed.slice(0, 100) + '...' : trimmed;
+            }
+          }
+        }
+      }
+
+      if (!finalSummary) {
+        finalSummary = 'スナップショット生成';
+      }
+
+      await StorageManager.instance.saveHistory({
+        thinkId:     this.ID,
+        timestamp:   nowStr,
+        fullContent: this.Content,
+        summary:     finalSummary,
+      });
+      console.log(`[TTThink] Snapshot created for ${this.ID} at ${nowStr} (summary: ${finalSummary})`);
+    } catch (e) {
+      console.error(`[TTThink] CreateSnapshot failed (${this.ID}):`, e);
+    }
+  }
+
+
+  // ── ヘルパー ───────────────────────────────────────────────────────
+
+  /** thought本文からThinkIDリストを取得する（ContentType='thought'専用）*/
+  public getThinkIds(): string[] {
+    if (this.ContentType !== 'thought') return [];
+    return this._content
+      .split('\n')
+      .filter(line => line.startsWith('* '))
+      .map(line => line.slice(2).trim())
+      .filter(Boolean);
+  }
+
+  private _extractTitle(): void {
+    if (!this._content) {
+      this.Name = '新しいメモ';
+      return;
+    }
+    const firstLine = this._content.split('\n')[0].trim();
+    const title = firstLine.replace(/^#+\s*/, '');
+    this.Name = title || '新しいメモ';
+  }
+
+  private static normalize(s: string): string {
+    return s.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  }
+}

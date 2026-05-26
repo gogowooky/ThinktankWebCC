@@ -1,128 +1,91 @@
 /**
- * server/index.ts
- * Express サーバーのエントリポイント
- * 
- * 本番環境 (Cloud Run) で使用するサーバー
- * WebSocket対応で複数ブラウザ間のリアルタイム同期に対応
+ * server/index.ts (v6)
+ * Express サーバーエントリポイント
+ * port 8080: BigQuery CRUD API + AI チャット API + Embedding/セマンティック検索 API（Phase 15）
  */
 
 import express from 'express';
-import path from 'path';
-import http from 'http';
+import path    from 'path';
 import { fileURLToPath } from 'url';
-import { WebSocketServer, WebSocket } from 'ws';
+import { createBigQueryRoutes }   from './routes/bigqueryRoutes.js';
+import { bigqueryService }        from './services/BigQueryService.js';
+import { createDriveRoutes }      from './routes/driveRoutes.js';
+import { driveService }           from './services/driveService.js';
+import { createChatRoutes }       from './routes/chatRoutes.js';
+import { createEmbeddingRoutes }  from './routes/embeddingRoutes.js';
+import { embeddingService }       from './services/EmbeddingService.js';
+import { vectorStoreService }     from './services/VectorStoreService.js';
 
-import { createBigQueryRoutes } from './routes/bigqueryRoutes.js';
-import { bigqueryService } from './services/BigQueryService.js';
-import { authMiddleware, authRoutes } from './middleware/authMiddleware.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// プロジェクトルートは server/ の親ディレクトリ
+const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
+const PORT = process.env['PORT'] ?? 8080;
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+app.use(express.json({ limit: '50mb' }));
 
-// JSON パーサー設定
-app.use(express.json({ limit: '10mb' }));
+// CORS（Vite dev server + WPF WebView2）
+app.use((_req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+app.options(/(.*)/, (_req, res) => { res.sendStatus(204); });
 
-// 認証ルートとミドルウェア
-app.use('/api/auth', authRoutes());
-app.use(authMiddleware());
+// ヘルスチェック
+app.get('/api/health', (_req, res) => { res.json({ status: 'ok' }); });
 
-// 静的ファイル配信 (dist ディレクトリ)
-app.use(express.static(path.join(projectRoot, 'dist')));
-
-// APIルートのマウント
+// BigQuery CRUD
 app.use('/api/bq', createBigQueryRoutes());
 
-// SPA フォールバック
+// Google Drive upload
+app.use('/api/drive', createDriveRoutes());
+
+// AI チャット（Phase 14）
+app.use('/api/chat', createChatRoutes());
+
+// Embedding / セマンティック検索（Phase 15）
+app.use('/api/embeddings', createEmbeddingRoutes());
+
+// 静的ファイル（本番ビルド）
+app.use(express.static(path.join(projectRoot, 'dist')));
 app.get(/.*/, (req, res) => {
-    if (req.path.startsWith('/api/')) {
-        return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
+  if (req.path.startsWith('/api/')) { res.status(404).json({ error: 'Not found' }); return; }
+  const indexPath = path.join(projectRoot, 'dist', 'index.html');
+  if (require('fs').existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(200).send('<p>Dev mode: open <a href="http://localhost:5173">http://localhost:5173</a></p>');
+  }
 });
 
-// HTTP サーバーを作成（WebSocket用）
-const server = http.createServer(app);
+async function start() {
+  // 先に listen してリクエストを受け付ける（初期化完了を待たない）
+  app.listen(PORT, () => {
+    console.log(`[Server] Listening on http://localhost:${PORT}`);
+  });
 
-// WebSocket サーバーを作成
-const wss = new WebSocketServer({ server, path: '/ws' });
+  const key = process.env['GOOGLE_SERVICE_ACCOUNT_KEY'];
+  if (!key) {
+    console.log('[Server] GOOGLE_SERVICE_ACCOUNT_KEY not set — BigQuery/Drive/Embedding disabled');
+    return;
+  }
 
-// 接続中のクライアントセット
-const clients: Set<WebSocket> = new Set();
+  const [bqOk, driveOk, embOk] = await Promise.all([
+    bigqueryService.initialize(),
+    driveService.initialize(),
+    embeddingService.initialize(),
+  ]);
+  console.log(bqOk    ? '[Server] BigQuery initialized'  : '[Server] BigQuery init failed');
+  console.log(driveOk ? '[Server] Drive initialized'     : '[Server] Drive init failed');
+  console.log(embOk   ? '[Server] Embedding initialized' : '[Server] Embedding init failed');
 
-// WebSocket接続処理
-wss.on('connection', (ws: WebSocket) => {
-    console.log('[WebSocket] Client connected');
-    clients.add(ws);
-
-    ws.on('message', (data: Buffer) => {
-        try {
-            const message = JSON.parse(data.toString());
-            console.log('[WebSocket] Received:', message.type);
-
-            // content-updateメッセージを他のクライアントにブロードキャスト
-            if (message.type === 'content-update') {
-                broadcastToOthers(ws, message);
-            }
-        } catch (e) {
-            console.error('[WebSocket] Invalid message:', e);
-        }
-    });
-
-    ws.on('close', () => {
-        console.log('[WebSocket] Client disconnected');
-        clients.delete(ws);
-    });
-
-    ws.on('error', (error) => {
-        console.error('[WebSocket] Error:', error);
-        clients.delete(ws);
-    });
-});
-
-// 送信元以外の全クライアントにブロードキャスト
-function broadcastToOthers(sender: WebSocket, message: unknown): void {
-    const data = JSON.stringify(message);
-    clients.forEach(client => {
-        if (client !== sender && client.readyState === WebSocket.OPEN) {
-            client.send(data);
-        }
-    });
+  if (bqOk && embOk) {
+    const bq  = bigqueryService.getBigQuery()!;
+    const pid = bigqueryService.getProjectId()!;
+    await vectorStoreService.initialize(bq, pid);
+    console.log('[Server] VectorStore initialized');
+  }
 }
 
-// 全クライアントにブロードキャスト（APIからも呼び出し可能）
-export function broadcastToAll(message: unknown): void {
-    const data = JSON.stringify(message);
-    clients.forEach(client => {
-        if (client.readyState === WebSocket.OPEN) {
-            client.send(data);
-        }
-    });
-}
-
-// サーバー起動
-async function startServer() {
-    // BigQuery API の初期化（環境変数が設定されている場合のみ）
-    if (process.env.GOOGLE_SERVICE_ACCOUNT_KEY) {
-        const bqInitialized = await bigqueryService.initialize();
-        if (bqInitialized) {
-            console.log('BigQuery API initialized successfully');
-        } else {
-            console.warn('BigQuery API initialization failed');
-        }
-    } else {
-        console.log('GOOGLE_SERVICE_ACCOUNT_KEY not set, BigQuery API disabled');
-    }
-
-    server.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
-        console.log(`WebSocket server available at ws://localhost:${PORT}/ws`);
-    });
-}
-
-startServer();
+start();

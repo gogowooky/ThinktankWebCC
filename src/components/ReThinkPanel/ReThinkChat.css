@@ -1,0 +1,193 @@
+/* ReThinkChat.css — CLI 風 AI チャット（ReThink版・ライトテーマ） */
+
+.rethink-chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #f5f7fa;
+  font-family: 'JetBrains Mono', 'Consolas', 'Courier New', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #2c3e6f;
+}
+
+/* ── ログ出力エリア ───────────────────────────────── */
+
+.rethink-chat__log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(30, 70, 32, 0.2) transparent;
+}
+
+.rethink-chat__log::-webkit-scrollbar { width: 5px; }
+.rethink-chat__log::-webkit-scrollbar-track { background: transparent; }
+.rethink-chat__log::-webkit-scrollbar-thumb {
+  background: rgba(30, 70, 32, 0.2);
+  border-radius: 3px;
+}
+
+/* ── 起動バナー ──────────────────────────────────── */
+
+.rethink-chat__banner {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 8px;
+}
+.rethink-chat__banner-line {
+  color: rgba(30, 70, 32, 0.4);
+  font-size: 11px;
+}
+.rethink-chat__banner-sep {
+  color: rgba(30, 70, 32, 0.2);
+  font-size: 11px;
+  letter-spacing: -0.5px;
+}
+.rethink-chat__dim { color: rgba(30, 70, 32, 0.4); }
+
+/* ── エントリ ─────────────────────────────────────────────── */
+
+.rethink-chat__entry {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── ユーザー行 ──────────────────────────────────────────── */
+
+.rethink-chat__user-block {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  background: rgba(27, 94, 32, 0.07);
+  border-left: 2px solid rgba(27, 94, 32, 0.35);
+  padding: 4px 8px 4px 6px;
+  border-radius: 0 3px 3px 0;
+}
+
+.rethink-chat__prompt {
+  color: #2e7d32;
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.rethink-chat__user-text {
+  color: #1b3a1e;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+  font-weight: 500;
+}
+
+/* ── AI 応答ブロック ─────────────────────────────────────── */
+
+.rethink-chat__ai-block {
+  display: flex;
+  flex-direction: column;
+  background: rgba(30, 70, 32, 0.04);
+  border-left: 2px solid rgba(30, 70, 32, 0.25);
+  padding: 3px 0 3px 6px;
+  margin-top: 2px;
+}
+
+.rethink-chat__ai-line {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.rethink-chat__ai-prefix {
+  color: #1e4620;
+  font-weight: 700;
+  flex-shrink: 0;
+  width: 28px;
+  user-select: none;
+}
+
+.rethink-chat__ai-text {
+  color: #37474f;
+  white-space: pre-wrap;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── タイムスタンプ ───────────────────────────────────────── */
+
+.rethink-chat__ts {
+  color: rgba(30, 70, 32, 0.3);
+  font-size: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+/* ── 待機カーソル ────────────────────────────────────────── */
+
+.rethink-chat__cursor {
+  color: #1e4620;
+  animation: rt-blink 1s step-end infinite;
+}
+
+@keyframes rt-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── 入力エリア（下部固定）──────────────────────────────── */
+
+.rethink-chat__input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  border-top: 1px solid rgba(30, 70, 32, 0.2);
+  flex-shrink: 0;
+}
+
+.rethink-chat__input-prompt {
+  color: #2e7d32;
+  font-weight: 700;
+  flex-shrink: 0;
+  padding-bottom: 5px;
+  user-select: none;
+}
+
+.rethink-chat__input {
+  flex: 1;
+  min-width: 0;
+  background: rgba(30, 70, 32, 0.04);
+  border: 1px solid rgba(30, 70, 32, 0.2);
+  border-radius: 4px;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #1a3d1c;
+  padding: 5px 8px;
+  min-height: 30px;
+  max-height: 120px;
+  overflow-y: hidden;
+  transition: border-color 0.15s;
+}
+
+.rethink-chat__input:focus {
+  border-color: rgba(30, 70, 32, 0.5);
+  background: #fff;
+}
+
+.rethink-chat__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

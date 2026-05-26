@@ -1,0 +1,284 @@
+/* CardMedia.css */
+
+.card-media {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: #f5f5f7;
+}
+
+/* ── ツールバー ─────────────────────────────────────── */
+.card-media__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+  background: #fff;
+}
+
+.card-media__filter {
+  flex: 1;
+  height: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  padding: 0 8px;
+  font-size: 11px;
+  background: #fff;
+  outline: none;
+  min-width: 0;
+}
+
+.card-media__filter:focus {
+  border-color: #7aa2f7;
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.2);
+}
+
+.card-media__refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  width: 26px;
+  padding: 0;
+  font-size: 11px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  background: #fff;
+  color: rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 100ms, border-color 100ms;
+}
+
+.card-media__refresh-btn:hover {
+  background: #f0f4ff;
+  border-color: #7aa2f7;
+  color: #4a7cf7;
+}
+
+.card-media__count {
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── グリッド（Think一覧カード用 / 2列固定）────────── */
+.card-media__grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  padding: 10px;
+  align-content: start;
+}
+
+/* テーブルカード用グリッド（幅に応じて1〜3列） */
+.card-media__grid--table {
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+/* ── カード（Think一覧用）────────────────────────────── */
+.card-media__card {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+  cursor: pointer;
+}
+
+.card-media__card:hover {
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  transform: translateY(-1px);
+}
+
+.card-media__card--focus {
+  border-color: rgba(122, 162, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.25);
+}
+
+/* カードヘッダー（上部カラーライン + アイコン + タイトル）*/
+.card-media__card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 6px;
+  border-top: 3px solid transparent;
+}
+
+.card-media__card-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.card-media__card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* 本文（全文表示、長い場合は折りたたみトグル付き）*/
+.card-media__card-body {
+  padding: 0 10px 8px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 本文展開ボタン */
+.card-media__body-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+  padding: 1px 4px;
+  font-size: 10px;
+  color: #4a7cf7;
+  background: none;
+  border: none;
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.card-media__body-expand-btn:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* フッター */
+.card-media__card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 10px 7px;
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  gap: 6px;
+  overflow: hidden;
+}
+
+.card-media__card-keywords {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  color: rgba(0, 0, 0, 0.25);
+  font-style: italic;
+}
+
+/* ── テーブルカード（1行1カード）──────────────────────── */
+.card-media__card--table {
+  cursor: default;
+  padding: 10px 12px;
+}
+
+.card-media__card--table:hover {
+  transform: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* フィールド一覧（col: val のリスト）*/
+.card-media__table-fields {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  column-gap: 8px;
+  row-gap: 3px;
+  width: 100%;
+}
+
+/* 各フィールド行 */
+.card-media__field {
+  display: contents;
+}
+
+/* ラベル */
+.card-media__field-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-top: 1px;
+  text-align: right;
+}
+
+.card-media__field-label::after {
+  content: ':';
+}
+
+/* 値（折り返し表示、長い場合は折りたたみ）*/
+.card-media__field-value {
+  font-size: 11px;
+  color: #1a1a1a;
+  word-break: break-all;
+  white-space: pre-wrap;
+  min-width: 0;
+}
+
+.card-media__field-value--collapsible {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-media__field-value-text {
+  word-break: break-all;
+}
+
+/* 折りたたみボタン */
+.card-media__expand-btn {
+  display: inline-block;
+  font-size: 10px;
+  color: #4a7cf7;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.8;
+  text-align: left;
+}
+
+.card-media__expand-btn:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+/* ── 空状態 ───────────────────────────────────────────── */
+.card-media__empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.3);
+}
+
+.card-media__empty-full {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  font-size: 12px;
+  color: rgba(0, 0, 0, 0.35);
+  text-align: center;
+  line-height: 1.7;
+}

@@ -1,99 +1,50 @@
+/**
+ * TTModels.ts
+ * v5 アプリ全体のモデルルート（シングルトン）
+ *
+ * データ階層: TTVault > Thoughts > Thought > Think
+ * Phase 1-3: TTVault を中心とした基本構成
+ * Phase 4 以降: TTApplication から参照される
+ */
+
 import { TTCollection } from './TTCollection';
-import { TTStatus } from './TTStatus';
-import { TTActions } from './TTAction';
-import { TTEvents } from './TTEvent';
-import { TTMemos } from './TTMemos';
-import { TTRequests } from './TTRequest';
-import { TTEditings } from './TTEditing';
-import { InitializeDefaultStatus } from '../Controllers/DefaultStatus';
-import { InitializeDefaultActions } from '../Controllers/DefaultActions';
-import { InitializeDefaultEvents } from '../Controllers/DefaultEvents';
-import { InitializeDefaultRequests } from '../Controllers/DefaultRequests';
+import { TTVault } from './TTVault';
 
 export class TTModels extends TTCollection {
-    public Status: TTStatus;
-    public Actions: TTActions;
-    public Events: TTEvents;
-    public Memos: TTMemos;
-    public Requests: TTRequests;
-    public Editings: TTEditings;
+  /** メインの保管庫（BigQuery: thinktank.vault / LocalFS: ./../ThinktankLocal/vault）*/
+  public Vault: TTVault;
 
-    private static _instance: TTModels;
+  private static _instance: TTModels | null = null;
 
-    public override get ClassName(): string {
-        return 'TTModels';
+  public override get ClassName(): string {
+    return 'TTModels';
+  }
+
+  private constructor() {
+    super();
+    this.ID = 'Thinktank';
+    this.Name = 'Thinktank';
+    this.Description = 'Root Model v5';
+
+    this.Vault = new TTVault('vault');
+    this.AddItem(this.Vault);
+
+    this.Vault.LoadCache();
+    this.LoadCache();
+  }
+
+  public static get Instance(): TTModels {
+    if (!TTModels._instance) {
+      TTModels._instance = new TTModels();
     }
+    return TTModels._instance;
+  }
 
-    private constructor() {
-        super();
-        TTModels._instance = this;
-        this.ID = 'Thinktank';
-        this.Name = 'Thinktank';
-        this.Description = 'Collection List';
+  public static resetInstance(): void {
+    TTModels._instance = null;
+  }
 
-        this.ItemSaveProperties = "ID,Name,Count,Description";
-        this.ListPropertiesMin = "ID,Count,Name";
-        this.ListProperties = "ID,Name,Count,Description";
-        this.ColumnMapping = "ID:コレクションID,Name:コレクション名,Count:アイテム数,Description:説明";
-        this.ColumnMaxWidth = "ID:11,Count:7,Name:40,Description:100";
-
-
-        // Setup initial collections
-        this.Status = new TTStatus();
-        this.Status.ID = "Status";
-        this.Status.Name = "ステータス";
-
-        this.Actions = new TTActions(this);
-        this.Actions.ID = "Actions";
-        this.Actions.Name = "アクション";
-
-        this.Events = new TTEvents();
-        this.Events.ID = "Events";
-        this.Events.Name = "イベント";
-
-        this.Memos = new TTMemos();
-        this.Memos.ID = "Memos";
-        this.Memos.Name = "メモ";
-
-        this.Requests = new TTRequests(this);
-        this.Requests.ID = "Requests";
-        this.Requests.Name = "リクエスト";
-
-        this.Editings = new TTEditings();
-        this.Editings.ID = "Editings";
-        this.Editings.Name = "編集設定";
-
-        this.AddItem(this.Status);
-        this.AddItem(this.Actions);
-        this.AddItem(this.Events);
-        this.AddItem(this.Memos);
-        this.AddItem(this.Requests);
-        this.AddItem(this.Editings);
-
-        // Initialize Default Status & Actions & Events & Requests
-        InitializeDefaultStatus(this);
-        InitializeDefaultActions(this);
-        InitializeDefaultEvents(this);
-        InitializeDefaultRequests(this);
-
-        // Load Cache
-        this.Status.LoadCache();
-        this.Actions.LoadCache();
-        this.Events.LoadCache();
-        this.Memos.LoadCache();
-        this.Requests.LoadCache();
-        this.Editings.LoadCache();
-        this.LoadCache();
-    }
-
-    public static get Instance(): TTModels {
-        if (!this._instance) {
-            this._instance = new TTModels();
-        }
-        return this._instance;
-    }
-
-    public override async LoadCache(): Promise<void> {
-        this.IsLoaded = true;
-    }
+  public override async LoadCache(): Promise<void> {
+    this.IsLoaded = true;
+  }
 }
