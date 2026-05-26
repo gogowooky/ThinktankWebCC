@@ -24,6 +24,22 @@ export interface SavePayload {
   relatedIds:  string;
 }
 
+export interface HistoryMeta {
+  historyId:   string;
+  thinkId:     string;
+  timestamp:   string;
+  title:       string;
+  contentType: string;
+  summary?:    string;
+}
+
+export interface SaveHistoryPayload {
+  thinkId:     string;
+  timestamp:   string;
+  fullContent: string;
+  summary?:    string;
+}
+
 export interface IStorageBackend {
   /** メタデータ一覧（content なし）を取得する */
   listMeta(): Promise<ThinkMeta[]>;
@@ -39,4 +55,14 @@ export interface IStorageBackend {
 
   /** 全文検索する */
   search(query: string): Promise<ThinkMeta[]>;
+
+  /** 指定したThinkの履歴メタデータ一覧を取得する */
+  listHistoryMeta(thinkId: string): Promise<HistoryMeta[]>;
+
+  /** 履歴の本文を取得する */
+  getHistoryContent(historyId: string): Promise<string | null>;
+
+  /** 履歴（スナップショット）を保存する */
+  saveHistory(payload: SaveHistoryPayload): Promise<HistoryMeta>;
 }
+

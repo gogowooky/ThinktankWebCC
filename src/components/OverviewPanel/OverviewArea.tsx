@@ -39,6 +39,7 @@ import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { semanticSearch } from '../../services/EmbeddingApiService';
 import type { SemanticSearchResult } from '../../services/EmbeddingApiService';
+import { TimelineView } from './TimelineView';
 import './OverviewArea.css';
 
 const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
@@ -47,6 +48,7 @@ const OVERVIEW_MODE_NAMES: Record<string, string> = {
   datagrid: 'Think一覧',
   graph:    'Thought分析',
   chat:     'AI相談',
+  timeline: 'タイムライン',
 };
 
 const noop = () => {};
@@ -162,16 +164,16 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     const timer = setTimeout(() => {
       if (showSettings) {
         settingsViewRef.current?.focus();
-      } else if (panel.MediaType === 'datagrid') {
+      } else if (panel.ViewMode === 'datagrid') {
         filterPanelRef.current?.focus();
-      } else if (panel.MediaType === 'chat') {
+      } else if (panel.ViewMode === 'chat') {
         aiChatViewRef.current?.focus();
-      } else if (panel.MediaType === 'graph') {
+      } else if (panel.ViewMode === 'graph') {
         graphMediaRef.current?.focus();
       }
     }, 50);
     return () => clearTimeout(timer);
-  }, [showSettings, panel.MediaType]);
+  }, [showSettings, panel.ViewMode]);
 
   const handleRefresh = useCallback(() => {
     app.RefreshAll().catch(e => console.error('[OverviewArea] RefreshAll failed:', e));
@@ -360,11 +362,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   // ── 算出値 ────────────────────────────────────────────────────────────────
   const think = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) ?? null : null;
-  const isThinkListMode = panel.MediaType === 'datagrid';
+  const isThinkListMode = panel.ViewMode === 'datagrid';
 
   const overviewModeLabel = showSettings
     ? '設定'
-    : (OVERVIEW_MODE_NAMES[panel.MediaType] ?? panel.MediaType);
+    : (OVERVIEW_MODE_NAMES[panel.ViewMode] ?? panel.ViewMode);
 
   return (
     <div className="overview-area">
@@ -463,14 +465,16 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
               onToggleCheck={handleToggleCheck}
             />
           )
-        ) : panel.MediaType === 'chat' ? (
+        ) : panel.ViewMode === 'chat' ? (
           <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
         ) : !think ? (
           <div className="overview-area__empty">
             <span>Thought をドロップして選択してください</span>
           </div>
-        ) : panel.MediaType === 'graph' ? (
+        ) : panel.ViewMode === 'graph' ? (
           <GraphMedia ref={graphMediaRef} think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
+        ) : panel.ViewMode === 'timeline' ? (
+          <TimelineView think={think} vault={vault} app={app} />
         ) : null}
       </div>
 

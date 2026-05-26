@@ -575,6 +575,45 @@ export class TTVault extends TTCollection {
     this.NotifyUpdated();
   }
 
+  // ── 履歴（タイムライン）操作 ───────────────────────────────────────
+
+  /** 指定したThinkの履歴メタデータ一覧を取得する */
+  public async LoadHistoryMeta(thinkId: string) {
+    try {
+      return await StorageManager.instance.listHistoryMeta(thinkId);
+    } catch (e) {
+      console.error(`[TTVault] LoadHistoryMeta failed for ${thinkId}:`, e);
+      return [];
+    }
+  }
+
+  /** 指定した履歴IDの本文を取得する */
+  public async GetHistoryContent(historyId: string): Promise<string | null> {
+    try {
+      return await StorageManager.instance.getHistoryContent(historyId);
+    } catch (e) {
+      console.error(`[TTVault] GetHistoryContent failed for ${historyId}:`, e);
+      return null;
+    }
+  }
+
+  /** 本日更新されたすべてのThinkのスナップショットを生成する（日末半自動用） */
+  public async CreateSnapshotsForModifiedToday(summary?: string): Promise<number> {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const modifiedThinks = this.GetThinks().filter(t => {
+      const compareDate = (t.UpdatedAt || t.ID).slice(0, 10);
+      return compareDate === todayStr && t.ContentType !== 'thought';
+    });
+
+    let count = 0;
+    for (const think of modifiedThinks) {
+      if (think.IsMetaOnly) await think.LoadContent();
+      await think.CreateSnapshot(summary);
+      count++;
+    }
+    return count;
+  }
+
   // ── LocalFS パスユーティリティ ─────────────────────────────────────
 
   public buildLocalPath(contentType: ContentType, id: string): string {

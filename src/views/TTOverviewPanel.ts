@@ -9,7 +9,7 @@
 import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
 
-export type OverviewViewMode = 'datagrid' | 'graph' | 'chat' | 'settings';
+export type OverviewViewMode = 'datagrid' | 'graph' | 'chat' | 'settings' | 'timeline';
 
 export class TTOverviewPanel extends TTUIItem {
   /** OverviewAreaの開閉状態（true=開いている）*/
@@ -18,12 +18,15 @@ export class TTOverviewPanel extends TTUIItem {
   /** 表示中のThoughtID（空 = 未選択）*/
   public ThoughtID: string = '';
 
-  /** 表示モード（datagrid/graph/chat/settings）*/
+  /** 表示モード（datagrid/graph/chat/settings/timeline）*/
   public ViewMode: OverviewViewMode = 'datagrid';
 
   /** MediaTypeの後方互換ゲッター（ViewModeから導出）*/
   public get MediaType(): MediaType {
-    return (this.ViewMode === 'settings' ? 'datagrid' : this.ViewMode) as MediaType;
+    if (this.ViewMode === 'settings' || this.ViewMode === 'timeline') {
+      return 'datagrid';
+    }
+    return this.ViewMode as MediaType;
   }
 
   /** 全文検索テキスト */

@@ -10,6 +10,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     delete:     (id)      => ipcRenderer.invoke('storage:delete', id),
     search:         (query)     => ipcRenderer.invoke('storage:search', query),
     syncFromServer: (serverUrl) => ipcRenderer.invoke('storage:syncFromServer', serverUrl),
+    listHistoryMeta:   (thinkId) => ipcRenderer.invoke('storage:listHistoryMeta', thinkId),
+    getHistoryContent: (historyId) => ipcRenderer.invoke('storage:getHistoryContent', historyId),
+    saveHistory:       (payload) => ipcRenderer.invoke('storage:saveHistory', payload),
   },
   getPathForFile: (file) => webUtils.getPathForFile(file),
 });

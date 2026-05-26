@@ -12,7 +12,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { MessageCircle, Files, Microscope, Settings, type LucideIcon } from 'lucide-react';
+import { MessageCircle, Files, Microscope, Settings, Clock, type LucideIcon } from 'lucide-react';
 import { PanelRibbon } from '../Layout/PanelRibbon';
 import type { OverviewViewMode } from '../../views/TTOverviewPanel';
 import './OverviewRibbon.css';
@@ -23,6 +23,7 @@ const VIEW_BUTTONS: Array<{ mode: OverviewContentMode; Icon: LucideIcon; title: 
   { mode: 'datagrid', Icon: Files,         title: 'Think一覧' },
   { mode: 'graph',    Icon: Microscope,    title: 'Thought分析' },
   { mode: 'chat',     Icon: MessageCircle, title: 'AI相談' },
+  { mode: 'timeline', Icon: Clock,         title: 'タイムライン' },
 ];
 
 interface Props {

@@ -7,7 +7,7 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { bigqueryService } from '../services/BigQueryService.js';
-import type { VaultRecord } from '../services/BigQueryService.js';
+import type { VaultRecord, VaultHistoryRecord } from '../services/BigQueryService.js';
 
 function toMeta(r: VaultRecord) {
   return {
@@ -98,6 +98,67 @@ export function createBigQueryRoutes() {
     const result = await bigqueryService.delete(fileId);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     res.json({ success: true });
+  });
+
+  // GET /api/bq/files/:id/history
+  router.get('/files/:id/history', async (req: Request, res: Response) => {
+    const fileId = Array.isArray(req.params['id']) ? req.params['id'][0] : req.params['id'];
+    const result = await bigqueryService.listHistoryMeta(fileId);
+    if (!result.success) { res.status(500).json({ error: result.error }); return; }
+    const mapped = result.data.map(r => ({
+      historyId:   r.history_id,
+      thinkId:     r.file_id,
+      timestamp:   r.timestamp == null ? '' :
+                     typeof r.timestamp === 'object'
+                       ? (r.timestamp as unknown as { value: string }).value
+                       : String(r.timestamp),
+      title:       r.title ?? '',
+      contentType: r.category,
+      summary:     r.summary ?? undefined,
+    }));
+    res.json(mapped);
+  });
+
+  // GET /api/bq/history/:historyId/content
+  router.get('/history/:historyId/content', async (req: Request, res: Response) => {
+    const historyId = Array.isArray(req.params['historyId']) ? req.params['historyId'][0] : req.params['historyId'];
+    const result = await bigqueryService.getHistoryContent(historyId);
+    if (!result.success) { res.status(500).json({ error: result.error }); return; }
+    if (result.data === null) { res.status(404).json({ error: 'not found' }); return; }
+    res.json(result.data);
+  });
+
+  // POST /api/bq/history
+  router.post('/history', async (req: Request, res: Response) => {
+    const { thinkId, timestamp, title, content, contentType, summary } = req.body as {
+      thinkId: string; timestamp: string;
+      title: string; content: string;
+      contentType: string; summary?: string;
+    };
+    if (!thinkId || !timestamp || !contentType) {
+      res.status(400).json({ error: 'thinkId, timestamp, contentType are required' }); return;
+    }
+    const tsSafe = timestamp.replace(/[:T]/g, '-').replace(/Z/g, '');
+    const historyId = `${thinkId}_${tsSafe}`;
+    const record: VaultHistoryRecord = {
+      history_id: historyId,
+      file_id:    thinkId,
+      timestamp:  timestamp,
+      title:      title ?? null,
+      content:    content ?? null,
+      category:   contentType,
+      summary:    summary ?? null,
+    };
+    const result = await bigqueryService.saveHistory(record);
+    if (!result.success) { res.status(500).json({ error: result.error }); return; }
+    res.json({
+      historyId,
+      thinkId,
+      timestamp,
+      title: title ?? '',
+      contentType,
+      summary: summary ?? undefined,
+    });
   });
 
   return router;

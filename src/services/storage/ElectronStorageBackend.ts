@@ -3,7 +3,7 @@
  * Electron IPC 経由でメインプロセスの fs 操作を呼び出すバックエンド
  */
 
-import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import type { IStorageBackend, ThinkMeta, SavePayload, HistoryMeta, SaveHistoryPayload } from './IStorageBackend';
 
 export interface SyncResult {
   added: number; updated: number; skipped: number; total: number;
@@ -19,6 +19,9 @@ declare global {
         delete:         (id: string)      => Promise<void>;
         search:         (q: string)       => Promise<ThinkMeta[]>;
         syncFromServer: (url: string)     => Promise<SyncResult>;
+        listHistoryMeta:   (thinkId: string) => Promise<HistoryMeta[]>;
+        getHistoryContent: (historyId: string) => Promise<string | null>;
+        saveHistory:       (p: SaveHistoryPayload) => Promise<HistoryMeta>;
       };
       getPathForFile: (file: File) => string;
     };
@@ -37,6 +40,9 @@ export class ElectronStorageBackend implements IStorageBackend {
   save(payload: SavePayload):   Promise<ThinkMeta>     { return this.api.save(payload); }
   delete(id: string):           Promise<void>          { return this.api.delete(id); }
   search(query: string):        Promise<ThinkMeta[]>   { return this.api.search(query); }
+  listHistoryMeta(thinkId: string): Promise<HistoryMeta[]> { return this.api.listHistoryMeta(thinkId); }
+  getHistoryContent(historyId: string): Promise<string | null> { return this.api.getHistoryContent(historyId); }
+  saveHistory(payload: SaveHistoryPayload): Promise<HistoryMeta> { return this.api.saveHistory(payload); }
 
   syncFromServer(serverUrl = 'http://localhost:8080'): Promise<SyncResult> {
     return this.api.syncFromServer(serverUrl);

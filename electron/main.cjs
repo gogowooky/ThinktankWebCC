@@ -6,11 +6,20 @@ const fs   = require('fs');
 
 const isDev    = process.env.NODE_ENV === 'development';
 const VAULT_DIR = path.join(app.getPath('userData'), 'thinktank', 'vault');
+const HISTORY_DIR = path.join(app.getPath('userData'), 'thinktank', 'history');
 
 // ── ヘルパー ──────────────────────────────────────────────────────────────
 
 function ensureVaultDir() {
   if (!fs.existsSync(VAULT_DIR)) fs.mkdirSync(VAULT_DIR, { recursive: true });
+}
+
+function ensureHistoryDir() {
+  if (!fs.existsSync(HISTORY_DIR)) fs.mkdirSync(HISTORY_DIR, { recursive: true });
+}
+
+function historyPath(historyId) {
+  return path.join(HISTORY_DIR, `${historyId}.json`);
 }
 
 function recordPath(id) {
@@ -105,6 +114,53 @@ ipcMain.handle('storage:search', (_event, query) => {
       (d.keywords|| '').toLowerCase().includes(q)
     ))
     .map(toMeta);
+});
+
+ipcMain.handle('storage:listHistoryMeta', (_event, thinkId) => {
+  ensureHistoryDir();
+  return fs.readdirSync(HISTORY_DIR)
+    .filter(f => f.endsWith('.json') && f.startsWith(thinkId + '_'))
+    .map(f => {
+      try {
+        const data = JSON.parse(fs.readFileSync(path.join(HISTORY_DIR, f), 'utf8'));
+        const { content: _content, ...meta } = data;
+        return meta;
+      } catch { return null; }
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+});
+
+ipcMain.handle('storage:getHistoryContent', (_event, historyId) => {
+  const p = historyPath(historyId);
+  if (!fs.existsSync(p)) return null;
+  try {
+    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return data.content ?? null;
+  } catch { return null; }
+});
+
+ipcMain.handle('storage:saveHistory', (_event, payload) => {
+  ensureHistoryDir();
+  const { thinkId, timestamp, fullContent, summary } = payload;
+  const { title, body } = splitContent(fullContent);
+  const tsSafe = timestamp.replace(/[:T]/g, '-').replace(/Z/g, '');
+  const historyId = `${thinkId}_${tsSafe}`;
+  const p = historyPath(historyId);
+
+  const record = {
+    historyId,
+    thinkId,
+    timestamp,
+    title,
+    content: body,
+    contentType: 'memo',
+    summary: summary || null,
+  };
+
+  fs.writeFileSync(p, JSON.stringify(record, null, 2), 'utf8');
+  const { content: _content, ...meta } = record;
+  return meta;
 });
 
 // ── BigQuery 同期 ─────────────────────────────────────────────────────────

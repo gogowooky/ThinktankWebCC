@@ -4,7 +4,7 @@
  * Vite proxy により /api/* → http://localhost:8080 に転送される
  */
 
-import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import type { IStorageBackend, ThinkMeta, SavePayload, HistoryMeta, SaveHistoryPayload } from './IStorageBackend';
 
 function splitContent(fullContent: string): { title: string; body: string } {
   const nl = fullContent.indexOf('\n');
@@ -60,5 +60,39 @@ export class BigQueryStorageBackend implements IStorageBackend {
     );
     if (!res.ok) throw new Error(`BQ search failed: ${res.status}`);
     return res.json() as Promise<ThinkMeta[]>;
+  }
+
+  async listHistoryMeta(thinkId: string): Promise<HistoryMeta[]> {
+    const res = await fetch(`${this.base}/files/${encodeURIComponent(thinkId)}/history`);
+    if (!res.ok) throw new Error(`BQ listHistoryMeta failed: ${res.status}`);
+    return res.json() as Promise<HistoryMeta[]>;
+  }
+
+  async getHistoryContent(historyId: string): Promise<string | null> {
+    const res = await fetch(`${this.base}/history/${encodeURIComponent(historyId)}/content`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`BQ getHistoryContent failed: ${res.status}`);
+    return res.json() as Promise<string>;
+  }
+
+  async saveHistory(payload: SaveHistoryPayload): Promise<HistoryMeta> {
+    const nl = payload.fullContent.indexOf('\n');
+    const title = nl === -1 ? payload.fullContent : payload.fullContent.slice(0, nl);
+    const content = nl === -1 ? '' : payload.fullContent.slice(nl + 1);
+
+    const res = await fetch(`${this.base}/history`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        thinkId:     payload.thinkId,
+        timestamp:   payload.timestamp,
+        title,
+        content,
+        contentType: 'memo',
+        summary:     payload.summary || null,
+      }),
+    });
+    if (!res.ok) throw new Error(`BQ saveHistory failed: ${res.status}`);
+    return res.json() as Promise<HistoryMeta>;
   }
 }

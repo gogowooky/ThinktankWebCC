@@ -120,6 +120,22 @@ export class TTThink extends TTObject {
     }
   }
 
+  /** 現在のコンテンツ状態から履歴スナップショット（本日分など）を作成して保存する */
+  public async CreateSnapshot(summary?: string): Promise<void> {
+    try {
+      const nowStr = new Date().toISOString();
+      await StorageManager.instance.saveHistory({
+        thinkId:     this.ID,
+        timestamp:   nowStr,
+        fullContent: this.Content,
+        summary:     summary,
+      });
+      console.log(`[TTThink] Snapshot created for ${this.ID} at ${nowStr}`);
+    } catch (e) {
+      console.error(`[TTThink] CreateSnapshot failed (${this.ID}):`, e);
+    }
+  }
+
 
   // ── ヘルパー ───────────────────────────────────────────────────────
 

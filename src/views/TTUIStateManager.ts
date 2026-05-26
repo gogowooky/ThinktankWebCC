@@ -141,7 +141,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'OverviewPanel.ViewMode': {
     panel: 'OverviewPanel',
-    default: 'datagrid', type: 'string', candidates: '^(datagrid|graph|chat|settings)$',
+    default: 'datagrid', type: 'string', candidates: '^(datagrid|graph|chat|settings|timeline)$',
     description: '上部パネル表示モード',
     get: (app) => app.OverviewPanel.ViewMode,
     set: (app, v) => { app.OverviewPanel.SetViewMode(v as OverviewViewMode); },

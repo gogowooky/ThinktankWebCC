@@ -8,7 +8,7 @@
  *   → BigQueryStorageBackend（Express /api/bq/*）
  */
 
-import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import type { IStorageBackend, ThinkMeta, SavePayload, HistoryMeta, SaveHistoryPayload } from './IStorageBackend';
 import { LocalStorageBackend }    from './LocalStorageBackend';
 import { BigQueryStorageBackend } from './BigQueryStorageBackend';
 import { ElectronStorageBackend, type SyncResult } from './ElectronStorageBackend';
@@ -63,6 +63,18 @@ export class StorageManager {
 
   public search(query: string): Promise<ThinkMeta[]> {
     return this.backend.search(query);
+  }
+
+  public listHistoryMeta(thinkId: string): Promise<HistoryMeta[]> {
+    return this.backend.listHistoryMeta(thinkId);
+  }
+
+  public getHistoryContent(historyId: string): Promise<string | null> {
+    return this.backend.getHistoryContent(historyId);
+  }
+
+  public saveHistory(payload: SaveHistoryPayload): Promise<HistoryMeta> {
+    return this.backend.saveHistory(payload);
   }
 
   public syncFromServer(serverUrl = 'http://localhost:8080'): Promise<SyncResult> {

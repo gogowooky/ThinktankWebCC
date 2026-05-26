@@ -8,6 +8,7 @@ import { BigQuery } from '@google-cloud/bigquery';
 
 const DATASET_ID = 'thinktank';
 const TABLE_ID   = 'vault';
+const HISTORY_TABLE_ID = 'vault_history';
 
 export interface VaultRecord {
   file_id:     string;
@@ -21,6 +22,16 @@ export interface VaultRecord {
   is_deleted:  boolean;
   created_at:  string;
   updated_at:  string;
+}
+
+export interface VaultHistoryRecord {
+  history_id:   string;
+  file_id:      string;
+  timestamp:    string;
+  title:        string | null;
+  content:      string | null;
+  category:     string;
+  summary:      string | null;
 }
 
 type BqResult<T = VaultRecord[]> = { success: true; data: T } | { success: false; error: string };
@@ -40,6 +51,7 @@ export class BigQueryService {
       this.projectId = keyFile.project_id as string | undefined;
       this.bigquery = new BigQuery({ projectId: this.projectId, credentials: keyFile });
       await this.ensureTableExists();
+      await this.ensureHistoryTableExists();
       console.log(`[BigQueryService] Initialized (project: ${this.projectId}, table: ${DATASET_ID}.${TABLE_ID})`);
       return true;
     } catch (error) {
@@ -53,6 +65,39 @@ export class BigQueryService {
 
   private get tbl(): string {
     return `\`${this.projectId}.${DATASET_ID}.${TABLE_ID}\``;
+  }
+
+  private get historyTbl(): string {
+    return `\`${this.projectId}.${DATASET_ID}.${HISTORY_TABLE_ID}\``;
+  }
+
+  private async ensureHistoryTableExists(): Promise<void> {
+    if (!this.bigquery) return;
+    const dataset = this.bigquery.dataset(DATASET_ID);
+    const table   = dataset.table(HISTORY_TABLE_ID);
+    const [exists] = await table.exists();
+    if (exists) {
+      console.log(`[BigQueryService] Table ${DATASET_ID}.${HISTORY_TABLE_ID} confirmed`);
+      return;
+    }
+
+    const [dsExists] = await dataset.exists();
+    if (!dsExists) {
+      await this.bigquery.createDataset(DATASET_ID, { location: 'asia-northeast1' });
+    }
+    await dataset.createTable(HISTORY_TABLE_ID, {
+      schema: [
+        { name: 'history_id',   type: 'STRING',    mode: 'REQUIRED' },
+        { name: 'file_id',      type: 'STRING',    mode: 'REQUIRED' },
+        { name: 'timestamp',    type: 'TIMESTAMP', mode: 'REQUIRED' },
+        { name: 'title',        type: 'STRING',    mode: 'NULLABLE' },
+        { name: 'content',      type: 'STRING',    mode: 'NULLABLE' },
+        { name: 'category',     type: 'STRING',    mode: 'REQUIRED' },
+        { name: 'summary',      type: 'STRING',    mode: 'NULLABLE' },
+      ],
+      clustering: { fields: ['file_id'] },
+    });
+    console.log(`[BigQueryService] Created table ${DATASET_ID}.${HISTORY_TABLE_ID}`);
   }
 
   private async ensureTableExists(): Promise<void> {
@@ -197,6 +242,83 @@ export class BigQueryService {
         return this.save(record, retries - 1);
       }
       return { success: false, error: String(error) };
+    }
+  }
+
+  // ── 履歴メタ一覧（content なし）────────────────────────────────────────
+  async listHistoryMeta(thinkId: string): Promise<BqResult<VaultHistoryRecord[]>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        SELECT history_id, file_id, timestamp, title, category, summary
+        FROM ${this.historyTbl}
+        WHERE file_id = @thinkId
+        ORDER BY timestamp DESC
+      `;
+      const [rows] = await this.bigquery.query({ query, params: { thinkId } });
+      return { success: true, data: rows as VaultHistoryRecord[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ── 履歴本文取得 ──────────────────────────────────────────────────────
+  async getHistoryContent(historyId: string): Promise<BqResult<string | null>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        SELECT content FROM ${this.historyTbl}
+        WHERE history_id = @historyId
+        LIMIT 1
+      `;
+      const [rows] = await this.bigquery.query({ query, params: { historyId } });
+      const row = (rows as Array<{ content: string | null }>)[0];
+      return { success: true, data: row?.content ?? null };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
+  // ── 履歴保存（MERGE） ─────────────────────────────────────────────────
+  async saveHistory(record: VaultHistoryRecord): Promise<BqResult<null>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        MERGE ${this.historyTbl} AS target
+        USING (
+          SELECT @history_id AS history_id, @file_id AS file_id,
+                 @timestamp AS timestamp, @title AS title,
+                 @content AS content, @category AS category,
+                 @summary AS summary
+        ) AS source ON target.history_id = source.history_id
+        WHEN MATCHED THEN UPDATE SET
+          target.title     = source.title,
+          target.content   = source.content,
+          target.category  = source.category,
+          target.summary   = source.summary
+        WHEN NOT MATCHED THEN INSERT
+          (history_id, file_id, timestamp, title, content, category, summary)
+        VALUES
+          (source.history_id, source.file_id, source.timestamp,
+           source.title, source.content, source.category, source.summary)
+      `;
+      const params = {
+        history_id:  record.history_id,
+        file_id:     record.file_id,
+        timestamp:   new Date(record.timestamp),
+        title:       record.title,
+        content:     record.content,
+        category:    record.category,
+        summary:     record.summary,
+      };
+      const types = {
+        history_id: 'STRING', file_id: 'STRING', timestamp: 'TIMESTAMP',
+        title: 'STRING', content: 'STRING', category: 'STRING', summary: 'STRING',
+      };
+      await this.bigquery.query({ query, params, types });
+      return { success: true, data: null };
+    } catch (e) {
+      return { success: false, error: String(e) };
     }
   }
 

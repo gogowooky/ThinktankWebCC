@@ -5,7 +5,7 @@
  * C# 側 API は引き続き vaultId='vault' を受け取る（互換維持のため固定渡し）
  */
 
-import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import type { IStorageBackend, ThinkMeta, SavePayload, HistoryMeta, SaveHistoryPayload } from './IStorageBackend';
 
 /** C# API が返す camelCase レスポンス */
 interface CsThinkRecord {
@@ -104,5 +104,27 @@ export class LocalStorageBackend implements IStorageBackend {
     if (!res.ok) throw new Error(`search failed: ${res.status}`);
     const data = (await res.json()) as CsThinkRecord[];
     return data.map(toMeta);
+  }
+
+  async listHistoryMeta(thinkId: string): Promise<HistoryMeta[]> {
+    console.warn('[LocalStorageBackend] listHistoryMeta はローカルAPIモードでは未サポートです');
+    return [];
+  }
+
+  async getHistoryContent(historyId: string): Promise<string | null> {
+    console.warn('[LocalStorageBackend] getHistoryContent はローカルAPIモードでは未サポートです');
+    return null;
+  }
+
+  async saveHistory(payload: SaveHistoryPayload): Promise<HistoryMeta> {
+    console.warn('[LocalStorageBackend] saveHistory はローカルAPIモードでは未サポートです');
+    return {
+      historyId: `${payload.thinkId}_${payload.timestamp}`,
+      thinkId: payload.thinkId,
+      timestamp: payload.timestamp,
+      title: '未サポート',
+      contentType: 'memo',
+      summary: payload.summary
+    };
   }
 }
