@@ -260,7 +260,11 @@ export class TTShortcutManager {
   hasShortcutForEvent(e: KeyboardEvent): boolean {
     const keyStr = keyEventToStr(e);
     if (!keyStr) return false;
-    return this._activeTable.has(keyStr) || this._activeChordStarters.has(keyStr);
+    const has = this._activeTable.has(keyStr) || this._activeChordStarters.has(keyStr);
+    if (!has && e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+      this._app?.Status.SetLastActionDisplay(`[未マッチ] key:${keyStr} focus:${this._currentFocus} exmode:${this._currentExMode || '空'}`);
+    }
+    return has;
   }
 
   // ── イベントハンドラー ─────────────────────────────────────────────────
