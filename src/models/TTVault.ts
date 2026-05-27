@@ -23,6 +23,9 @@ export class TTVault extends TTCollection {
   /** LocalFS ルートフォルダパス（Local モード用）*/
   public DataFolder: string = './../ThinktankLocal/vault';
 
+  /** GetThinksForThoughtAsync の結果をキャッシュする（同期版 GetThinksForThought 用）*/
+  private _thoughtThinksCache: Map<string, string[]> = new Map();
+
   public override get ClassName(): string {
     return 'TTVault';
   }
@@ -179,11 +182,20 @@ export class TTVault extends TTCollection {
     }
 
     const idMap = new Map(allThinks.map(t => [t.ID, t]));
-    return [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+    const result = [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+    this._thoughtThinksCache.set(thoughtId, result.map(t => t.ID));
+    return result;
   }
 
   /** GetThinksForThoughtAsync の同期版（非同期ロードや検索はスキップ）*/
   public GetThinksForThought(thoughtId: string): TTThink[] {
+    const cachedIds = this._thoughtThinksCache.get(thoughtId);
+    if (cachedIds) {
+      const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+      const idMap = new Map(allThinks.map(t => [t.ID, t]));
+      return cachedIds.map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+    }
+
     const rootThought = this.GetThink(thoughtId);
     if (!rootThought || rootThought.ContentType !== 'thought') return [];
     if (rootThought.IsMetaOnly) return []; // 未ロードなら空
@@ -194,6 +206,9 @@ export class TTVault extends TTCollection {
     let filterKeyword = '';
     let filterCreatedRange: { from: string; to: string } | null = null;
     let filterUpdatedRange: { from: string; to: string } | null = null;
+    let searchQuery = '';
+    let searchCreatedRange: { from: string; to: string } | null = null;
+    let searchUpdatedRange: { from: string; to: string } | null = null;
 
     const collectParamsSync = (tid: string, visited: Set<string>) => {
       if (visited.has(tid)) return;
@@ -210,6 +225,16 @@ export class TTVault extends TTCollection {
             const sub = this.GetThink(id);
             if (sub?.ContentType === 'thought') collectParamsSync(id, visited);
             else finalIds.add(id);
+          }
+        } else if (s.startsWith('>> ')) {
+          const body = s.slice(3).trim();
+          if (body.startsWith('検索語：')) searchQuery = body.slice(4).trim();
+          else if (body.startsWith('作成日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            searchCreatedRange = computeDateRange(d, r);
+          } else if (body.startsWith('更新日：')) {
+            const [d, r] = body.slice(4).split(',').map(v => v.trim());
+            searchUpdatedRange = computeDateRange(d, r);
           }
         } else if (s.startsWith('> ') && !s.startsWith('>> ')) {
           const body = s.slice(2).trim();
@@ -248,7 +273,17 @@ export class TTVault extends TTCollection {
       }
     }
 
-    if (finalIds.size === 0 && !filterKeyword && !filterCreatedRange && !filterUpdatedRange) return allThinks;
+    if (
+      finalIds.size === 0 &&
+      !filterKeyword &&
+      !filterCreatedRange &&
+      !filterUpdatedRange &&
+      !searchQuery &&
+      !searchCreatedRange &&
+      !searchUpdatedRange
+    ) {
+      return allThinks;
+    }
 
     const idMap = new Map(allThinks.map(t => [t.ID, t]));
     return [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);

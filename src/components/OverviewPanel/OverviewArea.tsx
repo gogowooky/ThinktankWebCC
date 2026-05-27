@@ -99,7 +99,10 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   );
   useEffect(() => {
     if (!panel.ThoughtID) { setThinksInThought([]); return; }
-    vault.GetThinksForThoughtAsync(panel.ThoughtID).then(setThinksInThought);
+    vault.GetThinksForThoughtAsync(panel.ThoughtID).then(newThinks => {
+      setThinksInThought(newThinks);
+      vault.NotifyUpdated();
+    });
   }, [panel.ThoughtID, vault, refreshKey]);
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
@@ -169,8 +172,22 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   }, [showSettings, panel.MediaType]);
 
   const handleRefresh = useCallback(() => {
-    app.RefreshAll().catch(e => console.error('[OverviewArea] RefreshAll failed:', e));
-  }, [app]);
+    if (!panel.ThoughtID) return;
+    const thought = vault.GetThink(panel.ThoughtID);
+    if (!thought) return;
+
+    thought.LoadContent(true)
+      .then(() => {
+        return vault.GetThinksForThoughtAsync(panel.ThoughtID);
+      })
+      .then(newThinks => {
+        setThinksInThought(newThinks);
+        vault.NotifyUpdated();
+      })
+      .catch(e => {
+        console.error('[OverviewArea] refresh failed:', e);
+      });
+  }, [panel.ThoughtID, vault]);
 
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
@@ -338,7 +355,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   // ── 算出値 ────────────────────────────────────────────────────────────────
   const think = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) ?? null : null;
-  const isThinkListMode = panel.MediaType === 'datagrid';
+  const isThinkListMode = panel.MediaType === 'datagrid' && !showSettings;
 
   const overviewModeLabel = showSettings
     ? '設定'
@@ -364,12 +381,13 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
         visibleCount={visibleThinks.length}
         totalCount={typeFilteredBase.length}
+        hasThought={!!panel.ThoughtID}
         onScrollPrev={handleScrollPrev}
         onScrollNext={handleScrollNext}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}
-        onDeleteChecked={handleDeleteChecked}
+        onClearThought={() => panel.ClearThought()}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onCreateThought={handleCreateThought}
         onToggleAllVault={handleToggleAllVault}

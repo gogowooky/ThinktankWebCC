@@ -6,7 +6,7 @@
 
 import { useCallback } from 'react';
 import {
-  CheckSquare, Square, ListX, ListCheck, LibrarySquare, Trash2,
+  CheckSquare, Square, ListX, ListCheck, LibrarySquare, SquareX,
   ListChecks, List, ArrowDownAZ, Save, MonitorUp, MonitorDown, ListRestart,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
@@ -28,13 +28,14 @@ interface Props {
   onCheckAll:           () => void;
   onClearChecks:        () => void;
   onExcludeChecked:     () => void;
-  onDeleteChecked:      () => void;
+  onClearThought:       () => void;
   onToggleCheckedOnly:  () => void;
   onCreateThought:      () => void;
   onToggleAllVault:     () => void;
   onToggleColumnDialog: () => void;
   onSaveChat:           () => void;
   onRefresh:            () => void;
+  hasThought:           boolean;
 }
 
 export function OverviewMenuRibbon({
@@ -44,8 +45,9 @@ export function OverviewMenuRibbon({
   showColumnDialog,
   canSaveChat,
   visibleCount, totalCount,
+  hasThought,
   onScrollPrev, onScrollNext,
-  onCheckAll, onClearChecks, onExcludeChecked, onDeleteChecked,
+  onCheckAll, onClearChecks, onExcludeChecked, onClearThought,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
   onToggleColumnDialog,
   onSaveChat, onRefresh,
@@ -60,16 +62,12 @@ export function OverviewMenuRibbon({
 
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
-  /* ── 設定モード: ボタンなし ─────────────────────────────── */
-  if (showSettings) {
-    return <div className="menu-ribbon overview-menu-ribbon" />;
-  }
-
-  /* ── チャット・グラフモード ─────────────────────────────────── */
-  if (mediaType === 'chat' || mediaType === 'graph') {
+  /* ── 設定モード / チャット・グラフモード ───────────────────── */
+  if (showSettings || mediaType === 'chat' || mediaType === 'graph') {
+    const showChatControls = !showSettings && mediaType === 'chat';
     return (
       <div className="menu-ribbon overview-menu-ribbon">
-        {mediaType === 'chat' && (
+        {showChatControls && (
           <>
             <button
               className="menu-ribbon__btn menu-ribbon__btn--icon"
@@ -183,14 +181,14 @@ export function OverviewMenuRibbon({
         </button>
       </div>
 
-      {/* 削除 */}
-      <div className="tooltip-wrapper" data-tip="チェック中のアイテムを削除" data-tip-side="left">
+      {/* Thought設定クリア */}
+      <div className="tooltip-wrapper" data-tip="Thought設定をクリア" data-tip-side="left">
         <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon menu-ribbon__btn--danger"
-          onClick={onDeleteChecked}
-          disabled={!hasChecked}
+          className="menu-ribbon__btn menu-ribbon__btn--icon"
+          onClick={onClearThought}
+          disabled={!hasThought}
         >
-          <Trash2 size={14} />
+          <SquareX size={14} />
         </button>
       </div>
 

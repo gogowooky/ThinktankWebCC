@@ -79,14 +79,14 @@ export class TTThink extends TTObject {
 
   // ── ストレージ連携（Phase 13）──────────────────────────────────────
 
-  public async LoadContent(): Promise<void> {
-    if (!this.IsMetaOnly) return;
+  public async LoadContent(force: boolean = false): Promise<void> {
+    if (!this.IsMetaOnly && !force) return;
     try {
       const body = await StorageManager.instance.getContent(this.ID);
       if (body !== null) {
         // _content at this point is the raw title line from LoadCache (e.g. "# My Memo")
         // Use it directly instead of this.Name which has the # prefix stripped
-        const titleLine = this._content.split('\n')[0];
+        const titleLine = this._content ? this._content.split('\n')[0] : `# ${this.Name}`;
         this.setContentSilent(titleLine + '\n' + body);
         this.markSaved();
       }

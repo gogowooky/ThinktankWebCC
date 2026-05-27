@@ -92,11 +92,22 @@
   color: rgba(255, 255, 255, 0.7);
   transition: background 150ms ease, color 150ms ease;
   flex-shrink: 0;
+  outline: none;
+}
+
+.panel-ribbon__toggle:focus {
+  outline: none;
 }
 
 .panel-ribbon__toggle:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
+}
+
+body[data-focus-column="Thinktank"] .panel-ribbon--thinktank .panel-ribbon__toggle,
+body[data-focus-column="Overview"] .panel-ribbon--overview .panel-ribbon__toggle,
+body[data-focus-column="ReThink"] .panel-ribbon--rethink .panel-ribbon__toggle {
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 /* 下部固定エリア */

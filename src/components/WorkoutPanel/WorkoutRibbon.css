@@ -43,6 +43,11 @@
   color: rgba(255, 255, 255, 0.7);
   transition: background 150ms ease, color 150ms ease;
   flex-shrink: 0;
+  outline: none;
+}
+
+.workout-ribbon__toggle:focus {
+  outline: none;
 }
 
 .workout-ribbon__toggle:hover {
@@ -51,8 +56,12 @@
 }
 
 .workout-ribbon__toggle:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.7);
-  outline-offset: 1px;
+  outline: none;
+}
+
+body[data-focus-column="Workout"] .workout-ribbon__toggle,
+body[data-focus-column="WorkoutSetting"] .workout-ribbon__toggle {
+  box-shadow: 0 0 0 2px #ffffff;
 }
 
 /* ── ボタン群 ─────────────────────────────────────── */
