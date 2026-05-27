@@ -24,7 +24,15 @@ export class TTThinktankPanel extends TTUIItem {
   /** 複数選択中のThoughtID一覧 */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
-  public set CheckedThoughtIDs(val: string[]) { this.SharedState.checkedIds = val; }
+  public set CheckedThoughtIDs(val: string[]) {
+    this.SharedState.checkedIds = val;
+    if (this._parent) {
+      const app = this._parent as any;
+      if (app.OverviewPanel) {
+        app.OverviewPanel.NotifyUpdated();
+      }
+    }
+  }
 
   /** Thoughts絞り込みテキスト */
   public Filter: string = '';

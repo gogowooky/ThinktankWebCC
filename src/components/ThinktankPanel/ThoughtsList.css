@@ -64,9 +64,9 @@
 .thoughts-list__row--overview-checked {
 }
 
-/* WorkoutPanelで表示されているThinkデータ（各パネルのベース色に基づいた背景色） */
-.thoughts-list__row--workout {
-  background: color-mix(in srgb, var(--local-ribbon-bg, var(--thinktank-ribbon-bg)) 6%, #ffffff);
+/* WorkoutPanelで表示されているThinkデータ（ThinktankPanel側のみ適用） */
+.thinktank-area .thoughts-list__row--workout {
+  background: color-mix(in srgb, var(--thinktank-ribbon-bg) 6%, #ffffff);
 }
 
 /* WorkoutPanelでフォーカスされているThinkデータは下線 */
