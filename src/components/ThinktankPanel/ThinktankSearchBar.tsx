@@ -5,25 +5,11 @@
  * ② 一覧表示する種別（ContentType）の選択ボタン
  */
 
-import React, { useId, useImperativeHandle, forwardRef, useRef } from 'react';
+import React, { useImperativeHandle, forwardRef, useRef } from 'react';
 import { TextSearch, X, FileText, Library, Table, Link, MessageCircle, Globe, SquareCheck, type LucideIcon } from 'lucide-react';
 import type { ContentType } from '../../types';
 import './UnifiedFilterPanel.css';
 import './ThinktankSearchBar.css';
-
-export type SearchMode = 'fulltext' | 'semantic' | 'hybrid';
-
-const SEARCH_MODE_LABELS: Record<SearchMode, string> = {
-  fulltext: '全文',
-  semantic: 'AI意味',
-  hybrid:   'ハイブリッド',
-};
-
-const SEARCH_MODE_TIPS: Record<SearchMode, string> = {
-  fulltext: '通常のキーワード全文検索',
-  semantic: 'Vertex AI によるセマンティック（意味）検索',
-  hybrid:   'AI意味 + 全文のハイブリッド検索',
-};
 
 const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'memo',    Icon: FileText,      label: 'メモ' },
@@ -42,8 +28,6 @@ interface Props {
   searchQuery:         string;
   onSearchQueryChange: (v: string) => void;
   onSearch:            () => void;
-  searchMode:          SearchMode;
-  onSearchModeChange:  (m: SearchMode) => void;
   loading:             boolean;
   visibleTypes:        Set<ContentType>;
   onToggleType:        (t: ContentType) => void;
@@ -53,13 +37,11 @@ interface Props {
 
 export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(function ThinktankSearchBar({
   searchQuery, onSearchQueryChange, onSearch,
-  searchMode, onSearchModeChange,
   loading,
   visibleTypes, onToggleType, onSelectAllTypes, onClearAllTypes,
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
-  const radioGroupName = `tt-search-mode-${useId()}`;
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchQuery.trim()) onSearch();
@@ -96,25 +78,6 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
             <X size={12} />
           </button>
         </div>
-      </div>
-
-      {/* 検索オプション（ラジオボタン） */}
-      <div className="tt-search-bar__modes">
-        {(Object.keys(SEARCH_MODE_LABELS) as SearchMode[]).map(m => (
-          <label
-            key={m}
-            className={`tt-search-bar__mode-radio${searchMode === m ? ' tt-search-bar__mode-radio--active' : ''}`}
-            data-tip={SEARCH_MODE_TIPS[m]}
-          >
-            <input
-              type="radio"
-              name={radioGroupName}
-              checked={searchMode === m}
-              onChange={() => onSearchModeChange(m)}
-            />
-            <span>{SEARCH_MODE_LABELS[m]}</span>
-          </label>
-        ))}
       </div>
 
       {/* 種別選択ボタン（右端=全選択/全クリアのトグル）*/}

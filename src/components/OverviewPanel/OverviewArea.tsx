@@ -29,7 +29,6 @@ import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
 import type { UnifiedFilterPanelRef } from '../ThinktankPanel/UnifiedFilterPanel';
 import { ThinktankSearchBar } from '../ThinktankPanel/ThinktankSearchBar';
-import type { SearchMode } from '../ThinktankPanel/ThinktankSearchBar';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
@@ -37,8 +36,6 @@ import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
-import { semanticSearch } from '../../services/EmbeddingApiService';
-import type { SemanticSearchResult } from '../../services/EmbeddingApiService';
 import './OverviewArea.css';
 
 const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
@@ -83,7 +80,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);
   const [searchLoading,  setSearchLoading]  = useState(false);
   const [searchSearched, setSearchSearched] = useState(false);
-  const [searchMode,     setSearchMode]     = useState<SearchMode>('fulltext');
 
   // ── チャット state ─────────────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -242,22 +238,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     if (!q) return;
     setSearchLoading(true);
     try {
-      if (searchMode === 'semantic' || searchMode === 'hybrid') {
-        const results: SemanticSearchResult[] = await semanticSearch(q, 30, searchMode === 'hybrid');
-        setSearchResults(results.map(r => {
-          const existing = vault.GetThink(r.id);
-          if (existing) return existing;
-          const t = new TTThink();
-          t.ID = r.id; t.VaultID = vault.ID;
-          t.ContentType = r.contentType as TTThink['ContentType'];
-          t.Keywords = r.keywords; t.RelatedIDs = r.relatedIds;
-          t.IsMetaOnly = true; t.setContentSilent(r.title);
-          return t;
-        }));
-        setSearchSearched(true);
-        setSearchLoading(false);
-        return;
-      }
       const metas = await StorageManager.instance.search(q);
       setSearchResults(metas.map(meta => {
         const existing = vault.GetThink(meta.id);
@@ -276,7 +256,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       setSearchLoading(false);
       setSearchSearched(true);
     }
-  }, [searchQuery, searchMode, vault]);
+  }, [searchQuery, vault]);
 
   const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
     const ids = Array.isArray(id) ? id : [id];
@@ -433,8 +413,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             searchQuery={searchQuery}
             onSearchQueryChange={handleSearchQueryChange}
             onSearch={handleSearch}
-            searchMode={searchMode}
-            onSearchModeChange={setSearchMode}
             loading={searchLoading}
             visibleTypes={visibleTypes}
             onToggleType={handleToggleType}

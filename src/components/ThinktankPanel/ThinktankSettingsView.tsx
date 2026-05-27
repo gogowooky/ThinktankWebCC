@@ -4,10 +4,8 @@
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight, Columns4, Columns2, Brain } from 'lucide-react';
+import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight, Columns4, Columns2 } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
-import { batchGenerateEmbeddings, getEmbeddingStatus } from '../../services/EmbeddingApiService';
-import type { BatchProgress } from '../../services/EmbeddingApiService';
 import type { SyncState } from '../../types';
 import type { LayoutMode } from '../Layout/AppLayout';
 import './ThinktankSettingsView.css';
@@ -81,34 +79,6 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   const [isStatusOpen,   setIsStatusOpen]   = useState(true);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
   const [isEditModeOpen, setIsEditModeOpen] = useState(true);
-
-  // Phase 15: Embedding一括生成
-  const [isEmbedOpen,    setIsEmbedOpen]    = useState(true);
-  const [embedStatus,    setEmbedStatus]    = useState<{ count: number; model: string } | null>(null);
-  const [embedProgress,  setEmbedProgress]  = useState<BatchProgress | null>(null);
-  const [embedRunning,   setEmbedRunning]   = useState(false);
-
-  const handleLoadEmbedStatus = useCallback(async () => {
-    try {
-      const s = await getEmbeddingStatus();
-      setEmbedStatus(s);
-    } catch {
-      setEmbedStatus(null);
-    }
-  }, []);
-
-  const handleBatchEmbed = useCallback(async () => {
-    setEmbedRunning(true);
-    setEmbedProgress({ type: 'progress', total: 0, processed: 0, failed: 0 });
-    try {
-      await batchGenerateEmbeddings(true, (p) => setEmbedProgress(p));
-    } catch (e) {
-      setEmbedProgress({ type: 'error', total: 0, processed: 0, failed: 0, message: String(e) });
-    } finally {
-      setEmbedRunning(false);
-      handleLoadEmbedStatus();
-    }
-  }, [handleLoadEmbedStatus]);
 
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';
@@ -196,65 +166,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
       </section>
 
 
-      {/* ── Embedding（Phase 15） ── */}
-      <section className="tt-settings-section">
-        <div className="tt-settings-section__header" onClick={() => { setIsEmbedOpen(v => !v); if (!embedStatus) handleLoadEmbedStatus(); }}>
-          {isEmbedOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">セマンティック検索 (Embedding)</h2>
-        </div>
-        {isEmbedOpen && (
-          <div className="tt-settings-embed">
-            <p className="tt-settings-section__desc">
-              全エントリーを AI ベクトル化して意味検索を有効にします。
-              初回のみ全件処理が必要です（以降は差分のみ）。
-            </p>
-            {embedStatus && (
-              <dl className="tt-settings-status">
-                <dt className="tt-settings-status__label">登録済み</dt>
-                <dd className="tt-settings-status__value">{embedStatus.count} 件</dd>
-                <dt className="tt-settings-status__label">モデル</dt>
-                <dd className="tt-settings-status__value">{embedStatus.model}</dd>
-              </dl>
-            )}
-            {embedProgress && (
-              <div className="tt-settings-embed__progress">
-                {embedProgress.type === 'error'
-                  ? <span className="tt-settings-embed__error">エラー: {embedProgress.message}</span>
-                  : <>
-                      <span>{embedProgress.processed} / {embedProgress.total} 件処理済み{embedProgress.failed > 0 ? ` (失敗: ${embedProgress.failed})` : ''}</span>
-                      {embedProgress.lastError && (
-                        <div className="tt-settings-embed__error" style={{ marginTop: 4, fontSize: 10, wordBreak: 'break-all' }}>
-                          {embedProgress.lastError}
-                        </div>
-                      )}
-                    </>
-                }
-              </div>
-            )}
-            <div className="tt-settings-embed__actions">
-              <button
-                className="tt-settings-save-btn"
-                onClick={handleLoadEmbedStatus}
-                data-tip="件数を確認"
-                data-tip-side="left"
-              >
-                <RefreshCw size={13} />
-                <span>件数確認</span>
-              </button>
-              <div className="tooltip-wrapper" data-tip="未登録エントリーを一括ベクトル化" data-tip-side="left">
-                <button
-                  className="tt-settings-save-btn"
-                  onClick={handleBatchEmbed}
-                  disabled={embedRunning}
-                >
-                  <Brain size={13} />
-                  <span>{embedRunning ? '処理中…' : '一括生成'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </section>
+
 
       {/* ── 保管庫名 ── */}
       <section className="tt-settings-section">

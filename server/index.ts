@@ -12,8 +12,6 @@ import { bigqueryService }        from './services/BigQueryService.js';
 import { createDriveRoutes }      from './routes/driveRoutes.js';
 import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
-import { createEmbeddingRoutes }  from './routes/embeddingRoutes.js';
-import { embeddingService }       from './services/EmbeddingService.js';
 import { vectorStoreService }     from './services/VectorStoreService.js';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
@@ -44,9 +42,6 @@ app.use('/api/drive', createDriveRoutes());
 // AI チャット（Phase 14）
 app.use('/api/chat', createChatRoutes());
 
-// Embedding / セマンティック検索（Phase 15）
-app.use('/api/embeddings', createEmbeddingRoutes());
-
 // 静的ファイル（本番ビルド）
 app.use(express.static(path.join(projectRoot, 'dist')));
 app.get(/.*/, (req, res) => {
@@ -71,20 +66,18 @@ async function start() {
     return;
   }
 
-  const [bqOk, driveOk, embOk] = await Promise.all([
+  const [bqOk, driveOk] = await Promise.all([
     bigqueryService.initialize(),
     driveService.initialize(),
-    embeddingService.initialize(),
   ]);
   console.log(bqOk    ? '[Server] BigQuery initialized'  : '[Server] BigQuery init failed');
   console.log(driveOk ? '[Server] Drive initialized'     : '[Server] Drive init failed');
-  console.log(embOk   ? '[Server] Embedding initialized' : '[Server] Embedding init failed');
 
-  if (bqOk && embOk) {
+  if (bqOk) {
     const bq  = bigqueryService.getBigQuery()!;
     const pid = bigqueryService.getProjectId()!;
     await vectorStoreService.initialize(bq, pid);
-    console.log('[Server] VectorStore initialized');
+    console.log('[Server] VectorStore (cleanup) initialized');
   }
 }
 
