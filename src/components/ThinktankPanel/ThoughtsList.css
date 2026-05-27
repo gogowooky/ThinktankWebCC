@@ -6,6 +6,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
+  background-color: #ffffff; /* リスト全体の背景は白 */
 }
 
 .thoughts-list--empty {
