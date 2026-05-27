@@ -33,19 +33,16 @@
 }
 
 .thoughts-list__row:hover {
-  background: rgba(7, 55, 99, 0.08);
+  background: color-mix(in srgb, var(--thinktank-ribbon-bg) 8%, transparent);
 }
 
+/* 選択中（開いている）行の背景色（薄青）は仕様外のため廃止 */
 .thoughts-list__row--selected {
-  background: rgba(7, 55, 99, 0.14);
 }
 
-.thoughts-list__row--selected:hover {
-  background: rgba(7, 55, 99, 0.18);
-}
-
+/* ThinktankPanelでチェックされた行の背景色（最優先） */
 .thoughts-list__row--checked {
-  background: rgba(7, 55, 99, 0.06);
+  background: color-mix(in srgb, var(--thinktank-ribbon-bg) 22%, #ffffff) !important;
 }
 
 .thoughts-list__row--focused {
