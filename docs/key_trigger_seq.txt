@@ -1,0 +1,66 @@
+本アプリケーションにおけるキー入力の検知・判定から、対応するアクションが呼び出されるまでの仕組みは、大きく分けると以下の **6つの段階（ステップ）** で動作しています。
+
+各役割がどのように連携しているかを段階ごとに解説します。
+
+---
+
+### 第1段階: ショートカット設定のロードとインデックス構築
+
+1. **設定データの読み込み**: 
+   アプリ起動時またはショートカット設定テーブル（`__tt_shortcuts__`）の保存時、[TTShortcutManager.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTShortcutManager.ts) はテキストの CSV データをパースします。
+2. **キーの正規化と登録**:
+   設定に記載されたキー名（例: `Alt+arrowup` や `Alt+Up`）は、小文字化、修飾キーの順序統一、方向キーの正規化（`up` → `arrowup` 等）が行われ、最終的な文字列（例: `alt+arrowup`）となって全件用のインデックス（`_keyIndex`）に格納されます。
+
+---
+
+### 第2段階: フォーカスと ExMode によるアクティブテーブルの構築
+
+1. **状態変化の検知**:
+   ユーザーが画面上をクリックしてフォーカス要素が切り替わると、[App.tsx](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/App.tsx) の `focusin` リスナーが発火し、[getFocusName.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/utils/getFocusName.ts) が現在の要素に対応するコンポーネントフォーカス名（例: `Workout.TextEditor`）を割り出します。
+2. **有効なキーの絞り込み**:
+   フォーカス名（`focus`）または `ExMode` の切り替えを検知するたびに、[TTShortcutManager.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTShortcutManager.ts) の `_rebuildActiveTable()` が実行されます。
+   - `matchesFocus()` 関数を用い、大文字小文字の区別なく、現在のフォーカス名と一致するショートカット（例: `*TextEditor` が `Workout.TextEditor` に合致）のみを抽出します。
+   - 抽出されたショートカットは、現時点で有効なマップ（`_activeTable`）に展開されます。
+
+---
+
+### 第3段階: キーイベントのキャプチャ（グローバル ＆ エディタ内部）
+
+キー入力が発生すると、以下の2箇所でイベントがフックされます。
+
+1. **グローバル（キャプチャフェーズ）**:
+   [App.tsx](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/App.tsx) にて `{ capture: true }`（キャプチャフェーズ）で登録されたリスナーが、DOMツリーの最上流でキー入力を即座にフックし、`TTShortcutManager` に転送します。
+2. **Monaco エディタ内部**:
+   Monaco Editor 内部でキーが押された場合は、[TextEditorMedia.tsx](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/components/WorkoutPanel/media/TextEditorMedia.tsx) 内の `editor.onKeyDown` ハンドラーがイベントをキャッチします。
+
+---
+
+### 第4段階: 横取り判定と重複防止（コントロール）
+
+1. **登録状況のチェック**:
+   `TextEditorMedia.tsx` でフックされたイベントは、`TTShortcutManager` の `hasShortcutForEvent()` に送られ、現在のアクティブなキーバインド（`_activeTable`）に含まれているかどうかが判定されます。
+2. **横取りとバブリングの停止**:
+   登録されたキー（例: `Alt+ArrowUp`）である場合、`e.preventDefault()` と `e.stopPropagation()` を呼ぶことで、Monaco Editor 自身のデフォルト機能（行の上下移動など）をキャンセルしてバブリングを止め、アプリ側の処理へとイベントを引き渡します。
+3. **重複処理のガード**:
+   キャプチャフェーズで既に処理されたイベントには `defaultPrevented === true` が付与されるため、バブリングフェーズ等で重複してアクションが呼び出されることを防ぐガード処理（早期リターン）が働きます。
+
+---
+
+### 第5段階: キー情報の文字列化と候補マッチング
+
+1. **入力キーのシリアライズ**:
+   渡された `KeyboardEvent` は `keyEventToStr()` によって、設定テーブルと同一のシリアライズ文字列（例: `"alt+arrowup"`）に変換されます。
+   - この変換時、ブラウザやOSによる方向キーの名称差分（`ArrowUp` や `Up`）は、すべて `"arrowup"` などの正規名称へと統一されます。
+2. **アクションの特定**:
+   `_activeTable.get(keyStr)` から、対応するショートカットエントリーを取得し、紐づいている ActionID（例: `"TextEditor.Folding.Forward"`）を取り出します。
+
+---
+
+### 第6段階: アクションの実行と表示
+
+1. **アクションの実行**:
+   取得した ActionID はグローバルアクションレジストリである [TTActions.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTActions.ts) の `Execute()` へ引き渡され、[TTFocusedPanelActions.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTFocusedPanelActions.ts) 等で登録されているアクションの Completion 処理（エディタ上の見出し探索・カーソル移動・折りたたみ制御など）が同期実行されます。
+2. **ステータス表示の更新**:
+   アクションの実行結果（例: `"L20へ移動"` や `"L5折畳"` など）は、`status.SetLastActionDisplay()` 経由で画面最下部の [WorkoutToolBar.tsx](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/components/WorkoutPanel/WorkoutToolBar.tsx)（KeyAction 欄）の `action` 部にリアルタイムで反映・表示されます。
+3. **キーモニターの更新**:
+   `WorkoutToolBar.tsx` 上のキーモニター（modifiers / key などの表示）もキャプチャフェーズ（`{ capture: true }`）で window イベントを監視しているため、Monaco エディタ内部で消費されるキー（矢印キー、Home、Delete 等）を含め、漏れなく画面上にキー名が表示されます。
