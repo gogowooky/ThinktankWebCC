@@ -133,7 +133,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       if (TTShortcutManager.instance.hasShortcutForEvent(browserEvent)) {
         e.preventDefault();
         e.stopPropagation();
-        TTShortcutManager.instance.handleKeyDown(browserEvent);
+        TTShortcutManager.instance.handleKeyDown(browserEvent, true);
       }
     });
 

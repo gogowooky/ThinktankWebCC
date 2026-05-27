@@ -265,8 +265,11 @@ export class TTShortcutManager {
 
   // ── イベントハンドラー ─────────────────────────────────────────────────
 
-  handleKeyDown(e: KeyboardEvent): void {
+  handleKeyDown(e: KeyboardEvent, isFromMonaco = false): void {
     if (e.defaultPrevented) return;
+    if (!isFromMonaco && e.target instanceof HTMLElement && e.target.closest('.monaco-editor')) {
+      return;
+    }
     const keyStr = keyEventToStr(e);
     if (!keyStr) return;
     this._processEvent(keyStr, e, currentModStr(e));

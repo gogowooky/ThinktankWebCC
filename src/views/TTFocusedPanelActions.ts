@@ -104,6 +104,9 @@ function getHeadingScope(model: any, startLine: number, parentLevel: number): { 
 }
 
 function isLineFolded(editor: any, lineNumber: number): boolean {
+  if (typeof editor.getHiddenAreas !== 'function') {
+    throw new Error('editor.getHiddenAreas is not defined');
+  }
   const hiddenAreas = editor.getHiddenAreas() || [];
   const targetLine = lineNumber + 1;
   return hiddenAreas.some((range: any) =>
@@ -117,26 +120,30 @@ export function registerTextEditorActions(): void {
   TTActions.Register({
     ActionID: 'TextEditor.Folding.Forward',
     Completion: (item) => {
-      const editor = TTShortcutManager.instance.activeMonacoEditor;
-      if (!editor) { item.Result = '[エディタ未選択]'; return; }
-      const model = editor.getModel();
-      const pos = editor.getPosition();
-      if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+      try {
+        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-      let targetLine = -1;
-      for (let i = pos.lineNumber - 1; i >= 1; i--) {
-        if (getHeadingLevel(model.getLineContent(i)) > 0) {
-          targetLine = i;
-          break;
+        let targetLine = -1;
+        for (let i = pos.lineNumber - 1; i >= 1; i--) {
+          if (getHeadingLevel(model.getLineContent(i)) > 0) {
+            targetLine = i;
+            break;
+          }
         }
-      }
 
-      if (targetLine !== -1) {
-        editor.setPosition({ lineNumber: targetLine, column: 1 });
-        editor.revealLineInCenterIfOutsideViewport(targetLine);
-        item.Result = `L${targetLine}へ移動`;
-      } else {
-        item.Result = '見出しなし';
+        if (targetLine !== -1) {
+          editor.setPosition({ lineNumber: targetLine, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(targetLine);
+          item.Result = `L${targetLine}へ移動`;
+        } else {
+          item.Result = '見出しなし';
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
       }
     },
   });
@@ -145,27 +152,31 @@ export function registerTextEditorActions(): void {
   TTActions.Register({
     ActionID: 'TextEditor.Folding.Backward',
     Completion: (item) => {
-      const editor = TTShortcutManager.instance.activeMonacoEditor;
-      if (!editor) { item.Result = '[エディタ未選択]'; return; }
-      const model = editor.getModel();
-      const pos = editor.getPosition();
-      if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+      try {
+        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-      const lineCount = model.getLineCount();
-      let targetLine = -1;
-      for (let i = pos.lineNumber + 1; i <= lineCount; i++) {
-        if (getHeadingLevel(model.getLineContent(i)) > 0) {
-          targetLine = i;
-          break;
+        const lineCount = model.getLineCount();
+        let targetLine = -1;
+        for (let i = pos.lineNumber + 1; i <= lineCount; i++) {
+          if (getHeadingLevel(model.getLineContent(i)) > 0) {
+            targetLine = i;
+            break;
+          }
         }
-      }
 
-      if (targetLine !== -1) {
-        editor.setPosition({ lineNumber: targetLine, column: 1 });
-        editor.revealLineInCenterIfOutsideViewport(targetLine);
-        item.Result = `L${targetLine}へ移動`;
-      } else {
-        item.Result = '見出しなし';
+        if (targetLine !== -1) {
+          editor.setPosition({ lineNumber: targetLine, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(targetLine);
+          item.Result = `L${targetLine}へ移動`;
+        } else {
+          item.Result = '見出しなし';
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
       }
     },
   });
@@ -174,54 +185,58 @@ export function registerTextEditorActions(): void {
   TTActions.Register({
     ActionID: 'TextEditor.Folding.OpenEachLevel',
     Completion: (item) => {
-      const editor = TTShortcutManager.instance.activeMonacoEditor;
-      if (!editor) { item.Result = '[エディタ未選択]'; return; }
-      const model = editor.getModel();
-      const pos = editor.getPosition();
-      if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+      try {
+        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-      let headingLine = -1;
-      let parentLevel = 0;
-      for (let i = pos.lineNumber; i >= 1; i--) {
-        const lvl = getHeadingLevel(model.getLineContent(i));
-        if (lvl > 0) {
-          headingLine = i;
-          parentLevel = lvl;
-          break;
-        }
-      }
-
-      if (headingLine === -1) { item.Result = '[見出し外]'; return; }
-
-      if (isLineFolded(editor, headingLine)) {
-        editor.setPosition({ lineNumber: headingLine, column: 1 });
-        editor.trigger('keyboard', 'editor.unfold', {});
-        editor.setPosition(pos);
-        item.Result = `L${headingLine}展開`;
-        return;
-      }
-
-      const scope = getHeadingScope(model, headingLine, parentLevel);
-      const maxLevel = 6;
-      for (let targetLvl = parentLevel + 1; targetLvl <= maxLevel; targetLvl++) {
-        const targets: number[] = [];
-        for (let i = scope.start + 1; i <= scope.end; i++) {
+        let headingLine = -1;
+        let parentLevel = 0;
+        for (let i = pos.lineNumber; i >= 1; i--) {
           const lvl = getHeadingLevel(model.getLineContent(i));
-          if (lvl === targetLvl) targets.push(i);
+          if (lvl > 0) {
+            headingLine = i;
+            parentLevel = lvl;
+            break;
+          }
         }
 
-        const folded = targets.filter(t => isLineFolded(editor, t));
-        if (folded.length > 0) {
-          folded.forEach(t => {
-            editor.setPosition({ lineNumber: t, column: 1 });
-            editor.trigger('keyboard', 'editor.unfold', {});
-          });
+        if (headingLine === -1) { item.Result = '[見出し外]'; return; }
+
+        if (isLineFolded(editor, headingLine)) {
+          editor.setPosition({ lineNumber: headingLine, column: 1 });
+          editor.trigger('keyboard', 'editor.unfold', {});
           editor.setPosition(pos);
-          item.Result = `Lvl${targetLvl}子展開`;
+          item.Result = `L${headingLine}展開`;
           return;
         }
+
+        const scope = getHeadingScope(model, headingLine, parentLevel);
+        const maxLevel = 6;
+        for (let targetLvl = parentLevel + 1; targetLvl <= maxLevel; targetLvl++) {
+          const targets: number[] = [];
+          for (let i = scope.start + 1; i <= scope.end; i++) {
+            const lvl = getHeadingLevel(model.getLineContent(i));
+            if (lvl === targetLvl) targets.push(i);
+          }
+
+          const folded = targets.filter(t => isLineFolded(editor, t));
+          if (folded.length > 0) {
+            folded.forEach(t => {
+              editor.setPosition({ lineNumber: t, column: 1 });
+              editor.trigger('keyboard', 'editor.unfold', {});
+            });
+            editor.setPosition(pos);
+            item.Result = `Lvl${targetLvl}子展開`;
+            return;
+          }
+        }
+        item.Result = '全展開済み';
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
       }
-      item.Result = '全展開済み';
     },
   });
 
@@ -229,53 +244,57 @@ export function registerTextEditorActions(): void {
   TTActions.Register({
     ActionID: 'TextEditor.Folding.CloseEachLevel',
     Completion: (item) => {
-      const editor = TTShortcutManager.instance.activeMonacoEditor;
-      if (!editor) { item.Result = '[エディタ未選択]'; return; }
-      const model = editor.getModel();
-      const pos = editor.getPosition();
-      if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+      try {
+        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-      let headingLine = -1;
-      let parentLevel = 0;
-      for (let i = pos.lineNumber; i >= 1; i--) {
-        const lvl = getHeadingLevel(model.getLineContent(i));
-        if (lvl > 0) {
-          headingLine = i;
-          parentLevel = lvl;
-          break;
-        }
-      }
-
-      if (headingLine === -1) { item.Result = '[見出し外]'; return; }
-
-      const scope = getHeadingScope(model, headingLine, parentLevel);
-      const maxLevel = 6;
-      for (let targetLvl = maxLevel; targetLvl > parentLevel; targetLvl--) {
-        const targets: number[] = [];
-        for (let i = scope.start + 1; i <= scope.end; i++) {
+        let headingLine = -1;
+        let parentLevel = 0;
+        for (let i = pos.lineNumber; i >= 1; i--) {
           const lvl = getHeadingLevel(model.getLineContent(i));
-          if (lvl === targetLvl) targets.push(i);
+          if (lvl > 0) {
+            headingLine = i;
+            parentLevel = lvl;
+            break;
+          }
         }
 
-        const opened = targets.filter(t => !isLineFolded(editor, t));
-        if (opened.length > 0) {
-          opened.forEach(t => {
-            editor.setPosition({ lineNumber: t, column: 1 });
-            editor.trigger('keyboard', 'editor.fold', {});
-          });
+        if (headingLine === -1) { item.Result = '[見出し外]'; return; }
+
+        const scope = getHeadingScope(model, headingLine, parentLevel);
+        const maxLevel = 6;
+        for (let targetLvl = maxLevel; targetLvl > parentLevel; targetLvl--) {
+          const targets: number[] = [];
+          for (let i = scope.start + 1; i <= scope.end; i++) {
+            const lvl = getHeadingLevel(model.getLineContent(i));
+            if (lvl === targetLvl) targets.push(i);
+          }
+
+          const opened = targets.filter(t => !isLineFolded(editor, t));
+          if (opened.length > 0) {
+            opened.forEach(t => {
+              editor.setPosition({ lineNumber: t, column: 1 });
+              editor.trigger('keyboard', 'editor.fold', {});
+            });
+            editor.setPosition(pos);
+            item.Result = `Lvl${targetLvl}子折畳`;
+            return;
+          }
+        }
+
+        if (!isLineFolded(editor, headingLine)) {
+          editor.setPosition({ lineNumber: headingLine, column: 1 });
+          editor.trigger('keyboard', 'editor.fold', {});
           editor.setPosition(pos);
-          item.Result = `Lvl${targetLvl}子折畳`;
-          return;
+          item.Result = `L${headingLine}折畳`;
+        } else {
+          item.Result = '折畳済み';
         }
-      }
-
-      if (!isLineFolded(editor, headingLine)) {
-        editor.setPosition({ lineNumber: headingLine, column: 1 });
-        editor.trigger('keyboard', 'editor.fold', {});
-        editor.setPosition(pos);
-        item.Result = `L${headingLine}折畳`;
-      } else {
-        item.Result = '折畳済み';
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
       }
     },
   });
