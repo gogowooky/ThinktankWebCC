@@ -171,8 +171,8 @@ export function WorkoutToolBar({ panel }: Props) {
     // 初期フォーカス
     setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
 
-    window.addEventListener('keydown',    onKeyDown);
-    window.addEventListener('keyup',      onKeyUp);
+    window.addEventListener('keydown',    onKeyDown, { capture: true });
+    window.addEventListener('keyup',      onKeyUp,   { capture: true });
     window.addEventListener('mousedown',  onMouse);
     window.addEventListener('mouseup',    onMouse);
     window.addEventListener('click',      onMouse);
@@ -184,8 +184,8 @@ export function WorkoutToolBar({ panel }: Props) {
     window.addEventListener('blur',       onWindowBlur);
 
     return () => {
-      window.removeEventListener('keydown',    onKeyDown);
-      window.removeEventListener('keyup',      onKeyUp);
+      window.removeEventListener('keydown',    onKeyDown, { capture: true });
+      window.removeEventListener('keyup',      onKeyUp,   { capture: true });
       window.removeEventListener('mousedown',  onMouse);
       window.removeEventListener('mouseup',    onMouse);
       window.removeEventListener('click',      onMouse);
