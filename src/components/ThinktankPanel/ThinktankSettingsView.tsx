@@ -119,8 +119,8 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
                 className="tt-settings-mode-radio"
               />
               <Columns4 size={13} className="tt-settings-mode-icon" />
-              <span className="tt-settings-mode-label">SIPOCモード</span>
-              <span className="tt-settings-mode-desc">全パネルを表示する標準モード</span>
+              <span className="tt-settings-mode-label">標準モード</span>
+              <span className="tt-settings-mode-desc">全パネルを表示する標準構成</span>
             </label>
             <label className={`tt-settings-mode-option${layoutMode === 'simple' ? ' tt-settings-mode-option--active' : ''}`}>
               <input
