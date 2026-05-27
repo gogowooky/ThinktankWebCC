@@ -19,7 +19,9 @@ export class TTOverviewPanel extends TTUIItem {
   public ThoughtID: string = '';
 
   /** チェックされているThink IDリスト（OverviewPanel内） */
-  public CheckedThoughtIDs: string[] = [];
+  public SharedState = { checkedIds: [] as string[] };
+  public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
+  public set CheckedThoughtIDs(val: string[]) { this.SharedState.checkedIds = val; }
 
   /** 表示モード（datagrid/graph/chat/settings）*/
   public ViewMode: OverviewViewMode = 'datagrid';

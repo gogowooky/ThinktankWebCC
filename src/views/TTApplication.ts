@@ -56,6 +56,11 @@ export class TTApplication extends TTUIItem {
     this.WorkoutPanel._parent   = this;
     this.ReThinkPanel._parent   = this;
     this.Status._parent         = this;
+
+    // チェック選択の共有ステートを同期
+    const sharedCheckedState = { checkedIds: [] as string[] };
+    this.ThinktankPanel.SharedState = sharedCheckedState;
+    this.OverviewPanel.SharedState = sharedCheckedState;
   }
 
   public static get Instance(): TTApplication {

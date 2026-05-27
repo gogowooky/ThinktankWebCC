@@ -41,9 +41,8 @@
 .thoughts-list__row--selected {
 }
 
-/* ThinktankPanelでチェックされた行の背景色（最優先） */
+/* ThinktankPanelでチェックされた行の背景色：変更なし（仕様変更） */
 .thoughts-list__row--checked {
-  background: color-mix(in srgb, var(--thinktank-ribbon-bg) 22%, #ffffff) !important;
 }
 
 .thoughts-list__row--focused {
@@ -60,14 +59,13 @@
   background: color-mix(in srgb, var(--overview-ribbon-bg) 14%, #ffffff) !important;
 }
 
-/* ③ Overviewでチェックされているファイル（最も濃い） */
+/* ③ Overviewでチェックされているファイル（背景色変更なし） */
 .thoughts-list__row--overview-checked {
-  background: color-mix(in srgb, var(--overview-ribbon-bg) 22%, #ffffff) !important;
 }
 
-/* WorkoutPanelで表示されているThinkデータは太字 */
+/* WorkoutPanelで表示されているThinkデータ（各パネルのベース色に基づいた背景色） */
 .thoughts-list__row--workout {
-  font-weight: bold;
+  background: color-mix(in srgb, var(--local-ribbon-bg, var(--thinktank-ribbon-bg)) 6%, #ffffff);
 }
 
 /* WorkoutPanelでフォーカスされているThinkデータは下線 */
