@@ -15,6 +15,7 @@ interface HighlightState {
   overviewIncludedIds: string[];
   overviewCheckedIds: string[];
   workoutIds: string[];
+  workoutFocusedId: string | null;
 }
 
 const HighlightContext = createContext<HighlightState>({
@@ -22,6 +23,7 @@ const HighlightContext = createContext<HighlightState>({
   overviewIncludedIds: [],
   overviewCheckedIds: [],
   workoutIds: [],
+  workoutFocusedId: null,
 });
 
 export function useHighlight(): HighlightState {
@@ -49,6 +51,9 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
 
   const workoutIds = workout.Areas.map(a => a.ResourceID).filter(Boolean);
 
+  const focusedArea = workout.Areas.find(a => a.ID === workout.FocusedAreaId);
+  const workoutFocusedId = focusedArea ? focusedArea.ResourceID : null;
+
   return (
     <HighlightContext.Provider
       value={{
@@ -56,6 +61,7 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
         overviewIncludedIds,
         overviewCheckedIds,
         workoutIds,
+        workoutFocusedId,
       }}
     >
       {children}

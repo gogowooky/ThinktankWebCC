@@ -27,6 +27,7 @@
   cursor: pointer;
   font-size: 12px;
   color: #1a1a2e;
+  background-color: #ffffff; /* アイテムの背景色は白 */
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   transition: background 100ms ease;
   overflow: hidden;
@@ -64,8 +65,14 @@
   background: color-mix(in srgb, var(--overview-ribbon-bg) 22%, #ffffff) !important;
 }
 
+/* WorkoutPanelで表示されているThinkデータは太字 */
 .thoughts-list__row--workout {
-  background: rgba(220, 53, 69, 0.05);
+  font-weight: bold;
+}
+
+/* WorkoutPanelでフォーカスされているThinkデータは下線 */
+.thoughts-list__row--workout-focused .thoughts-list__title {
+  text-decoration: underline;
 }
 
 /* ── 行内要素 ─────────────────────────────────────────── */
