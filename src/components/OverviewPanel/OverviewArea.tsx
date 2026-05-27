@@ -62,7 +62,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   // ── フィルター・チェック state ──────────────────────────────────────────────
   const [filter,           setFilter]           = useState('');
-  const [checkedIds,       setCheckedIds]       = useState<string[]>([]);
   const [showCheckedOnly,  setShowCheckedOnly]  = useState(false);
   const [createdDate,      setCreatedDate]      = useState('');
   const [createdRange,     setCreatedRange]     = useState('');
@@ -110,7 +109,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     createdDate, createdRange, updatedDate, updatedRange,
   }), [createdDate, createdRange, updatedDate, updatedRange]);
 
-  const checkedSet = useMemo(() => new Set(checkedIds), [checkedIds]);
+  const checkedSet = useMemo(() => new Set(panel.CheckedThoughtIDs), [panel.CheckedThoughtIDs]);
 
   // 母集合: 検索語があれば検索結果、なければ選択 Thought 内の Think
   const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : thinksInThought;
@@ -140,7 +139,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     if (panel.ThoughtID === prevThoughtIdRef.current) return;
     prevThoughtIdRef.current = panel.ThoughtID;
     setFilter('');
-    setCheckedIds([]);
+    panel.SetCheckedThoughtIDs([]);
     setShowCheckedOnly(false);
     setSearchQuery('');
     setSearchResults([]);
@@ -176,45 +175,45 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
   const handleCheckAll = useCallback(() => {
-    setCheckedIds(visibleIds);
-  }, [visibleIds]);
+    panel.SetCheckedThoughtIDs(visibleIds);
+  }, [visibleIds, panel]);
 
-  const handleClearChecks = useCallback(() => setCheckedIds([]), []);
+  const handleClearChecks = useCallback(() => panel.SetCheckedThoughtIDs([]), [panel]);
 
   const handleExcludeChecked = useCallback(async () => {
-    if (checkedIds.length === 0 || !panel.ThoughtID) return;
+    if (panel.CheckedThoughtIDs.length === 0 || !panel.ThoughtID) return;
     const thought = vault.GetThink(panel.ThoughtID);
     if (!thought || thought.ContentType !== 'thought') return;
     if (thought.IsMetaOnly) await thought.LoadContent();
-    const remaining = thought.getThinkIds().filter(id => !checkedIds.includes(id));
+    const remaining = thought.getThinkIds().filter(id => !panel.CheckedThoughtIDs.includes(id));
     const nonIdLines = thought.Content.split('\n').filter(l => !l.startsWith('* '));
     thought.Content = [...nonIdLines, ...remaining.map(id => `* ${id}`)].join('\n');
     await thought.SaveContent();
-    setCheckedIds([]);
-  }, [checkedIds, panel.ThoughtID, vault]);
+    panel.SetCheckedThoughtIDs([]);
+  }, [panel, vault]);
 
   const handleToggleAllVault = useCallback(() => {
     const allChecked = thinksInThought.length > 0 && thinksInThought.every(t => checkedSet.has(t.ID));
-    setCheckedIds(allChecked ? [] : thinksInThought.map(t => t.ID));
-  }, [thinksInThought, checkedSet]);
+    panel.SetCheckedThoughtIDs(allChecked ? [] : thinksInThought.map(t => t.ID));
+  }, [thinksInThought, checkedSet, panel]);
 
   const handleCreateThought = useCallback(async () => {
-    if (checkedIds.length === 0) return;
-    const think = await vault.CreateThoughtFromIds(checkedIds, filter);
-    setCheckedIds([]);
+    if (panel.CheckedThoughtIDs.length === 0) return;
+    const think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, filter);
+    panel.SetCheckedThoughtIDs([]);
     app.OpenThought(think.ID);
-  }, [checkedIds, vault, filter, app]);
+  }, [panel, vault, filter, app]);
 
   const handleToggleCheckedOnly   = useCallback(() => setShowCheckedOnly(v => !v), []);
   const handleToggleColumnDialog  = useCallback(() => setShowColumnDialog(v => !v), []);
 
   const handleDeleteChecked = useCallback(async () => {
-    if (checkedIds.length === 0) return;
-    if (!window.confirm(`${checkedIds.length} 件を削除しますか？`)) return;
-    app.RemoveThinksFromWorkout(checkedIds);
-    await vault.DeleteThinks(checkedIds);
-    setCheckedIds([]);
-  }, [app, vault, checkedIds]);
+    if (panel.CheckedThoughtIDs.length === 0) return;
+    if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
+    app.RemoveThinksFromWorkout(panel.CheckedThoughtIDs);
+    await vault.DeleteThinks(panel.CheckedThoughtIDs);
+    panel.SetCheckedThoughtIDs([]);
+  }, [app, vault, panel]);
 
   const handleToggleType = useCallback((t: ContentType) => {
     setVisibleTypes(prev => {
@@ -260,16 +259,15 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
     const ids = Array.isArray(id) ? id : [id];
-    setCheckedIds(prev => {
-      const nextSet = new Set(prev);
-      ids.forEach(tid => {
-        const next = (force !== undefined) ? force : !nextSet.has(tid);
-        if (next) nextSet.add(tid);
-        else nextSet.delete(tid);
-      });
-      return Array.from(nextSet);
+    const prev = panel.CheckedThoughtIDs;
+    const nextSet = new Set(prev);
+    ids.forEach(tid => {
+      const next = (force !== undefined) ? force : !nextSet.has(tid);
+      if (next) nextSet.add(tid);
+      else nextSet.delete(tid);
     });
-  }, []);
+    panel.SetCheckedThoughtIDs(Array.from(nextSet));
+  }, [panel]);
 
   const handleOpenThinkInWorkout = useCallback((id: string) => {
     app.OpenThinkInWorkout(id);
@@ -359,7 +357,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         showSettings={showSettings}
         mediaType={panel.MediaType}
         visibleIds={visibleIds}
-        checkedIds={checkedIds}
+        checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={showCheckedOnly}
         allVaultChecked={allVaultChecked}
         showColumnDialog={showColumnDialog}
@@ -435,7 +433,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             <ThoughtsList
               thoughts={visibleThinks}
               selectedId=""
-              checkedIds={checkedIds}
+              checkedIds={panel.CheckedThoughtIDs}
               columns={columns}
               onOpen={handleOpenThinkInWorkout}
               onToggleCheck={handleToggleCheck}

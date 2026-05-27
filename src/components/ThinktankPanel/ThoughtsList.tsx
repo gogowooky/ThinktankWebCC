@@ -93,7 +93,7 @@ export function ThoughtsList({
   onToggleCheck,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const { overviewThoughtIds, workoutIds } = useHighlight();
+  const { overviewThoughtIds, overviewIncludedIds, overviewCheckedIds, workoutIds } = useHighlight();
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const visibleCols = columns.filter(c => c.visible);
 
@@ -161,9 +161,11 @@ export function ThoughtsList({
           const thought = thoughts[vItem.index];
           const isSelected        = thought.ID === selectedId;
           const isChecked         = checkedIds.includes(thought.ID);
-          const isOverviewThought = overviewThoughtIds.includes(thought.ID);
-          const isInWorkout       = workoutIds.includes(thought.ID);
-          const isFocused         = thought.ID === focusedId;
+          const isOverviewThought  = overviewThoughtIds.includes(thought.ID);
+          const isOverviewIncluded = overviewIncludedIds.includes(thought.ID);
+          const isOverviewChecked  = overviewCheckedIds.includes(thought.ID);
+          const isInWorkout        = workoutIds.includes(thought.ID);
+          const isFocused          = thought.ID === focusedId;
 
           return (
             <div
@@ -175,11 +177,13 @@ export function ThoughtsList({
               }}
               className={[
                 'thoughts-list__row',
-                isSelected        ? 'thoughts-list__row--selected'        : '',
-                isChecked         ? 'thoughts-list__row--checked'          : '',
-                isOverviewThought ? 'thoughts-list__row--overview-thought' : '',
-                isInWorkout       ? 'thoughts-list__row--workout'          : '',
-                isFocused         ? 'thoughts-list__row--focused'          : '',
+                isSelected         ? 'thoughts-list__row--selected'         : '',
+                isChecked          ? 'thoughts-list__row--checked'          : '',
+                isOverviewThought  ? 'thoughts-list__row--overview-thought' : '',
+                isOverviewIncluded ? 'thoughts-list__row--overview-included' : '',
+                isOverviewChecked  ? 'thoughts-list__row--overview-checked' : '',
+                isInWorkout        ? 'thoughts-list__row--workout'          : '',
+                isFocused          ? 'thoughts-list__row--focused'          : '',
               ].join(' ')}
               style={{
                 position: 'absolute',

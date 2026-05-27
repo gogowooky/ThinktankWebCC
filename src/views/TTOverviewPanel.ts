@@ -18,6 +18,9 @@ export class TTOverviewPanel extends TTUIItem {
   /** 表示中のThoughtID（空 = 未選択）*/
   public ThoughtID: string = '';
 
+  /** チェックされているThink IDリスト（OverviewPanel内） */
+  public CheckedThoughtIDs: string[] = [];
+
   /** 表示モード（datagrid/graph/chat/settings）*/
   public ViewMode: OverviewViewMode = 'datagrid';
 
@@ -71,6 +74,7 @@ export class TTOverviewPanel extends TTUIItem {
    */
   public OpenThought(thoughtId: string, mediaType: MediaType = 'datagrid'): void {
     this.ThoughtID = thoughtId;
+    this.CheckedThoughtIDs = []; // チェッククリア
     if (mediaType !== 'settings' as string) {
       this.ViewMode = mediaType as OverviewViewMode;
     }
@@ -83,6 +87,13 @@ export class TTOverviewPanel extends TTUIItem {
   /** Thought表示をクリアする */
   public ClearThought(): void {
     this.ThoughtID = '';
+    this.CheckedThoughtIDs = []; // チェッククリア
+    this.NotifyUpdated();
+  }
+
+  /** チェック状態を更新する */
+  public SetCheckedThoughtIDs(ids: string[]): void {
+    this.CheckedThoughtIDs = ids;
     this.NotifyUpdated();
   }
 

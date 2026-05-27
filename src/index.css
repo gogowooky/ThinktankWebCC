@@ -22,15 +22,15 @@
   --radius:           6px;
   --transition-panel: 200ms ease;
 
-  /* パネル別テーマ色（TT_Color.txt: blue-dark / indigo-dark / gray / green-dark）*/
-  --thinktank-ribbon-bg: #073763;
-  --thinktank-area-bg:   #E8F1F8;
-  --overview-ribbon-bg:  #3949AB;
-  --overview-area-bg:    #F9FAFF;
-  --workout-ribbon-bg:   #3F3F3F;
-  --workout-area-bg:     #D0D0D0;
-  --rethink-ribbon-bg:  #1E4620;
-  --rethink-area-bg:    #E2EFDA;
+  /* パネル別テーマ色 */
+  --thinktank-ribbon-bg: #1d618f;
+  --thinktank-area-bg:   #edf2f6;
+  --overview-ribbon-bg:  #873960;
+  --overview-area-bg:    #f8f3f5;
+  --workout-ribbon-bg:   #382830;
+  --workout-area-bg:     #e3e1e2;
+  --rethink-ribbon-bg:  #324f46;
+  --rethink-area-bg:    #eff1f0;
 
   /* 同期インジケーター */
   --sync-synced:  var(--text-muted);
