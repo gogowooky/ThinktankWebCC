@@ -91,10 +91,22 @@ function parseMultiKey(raw: string): string[] {
 
 const MOD_ORDER = ['ctrl', 'alt', 'shift', 'meta'] as const;
 
+const KEY_NAME_MAP: Record<string, string> = {
+  up:    'arrowup',
+  down:  'arrowdown',
+  left:  'arrowleft',
+  right: 'arrowright',
+};
+
+function normalizeKeyName(k: string): string {
+  const lower = k.toLowerCase();
+  return KEY_NAME_MAP[lower] ?? lower;
+}
+
 function normalizeKeyStr(raw: string): string {
   const parts = raw.toLowerCase().trim().split('+').map(p => p.trim()).filter(Boolean);
   const mods   = MOD_ORDER.filter(m => parts.includes(m));
-  const nonMod = parts.filter(p => !(MOD_ORDER as readonly string[]).includes(p));
+  const nonMod = parts.filter(p => !(MOD_ORDER as readonly string[]).includes(p)).map(normalizeKeyName);
   return [...mods, ...nonMod].join('+');
 }
 
@@ -108,7 +120,7 @@ function keyEventToStr(e: KeyboardEvent): string | null {
     if (m === 'meta')  return e.metaKey;
     return false;
   });
-  const keyStr = key.length === 1 ? key.toLowerCase() : key.toLowerCase();
+  const keyStr = normalizeKeyName(key);
   return [...mods, keyStr].join('+') || keyStr;
 }
 
@@ -152,8 +164,11 @@ function currentModStr(e: Event): string {
 
 function matchesFocus(pattern: string, current: string): boolean {
   if (!pattern || pattern === '*') return true;
-  if (pattern.endsWith('*'))       return current.startsWith(pattern.slice(0, -1));
-  return pattern === current;
+  const p = pattern.toLowerCase();
+  const c = current.toLowerCase();
+  if (p.endsWith('*'))       return c.startsWith(p.slice(0, -1));
+  if (p.startsWith('*'))     return c.endsWith(p.slice(1));
+  return p === c || c.endsWith('.' + p);
 }
 
 // ── TTShortcutManager ─────────────────────────────────────────────────────
@@ -176,6 +191,10 @@ export class TTShortcutManager {
   // ── 現在状態 ──────────────────────────────────────────────────────────
   private _currentFocus:  string = 'None';
   private _currentExMode: string = '';
+
+  private _activeMonacoEditor: any = null;
+  public get activeMonacoEditor(): any { return this._activeMonacoEditor; }
+  public setActiveMonacoEditor(editor: any): void { this._activeMonacoEditor = editor; }
 
   // ── コード入力 ────────────────────────────────────────────────────────
   private _chordFirst: string | null                        = null;
@@ -238,9 +257,16 @@ export class TTShortcutManager {
     this._rebuildActiveTable();
   }
 
+  hasShortcutForEvent(e: KeyboardEvent): boolean {
+    const keyStr = keyEventToStr(e);
+    if (!keyStr) return false;
+    return this._activeTable.has(keyStr) || this._activeChordStarters.has(keyStr);
+  }
+
   // ── イベントハンドラー ─────────────────────────────────────────────────
 
   handleKeyDown(e: KeyboardEvent): void {
+    if (e.defaultPrevented) return;
     const keyStr = keyEventToStr(e);
     if (!keyStr) return;
     this._processEvent(keyStr, e, currentModStr(e));
@@ -276,7 +302,7 @@ export class TTShortcutManager {
    */
   private _rebuildActiveTable(): void {
     const focus      = this._currentFocus;
-    const exMode     = this._currentExMode;
+    const exMode     = this._currentExMode.toLowerCase();
     const exModeMods = exMode ? (this._app?.Status.ExModeModKey ?? '') : '';
 
     this._activeTable         = new Map();
@@ -482,7 +508,7 @@ export class TTShortcutManager {
 
     this._shortcuts = section.rows.flatMap(row => {
       const focus       = focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*';
-      const exmode      = emIdx  >= 0 ? (row[emIdx]?.trim()  ?? '') : '';
+      const exmode      = emIdx  >= 0 ? (row[emIdx]?.trim().toLowerCase() ?? '') : '';
       const action      = row[actIdx]?.trim() ?? '';
       const description = dscIdx >= 0 ? (row[dscIdx]?.trim() ?? '') : '';
       const keys        = parseMultiKey(row[keyIdx]?.trim() ?? '');

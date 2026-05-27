@@ -11,6 +11,7 @@ import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHand
 import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
 import { StorageManager } from '../../../services/storage/StorageManager';
+import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import './TextEditorMedia.css';
 
 export interface TextEditorMediaRef { focus: () => void; }
@@ -123,6 +124,28 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const body = editor.getValue();
       savedRef.current = body;
       onSave(reconstructContent(think, body));
+    });
+
+    // アプリのキーバインディングで定義されているキーイベントのみ横取りして実行
+    editor.onKeyDown((e: any) => {
+      const browserEvent = e.browserEvent;
+      if (browserEvent.defaultPrevented) return;
+      if (TTShortcutManager.instance.hasShortcutForEvent(browserEvent)) {
+        e.preventDefault();
+        e.stopPropagation();
+        TTShortcutManager.instance.handleKeyDown(browserEvent);
+      }
+    });
+
+    // アクティブエディタの追跡
+    TTShortcutManager.instance.setActiveMonacoEditor(editor);
+    editor.onDidFocusEditorText(() => {
+      TTShortcutManager.instance.setActiveMonacoEditor(editor);
+    });
+    editor.onDidBlurEditorText(() => {
+      if (TTShortcutManager.instance.activeMonacoEditor === editor) {
+        TTShortcutManager.instance.setActiveMonacoEditor(null);
+      }
     });
 
     updateDecorations();
