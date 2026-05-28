@@ -92,10 +92,15 @@ function parseMultiKey(raw: string): string[] {
 const MOD_ORDER = ['ctrl', 'alt', 'shift', 'meta'] as const;
 
 const KEY_NAME_MAP: Record<string, string> = {
-  up:    'arrowup',
-  down:  'arrowdown',
-  left:  'arrowleft',
-  right: 'arrowright',
+  uparrow:    'arrowup',
+  downarrow:  'arrowdown',
+  leftarrow:  'arrowleft',
+  rightarrow: 'arrowright',
+  up:         'arrowup',
+  down:       'arrowdown',
+  left:       'arrowleft',
+  right:      'arrowright',
+  esc:        'escape',
 };
 
 function normalizeKeyName(k: string): string {
@@ -179,6 +184,12 @@ export class TTShortcutManager {
 
   private _app:        TTApplication | null = null;
   private _shortcuts:  ShortcutEntry[]      = [...DEFAULT_SHORTCUTS];
+  private _activeEditor: any = null;
+
+  get activeEditor(): any { return this._activeEditor; }
+  setActiveEditor(editor: any): void {
+    this._activeEditor = editor;
+  }
 
   // ── インデックス ──────────────────────────────────────────────────────
   /** 全件キーインデックス（ショートカット更新時に構築） */
@@ -275,6 +286,7 @@ export class TTShortcutManager {
       return;
     }
     const keyStr = keyEventToStr(e);
+    console.log(`[TTShortcutManager] keydown: e.key="${e.key}" -> keyStr="${keyStr}" (currentFocus="${this._currentFocus}")`);
     if (!keyStr) return;
     this._processEvent(keyStr, e, currentModStr(e));
   }
@@ -362,10 +374,12 @@ export class TTShortcutManager {
   private _processEvent(keyStr: string, e: Event, mods: string): void {
     const candidates = this._activeTable.get(keyStr) ?? [];
 
-    // ① フォーカス固有
+    // ① フォーカス固有（TextEditor.で始まるアクションはエディタ内で例外的に実行可能にする）
     for (const s of candidates) {
-      if ((s.focus || '*') === '*') continue;
+      const isEditorAction = s.action.startsWith('TextEditor.');
+      if ((s.focus || '*') === '*' && !isEditorAction) continue;
       e.preventDefault();
+      e.stopPropagation();
       const allow = this._executeAction(s.action, mods);
       if (!allow) return;
     }
@@ -377,6 +391,7 @@ export class TTShortcutManager {
       if ((s.focus || '*') !== '*') continue;
       if (!s.exmode && !this._isExModeAction(s.action)) continue;
       e.preventDefault();
+      e.stopPropagation();
       const allow = this._executeAction(s.action, mods);
       if (!allow) return;
     }
@@ -393,6 +408,7 @@ export class TTShortcutManager {
       );
       if (match) {
         e.preventDefault();
+        e.stopPropagation();
         this._executeAction(match.action, mods);
       }
       this._clearChord();
@@ -403,6 +419,7 @@ export class TTShortcutManager {
     const chordStarters = this._activeChordStarters.get(keyStr) ?? [];
     if (chordStarters.some(s => (s.focus || '*') === '*')) {
       e.preventDefault();
+      e.stopPropagation();
       this._chordFirst = keyStr;
       this._chordTimer = setTimeout(() => this._clearChord(), 2000);
       return;
@@ -413,6 +430,7 @@ export class TTShortcutManager {
       if ((s.focus || '*') !== '*') continue;
       if (s.exmode || this._isExModeAction(s.action)) continue;
       e.preventDefault();
+      e.stopPropagation();
       const allow = this._executeAction(s.action, mods);
       if (!allow) return;
     }
