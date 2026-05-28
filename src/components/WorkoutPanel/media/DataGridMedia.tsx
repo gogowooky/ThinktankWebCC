@@ -21,6 +21,7 @@ import type { MediaProps } from './types';
 import type { TableSection, RawLine } from '../../../utils/tableFormat';
 import { useHighlight } from '../../../contexts/HighlightContext';
 import { parseTableContent, tableSectionToContent } from '../../../utils/tableFormat';
+import { applyFilter } from '../../ThinktankPanel/ThoughtsList';
 import './DataGridMedia.css';
 
 // ContentType アイコンマッピング
@@ -821,12 +822,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
   }, [think?.ID, vault]);
 
   const filtered = useMemo<TTThink[]>(() => {
-    const q = filter.trim().toLowerCase();
-    if (!q) return allItems;
-    return allItems.filter(t =>
-      t.Name.toLowerCase().includes(q) ||
-      t.Keywords.toLowerCase().includes(q)
-    );
+    return applyFilter(allItems, filter);
   }, [allItems, filter]);
 
   const rowVirtualizer = useVirtualizer({

@@ -18,6 +18,7 @@ import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
 import { parseTableContent } from '../../../utils/tableFormat';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
+import { applyFilter } from '../../ThinktankPanel/ThoughtsList';
 import './CardMedia.css';
 
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
@@ -228,12 +229,7 @@ function ThinkCardView({ think, vault }: MediaProps) {
   }, [think, vault]);
 
   const filtered = useMemo<TTThink[]>(() => {
-    const q = filter.trim().toLowerCase();
-    if (!q) return allItems;
-    return allItems.filter(t =>
-      t.Name.toLowerCase().includes(q) ||
-      t.Keywords.toLowerCase().includes(q)
-    );
+    return applyFilter(allItems, filter);
   }, [allItems, filter]);
 
   return (

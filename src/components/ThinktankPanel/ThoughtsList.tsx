@@ -37,16 +37,28 @@ export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
   const raw = filter.trim();
   if (!raw) return thoughts;
 
-  // スペース区切りで AND トークンに分割（"-" prefix で NOT）
-  const tokens = raw.toLowerCase().split(/\s+/).filter(Boolean);
+  // カンマ ',' で分割しキーワードグループとする。グループ間の検索は OR 検索。
+  const groups = raw.split(',').map(g => g.trim()).filter(Boolean);
+  if (groups.length === 0) return thoughts;
 
   return thoughts.filter(t => {
     const text = `${t.Name} ${t.Keywords}`.toLowerCase();
-    return tokens.every(token => {
-      if (token.startsWith('-') && token.length > 1) {
-        return !text.includes(token.slice(1));
-      }
-      return text.includes(token);
+
+    // グループ間の検索は OR 検索 (いずれかのグループがマッチすれば真)
+    return groups.some(group => {
+      // グループ内をスペース ' ' で分割し、トークンとする
+      const tokens = group.split(/\s+/).map(tk => tk.trim()).filter(Boolean);
+      if (tokens.length === 0) return false;
+
+      // グループ内の検索は AND 検索 (すべてのトークンが条件を満たす必要がある)
+      return tokens.every(token => {
+        // 語頭に '-' がついたkeywordはnot検索
+        if (token.startsWith('-') && token.length > 1) {
+          const notWord = token.slice(1).toLowerCase();
+          return !text.includes(notWord);
+        }
+        return text.includes(token.toLowerCase());
+      });
     });
   });
 }
