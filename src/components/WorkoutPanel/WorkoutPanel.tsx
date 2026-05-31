@@ -755,7 +755,7 @@ export function WorkoutPanel({ app }: Props) {
       {/* ── コンテンツ領域 ────────────────────────────────────── */}
       <div
         ref={bodyRef}
-        className="workout-panel__body"
+        className="ContentsArea"
         onDragOver={handleBodyDragOver}
         onDragLeave={handleBodyDragLeave}
         onDrop={handleBodyDrop}

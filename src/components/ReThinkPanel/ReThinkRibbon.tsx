@@ -29,18 +29,20 @@ export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode }: Props) 
       onToggle={onToggle}
     >
       <button
+        id="ReThinkAI"
         className={`rethink-ribbon__btn${viewMode === 'chat' ? ' rethink-ribbon__btn--active' : ''}`}
         onClick={() => onSetMode('chat')}
         data-tip="AI相談"
-        aria-label="AI相談"
+        aria-label="ReThinkAI"
       >
         <MessageCircle size={16} />
       </button>
       <button
+        id="ReThinkSetting"
         className={`rethink-ribbon__btn${viewMode === 'settings' ? ' rethink-ribbon__btn--active' : ''}`}
         onClick={() => onSetMode('settings')}
         data-tip="設定"
-        aria-label="設定"
+        aria-label="ReThinkSetting"
       >
         <Settings size={16} />
       </button>

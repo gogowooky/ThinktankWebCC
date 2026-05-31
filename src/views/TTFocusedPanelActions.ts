@@ -103,25 +103,74 @@ function getHeadingScope(model: any, startLine: number, parentLevel: number): { 
   return { start: startLine, end: endLine };
 }
 
-function isLineFolded(editor: any, lineNumber: number): boolean {
-  if (typeof editor.getHiddenAreas !== 'function') {
-    throw new Error('editor.getHiddenAreas is not defined');
+/**
+ * 指定行が現在表示されているか（折畳で隠れていないか）を返す。
+ *
+ * Monaco 内部 API の getEndLineNumber() は未初期化時に undefined を返すため信頼できない。
+ * 代わりに、ドキュメントの見出し構造から fold スコープを自前計算し、
+ * 動作実績のある isLineFolded() で折畳状態を確認する方式を採用する。
+ *
+ * アルゴリズム:
+ *   lineNumber より前にある全見出し行 h について
+ *     - h が折畳まれている
+ *     - h の fold スコープ（h+1 〜 同レベル以下の次の見出し行の前行）に lineNumber が含まれる
+ *   上記を満たす h が存在すれば lineNumber は隠れている。
+ */
+function isLineVisible(editor: any, lineNumber: number, model: any): boolean {
+  const lineCount = model.getLineCount();
+
+  for (let h = 1; h < lineNumber; h++) {
+    const lvl = getHeadingLevel(model.getLineContent(h));
+    if (lvl === 0) continue;
+    if (!isLineFolded(editor, h)) continue;
+
+    // h の fold スコープの末尾を計算（同レベル以下の次見出しの直前行）
+    let scopeEnd = lineCount;
+    for (let j = h + 1; j <= lineCount; j++) {
+      const jLvl = getHeadingLevel(model.getLineContent(j));
+      if (jLvl > 0 && jLvl <= lvl) {
+        scopeEnd = j - 1;
+        break;
+      }
+    }
+
+    if (lineNumber <= scopeEnd) return false; // h のスコープ内 → 隠れている
   }
-  const hiddenAreas = editor.getHiddenAreas() || [];
-  const targetLine = lineNumber + 1;
-  return hiddenAreas.some((range: any) =>
-    targetLine >= range.startLineNumber && targetLine <= range.endLineNumber
-  );
+
+  return true;
+}
+
+function isLineFolded(editor: any, lineNumber: number): boolean {
+  // Monaco 0.52 の同期フィールドは foldingModel（アンダースコアなし）
+  const regions = (editor.getContribution?.('editor.contrib.folding') as any)
+    ?.foldingModel?.regions;
+  if (regions) {
+    for (let i = 0; i < regions.length; i++) {
+      if (regions.isCollapsed(i) && regions.getStartLineNumber(i) === lineNumber) {
+        return true;
+      }
+    }
+    return false;
+  }
+  // フォールバック: 旧 Monaco 公開 API (0.44 未満)
+  if (typeof editor.getHiddenAreas === 'function') {
+    const hiddenAreas: any[] = editor.getHiddenAreas() ?? [];
+    const nextLine = lineNumber + 1;
+    return hiddenAreas.some((r: any) =>
+      nextLine >= r.startLineNumber && nextLine <= r.endLineNumber
+    );
+  }
+  return false;
 }
 
 export function registerTextEditorActions(): void {
 
-  // 1. TextEditor.Folding.Forward
+  // 1. TextEditor.Folding.ForwardVisible
   TTActions.Register({
-    ActionID: 'TextEditor.Folding.Forward',
+    ActionID: 'TextEditor.Folding.ForwardVisible',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        const editor = TTShortcutManager.instance.activeEditor;
         if (!editor) { item.Result = '[エディタ未選択]'; return; }
         const model = editor.getModel();
         const pos = editor.getPosition();
@@ -129,7 +178,7 @@ export function registerTextEditorActions(): void {
 
         let targetLine = -1;
         for (let i = pos.lineNumber - 1; i >= 1; i--) {
-          if (getHeadingLevel(model.getLineContent(i)) > 0) {
+          if (getHeadingLevel(model.getLineContent(i)) > 0 && isLineVisible(editor, i, model)) {
             targetLine = i;
             break;
           }
@@ -148,12 +197,12 @@ export function registerTextEditorActions(): void {
     },
   });
 
-  // 2. TextEditor.Folding.Backward
+  // 2. TextEditor.Folding.BackwardVisible
   TTActions.Register({
-    ActionID: 'TextEditor.Folding.Backward',
+    ActionID: 'TextEditor.Folding.BackwardVisible',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        const editor = TTShortcutManager.instance.activeEditor;
         if (!editor) { item.Result = '[エディタ未選択]'; return; }
         const model = editor.getModel();
         const pos = editor.getPosition();
@@ -162,7 +211,7 @@ export function registerTextEditorActions(): void {
         const lineCount = model.getLineCount();
         let targetLine = -1;
         for (let i = pos.lineNumber + 1; i <= lineCount; i++) {
-          if (getHeadingLevel(model.getLineContent(i)) > 0) {
+          if (getHeadingLevel(model.getLineContent(i)) > 0 && isLineVisible(editor, i, model)) {
             targetLine = i;
             break;
           }
@@ -186,7 +235,7 @@ export function registerTextEditorActions(): void {
     ActionID: 'TextEditor.Folding.OpenEachLevel',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        const editor = TTShortcutManager.instance.activeEditor;
         if (!editor) { item.Result = '[エディタ未選択]'; return; }
         const model = editor.getModel();
         const pos = editor.getPosition();
@@ -245,7 +294,7 @@ export function registerTextEditorActions(): void {
     ActionID: 'TextEditor.Folding.CloseEachLevel',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeMonacoEditor;
+        const editor = TTShortcutManager.instance.activeEditor;
         if (!editor) { item.Result = '[エディタ未選択]'; return; }
         const model = editor.getModel();
         const pos = editor.getPosition();

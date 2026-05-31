@@ -22,15 +22,16 @@ interface SettingsEntry {
   type: SettingsType;
   Icon: LucideIcon;
   name: string;
+  id: string;
 }
 
 export const WORKOUT_SETTINGS: SettingsEntry[] = [
-  { type: 'workout',    Icon: PanelLeftDashed, name: 'Workout設定' },
-  { type: 'texteditor', Icon: NotebookPen,     name: 'TextEditor設定' },
-  { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定' },
-  { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定' },
-  { type: 'card',       Icon: IdCard,          name: 'Card設定' },
-  { type: 'graph',      Icon: Share2,          name: 'Graph設定' },
+  { type: 'workout',    Icon: PanelLeftDashed, name: 'Workout設定',    id: 'Workout' },
+  { type: 'texteditor', Icon: NotebookPen,     name: 'TextEditor設定', id: 'TextEditor' },
+  { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定',   id: 'Markdown' },
+  { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定',   id: 'DataGrid' },
+  { type: 'card',       Icon: IdCard,          name: 'Card設定',       id: 'Card' },
+  { type: 'graph',      Icon: Share2,          name: 'Graph設定',      id: 'Graph' },
 ];
 
 interface Props {
@@ -61,16 +62,17 @@ export function WorkoutRibbon({ activeSettings, isOpen, thinkTitle, onToggle, on
 
       {/* 設定ボタン群 */}
       <div className="workout-ribbon__buttons">
-        {WORKOUT_SETTINGS.map(({ type, Icon, name }) => (
+        {WORKOUT_SETTINGS.map(({ type, Icon, name, id }) => (
           <button
             key={type}
+            id={id}
             className={[
               'workout-ribbon__btn',
               activeSettings === type ? 'workout-ribbon__btn--active' : '',
             ].join(' ')}
             onClick={() => handleClick(type)}
             data-tip={name}
-            aria-label={name}
+            aria-label={id}
           >
             <Icon size={16} />
           </button>

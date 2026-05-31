@@ -29,9 +29,10 @@ const MODE_BUTTONS: {
   mode: ThinktankViewMode;
   icon: React.ReactNode;
   label: string;
+  id: string;
 }[] = [
-  { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧' },
-  { mode: 'chat',    icon: <MessageCircle size={16} />, label: 'AI相談' },
+  { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧', id: 'ThinktankThinkList' },
+  { mode: 'chat',    icon: <MessageCircle size={16} />, label: 'AI相談', id: 'ThinktankAI' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────
@@ -53,12 +54,13 @@ export function ThinktankRibbon({
       onToggle={onToggle}
       bottomLabel={vaultName}
     >
-      {MODE_BUTTONS.map(({ mode: m, icon, label }) => (
+      {MODE_BUTTONS.map(({ mode: m, icon, label, id }) => (
         <button
           key={m}
+          id={id}
           className={`ribbon-icon-btn${viewMode === m ? ' ribbon-icon-btn--active' : ''}`}
           data-tip={label}
-          aria-label={label}
+          aria-label={id}
           onClick={() => onSetViewMode(m)}
         >
           {icon}
@@ -75,9 +77,10 @@ export function ThinktankRibbon({
         </button>
       )}
       <button
+        id="ThinktankSetting"
         className={`ribbon-icon-btn${viewMode === 'settings' ? ' ribbon-icon-btn--active' : ''}`}
         data-tip="設定"
-        aria-label="設定"
+        aria-label="ThinktankSetting"
         onClick={() => onSetViewMode('settings')}
       >
         <Settings size={16} />

@@ -15,7 +15,6 @@
  * ── インデックス構造 ──────────────────────────────────────────────────────
  *   _keyIndex         : Map<keyStr, ShortcutEntry[]>  全件インデックス（ショートカット更新時に構築）
  *   _activeTable      : Map<keyStr, ShortcutEntry[]>  現在の focus+exmode でフィルタ済み（状態変化時に再構築）
- *   _activeChordStarters: Map<firstStroke, ShortcutEntry[]>  コード入力用インデックス
  *
  * ── action 書式 ───────────────────────────────────────────────────────────
  *   ActionID                    コロンなし → TTActions.Execute()
@@ -26,7 +25,6 @@
  * ── key 書式 ─────────────────────────────────────────────────────────────
  *   キーボード: {ctrl|alt|shift|meta}+{key}  ※ 順不同・小文字
  *   マウス:     left1 / left2 / right1 / wheelup / wheeldown（修飾付き可）
- *   コード入力: Ctrl+K Z のようにスペース区切り2打鍵（* フォーカスのみ）
  *   複数指定:   | 区切りで複数キーを同一アクションに割り当て可能
  *               | 自体を指定したい場合は "" でくくる（例: "ctrl+|"）
  */
@@ -58,6 +56,10 @@ const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   { focus: '*', exmode: 'ExPanel', key: 'o', action: 'FocusedPanel.ToggleAreaVisibility', description: 'フォーカスパネル開閉' },
   { focus: '*', exmode: 'ExPanel', key: 'p', action: 'FocusedPanel.SetViewModePrev',      description: 'フォーカスパネルモード前' },
   { focus: '*', exmode: 'ExPanel', key: 'n', action: 'FocusedPanel.SetViewModeNext',      description: 'フォーカスパネルモード次' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowup',    action: 'TextEditor.Folding.ForwardVisible',       description: '現表示範囲の折畳タイトル行を前方向に探索してカーソル移動' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowdown',  action: 'TextEditor.Folding.BackwardVisible',      description: '現表示範囲の折畳タイトル行を後方向に探索してカーソル移動' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowright', action: 'TextEditor.Folding.OpenEachLevel', description: 'カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowleft',  action: 'TextEditor.Folding.CloseEachLevel',description: 'カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく' },
 ];
 
 // ── キー複数指定パーサー ──────────────────────────────────────────────────
@@ -195,21 +197,11 @@ export class TTShortcutManager {
   /** 全件キーインデックス（ショートカット更新時に構築） */
   private _keyIndex:            Map<string, ShortcutEntry[]> = new Map();
   /** 現在の focus+exmode でフィルタ済みアクティブテーブル（状態変化時に再構築） */
-  private _activeTable:         Map<string, ShortcutEntry[]> = new Map();
-  /** アクティブテーブル内のコード入力先頭ストロークインデックス */
-  private _activeChordStarters: Map<string, ShortcutEntry[]> = new Map();
+  private _activeTable: Map<string, ShortcutEntry[]> = new Map();
 
   // ── 現在状態 ──────────────────────────────────────────────────────────
   private _currentFocus:  string = 'None';
   private _currentExMode: string = '';
-
-  private _activeMonacoEditor: any = null;
-  public get activeMonacoEditor(): any { return this._activeMonacoEditor; }
-  public setActiveMonacoEditor(editor: any): void { this._activeMonacoEditor = editor; }
-
-  // ── コード入力 ────────────────────────────────────────────────────────
-  private _chordFirst: string | null                        = null;
-  private _chordTimer: ReturnType<typeof setTimeout> | null = null;
 
   private _vaultThink: TTThink | null = null;
 
@@ -268,25 +260,11 @@ export class TTShortcutManager {
     this._rebuildActiveTable();
   }
 
-  hasShortcutForEvent(e: KeyboardEvent): boolean {
-    const keyStr = keyEventToStr(e);
-    if (!keyStr) return false;
-    const has = this._activeTable.has(keyStr) || this._activeChordStarters.has(keyStr);
-    if (!has && e.altKey && ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-      this._app?.Status.SetLastActionDisplay(`[未マッチ] key:${keyStr} focus:${this._currentFocus} exmode:${this._currentExMode || '空'}`);
-    }
-    return has;
-  }
-
   // ── イベントハンドラー ─────────────────────────────────────────────────
 
-  handleKeyDown(e: KeyboardEvent, isFromMonaco = false): void {
+  handleKeyDown(e: KeyboardEvent): void {
     if (e.defaultPrevented) return;
-    if (!isFromMonaco && e.target instanceof HTMLElement && e.target.closest('.monaco-editor')) {
-      return;
-    }
     const keyStr = keyEventToStr(e);
-    console.log(`[TTShortcutManager] keydown: e.key="${e.key}" -> keyStr="${keyStr}" (currentFocus="${this._currentFocus}")`);
     if (!keyStr) return;
     this._processEvent(keyStr, e, currentModStr(e));
   }
@@ -324,8 +302,7 @@ export class TTShortcutManager {
     const exMode     = this._currentExMode.toLowerCase();
     const exModeMods = exMode ? (this._app?.Status.ExModeModKey ?? '') : '';
 
-    this._activeTable         = new Map();
-    this._activeChordStarters = new Map();
+    this._activeTable = new Map();
 
     for (const [key, entries] of this._keyIndex) {
       const matched = entries.filter(s =>
@@ -339,14 +316,8 @@ export class TTShortcutManager {
         ? this._mergeExModeKey(key, exModeMods)
         : key;
 
-      if (effectiveKey.includes(' ')) {
-        const firstStroke = effectiveKey.split(' ')[0];
-        if (!this._activeChordStarters.has(firstStroke)) this._activeChordStarters.set(firstStroke, []);
-        this._activeChordStarters.get(firstStroke)!.push(...matched);
-      } else {
-        if (!this._activeTable.has(effectiveKey)) this._activeTable.set(effectiveKey, []);
-        this._activeTable.get(effectiveKey)!.push(...matched);
-      }
+      if (!this._activeTable.has(effectiveKey)) this._activeTable.set(effectiveKey, []);
+      this._activeTable.get(effectiveKey)!.push(...matched);
     }
   }
 
@@ -369,7 +340,6 @@ export class TTShortcutManager {
    *  ① フォーカス固有ショートカット（focus ≠ '*'）: _shouldHandle をバイパス
    *  ② ExMode グローバルショートカット: _shouldHandle をバイパス（どこからでも有効）
    *  ③ 通常グローバルショートカット（focus = '*'）: 入力系コントロール内では無効
-   *     ※ コード入力（2打鍵）は グローバルのみ対応
    */
   private _processEvent(keyStr: string, e: Event, mods: string): void {
     const candidates = this._activeTable.get(keyStr) ?? [];
@@ -399,33 +369,7 @@ export class TTShortcutManager {
     // ③ 通常グローバル（入力系コントロール内では無効）
     if (!this._shouldHandle(e)) return;
 
-    // コード入力: 2打鍵目
-    if (this._chordFirst) {
-      const chordKey    = `${this._chordFirst} ${keyStr}`;
-      const chordCands  = this._keyIndex.get(chordKey) ?? [];
-      const match = chordCands.find(s =>
-        (s.focus || '*') === '*' && s.exmode === this._currentExMode
-      );
-      if (match) {
-        e.preventDefault();
-        e.stopPropagation();
-        this._executeAction(match.action, mods);
-      }
-      this._clearChord();
-      return;
-    }
-
-    // コード入力: 1打鍵目
-    const chordStarters = this._activeChordStarters.get(keyStr) ?? [];
-    if (chordStarters.some(s => (s.focus || '*') === '*')) {
-      e.preventDefault();
-      e.stopPropagation();
-      this._chordFirst = keyStr;
-      this._chordTimer = setTimeout(() => this._clearChord(), 2000);
-      return;
-    }
-
-    // 単打鍵グローバル（ExMode 関連ショートカットは ② で処理済みなのでスキップ）
+    // グローバル単打鍵（ExMode 関連ショートカットは ② で処理済みなのでスキップ）
     for (const s of candidates) {
       if ((s.focus || '*') !== '*') continue;
       if (s.exmode || this._isExModeAction(s.action)) continue;
@@ -451,14 +395,7 @@ export class TTShortcutManager {
       target instanceof HTMLSelectElement
     ) return false;
     if (target.getAttribute?.('contenteditable') === 'true') return false;
-    if (target.closest?.('.monaco-editor')) return false;
     return true;
-  }
-
-  private _clearChord(): void {
-    if (this._chordTimer) clearTimeout(this._chordTimer);
-    this._chordFirst = null;
-    this._chordTimer = null;
   }
 
   private _executeAction(action: string, mods: string): boolean {
@@ -531,7 +468,7 @@ export class TTShortcutManager {
       return;
     }
 
-    this._shortcuts = section.rows.flatMap(row => {
+    const tableShortcuts = section.rows.flatMap(row => {
       const focus       = focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*';
       const exmode      = emIdx  >= 0 ? (row[emIdx]?.trim().toLowerCase() ?? '') : '';
       const action      = row[actIdx]?.trim() ?? '';
@@ -541,6 +478,12 @@ export class TTShortcutManager {
         .filter(k => k && action)
         .map(key => ({ focus, exmode, key, action, description }));
     });
+
+    // テーブルで定義されていない DEFAULT_SHORTCUTS のエントリを補完する。
+    // key が同一のエントリはテーブル側を優先（ユーザーが意図的に上書きした場合を尊重）。
+    const tableKeys = new Set(tableShortcuts.map(s => s.key));
+    const defaults  = DEFAULT_SHORTCUTS.filter(s => !tableKeys.has(s.key));
+    this._shortcuts = [...defaults, ...tableShortcuts];
 
     this._buildKeyIndex();
   }

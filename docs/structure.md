@@ -1,19 +1,15 @@
 
-
-
-Window (App)
-  └ AppLayout (HighlightProvider を内包)
-      ├─ ThinktankPanel (左端の制御・一覧パネル)
-      │    ├─ ThinktankRibbon (縦型メニューリボン)
-      │    │    ├─ ［Files］Think一覧 モード切り替えボタン
-      │    │    ├─ ［SearchCheck］検索 モード切り替えボタン
-      │    │    ├─ ［Library］Thought一覧 モード切り替えボタン
-      │    │    ├─ ［MessageCircle］AI相談 モード切り替えボタン
-      │    │    ├─ ［RefreshCw］BigQuery同期 ボタン (同期関数が存在する場合)
-      │    │    └─ ［Settings］設定 モード切り替えボタン
-      │    ├─ PanelArea (開閉可能な領域)
-      │    │    └─ ThinktankArea (Thinktankのメイン領域)
-      │    │         ├─ ThinktankMenuRibbon (上部メニューバー)
+# Thinktank 構造: Window (App)
+## AppLayout (HighlightProvider を内包)
+###   ├─ ThinktankPanel (左端の制御・一覧パネル)
+####  │    ├─ ThinktankRibbon (縦型メニューリボン)
+      │    │    ├─ [ThinktankThinkList] モード切り替えボタン
+      │    │    ├─ [ThinktankSearch] モード切り替えボタン
+      │    │    ├─ [ThinktankAI] モード切り替えボタン
+      │    │    └─ [ThinktankSetting] モード切り替えボタン
+####  │    ├─ PanelArea (開閉可能な領域)
+##### │    └─ ThinktankArea (Thinktankのメイン領域)
+##### │    │         ├─ ThinktankMenuRibbon (上部メニューバー)
       │    │         │    ├─ 【通常・検索・Thought一覧モード時】
       │    │         │    │    ├─ ［Square / CheckSquare］表示中を全選択/クリアボタン
       │    │         │    │    ├─ ［List / ListChecks］全アイテム選択/クリア（非表示含む）ボタン
@@ -30,7 +26,7 @@ Window (App)
       │    │         │    │    └─ ［Save］Chatを保管庫に保存ボタン
       │    │         │    └─ 【設定モード時】
       │    │         │         └─ (ボタンなし)
-      │    │         ├─ ColumnSortDialog (カラム設定・ソートダイアログ)
+##### │    │         ├─ ColumnSortDialog (カラム設定・ソートダイアログ)
       │    │         │    └─ 表示項目・ソート設定テーブル
       │    │         │         ├─ ヘッダー部 ［X］閉じるボタン
       │    │         │         └─ 各フィールド行
@@ -38,7 +34,7 @@ Window (App)
       │    │         │              ├─ ［input[type=checkbox]］表示オン/オフ
       │    │         │              ├─ ［input[type=checkbox]］昇順ソート
       │    │         │              └─ ［input[type=checkbox]］降順ソート
-      │    │         ├─ UnifiedFilterPanel (キーワード＆日付フィルターバー)
+##### │    │         ├─ UnifiedFilterPanel (キーワード＆日付フィルターバー)
       │    │         │    ├─ テキストフィルター行
       │    │         │    │    ├─ ［input[type=text]］キーワード検索入力欄
       │    │         │    │    ├─ ［ChevronDown］履歴展開矢印
@@ -53,7 +49,7 @@ Window (App)
       │    │         │         ├─ ［input[type=date]］基準日選択
       │    │         │         ├─ ［input[type=text]］範囲指定入力欄 (+Nd / @N)
       │    │         │         └─ ［X］クリアボタン
-      │    │         └─ (ViewMode に応じた切り替え表示)
+##### │    │         └─ (ViewMode に応じた切り替え表示)
       │    │              ├─ ThinktankFilterView (Think一覧モード)
       │    │              │    └─ Think一覧テーブル (各行にチェックボックス、タイトル、日付等を表示)
       │    │              ├─ ThinktankSearchView (検索モード)
@@ -66,13 +62,13 @@ Window (App)
       │    │                   └─ Thought一覧テーブル (Thoughtリスト表示、ドラッグ可能)
       │    └─ Splitter (幅リサイズ用バー)
       │
-      ├─ OverviewPanel (左から2番目、特定のテーマ(Thought)を掘り下げるパネル) ※表示モード時のみ
-      │    ├─ OverviewRibbon (縦型メニューリボン)
-      │    │    ├─ ［Files］Think一覧 モード切り替えボタン
-      │    │    ├─ ［Microscope］Thought分析 モード切り替えボタン
-      │    │    ├─ ［MessageCircle］AI相談 モード切り替えボタン
-      │    │    └─ ［Settings］設定 モード切り替えボタン
-      │    ├─ PanelArea (開閉可能な領域)
+###   ├─ OverviewPanel (左から2番目、特定のテーマ(Thought)を掘り下げるパネル) ※表示モード時のみ
+####  │    ├─ OverviewRibbon (縦型メニューリボン)
+      │    │    ├─ [OverviewThinkList] モード切り替えボタン
+      │    │    ├─ [OverviewResearch] モード切り替えボタン
+      │    │    ├─ [OverviewAI] モード切り替えボタン
+      │    │    └─ [OverviewSetting] モード切り替えボタン
+####  │    ├─ PanelArea (開閉可能な領域)
       │    │    └─ OverviewArea (Overviewのメイン領域)
       │    │         ├─ OverviewMenuRibbon (上部メニューバー)
       │    │         │    ├─ 【通常モード時】
@@ -103,16 +99,16 @@ Window (App)
       │    │              └─ GraphMedia (Thought分析グラフモード) ※Workoutと共通
       │    └─ Splitter (幅リサイズ用バー)
       │
-      ├─ WorkoutPanel (中央のコンテンツ・編集作業領域)
-      │    ├─ WorkoutRibbon (左縦型メニューリボン)
-      │    │    ├─ ［ChevronLeft / ChevronRight］設定パネル開閉トグルボタン
-      │    │    ├─ ［PanelLeftDashed］Workout設定ボタン
-      │    │    ├─ ［NotebookPen］TextEditor設定ボタン
-      │    │    ├─ ［BookOpenText］Markdown設定ボタン
-      │    │    ├─ ［Table］DataGrid設定ボタン
-      │    │    ├─ ［IdCard］Card設定ボタン
-      │    │    └─ ［Share2］Graph設定ボタン
-      │    ├─ PanelArea (設定などの開閉領域)
+###   ├─ WorkoutPanel (中央のコンテンツ・編集作業領域)
+####  │    ├─ WorkoutRibbon (左縦型メニューリボン)
+      │    │    ├─ [ChevronLeft / ChevronRight] 設定パネル開閉トグルボタン
+      │    │    ├─ [Workout] モード設定ボタン
+      │    │    ├─ [TextEditor] モード設定ボタン
+      │    │    ├─ [Markdown] モード設定ボタン
+      │    │    ├─ [DataGrid] モード設定ボタン
+      │    │    ├─ [Card] モード設定ボタン
+      │    │    └─ [Graph] モード設定ボタン
+####  │    ├─ PanelArea (設定などの開閉領域)
       │    │    └─ WorkoutSettingPanel (新規作成・インポート・エクスポート設定)
       │    │         ├─ 【Workout設定時】
       │    │         │    └─ エリアセクション
@@ -129,11 +125,11 @@ Window (App)
       │    │         │    └─ テーブルセクション: ［FilePlus］新規作成, ［FileSpreadsheet］読込, ［Save］保存
       │    │         └─ 【その他 (Markdown / Card / Graph設定) 時】
       │    │              └─ プレースホルダーテキスト表示
-      │    ├─ Splitter (幅リサイズ用バー)
-      │    └─ workout-panel__body (メインコンテンツ領域)
-      │         ├─ WorkoutAreaEmpty (エリアが空の時の初期表示)
+####  │    ├─ Splitter (幅リサイズ用バー)
+####  │    └─ ContentsArea (メインコンテンツ領域)
+##### │         ├─ WorkoutAreaEmpty (エリアが空の時の初期表示)
       │         │    └─ ガイドテキスト・初期画面
-      │         ├─ LayoutView (BSPツリー型で画面分割を再帰レンダリングするビュー)
+##### │         ├─ LayoutView (BSPツリー型で画面分割を再帰レンダリングするビュー)
       │         │    ├─ SplitView (分割ノード)
       │         │    │    ├─ LayoutView (第1ペイン)
       │         │    │    ├─ Splitter / WorkoutHSplitter (境界線)
@@ -155,7 +151,7 @@ Window (App)
       │         │              ├─ CardMedia (かんばん/カード表示)
       │         │              ├─ GraphMedia (関連グラフ構造表示)
       │         │              └─ ChatMedia (チャット履歴ビュー)
-      │         └─ WorkoutToolBar (最下段のステータス/ツールバー)
+##### │         └─ WorkoutToolBar (最下段のステータス/ツールバー)
       │              ├─ 左側エリア
       │              │    ├─ 【通常入力時】 ［input[type=text]］コマンド/テキスト入力欄、［X］クリアボタン、［datalist］ハイライト履歴
       │              │    ├─ 【KeyAction表示時】 状態テキスト表示 (focus, mod, key, mouse, touch, exmode/exmod, action 等)
@@ -171,9 +167,9 @@ Window (App)
       │                   ├─ ［Copyright］Copyright表示トグルボタン
       │                   └─ ［ChevronsLeftRight / ChevronsRightLeft］ツールバー拡大縮小トグルボタン
       │
-      └─ ReThinkPanel (右端 of AI対話・考察パネル) ※表示モード時のみ
-           ├─ Splitter (幅リサイズ用バー)
-           ├─ PanelArea (開閉可能な領域)
+###   └─ ReThinkPanel (右端 of AI対話・考察パネル) ※表示モード時のみ
+####       ├─ Splitter (幅リサイズ用バー)
+####       ├─ PanelArea (開閉可能な領域)
            │    └─ ReThinkArea (ReThinkのメイン領域)
            │         ├─ ReThinkMenuRibbon (上部メニューバー)
            │         │    ├─ 【chat モード時】
@@ -187,9 +183,28 @@ Window (App)
            │              │    ├─ バナー領域
            │              │    └─ チャットメッセージエントリ一覧 (ユーザーメッセージ / AIメッセージ)
            │              └─ ［textarea］入力エリア (Enter=送信 / Shift+Enter=改行)
-           └─ ReThinkRibbon (縦型メニューリボン)
-                ├─ ［MessageCircle］AI相談 モード切り替えボタン
-                └─ ［Settings］設定 モード切り替えボタン
+####       └─ ReThinkRibbon (縦型メニューリボン)
+                ├─ [ReThinkAI] モード切り替えボタン
+                └─ [ReThinkSetting] モード切り替えボタン
+
+
+
+
+# 実装したい変数
+Application.Focus.Panel
+  ThinktankThinkList,ThinktankSearch,ThinktankAI,ThinktankSetting
+  OverviewThinkList,OverviewResearch,OverviewAI,OverviewSetting
+  Workout,TextEdito,Markdown,DataGrid,Card,Graph
+  Workout.Pane1,Workout.Pane2,...
+  Workout.StatusBar.
+  ReThinkAI,ReThinkSetting
+Application.Focus.Column
+  Thinktank,Overview,WorkoutSetting,Workout,ReThink
+WorkoutPanel.Current.PaneID
+  Workout.Pane1,Workout.Pane2,...
+WorkoutPanel.Current.PaneName
+  .*
+
 
 
 
