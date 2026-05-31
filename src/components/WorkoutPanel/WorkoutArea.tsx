@@ -14,6 +14,7 @@ import type { MediaType } from '../../types';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutAreaRibbon, extractLinkDrop } from './WorkoutAreaRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
+import { appendLinkToContent } from '../../utils/thinkFormat';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -106,7 +107,7 @@ export function WorkoutArea({
     e.preventDefault();
     e.stopPropagation(); // TextEditorMedia / Monaco に渡さない
     setIsContentLinkDrop(false);
-    current.Content = current.Content.trimEnd() + `\n\n* [${link.title}](${link.url})`;
+    current.Content = appendLinkToContent(current.Content, link);
     await current.SaveContent();
     setContentRefreshKey(k => k + 1);
   }, [vault, area.ResourceID]);

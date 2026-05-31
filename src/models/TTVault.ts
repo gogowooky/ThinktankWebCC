@@ -15,6 +15,7 @@ import type { ContentType } from '../types';
 import { TTModels } from './TTModels';
 import { formatDateRangeJapanese, computeDateRange } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
+import { parseThought, serializeThought, serializeLinks } from '../utils/thinkFormat';
 
 export class TTVault extends TTCollection {
   /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
@@ -87,46 +88,31 @@ export class TTVault extends TTCollection {
       if (!t || t.ContentType !== 'thought') return;
       if (t.IsMetaOnly) await t.LoadContent();
 
-      const lines = t.Content.split('\n').slice(1); // タイトル行除外
+      const parsed = parseThought(t.Content);
 
-      for (const line of lines) {
-        const s = line.trim();
-        if (s.startsWith('* ')) {
-          const id = s.slice(2).trim();
-          if (id) {
-            const sub = this.GetThink(id);
-            if (sub?.ContentType === 'thought') {
-              await collectParams(id, visited);
-            } else {
-              finalIds.add(id);
-            }
-          }
-        } else if (s.startsWith('>> ')) {
-          // 全文検索パラメータ
-          const body = s.slice(3).trim();
-          if (body.startsWith('検索語：')) searchQuery = body.slice(4).trim();
-          else if (body.startsWith('作成日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            searchCreatedRange = computeDateRange(d, r);
-          } else if (body.startsWith('更新日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            searchUpdatedRange = computeDateRange(d, r);
-          }
-        } else if (s.startsWith('> ')) {
-          // フィルターパラメータ
-          const body = s.slice(2).trim();
-          if (body.startsWith('作成日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            filterCreatedRange = computeDateRange(d, r);
-          } else if (body.startsWith('更新日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            filterUpdatedRange = computeDateRange(d, r);
-          } else if (body.startsWith('Keyword：')) {
-            filterKeyword = body.slice('Keyword：'.length).trim();
-          } else if (!body.includes('：')) {
-            filterKeyword = body;
-          }
+      for (const id of parsed.ids) {
+        const sub = this.GetThink(id);
+        if (sub?.ContentType === 'thought') {
+          await collectParams(id, visited);
+        } else {
+          finalIds.add(id);
         }
+      }
+
+      if (parsed.search.query) searchQuery = parsed.search.query;
+      if (parsed.search.createdRange) {
+        searchCreatedRange = computeDateRange(parsed.search.createdRange.dateStr, parsed.search.createdRange.rangeStr);
+      }
+      if (parsed.search.updatedRange) {
+        searchUpdatedRange = computeDateRange(parsed.search.updatedRange.dateStr, parsed.search.updatedRange.rangeStr);
+      }
+
+      if (parsed.filter.keyword) filterKeyword = parsed.filter.keyword;
+      if (parsed.filter.createdRange) {
+        filterCreatedRange = computeDateRange(parsed.filter.createdRange.dateStr, parsed.filter.createdRange.rangeStr);
+      }
+      if (parsed.filter.updatedRange) {
+        filterUpdatedRange = computeDateRange(parsed.filter.updatedRange.dateStr, parsed.filter.updatedRange.rangeStr);
       }
     };
 
@@ -216,40 +202,28 @@ export class TTVault extends TTCollection {
       const t = this.GetThink(tid);
       if (!t || t.ContentType !== 'thought' || t.IsMetaOnly) return;
 
-      const lines = t.Content.split('\n').slice(1);
-      for (const line of lines) {
-        const s = line.trim();
-        if (s.startsWith('* ')) {
-          const id = s.slice(2).trim();
-          if (id) {
-            const sub = this.GetThink(id);
-            if (sub?.ContentType === 'thought') collectParamsSync(id, visited);
-            else finalIds.add(id);
-          }
-        } else if (s.startsWith('>> ')) {
-          const body = s.slice(3).trim();
-          if (body.startsWith('検索語：')) searchQuery = body.slice(4).trim();
-          else if (body.startsWith('作成日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            searchCreatedRange = computeDateRange(d, r);
-          } else if (body.startsWith('更新日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            searchUpdatedRange = computeDateRange(d, r);
-          }
-        } else if (s.startsWith('> ') && !s.startsWith('>> ')) {
-          const body = s.slice(2).trim();
-          if (body.startsWith('作成日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            filterCreatedRange = computeDateRange(d, r);
-          } else if (body.startsWith('更新日：')) {
-            const [d, r] = body.slice(4).split(',').map(v => v.trim());
-            filterUpdatedRange = computeDateRange(d, r);
-          } else if (body.startsWith('Keyword：')) {
-            filterKeyword = body.slice('Keyword：'.length).trim();
-          } else if (!body.includes('：')) {
-            filterKeyword = body;
-          }
-        }
+      const parsed = parseThought(t.Content);
+
+      for (const id of parsed.ids) {
+        const sub = this.GetThink(id);
+        if (sub?.ContentType === 'thought') collectParamsSync(id, visited);
+        else finalIds.add(id);
+      }
+
+      if (parsed.search.query) searchQuery = parsed.search.query;
+      if (parsed.search.createdRange) {
+        searchCreatedRange = computeDateRange(parsed.search.createdRange.dateStr, parsed.search.createdRange.rangeStr);
+      }
+      if (parsed.search.updatedRange) {
+        searchUpdatedRange = computeDateRange(parsed.search.updatedRange.dateStr, parsed.search.updatedRange.rangeStr);
+      }
+
+      if (parsed.filter.keyword) filterKeyword = parsed.filter.keyword;
+      if (parsed.filter.createdRange) {
+        filterCreatedRange = computeDateRange(parsed.filter.createdRange.dateStr, parsed.filter.createdRange.rangeStr);
+      }
+      if (parsed.filter.updatedRange) {
+        filterUpdatedRange = computeDateRange(parsed.filter.updatedRange.dateStr, parsed.filter.updatedRange.rangeStr);
       }
     };
 
@@ -400,34 +374,19 @@ export class TTVault extends TTCollection {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
 
-    let body = '';
-    
-    if (prefix === '>> ') {
-      // 全文検索モード
-      if (searchQuery) body += `>> 検索語：${searchQuery}\n`;
-      if (dates?.createdDate || dates?.createdRange) {
-        body += `>> 作成日：${dates.createdDate || ''}, ${dates.createdRange || ''}\n`;
-      }
-      if (dates?.updatedDate || dates?.updatedRange) {
-        body += `>> 更新日：${dates.updatedDate || ''}, ${dates.updatedRange || ''}\n`;
-      }
-    } else if (prefix === '> ') {
-      // フィルターモード
-      if (filterKeyword) body += `> Keyword：${filterKeyword}\n`;
-      if (dates?.createdDate || dates?.createdRange) {
-        body += `> 作成日：${dates.createdDate || ''}, ${dates.createdRange || ''}\n`;
-      }
-      if (dates?.updatedDate || dates?.updatedRange) {
-        body += `> 更新日：${dates.updatedDate || ''}, ${dates.updatedRange || ''}\n`;
-      }
-    }
-
-    // ID セクション
-    if (ids.length > 0) {
-      body += ids.map(id => `* ${id}`).join('\n') + '\n';
-    }
-
-    const fullContent = `${prefix}${title}\n${body.trim()}`;
+    const fullContent = serializeThought({
+      prefix,
+      title,
+      searchQuery,
+      filterKeyword,
+      dates: dates ? {
+        createdDate: dates.createdDate,
+        createdRange: dates.createdRange,
+        updatedDate: dates.updatedDate,
+        updatedRange: dates.updatedRange,
+      } : undefined,
+      ids,
+    });
 
     const think = new TTThink();
     think.ID          = newId;
@@ -508,7 +467,7 @@ export class TTVault extends TTCollection {
   public async CreateLinksThink(title: string, url: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
     const newId       = TTVault.generateUniqueId(existingIds);
-    const fullContent = `${title}\n* [${title}](${url})`;
+    const fullContent = serializeLinks(title, [{ title, url }]);
 
     const think = new TTThink();
     think.ID          = newId;
@@ -561,9 +520,20 @@ export class TTVault extends TTCollection {
       const thought = this.GetThink(thoughtId);
       if (thought && thought.ContentType === 'thought') {
         if (thought.IsMetaOnly) await thought.LoadContent();
-        const existingIds2 = thought.getThinkIds();
-        const nonIdLines = thought.Content.split('\n').filter(l => !l.startsWith('* '));
-        const newContent  = [...nonIdLines, ...existingIds2.map(id => `* ${id}`), `* ${newId}`].join('\n');
+        const parsed = parseThought(thought.Content);
+        const newContent = serializeThought({
+          prefix: thought.Content.startsWith('>>') ? '>> ' : '> ',
+          title: parsed.title,
+          searchQuery: parsed.search.query,
+          filterKeyword: parsed.filter.keyword,
+          dates: {
+            createdDate: parsed.filter.createdRange?.dateStr || parsed.search.createdRange?.dateStr,
+            createdRange: parsed.filter.createdRange?.rangeStr || parsed.search.createdRange?.rangeStr,
+            updatedDate: parsed.filter.updatedRange?.dateStr || parsed.search.updatedRange?.dateStr,
+            updatedRange: parsed.filter.updatedRange?.rangeStr || parsed.search.updatedRange?.rangeStr,
+          },
+          ids: [...parsed.ids, newId],
+        });
         thought.Content = newContent;
         await thought.SaveContent();
       }

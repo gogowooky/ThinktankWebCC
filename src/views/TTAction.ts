@@ -3,10 +3,20 @@
  * アクション定義の型とアクション実行コンテキスト。
  */
 
+export type ActionID =
+  | 'FocusedPanel.ToggleAreaVisibility'
+  | 'FocusedPanel.SetViewModePrev'
+  | 'FocusedPanel.SetViewModeNext'
+  | 'TextEditor.Folding.ForwardVisible'
+  | 'TextEditor.Folding.BackwardVisible'
+  | 'TextEditor.Folding.OpenEachLevel'
+  | 'TextEditor.Folding.CloseEachLevel'
+  | string; // 動的・外部定義のアクションを許容
+
 /** アクション実行コンテキスト。Completion 関数が Result / Allow を書き込む。 */
 export interface TTActionItem {
   /** アクション ID */
-  ActionID: string;
+  ActionID: ActionID;
   /** 実行結果（Completion が設定） */
   Result: string;
   /**
@@ -19,6 +29,8 @@ export interface TTActionItem {
 
 /** アクション定義 */
 export interface TTAction {
-  ActionID:   string;
-  Completion: (item: TTActionItem) => void | Promise<void>;
+  ActionID:    ActionID;
+  Description?: string;
+  Category?:    string;
+  Completion:  (item: TTActionItem) => void | Promise<void>;
 }

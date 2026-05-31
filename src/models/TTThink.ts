@@ -10,6 +10,7 @@
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
+import { parseThought } from '../utils/thinkFormat';
 
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
@@ -126,11 +127,7 @@ export class TTThink extends TTObject {
   /** thought本文からThinkIDリストを取得する（ContentType='thought'専用）*/
   public getThinkIds(): string[] {
     if (this.ContentType !== 'thought') return [];
-    return this._content
-      .split('\n')
-      .filter(line => line.startsWith('* '))
-      .map(line => line.slice(2).trim())
-      .filter(Boolean);
+    return parseThought(this._content).ids;
   }
 
   private _extractTitle(): void {

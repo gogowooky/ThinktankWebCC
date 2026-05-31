@@ -11,35 +11,8 @@ import { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImper
 import type { ChatMessage } from '../../../types';
 import type { MediaProps } from './types';
 import { streamChat } from '../../../services/ChatApiService';
+import { parseChat } from '../../../utils/thinkFormat';
 import './ChatMedia.css';
-
-function parseChatContent(content: string): ChatMessage[] {
-  const messages: ChatMessage[] = [];
-  const lines = content.split('\n');
-  let i = 0;
-  while (i < lines.length) {
-    const line = lines[i];
-    if (line.startsWith('## ')) {
-      const userText = line.slice(3).trim();
-      if (userText) {
-        messages.push({ id: `u-${i}`, role: 'user', content: userText, timestamp: '' });
-      }
-      i++;
-      const aiLines: string[] = [];
-      while (i < lines.length && !lines[i].startsWith('## ')) {
-        aiLines.push(lines[i]);
-        i++;
-      }
-      const aiText = aiLines.join('\n').trim();
-      if (aiText) {
-        messages.push({ id: `a-${i}`, role: 'assistant', content: aiText, timestamp: '' });
-      }
-    } else {
-      i++;
-    }
-  }
-  return messages;
-}
 
 function buildSystemPrompt(thinkName: string, thinkContent: string): string {
   return (
@@ -64,7 +37,7 @@ export interface ChatMediaRef { focus: () => void; }
 export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think }: MediaProps, ref) {
   const initialMessages = useMemo<ChatMessage[]>(() => {
     if (!think || think.ContentType !== 'chat') return [];
-    return parseChatContent(think.Content);
+    return parseChat(think.Content);
   }, [think?.ID]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [messages,  setMessages]  = useState<ChatMessage[]>(initialMessages);

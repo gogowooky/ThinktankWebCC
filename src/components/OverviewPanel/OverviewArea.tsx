@@ -36,6 +36,7 @@ import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
+import { parseThought, serializeThought, serializeChat } from '../../utils/thinkFormat';
 import './OverviewArea.css';
 
 const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
@@ -202,9 +203,24 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     const thought = vault.GetThink(panel.ThoughtID);
     if (!thought || thought.ContentType !== 'thought') return;
     if (thought.IsMetaOnly) await thought.LoadContent();
-    const remaining = thought.getThinkIds().filter(id => !panel.CheckedThoughtIDs.includes(id));
-    const nonIdLines = thought.Content.split('\n').filter(l => !l.startsWith('* '));
-    thought.Content = [...nonIdLines, ...remaining.map(id => `* ${id}`)].join('\n');
+    
+    const parsed = parseThought(thought.Content);
+    const remaining = parsed.ids.filter(id => !panel.CheckedThoughtIDs.includes(id));
+    const newContent = serializeThought({
+      prefix: thought.Content.startsWith('>>') ? '>> ' : '> ',
+      title: parsed.title,
+      searchQuery: parsed.search.query,
+      filterKeyword: parsed.filter.keyword,
+      dates: {
+        createdDate: parsed.filter.createdRange?.dateStr || parsed.search.createdRange?.dateStr,
+        createdRange: parsed.filter.createdRange?.rangeStr || parsed.search.createdRange?.rangeStr,
+        updatedDate: parsed.filter.updatedRange?.dateStr || parsed.search.updatedRange?.dateStr,
+        updatedRange: parsed.filter.updatedRange?.rangeStr || parsed.search.updatedRange?.rangeStr,
+      },
+      ids: remaining,
+    });
+    
+    thought.Content = newContent;
     await thought.SaveContent();
     panel.SetCheckedThoughtIDs([]);
   }, [panel, vault]);
@@ -348,7 +364,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     if (chatMessages.length === 0) return;
     const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
-    const body = chatMessages.map(m => m.role === 'user' ? `## ${m.content}` : m.content).join('\n');
+    const body = serializeChat(chatMessages);
     await vault.CreateChatThink(`${title}\n${body}`, panel.ThoughtID ?? undefined);
     setChatMessages([]);
   }, [chatMessages, vault, panel]);

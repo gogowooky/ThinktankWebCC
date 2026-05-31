@@ -13,6 +13,7 @@ import { TTOverviewPanel } from './TTOverviewPanel';
 import { TTWorkoutPanel } from './TTWorkoutPanel';
 import { TTReThinkPanel } from './TTReThinkPanel';
 import { TTApplicationStatus } from './TTApplicationStatus';
+import { TTUIStateManager } from './TTUIStateManager';
 import type { MediaType } from '../types';
 
 export class TTApplication extends TTUIItem {
@@ -61,6 +62,15 @@ export class TTApplication extends TTUIItem {
     const sharedCheckedState = { checkedIds: [] as string[] };
     this.ThinktankPanel.SharedState = sharedCheckedState;
     this.OverviewPanel.SharedState = sharedCheckedState;
+
+    // TTUIStateManager からのプロパティ更新を購読して、対象パネルを更新する
+    const stateManager = TTUIStateManager.instance;
+    stateManager.addListener('ThinktankPanel.*', () => this.ThinktankPanel.NotifyUpdated());
+    stateManager.addListener('OverviewPanel.*', () => this.OverviewPanel.NotifyUpdated());
+    stateManager.addListener('WorkoutPanel.*', () => this.WorkoutPanel.NotifyUpdated());
+    stateManager.addListener('ReThinkPanel.*', () => this.ReThinkPanel.NotifyUpdated());
+    stateManager.addListener('Application.*', () => this.NotifyUpdated(false));
+    stateManager.addListener('TextEditor.*', () => this.WorkoutPanel.NotifyUpdated());
   }
 
   public static get Instance(): TTApplication {

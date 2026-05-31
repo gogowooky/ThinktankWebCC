@@ -164,3 +164,55 @@ export function sectionToCsv(section: TableSection): string {
     ...section.rows.map(row => row.map(escapeCsv).join(',')),
   ].join('\r\n');
 }
+
+/**
+ * 指定したキー列の値に一致するデータ行の、特定列の値を更新し、新しいコンテンツ文字列を返す。
+ * コメントや空行の構造はそのまま維持される。
+ *
+ * @param content 元のテーブルコンテンツ文字列
+ * @param keyColumnName 検索キーとする列名（例: "key"）
+ * @param updates キー値と「列名: 新しい値」のマッピング
+ *                例: { "TextEditor.LineNumbers.IsVisible": { "current": "true" } }
+ * @param isConstKeyed 一部の行が "const" 等で固定されている場合に更新をスキップする条件（省略可）
+ */
+export function updateTableContent(
+  content: string,
+  keyColumnName: string,
+  updates: Record<string, Record<string, string>>,
+  isConstKeyed?: (key: string) => boolean,
+): string {
+  const sections = parseTableContent(content);
+  const section = sections[0];
+  if (!section) return content;
+
+  const keyIdx = section.columns.findIndex(c => c === keyColumnName);
+  if (keyIdx < 0) return content;
+
+  // 各データ行について更新処理を実行
+  const newRows = section.rows.map((row) => {
+    const rowKey = row[keyIdx]?.trim() ?? '';
+    if (!rowKey) return row;
+    
+    // 定数行などで更新をスキップする場合
+    if (isConstKeyed && isConstKeyed(rowKey)) return row;
+
+    const rowUpdates = updates[rowKey];
+    if (!rowUpdates) return row;
+
+    const newRow = [...row];
+    for (const [colName, newVal] of Object.entries(rowUpdates)) {
+      // current 列または value 列（後方互換）のインデックスを探して更新
+      let colIdx = section.columns.findIndex(c => c === colName);
+      if (colIdx < 0 && colName === 'current') {
+        // current が見つからない場合は value を探す
+        colIdx = section.columns.findIndex(c => c === 'value');
+      }
+      if (colIdx >= 0) {
+        newRow[colIdx] = newVal;
+      }
+    }
+    return newRow;
+  });
+
+  return tableSectionToContent(section.title, { ...section, rows: newRows });
+}

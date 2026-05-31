@@ -14,6 +14,7 @@ import { ReThinkChat } from './ReThinkChat';
 import type { ReThinkChatRef } from './ReThinkChat';
 import { ReThinkMenuRibbon } from './ReThinkMenuRibbon';
 import type { ReThinkViewMode } from './ReThinkRibbon';
+import { serializeChat } from '../../utils/thinkFormat';
 import '../../components/Layout/MenuRibbon.css';
 import './ReThinkArea.css';
 
@@ -66,7 +67,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
     if (msgs.length === 0) return;
     const firstUser = msgs.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
-    const body  = msgs.map(m => m.role === 'user' ? `## ${m.content}` : m.content).join('\n');
+    const body  = serializeChat(msgs);
     await vault.CreateChatThink(`${title}\n${body}`, panel.LinkedThoughtID ?? undefined);
     panel.ClearChat();
   }, [panel, vault]);

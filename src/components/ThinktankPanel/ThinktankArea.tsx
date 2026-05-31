@@ -29,6 +29,7 @@ import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
+import { serializeChat } from '../../utils/thinkFormat';
 import './ThinktankArea.css';
 
 import type { LayoutMode } from '../Layout/AppLayout';
@@ -277,7 +278,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     if (chatMessages.length === 0) return;
     const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
-    const body = chatMessages.map(m => m.role === 'user' ? `## ${m.content}` : m.content).join('\n');
+    const body = serializeChat(chatMessages);
     await vault.CreateChatThink(`${title}\n${body}`);
     setChatMessages([]);
   }, [chatMessages, vault]);

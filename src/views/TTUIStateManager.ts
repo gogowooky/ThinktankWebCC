@@ -24,7 +24,7 @@
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
-import { parseTableContent, tableSectionToContent } from '../utils/tableFormat';
+import { parseTableContent, tableSectionToContent, updateTableContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
 import type { WorkoutViewMode, SectionStyle, HighlightStyle } from './TTWorkoutPanel';
@@ -32,10 +32,40 @@ import { SECTION_STYLE_DEFAULTS, HIGHLIGHT_STYLE_DEFAULTS } from './TTWorkoutPan
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 
+// ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
+
+export type ConfigKey =
+  | 'ThinktankPanel.IsAreaOpen'
+  | 'ThinktankPanel.ViewMode'
+  | 'OverviewPanel.IsAreaOpen'
+  | 'OverviewPanel.ViewMode'
+  | 'WorkoutPanel.IsAreaOpen'
+  | 'WorkoutPanel.ViewMode'
+  | 'TextEditor.LineNumbers.IsVisible'
+  | 'TextEditor.WordWrap.IsVisible'
+  | 'TextEditor.Minimap.IsVisible'
+  | 'TextEditor.FullWidthSpace.IsVisible'
+  | 'TextEditor.UnicodeHighlight.IsVisible'
+  | 'TextEditor.BracketPairColorization.IsVisible'
+  | 'TextEditor.Color.Background'
+  | 'TextEditor.Color.Text'
+  | 'TextEditor.Color.Selection'
+  | 'TextEditor.Color.Occurrence'
+  | 'TextEditor.Style.Section'
+  | 'WorkoutPanel.Style.Highlight'
+  | 'WorkoutPanel.ToolBarMode'
+  | 'WorkoutPanel.Highlight.KeyWord'
+  | 'Application.FocusedColumn'
+  | 'ReThinkPanel.IsAreaOpen'
+  | 'ReThinkPanel.ViewMode'
+  | string; // プリセットキーなどの動的拡張を許容
+
+export type ConfigListener = (key: ConfigKey, value: string) => void;
+
 // ── PropDef: serialize() が返すテーブル行の型 ────────────────────────────────
 
 interface PropDef {
-  key:         string;
+  key:         ConfigKey;
   current:     string;
   default:     string;
   type:        'boolean' | 'string' | 'color' | 'json';
@@ -113,7 +143,7 @@ function makeHighlightPresetSpec(n: number): PropSpec {
  * UI設定の全項目定義。新規項目の追加はここにオブジェクトを1つ追記するだけでよい。
  * _getProps() / _applyProp() はこの定義を参照するため個別修正不要。
  */
-const PROP_SPECS: Record<string, PropSpec> = {
+const PROP_SPECS: Record<ConfigKey, PropSpec> = {
 
   // ── ThinktankPanel ──────────────────────────────────────────────────────
   'ThinktankPanel.IsAreaOpen': {
@@ -353,6 +383,7 @@ export class TTUIStateManager {
   private _undoStack: string[] = [];
   private _redoStack: string[] = [];
   private _vaultThink: TTThink | null = null;
+  private _listeners = new Map<ConfigKey, Set<ConfigListener>>();
 
   static get instance(): TTUIStateManager {
     if (!TTUIStateManager._instance) {
@@ -414,14 +445,14 @@ export class TTUIStateManager {
   }
 
   /** ショートカット等からの単一プロパティ変更 */
-  applyProperty(key: string, value: string): void {
+  applyProperty(key: ConfigKey, value: string): void {
     if (!this._app) return;
     this._pushUndo();
     this._applying = true;
     try {
       this._applyProp(key, value);
-      const panel = PROP_SPECS[key]?.panel ?? (key.split('.')[0] as PanelKey);
-      this._notifyPanel(this._app, panel);
+      const newVal = PROP_SPECS[key]?.get(this._app) ?? value;
+      this._emit(key, newVal);
       this._app.NotifyUpdated(false);
     } finally {
       this._applying = false;
@@ -489,7 +520,7 @@ export class TTUIStateManager {
    * candidates 正規表現で値を検証し、toggle/next/prev の特別コマンドを処理する。
    * NotifyUpdated() は呼ばない（_applyContent がまとめて呼ぶ）。
    */
-  private _applyProp(key: string, value: string): void {
+  private _applyProp(key: ConfigKey, value: string): void {
     if (!this._app) return;
     const spec = PROP_SPECS[key];
     if (!spec) return;
@@ -546,7 +577,7 @@ export class TTUIStateManager {
       const applyIdx = curIdx >= 0 ? curIdx : valIdx; // current 優先、旧 value にフォールバック
       if (keyIdx < 0 || applyIdx < 0) return;
 
-      const dirtyPanels = new Set<PanelKey>();
+      const updatedKeys = new Set<ConfigKey>();
 
       // 1st pass: const エントリ → default 列の値を適用（ファイルで編集可能なプリセットデータを読み込む）
       for (const row of section.rows) {
@@ -555,7 +586,7 @@ export class TTUIStateManager {
         if (!spec?.isConst) continue;
         const defaultVal = defIdx >= 0 ? (row[defIdx] ?? spec.default) : spec.default;
         this._applyProp(key, defaultVal);
-        dirtyPanels.add(spec.panel);
+        updatedKeys.add(key);
       }
 
       // 2nd pass: 通常エントリ → current 列の値を適用
@@ -566,12 +597,15 @@ export class TTUIStateManager {
         const spec = PROP_SPECS[key];
         if (spec?.isConst) continue;
         this._applyProp(key, val);
-        if (spec?.panel) dirtyPanels.add(spec.panel);
+        updatedKeys.add(key);
       }
 
-      const app = this._app;
-      dirtyPanels.forEach(panel => this._notifyPanel(app, panel));
-      if (dirtyPanels.size > 0) app.NotifyUpdated(false);
+      // 変更イベントを発火
+      for (const key of updatedKeys) {
+        const val = PROP_SPECS[key]?.get(this._app) ?? '';
+        this._emit(key, val);
+      }
+      this._app.NotifyUpdated(false);
     } finally {
       this._applying = false;
     }
@@ -585,27 +619,18 @@ export class TTUIStateManager {
   private _serializePreservingStructure(app: TTApplication): string {
     const savedContent = this._vaultThink?.Content;
     if (savedContent) {
-      const sections = parseTableContent(savedContent);
-      const section = sections[0];
-      if (section) {
-        const keyIdx = section.columns.findIndex(c => c === 'key');
-        const curIdx = section.columns.findIndex(c => c === 'current');
-        const valIdx = section.columns.findIndex(c => c === 'value'); // 旧列フォールバック
-        const writeIdx = curIdx >= 0 ? curIdx : valIdx;
-        if (keyIdx >= 0 && writeIdx >= 0) {
-          const newRows = section.rows.map(row => {
-            const key  = row[keyIdx]?.trim() ?? '';
-            const spec = PROP_SPECS[key];
-            if (!spec) return row;
-            if (spec.isConst) return row; // const エントリ: current 列を "const" のまま維持
-            const newVal = spec.get(app);
-            const newRow = [...row];
-            newRow[writeIdx] = newVal;
-            return newRow;
-          });
-          return tableSectionToContent(section.title, { ...section, rows: newRows });
+      const updates: Record<string, Record<string, string>> = {};
+      for (const [key, spec] of Object.entries(PROP_SPECS)) {
+        if (!spec.isConst) {
+          updates[key] = { current: spec.get(app) };
         }
       }
+      return updateTableContent(
+        savedContent,
+        'key',
+        updates,
+        (key) => !!PROP_SPECS[key]?.isConst
+      );
     }
     return this.serialize(app);
   }
@@ -633,15 +658,32 @@ export class TTUIStateManager {
     return lines.join('\n');
   }
 
-  /** パネル識別子に対応する NotifyUpdated() を呼ぶ */
-  private _notifyPanel(app: TTApplication, panel: PanelKey): void {
-    switch (panel) {
-      case 'ThinktankPanel': app.ThinktankPanel.NotifyUpdated(); break;
-      case 'OverviewPanel':  app.OverviewPanel.NotifyUpdated();  break;
-      case 'WorkoutPanel':   app.WorkoutPanel.NotifyUpdated();   break;
-      case 'ReThinkPanel':   app.ReThinkPanel.NotifyUpdated();   break;
-      case 'Application':    /* app.NotifyUpdated(false) is called by applyProperty */ break;
+  /** 指定したキーに対するプロパティ変更イベントを購読する */
+  addListener(key: ConfigKey, listener: ConfigListener): void {
+    if (!this._listeners.has(key)) {
+      this._listeners.set(key, new Set());
     }
+    this._listeners.get(key)!.add(listener);
+  }
+
+  /** 指定したキーに対するプロパティ変更イベントの購読を解除する */
+  removeListener(key: ConfigKey, listener: ConfigListener): void {
+    this._listeners.get(key)?.delete(listener);
+  }
+
+  /** イベントをディスパッチする */
+  private _emit(key: ConfigKey, value: string): void {
+    // 特定キーのリスナー
+    this._listeners.get(key)?.forEach(listener => listener(key, value));
+
+    // パネルカテゴリ全体（例: "ThinktankPanel.*"）
+    const category = key.split('.')[0];
+    if (category) {
+      this._listeners.get(`${category}.*`)?.forEach(listener => listener(key, value));
+    }
+
+    // グローバルリスナー
+    this._listeners.get('*')?.forEach(listener => listener(key, value));
   }
 
   private _pushUndo(): void {
