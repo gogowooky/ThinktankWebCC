@@ -195,3 +195,80 @@ CSVをベースにした独自形式のデータです。
     [TTShortcutManager.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTShortcutManager.ts) は、現在アクティブなフォーカス（`getFocusName()` 経由）および ExMode（一時的なモディファイアモード）と照合して、一致するアクションをディスパッチします。
 *   **入力フォームでの競合制御**:
     `input`, `textarea`, `select` および `contenteditable` 要素にフォーカスがある間は、グローバルショートカットの処理を自動的に無効化（`_shouldHandle`）し、Monaco Editor 固有のアクション（アウトライン移動等）のみをバイパスして安全に実行するロジックになっています。
+
+---
+
+## 付録 1. Status名とその説明
+
+アプリケーションの状態変数（UI設定 `__tt_ui_state__` で管理される項目）の一覧です。
+
+| ステータス名（設定キー） | 担当パネル | データ型 / 選択肢 | 既定値 | 説明 |
+| :--- | :--- | :--- | :--- | :--- |
+| `ThinktankPanel.IsAreaOpen` | `ThinktankPanel` | `boolean` (true / false) | `true` | 左パネル（ThinktankPanel）の開閉状態 |
+| `ThinktankPanel.ViewMode` | `ThinktankPanel` | `string` (filter / chat / settings) | `filter` | 左パネルの表示モード |
+| `OverviewPanel.IsAreaOpen` | `OverviewPanel` | `boolean` (true / false) | `false` | 中央左パネル（OverviewPanel）の開閉状態 |
+| `OverviewPanel.ViewMode` | `OverviewPanel` | `string` (datagrid / graph / chat / settings) | `datagrid` | 中央左パネルの表示モード |
+| `WorkoutPanel.IsAreaOpen` | `WorkoutPanel` | `boolean` (true / false) | `true` | 中央右パネル（WorkoutPanel）の開閉状態 |
+| `WorkoutPanel.ViewMode` | `WorkoutPanel` | `string` (workout / texteditor / markdown / datagrid / card / graph) | `workout` | 中央右パネルの表示モード |
+| `TextEditor.LineNumbers.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでの行番号の表示・非表示 |
+| `TextEditor.WordWrap.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `true` | エディタでの折り返し表示の有効・無効 |
+| `TextEditor.Minimap.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでのミニマップの表示・非表示 |
+| `TextEditor.FullWidthSpace.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでの全角スペース可視化の有効・無効 |
+| `TextEditor.UnicodeHighlight.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでのUnicode特殊文字強調の有効・無効 |
+| `TextEditor.BracketPairColorization.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `true` | エディタでの対応する括弧ペアの色分け表示 |
+| `TextEditor.Color.Background` | `WorkoutPanel` | `color` (HEXカラー) | `#f5f5f5` | エディタの背景色 |
+| `TextEditor.Color.Text` | `WorkoutPanel` | `color` (HEXカラー) | `#1e1e1e` | エディタのフォント文字色 |
+| `TextEditor.Color.Selection` | `WorkoutPanel` | `color` (HEXカラー) | `#c6e6c6ff` | エディタのテキスト選択範囲の背景色 |
+| `TextEditor.Color.Occurrence` | `WorkoutPanel` | `color` (HEXカラー) | `#aac6aaff` | エディタで選択した語と同一の単語の強調色 |
+| `TextEditor.Style.Section` | `WorkoutPanel` | `string` (Preset1〜5) | `Preset1` | セクション（見出し）の表示装飾スタイルの選択 |
+| `WorkoutPanel.Style.Highlight` | `WorkoutPanel` | `string` (Preset1〜5) | `Preset1` | ハイライトキーワードの表示装飾スタイルの選択 |
+| `WorkoutPanel.ToolBarMode` | `WorkoutPanel` | `string` (Status / Highlighter / KeyAction / Command / Translate / Reminder / Copyright) | `Copyright` | ワークアウトパネル下部ツールバーの表示コンテンツ切り替え |
+| `WorkoutPanel.Highlight.KeyWord` | `WorkoutPanel` | `string` (正規表現対応) | `(空)` | エディタ内で強調表示する追加キーワード |
+| `Application.FocusedColumn` | `Application` | `string` (Thinktank / Overview / WorkoutSetting / ReThink) | `Thinktank` | 現在キーボード入力フォーカスがある対象パネル |
+| `ReThinkPanel.IsAreaOpen` | `ReThinkPanel` | `boolean` (true / false) | `true` | 右パネル（ReThinkPanel）の開閉状態 |
+| `ReThinkPanel.ViewMode` | `ReThinkPanel` | `string` (chat / settings) | `chat` | 右パネルの表示モード |
+
+---
+
+## 付録 2. Action名とその機能の説明
+
+アプリケーション内で実行可能な登録済みアクション（`TTActions`）の一覧です。
+
+| アクションID (ActionID) | 分類 | アクションの機能と説明 |
+| :--- | :--- | :--- |
+| `FocusedPanel.ToggleAreaVisibility` | パネル制御 | 現在フォーカスのあるパネルを開閉（表示/非表示をトグル）します。 |
+| `FocusedPanel.SetViewModePrev` | パネル制御 | 現在フォーカスのあるパネルの表示モード（ViewMode）を1つ前に戻します。 |
+| `FocusedPanel.SetViewModeNext` | パネル制御 | 現在フォーカスのあるパネルの表示モード（ViewMode）を1つ次に進めます。 |
+| `TextEditor.Folding.ForwardVisible` | エディタ移動 | エディタ内で、現在表示（展開）されている見出し行を上方向に検索し、見つかった行へカーソルを移動します。 |
+| `TextEditor.Folding.BackwardVisible` | エディタ移動 | エディタ内で、現在表示（展開）されている見出し行を下方向に検索し、見つかった行へカーソルを移動します。 |
+| `TextEditor.Folding.OpenEachLevel` | エディタ折畳 | カーソルが配置されている見出し（Foldingスコープ）を段階的に展開します。 |
+| `TextEditor.Folding.CloseEachLevel` | エディタ折畳 | カーソルが配置されている見出し（Foldingスコープ）を段階的に折りたたみます。 |
+
+---
+
+## 付録 3. キーバインディング表
+
+アプリケーション起動時にデフォルトで適用されるキーバインディングの一覧です。これらの定義は `__tt_shortcuts__`（Keyboard Shortcuts）テーブルを編集することで、ユーザーが独自に上書きまたは新規追加することが可能です。
+
+| フォーカス範囲 (`focus`) | モード制限 (`exmode`) | ショートカットキー (`key`) | 実行アクション (`action`) | アクション内容の説明 |
+| :--- | :--- | :--- | :--- | :--- |
+| `*` (全体) | (なし) | `ctrl+shift+z` | `ui:undo` | UI設定（フォント色や開閉状態等）の変更履歴を1つ戻します。 |
+| `*` (全体) | (なし) | `ctrl+shift+y` | `ui:redo` | UI設定（フォント色や開閉状態等）の変更履歴を1つ進めます（やり直し）。 |
+| `*` (全体) | (なし) | `ctrl+shift+l` | `TextEditor.LineNumbers.IsVisible:toggle` | テキストエディタの行番号表示のトグル切り替え。 |
+| `*` (全体) | (なし) | `ctrl+shift+w` | `TextEditor.WordWrap.IsVisible:toggle` | テキストエディタの右端折り返し表示のトグル切り替え。 |
+| `*` (全体) | (なし) | `ctrl+shift+m` | `TextEditor.Minimap.IsVisible:toggle` | テキストエディタのミニマップ表示のトグル切り替え。 |
+| `*` (全体) | `ExPanel` | `o` | `FocusedPanel.ToggleAreaVisibility` | フォーカスしているパネルの開閉状態をトグル切り替え。 |
+| `*` (全体) | `ExPanel` | `p` | `FocusedPanel.SetViewModePrev` | フォーカスしているパネルの表示モードを1つ前に戻します。 |
+| `*` (全体) | `ExPanel` | `n` | `FocusedPanel.SetViewModeNext` | フォーカスしているパネルの表示モードを1つ次に進めます。 |
+| `*TextEditor` | (なし) | `alt+arrowup` | `TextEditor.Folding.ForwardVisible` | 現在エディタで表示されている見出し行を上方向に探索して移動。 |
+| `*TextEditor` | (なし) | `alt+arrowdown` | `TextEditor.Folding.BackwardVisible` | 現在エディタで表示されている見出し行を下方向に探索して移動。 |
+| `*TextEditor` | (なし) | `alt+arrowright` | `TextEditor.Folding.OpenEachLevel` | カーソル位置の見出し階層を段階的に展開します。 |
+| `*TextEditor` | (なし) | `alt+arrowleft` | `TextEditor.Folding.CloseEachLevel` | カーソル位置の見出し階層を段階的に折りたたみます。 |
+
+> [!NOTE]
+> **アクションの指定形式について**
+> キーバインディング設定 (`action` 列) には以下の書式を使用できます。
+> - **ActionIDのみ**: 登録された JavaScript アクションを実行します（例: `FocusedPanel.ToggleAreaVisibility`）。
+> - **`{Status名}:{設定値}`**: UI状態変数の値を直接変更します（例: `TextEditor.LineNumbers.IsVisible:toggle` で表示/非表示を反転）。
+> - **`ui:undo` / `ui:redo`**: UI状態設定の履歴を取り消し、またはやり直します。
+> - **`ExMode:{モード名}`**: 特定の一時キーモディファイア（ExMode）をアクティブにします。
