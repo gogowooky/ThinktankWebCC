@@ -26,7 +26,7 @@
 2.  ブラウザ版の場合は、指定されたURLを開きます。
 3.  起動すると、以下の**4つのパネル**が横並びになったUIが表示されます。
 
-### 2.2 4パネルUIの構成
+### 2.2 4パネルUI of 構成
 ```
 ┌────────────────┬────────────────┬────────────────────────────────┬────────────────┐
 │  Thinktank     │  Overview      │        Workout Panel           │  ReThink       │
@@ -85,7 +85,9 @@
 
 ---
 
-### 3.2 Thinkファイルのフォーマット形式
+## 4. 技術詳細
+
+### 4.1 Thinkファイルのフォーマット形式
 
 保存されるデータアイテム（`TTThink`）のテキスト表現仕様です。
 
@@ -112,6 +114,7 @@
 *   `>` で始まる行 : フィルターパラメータ（Keyword、作成日、更新日）
 *   `>>` で始まる行 : 全文検索パラメータ（検索語、作成日、更新日）
 *   `*` で始まる行 : thoughtに含まれる個別ThinkのIDリスト（1行につき1件）
+*   パース・シリアライズロジックは [thinkFormat.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/utils/thinkFormat.ts) の `parseThought()` および `serializeThought()` に一元化されています。
 
 #### ③ chat (AI対話記録形式)
 AIアシスタントとの会話ログを記録するフォーマットです。
@@ -125,6 +128,7 @@ AIアシスタントとの会話ログを記録するフォーマットです。
 ```
 *   `## ` で始まる行 : ユーザーの発言
 *   それ以外の行 : AIの応答メッセージ（Markdown対応）
+*   パース・シリアライズロジックは [thinkFormat.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/utils/thinkFormat.ts) の `parseChat()` および `serializeChat()` に一元化されています。
 
 #### ④ links (リンク集形式)
 外部URLやローカルファイルパスのリンクをまとめて管理するフォーマットです。
@@ -134,6 +138,7 @@ AIアシスタントとの会話ログを記録するフォーマットです。
 * [[リンクのラベル_2]]([URL_2])
 ```
 *   `* ` で始まる行 : `* [ラベル](URL)` のMarkdownリンク形式
+*   パース・シリアライズロジックは [thinkFormat.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/utils/thinkFormat.ts) の `parseLinks()`, `serializeLinks()`, `appendLinkToContent()` に一元化されています。
 
 #### ⑤ table (表形式データ)
 CSVをベースにした独自形式のデータです。
@@ -147,17 +152,46 @@ CSVをベースにした独自形式のデータです。
 *   `>` で始まる最初の行 : 列定義ヘッダー（CSV形式）
 *   データ行 : 通常のCSV形式の行
 *   `#` または `;` で始まる行 : コメント行（データとして読み込まれませんが、ファイル構造を維持したまま保存されます）
+*   パース・シリアライズロジックは [tableFormat.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/utils/tableFormat.ts) の `parseTableContent()` および `tableSectionToContent()` が処理を担います。
 
 ---
 
-### 3.3 UI設定とキーバインディングの永続化
+### 4.2 UI設定の同期と構造維持更新
 
-#### UI設定の同期 (`__tt_ui_state__`)
 *   アプリの表示/非表示状態やテキストエディタのカラーテーマ等の設定は、`__tt_ui_state__` というシステムThink（table種別）で管理されています。
-*   このテーブル設定は `localStorage` にキャッシュされ、高速起動を実現しています。
-*   値の更新時、設定ファイル内の手書きのコメント行や構造を壊さないように、`current` 列のみを部分更新する「構造維持シリアライズ」が適用されます。
+*   この設定値は `localStorage` にキャッシュされ、高速起動を実現しています。
+*   保存時には、ユーザーがエディタ（Monaco Editor）等で手書きしたコメント行や空行のファイル構造を壊さないように、[tableFormat.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/utils/tableFormat.ts) の `updateTableContent()` 汎用関数を利用して、`current` 列（または後方互換用の `value` 列）のみを部分更新する**構造維持シリアライズ**が適用されます。
 
-#### キーバインディング管理 (`__tt_shortcuts__`)
-*   ショートカットキーの定義は `__tt_shortcuts__` というシステムThink（table種別）で管理されています。
-*   モディファイアキー（`ctrl`, `alt`, `shift`, `meta`）の組み合わせを検知してアクションを起動します。
-*   一時的にモードを固定する **ExMode**（例：オプションモードなど）を利用することで、ワンアクションで複数の操作を流れるように実行できます。
+---
+
+### 4.3 Status値（状態変数）の管理
+
+*   **型安全な設定キーの定義**:
+    アプリ設定項目（`PROP_SPECS`）のキーは `ConfigKey` リテラル型として厳密に定義され、存在しない設定項目に対するタイポ等のバグをコンパイル段階で検出します。
+*   **Pub/Sub通知モデル**:
+    [TTUIStateManager.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTUIStateManager.ts) から特定のパネルクラスに更新通知を強制するハードコードを排除し、`addListener()` / `removeListener()` / `_emit()` による自律的なイベントエミッター方式へ移行しました。
+*   **一括イベント購読**:
+    [TTApplication.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTApplication.ts) の初期化（コンストラクタ）において、各パネル設定の変更イベント購読を一括定義し、状態変数の更新が適切なコンポーネントの再描画（`NotifyUpdated()`）に自動伝搬する構成をとっています。
+
+---
+
+### 4.4 アクションの管理
+
+*   **型安全なActionID**:
+    ショートカット等からキックされるアクションIDは `ActionID` リテラル型として定義され、型チェックの恩恵を受けられます。
+*   **同期・非同期のハイブリッド実行**:
+    [TTActions.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTActions.ts) は、非同期処理（Completion が `Promise` を返す）と同期処理の両方をシームレスにサポートします。
+    *   非同期アクション実行時は、ステータスバーに `[実行中...]` が即座に表示され、完了（resolve）またはエラー（reject）時に自動的に状態表示が更新されます。
+*   **メタデータと一覧取得**:
+    アクション定義（`TTAction`）には `Description` (説明) や `Category` (分類) が定義でき、`TTActions.GetRegisteredActions()` を用いて登録されているアクション一覧とメタデータを動的に取得可能です。
+
+---
+
+### 4.5 キーバインディングの管理
+
+*   **キーイベント解析の分離**:
+    キーボードイベントやマウス/ホイールイベントから「`ctrl+shift+z`」などの文字列に変換・正規化するロジックや、複数キー定義を分割する処理は [keyboardUtils.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/utils/keyboardUtils.ts) に完全に分離されています。
+*   **フォーカス状態に応じたディスパッチ**:
+    [TTShortcutManager.ts](file:///c:/Users/gogow/Documents/ThinktankWebCC/src/views/TTShortcutManager.ts) は、現在アクティブなフォーカス（`getFocusName()` 経由）および ExMode（一時的なモディファイアモード）と照合して、一致するアクションをディスパッチします。
+*   **入力フォームでの競合制御**:
+    `input`, `textarea`, `select` および `contenteditable` 要素にフォーカスがある間は、グローバルショートカットの処理を自動的に無効化（`_shouldHandle`）し、Monaco Editor 固有のアクション（アウトライン移動等）のみをバイパスして安全に実行するロジックになっています。
