@@ -1,5 +1,4 @@
 {
-  "Instructions for AI Agent": "commit*の項目は適宜更新。versionは3桁目のみ+1する。",
   "appName": "Thinktank",
   "version": "1.0.9",
   "copyright": {

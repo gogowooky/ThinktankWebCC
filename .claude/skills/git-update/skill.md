@@ -3,6 +3,8 @@ name: git-update
 description: GitHubに更新分を登録する
 ---
 
+確認なしで自律的に進めること。
+
 Githubにコミットする
 
 docs/copyright.txtを以下に従って更新する
