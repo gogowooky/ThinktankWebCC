@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "eb48369",
-  "commitDateTime": "2026-06-02-080545",
-  "commitMessage": "chore: add git-update skill and update allowed bash commands Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+  "commitId": "f9df1da",
+  "commitDateTime": "2026-06-02-081628",
+  "commitMessage": "chore: add autonomous execution instruction to git-update skill and claude.md Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 }
