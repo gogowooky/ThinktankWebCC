@@ -1,9 +1,9 @@
 ---
 name: git-update
-description: GitHubに更新分を登録する
+description: GitHubに更新分を登録し、その際version情報を更新する。
 ---
 
-確認なしで自律的に進めること。
+以下は確認なしで自律的に進めること。
 
 Githubにコミットする
 

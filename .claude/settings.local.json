@@ -120,7 +120,13 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(node --input-type=module)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankWebCC\\\\src\" -Recurse -Filter \"*.tsx\" -o Name)",
-      "Bash(node -e \"const p=require\\('./package.json'\\); const deps={...p.dependencies,...p.devDependencies}; console.log\\('monaco-editor:', deps['monaco-editor']\\); console.log\\('@monaco-editor/react:', deps['@monaco-editor/react']\\);\")"
+      "Bash(node -e \"const p=require\\('./package.json'\\); const deps={...p.dependencies,...p.devDependencies}; console.log\\('monaco-editor:', deps['monaco-editor']\\); console.log\\('@monaco-editor/react:', deps['@monaco-editor/react']\\);\")",
+      "mcp__e996586d-c83a-422d-8d27-cd9ba3087a74__search_entities",
+      "mcp__5c11760e-caf9-4c2a-8deb-4e78b914496e__search_articles",
+      "mcp__e996586d-c83a-422d-8d27-cd9ba3087a74__query_open_targets_graphql",
+      "mcp__5c11760e-caf9-4c2a-8deb-4e78b914496e__get_article_metadata",
+      "Bash(node_modules/.bin/electron --version)",
+      "Bash(npx electron *)"
     ]
   }
 }

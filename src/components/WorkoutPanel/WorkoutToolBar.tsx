@@ -14,7 +14,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTApplication } from '../../views/TTApplication';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
-import copywriteRaw from '../../../docs/copyright.txt?raw';
+import copywriteRaw from '../../../copyright.txt?raw';
 import './WorkoutToolBar.css';
 
 const _cw = JSON.parse(copywriteRaw);
@@ -200,13 +200,11 @@ export function WorkoutToolBar({ panel }: Props) {
   }, [mode]);
 
   const handleAuthorToggle = useCallback(() => {
-    setAuthorState(s => {
-      const next = s === 'off' ? 'banner' : 'off';
-      panel.ToolBarMode = next !== 'off' ? 'Copyright' : MODE_TO_TOOLBAR[mode] ?? 'Highlighter';
-      panel.NotifyUpdated(false);
-      return next;
-    });
-  }, [mode, panel]);
+    const next: AuthorState = authorState === 'off' ? 'banner' : 'off';
+    panel.ToolBarMode = next !== 'off' ? 'Copyright' : MODE_TO_TOOLBAR[mode] ?? 'Highlighter';
+    panel.NotifyUpdated(false);
+    setAuthorState(next);
+  }, [authorState, mode, panel]);
 
   const handleBannerClick = useCallback(() => {
     setAuthorState('static');
