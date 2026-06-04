@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "f9df1da",
-  "commitDateTime": "2026-06-02-081628",
-  "commitMessage": "chore: add autonomous execution instruction to git-update skill and claude.md Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+  "commitId": "fcfc2ae",
+  "commitDateTime": "2026-06-04-231106",
+  "commitMessage": "chore: reorganize docs, update CLAUDE.md, WorkoutToolBar, and settings Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 }
