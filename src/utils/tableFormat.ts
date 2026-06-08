@@ -110,6 +110,23 @@ export function tableSectionToContent(
 ): string {
   const order = columnOrder ?? section.columns.map((_, i) => i);
 
+  // 元のヘッダー行から各列の表示幅（パディング）を解析する
+  const colWidths: number[] = [];
+  const columnsLine = section.rawLines?.find(r => r.type === 'columns');
+  if (columnsLine) {
+    // 先頭の '>' を除いてパース（スペース維持）
+    const headerTokens = parseCsvLine(columnsLine.text.slice(1));
+    for (let i = 0; i < section.columns.length; i++) {
+      const token = headerTokens[i] ?? '';
+      if (i === 0) {
+        // 1列目は先頭のスペース（>との間のスペース）を除いた幅を有効幅とする
+        colWidths[i] = token.trimStart().length;
+      } else {
+        colWidths[i] = token.length;
+      }
+    }
+  }
+
   // rawLines がない（XLSX インポート等）場合はシンプルに生成
   if (!section.rawLines || section.rawLines.length === 0) {
     let out = title + '\n';
@@ -132,12 +149,33 @@ export function tableSectionToContent(
 
   for (const raw of section.rawLines) {
     switch (raw.type) {
-      case 'columns':
-        result += '> ' + order.map(i => escapeCsv(section.columns[i] ?? '')).join(',') + '\n';
+      case 'columns': {
+        const lineParts = order.map((origIdx, orderIdx) => {
+          const val = escapeCsv(section.columns[origIdx] ?? '');
+          if (orderIdx < order.length - 1) {
+            const targetWidth = colWidths[origIdx] ?? 0;
+            if (val.length < targetWidth) {
+              return val.padEnd(targetWidth);
+            }
+          }
+          return val;
+        });
+        result += '> ' + lineParts.join(',') + '\n';
         break;
+      }
       case 'data': {
         const row = section.rows[raw.rowIdx!] ?? [];
-        result += order.map(i => escapeCsv(row[i] ?? '')).join(',') + '\n';
+        const lineParts = order.map((origIdx, orderIdx) => {
+          const val = escapeCsv(row[origIdx] ?? '');
+          if (orderIdx < order.length - 1) {
+            const targetWidth = colWidths[origIdx] ?? 0;
+            if (val.length < targetWidth) {
+              return val.padEnd(targetWidth);
+            }
+          }
+          return val;
+        });
+        result += lineParts.join(',') + '\n';
         break;
       }
       default:
