@@ -1,6 +1,6 @@
-/* ThinktankRibbon.css */
+/* ThinktankTabBar.css */
 
-.ribbon-icon-btn {
+.tab-icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,23 +12,23 @@
   flex-shrink: 0;
 }
 
-.ribbon-icon-btn:hover {
+.tab-icon-btn:hover {
   background: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* アクティブ状態 */
-.ribbon-icon-btn--active {
+.tab-icon-btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
 /* 同期インジケーター状態別カラー */
-.ribbon-icon-btn--synced  { color: rgba(158, 206, 106, 0.75); }
-.ribbon-icon-btn--syncing { color: rgba(122, 162, 247, 0.9);  }
-.ribbon-icon-btn--pending { color: rgba(224, 175, 104, 0.85); }
-.ribbon-icon-btn--error   { color: rgba(247, 118, 142, 0.9);  }
-.ribbon-icon-btn--offline { color: rgba(255, 255, 255, 0.3);  }
+.tab-icon-btn--synced  { color: rgba(158, 206, 106, 0.75); }
+.tab-icon-btn--syncing { color: rgba(122, 162, 247, 0.9);  }
+.tab-icon-btn--pending { color: rgba(224, 175, 104, 0.85); }
+.tab-icon-btn--error   { color: rgba(247, 118, 142, 0.9);  }
+.tab-icon-btn--offline { color: rgba(255, 255, 255, 0.3);  }
 
 /* 回転アニメーション（同期中） */
 @keyframes spin {

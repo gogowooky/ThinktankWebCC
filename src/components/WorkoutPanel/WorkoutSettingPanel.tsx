@@ -19,8 +19,8 @@ import {
   Save,
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
-import type { SettingsType } from './WorkoutRibbon';
-import { WORKOUT_SETTINGS } from './WorkoutRibbon';
+import type { SettingsType } from './WorkoutTabBar';
+import { WORKOUT_SETTINGS } from './WorkoutTabBar';
 import './WorkoutSettingPanel.css';
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────

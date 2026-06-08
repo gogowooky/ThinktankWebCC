@@ -1,5 +1,5 @@
 /**
- * ThinktankRibbon.tsx
+ * ThinktankTabBar.tsx
  * ThinktankPanel の縦タブバー（旧Ribbon）ボタン群。
  *
  * 上部: Think一覧（検索・Thought一覧を統合）/ AI相談
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
-import './ThinktankRibbon.css';
+import './ThinktankTabBar.css';
 
 interface Props {
   isOpen: boolean;
@@ -37,7 +37,7 @@ const MODE_BUTTONS: {
 
 // ── コンポーネント ──────────────────────────────────────────────────────
 
-export function ThinktankRibbon({
+export function ThinktankTabBar({
   isOpen,
   onToggle,
   viewMode,
@@ -58,7 +58,7 @@ export function ThinktankRibbon({
         <button
           key={m}
           id={id}
-          className={`ribbon-icon-btn${viewMode === m ? ' ribbon-icon-btn--active' : ''}`}
+          className={`tab-icon-btn${viewMode === m ? ' tab-icon-btn--active' : ''}`}
           data-tip={label}
           aria-label={id}
           onClick={() => onSetViewMode(m)}
@@ -68,7 +68,7 @@ export function ThinktankRibbon({
       ))}
       {onSync && (
         <button
-          className="ribbon-icon-btn"
+          className="tab-icon-btn"
           data-tip="BigQuery同期"
           aria-label="BigQuery同期"
           onClick={onSync}
@@ -78,7 +78,7 @@ export function ThinktankRibbon({
       )}
       <button
         id="ThinktankSetting"
-        className={`ribbon-icon-btn${viewMode === 'settings' ? ' ribbon-icon-btn--active' : ''}`}
+        className={`tab-icon-btn${viewMode === 'settings' ? ' tab-icon-btn--active' : ''}`}
         data-tip="設定"
         aria-label="ThinktankSetting"
         onClick={() => onSetViewMode('settings')}

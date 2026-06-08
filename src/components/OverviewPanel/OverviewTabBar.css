@@ -1,6 +1,6 @@
-/* ReThinkRibbon.css */
+/* OverviewTabBar.css */
 
-.rethink-ribbon__btn {
+.overview-tab-bar__btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,17 +11,12 @@
   transition: background 120ms ease, color 120ms ease;
 }
 
-.rethink-ribbon__btn:hover {
+.overview-tab-bar__btn:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
 
-.rethink-ribbon__btn:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.75);
-  outline-offset: 1px;
-}
-
-.rethink-ribbon__btn--active {
-  background: rgba(255, 255, 255, 0.18);
+.overview-tab-bar__btn--active {
+  background: rgba(255, 255, 255, 0.25);
   color: #fff;
 }

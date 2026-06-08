@@ -10,8 +10,8 @@
 export function getFocusName(el: Element | null): string {
   if (!el || el === document.body || el === document.documentElement) return 'None';
 
-  // WorkoutRibbon（設定パネル開閉ボタン群）
-  if (el.closest('.workout-ribbon')) return 'WorkoutSetting.Ribbon';
+  // WorkoutTabBar（設定パネル開閉ボタン群）
+  if (el.closest('.workout-tab-bar')) return 'WorkoutSetting.TabBar';
 
   // WorkoutToolBar
   if (el.closest('.workout-toolbar')) return 'Workout.ToolBar';
@@ -48,7 +48,7 @@ export function getFocusName(el: Element | null): string {
   const tt = el.closest('.thinktank-panel, .thinktank-area');
   if (tt) {
     const panel = tt.closest('.thinktank-panel') ?? tt.parentElement ?? tt;
-    const label = panel.querySelector('.ribbon-icon-btn--active')?.getAttribute('aria-label') ?? '';
+    const label = panel.querySelector('.tab-icon-btn--active')?.getAttribute('aria-label') ?? '';
     if (label === '検索')        return 'Thinktank.Search';
     if (label === 'Thought一覧') return 'Thinktank.Thoughts';
     if (label === 'AI相談')      return 'Thinktank.Chat';

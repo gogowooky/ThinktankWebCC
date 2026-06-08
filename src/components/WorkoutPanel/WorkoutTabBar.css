@@ -1,8 +1,8 @@
-/* WorkoutRibbon.css */
+/* WorkoutTabBar.css */
 
 /* ── ボタン群 ─────────────────────────────────────── */
 
-.workout-ribbon__btn {
+.workout-tab-bar__btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,17 +14,17 @@
   flex-shrink: 0;
 }
 
-.workout-ribbon__btn:hover {
+.workout-tab-bar__btn:hover {
   background: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.9);
 }
 
-.workout-ribbon__btn--active {
+.workout-tab-bar__btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
-.workout-ribbon__btn:focus-visible {
+.workout-tab-bar__btn:focus-visible {
   outline: 1px solid rgba(255, 255, 255, 0.7);
   outline-offset: 1px;
 }

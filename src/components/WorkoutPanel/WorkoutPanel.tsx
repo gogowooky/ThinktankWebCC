@@ -3,7 +3,7 @@
  * BSP ツリー型レイアウトで WorkoutArea を再帰的にレンダリングする。
  *
  * レイアウト構造（左→右）:
- *   [WorkoutRibbon 40px] [WorkoutSettingPanel? + Splitter] [コンテンツ flex:1]
+ *   [WorkoutTabBar 40px] [WorkoutSettingPanel? + Splitter] [コンテンツ flex:1]
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -18,13 +18,13 @@ import { PanelArea } from '../Layout/PanelArea';
 import { WorkoutHSplitter } from './WorkoutHSplitter';
 import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
-import { WorkoutRibbon } from './WorkoutRibbon';
+import { WorkoutTabBar } from './WorkoutTabBar';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
 import type { WorkoutSettingPanelRef } from './WorkoutSettingPanel';
 import { WorkoutToolBar } from './WorkoutToolBar';
 import { extractLinkDrop } from './WorkoutAreaRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
-import type { SettingsType } from './WorkoutRibbon';
+import type { SettingsType } from './WorkoutTabBar';
 import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
 
@@ -709,7 +709,7 @@ export function WorkoutPanel({ app }: Props) {
     <div className="workout-panel">
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
-      <WorkoutRibbon
+      <WorkoutTabBar
         activeSettings={panel.ViewMode}
         isOpen={panel.IsAreaOpen}
         thinkTitle={focusedThinkTitle}

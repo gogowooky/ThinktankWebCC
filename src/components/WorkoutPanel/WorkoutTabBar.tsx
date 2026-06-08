@@ -1,5 +1,5 @@
 /**
- * WorkoutRibbon.tsx
+ * WorkoutTabBar.tsx
  * WorkoutPanel 左縦タブバー（旧リボン）。
  *
  * ボタン構成（上から）:
@@ -14,7 +14,7 @@
 import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
-import './WorkoutRibbon.css';
+import './WorkoutTabBar.css';
 
 export type SettingsType = Extract<MediaType, 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph'>;
 
@@ -42,7 +42,7 @@ interface Props {
   onSetActiveSettings: (type: SettingsType | null) => void;
 }
 
-export function WorkoutRibbon({ activeSettings, isOpen, thinkTitle, onToggle, onSetActiveSettings }: Props) {
+export function WorkoutTabBar({ activeSettings, isOpen, thinkTitle, onToggle, onSetActiveSettings }: Props) {
   const handleClick = (type: SettingsType) => {
     onSetActiveSettings(isOpen && activeSettings === type ? null : type);
   };
@@ -60,8 +60,8 @@ export function WorkoutRibbon({ activeSettings, isOpen, thinkTitle, onToggle, on
           key={type}
           id={id}
           className={[
-            'workout-ribbon__btn',
-            activeSettings === type ? 'workout-ribbon__btn--active' : '',
+            'workout-tab-bar__btn',
+            activeSettings === type ? 'workout-tab-bar__btn--active' : '',
           ].join(' ')}
           onClick={() => handleClick(type)}
           data-tip={name}

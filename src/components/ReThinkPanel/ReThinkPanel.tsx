@@ -2,7 +2,7 @@
  * ReThinkPanel.tsx
  * Phase 10: ReThinkPanel 統合コンポーネント。
  *
- * 構造（右側パネル）: [Splitter] [PanelArea > ReThinkArea] [ReThinkRibbon]
+ * 構造（右側パネル）: [Splitter] [PanelArea > ReThinkArea] [ReThinkTabBar]
  * Think/Thought の次の展開について AI と相談するパネル。
  */
 
@@ -11,7 +11,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
-import { ReThinkRibbon, type ReThinkViewMode } from './ReThinkRibbon';
+import { ReThinkTabBar, type ReThinkViewMode } from './ReThinkTabBar';
 import { ReThinkArea } from './ReThinkArea';
 import './ReThinkPanel.css';
 
@@ -58,7 +58,7 @@ export function ReThinkPanel({ app, width, onResize }: Props) {
       >
         <ReThinkArea app={app} viewMode={panel.ViewMode} />
       </PanelArea>
-      <ReThinkRibbon
+      <ReThinkTabBar
         isOpen={panel.IsAreaOpen}
         viewMode={panel.ViewMode}
         onToggle={handleToggle}

@@ -2,7 +2,7 @@
  * ThinktankPanel.tsx
  * Phase 6: ThinktankPanel 統合コンポーネント。
  *
- * 構造: [ThinktankRibbon] [PanelArea > ThinktankArea]
+ * 構造: [ThinktankTabBar] [PanelArea > ThinktankArea]
  * AppLayout から差し込んで使う。
  */
 
@@ -12,7 +12,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
-import { ThinktankRibbon } from './ThinktankRibbon';
+import { ThinktankTabBar } from './ThinktankTabBar';
 import { ThinktankArea } from './ThinktankArea';
 import type { LayoutMode } from '../Layout/AppLayout';
 import './ThinktankPanel.css';
@@ -68,7 +68,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
 
   return (
     <div className="thinktank-panel">
-      <ThinktankRibbon
+      <ThinktankTabBar
         isOpen={panel.IsAreaOpen}
         onToggle={handleToggle}
         viewMode={panel.ViewMode}

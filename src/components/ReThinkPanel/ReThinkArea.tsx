@@ -13,7 +13,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ReThinkChat } from './ReThinkChat';
 import type { ReThinkChatRef } from './ReThinkChat';
 import { ReThinkMenuRibbon } from './ReThinkMenuRibbon';
-import type { ReThinkViewMode } from './ReThinkRibbon';
+import type { ReThinkViewMode } from './ReThinkTabBar';
 import { serializeChat } from '../../utils/thinkFormat';
 import '../../components/Layout/MenuRibbon.css';
 import './ReThinkArea.css';

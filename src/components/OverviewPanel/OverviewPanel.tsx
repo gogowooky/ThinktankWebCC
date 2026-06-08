@@ -2,7 +2,7 @@
  * OverviewPanel.tsx
  * OverviewPanel 統合コンポーネント。
  *
- * 構造: [OverviewRibbon] [PanelArea > OverviewArea] [Splitter]
+ * 構造: [OverviewTabBar] [PanelArea > OverviewArea] [Splitter]
  */
 
 import { useCallback, useState } from 'react';
@@ -10,7 +10,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
-import { OverviewRibbon } from './OverviewRibbon';
+import { OverviewTabBar } from './OverviewTabBar';
 import { OverviewArea } from './OverviewArea';
 import './OverviewPanel.css';
 
@@ -139,7 +139,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <OverviewRibbon
+      <OverviewTabBar
         isOpen={panel.IsAreaOpen}
         viewMode={panel.ViewMode}
         onToggle={handleToggle}

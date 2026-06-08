@@ -1,5 +1,5 @@
 /**
- * OverviewRibbon.tsx
+ * OverviewTabBar.tsx
  * OverviewPanel の縦型タブバー（旧Ribbon）。
  *
  * ボタン構成（上から）:
@@ -15,7 +15,7 @@ import { useCallback, useState } from 'react';
 import { MessageCircle, Files, Microscope, Settings, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { OverviewViewMode } from '../../views/TTOverviewPanel';
-import './OverviewRibbon.css';
+import './OverviewTabBar.css';
 
 type OverviewContentMode = Exclude<OverviewViewMode, 'settings'>;
 
@@ -35,7 +35,7 @@ interface Props {
   thoughtName?:      string;
 }
 
-export function OverviewRibbon({
+export function OverviewTabBar({
   isOpen, viewMode, onToggle, onViewMode, onToggleSettings, onRefresh, thoughtName,
 }: Props) {
   return (
@@ -51,8 +51,8 @@ export function OverviewRibbon({
           key={mode}
           id={id}
           className={[
-            'overview-ribbon__btn',
-            viewMode === mode ? 'overview-ribbon__btn--active' : '',
+            'overview-tab-bar__btn',
+            viewMode === mode ? 'overview-tab-bar__btn--active' : '',
           ].join(' ')}
           onClick={() => onViewMode(mode)}
           data-tip={title}
@@ -63,7 +63,7 @@ export function OverviewRibbon({
       ))}
       <button
         id="OverviewSetting"
-        className={`overview-ribbon__btn${viewMode === 'settings' ? ' overview-ribbon__btn--active' : ''}`}
+        className={`overview-tab-bar__btn${viewMode === 'settings' ? ' overview-tab-bar__btn--active' : ''}`}
         onClick={onToggleSettings}
         data-tip="設定"
         aria-label="OverviewSetting"
