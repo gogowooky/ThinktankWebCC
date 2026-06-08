@@ -6,8 +6,9 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright } from 'lucide-react';
+import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright, Monitor, Globe } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
@@ -233,8 +234,20 @@ export function ApplicationStatusBar({ panel }: Props) {
   const current = MODES.find(m => m.id === mode)!;
   const isAuthorOn = authorState !== 'off';
 
+  const storageMode = StorageManager.instance.mode;
+  const isLocalMode = storageMode === 'electron' || storageMode === 'local';
+
   return (
     <div className="application-status-bar">
+
+      {/* 起動モードインジケータ */}
+      <div
+        className="application-status-bar__mode-indicator"
+        data-tip={isLocalMode ? '起動モード: Local' : '起動モード: Online'}
+      >
+        {isLocalMode ? <Monitor size={14} /> : <Globe size={14} />}
+      </div>
+      <div className="application-status-bar__indicator-divider" />
 
       {/* 作成者バナー / 作成者静的表示 / 通常入力欄 */}
       {authorState === 'banner' ? (
