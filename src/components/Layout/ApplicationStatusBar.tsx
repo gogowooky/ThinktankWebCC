@@ -1,21 +1,18 @@
 /**
- * WorkoutToolBar.tsx
- * WorkoutPanel 最下段の横型ツールバー。
+ * ApplicationStatusBar.tsx
+ * アプリケーション全体の最下段に常時表示されるステータスバー。
  * 左: テキスト入力欄（モードに応じた機能）
  * 右: モードアイコン群 + ユーティリティボタン
- *
- * 縮小時: WorkoutPanel 内下段に表示（ChevronsLeftRight アイコン）
- * 拡大時: アプリ全体の最下段に固定表示（ChevronsRightLeft アイコン）
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
+import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTApplication } from '../../views/TTApplication';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
-import './WorkoutToolBar.css';
+import './ApplicationStatusBar.css';
 
 const _cw = JSON.parse(copywriteRaw);
 const AUTHOR_BANNER_TEXT = `${_cw.appName} ver.${_cw.version}, ${_cw.copyright.holder}(${_cw.copyright.year}). --- [${_cw.projectName}:${_cw.commitId}](${_cw.commitDateTime}) --- ${_cw.commitMessage}`;
@@ -61,14 +58,13 @@ interface Props {
   panel: TTWorkoutPanel;
 }
 
-export function WorkoutToolBar({ panel }: Props) {
+export function ApplicationStatusBar({ panel }: Props) {
   useAppUpdate(panel);
   const status = TTApplication.Instance.Status;
   useAppUpdate(status);
 
   const [mode,        setMode]        = useState<ToolMode>(() => TOOLBAR_TO_MODE[panel.ToolBarMode] ?? 'highlight');
   const [text,        setText]        = useState(() => panel.HighlightWord);
-  const [isExpanded,  setIsExpanded]  = useState(false);
   const [authorState, setAuthorState] = useState<AuthorState>(() => panel.ToolBarMode === 'Copyright' ? 'static' : 'off');
   const [kaState,     setKaState]     = useState<KAState>(KA_INIT);
   const inputRef       = useRef<HTMLInputElement>(null);
@@ -90,15 +86,6 @@ export function WorkoutToolBar({ panel }: Props) {
       }
     }
   }, [panel.ToolBarMode]);
-
-  useEffect(() => {
-    if (isExpanded) {
-      document.body.classList.add('toolbar-expanded');
-    } else {
-      document.body.classList.remove('toolbar-expanded');
-    }
-    return () => { document.body.classList.remove('toolbar-expanded'); };
-  }, [isExpanded]);
 
   useEffect(() => {
     if (mode === 'highlight') setText(panel.HighlightWord);
@@ -247,76 +234,76 @@ export function WorkoutToolBar({ panel }: Props) {
   const isAuthorOn = authorState !== 'off';
 
   return (
-    <div className={`workout-toolbar${isExpanded ? ' workout-toolbar--expanded' : ''}`}>
+    <div className="application-status-bar">
 
       {/* 作成者バナー / 作成者静的表示 / 通常入力欄 */}
       {authorState === 'banner' ? (
         <div
-          className="workout-toolbar__author-banner"
+          className="application-status-bar__author-banner"
           onClick={handleBannerClick}
           title="クリックで静的表示"
         >
-          <span className="workout-toolbar__author-banner-text">
+          <span className="application-status-bar__author-banner-text">
             {AUTHOR_BANNER_TEXT}
           </span>
         </div>
       ) : mode === 'keyaction' && authorState === 'off' ? (
-        <div className="workout-toolbar__keyaction">
-          <span className="workout-toolbar__ka-field">
-            <span className="workout-toolbar__ka-label">focus</span>
-            <span className="workout-toolbar__ka-value workout-toolbar__ka-value--focus">{kaState.focus}</span>
+        <div className="application-status-bar__keyaction">
+          <span className="application-status-bar__ka-field">
+            <span className="application-status-bar__ka-label">focus</span>
+            <span className="application-status-bar__ka-value application-status-bar__ka-value--focus">{kaState.focus}</span>
           </span>
-          <span className="workout-toolbar__ka-divider" />
-          <span className="workout-toolbar__ka-field">
-            <span className="workout-toolbar__ka-label">mod</span>
-            <span className="workout-toolbar__ka-value">{kaState.modifiers}</span>
+          <span className="application-status-bar__ka-divider" />
+          <span className="application-status-bar__ka-field">
+            <span className="application-status-bar__ka-label">mod</span>
+            <span className="application-status-bar__ka-value">{kaState.modifiers}</span>
           </span>
-          <span className="workout-toolbar__ka-sep">·</span>
-          <span className="workout-toolbar__ka-field">
-            <span className="workout-toolbar__ka-label">key</span>
-            <span className="workout-toolbar__ka-value">{kaState.key}</span>
+          <span className="application-status-bar__ka-sep">·</span>
+          <span className="application-status-bar__ka-field">
+            <span className="application-status-bar__ka-label">key</span>
+            <span className="application-status-bar__ka-value">{kaState.key}</span>
           </span>
-          <span className="workout-toolbar__ka-sep">·</span>
-          <span className="workout-toolbar__ka-field">
-            <span className="workout-toolbar__ka-label">mouse</span>
-            <span className="workout-toolbar__ka-value">{kaState.mouse}</span>
+          <span className="application-status-bar__ka-sep">·</span>
+          <span className="application-status-bar__ka-field">
+            <span className="application-status-bar__ka-label">mouse</span>
+            <span className="application-status-bar__ka-value">{kaState.mouse}</span>
           </span>
-          <span className="workout-toolbar__ka-sep">·</span>
-          <span className="workout-toolbar__ka-field">
-            <span className="workout-toolbar__ka-label">touch</span>
-            <span className="workout-toolbar__ka-value">{kaState.touch}</span>
+          <span className="application-status-bar__ka-sep">·</span>
+          <span className="application-status-bar__ka-field">
+            <span className="application-status-bar__ka-label">touch</span>
+            <span className="application-status-bar__ka-value">{kaState.touch}</span>
           </span>
-          <span className="workout-toolbar__ka-divider" />
-          <span className="workout-toolbar__ka-field">
-            <span className="workout-toolbar__ka-label">exmode</span>
-            <span className={`workout-toolbar__ka-value${status.ExMode ? ' workout-toolbar__ka-value--exmode' : ''}`}>
+          <span className="application-status-bar__ka-divider" />
+          <span className="application-status-bar__ka-field">
+            <span className="application-status-bar__ka-label">exmode</span>
+            <span className={`application-status-bar__ka-value${status.ExMode ? ' application-status-bar__ka-value--exmode' : ''}`}>
               {status.ExMode || '-'}
             </span>
           </span>
           {status.ExMode && (
             <>
-              <span className="workout-toolbar__ka-sep">·</span>
-              <span className="workout-toolbar__ka-field">
-                <span className="workout-toolbar__ka-label">exmod</span>
-                <span className="workout-toolbar__ka-value">{status.ExModeModKey}</span>
+              <span className="application-status-bar__ka-sep">·</span>
+              <span className="application-status-bar__ka-field">
+                <span className="application-status-bar__ka-label">exmod</span>
+                <span className="application-status-bar__ka-value">{status.ExModeModKey}</span>
               </span>
             </>
           )}
-          <span className="workout-toolbar__ka-divider" />
-          <span className="workout-toolbar__ka-field">
-            <span className="workout-toolbar__ka-label">action</span>
-            <span className="workout-toolbar__ka-value workout-toolbar__ka-value--action">{status.LastActionDisplay || '-'}</span>
+          <span className="application-status-bar__ka-divider" />
+          <span className="application-status-bar__ka-field">
+            <span className="application-status-bar__ka-label">action</span>
+            <span className="application-status-bar__ka-value application-status-bar__ka-value--action">{status.LastActionDisplay || '-'}</span>
           </span>
         </div>
       ) : (
         <>
           <input
             ref={inputRef}
-            className="workout-toolbar__input"
+            className="application-status-bar__input"
             type="text"
             value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
             readOnly={authorState === 'static'}
-            list={authorState === 'off' && mode === 'highlight' ? 'toolbar-highlight-history' : undefined}
+            list={authorState === 'off' && mode === 'highlight' ? 'status-bar-highlight-history' : undefined}
             onChange={e => handleTextChange(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
@@ -324,7 +311,7 @@ export function WorkoutToolBar({ panel }: Props) {
             spellCheck={false}
           />
           {authorState === 'off' && mode === 'highlight' && (
-            <datalist id="toolbar-highlight-history">
+            <datalist id="status-bar-highlight-history">
               {panel.HighlightHistory.map((h: string, i: number) => (
                 <option key={i} value={h} />
               ))}
@@ -332,7 +319,7 @@ export function WorkoutToolBar({ panel }: Props) {
           )}
           {authorState === 'off' && text && (
             <button
-              className="workout-toolbar__clear-btn"
+              className="application-status-bar__clear-btn"
               onClick={handleClear}
               data-tip="クリア"
               aria-label="クリア"
@@ -344,11 +331,11 @@ export function WorkoutToolBar({ panel }: Props) {
       )}
 
       {/* モードアイコン群 */}
-      <div className="workout-toolbar__modes">
+      <div className="application-status-bar__modes">
         {MODES.map(m => (
           <button
             key={m.id}
-            className={`workout-toolbar__mode-btn${!isAuthorOn && mode === m.id ? ' workout-toolbar__mode-btn--active' : ''}`}
+            className={`application-status-bar__mode-btn${!isAuthorOn && mode === m.id ? ' application-status-bar__mode-btn--active' : ''}`}
             onClick={() => handleModeSelect(m.id)}
             data-tip={m.label}
             aria-label={m.label}
@@ -359,24 +346,15 @@ export function WorkoutToolBar({ panel }: Props) {
       </div>
 
       {/* ユーティリティボタン */}
-      <div className="workout-toolbar__utils">
+      <div className="application-status-bar__utils">
         <button
-          className={`workout-toolbar__util-btn${isAuthorOn ? ' workout-toolbar__util-btn--active' : ''}`}
+          className={`application-status-bar__util-btn${isAuthorOn ? ' application-status-bar__util-btn--active' : ''}`}
           onClick={handleAuthorToggle}
           data-tip="Copyright"
           data-tip-side="left"
           aria-label="Copyright"
         >
           <Copyright size={14} />
-        </button>
-        <button
-          className="workout-toolbar__util-btn"
-          onClick={() => setIsExpanded(v => !v)}
-          data-tip={isExpanded ? 'ツールバー縮小' : 'ツールバー拡大'}
-          data-tip-side="left"
-          aria-label={isExpanded ? 'ツールバー縮小' : 'ツールバー拡大'}
-        >
-          {isExpanded ? <ChevronsRightLeft size={14} /> : <ChevronsLeftRight size={14} />}
         </button>
       </div>
     </div>

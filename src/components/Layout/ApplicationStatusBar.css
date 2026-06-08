@@ -1,33 +1,22 @@
-/* WorkoutToolBar.css - updated */
+/* ApplicationStatusBar.css */
 
-.workout-toolbar {
+.application-status-bar {
   display: flex;
   align-items: center;
   height: 28px;
   flex-shrink: 0;
   background: var(--workout-ribbon-bg, #2d2d2d);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0 4px;
   gap: 2px;
   position: relative;
   z-index: 100;
   overflow: visible;
-}
-
-/* 拡大時: アプリ全体の最下段に fixed 表示 */
-.workout-toolbar--expanded {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 28px;
-  z-index: 9999;
-  background: var(--workout-ribbon-bg, #2d2d2d);
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  width: 100%;
 }
 
 /* ── テキスト入力 ── */
-.workout-toolbar__input {
+.application-status-bar__input {
   flex: 1;
   height: 20px;
   padding: 0 6px;
@@ -39,16 +28,16 @@
   min-width: 0;
 }
 
-.workout-toolbar__input::placeholder {
+.application-status-bar__input::placeholder {
   color: rgba(255, 255, 255, 0.3);
 }
 
-.workout-toolbar__input:focus {
+.application-status-bar__input:focus {
   background: transparent;
 }
 
 /* ── クリアボタン ── */
-.workout-toolbar__clear-btn {
+.application-status-bar__clear-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -60,13 +49,13 @@
   transition: background 100ms ease, color 100ms ease;
 }
 
-.workout-toolbar__clear-btn:hover {
+.application-status-bar__clear-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* ── モードアイコン群 ── */
-.workout-toolbar__modes {
+.application-status-bar__modes {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -74,7 +63,7 @@
   flex-shrink: 0;
 }
 
-.workout-toolbar__mode-btn {
+.application-status-bar__mode-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,18 +74,18 @@
   transition: background 100ms ease, color 100ms ease;
 }
 
-.workout-toolbar__mode-btn:hover {
+.application-status-bar__mode-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
 }
 
-.workout-toolbar__mode-btn--active {
+.application-status-bar__mode-btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
 /* ── ユーティリティボタン群 ── */
-.workout-toolbar__utils {
+.application-status-bar__utils {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -104,7 +93,7 @@
   flex-shrink: 0;
 }
 
-.workout-toolbar__util-btn {
+.application-status-bar__util-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,18 +104,18 @@
   transition: background 100ms ease, color 100ms ease;
 }
 
-.workout-toolbar__util-btn:hover {
+.application-status-bar__util-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
 }
 
-.workout-toolbar__util-btn--active {
+.application-status-bar__util-btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
 /* ── KeyAction イベントモニター ── */
-.workout-toolbar__keyaction {
+.application-status-bar__keyaction {
   flex: 1;
   display: flex;
   align-items: center;
@@ -136,14 +125,14 @@
   min-width: 0;
 }
 
-.workout-toolbar__ka-field {
+.application-status-bar__ka-field {
   display: flex;
   align-items: center;
   gap: 3px;
   flex-shrink: 0;
 }
 
-.workout-toolbar__ka-label {
+.application-status-bar__ka-label {
   font-size: 9px;
   color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
@@ -151,7 +140,7 @@
   user-select: none;
 }
 
-.workout-toolbar__ka-value {
+.application-status-bar__ka-value {
   font-size: 11px;
   font-family: monospace;
   color: rgba(255, 255, 255, 0.85);
@@ -163,13 +152,13 @@
   white-space: nowrap;
 }
 
-.workout-toolbar__ka-sep {
+.application-status-bar__ka-sep {
   color: rgba(255, 255, 255, 0.2);
   font-size: 10px;
   flex-shrink: 0;
 }
 
-.workout-toolbar__ka-divider {
+.application-status-bar__ka-divider {
   width: 1px;
   height: 14px;
   background: rgba(255, 255, 255, 0.15);
@@ -177,7 +166,7 @@
   margin: 0 4px;
 }
 
-.workout-toolbar__ka-value--focus {
+.application-status-bar__ka-value--focus {
   color: #7dd3c0;
   background: rgba(125, 211, 192, 0.12);
   max-width: 180px;
@@ -185,13 +174,13 @@
   text-overflow: ellipsis;
 }
 
-.workout-toolbar__ka-value--exmode {
+.application-status-bar__ka-value--exmode {
   color: #f9a825;
   background: rgba(249, 168, 37, 0.15);
   font-weight: 600;
 }
 
-.workout-toolbar__ka-value--action {
+.application-status-bar__ka-value--action {
   color: #aaa;
   max-width: 240px;
   overflow: hidden;
@@ -200,7 +189,7 @@
 }
 
 /* ── 作成者バナー ── */
-.workout-toolbar__author-banner {
+.application-status-bar__author-banner {
   flex: 1;
   height: 20px;
   overflow: hidden;
@@ -208,7 +197,7 @@
   min-width: 0;
 }
 
-.workout-toolbar__author-banner-text {
+.application-status-bar__author-banner-text {
   display: inline-block;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.75);

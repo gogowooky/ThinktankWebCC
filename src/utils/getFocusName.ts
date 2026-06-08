@@ -13,8 +13,8 @@ export function getFocusName(el: Element | null): string {
   // WorkoutTabBar（設定パネル開閉ボタン群）
   if (el.closest('.workout-tab-bar')) return 'WorkoutSetting.TabBar';
 
-  // WorkoutToolBar
-  if (el.closest('.workout-toolbar')) return 'Workout.ToolBar';
+  // ApplicationStatusBar
+  if (el.closest('.application-status-bar')) return 'Application.StatusBar';
 
   // WorkoutArea (active content pane) — data-media-type 属性でメディアタイプを判別
   const wa = el.closest('.workout-area');

@@ -21,7 +21,6 @@ import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutTabBar } from './WorkoutTabBar';
 import { WorkoutSettingPanel } from './WorkoutSettingPanel';
 import type { WorkoutSettingPanelRef } from './WorkoutSettingPanel';
-import { WorkoutToolBar } from './WorkoutToolBar';
 import { extractLinkDrop } from './WorkoutAreaRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
 import type { SettingsType } from './WorkoutTabBar';
@@ -776,8 +775,6 @@ export function WorkoutPanel({ app }: Props) {
           />
         )}
 
-        {/* ── ツールバー（最下段）────────────────────────────── */}
-        <WorkoutToolBar panel={panel} />
       </div>
 
       {/* ── ドラッグ Ghost ────────────────────────────────────── */}

@@ -20,6 +20,7 @@ import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
 import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
 import { ReThinkPanel } from '../ReThinkPanel/ReThinkPanel';
+import { ApplicationStatusBar } from './ApplicationStatusBar';
 import './AppLayout.css';
 
 // パネル幅の初期値・最小値
@@ -73,40 +74,43 @@ export function AppLayout() {
 
   return (
     <HighlightProvider>
-    <div className="app-layout">
+    <div className="app-container">
+      <div className="app-layout">
 
-      {/* ── ThinktankPanel（Phase 6 実装済み）─────────────────── */}
-      <ThinktankPanel
-        app={app}
-        width={ttWidth}
-        onResize={onTtSplitter}
-        layoutMode={layoutMode}
-        onLayoutModeChange={handleLayoutModeChange}
-      />
-
-      {/* ── OverviewPanel（Phase 9 実装済み）──────────────────── */}
-      <div className="app-panel app-panel--overview" style={showSidePanels ? undefined : { display: 'none' }}>
-        <OverviewPanel
+        {/* ── ThinktankPanel（Phase 6 実装済み）─────────────────── */}
+        <ThinktankPanel
           app={app}
-          width={overviewWidth}
-          onResize={onOverviewSplitter}
+          width={ttWidth}
+          onResize={onTtSplitter}
+          layoutMode={layoutMode}
+          onLayoutModeChange={handleLayoutModeChange}
         />
-      </div>
 
-      {/* ── WorkoutPanel（Phase 7 実装済み）────────────────────── */}
-      <div className="app-panel app-panel--workout">
-        <WorkoutPanel app={app} />
-      </div>
+        {/* ── OverviewPanel（Phase 9 実装済み）──────────────────── */}
+        <div className="app-panel app-panel--overview" style={showSidePanels ? undefined : { display: 'none' }}>
+          <OverviewPanel
+            app={app}
+            width={overviewWidth}
+            onResize={onOverviewSplitter}
+          />
+        </div>
 
-      {/* ── ReThinkPanel（Phase 10 実装済み）─────────────────────── */}
-      <div className="app-panel app-panel--rethink" style={showSidePanels ? undefined : { display: 'none' }}>
-        <ReThinkPanel
-          app={app}
-          width={rethinkWidth}
-          onResize={onRethinkSplitter}
-        />
-      </div>
+        {/* ── WorkoutPanel（Phase 7 実装済み）────────────────────── */}
+        <div className="app-panel app-panel--workout">
+          <WorkoutPanel app={app} />
+        </div>
 
+        {/* ── ReThinkPanel（Phase 10 実装済み）─────────────────────── */}
+        <div className="app-panel app-panel--rethink" style={showSidePanels ? undefined : { display: 'none' }}>
+          <ReThinkPanel
+            app={app}
+            width={rethinkWidth}
+            onResize={onRethinkSplitter}
+          />
+        </div>
+
+      </div>
+      <ApplicationStatusBar panel={app.WorkoutPanel} />
     </div>
     </HighlightProvider>
   );

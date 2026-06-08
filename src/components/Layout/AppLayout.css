@@ -2,18 +2,22 @@
 
 /* ── メインコンテナ ────────────────────────────────────── */
 
-.app-layout {
+.app-container {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background: var(--bg-primary);
 }
 
-/* ToolBar 拡大時: 各パネルがツールバーと重ならないよう高さを縮める */
-body.toolbar-expanded .app-layout {
-  height: calc(100vh - 28px);
+.app-layout {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
 }
 
 /* ── 各パネルの共通スタイル ────────────────────────────── */
