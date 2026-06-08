@@ -1,5 +1,5 @@
 /**
- * ThinktankSearchBar.tsx
+ * OverviewSearchBar.tsx
  * Think一覧モードの日付欄の下に表示する、
  * ① 全文/AI 検索のキーワード欄＋検索オプション
  * ② 一覧表示する種別（ContentType）の選択ボタン
@@ -8,8 +8,8 @@
 import React, { useImperativeHandle, forwardRef, useRef } from 'react';
 import { TextSearch, X, FileText, Library, Table, Link, MessageCircle, Globe, SquareCheck, type LucideIcon } from 'lucide-react';
 import type { ContentType } from '../../types';
-import './ThinktankFilterPanel.css';
-import './ThinktankSearchBar.css';
+import './OverviewFilterPanel.css';
+import './OverviewSearchBar.css';
 
 const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'memo',    Icon: FileText,      label: 'メモ' },
@@ -20,7 +20,7 @@ const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'nettext', Icon: Globe,         label: 'WebText' },
 ];
 
-export interface ThinktankSearchBarRef {
+export interface OverviewSearchBarRef {
   focus: () => void;
 }
 
@@ -35,7 +35,7 @@ interface Props {
   onClearAllTypes:     () => void;
 }
 
-export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(function ThinktankSearchBar({
+export const OverviewSearchBar = forwardRef<OverviewSearchBarRef, Props>(function OverviewSearchBar({
   searchQuery, onSearchQueryChange, onSearch,
   loading,
   visibleTypes, onToggleType, onSelectAllTypes, onClearAllTypes,
@@ -48,7 +48,7 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
   };
 
   return (
-    <div className="tt-search-bar">
+    <div className="ov-search-bar">
       {/* 検索キーワード欄（タイトル絞り込み欄と同じスタイル） */}
       <div className="unified-filter-row">
         <div className="unified-filter-row-left">
@@ -81,13 +81,13 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
       </div>
 
       {/* 種別選択ボタン（右端=全選択/全クリアのトグル）*/}
-      <div className="tt-search-bar__types">
+      <div className="ov-search-bar__types">
         {TYPE_DEFS.map(({ type, Icon, label }) => {
           const active = visibleTypes.has(type);
           return (
             <button
               key={type}
-              className={`tt-search-bar__type-btn${active ? ' tt-search-bar__type-btn--active' : ''}`}
+              className={`ov-search-bar__type-btn${active ? ' ov-search-bar__type-btn--active' : ''}`}
               onClick={() => onToggleType(type)}
               data-tip={label}
               aria-label={label}
@@ -101,7 +101,7 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
           const allSelected = visibleTypes.size === TYPE_DEFS.length;
           return (
             <button
-              className="tt-search-bar__type-all tt-search-bar__type-all--right"
+              className="ov-search-bar__type-all ov-search-bar__type-all--right"
               onClick={allSelected ? onClearAllTypes : onSelectAllTypes}
               data-tip={allSelected ? '全種別をクリア' : '全種別を選択'}
               data-tip-side="left"
@@ -115,3 +115,4 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
     </div>
   );
 });
+OverviewSearchBar.displayName = 'OverviewSearchBar';

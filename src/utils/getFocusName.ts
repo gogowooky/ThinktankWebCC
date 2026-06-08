@@ -13,8 +13,8 @@ export function getFocusName(el: Element | null): string {
   // WorkoutTabBar（設定パネル開閉ボタン群）
   if (el.closest('.workout-tab-bar')) return 'WorkoutSetting.TabBar';
 
-  // ApplicationStatusBar
-  if (el.closest('.application-status-bar')) return 'Application.StatusBar';
+  // ApplicationStatusBarArea
+  if (el.closest('.ApplicationStatusBarArea')) return 'Application.StatusBarArea';
 
   // WorkoutArea (active content pane) — data-media-type 属性でメディアタイプを判別
   const wa = el.closest('.workout-area');
@@ -32,10 +32,10 @@ export function getFocusName(el: Element | null): string {
     return 'Workout.ActivePane';
   }
 
-  // WorkoutSettingPanel
-  const ws = el.closest('.workout-setting-panel');
+  // WorkoutSettingArea
+  const ws = el.closest('.workout-setting-area');
   if (ws) {
-    const txt = ws.querySelector('.workout-setting-panel__header')?.textContent?.toLowerCase() ?? '';
+    const txt = ws.querySelector('.workout-setting-area__header')?.textContent?.toLowerCase() ?? '';
     if (txt.includes('texteditor')) return 'WorkoutSetting.TextEditor';
     if (txt.includes('markdown'))   return 'WorkoutSetting.Markdown';
     if (txt.includes('datagrid'))   return 'WorkoutSetting.DataGrid';

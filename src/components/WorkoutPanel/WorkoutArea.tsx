@@ -4,7 +4,7 @@
  *
  * - vault.GetThink(area.ResourceID) で対象 Think を取得
  * - area.MediaType に応じて適切なメディアコンポーネントを描画
- * - TextEditorMedia の dirty 状態を WorkoutAreaRibbon の ● 表示に連携
+ * - TextEditorMedia の dirty 状態を WorkoutMenuRibbon の ● 表示に連携
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -12,7 +12,7 @@ import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { WorkoutAreaRibbon, extractLinkDrop } from './WorkoutAreaRibbon';
+import { WorkoutMenuRibbon, extractLinkDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
@@ -250,7 +250,7 @@ export function WorkoutArea({
       onMouseEnter={handleDragEnter}
       onMouseLeave={onDragLeave}
     >
-      <WorkoutAreaRibbon
+      <WorkoutMenuRibbon
         area={area}
         contentType={think?.ContentType}
         isFocused={isFocused}

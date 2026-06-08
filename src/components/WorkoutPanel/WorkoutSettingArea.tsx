@@ -1,5 +1,5 @@
 /**
- * WorkoutSettingPanel.tsx
+ * WorkoutSettingArea.tsx
  */
 
 import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
@@ -21,7 +21,7 @@ import {
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
-import './WorkoutSettingPanel.css';
+import './WorkoutSettingArea.css';
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
 
@@ -49,7 +49,7 @@ function AddIcon({ dir }: { dir: Dir }) {
 
 // ── Ref ─────────────────────────────────────────────────────────────────
 
-export interface WorkoutSettingPanelRef { focus: () => void; }
+export interface WorkoutSettingAreaRef { focus: () => void; }
 
 // ── Props ────────────────────────────────────────────────────────────────
 
@@ -79,7 +79,7 @@ interface Props {
 
 // ── Component ────────────────────────────────────────────────────────────
 
-export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(function WorkoutSettingPanel({
+export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(function WorkoutSettingArea({
   activeSettings, panel, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
@@ -122,33 +122,33 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
 
   return (
-    <div ref={panelRef} className="workout-setting-panel" style={{ width }} tabIndex={-1}>
+    <div ref={panelRef} className="workout-setting-area" style={{ width }} tabIndex={-1}>
 
-      <div className="workout-setting-panel__header">Workout&gt;{panelName}</div>
+      <div className="workout-setting-area__header">Workout&gt;{panelName}</div>
 
-      <div className="workout-setting-panel__body">
+      <div className="workout-setting-area__body">
         {activeSettings === 'workout' ? (
           <>
             {/* エリア管理 */}
-            <div className="workout-setting-panel__section">
+            <div className="workout-setting-area__section">
               <div 
-                className="workout-setting-panel__section-header"
+                className="workout-setting-area__section-header"
                 onClick={() => setIsAreaSettingsOpen(!isAreaSettingsOpen)}
               >
                 {isAreaSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>エリア</span>
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>エリア</span>
               </div>
               
               {isAreaSettingsOpen && (
-                <div className="workout-setting-panel__section-content">
+                <div className="workout-setting-area__section-content">
                   {/* 分割 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>分割</span>
-                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="左に分割して新Pane追加">
                         <button
                           ref={firstWorkoutRef}
-                          className="workout-setting-panel__icon-btn"
+                          className="workout-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitLeft : undefined}
                           disabled={!hasFocus}
                         >
@@ -157,7 +157,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                       </div>
                       <div className="tooltip-wrapper" data-tip="右に分割して新Pane追加">
                         <button
-                          className="workout-setting-panel__icon-btn"
+                          className="workout-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitRight : undefined}
                           disabled={!hasFocus}
                         >
@@ -166,7 +166,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                       </div>
                       <div className="tooltip-wrapper" data-tip="上に分割して新Pane追加">
                         <button
-                          className="workout-setting-panel__icon-btn"
+                          className="workout-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitAbove : undefined}
                           disabled={!hasFocus}
                         >
@@ -175,7 +175,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                       </div>
                       <div className="tooltip-wrapper" data-tip="下に分割して新Pane追加">
                         <button
-                          className="workout-setting-panel__icon-btn"
+                          className="workout-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitBelow : undefined}
                           disabled={!hasFocus}
                         >
@@ -188,30 +188,30 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                   {/* 追加 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>追加</span>
-                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className="workout-setting-panel__icon-btn"
+                        className="workout-setting-area__icon-btn"
                         onClick={onAddLeft}
                         data-tip="左端に追加"
                       >
                         <AddIcon dir="left" />
                       </button>
                       <button
-                        className="workout-setting-panel__icon-btn"
+                        className="workout-setting-area__icon-btn"
                         onClick={onAddRight}
                         data-tip="右端に追加"
                       >
                         <AddIcon dir="right" />
                       </button>
                       <button
-                        className="workout-setting-panel__icon-btn"
+                        className="workout-setting-area__icon-btn"
                         onClick={onAddTop}
                         data-tip="上端に追加"
                       >
                         <AddIcon dir="up" />
                       </button>
                       <button
-                        className="workout-setting-panel__icon-btn"
+                        className="workout-setting-area__icon-btn"
                         onClick={onAddBottom}
                         data-tip="下端に追加"
                       >
@@ -223,10 +223,10 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                   {/* 消去 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>消去</span>
-                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="フォーカスペインを消去">
                         <button
-                          className="workout-setting-panel__icon-btn workout-setting-panel__icon-btn--danger"
+                          className="workout-setting-area__icon-btn workout-setting-area__icon-btn--danger"
                           onClick={hasFocus ? onRemoveFocused : undefined}
                           disabled={!hasFocus}
                         >
@@ -234,7 +234,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                         </button>
                       </div>
                       <button
-                        className="workout-setting-panel__icon-btn workout-setting-panel__icon-btn--danger"
+                        className="workout-setting-area__icon-btn workout-setting-area__icon-btn--danger"
                         onClick={onClearAll}
                         data-tip="すべてのペインを全消去"
                       >
@@ -246,10 +246,10 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                   {/* 均等 */}
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>均等</span>
-                    <div className="workout-setting-panel__icon-row" style={{ flex: 1 }}>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="幅を均等化">
                         <button
-                          className="workout-setting-panel__icon-btn"
+                          className="workout-setting-area__icon-btn"
                           onClick={hasFocus ? onEqualizeWidths : undefined}
                           disabled={!hasFocus}
                         >
@@ -258,7 +258,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                       </div>
                       <div className="tooltip-wrapper" data-tip="高さを均等化">
                         <button
-                          className="workout-setting-panel__icon-btn"
+                          className="workout-setting-area__icon-btn"
                           onClick={hasFocus ? onEqualizeHeights : undefined}
                           disabled={!hasFocus}
                         >
@@ -273,122 +273,122 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
           </>
         ) : activeSettings === 'texteditor' ? (
           <>
-            <div className="workout-setting-panel__section">
+            <div className="workout-setting-area__section">
               <div 
-                className="workout-setting-panel__section-header"
+                className="workout-setting-area__section-header"
                 onClick={() => setIsDisplaySettingsOpen(!isDisplaySettingsOpen)}
               >
                 {isDisplaySettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>表示設定</span>
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>表示設定</span>
               </div>
               
               {isDisplaySettingsOpen && (
-                <div className="workout-setting-panel__section-content">
-                  <label className="workout-setting-panel__checkbox-label">
+                <div className="workout-setting-area__section-content">
+                  <label className="workout-setting-area__checkbox-label">
                     <input
                       ref={firstTexteditorRef}
                       type="checkbox"
                       checked={panel.TextEditor.LineNumbers.IsVisible}
                       onChange={e => panel.SetTextEditorLineNumbersVisible(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">行番号</span>
+                    <span className="workout-setting-area__checkbox-text">行番号</span>
                   </label>
 
-                  <label className="workout-setting-panel__checkbox-label">
+                  <label className="workout-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.WordWrap.IsVisible}
                       onChange={e => panel.SetTextEditorWordWrapVisible(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">Wordwrap</span>
+                    <span className="workout-setting-area__checkbox-text">Wordwrap</span>
                   </label>
 
-                  <label className="workout-setting-panel__checkbox-label">
+                  <label className="workout-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.Minimap.IsVisible}
                       onChange={e => panel.SetTextEditorMinimapVisible(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">ミニマップ</span>
+                    <span className="workout-setting-area__checkbox-text">ミニマップ</span>
                   </label>
 
-                  <label className="workout-setting-panel__checkbox-label">
+                  <label className="workout-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.FullWidthSpace.IsVisible}
                       onChange={e => panel.SetTextEditorFullWidthSpaceVisible(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">全角スペース</span>
+                    <span className="workout-setting-area__checkbox-text">全角スペース</span>
                   </label>
 
-                  <label className="workout-setting-panel__checkbox-label">
+                  <label className="workout-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.UnicodeHighlight.IsVisible}
                       onChange={e => panel.SetTextEditorUnicodeHighlightVisible(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">特殊文字警告</span>
+                    <span className="workout-setting-area__checkbox-text">特殊文字警告</span>
                   </label>
 
-                  <label className="workout-setting-panel__checkbox-label">
+                  <label className="workout-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.BracketPairColorization.IsVisible}
                       onChange={e => panel.SetTextEditorBracketPairColorizationVisible(e.target.checked)}
                     />
-                    <span className="workout-setting-panel__checkbox-text">括弧対応</span>
+                    <span className="workout-setting-area__checkbox-text">括弧対応</span>
                   </label>
                 </div>
               )}
             </div>
-            <div className="workout-setting-panel__divider" />
+            <div className="workout-setting-area__divider" />
 
-            <div className="workout-setting-panel__section">
+            <div className="workout-setting-area__section">
               <div 
-                className="workout-setting-panel__section-header"
+                className="workout-setting-area__section-header"
                 onClick={() => setIsColorSettingsOpen(!isColorSettingsOpen)}
               >
                 {isColorSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>文字設定</span>
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>文字設定</span>
               </div>
 
               {isColorSettingsOpen && (
-                <div className="workout-setting-panel__section-content">
-                  <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">背景色</span>
+                <div className="workout-setting-area__section-content">
+                  <div className="workout-setting-area__color-row">
+                    <span className="workout-setting-area__color-label">背景色</span>
                     <input
                       type="color"
-                      className="workout-setting-panel__color-picker"
+                      className="workout-setting-area__color-picker"
                       value={panel.TextEditor.Color.Background.slice(0, 7)}
                       onChange={e => panel.SetTextEditorColorBackground(e.target.value)}
                     />
                   </div>
 
-                  <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">文字色</span>
+                  <div className="workout-setting-area__color-row">
+                    <span className="workout-setting-area__color-label">文字色</span>
                     <input
                       type="color"
-                      className="workout-setting-panel__color-picker"
+                      className="workout-setting-area__color-picker"
                       value={panel.TextEditor.Color.Text.slice(0, 7)}
                       onChange={e => panel.SetTextEditorColorText(e.target.value)}
                     />
                   </div>
 
-                  <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">選択色</span>
+                  <div className="workout-setting-area__color-row">
+                    <span className="workout-setting-area__color-label">選択色</span>
                     <input
                       type="color"
-                      className="workout-setting-panel__color-picker"
+                      className="workout-setting-area__color-picker"
                       value={panel.TextEditor.Color.Selection.slice(0, 7)}
                       onChange={e => panel.SetTextEditorColorSelection(e.target.value)}
                     />
                   </div>
 
-                  <div className="workout-setting-panel__color-row">
-                    <span className="workout-setting-panel__color-label">一致色</span>
+                  <div className="workout-setting-area__color-row">
+                    <span className="workout-setting-area__color-label">一致色</span>
                     <input
                       type="color"
-                      className="workout-setting-panel__color-picker"
+                      className="workout-setting-area__color-picker"
                       value={panel.TextEditor.Color.Occurrence.slice(0, 7)}
                       onChange={e => panel.SetTextEditorColorOccurrence(e.target.value)}
                     />
@@ -398,16 +398,16 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                     const style = panel.TextEditor.HeadingStyles[level - 1];
                     const fw = ['１', '２', '３', '４', '５'][level - 1];
                     return (
-                      <div key={level} className="workout-setting-panel__heading-style-row">
-                        <span className="workout-setting-panel__heading-style-label">セクション{fw}</span>
+                      <div key={level} className="workout-setting-area__heading-style-row">
+                        <span className="workout-setting-area__heading-style-label">セクション{fw}</span>
                         <input
                           type="color"
-                          className="workout-setting-panel__color-picker"
+                          className="workout-setting-area__color-picker"
                           value={style.color}
                           onChange={e => panel.SetTextEditorHeadingStyle(level, { color: e.target.value })}
                           data-tip={`セクション${fw}の文字色`}
                         />
-                        <label className="workout-setting-panel__small-checkbox">
+                        <label className="workout-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={style.bold}
@@ -415,7 +415,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                           />
                           B
                         </label>
-                        <label className="workout-setting-panel__small-checkbox">
+                        <label className="workout-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={style.underline}
@@ -429,31 +429,31 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                 </div>
               )}
             </div>
-            <div className="workout-setting-panel__divider" />
+            <div className="workout-setting-area__divider" />
 
             {/* ハイライトグループ色設定 */}
-            <div className="workout-setting-panel__section">
+            <div className="workout-setting-area__section">
               <div
-                className="workout-setting-panel__section-header"
+                className="workout-setting-area__section-header"
                 onClick={() => setIsHighlightColorOpen(!isHighlightColorOpen)}
               >
                 {isHighlightColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>ハイライト色</span>
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>ハイライト色</span>
               </div>
 
               {isHighlightColorOpen && (
-                <div className="workout-setting-panel__section-content">
+                <div className="workout-setting-area__section-content">
                   {[1, 2, 3, 4, 5].map(group => {
                     const style = panel.TextEditor.HighlightStyles[group - 1];
                     const fw = ['１', '２', '３', '４', '５'][group - 1];
                     return (
-                      <div key={group} className="workout-setting-panel__color-row">
-                        <span className="workout-setting-panel__color-label">グループ{fw}</span>
+                      <div key={group} className="workout-setting-area__color-row">
+                        <span className="workout-setting-area__color-label">グループ{fw}</span>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>背景</span>
                           <input
                             type="color"
-                            className="workout-setting-panel__color-picker"
+                            className="workout-setting-area__color-picker"
                             value={style.backgroundColor}
                             onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
                             data-tip={`グループ${fw}の背景色`}
@@ -462,7 +462,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                           <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>文字</span>
                           <input
                             type="color"
-                            className="workout-setting-panel__color-picker"
+                            className="workout-setting-area__color-picker"
                             value={style.color}
                             onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { color: e.target.value })}
                             data-tip={`グループ${fw}の文字色`}
@@ -475,24 +475,24 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                 </div>
               )}
             </div>
-            <div className="workout-setting-panel__divider" />
+            <div className="workout-setting-area__divider" />
 
             {/* メモ操作 */}
-            <div className="workout-setting-panel__section">
+            <div className="workout-setting-area__section">
               <div
-                className="workout-setting-panel__section-header"
+                className="workout-setting-area__section-header"
                 onClick={() => setIsMemoSettingsOpen(!isMemoSettingsOpen)}
               >
                 {isMemoSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>メモ</span>
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>メモ</span>
               </div>
 
               {isMemoSettingsOpen && (
-                <div className="workout-setting-panel__section-content">
+                <div className="workout-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
                     <button
-                      className="workout-setting-panel__icon-btn"
+                      className="workout-setting-area__icon-btn"
                       onClick={onCreateMemo}
                       data-tip="新規メモファイルを作成"
                     >
@@ -502,7 +502,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
                     <button
-                      className="workout-setting-panel__icon-btn"
+                      className="workout-setting-area__icon-btn"
                       onClick={onReadMemo}
                       data-tip="txt / md / xdoc を読み取って新規メモを作成"
                     >
@@ -512,7 +512,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
                     <button
-                      className="workout-setting-panel__icon-btn"
+                      className="workout-setting-area__icon-btn"
                       onClick={onSaveMemo}
                       data-tip="表示中のメモを .md ファイルで保存"
                     >
@@ -525,22 +525,22 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
           </>
         ) : activeSettings === 'datagrid' ? (
           <>
-            <div className="workout-setting-panel__section">
+            <div className="workout-setting-area__section">
               <div
-                className="workout-setting-panel__section-header"
+                className="workout-setting-area__section-header"
                 onClick={() => setIsTableSettingsOpen(!isTableSettingsOpen)}
               >
                 {isTableSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-panel__section-label" style={{ marginBottom: 0 }}>テーブル</span>
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>テーブル</span>
               </div>
 
               {isTableSettingsOpen && (
-                <div className="workout-setting-panel__section-content">
+                <div className="workout-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
                     <button
                       ref={firstDatagridRef}
-                      className="workout-setting-panel__icon-btn"
+                      className="workout-setting-area__icon-btn"
                       onClick={onCreateTable}
                       data-tip="新規テーブルファイルを作成"
                     >
@@ -550,7 +550,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
                     <button
-                      className="workout-setting-panel__icon-btn"
+                      className="workout-setting-area__icon-btn"
                       onClick={onReadTable}
                       data-tip="CSV / XLSX を読み取って新規テーブルを作成"
                     >
@@ -560,7 +560,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
                     <button
-                      className="workout-setting-panel__icon-btn"
+                      className="workout-setting-area__icon-btn"
                       onClick={onSaveTable}
                       data-tip="表示中のテーブルデータを CSV で保存"
                     >
@@ -572,7 +572,7 @@ export const WorkoutSettingPanel = forwardRef<WorkoutSettingPanelRef, Props>(fun
             </div>
           </>
         ) : (
-          <div className="workout-setting-panel__placeholder">
+          <div className="workout-setting-area__placeholder">
             {panelName} の設定は今後追加予定です。
           </div>
         )}

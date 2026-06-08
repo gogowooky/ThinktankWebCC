@@ -20,7 +20,7 @@ import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
 import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
 import { ReThinkPanel } from '../ReThinkPanel/ReThinkPanel';
-import { ApplicationStatusBar } from './ApplicationStatusBar';
+import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
 import './AppLayout.css';
 
 // パネル幅の初期値・最小値
@@ -74,8 +74,8 @@ export function AppLayout() {
 
   return (
     <HighlightProvider>
-    <div className="app-container">
-      <div className="app-layout">
+    <div className="ApplicationContainer">
+      <div className="ApplicationLayout">
 
         {/* ── ThinktankPanel（Phase 6 実装済み）─────────────────── */}
         <ThinktankPanel
@@ -110,7 +110,7 @@ export function AppLayout() {
         </div>
 
       </div>
-      <ApplicationStatusBar panel={app.WorkoutPanel} />
+      <ApplicationStatusBarArea panel={app.WorkoutPanel} />
     </div>
     </HighlightProvider>
   );

@@ -3,7 +3,7 @@
  * BSP ツリー型レイアウトで WorkoutArea を再帰的にレンダリングする。
  *
  * レイアウト構造（左→右）:
- *   [WorkoutTabBar 40px] [WorkoutSettingPanel? + Splitter] [コンテンツ flex:1]
+ *   [WorkoutTabBar 40px] [WorkoutSettingArea? + Splitter] [コンテンツ flex:1]
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -19,9 +19,9 @@ import { WorkoutHSplitter } from './WorkoutHSplitter';
 import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutTabBar } from './WorkoutTabBar';
-import { WorkoutSettingPanel } from './WorkoutSettingPanel';
-import type { WorkoutSettingPanelRef } from './WorkoutSettingPanel';
-import { extractLinkDrop } from './WorkoutAreaRibbon';
+import { WorkoutSettingArea } from './WorkoutSettingArea';
+import type { WorkoutSettingAreaRef } from './WorkoutSettingArea';
+import { extractLinkDrop } from './WorkoutMenuRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
 import type { SettingsType } from './WorkoutTabBar';
 import type { MediaType } from '../../types';
@@ -185,7 +185,7 @@ export function WorkoutPanel({ app }: Props) {
 
   // 設定パネル: 開閉は panel.IsAreaOpen
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
-  const settingPanelRef = useRef<WorkoutSettingPanelRef>(null);
+  const settingPanelRef = useRef<WorkoutSettingAreaRef>(null);
 
   // 設定パネルが開いた時・モード切替時に対応要素へフォーカス
   useEffect(() => {
@@ -722,7 +722,7 @@ export function WorkoutPanel({ app }: Props) {
         isOpen={panel.IsAreaOpen}
         width={settingsPanelWidth}
       >
-        <WorkoutSettingPanel
+        <WorkoutSettingArea
           ref={settingPanelRef}
           activeSettings={panel.ViewMode}
           panel={panel}

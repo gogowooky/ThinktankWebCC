@@ -1,6 +1,6 @@
-/* ApplicationStatusBar.css */
+/* ApplicationStatusBarArea.css */
 
-.application-status-bar {
+.ApplicationStatusBarArea {
   display: flex;
   align-items: center;
   height: 28px;
@@ -15,7 +15,7 @@
   width: 100%;
 }
 
-.application-status-bar__mode-indicator {
+.ApplicationStatusBarArea__mode-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -26,7 +26,7 @@
   cursor: default;
 }
 
-.application-status-bar__indicator-divider {
+.ApplicationStatusBarArea__indicator-divider {
   width: 1px;
   height: 14px;
   background: rgba(255, 255, 255, 0.15);
@@ -35,7 +35,7 @@
 }
 
 /* ── テキスト入力 ── */
-.application-status-bar__input {
+.ApplicationStatusBarArea__input {
   flex: 1;
   height: 20px;
   padding: 0 6px;
@@ -47,16 +47,16 @@
   min-width: 0;
 }
 
-.application-status-bar__input::placeholder {
+.ApplicationStatusBarArea__input::placeholder {
   color: rgba(255, 255, 255, 0.3);
 }
 
-.application-status-bar__input:focus {
+.ApplicationStatusBarArea__input:focus {
   background: transparent;
 }
 
 /* ── クリアボタン ── */
-.application-status-bar__clear-btn {
+.ApplicationStatusBarArea__clear-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,13 +68,13 @@
   transition: background 100ms ease, color 100ms ease;
 }
 
-.application-status-bar__clear-btn:hover {
+.ApplicationStatusBarArea__clear-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
 }
 
 /* ── モードアイコン群 ── */
-.application-status-bar__modes {
+.ApplicationStatusBarArea__modes {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -82,7 +82,7 @@
   flex-shrink: 0;
 }
 
-.application-status-bar__mode-btn {
+.ApplicationStatusBarArea__mode-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -93,18 +93,18 @@
   transition: background 100ms ease, color 100ms ease;
 }
 
-.application-status-bar__mode-btn:hover {
+.ApplicationStatusBarArea__mode-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
 }
 
-.application-status-bar__mode-btn--active {
+.ApplicationStatusBarArea__mode-btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
 /* ── ユーティリティボタン群 ── */
-.application-status-bar__utils {
+.ApplicationStatusBarArea__utils {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -112,7 +112,7 @@
   flex-shrink: 0;
 }
 
-.application-status-bar__util-btn {
+.ApplicationStatusBarArea__util-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -123,18 +123,18 @@
   transition: background 100ms ease, color 100ms ease;
 }
 
-.application-status-bar__util-btn:hover {
+.ApplicationStatusBarArea__util-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
 }
 
-.application-status-bar__util-btn--active {
+.ApplicationStatusBarArea__util-btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
 /* ── KeyAction イベントモニター ── */
-.application-status-bar__keyaction {
+.ApplicationStatusBarArea__keyaction {
   flex: 1;
   display: flex;
   align-items: center;
@@ -144,14 +144,14 @@
   min-width: 0;
 }
 
-.application-status-bar__ka-field {
+.ApplicationStatusBarArea__ka-field {
   display: flex;
   align-items: center;
   gap: 3px;
   flex-shrink: 0;
 }
 
-.application-status-bar__ka-label {
+.ApplicationStatusBarArea__ka-label {
   font-size: 9px;
   color: rgba(255, 255, 255, 0.35);
   text-transform: uppercase;
@@ -159,7 +159,7 @@
   user-select: none;
 }
 
-.application-status-bar__ka-value {
+.ApplicationStatusBarArea__ka-value {
   font-size: 11px;
   font-family: monospace;
   color: rgba(255, 255, 255, 0.85);
@@ -171,13 +171,13 @@
   white-space: nowrap;
 }
 
-.application-status-bar__ka-sep {
+.ApplicationStatusBarArea__ka-sep {
   color: rgba(255, 255, 255, 0.2);
   font-size: 10px;
   flex-shrink: 0;
 }
 
-.application-status-bar__ka-divider {
+.ApplicationStatusBarArea__ka-divider {
   width: 1px;
   height: 14px;
   background: rgba(255, 255, 255, 0.15);
@@ -185,7 +185,7 @@
   margin: 0 4px;
 }
 
-.application-status-bar__ka-value--focus {
+.ApplicationStatusBarArea__ka-value--focus {
   color: #7dd3c0;
   background: rgba(125, 211, 192, 0.12);
   max-width: 180px;
@@ -193,13 +193,13 @@
   text-overflow: ellipsis;
 }
 
-.application-status-bar__ka-value--exmode {
+.ApplicationStatusBarArea__ka-value--exmode {
   color: #f9a825;
   background: rgba(249, 168, 37, 0.15);
   font-weight: 600;
 }
 
-.application-status-bar__ka-value--action {
+.ApplicationStatusBarArea__ka-value--action {
   color: #aaa;
   max-width: 240px;
   overflow: hidden;
@@ -208,7 +208,7 @@
 }
 
 /* ── 作成者バナー ── */
-.application-status-bar__author-banner {
+.ApplicationStatusBarArea__author-banner {
   flex: 1;
   height: 20px;
   overflow: hidden;
@@ -216,7 +216,7 @@
   min-width: 0;
 }
 
-.application-status-bar__author-banner-text {
+.ApplicationStatusBarArea__author-banner-text {
   display: inline-block;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.75);

@@ -2,7 +2,7 @@
 
 /* ── メインコンテナ ────────────────────────────────────── */
 
-.app-container {
+.ApplicationContainer {
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -11,7 +11,7 @@
   background: var(--bg-primary);
 }
 
-.app-layout {
+.ApplicationLayout {
   display: flex;
   flex-direction: row;
   flex: 1;

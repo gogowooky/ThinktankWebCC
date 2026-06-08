@@ -12,9 +12,9 @@
   background: var(--rethink-area-bg);
 }
 
-/* ── コンテキストバー ─────────────────────────────── */
+/* ── ReThinkContextBar ─────────────────────────────── */
 
-.rethink-area__context {
+.ReThinkContextBar {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -25,16 +25,16 @@
   min-height: 28px;
 }
 
-.rethink-area__context--empty {
+.ReThinkContextBar--empty {
   background: color-mix(in srgb, var(--rethink-area-bg) 90%, var(--rethink-ribbon-bg) 10%);
 }
 
-.rethink-area__context-icon {
+.ReThinkContextBar__icon {
   color: var(--rethink-ribbon-bg);
   flex-shrink: 0;
 }
 
-.rethink-area__context-label {
+.ReThinkContextBar__label {
   font-size: 11px;
   font-weight: 600;
   color: #1a3d1c;
@@ -45,7 +45,7 @@
   min-width: 0;
 }
 
-.rethink-area__context-none {
+.ReThinkContextBar__none {
   font-size: 11px;
   color: rgba(30, 70, 32, 0.45);
   font-style: italic;

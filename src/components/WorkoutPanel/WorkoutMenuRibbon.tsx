@@ -1,5 +1,5 @@
 /**
- * WorkoutAreaRibbon.tsx
+ * WorkoutMenuRibbon.tsx
  * WorkoutArea のリボンバー。
  *
  * 左から: [ドラッグハンドル] [タイトル] [MediaTypeボタン群] [閉じるボタン]
@@ -19,7 +19,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
 };
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { MediaType } from '../../types';
-import './WorkoutAreaRibbon.css';
+import './WorkoutMenuRibbon.css';
 
 const MEMO_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
   { type: 'texteditor', Icon: NotebookPen,  title: 'テキストエディタ' },
@@ -140,7 +140,7 @@ interface Props {
   onUrlDrop?:        (url: string, title: string) => void;
 }
 
-export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
+export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
     : contentType === 'thought' ? THOUGHT_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
@@ -176,9 +176,9 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
   return (
     <div
       className={[
-        'workout-area-ribbon',
-        isFocused    ? 'workout-area-ribbon--focused'     : '',
-        isDropTarget ? 'workout-area-ribbon--drop-target' : '',
+        'workout-menu-ribbon',
+        isFocused    ? 'workout-menu-ribbon--focused'     : '',
+        isDropTarget ? 'workout-menu-ribbon--drop-target' : '',
       ].join(' ')}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -187,7 +187,7 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
 
       {/* 種別アイコン（ドラッグハンドル兼用）*/}
       <div
-        className="workout-area-ribbon__drag"
+        className="workout-menu-ribbon__drag"
         onMouseDown={onDragStart}
         data-tip="ドラッグして移動"
         data-tip-side="bottom"
@@ -196,17 +196,17 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
       </div>
 
       {/* タイトル（未保存変更があれば ● を表示）*/}
-      <span className="workout-area-ribbon__title" data-tip={area.Title} data-tip-side="bottom">
-        {isDirty && <span className="workout-area-ribbon__dirty">●</span>}
+      <span className="workout-menu-ribbon__title" data-tip={area.Title} data-tip-side="bottom">
+        {isDirty && <span className="workout-menu-ribbon__dirty">●</span>}
         {area.Title || '（無題）'}
       </span>
 
       {/* MediaType ボタン群 */}
-      <div className="workout-area-ribbon__media">
+      <div className="workout-menu-ribbon__media">
         {mediaButtons.map(({ type, Icon, title }) => (
           <button
             key={type}
-            className={`workout-area-ribbon__media-btn${area.MediaType === type ? ' workout-area-ribbon__media-btn--active' : ''}`}
+            className={`workout-menu-ribbon__media-btn${area.MediaType === type ? ' workout-menu-ribbon__media-btn--active' : ''}`}
             onClick={() => onMediaTypeChange(type)}
             data-tip={title}
             data-tip-side="left"
@@ -218,7 +218,7 @@ export function WorkoutAreaRibbon({ area, contentType, isFocused, isDirty = fals
 
       {/* 閉じるボタン */}
       <button
-        className="workout-area-ribbon__close"
+        className="workout-menu-ribbon__close"
         onClick={onClose}
         data-tip="閉じる"
         data-tip-side="bottom"

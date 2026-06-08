@@ -2,7 +2,7 @@
  * ReThinkArea.tsx
  * Phase 10: ReThinkPanel のメインエリア。
  *
- * - 上部コンテキストバー: 連携中 Thought / Think 名を表示
+ * - 上部 ReThinkContextBar: 連携中 Thought / Think 名を表示
  * - 下部: ReThinkChat（AI との CLI ターミナル風チャット）
  */
 
@@ -117,24 +117,24 @@ export function ReThinkArea({ app, viewMode }: Props) {
         onScrollNext={handleScrollNext}
       />
 
-      {/* ── コンテキストバー ─────────────────────────────────── */}
-      <div className={`rethink-area__context${hasContext ? '' : ' rethink-area__context--empty'}`}>
+      {/* ── ReThinkContextBar ─────────────────────────────────── */}
+      <div id="rethink-context-bar" className={`ReThinkContextBar${hasContext ? '' : ' ReThinkContextBar--empty'}`}>
         {thoughtName ? (
           <>
-            <BookOpen size={11} className="rethink-area__context-icon" />
-            <span className="rethink-area__context-label" title={thoughtName}>
+            <BookOpen size={11} className="ReThinkContextBar__icon" />
+            <span className="ReThinkContextBar__label" title={thoughtName}>
               {thoughtName}
             </span>
           </>
         ) : thinkName ? (
           <>
-            <FileText size={11} className="rethink-area__context-icon" />
-            <span className="rethink-area__context-label" title={thinkName}>
+            <FileText size={11} className="ReThinkContextBar__icon" />
+            <span className="ReThinkContextBar__label" title={thinkName}>
               {thinkName}
             </span>
           </>
         ) : (
-          <span className="rethink-area__context-none">コンテキスト未設定</span>
+          <span className="ReThinkContextBar__none">コンテキスト未設定</span>
         )}
       </div>
 

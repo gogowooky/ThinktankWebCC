@@ -1,11 +1,11 @@
-/* WorkoutSettingPanel.css */
+/* WorkoutSettingArea.css */
 
 /* パネル内にフォーカスがある間、ヘッダーに下線を表示 */
-.workout-setting-panel:focus-within .workout-setting-panel__header {
+.workout-setting-area:focus-within .workout-setting-area__header {
   text-decoration: underline;
 }
 
-.workout-setting-panel {
+.workout-setting-area {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -19,7 +19,7 @@
 }
 
 /* ── ヘッダー ────────────────────────────────────────── */
-.workout-setting-panel__header {
+.workout-setting-area__header {
   flex-shrink: 0;
   height: 30px;
   display: flex;
@@ -35,7 +35,7 @@
 }
 
 /* ── 本体 ──────────────────────────────────────────── */
-.workout-setting-panel__body {
+.workout-setting-area__body {
   flex: 1;
   overflow-y: auto;
   overflow-x: visible;
@@ -43,7 +43,7 @@
 }
 
 /* ── セクション ─────────────────────────────────────── */
-.workout-setting-panel__section {
+.workout-setting-area__section {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -51,11 +51,11 @@
   position: relative;
 }
 
-.workout-setting-panel__section:hover {
+.workout-setting-area__section:hover {
   z-index: 100;
 }
 
-.workout-setting-panel__section-label {
+.workout-setting-area__section-label {
   font-size: 9px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -65,7 +65,7 @@
   flex-shrink: 0;
 }
 
-.workout-setting-panel__section-header {
+.workout-setting-area__section-header {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -77,18 +77,18 @@
   user-select: none;
 }
 
-.workout-setting-panel__section-header:hover {
+.workout-setting-area__section-header:hover {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.workout-setting-panel__section-header .workout-setting-panel__section-label {
+.workout-setting-area__section-header .workout-setting-area__section-label {
   margin-bottom: 0;
   padding: 0;
   color: inherit;
   font-size: 10px;
 }
 
-.workout-setting-panel__section-content {
+.workout-setting-area__section-content {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -100,7 +100,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.workout-setting-panel__btn {
+.workout-setting-area__btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -117,18 +117,18 @@
   text-align: left;
 }
 
-.workout-setting-panel__btn .lucide {
+.workout-setting-area__btn .lucide {
   flex-shrink: 0;
   width: 14px;
 }
 
-.workout-setting-panel__btn:hover:not(:disabled) {
+.workout-setting-area__btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-.workout-setting-panel__btn:disabled,
-.workout-setting-panel__btn--disabled {
+.workout-setting-area__btn:disabled,
+.workout-setting-area__btn--disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -144,13 +144,13 @@
 }
 
 /* ── アイコンボタン行（4×1）──────────────────────── */
-.workout-setting-panel__icon-row {
+.workout-setting-area__icon-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
 }
 
-.workout-setting-panel__icon-btn {
+.workout-setting-area__icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -161,18 +161,18 @@
   cursor: pointer;
 }
 
-.workout-setting-panel__icon-btn:hover:not(:disabled) {
+.workout-setting-area__icon-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-.workout-setting-panel__icon-btn:disabled {
+.workout-setting-area__icon-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
 /* ── セクション区切り ──────────────────────────────── */
-.workout-setting-panel__divider {
+.workout-setting-area__divider {
   height: 1px;
   margin: 6px 8px;
   background: rgba(255, 255, 255, 0.08);
@@ -180,7 +180,7 @@
 }
 
 /* ── プレースホルダー ──────────────────────────────── */
-.workout-setting-panel__placeholder {
+.workout-setting-area__placeholder {
   padding: 12px;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.3);
@@ -188,7 +188,7 @@
 }
 
 /* ── チェックボックス ──────────────────────────────── */
-.workout-setting-panel__checkbox-label {
+.workout-setting-area__checkbox-label {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -196,19 +196,19 @@
   cursor: pointer;
 }
 
-.workout-setting-panel__checkbox-label input[type="checkbox"] {
+.workout-setting-area__checkbox-label input[type="checkbox"] {
   margin: 0;
   cursor: pointer;
 }
 
-.workout-setting-panel__checkbox-text {
+.workout-setting-area__checkbox-text {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
   user-select: none;
 }
 
 /* ── 色設定 ──────────────────────────────────── */
-.workout-setting-panel__color-row {
+.workout-setting-area__color-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -216,12 +216,12 @@
   padding: 2px 8px;
 }
 
-.workout-setting-panel__color-label {
+.workout-setting-area__color-label {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
 }
 
-.workout-setting-panel__color-picker {
+.workout-setting-area__color-picker {
   -webkit-appearance: none;
   border: 1px solid rgba(255, 255, 255, 0.2);
   width: 21px;
@@ -232,28 +232,28 @@
   background: none;
 }
 
-.workout-setting-panel__color-picker::-webkit-color-swatch-wrapper {
+.workout-setting-area__color-picker::-webkit-color-swatch-wrapper {
   padding: 0;
 }
 
-.workout-setting-panel__color-picker::-webkit-color-swatch {
+.workout-setting-area__color-picker::-webkit-color-swatch {
   border: none;
   border-radius: 3px;
 }
 
-.workout-setting-panel__heading-style-row {
+.workout-setting-area__heading-style-row {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
 }
 
-.workout-setting-panel__heading-style-label {
+.workout-setting-area__heading-style-label {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.75);
 }
 
-.workout-setting-panel__small-checkbox {
+.workout-setting-area__small-checkbox {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -263,20 +263,20 @@
   cursor: pointer;
 }
 
-.workout-setting-panel__small-checkbox input {
+.workout-setting-area__small-checkbox input {
   margin: 0;
   cursor: pointer;
 }
 
 /* ── ハイライト設定 ──────────────────────────────────── */
-.workout-setting-panel__input-with-clear {
+.workout-setting-area__input-with-clear {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
 }
 
-.workout-setting-panel__text-input {
+.workout-setting-area__text-input {
   width: 100%;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -288,11 +288,11 @@
   transition: border-color 0.2s ease;
 }
 
-.workout-setting-panel__text-input:focus {
+.workout-setting-area__text-input:focus {
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-.workout-setting-panel__clear-btn {
+.workout-setting-area__clear-btn {
   position: absolute;
   right: 6px;
   background: none;
@@ -307,13 +307,13 @@
   transition: color 0.1s ease, background 0.1s ease;
 }
 
-.workout-setting-panel__clear-btn:hover {
+.workout-setting-area__clear-btn:hover {
   color: rgba(255, 255, 255, 0.8);
   background: rgba(255, 255, 255, 0.1);
 }
 
 /* ── 入れ替えボタン ────────────────────────────────── */
-.workout-setting-panel__swap-btn {
+.workout-setting-area__swap-btn {
   width: 100%;
   padding: 5px 8px;
   font-size: 11px;
@@ -326,14 +326,14 @@
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
-.workout-setting-panel__swap-btn:hover {
+.workout-setting-area__swap-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* ── アイコンボタン（danger） ──────────────────────── */
-.workout-setting-panel__icon-btn--danger:hover:not(:disabled) {
+.workout-setting-area__icon-btn--danger:hover:not(:disabled) {
   background: rgba(239, 83, 80, 0.2);
   color: #ef5350;
 }

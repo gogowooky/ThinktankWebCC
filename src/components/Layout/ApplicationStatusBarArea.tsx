@@ -1,5 +1,5 @@
 /**
- * ApplicationStatusBar.tsx
+ * ApplicationStatusBarArea.tsx
  * アプリケーション全体の最下段に常時表示されるステータスバー。
  * 左: テキスト入力欄（モードに応じた機能）
  * 右: モードアイコン群 + ユーティリティボタン
@@ -13,7 +13,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
-import './ApplicationStatusBar.css';
+import './ApplicationStatusBarArea.css';
 
 const _cw = JSON.parse(copywriteRaw);
 const AUTHOR_BANNER_TEXT = `${_cw.appName} ver.${_cw.version}, ${_cw.copyright.holder}(${_cw.copyright.year}). --- [${_cw.projectName}:${_cw.commitId}](${_cw.commitDateTime}) --- ${_cw.commitMessage}`;
@@ -59,7 +59,7 @@ interface Props {
   panel: TTWorkoutPanel;
 }
 
-export function ApplicationStatusBar({ panel }: Props) {
+export function ApplicationStatusBarArea({ panel }: Props) {
   useAppUpdate(panel);
   const status = TTApplication.Instance.Status;
   useAppUpdate(status);
@@ -238,81 +238,83 @@ export function ApplicationStatusBar({ panel }: Props) {
   const isLocalMode = storageMode === 'electron' || storageMode === 'local';
 
   return (
-    <div className="application-status-bar">
+    <div className="ApplicationStatusBarArea">
 
       {/* 起動モードインジケータ */}
       <div
-        className="application-status-bar__mode-indicator"
+        id="StatusBarModeIndicator"
+        className="ApplicationStatusBarArea__mode-indicator"
         data-tip={isLocalMode ? '起動モード: Local' : '起動モード: Online'}
       >
         {isLocalMode ? <Monitor size={14} /> : <Globe size={14} />}
       </div>
-      <div className="application-status-bar__indicator-divider" />
+      <div className="ApplicationStatusBarArea__indicator-divider" />
 
       {/* 作成者バナー / 作成者静的表示 / 通常入力欄 */}
       {authorState === 'banner' ? (
         <div
-          className="application-status-bar__author-banner"
+          className="ApplicationStatusBarArea__author-banner"
           onClick={handleBannerClick}
           title="クリックで静的表示"
         >
-          <span className="application-status-bar__author-banner-text">
+          <span className="ApplicationStatusBarArea__author-banner-text">
             {AUTHOR_BANNER_TEXT}
           </span>
         </div>
       ) : mode === 'keyaction' && authorState === 'off' ? (
-        <div className="application-status-bar__keyaction">
-          <span className="application-status-bar__ka-field">
-            <span className="application-status-bar__ka-label">focus</span>
-            <span className="application-status-bar__ka-value application-status-bar__ka-value--focus">{kaState.focus}</span>
+        <div className="ApplicationStatusBarArea__keyaction">
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">focus</span>
+            <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{kaState.focus}</span>
           </span>
-          <span className="application-status-bar__ka-divider" />
-          <span className="application-status-bar__ka-field">
-            <span className="application-status-bar__ka-label">mod</span>
-            <span className="application-status-bar__ka-value">{kaState.modifiers}</span>
+          <span className="ApplicationStatusBarArea__ka-divider" />
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">mod</span>
+            <span className="ApplicationStatusBarArea__ka-value">{kaState.modifiers}</span>
           </span>
-          <span className="application-status-bar__ka-sep">·</span>
-          <span className="application-status-bar__ka-field">
-            <span className="application-status-bar__ka-label">key</span>
-            <span className="application-status-bar__ka-value">{kaState.key}</span>
+          <span className="ApplicationStatusBarArea__ka-sep">·</span>
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">key</span>
+            <span className="ApplicationStatusBarArea__ka-value">{kaState.key}</span>
           </span>
-          <span className="application-status-bar__ka-sep">·</span>
-          <span className="application-status-bar__ka-field">
-            <span className="application-status-bar__ka-label">mouse</span>
-            <span className="application-status-bar__ka-value">{kaState.mouse}</span>
+          <span className="ApplicationStatusBarArea__ka-sep">·</span>
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">mouse</span>
+            <span className="ApplicationStatusBarArea__ka-value">{kaState.mouse}</span>
           </span>
-          <span className="application-status-bar__ka-sep">·</span>
-          <span className="application-status-bar__ka-field">
-            <span className="application-status-bar__ka-label">touch</span>
-            <span className="application-status-bar__ka-value">{kaState.touch}</span>
+          <span className="ApplicationStatusBarArea__ka-sep">·</span>
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">touch</span>
+            <span className="ApplicationStatusBarArea__ka-value">{kaState.touch}</span>
           </span>
-          <span className="application-status-bar__ka-divider" />
-          <span className="application-status-bar__ka-field">
-            <span className="application-status-bar__ka-label">exmode</span>
-            <span className={`application-status-bar__ka-value${status.ExMode ? ' application-status-bar__ka-value--exmode' : ''}`}>
+          <span className="ApplicationStatusBarArea__ka-divider" />
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">exmode</span>
+            <span className={`ApplicationStatusBarArea__ka-value${status.ExMode ? ' ApplicationStatusBarArea__ka-value--exmode' : ''}`}>
               {status.ExMode || '-'}
             </span>
           </span>
           {status.ExMode && (
             <>
-              <span className="application-status-bar__ka-sep">·</span>
-              <span className="application-status-bar__ka-field">
-                <span className="application-status-bar__ka-label">exmod</span>
-                <span className="application-status-bar__ka-value">{status.ExModeModKey}</span>
+              <span className="ApplicationStatusBarArea__ka-sep">·</span>
+              <span className="ApplicationStatusBarArea__ka-field">
+                <span className="ApplicationStatusBarArea__ka-label">exmod</span>
+                <span className="ApplicationStatusBarArea__ka-value">{status.ExModeModKey}</span>
               </span>
             </>
           )}
-          <span className="application-status-bar__ka-divider" />
-          <span className="application-status-bar__ka-field">
-            <span className="application-status-bar__ka-label">action</span>
-            <span className="application-status-bar__ka-value application-status-bar__ka-value--action">{status.LastActionDisplay || '-'}</span>
+          <span className="ApplicationStatusBarArea__ka-divider" />
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">action</span>
+            <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--action">{status.LastActionDisplay || '-'}</span>
           </span>
         </div>
       ) : (
         <>
           <input
             ref={inputRef}
-            className="application-status-bar__input"
+            id="StatusBarTextInput"
+            className="ApplicationStatusBarArea__input"
             type="text"
             value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
             readOnly={authorState === 'static'}
@@ -332,7 +334,7 @@ export function ApplicationStatusBar({ panel }: Props) {
           )}
           {authorState === 'off' && text && (
             <button
-              className="application-status-bar__clear-btn"
+              className="ApplicationStatusBarArea__clear-btn"
               onClick={handleClear}
               data-tip="クリア"
               aria-label="クリア"
@@ -344,11 +346,12 @@ export function ApplicationStatusBar({ panel }: Props) {
       )}
 
       {/* モードアイコン群 */}
-      <div className="application-status-bar__modes">
+      <div className="ApplicationStatusBarArea__modes">
         {MODES.map(m => (
           <button
             key={m.id}
-            className={`application-status-bar__mode-btn${!isAuthorOn && mode === m.id ? ' application-status-bar__mode-btn--active' : ''}`}
+            id={`StatusBarModeButton${m.id}`}
+            className={`ApplicationStatusBarArea__mode-btn${!isAuthorOn && mode === m.id ? ' ApplicationStatusBarArea__mode-btn--active' : ''}`}
             onClick={() => handleModeSelect(m.id)}
             data-tip={m.label}
             aria-label={m.label}
@@ -359,9 +362,9 @@ export function ApplicationStatusBar({ panel }: Props) {
       </div>
 
       {/* ユーティリティボタン */}
-      <div className="application-status-bar__utils">
+      <div className="ApplicationStatusBarArea__utils">
         <button
-          className={`application-status-bar__util-btn${isAuthorOn ? ' application-status-bar__util-btn--active' : ''}`}
+          className={`ApplicationStatusBarArea__util-btn${isAuthorOn ? ' ApplicationStatusBarArea__util-btn--active' : ''}`}
           onClick={handleAuthorToggle}
           data-tip="Copyright"
           data-tip-side="left"

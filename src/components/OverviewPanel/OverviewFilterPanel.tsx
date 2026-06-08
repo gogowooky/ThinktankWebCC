@@ -2,11 +2,11 @@ import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react'
 import { Type, CalendarDays, CalendarClock, ChevronDown, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { parseRange } from '../../utils/dateUtils';
-import { FilterHistoryPulldown } from './FilterHistoryPulldown';
+import { FilterHistoryPulldown } from '../ThinktankPanel/FilterHistoryPulldown';
 import { saveHistory } from '../../utils/historyUtils';
-import './UnifiedFilterPanel.css';
+import './OverviewFilterPanel.css';
 
-export interface UnifiedFilterPanelRef {
+export interface OverviewFilterPanelRef {
   focus: () => void;
 }
 
@@ -38,7 +38,7 @@ interface Props {
   textIcon?:        LucideIcon;
 }
 
-export const UnifiedFilterPanel = React.memo(forwardRef<UnifiedFilterPanelRef, Props>(function UnifiedFilterPanel({
+export const OverviewFilterPanel = React.memo(forwardRef<OverviewFilterPanelRef, Props>(function OverviewFilterPanel({
   historyKey,
   textValue, onTextChange,
   createdDate, onCreatedDateChange,
@@ -194,3 +194,4 @@ export const UnifiedFilterPanel = React.memo(forwardRef<UnifiedFilterPanelRef, P
     </div>
   );
 }));
+OverviewFilterPanel.displayName = 'OverviewFilterPanel';

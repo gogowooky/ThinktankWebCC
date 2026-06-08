@@ -1,0 +1,219 @@
+.unified-filter-panel {
+  display: flex;
+  flex-direction: column;
+  background: transparent; /* 親の背景色（--overview-area-bg 等）を活かす */
+}
+
+.unified-filter-row {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  gap: 6px;
+  padding: 0 8px;
+  background: rgba(0, 0, 0, 0.04); /* 極薄いグレーで境界のみ作る */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: visible;
+  z-index: 10;
+}
+
+.unified-filter-row-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.unified-filter-row-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.unified-filter-icon {
+  flex-shrink: 0;
+  color: #555;
+  opacity: 0.6;
+}
+
+/* テキスト入力ラッパー */
+.unified-filter-text-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.unified-filter-text-input {
+  flex: 1;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: #1a1a2e; /* テキスト色は濃い紺色を維持 */
+  font-family: inherit;
+  padding-right: 20px;
+}
+
+.unified-filter-text-input::placeholder {
+  color: #888;
+}
+
+/* プルダウントリガーアイコン */
+.unified-filter-pulldown-icon {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+
+.unified-filter-pulldown-icon:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #666;
+}
+
+/* 日付入力 */
+.unified-filter-date-input {
+  width: 92px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: #1a1a2e;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.unified-filter-date-input::-webkit-datetime-edit {
+  color: #888; /* プレースホルダーと同じグレーに合わせる */
+}
+
+.unified-filter-date-input::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+  margin-left: -6px;
+  padding: 0;
+}
+
+/* 範囲入力 */
+.unified-filter-range-input {
+  width: 58px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 11px;
+  color: #1a1a2e;
+  font-family: inherit;
+  text-align: right;
+  margin-left: 0px; /* 余白をゼロに */
+}
+
+.unified-filter-range-input--invalid {
+  color: #c0392b;
+}
+
+/* ボタン類 */
+.unified-filter-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.unified-filter-btn:hover {
+  color: #333;
+  background: rgba(0,0,0,0.05);
+}
+
+.unified-filter-btn--clear:hover {
+  color: #c0392b;
+}
+
+/* 件数カウント */
+.unified-filter-count {
+  font-size: 10px;
+  color: #888;
+  white-space: nowrap;
+}
+
+/* プルダウンメニュー — テキストボックスの幅に合わせる */
+.filter-history-pulldown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%; /* 親 (wrapper) の幅に合わせる */
+  max-width: 400px; /* 横長になりすぎないように */
+  background: #ffffff; /* 履歴は白背景で見やすく */
+  border: 1px solid #d0d7de;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  z-index: 1000;
+  margin-top: -1px;
+}
+
+.filter-history-pulldown__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.filter-history-pulldown__item {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px; /* パディングを詰めて狭くする */
+  cursor: pointer;
+  gap: 6px;
+  transition: background 0.1s;
+}
+
+.filter-history-pulldown__item:hover {
+  background: #f5f7fa;
+}
+
+.filter-history-pulldown__item-text {
+  flex: 1;
+  font-size: 11px; /* 12px から 11px に下げてよりタイトに */
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filter-history-pulldown__item-delete {
+  padding: 4px;
+  color: #ccc;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+}
+
+.filter-history-pulldown__item:hover .filter-history-pulldown__item-delete {
+  opacity: 1;
+}
+
+.filter-history-pulldown__item-delete:hover {
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+}

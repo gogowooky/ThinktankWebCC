@@ -16,8 +16,8 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { TTThink } from '../../models/TTThink';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
-import { UnifiedFilterPanel } from './UnifiedFilterPanel';
-import type { UnifiedFilterPanelRef } from './UnifiedFilterPanel';
+import { ThinktankFilterPanel } from './ThinktankFilterPanel';
+import type { ThinktankFilterPanelRef } from './ThinktankFilterPanel';
 import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchBar } from './ThinktankSearchBar';
 import { applySort } from '../../utils/sortUtils';
@@ -91,7 +91,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
   const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
 
-  const filterPanelRef   = useRef<UnifiedFilterPanelRef>(null);
+  const filterPanelRef   = useRef<ThinktankFilterPanelRef>(null);
   const settingsViewRef  = useRef<ThinktankSettingsViewRef>(null);
 
   // mode 切り替え時: 適切な入力要素に自動フォーカス
@@ -383,7 +383,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
       {isFilterMode && (
         <>
-          <UnifiedFilterPanel
+          <ThinktankFilterPanel
             ref={filterPanelRef}
             historyKey="tt-filter"
             textValue={filterTitleQuery}

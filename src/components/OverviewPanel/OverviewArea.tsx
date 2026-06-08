@@ -26,9 +26,9 @@ import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
 import type { GraphMediaRef } from '../WorkoutPanel/media/GraphMedia';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
 import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
-import { UnifiedFilterPanel } from '../ThinktankPanel/UnifiedFilterPanel';
-import type { UnifiedFilterPanelRef } from '../ThinktankPanel/UnifiedFilterPanel';
-import { ThinktankSearchBar } from '../ThinktankPanel/ThinktankSearchBar';
+import { OverviewFilterPanel } from './OverviewFilterPanel';
+import type { OverviewFilterPanelRef } from './OverviewFilterPanel';
+import { OverviewSearchBar } from './OverviewSearchBar';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
@@ -87,7 +87,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const chatAbortRef                    = useRef<AbortController | null>(null);
   const chatAccumulatedRef              = useRef('');
   const aiChatViewRef                   = useRef<AiChatViewRef>(null);
-  const filterPanelRef                  = useRef<UnifiedFilterPanelRef>(null);
+  const filterPanelRef                  = useRef<OverviewFilterPanelRef>(null);
   const settingsViewRef                 = useRef<OverviewSettingsViewRef>(null);
   const graphMediaRef                   = useRef<GraphMediaRef>(null);
 
@@ -426,7 +426,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       {/* ── フィルターパネル + 検索バー（Think一覧モードのみ）────────── */}
       {isThinkListMode && (
         <>
-          <UnifiedFilterPanel
+          <OverviewFilterPanel
             ref={filterPanelRef}
             historyKey="ov-filter"
             textValue={filter}
@@ -441,7 +441,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             onUpdatedRangeChange={setUpdatedRange}
             showDateFilters={true}
           />
-          <ThinktankSearchBar
+          <OverviewSearchBar
             searchQuery={searchQuery}
             onSearchQueryChange={handleSearchQueryChange}
             onSearch={handleSearch}
