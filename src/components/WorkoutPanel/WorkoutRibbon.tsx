@@ -1,6 +1,6 @@
 /**
  * WorkoutRibbon.tsx
- * WorkoutPanel 左縦リボン（カスタム実装）。
+ * WorkoutPanel 左縦タブバー（旧リボン）。
  *
  * ボタン構成（上から）:
  *   Workout設定 / TextEditor設定 / Markdown設定 /
@@ -8,11 +8,11 @@
  *
  * - 押下で対応する設定パネルを開く
  * - 開いている設定パネルのボタン再押下で閉じる
- * - 上部: アクティブ設定名ラベル（縦書き）
  * - 下部: フォーカスペインの Think タイトル（縦書き）
  */
 
-import { ChevronLeft, ChevronRight, PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, type LucideIcon } from 'lucide-react';
+import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, type LucideIcon } from 'lucide-react';
+import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
 import './WorkoutRibbon.css';
 
@@ -48,46 +48,28 @@ export function WorkoutRibbon({ activeSettings, isOpen, thinkTitle, onToggle, on
   };
 
   return (
-    <div className="workout-ribbon">
-
-      {/* 最上部: 開閉トグルボタン */}
-      <button
-        className="workout-ribbon__toggle"
-        onClick={onToggle}
-        data-tip={isOpen ? '設定パネルを閉じる' : '設定パネルを開く'}
-        aria-label={isOpen ? '設定パネルを閉じる' : '設定パネルを開く'}
-      >
-        {isOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-      </button>
-
-      {/* 設定ボタン群 */}
-      <div className="workout-ribbon__buttons">
-        {WORKOUT_SETTINGS.map(({ type, Icon, name, id }) => (
-          <button
-            key={type}
-            id={id}
-            className={[
-              'workout-ribbon__btn',
-              activeSettings === type ? 'workout-ribbon__btn--active' : '',
-            ].join(' ')}
-            onClick={() => handleClick(type)}
-            data-tip={name}
-            aria-label={id}
-          >
-            <Icon size={16} />
-          </button>
-        ))}
-      </div>
-
-      {/* スペーサー */}
-      <div className="workout-ribbon__spacer" />
-
-      {/* 下部: Think タイトル（縦書き）*/}
-      {thinkTitle && (
-        <div className="workout-ribbon__label-wrap" data-tip={thinkTitle} data-tip-side="right">
-          <span className="workout-ribbon__label">{thinkTitle}</span>
-        </div>
-      )}
-    </div>
+    <VerticalTabBar
+      panelId="workout"
+      side="left"
+      isOpen={isOpen}
+      onToggle={onToggle}
+      bottomLabel={thinkTitle}
+    >
+      {WORKOUT_SETTINGS.map(({ type, Icon, name, id }) => (
+        <button
+          key={type}
+          id={id}
+          className={[
+            'workout-ribbon__btn',
+            activeSettings === type ? 'workout-ribbon__btn--active' : '',
+          ].join(' ')}
+          onClick={() => handleClick(type)}
+          data-tip={name}
+          aria-label={id}
+        >
+          <Icon size={16} />
+        </button>
+      ))}
+    </VerticalTabBar>
   );
 }

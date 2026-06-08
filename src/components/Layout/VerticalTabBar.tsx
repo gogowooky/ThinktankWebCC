@@ -1,34 +1,34 @@
 /**
- * PanelRibbon.tsx
- * Phase 5: 各パネル共通の縦アイコンバー（Ribbon）。
+ * VerticalTabBar.tsx
+ * 各パネル共通の縦型タブバー（旧リボン）。
  *
  * - 常時表示（開閉によって非表示にならない）
  * - パネルテーマ色を背景に持つ
- * - 開閉トグルボタンを末尾に配置
+ * - 開閉トグルボタンを末尾（または先頭）に配置
  * - side='left'  のとき chevron は右向き（Area が右にある）
  * - side='right' のとき chevron は左向き（Area が左にある）
  */
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
-import './PanelRibbon.css';
+import './VerticalTabBar.css';
 
 export type PanelSide = 'left' | 'right';
 
 interface Props {
   /** パネル識別子（CSS クラス名 & data 属性用）*/
   panelId: 'thinktank' | 'overview' | 'workout' | 'rethink';
-  /** Ribbon を表示するパネルの向き（Area が ribbon のどちら側にあるか）*/
+  /** タブバーを表示するパネルの向き（Area が tab-bar のどちら側にあるか）*/
   side?: PanelSide;
   /** Area の開閉状態 */
   isOpen: boolean;
   /** 開閉トグルコールバック */
   onToggle: () => void;
-  /** Ribbon 内（上部）に表示する追加ボタン群 */
+  /** タブバー内（上部）に表示するタブ（アイコンボタン群） */
   children?: ReactNode;
-  /** Ribbon 下部に固定表示するボタン群 */
+  /** タブバー下部に固定表示するボタン群 */
   bottomChildren?: ReactNode;
-  /** Ribbon 最下部に縦書きで表示するラベル */
+  /** タブバー最下部に縦書きで表示するラベル */
   bottomLabel?: string;
   /** D&D ドロップ受け入れ中フラグ（ハイライト用）*/
   isDragOver?: boolean;
@@ -37,7 +37,7 @@ interface Props {
   onDrop?: React.DragEventHandler<HTMLDivElement>;
 }
 
-export function PanelRibbon({
+export function VerticalTabBar({
   panelId,
   side = 'left',
   isOpen,
@@ -51,14 +51,14 @@ export function PanelRibbon({
   onDrop,
 }: Props) {
   // 開閉矢印の向きを決定
-  // left  側 ribbon: 閉じているとき右向き▶（開く）、開いているとき左向き◀（閉じる）
-  // right 側 ribbon: 閉じているとき左向き◀（開く）、開いているとき右向き▶（閉じる）
+  // left  側 tab-bar: 閉じているとき右向き▶（開く）、開いているとき左向き◀（閉じる）
+  // right 側 tab-bar: 閉じているとき左向き◀（開く）、開いているとき右向き▶（閉じる）
   const showChevronRight =
     (side === 'left' && !isOpen) || (side === 'right' && isOpen);
 
   return (
     <div
-      className={`panel-ribbon panel-ribbon--${panelId}${isDragOver ? ' panel-ribbon--drag-over' : ''}`}
+      className={`vertical-tab-bar vertical-tab-bar--${panelId}${isDragOver ? ' vertical-tab-bar--drag-over' : ''}`}
       data-panel={panelId}
       data-side={side}
       onDragOver={onDragOver}
@@ -67,7 +67,7 @@ export function PanelRibbon({
     >
       {/* 開閉トグルボタン（先頭）*/}
       <button
-        className="panel-ribbon__toggle"
+        className="vertical-tab-bar__toggle"
         onClick={onToggle}
         data-tip={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
         aria-label={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
@@ -78,21 +78,21 @@ export function PanelRibbon({
         }
       </button>
 
-      {/* ユーザー定義ボタン */}
-      {children && <div className="panel-ribbon__buttons">{children}</div>}
+      {/* タブボタン群（メイン） */}
+      {children && <div className="vertical-tab-bar__buttons">{children}</div>}
 
-      {/* 上寄せ固定ボタン群（モードボタン直下）*/}
+      {/* 下部固定ボタン群（設定ボタンなど） */}
       {bottomChildren && (
-        <div className="panel-ribbon__bottom">{bottomChildren}</div>
+        <div className="vertical-tab-bar__bottom">{bottomChildren}</div>
       )}
 
       {/* スペーサー */}
-      <div className="panel-ribbon__spacer" />
+      <div className="vertical-tab-bar__spacer" />
 
-      {/* 最下部ラベル（左90度・下寄せ）*/}
+      {/* 最下部ラベル（左90度・下寄せ） */}
       {bottomLabel && (
-        <div className="panel-ribbon__label-wrap" data-tip={bottomLabel} data-tip-side={side === 'left' ? 'right' : 'left'}>
-          <span className="panel-ribbon__label">{bottomLabel}</span>
+        <div className="vertical-tab-bar__label-wrap" data-tip={bottomLabel} data-tip-side={side === 'left' ? 'right' : 'left'}>
+          <span className="vertical-tab-bar__label">{bottomLabel}</span>
         </div>
       )}
     </div>

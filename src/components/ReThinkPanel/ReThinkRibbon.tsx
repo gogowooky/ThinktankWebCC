@@ -1,13 +1,13 @@
 /**
  * ReThinkRibbon.tsx
- * Phase 10: ReThinkPanel の Ribbon。
+ * Phase 10: ReThinkPanel の 縦型タブバー（旧Ribbon）。
  *
  * side="right" でパネルの右端に配置。
  * ボタン: AI相談 / 設定 / 会話クリア
  */
 
 import { MessageCircle, Settings } from 'lucide-react';
-import { PanelRibbon } from '../Layout/PanelRibbon';
+import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import './ReThinkRibbon.css';
 
 import type { ReThinkViewMode } from '../../views/TTReThinkPanel';
@@ -22,7 +22,7 @@ interface Props {
 
 export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode }: Props) {
   return (
-    <PanelRibbon
+    <VerticalTabBar
       panelId="rethink"
       side="right"
       isOpen={isOpen}
@@ -46,7 +46,6 @@ export function ReThinkRibbon({ isOpen, viewMode, onToggle, onSetMode }: Props) 
       >
         <Settings size={16} />
       </button>
-
-    </PanelRibbon>
+    </VerticalTabBar>
   );
 }

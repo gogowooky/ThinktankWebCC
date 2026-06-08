@@ -1,6 +1,6 @@
 /**
  * ThinktankRibbon.tsx
- * ThinktankPanel の Ribbon ボタン群。
+ * ThinktankPanel の縦タブバー（旧Ribbon）ボタン群。
  *
  * 上部: Think一覧（検索・Thought一覧を統合）/ AI相談
  * 下部: 設定
@@ -9,7 +9,7 @@
 import {
   MessageCircle, Files, Settings, RefreshCw,
 } from 'lucide-react';
-import { PanelRibbon } from '../Layout/PanelRibbon';
+import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
 import './ThinktankRibbon.css';
 
@@ -47,7 +47,7 @@ export function ThinktankRibbon({
   vaultName,
 }: Props) {
   return (
-    <PanelRibbon
+    <VerticalTabBar
       panelId="thinktank"
       side="left"
       isOpen={isOpen}
@@ -85,6 +85,6 @@ export function ThinktankRibbon({
       >
         <Settings size={16} />
       </button>
-    </PanelRibbon>
+    </VerticalTabBar>
   );
 }

@@ -1,6 +1,6 @@
 /**
  * OverviewRibbon.tsx
- * OverviewPanel の縦アイコン Ribbon。
+ * OverviewPanel の縦型タブバー（旧Ribbon）。
  *
  * ボタン構成（上から）:
  *   Sparkles    – AI相談（データ分析チャット）
@@ -13,7 +13,7 @@
 
 import { useCallback, useState } from 'react';
 import { MessageCircle, Files, Microscope, Settings, type LucideIcon } from 'lucide-react';
-import { PanelRibbon } from '../Layout/PanelRibbon';
+import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { OverviewViewMode } from '../../views/TTOverviewPanel';
 import './OverviewRibbon.css';
 
@@ -39,7 +39,7 @@ export function OverviewRibbon({
   isOpen, viewMode, onToggle, onViewMode, onToggleSettings, onRefresh, thoughtName,
 }: Props) {
   return (
-    <PanelRibbon
+    <VerticalTabBar
       panelId="overview"
       side="left"
       isOpen={isOpen}
@@ -70,6 +70,6 @@ export function OverviewRibbon({
       >
         <Settings size={16} />
       </button>
-    </PanelRibbon>
+    </VerticalTabBar>
   );
 }

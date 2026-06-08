@@ -1,6 +1,6 @@
-/* PanelRibbon.css */
+/* VerticalTabBar.css */
 
-.panel-ribbon {
+.vertical-tab-bar {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -15,43 +15,38 @@
   z-index: 10;
 }
 
-/* ホバー時にリボン全体を最前面へ */
-.panel-ribbon:has(button:hover) {
+/* ホバー時にタブバー全体を最前面へ */
+.vertical-tab-bar:has(button:hover) {
   z-index: 9999;
 }
 
 /* ── パネル別テーマ色 ─────────────────────────────────── */
 
-.panel-ribbon--thinktank {
+.vertical-tab-bar--thinktank {
   background: var(--thinktank-ribbon-bg);
 }
 
-.panel-ribbon--overview {
+.vertical-tab-bar--overview {
   background: var(--overview-ribbon-bg);
 }
 
-.panel-ribbon--workout {
+.vertical-tab-bar--workout {
   background: var(--workout-ribbon-bg);
 }
 
-.panel-ribbon--rethink {
+.vertical-tab-bar--rethink {
   background: var(--rethink-ribbon-bg);
 }
 
 /* D&D ドロップ受け入れ中 */
-.panel-ribbon--drag-over {
+.vertical-tab-bar--drag-over {
   background: rgba(255, 255, 255, 0.18) !important;
   outline: 2px solid rgba(255, 255, 255, 0.5);
   outline-offset: -2px;
 }
 
-/* ── カスタムツールチップ（global に移行済み） ── */
-.panel-ribbon button[data-tip]:not([data-tip='']) {
-  /* index.css の定義を利用 */
-}
-
-/* ツールチップの表示位置制御: リボン内のボタンは横側に表示する */
-.panel-ribbon[data-side="left"] [data-tip]::after {
+/* ツールチップの表示位置制御: タブバー内のボタンは横側に表示する */
+.vertical-tab-bar[data-side="left"] [data-tip]::after {
   bottom: 50% !important;
   left: calc(100% + 10px) !important;
   right: auto !important;
@@ -59,7 +54,7 @@
   transform: translateY(50%) !important;
 }
 
-.panel-ribbon[data-side="right"] [data-tip]::after {
+.vertical-tab-bar[data-side="right"] [data-tip]::after {
   bottom: 50% !important;
   right: calc(100% + 10px) !important;
   left: auto !important;
@@ -69,7 +64,7 @@
 
 /* ── 内部要素 ─────────────────────────────────────────── */
 
-.panel-ribbon__buttons {
+.vertical-tab-bar__buttons {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -77,12 +72,12 @@
   width: 100%;
 }
 
-.panel-ribbon__spacer {
+.vertical-tab-bar__spacer {
   flex: 1;
 }
 
 /* 開閉トグルボタン */
-.panel-ribbon__toggle {
+.vertical-tab-bar__toggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -95,23 +90,29 @@
   outline: none;
 }
 
-.panel-ribbon__toggle:focus {
+.vertical-tab-bar__toggle:focus {
   outline: none;
 }
 
-.panel-ribbon__toggle:hover {
+.vertical-tab-bar__toggle:hover {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
 
-body[data-focus-column="Thinktank"] .panel-ribbon--thinktank .panel-ribbon__toggle,
-body[data-focus-column="Overview"] .panel-ribbon--overview .panel-ribbon__toggle,
-body[data-focus-column="ReThink"] .panel-ribbon--rethink .panel-ribbon__toggle {
+body[data-focus-column="Thinktank"] .vertical-tab-bar--thinktank .vertical-tab-bar__toggle,
+body[data-focus-column="Overview"] .vertical-tab-bar--overview .vertical-tab-bar__toggle,
+body[data-focus-column="ReThink"] .vertical-tab-bar--rethink .vertical-tab-bar__toggle {
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+/* Workoutパネルのフォーカス用 */
+body[data-focus-column="Workout"] .vertical-tab-bar--workout .vertical-tab-bar__toggle,
+body[data-focus-column="WorkoutSetting"] .vertical-tab-bar--workout .vertical-tab-bar__toggle {
   box-shadow: 0 0 0 2px #ffffff;
 }
 
 /* 下部固定エリア */
-.panel-ribbon__bottom {
+.vertical-tab-bar__bottom {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -122,7 +123,7 @@ body[data-focus-column="ReThink"] .panel-ribbon--rethink .panel-ribbon__toggle {
 }
 
 /* 最下部ラベル（縦書き・左90度） */
-.panel-ribbon__label-wrap {
+.vertical-tab-bar__label-wrap {
   flex-shrink: 0;
   height: 33.333%;
   width: 100%;
@@ -131,7 +132,7 @@ body[data-focus-column="ReThink"] .panel-ribbon--rethink .panel-ribbon__toggle {
   box-sizing: border-box;
 }
 
-.panel-ribbon__label {
+.vertical-tab-bar__label {
   position: absolute;
   /* Pivot at left-bottom so text anchors to wrapper bottom and extends upward */
   left: calc(50% + 10px);
@@ -147,12 +148,17 @@ body[data-focus-column="ReThink"] .panel-ribbon--rethink .panel-ribbon__toggle {
   user-select: none;
 }
 
-/* Workout リボンはやや暗めなのでホバー色を調整 */
-.panel-ribbon--workout .panel-ribbon__toggle {
+/* Workout タブバーはやや暗めなのでホバー色を調整 */
+.vertical-tab-bar--workout .vertical-tab-bar__toggle {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.panel-ribbon--workout .panel-ribbon__toggle:hover {
+.vertical-tab-bar--workout .vertical-tab-bar__toggle:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
+}
+
+/* Workout タブバーの下部ラベルはフォントサイズをやや小さく（以前のWorkout仕様に合わせる） */
+.vertical-tab-bar--workout .vertical-tab-bar__label {
+  font-size: 13px;
 }
