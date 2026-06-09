@@ -348,3 +348,55 @@ export function registerTextEditorActions(): void {
     },
   });
 }
+
+export interface HeadingAttribute {
+  offset: number;
+  headingNumber: string;
+  isHidden: boolean;
+}
+
+/**
+ * エディタ上のドキュメント（Markdown構造）から各見出しのメタデータを解析し、
+ * アウトライン構造やインデックス情報を生成して返します。
+ *
+ * @param editor Monaco Editor インスタンス
+ */
+export function getHeadingAttributes(editor: any): HeadingAttribute[] {
+  const model = editor.getModel();
+  if (!model) return [];
+
+  const lineCount = model.getLineCount();
+  const attributes: HeadingAttribute[] = [];
+
+  // 見出しレベル(1〜6)ごとのカウンター
+  const counters = [0, 0, 0, 0, 0, 0];
+
+  for (let i = 1; i <= lineCount; i++) {
+    const lineContent = model.getLineContent(i);
+    const level = getHeadingLevel(lineContent);
+
+    if (level > 0) {
+      // 累積文字数オフセット(0始まり)を取得
+      const offset = model.getOffsetAt({ lineNumber: i, column: 1 });
+
+      // 見出し番号の生成
+      counters[level - 1]++;
+      // 現在のレベルより深いレベルのカウンターはリセット
+      for (let k = level; k < 6; k++) {
+        counters[k] = 0;
+      }
+      const headingNumber = counters.slice(0, level).join('.');
+
+      // 非表示フラグの判定
+      const isHidden = !isLineVisible(editor, i, model);
+
+      attributes.push({
+        offset,
+        headingNumber,
+        isHidden,
+      });
+    }
+  }
+
+  return attributes;
+}
