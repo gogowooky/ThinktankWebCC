@@ -136,7 +136,10 @@ export class TTThink extends TTObject {
       return;
     }
     const firstLine = this._content.split('\n')[0].trim();
-    const title = firstLine.replace(/^#+\s*/, '');
+    let title = firstLine.replace(/^#+\s*/, '');
+    if (this.ContentType === 'thought') {
+      title = title.replace(/^>>?\s*/, '');
+    }
     this.Name = title || '新しいメモ';
   }
 

@@ -207,7 +207,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     const parsed = parseThought(thought.Content);
     const remaining = parsed.ids.filter(id => !panel.CheckedThoughtIDs.includes(id));
     const newContent = serializeThought({
-      prefix: thought.Content.startsWith('>>') ? '>> ' : '> ',
+      prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
       title: parsed.title,
       searchQuery: parsed.search.query,
       filterKeyword: parsed.filter.keyword,

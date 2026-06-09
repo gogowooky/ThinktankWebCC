@@ -522,7 +522,7 @@ export class TTVault extends TTCollection {
         if (thought.IsMetaOnly) await thought.LoadContent();
         const parsed = parseThought(thought.Content);
         const newContent = serializeThought({
-          prefix: thought.Content.startsWith('>>') ? '>> ' : '> ',
+          prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
           title: parsed.title,
           searchQuery: parsed.search.query,
           filterKeyword: parsed.filter.keyword,

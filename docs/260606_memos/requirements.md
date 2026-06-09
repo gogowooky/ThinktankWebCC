@@ -173,8 +173,8 @@ ContentType に応じてメディアタイプが自動選択される：
 
 ### Thoughtの特殊フォーマット
 
-```
-# Thoughtのタイトル
+```markdown
+Thoughtのタイトル
 * <ThinkID1>
 * <ThinkID2>
 > filter_text

@@ -133,7 +133,8 @@ export interface ThoughtContent {
  */
 export function parseThought(content: string): ThoughtContent {
   const lines = content.split('\n');
-  const title = lines[0] ?? '';
+  const rawTitle = lines[0] ?? '';
+  const title = rawTitle.replace(/^>>?\s*/, '');
   const bodyLines = lines.slice(1);
 
   const ids: string[] = [];
@@ -225,7 +226,7 @@ export function serializeThought(options: ThoughtCreateOptions): string {
     body += ids.map(id => `* ${id}`).join('\n') + '\n';
   }
 
-  return `${prefix}${title}\n${body.trim()}`;
+  return `${title}\n${body.trim()}`;
 }
 
 // #endregion
