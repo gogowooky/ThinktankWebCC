@@ -1,0 +1,249 @@
+/* WorkoutPanel.css */
+
+.workout-panel-tree {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  background: var(--workout-area-bg);
+  padding: 4px;
+}
+
+/* ── 空状態 ── */
+.workout-empty {
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.4;
+  user-select: none;
+}
+
+.workout-empty__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222;
+}
+
+.workout-empty__desc {
+  font-size: 11px;
+  color: #444;
+  padding: 8px;
+}
+
+/* ── BSPツリー分割 ── */
+.workout-split {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.workout-split--v { flex-direction: row; }
+.workout-split--h { flex-direction: column; }
+
+.workout-split__child {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.workout-bsp-splitter {
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.12);
+  transition: background 150ms ease;
+  z-index: 5;
+}
+
+.workout-bsp-splitter--v {
+  width: 4px;
+  cursor: col-resize;
+}
+
+.workout-bsp-splitter--h {
+  height: 4px;
+  cursor: row-resize;
+}
+
+.workout-bsp-splitter:hover {
+  background: var(--text-accent);
+}
+
+/* ── ドロップオーバーレイ ── */
+.workout-drop-overlay {
+  position: absolute;
+  background: rgba(110, 200, 120, 0.25);
+  border: 2px solid rgba(60, 160, 80, 0.8);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 500;
+  transition: all 80ms ease;
+}
+
+/* ── Swapドラッグのゴーストチップ ── */
+.workout-drag-ghost {
+  position: fixed;
+  z-index: 10000;
+  background: rgba(15, 15, 20, 0.9);
+  color: #fff;
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ── 個別ペイン（WorkoutArea）── */
+.workout-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.workout-area--focused {
+  border-color: var(--workout-ribbon-bg);
+  box-shadow: 0 0 0 1px var(--workout-ribbon-bg);
+}
+
+.workout-area--swap-target {
+  outline: 3px solid rgba(110, 200, 120, 0.8);
+  outline-offset: -3px;
+}
+
+/* ── ペインヘッダー（WorkoutMenuRibbon）── */
+.workout-menu-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  background: var(--workout-ribbon-bg);
+  color: rgba(255, 255, 255, 0.85);
+  user-select: none;
+}
+
+.workout-menu-ribbon__grip {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  opacity: 0.6;
+  padding: 2px;
+}
+
+.workout-menu-ribbon__grip:hover { opacity: 1; }
+.workout-menu-ribbon__grip:active { cursor: grabbing; }
+
+.workout-menu-ribbon__title {
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 50%;
+}
+
+.workout-menu-ribbon__dirty {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-warning);
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
+.workout-menu-ribbon__media-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 20px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.workout-menu-ribbon__media-tab:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.workout-menu-ribbon__media-tab--active {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.workout-menu-ribbon__media-tab:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* ── ペインコンテンツ ── */
+.workout-area-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #1a1a2e;
+}
+
+/* ── 設定トレイ ── */
+.workout-setting-area {
+  flex-shrink: 0;
+  background: #2f2229;
+  color: rgba(255, 255, 255, 0.8);
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+
+.workout-setting-area__section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.workout-setting-area__section-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.5;
+  margin-bottom: 2px;
+}
+
+.workout-setting-area__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.workout-setting-area__btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.workout-setting-area__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}

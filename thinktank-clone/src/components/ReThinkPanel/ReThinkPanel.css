@@ -1,0 +1,44 @@
+/* ReThinkPanel.css */
+
+.rethink-context-bar {
+  flex-shrink: 0;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(50, 79, 70, 0.12);
+  color: #243b33;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+
+.rethink-settings {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rethink-settings__title {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+
+.rethink-settings__btn {
+  text-align: left;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  background: #fff;
+}
+
+.rethink-settings__btn:hover {
+  background: rgba(50, 79, 70, 0.08);
+}

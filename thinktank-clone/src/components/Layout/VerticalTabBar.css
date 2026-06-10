@@ -1,0 +1,167 @@
+/* VerticalTabBar.css */
+
+.vertical-tab-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+  padding: 8px 0;
+  gap: 4px;
+  background: var(--bg-panel);
+  overflow: visible;
+  position: relative;
+  z-index: 10;
+}
+
+.vertical-tab-bar:has(button:hover) {
+  z-index: 9999;
+}
+
+/* ── パネル別テーマ色 ── */
+.vertical-tab-bar--thinktank { background: var(--thinktank-ribbon-bg); }
+.vertical-tab-bar--overview  { background: var(--overview-ribbon-bg); }
+.vertical-tab-bar--workout   { background: var(--workout-ribbon-bg); }
+.vertical-tab-bar--rethink   { background: var(--rethink-ribbon-bg); }
+
+/* ツールチップの表示位置制御 */
+.vertical-tab-bar[data-side="left"] [data-tip]::after {
+  bottom: 50% !important;
+  left: calc(100% + 10px) !important;
+  right: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
+}
+
+.vertical-tab-bar[data-side="right"] [data-tip]::after {
+  bottom: 50% !important;
+  right: calc(100% + 10px) !important;
+  left: auto !important;
+  top: auto !important;
+  transform: translateY(50%) !important;
+}
+
+.vertical-tab-bar__buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.vertical-tab-bar__spacer { flex: 1; }
+
+.vertical-tab-bar__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+  outline: none;
+}
+
+.vertical-tab-bar__toggle:focus { outline: none; }
+
+.vertical-tab-bar__toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.vertical-tab-bar__toggle--active {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+body[data-focus-column="Thinktank"] .vertical-tab-bar--thinktank .vertical-tab-bar__toggle:first-child,
+body[data-focus-column="Overview"] .vertical-tab-bar--overview .vertical-tab-bar__toggle:first-child,
+body[data-focus-column="ReThink"] .vertical-tab-bar--rethink .vertical-tab-bar__toggle:first-child,
+body[data-focus-column="Workout"] .vertical-tab-bar--workout .vertical-tab-bar__toggle:first-child,
+body[data-focus-column="WorkoutSetting"] .vertical-tab-bar--workout .vertical-tab-bar__toggle:first-child {
+  box-shadow: 0 0 0 2px #ffffff;
+}
+
+.vertical-tab-bar__bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding-bottom: 4px;
+  flex-shrink: 0;
+}
+
+/* 最下部ラベル（縦書き・左90度） */
+.vertical-tab-bar__label-wrap {
+  flex-shrink: 0;
+  height: 33.333%;
+  width: 100%;
+  position: relative;
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.vertical-tab-bar__label {
+  position: absolute;
+  left: calc(50% + 10px);
+  bottom: 4px;
+  width: 400px;
+  transform-origin: left bottom;
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+}
+
+.vertical-tab-bar--workout .vertical-tab-bar__toggle {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.vertical-tab-bar--workout .vertical-tab-bar__toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.vertical-tab-bar--workout .vertical-tab-bar__label {
+  font-size: 13px;
+}
+
+/* ── クラウド同期トグル ── */
+.vertical-tab-bar__sync-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.vertical-tab-bar__sync-toggle--on {
+  color: #9ece6a;
+}
+
+.vertical-tab-bar__sync-toggle:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ロード中インジケータ */
+.vertical-tab-bar__loading {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  animation: tt-spin 0.9s linear infinite;
+  margin: 4px 0;
+}
+
+@keyframes tt-spin {
+  to { transform: rotate(360deg); }
+}

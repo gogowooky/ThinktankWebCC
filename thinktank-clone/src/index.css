@@ -1,0 +1,126 @@
+/* Thinktank クローン グローバルスタイル */
+
+:root {
+  /* 背景 */
+  --bg-primary:       #1e2030;
+  --bg-secondary:     #1a1b26;
+  --bg-panel:         #24283b;
+  --bg-hover:         #2a3050;
+  --bg-selected:      #2e3460;
+
+  /* テキスト */
+  --text-primary:     #c0caf5;
+  --text-muted:       #565f89;
+  --text-accent:      #7aa2f7;
+  --text-highlight:   #e0af68;
+  --text-success:     #9ece6a;
+  --text-warning:     #ff9e64;
+  --text-error:       #f7768e;
+
+  /* ボーダー・UI */
+  --border:           #292e42;
+  --radius:           6px;
+  --transition-panel: 200ms ease;
+
+  /* パネル別テーマ色 */
+  --thinktank-ribbon-bg: #1d618f;
+  --thinktank-area-bg:   #edf2f6;
+  --overview-ribbon-bg:  #873960;
+  --overview-area-bg:    #f8f3f5;
+  --workout-ribbon-bg:   #382830;
+  --workout-area-bg:     #e3e1e2;
+  --rethink-ribbon-bg:   #324f46;
+  --rethink-area-bg:     #eff1f0;
+
+  /* 同期インジケーター */
+  --sync-synced:  var(--text-muted);
+  --sync-syncing: var(--text-accent);
+  --sync-error:   var(--text-error);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Inter', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+}
+
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── カスタムツールチップ ── */
+[data-tip] { position: relative; }
+
+[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 15, 20, 0.95);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 400;
+  font-family: system-ui, sans-serif;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 20000;
+  transition: opacity 0.12s ease, visibility 0.12s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  pointer-events: none;
+  text-align: center;
+}
+
+[data-tip]:hover { z-index: 20001; }
+[data-tip]:hover::after { opacity: 1; visibility: visible; }
+
+[data-tip-side="right"]::after {
+  bottom: 50%;
+  left: calc(100% + 8px);
+  transform: translateY(50%);
+}
+[data-tip-side="left"]::after {
+  bottom: 50%;
+  right: calc(100% + 8px);
+  left: auto;
+  transform: translateY(50%);
+}
+[data-tip-side="bottom"]::after {
+  top: calc(100% + 8px);
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}

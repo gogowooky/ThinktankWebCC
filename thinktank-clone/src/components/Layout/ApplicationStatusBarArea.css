@@ -1,0 +1,180 @@
+/* ApplicationStatusBarArea.css */
+
+.ApplicationStatusBarArea {
+  display: flex;
+  align-items: center;
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--workout-ribbon-bg, #2d2d2d);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0 4px;
+  gap: 2px;
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+  width: 100%;
+}
+
+.ApplicationStatusBarArea__mode-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.ApplicationStatusBarArea__indicator-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.ApplicationStatusBarArea__input {
+  flex: 1;
+  height: 20px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  outline: none;
+  min-width: 0;
+}
+
+.ApplicationStatusBarArea__input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.ApplicationStatusBarArea__modes,
+.ApplicationStatusBarArea__utils {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.ApplicationStatusBarArea__mode-btn,
+.ApplicationStatusBarArea__util-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  color: rgba(255, 255, 255, 0.45);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.ApplicationStatusBarArea__mode-btn:hover,
+.ApplicationStatusBarArea__util-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ApplicationStatusBarArea__mode-btn--active,
+.ApplicationStatusBarArea__util-btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* ── KeyAction イベントモニター ── */
+.ApplicationStatusBarArea__keyaction {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.ApplicationStatusBarArea__ka-field {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.ApplicationStatusBarArea__ka-label {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.ApplicationStatusBarArea__ka-value {
+  font-size: 11px;
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  padding: 0 4px;
+  min-width: 16px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.ApplicationStatusBarArea__ka-sep {
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.ApplicationStatusBarArea__ka-divider {
+  width: 1px;
+  height: 14px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.ApplicationStatusBarArea__ka-value--focus {
+  color: #7dd3c0;
+  background: rgba(125, 211, 192, 0.12);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ApplicationStatusBarArea__ka-value--exmode {
+  color: #f9a825;
+  background: rgba(249, 168, 37, 0.15);
+  font-weight: 600;
+}
+
+.ApplicationStatusBarArea__ka-value--action {
+  color: #aaa;
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 作成者バナー ── */
+.ApplicationStatusBarArea__author-banner {
+  flex: 1;
+  height: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.ApplicationStatusBarArea__author-banner-text {
+  display: inline-block;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+  animation: author-banner-scroll 28s linear infinite;
+}
+
+@keyframes author-banner-scroll {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
