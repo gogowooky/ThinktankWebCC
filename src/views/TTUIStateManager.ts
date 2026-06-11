@@ -35,14 +35,14 @@ import type { MediaType } from '../types';
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
 export type ConfigKey =
-  | 'Column.Thinktank.IsOpen'
-  | 'Column.Thinktank.Mode'
-  | 'Column.Overview.IsOpen'
-  | 'Column.Overview.Mode'
-  | 'Column.Workout.IsOpen'
-  | 'Column.Workout.Mode'
-  | 'Column.ReThink.IsOpen'
-  | 'Column.ReThink.Mode'
+  | 'ThinktankPanel.Mode.IsOpen'
+  | 'ThinktankPanel.Mode.Name'
+  | 'OverviewPanel.Mode.IsOpen'
+  | 'OverviewPanel.Mode.Name'
+  | 'WorkoutPanel.Mode.IsOpen'
+  | 'WorkoutPanel.Mode.Name'
+  | 'ReThinkPanel.Mode.IsOpen'
+  | 'ReThinkPanel.Mode.Name'
   | 'TextEditor.LineNumbers.IsVisible'
   | 'TextEditor.WordWrap.IsVisible'
   | 'TextEditor.Minimap.IsVisible'
@@ -54,8 +54,8 @@ export type ConfigKey =
   | 'TextEditor.Color.Selection'
   | 'TextEditor.Color.Occurrence'
   | 'TextEditor.Style.Section'
-  | 'Application.ToolBar.Mode'
-  | 'Application.FocusedPanel.Name'
+  | 'ToolBar.Mode.Name'
+  | 'Application.Focused.AreaName'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -127,14 +127,14 @@ function makeSectionPresetSpec(n: number): PropSpec {
 const PROP_SPECS: Record<ConfigKey, PropSpec> = {
 
   // ── ThinktankPanel ──────────────────────────────────────────────────────
-  'Column.Thinktank.IsOpen': {
+  'ThinktankPanel.Mode.IsOpen': {
     panel: 'ThinktankPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '左パネル表示',
     get: (app) => String(app.ThinktankPanel.IsAreaOpen),
     set: (app, v) => { app.ThinktankPanel.IsAreaOpen = parseBool(v, app.ThinktankPanel.IsAreaOpen); },
   },
-  'Column.Thinktank.Mode': {
+  'ThinktankPanel.Mode.Name': {
     panel: 'ThinktankPanel',
     default: 'filter', type: 'string', candidates: '^(filter|chat|settings)$',
     description: '左パネルモード',
@@ -143,14 +143,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── OverviewPanel ────────────────────────────────────────────────────────
-  'Column.Overview.IsOpen': {
+  'OverviewPanel.Mode.IsOpen': {
     panel: 'OverviewPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '上部パネル表示',
     get: (app) => String(app.OverviewPanel.IsAreaOpen),
     set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
   },
-  'Column.Overview.Mode': {
+  'OverviewPanel.Mode.Name': {
     panel: 'OverviewPanel',
     default: 'datagrid', type: 'string', candidates: '^(datagrid|graph|chat|settings)$',
     description: '上部パネル表示モード',
@@ -159,14 +159,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── WorkoutPanel ─────────────────────────────────────────────────────
-  'Column.Workout.IsOpen': {
+  'WorkoutPanel.Mode.IsOpen': {
     panel: 'WorkoutPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'ワークアウトパネル表示',
     get: (app) => String(app.WorkoutPanel.IsAreaOpen),
     set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
   },
-  'Column.Workout.Mode': {
+  'WorkoutPanel.Mode.Name': {
     panel: 'WorkoutPanel',
     default: 'workout', type: 'string', candidates: '^(workout|texteditor|markdown|datagrid|card|graph)$',
     description: 'ワークアウト設定パネルモード',
@@ -260,8 +260,8 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`TextEditor.SectionStyle.Preset${n}`, makeSectionPresetSpec(n)])),
 
   // ── ToolBar 表示モード ────────────────────────────────────────────────
-  'Application.ToolBar.Mode': {
-    panel: 'Application',
+  'ToolBar.Mode.Name': {
+    panel: 'WorkoutPanel',
     default: 'Copyright', type: 'string',
     candidates: '^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$',
     description: 'Toolバー表示モード',
@@ -270,7 +270,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── Application ──────────────────────────────────────────────────────────
-  'Application.FocusedPanel.Name': {
+  'Application.Focused.AreaName': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
     candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
@@ -312,14 +312,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── ReThinkPanel ─────────────────────────────────────────────────────────
-  'Column.ReThink.IsOpen': {
+  'ReThinkPanel.Mode.IsOpen': {
     panel: 'ReThinkPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '右パネル表示',
     get: (app) => String(app.ReThinkPanel.IsAreaOpen),
     set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
   },
-  'Column.ReThink.Mode': {
+  'ReThinkPanel.Mode.Name': {
     panel: 'ReThinkPanel',
     default: 'chat', type: 'string', candidates: '^(chat|settings)$',
     description: '右パネル表示モード',

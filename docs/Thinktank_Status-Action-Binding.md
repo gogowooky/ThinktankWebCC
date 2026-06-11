@@ -6,19 +6,16 @@
 
 
 # Status
-## 完了：　Application.FocusedPanel.Name
-## 完了：　WorkoutPanel.Style.Highlight（廃止）
-## 完了：　WorkoutPanel.Highlight.KeyWord（廃止）
-## 完了：　Application.ToolBar.Mode
-## 完了：　Column.Thinktank.IsOpen
-## 完了：　Column.Thinktank.Mode
-## 完了：　Column.Overview.IsOpen
-## 完了：　Column.Overview.Mode
-## 完了：　Column.Workout.IsOpen
-## 完了：　Column.Workout.Mode
-## 完了：　Column.ReThink.IsOpen
-## 完了：　Column.ReThink.Mode
-
+## 完了：　Application.Focused.AreaName
+## 完了：　ToolBar.Mode.Name
+## 完了：　ThinktankPanel.Mode.IsOpen
+## 完了：　ThinktankPanel.Mode.Name
+## 完了：　OverviewPanel.Mode.IsOpen
+## 完了：　OverviewPanel.Mode.Name
+## 完了：　WorkoutPanel.Mode.IsOpen
+## 完了：　WorkoutPanel.Mode.Name
+## 完了：　ReThinkPanel.Mode.IsOpen
+## 完了：　ReThinkPanel.Mode.Name
 
 ## 完了：　TextEditor.LineNumbers.IsVisible
 ## 完了：　TextEditor.WordWrap.IsVisible
