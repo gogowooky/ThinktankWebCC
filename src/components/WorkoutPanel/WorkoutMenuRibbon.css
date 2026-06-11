@@ -17,7 +17,7 @@
 .workout-menu-ribbon--focused {
 }
 
-.workout-menu-ribbon--focused .workout-menu-ribbon__title {
+body[data-focus-column="Workout"] .workout-menu-ribbon--focused .workout-menu-ribbon__title {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-color: rgba(255, 255, 255, 0.6);

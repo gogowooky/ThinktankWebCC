@@ -315,28 +315,28 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   'Application.FocusedColumn': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
-    candidates: '^(Thinktank|Overview|WorkoutSetting|ReThink)$',
+    candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
     description: 'フォーカスカラム',
     getValues: (_app) => localStorage.getItem('tt-layout-mode') === 'simple'
-      ? ['Thinktank', 'WorkoutSetting']
-      : ['Thinktank', 'Overview', 'WorkoutSetting', 'ReThink'],
+      ? ['Thinktank', 'WorkoutSetting', 'Workout']
+      : ['Thinktank', 'Overview', 'WorkoutSetting', 'Workout', 'ReThink'],
     get: (app) => app.FocusedColumn,
     set: (app, v) => {
       app.FocusedColumn = v;
       const SELECTORS: Record<string, string> = {
         'Thinktank':      '.thinktank-panel, .thinktank-area',
         'Overview':       '.overview-panel, .overview-area',
-        'WorkoutSetting': '.workout-setting-panel',
+        'WorkoutSetting': '.workout-setting-area',
         'Workout':        '.workout-area',
         'ReThink':        '.rethink-panel, .rethink-area',
       };
       // WorkoutSetting: パネルが閉じている場合は開閉トグルにフォーカス
       const effectiveSel = (v === 'WorkoutSetting' && !app.WorkoutPanel.IsAreaOpen)
-        ? '.workout-ribbon__toggle'
+        ? '.vertical-tab-bar--workout .vertical-tab-bar__toggle'
         : SELECTORS[v];
       if (!effectiveSel) return;
       const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         const root = document.querySelector<HTMLElement>(effectiveSel);
         if (!root) return;
         // root 自体がフォーカス可能かつ非 inert なら直接フォーカス
@@ -349,7 +349,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
           .find(el => !el.closest('[inert]'));
         if (focusable) focusable.focus({ preventScroll: true });
         else if (!root.closest('[inert]')) root.focus({ preventScroll: true });
-      });
+      }, 50);
     },
   },
 

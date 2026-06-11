@@ -11,7 +11,7 @@ export function getFocusName(el: Element | null): string {
   if (!el || el === document.body || el === document.documentElement) return 'None';
 
   // WorkoutTabBar（設定パネル開閉ボタン群）
-  if (el.closest('.workout-tab-bar')) return 'WorkoutSetting.TabBar';
+  if (el.closest('.vertical-tab-bar--workout')) return 'WorkoutSetting.TabBar';
 
   // ApplicationStatusBarArea
   if (el.closest('.ApplicationStatusBarArea')) return 'Application.StatusBarArea';

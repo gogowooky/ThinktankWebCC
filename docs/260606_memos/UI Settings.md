@@ -33,6 +33,6 @@ WorkoutPanel.HighlightStyle.Preset4,const,"[{""backgroundColor"":""#fff0b3"",""c
 WorkoutPanel.HighlightStyle.Preset5,const,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]",json,.*,ハイライトスタイルプリセット5
 WorkoutPanel.ToolBarMode,Translate,Copyright,string,^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$,Toolバー表示モード
 WorkoutPanel.Highlight.KeyWord,,,string,.*,ハイライトキーワード
-Application.FocusedColumn,Overview,Thinktank,string,^(Thinktank|Overview|WorkoutSetting|ReThink)$,フォーカスカラム
+Application.FocusedColumn,Overview,Thinktank,string,^(Thinktank|Overview|Workout|ReThink)$,フォーカスカラム
 ReThinkPanel.IsAreaOpen,false,true,boolean,^(true|false)$,右パネル表示
 ReThinkPanel.ViewMode,settings,chat,string,^(chat|settings)$,右パネル表示モード

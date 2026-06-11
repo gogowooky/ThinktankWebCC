@@ -106,7 +106,6 @@ body[data-focus-column="ReThink"] .vertical-tab-bar--rethink .vertical-tab-bar__
 }
 
 /* Workoutパネルのフォーカス用 */
-body[data-focus-column="Workout"] .vertical-tab-bar--workout .vertical-tab-bar__toggle,
 body[data-focus-column="WorkoutSetting"] .vertical-tab-bar--workout .vertical-tab-bar__toggle {
   box-shadow: 0 0 0 2px #ffffff;
 }

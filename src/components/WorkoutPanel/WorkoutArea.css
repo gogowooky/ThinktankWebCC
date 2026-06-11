@@ -14,6 +14,10 @@
   cursor: default;
 }
 
+.workout-area:focus {
+  outline: none;
+}
+
 /* フォーカス中: 枠線なし（リボンタイトルの下線で識別） */
 .workout-area--focused {
 }

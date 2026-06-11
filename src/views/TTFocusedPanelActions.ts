@@ -18,6 +18,7 @@ const PANEL_VIEW_MODES: Record<string, string[]> = {
   Thinktank:      ['filter', 'chat', 'settings'],
   Overview:       ['datagrid', 'graph', 'chat', 'settings'],
   WorkoutSetting: ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  Workout:        ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
   ReThink:        ['chat', 'settings'],
 };
 
@@ -34,7 +35,8 @@ function getPanel(app: TTApplication): PanelLike | null {
   switch (app.FocusedColumn) {
     case 'Thinktank':      return app.ThinktankPanel;
     case 'Overview':       return app.OverviewPanel;
-    case 'WorkoutSetting': return app.WorkoutPanel;
+    case 'WorkoutSetting':
+    case 'Workout':        return app.WorkoutPanel;
     case 'ReThink':        return app.ReThinkPanel;
     default:               return null;
   }

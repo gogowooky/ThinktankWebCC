@@ -246,6 +246,7 @@ export function WorkoutArea({
     <div
       className={className}
       data-area-id={area.ID}
+      tabIndex={-1}
       onMouseDown={onFocus}
       onMouseEnter={handleDragEnter}
       onMouseLeave={onDragLeave}
