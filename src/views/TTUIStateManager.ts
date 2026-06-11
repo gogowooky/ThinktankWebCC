@@ -27,20 +27,22 @@ import { TTThink } from '../models/TTThink';
 import { parseTableContent, tableSectionToContent, updateTableContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
-import type { WorkoutViewMode, SectionStyle, HighlightStyle } from './TTWorkoutPanel';
-import { SECTION_STYLE_DEFAULTS, HIGHLIGHT_STYLE_DEFAULTS } from './TTWorkoutPanel';
+import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
+import { SECTION_STYLE_DEFAULTS } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
 export type ConfigKey =
-  | 'ThinktankPanel.IsAreaOpen'
-  | 'ThinktankPanel.ViewMode'
-  | 'OverviewPanel.IsAreaOpen'
-  | 'OverviewPanel.ViewMode'
-  | 'WorkoutPanel.IsAreaOpen'
-  | 'WorkoutPanel.ViewMode'
+  | 'Column.Thinktank.IsOpen'
+  | 'Column.Thinktank.Mode'
+  | 'Column.Overview.IsOpen'
+  | 'Column.Overview.Mode'
+  | 'Column.Workout.IsOpen'
+  | 'Column.Workout.Mode'
+  | 'Column.ReThink.IsOpen'
+  | 'Column.ReThink.Mode'
   | 'TextEditor.LineNumbers.IsVisible'
   | 'TextEditor.WordWrap.IsVisible'
   | 'TextEditor.Minimap.IsVisible'
@@ -52,12 +54,8 @@ export type ConfigKey =
   | 'TextEditor.Color.Selection'
   | 'TextEditor.Color.Occurrence'
   | 'TextEditor.Style.Section'
-  | 'WorkoutPanel.Style.Highlight'
-  | 'WorkoutPanel.ToolBarMode'
-  | 'WorkoutPanel.Highlight.KeyWord'
-  | 'Application.FocusedColumn'
-  | 'ReThinkPanel.IsAreaOpen'
-  | 'ReThinkPanel.ViewMode'
+  | 'Application.ToolBar.Mode'
+  | 'Application.FocusedPanel.Name'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -104,7 +102,6 @@ interface PropSpec {
 
 // プリセットデフォルト JSON（TTWorkoutPanel の定数から生成）
 const SECTION_STYLE_DEFAULT_JSON   = JSON.stringify(SECTION_STYLE_DEFAULTS);
-const HIGHLIGHT_STYLE_DEFAULT_JSON = JSON.stringify(HIGHLIGHT_STYLE_DEFAULTS);
 
 function makeSectionPresetSpec(n: number): PropSpec {
   const key = `TextEditor.SectionStyle.Preset${n}`;
@@ -122,22 +119,6 @@ function makeSectionPresetSpec(n: number): PropSpec {
   };
 }
 
-function makeHighlightPresetSpec(n: number): PropSpec {
-  const key = `WorkoutPanel.HighlightStyle.Preset${n}`;
-  return {
-    panel: 'WorkoutPanel',
-    isConst: true, default: HIGHLIGHT_STYLE_DEFAULT_JSON, type: 'json', candidates: '.*',
-    description: `ハイライトスタイルプリセット${n}`,
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v) as HighlightStyle[];
-      app.WorkoutPanel.TextEditor.HighlightPresets[key] = s;
-      if (app.WorkoutPanel.TextEditor.HighlightStyleKey === key)
-        app.WorkoutPanel.TextEditor.HighlightStyles = [...s];
-    } catch { /* ignore */ } },
-  };
-}
-
 /**
  * PROP_SPECS
  * UI設定の全項目定義。新規項目の追加はここにオブジェクトを1つ追記するだけでよい。
@@ -146,14 +127,14 @@ function makeHighlightPresetSpec(n: number): PropSpec {
 const PROP_SPECS: Record<ConfigKey, PropSpec> = {
 
   // ── ThinktankPanel ──────────────────────────────────────────────────────
-  'ThinktankPanel.IsAreaOpen': {
+  'Column.Thinktank.IsOpen': {
     panel: 'ThinktankPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '左パネル表示',
     get: (app) => String(app.ThinktankPanel.IsAreaOpen),
     set: (app, v) => { app.ThinktankPanel.IsAreaOpen = parseBool(v, app.ThinktankPanel.IsAreaOpen); },
   },
-  'ThinktankPanel.ViewMode': {
+  'Column.Thinktank.Mode': {
     panel: 'ThinktankPanel',
     default: 'filter', type: 'string', candidates: '^(filter|chat|settings)$',
     description: '左パネルモード',
@@ -162,14 +143,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── OverviewPanel ────────────────────────────────────────────────────────
-  'OverviewPanel.IsAreaOpen': {
+  'Column.Overview.IsOpen': {
     panel: 'OverviewPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '上部パネル表示',
     get: (app) => String(app.OverviewPanel.IsAreaOpen),
     set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
   },
-  'OverviewPanel.ViewMode': {
+  'Column.Overview.Mode': {
     panel: 'OverviewPanel',
     default: 'datagrid', type: 'string', candidates: '^(datagrid|graph|chat|settings)$',
     description: '上部パネル表示モード',
@@ -178,14 +159,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── WorkoutPanel ─────────────────────────────────────────────────────
-  'WorkoutPanel.IsAreaOpen': {
+  'Column.Workout.IsOpen': {
     panel: 'WorkoutPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'ワークアウトパネル表示',
     get: (app) => String(app.WorkoutPanel.IsAreaOpen),
     set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
   },
-  'WorkoutPanel.ViewMode': {
+  'Column.Workout.Mode': {
     panel: 'WorkoutPanel',
     default: 'workout', type: 'string', candidates: '^(workout|texteditor|markdown|datagrid|card|graph)$',
     description: 'ワークアウト設定パネルモード',
@@ -278,23 +259,9 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`TextEditor.SectionStyle.Preset${n}`, makeSectionPresetSpec(n)])),
 
-  'WorkoutPanel.Style.Highlight': {
-    panel: 'WorkoutPanel',
-    default: 'WorkoutPanel.HighlightStyle.Preset1', type: 'string',
-    candidates: '^WorkoutPanel\\.HighlightStyle\\.Preset[1-5]$',
-    description: 'ハイライトスタイル',
-    get: (app) => app.WorkoutPanel.TextEditor.HighlightStyleKey,
-    set: (app, v) => {
-      app.WorkoutPanel.TextEditor.HighlightStyleKey = v;
-      const preset = app.WorkoutPanel.TextEditor.HighlightPresets[v];
-      if (preset) app.WorkoutPanel.TextEditor.HighlightStyles = [...preset];
-    },
-  },
-  ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`WorkoutPanel.HighlightStyle.Preset${n}`, makeHighlightPresetSpec(n)])),
-
   // ── ToolBar 表示モード ────────────────────────────────────────────────
-  'WorkoutPanel.ToolBarMode': {
-    panel: 'WorkoutPanel',
+  'Application.ToolBar.Mode': {
+    panel: 'Application',
     default: 'Copyright', type: 'string',
     candidates: '^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$',
     description: 'Toolバー表示モード',
@@ -302,17 +269,8 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     set: (app, v) => { app.WorkoutPanel.ToolBarMode = v; },
   },
 
-  // ── ハイライト設定（全Pane共通） ────────────────────────────────────────
-  'WorkoutPanel.Highlight.KeyWord': {
-    panel: 'WorkoutPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: 'ハイライトキーワード',
-    get: (app) => app.WorkoutPanel.HighlightWord,
-    set: (app, v) => { app.WorkoutPanel.HighlightWord = v; },
-  },
-
   // ── Application ──────────────────────────────────────────────────────────
-  'Application.FocusedColumn': {
+  'Application.FocusedPanel.Name': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
     candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
@@ -354,14 +312,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── ReThinkPanel ─────────────────────────────────────────────────────────
-  'ReThinkPanel.IsAreaOpen': {
+  'Column.ReThink.IsOpen': {
     panel: 'ReThinkPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '右パネル表示',
     get: (app) => String(app.ReThinkPanel.IsAreaOpen),
     set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
   },
-  'ReThinkPanel.ViewMode': {
+  'Column.ReThink.Mode': {
     panel: 'ReThinkPanel',
     default: 'chat', type: 'string', candidates: '^(chat|settings)$',
     description: '右パネル表示モード',
@@ -676,10 +634,11 @@ export class TTUIStateManager {
     // 特定キーのリスナー
     this._listeners.get(key)?.forEach(listener => listener(key, value));
 
-    // パネルカテゴリ全体（例: "ThinktankPanel.*"）
-    const category = key.split('.')[0];
-    if (category) {
-      this._listeners.get(`${category}.*`)?.forEach(listener => listener(key, value));
+    // ドット区切りの各階層でのワイルドカード通知（例: "Column.Thinktank.IsOpen" -> "Column.Thinktank.*", "Column.*"）
+    const parts = key.split('.');
+    for (let i = 1; i < parts.length; i++) {
+      const subCat = parts.slice(0, i).join('.') + '.*';
+      this._listeners.get(subCat)?.forEach(listener => listener(key, value));
     }
 
     // グローバルリスナー

@@ -65,10 +65,10 @@ export class TTApplication extends TTUIItem {
 
     // TTUIStateManager からのプロパティ更新を購読して、対象パネルを更新する
     const stateManager = TTUIStateManager.instance;
-    stateManager.addListener('ThinktankPanel.*', () => this.ThinktankPanel.NotifyUpdated());
-    stateManager.addListener('OverviewPanel.*', () => this.OverviewPanel.NotifyUpdated());
-    stateManager.addListener('WorkoutPanel.*', () => this.WorkoutPanel.NotifyUpdated());
-    stateManager.addListener('ReThinkPanel.*', () => this.ReThinkPanel.NotifyUpdated());
+    stateManager.addListener('Column.Thinktank.*', () => this.ThinktankPanel.NotifyUpdated());
+    stateManager.addListener('Column.Overview.*', () => this.OverviewPanel.NotifyUpdated());
+    stateManager.addListener('Column.Workout.*', () => this.WorkoutPanel.NotifyUpdated());
+    stateManager.addListener('Column.ReThink.*', () => this.ReThinkPanel.NotifyUpdated());
     stateManager.addListener('Application.*', () => this.NotifyUpdated(false));
     stateManager.addListener('TextEditor.*', () => this.WorkoutPanel.NotifyUpdated());
   }
