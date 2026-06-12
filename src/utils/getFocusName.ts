@@ -10,68 +10,59 @@
 export function getFocusName(el: Element | null): string {
   if (!el || el === document.body || el === document.documentElement) return 'None';
 
-  // WorkoutTabBar（設定パネル開閉ボタン群）
-  if (el.closest('.vertical-tab-bar--workout')) return 'WorkoutSetting.TabBar';
+  // 循環参照を避けるため、window オブジェクトから TTApplication インスタンスを遅延取得
+  const app = (window as any).ttApp;
 
-  // ApplicationStatusBarArea
-  if (el.closest('.ApplicationStatusBarArea')) return 'Application.StatusBarArea';
+  // 1. WorkoutTabBar (WorkoutSetting.{ModeName})
+  if (el.closest('.vertical-tab-bar--workout')) {
+    const mode = app?.WorkoutPanel?.ViewMode ?? 'workout';
+    return `WorkoutSetting.${mode}`;
+  }
 
-  // WorkoutArea (active content pane) — data-media-type 属性でメディアタイプを判別
+  // 2. ToolBar.{ModeName}
+  if (el.closest('.workout-toolbar')) {
+    const mode = app?.WorkoutPanel?.ToolBarMode ?? 'Copyright';
+    return `ToolBar.${mode}`;
+  }
+
+  // 3. WorkoutArea (Workout.{MediaType})
   const wa = el.closest('.workout-area');
   if (wa) {
-    const mt = (wa.querySelector('.workout-area__content') as HTMLElement | null)?.dataset.mediaType;
-    switch (mt) {
-      case 'workout':
-      case 'texteditor': return 'Workout.TextEditor';
-      case 'markdown':   return 'Workout.Markdown';
-      case 'datagrid':   return 'Workout.DataGrid';
-      case 'card':       return 'Workout.Card';
-      case 'graph':      return 'Workout.Graph';
-      case 'chat':       return 'Workout.Chat';
-    }
-    return 'Workout.ActivePane';
+    const mt = (wa.querySelector('.workout-area__content') as HTMLElement | null)?.dataset.mediaType ?? 'texteditor';
+    return `Workout.${mt}`;
   }
 
-  // WorkoutSettingArea
+  // 4. WorkoutSettingArea (WorkoutSetting.{ModeName})
   const ws = el.closest('.workout-setting-area');
   if (ws) {
-    const txt = ws.querySelector('.workout-setting-area__header')?.textContent?.toLowerCase() ?? '';
-    if (txt.includes('texteditor')) return 'WorkoutSetting.TextEditor';
-    if (txt.includes('markdown'))   return 'WorkoutSetting.Markdown';
-    if (txt.includes('datagrid'))   return 'WorkoutSetting.DataGrid';
-    if (txt.includes('card'))       return 'WorkoutSetting.Card';
-    if (txt.includes('graph'))      return 'WorkoutSetting.Graph';
-    return 'WorkoutSetting.Workout';
+    const mode = app?.WorkoutPanel?.ViewMode ?? 'workout';
+    return `WorkoutSetting.${mode}`;
   }
 
-  // ThinktankPanel
+  // 5. ThinktankPanel (Thinktank.{ModeName})
   const tt = el.closest('.thinktank-panel, .thinktank-area');
   if (tt) {
-    const panel = tt.closest('.thinktank-panel') ?? tt.parentElement ?? tt;
-    const label = panel.querySelector('.tab-icon-btn--active')?.getAttribute('aria-label') ?? '';
-    if (label === '検索')        return 'Thinktank.Search';
-    if (label === 'Thought一覧') return 'Thinktank.Thoughts';
-    if (label === 'AI相談')      return 'Thinktank.Chat';
-    if (label === '設定')        return 'Thinktank.Setting';
-    return 'Thinktank.Thinks';
+    const mode = app?.ThinktankPanel?.ViewMode ?? 'filter';
+    return `Thinktank.${mode}`;
   }
 
-  // OverviewPanel — レンダリング済みの子コンポーネントのクラスで判別
+  // 6. OverviewPanel (Overview.{ModeName})
   const ov = el.closest('.overview-panel, .overview-area');
   if (ov) {
-    const root = ov.closest('.overview-panel') ?? ov;
-    if (root.querySelector('.ov-settings-view')) return 'Overview.Setting';
-    if (root.querySelector('.ai-chat-view'))      return 'Overview.Chat';
-    if (root.querySelector('.graph-media'))        return 'Overview.Analyze';
-    return 'Overview.Thinks';
+    const mode = app?.OverviewPanel?.ViewMode ?? 'datagrid';
+    return `Overview.${mode}`;
   }
 
-  // ReThinkPanel — .rethink-chat の有無でモードを判別
+  // 7. ReThinkPanel (ReThink.{ModeName})
   const rt = el.closest('.rethink-panel, .rethink-area');
   if (rt) {
-    const root = rt.closest('.rethink-panel') ?? rt;
-    if (root.querySelector('.rethink-chat')) return 'ReThink.Chat';
-    return 'ReThink.Setting';
+    const mode = app?.ReThinkPanel?.ViewMode ?? 'chat';
+    return `ReThink.${mode}`;
+  }
+
+  // 8. Application.StatusBarArea 等、その他のフォールバック
+  if (el.closest('.ApplicationStatusBarArea')) {
+    return 'Application.StatusBarArea';
   }
 
   return 'None';

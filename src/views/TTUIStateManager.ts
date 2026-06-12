@@ -31,6 +31,7 @@ import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
 import { SECTION_STYLE_DEFAULTS } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
+import { getFocusName } from '../utils/getFocusName';
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
@@ -39,8 +40,8 @@ export type ConfigKey =
   | 'ThinktankPanel.Mode.Name'
   | 'OverviewPanel.Mode.IsOpen'
   | 'OverviewPanel.Mode.Name'
-  | 'WorkoutPanel.Mode.IsOpen'
-  | 'WorkoutPanel.Mode.Name'
+  | 'WorkoutSettingPanel.Mode.IsOpen'
+  | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Mode.IsOpen'
   | 'ReThinkPanel.Mode.Name'
   | 'TextEditor.LineNumbers.IsVisible'
@@ -56,6 +57,10 @@ export type ConfigKey =
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
   | 'Application.Focused.AreaName'
+  | 'Application.KeyboardFocused.AreaName'
+  | 'WorkoutPanel.Pane.Count'
+  | 'WorkoutPanel.FocusedPane.ID'
+  | 'WorkoutPanel.FocusedPane.MediaType'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -159,14 +164,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── WorkoutPanel ─────────────────────────────────────────────────────
-  'WorkoutPanel.Mode.IsOpen': {
+  'WorkoutSettingPanel.Mode.IsOpen': {
     panel: 'WorkoutPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'ワークアウトパネル表示',
     get: (app) => String(app.WorkoutPanel.IsAreaOpen),
     set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
   },
-  'WorkoutPanel.Mode.Name': {
+  'WorkoutSettingPanel.Mode.Name': {
     panel: 'WorkoutPanel',
     default: 'workout', type: 'string', candidates: '^(workout|texteditor|markdown|datagrid|card|graph)$',
     description: 'ワークアウト設定パネルモード',
@@ -325,6 +330,43 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '右パネル表示モード',
     get: (app) => app.ReThinkPanel.ViewMode,
     set: (app, v) => { app.ReThinkPanel.SetViewMode(v as ReThinkViewMode); },
+  },
+
+  // ── KeyboardFocus & Pane Info ──────────────────────────────────────────────
+  'Application.KeyboardFocused.AreaName': {
+    panel: 'Application',
+    default: 'None', type: 'string', candidates: '.*',
+    description: 'キーボードフォーカスエリア名',
+    isConst: true,
+    get: (_app) => getFocusName(document.activeElement),
+    set: () => {},
+  },
+  'WorkoutPanel.Pane.Count': {
+    panel: 'WorkoutPanel',
+    default: '0', type: 'string', candidates: '^[0-9]+$',
+    description: '表示されているペインの数',
+    isConst: true,
+    get: (app) => String(app.WorkoutPanel.Areas.length),
+    set: () => {},
+  },
+  'WorkoutPanel.FocusedPane.ID': {
+    panel: 'WorkoutPanel',
+    default: 'None', type: 'string', candidates: '.*',
+    description: 'フォーカスがあるペインのID',
+    isConst: true,
+    get: (app) => app.WorkoutPanel.FocusedAreaId ?? 'None',
+    set: () => {},
+  },
+  'WorkoutPanel.FocusedPane.MediaType': {
+    panel: 'WorkoutPanel',
+    default: 'None', type: 'string', candidates: '.*',
+    description: 'フォーカスがあるペインのメディアタイプ',
+    isConst: true,
+    get: (app) => {
+      const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
+      return area?.MediaType ?? 'None';
+    },
+    set: () => {},
   },
 };
 
