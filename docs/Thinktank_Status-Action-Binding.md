@@ -8,7 +8,7 @@
 
 # Status
 ## 完了：　Application.KeyboardFocused.AreaName
-　Q：設定される値を記載してください。
+　Q：設定値を記載してください。
 　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
 　　- Thinktank.{ModeName} （左パネルフォーカス時。ModeName = filter / chat / settings）
 　　- Overview.{ModeName} （上部パネルフォーカス時。ModeName = datagrid / graph / chat / settings）
@@ -18,7 +18,7 @@
 　　- ReThink.{ModeName} （右パネルフォーカス時。ModeName = chat / settings）
 　　※フォーカスがどこにもない場合は None、ステータスバーにある場合は Application.StatusBarArea となります。
 ## 完了：　Application.Focused.AreaName
-　Q：設定されるすべての値を記載してください。
+　Q：設定値を記載してください。
 　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
 　　- Thinktank （左パネル：フィルター / チャット / 設定）
 　　- Overview （上部パネル：データグリッド / グラフ / チャット / 設定）
@@ -27,18 +27,59 @@
 　　- ReThink （右パネル：AIチャット / 設定）
 　　※レイアウトモードが 'simple' の場合は、Thinktank, WorkoutSetting, Workout の3つのみが選択肢となります。
 ## 完了：　ToolBar.Mode.Name
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の7つです。
+　　- Status （ステータス）
+　　- Highlighter （ハイライター）
+　　- KeyAction （キーアクション）
+　　- Command （コマンド）
+　　- Translate （翻訳）
+　　- Reminder （リマインダー）
+　　- Copyright （著作権・コピーライト情報）
 ## 完了：　ThinktankPanel.Mode.IsOpen
 ## 完了：　ThinktankPanel.Mode.Name
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の3つです。
+　　- filter （フィルター / 検索）
+　　- chat （AI相談チャット）
+　　- settings （設定）
 ## 完了：　OverviewPanel.Mode.IsOpen
 ## 完了：　OverviewPanel.Mode.Name
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の4つです。
+　　- datagrid （データグリッド）
+　　- graph （関係性グラフ）
+　　- chat （AIチャット）
+　　- settings （設定）
 ## 完了：　WorkoutSettingPanel.Mode.IsOpen
 ## 完了：　WorkoutSettingPanel.Mode.Name
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の6つです。
+　　- workout （概要設定）
+　　- texteditor （テキストエディタ）
+　　- markdown （マークダウンプレビュー）
+　　- datagrid （データグリッド）
+　　- card （カードビュー）
+　　- graph （グラフビュー）
 ## 完了：　ReThinkPanel.Mode.IsOpen
 ## 完了：　ReThinkPanel.Mode.Name
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の2つです。
+　　- chat （AI対話チャット）
+　　- settings （設定）
 
 ## 完了：　WorkoutPanel.Pane.Count
 ## 完了：　WorkoutPanel.FocusedPane.ID
 ## 完了：　WorkoutPanel.FocusedPane.MediaType
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の7つです。
+　　- workout （概要設定）
+　　- texteditor （テキストエディタ）
+　　- markdown （マークダウン）
+　　- datagrid （データグリッド）
+　　- card （カード）
+　　- graph （グラフ）
+　　- None （フォーカスされているペインがない場合）
 
 ## 完了：　TextEditor.LineNumbers.IsVisible
 ## 完了：　TextEditor.WordWrap.IsVisible
