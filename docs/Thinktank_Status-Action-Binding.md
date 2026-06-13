@@ -10,14 +10,14 @@
 ## 完了：　Application.KeyboardFocused.AreaName
 　Q：設定値を記載してください。
 　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
-　　- Thinktank.{ModeName} （左パネルフォーカス時。ModeName = filter / chat / settings）
-　　- Overview.{ModeName} （上部パネルフォーカス時。ModeName = datagrid / graph / chat / settings）
-　　- WorkoutSetting.{ModeName} （ワークアウト設定トレイまたはタブバーフォーカス時。ModeName = workout / texteditor / markdown / datagrid / card / graph）
-　　- ToolBar.{ModeName} （ワークアウトツールバーフォーカス時。ModeName = Status / Highlighter / KeyAction / Command / Translate / Reminder / Copyright）
-　　- Workout.{MediaType} （ワークアウト編集ペインフォーカス時。MediaType = workout / texteditor / markdown / datagrid / card / graph / chat）
-　　- ReThink.{ModeName} （右パネルフォーカス時。ModeName = chat / settings）
+　　- Thinktank.{ModeName}
+　　- Overview.{ModeName} 
+　　- WorkoutSetting.{ModeName}
+　　- ToolBar.{ModeName} 
+　　- Workout.{MediaType}
+　　- ReThink.{ModeName}
 　　※フォーカスがどこにもない場合は None、ステータスバーにある場合は Application.StatusBarArea となります。
-## 完了：　Application.Focused.AreaName
+## 完了：　Application.Focused.ColumnName
 　Q：設定値を記載してください。
 　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
 　　- Thinktank （左パネル：フィルター / チャット / 設定）

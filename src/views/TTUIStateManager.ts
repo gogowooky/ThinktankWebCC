@@ -56,7 +56,7 @@ export type ConfigKey =
   | 'TextEditor.Color.Occurrence'
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
-  | 'Application.Focused.AreaName'
+  | 'Application.Focused.ColumnName'
   | 'Application.KeyboardFocused.AreaName'
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
@@ -275,7 +275,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── Application ──────────────────────────────────────────────────────────
-  'Application.Focused.AreaName': {
+  'Application.Focused.ColumnName': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
     candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
