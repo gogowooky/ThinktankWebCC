@@ -10,6 +10,7 @@ import { Monitor, Globe } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
@@ -135,18 +136,14 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       setKaState(s => ({ ...s, touch: `${e.type}(${count})` }));
     };
 
-    const onFocusIn = () => {
-      // rAF でReact再描画後に判定（リボンボタン等のクリック直後にモードが確定する）
-      requestAnimationFrame(() => {
-        setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
-      });
-    };
-    const onWindowBlur = () => {
-      setKaState(s => ({ ...s, focus: '-' }));
-    };
-
     // 初期フォーカス
-    setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
+    setKaState(s => ({ ...s, focus: TTUIStateManager.instance.getProperty('Application.KeyboardFocused.AreaName') || 'None' }));
+
+    // UIStateManager のフォーカス変更をリッスンして同期
+    const handleFocusChange = (key: string, value: string) => {
+      setKaState(s => ({ ...s, focus: value }));
+    };
+    TTUIStateManager.instance.addListener('Application.KeyboardFocused.AreaName', handleFocusChange);
 
     if (mode === 'keyaction') {
       window.addEventListener('keydown',    onKeyDown, { capture: true });
@@ -159,8 +156,6 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       window.addEventListener('touchmove',  onTouch, { passive: true });
       window.addEventListener('touchend',   onTouch, { passive: true });
     }
-    window.addEventListener('focusin',    onFocusIn);
-    window.addEventListener('blur',       onWindowBlur);
 
     return () => {
       if (mode === 'keyaction') {
@@ -174,8 +169,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
         window.removeEventListener('touchmove',  onTouch);
         window.removeEventListener('touchend',   onTouch);
       }
-      window.removeEventListener('focusin',    onFocusIn);
-      window.removeEventListener('blur',       onWindowBlur);
+      TTUIStateManager.instance.removeListener('Application.KeyboardFocused.AreaName', handleFocusChange);
       cancelAnimationFrame(rafRef.current);
     };
   }, [mode]);

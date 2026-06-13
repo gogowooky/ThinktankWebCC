@@ -141,25 +141,11 @@ export function StatusBarKeyActionPanel({
   exModeModKey,
   lastActionDisplay,
 }: KeyActionPanelProps) {
-  const [focusValue, setFocusValue] = useState(() =>
-    TTUIStateManager.instance.getProperty('Application.KeyboardFocused.AreaName')
-  );
-
-  useEffect(() => {
-    const handleFocusChange = () => {
-      setFocusValue(TTUIStateManager.instance.getProperty('Application.KeyboardFocused.AreaName'));
-    };
-    TTUIStateManager.instance.addListener('Application.KeyboardFocused.AreaName', handleFocusChange);
-    return () => {
-      TTUIStateManager.instance.removeListener('Application.KeyboardFocused.AreaName', handleFocusChange);
-    };
-  }, []);
-
   return (
     <div className="ApplicationStatusBarArea__keyaction">
       <span className="ApplicationStatusBarArea__ka-field">
         <span className="ApplicationStatusBarArea__ka-label">focus</span>
-        <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{focusValue}</span>
+        <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{kaState.focus}</span>
       </span>
       <span className="ApplicationStatusBarArea__ka-divider" />
       <span className="ApplicationStatusBarArea__ka-field">
