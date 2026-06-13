@@ -14,7 +14,7 @@
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
 
 ## 完了：　260614　Application.KeyboardFocused.AreaName
-　ToolBar.KeyActionのTextBox中の FOCUS部 にこの値を表示します
+　この値が更新された際には、ToolBar.KeyActionのTextBox中の FOCUS部 にこの値を表示します
 
 　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
 　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。
