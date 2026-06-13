@@ -141,10 +141,10 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'ThinktankPanel.Mode.Name': {
     panel: 'ThinktankPanel',
-    default: 'filter', type: 'string', candidates: '^(filter|chat|settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Settings)$',
     description: '左パネルモード',
-    get: (app) => app.ThinktankPanel.ViewMode,
-    set: (app, v) => { app.ThinktankPanel.ViewMode = v as ThinktankViewMode; },
+    get: (app) => capitalize(app.ThinktankPanel.ViewMode),
+    set: (app, v) => { app.ThinktankPanel.ViewMode = v.toLowerCase() as ThinktankViewMode; },
   },
 
   // ── OverviewPanel ────────────────────────────────────────────────────────
@@ -157,10 +157,10 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'OverviewPanel.Mode.Name': {
     panel: 'OverviewPanel',
-    default: 'datagrid', type: 'string', candidates: '^(datagrid|graph|chat|settings)$',
+    default: 'Datagrid', type: 'string', candidates: '^(Datagrid|Graph|Chat|Settings)$',
     description: '上部パネル表示モード',
-    get: (app) => app.OverviewPanel.ViewMode,
-    set: (app, v) => { app.OverviewPanel.SetViewMode(v as OverviewViewMode); },
+    get: (app) => capitalize(app.OverviewPanel.ViewMode),
+    set: (app, v) => { app.OverviewPanel.SetViewMode(v.toLowerCase() as OverviewViewMode); },
   },
 
   // ── WorkoutPanel ─────────────────────────────────────────────────────
@@ -173,10 +173,10 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'WorkoutSettingPanel.Mode.Name': {
     panel: 'WorkoutPanel',
-    default: 'workout', type: 'string', candidates: '^(workout|texteditor|markdown|datagrid|card|graph)$',
+    default: 'Workout', type: 'string', candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph)$',
     description: 'ワークアウト設定パネルモード',
-    get: (app) => app.WorkoutPanel.ViewMode,
-    set: (app, v) => { app.WorkoutPanel.SetViewMode(v as WorkoutViewMode); },
+    get: (app) => capitalize(app.WorkoutPanel.ViewMode),
+    set: (app, v) => { app.WorkoutPanel.SetViewMode(v.toLowerCase() as WorkoutViewMode); },
   },
 
   // ── TextEditor（テキストエディタ設定）──────────────────────────────────────
@@ -326,10 +326,10 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'ReThinkPanel.Mode.Name': {
     panel: 'ReThinkPanel',
-    default: 'chat', type: 'string', candidates: '^(chat|settings)$',
+    default: 'Chat', type: 'string', candidates: '^(Chat|Settings)$',
     description: '右パネル表示モード',
-    get: (app) => app.ReThinkPanel.ViewMode,
-    set: (app, v) => { app.ReThinkPanel.SetViewMode(v as ReThinkViewMode); },
+    get: (app) => capitalize(app.ReThinkPanel.ViewMode),
+    set: (app, v) => { app.ReThinkPanel.SetViewMode(v.toLowerCase() as ReThinkViewMode); },
   },
 
   // ── KeyboardFocus & Pane Info ──────────────────────────────────────────────
@@ -364,7 +364,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     isConst: true,
     get: (app) => {
       const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
-      return area?.MediaType ?? 'None';
+      return capitalize(area?.MediaType ?? 'None');
     },
     set: () => {},
   },
@@ -718,6 +718,11 @@ export class TTUIStateManager {
 }
 
 // ── ユーティリティ ────────────────────────────────────────────────────────────
+function capitalize(s: string): string {
+  if (!s) return '';
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 
 function extractValuesFromPattern(pattern: string): string[] {
   const match = pattern.match(/\^?\(([^)]+)\)\$?/);

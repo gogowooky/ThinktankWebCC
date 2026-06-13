@@ -7,7 +7,8 @@
 
 # Status
 ## 完了：　260613　Application.KeyboardFocused.AreaName
-　ツールバーのFOCUSにはこの値を表示してください。
+　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
+　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。
 
 　Q：設定値を記載してください。
 　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
@@ -38,48 +39,58 @@
 　　- Reminder （リマインダー）
 　　- Copyright （著作権・コピーライト情報）
 ## 完了：　ThinktankPanel.Mode.IsOpen
-## 完了：　ThinktankPanel.Mode.Name
+## 完了：　260613　ThinktankPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の3つです。
-　　- filter （フィルター / 検索）
-　　- chat （AI相談チャット）
-　　- settings （設定）
+　　- Filter （フィルター / 検索）
+　　- Chat （AI相談チャット）
+　　- Settings （設定）
 ## 完了：　OverviewPanel.Mode.IsOpen
-## 完了：　OverviewPanel.Mode.Name
+## 完了：　260613　OverviewPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の4つです。
-　　- datagrid （データグリッド）
-　　- graph （関係性グラフ）
-　　- chat （AIチャット）
-　　- settings （設定）
+　　- Datagrid （データグリッド）
+　　- Graph （関係性グラフ）
+　　- Chat （AIチャット）
+　　- Settings （設定）
 ## 完了：　WorkoutSettingPanel.Mode.IsOpen
-## 完了：　WorkoutSettingPanel.Mode.Name
+## 完了：　260613　WorkoutSettingPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の6つです。
-　　- workout （概要設定）
-　　- texteditor （テキストエディタ）
-　　- markdown （マークダウンプレビュー）
-　　- datagrid （データグリッド）
-　　- card （カードビュー）
-　　- graph （グラフビュー）
+　　- Workout （概要設定）
+　　- Texteditor （テキストエディタ）
+　　- Markdown （マークダウンプレビュー）
+　　- Datagrid （データグリッド）
+　　- Card （カードビュー）
+　　- Graph （グラフビュー）
 ## 完了：　ReThinkPanel.Mode.IsOpen
-## 完了：　ReThinkPanel.Mode.Name
+## 完了：　260613　ReThinkPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の2つです。
-　　- chat （AI対話チャット）
-　　- settings （設定）
+　　- Chat （AI対話チャット）
+　　- Settings （設定）
 
 ## 完了：　WorkoutPanel.Pane.Count
 ## 完了：　WorkoutPanel.FocusedPane.ID
-## 完了：　WorkoutPanel.FocusedPane.MediaType
+## 完了：　260613　WorkoutPanel.FocusedPane.MediaType
+　設定値の1文字目は大文字にしてください
+
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の7つです。
-　　- workout （概要設定）
-　　- texteditor （テキストエディタ）
-　　- markdown （マークダウン）
-　　- datagrid （データグリッド）
-　　- card （カード）
-　　- graph （グラフ）
+　　- Workout （概要設定）
+　　- Texteditor （テキストエディタ）
+　　- Markdown （マークダウン）
+　　- Datagrid （データグリッド）
+　　- Card （カード）
+　　- Graph （グラフ）
 　　- None （フォーカスされているペインがない場合）
 
 ## 完了：　TextEditor.LineNumbers.IsVisible
