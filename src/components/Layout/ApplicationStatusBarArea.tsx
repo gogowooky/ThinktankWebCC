@@ -104,10 +104,12 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   }, [status]);
 
   // KeyAction モード: window 全体のイベントをウォッチ
+  // KeyAction / Status モード: window 全体のイベントをウォッチ
   useEffect(() => {
-    if (mode !== 'keyaction') { setKaState(KA_INIT); return; }
+    if (mode !== 'keyaction' && mode !== 'status') { setKaState(KA_INIT); return; }
 
     const onKeyDown = (e: KeyboardEvent) => {
+      if (mode !== 'keyaction') return;
       const mods = [
         e.ctrlKey  && 'Ctrl',
         e.altKey   && 'Alt',
@@ -119,6 +121,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
+      if (mode !== 'keyaction') return;
       // 離した後に残っているモディファイアキーを再計算、KEYはクリア
       const mods = [
         e.ctrlKey  && 'Ctrl',
@@ -130,6 +133,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     };
 
     const onMouse = (e: MouseEvent) => {
+      if (mode !== 'keyaction') return;
       const label = `${e.type}(${Math.round(e.clientX)},${Math.round(e.clientY)})`;
       if (e.type === 'mousemove') {
         cancelAnimationFrame(rafRef.current);
@@ -142,6 +146,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     };
 
     const onTouch = (e: TouchEvent) => {
+      if (mode !== 'keyaction') return;
       const count = e.type === 'touchend' ? e.changedTouches.length : e.touches.length;
       setKaState(s => ({ ...s, touch: `${e.type}(${count})` }));
     };
@@ -159,28 +164,32 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     // 初期フォーカス
     setKaState(s => ({ ...s, focus: getFocusName(document.activeElement) }));
 
-    window.addEventListener('keydown',    onKeyDown, { capture: true });
-    window.addEventListener('keyup',      onKeyUp,   { capture: true });
-    window.addEventListener('mousedown',  onMouse);
-    window.addEventListener('mouseup',    onMouse);
-    window.addEventListener('click',      onMouse);
-    window.addEventListener('mousemove',  onMouse, { passive: true });
-    window.addEventListener('touchstart', onTouch, { passive: true });
-    window.addEventListener('touchmove',  onTouch, { passive: true });
-    window.addEventListener('touchend',   onTouch, { passive: true });
+    if (mode === 'keyaction') {
+      window.addEventListener('keydown',    onKeyDown, { capture: true });
+      window.addEventListener('keyup',      onKeyUp,   { capture: true });
+      window.addEventListener('mousedown',  onMouse);
+      window.addEventListener('mouseup',    onMouse);
+      window.addEventListener('click',      onMouse);
+      window.addEventListener('mousemove',  onMouse, { passive: true });
+      window.addEventListener('touchstart', onTouch, { passive: true });
+      window.addEventListener('touchmove',  onTouch, { passive: true });
+      window.addEventListener('touchend',   onTouch, { passive: true });
+    }
     window.addEventListener('focusin',    onFocusIn);
     window.addEventListener('blur',       onWindowBlur);
 
     return () => {
-      window.removeEventListener('keydown',    onKeyDown, { capture: true });
-      window.removeEventListener('keyup',      onKeyUp,   { capture: true });
-      window.removeEventListener('mousedown',  onMouse);
-      window.removeEventListener('mouseup',    onMouse);
-      window.removeEventListener('click',      onMouse);
-      window.removeEventListener('mousemove',  onMouse);
-      window.removeEventListener('touchstart', onTouch);
-      window.removeEventListener('touchmove',  onTouch);
-      window.removeEventListener('touchend',   onTouch);
+      if (mode === 'keyaction') {
+        window.removeEventListener('keydown',    onKeyDown, { capture: true });
+        window.removeEventListener('keyup',      onKeyUp,   { capture: true });
+        window.removeEventListener('mousedown',  onMouse);
+        window.removeEventListener('mouseup',    onMouse);
+        window.removeEventListener('click',      onMouse);
+        window.removeEventListener('mousemove',  onMouse);
+        window.removeEventListener('touchstart', onTouch);
+        window.removeEventListener('touchmove',  onTouch);
+        window.removeEventListener('touchend',   onTouch);
+      }
       window.removeEventListener('focusin',    onFocusIn);
       window.removeEventListener('blur',       onWindowBlur);
       cancelAnimationFrame(rafRef.current);
@@ -307,6 +316,13 @@ export function ApplicationStatusBarArea({ panel }: Props) {
           <span className="ApplicationStatusBarArea__ka-field">
             <span className="ApplicationStatusBarArea__ka-label">action</span>
             <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--action">{status.LastActionDisplay || '-'}</span>
+          </span>
+        </div>
+      ) : mode === 'status' && authorState === 'off' ? (
+        <div className="ApplicationStatusBarArea__keyaction">
+          <span className="ApplicationStatusBarArea__ka-field">
+            <span className="ApplicationStatusBarArea__ka-label">focus</span>
+            <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{kaState.focus}</span>
           </span>
         </div>
       ) : (
