@@ -15,9 +15,20 @@
 
 ## 完了：　260614　Application.KeyboardFocused.AreaName
 　この値が更新された際には、ToolBar.KeyActionのTextBox中の FOCUS部 にこの値を表示します
-
-　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
-　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。
+ 
+ 　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
+ 　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。
+ 
+ 　Q：ToolBar.KeyActionのTextBox中に表示されている値を説明してください
+ 　A：ステータスバーの `KeyAction` モード（`StatusBarKeyActionPanel`）では、以下の項目が横並びで表示され、ユーザーの入力やフォーカス状態を監視します。
+ 　　- **focus** (フォーカスエリア名): 現在キーボードフォーカスがあるDOM要素に対応するエリア名。例: `Thinktank.Filter`, `Workout.Texteditor`, `ReThink.Chat` など。
+ 　　- **mod** (修飾キー): 現在押されている修飾キー（`Ctrl`, `Alt`, `Shift`, `Meta`）。
+ 　　- **key** (キー名): 現在押下された直近のキー名（例: `A`, `Space`, `Enter` などの大文字表示）。
+ 　　- **mouse** (マウス操作): 直近のマウスイベントタイプとクリック座標（例: `click(320, 840)` など）。
+ 　　- **touch** (タッチ操作): 直近のタッチイベントタイプとタッチポイント数（例: `touchstart(1)` など）。
+ 　　- **exmode** (EXモード): 現在有効になっている一時的な拡張ショートカットモード（例: `Command`, `Highlight` など）。
+ 　　- **exmod** (EX修飾キー): 拡張モードのトリガーになっている修飾キー。
+ 　　- **action** (直前アクション): 直前に実行されたショートカットやコマンド等のアクション名（例: `L20へ移動`, `L5折畳` など）。
 
 
 　Q：設定値を記載してください。
