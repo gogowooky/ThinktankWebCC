@@ -1,18 +1,36 @@
 /**
  * ApplicationStatusBarArea.tsx
  * アプリケーション全体の最下段に常時表示されるステータスバー。
- * 左: テキスト入力欄（モードに応じた機能）
- * 右: モードアイコン群 + ユーティリティボタン
+ * 左: テキスト入力欄や各種ステータス表示（モードに応じた機能）[Panels]
+ * 右: モードアイコン群 + ユーティリティボタン [TabBar]
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, X, Copyright, Monitor, Globe } from 'lucide-react';
+import { Monitor, Globe } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
+
+// 下位コンポーネントおよび型のインポート
+import {
+  StatusBarAuthorBanner,
+  StatusBarStatusPanel,
+  StatusBarKeyActionPanel,
+  StatusBarInputPanel,
+  type KAState,
+} from './StatusBarPanels';
+
+import {
+  StatusBarTabBar,
+  MODES,
+  TOOLBAR_TO_MODE,
+  MODE_TO_TOOLBAR,
+  type ToolMode,
+} from './StatusBarTabBar';
+
 import './ApplicationStatusBarArea.css';
 
 const _cw = JSON.parse(copywriteRaw);
@@ -20,40 +38,7 @@ const AUTHOR_BANNER_TEXT = `${_cw.appName} ver.${_cw.version}, ${_cw.copyright.h
 
 type AuthorState = 'off' | 'banner' | 'static';
 
-interface KAState {
-  modifiers: string;
-  key:       string;
-  mouse:     string;
-  touch:     string;
-  focus:     string;
-}
 const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-', focus: '-' };
-
-type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
-
-interface ModeEntry {
-  id:          ToolMode;
-  icon:        React.ReactNode;
-  label:       string;
-  placeholder: string;
-}
-
-const MODES: ModeEntry[] = [
-  { id: 'status',    icon: <Info        size={14} />, label: 'Status',      placeholder: 'Status...' },
-  { id: 'highlight', icon: <Highlighter size={14} />, label: 'Highlighter', placeholder: '例: rethink fixme, error warn, info' },
-  { id: 'keyaction', icon: <Keyboard    size={14} />, label: 'KeyAction',   placeholder: 'KeyAction...' },
-  { id: 'command',   icon: <Terminal    size={14} />, label: 'Command',     placeholder: 'Command...' },
-  { id: 'translate', icon: <BookA       size={14} />, label: 'Translate',   placeholder: 'Translate...' },
-  { id: 'reminder',  icon: <Bell        size={14} />, label: 'Reminder',    placeholder: 'Reminder...' },
-];
-
-const TOOLBAR_TO_MODE: Record<string, ToolMode> = Object.fromEntries(
-  MODES.map(m => [m.label, m.id])
-) as Record<string, ToolMode>;
-
-const MODE_TO_TOOLBAR: Record<ToolMode, string> = Object.fromEntries(
-  MODES.map(m => [m.id, m.label])
-) as Record<ToolMode, string>;
 
 interface Props {
   panel: TTWorkoutPanel;
@@ -103,7 +88,6 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     return () => window.removeEventListener('keyup', onKeyUp);
   }, [status]);
 
-  // KeyAction モード: window 全体のイベントをウォッチ
   // KeyAction / Status モード: window 全体のイベントをウォッチ
   useEffect(() => {
     if (mode !== 'keyaction' && mode !== 'status') { setKaState(KA_INIT); return; }
@@ -246,6 +230,50 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   const storageMode = StorageManager.instance.mode;
   const isLocalMode = storageMode === 'electron' || storageMode === 'local';
 
+  // 左側コンテンツパネルの出し分け
+  const renderPanel = () => {
+    if (authorState === 'banner') {
+      return (
+        <StatusBarAuthorBanner
+          bannerText={AUTHOR_BANNER_TEXT}
+          onClick={handleBannerClick}
+        />
+      );
+    }
+
+    if (authorState === 'off') {
+      if (mode === 'keyaction') {
+        return (
+          <StatusBarKeyActionPanel
+            kaState={kaState}
+            exMode={status.ExMode}
+            exModeModKey={status.ExModeModKey}
+            lastActionDisplay={status.LastActionDisplay}
+          />
+        );
+      }
+      if (mode === 'status') {
+        return <StatusBarStatusPanel focus={kaState.focus} />;
+      }
+    }
+
+    // 通常の入力フィールド (Highlight, Command, Translate, Reminder 等、または Copyrightの静的表示)
+    return (
+      <StatusBarInputPanel
+        inputRef={inputRef}
+        value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
+        onChange={handleTextChange}
+        onClear={handleClear}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        placeholder={current.placeholder}
+        isReadOnly={authorState === 'static'}
+        showHistory={authorState === 'off' && mode === 'highlight'}
+        historyList={panel.HighlightHistory}
+      />
+    );
+  };
+
   return (
     <div className="ApplicationStatusBarArea">
 
@@ -259,136 +287,17 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       </div>
       <div className="ApplicationStatusBarArea__indicator-divider" />
 
-      {/* 作成者バナー / 作成者静的表示 / 通常入力欄 */}
-      {authorState === 'banner' ? (
-        <div
-          className="ApplicationStatusBarArea__author-banner"
-          onClick={handleBannerClick}
-          title="クリックで静的表示"
-        >
-          <span className="ApplicationStatusBarArea__author-banner-text">
-            {AUTHOR_BANNER_TEXT}
-          </span>
-        </div>
-      ) : mode === 'keyaction' && authorState === 'off' ? (
-        <div className="ApplicationStatusBarArea__keyaction">
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">focus</span>
-            <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{kaState.focus}</span>
-          </span>
-          <span className="ApplicationStatusBarArea__ka-divider" />
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">mod</span>
-            <span className="ApplicationStatusBarArea__ka-value">{kaState.modifiers}</span>
-          </span>
-          <span className="ApplicationStatusBarArea__ka-sep">·</span>
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">key</span>
-            <span className="ApplicationStatusBarArea__ka-value">{kaState.key}</span>
-          </span>
-          <span className="ApplicationStatusBarArea__ka-sep">·</span>
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">mouse</span>
-            <span className="ApplicationStatusBarArea__ka-value">{kaState.mouse}</span>
-          </span>
-          <span className="ApplicationStatusBarArea__ka-sep">·</span>
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">touch</span>
-            <span className="ApplicationStatusBarArea__ka-value">{kaState.touch}</span>
-          </span>
-          <span className="ApplicationStatusBarArea__ka-divider" />
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">exmode</span>
-            <span className={`ApplicationStatusBarArea__ka-value${status.ExMode ? ' ApplicationStatusBarArea__ka-value--exmode' : ''}`}>
-              {status.ExMode || '-'}
-            </span>
-          </span>
-          {status.ExMode && (
-            <>
-              <span className="ApplicationStatusBarArea__ka-sep">·</span>
-              <span className="ApplicationStatusBarArea__ka-field">
-                <span className="ApplicationStatusBarArea__ka-label">exmod</span>
-                <span className="ApplicationStatusBarArea__ka-value">{status.ExModeModKey}</span>
-              </span>
-            </>
-          )}
-          <span className="ApplicationStatusBarArea__ka-divider" />
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">action</span>
-            <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--action">{status.LastActionDisplay || '-'}</span>
-          </span>
-        </div>
-      ) : mode === 'status' && authorState === 'off' ? (
-        <div className="ApplicationStatusBarArea__keyaction">
-          <span className="ApplicationStatusBarArea__ka-field">
-            <span className="ApplicationStatusBarArea__ka-label">focus</span>
-            <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{kaState.focus}</span>
-          </span>
-        </div>
-      ) : (
-        <>
-          <input
-            ref={inputRef}
-            id="StatusBarTextInput"
-            className="ApplicationStatusBarArea__input"
-            type="text"
-            value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
-            readOnly={authorState === 'static'}
-            list={authorState === 'off' && mode === 'highlight' ? 'status-bar-highlight-history' : undefined}
-            onChange={e => handleTextChange(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            placeholder={current.placeholder}
-            spellCheck={false}
-          />
-          {authorState === 'off' && mode === 'highlight' && (
-            <datalist id="status-bar-highlight-history">
-              {panel.HighlightHistory.map((h: string, i: number) => (
-                <option key={i} value={h} />
-              ))}
-            </datalist>
-          )}
-          {authorState === 'off' && text && (
-            <button
-              className="ApplicationStatusBarArea__clear-btn"
-              onClick={handleClear}
-              data-tip="クリア"
-              aria-label="クリア"
-            >
-              <X size={12} />
-            </button>
-          )}
-        </>
-      )}
+      {/* 左側コンテンツパネル領域 */}
+      {renderPanel()}
 
-      {/* モードアイコン群 */}
-      <div className="ApplicationStatusBarArea__modes">
-        {MODES.map(m => (
-          <button
-            key={m.id}
-            id={`StatusBarModeButton${m.id}`}
-            className={`ApplicationStatusBarArea__mode-btn${!isAuthorOn && mode === m.id ? ' ApplicationStatusBarArea__mode-btn--active' : ''}`}
-            onClick={() => handleModeSelect(m.id)}
-            data-tip={m.label}
-            aria-label={m.label}
-          >
-            {m.icon}
-          </button>
-        ))}
-      </div>
+      {/* 右側タブバー領域 */}
+      <StatusBarTabBar
+        mode={mode}
+        isAuthorOn={isAuthorOn}
+        onModeSelect={handleModeSelect}
+        onAuthorToggle={handleAuthorToggle}
+      />
 
-      {/* ユーティリティボタン */}
-      <div className="ApplicationStatusBarArea__utils">
-        <button
-          className={`ApplicationStatusBarArea__util-btn${isAuthorOn ? ' ApplicationStatusBarArea__util-btn--active' : ''}`}
-          onClick={handleAuthorToggle}
-          data-tip="Copyright"
-          data-tip-side="left"
-          aria-label="Copyright"
-        >
-          <Copyright size={14} />
-        </button>
-      </div>
     </div>
   );
 }
