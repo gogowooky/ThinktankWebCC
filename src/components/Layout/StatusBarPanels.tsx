@@ -90,7 +90,7 @@ export function StatusBarStatusPanel({ focus }: StatusPanelProps) {
   const keys = statusModeText.split(',').map(k => k.trim()).filter(Boolean);
   const items = keys.map(key => {
     const val = TTUIStateManager.instance.getProperty(key);
-    return `${key}:{${val}}`;
+    return `${key}:[${val}]`;
   });
   const displayText = items.join(' ');
 
