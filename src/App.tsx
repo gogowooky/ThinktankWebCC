@@ -54,10 +54,12 @@ export default function App() {
         const name = getFocusName(document.activeElement)
         TTShortcutManager.instance.onFocusChange(name)
         document.body.dataset.focusColumn = name.split('.')[0]
+        TTUIStateManager.instance.notifyConstPropertyChanged('Application.KeyboardFocused.AreaName')
       })
     }
     const handleWindowBlur = () => {
       delete document.body.dataset.focusColumn
+      TTUIStateManager.instance.notifyConstPropertyChanged('Application.KeyboardFocused.AreaName')
     }
 
     // capture: true でキャプチャフェーズ登録 → テキストボックス・Monaco 含む

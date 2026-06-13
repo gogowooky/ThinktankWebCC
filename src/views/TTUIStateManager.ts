@@ -56,6 +56,7 @@ export type ConfigKey =
   | 'TextEditor.Color.Occurrence'
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
+  | 'ToolBar.StatusMode.Text'
   | 'Application.Focused.ColumnName'
   | 'Application.KeyboardFocused.AreaName'
   | 'WorkoutPanel.Pane.Count'
@@ -273,6 +274,15 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.WorkoutPanel.ToolBarMode,
     set: (app, v) => { app.WorkoutPanel.ToolBarMode = v; },
   },
+  'ToolBar.StatusMode.Text': {
+    panel: 'WorkoutPanel',
+    default: 'ThinktankPanel.Mode.Name,OverviewPanel.Mode.Name,WorkoutSettingPanel.Mode.Name',
+    type: 'string',
+    candidates: '.*',
+    description: 'ステータスバー表示項目 (CSV)',
+    get: (app) => app.WorkoutPanel.StatusModeText,
+    set: (app, v) => { app.WorkoutPanel.StatusModeText = v; },
+  },
 
   // ── Application ──────────────────────────────────────────────────────────
   'Application.Focused.ColumnName': {
@@ -461,6 +471,24 @@ export class TTUIStateManager {
     if (this._vaultThink) {
       this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
     }
+  }
+
+  /** 指定したキーの現在値を文字列で取得する */
+  getProperty(key: ConfigKey): string {
+    if (!this._app) return '';
+    const spec = PROP_SPECS[key];
+    if (!spec) return '';
+    return spec.get(this._app);
+  }
+
+  /** 読み取り専用プロパティ（フォーカス等）の値変更を軽量に通知する */
+  notifyConstPropertyChanged(key: ConfigKey): void {
+    if (!this._app) return;
+    const spec = PROP_SPECS[key];
+    if (!spec || !spec.isConst) return;
+    const val = spec.get(this._app);
+    this._emit(key, val);
+    this._app.NotifyUpdated(false);
   }
 
   /** 現在のアプリ状態を構造保持でシリアライズして返す（更新ボタン用） */

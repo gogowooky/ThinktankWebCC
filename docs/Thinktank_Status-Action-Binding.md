@@ -6,8 +6,13 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Status
-## 調査：　260613　Application.KeyboardFocused.AreaName
-　ToolBarのKeyActionのFOCUSにはこの値を表示してください。
+## 完了：　260614　ToolBar.StatusMode.Text
+　ToolBarがStatusモードのPanelには、EditBoxとTextBoxを配置し、PanelにフォーカスがあるときはEditBoxが、FocusがはずれるとTextBoxが表示されます。
+　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
+　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
+
+## 完了：　260614　Application.KeyboardFocused.AreaName
+　ToolBarがKeyActionモードのPanelの、FOCUSにはこの値を表示してください。
 
 　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
 　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。

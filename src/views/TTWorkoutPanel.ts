@@ -174,6 +174,9 @@ export class TTWorkoutPanel extends TTUIItem {
   /** ToolBar の表示モード */
   public ToolBarMode: string = 'Copyright';
 
+  /** ToolBar StatusMode用テキスト (CSV形式) */
+  public StatusModeText: string = 'ThinktankPanel.Mode.Name,OverviewPanel.Mode.Name,WorkoutSettingPanel.Mode.Name';
+
   public SetViewMode(mode: WorkoutViewMode): void {
     this.ViewMode = mode;
     this.NotifyUpdated();

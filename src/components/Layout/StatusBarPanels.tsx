@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -37,11 +38,90 @@ interface StatusPanelProps {
 }
 
 export function StatusBarStatusPanel({ focus }: StatusPanelProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [inputValue, setInputValue] = useState(() =>
+    TTUIStateManager.instance.getProperty('ToolBar.StatusMode.Text')
+  );
+
+  // 外部変更を同期するリスナー
+  useEffect(() => {
+    const handleStateChange = () => {
+      if (!isFocused) {
+        setInputValue(TTUIStateManager.instance.getProperty('ToolBar.StatusMode.Text'));
+      }
+    };
+    TTUIStateManager.instance.addListener('ToolBar.StatusMode.Text', handleStateChange);
+    
+    // 他のプロパティの変更を検知して再描画
+    const handleAnyChange = () => {
+      if (!isFocused) {
+        // トリガー再描画
+        setInputValue(TTUIStateManager.instance.getProperty('ToolBar.StatusMode.Text'));
+      }
+    };
+    TTUIStateManager.instance.addListener('*', handleAnyChange);
+
+    return () => {
+      TTUIStateManager.instance.removeListener('ToolBar.StatusMode.Text', handleStateChange);
+      TTUIStateManager.instance.removeListener('*', handleAnyChange);
+    };
+  }, [isFocused]);
+
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = (e: React.FocusEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsFocused(false);
+      TTUIStateManager.instance.applyProperty('ToolBar.StatusMode.Text', inputValue);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      TTUIStateManager.instance.applyProperty('ToolBar.StatusMode.Text', inputValue);
+      e.currentTarget.blur();
+    }
+  };
+
+  // TextBox用の表示文字列を作成
+  const statusModeText = TTUIStateManager.instance.getProperty('ToolBar.StatusMode.Text') || '';
+  const keys = statusModeText.split(',').map(k => k.trim()).filter(Boolean);
+  const items = keys.map(key => {
+    const val = TTUIStateManager.instance.getProperty(key);
+    return `${key}:{${val}}`;
+  });
+  const displayText = items.join(' ');
+
+  if (isFocused) {
+    return (
+      <div
+        className="ApplicationStatusBarArea__status-panel-container"
+        onBlur={handleBlur}
+      >
+        <input
+          type="text"
+          className="ApplicationStatusBarArea__status-input"
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          autoFocus
+          placeholder="StatusIDs (comma separated)"
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="ApplicationStatusBarArea__keyaction">
-      <span className="ApplicationStatusBarArea__ka-field">
-        <span className="ApplicationStatusBarArea__ka-label">focus</span>
-        <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{focus}</span>
+    <div
+      className="ApplicationStatusBarArea__status-panel-container"
+      tabIndex={0}
+      onFocus={handleFocus}
+      title="クリックして編集"
+    >
+      <span className="ApplicationStatusBarArea__status-text">
+        {displayText || 'No status items configured'}
       </span>
     </div>
   );
