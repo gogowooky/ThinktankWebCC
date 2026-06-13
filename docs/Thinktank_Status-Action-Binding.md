@@ -6,7 +6,9 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Status
-## 完了：　260613　Application.KeyboardFocused.AreaName
+## 調査：　260613　Application.KeyboardFocused.AreaName
+　ToolBarのKeyActionのFOCUSにはこの値を表示してください。
+
 　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
 　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。
 
