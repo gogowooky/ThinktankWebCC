@@ -1,5 +1,5 @@
 # AIへの指示
-・ 本ファイルでは、実装または修正をしてほしいStatusまたはActionについて、以下のフォーマットで記載いたします。記載内容に基づいて対応してください。対象とする記載は空行までとし、空行後の記載は無視してください。完了後はコミットコメントに概要を記入し、commit&pushしてください。
+・ 本ファイルでは、実装または修正をしてほしいStatusまたはActionについて、以下のフォーマットで記載いたします。記載内容に基づいて対応してください。対象とする記載は空行までとし、空行後の記載は無視してください。完了後はコミットコメントに概要を記入し、commit&pushしてください。その他以下は、見出し行の指示に従って実装、調査、修正等を行ってください。また、対応中のタイトルが分かるように表示してください。
 (行頭) ## 実装：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容に基づいて実装し、日付を変更してください。
 (行頭) ## 修正：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容に基づいて修正し、日付を変更してください。
 (行頭) ## 調査：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容について調査・回答を追記し、日付を変更してください。
@@ -14,7 +14,7 @@
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
 
 ## 完了：　260614　Application.KeyboardFocused.AreaName
-　この値が更新された際には、ToolBar.KeyActionのTextBox中の FOCUS部 にこの値を表示します
+　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。
  
  　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
  　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。
@@ -29,7 +29,6 @@
  　　- **exmode** (EXモード): 現在有効になっている一時的な拡張ショートカットモード（例: `Command`, `Highlight` など）。
  　　- **exmod** (EX修飾キー): 拡張モードのトリガーになっている修飾キー。
  　　- **action** (直前アクション): 直前に実行されたショートカットやコマンド等のアクション名（例: `L20へ移動`, `L5折畳` など）。
-
 
 　Q：設定値を記載してください。
 　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
@@ -134,5 +133,19 @@
 ## 完了：　TextEditor.Folding.BackwardVisible　　　
 ## 完了：　TextEditor.Folding.OpenEachLevel　　　
 ## 完了：　TextEditor.Folding.CloseEachLevel　　　
+
+
+
+# その他
+## 完了:　260614　ToolBar.KeyActionのTextBox中に表示されている値を説明してください
+ 　A：ステータスバーの `KeyAction` モード（`StatusBarKeyActionPanel`）では、以下の項目が横並びで表示され、ユーザーの入力やフォーカス状態を監視します。
+ 　　- **focus** (フォーカスエリア名): 現在キーボードフォーカスがあるDOM要素に対応するエリア名。例: `Thinktank.Filter`, `Workout.Texteditor`, `ReThink.Chat` など。
+ 　　- **mod** (修飾キー): 現在押されている修飾キー（`Ctrl`, `Alt`, `Shift`, `Meta`）。
+ 　　- **key** (キー名): 現在押下された直近のキー名（例: `A`, `Space`, `Enter` などの大文字表示）。
+ 　　- **mouse** (マウス操作): 直近のマウスイベントタイプとクリック座標（例: `click(320, 840)` など）。
+ 　　- **touch** (タッチ操作): 直近のタッチイベントタイプとタッチポイント数（例: `touchstart(1)` など）。
+ 　　- **exmode** (EXモード): 現在有効になっている一時的な拡張ショートカットモード（例: `Command`, `Highlight` など）。
+ 　　- **exmod** (EX修飾キー): 拡張モードのトリガーになっている修飾キー。
+ 　　- **action** (直前アクション): 直前に実行されたショートカットやコマンド等のアクション名（例: `L20へ移動`, `L5折畳` など）。
 
 
