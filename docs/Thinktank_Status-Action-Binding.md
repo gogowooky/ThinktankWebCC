@@ -14,10 +14,11 @@
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
 
 ## 完了：　260614　Application.KeyboardFocused.AreaName
-　ToolBarがKeyActionモードのPanelの、FOCUSにはこの値を表示してください。
+　ToolBar.KeyActionのTextBox中の FOCUS部 にこの値を表示します
 
 　各Panelが表示中ではない場合も、ModeNameにはFocusのあるボタンを表示してください。
 　WorkoutにPaneが表示されていない場合は、Workout.Noneと表示してください。
+
 
 　Q：設定値を記載してください。
 　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
