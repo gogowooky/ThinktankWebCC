@@ -36,7 +36,7 @@
 　　- Workout （ワークアウト編集エリア）
 　　- ReThink （右パネル：AIチャット / 設定）
 　　※レイアウトモードが 'simple' の場合は、Thinktank, WorkoutSetting, Workout の3つのみが選択肢となります。
-## 完了：　ToolBar.Mode.Name
+## 完了：　260613　ToolBar.Mode.Name
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の7つです。
 　　- Status （ステータス）
@@ -46,7 +46,7 @@
 　　- Translate （翻訳）
 　　- Reminder （リマインダー）
 　　- Copyright （著作権・コピーライト情報）
-## 完了：　ThinktankPanel.Mode.IsOpen
+## 完了：　260613　ThinktankPanel.Mode.IsOpen
 ## 完了：　260613　ThinktankPanel.Mode.Name
 　設定値の1文字目は大文字にしてください
 
@@ -55,7 +55,7 @@
 　　- Filter （フィルター / 検索）
 　　- Chat （AI相談チャット）
 　　- Settings （設定）
-## 完了：　OverviewPanel.Mode.IsOpen
+## 完了：　260613　OverviewPanel.Mode.IsOpen
 ## 完了：　260613　OverviewPanel.Mode.Name
 　設定値の1文字目は大文字にしてください
 
@@ -65,7 +65,7 @@
 　　- Graph （関係性グラフ）
 　　- Chat （AIチャット）
 　　- Settings （設定）
-## 完了：　WorkoutSettingPanel.Mode.IsOpen
+## 完了：　260613　WorkoutSettingPanel.Mode.IsOpen
 ## 完了：　260613　WorkoutSettingPanel.Mode.Name
 　設定値の1文字目は大文字にしてください
 
@@ -77,7 +77,7 @@
 　　- Datagrid （データグリッド）
 　　- Card （カードビュー）
 　　- Graph （グラフビュー）
-## 完了：　ReThinkPanel.Mode.IsOpen
+## 完了：　260613　ReThinkPanel.Mode.IsOpen
 ## 完了：　260613　ReThinkPanel.Mode.Name
 　設定値の1文字目は大文字にしてください
 
@@ -86,8 +86,8 @@
 　　- Chat （AI対話チャット）
 　　- Settings （設定）
 
-## 完了：　WorkoutPanel.Pane.Count
-## 完了：　WorkoutPanel.FocusedPane.ID
+## 完了：　260613　WorkoutPanel.Pane.Count
+## 完了：　260613　WorkoutPanel.FocusedPane.ID
 ## 完了：　260613　WorkoutPanel.FocusedPane.MediaType
 　設定値の1文字目は大文字にしてください
 
@@ -101,17 +101,17 @@
 　　- Graph （グラフ）
 　　- None （フォーカスされているペインがない場合）
 
-## 完了：　TextEditor.LineNumbers.IsVisible
-## 完了：　TextEditor.WordWrap.IsVisible
-## 完了：　TextEditor.Minimap.IsVisible
-## 完了：　TextEditor.FullWidthSpace.IsVisible
-## 完了：　TextEditor.UnicodeHighlight.IsVisible
-## 完了：　TextEditor.BracketPairColorization.IsVisible
-## 完了：　TextEditor.Color.Background
-## 完了：　TextEditor.Color.Text
-## 完了：　TextEditor.Color.Selection
-## 完了：　TextEditor.Color.Occurrence
-## 完了：　TextEditor.Style.Section
+## 完了：　260613　TextEditor.LineNumbers.IsVisible
+## 完了：　260613　TextEditor.WordWrap.IsVisible
+## 完了：　260613　TextEditor.Minimap.IsVisible
+## 完了：　260613　TextEditor.FullWidthSpace.IsVisible
+## 完了：　260613　TextEditor.UnicodeHighlight.IsVisible
+## 完了：　260613　TextEditor.BracketPairColorization.IsVisible
+## 完了：　260613　TextEditor.Color.Background
+## 完了：　260613　TextEditor.Color.Text
+## 完了：　260613　TextEditor.Color.Selection
+## 完了：　260613　TextEditor.Color.Occurrence
+## 完了：　260613　TextEditor.Style.Section
 
 # Action
 ## 完了：　FocusedPanel.ToggleAreaVisibility
