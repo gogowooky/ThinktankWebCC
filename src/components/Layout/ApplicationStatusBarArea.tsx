@@ -137,13 +137,13 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     };
 
     // 初期フォーカス
-    setKaState(s => ({ ...s, focus: TTUIStateManager.instance.getProperty('Application.FocusedArea.Name') || 'None' }));
+    setKaState(s => ({ ...s, focus: TTUIStateManager.instance.getProperty('Application.KeyboardFocused.AreaName') || 'None' }));
 
     // UIStateManager のフォーカス変更をリッスンして同期
     const handleFocusChange = (key: string, value: string) => {
       setKaState(s => ({ ...s, focus: value }));
     };
-    TTUIStateManager.instance.addListener('Application.FocusedArea.Name', handleFocusChange);
+    TTUIStateManager.instance.addListener('Application.KeyboardFocused.AreaName', handleFocusChange);
 
     if (mode === 'keyaction') {
       window.addEventListener('keydown',    onKeyDown, { capture: true });
@@ -169,7 +169,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
         window.removeEventListener('touchmove',  onTouch);
         window.removeEventListener('touchend',   onTouch);
       }
-      TTUIStateManager.instance.removeListener('Application.FocusedArea.Name', handleFocusChange);
+      TTUIStateManager.instance.removeListener('Application.KeyboardFocused.AreaName', handleFocusChange);
       cancelAnimationFrame(rafRef.current);
     };
   }, [mode]);

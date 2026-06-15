@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.12",
+  "version": "1.0.11",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "veneno-02",
-  "commitId": "5f08ae2",
-  "commitDateTime": "2026-06-15-124825",
-  "commitMessage": "refactor: rename Status IDs - Application.KeyboardFocused.AreaName→FocusedArea.Name, Application.Focused.ColumnName→FocusedPanel.Name"
+  "commitPC": "E15",
+  "commitId": "fcfc2ae",
+  "commitDateTime": "2026-06-04-231106",
+  "commitMessage": "chore: reorganize docs, update CLAUDE.md, WorkoutToolBar, and settings Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 }
