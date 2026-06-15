@@ -57,8 +57,8 @@ export type ConfigKey =
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
-  | 'Application.Focused.ColumnName'
-  | 'Application.KeyboardFocused.AreaName'
+  | 'Application.FocusedPanel.Name'
+  | 'Application.FocusedArea.Name'
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.MediaType'
@@ -285,7 +285,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── Application ──────────────────────────────────────────────────────────
-  'Application.Focused.ColumnName': {
+  'Application.FocusedPanel.Name': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
     candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
@@ -303,26 +303,12 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
         'Workout':        '.workout-area',
         'ReThink':        '.rethink-panel, .rethink-area',
       };
-      // WorkoutSetting: パネルが閉じている場合は開閉トグルにフォーカス
       const effectiveSel = (v === 'WorkoutSetting' && !app.WorkoutPanel.IsAreaOpen)
         ? '.vertical-tab-bar--workout .vertical-tab-bar__toggle'
         : SELECTORS[v];
-      if (!effectiveSel) return;
-      const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
-      setTimeout(() => {
-        const root = document.querySelector<HTMLElement>(effectiveSel);
-        if (!root) return;
-        // root 自体がフォーカス可能かつ非 inert なら直接フォーカス
-        if (root.matches(FOCUSABLE) && !root.closest('[inert]')) {
-          root.focus({ preventScroll: true });
-          return;
-        }
-        // inert コンテナ内の要素を除いて最初のフォーカス可能要素を検索
-        const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
-          .find(el => !el.closest('[inert]'));
-        if (focusable) focusable.focus({ preventScroll: true });
-        else if (!root.closest('[inert]')) root.focus({ preventScroll: true });
-      }, 50);
+      if (effectiveSel) {
+        focusSelector(effectiveSel);
+      }
     },
   },
 
@@ -343,13 +329,117 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── KeyboardFocus & Pane Info ──────────────────────────────────────────────
-  'Application.KeyboardFocused.AreaName': {
+  'Application.FocusedArea.Name': {
     panel: 'Application',
     default: 'None', type: 'string', candidates: '.*',
     description: 'キーボードフォーカスエリア名',
     isConst: true,
+    getValues: (app) => {
+      const list: string[] = [];
+      const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+      const isSimple = localStorage.getItem('tt-layout-mode') === 'simple';
+
+      if (app.ThinktankPanel.IsAreaOpen) {
+        list.push(`Thinktank.${capitalize(app.ThinktankPanel.ViewMode)}`);
+      }
+      if (!isSimple && app.OverviewPanel.IsAreaOpen) {
+        list.push(`Overview.${capitalize(app.OverviewPanel.ViewMode)}`);
+      }
+      if (app.WorkoutPanel.IsAreaOpen) {
+        list.push(`WorkoutSetting.${capitalize(app.WorkoutPanel.ViewMode)}`);
+      }
+      if (app.WorkoutPanel.Areas.length > 0) {
+        for (const area of app.WorkoutPanel.Areas) {
+          list.push(`Workout.${capitalize(area.MediaType)}`);
+        }
+      }
+      if (!isSimple && app.ReThinkPanel.IsAreaOpen) {
+        list.push(`ReThink.${capitalize(app.ReThinkPanel.ViewMode)}`);
+      }
+      list.push(`ToolBar.${capitalize(app.WorkoutPanel.ToolBarMode)}`);
+
+      return Array.from(new Set(list));
+    },
     get: (_app) => getFocusName(document.activeElement),
-    set: () => {},
+    set: (app, value) => {
+      if (!value || value === 'None') {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+        return;
+      }
+      if (value === 'Application.StatusBarArea') {
+        focusSelector('.ApplicationStatusBarArea');
+        return;
+      }
+
+      const parts = value.split('.');
+      const panelName = parts[0];
+      const subName = parts[1] || '';
+
+      const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+      const subNameCap = capitalize(subName);
+
+      if (panelName === 'Thinktank') {
+        app.ThinktankPanel.IsAreaOpen = true;
+        if (subName) {
+          app.ThinktankPanel.ViewMode = subName.toLowerCase() as any;
+        }
+        focusSelector('.thinktank-panel, .thinktank-area');
+      } else if (panelName === 'Overview') {
+        app.OverviewPanel.IsAreaOpen = true;
+        if (subName) {
+          app.OverviewPanel.SetViewMode(subName.toLowerCase() as any);
+        }
+        focusSelector('.overview-panel, .overview-area');
+      } else if (panelName === 'WorkoutSetting') {
+        app.WorkoutPanel.IsAreaOpen = true;
+        if (subName) {
+          app.WorkoutPanel.SetViewMode(subName.toLowerCase() as any);
+        }
+        focusSelector('.workout-setting-area');
+      } else if (panelName === 'ReThink') {
+        app.ReThinkPanel.IsAreaOpen = true;
+        if (subName) {
+          app.ReThinkPanel.SetViewMode(subName.toLowerCase() as any);
+        }
+        focusSelector('.rethink-panel, .rethink-area');
+      } else if (panelName === 'ToolBar') {
+        if (subName) {
+          const modeMap: Record<string, string> = {
+            'keyaction': 'KeyAction',
+          };
+          const toolbarMode = modeMap[subName.toLowerCase()] || subNameCap;
+          app.WorkoutPanel.ToolBarMode = toolbarMode;
+        }
+        focusSelector('.workout-toolbar');
+      } else if (panelName === 'Workout') {
+        if (subName && subName.toLowerCase() !== 'none') {
+          const typeLower = subName.toLowerCase();
+          setTimeout(() => {
+            const areas = Array.from(document.querySelectorAll<HTMLElement>('.workout-area'));
+            const targetArea = areas.find(area => {
+              const content = area.querySelector<HTMLElement>('.workout-area__content');
+              return content?.dataset.mediaType?.toLowerCase() === typeLower;
+            }) || areas[0];
+            
+            if (targetArea) {
+              const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
+              if (targetArea.matches(FOCUSABLE) && !targetArea.closest('[inert]')) {
+                targetArea.focus({ preventScroll: true });
+                return;
+              }
+              const focusable = Array.from(targetArea.querySelectorAll<HTMLElement>(FOCUSABLE))
+                .find(el => !el.closest('[inert]'));
+              if (focusable) focusable.focus({ preventScroll: true });
+              else if (!targetArea.closest('[inert]')) targetArea.focus({ preventScroll: true });
+            }
+          }, 50);
+        } else {
+          focusSelector('.workout-area');
+        }
+      }
+    },
   },
   'WorkoutPanel.Pane.Count': {
     panel: 'WorkoutPanel',
@@ -595,6 +685,9 @@ export class TTUIStateManager {
     if (!this._app) return;
     this._applying = true;
     try {
+      content = content
+        .replace(/\bApplication\.KeyboardFocused\.AreaName\b/g, 'Application.FocusedArea.Name')
+        .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name');
       const sections = parseTableContent(content);
       const section = sections[0];
       if (!section) return;
@@ -645,8 +738,11 @@ export class TTUIStateManager {
    * _vaultThink が未設定またはパース不能な場合は serialize() にフォールバック。
    */
   private _serializePreservingStructure(app: TTApplication): string {
-    const savedContent = this._vaultThink?.Content;
+    let savedContent = this._vaultThink?.Content;
     if (savedContent) {
+      savedContent = savedContent
+        .replace(/\bApplication\.KeyboardFocused\.AreaName\b/g, 'Application.FocusedArea.Name')
+        .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name');
       const updates: Record<string, Record<string, string>> = {};
       for (const [key, spec] of Object.entries(PROP_SPECS)) {
         if (!spec.isConst) {
@@ -768,4 +864,27 @@ function parseBool(value: string, current: boolean): boolean {
 function csvEscape(v: string): string {
   return v.includes(',') || v.includes('"') || v.includes('\n')
     ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+export function focusSelector(selector: string, fallbackSelector?: string): void {
+  const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
+  setTimeout(() => {
+    let root = document.querySelector<HTMLElement>(selector);
+    if (!root && fallbackSelector) {
+      root = document.querySelector<HTMLElement>(fallbackSelector);
+    }
+    if (!root) return;
+
+    if (root.matches(FOCUSABLE) && !root.closest('[inert]')) {
+      root.focus({ preventScroll: true });
+      return;
+    }
+    const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
+      .find(el => !el.closest('[inert]'));
+    if (focusable) {
+      focusable.focus({ preventScroll: true });
+    } else if (!root.closest('[inert]')) {
+      root.focus({ preventScroll: true });
+    }
+  }, 50);
 }

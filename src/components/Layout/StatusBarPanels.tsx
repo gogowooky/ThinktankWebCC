@@ -141,11 +141,15 @@ export function StatusBarKeyActionPanel({
   exModeModKey,
   lastActionDisplay,
 }: KeyActionPanelProps) {
+  const displayFocus = (kaState.focus && kaState.focus !== 'None' && kaState.focus !== 'Application.StatusBarArea')
+    ? kaState.focus
+    : '-';
+
   return (
     <div className="ApplicationStatusBarArea__keyaction">
       <span className="ApplicationStatusBarArea__ka-field">
-        <span className="ApplicationStatusBarArea__ka-label">focus</span>
-        <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{kaState.focus}</span>
+        <span className="ApplicationStatusBarArea__ka-label">FOCUS</span>
+        <span className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus">{displayFocus}</span>
       </span>
       <span className="ApplicationStatusBarArea__ka-divider" />
       <span className="ApplicationStatusBarArea__ka-field">

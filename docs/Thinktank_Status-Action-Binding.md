@@ -13,7 +13,7 @@
 　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
 
-## 完了：　260614　Application.KeyboardFocused.AreaName
+## 完了：　260615　Application.FocusedArea.Name
 　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
 　フォーカスされるものがある場合のみFOCUSされる
 
@@ -26,7 +26,8 @@
 　　- Workout.{MediaType}
 　　- ReThink.{ModeName}
 　　※フォーカスがどこにもない場合は None、ステータスバーにある場合は Application.StatusBarArea となります。
-## 完了：　Application.Focused.ColumnName
+
+## 完了：　260615　Application.FocusedPanel.Name
 　Q：設定値を記載してください。
 　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
 　　- Thinktank （左パネル：フィルター / チャット / 設定）
