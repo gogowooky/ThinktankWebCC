@@ -53,7 +53,21 @@ export default function App() {
       _focusRaf = requestAnimationFrame(() => {
         const name = getFocusName(document.activeElement)
         TTShortcutManager.instance.onFocusChange(name)
-        document.body.dataset.focusColumn = name.split('.')[0]
+        const colName = name.split('.')[0]
+        document.body.dataset.focusColumn = colName
+
+        const isSimple = localStorage.getItem('tt-layout-mode') === 'simple'
+        const validColumns = isSimple
+          ? ['Thinktank', 'WorkoutSetting', 'Workout']
+          : ['Thinktank', 'Overview', 'WorkoutSetting', 'Workout', 'ReThink']
+
+        if (validColumns.includes(colName)) {
+          if (app.FocusedColumn !== colName) {
+            app.FocusedColumn = colName
+            TTUIStateManager.instance.notifyPropertyChanged('Application.FocusedPanel.Name')
+          }
+        }
+
         TTUIStateManager.instance.notifyConstPropertyChanged('Application.FocusedArea.Name')
       })
     }

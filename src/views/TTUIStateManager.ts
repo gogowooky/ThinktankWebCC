@@ -581,6 +581,16 @@ export class TTUIStateManager {
     this._app.NotifyUpdated(false);
   }
 
+  /** 指定したキーのプロパティ変更イベントとアプリ更新を通知する */
+  notifyPropertyChanged(key: ConfigKey): void {
+    if (!this._app) return;
+    const spec = PROP_SPECS[key];
+    if (!spec) return;
+    const val = spec.get(this._app);
+    this._emit(key, val);
+    this._app.NotifyUpdated(false);
+  }
+
   /** 現在のアプリ状態を構造保持でシリアライズして返す（更新ボタン用） */
   getLatestContent(): string | null {
     if (!this._app) return null;
