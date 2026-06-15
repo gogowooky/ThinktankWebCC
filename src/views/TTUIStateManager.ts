@@ -57,8 +57,8 @@ export type ConfigKey =
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
-  | 'Application.Focused.ColumnName'
-  | 'Application.KeyboardFocused.AreaName'
+  | 'Application.FocusedPanel.Name'
+  | 'Application.FocusedArea.Name'
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.MediaType'
@@ -285,7 +285,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── Application ──────────────────────────────────────────────────────────
-  'Application.Focused.ColumnName': {
+  'Application.FocusedPanel.Name': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
     candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
@@ -343,7 +343,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── KeyboardFocus & Pane Info ──────────────────────────────────────────────
-  'Application.KeyboardFocused.AreaName': {
+  'Application.FocusedArea.Name': {
     panel: 'Application',
     default: 'None', type: 'string', candidates: '.*',
     description: 'キーボードフォーカスエリア名',
