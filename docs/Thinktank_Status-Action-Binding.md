@@ -1,9 +1,27 @@
+# IDの命名規則および設計ルール
+<!--
+本アプリの Action と Status の ID ルール：
+1. Action/Statusはともに、*.*.* 形式のIDを基本とします。
+2. Statusは読み取り専用とします。
+3. Status値の変更はActionで行い、そのActionのIDは、{Status ID}.*形式のIDとします。
+-->
+
 # AIへの指示
 ・ 本ファイルでは、実装または修正をしてほしいStatusまたはActionについて、以下のフォーマットで記載いたします。記載内容に基づいて対応してください。対象とする記載は空行までとし、空行後の記載は無視してください。完了後はコミットコメントに概要を記入し、commit&pushしてください。その他以下は、見出し行の指示に従って実装、調査、修正等を行ってください。また、対応中のタイトルが分かるように表示してください。
 (行頭) ## 実装：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容に基づいて実装し、日付を変更してください。
 (行頭) ## 修正：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容に基づいて修正し、日付を変更してください。
 (行頭) ## 調査：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容について調査・回答を追記し、日付を変更してください。
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
+
+# Action
+## 完了：　FocusedPanel.ToggleAreaVisibility
+## 完了：　FocusedPanel.SetViewModePrev
+## 完了：　FocusedPanel.SetViewModeNext
+## 完了：　TextEditor.Folding.ForwardVisible　　　
+## 完了：　TextEditor.Folding.BackwardVisible　　　
+## 完了：　TextEditor.Folding.OpenEachLevel　　　
+## 完了：　TextEditor.Folding.CloseEachLevel　　　
+
 
 # Status
 ## 完了：　260614　ToolBar.StatusMode.Text
@@ -110,17 +128,6 @@
 ## 完了：　260613　TextEditor.Color.Selection
 ## 完了：　260613　TextEditor.Color.Occurrence
 ## 完了：　260613　TextEditor.Style.Section
-
-# Action
-## 完了：　FocusedPanel.ToggleAreaVisibility
-## 完了：　FocusedPanel.SetViewModePrev
-## 完了：　FocusedPanel.SetViewModeNext
-## 完了：　TextEditor.Folding.ForwardVisible　　　
-## 完了：　TextEditor.Folding.BackwardVisible　　　
-## 完了：　TextEditor.Folding.OpenEachLevel　　　
-## 完了：　TextEditor.Folding.CloseEachLevel　　　
-
-
 
 # その他
 ## 完了:　260614　ToolBar.KeyActionのTextBox中に表示されている値を説明してください
