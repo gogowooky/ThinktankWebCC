@@ -312,7 +312,7 @@ export class TTShortcutManager {
   private _executeAction(action: string, mods: string): boolean {
     const status = this._app?.Status;
 
-    if (!action.includes(':')) {
+    if (!action.includes(':') || TTActions.Has(action)) {
       const res = TTActions.Execute(action);
       if (res instanceof Promise) {
         status?.SetLastActionDisplay(`${action}: [実行中...]`);

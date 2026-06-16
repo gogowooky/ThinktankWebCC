@@ -24,7 +24,6 @@
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
-import ttUiItemMd from '../models/TTUIItem.md?raw';
 import { parseTableContent, tableSectionToContent, updateTableContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
@@ -528,12 +527,12 @@ export class TTUIStateManager {
         'UI Settings',
         'table',
         'system,ui-state',
-        ttUiItemMd,
+        localStatusContent,
       );
     } else {
       if (think.IsMetaOnly) await think.LoadContent();
       if (!localStorage.getItem(TTUIStateManager.LS_KEY)) {
-        this.onThinkSaved(think.ID, ttUiItemMd);
+        this.onThinkSaved(think.ID, localStatusContent);
       } else {
         this._vaultThink = think;
         think.setContentSilent(this._serializePreservingStructure(this._app));
@@ -861,7 +860,7 @@ export class TTUIStateManager {
     if (stored) {
       this._applyContent(stored);
     } else {
-      this._applyContent(ttUiItemMd);
+      this._applyContent(localStatusContent);
     }
   }
 }

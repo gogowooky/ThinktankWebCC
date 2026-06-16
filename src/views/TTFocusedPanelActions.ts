@@ -11,6 +11,7 @@
 import type { TTApplication } from './TTApplication';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
+import { TTUIStateManager } from './TTUIStateManager';
 
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
@@ -79,6 +80,22 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       const next = modes[(idx + 1) % modes.length];
       panel.SetViewMode(next);
       item.Result = next;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.Mode.Name:Next',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'next');
+      item.Result = TTUIStateManager.instance.getProperty('ToolBar.Mode.Name');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.Mode.Name:Prev',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'prev');
+      item.Result = TTUIStateManager.instance.getProperty('ToolBar.Mode.Name');
     },
   });
 

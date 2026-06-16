@@ -3,7 +3,7 @@
 本アプリの Action と Status の ID ルール：
 1. Action/Statusはともに、*.*.* 形式のIDを基本とします。
 2. Statusは読み取り専用とします。
-3. Status値の変更はActionで行い、そのActionのIDは、{Status ID}.*形式のIDとします。
+3. Status値の変更はActionで行い、そのActionのIDは、{Status ID}:*形式のIDとします。
 -->
 
 # AIへの指示
@@ -15,21 +15,31 @@
 
 # Action
 ## 完了：　FocusedPanel.ToggleAreaVisibility
+
 ## 完了：　FocusedPanel.SetViewModePrev
 ## 完了：　FocusedPanel.SetViewModeNext
 ## 完了：　TextEditor.Folding.ForwardVisible　　　
 ## 完了：　TextEditor.Folding.BackwardVisible　　　
 ## 完了：　TextEditor.Folding.OpenEachLevel　　　
 ## 完了：　TextEditor.Folding.CloseEachLevel　　　
+## 完了：　260616　ToolBar.Mode.Name:Next
+　ToolBar.Mode.Nameの設定値を次の値にする。値は循環式。
+## 完了：　260616　ToolBar.Mode.Name:Prev
+　ToolBar.Mode.Nameの設定値を前の値にする。値は循環式。
 
 
 # Status
-## 完了：　260614　ToolBar.StatusMode.Text
-　ToolBar.StatusのTextBoxには「StatusID1:[値1]」、「StatusID2:[値2]」...「StatusIDn:[値n]」というフォーマットで表示します。
+## 完了：　260613　ToolBar.Mode.Name
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の7つです。
+　　- Status （ステータス）
+　　- Highlighter （ハイライター）
+　　- KeyAction （キーアクション）
+　　- Command （コマンド）
+　　- Translate （翻訳）
+　　- Reminder （リマインダー）
+　　- Copyright （著作権・コピーライト情報）
 
-　ToolBarがStatusモードのPanelには、EditBoxとTextBoxを配置し、PanelにフォーカスがあるときはEditBoxが、FocusがはずれるとTextBoxが表示されます。
-　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
-　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
 ## 完了：　260615　Application.FocusedArea.Name
 　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
 　フォーカスされるものがある場合のみFOCUSされる
@@ -52,16 +62,6 @@
 　　- Workout （ワークアウト編集エリア）
 　　- ReThink （右パネル：AIチャット / 設定）
 　　※レイアウトモードが 'simple' の場合は、Thinktank, WorkoutSetting, Workout の3つのみが選択肢となります。
-## 完了：　260613　ToolBar.Mode.Name
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の7つです。
-　　- Status （ステータス）
-　　- Highlighter （ハイライター）
-　　- KeyAction （キーアクション）
-　　- Command （コマンド）
-　　- Translate （翻訳）
-　　- Reminder （リマインダー）
-　　- Copyright （著作権・コピーライト情報）
 ## 完了：　260613　ThinktankPanel.Mode.IsOpen
 ## 完了：　260613　ThinktankPanel.Mode.Name
 　設定値の1文字目は大文字にしてください
@@ -128,6 +128,14 @@
 ## 完了：　260613　TextEditor.Color.Selection
 ## 完了：　260613　TextEditor.Color.Occurrence
 ## 完了：　260613　TextEditor.Style.Section
+
+# Status 完了
+## 完了：　260614　ToolBar.StatusMode.Text
+　ToolBar.StatusのTextBoxには「StatusID1:[値1]」、「StatusID2:[値2]」...「StatusIDn:[値n]」というフォーマットで表示します。
+
+　ToolBarがStatusモードのPanelには、EditBoxとTextBoxを配置し、PanelにフォーカスがあるときはEditBoxが、FocusがはずれるとTextBoxが表示されます。
+　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
+　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
 
 # その他
 ## 完了:　260614　ToolBar.KeyActionのTextBox中に表示されている値を説明してください
