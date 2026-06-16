@@ -36,6 +36,9 @@ import { parseTableContent } from '../utils/tableFormat';
 import { TTUIStateManager } from './TTUIStateManager';
 import { TTActions } from './TTActions';
 import { getFocusName } from '../utils/getFocusName';
+import localShortcutContent from '../../docs/Shortcut.md?raw';
+
+const USE_LOCAL_FILES = true;
 import {
   parseMultiKey,
   keyEventToStr,
@@ -124,6 +127,11 @@ export class TTShortcutManager {
   }
 
   async ensureThinkExists(vault: TTVault): Promise<void> {
+    if (USE_LOCAL_FILES) {
+      console.log('[TTShortcutManager] Loading shortcuts from local docs/Shortcut.md');
+      this._loadFromContent(localShortcutContent);
+      return;
+    }
     let think = vault.GetThink(TTShortcutManager.THINK_ID);
     if (!think) {
       think = await vault.AddThinkWithContent(

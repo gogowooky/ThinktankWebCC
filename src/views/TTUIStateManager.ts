@@ -32,6 +32,9 @@ import { SECTION_STYLE_DEFAULTS } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
+import localStatusContent from '../../docs/Status.md?raw';
+
+const USE_LOCAL_FILES = true;
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
@@ -511,6 +514,11 @@ export class TTUIStateManager {
    * Vault 読み込み完了後に呼ぶ。UIState Think を作成/同期する。
    */
   async ensureThinkExists(vault: TTVault): Promise<void> {
+    if (USE_LOCAL_FILES) {
+      console.log('[TTUIStateManager] Loading initial UI state from local docs/Status.md');
+      this._applyContent(localStatusContent);
+      return;
+    }
     if (!this._app) return;
     let think = vault.GetThink(TTUIStateManager.THINK_ID);
     if (!think) {
