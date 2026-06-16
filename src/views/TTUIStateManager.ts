@@ -24,6 +24,7 @@
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
+import ttUiItemMd from '../models/TTUIItem.md?raw';
 import { parseTableContent, tableSectionToContent, updateTableContent } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
@@ -519,12 +520,12 @@ export class TTUIStateManager {
         'UI Settings',
         'table',
         'system,ui-state',
-        this.serialize(this._app),
+        ttUiItemMd,
       );
     } else {
       if (think.IsMetaOnly) await think.LoadContent();
       if (!localStorage.getItem(TTUIStateManager.LS_KEY)) {
-        this.onThinkSaved(think.ID, think.Content);
+        this.onThinkSaved(think.ID, ttUiItemMd);
       } else {
         this._vaultThink = think;
         think.setContentSilent(this._serializePreservingStructure(this._app));
@@ -697,7 +698,8 @@ export class TTUIStateManager {
     try {
       content = content
         .replace(/\bApplication\.KeyboardFocused\.AreaName\b/g, 'Application.FocusedArea.Name')
-        .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name');
+        .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name')
+        .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name');
       const sections = parseTableContent(content);
       const section = sections[0];
       if (!section) return;
@@ -752,7 +754,8 @@ export class TTUIStateManager {
     if (savedContent) {
       savedContent = savedContent
         .replace(/\bApplication\.KeyboardFocused\.AreaName\b/g, 'Application.FocusedArea.Name')
-        .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name');
+        .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name')
+        .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name');
       const updates: Record<string, Record<string, string>> = {};
       for (const [key, spec] of Object.entries(PROP_SPECS)) {
         if (!spec.isConst) {
@@ -847,7 +850,11 @@ export class TTUIStateManager {
 
   private _loadFromLocalStorage(): void {
     const stored = localStorage.getItem(TTUIStateManager.LS_KEY);
-    if (stored) this._applyContent(stored);
+    if (stored) {
+      this._applyContent(stored);
+    } else {
+      this._applyContent(ttUiItemMd);
+    }
   }
 }
 
