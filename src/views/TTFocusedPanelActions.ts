@@ -99,6 +99,110 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // ExMode 関連アクションの登録
+  TTActions.Register({
+    ActionID: 'Application.Status.ExMode:ExApp',
+    Completion: (item) => {
+      app.Status.SetExMode('ExApp', item.Mods ?? '');
+      item.Result = `ExMode→ExApp [${item.Mods ?? ''}]`;
+    },
+  });
+  TTActions.Register({
+    ActionID: 'ExMode:ExApp',
+    Completion: (item) => {
+      app.Status.SetExMode('ExApp', item.Mods ?? '');
+      item.Result = `ExMode→ExApp [${item.Mods ?? ''}]`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'Application.Status.ExMode:ExOpt',
+    Completion: (item) => {
+      app.Status.SetExMode('ExOpt', item.Mods ?? '');
+      item.Result = `ExMode→ExOpt [${item.Mods ?? ''}]`;
+    },
+  });
+  TTActions.Register({
+    ActionID: 'ExMode:ExOpt',
+    Completion: (item) => {
+      app.Status.SetExMode('ExOpt', item.Mods ?? '');
+      item.Result = `ExMode→ExOpt [${item.Mods ?? ''}]`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'Application.Status.ExMode:None',
+    Completion: (item) => {
+      app.Status.SetExMode('None', item.Mods ?? '');
+      item.Result = `ExMode→None [${item.Mods ?? ''}]`;
+    },
+  });
+  TTActions.Register({
+    ActionID: 'ExMode:None',
+    Completion: (item) => {
+      app.Status.SetExMode('None', item.Mods ?? '');
+      item.Result = `ExMode→None [${item.Mods ?? ''}]`;
+    },
+  });
+
+  // UI状態 (Undo/Redo) アクションの登録
+  TTActions.Register({
+    ActionID: 'ui:undo',
+    Completion: (item) => {
+      TTUIStateManager.instance.undo();
+      item.Result = 'Undo';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ui:redo',
+    Completion: (item) => {
+      TTUIStateManager.instance.redo();
+      item.Result = 'Redo';
+    },
+  });
+
+  // 状態変数 (Property) 変更アクションの登録
+  TTActions.Register({
+    ActionID: 'Application.FocusedArea.Name:prev',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.FocusedArea.Name', 'prev');
+      item.Result = TTUIStateManager.instance.getProperty('Application.FocusedArea.Name');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'Application.FocusedArea.Name:next',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.FocusedArea.Name', 'next');
+      item.Result = TTUIStateManager.instance.getProperty('Application.FocusedArea.Name');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.LineNumbers.IsVisible:toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.LineNumbers.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.LineNumbers.IsVisible');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.WordWrap.IsVisible:toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.WordWrap.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.WordWrap.IsVisible');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.Minimap.IsVisible:toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.Minimap.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.Minimap.IsVisible');
+    },
+  });
+
   registerTextEditorActions();
 }
 

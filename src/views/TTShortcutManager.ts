@@ -312,8 +312,8 @@ export class TTShortcutManager {
   private _executeAction(action: string, mods: string): boolean {
     const status = this._app?.Status;
 
-    if (!action.includes(':') || TTActions.Has(action)) {
-      const res = TTActions.Execute(action);
+    if (TTActions.Has(action)) {
+      const res = TTActions.Execute(action, mods);
       if (res instanceof Promise) {
         status?.SetLastActionDisplay(`${action}: [実行中...]`);
         res.then(item => {
@@ -328,24 +328,6 @@ export class TTShortcutManager {
       }
     }
 
-    const colonIdx = action.indexOf(':');
-    const target   = action.slice(0, colonIdx).trim();
-    const value    = action.slice(colonIdx + 1).trim();
-
-    if (target === 'ExMode' || target === 'Application.Status.ExMode') {
-      this._app?.Status.SetExMode(value, mods);
-      status?.SetLastActionDisplay(`ExMode→${value} [${mods}]`);
-      return false;
-    }
-    if (target === 'ui') {
-      if (value === 'undo') TTUIStateManager.instance.undo();
-      if (value === 'redo') TTUIStateManager.instance.redo();
-      status?.SetLastActionDisplay(action);
-      return false;
-    }
-
-    TTUIStateManager.instance.applyProperty(target, value);
-    status?.SetLastActionDisplay(action);
     return false;
   }
 

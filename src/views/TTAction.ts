@@ -25,6 +25,8 @@ export interface TTActionItem {
    * true  = 同一イベントで後続の一致ショートカットも実行を継続。
    */
   Allow: boolean;
+  /** 修飾キー情報 (ExMode適用などのために伝搬) */
+  Mods?: string;
 }
 
 /** アクション定義 */

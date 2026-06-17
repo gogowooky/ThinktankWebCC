@@ -27,8 +27,8 @@ export class TTActions {
    * アクションを実行し、TTActionItem または Promise<TTActionItem> を返す。
    * 未登録の ActionID の場合は Result に "[未定義]" メッセージを設定する。
    */
-  static Execute(actionId: ActionID): TTActionItem | Promise<TTActionItem> {
-    const item: TTActionItem = { ActionID: actionId, Result: '', Allow: false };
+  static Execute(actionId: ActionID, mods?: string): TTActionItem | Promise<TTActionItem> {
+    const item: TTActionItem = { ActionID: actionId, Result: '', Allow: false, Mods: mods };
     const action = this._registry.get(actionId);
     
     if (action) {
