@@ -18,8 +18,8 @@ Keyboard Shortcuts
 *     ,       ,Alt+A                         ,Application.Status.ExMode:ExApp        ,アプリケーションモード
 *     ,ExApp  ,ArrowLeft|A,Application.FocusedArea.Name:prev         ,フォーカスカラム左
 *     ,ExApp  ,ArrowRight|S,Application.FocusedArea.Name:next         ,フォーカスカラム右
-*     ,ExApp  ,Shift+Z|X|Shift+ArrowRight     ,ToolBar.Mode.Name:next          ,Workoutツールバー右
-*     ,ExApp  ,Z|Shift+ArrowLeft              ,ToolBar.Mode.Name:prev          ,Workoutツールバー左
+*     ,ExApp  ,Shift+Z|X|Shift+ArrowRight     ,ToolBar.Mode.Name:Next          ,Workoutツールバー右
+*     ,ExApp  ,Z|Shift+ArrowLeft              ,ToolBar.Mode.Name:Prev          ,Workoutツールバー左
 
 *     ,ExApp  ,O|Q    ,FocusedPanel.ToggleAreaVisibility,パネル開閉
 *     ,ExApp  ,W|P|ArrowUp,FocusedPanel.SetViewModePrev,パネルモード上
