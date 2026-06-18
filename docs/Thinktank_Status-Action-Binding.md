@@ -14,75 +14,13 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 完了：　260619　FocusedPanel.ToggleAreaVisibility
-　IDをFocusedPanel.Area.IsOpen:Toggleに変更して下さい。
-
-## 完了：　260619　FocusedPanel.SetViewModePrev
-　IDをFocusedPanel.Mode.Name:Prevに変更して下さい。
-
-## 完了：　260619　FocusedPanel.SetViewModeNext
-　IDをFocusedPanel.Mode.Name:Nextに変更して下さい。
-
-## 完了：　260619　FocusedPanel.SetViewModeNext
-　このIDは廃止してください。
-
 ## 完了：　TextEditor.Folding.ForwardVisible
 ## 完了：　TextEditor.Folding.BackwardVisible　　　
 ## 完了：　TextEditor.Folding.OpenEachLevel　　　
 ## 完了：　TextEditor.Folding.CloseEachLevel
 
 
-
 # Status
-
-## 完了：　260619　ThinktankPanel.Mode.IsOpen
-　IDをThinktankPanel.Area.IsOpenに変更してください
-
-## 完了：　260613　ThinktankPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の3つです。
-　　- Filter （フィルター / 検索）
-　　- Chat （AI相談チャット）
-　　- Settings （設定）
-## 完了：　260619　OverviewPanel.Mode.IsOpen
-　IDをOverviewPanel.Area.IsOpenに変更してください
-
-## 完了：　260613　OverviewPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の4つです。
-　　- Datagrid （データグリッド）
-　　- Graph （関係性グラフ）
-　　- Chat （AIチャット）
-　　- Settings （設定）
-## 完了：　260619　WorkoutSettingPanel.Mode.IsOpen
-　IDをWorkoutSettingPanel.Area.IsOpenに変更してください
-
-## 完了：　260613　WorkoutSettingPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の6つです。
-　　- Workout （概要設定）
-　　- Texteditor （テキストエディタ）
-　　- Markdown （マークダウンプレビュー）
-　　- Datagrid （データグリッド）
-　　- Card （カードビュー）
-　　- Graph （グラフビュー）
-## 完了：　260619　ReThinkPanel.Mode.IsOpen
-　IDをReThinkPanel.Area.IsOpenに変更してください
-
-## 完了：　260613　ReThinkPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の2つです。
-　　- Chat （AI対話チャット）
-　　- Settings （設定）
-
 ## 完了：　260615　Application.FocusedArea.Name
 　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
 　フォーカスされるものがある場合のみFOCUSされる
@@ -134,6 +72,56 @@
 ## 完了：　260613　TextEditor.Style.Section
 
 # OK
+
+## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
+## Action：　260619　FocusedPanel.Mode.Name:Prev
+## Action：　260619　FocusedPanel.Mode.Name:Next
+## Status：　260619　ThinktankPanel.Area.IsOpen
+## Status：　260613　ThinktankPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の3つです。
+　　- Filter （フィルター / 検索）
+　　- Chat （AI相談チャット）
+　　- Settings （設定）
+## Status：　260619　OverviewPanel.Area.IsOpen
+## Status：　260613　OverviewPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の4つです。
+　　- Datagrid （データグリッド）
+　　- Graph （関係性グラフ）
+　　- Chat （AIチャット）
+　　- Settings （設定）
+## Status：　260619　WorkoutSettingPanel.Area.IsOpen
+## Status：　260613　WorkoutSettingPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の6つです。
+　　- Workout （概要設定）
+　　- Texteditor （テキストエディタ）
+　　- Markdown （マークダウンプレビュー）
+　　- Datagrid （データグリッド）
+　　- Card （カードビュー）
+　　- Graph （グラフビュー）
+## Status：　260619　ReThinkPanel.Area.IsOpen
+## Status：　260613　ReThinkPanel.Mode.Name
+　設定値の1文字目は大文字にしてください
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の2つです。
+　　- Chat （AI対話チャット）
+　　- Settings （設定）
+
+
+
+## Action：　260616　ToolBar.Mode.Name:Next
+　ToolBar.Mode.Nameの設定値を次の値にする。値は循環式。
+## Action：　260616　ToolBar.Mode.Name:Prev
+　ToolBar.Mode.Nameの設定値を前の値にする。値は循環式。
 ## Status：　260613　ToolBar.Mode.Name
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の7つです。
@@ -144,10 +132,6 @@
 　　- Translate （翻訳）
 　　- Reminder （リマインダー）
 　　- Copyright （著作権・コピーライト情報）
-## Action：　260616　ToolBar.Mode.Name:Next
-　ToolBar.Mode.Nameの設定値を次の値にする。値は循環式。
-## Action：　260616　ToolBar.Mode.Name:Prev
-　ToolBar.Mode.Nameの設定値を前の値にする。値は循環式。
 
 ## Status：　260614　ToolBar.StatusMode.Text
 　ToolBar.StatusのTextBoxには「StatusID1:[値1]」、「StatusID2:[値2]」...「StatusIDn:[値n]」というフォーマットで表示します。
