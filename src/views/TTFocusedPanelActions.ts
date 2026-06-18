@@ -48,7 +48,7 @@ function getPanel(app: TTApplication): PanelLike | null {
 export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
-    ActionID: 'FocusedPanel.ToggleAreaVisibility',
+    ActionID: 'FocusedPanel.Area.IsOpen:Toggle',
     Completion: (item) => {
       const panel = getPanel(app);
       if (!panel) { item.Result = '[対象なし]'; return; }
@@ -58,7 +58,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'FocusedPanel.SetViewModePrev',
+    ActionID: 'FocusedPanel.Mode.Name:Prev',
     Completion: (item) => {
       const panel = getPanel(app);
       const modes = PANEL_VIEW_MODES[app.FocusedColumn];
@@ -71,7 +71,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'FocusedPanel.SetViewModeNext',
+    ActionID: 'FocusedPanel.Mode.Name:Next',
     Completion: (item) => {
       const panel = getPanel(app);
       const modes = PANEL_VIEW_MODES[app.FocusedColumn];

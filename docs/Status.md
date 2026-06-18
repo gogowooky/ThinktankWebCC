@@ -5,17 +5,17 @@ UI Settings
 > group,   description,key,     current,     default,    type,     candidates
 
 # Application
-アプリケーション, フォーカスカラム     ,Application.FocusedColumn,Overview    ,Thinktank   ,string  ,^(Thinktank|Overview|WorkoutSetting|ReThink)$
+アプリケーション, フォーカスカラム     ,Application.FocusedPanel.Name,Overview    ,Thinktank   ,string  ,^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$
 
 # Thinktank Panel
-パネル  , 左パネル表示       ,ThinktankPanel.IsAreaOpen,true        ,true        ,boolean ,^(true|false)$
-パネル  , 左パネルモード      ,ThinktankPanel.ViewMode,filter      ,filter      ,string  ,^(filter|chat|settings)$
-パネル  , 上部パネル表示      ,OverviewPanel.IsAreaOpen,true        ,false       ,boolean ,^(true|false)$
-パネル  , 上部パネル表示モード   ,OverviewPanel.ViewMode,datagrid    ,datagrid    ,string  ,^(datagrid|graph|chat|settings)$
-パネル  , ワークアウトパネル表示  ,WorkoutPanel.IsAreaOpen,false       ,true        ,boolean ,^(true|false)$
-パネル  , ワークアウト設定パネルモード,WorkoutPanel.ViewMode,markdown    ,workout     ,string  ,^(workout|texteditor|markdown|datagrid|card|graph)$
-パネル  , 右パネル表示       ,ReThinkPanel.IsAreaOpen,false       ,true        ,boolean ,^(true|false)$
-パネル  , 右パネル表示モード    ,ReThinkPanel.ViewMode,chat        ,chat        ,string  ,^(chat|settings)$
+パネル  , 左パネル表示       ,ThinktankPanel.Area.IsOpen,true        ,true        ,boolean ,^(true|false)$
+パネル  , 左パネルモード      ,ThinktankPanel.Mode.Name,Filter      ,Filter      ,string  ,^(Filter|Chat|Settings)$
+パネル  , 上部パネル表示      ,OverviewPanel.Area.IsOpen,true        ,false       ,boolean ,^(true|false)$
+パネル  , 上部パネル表示モード   ,OverviewPanel.Mode.Name,Datagrid    ,Datagrid    ,string  ,^(Datagrid|Graph|Chat|Settings)$
+パネル  , ワークアウトパネル表示  ,WorkoutSettingPanel.Area.IsOpen,false       ,true        ,boolean ,^(true|false)$
+パネル  , ワークアウト設定パネルモード,WorkoutSettingPanel.Mode.Name,Markdown    ,Workout     ,string  ,^(Workout|Texteditor|Markdown|Datagrid|Card|Graph)$
+パネル  , 右パネル表示       ,ReThinkPanel.Area.IsOpen,false       ,true        ,boolean ,^(true|false)$
+パネル  , 右パネル表示モード    ,ReThinkPanel.Mode.Name,Chat        ,Chat        ,string  ,^(Chat|Settings)$
 
 #　TextEditor
 エディタ , 行番号表示        ,TextEditor.LineNumbers.IsVisible,false       ,false       ,boolean ,^(true|false)$

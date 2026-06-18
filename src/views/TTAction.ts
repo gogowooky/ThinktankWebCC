@@ -4,9 +4,9 @@
  */
 
 export type ActionID =
-  | 'FocusedPanel.ToggleAreaVisibility'
-  | 'FocusedPanel.SetViewModePrev'
-  | 'FocusedPanel.SetViewModeNext'
+  | 'FocusedPanel.Area.IsOpen:Toggle'
+  | 'FocusedPanel.Mode.Name:Prev'
+  | 'FocusedPanel.Mode.Name:Next'
   | 'TextEditor.Folding.ForwardVisible'
   | 'TextEditor.Folding.BackwardVisible'
   | 'TextEditor.Folding.OpenEachLevel'

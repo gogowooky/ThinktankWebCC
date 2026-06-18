@@ -39,13 +39,13 @@ const USE_LOCAL_FILES = true;
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
 export type ConfigKey =
-  | 'ThinktankPanel.Mode.IsOpen'
+  | 'ThinktankPanel.Area.IsOpen'
   | 'ThinktankPanel.Mode.Name'
-  | 'OverviewPanel.Mode.IsOpen'
+  | 'OverviewPanel.Area.IsOpen'
   | 'OverviewPanel.Mode.Name'
-  | 'WorkoutSettingPanel.Mode.IsOpen'
+  | 'WorkoutSettingPanel.Area.IsOpen'
   | 'WorkoutSettingPanel.Mode.Name'
-  | 'ReThinkPanel.Mode.IsOpen'
+  | 'ReThinkPanel.Area.IsOpen'
   | 'ReThinkPanel.Mode.Name'
   | 'TextEditor.LineNumbers.IsVisible'
   | 'TextEditor.WordWrap.IsVisible'
@@ -136,7 +136,7 @@ function makeSectionPresetSpec(n: number): PropSpec {
 const PROP_SPECS: Record<ConfigKey, PropSpec> = {
 
   // ── ThinktankPanel ──────────────────────────────────────────────────────
-  'ThinktankPanel.Mode.IsOpen': {
+  'ThinktankPanel.Area.IsOpen': {
     panel: 'ThinktankPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '左パネル表示',
@@ -152,7 +152,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── OverviewPanel ────────────────────────────────────────────────────────
-  'OverviewPanel.Mode.IsOpen': {
+  'OverviewPanel.Area.IsOpen': {
     panel: 'OverviewPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '上部パネル表示',
@@ -168,7 +168,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── WorkoutPanel ─────────────────────────────────────────────────────
-  'WorkoutSettingPanel.Mode.IsOpen': {
+  'WorkoutSettingPanel.Area.IsOpen': {
     panel: 'WorkoutPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'ワークアウトパネル表示',
@@ -316,7 +316,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── ReThinkPanel ─────────────────────────────────────────────────────────
-  'ReThinkPanel.Mode.IsOpen': {
+  'ReThinkPanel.Area.IsOpen': {
     panel: 'ReThinkPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '右パネル表示',
@@ -706,7 +706,15 @@ export class TTUIStateManager {
       content = content
         .replace(/\bApplication\.KeyboardFocused\.AreaName\b/g, 'Application.FocusedArea.Name')
         .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name')
-        .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name');
+        .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name')
+        .replace(/\bThinktankPanel\.Mode\.IsOpen\b/g, 'ThinktankPanel.Area.IsOpen')
+        .replace(/\bThinktankPanel\.IsAreaOpen\b/g, 'ThinktankPanel.Area.IsOpen')
+        .replace(/\bOverviewPanel\.Mode\.IsOpen\b/g, 'OverviewPanel.Area.IsOpen')
+        .replace(/\bOverviewPanel\.IsAreaOpen\b/g, 'OverviewPanel.Area.IsOpen')
+        .replace(/\bWorkoutSettingPanel\.Mode\.IsOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
+        .replace(/\bWorkoutPanel\.IsAreaOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
+        .replace(/\bReThinkPanel\.Mode\.IsOpen\b/g, 'ReThinkPanel.Area.IsOpen')
+        .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen');
       const sections = parseTableContent(content);
       const section = sections[0];
       if (!section) return;
@@ -762,7 +770,15 @@ export class TTUIStateManager {
       savedContent = savedContent
         .replace(/\bApplication\.KeyboardFocused\.AreaName\b/g, 'Application.FocusedArea.Name')
         .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name')
-        .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name');
+        .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name')
+        .replace(/\bThinktankPanel\.Mode\.IsOpen\b/g, 'ThinktankPanel.Area.IsOpen')
+        .replace(/\bThinktankPanel\.IsAreaOpen\b/g, 'ThinktankPanel.Area.IsOpen')
+        .replace(/\bOverviewPanel\.Mode\.IsOpen\b/g, 'OverviewPanel.Area.IsOpen')
+        .replace(/\bOverviewPanel\.IsAreaOpen\b/g, 'OverviewPanel.Area.IsOpen')
+        .replace(/\bWorkoutSettingPanel\.Mode\.IsOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
+        .replace(/\bWorkoutPanel\.IsAreaOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
+        .replace(/\bReThinkPanel\.Mode\.IsOpen\b/g, 'ReThinkPanel.Area.IsOpen')
+        .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen');
       const updates: Record<string, Record<string, string>> = {};
       for (const [key, spec] of Object.entries(PROP_SPECS)) {
         if (!spec.isConst) {

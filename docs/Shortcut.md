@@ -21,9 +21,9 @@ Keyboard Shortcuts
 *     ,ExApp  ,Shift+Z|X|Shift+ArrowRight     ,ToolBar.Mode.Name:Next          ,Workoutツールバー右
 *     ,ExApp  ,Z|Shift+ArrowLeft              ,ToolBar.Mode.Name:Prev          ,Workoutツールバー左
 
-*     ,ExApp  ,O|Q    ,FocusedPanel.ToggleAreaVisibility,パネル開閉
-*     ,ExApp  ,W|P|ArrowUp,FocusedPanel.SetViewModePrev,パネルモード上
-*     ,ExApp  ,D|N|ArrowDown,FocusedPanel.SetViewModeNext,パネルモード下
+*     ,ExApp  ,O|Q    ,FocusedPanel.Area.IsOpen:Toggle,パネル開閉
+*     ,ExApp  ,W|P|ArrowUp,FocusedPanel.Mode.Name:Prev,パネルモード上
+*     ,ExApp  ,D|N|ArrowDown,FocusedPanel.Mode.Name:Next,パネルモード下
 
 
 # Editor
