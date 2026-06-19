@@ -14,24 +14,26 @@ Keyboard Shortcuts
 
 # Columns
 
-*       ,       ,Alt+A                            ,Application.Status.ExMode:ExApp            ,アプリケーションモード
-*       ,ExApp  ,Tab                              ,Application.FocusedPanel.Name:Prev         ,フォーカスカラム左
-*       ,ExApp  ,Shift+Tab                      ,Application.FocusedPanel.Name:Next         ,フォーカスカラム右
-*       ,ExApp  ,Shift+Z|X                        ,ToolBar.Mode.Name:Next                     ,Workoutツールバー右
-*       ,ExApp  ,Z                                ,ToolBar.Mode.Name:Prev                     ,Workoutツールバー左
+*           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
+*           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,フォーカスカラム左
+*           ,ExApp  ,S                  ,Application.FocusedPanel.Name:Next             ,フォーカスカラム右
+*           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,Workoutツールバー左
+*           ,ExApp  ,X                  ,ToolBar.Mode.Name:Next                         ,Workoutツールバー右
 
-*       ,ExApp  ,Q|O                              ,FocusedPanel.Area.IsOpen:Toggle            ,パネル開閉
-*       ,ExApp  ,W|P                              ,FocusedPanel.Mode.Name:Prev                ,パネルモード上
-*       ,ExApp  ,D|N                              ,FocusedPanel.Mode.Name:Next                ,パネルモード下
+*           ,ExApp  ,Q|O                ,FocusedPanel.Area.IsOpen:Toggle                ,パネル開閉
+*           ,ExApp  ,W|P                ,FocusedPanel.Mode.Name:Prev                    ,パネルモード上
+*           ,ExApp  ,D|N                ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
 
-*       ,ExApp  ,ArrowDown                     ,WorkoutPanel.FocusedPane.PaneNumber:Next   ,ペインを次に移動
-*       ,ExApp  ,ArrowUp                      ,WorkoutPanel.FocusedPane.PaneNumber:Prev   ,ペインを前に移動
+*           ,ExApp  ,ArrowDown          ,WorkoutPanel.FocusedPane.PaneNumber:Next       ,ペインを次に移動
+*           ,ExApp  ,ArrowUp            ,WorkoutPanel.FocusedPane.PaneNumber:Prev       ,ペインを前に移動
+*           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
+*           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
 # Editor
-*TextEditor ,  ,Alt+ArrowUp                     ,TextEditor.Folding.ForwardVisible,現表示範囲の折畳タイトル行を前方向に探索してカーソル移動
-*TextEditor ,  ,Alt+ArrowDown       ,TextEditor.Folding.BackwardVisible,現表示範囲の折畳タイトル行を後方向に探索してカーソル移動
-*TextEditor ,  ,Alt+ArrowRight          ,TextEditor.Folding.OpenEachLevel,カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく
-*TextEditor ,  ,Alt+ArrowLeft           ,TextEditor.Folding.CloseEachLevel,カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく
+*TextEditor ,       ,Alt+ArrowUp        ,TextEditor.Folding.ForwardVisible              ,現表示範囲の折畳タイトル行を前方向に探索してカーソル移動
+*TextEditor ,       ,Alt+ArrowDown      ,TextEditor.Folding.BackwardVisible             ,現表示範囲の折畳タイトル行を後方向に探索してカーソル移動
+*TextEditor ,       ,Alt+ArrowRight     ,TextEditor.Folding.OpenEachLevel               ,カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく
+*TextEditor ,       ,Alt+ArrowLeft      ,TextEditor.Folding.CloseEachLevel              ,カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく
 
 
 # Editor Option モード

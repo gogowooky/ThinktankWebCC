@@ -87,6 +87,8 @@
 　　※レイアウトモードが 'simple' の場合は、Thinktank, WorkoutSetting, Workout の3つのみが選択肢となります。
 
 
+## 完了：　260619　Application.Status.ExMode:ExApp
+## 完了：　260619　Application.Status.ExMode:ExOpt
 ## Status：　260619　Application.Status.ExMode
 　Q：登録されていないでしょうか？
 　A：登録されていませんでしたので、Statusとして `TTUIStateManager` に追加登録（実装）しました。
