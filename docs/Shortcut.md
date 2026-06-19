@@ -41,8 +41,8 @@ Workout*    ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:toggle
 Workout*    ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:toggle           ,折り返し切り替え
 Workout*    ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:toggle            ,ミニマップ切り替え
 
-*     ,       ,Ctrl+Shift+Z,TextEditor.EditText.Undo    ,UI設定を元に戻す
-*     ,       ,Ctrl+Shift+Y,TextEditor.EditText.Redo    ,UI設定をやり直す
+*           ,       ,Ctrl+Z             ,TextEditor.EditText.Undo    ,編集を元に戻す
+*           ,       ,Ctrl+Y             ,TextEditor.EditText.Redo    ,編集をやり直す
 
 
 

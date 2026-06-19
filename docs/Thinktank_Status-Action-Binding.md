@@ -22,10 +22,8 @@
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Next
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Prev
 
-## 完了：　260619　ui:undo
-　IDを TextEditor.EditText.Undo に変更してください。
-## 完了：　260619　ui:redo
-　IDを TextEditor.EditText.Redo に変更してください。
+## 完了：　260619　TextEditor.EditText.Undo
+## 完了：　260619　TextEditor.EditText.Redo
 
 # Status
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode
@@ -68,7 +66,8 @@
 ## 完了：　260613　TextEditor.Color.Occurrence
 ## 完了：　260613　TextEditor.Style.Section
 
-# OK
+
+# OK =================================================================================================================
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
 ## Status：　260619　WorkoutPanel.FocusedPane.PaneNumber
