@@ -19,7 +19,7 @@
  * ── action 書式 ───────────────────────────────────────────────────────────
  *   ActionID                    コロンなし → TTActions.Execute()
  *   Panel.Property:value        → TTUIStateManager.applyProperty()
- *   ui:undo / ui:redo           → UI状態 Undo/Redo
+ *   TextEditor.EditText.Undo / Redo  → UI状態 Undo/Redo
  *   ExMode:{name}               → Application.Status.SetExMode()
  *
  * ── key 書式 ─────────────────────────────────────────────────────────────
@@ -59,8 +59,8 @@ interface ShortcutEntry {
 // ── デフォルトショートカット ──────────────────────────────────────────────
 
 const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
-  { focus: '*', exmode: '', key: 'ctrl+shift+z', action: 'ui:undo',                                    description: 'UI設定を元に戻す' },
-  { focus: '*', exmode: '', key: 'ctrl+shift+y', action: 'ui:redo',                                    description: 'UI設定をやり直す' },
+  { focus: '*', exmode: '', key: 'ctrl+shift+z', action: 'TextEditor.EditText.Undo',                                    description: 'UI設定を元に戻す' },
+  { focus: '*', exmode: '', key: 'ctrl+shift+y', action: 'TextEditor.EditText.Redo',                                    description: 'UI設定をやり直す' },
   { focus: '*', exmode: '', key: 'ctrl+shift+l', action: 'TextEditor.LineNumbers.IsVisible:toggle',    description: '行番号切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+w', action: 'TextEditor.WordWrap.IsVisible:toggle',       description: '折り返し切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+m', action: 'TextEditor.Minimap.IsVisible:toggle',        description: 'ミニマップ切り替え' },

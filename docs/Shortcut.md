@@ -4,7 +4,7 @@ Keyboard Shortcuts
 
 ## アクション書式: Panel.Property:value（value: true/false/toggle/文字列） 
 
-## 特殊コマンド: ui:undo  /  ui:redo
+## 特殊コマンド: TextEditor.EditText.Undo  /  TextEditor.EditText.Redo
 
 ## コード入力（2段）: Ctrl+K L のようにスペース区切り
 
@@ -41,8 +41,8 @@ Workout*    ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:toggle
 Workout*    ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:toggle           ,折り返し切り替え
 Workout*    ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:toggle            ,ミニマップ切り替え
 
-*     ,       ,Ctrl+Shift+Z,ui:undo    ,UI設定を元に戻す
-*     ,       ,Ctrl+Shift+Y,ui:redo    ,UI設定をやり直す
+*     ,       ,Ctrl+Shift+Z,TextEditor.EditText.Undo    ,UI設定を元に戻す
+*     ,       ,Ctrl+Shift+Y,TextEditor.EditText.Redo    ,UI設定をやり直す
 
 
 

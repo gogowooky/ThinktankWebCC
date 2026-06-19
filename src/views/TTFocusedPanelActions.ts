@@ -148,7 +148,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   // UI状態 (Undo/Redo) アクションの登録
   TTActions.Register({
-    ActionID: 'ui:undo',
+    ActionID: 'TextEditor.EditText.Undo',
     Completion: (item) => {
       TTUIStateManager.instance.undo();
       item.Result = 'Undo';
@@ -156,7 +156,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'ui:redo',
+    ActionID: 'TextEditor.EditText.Redo',
     Completion: (item) => {
       TTUIStateManager.instance.redo();
       item.Result = 'Redo';

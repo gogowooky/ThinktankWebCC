@@ -22,6 +22,10 @@
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Next
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Prev
 
+## 完了：　260619　ui:undo
+　IDを TextEditor.EditText.Undo に変更してください。
+## 完了：　260619　ui:redo
+　IDを TextEditor.EditText.Redo に変更してください。
 
 # Status
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode
