@@ -37,10 +37,9 @@ Keyboard Shortcuts
 
 # Editor Option モード
 *           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
-
-Workout*,ExOpt  ,L      ,TextEditor.LineNumbers.IsVisible:toggle ,行番号切り替え
-Workout*,ExOpt  ,W      ,TextEditor.WordWrap.IsVisible:toggle,折り返し切り替え
-Workout*,ExOpt  ,M      ,TextEditor.Minimap.IsVisible:toggle,ミニマップ切り替え
+Workout*    ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:toggle        ,行番号切り替え
+Workout*    ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:toggle           ,折り返し切り替え
+Workout*    ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:toggle            ,ミニマップ切り替え
 
 *     ,       ,Ctrl+Shift+Z,ui:undo    ,UI設定を元に戻す
 *     ,       ,Ctrl+Shift+Y,ui:redo    ,UI設定をやり直す
