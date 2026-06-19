@@ -13,7 +13,6 @@ Keyboard Shortcuts
 ; [AI] ; で始まるテキストは薄い灰色にしてください。
 
 # Columns
-
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
 *           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,フォーカスカラム左
 *           ,ExApp  ,S                  ,Application.FocusedPanel.Name:Next             ,フォーカスカラム右
@@ -37,7 +36,7 @@ Keyboard Shortcuts
 
 
 # Editor Option モード
-*     ,       ,Alt+O  ,Application.Status.ExMode:ExOpt,モード切替
+*           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
 
 Workout*,ExOpt  ,L      ,TextEditor.LineNumbers.IsVisible:toggle ,行番号切り替え
 Workout*,ExOpt  ,W      ,TextEditor.WordWrap.IsVisible:toggle,折り返し切り替え
@@ -45,9 +44,6 @@ Workout*,ExOpt  ,M      ,TextEditor.Minimap.IsVisible:toggle,ミニマップ切�
 
 *     ,       ,Ctrl+Shift+Z,ui:undo    ,UI設定を元に戻す
 *     ,       ,Ctrl+Shift+Y,ui:redo    ,UI設定をやり直す
-;
-;
-;
-;
-;
-;
+
+
+
