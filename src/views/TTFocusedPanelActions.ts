@@ -262,6 +262,14 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // LineNumbers
+  TTActions.Register({
+    ActionID: 'TextEditor.LineNumbers.IsVisible:Toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.LineNumbers.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.LineNumbers.IsVisible');
+    },
+  });
   TTActions.Register({
     ActionID: 'TextEditor.LineNumbers.IsVisible:toggle',
     Completion: (item) => {
@@ -270,6 +278,14 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // WordWrap
+  TTActions.Register({
+    ActionID: 'TextEditor.WordWrap.IsVisible:Toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.WordWrap.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.WordWrap.IsVisible');
+    },
+  });
   TTActions.Register({
     ActionID: 'TextEditor.WordWrap.IsVisible:toggle',
     Completion: (item) => {
@@ -278,11 +294,67 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // Minimap
+  TTActions.Register({
+    ActionID: 'TextEditor.Minimap.IsVisible:Toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.Minimap.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.Minimap.IsVisible');
+    },
+  });
   TTActions.Register({
     ActionID: 'TextEditor.Minimap.IsVisible:toggle',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('TextEditor.Minimap.IsVisible', 'toggle');
       item.Result = TTUIStateManager.instance.getProperty('TextEditor.Minimap.IsVisible');
+    },
+  });
+
+  // FullWidthSpace
+  TTActions.Register({
+    ActionID: 'TextEditor.FullWidthSpace.IsVisible:Toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.FullWidthSpace.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.FullWidthSpace.IsVisible');
+    },
+  });
+  TTActions.Register({
+    ActionID: 'TextEditor.FullWidthSpace.IsVisible:toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.FullWidthSpace.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.FullWidthSpace.IsVisible');
+    },
+  });
+
+  // UnicodeHighlight
+  TTActions.Register({
+    ActionID: 'TextEditor.UnicodeHighlight.IsVisible:Toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.UnicodeHighlight.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.UnicodeHighlight.IsVisible');
+    },
+  });
+  TTActions.Register({
+    ActionID: 'TextEditor.UnicodeHighlight.IsVisible:toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.UnicodeHighlight.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.UnicodeHighlight.IsVisible');
+    },
+  });
+
+  // BracketPairColorization
+  TTActions.Register({
+    ActionID: 'TextEditor.BracketPairColorization.IsVisible:Toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.BracketPairColorization.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.BracketPairColorization.IsVisible');
+    },
+  });
+  TTActions.Register({
+    ActionID: 'TextEditor.BracketPairColorization.IsVisible:toggle',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('TextEditor.BracketPairColorization.IsVisible', 'toggle');
+      item.Result = TTUIStateManager.instance.getProperty('TextEditor.BracketPairColorization.IsVisible');
     },
   });
 

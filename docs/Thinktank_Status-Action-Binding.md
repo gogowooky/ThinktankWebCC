@@ -19,14 +19,33 @@
 ## 完了：　TextEditor.Folding.OpenEachLevel　　　
 ## 完了：　TextEditor.Folding.CloseEachLevel
 
-## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Next
-　
-
-## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Prev
+## 完了：　260619　TextEditor.LineNumbers.IsVisible:Toggle
+## 完了：　260619　TextEditor.WordWrap.IsVisible:Toggle
+## 完了：　260619　TextEditor.Minimap.IsVisible:Toggle
+## 完了：　260619　TextEditor.FullWidthSpace.IsVisible:Toggle
+## 完了：　260619　TextEditor.UnicodeHighlight.IsVisible:Toggle
+## 完了：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
 
 
 # Status
-## 完了：　260619　WorkoutPanel.FocusedPane.Mode
+## 完了：　260613　TextEditor.LineNumbers.IsVisible
+## 完了：　260613　TextEditor.WordWrap.IsVisible
+## 完了：　260613　TextEditor.Minimap.IsVisible
+## 完了：　260613　TextEditor.FullWidthSpace.IsVisible
+## 完了：　260613　TextEditor.UnicodeHighlight.IsVisible
+## 完了：　260613　TextEditor.BracketPairColorization.IsVisible
+
+## 完了：　260613　TextEditor.Color.Background
+## 完了：　260613　TextEditor.Color.Text
+## 完了：　260613　TextEditor.Color.Selection
+## 完了：　260613　TextEditor.Color.Occurrence
+## 完了：　260613　TextEditor.Style.Section
+
+
+# OK =================================================================================================================
+## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
+## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev
+## Status：　260619　WorkoutPanel.FocusedPane.Mode
 　Next/Prevを設定して変更される値は、すべての設定値ではなく、FocusedPaneに表示されているThinkファイル種別ごとに取り得る範囲が変わります。
 　今、Next/Prevでその範囲を超えて設定されてしまっていますので、修正してください。docs\260606_Thinktank仕様書\02_UI・画面レイアウト仕様.mdの## 6. ContentType と MediaType のマッピングを参照してください。
 
@@ -42,9 +61,12 @@
 　　- `Chat` （AIチャット）
 
 
-## 完了：　260613　WorkoutPanel.Pane.Count
-## 完了：　260613　WorkoutPanel.FocusedPane.ID
-## 完了：　260613　WorkoutPanel.FocusedPane.MediaType
+## Action：　260619　TextEditor.EditText.Undo
+## Action：　260619　TextEditor.EditText.Redo
+
+## Status：　260613　WorkoutPanel.Pane.Count
+## Status：　260613　WorkoutPanel.FocusedPane.ID
+## Status：　260613　WorkoutPanel.FocusedPane.MediaType
 　設定値の1文字目は大文字にしてください
 
 　Q：設定値を記載してください。
@@ -56,23 +78,6 @@
 　　- Card （カード）
 　　- Graph （グラフ）
 　　- None （フォーカスされているペインがない場合）
-
-## 完了：　260613　TextEditor.LineNumbers.IsVisible
-## 完了：　260613　TextEditor.WordWrap.IsVisible
-## 完了：　260613　TextEditor.Minimap.IsVisible
-## 完了：　260613　TextEditor.FullWidthSpace.IsVisible
-## 完了：　260613　TextEditor.UnicodeHighlight.IsVisible
-## 完了：　260613　TextEditor.BracketPairColorization.IsVisible
-## 完了：　260613　TextEditor.Color.Background
-## 完了：　260613　TextEditor.Color.Text
-## 完了：　260613　TextEditor.Color.Selection
-## 完了：　260613　TextEditor.Color.Occurrence
-## 完了：　260613　TextEditor.Style.Section
-
-
-# OK =================================================================================================================
-## Action：　260619　TextEditor.EditText.Undo
-## Action：　260619　TextEditor.EditText.Redo
 
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
@@ -146,7 +151,7 @@
 　　- Settings （設定）
 ## Status：　260619　WorkoutSettingPanel.Area.IsOpen
 ## Status：　260613　WorkoutSettingPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
+　設定値の1文字目は大文字にしてください{}
 
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の6つです。

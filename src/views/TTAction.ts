@@ -19,6 +19,12 @@ export type ActionID =
   | 'TextEditor.Folding.BackwardVisible'
   | 'TextEditor.Folding.OpenEachLevel'
   | 'TextEditor.Folding.CloseEachLevel'
+  | 'TextEditor.LineNumbers.IsVisible:Toggle'
+  | 'TextEditor.WordWrap.IsVisible:Toggle'
+  | 'TextEditor.Minimap.IsVisible:Toggle'
+  | 'TextEditor.FullWidthSpace.IsVisible:Toggle'
+  | 'TextEditor.UnicodeHighlight.IsVisible:Toggle'
+  | 'TextEditor.BracketPairColorization.IsVisible:Toggle'
   | string; // 動的・外部定義のアクションを許容
 
 /** アクション実行コンテキスト。Completion 関数が Result / Allow を書き込む。 */
