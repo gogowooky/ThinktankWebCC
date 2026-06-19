@@ -19,16 +19,23 @@
 ## 完了：　TextEditor.Folding.OpenEachLevel　　　
 ## 完了：　TextEditor.Folding.CloseEachLevel
 
-## 完了：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
-## 完了：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
+## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Next
+## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Prev
+
 
 # Status
-## 完了：　260619　WorkoutPanel.FocusedPane.PaneNumber
+## 完了：　260619　WorkoutPanel.FocusedPane.Mode
 　Q：設定値を記載してください。
-　A：現在表示されているペインの中でフォーカスされているペインの番号（1始まり）を返します。
-　　設定される値は以下の通りです。
-　　- `1`〜`6` （表示されているペインの配置順）
-　　- `0` （フォーカスされているペインがない場合）
+　A：現在フォーカスされているペイン（WorkoutArea）の表示モード（1文字目大文字）を取得・設定します。
+　　設定・変更可能な値は以下の7つです（循環切替に対応）。
+　　- `Workout` （概要設定）
+　　- `Texteditor` （テキストエディタ）
+　　- `Markdown` （マークダウンプレビュー）
+　　- `Datagrid` （データグリッド）
+　　- `Card` （カードビュー）
+　　- `Graph` （グラフビュー）
+　　- `Chat` （AIチャット）
+
 
 ## 完了：　260613　WorkoutPanel.Pane.Count
 ## 完了：　260613　WorkoutPanel.FocusedPane.ID
@@ -58,6 +65,15 @@
 ## 完了：　260613　TextEditor.Style.Section
 
 # OK
+## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
+## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
+## Status：　260619　WorkoutPanel.FocusedPane.PaneNumber
+　Q：設定値を記載してください。
+　A：現在表示されているペインの中でフォーカスされているペインの番号（1始まり）を返します。
+　　設定される値は以下の通りです。
+　　- `1`〜`6` （表示されているペインの配置順）
+　　- `0` （フォーカスされているペインがない場合）
+
 ## Action：　260619　Application.FocusedPanel.Name:Next
 ## Action：　260619　Application.FocusedPanel.Name:Prev
 ## Status：　260615　Application.FocusedPanel.Name

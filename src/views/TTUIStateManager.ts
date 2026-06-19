@@ -67,6 +67,7 @@ export type ConfigKey =
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.MediaType'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
+  | 'WorkoutPanel.FocusedPane.Mode'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -494,6 +495,22 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       return idx >= 0 ? String(idx + 1) : '0';
     },
     set: () => {},
+  },
+  'WorkoutPanel.FocusedPane.Mode': {
+    panel: 'WorkoutPanel',
+    default: 'Workout', type: 'string',
+    candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph|Chat)$',
+    description: 'フォーカスがあるペインの表示モード',
+    getValues: (_app) => ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat'],
+    get: (app) => {
+      const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
+      return capitalize(area?.MediaType ?? 'None');
+    },
+    set: (app, v) => {
+      if (app.WorkoutPanel.FocusedAreaId) {
+        app.WorkoutPanel.SetMediaType(app.WorkoutPanel.FocusedAreaId, v.toLowerCase() as MediaType);
+      }
+    },
   },
 };
 

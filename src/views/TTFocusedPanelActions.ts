@@ -233,6 +233,22 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.Mode:Next',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('WorkoutPanel.FocusedPane.Mode', 'next');
+      item.Result = TTUIStateManager.instance.getProperty('WorkoutPanel.FocusedPane.Mode');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.Mode:Prev',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('WorkoutPanel.FocusedPane.Mode', 'prev');
+      item.Result = TTUIStateManager.instance.getProperty('WorkoutPanel.FocusedPane.Mode');
+    },
+  });
+
+  TTActions.Register({
     ActionID: 'TextEditor.LineNumbers.IsVisible:toggle',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('TextEditor.LineNumbers.IsVisible', 'toggle');
