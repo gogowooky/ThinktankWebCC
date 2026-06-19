@@ -24,19 +24,18 @@
 ## 完了：　260619　Application.FocusedPanel.Name:Prev
 
 # Status
-## 完了：　260615　Application.FocusedArea.Name
-　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
-　フォーカスされるものがある場合のみFOCUSされる
 
-　Q：設定値を記載してください。
-　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
-　　- Thinktank.{ModeName}
-　　- Overview.{ModeName} 
-　　- WorkoutSetting.{ModeName}
-　　- ToolBar.{ModeName} 
-　　- Workout.{MediaType}
-　　- ReThink.{ModeName}
-　　※フォーカスがどこにもない場合は None、ステータスバーにある場合は Application.StatusBarArea となります。
+## 完了：　260619　Application.Status.ExMode
+　Q：登録されていないでしょうか？
+　A：登録されていませんでしたので、Statusとして `TTUIStateManager` に追加登録（実装）しました。
+　　これにより、一時拡張ショートカットモード（`ExApp` / `ExOpt` 等）のステータス変化が UI状態管理システムを通じて正しく通知され、参照可能になりました。
+　　
+　　設定値は以下の通りです。
+　　- `None` （通常状態）
+　　- `ExApp` （アプリケーション拡張モード）
+　　- `ExOpt` （オプション拡張モード）
+
+
 ## 完了：　260615　Application.FocusedPanel.Name
 　Q：設定値を記載してください。
 　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
@@ -75,6 +74,19 @@
 ## 完了：　260613　TextEditor.Style.Section
 
 # OK
+## 完了：　260615　Application.FocusedArea.Name
+　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
+　フォーカスされるものがある場合のみFOCUSされる
+
+　Q：設定値を記載してください。
+　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
+　　- Thinktank.{ModeName}
+　　- Overview.{ModeName} 
+　　- WorkoutSetting.{ModeName}
+　　- ToolBar.{ModeName} 
+　　- Workout.{MediaType}
+　　- ReThink.{ModeName}
+　　※フォーカスがどこにもない場合は None、ステータスバーにある場合は Application.StatusBarArea となります。
 
 ## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
 ## Action：　260619　FocusedPanel.Mode.Name:Prev

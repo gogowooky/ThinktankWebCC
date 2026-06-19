@@ -10,6 +10,7 @@
  */
 
 import { TTNotifyBase } from '../models/TTNotifyBase';
+import { TTUIStateManager } from './TTUIStateManager';
 
 export class TTApplicationStatus extends TTNotifyBase {
   private _exMode:            string = '';
@@ -25,6 +26,7 @@ export class TTApplicationStatus extends TTNotifyBase {
     this._exMode       = name;
     this._exModeModKey = modKey;
     this.NotifyUpdated();
+    TTUIStateManager.instance.notifyConstPropertyChanged('Application.Status.ExMode');
   }
 
   /** ExMode を終了してクリアする。すでに非アクティブな場合は何もしない。 */
@@ -33,6 +35,7 @@ export class TTApplicationStatus extends TTNotifyBase {
     this._exMode       = '';
     this._exModeModKey = '';
     this.NotifyUpdated();
+    TTUIStateManager.instance.notifyConstPropertyChanged('Application.Status.ExMode');
   }
 
   /** 直近のアクション表示文字列を更新する（KeyAction パネルにリアルタイム表示）。 */

@@ -62,6 +62,7 @@ export type ConfigKey =
   | 'ToolBar.StatusMode.Text'
   | 'Application.FocusedPanel.Name'
   | 'Application.FocusedArea.Name'
+  | 'Application.Status.ExMode'
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.MediaType'
@@ -443,6 +444,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
         }
       }
     },
+  },
+  'Application.Status.ExMode': {
+    panel: 'Application',
+    default: 'None', type: 'string', candidates: '.*',
+    description: '一時拡張ショートカットモード',
+    isConst: true,
+    get: (app) => app.Status.ExMode || 'None',
+    set: () => {},
   },
   'WorkoutPanel.Pane.Count': {
     panel: 'WorkoutPanel',
