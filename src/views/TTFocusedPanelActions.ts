@@ -150,16 +150,26 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   TTActions.Register({
     ActionID: 'TextEditor.EditText.Undo',
     Completion: (item) => {
-      TTUIStateManager.instance.undo();
-      item.Result = 'Undo';
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (editor) {
+        editor.trigger('keyboard', 'undo', {});
+        item.Result = 'Undo';
+      } else {
+        item.Result = '[エディタ未選択]';
+      }
     },
   });
 
   TTActions.Register({
     ActionID: 'TextEditor.EditText.Redo',
     Completion: (item) => {
-      TTUIStateManager.instance.redo();
-      item.Result = 'Redo';
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (editor) {
+        editor.trigger('keyboard', 'redo', {});
+        item.Result = 'Redo';
+      } else {
+        item.Result = '[エディタ未選択]';
+      }
     },
   });
 

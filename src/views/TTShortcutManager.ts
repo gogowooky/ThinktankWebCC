@@ -59,8 +59,8 @@ interface ShortcutEntry {
 // ── デフォルトショートカット ──────────────────────────────────────────────
 
 const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
-  { focus: '*', exmode: '', key: 'ctrl+shift+z', action: 'TextEditor.EditText.Undo',                                    description: 'UI設定を元に戻す' },
-  { focus: '*', exmode: '', key: 'ctrl+shift+y', action: 'TextEditor.EditText.Redo',                                    description: 'UI設定をやり直す' },
+  { focus: '*', exmode: '', key: 'ctrl+z', action: 'TextEditor.EditText.Undo',                                    description: '編集を元に戻す' },
+  { focus: '*', exmode: '', key: 'ctrl+y', action: 'TextEditor.EditText.Redo',                                    description: '編集をやり直す' },
   { focus: '*', exmode: '', key: 'ctrl+shift+l', action: 'TextEditor.LineNumbers.IsVisible:toggle',    description: '行番号切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+w', action: 'TextEditor.WordWrap.IsVisible:toggle',       description: '折り返し切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+m', action: 'TextEditor.Minimap.IsVisible:toggle',        description: 'ミニマップ切り替え' },
