@@ -19,6 +19,9 @@
 ## 完了：　TextEditor.Folding.OpenEachLevel　　　
 ## 完了：　TextEditor.Folding.CloseEachLevel
 
+## 完了：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
+## 完了：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
+
 # Status
 ## 完了：　260619　WorkoutPanel.FocusedPane.PaneNumber
 　Q：設定値を記載してください。

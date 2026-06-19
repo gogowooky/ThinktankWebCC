@@ -12,6 +12,7 @@ import type { TTApplication } from './TTApplication';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTUIStateManager } from './TTUIStateManager';
+import { collectAreaIds } from './TTWorkoutPanel';
 
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
@@ -192,6 +193,42 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.FocusedPanel.Name', 'next');
       item.Result = TTUIStateManager.instance.getProperty('Application.FocusedPanel.Name');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.PaneNumber:Next',
+    Completion: (item) => {
+      const wPanel = app.WorkoutPanel;
+      const layout = wPanel.Layout;
+      if (!layout) { item.Result = '[レイアウトなし]'; return; }
+      const order = collectAreaIds(layout);
+      if (order.length <= 1) { item.Result = '[ペイン数不足]'; return; }
+
+      const curIdx = wPanel.FocusedAreaId ? order.indexOf(wPanel.FocusedAreaId) : -1;
+      const nextIdx = curIdx >= 0 ? (curIdx + 1) % order.length : 0;
+      const nextAreaId = order[nextIdx];
+
+      wPanel.FocusArea(nextAreaId);
+      item.Result = `Pane ${nextIdx + 1}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.PaneNumber:Prev',
+    Completion: (item) => {
+      const wPanel = app.WorkoutPanel;
+      const layout = wPanel.Layout;
+      if (!layout) { item.Result = '[レイアウトなし]'; return; }
+      const order = collectAreaIds(layout);
+      if (order.length <= 1) { item.Result = '[ペイン数不足]'; return; }
+
+      const curIdx = wPanel.FocusedAreaId ? order.indexOf(wPanel.FocusedAreaId) : -1;
+      const prevIdx = curIdx >= 0 ? (curIdx - 1 + order.length) % order.length : order.length - 1;
+      const prevAreaId = order[prevIdx];
+
+      wPanel.FocusArea(prevAreaId);
+      item.Result = `Pane ${prevIdx + 1}`;
     },
   });
 

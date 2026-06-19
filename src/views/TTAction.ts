@@ -9,6 +9,8 @@ export type ActionID =
   | 'FocusedPanel.Mode.Name:Next'
   | 'Application.FocusedPanel.Name:Next'
   | 'Application.FocusedPanel.Name:Prev'
+  | 'WorkoutPanel.FocusedPane.PaneNumber:Next'
+  | 'WorkoutPanel.FocusedPane.PaneNumber:Prev'
   | 'TextEditor.Folding.ForwardVisible'
   | 'TextEditor.Folding.BackwardVisible'
   | 'TextEditor.Folding.OpenEachLevel'
