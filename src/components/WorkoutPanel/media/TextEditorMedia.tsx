@@ -127,12 +127,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     const focusDisposable = editor.onDidFocusEditorText(() => {
       TTShortcutManager.instance.setActiveEditor(editor);
     });
-    const blurDisposable = editor.onDidBlurEditorText(() => {
-      if (TTShortcutManager.instance.activeEditor === editor) {
-        TTShortcutManager.instance.setActiveEditor(null);
-      }
-    });
-    disposablesRef.current.push(focusDisposable, blurDisposable);
+    disposablesRef.current.push(focusDisposable);
 
     if (editor.hasTextFocus()) {
       TTShortcutManager.instance.setActiveEditor(editor);

@@ -151,11 +151,13 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     ActionID: 'TextEditor.EditText.Undo',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
-      if (editor) {
+      const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
+      if (editor && isEditorFocused) {
         editor.trigger('keyboard', 'undo', {});
-        item.Result = 'Undo';
+        item.Result = 'Editor Undo';
       } else {
-        item.Result = '[エディタ未選択]';
+        TTUIStateManager.instance.undo();
+        item.Result = 'UI State Undo';
       }
     },
   });
@@ -164,11 +166,13 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     ActionID: 'TextEditor.EditText.Redo',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
-      if (editor) {
+      const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
+      if (editor && isEditorFocused) {
         editor.trigger('keyboard', 'redo', {});
-        item.Result = 'Redo';
+        item.Result = 'Editor Redo';
       } else {
-        item.Result = '[エディタ未選択]';
+        TTUIStateManager.instance.redo();
+        item.Result = 'UI State Redo';
       }
     },
   });
