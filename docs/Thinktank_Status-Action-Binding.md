@@ -20,6 +20,9 @@
 ## 完了：　TextEditor.Folding.CloseEachLevel
 
 
+## 完了：　260619　Application.FocusedPanel.Name:Next
+## 完了：　260619　Application.FocusedPanel.Name:Prev
+
 # Status
 ## 完了：　260615　Application.FocusedArea.Name
 　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　

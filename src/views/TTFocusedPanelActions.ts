@@ -180,6 +180,22 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
+    ActionID: 'Application.FocusedPanel.Name:Prev',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.FocusedPanel.Name', 'prev');
+      item.Result = TTUIStateManager.instance.getProperty('Application.FocusedPanel.Name');
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'Application.FocusedPanel.Name:Next',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.FocusedPanel.Name', 'next');
+      item.Result = TTUIStateManager.instance.getProperty('Application.FocusedPanel.Name');
+    },
+  });
+
+  TTActions.Register({
     ActionID: 'TextEditor.LineNumbers.IsVisible:toggle',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('TextEditor.LineNumbers.IsVisible', 'toggle');

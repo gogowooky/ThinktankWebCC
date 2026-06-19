@@ -7,6 +7,8 @@ export type ActionID =
   | 'FocusedPanel.Area.IsOpen:Toggle'
   | 'FocusedPanel.Mode.Name:Prev'
   | 'FocusedPanel.Mode.Name:Next'
+  | 'Application.FocusedPanel.Name:Next'
+  | 'Application.FocusedPanel.Name:Prev'
   | 'TextEditor.Folding.ForwardVisible'
   | 'TextEditor.Folding.BackwardVisible'
   | 'TextEditor.Folding.OpenEachLevel'
