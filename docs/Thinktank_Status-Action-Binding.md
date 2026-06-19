@@ -19,32 +19,13 @@
 ## 完了：　TextEditor.Folding.OpenEachLevel　　　
 ## 完了：　TextEditor.Folding.CloseEachLevel
 
-
-## 完了：　260619　Application.FocusedPanel.Name:Next
-## 完了：　260619　Application.FocusedPanel.Name:Prev
-
 # Status
-
-## 完了：　260619　Application.Status.ExMode
-　Q：登録されていないでしょうか？
-　A：登録されていませんでしたので、Statusとして `TTUIStateManager` に追加登録（実装）しました。
-　　これにより、一時拡張ショートカットモード（`ExApp` / `ExOpt` 等）のステータス変化が UI状態管理システムを通じて正しく通知され、参照可能になりました。
-　　
-　　設定値は以下の通りです。
-　　- `None` （通常状態）
-　　- `ExApp` （アプリケーション拡張モード）
-　　- `ExOpt` （オプション拡張モード）
-
-
-## 完了：　260615　Application.FocusedPanel.Name
+## 完了：　260619　WorkoutPanel.FocusedPane.PaneNumber
 　Q：設定値を記載してください。
-　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
-　　- Thinktank （左パネル：フィルター / チャット / 設定）
-　　- Overview （上部パネル：データグリッド / グラフ / チャット / 設定）
-　　- WorkoutSetting （ワークアウト設定トレイ / 垂直タブバー）
-　　- Workout （ワークアウト編集エリア）
-　　- ReThink （右パネル：AIチャット / 設定）
-　　※レイアウトモードが 'simple' の場合は、Thinktank, WorkoutSetting, Workout の3つのみが選択肢となります。
+　A：現在表示されているペインの中でフォーカスされているペインの番号（1始まり）を返します。
+　　設定される値は以下の通りです。
+　　- `1`〜`6` （表示されているペインの配置順）
+　　- `0` （フォーカスされているペインがない場合）
 
 ## 完了：　260613　WorkoutPanel.Pane.Count
 ## 完了：　260613　WorkoutPanel.FocusedPane.ID
@@ -74,7 +55,30 @@
 ## 完了：　260613　TextEditor.Style.Section
 
 # OK
-## 完了：　260615　Application.FocusedArea.Name
+## Action：　260619　Application.FocusedPanel.Name:Next
+## Action：　260619　Application.FocusedPanel.Name:Prev
+## Status：　260615　Application.FocusedPanel.Name
+　Q：設定値を記載してください。
+　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
+　　- Thinktank （左パネル：フィルター / チャット / 設定）
+　　- Overview （上部パネル：データグリッド / グラフ / チャット / 設定）
+　　- WorkoutSetting （ワークアウト設定トレイ / 垂直タブバー）
+　　- Workout （ワークアウト編集エリア）
+　　- ReThink （右パネル：AIチャット / 設定）
+　　※レイアウトモードが 'simple' の場合は、Thinktank, WorkoutSetting, Workout の3つのみが選択肢となります。
+
+
+## Status：　260619　Application.Status.ExMode
+　Q：登録されていないでしょうか？
+　A：登録されていませんでしたので、Statusとして `TTUIStateManager` に追加登録（実装）しました。
+　　これにより、一時拡張ショートカットモード（`ExApp` / `ExOpt` 等）のステータス変化が UI状態管理システムを通じて正しく通知され、参照可能になりました。
+　　
+　　設定値は以下の通りです。
+　　- `None` （通常状態）
+　　- `ExApp` （アプリケーション拡張モード）
+　　- `ExOpt` （オプション拡張モード）
+
+## Status：　260615　Application.FocusedArea.Name
 　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
 　フォーカスされるものがある場合のみFOCUSされる
 

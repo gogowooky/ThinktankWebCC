@@ -28,7 +28,7 @@ import { parseTableContent, tableSectionToContent, updateTableContent } from '..
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
 import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
-import { SECTION_STYLE_DEFAULTS } from './TTWorkoutPanel';
+import { SECTION_STYLE_DEFAULTS, collectAreaIds } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
@@ -66,6 +66,7 @@ export type ConfigKey =
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.MediaType'
+  | 'WorkoutPanel.FocusedPane.PaneNumber'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -477,6 +478,20 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => {
       const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
       return capitalize(area?.MediaType ?? 'None');
+    },
+    set: () => {},
+  },
+  'WorkoutPanel.FocusedPane.PaneNumber': {
+    panel: 'WorkoutPanel',
+    default: '0', type: 'string', candidates: '^[0-9]+$',
+    description: 'フォーカスがあるペインの番号（1始まり）',
+    isConst: true,
+    get: (app) => {
+      const layout = app.WorkoutPanel.Layout;
+      if (!layout || !app.WorkoutPanel.FocusedAreaId) return '0';
+      const order = collectAreaIds(layout);
+      const idx = order.indexOf(app.WorkoutPanel.FocusedAreaId);
+      return idx >= 0 ? String(idx + 1) : '0';
     },
     set: () => {},
   },
