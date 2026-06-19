@@ -30,7 +30,7 @@ import type { OverviewViewMode } from './TTOverviewPanel';
 import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
 import { SECTION_STYLE_DEFAULTS, collectAreaIds } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
-import type { MediaType } from '../types';
+import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
 import localStatusContent from '../../docs/Status.md?raw';
 
@@ -136,6 +136,27 @@ function makeSectionPresetSpec(n: number): PropSpec {
  * UI設定の全項目定義。新規項目の追加はここにオブジェクトを1つ追記するだけでよい。
  * _getProps() / _applyProp() はこの定義を参照するため個別修正不要。
  */
+function getFocusedPaneAllowedModes(app: TTApplication): string[] {
+  const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
+  if (!area || !area.ResourceID) {
+    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat'];
+  }
+  const think = app.Models.Vault.GetThink(area.ResourceID);
+  if (!think) {
+    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat'];
+  }
+  const mapping: Record<ContentType, MediaType[]> = {
+    memo: ['texteditor', 'markdown'],
+    nettext: ['texteditor', 'markdown'],
+    thought: ['texteditor', 'datagrid', 'markdown', 'card', 'graph'],
+    table: ['texteditor', 'datagrid', 'card'],
+    chat: ['texteditor', 'chat'],
+    links: ['texteditor', 'markdown'],
+  };
+  const allowed = mapping[think.ContentType] || ['texteditor', 'markdown'];
+  return allowed.map(m => capitalize(m));
+}
+
 const PROP_SPECS: Record<ConfigKey, PropSpec> = {
 
   // ── ThinktankPanel ──────────────────────────────────────────────────────
@@ -501,14 +522,17 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     default: 'Workout', type: 'string',
     candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph|Chat)$',
     description: 'フォーカスがあるペインの表示モード',
-    getValues: (_app) => ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat'],
+    getValues: (app) => getFocusedPaneAllowedModes(app),
     get: (app) => {
       const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
       return capitalize(area?.MediaType ?? 'None');
     },
     set: (app, v) => {
       if (app.WorkoutPanel.FocusedAreaId) {
-        app.WorkoutPanel.SetMediaType(app.WorkoutPanel.FocusedAreaId, v.toLowerCase() as MediaType);
+        const allowed = getFocusedPaneAllowedModes(app).map(x => x.toLowerCase());
+        if (allowed.includes(v.toLowerCase())) {
+          app.WorkoutPanel.SetMediaType(app.WorkoutPanel.FocusedAreaId, v.toLowerCase() as MediaType);
+        }
       }
     },
   },

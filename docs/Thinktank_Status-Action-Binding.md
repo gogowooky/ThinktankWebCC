@@ -20,13 +20,16 @@
 ## 完了：　TextEditor.Folding.CloseEachLevel
 
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Next
+　
+
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode:Prev
 
-## 完了：　260619　TextEditor.EditText.Undo
-## 完了：　260619　TextEditor.EditText.Redo
 
 # Status
 ## 完了：　260619　WorkoutPanel.FocusedPane.Mode
+　Next/Prevを設定して変更される値は、すべての設定値ではなく、FocusedPaneに表示されているThinkファイル種別ごとに取り得る範囲が変わります。
+　今、Next/Prevでその範囲を超えて設定されてしまっていますので、修正してください。docs\260606_Thinktank仕様書\02_UI・画面レイアウト仕様.mdの## 6. ContentType と MediaType のマッピングを参照してください。
+
 　Q：設定値を記載してください。
 　A：現在フォーカスされているペイン（WorkoutArea）の表示モード（1文字目大文字）を取得・設定します。
 　　設定・変更可能な値は以下の7つです（循環切替に対応）。
@@ -68,6 +71,9 @@
 
 
 # OK =================================================================================================================
+## Action：　260619　TextEditor.EditText.Undo
+## Action：　260619　TextEditor.EditText.Redo
+
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
 ## Status：　260619　WorkoutPanel.FocusedPane.PaneNumber
