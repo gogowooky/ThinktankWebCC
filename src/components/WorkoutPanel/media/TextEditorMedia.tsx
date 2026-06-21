@@ -12,6 +12,7 @@ import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
 import { StorageManager } from '../../../services/storage/StorageManager';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
+import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import './TextEditorMedia.css';
 
 export interface TextEditorMediaRef { focus: () => void; }
@@ -124,14 +125,31 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     disposablesRef.current.forEach(d => d.dispose());
     disposablesRef.current = [];
 
+    const notifyHeadingStatus = () => {
+      TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
+      TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
+    };
+
     const focusDisposable = editor.onDidFocusEditorText(() => {
       TTShortcutManager.instance.setActiveEditor(editor);
+      notifyHeadingStatus();
     });
     disposablesRef.current.push(focusDisposable);
 
     if (editor.hasTextFocus()) {
       TTShortcutManager.instance.setActiveEditor(editor);
+      notifyHeadingStatus();
     }
+
+    const cursorDisposable = editor.onDidChangeCursorPosition(() => {
+      notifyHeadingStatus();
+    });
+    disposablesRef.current.push(cursorDisposable);
+
+    const contentDisposable = editor.onDidChangeModelContent(() => {
+      notifyHeadingStatus();
+    });
+    disposablesRef.current.push(contentDisposable);
 
     decorationsCollectionRef.current = editor.createDecorationsCollection();
 
@@ -152,6 +170,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       disposablesRef.current = [];
       if (TTShortcutManager.instance.activeEditor === editorRef.current) {
         TTShortcutManager.instance.setActiveEditor(null);
+        TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
+        TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
       }
     };
   }, []);

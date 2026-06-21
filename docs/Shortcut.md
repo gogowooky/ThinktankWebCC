@@ -2,17 +2,15 @@ Keyboard Shortcuts
 
 # Keyboard Shortcuts
 
-## アクション書式: Panel.Property:value（value: true/false/toggle/文字列） 
+> focus     ,exmode ,key                ,action                                         ,description
 
-## 特殊コマンド: TextEditor.EditText.Undo  /  TextEditor.EditText.Redo
+# Editor カーソル
+*TextEditor ,       ,Alt+ArrowUp        ,TextEditor.CurrentFolding.Heading:VisibleForward,現表示範囲の折畳タイトル行を前方向に探索してカーソル移動
+*TextEditor ,       ,Alt+ArrowDown      ,TextEditor.CurrentFolding.Heading:VisibleBackward,現表示範囲の折畳タイトル行を後方向に探索してカーソル移動
+*TextEditor ,       ,Alt+ArrowRight     ,TextEditor.CurrentFolding.Heading:OpenStepwise  ,カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく
+*TextEditor ,       ,Alt+ArrowLeft      ,TextEditor.CurrentFolding.Heading:CloseStepwise ,カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく
 
-## コード入力（2段）: Ctrl+K L のようにスペース区切り
-
-> focus ,exmode ,key                            ,action                                     ,description
-; 以下が設定データ
-; [AI] ; で始まるテキストは薄い灰色にしてください。
-
-# Columns
+# アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
 *           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,フォーカスカラム左
 *           ,ExApp  ,S                  ,Application.FocusedPanel.Name:Next             ,フォーカスカラム右
@@ -28,19 +26,16 @@ Keyboard Shortcuts
 *           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
 *           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
-# Editor
-*TextEditor ,       ,Alt+ArrowUp        ,TextEditor.Folding.ForwardVisible              ,現表示範囲の折畳タイトル行を前方向に探索してカーソル移動
-*TextEditor ,       ,Alt+ArrowDown      ,TextEditor.Folding.BackwardVisible             ,現表示範囲の折畳タイトル行を後方向に探索してカーソル移動
-*TextEditor ,       ,Alt+ArrowRight     ,TextEditor.Folding.OpenEachLevel               ,カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく
-*TextEditor ,       ,Alt+ArrowLeft      ,TextEditor.Folding.CloseEachLevel              ,カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく
-
-
-# Editor Option モード
+# Editor オプション　モード
 *           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
-Workout*    ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:toggle        ,行番号切り替え
-Workout*    ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:toggle           ,折り返し切り替え
-Workout*    ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:toggle            ,ミニマップ切り替え
+*           ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:Toggle        ,行番号On/Off
+*           ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:Toggle           ,折返しOn/Off
+*           ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:Toggle            ,ミニマップOn/Off
+*           ,ExOpt  ,F                  ,TextEditor.FullWidthSpace.IsVisible:Toggle     ,全角スペース表示On/Off
+*           ,ExOpt  ,U                  ,TextEditor.UnicodeHighlight.IsVisible:Toggle   ,エラー文字強調On/Off
+*           ,ExOpt  ,B                  ,TextEditor.BracketPairColorization.IsVisible:Toggle ,括弧強調On/Off
 
+# Editor 編集
 *           ,       ,Ctrl+Z             ,TextEditor.EditText.Undo    ,編集を元に戻す
 *           ,       ,Ctrl+Y             ,TextEditor.EditText.Redo    ,編集をやり直す
 

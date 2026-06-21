@@ -186,8 +186,8 @@ export function TextEditorMedia({ think, areaId }: { think: TTThink; areaId: str
 
   // フォーカス中エディタとしてアクションハンドラを登録
   const registerHandlers = () => {
-    app.MediaActionHandlers.set('TextEditor.Folding.OpenEachLevel', openEachLevel);
-    app.MediaActionHandlers.set('TextEditor.Folding.CloseEachLevel', closeEachLevel);
+    app.MediaActionHandlers.set('TextEditor.CurrentFolding.Heading:OpenStepwise', openEachLevel);
+    app.MediaActionHandlers.set('TextEditor.CurrentFolding.Heading:CloseStepwise', closeEachLevel);
     app.MediaActionHandlers.set('TextEditor.Heading.Previous', () => gotoHeading('prev'));
     app.MediaActionHandlers.set('TextEditor.Heading.Next', () => gotoHeading('next'));
     app.MediaActionHandlers.set('TextEditor.Heading.Parent', () => gotoHeading('parent'));

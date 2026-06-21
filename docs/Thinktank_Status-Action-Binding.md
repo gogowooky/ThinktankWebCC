@@ -14,26 +14,23 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 完了：　TextEditor.Folding.ForwardVisible
-## 完了：　TextEditor.Folding.BackwardVisible　　　
-## 完了：　TextEditor.Folding.OpenEachLevel　　　
-## 完了：　TextEditor.Folding.CloseEachLevel
-
-## 完了：　260619　TextEditor.LineNumbers.IsVisible:Toggle
-## 完了：　260619　TextEditor.WordWrap.IsVisible:Toggle
-## 完了：　260619　TextEditor.Minimap.IsVisible:Toggle
-## 完了：　260619　TextEditor.FullWidthSpace.IsVisible:Toggle
-## 完了：　260619　TextEditor.UnicodeHighlight.IsVisible:Toggle
-## 完了：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
+## 完了：　260621　TextEditor.Folding.ForwardVisible
+　IDをTextEditor.CurrentFolding.Heading:VisibleForwardに変更
+## 完了：　260621　TextEditor.Folding.BackwardVisible
+　IDをTextEditor.CurrentFolding.Heading:VisibleBackwardに変更
+## 完了：　260621　TextEditor.Folding.OpenEachLevel
+　IDをTextEditor.CurrentFolding.Heading:OpenStepwiseに変更
+## 完了：　260621　TextEditor.Folding.CloseEachLevel
+　IDをTextEditor.CurrentFolding.Heading:CloseStepwiseに変更
 
 
 # Status
-## 完了：　260613　TextEditor.LineNumbers.IsVisible
-## 完了：　260613　TextEditor.WordWrap.IsVisible
-## 完了：　260613　TextEditor.Minimap.IsVisible
-## 完了：　260613　TextEditor.FullWidthSpace.IsVisible
-## 完了：　260613　TextEditor.UnicodeHighlight.IsVisible
-## 完了：　260613　TextEditor.BracketPairColorization.IsVisible
+## 完了：　260621　TextEditor.CurrentFolding.HeadingOffset
+　カーソル位置が属する見出し行の開始位置（先頭文字位置）
+## 完了：　260621　TextEditor.CurrentFolding.HeadingNumber
+　カーソル位置が属する見出し行の番号(例: 1.3.4)
+docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
+
 
 ## 完了：　260613　TextEditor.Color.Background
 ## 完了：　260613　TextEditor.Color.Text
@@ -43,6 +40,19 @@
 
 
 # OK =================================================================================================================
+## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle
+## Action：　260619　TextEditor.WordWrap.IsVisible:Toggle
+## Action：　260619　TextEditor.Minimap.IsVisible:Toggle
+## Action：　260619　TextEditor.FullWidthSpace.IsVisible:Toggle
+## Action：　260619　TextEditor.UnicodeHighlight.IsVisible:Toggle
+## Action：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
+## Status：　260613　TextEditor.LineNumbers.IsVisible
+## Status：　260613　TextEditor.WordWrap.IsVisible
+## Status：　260613　TextEditor.Minimap.IsVisible
+## Status：　260613　TextEditor.FullWidthSpace.IsVisible
+## Status：　260613　TextEditor.UnicodeHighlight.IsVisible
+## Status：　260613　TextEditor.BracketPairColorization.IsVisible
+
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev
 ## Status：　260619　WorkoutPanel.FocusedPane.Mode

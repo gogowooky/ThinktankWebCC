@@ -167,8 +167,8 @@ export const DEFAULT_SHORTCUTS: ShortcutDef[] = [
   { key: 'ctrl+alt+w', focus: 'Workout', actionId: 'Workout.CloseFocused', description: 'フォーカス中ペインを閉じる' },
   { key: 'ctrl+alt+e', focus: '*', actionId: 'Workout.Equalize', description: 'ペイン幅の均等化' },
   // ── TextEditor: 見出し開閉制御 ──
-  { key: 'ctrl+alt+[', focus: 'Workout.TextEditor', actionId: 'TextEditor.Folding.CloseEachLevel', description: '見出しの段階的折りたたみ' },
-  { key: 'ctrl+alt+]', focus: 'Workout.TextEditor', actionId: 'TextEditor.Folding.OpenEachLevel', description: '見出しの段階的展開' },
+  { key: 'ctrl+alt+[', focus: 'Workout.TextEditor', actionId: 'TextEditor.CurrentFolding.Heading:CloseStepwise', description: '見出しの段階的折りたたみ' },
+  { key: 'ctrl+alt+]', focus: 'Workout.TextEditor', actionId: 'TextEditor.CurrentFolding.Heading:OpenStepwise', description: '見出しの段階的展開' },
   { key: 'ctrl+alt+arrowup', focus: 'Workout.TextEditor', actionId: 'TextEditor.Heading.Previous', description: '前の表示見出しへ移動' },
   { key: 'ctrl+alt+arrowdown', focus: 'Workout.TextEditor', actionId: 'TextEditor.Heading.Next', description: '次の表示見出しへ移動' },
   { key: 'ctrl+alt+arrowleft', focus: 'Workout.TextEditor', actionId: 'TextEditor.Heading.Parent', description: '親見出しへ移動' },

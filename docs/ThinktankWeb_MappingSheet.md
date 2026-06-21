@@ -18,8 +18,8 @@
 | **フォーカス中ペインを保存** | `ctrl+s` | Workoutペイン (`Workout`) | `Workout.SaveFocused` | - *(直接ファイル保存)* |
 | **フォーカス中ペインを閉じる**| `ctrl+alt+w` | Workoutペイン (`Workout`) | `Workout.CloseFocused` | - *(ペイン破棄)* |
 | **ペイン幅の均等化** | `ctrl+alt+e` | 全体 (`*`) | `Workout.Equalize` | - *(レイアウトの再計算)* |
-| **見出しの段階的折りたたみ** | `ctrl+alt+[` | エディタ (`Workout.TextEditor`) | `TextEditor.Folding.CloseEachLevel`| - *(エディタ表示状態)* |
-| **見出しの段階的展開** | `ctrl+alt+]` | エディタ (`Workout.TextEditor`) | `TextEditor.Folding.OpenEachLevel` | - *(エディタ表示状態)* |
+| **見出しの段階的折りたたみ** | `ctrl+alt+[` | エディタ (`Workout.TextEditor`) | `TextEditor.CurrentFolding.Heading:CloseStepwise`| - *(エディタ表示状態)* |
+| **見出しの段階的展開** | `ctrl+alt+]` | エディタ (`Workout.TextEditor`) | `TextEditor.CurrentFolding.Heading:OpenStepwise` | - *(エディタ表示状態)* |
 | **前の表示見出しへ移動** | `ctrl+alt+arrowup` | エディタ (`Workout.TextEditor`) | `TextEditor.Heading.Previous` | - *(カーソル移動)* |
 | **次の表示見出しへ移動** | `ctrl+alt+arrowdown`| エディタ (`Workout.TextEditor`) | `TextEditor.Heading.Next` | - *(カーソル移動)* |
 | **親見出しへ移動** | `ctrl+alt+arrowleft`| エディタ (`Workout.TextEditor`) | `TextEditor.Heading.Parent` | - *(カーソル移動)* |

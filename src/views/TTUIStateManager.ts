@@ -33,6 +33,8 @@ import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
 import localStatusContent from '../../docs/Status.md?raw';
+import { TTShortcutManager } from './TTShortcutManager';
+import { getHeadingAttributes } from './TTFocusedPanelActions';
 
 const USE_LOCAL_FILES = true;
 
@@ -68,6 +70,8 @@ export type ConfigKey =
   | 'WorkoutPanel.FocusedPane.MediaType'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
   | 'WorkoutPanel.FocusedPane.Mode'
+  | 'TextEditor.CurrentFolding.HeadingOffset'
+  | 'TextEditor.CurrentFolding.HeadingNumber'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -535,6 +539,48 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
         }
       }
     },
+  },
+  'TextEditor.CurrentFolding.HeadingOffset': {
+    panel: 'WorkoutPanel',
+    default: '0', type: 'string', candidates: '.*',
+    description: 'カーソル位置が属する見出し行の開始位置（先頭文字位置）',
+    isConst: true,
+    get: (_app) => {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) return '0';
+      const model = editor.getModel();
+      const pos = editor.getPosition();
+      if (!model || !pos) return '0';
+
+      const targetOffset = model.getOffsetAt(pos);
+      const headings = getHeadingAttributes(editor);
+      const matched = headings.filter(h => h.offset <= targetOffset);
+      if (matched.length === 0) return '0';
+
+      return String(matched[matched.length - 1].offset);
+    },
+    set: () => {},
+  },
+  'TextEditor.CurrentFolding.HeadingNumber': {
+    panel: 'WorkoutPanel',
+    default: 'None', type: 'string', candidates: '.*',
+    description: 'カーソル位置が属する見出し行の番号(例: 1.3.4)',
+    isConst: true,
+    get: (_app) => {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) return 'None';
+      const model = editor.getModel();
+      const pos = editor.getPosition();
+      if (!model || !pos) return 'None';
+
+      const targetOffset = model.getOffsetAt(pos);
+      const headings = getHeadingAttributes(editor);
+      const matched = headings.filter(h => h.offset <= targetOffset);
+      if (matched.length === 0) return 'None';
+
+      return matched[matched.length - 1].headingNumber;
+    },
+    set: () => {},
   },
 };
 

@@ -193,8 +193,8 @@ export class TTApplication extends TTNotifyBase {
 
     // メディア（TextEditor/DataGrid）系はフォーカス中コンポーネントが登録したハンドラへ委譲
     const mediaActions: Array<[string, string]> = [
-      ['TextEditor.Folding.OpenEachLevel', '見出しの段階的展開'],
-      ['TextEditor.Folding.CloseEachLevel', '見出しの段階的折りたたみ'],
+      ['TextEditor.CurrentFolding.Heading:OpenStepwise', '見出しの段階的展開'],
+      ['TextEditor.CurrentFolding.Heading:CloseStepwise', '見出しの段階的折りたたみ'],
       ['TextEditor.Heading.Previous', '前の表示見出しへ移動'],
       ['TextEditor.Heading.Next', '次の表示見出しへ移動'],
       ['TextEditor.Heading.Parent', '親見出しへ移動'],

@@ -34,6 +34,8 @@ UI Settings
 エディタ , セクションスタイルプリセット3,TextEditor.SectionStyle.Preset3,const       ,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]",json    ,.*
 エディタ , セクションスタイルプリセット4,TextEditor.SectionStyle.Preset4,const       ,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]",json    ,.*
 エディタ , セクションスタイルプリセット5,TextEditor.SectionStyle.Preset5,const       ,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]",json    ,.*
+エディタ , 見出しOffset     ,TextEditor.CurrentFolding.HeadingOffset,0          ,0          ,string  ,.*
+エディタ , 見出し番号       ,TextEditor.CurrentFolding.HeadingNumber,None       ,None       ,string  ,.*
 
 # Panel
 パネル  , ハイライトスタイル    ,WorkoutPanel.Style.Highlight,WorkoutPanel.HighlightStyle.Preset1,WorkoutPanel.HighlightStyle.Preset1,string  ,^WorkoutPanel\.HighlightStyle\.Preset[1-5]$

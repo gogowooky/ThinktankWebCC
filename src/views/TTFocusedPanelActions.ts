@@ -443,9 +443,9 @@ function isLineFolded(editor: any, lineNumber: number): boolean {
 
 export function registerTextEditorActions(): void {
 
-  // 1. TextEditor.Folding.ForwardVisible
+  // 1. TextEditor.CurrentFolding.Heading:VisibleForward
   TTActions.Register({
-    ActionID: 'TextEditor.Folding.ForwardVisible',
+    ActionID: 'TextEditor.CurrentFolding.Heading:VisibleForward',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -475,9 +475,9 @@ export function registerTextEditorActions(): void {
     },
   });
 
-  // 2. TextEditor.Folding.BackwardVisible
+  // 2. TextEditor.CurrentFolding.Heading:VisibleBackward
   TTActions.Register({
-    ActionID: 'TextEditor.Folding.BackwardVisible',
+    ActionID: 'TextEditor.CurrentFolding.Heading:VisibleBackward',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -508,9 +508,9 @@ export function registerTextEditorActions(): void {
     },
   });
 
-  // 3. TextEditor.Folding.OpenEachLevel
+  // 3. TextEditor.CurrentFolding.Heading:OpenStepwise
   TTActions.Register({
-    ActionID: 'TextEditor.Folding.OpenEachLevel',
+    ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -567,9 +567,9 @@ export function registerTextEditorActions(): void {
     },
   });
 
-  // 4. TextEditor.Folding.CloseEachLevel
+  // 4. TextEditor.CurrentFolding.Heading:CloseStepwise
   TTActions.Register({
-    ActionID: 'TextEditor.Folding.CloseEachLevel',
+    ActionID: 'TextEditor.CurrentFolding.Heading:CloseStepwise',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
