@@ -93,6 +93,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
   const editorRef   = useRef<any>(null);
   const disposablesRef = useRef<any[]>([]);
+  const headingStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focus() }));
   const [isDragOver, setIsDragOver] = useState(false);
@@ -123,34 +124,44 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     editorRef.current = editor;
     registerMarkdownFolding(monaco);
 
-    // フォーカスイベントの購読を追加し、フォーカスがあるエディタのみをアクティブにする
     disposablesRef.current.forEach(d => d.dispose());
     disposablesRef.current = [];
 
     const notifyHeadingStatus = () => {
-      const headings = getHeadingAttributes(editor);
-      const pos = editor.getPosition();
-      const model = editor.getModel();
-      
-      let offsetVal = '0';
-      let numberVal = 'None';
-      
-      if (pos && model) {
-        const targetOffset = model.getOffsetAt(pos);
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length > 0) {
-          const currentHeading = matched[matched.length - 1];
-          offsetVal = String(currentHeading.offset);
-          numberVal = currentHeading.headingNumber;
-        }
+      if (headingStatusTimerRef.current) {
+        clearTimeout(headingStatusTimerRef.current);
       }
 
-      const workoutPanel = TTApplication.Instance.WorkoutPanel;
-      workoutPanel.TextEditor.CurrentFoldingHeadingOffset = offsetVal;
-      workoutPanel.TextEditor.CurrentFoldingHeadingNumber = numberVal;
+      headingStatusTimerRef.current = setTimeout(() => {
+        const headings = getHeadingAttributes(editor);
+        const pos = editor.getPosition();
+        const model = editor.getModel();
+        
+        let offsetVal = '0';
+        let numberVal = 'None';
+        
+        if (pos && model) {
+          const targetOffset = model.getOffsetAt(pos);
+          const matched = headings.filter(h => h.offset <= targetOffset);
+          if (matched.length > 0) {
+            const currentHeading = matched[matched.length - 1];
+            offsetVal = String(currentHeading.offset);
+            numberVal = currentHeading.headingNumber;
+          }
+        }
 
-      TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
-      TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
+        const workoutPanel = TTApplication.Instance.WorkoutPanel;
+        if (
+          workoutPanel.TextEditor.CurrentFoldingHeadingOffset !== offsetVal ||
+          workoutPanel.TextEditor.CurrentFoldingHeadingNumber !== numberVal
+        ) {
+          workoutPanel.TextEditor.CurrentFoldingHeadingOffset = offsetVal;
+          workoutPanel.TextEditor.CurrentFoldingHeadingNumber = numberVal;
+
+          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
+          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
+        }
+      }, 150);
     };
 
     const focusDisposable = editor.onDidFocusEditorText(() => {
@@ -189,6 +200,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   // マウント/アンマウント時のアクティブエディタのクリーンアップ
   useEffect(() => {
     return () => {
+      if (headingStatusTimerRef.current) {
+        clearTimeout(headingStatusTimerRef.current);
+      }
       disposablesRef.current.forEach(d => d.dispose());
       disposablesRef.current = [];
       if (TTShortcutManager.instance.activeEditor === editorRef.current) {

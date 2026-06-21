@@ -395,27 +395,8 @@ function getHeadingScope(model: any, startLine: number, parentLevel: number): { 
  *   上記を満たす h が存在すれば lineNumber は隠れている。
  */
 function isLineVisible(editor: any, lineNumber: number, model: any): boolean {
-  const lineCount = model.getLineCount();
-
-  for (let h = 1; h < lineNumber; h++) {
-    const lvl = getHeadingLevel(model.getLineContent(h));
-    if (lvl === 0) continue;
-    if (!isLineFolded(editor, h)) continue;
-
-    // h の fold スコープの末尾を計算（同レベル以下の次見出しの直前行）
-    let scopeEnd = lineCount;
-    for (let j = h + 1; j <= lineCount; j++) {
-      const jLvl = getHeadingLevel(model.getLineContent(j));
-      if (jLvl > 0 && jLvl <= lvl) {
-        scopeEnd = j - 1;
-        break;
-      }
-    }
-
-    if (lineNumber <= scopeEnd) return false; // h のスコープ内 → 隠れている
-  }
-
-  return true;
+  const hiddenAreas = typeof editor.getHiddenAreas === 'function' ? (editor.getHiddenAreas() ?? []) : [];
+  return !hiddenAreas.some((r: any) => lineNumber >= r.startLineNumber && lineNumber <= r.endLineNumber);
 }
 
 function isLineFolded(editor: any, lineNumber: number): boolean {
@@ -649,6 +630,8 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
   // 見出しレベル(1〜6)ごとのカウンター
   const counters = [0, 0, 0, 0, 0, 0];
 
+  const hiddenAreas = typeof editor.getHiddenAreas === 'function' ? (editor.getHiddenAreas() ?? []) : [];
+
   for (let i = 1; i <= lineCount; i++) {
     const lineContent = model.getLineContent(i);
     const level = getHeadingLevel(lineContent);
@@ -666,7 +649,7 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
       const headingNumber = counters.slice(0, level).join('.');
 
       // 非表示フラグの判定
-      const isHidden = !isLineVisible(editor, i, model);
+      const isHidden = hiddenAreas.some((r: any) => i >= r.startLineNumber && i <= r.endLineNumber);
 
       attributes.push({
         offset,
