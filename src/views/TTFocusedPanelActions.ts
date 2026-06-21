@@ -500,44 +500,42 @@ export function registerTextEditorActions(): void {
         const pos = editor.getPosition();
         if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-        let headingLine = -1;
-        let parentLevel = 0;
-        for (let i = pos.lineNumber; i >= 1; i--) {
-          const lvl = getHeadingLevel(model.getLineContent(i));
-          if (lvl > 0) {
-            headingLine = i;
-            parentLevel = lvl;
-            break;
-          }
-        }
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
 
-        if (headingLine === -1) { item.Result = '[見出し外]'; return; }
+        // 1. 現在のカーソル位置から上方向に最も近い見出し H を取得
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
+        const h = matched[matched.length - 1];
 
-        if (isLineFolded(editor, headingLine)) {
-          editor.setPosition({ lineNumber: headingLine, column: 1 });
+        // 2. H 自体が折りたたまれている場合は、その行を展開して終了
+        if (isLineFolded(editor, h.line)) {
+          editor.setPosition({ lineNumber: h.line, column: 1 });
           editor.trigger('keyboard', 'editor.unfold', {});
           editor.setPosition(pos);
-          item.Result = `L${headingLine}展開`;
+          item.Result = `L${h.line}展開`;
           return;
         }
 
-        const scope = getHeadingScope(model, headingLine, parentLevel);
-        const maxLevel = 6;
-        for (let targetLvl = parentLevel + 1; targetLvl <= maxLevel; targetLvl++) {
-          const targets: number[] = [];
-          for (let i = scope.start + 1; i <= scope.end; i++) {
-            const lvl = getHeadingLevel(model.getLineContent(i));
-            if (lvl === targetLvl) targets.push(i);
-          }
+        // H のスコープの末尾行を取得
+        const idx = headings.indexOf(h);
+        const scopeEnd = headingScopeEnd(headings, idx, model.getLineCount());
 
-          const folded = targets.filter(t => isLineFolded(editor, t));
-          if (folded.length > 0) {
-            folded.forEach(t => {
-              editor.setPosition({ lineNumber: t, column: 1 });
+        // H の子孫見出しを取得
+        const descendants = headings.filter(
+          (d) => d.line > h.line && d.line <= scopeEnd && d.headingNumber.startsWith(h.headingNumber + '.')
+        );
+
+        // 3 & 4. 子→孫→曾孫... の順に、最も浅い階層で折りたたまれているものをすべて展開して終了
+        for (let depth = h.level + 1; depth <= 6; depth++) {
+          const targets = descendants.filter(d => d.level === depth && isLineFolded(editor, d.line));
+          if (targets.length > 0) {
+            targets.forEach(t => {
+              editor.setPosition({ lineNumber: t.line, column: 1 });
               editor.trigger('keyboard', 'editor.unfold', {});
             });
             editor.setPosition(pos);
-            item.Result = `Lvl${targetLvl}子展開`;
+            item.Result = `Lvl${depth}子展開`;
             return;
           }
         }
@@ -559,45 +557,42 @@ export function registerTextEditorActions(): void {
         const pos = editor.getPosition();
         if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-        let headingLine = -1;
-        let parentLevel = 0;
-        for (let i = pos.lineNumber; i >= 1; i--) {
-          const lvl = getHeadingLevel(model.getLineContent(i));
-          if (lvl > 0) {
-            headingLine = i;
-            parentLevel = lvl;
-            break;
-          }
-        }
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
 
-        if (headingLine === -1) { item.Result = '[見出し外]'; return; }
+        // 1. 現在のカーソル位置から上方向に最も近い見出し H を取得
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
+        const h = matched[matched.length - 1];
 
-        const scope = getHeadingScope(model, headingLine, parentLevel);
-        const maxLevel = 6;
-        for (let targetLvl = maxLevel; targetLvl > parentLevel; targetLvl--) {
-          const targets: number[] = [];
-          for (let i = scope.start + 1; i <= scope.end; i++) {
-            const lvl = getHeadingLevel(model.getLineContent(i));
-            if (lvl === targetLvl) targets.push(i);
-          }
+        const idx = headings.indexOf(h);
+        const scopeEnd = headingScopeEnd(headings, idx, model.getLineCount());
 
-          const opened = targets.filter(t => !isLineFolded(editor, t));
-          if (opened.length > 0) {
-            opened.forEach(t => {
-              editor.setPosition({ lineNumber: t, column: 1 });
+        // H の子孫見出し
+        const descendants = headings.filter(
+          (d) => d.line > h.line && d.line <= scopeEnd && d.headingNumber.startsWith(h.headingNumber + '.')
+        );
+
+        // 2 & 3. 子孫見出しについて、最深レベル（最大 6）から順に親方向に向かって走査し、展開されている見出しが見つかったら、その階層の見出しをすべて折りたたんで終了
+        for (let depth = 6; depth >= h.level + 1; depth--) {
+          const targets = descendants.filter(d => d.level === depth && !isLineFolded(editor, d.line) && !d.isHidden);
+          if (targets.length > 0) {
+            targets.forEach(t => {
+              editor.setPosition({ lineNumber: t.line, column: 1 });
               editor.trigger('keyboard', 'editor.fold', {});
             });
             editor.setPosition(pos);
-            item.Result = `Lvl${targetLvl}子折畳`;
+            item.Result = `Lvl${depth}子折畳`;
             return;
           }
         }
 
-        if (!isLineFolded(editor, headingLine)) {
-          editor.setPosition({ lineNumber: headingLine, column: 1 });
+        // 4. スコープ内のすべての子孫見出しがすでに折りたたまれている場合は、親である H 自体を折りたたむ
+        if (!isLineFolded(editor, h.line)) {
+          editor.setPosition({ lineNumber: h.line, column: 1 });
           editor.trigger('keyboard', 'editor.fold', {});
           editor.setPosition(pos);
-          item.Result = `L${headingLine}折畳`;
+          item.Result = `L${h.line}折畳`;
         } else {
           item.Result = '折畳済み';
         }
@@ -609,9 +604,20 @@ export function registerTextEditorActions(): void {
 }
 
 export interface HeadingAttribute {
+  line: number;
+  level: number;
   offset: number;
   headingNumber: string;
   isHidden: boolean;
+}
+
+/** 見出しのfoldスコープ末尾行（次の同位以上の見出しの直前まで） */
+function headingScopeEnd(headings: HeadingAttribute[], idx: number, lineCount: number): number {
+  const h = headings[idx];
+  for (let i = idx + 1; i < headings.length; i++) {
+    if (headings[i].level <= h.level) return headings[i].line - 1;
+  }
+  return lineCount;
 }
 
 /**
@@ -652,6 +658,8 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
       const isHidden = hiddenAreas.some((r: any) => i >= r.startLineNumber && i <= r.endLineNumber);
 
       attributes.push({
+        line: i,
+        level,
         offset,
         headingNumber,
         isHidden,
