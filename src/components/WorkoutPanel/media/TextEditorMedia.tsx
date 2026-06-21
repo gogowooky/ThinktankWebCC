@@ -13,6 +13,8 @@ import type { MediaProps } from './types';
 import { StorageManager } from '../../../services/storage/StorageManager';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
+import { TTApplication } from '../../../views/TTApplication';
+import { getHeadingAttributes } from '../../../views/TTFocusedPanelActions';
 import './TextEditorMedia.css';
 
 export interface TextEditorMediaRef { focus: () => void; }
@@ -126,6 +128,27 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     disposablesRef.current = [];
 
     const notifyHeadingStatus = () => {
+      const headings = getHeadingAttributes(editor);
+      const pos = editor.getPosition();
+      const model = editor.getModel();
+      
+      let offsetVal = '0';
+      let numberVal = 'None';
+      
+      if (pos && model) {
+        const targetOffset = model.getOffsetAt(pos);
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length > 0) {
+          const currentHeading = matched[matched.length - 1];
+          offsetVal = String(currentHeading.offset);
+          numberVal = currentHeading.headingNumber;
+        }
+      }
+
+      const workoutPanel = TTApplication.Instance.WorkoutPanel;
+      workoutPanel.TextEditor.CurrentFoldingHeadingOffset = offsetVal;
+      workoutPanel.TextEditor.CurrentFoldingHeadingNumber = numberVal;
+
       TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
       TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
     };

@@ -14,23 +14,23 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 完了：　260621　TextEditor.Folding.ForwardVisible
-　IDをTextEditor.CurrentFolding.Heading:VisibleForwardに変更
-## 完了：　260621　TextEditor.Folding.BackwardVisible
-　IDをTextEditor.CurrentFolding.Heading:VisibleBackwardに変更
-## 完了：　260621　TextEditor.Folding.OpenEachLevel
-　IDをTextEditor.CurrentFolding.Heading:OpenStepwiseに変更
-## 完了：　260621　TextEditor.Folding.CloseEachLevel
-　IDをTextEditor.CurrentFolding.Heading:CloseStepwiseに変更
+## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
+## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
+## 完了：　260621　TextEditor.CurrentFolding.Heading:OpenStepwise
+## 完了：　260621　TextEditor.CurrentFolding.Heading:CloseStepwise
 
 
 # Status
 ## 完了：　260621　TextEditor.CurrentFolding.HeadingOffset
 　カーソル位置が属する見出し行の開始位置（先頭文字位置）
+　現在の実装は廃止します。
+　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その offsetを設定する
+
 ## 完了：　260621　TextEditor.CurrentFolding.HeadingNumber
 　カーソル位置が属する見出し行の番号(例: 1.3.4)
-docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
-
+　現在の実装は廃止します。
+　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
+　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
 
 ## 完了：　260613　TextEditor.Color.Background
 ## 完了：　260613　TextEditor.Color.Text

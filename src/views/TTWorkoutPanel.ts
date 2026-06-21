@@ -39,6 +39,9 @@ export class TextEditorSettings {
   UnicodeHighlight = { IsVisible: false };
   BracketPairColorization = { IsVisible: true };
 
+  CurrentFoldingHeadingOffset = '0';
+  CurrentFoldingHeadingNumber = 'None';
+
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };
   HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];
   HighlightStyles: HighlightStyle[] = [...HIGHLIGHT_STYLE_DEFAULTS];

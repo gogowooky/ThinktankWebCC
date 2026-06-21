@@ -545,42 +545,16 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     default: '0', type: 'string', candidates: '.*',
     description: 'カーソル位置が属する見出し行の開始位置（先頭文字位置）',
     isConst: true,
-    get: (_app) => {
-      const editor = TTShortcutManager.instance.activeEditor;
-      if (!editor) return '0';
-      const model = editor.getModel();
-      const pos = editor.getPosition();
-      if (!model || !pos) return '0';
-
-      const targetOffset = model.getOffsetAt(pos);
-      const headings = getHeadingAttributes(editor);
-      const matched = headings.filter(h => h.offset <= targetOffset);
-      if (matched.length === 0) return '0';
-
-      return String(matched[matched.length - 1].offset);
-    },
-    set: () => {},
+    get: (app) => app.WorkoutPanel.TextEditor.CurrentFoldingHeadingOffset ?? '0',
+    set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentFoldingHeadingOffset = v; },
   },
   'TextEditor.CurrentFolding.HeadingNumber': {
     panel: 'WorkoutPanel',
     default: 'None', type: 'string', candidates: '.*',
     description: 'カーソル位置が属する見出し行の番号(例: 1.3.4)',
     isConst: true,
-    get: (_app) => {
-      const editor = TTShortcutManager.instance.activeEditor;
-      if (!editor) return 'None';
-      const model = editor.getModel();
-      const pos = editor.getPosition();
-      if (!model || !pos) return 'None';
-
-      const targetOffset = model.getOffsetAt(pos);
-      const headings = getHeadingAttributes(editor);
-      const matched = headings.filter(h => h.offset <= targetOffset);
-      if (matched.length === 0) return 'None';
-
-      return matched[matched.length - 1].headingNumber;
-    },
-    set: () => {},
+    get: (app) => app.WorkoutPanel.TextEditor.CurrentFoldingHeadingNumber ?? 'None',
+    set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentFoldingHeadingNumber = v; },
   },
 };
 
