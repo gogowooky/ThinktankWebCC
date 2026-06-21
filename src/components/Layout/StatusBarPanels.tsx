@@ -42,6 +42,8 @@ export function StatusBarStatusPanel({ focus }: StatusPanelProps) {
   const [inputValue, setInputValue] = useState(() =>
     TTUIStateManager.instance.getProperty('ToolBar.StatusMode.Text')
   );
+  const [tick, setTick] = useState(0);
+  const forceUpdate = () => setTick(t => t + 1);
 
   // 外部変更を同期するリスナー
   useEffect(() => {
@@ -56,7 +58,7 @@ export function StatusBarStatusPanel({ focus }: StatusPanelProps) {
     const handleAnyChange = () => {
       if (!isFocused) {
         // トリガー再描画
-        setInputValue(TTUIStateManager.instance.getProperty('ToolBar.StatusMode.Text'));
+        forceUpdate();
       }
     };
     TTUIStateManager.instance.addListener('*', handleAnyChange);
