@@ -631,8 +631,7 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
   // 見出しレベル(1〜6)ごとのカウンター
   const counters = [0, 0, 0, 0, 0, 0];
 
-  const hiddenAreas = typeof editor.getHiddenAreas === 'function' ? (editor.getHiddenAreas() ?? []) : [];
-
+  // 1パス目: 基本情報を収集
   for (let i = 1; i <= lineCount; i++) {
     const lineContent = model.getLineContent(i);
     const level = getHeadingLevel(lineContent);
@@ -649,17 +648,33 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
       }
       const headingNumber = counters.slice(0, level).join('.');
 
-      // 非表示フラグの判定
-      const isHidden = hiddenAreas.some((r: any) => i >= r.startLineNumber && i <= r.endLineNumber);
-
       attributes.push({
         line: i,
         level,
         offset,
         headingNumber,
-        isHidden,
+        isHidden: false,
       });
     }
+  }
+
+  // 2パス目: 各見出しの非表示判定
+  // 仕様書: 当該行より前（上方向）にある全見出し行 h について、h が折りたたまれており、かつ h の fold スコープ内に対象行が含まれる場合、非表示と判定します。
+  for (let idx = 0; idx < attributes.length; idx++) {
+    const target = attributes[idx];
+    let isHidden = false;
+
+    for (let prevIdx = 0; prevIdx < idx; prevIdx++) {
+      const prevH = attributes[prevIdx];
+      if (isLineFolded(editor, prevH.line)) {
+        const scopeEnd = headingScopeEnd(attributes, prevIdx, lineCount);
+        if (target.line > prevH.line && target.line <= scopeEnd) {
+          isHidden = true;
+          break;
+        }
+      }
+    }
+    target.isHidden = isHidden;
   }
 
   return attributes;

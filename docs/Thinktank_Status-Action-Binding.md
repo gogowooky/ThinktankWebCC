@@ -15,10 +15,10 @@
 
 # Action
 ## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
-　隠れているHeadingには移動しません。表示されているHeadingにのみ移動するように修正してください。　
+　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 
 ## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
-　隠れているHeadingには移動しません。表示されているHeadingにのみ移動するように修正してください。　
+　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 
 ## 完了：　260621　TextEditor.CurrentFolding.Heading:OpenStepwise
 　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md の TextEditor.Folding.OpenEachLevel に記述されている実装と同様の実装を行う
