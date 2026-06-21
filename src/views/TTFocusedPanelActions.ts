@@ -631,6 +631,23 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
   // 見出しレベル(1〜6)ごとのカウンター
   const counters = [0, 0, 0, 0, 0, 0];
 
+  // 現在折りたたまれている行を Set にキャッシュして判定を O(1) にする
+  const foldedLines = new Set<number>();
+  const regions = (editor.getContribution?.('editor.contrib.folding') as any)
+    ?.foldingModel?.regions;
+  if (regions) {
+    for (let i = 0; i < regions.length; i++) {
+      if (regions.isCollapsed(i)) {
+        foldedLines.add(regions.getStartLineNumber(i));
+      }
+    }
+  }
+
+  const checkIsFolded = (line: number) => {
+    if (regions) return foldedLines.has(line);
+    return isLineFolded(editor, line); // フォールバック
+  };
+
   // 1パス目: 基本情報を収集
   for (let i = 1; i <= lineCount; i++) {
     const lineContent = model.getLineContent(i);
@@ -660,21 +677,27 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
 
   // 2パス目: 各見出しの非表示判定
   // 仕様書: 当該行より前（上方向）にある全見出し行 h について、h が折りたたまれており、かつ h の fold スコープ内に対象行が含まれる場合、非表示と判定します。
+  // 状態追跡による O(N) 判定アルゴリズム (二重ループおよび scopeEnd 再計算の完全廃止)
+  let currentFoldedParentLevel = -1;
+
   for (let idx = 0; idx < attributes.length; idx++) {
     const target = attributes[idx];
-    let isHidden = false;
 
-    for (let prevIdx = 0; prevIdx < idx; prevIdx++) {
-      const prevH = attributes[prevIdx];
-      if (isLineFolded(editor, prevH.line)) {
-        const scopeEnd = headingScopeEnd(attributes, prevIdx, lineCount);
-        if (target.line > prevH.line && target.line <= scopeEnd) {
-          isHidden = true;
-          break;
-        }
+    // もし現在折りたたまれている上位見出しがあり、そのレベルが現在の見出しより上位（数値が小さい）なら非表示
+    if (currentFoldedParentLevel !== -1 && target.level > currentFoldedParentLevel) {
+      target.isHidden = true;
+    } else {
+      // そうでなければ非表示ではない。影響範囲（スコープ）から抜けたので折りたたみ状態を解除
+      target.isHidden = false;
+      currentFoldedParentLevel = -1;
+    }
+
+    // この見出し自身が折りたたまれている場合、まだ上位の折りたたみが無ければ、これを最上位 of 折りたたみとする
+    if (checkIsFolded(target.line)) {
+      if (currentFoldedParentLevel === -1) {
+        currentFoldedParentLevel = target.level;
       }
     }
-    target.isHidden = isHidden;
   }
 
   return attributes;
