@@ -10,6 +10,9 @@ Keyboard Shortcuts
 *TextEditor ,       ,Alt+ArrowRight     ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft      ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
 
+*TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingBackward  ,兄弟折畳行を前後移動
+*TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingForward   ,兄弟折畳行を後移動
+
 # アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
 *           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,フォーカスカラム左

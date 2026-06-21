@@ -488,56 +488,7 @@ export function registerTextEditorActions(): void {
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
     Completion: (item) => {
-      try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
-
-        // 1. 現在のカーソル位置から上方向に最も近い見出し H を取得
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
-        const h = matched[matched.length - 1];
-
-        // 2. H 自体が折りたたまれている場合は、その行を展開して終了
-        if (isLineFolded(editor, h.line)) {
-          editor.setPosition({ lineNumber: h.line, column: 1 });
-          editor.trigger('keyboard', 'editor.unfold', {});
-          editor.setPosition(pos);
-          item.Result = `L${h.line}展開`;
-          return;
-        }
-
-        // H のスコープの末尾行を取得
-        const idx = headings.indexOf(h);
-        const scopeEnd = headingScopeEnd(headings, idx, model.getLineCount());
-
-        // H の子孫見出しを取得
-        const descendants = headings.filter(
-          (d) => d.line > h.line && d.line <= scopeEnd && d.headingNumber.startsWith(h.headingNumber + '.')
-        );
-
-        // 3 & 4. 子→孫→曾孫... の順に、最も浅い階層で折りたたまれているものをすべて展開して終了
-        for (let depth = h.level + 1; depth <= 6; depth++) {
-          const targets = descendants.filter(d => d.level === depth && isLineFolded(editor, d.line));
-          if (targets.length > 0) {
-            targets.forEach(t => {
-              editor.setPosition({ lineNumber: t.line, column: 1 });
-              editor.trigger('keyboard', 'editor.unfold', {});
-            });
-            editor.setPosition(pos);
-            item.Result = `Lvl${depth}子展開`;
-            return;
-          }
-        }
-        item.Result = '全展開済み';
-      } catch (err: any) {
-        item.Result = `[エラー] ${err.message}`;
-      }
+      item.Result = '削除済み';
     },
   });
 
@@ -555,41 +506,45 @@ export function registerTextEditorActions(): void {
         const headings = getHeadingAttributes(editor);
         const targetOffset = model.getOffsetAt(pos);
 
-        // 1. 現在のカーソル位置から上方向に最も近い見出し H を取得
+        // 現在のカーソル位置から上方向に最も近い見出し H を取得
         const matched = headings.filter(h => h.offset <= targetOffset);
         if (matched.length === 0) { item.Result = '[見出し外]'; return; }
         const h = matched[matched.length - 1];
 
-        const idx = headings.indexOf(h);
-        const scopeEnd = headingScopeEnd(headings, idx, model.getLineCount());
-
-        // H の子孫見出し
-        const descendants = headings.filter(
-          (d) => d.line > h.line && d.line <= scopeEnd && d.headingNumber.startsWith(h.headingNumber + '.')
-        );
-
-        // 2 & 3. 子孫見出しについて、最深レベル（最大 6）から順に親方向に向かって走査し、展開されている見出しが見つかったら、その階層の見出しをすべて折りたたんで終了
-        for (let depth = 6; depth >= h.level + 1; depth--) {
-          const targets = descendants.filter(d => d.level === depth && !isLineFolded(editor, d.line) && !d.isHidden);
-          if (targets.length > 0) {
-            targets.forEach(t => {
-              editor.setPosition({ lineNumber: t.line, column: 1 });
-              editor.trigger('keyboard', 'editor.fold', {});
-            });
-            editor.setPosition(pos);
-            item.Result = `Lvl${depth}子折畳`;
-            return;
-          }
+        // 1. 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動して終了
+        if (pos.lineNumber !== h.line) {
+          editor.setPosition({ lineNumber: h.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(h.line);
+          item.Result = `L${h.line}へ移動`;
+          return;
         }
 
-        // 4. スコープ内のすべての子孫見出しがすでに折りたたまれている場合は、親である H 自体を折りたたむ
+        // 2. Heading 行が Open である場合： Heading 行を Close にする -> 終了
         if (!isLineFolded(editor, h.line)) {
           editor.setPosition({ lineNumber: h.line, column: 1 });
           editor.trigger('keyboard', 'editor.fold', {});
           editor.setPosition(pos);
           item.Result = `L${h.line}折畳`;
+          return;
+        }
+
+        // 3. 兄弟 Heading 行のすべてを Close にする -> 終了
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        const siblings = headings.filter(
+          d => d.level === h.level &&
+               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber
+        );
+
+        const targets = siblings.filter(s => !isLineFolded(editor, s.line));
+        if (targets.length > 0) {
+          targets.forEach(t => {
+            editor.setPosition({ lineNumber: t.line, column: 1 });
+            editor.trigger('keyboard', 'editor.fold', {});
+          });
+          editor.setPosition(pos);
+          item.Result = `兄弟${targets.length}件折畳`;
         } else {
-          item.Result = '折畳済み';
+          item.Result = '兄弟すべて折畳済み';
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
