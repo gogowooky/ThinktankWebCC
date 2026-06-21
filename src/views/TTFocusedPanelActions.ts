@@ -528,10 +528,11 @@ export function registerTextEditorActions(): void {
           return;
         }
 
-        // 3. 兄弟 Heading 行のすべてを Close にする -> 終了
+        // 3. 自分以外の兄弟 Heading 行のすべてを Close にする -> 終了
         const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
         const siblings = headings.filter(
-          d => d.level === h.level &&
+          d => d.line !== h.line &&
+               d.level === h.level &&
                d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber
         );
 

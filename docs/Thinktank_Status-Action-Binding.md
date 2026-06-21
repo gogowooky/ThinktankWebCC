@@ -24,7 +24,7 @@
 　以下の手順で実装してください。
 　↓　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
 　↓　Heading行がOpenである場合：　Heading行をCloseにする　→　終了
-　↓　兄弟Heading行のすべてをCloseにする　→　終了
+　↓　自分以外の兄弟Heading行のすべてをCloseにする　→　終了
 
 # Status
 ## 完了：　260621　TextEditor.CurrentFolding.HeadingOffset
