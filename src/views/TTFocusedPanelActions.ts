@@ -435,20 +435,18 @@ export function registerTextEditorActions(): void {
         const pos = editor.getPosition();
         if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-        let targetLine = -1;
-        for (let i = pos.lineNumber - 1; i >= 1; i--) {
-          if (getHeadingLevel(model.getLineContent(i)) > 0 && isLineVisible(editor, i, model)) {
-            targetLine = i;
-            break;
-          }
-        }
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
 
-        if (targetLine !== -1) {
-          editor.setPosition({ lineNumber: targetLine, column: 1 });
-          editor.revealLineInCenterIfOutsideViewport(targetLine);
-          item.Result = `L${targetLine}へ移動`;
+        // offset < targetOffset を満たす見出しを降順（後ろから）走査し、isHidden === false である最初の行を特定
+        const target = [...headings].reverse().find(h => h.offset < targetOffset && !h.isHidden);
+
+        if (target) {
+          editor.setPosition({ lineNumber: target.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(target.line);
+          item.Result = `L${target.line}へ移動`;
         } else {
-          item.Result = '見出しなし';
+          item.Result = '表示見出しなし';
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
@@ -467,21 +465,18 @@ export function registerTextEditorActions(): void {
         const pos = editor.getPosition();
         if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
 
-        const lineCount = model.getLineCount();
-        let targetLine = -1;
-        for (let i = pos.lineNumber + 1; i <= lineCount; i++) {
-          if (getHeadingLevel(model.getLineContent(i)) > 0 && isLineVisible(editor, i, model)) {
-            targetLine = i;
-            break;
-          }
-        }
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
 
-        if (targetLine !== -1) {
-          editor.setPosition({ lineNumber: targetLine, column: 1 });
-          editor.revealLineInCenterIfOutsideViewport(targetLine);
-          item.Result = `L${targetLine}へ移動`;
+        // offset > targetOffset を満たす見出しを昇順（前から）走査し、isHidden === false である最初の行を特定
+        const target = headings.find(h => h.offset > targetOffset && !h.isHidden);
+
+        if (target) {
+          editor.setPosition({ lineNumber: target.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(target.line);
+          item.Result = `L${target.line}へ移動`;
         } else {
-          item.Result = '見出しなし';
+          item.Result = '表示見出しなし';
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;

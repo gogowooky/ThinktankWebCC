@@ -5,10 +5,10 @@ Keyboard Shortcuts
 > focus     ,exmode ,key                ,action                                         ,description
 
 # Editor カーソル
-*TextEditor ,       ,Alt+ArrowUp        ,TextEditor.CurrentFolding.Heading:VisibleForward,現表示範囲の折畳タイトル行を前方向に探索してカーソル移動
-*TextEditor ,       ,Alt+ArrowDown      ,TextEditor.CurrentFolding.Heading:VisibleBackward,現表示範囲の折畳タイトル行を後方向に探索してカーソル移動
-*TextEditor ,       ,Alt+ArrowRight     ,TextEditor.CurrentFolding.Heading:OpenStepwise  ,カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく
-*TextEditor ,       ,Alt+ArrowLeft      ,TextEditor.CurrentFolding.Heading:CloseStepwise ,カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく
+*TextEditor ,       ,Alt+ArrowUp        ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
+*TextEditor ,       ,Alt+ArrowDown      ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
+*TextEditor ,       ,Alt+ArrowRight     ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
+*TextEditor ,       ,Alt+ArrowLeft      ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
 
 # アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
