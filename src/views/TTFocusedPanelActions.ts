@@ -596,6 +596,104 @@ export function registerTextEditorActions(): void {
       }
     },
   });
+
+  // 5. TextEditor.CurrentFolding.Heading:SiblingForward
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingForward',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
+
+        // 現在のカーソル位置から上方向に最も近い見出し H を取得
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
+        const h = matched[matched.length - 1];
+
+        // 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動
+        if (pos.lineNumber !== h.line) {
+          editor.setPosition({ lineNumber: h.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(h.line);
+          item.Result = `L${h.line}へ移動`;
+          return;
+        }
+
+        // 現カーソル位置が Heading 行である場合：次の兄弟 Heading 行へ移動
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        const nextSibling = headings.find(
+          d => d.offset > h.offset &&
+               d.level === h.level &&
+               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber &&
+               !d.isHidden
+        );
+
+        if (nextSibling) {
+          editor.setPosition({ lineNumber: nextSibling.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(nextSibling.line);
+          item.Result = `L${nextSibling.line}へ移動`;
+        } else {
+          item.Result = '次の兄弟見出しなし';
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    },
+  });
+
+  // 6. TextEditor.CurrentFolding.Heading:SiblingBackward
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingBackward',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
+
+        // 現在のカーソル位置から上方向に最も近い見出し H を取得
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
+        const h = matched[matched.length - 1];
+
+        // 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動
+        if (pos.lineNumber !== h.line) {
+          editor.setPosition({ lineNumber: h.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(h.line);
+          item.Result = `L${h.line}へ移動`;
+          return;
+        }
+
+        // 現カーソル位置が Heading 行である場合：前の兄弟 Heading 行へ移動
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        const prevSibling = [...headings].reverse().find(
+          d => d.offset < h.offset &&
+               d.level === h.level &&
+               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber &&
+               !d.isHidden
+        );
+
+        if (prevSibling) {
+          editor.setPosition({ lineNumber: prevSibling.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(prevSibling.line);
+          item.Result = `L${prevSibling.line}へ移動`;
+        } else {
+          item.Result = '前の兄弟見出しなし';
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    },
+  });
 }
 
 export interface HeadingAttribute {

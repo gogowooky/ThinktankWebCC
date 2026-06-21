@@ -19,6 +19,8 @@ export type ActionID =
   | 'TextEditor.CurrentFolding.Heading:VisibleBackward'
   | 'TextEditor.CurrentFolding.Heading:OpenStepwise'
   | 'TextEditor.CurrentFolding.Heading:CloseStepwise'
+  | 'TextEditor.CurrentFolding.Heading:SiblingForward'
+  | 'TextEditor.CurrentFolding.Heading:SiblingBackward'
   | 'TextEditor.LineNumbers.IsVisible:Toggle'
   | 'TextEditor.WordWrap.IsVisible:Toggle'
   | 'TextEditor.Minimap.IsVisible:Toggle'

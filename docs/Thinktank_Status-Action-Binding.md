@@ -14,11 +14,15 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
-　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
+## 完了：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
+　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
+　現カーソル位置がHeading行である場合：次の兄弟Heading行へ移動
+　兄弟Heading行とは、同じ親headingNumberをもつHeading行
 
-## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
-　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
+## 完了：　260621　TextEditor.CurrentFolding.Heading:SiblingBackward
+　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
+　現カーソル位置がHeading行である場合：前の兄弟Heading行へ移動
+　兄弟Heading行とは、同じ親headingNumberをもつHeading行
 
 ## 完了：　260621　TextEditor.CurrentFolding.Heading:OpenStepwise
 　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md の TextEditor.Folding.OpenEachLevel に記述されている実装と同様の実装を行う
@@ -45,6 +49,13 @@
 
 
 # OK =================================================================================================================
+## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
+　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
+## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
+　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
+
+
+
 ## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle
 ## Action：　260619　TextEditor.WordWrap.IsVisible:Toggle
 ## Action：　260619　TextEditor.Minimap.IsVisible:Toggle
