@@ -503,8 +503,8 @@ export function registerTextEditorActions(): void {
         if (matched.length === 0) { item.Result = '[見出し外]'; return; }
         const h = matched[matched.length - 1];
 
-        // ↓ 現カーソル位置がHeading行の場合でHeadingがCloseである場合は、Heading行をOpenにして終了します。
-        if (pos.lineNumber === h.line && isLineFolded(editor, h.line)) {
+        // ↓ 現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
+        if (isLineFolded(editor, h.line)) {
           editor.setPosition({ lineNumber: h.line, column: 1 });
           editor.trigger('keyboard', 'editor.unfold', {});
           editor.setPosition(pos);

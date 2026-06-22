@@ -15,10 +15,10 @@
 
 # Action
 
-## 修正：　260622　TextEditor.CurrentFolding.Heading:Open
+## 完了：　260622　TextEditor.CurrentFolding.Heading:Open
 　以下の手順を実装してください。
-　↓　現カーソル位置がHeading行の場合でHeadingがCloseである場合は、Heading行をOpenにして終了します。
-　↓　現カーソル位置のHeading行を取得後、その子Heading行をすべてOpenにして終了します
+　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
+　↓　現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
 
 ## 完了：　260622　TextEditor.CurrentFolding.Heading:CloseStepwise
 　以下の手順を実装してください。
