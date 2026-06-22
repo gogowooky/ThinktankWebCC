@@ -15,16 +15,17 @@
 
 # Action
 
-## 完了：　260621　TextEditor.CurrentFolding.Heading:OpenStepwise
-　一旦実装内容を全削除してください。
-　
+## 修正：　260622　TextEditor.CurrentFolding.Heading:Open
+　以下の手順を実装してください。
+　↓　現カーソル位置がHeading行の場合でHeadingがCloseである場合は、Heading行をOpenにして終了します。
+　↓　現カーソル位置のHeading行を取得後、その子Heading行をすべてOpenにして終了します
 
-## 完了：　260621　TextEditor.CurrentFolding.Heading:CloseStepwise
-　一旦実装内容を全削除してください。
-　以下の手順で実装してください。
-　↓　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
-　↓　Heading行がOpenである場合：　Heading行をCloseにする　→　終了
-　↓　自分以外の兄弟Heading行のすべてをCloseにする　→　終了
+## 完了：　260622　TextEditor.CurrentFolding.Heading:CloseStepwise
+　以下の手順を実装してください。
+　↓　現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
+　↓　現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
+　↓　現カーソルがあるHeading行がCloseである場合は、兄弟Heading行をすべて抽出し、親Heading行や孫Heading行が含まれないことを確認し、抽出した兄弟HeadingのすべてをCloseにして終了します
+　　　
 
 # Status
 ## 完了：　260621　TextEditor.CurrentFolding.HeadingOffset

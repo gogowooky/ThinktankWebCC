@@ -151,9 +151,6 @@
 
 .ApplicationStatusBarArea__ka-value--action {
   color: #aaa;
-  max-width: 240px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

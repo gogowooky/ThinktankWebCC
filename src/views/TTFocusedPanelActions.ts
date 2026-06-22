@@ -484,11 +484,73 @@ export function registerTextEditorActions(): void {
     },
   });
 
-  // 3. TextEditor.CurrentFolding.Heading:OpenStepwise
+  // 3. TextEditor.CurrentFolding.Heading:Open
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:Open',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
+
+        // 現在のカーソル位置から上方向に最も近い見出し H を取得
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
+        const h = matched[matched.length - 1];
+
+        // ↓ 現カーソル位置がHeading行の場合でHeadingがCloseである場合は、Heading行をOpenにして終了します。
+        if (pos.lineNumber === h.line && isLineFolded(editor, h.line)) {
+          editor.setPosition({ lineNumber: h.line, column: 1 });
+          editor.trigger('keyboard', 'editor.unfold', {});
+          editor.setPosition(pos);
+          item.Result = `L${h.line}展開`;
+          return;
+        }
+
+        // ↓ 現カーソル位置のHeading行を取得後、その子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
+        const scopeEnd = headingScopeEnd(headings, headings.indexOf(h), model.getLineCount());
+        const childHeadings = headings.filter(
+          d => d.line > h.line &&
+               d.line <= scopeEnd &&
+               d.level === h.level + 1 &&
+               d.headingNumber.startsWith(h.headingNumber + '.')
+        );
+
+        // 自Heading行や孫Heading行が含まれないことを確認
+        const hasSelfOrGrandchild = childHeadings.some(
+          c => c.line === h.line || c.level !== h.level + 1 || !c.headingNumber.startsWith(h.headingNumber + '.')
+        );
+        if (hasSelfOrGrandchild) {
+          console.warn('[Assertion Failed] 子Headingリストに自Headingまたは孫Headingが含まれています。');
+        }
+
+        const targets = childHeadings.filter(c => isLineFolded(editor, c.line));
+        if (targets.length > 0) {
+          targets.forEach(t => {
+            editor.setPosition({ lineNumber: t.line, column: 1 });
+            editor.trigger('keyboard', 'editor.unfold', {});
+          });
+          editor.setPosition(pos);
+          item.Result = `子${targets.length}件展開`;
+        } else {
+          item.Result = '子すべて展開済み';
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    },
+  });
+
+  // 3-2. TextEditor.CurrentFolding.Heading:OpenStepwise (Openに委譲)
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
     Completion: (item) => {
-      item.Result = '削除済み';
+      return TTActions.Get('TextEditor.CurrentFolding.Heading:Open')?.Completion(item);
     },
   });
 
@@ -511,24 +573,21 @@ export function registerTextEditorActions(): void {
         if (matched.length === 0) { item.Result = '[見出し外]'; return; }
         const h = matched[matched.length - 1];
 
-        // 1. 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動して終了
+        // ↓ 現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
         if (pos.lineNumber !== h.line) {
           editor.setPosition({ lineNumber: h.line, column: 1 });
           editor.revealLineInCenterIfOutsideViewport(h.line);
-          item.Result = `L${h.line}へ移動`;
-          return;
         }
 
-        // 2. Heading 行が Open である場合： Heading 行を Close にする -> 終了
+        // ↓ 現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
         if (!isLineFolded(editor, h.line)) {
           editor.setPosition({ lineNumber: h.line, column: 1 });
           editor.trigger('keyboard', 'editor.fold', {});
-          editor.setPosition(pos);
           item.Result = `L${h.line}折畳`;
           return;
         }
 
-        // 3. 自分以外の兄弟 Heading 行のすべてを Close にする -> 終了
+        // ↓ 現カーソルがあるHeading行がCloseである場合は、兄弟Heading行をすべて抽出し、親Heading行や孫Heading行が含まれないことを確認し、抽出した兄弟HeadingのすべてをCloseにして終了します
         const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
         const siblings = headings.filter(
           d => d.line !== h.line &&
@@ -536,15 +595,24 @@ export function registerTextEditorActions(): void {
                d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber
         );
 
+        // 親Heading行や孫Heading行が含まれないことを確認
+        const hasParentOrGrandchild = siblings.some(
+          s => s.level !== h.level || s.headingNumber.split('.').slice(0, -1).join('.') !== parentNumber
+        );
+        if (hasParentOrGrandchild) {
+          console.warn('[Assertion Failed] 兄弟Headingリストに親または孫Headingが含まれています。');
+        }
+
         const targets = siblings.filter(s => !isLineFolded(editor, s.line));
         if (targets.length > 0) {
           targets.forEach(t => {
             editor.setPosition({ lineNumber: t.line, column: 1 });
             editor.trigger('keyboard', 'editor.fold', {});
           });
-          editor.setPosition(pos);
+          editor.setPosition({ lineNumber: h.line, column: 1 });
           item.Result = `兄弟${targets.length}件折畳`;
         } else {
+          editor.setPosition({ lineNumber: h.line, column: 1 });
           item.Result = '兄弟すべて折畳済み';
         }
       } catch (err: any) {
