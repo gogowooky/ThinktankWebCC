@@ -44,5 +44,8 @@ UI Settings
 パネル  , ハイライトスタイルプリセット3,WorkoutPanel.HighlightStyle.Preset3,const       ,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]",json    ,.*
 パネル  , ハイライトスタイルプリセット4,WorkoutPanel.HighlightStyle.Preset4,const       ,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]",json    ,.*
 パネル  , ハイライトスタイルプリセット5,WorkoutPanel.HighlightStyle.Preset5,const       ,"[{""backgroundColor"":""#fff0b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#ffb3b3"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3e0ff"",""color"":""#1a1a1a""},{""backgroundColor"":""#b3ffb3"",""color"":""#1a1a1a""},{""backgroundColor"":""#e6b3ff"",""color"":""#1a1a1a""}]",json    ,.*
-パネル  , Toolバー表示モード  ,WorkoutPanel.ToolBarMode,KeyAction   ,Copyright   ,string  ,^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$
-パネル  , ハイライトキーワード   ,WorkoutPanel.Highlight.KeyWord,            ,            ,string  ,.*
+パネル  , Toolバー表示モード  ,ToolBar.Mode.Name,KeyAction   ,Copyright   ,string  ,^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$
+パネル  , ハイライター入力テキスト,ToolBar.HighlighterMode.Text,            ,            ,string  ,.*
+パネル  , コマンド入力テキスト   ,ToolBar.CommandMode.Text,            ,            ,string  ,.*
+パネル  , 翻訳入力テキスト     ,ToolBar.TranslateMode.Text,            ,            ,string  ,.*
+パネル  , リマインダー入力テキスト ,ToolBar.ReminderMode.Text,            ,            ,string  ,.*
