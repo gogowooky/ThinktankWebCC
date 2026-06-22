@@ -15,7 +15,6 @@
 
 # Action
 
-
 # Status
 
 ## 完了：　260613　TextEditor.Color.Background
@@ -26,13 +25,13 @@
 
 
 # OK =================================================================================================================
-## 完了：　260622　ToolBar.HighlighterMode.Text
+## Status：　260622　ToolBar.HighlighterMode.Text
 　ToolBaeのHighlighterModeのTextboxの値を保持します。
-## 完了：　260622　ToolBar.CommandMode.Text
+## Status：　260622　ToolBar.CommandMode.Text
 　ToolBaeのCommandModeのTextboxの値を保持します。
-## 完了：　260622　ToolBar.TranslateMode.Text
+## Status：　260622　ToolBar.TranslateMode.Text
 　ToolBaeのTranslateModeのTextboxの値を保持します。
-## 完了：　260622　ToolBar.ReminderMode.Text
+## Status：　260622　ToolBar.ReminderMode.Text
 　ToolBaeのReminderModeのTextboxの値を保持します。
 
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
