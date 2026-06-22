@@ -505,14 +505,12 @@ export function registerTextEditorActions(): void {
 
         // ↓ 現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
         if (isLineFolded(editor, h.line)) {
-          editor.setPosition({ lineNumber: h.line, column: 1 });
-          editor.trigger('keyboard', 'editor.unfold', {});
-          editor.setPosition(pos);
+          editor.trigger('tt', 'editor.unfold', { selectionLines: [h.line] });
           item.Result = `L${h.line}展開`;
           return;
         }
 
-        // ↓ 現カーソル位置のHeading行を取得後、その子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
+        // ↓ 現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
         const scopeEnd = headingScopeEnd(headings, headings.indexOf(h), model.getLineCount());
         const childHeadings = headings.filter(
           d => d.line > h.line &&
@@ -531,11 +529,7 @@ export function registerTextEditorActions(): void {
 
         const targets = childHeadings.filter(c => isLineFolded(editor, c.line));
         if (targets.length > 0) {
-          targets.forEach(t => {
-            editor.setPosition({ lineNumber: t.line, column: 1 });
-            editor.trigger('keyboard', 'editor.unfold', {});
-          });
-          editor.setPosition(pos);
+          editor.trigger('tt', 'editor.unfold', { selectionLines: targets.map(t => t.line) });
           item.Result = `子${targets.length}件展開`;
         } else {
           item.Result = '子すべて展開済み';
@@ -581,8 +575,7 @@ export function registerTextEditorActions(): void {
 
         // ↓ 現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
         if (!isLineFolded(editor, h.line)) {
-          editor.setPosition({ lineNumber: h.line, column: 1 });
-          editor.trigger('keyboard', 'editor.fold', {});
+          editor.trigger('tt', 'editor.fold', { selectionLines: [h.line] });
           item.Result = `L${h.line}折畳`;
           return;
         }
@@ -605,14 +598,9 @@ export function registerTextEditorActions(): void {
 
         const targets = siblings.filter(s => !isLineFolded(editor, s.line));
         if (targets.length > 0) {
-          targets.forEach(t => {
-            editor.setPosition({ lineNumber: t.line, column: 1 });
-            editor.trigger('keyboard', 'editor.fold', {});
-          });
-          editor.setPosition({ lineNumber: h.line, column: 1 });
+          editor.trigger('tt', 'editor.fold', { selectionLines: targets.map(t => t.line) });
           item.Result = `兄弟${targets.length}件折畳`;
         } else {
-          editor.setPosition({ lineNumber: h.line, column: 1 });
           item.Result = '兄弟すべて折畳済み';
         }
       } catch (err: any) {
