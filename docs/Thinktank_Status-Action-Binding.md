@@ -15,7 +15,10 @@
 
 # Action
 
-## 完了：　260622　TextEditor.CurrentFolding.Heading:Open
+## 完了：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
+　IDをTextEditor.CurrentFolding.Heading:OpenStepwiseに変更してください。
+
+
 　以下の手順を実装してください。
 　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
 　↓　現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します

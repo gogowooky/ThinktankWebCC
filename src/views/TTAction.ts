@@ -17,7 +17,6 @@ export type ActionID =
   | 'TextEditor.EditText.Redo'
   | 'TextEditor.CurrentFolding.Heading:VisibleForward'
   | 'TextEditor.CurrentFolding.Heading:VisibleBackward'
-  | 'TextEditor.CurrentFolding.Heading:Open'
   | 'TextEditor.CurrentFolding.Heading:OpenStepwise'
   | 'TextEditor.CurrentFolding.Heading:CloseStepwise'
   | 'TextEditor.CurrentFolding.Heading:SiblingForward'

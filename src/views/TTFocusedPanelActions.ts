@@ -484,9 +484,9 @@ export function registerTextEditorActions(): void {
     },
   });
 
-  // 3. TextEditor.CurrentFolding.Heading:Open
+  // 3. TextEditor.CurrentFolding.Heading:OpenStepwise
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:Open',
+    ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -537,14 +537,6 @@ export function registerTextEditorActions(): void {
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
       }
-    },
-  });
-
-  // 3-2. TextEditor.CurrentFolding.Heading:OpenStepwise (Openに委譲)
-  TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
-    Completion: (item) => {
-      return TTActions.Get('TextEditor.CurrentFolding.Heading:Open')?.Completion(item);
     },
   });
 
