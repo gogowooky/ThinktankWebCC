@@ -505,7 +505,7 @@ export function registerTextEditorActions(): void {
 
         // ↓ 現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
         if (isLineFolded(editor, h.line)) {
-          editor.trigger('tt', 'editor.unfold', { selectionLines: [h.line] });
+          editor.trigger('tt', 'editor.unfold', { selectionLines: [h.line - 1] });
           item.Result = `L${h.line}展開`;
           return;
         }
@@ -529,7 +529,7 @@ export function registerTextEditorActions(): void {
 
         const targets = childHeadings.filter(c => isLineFolded(editor, c.line));
         if (targets.length > 0) {
-          editor.trigger('tt', 'editor.unfold', { selectionLines: targets.map(t => t.line) });
+          editor.trigger('tt', 'editor.unfold', { selectionLines: targets.map(t => t.line - 1) });
           item.Result = `子${targets.length}件展開`;
         } else {
           item.Result = '子すべて展開済み';
@@ -575,7 +575,7 @@ export function registerTextEditorActions(): void {
 
         // ↓ 現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
         if (!isLineFolded(editor, h.line)) {
-          editor.trigger('tt', 'editor.fold', { selectionLines: [h.line] });
+          editor.trigger('tt', 'editor.fold', { selectionLines: [h.line - 1] });
           item.Result = `L${h.line}折畳`;
           return;
         }
@@ -598,7 +598,7 @@ export function registerTextEditorActions(): void {
 
         const targets = siblings.filter(s => !isLineFolded(editor, s.line));
         if (targets.length > 0) {
-          editor.trigger('tt', 'editor.fold', { selectionLines: targets.map(t => t.line) });
+          editor.trigger('tt', 'editor.fold', { selectionLines: targets.map(t => t.line - 1) });
           item.Result = `兄弟${targets.length}件折畳`;
         } else {
           item.Result = '兄弟すべて折畳済み';
