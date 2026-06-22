@@ -51,7 +51,14 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   useAppUpdate(status);
 
   const [mode,        setMode]        = useState<ToolMode>(() => TOOLBAR_TO_MODE[panel.ToolBarMode] ?? 'highlight');
-  const [text,        setText]        = useState(() => panel.HighlightWord);
+  const [text,        setText]        = useState(() => {
+    const initMode = TOOLBAR_TO_MODE[panel.ToolBarMode] ?? 'highlight';
+    if (initMode === 'highlight') return panel.HighlightWord;
+    if (initMode === 'command') return panel.CommandText || '';
+    if (initMode === 'translate') return panel.TranslateText || '';
+    if (initMode === 'reminder') return panel.ReminderText || '';
+    return '';
+  });
   const [authorState, setAuthorState] = useState<AuthorState>(() => panel.ToolBarMode === 'Copyright' ? 'static' : 'off');
   const [kaState,     setKaState]     = useState<KAState>(KA_INIT);
   const inputRef       = useRef<HTMLInputElement>(null);
@@ -76,7 +83,10 @@ export function ApplicationStatusBarArea({ panel }: Props) {
 
   useEffect(() => {
     if (mode === 'highlight') setText(panel.HighlightWord);
-  }, [panel.HighlightWord, mode]);
+    else if (mode === 'command') setText(panel.CommandText || '');
+    else if (mode === 'translate') setText(panel.TranslateText || '');
+    else if (mode === 'reminder') setText(panel.ReminderText || '');
+  }, [panel.HighlightWord, panel.CommandText, panel.TranslateText, panel.ReminderText, mode]);
 
   // ExMode: モディファイアキーがすべて離されたら自動クリア（常時監視）
   useEffect(() => {
@@ -190,7 +200,12 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   const handleModeSelect = useCallback((m: ToolMode) => {
     setMode(m);
     setAuthorState('off');
-    setText(m === 'highlight' ? panel.HighlightWord : '');
+    let t = '';
+    if (m === 'highlight') t = panel.HighlightWord;
+    else if (m === 'command') t = panel.CommandText || '';
+    else if (m === 'translate') t = panel.TranslateText || '';
+    else if (m === 'reminder') t = panel.ReminderText || '';
+    setText(t);
     inputRef.current?.focus();
     panel.ToolBarMode = MODE_TO_TOOLBAR[m] ?? 'Highlighter';
     panel.NotifyUpdated(false);
@@ -199,6 +214,9 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   const handleTextChange = useCallback((v: string) => {
     setText(v);
     if (mode === 'highlight') panel.SetHighlightWord(v);
+    else if (mode === 'command') panel.SetCommandText(v);
+    else if (mode === 'translate') panel.SetTranslateText(v);
+    else if (mode === 'reminder') panel.SetReminderText(v);
   }, [mode, panel]);
 
   const handleBlur = useCallback(() => {
@@ -216,6 +234,9 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   const handleClear = useCallback(() => {
     setText('');
     if (mode === 'highlight') panel.SetHighlightWord('');
+    else if (mode === 'command') panel.SetCommandText('');
+    else if (mode === 'translate') panel.SetTranslateText('');
+    else if (mode === 'reminder') panel.SetReminderText('');
   }, [mode, panel]);
 
   const current = MODES.find(m => m.id === mode)!;

@@ -15,31 +15,20 @@
 
 # Action
 
-## 完了：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
-　IDをTextEditor.CurrentFolding.Heading:OpenStepwiseに変更してください。
-
-
-　以下の手順を実装してください。
-　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
-　↓　現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
-
-## 完了：　260622　TextEditor.CurrentFolding.Heading:CloseStepwise
-　以下の手順を実装してください。
-　↓　現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
-　↓　現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
-　↓　現カーソルがあるHeading行がCloseである場合は、兄弟Heading行をすべて抽出し、親Heading行や孫Heading行が含まれないことを確認し、抽出した兄弟HeadingのすべてをCloseにして終了します
-　　　
 
 # Status
-## 完了：　260621　TextEditor.CurrentFolding.HeadingOffset
-　カーソル位置が属する見出し行の開始位置（先頭文字位置）
-　現在の実装は廃止します。
-　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その offsetを設定する
-## 完了：　260621　TextEditor.CurrentFolding.HeadingNumber
-　カーソル位置が属する見出し行の番号(例: 1.3.4)
-　現在の実装は廃止します。
-　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
-　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
+## 完了：　260622　ToolBar.HighlighterMode.Text
+　ToolBaeのHighlighterModeのTextboxの値を保持します。
+
+## 完了：　260622　ToolBar.CommandMode.Text
+　ToolBaeのCommandModeのTextboxの値を保持します。
+
+## 完了：　260622　ToolBar.TranslateMode.Text
+　ToolBaeのTranslateModeのTextboxの値を保持します。
+
+## 完了：　260622　ToolBar.ReminderMode.Text
+　ToolBaeのReminderModeのTextboxの値を保持します。
+
 
 ## 完了：　260613　TextEditor.Color.Background
 ## 完了：　260613　TextEditor.Color.Text
@@ -49,17 +38,37 @@
 
 
 # OK =================================================================================================================
-## 完了：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
+## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
+　以下の手順を実装してください。
+　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
+　↓　現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
+## Action：　260622　TextEditor.CurrentFolding.Heading:CloseStepwise
+　以下の手順を実装してください。
+　↓　現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
+　↓　現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
+　↓　現カーソルがあるHeading行がCloseである場合は、兄弟Heading行をすべて抽出し、親Heading行や孫Heading行が含まれないことを確認し、抽出した兄弟HeadingのすべてをCloseにして終了します
+　　　
+## Status：　260621　TextEditor.CurrentFolding.HeadingOffset
+　カーソル位置が属する見出し行の開始位置（先頭文字位置）
+　現在の実装は廃止します。
+　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その offsetを設定する
+## Status：　260621　TextEditor.CurrentFolding.HeadingNumber
+　カーソル位置が属する見出し行の番号(例: 1.3.4)
+　現在の実装は廃止します。
+　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
+　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
+
+## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
 　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
 　現カーソル位置がHeading行である場合：次の兄弟Heading行へ移動
 　兄弟Heading行とは、同じ親headingNumberをもつHeading行
-## 完了：　260621　TextEditor.CurrentFolding.Heading:SiblingBackward
+## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingBackward
 　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
 　現カーソル位置がHeading行である場合：前の兄弟Heading行へ移動
 　兄弟Heading行とは、同じ親headingNumberをもつHeading行
-## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
+## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
-## 完了：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
+## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 
 

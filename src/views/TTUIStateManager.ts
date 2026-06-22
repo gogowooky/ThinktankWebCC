@@ -314,6 +314,34 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.WorkoutPanel.StatusModeText,
     set: (app, v) => { app.WorkoutPanel.StatusModeText = v; },
   },
+  'ToolBar.HighlighterMode.Text': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: 'ハイライターの入力テキスト',
+    get: (app) => app.WorkoutPanel.HighlightWord || '',
+    set: (app, v) => { app.WorkoutPanel.HighlightWord = v; },
+  },
+  'ToolBar.CommandMode.Text': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: 'コマンドラインの入力テキスト',
+    get: (app) => app.WorkoutPanel.CommandText || '',
+    set: (app, v) => { app.WorkoutPanel.CommandText = v; },
+  },
+  'ToolBar.TranslateMode.Text': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: '翻訳の入力テキスト',
+    get: (app) => app.WorkoutPanel.TranslateText || '',
+    set: (app, v) => { app.WorkoutPanel.TranslateText = v; },
+  },
+  'ToolBar.ReminderMode.Text': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: 'リマインダーの入力テキスト',
+    get: (app) => app.WorkoutPanel.ReminderText || '',
+    set: (app, v) => { app.WorkoutPanel.ReminderText = v; },
+  },
 
   // ── Application ──────────────────────────────────────────────────────────
   'Application.FocusedPanel.Name': {

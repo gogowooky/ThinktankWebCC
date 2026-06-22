@@ -206,6 +206,15 @@ export class TTWorkoutPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
+  // ── コマンド・翻訳・リマインダーテキスト設定 ──────────────────────────────────────
+  public CommandText: string = '';
+  public TranslateText: string = '';
+  public ReminderText: string = '';
+
+  public SetCommandText(v: string) { this.CommandText = v; this.NotifyUpdated(); }
+  public SetTranslateText(v: string) { this.TranslateText = v; this.NotifyUpdated(); }
+  public SetReminderText(v: string) { this.ReminderText = v; this.NotifyUpdated(); }
+
   // ── TextEditor ヘルパーメソッド ─────────────────────────────────────────
   public SetTextEditorLineNumbersVisible(v: boolean) { this.TextEditor.LineNumbers.IsVisible = v; this.NotifyUpdated(); }
   public SetTextEditorWordWrapVisible(v: boolean) { this.TextEditor.WordWrap.IsVisible = v; this.NotifyUpdated(); }
