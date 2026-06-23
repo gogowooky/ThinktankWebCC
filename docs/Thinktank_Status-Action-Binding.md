@@ -22,7 +22,6 @@
 
 
 ## 
-
 1. システムで使用されているもの（使用中）
 エディタの各種配色、および各見出し階層（セクション）ごとのカラー設定は、状態管理マネージャー（
 
@@ -432,7 +431,6 @@ candidates:     ^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyri
 
 ## Status：　260614　ToolBar.StatusMode.Text
 
-
 　ToolBarがStatusモードのPanelには、EditBoxとTextBoxを配置し、PanelにフォーカスがあるときはEditBoxが、FocusがはずれるとTextBoxが表示されます。
 　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
@@ -448,5 +446,4 @@ candidates:     ^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyri
  　　- **exmode** (EXモード): 現在有効になっている一時的な拡張ショートカットモード（例: `Command`, `Highlight` など）。
  　　- **exmod** (EX修飾キー): 拡張モードのトリガーになっている修飾キー。
  　　- **action** (直前アクション): 直前に実行されたショートカットやコマンド等のアクション名（例: `L20へ移動`, `L5折畳` など）。
-
 

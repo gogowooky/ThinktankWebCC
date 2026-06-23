@@ -1,5 +1,5 @@
 
-# Name,                                 Color,            BgColor,          Attrs
+# StatusID                              Color,            BgColor,          Attrs
 Default.TextEditor.Text,                #1e1e1e,        #f5f5f5,        none
 Default.TextEditor.Selection,           undefined,        #cba8ff,        undefined
 Default.TextEditor.Occurrence,          undefined,        #fff0fd,        undefined
