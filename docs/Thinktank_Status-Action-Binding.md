@@ -160,7 +160,6 @@ candidates:     ^.*$
 ## Action：　260619　TextEditor.UnicodeHighlight.IsVisible:Toggle
 ## Action：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
 ## Status：　260613　TextEditor.LineNumbers.IsVisible
-
 description:    行番号表示
 key:            TextEditor.LineNumbers.IsVisible
 current:        false
@@ -176,7 +175,6 @@ default:        true
 type:           boolean
 candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.Minimap.IsVisible
-
 description:    ミニマップ表示
 key:            TextEditor.Minimap.IsVisible
 current:        false
@@ -184,7 +182,6 @@ default:        true
 type:           boolean
 candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.FullWidthSpace.IsVisible
-
 description:    全角スペース強調表示
 key:            TextEditor.FullWidthSpace.IsVisible
 current:        false
@@ -192,7 +189,6 @@ default:        false
 type:           boolean
 candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.UnicodeHighlight.IsVisible
-
 description:    Unicode文字強調表示
 key:            TextEditor.UnicodeHighlight.IsVisible
 current:        false
@@ -200,7 +196,6 @@ default:        false
 type:           boolean
 candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.BracketPairColorization.IsVisible
-
 description:    括弧の色分け
 key:            TextEditor.BracketPairColorization.IsVisible
 current:        true
@@ -211,38 +206,33 @@ candidates:     ^(true|false)$
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev
 ## Status：　260619　WorkoutPanel.FocusedPane.Mode
+description:    ワークアウトパネルの表示モード
+key:            WorkoutPanel.FocusedPane.Mode
+current:        Texteditor
+default:        Texteditor
+type:           string
+candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
+
 　Next/Prevを設定して変更される値は、すべての設定値ではなく、FocusedPaneに表示されているThinkファイル種別ごとに取り得る範囲が変わります。
 　今、Next/Prevでその範囲を超えて設定されてしまっていますので、修正してください。docs\260606_Thinktank仕様書\02_UI・画面レイアウト仕様.mdの## 6. ContentType と MediaType のマッピングを参照してください。
 
 　Q：設定値を記載してください。
 　A：現在フォーカスされているペイン（WorkoutArea）の表示モード（1文字目大文字）を取得・設定します。
-　　設定・変更可能な値は以下の7つです（循環切替に対応）。
-　　- `Workout` （概要設定）
+　　設定・変更可能な値は以下の6つです（循環切替に対応）。
 　　- `Texteditor` （テキストエディタ）
 　　- `Markdown` （マークダウンプレビュー）
 　　- `Datagrid` （データグリッド）
 　　- `Card` （カードビュー）
 　　- `Graph` （グラフビュー）
 　　- `Chat` （AIチャット）
-
+　　- `None` （フォーカスされているペインがない場合）
 
 ## Action：　260619　TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo
 
 ## Status：　260613　WorkoutPanel.Pane.Count
-## Status：　260613　WorkoutPanel.FocusedPane.ID
-## Status：　260613　WorkoutPanel.FocusedPane.MediaType
-　設定値の1文字目は大文字にしてください
 
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の7つです。
-　　- Workout （概要設定）
-　　- Texteditor （テキストエディタ）
-　　- Markdown （マークダウン）
-　　- Datagrid （データグリッド）
-　　- Card （カード）
-　　- Graph （グラフ）
-　　- None （フォーカスされているペインがない場合）
+## Status：　260613　WorkoutPanel.FocusedPane.ID
 
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
@@ -257,7 +247,6 @@ candidates:     ^(true|false)$
 ## Action：　260619　Application.FocusedPanel.Name:Next
 ## Action：　260619　Application.FocusedPanel.Name:Prev
 ## Status：　260615　Application.FocusedPanel.Name
-
 description:    フォーカスカラム
 key:            Application.FocusedPanel.Name
 current:        Overview
@@ -278,6 +267,13 @@ candidates:      ^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$
 ## Action：　260619　Application.Status.ExMode:ExApp
 ## Action：　260619　Application.Status.ExMode:ExOpt
 ## Status：　260619　Application.Status.ExMode
+description:    拡張モード
+key:            Application.Status.ExMode
+current:        None
+default:        None
+type:           string
+candidates:      ^(None|ExApp|ExOpt)$
+
 　Q：登録されていないでしょうか？
 　A：登録されていませんでしたので、Statusとして `TTUIStateManager` に追加登録（実装）しました。
 　　これにより、一時拡張ショートカットモード（`ExApp` / `ExOpt` 等）のステータス変化が UI状態管理システムを通じて正しく通知され、参照可能になりました。
@@ -288,6 +284,13 @@ candidates:      ^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$
 　　- `ExOpt` （オプション拡張モード）
 
 ## Status：　260615　Application.FocusedArea.Name
+description:    フォーカスエリア
+key:            Application.FocusedArea.Name
+current:        None
+default:        None
+type:           string
+candidates:      ^(None|Thinktank|Overview|WorkoutSetting|Workout|ReThink)\..*$
+
 　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
 　フォーカスされるものがある場合のみFOCUSされる
 
@@ -305,7 +308,6 @@ candidates:      ^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$
 ## Action：　260619　FocusedPanel.Mode.Name:Prev
 ## Action：　260619　FocusedPanel.Mode.Name:Next
 ## Status：　260619　ThinktankPanel.Area.IsOpen
-
 description:    左パネル表示
 key:            ThinktankPanel.Area.IsOpen
 current:        true
@@ -313,7 +315,6 @@ default:        true
 type:           boolean
 candidates:     ^(true|false)$
 ## Status：　260613　ThinktankPanel.Mode.Name
-
 description:    左パネルモード
 key:            ThinktankPanel.Mode.Name
 current:        Filter

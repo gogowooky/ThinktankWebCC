@@ -24,7 +24,7 @@
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
-import { parseTableContent, tableSectionToContent, updateTableContent } from '../utils/tableFormat';
+import { parseTableContent, tableSectionToContent, updateTableContent, TableSection } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
 import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
@@ -32,7 +32,7 @@ import { SECTION_STYLE_DEFAULTS, collectAreaIds } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
-import localStatusContent from '../../docs/DefaultStatus.md?raw';
+import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
 import { getHeadingAttributes } from './TTFocusedPanelActions';
 
@@ -67,7 +67,6 @@ export type ConfigKey =
   | 'Application.Status.ExMode'
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
-  | 'WorkoutPanel.FocusedPane.MediaType'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
   | 'WorkoutPanel.FocusedPane.Mode'
   | 'TextEditor.CurrentFolding.HeadingOffset'
@@ -524,17 +523,6 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.WorkoutPanel.FocusedAreaId ?? 'None',
     set: () => {},
   },
-  'WorkoutPanel.FocusedPane.MediaType': {
-    panel: 'WorkoutPanel',
-    default: 'None', type: 'string', candidates: '.*',
-    description: 'フォーカスがあるペインのメディアタイプ',
-    isConst: true,
-    get: (app) => {
-      const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
-      return capitalize(area?.MediaType ?? 'None');
-    },
-    set: () => {},
-  },
   'WorkoutPanel.FocusedPane.PaneNumber': {
     panel: 'WorkoutPanel',
     default: '0', type: 'string', candidates: '^[0-9]+$',
@@ -628,7 +616,7 @@ export class TTUIStateManager {
    */
   async ensureThinkExists(vault: TTVault): Promise<void> {
     if (USE_LOCAL_FILES) {
-      console.log('[TTUIStateManager] Loading initial UI state from local docs/DefaultStatus.md');
+      console.log('[TTUIStateManager] Loading initial UI state from local docs/Thinktank_Status-Action-Binding.md');
       this._applyContent(localStatusContent);
       return;
     }
@@ -834,8 +822,15 @@ export class TTUIStateManager {
         .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'Default.TextEditor.Occurrence.BgColor')
         .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'Default.TextEditor.Selection.BgColor')
         .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'Default.TextEditor.Occurrence.BgColor');
-      const sections = parseTableContent(content);
-      const section = sections[0];
+      let sections = parseTableContent(content);
+      let section = sections[0];
+
+      // CSVとしてパースできない場合（Markdown形式の場合）、Markdownとしてパースを試みる
+      if (!section || section.columns.length === 0) {
+        sections = [parseMarkdownStatus(content)];
+        section = sections[0];
+      }
+
       if (!section) return;
       const keyIdx = section.columns.findIndex(c => c === 'key');
       const curIdx = section.columns.findIndex(c => c === 'current');
@@ -1052,4 +1047,74 @@ export function focusSelector(selector: string, fallbackSelector?: string): void
       root.focus({ preventScroll: true });
     }
   }, 50);
+}
+
+/**
+ * Markdownから「## Status」で始まるセクションを抽出し、TableSection互換の構造に変換する
+ */
+export function parseMarkdownStatus(content: string): TableSection {
+  const lines = content.split('\n');
+  const items: Record<string, string>[] = [];
+  let currentItem: Record<string, string> | null = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // 「## Status」で始まる見出しで新規ブロックを開始
+    // 全角・半角コロンや、日付・IDなどが続くケースを考慮
+    if (/^##\s*Status\s*[:：]/i.test(trimmed)) {
+      if (currentItem && currentItem.key) {
+        items.push(currentItem);
+      }
+      currentItem = {};
+      continue;
+    }
+
+    // 別の見出し (## Action や ## 完了 など) が来たら現在のブロックを閉じる
+    if (trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
+      if (currentItem && currentItem.key) {
+        items.push(currentItem);
+      }
+      currentItem = null;
+      continue;
+    }
+
+    // ブロック内でのプロパティ (key: value) の抽出
+    if (currentItem) {
+      const match = trimmed.match(/^(description|key|current|default|type|candidates)\s*[:：]\s*(.*)$/i);
+      if (match) {
+        const propName = match[1].toLowerCase();
+        let propValue = match[2].trim();
+        
+        // クォーテーションで囲まれている場合は解除
+        if ((propValue.startsWith("'") && propValue.endsWith("'")) ||
+            (propValue.startsWith('"') && propValue.endsWith('"'))) {
+          propValue = propValue.slice(1, -1);
+        }
+        currentItem[propName] = propValue;
+      }
+    }
+  }
+
+  // 最後の要素をプッシュ
+  if (currentItem && currentItem.key) {
+    items.push(currentItem);
+  }
+
+  const columns = ['description', 'key', 'current', 'default', 'type', 'candidates'];
+  const rows = items.map(item => [
+    item.description || '',
+    item.key || '',
+    item.current || '',
+    item.default || '',
+    item.type || '',
+    item.candidates || ''
+  ]);
+
+  return {
+    title: 'UI Settings',
+    columns,
+    rows,
+    rawLines: []
+  };
 }
