@@ -17,8 +17,8 @@ TextEditor.UnicodeHighlight.IsVisible,false,false,boolean,^(true|false)$,Unicode
 TextEditor.BracketPairColorization.IsVisible,true,true,boolean,^(true|false)$,括弧ペア色分け
 Default.TextEditor.Text.BgColor,#f5f5f5,#f5f5f5,color,"^#[0-9a-fA-F]{6,8}$",背景色
 Default.TextEditor.Text.Color,#1e1e1e,#1e1e1e,color,"^#[0-9a-fA-F]{6,8}$",文字色
-Default.TextEditor.Text.Selection.BgColor,#cba8ff,#c6e6c6ff,color,"^#[0-9a-fA-F]{6,8}$",選択色
-Default.TextEditor.Text.Occurrence.BgColor,#fff0fd,#aac6aaff,color,"^#[0-9a-fA-F]{6,8}$",一致色
+Default.TextEditor.Selection.BgColor,#cba8ff,#c6e6c6ff,color,"^#[0-9a-fA-F]{6,8}$",選択色
+Default.TextEditor.Occurrence.BgColor,#fff0fd,#aac6aaff,color,"^#[0-9a-fA-F]{6,8}$",一致色
 TextEditor.Style.Section,TextEditor.SectionStyle.Preset1,TextEditor.SectionStyle.Preset1,string,^TextEditor\.SectionStyle\.Preset[1-5]$,セクションスタイル
 TextEditor.SectionStyle.Preset1,const,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]",json,.*,セクションスタイルプリセット1
 TextEditor.SectionStyle.Preset2,const,"[{""color"":""#569cd6"",""bold"":true,""underline"":false},{""color"":""#4ec9b0"",""bold"":true,""underline"":false},{""color"":""#ce9178"",""bold"":true,""underline"":false},{""color"":""#dcdcaa"",""bold"":true,""underline"":false},{""color"":""#c586c0"",""bold"":true,""underline"":false}]",json,.*,セクションスタイルプリセット2

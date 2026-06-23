@@ -57,8 +57,8 @@ export type ConfigKey =
   | 'TextEditor.BracketPairColorization.IsVisible'
   | 'Default.TextEditor.Text.BgColor'
   | 'Default.TextEditor.Text.Color'
-  | 'Default.TextEditor.Text.Selection.BgColor'
-  | 'Default.TextEditor.Text.Occurrence.BgColor'
+  | 'Default.TextEditor.Selection.BgColor'
+  | 'Default.TextEditor.Occurrence.BgColor'
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
@@ -268,14 +268,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.WorkoutPanel.TextEditor.Color.Text,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Text = v; },
   },
-  'Default.TextEditor.Text.Selection.BgColor': {
+  'Default.TextEditor.Selection.BgColor': {
     panel: 'WorkoutPanel',
     default: '#c6e6c6ff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
     description: '選択色',
     get: (app) => app.WorkoutPanel.TextEditor.Color.Selection,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Selection = v; },
   },
-  'Default.TextEditor.Text.Occurrence.BgColor': {
+  'Default.TextEditor.Occurrence.BgColor': {
     panel: 'WorkoutPanel',
     default: '#aac6aaff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
     description: '一致色',
@@ -830,8 +830,10 @@ export class TTUIStateManager {
         .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen')
         .replace(/\bTextEditor\.Color\.Background\b/g, 'Default.TextEditor.Text.BgColor')
         .replace(/\bTextEditor\.Color\.Text\b/g, 'Default.TextEditor.Text.Color')
-        .replace(/\bTextEditor\.Color\.Selection\b/g, 'Default.TextEditor.Text.Selection.BgColor')
-        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'Default.TextEditor.Text.Occurrence.BgColor');
+        .replace(/\bTextEditor\.Color\.Selection\b/g, 'Default.TextEditor.Selection.BgColor')
+        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'Default.TextEditor.Occurrence.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'Default.TextEditor.Selection.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'Default.TextEditor.Occurrence.BgColor');
       const sections = parseTableContent(content);
       const section = sections[0];
       if (!section) return;
@@ -898,8 +900,10 @@ export class TTUIStateManager {
         .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen')
         .replace(/\bTextEditor\.Color\.Background\b/g, 'Default.TextEditor.Text.BgColor')
         .replace(/\bTextEditor\.Color\.Text\b/g, 'Default.TextEditor.Text.Color')
-        .replace(/\bTextEditor\.Color\.Selection\b/g, 'Default.TextEditor.Text.Selection.BgColor')
-        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'Default.TextEditor.Text.Occurrence.BgColor');
+        .replace(/\bTextEditor\.Color\.Selection\b/g, 'Default.TextEditor.Selection.BgColor')
+        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'Default.TextEditor.Occurrence.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'Default.TextEditor.Selection.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'Default.TextEditor.Occurrence.BgColor');
       const updates: Record<string, Record<string, string>> = {};
       for (const [key, spec] of Object.entries(PROP_SPECS)) {
         if (!spec.isConst) {

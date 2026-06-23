@@ -17,19 +17,19 @@
 
 # Status
 
-## 修正：　260623　TextEditor.Color.Background
+## 完了：　260623　Default.TextEditor.Text.BgColor
 　IDをDefault.TextEditor.Text.BgColorに変更してください。
 
-## 修正：　260623　TextEditor.Color.Text
+## 完了：　260623　Default.TextEditor.Text.Color
 　IDをDefault.TextEditor.Text.Colorに変更してください。
 
-## 修正：　260623　TextEditor.Color.Selection
-　IDをDefault.TextEditor.Text.Selection.BgColorに変更してください。
+## 完了：　260623　Default.TextEditor.Selection.BgColor
+　IDをDefault.TextEditor.Selection.BgColorに変更してください。
 
-## 修正：　260623　TextEditor.Color.Occurrence
-　IDをDefault.TextEditor.Text.Occurrence.BgColorに変更してください。
+## 完了：　260623　Default.TextEditor.Occurrence.BgColor  
+　IDをDefault.TextEditor.Occurrence.BgColorに変更してください。
 
-## 完了：　260613　TextEditor.Style.Section
+## 完了：　260623　TextEditor.Style.Section
 
 
 ## 
