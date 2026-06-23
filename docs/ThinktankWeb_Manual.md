@@ -217,10 +217,10 @@ CSVをベースにした独自形式のデータです。
 | `TextEditor.FullWidthSpace.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでの全角スペース可視化の有効・無効 |
 | `TextEditor.UnicodeHighlight.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでのUnicode特殊文字強調の有効・無効 |
 | `TextEditor.BracketPairColorization.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `true` | エディタでの対応する括弧ペアの色分け表示 |
-| `Default.TextEditor.Text.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#f5f5f5` | エディタの背景色 |
-| `Default.TextEditor.Text.Color` | `WorkoutPanel` | `color` (HEXカラー) | `#1e1e1e` | エディタのフォント文字色 |
-| `Default.TextEditor.Selection.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#c6e6c6ff` | エディタのテキスト選択範囲の背景色 |
-| `Default.TextEditor.Occurrence.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#aac6aaff` | エディタで選択した語と同一の単語の強調色 |
+| `TextEditor.Text.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#f5f5f5` | エディタの背景色 |
+| `TextEditor.Text.Color` | `WorkoutPanel` | `color` (HEXカラー) | `#1e1e1e` | エディタのフォント文字色 |
+| `TextEditor.Selection.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#c6e6c6ff` | エディタのテキスト選択範囲の背景色 |
+| `TextEditor.Occurrence.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#aac6aaff` | エディタで選択した語と同一の単語の強調色 |
 | `TextEditor.Style.Section` | `WorkoutPanel` | `string` (Preset1〜5) | `Preset1` | セクション（見出し）の表示装飾スタイルの選択 |
 | `WorkoutPanel.Style.Highlight` | `WorkoutPanel` | `string` (Preset1〜5) | `Preset1` | ハイライトキーワードの表示装飾スタイルの選択 |
 | `WorkoutPanel.ToolBarMode` | `WorkoutPanel` | `string` (Status / Highlighter / KeyAction / Command / Translate / Reminder / Copyright) | `Copyright` | ワークアウトパネル下部ツールバーの表示コンテンツ切り替え |

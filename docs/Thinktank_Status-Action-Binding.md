@@ -17,7 +17,6 @@
 
 # Status
 
-
 ## 完了：　260623　TextEditor.Style.Section
 
 
@@ -47,63 +46,43 @@ JSON定義の中に {"backgroundColor":"#fff0b3","color":"#1a1a1a"} などの配
 
 
 # OK =================================================================================================================
-## Status：　260623　Default.TextEditor.Text.BgColor
+## 完了：　260624　TextEditor.Text.BgColor
+　ID Default.TextEditor.Text.BgColor を TextEditor.Text.BgColor に変更
+
 description:    エディタ背景色
-key:            Default.TextEditor.Text.BgColor
+key:            TextEditor.Text.BgColor
 current:        #f5f5f5
 default:        #f5f5f5
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260623　Default.TextEditor.Text.Color
+## 完了：　260624　TextEditor.Text.Color
+　ID Default.TextEditor.Text.Color を TextEditor.Text.Color に変更
+
 description:    エディタ文字色
-key:            Default.TextEditor.Text.Color
+key:            TextEditor.Text.Color
 current:        #1e1e1e
 default:        #1e1e1e
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260623　Default.TextEditor.Selection.BgColor
+## 完了：　260624　TextEditor.Selection.BgColor
+　ID Default.TextEditor.Selection.BgColor を TextEditor.Selection.BgColor に変更
+
 description:    エディタのテキスト選択範囲の背景色
-key:            Default.TextEditor.Selection.BgColor
+key:            TextEditor.Selection.BgColor
 current:        #cba8ff
 default:        #c6e6c6ff
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260623　Default.TextEditor.Occurrence.BgColor
+## 完了：　260624　TextEditor.Occurrence.BgColor
+　ID Default.TextEditor.Occurrence.BgColor を TextEditor.Occurrence.BgColor に変更
+
 description:    エディタで選択した語と同一の単語の強調色
-key:            Default.TextEditor.Occurrence.BgColor
+key:            TextEditor.Occurrence.BgColor
 current:        #fff0fd
 default:        #aac6aaff
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
 
-## Status：　260622　ToolBar.HighlighterMode.Text
-description:    ハイライター入力テキスト
-key:            ToolBar.HighlighterMode.Text
-current:        ''
-default:        ''
-type:           string
-candidates:     .*
-## Status：　260622　ToolBar.CommandMode.Text
-description:    コマンド入力テキスト
-key:            ToolBar.CommandMode.Text
-current:        ''
-default:        ''
-type:           string
-candidates:     .*
-## Status：　260622　ToolBar.TranslateMode.Text
-description:    翻訳入力テキスト
-key:            ToolBar.TranslateMode.Text
-current:        ''
-default:        ''
-type:           string
-candidates:     .*
-## Status：　260622　ToolBar.ReminderMode.Text
-description:    リマインダー入力テキスト
-key:            ToolBar.ReminderMode.Text
-current:        ''
-default:        ''
-type:           string
-candidates:     .*
 
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
 　以下の手順を実装してください。

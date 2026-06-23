@@ -55,10 +55,10 @@ export type ConfigKey =
   | 'TextEditor.FullWidthSpace.IsVisible'
   | 'TextEditor.UnicodeHighlight.IsVisible'
   | 'TextEditor.BracketPairColorization.IsVisible'
-  | 'Default.TextEditor.Text.BgColor'
-  | 'Default.TextEditor.Text.Color'
-  | 'Default.TextEditor.Selection.BgColor'
-  | 'Default.TextEditor.Occurrence.BgColor'
+  | 'TextEditor.Text.BgColor'
+  | 'TextEditor.Text.Color'
+  | 'TextEditor.Selection.BgColor'
+  | 'TextEditor.Occurrence.BgColor'
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
@@ -253,28 +253,28 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible),
     set: (app, v) => { app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible); },
   },
-  'Default.TextEditor.Text.BgColor': {
+  'TextEditor.Text.BgColor': {
     panel: 'WorkoutPanel',
     default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
     description: '背景色',
     get: (app) => app.WorkoutPanel.TextEditor.Color.Background,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Background = v; },
   },
-  'Default.TextEditor.Text.Color': {
+  'TextEditor.Text.Color': {
     panel: 'WorkoutPanel',
     default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
     description: '文字色',
     get: (app) => app.WorkoutPanel.TextEditor.Color.Text,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Text = v; },
   },
-  'Default.TextEditor.Selection.BgColor': {
+  'TextEditor.Selection.BgColor': {
     panel: 'WorkoutPanel',
     default: '#c6e6c6ff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
     description: '選択色',
     get: (app) => app.WorkoutPanel.TextEditor.Color.Selection,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Selection = v; },
   },
-  'Default.TextEditor.Occurrence.BgColor': {
+  'TextEditor.Occurrence.BgColor': {
     panel: 'WorkoutPanel',
     default: '#aac6aaff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
     description: '一致色',
@@ -816,12 +816,16 @@ export class TTUIStateManager {
         .replace(/\bWorkoutPanel\.IsAreaOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
         .replace(/\bReThinkPanel\.Mode\.IsOpen\b/g, 'ReThinkPanel.Area.IsOpen')
         .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen')
-        .replace(/\bTextEditor\.Color\.Background\b/g, 'Default.TextEditor.Text.BgColor')
-        .replace(/\bTextEditor\.Color\.Text\b/g, 'Default.TextEditor.Text.Color')
-        .replace(/\bTextEditor\.Color\.Selection\b/g, 'Default.TextEditor.Selection.BgColor')
-        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'Default.TextEditor.Occurrence.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'Default.TextEditor.Selection.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'Default.TextEditor.Occurrence.BgColor');
+        .replace(/\bTextEditor\.Color\.Background\b/g, 'TextEditor.Text.BgColor')
+        .replace(/\bTextEditor\.Color\.Text\b/g, 'TextEditor.Text.Color')
+        .replace(/\bTextEditor\.Color\.Selection\b/g, 'TextEditor.Selection.BgColor')
+        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'TextEditor.Occurrence.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.BgColor\b/g, 'TextEditor.Text.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
+        .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
+        .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor');
       let sections = parseTableContent(content);
       let section = sections[0];
 
@@ -893,12 +897,16 @@ export class TTUIStateManager {
         .replace(/\bWorkoutPanel\.IsAreaOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
         .replace(/\bReThinkPanel\.Mode\.IsOpen\b/g, 'ReThinkPanel.Area.IsOpen')
         .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen')
-        .replace(/\bTextEditor\.Color\.Background\b/g, 'Default.TextEditor.Text.BgColor')
-        .replace(/\bTextEditor\.Color\.Text\b/g, 'Default.TextEditor.Text.Color')
-        .replace(/\bTextEditor\.Color\.Selection\b/g, 'Default.TextEditor.Selection.BgColor')
-        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'Default.TextEditor.Occurrence.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'Default.TextEditor.Selection.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'Default.TextEditor.Occurrence.BgColor');
+        .replace(/\bTextEditor\.Color\.Background\b/g, 'TextEditor.Text.BgColor')
+        .replace(/\bTextEditor\.Color\.Text\b/g, 'TextEditor.Text.Color')
+        .replace(/\bTextEditor\.Color\.Selection\b/g, 'TextEditor.Selection.BgColor')
+        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'TextEditor.Occurrence.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.BgColor\b/g, 'TextEditor.Text.BgColor')
+        .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
+        .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
+        .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor');
       const updates: Record<string, Record<string, string>> = {};
       for (const [key, spec] of Object.entries(PROP_SPECS)) {
         if (!spec.isConst) {
