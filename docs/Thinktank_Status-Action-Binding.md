@@ -17,11 +17,46 @@
 
 # Status
 
-## 完了：　260613　TextEditor.Color.Background
-## 完了：　260613　TextEditor.Color.Text
-## 完了：　260613　TextEditor.Color.Selection
-## 完了：　260613　TextEditor.Color.Occurrence
+## 修正：　260623　TextEditor.Color.Background
+　IDをDefault.TextEditor.Text.BgColorに変更してください。
+
+## 修正：　260623　TextEditor.Color.Text
+　IDをDefault.TextEditor.Text.Colorに変更してください。
+
+## 修正：　260623　TextEditor.Color.Selection
+　IDをDefault.TextEditor.Text.Selection.BgColorに変更してください。
+
+## 修正：　260623　TextEditor.Color.Occurrence
+　IDをDefault.TextEditor.Text.Occurrence.BgColorに変更してください。
+
 ## 完了：　260613　TextEditor.Style.Section
+
+
+## 
+
+1. システムで使用されているもの（使用中）
+エディタの各種配色、および各見出し階層（セクション）ごとのカラー設定は、状態管理マネージャー（
+
+TTUIStateManager.ts
+）およびコンポーネント上で完全に機能しています。
+
+TextEditor.Color.Background（エディタ背景色）
+TextEditor.Color.Text（エディタ文字色）
+TextEditor.Color.Selection（テキスト選択範囲の背景色）
+TextEditor.Color.Occurrence（一致する単語の強調色）
+TextEditor.SectionStyle.Preset1 〜 Preset5（セクションスタイルプリセット）
+各JSON定義の中に "color": "#569cd6" のような階層ごとの配色データが指定されており、エディタ見出しのカラー表示に適用されています。
+2. 記述はあるが、システムで使用されていないもの（未使用）
+ワークアウトパネルのハイライト（キーワード強調）配色に関する以下の 6点 は、
+
+DefaultStatus.md
+ に記載がありますが、現在はプログラムで使用されていません。
+
+WorkoutPanel.Style.Highlight（ハイライトスタイル選択）
+WorkoutPanel.HighlightStyle.Preset1 〜 Preset5（ハイライト配色のプリセット）
+JSON定義の中に {"backgroundColor":"#fff0b3","color":"#1a1a1a"} などの配色データが定義されています。
+
+
 
 # OK =================================================================================================================
 ## Status：　260622　ToolBar.HighlighterMode.Text
