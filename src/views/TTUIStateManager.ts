@@ -12,13 +12,13 @@
  * キーごとの全情報（読み取り・書き込み・メタデータ）を PROP_SPECS に一元集約。
  * 新しいUI設定項目を追加する場合は PROP_SPECS にオブジェクトを1つ追加するだけでよい。
  *
- * 列構成: key, current, default, type, candidates, description
+ * 列構成: description, key, current, default, type, candidates
+ *   description:説明
  *   key:        変数名
  *   current:    現在値（編集→保存でUIに反映）
  *   default:    デフォルト値（参照用）
  *   type:       データ型 (boolean/string/color/json)
  *   candidates: 正規表現（値変更前の照合に使用）。特別な値: toggle, next, prev
- *   description:説明
  */
 
 import type { TTApplication } from './TTApplication';
@@ -32,7 +32,7 @@ import { SECTION_STYLE_DEFAULTS, collectAreaIds } from './TTWorkoutPanel';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
-import localStatusContent from '../../docs/Status.md?raw';
+import localStatusContent from '../../docs/DefaultStatus.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
 import { getHeadingAttributes } from './TTFocusedPanelActions';
 
@@ -628,7 +628,7 @@ export class TTUIStateManager {
    */
   async ensureThinkExists(vault: TTVault): Promise<void> {
     if (USE_LOCAL_FILES) {
-      console.log('[TTUIStateManager] Loading initial UI state from local docs/Status.md');
+      console.log('[TTUIStateManager] Loading initial UI state from local docs/DefaultStatus.md');
       this._applyContent(localStatusContent);
       return;
     }
@@ -916,15 +916,15 @@ export class TTUIStateManager {
       '# current列を編集 → Ctrl+S 保存でUIに反映 / 更新ボタンでUIからファイルに反映',
       '# Undo: Ctrl+Shift+Z  /  Redo: Ctrl+Shift+Y',
       '',
-      '> key,current,default,type,candidates,description',
+      '> description,key,current,default,type,candidates',
       ...props.map(p =>
         [
+          csvEscape(p.description),
           p.key,
           csvEscape(p.current),
           csvEscape(p.default),
           p.type,
           csvEscape(p.candidates),
-          csvEscape(p.description),
         ].join(',')
       ),
     ];

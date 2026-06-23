@@ -23,16 +23,35 @@
 ## 完了：　260613　TextEditor.Color.Occurrence
 ## 完了：　260613　TextEditor.Style.Section
 
-
 # OK =================================================================================================================
 ## Status：　260622　ToolBar.HighlighterMode.Text
-　ToolBaeのHighlighterModeのTextboxの値を保持します。
+description:    ハイライター入力テキスト
+key:            ToolBar.HighlighterMode.Text
+current:        ''
+default:        ''
+type:           string
+candidates:     .*
 ## Status：　260622　ToolBar.CommandMode.Text
-　ToolBaeのCommandModeのTextboxの値を保持します。
+description:    コマンド入力テキスト
+key:            ToolBar.CommandMode.Text
+current:        ''
+default:        ''
+type:           string
+candidates:     .*
 ## Status：　260622　ToolBar.TranslateMode.Text
-　ToolBaeのTranslateModeのTextboxの値を保持します。
+description:    翻訳入力テキスト
+key:            ToolBar.TranslateMode.Text
+current:        ''
+default:        ''
+type:           string
+candidates:     .*
 ## Status：　260622　ToolBar.ReminderMode.Text
-　ToolBaeのReminderModeのTextboxの値を保持します。
+description:    リマインダー入力テキスト
+key:            ToolBar.ReminderMode.Text
+current:        ''
+default:        ''
+type:           string
+candidates:     .*
 
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
 　以下の手順を実装してください。
@@ -43,13 +62,26 @@
 　↓　現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
 　↓　現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
 　↓　現カーソルがあるHeading行がCloseである場合は、兄弟Heading行をすべて抽出し、親Heading行や孫Heading行が含まれないことを確認し、抽出した兄弟HeadingのすべてをCloseにして終了します
-　　　
 ## Status：　260621　TextEditor.CurrentFolding.HeadingOffset
-　カーソル位置が属する見出し行の開始位置（先頭文字位置）
+
+description:    カーソル位置が属する見出し行の開始位置（先頭文字位置）
+key:            TextEditor.CurrentFolding.HeadingOffset
+current:        0
+default:        0
+type:           string
+candidates:     .*
+
 　現在の実装は廃止します。
 　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その offsetを設定する
 ## Status：　260621　TextEditor.CurrentFolding.HeadingNumber
-　カーソル位置が属する見出し行の番号(例: 1.3.4)
+
+description:    カーソル位置が属する見出し行の番号(例: 1.3.4)
+key:            TextEditor.CurrentFolding.HeadingNumber
+current:        None
+default:        None
+type:           string
+candidates:     ^.*$
+
 　現在の実装は廃止します。
 　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
 　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
@@ -76,11 +108,53 @@
 ## Action：　260619　TextEditor.UnicodeHighlight.IsVisible:Toggle
 ## Action：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
 ## Status：　260613　TextEditor.LineNumbers.IsVisible
+
+description:    行番号表示
+key:            TextEditor.LineNumbers.IsVisible
+current:        false
+default:        false
+type:           boolean
+candidates:     ^(true|false)$
+
 ## Status：　260613　TextEditor.WordWrap.IsVisible
+description:    折り返し
+key:            TextEditor.WordWrap.IsVisible
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.Minimap.IsVisible
+
+description:    ミニマップ表示
+key:            TextEditor.Minimap.IsVisible
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.FullWidthSpace.IsVisible
+
+description:    全角スペース強調表示
+key:            TextEditor.FullWidthSpace.IsVisible
+current:        false
+default:        false
+type:           boolean
+candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.UnicodeHighlight.IsVisible
+
+description:    Unicode文字強調表示
+key:            TextEditor.UnicodeHighlight.IsVisible
+current:        false
+default:        false
+type:           boolean
+candidates:     ^(true|false)$
 ## Status：　260613　TextEditor.BracketPairColorization.IsVisible
+
+description:    括弧の色分け
+key:            TextEditor.BracketPairColorization.IsVisible
+current:        true
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
 
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev
@@ -121,6 +195,7 @@
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
 ## Status：　260619　WorkoutPanel.FocusedPane.PaneNumber
+
 　Q：設定値を記載してください。
 　A：現在表示されているペインの中でフォーカスされているペインの番号（1始まり）を返します。
 　　設定される値は以下の通りです。
@@ -130,6 +205,14 @@
 ## Action：　260619　Application.FocusedPanel.Name:Next
 ## Action：　260619　Application.FocusedPanel.Name:Prev
 ## Status：　260615　Application.FocusedPanel.Name
+
+description:    フォーカスカラム
+key:            Application.FocusedPanel.Name
+current:        Overview
+default:        Thinktank
+type:           string
+candidates:      ^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$
+
 　Q：設定値を記載してください。
 　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
 　　- Thinktank （左パネル：フィルター / チャット / 設定）
@@ -170,8 +253,22 @@
 ## Action：　260619　FocusedPanel.Mode.Name:Prev
 ## Action：　260619　FocusedPanel.Mode.Name:Next
 ## Status：　260619　ThinktankPanel.Area.IsOpen
+
+description:    左パネル表示
+key:            ThinktankPanel.Area.IsOpen
+current:        true
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
 ## Status：　260613　ThinktankPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
+
+description:    左パネルモード
+key:            ThinktankPanel.Mode.Name
+current:        Filter
+default:        Filter
+type:           string
+candidates:     ^(Filter|Chat|Settings)$
+
 
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の3つです。
@@ -179,8 +276,22 @@
 　　- Chat （AI相談チャット）
 　　- Settings （設定）
 ## Status：　260619　OverviewPanel.Area.IsOpen
+
+description:    上部パネル表示
+key:            OverviewPanel.Area.IsOpen
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+
 ## Status：　260613　OverviewPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
+
+description:    上部パネルモード
+key:            OverviewPanel.Mode.Name
+current:        Datagrid
+default:        Datagrid
+type:           string
+candidates:     ^(Datagrid|Graph|Chat|Settings)$
 
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の4つです。
@@ -189,8 +300,24 @@
 　　- Chat （AIチャット）
 　　- Settings （設定）
 ## Status：　260619　WorkoutSettingPanel.Area.IsOpen
+
+description:    ワークアウト設定パネル表示
+key:            WorkoutSettingPanel.Area.IsOpen
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+
+
 ## Status：　260613　WorkoutSettingPanel.Mode.Name
-　設定値の1文字目は大文字にしてください{}
+
+description:    ワークアウト設定パネルモード
+key:            WorkoutSettingPanel.Mode.Name
+current:        Workout
+default:        Workout
+type:           string
+candidates:     ^(Workout|Texteditor|Markdown|Datagrid|Card|Graph)$
+
 
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の6つです。
@@ -201,8 +328,24 @@
 　　- Card （カードビュー）
 　　- Graph （グラフビュー）
 ## Status：　260619　ReThinkPanel.Area.IsOpen
+
+description:    右パネル表示
+key:            ReThinkPanel.Area.IsOpen
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+
+
 ## Status：　260613　ReThinkPanel.Mode.Name
-　設定値の1文字目は大文字にしてください
+
+description:    右パネルモード
+key:            ReThinkPanel.Mode.Name
+current:        Chat
+default:        Chat
+type:           string
+candidates:     ^(Chat|Settings)$
+
 
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の2つです。
@@ -216,6 +359,14 @@
 ## Action：　260616　ToolBar.Mode.Name:Prev
 　ToolBar.Mode.Nameの設定値を前の値にする。値は循環式。
 ## Status：　260613　ToolBar.Mode.Name
+
+description:    ToolBarのモード
+key:            ToolBar.Mode.Name
+current:        KeyAction
+default:        KeyAction
+type:           string
+candidates:     ^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$
+
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の7つです。
 　　- Status （ステータス）
@@ -227,7 +378,7 @@
 　　- Copyright （著作権・コピーライト情報）
 
 ## Status：　260614　ToolBar.StatusMode.Text
-　ToolBar.StatusのTextBoxには「StatusID1:[値1]」、「StatusID2:[値2]」...「StatusIDn:[値n]」というフォーマットで表示します。
+
 
 　ToolBarがStatusモードのPanelには、EditBoxとTextBoxを配置し、PanelにフォーカスがあるときはEditBoxが、FocusがはずれるとTextBoxが表示されます。
 　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
