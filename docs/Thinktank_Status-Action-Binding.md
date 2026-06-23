@@ -17,17 +17,6 @@
 
 # Status
 
-## 完了：　260623　Default.TextEditor.Text.BgColor
-　IDをDefault.TextEditor.Text.BgColorに変更してください。
-
-## 完了：　260623　Default.TextEditor.Text.Color
-　IDをDefault.TextEditor.Text.Colorに変更してください。
-
-## 完了：　260623　Default.TextEditor.Selection.BgColor
-　IDをDefault.TextEditor.Selection.BgColorに変更してください。
-
-## 完了：　260623　Default.TextEditor.Occurrence.BgColor  
-　IDをDefault.TextEditor.Occurrence.BgColorに変更してください。
 
 ## 完了：　260623　TextEditor.Style.Section
 
@@ -59,6 +48,35 @@ JSON定義の中に {"backgroundColor":"#fff0b3","color":"#1a1a1a"} などの配
 
 
 # OK =================================================================================================================
+## Status：　260623　Default.TextEditor.Text.BgColor
+description:    エディタ背景色
+key:            Default.TextEditor.Text.BgColor
+current:        #f5f5f5
+default:        #f5f5f5
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260623　Default.TextEditor.Text.Color
+description:    エディタ文字色
+key:            Default.TextEditor.Text.Color
+current:        #1e1e1e
+default:        #1e1e1e
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260623　Default.TextEditor.Selection.BgColor
+description:    エディタのテキスト選択範囲の背景色
+key:            Default.TextEditor.Selection.BgColor
+current:        #cba8ff
+default:        #c6e6c6ff
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260623　Default.TextEditor.Occurrence.BgColor
+description:    エディタで選択した語と同一の単語の強調色
+key:            Default.TextEditor.Occurrence.BgColor
+current:        #fff0fd
+default:        #aac6aaff
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
 ## Status：　260622　ToolBar.HighlighterMode.Text
 description:    ハイライター入力テキスト
 key:            ToolBar.HighlighterMode.Text
