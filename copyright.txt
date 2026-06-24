@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "afc4519",
-  "commitDateTime": "2026-06-24-122332",
-  "commitMessage": "docs: update TextEditor.Highlighter status in Thinktank_Status-Action-Binding.md"
+  "commitId": "321a065",
+  "commitDateTime": "2026-06-24-130147",
+  "commitMessage": "feat: implement Overview.Thought.Name and deprecate TextEditor.Style.Section"
 }

@@ -209,6 +209,7 @@ CSVをベースにした独自形式のデータです。
 | `ThinktankPanel.ViewMode` | `ThinktankPanel` | `string` (filter / chat / settings) | `filter` | 左パネルの表示モード |
 | `OverviewPanel.IsAreaOpen` | `OverviewPanel` | `boolean` (true / false) | `false` | 中央左パネル（OverviewPanel）の開閉状態 |
 | `OverviewPanel.ViewMode` | `OverviewPanel` | `string` (datagrid / graph / chat / settings) | `datagrid` | 中央左パネルの表示モード |
+| `Overview.Thought.Name` | `OverviewPanel` | `string` (任意のID) | `none` | OverviewパネルのthoughtファイルID |
 | `WorkoutPanel.IsAreaOpen` | `WorkoutPanel` | `boolean` (true / false) | `true` | 中央右パネル（WorkoutPanel）の開閉状態 |
 | `WorkoutPanel.ViewMode` | `WorkoutPanel` | `string` (workout / texteditor / markdown / datagrid / card / graph) | `workout` | 中央右パネルの表示モード |
 | `TextEditor.LineNumbers.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでの行番号の表示・非表示 |
@@ -221,7 +222,6 @@ CSVをベースにした独自形式のデータです。
 | `TextEditor.Text.Color` | `WorkoutPanel` | `color` (HEXカラー) | `#1e1e1e` | エディタのフォント文字色 |
 | `TextEditor.Selection.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#c6e6c6ff` | エディタのテキスト選択範囲の背景色 |
 | `TextEditor.Occurrence.BgColor` | `WorkoutPanel` | `color` (HEXカラー) | `#aac6aaff` | エディタで選択した語と同一の単語の強調色 |
-| `TextEditor.Style.Section` | `WorkoutPanel` | `string` (Preset1〜5) | `Preset1` | セクション（見出し）の表示装飾スタイルの選択 |
 | `WorkoutPanel.Style.Highlight` | `WorkoutPanel` | `string` (Preset1〜5) | `Preset1` | ハイライトキーワードの表示装飾スタイルの選択 |
 | `WorkoutPanel.ToolBarMode` | `WorkoutPanel` | `string` (Status / Highlighter / KeyAction / Command / Translate / Reminder / Copyright) | `Copyright` | ワークアウトパネル下部ツールバーの表示コンテンツ切り替え |
 | `WorkoutPanel.Highlight.KeyWord` | `WorkoutPanel` | `string` (正規表現対応) | `(空)` | エディタ内で強調表示する追加キーワード |

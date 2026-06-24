@@ -17,8 +17,18 @@
 
 # Status
 
-## 完了：　260623　TextEditor.Style.Section
+## Status：　260624　Overview.Thought.Name
+　Overviewパネルに設定された thoughtファイルの IDです。
 
+description:    OverviewパネルのthoughtファイルID
+key:            Overview.Thought.Name
+current:        none
+default:        none
+type:           string
+candidates:     .*
+
+## 完了：　260624　TextEditor.Style.Section
+　本IDは廃止されました。
 
 
 ## 
@@ -229,7 +239,7 @@ default:        undefined
 type:           string
 candidates:     .*
 
-## Status：　260624　TextEditor.Heading.Color
+## Status：　260624　TextEditor.Heading1.Color
 見出し行レベル１の文字色
 WorkoutSettingPanel>TextEditor設定>文字設定>セクション1 で変更した場合に反映される。
 

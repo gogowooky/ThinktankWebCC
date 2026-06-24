@@ -45,6 +45,7 @@ export type ConfigKey =
   | 'ThinktankPanel.Mode.Name'
   | 'OverviewPanel.Area.IsOpen'
   | 'OverviewPanel.Mode.Name'
+  | 'Overview.Thought.Name'
   | 'WorkoutSettingPanel.Area.IsOpen'
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
@@ -92,7 +93,6 @@ export type ConfigKey =
   | 'TextEditor.Highlighter6.Color'
   | 'TextEditor.Highlighter6.BgColor'
   | 'TextEditor.Highlighter6.Attrs'
-  | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
   | 'Application.FocusedPanel.Name'
@@ -226,6 +226,19 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => capitalize(app.OverviewPanel.ViewMode),
     set: (app, v) => { app.OverviewPanel.SetViewMode(v.toLowerCase() as OverviewViewMode); },
   },
+  'Overview.Thought.Name': {
+    panel: 'OverviewPanel',
+    default: 'none', type: 'string', candidates: '.*',
+    description: 'OverviewパネルのthoughtファイルID',
+    get: (app) => app.OverviewPanel.ThoughtID || 'none',
+    set: (app, v) => {
+      if (v === 'none') {
+        app.OverviewPanel.ClearThought();
+      } else {
+        app.OverviewPanel.OpenThought(v);
+      }
+    },
+  },
 
   // ── WorkoutPanel ─────────────────────────────────────────────────────
   'WorkoutSettingPanel.Area.IsOpen': {
@@ -314,25 +327,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.WorkoutPanel.TextEditor.Color.Occurrence,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Occurrence = v; },
   },
-  'TextEditor.Style.Section': {
-    panel: 'WorkoutPanel',
-    default: 'TextEditor.SectionStyle.Preset1', type: 'string',
-    candidates: '^TextEditor\\.SectionStyle\\.Preset[1-5]$',
-    description: 'セクションスタイル',
-    get: (app) => app.WorkoutPanel.TextEditor.SectionStyleKey,
-    set: (app, v) => {
-      app.WorkoutPanel.TextEditor.SectionStyleKey = v;
-      const preset = app.WorkoutPanel.TextEditor.SectionPresets[v];
-      if (preset) {
-        app.WorkoutPanel.TextEditor.HeadingStyles = [...preset];
-        for (let level = 1; level <= 5; level++) {
-          TTUIStateManager.instance.notifyPropertyChanged(`TextEditor.Heading${level}.Color`);
-          TTUIStateManager.instance.notifyPropertyChanged(`TextEditor.Heading${level}.BgColor`);
-          TTUIStateManager.instance.notifyPropertyChanged(`TextEditor.Heading${level}.Attrs`);
-        }
-      }
-    },
-  },
+
   ...Object.fromEntries(
     [1, 2, 3, 4, 5].flatMap(level => {
       const idx = level - 1;
