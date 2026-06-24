@@ -461,31 +461,67 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 
               {isHighlightColorOpen && (
                 <div className="workout-setting-area__section-content">
-                  {[1, 2, 3, 4, 5].map(group => {
-                    const style = panel.TextEditor.HighlightStyles[group - 1];
-                    const fw = ['１', '２', '３', '４', '５'][group - 1];
+                  {[1, 2, 3, 4, 5, 6].map(group => {
+                    const style = panel.TextEditor.HighlightStyles[group - 1] || { backgroundColor: '#ffffff', color: 'undefined', bold: false, underline: false };
+                    const fw = ['１', '２', '３', '４', '５', '６'][group - 1];
+                    const hasBg = style.backgroundColor !== undefined && style.backgroundColor !== 'undefined';
+                    const hasFg = style.color !== undefined && style.color !== 'undefined';
                     return (
-                      <div key={group} className="workout-setting-area__color-row">
-                        <span className="workout-setting-area__color-label">グループ{fw}</span>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>背景</span>
-                          <input
-                            type="color"
-                            className="workout-setting-area__color-picker"
-                            value={style.backgroundColor}
-                            onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
-                            data-tip={`グループ${fw}の背景色`}
-                            data-tip-side="left"
-                          />
-                          <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', marginLeft: '4px' }}>文字</span>
-                          <input
-                            type="color"
-                            className="workout-setting-area__color-picker"
-                            value={style.color}
-                            onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { color: e.target.value })}
-                            data-tip={`グループ${fw}の文字色`}
-                            data-tip-side="left"
-                          />
+                      <div key={group} className="workout-setting-area__color-row" style={{ flexWrap: 'wrap', gap: '4px' }}>
+                        <span className="workout-setting-area__color-label" style={{ minWidth: '50px' }}>グループ{fw}</span>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          <label className="workout-setting-area__small-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={hasBg}
+                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { backgroundColor: e.target.checked ? '#ffffff' : 'undefined' })}
+                            />
+                            BG
+                          </label>
+                          {hasBg && (
+                            <input
+                              type="color"
+                              className="workout-setting-area__color-picker"
+                              value={style.backgroundColor.slice(0, 7)}
+                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
+                              data-tip={`グループ${fw}の背景色`}
+                            />
+                          )}
+                          
+                          <label className="workout-setting-area__small-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={hasFg}
+                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { color: e.target.checked ? '#000000' : 'undefined' })}
+                            />
+                            FG
+                          </label>
+                          {hasFg && (
+                            <input
+                              type="color"
+                              className="workout-setting-area__color-picker"
+                              value={style.color.slice(0, 7)}
+                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { color: e.target.value })}
+                              data-tip={`グループ${fw}の文字色`}
+                            />
+                          )}
+
+                          <label className="workout-setting-area__small-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={style.bold ?? false}
+                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { bold: e.target.checked })}
+                            />
+                            B
+                          </label>
+                          <label className="workout-setting-area__small-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={style.underline ?? false}
+                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { underline: e.target.checked })}
+                            />
+                            U
+                          </label>
                         </div>
                       </div>
                     );

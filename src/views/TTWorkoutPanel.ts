@@ -21,14 +21,15 @@ export const SECTION_STYLE_DEFAULTS: SectionStyle[] = [
   { color: '#c586c0', bold: true, underline: false },
 ];
 
-export type HighlightStyle = { backgroundColor: string; color: string };
+export type HighlightStyle = { backgroundColor: string; color: string; bold?: boolean; underline?: boolean };
 
 export const HIGHLIGHT_STYLE_DEFAULTS: HighlightStyle[] = [
-  { backgroundColor: '#fff0b3', color: '#1a1a1a' },
-  { backgroundColor: '#ffb3b3', color: '#1a1a1a' },
-  { backgroundColor: '#b3e0ff', color: '#1a1a1a' },
-  { backgroundColor: '#b3ffb3', color: '#1a1a1a' },
-  { backgroundColor: '#e6b3ff', color: '#1a1a1a' },
+  { backgroundColor: '#fff0b3', color: 'undefined', bold: false, underline: false },
+  { backgroundColor: '#ffb3b3', color: 'undefined', bold: false, underline: false },
+  { backgroundColor: '#b3e0ff', color: 'undefined', bold: false, underline: false },
+  { backgroundColor: '#b3ffb3', color: 'undefined', bold: false, underline: false },
+  { backgroundColor: '#e6b3ff', color: 'undefined', bold: false, underline: false },
+  { backgroundColor: '#e620ff', color: 'undefined', bold: false, underline: false },
 ];
 
 export class TextEditorSettings {
@@ -232,8 +233,8 @@ export class TTWorkoutPanel extends TTUIItem {
     this.TextEditor.HeadingStyles = this.TextEditor.HeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);
     this.NotifyUpdated();
   }
-  public SetTextEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string }>) {
-    if (groupIndex >= 0 && groupIndex <= 4) {
+  public SetTextEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string; bold: boolean; underline: boolean }>) {
+    if (groupIndex >= 0 && groupIndex <= 5) {
       this.TextEditor.HighlightStyles = this.TextEditor.HighlightStyles.map((s, i) => i === groupIndex ? { ...s, ...style } : s);
       this.NotifyUpdated();
     }

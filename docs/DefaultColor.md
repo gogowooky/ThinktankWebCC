@@ -11,16 +11,16 @@ Default.TextEditor.Highlighter4,        undefined,        #b3ffb3,        undefi
 Default.TextEditor.Highlighter5,        undefined,        #e6b3ff,        undefined
 Default.TextEditor.Highlighter6,        undefined,        #e620ff,        undefined
 
-Default.TextEditor.Underline,           undefined,        undefined,        underline
-Default.TextEditor.Italic,              undefined,        undefined,        italic
-Default.TextEditor.Strikethrough,       undefined,        undefined,        strikethrough
-Default.TextEditor.Bold,                undefined,        undefined,        bold
-
 Default.TextEditor.Heading1,            #569cd6,        undefined,        bold|underline
 Default.TextEditor.Heading2,            #4ec9b0,        undefined,        bold|underline
 Default.TextEditor.Heading3,            #ce9178,        undefined,        bold|underline
 Default.TextEditor.Heading4,            #dcdcaa,        undefined,        bold|underline
 Default.TextEditor.Heading5,            #c586c0,        undefined,        bold|underline
 Default.TextEditor.Heading6,            #569cd6,        undefined,        bold|underline
+
+Default.TextEditor.Underline,           undefined,        undefined,        underline
+Default.TextEditor.Italic,              undefined,        undefined,        italic
+Default.TextEditor.Strikethrough,       undefined,        undefined,        strikethrough
+Default.TextEditor.Bold,                undefined,        undefined,        bold
 
 

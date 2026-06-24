@@ -303,11 +303,15 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       document.head.appendChild(highlightStyleEl);
     }
     const highlightStylesCss = editorSettings.highlightStyles.map((style, index) => {
+      const hasBg = style.backgroundColor && style.backgroundColor !== 'undefined';
+      const hasFg = style.color && style.color !== 'undefined';
       return `.custom-highlight-g${index + 1} {
-  background-color: ${style.backgroundColor};
-  color: ${style.color} !important;
-  border-radius: 2px;
-}`;
+        ${hasBg ? `background-color: ${style.backgroundColor};` : ''}
+        ${hasFg ? `color: ${style.color} !important;` : ''}
+        ${style.bold ? 'font-weight: bold !important;' : ''}
+        ${style.underline ? 'text-decoration: underline !important;' : ''}
+        border-radius: 2px;
+      }`;
     }).join('\n');
     highlightStyleEl.textContent = highlightStylesCss;
 

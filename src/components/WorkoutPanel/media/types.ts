@@ -31,7 +31,7 @@ export interface MediaProps {
     unicodeHighlight: boolean;
     bracketPairColorization: boolean;
     highlightWord: string;
-    highlightStyles: { backgroundColor: string; color: string }[];
+    highlightStyles: { backgroundColor: string; color: string; bold?: boolean; underline?: boolean }[];
     background: string;
     foreground: string;
     selectionBackground: string;
