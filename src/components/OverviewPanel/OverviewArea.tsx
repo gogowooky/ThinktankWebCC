@@ -104,7 +104,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       setThinksInThought(newThinks);
       vault.NotifyUpdated();
     });
-  }, [panel.ThoughtID, vault, refreshKey]);
+  }, [panel.ThoughtID, vault, refreshKey, vault.IsLoaded, vault.Count]);
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 

@@ -20,6 +20,7 @@
 ## 完了：　260624　Overview.Thought.Name
 　本StatusIDの中身
 　Overviewパネルに設定された thoughtファイルの IDです。
+　※ 起動時のロードおよびD&Dドロップ時の即時反映対応完了。
 
 description:    OverviewパネルのthoughtファイルID
 key:            Overview.Thought.Name
