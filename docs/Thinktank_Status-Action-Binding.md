@@ -17,7 +17,9 @@
 
 # Status
 
-## 完了：　260624　Overview.Thought.Name
+
+# OK =================================================================================================================
+## Status：　260624　Overview.Thought.Name
 　本StatusIDの中身
 　Overviewパネルに設定された thoughtファイルの IDです。
 　※ 起動時のロードおよびD&Dドロップ時の即時反映対応完了。
@@ -29,37 +31,6 @@ default:        none
 type:           string
 candidates:     .*
 
-## 完了：　260624　TextEditor.Style.Section
-　本IDは廃止されました。
-
-
-## 
-
-1. システムで使用されているもの（使用中）
-エディタの各種配色、および各見出し階層（セクション）ごとのカラー設定は、状態管理マネージャー（
-
-TTUIStateManager.ts
-）およびコンポーネント上で完全に機能しています。
-
-TextEditor.Color.Background（エディタ背景色）
-TextEditor.Color.Text（エディタ文字色）
-TextEditor.Color.Selection（テキスト選択範囲の背景色）
-TextEditor.Color.Occurrence（一致する単語の強調色）
-TextEditor.SectionStyle.Preset1 〜 Preset5（セクションスタイルプリセット）
-各JSON定義の中に "color": "#569cd6" のような階層ごとの配色データが指定されており、エディタ見出しのカラー表示に適用されています。
-2. 記述はあるが、システムで使用されていないもの（未使用）
-ワークアウトパネルのハイライト（キーワード強調）配色に関する以下の 6点 は、
-
-DefaultStatus.md
- に記載がありますが、現在はプログラムで使用されていません。
-
-WorkoutPanel.Style.Highlight（ハイライトスタイル選択）
-WorkoutPanel.HighlightStyle.Preset1 〜 Preset5（ハイライト配色のプリセット）
-JSON定義の中に {"backgroundColor":"#fff0b3","color":"#1a1a1a"} などの配色データが定義されています。
-
-
-
-# OK =================================================================================================================
 ## Status：　260624　TextEditor.Highlighter1.Color
 ハイライト1の文字色
 WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ1＞文字 で変更した場合に反映される。
