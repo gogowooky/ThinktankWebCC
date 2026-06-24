@@ -50,6 +50,16 @@ export type ConfigKey =
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
   | 'ReThinkPanel.Mode.Name'
+  | 'Thinktank.Ribbon.BgColor'
+  | 'Thinktank.Area.BgColor'
+  | 'Overview.Ribbon.BgColor'
+  | 'Overview.Area.BgColor'
+  | 'Workout.Ribbon.BgColor'
+  | 'Workout.Area.BgColor'
+  | 'ReThink.Ribbon.BgColor'
+  | 'ReThink.Area.BgColor'
+  | 'ToolBar.BgColor'
+  | 'ToolBar.Color'
   | 'TextEditor.LineNumbers.IsVisible'
   | 'TextEditor.WordWrap.IsVisible'
   | 'TextEditor.Minimap.IsVisible'
@@ -498,6 +508,78 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '右パネル表示モード',
     get: (app) => capitalize(app.ReThinkPanel.ViewMode),
     set: (app, v) => { app.ReThinkPanel.SetViewMode(v.toLowerCase() as ReThinkViewMode); },
+  },
+
+  // ── Theme Panel & ToolBar Colors ──────────────────────────────────────────
+  'Thinktank.Ribbon.BgColor': {
+    panel: 'ThinktankPanel',
+    default: '#1d618f', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'Thinktank（左）パネルのリボン背景色',
+    get: () => getCssVariable('--thinktank-ribbon-bg', '#1d618f'),
+    set: (_app, v) => setCssVariable('--thinktank-ribbon-bg', v),
+  },
+  'Thinktank.Area.BgColor': {
+    panel: 'ThinktankPanel',
+    default: '#edf2f6', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'Thinktank（左）パネルのメインエリア背景色',
+    get: () => getCssVariable('--thinktank-area-bg', '#edf2f6'),
+    set: (_app, v) => setCssVariable('--thinktank-area-bg', v),
+  },
+  'Overview.Ribbon.BgColor': {
+    panel: 'OverviewPanel',
+    default: '#873960', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'Overview（上）パネルのリボン背景色',
+    get: () => getCssVariable('--overview-ribbon-bg', '#873960'),
+    set: (_app, v) => setCssVariable('--overview-ribbon-bg', v),
+  },
+  'Overview.Area.BgColor': {
+    panel: 'OverviewPanel',
+    default: '#f8f3f5', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'Overview（上）パネルのメインエリア背景色',
+    get: () => getCssVariable('--overview-area-bg', '#f8f3f5'),
+    set: (_app, v) => setCssVariable('--overview-area-bg', v),
+  },
+  'Workout.Ribbon.BgColor': {
+    panel: 'WorkoutPanel',
+    default: '#382830', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'Workout（中）パネルのリボン背景色',
+    get: () => getCssVariable('--workout-ribbon-bg', '#382830'),
+    set: (_app, v) => setCssVariable('--workout-ribbon-bg', v),
+  },
+  'Workout.Area.BgColor': {
+    panel: 'WorkoutPanel',
+    default: '#e3e1e2', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'Workout（中）パネルのメインエリア背景色',
+    get: () => getCssVariable('--workout-area-bg', '#e3e1e2'),
+    set: (_app, v) => setCssVariable('--workout-area-bg', v),
+  },
+  'ReThink.Ribbon.BgColor': {
+    panel: 'ReThinkPanel',
+    default: '#324f46', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'ReThink（右）パネルのリボン背景色',
+    get: () => getCssVariable('--rethink-ribbon-bg', '#324f46'),
+    set: (_app, v) => setCssVariable('--rethink-ribbon-bg', v),
+  },
+  'ReThink.Area.BgColor': {
+    panel: 'ReThinkPanel',
+    default: '#eff1f0', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'ReThink（右）パネルのメインエリア背景色',
+    get: () => getCssVariable('--rethink-area-bg', '#eff1f0'),
+    set: (_app, v) => setCssVariable('--rethink-area-bg', v),
+  },
+  'ToolBar.BgColor': {
+    panel: 'WorkoutPanel',
+    default: '#2d2d2d', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'ツールバー（ステータスバー）の背景色',
+    get: () => getCssVariable('--toolbar-bg', '#2d2d2d'),
+    set: (_app, v) => setCssVariable('--toolbar-bg', v),
+  },
+  'ToolBar.Color': {
+    panel: 'WorkoutPanel',
+    default: '#ffffff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+    description: 'ツールバー（ステータスバー）の文字色',
+    get: () => getCssVariable('--toolbar-color', '#ffffff'),
+    set: (_app, v) => setCssVariable('--toolbar-color', v),
   },
 
   // ── KeyboardFocus & Pane Info ──────────────────────────────────────────────
@@ -1239,4 +1321,15 @@ export function parseMarkdownStatus(content: string): TableSection {
     rows,
     rawLines: []
   };
+}
+
+function getCssVariable(name: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  const val = document.documentElement.style.getPropertyValue(name);
+  return val ? val.trim() : fallback;
+}
+
+function setCssVariable(name: string, value: string): void {
+  if (typeof document === 'undefined') return;
+  document.documentElement.style.setProperty(name, value);
 }

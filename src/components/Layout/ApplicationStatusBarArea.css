@@ -5,7 +5,8 @@
   align-items: center;
   height: 28px;
   flex-shrink: 0;
-  background: var(--workout-ribbon-bg, #2d2d2d);
+  background: var(--toolbar-bg, var(--workout-ribbon-bg, #2d2d2d));
+  color: var(--toolbar-color, rgba(255, 255, 255, 0.85));
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0 4px;
   gap: 2px;
@@ -21,7 +22,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 50%, transparent);
   flex-shrink: 0;
   cursor: default;
 }
@@ -29,7 +30,7 @@
 .ApplicationStatusBarArea__indicator-divider {
   width: 1px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 15%, transparent);
   flex-shrink: 0;
   margin-right: 4px;
 }
@@ -41,14 +42,14 @@
   padding: 0 6px;
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--toolbar-color, rgba(255, 255, 255, 0.9));
   font-size: 11px;
   outline: none;
   min-width: 0;
 }
 
 .ApplicationStatusBarArea__input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 30%, transparent);
 }
 
 .ApplicationStatusBarArea__input:focus {
@@ -63,14 +64,14 @@
   width: 18px;
   height: 18px;
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.45);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 45%, transparent);
   flex-shrink: 0;
   transition: background 100ms ease, color 100ms ease;
 }
 
 .ApplicationStatusBarArea__clear-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 12%, transparent);
+  color: var(--toolbar-color, #fff);
 }
 
 /* ── モードアイコン群 ── */
@@ -89,18 +90,18 @@
   width: 22px;
   height: 22px;
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.45);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 45%, transparent);
   transition: background 100ms ease, color 100ms ease;
 }
 
 .ApplicationStatusBarArea__mode-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 12%, transparent);
+  color: var(--toolbar-color, #fff);
 }
 
 .ApplicationStatusBarArea__mode-btn--active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 18%, transparent);
+  color: var(--toolbar-color, #fff);
 }
 
 /* ── ユーティリティボタン群 ── */
@@ -119,18 +120,18 @@
   width: 22px;
   height: 22px;
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.45);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 45%, transparent);
   transition: background 100ms ease, color 100ms ease;
 }
 
 .ApplicationStatusBarArea__util-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 12%, transparent);
+  color: var(--toolbar-color, #fff);
 }
 
 .ApplicationStatusBarArea__util-btn--active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 18%, transparent);
+  color: var(--toolbar-color, #fff);
 }
 
 /* ── KeyAction イベントモニター ── */
@@ -153,7 +154,7 @@
 
 .ApplicationStatusBarArea__ka-label {
   font-size: 9px;
-  color: rgba(255, 255, 255, 0.35);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 35%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   user-select: none;
@@ -162,8 +163,8 @@
 .ApplicationStatusBarArea__ka-value {
   font-size: 11px;
   font-family: monospace;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.08);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 85%, transparent);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 8%, transparent);
   border-radius: 3px;
   padding: 0 4px;
   min-width: 16px;
@@ -172,7 +173,7 @@
 }
 
 .ApplicationStatusBarArea__ka-sep {
-  color: rgba(255, 255, 255, 0.2);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 20%, transparent);
   font-size: 10px;
   flex-shrink: 0;
 }
@@ -180,7 +181,7 @@
 .ApplicationStatusBarArea__ka-divider {
   width: 1px;
   height: 14px;
-  background: rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 15%, transparent);
   flex-shrink: 0;
   margin: 0 4px;
 }
@@ -218,7 +219,7 @@
 
 .ApplicationStatusBarArea__author-banner-text {
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.75);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 75%, transparent);
   font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -240,10 +241,10 @@
   width: 100%;
   height: 20px;
   padding: 0 6px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--toolbar-color, #fff) 15%, transparent);
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--toolbar-color, rgba(255, 255, 255, 0.9));
   font-size: 11px;
   outline: none;
 }
@@ -251,7 +252,7 @@
 .ApplicationStatusBarArea__status-text {
   font-size: 11px;
   font-family: monospace;
-  color: rgba(255, 255, 255, 0.85);
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 85%, transparent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

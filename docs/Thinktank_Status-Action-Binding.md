@@ -18,108 +18,6 @@
 # Status
 
 # Application ========================================================================================================
-# OK =================================================================================================================
-## Status：　260624　Overview.Thought.Name
-　本StatusIDの中身
-　Overviewパネルに設定された thoughtファイルの IDです。
-　※ 起動時のロードおよびD&Dドロップ時の即時反映対応完了。
-
-description:    OverviewパネルのthoughtファイルID
-key:            Overview.Thought.Name
-current:        none
-default:        none
-type:           string
-candidates:     .*
-
-## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
-　以下の手順を実装してください。
-　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
-　↓　現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
-## Action：　260622　TextEditor.CurrentFolding.Heading:CloseStepwise
-　以下の手順を実装してください。
-　↓　現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
-　↓　現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
-　↓　現カーソルがあるHeading行がCloseである場合は、兄弟Heading行をすべて抽出し、親Heading行や孫Heading行が含まれないことを確認し、抽出した兄弟HeadingのすべてをCloseにして終了します
-## Status：　260621　TextEditor.CurrentFolding.HeadingOffset
-
-description:    カーソル位置が属する見出し行の開始位置（先頭文字位置）
-key:            TextEditor.CurrentFolding.HeadingOffset
-current:        0
-default:        0
-type:           string
-candidates:     .*
-
-　現在の実装は廃止します。
-　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その offsetを設定する
-## Status：　260621　TextEditor.CurrentFolding.HeadingNumber
-
-description:    カーソル位置が属する見出し行の番号(例: 1.3.4)
-key:            TextEditor.CurrentFolding.HeadingNumber
-current:        None
-default:        None
-type:           string
-candidates:     ^.*$
-
-　現在の実装は廃止します。
-　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
-　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
-
-## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
-　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
-　現カーソル位置がHeading行である場合：次の兄弟Heading行へ移動
-　兄弟Heading行とは、同じ親headingNumberをもつHeading行
-## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingBackward
-　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
-　現カーソル位置がHeading行である場合：前の兄弟Heading行へ移動
-　兄弟Heading行とは、同じ親headingNumberをもつHeading行
-## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
-　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
-## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
-　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
-
-
-
-## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
-## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev
-## Status：　260619　WorkoutPanel.FocusedPane.Mode
-description:    ワークアウトパネルの表示モード
-key:            WorkoutPanel.FocusedPane.Mode
-current:        Texteditor
-default:        Texteditor
-type:           string
-candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
-
-　Next/Prevを設定して変更される値は、すべての設定値ではなく、FocusedPaneに表示されているThinkファイル種別ごとに取り得る範囲が変わります。
-　今、Next/Prevでその範囲を超えて設定されてしまっていますので、修正してください。docs\260606_Thinktank仕様書\02_UI・画面レイアウト仕様.mdの## 6. ContentType と MediaType のマッピングを参照してください。
-
-　Q：設定値を記載してください。
-　A：現在フォーカスされているペイン（WorkoutArea）の表示モード（1文字目大文字）を取得・設定します。
-　　設定・変更可能な値は以下の6つです（循環切替に対応）。
-　　- `Texteditor` （テキストエディタ）
-　　- `Markdown` （マークダウンプレビュー）
-　　- `Datagrid` （データグリッド）
-　　- `Card` （カードビュー）
-　　- `Graph` （グラフビュー）
-　　- `Chat` （AIチャット）
-　　- `None` （フォーカスされているペインがない場合）
-
-## Action：　260619　TextEditor.EditText.Undo
-## Action：　260619　TextEditor.EditText.Redo
-
-## Status：　260613　WorkoutPanel.Pane.Count
-
-## Status：　260613　WorkoutPanel.FocusedPane.ID
-
-## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
-## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
-## Status：　260619　WorkoutPanel.FocusedPane.PaneNumber
-
-　Q：設定値を記載してください。
-　A：現在表示されているペインの中でフォーカスされているペインの番号（1始まり）を返します。
-　　設定される値は以下の通りです。
-　　- `1`〜`6` （表示されているペインの配置順）
-　　- `0` （フォーカスされているペインがない場合）
-
 ## Action：　260619　Application.FocusedPanel.Name:Next
 ## Action：　260619　Application.FocusedPanel.Name:Prev
 ## Status：　260615　Application.FocusedPanel.Name
@@ -180,109 +78,6 @@ candidates:      ^(None|Thinktank|Overview|WorkoutSetting|Workout|ReThink)\..*$
 　　- ReThink.{ModeName}
 　　※フォーカスがどこにもない場合は None、ステータスバーにある場合は Application.StatusBarArea となります。
 
-## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
-## Action：　260619　FocusedPanel.Mode.Name:Prev
-## Action：　260619　FocusedPanel.Mode.Name:Next
-## Status：　260619　ThinktankPanel.Area.IsOpen
-description:    左パネル表示
-key:            ThinktankPanel.Area.IsOpen
-current:        true
-default:        true
-type:           boolean
-candidates:     ^(true|false)$
-## Status：　260613　ThinktankPanel.Mode.Name
-description:    左パネルモード
-key:            ThinktankPanel.Mode.Name
-current:        Filter
-default:        Filter
-type:           string
-candidates:     ^(Filter|Chat|Settings)$
-
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の3つです。
-　　- Filter （フィルター / 検索）
-　　- Chat （AI相談チャット）
-　　- Settings （設定）
-## Status：　260619　OverviewPanel.Area.IsOpen
-
-description:    上部パネル表示
-key:            OverviewPanel.Area.IsOpen
-current:        false
-default:        true
-type:           boolean
-candidates:     ^(true|false)$
-
-## Status：　260613　OverviewPanel.Mode.Name
-
-description:    上部パネルモード
-key:            OverviewPanel.Mode.Name
-current:        Datagrid
-default:        Datagrid
-type:           string
-candidates:     ^(Datagrid|Graph|Chat|Settings)$
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の4つです。
-　　- Datagrid （データグリッド）
-　　- Graph （関係性グラフ）
-　　- Chat （AIチャット）
-　　- Settings （設定）
-## Status：　260619　WorkoutSettingPanel.Area.IsOpen
-
-description:    ワークアウト設定パネル表示
-key:            WorkoutSettingPanel.Area.IsOpen
-current:        false
-default:        true
-type:           boolean
-candidates:     ^(true|false)$
-
-
-## Status：　260613　WorkoutSettingPanel.Mode.Name
-
-description:    ワークアウト設定パネルモード
-key:            WorkoutSettingPanel.Mode.Name
-current:        Workout
-default:        Workout
-type:           string
-candidates:     ^(Workout|Texteditor|Markdown|Datagrid|Card|Graph)$
-
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の6つです。
-　　- Workout （概要設定）
-　　- Texteditor （テキストエディタ）
-　　- Markdown （マークダウンプレビュー）
-　　- Datagrid （データグリッド）
-　　- Card （カードビュー）
-　　- Graph （グラフビュー）
-## Status：　260619　ReThinkPanel.Area.IsOpen
-
-description:    右パネル表示
-key:            ReThinkPanel.Area.IsOpen
-current:        false
-default:        true
-type:           boolean
-candidates:     ^(true|false)$
-
-
-## Status：　260613　ReThinkPanel.Mode.Name
-
-description:    右パネルモード
-key:            ReThinkPanel.Mode.Name
-current:        Chat
-default:        Chat
-type:           string
-candidates:     ^(Chat|Settings)$
-
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の2つです。
-　　- Chat （AI対話チャット）
-　　- Settings （設定）
-
-
-
 ## Action：　260616　ToolBar.Mode.Name:Next
 　ToolBar.Mode.Nameの設定値を次の値にする。値は循環式。
 ## Action：　260616　ToolBar.Mode.Name:Prev
@@ -312,7 +107,288 @@ candidates:     ^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyri
 　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
 
+# Panel ==============================================================================================================
+## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
+## Action：　260619　FocusedPanel.Mode.Name:Prev
+## Action：　260619　FocusedPanel.Mode.Name:Next
+
+## Status：　260619　ThinktankPanel.Area.IsOpen
+description:    左パネル表示
+key:            ThinktankPanel.Area.IsOpen
+current:        true
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+## Status：　260613　ThinktankPanel.Mode.Name
+description:    左パネルモード
+key:            ThinktankPanel.Mode.Name
+current:        Filter
+default:        Filter
+type:           string
+candidates:     ^(Filter|Chat|Settings)$
+
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の3つです。
+　　- Filter （フィルター / 検索）
+　　- Chat （AI相談チャット）
+　　- Settings （設定）
+
+## Status：　260619　OverviewPanel.Area.IsOpen
+
+description:    上部パネル表示
+key:            OverviewPanel.Area.IsOpen
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+## Status：　260613　OverviewPanel.Mode.Name
+
+description:    上部パネルモード
+key:            OverviewPanel.Mode.Name
+current:        Datagrid
+default:        Datagrid
+type:           string
+candidates:     ^(Datagrid|Graph|Chat|Settings)$
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の4つです。
+　　- Datagrid （データグリッド）
+　　- Graph （関係性グラフ）
+　　- Chat （AIチャット）
+　　- Settings （設定）
+## Status：　260624　Overview.Thought.Name
+　本StatusIDの中身
+　Overviewパネルに設定された thoughtファイルの IDです。
+　※ 起動時のロードおよびD&Dドロップ時の即時反映対応完了。
+
+description:    OverviewパネルのthoughtファイルID
+key:            Overview.Thought.Name
+current:        none
+default:        none
+type:           string
+candidates:     .*
+
+## Status：　260619　WorkoutSettingPanel.Area.IsOpen
+
+description:    ワークアウト設定パネル表示
+key:            WorkoutSettingPanel.Area.IsOpen
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+## Status：　260613　WorkoutSettingPanel.Mode.Name
+
+description:    ワークアウト設定パネルモード
+key:            WorkoutSettingPanel.Mode.Name
+current:        Workout
+default:        Workout
+type:           string
+candidates:     ^(Workout|Texteditor|Markdown|Datagrid|Card|Graph)$
+
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の6つです。
+　　- Workout （概要設定）
+　　- Texteditor （テキストエディタ）
+　　- Markdown （マークダウンプレビュー）
+　　- Datagrid （データグリッド）
+　　- Card （カードビュー）
+　　- Graph （グラフビュー）
+
+## Status：　260619　ReThinkPanel.Area.IsOpen
+
+description:    右パネル表示
+key:            ReThinkPanel.Area.IsOpen
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+## Status：　260613　ReThinkPanel.Mode.Name
+
+description:    右パネルモード
+key:            ReThinkPanel.Mode.Name
+current:        Chat
+default:        Chat
+type:           string
+candidates:     ^(Chat|Settings)$
+
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の2つです。
+　　- Chat （AI対話チャット）
+　　- Settings （設定）
+
+
+
+## Status：　260613　WorkoutPanel.Pane.Count
+
+## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
+## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev
+## Status：　260619　WorkoutPanel.FocusedPane.Mode
+description:    ワークアウトパネルの表示モード
+key:            WorkoutPanel.FocusedPane.Mode
+current:        Texteditor
+default:        Texteditor
+type:           string
+candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
+
+　Next/Prevを設定して変更される値は、すべての設定値ではなく、FocusedPaneに表示されているThinkファイル種別ごとに取り得る範囲が変わります。
+　今、Next/Prevでその範囲を超えて設定されてしまっていますので、修正してください。docs\260606_Thinktank仕様書\02_UI・画面レイアウト仕様.mdの## 6. ContentType と MediaType のマッピングを参照してください。
+
+　Q：設定値を記載してください。
+　A：現在フォーカスされているペイン（WorkoutArea）の表示モード（1文字目大文字）を取得・設定します。
+　　設定・変更可能な値は以下の6つです（循環切替に対応）。
+　　- `Texteditor` （テキストエディタ）
+　　- `Markdown` （マークダウンプレビュー）
+　　- `Datagrid` （データグリッド）
+　　- `Card` （カードビュー）
+　　- `Graph` （グラフビュー）
+　　- `Chat` （AIチャット）
+　　- `None` （フォーカスされているペインがない場合）
+
+
+
+## Status：　260613　WorkoutPanel.FocusedPane.ID
+
+## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
+## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
+## Status：　260619　WorkoutPanel.FocusedPane.PaneNumber
+
+　Q：設定値を記載してください。
+　A：現在表示されているペインの中でフォーカスされているペインの番号（1始まり）を返します。
+　　設定される値は以下の通りです。
+　　- `1`〜`6` （表示されているペインの配置順）
+　　- `0` （フォーカスされているペインがない場合）
+
+
+
+# TextEditor ==========================================================================================================
+
+## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
+　以下の手順を実装してください。
+　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
+　↓　現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
+## Action：　260622　TextEditor.CurrentFolding.Heading:CloseStepwise
+　以下の手順を実装してください。
+　↓　現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
+　↓　現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
+　↓　現カーソルがあるHeading行がCloseである場合は、兄弟Heading行をすべて抽出し、親Heading行や孫Heading行が含まれないことを確認し、抽出した兄弟HeadingのすべてをCloseにして終了します
+## Status：　260621　TextEditor.CurrentFolding.HeadingOffset
+
+description:    カーソル位置が属する見出し行の開始位置（先頭文字位置）
+key:            TextEditor.CurrentFolding.HeadingOffset
+current:        0
+default:        0
+type:           string
+candidates:     .*
+
+　現在の実装は廃止します。
+　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その offsetを設定する
+## Status：　260621　TextEditor.CurrentFolding.HeadingNumber
+
+description:    カーソル位置が属する見出し行の番号(例: 1.3.4)
+key:            TextEditor.CurrentFolding.HeadingNumber
+current:        None
+default:        None
+type:           string
+candidates:     ^.*$
+
+　現在の実装は廃止します。
+　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
+　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
+
+## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
+　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
+　現カーソル位置がHeading行である場合：次の兄弟Heading行へ移動
+　兄弟Heading行とは、同じ親headingNumberをもつHeading行
+## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingBackward
+　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
+　現カーソル位置がHeading行である場合：前の兄弟Heading行へ移動
+　兄弟Heading行とは、同じ親headingNumberをもつHeading行
+## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
+　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
+## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
+　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
+
+
+
+## Action：　260619　TextEditor.EditText.Undo
+## Action：　260619　TextEditor.EditText.Redo
+
+
 # Color ============================================================================================================== 
+## Status：　260624　Thinktank.Ribbon.BgColor
+description:    Thinktank（左）パネルのヘッダー・リボン背景色
+key:            Thinktank.Ribbon.BgColor
+current:        #1d618f
+default:        #1d618f
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Thinktank.Area.BgColor
+description:    Thinktank（左）パネルのメインエリア背景色
+key:            Thinktank.Area.BgColor
+current:        #edf2f6
+default:        #edf2f6
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Overview.Ribbon.BgColor
+description:    Overview（上）パネルのヘッダー・リボン背景色
+key:            Overview.Ribbon.BgColor
+current:        #873960
+default:        #873960
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Overview.Area.BgColor
+description:    Overview（上）パネルのメインエリア背景色
+key:            Overview.Area.BgColor
+current:        #f8f3f5
+default:        #f8f3f5
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Workout.Ribbon.BgColor
+description:    Workout（中）パネルのヘッダー・リボン背景色
+key:            Workout.Ribbon.BgColor
+current:        #382830
+default:        #382830
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Workout.Area.BgColor
+description:    Workout（中）パネルのメインエリア背景色
+key:            Workout.Area.BgColor
+current:        #e3e1e2
+default:        #e3e1e2
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ReThink.Ribbon.BgColor
+description:    ReThink（右）パネルのヘッダー・リボン背景色
+key:            ReThink.Ribbon.BgColor
+current:        #324f46
+default:        #324f46
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ReThink.Area.BgColor
+description:    ReThink（右）パネルのメインエリア背景色
+key:            ReThink.Area.BgColor
+current:        #eff1f0
+default:        #eff1f0
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ToolBar.BgColor
+description:    ツールバー（ステータスバー）の背景色
+key:            ToolBar.BgColor
+current:        #2d2d2d
+default:        #2d2d2d
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ToolBar.Color
+description:    ツールバー（ステータスバー）の文字色
+key:            ToolBar.Color
+current:        #ffffff
+default:        #ffffff
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
 ## Status：　260624　TextEditor.Highlighter1.Color
 ハイライト1の文字色
 WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ1＞文字 で変更した場合に反映される。

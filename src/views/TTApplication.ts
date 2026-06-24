@@ -73,6 +73,10 @@ export class TTApplication extends TTUIItem {
     stateManager.addListener('Application.*', () => this.NotifyUpdated(false));
     stateManager.addListener('TextEditor.*', () => this.WorkoutPanel.NotifyUpdated());
     stateManager.addListener('ToolBar.*', () => this.WorkoutPanel.NotifyUpdated());
+    stateManager.addListener('Thinktank.*', () => this.ThinktankPanel.NotifyUpdated());
+    stateManager.addListener('Overview.*', () => this.OverviewPanel.NotifyUpdated());
+    stateManager.addListener('Workout.*', () => this.WorkoutPanel.NotifyUpdated());
+    stateManager.addListener('ReThink.*', () => this.ReThinkPanel.NotifyUpdated());
   }
 
   public static get Instance(): TTApplication {
