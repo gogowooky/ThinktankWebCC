@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "55f8bed",
-  "commitDateTime": "2026-06-24-073851",
-  "commitMessage": "docs: migrate status source to Thinktank_Status-Action-Binding.md and delete WorkoutPanel.FocusedPane.MediaType"
+  "commitPC": "veneno-02",
+  "commitId": "afc4519",
+  "commitDateTime": "2026-06-24-122332",
+  "commitMessage": "docs: update TextEditor.Highlighter status in Thinktank_Status-Action-Binding.md"
 }
