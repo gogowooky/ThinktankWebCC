@@ -1,9 +1,0 @@
-/* ChatMedia.css */
-
-.chat-media {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  background: #fbfafa;
-}

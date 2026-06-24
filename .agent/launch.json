@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite"],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "server:dev"],
+      "port": 8080,
+      "autoPort": true
+    },
+    {
+      "name": "clone-frontend",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["vite", "--config", "thinktank-clone/vite.config.ts", "thinktank-clone"],
+      "port": 5173,
+      "autoPort": true
+    },
+    {
+      "name": "clone-backend",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["thinktank-clone/server/index.ts"],
+      "port": 8081,
+      "autoPort": false
+    }
+  ]
+}
