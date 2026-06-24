@@ -20,197 +20,6 @@
 ## 完了：　260623　TextEditor.Style.Section
 
 
-## 完了：　260624　TextEditor.Highlighter1.Color
-ハイライト1の文字色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ1＞文字 で変更した場合に反映される。
-
-description:    ハイライト1の文字色
-key:            TextEditor.Highlighter1.Color
-current:        undefined
-default:        undefined
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter1.BgColor
-ハイライト1の背景色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ1＞背景 で変更した場合に反映される。
-
-description:    ハイライト1の背景色
-key:            TextEditor.Highlighter1.BgColor
-current:        #fff0b3
-default:        #fff0b3
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter2.Color
-ハイライト2の文字色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ2＞文字 で変更した場合に反映される。
-
-description:    ハイライト2の文字色
-key:            TextEditor.Highlighter2.Color
-current:        undefined
-default:        undefined
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter2.BgColor
-ハイライト2の背景色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ2＞背景 で変更した場合に反映される。
-
-description:    ハイライト2の背景色
-key:            TextEditor.Highlighter2.BgColor
-current:        #ffb3b3
-default:        #ffb3b3
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-
-## 完了：　260624　TextEditor.Highlighter2.Attrs
-ハイライト2の属性
-WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ2＞属性 で変更した場合に反映される。
-
-description:    ハイライト2の属性
-key:            TextEditor.Highlighter2.Attrs
-current:        undefined
-default:        undefined
-type:           string
-candidates:     .*
-
-
-## 完了：　260624　TextEditor.Highlighter3.Color
-ハイライト3の文字色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ3＞文字 で変更した場合に反映される。
-
-description:    ハイライト3の文字色
-key:            TextEditor.Highlighter3.Color
-current:        undefined
-default:        undefined
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-
-## 完了：　260624　TextEditor.Highlighter3.BgColor
-ハイライト3の背景色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ3＞背景 で変更した場合に反映される。
-
-description:    ハイライト3の背景色
-key:            TextEditor.Highlighter3.BgColor
-current:        #b3e0ff
-default:        #b3e0ff
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter3.Attrs
-ハイライト3の属性
-WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ3＞属性 で変更した場合に反映される。
-
-description:    ハイライト3の属性
-key:            TextEditor.Highlighter3.Attrs
-current:        undefined
-default:        undefined
-type:           string
-candidates:     .*
-
-## 完了：　260624　TextEditor.Highlighter4.Color
-ハイライト4の文字色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ4＞文字 で変更した場合に反映される。
-
-description:    ハイライト4の文字色
-key:            TextEditor.Highlighter4.Color
-current:        undefined
-default:        undefined
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter4.BgColor
-ハイライト4の背景色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ4＞背景 で変更した場合に反映される。
-
-description:    ハイライト4の背景色
-key:            TextEditor.Highlighter4.BgColor
-current:        #b3ffb3
-default:        #b3ffb3
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter4.Attrs
-ハイライト4の属性
-WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ4＞属性 で変更した場合に反映される。
-
-description:    ハイライト4の属性
-key:            TextEditor.Highlighter4.Attrs
-current:        undefined
-default:        undefined
-type:           string
-candidates:     .*
-
-## 完了：　260624　TextEditor.Highlighter5.Color
-ハイライト5の文字色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ5＞文字 で変更した場合に反映される。
-
-description:    ハイライト5の文字色
-key:            TextEditor.Highlighter5.Color
-current:        undefined
-default:        undefined
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter5.BgColor
-ハイライト5の背景色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ5＞背景 で変更した場合に反映される。
-
-description:    ハイライト5の背景色
-key:            TextEditor.Highlighter5.BgColor
-current:        #e6b3ff
-default:        #e6b3ff
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter5.Attrs
-ハイライト5の属性
-WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ5＞属性 で変更した場合に反映される。
-
-description:    ハイライト5の属性
-key:            TextEditor.Highlighter5.Attrs
-current:        undefined
-default:        undefined
-type:           string
-candidates:     .*
-
-## 完了：　260624　TextEditor.Highlighter6.Color
-ハイライト6の文字色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ6＞文字 で変更した場合に反映される。
-
-description:    ハイライト6の文字色
-key:            TextEditor.Highlighter6.Color
-current:        undefined
-default:        undefined
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-
-## 完了：　260624　TextEditor.Highlighter6.BgColor
-ハイライト6の背景色
-WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ6＞背景 で変更した場合に反映される。
-
-description:    ハイライト6の背景色
-key:            TextEditor.Highlighter6.BgColor
-current:        #e620ff
-default:        #e620ff
-type:           string
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
-## 完了：　260624　TextEditor.Highlighter6.Attrs
-ハイライト6の属性
-WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ6＞属性 で変更した場合に反映される。
-
-description:    ハイライト6の属性
-key:            TextEditor.Highlighter6.Attrs
-current:        undefined
-default:        undefined
-type:           string
-candidates:     .*
-
 
 ## 
 
@@ -239,6 +48,187 @@ JSON定義の中に {"backgroundColor":"#fff0b3","color":"#1a1a1a"} などの配
 
 
 # OK =================================================================================================================
+## Status：　260624　TextEditor.Highlighter1.Color
+ハイライト1の文字色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ1＞文字 で変更した場合に反映される。
+
+description:    ハイライト1の文字色
+key:            TextEditor.Highlighter1.Color
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter1.BgColor
+ハイライト1の背景色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ1＞背景 で変更した場合に反映される。
+
+description:    ハイライト1の背景色
+key:            TextEditor.Highlighter1.BgColor
+current:        #fff0b3
+default:        #fff0b3
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter1.Attrs
+ハイライト1の属性
+WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ1＞属性 で変更した場合に反映される。
+
+description:    ハイライト1の属性
+key:            TextEditor.Highlighter1.Attrs
+current:        undefined
+default:        undefined
+type:           string
+candidates:     .*
+## Status：　260624　TextEditor.Highlighter2.Color
+ハイライト2の文字色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ2＞文字 で変更した場合に反映される。
+
+description:    ハイライト2の文字色
+key:            TextEditor.Highlighter2.Color
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter2.BgColor
+ハイライト2の背景色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ2＞背景 で変更した場合に反映される。
+
+description:    ハイライト2の背景色
+key:            TextEditor.Highlighter2.BgColor
+current:        #ffb3b3
+default:        #ffb3b3
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter2.Attrs
+ハイライト2の属性
+WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ2＞属性 で変更した場合に反映される。
+
+description:    ハイライト2の属性
+key:            TextEditor.Highlighter2.Attrs
+current:        undefined
+default:        undefined
+type:           string
+candidates:     .*
+## Status：　260624　TextEditor.Highlighter3.Color
+ハイライト3の文字色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ3＞文字 で変更した場合に反映される。
+
+description:    ハイライト3の文字色
+key:            TextEditor.Highlighter3.Color
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter3.BgColor
+ハイライト3の背景色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ3＞背景 で変更した場合に反映される。
+
+description:    ハイライト3の背景色
+key:            TextEditor.Highlighter3.BgColor
+current:        #b3e0ff
+default:        #b3e0ff
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter3.Attrs
+ハイライト3の属性
+WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ3＞属性 で変更した場合に反映される。
+
+description:    ハイライト3の属性
+key:            TextEditor.Highlighter3.Attrs
+current:        undefined
+default:        undefined
+type:           string
+candidates:     .*
+## Status：　260624　TextEditor.Highlighter4.Color
+ハイライト4の文字色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ4＞文字 で変更した場合に反映される。
+
+description:    ハイライト4の文字色
+key:            TextEditor.Highlighter4.Color
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter4.BgColor
+ハイライト4の背景色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ4＞背景 で変更した場合に反映される。
+
+description:    ハイライト4の背景色
+key:            TextEditor.Highlighter4.BgColor
+current:        #b3ffb3
+default:        #b3ffb3
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter4.Attrs
+ハイライト4の属性
+WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ4＞属性 で変更した場合に反映される。
+
+description:    ハイライト4の属性
+key:            TextEditor.Highlighter4.Attrs
+current:        undefined
+default:        undefined
+type:           string
+candidates:     .*
+## Status：　260624　TextEditor.Highlighter5.Color
+ハイライト5の文字色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ5＞文字 で変更した場合に反映される。
+
+description:    ハイライト5の文字色
+key:            TextEditor.Highlighter5.Color
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter5.BgColor
+ハイライト5の背景色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ5＞背景 で変更した場合に反映される。
+
+description:    ハイライト5の背景色
+key:            TextEditor.Highlighter5.BgColor
+current:        #e6b3ff
+default:        #e6b3ff
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter5.Attrs
+ハイライト5の属性
+WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ5＞属性 で変更した場合に反映される。
+
+description:    ハイライト5の属性
+key:            TextEditor.Highlighter5.Attrs
+current:        undefined
+default:        undefined
+type:           string
+candidates:     .*
+## Status：　260624　TextEditor.Highlighter6.Color
+ハイライト6の文字色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ6＞文字 で変更した場合に反映される。
+
+description:    ハイライト6の文字色
+key:            TextEditor.Highlighter6.Color
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter6.BgColor
+ハイライト6の背景色
+WorkoutSettingPanel>TextEditor設定>ハイライト色>グループ6＞背景 で変更した場合に反映される。
+
+description:    ハイライト6の背景色
+key:            TextEditor.Highlighter6.BgColor
+current:        #e620ff
+default:        #e620ff
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Highlighter6.Attrs
+ハイライト6の属性
+WorkoutSettingPanel>TextEditor設定>ハイライト設定>グループ6＞属性 で変更した場合に反映される。
+
+description:    ハイライト6の属性
+key:            TextEditor.Highlighter6.Attrs
+current:        undefined
+default:        undefined
+type:           string
+candidates:     .*
+
 ## Status：　260624　TextEditor.Heading.Color
 見出し行レベル１の文字色
 WorkoutSettingPanel>TextEditor設定>文字設定>セクション1 で変更した場合に反映される。
