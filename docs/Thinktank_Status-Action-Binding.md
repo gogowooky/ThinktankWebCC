@@ -17,7 +17,8 @@
 
 # Status
 
-## Status：　260624　Overview.Thought.Name
+## 完了：　260624　Overview.Thought.Name
+　本StatusIDの中身
 　Overviewパネルに設定された thoughtファイルの IDです。
 
 description:    OverviewパネルのthoughtファイルID

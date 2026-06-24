@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "321a065",
-  "commitDateTime": "2026-06-24-130147",
-  "commitMessage": "feat: implement Overview.Thought.Name and deprecate TextEditor.Style.Section"
+  "commitId": "d2a0524",
+  "commitDateTime": "2026-06-24-131202",
+  "commitMessage": "fix: immediately notify Overview.Thought.Name change on D&D"
 }

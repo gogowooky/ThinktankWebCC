@@ -8,6 +8,7 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
+import { TTUIStateManager } from './TTUIStateManager';
 
 export type OverviewViewMode = 'datagrid' | 'graph' | 'chat' | 'settings';
 
@@ -92,6 +93,7 @@ export class TTOverviewPanel extends TTUIItem {
       this.IsAreaOpen = true;
     }
     this.NotifyUpdated();
+    TTUIStateManager.instance.notifyPropertyChanged('Overview.Thought.Name');
   }
 
   /** Thought表示をクリアする */
@@ -99,6 +101,7 @@ export class TTOverviewPanel extends TTUIItem {
     this.ThoughtID = '';
     this.CheckedThoughtIDs = []; // チェッククリア
     this.NotifyUpdated();
+    TTUIStateManager.instance.notifyPropertyChanged('Overview.Thought.Name');
   }
 
   /** チェック状態を更新する */
