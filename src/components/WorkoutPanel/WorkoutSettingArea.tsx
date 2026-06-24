@@ -397,6 +397,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                   {[1, 2, 3, 4, 5].map(level => {
                     const style = panel.TextEditor.HeadingStyles[level - 1];
                     const fw = ['１', '２', '３', '４', '５'][level - 1];
+                    const hasBg = style.bgColor !== undefined && style.bgColor !== 'undefined';
                     return (
                       <div key={level} className="workout-setting-area__heading-style-row">
                         <span className="workout-setting-area__heading-style-label">セクション{fw}</span>
@@ -423,6 +424,23 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                           />
                           U
                         </label>
+                        <label className="workout-setting-area__small-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={hasBg}
+                            onChange={e => panel.SetTextEditorHeadingStyle(level, { bgColor: e.target.checked ? '#ffffff' : 'undefined' })}
+                          />
+                          BG
+                        </label>
+                        {hasBg && (
+                          <input
+                            type="color"
+                            className="workout-setting-area__color-picker"
+                            value={style.bgColor && style.bgColor !== 'undefined' ? style.bgColor.slice(0, 7) : '#ffffff'}
+                            onChange={e => panel.SetTextEditorHeadingStyle(level, { bgColor: e.target.value })}
+                            data-tip={`セクション${fw}の背景色`}
+                          />
+                        )}
                       </div>
                     );
                   })}

@@ -36,6 +36,6 @@ export interface MediaProps {
     foreground: string;
     selectionBackground: string;
     occurrenceBackground: string;
-    headingStyles: { color: string; bold: boolean; underline: boolean }[];
+    headingStyles: { color: string; bgColor?: string; bold: boolean; underline: boolean }[];
   };
 }

@@ -267,9 +267,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
     const cssRules = editorSettings.headingStyles.map((style, index) => {
       const level = index + 1;
+      const hasBg = style.bgColor && style.bgColor !== 'undefined' && style.bgColor !== 'none';
       return `
         .custom-heading-${level} {
           color: ${style.color} !important;
+          ${hasBg ? `background-color: ${style.bgColor} !important;` : ''}
           ${style.bold ? 'font-weight: bold !important;' : ''}
           ${style.underline ? 'text-decoration: underline !important;' : ''}
         }

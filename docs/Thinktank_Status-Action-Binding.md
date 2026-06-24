@@ -20,7 +20,173 @@
 ## 完了：　260623　TextEditor.Style.Section
 
 
+## 完了：　260624　TextEditor.Heading1.Color
+見出し行レベル１の文字色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション1 で変更した場合に反映される。
+
+description:    見出し行レベル１の文字色
+key:            TextEditor.Heading1.Color
+current:        #569cd6
+default:        #569cd6
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+    
+## 完了：　260624　TextEditor.Heading1.BgColor
+見出し行レベル１の背景色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション1 で変更した場合に反映される。
+
+description:    見出し行レベル１の背景色
+key:            TextEditor.Heading1.BgColor
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading1.Attrs
+見出し行レベル１の属性
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション1 で変更した場合に反映される。
+
+description:    見出し行レベル１の属性
+key:            TextEditor.Heading1.Attrs
+current:        bold|underline
+default:    　　bold|underline
+type:           string
+candidates:     .*
+
+## 完了：　260624　TextEditor.Heading2.Color
+見出し行レベル２の文字色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション2 で変更した場合に反映される。
+
+description:    見出し行レベル２の文字色
+key:            TextEditor.Heading2.Color
+current:        #4ec9b0
+default:        #4ec9b0
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading2.BgColor
+見出し行レベル２の背景色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション2 で変更した場合に反映される。
+
+description:    見出し行レベル２の背景色
+key:            TextEditor.Heading2.BgColor
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading2.Attrs
+見出し行レベル２の属性
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション2 で変更した場合に反映される。
+
+description:    見出し行レベル２の属性
+key:            TextEditor.Heading2.Attrs
+current:        bold|underline
+default:    　　bold|underline
+type:           string
+candidates:     .*
+
+## 完了：　260624　TextEditor.Heading3.Color
+見出し行レベル３の文字色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション3 で変更した場合に反映される。
+
+description:    見出し行レベル３の文字色
+key:            TextEditor.Heading3.Color
+current:        #ce9178
+default:        #ce9178
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading3.BgColor
+見出し行レベル３の背景色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション3 で変更した場合に反映される。
+
+description:    見出し行レベル３の背景色
+key:            TextEditor.Heading3.BgColor
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading3.Attrs
+見出し行レベル３の属性
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション3 で変更した場合に反映される。
+
+description:    見出し行レベル３の属性
+key:            TextEditor.Heading3.Attrs
+current:        bold|underline
+default:    　　bold|underline
+type:           string
+candidates:     .*
+
+## 完了：　260624　TextEditor.Heading4.Color
+見出し行レベル4の文字色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション4 で変更した場合に反映される。
+
+description:    見出し行レベル4の文字色
+key:            TextEditor.Heading4.Color
+current:        #dcdcaa
+default:        #dcdcaa
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading4.BgColor
+見出し行レベル4の背景色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション4 で変更した場合に反映される.
+
+description:    見出し行レベル4の背景色
+key:            TextEditor.Heading4.BgColor
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading4.Attrs
+見出し行レベル4の属性
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション4 で変更した場合に反映される。
+
+description:    見出し行レベル4の属性
+key:            TextEditor.Heading4.Attrs
+current:        bold|underline
+default:    　　bold|underline
+type:           string
+candidates:     .*
+
+## 完了：　260624　TextEditor.Heading5.Color
+見出し行レベル5の文字色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション5 で変更した場合に反映される。
+
+description:    見出し行レベル5の文字色
+key:            TextEditor.Heading5.Color
+current:        #c586c0
+default:        #c586c0
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading5.BgColor
+見出し行レベル5の背景色
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション5 で変更した場合に反映される。
+
+description:    見出し行レベル5の背景色
+key:            TextEditor.Heading5.BgColor
+current:        undefined
+default:        undefined
+type:           string
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+## 完了：　260624　TextEditor.Heading5.Attrs
+見出し行レベル5の属性
+WorkoutSettingPanel>TextEditor設定>文字設定>セクション5 で変更した場合に反映される。
+
+description:    見出し行レベル5の属性
+key:            TextEditor.Heading5.Attrs
+current:        bold|underline
+default:    　　bold|underline
+type:           string
+candidates:     .*
+
 ## 
+
 1. システムで使用されているもの（使用中）
 エディタの各種配色、および各見出し階層（セクション）ごとのカラー設定は、状態管理マネージャー（
 
@@ -46,36 +212,28 @@ JSON定義の中に {"backgroundColor":"#fff0b3","color":"#1a1a1a"} などの配
 
 
 # OK =================================================================================================================
-## 完了：　260624　TextEditor.Text.BgColor
-　ID Default.TextEditor.Text.BgColor を TextEditor.Text.BgColor に変更
-
+## Status：　260624　TextEditor.Text.BgColor
 description:    エディタ背景色
 key:            TextEditor.Text.BgColor
 current:        #f5f5f5
 default:        #f5f5f5
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
-## 完了：　260624　TextEditor.Text.Color
-　ID Default.TextEditor.Text.Color を TextEditor.Text.Color に変更
-
+## Status：　260624　TextEditor.Text.Color
 description:    エディタ文字色
 key:            TextEditor.Text.Color
 current:        #1e1e1e
 default:        #1e1e1e
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
-## 完了：　260624　TextEditor.Selection.BgColor
-　ID Default.TextEditor.Selection.BgColor を TextEditor.Selection.BgColor に変更
-
+## Status：　260624　TextEditor.Selection.BgColor
 description:    エディタのテキスト選択範囲の背景色
 key:            TextEditor.Selection.BgColor
 current:        #cba8ff
 default:        #c6e6c6ff
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
-## 完了：　260624　TextEditor.Occurrence.BgColor
-　ID Default.TextEditor.Occurrence.BgColor を TextEditor.Occurrence.BgColor に変更
-
+## Status：　260624　TextEditor.Occurrence.BgColor
 description:    エディタで選択した語と同一の単語の強調色
 key:            TextEditor.Occurrence.BgColor
 current:        #fff0fd

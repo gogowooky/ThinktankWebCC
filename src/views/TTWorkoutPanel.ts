@@ -11,7 +11,7 @@ export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid'
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
 
-export type SectionStyle = { color: string; bold: boolean; underline: boolean };
+export type SectionStyle = { color: string; bgColor?: string; bold: boolean; underline: boolean };
 
 export const SECTION_STYLE_DEFAULTS: SectionStyle[] = [
   { color: '#569cd6', bold: true, underline: false },
@@ -227,7 +227,7 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetTextEditorColorText(color: string)        { this.TextEditor.Color.Text        = color; this.NotifyUpdated(); }
   public SetTextEditorColorSelection(color: string)   { this.TextEditor.Color.Selection   = color; this.NotifyUpdated(); }
   public SetTextEditorColorOccurrence(color: string)  { this.TextEditor.Color.Occurrence  = color; this.NotifyUpdated(); }
-  public SetTextEditorHeadingStyle(level: number, style: { color?: string; bold?: boolean; underline?: boolean }) {
+  public SetTextEditorHeadingStyle(level: number, style: { color?: string; bgColor?: string; bold?: boolean; underline?: boolean }) {
     if (level < 1 || level > 5) return;
     this.TextEditor.HeadingStyles = this.TextEditor.HeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);
     this.NotifyUpdated();

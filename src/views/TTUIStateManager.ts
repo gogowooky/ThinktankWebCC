@@ -59,6 +59,21 @@ export type ConfigKey =
   | 'TextEditor.Text.Color'
   | 'TextEditor.Selection.BgColor'
   | 'TextEditor.Occurrence.BgColor'
+  | 'TextEditor.Heading1.Color'
+  | 'TextEditor.Heading1.BgColor'
+  | 'TextEditor.Heading1.Attrs'
+  | 'TextEditor.Heading2.Color'
+  | 'TextEditor.Heading2.BgColor'
+  | 'TextEditor.Heading2.Attrs'
+  | 'TextEditor.Heading3.Color'
+  | 'TextEditor.Heading3.BgColor'
+  | 'TextEditor.Heading3.Attrs'
+  | 'TextEditor.Heading4.Color'
+  | 'TextEditor.Heading4.BgColor'
+  | 'TextEditor.Heading4.Attrs'
+  | 'TextEditor.Heading5.Color'
+  | 'TextEditor.Heading5.BgColor'
+  | 'TextEditor.Heading5.Attrs'
   | 'TextEditor.Style.Section'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
@@ -290,9 +305,56 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     set: (app, v) => {
       app.WorkoutPanel.TextEditor.SectionStyleKey = v;
       const preset = app.WorkoutPanel.TextEditor.SectionPresets[v];
-      if (preset) app.WorkoutPanel.TextEditor.HeadingStyles = [...preset];
+      if (preset) {
+        app.WorkoutPanel.TextEditor.HeadingStyles = [...preset];
+        for (let level = 1; level <= 5; level++) {
+          TTUIStateManager.instance.notifyPropertyChanged(`TextEditor.Heading${level}.Color`);
+          TTUIStateManager.instance.notifyPropertyChanged(`TextEditor.Heading${level}.BgColor`);
+          TTUIStateManager.instance.notifyPropertyChanged(`TextEditor.Heading${level}.Attrs`);
+        }
+      }
     },
   },
+  ...Object.fromEntries(
+    [1, 2, 3, 4, 5].flatMap(level => {
+      const idx = level - 1;
+      return [
+        [`TextEditor.Heading${level}.Color`, {
+          panel: 'WorkoutPanel',
+          default: SECTION_STYLE_DEFAULTS[idx].color, type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
+          description: `見出し行レベル${level}の文字色`,
+          get: (app) => app.WorkoutPanel.TextEditor.HeadingStyles[idx]?.color ?? SECTION_STYLE_DEFAULTS[idx].color,
+          set: (app, v) => { app.WorkoutPanel.SetTextEditorHeadingStyle(level, { color: v }); },
+        }],
+        [`TextEditor.Heading${level}.BgColor`, {
+          panel: 'WorkoutPanel',
+          default: 'undefined', type: 'string', candidates: '^(undefined|#[0-9a-fA-F]{6,8})$',
+          description: `見出し行レベル${level}の背景色`,
+          get: (app) => app.WorkoutPanel.TextEditor.HeadingStyles[idx]?.bgColor ?? 'undefined',
+          set: (app, v) => { app.WorkoutPanel.SetTextEditorHeadingStyle(level, { bgColor: v }); },
+        }],
+        [`TextEditor.Heading${level}.Attrs`, {
+          panel: 'WorkoutPanel',
+          default: (SECTION_STYLE_DEFAULTS[idx].bold ? 'bold' : '') + (SECTION_STYLE_DEFAULTS[idx].underline ? '|underline' : '') || 'none',
+          type: 'string', candidates: '.*',
+          description: `見出し行レベル${level}の属性`,
+          get: (app) => {
+            const style = app.WorkoutPanel.TextEditor.HeadingStyles[idx];
+            if (!style) return 'none';
+            const attrs: string[] = [];
+            if (style.bold) attrs.push('bold');
+            if (style.underline) attrs.push('underline');
+            return attrs.join('|') || 'none';
+          },
+          set: (app, v) => {
+            const bold = v.includes('bold');
+            const underline = v.includes('underline');
+            app.WorkoutPanel.SetTextEditorHeadingStyle(level, { bold, underline });
+          },
+        }]
+      ];
+    })
+  ),
   ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`TextEditor.SectionStyle.Preset${n}`, makeSectionPresetSpec(n)])),
 
   // ── ToolBar 表示モード ────────────────────────────────────────────────
