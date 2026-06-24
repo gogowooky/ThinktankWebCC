@@ -1,0 +1,21 @@
+﻿
+<SyntaxDefinition name="MD" extensions=".md" xmlns="http://icsharpcode.net/sharpdevelop/syntaxdefinition/2008">
+
+    <Color name="Marker1" background="#FFBBBB" />
+    <Color name="Marker2" background="#EEDDAA" />
+    <Color name="Marker3" background="#BBFFDD" />
+    <Color name="Marker4" background="#AACCFF" />
+    <Color name="Marker5" background="#EEDDFF" />
+    <Color name="Marker6" background="#CCCCCC" />
+
+    <Color name="Keyword1" background="#EEDDFF" foreground="#CC2222" fontWeight="bold" underline="true"/>
+    <Color name="Keyword2" background="#EEDDFF" foreground="#229922" fontWeight="bold" underline="true"/>
+    <Color name="Keyword3" background="#EEDDFF" foreground="#6666CC" fontWeight="bold" underline="true"/>
+    <Color name="Keyword4" background="#EEDDFF" foreground="#0088FF" fontWeight="bold" underline="true"/>
+    <Color name="Keyword5" background="#EEDDFF" foreground="#AA66AA" fontWeight="bold" underline="true"/>
+    <Color name="Keyword6" background="#EEDDFF" foreground="#666666" fontWeight="bold" underline="true"/>
+
+    <RuleSet/>
+
+</SyntaxDefinition>
+

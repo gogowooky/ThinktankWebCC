@@ -17,6 +17,9 @@
 
 # Status
 
+
+
+
 # Application ========================================================================================================
 ## Action：　260619　Application.FocusedPanel.Name:Next
 ## Action：　260619　Application.FocusedPanel.Name:Prev
@@ -102,10 +105,44 @@ candidates:     ^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyri
 　　- Copyright （著作権・コピーライト情報）
 
 ## Status：　260614　ToolBar.StatusMode.Text
+description:    ステータスIDのテキスト
+key:            ToolBar.StatusMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
 
 　ToolBarがStatusモードのPanelには、EditBoxとTextBoxを配置し、PanelにフォーカスがあるときはEditBoxが、FocusがはずれるとTextBoxが表示されます。
 　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
+## Status：　260625　ToolBar.HighlighterMode.Text
+description:    ハイライターの入力テキスト
+key:            ToolBar.HighlighterMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
+## Status：　260625　ToolBar.CommandMode.Text
+description:    コマンドラインの入力テキスト
+key:            ToolBar.CommandMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
+## Status：　260625　ToolBar.TranslateMode.Text
+description:    翻訳の入力テキスト
+key:            ToolBar.TranslateMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
+## Status：　260625　ToolBar.ReminderMode.Text
+description:    リマインダーの入力テキスト
+key:            ToolBar.ReminderMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
 
 # Panel ==============================================================================================================
 ## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
@@ -757,6 +794,7 @@ candidates:     ^#[0-9a-fA-F]{6,8}$
 ## Action：　260619　TextEditor.FullWidthSpace.IsVisible:Toggle
 ## Action：　260619　TextEditor.UnicodeHighlight.IsVisible:Toggle
 ## Action：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
+
 ## Status：　260613　TextEditor.LineNumbers.IsVisible
 description:    行番号表示
 key:            TextEditor.LineNumbers.IsVisible

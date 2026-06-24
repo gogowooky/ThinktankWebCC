@@ -158,24 +158,7 @@ interface PropSpec {
   getValues?: (app: TTApplication) => string[];
 }
 
-// プリセットデフォルト JSON（TTWorkoutPanel の定数から生成）
-const SECTION_STYLE_DEFAULT_JSON   = JSON.stringify(SECTION_STYLE_DEFAULTS);
 
-function makeSectionPresetSpec(n: number): PropSpec {
-  const key = `TextEditor.SectionStyle.Preset${n}`;
-  return {
-    panel: 'WorkoutPanel',
-    isConst: true, default: SECTION_STYLE_DEFAULT_JSON, type: 'json', candidates: '.*',
-    description: `セクションスタイルプリセット${n}`,
-    get: (_app) => 'const',
-    set: (app, v) => { try {
-      const s = JSON.parse(v) as SectionStyle[];
-      app.WorkoutPanel.TextEditor.SectionPresets[key] = s;
-      if (app.WorkoutPanel.TextEditor.SectionStyleKey === key)
-        app.WorkoutPanel.TextEditor.HeadingStyles = [...s];
-    } catch { /* ignore */ } },
-  };
-}
 
 /**
  * PROP_SPECS
@@ -417,7 +400,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       ];
     })
   ),
-  ...Object.fromEntries([1, 2, 3, 4, 5].map(n => [`TextEditor.SectionStyle.Preset${n}`, makeSectionPresetSpec(n)])),
+
 
   // ── ToolBar 表示モード ────────────────────────────────────────────────
   'ToolBar.Mode.Name': {

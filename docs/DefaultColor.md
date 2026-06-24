@@ -23,4 +23,14 @@ Default.TextEditor.Italic,              undefined,        undefined,        ital
 Default.TextEditor.Strikethrough,       undefined,        undefined,        strikethrough
 Default.TextEditor.Bold,                undefined,        undefined,        bold
 
+Default.Thinktank.Ribbon,               undefined,        #1d618f,        undefined
+Default.Thinktank.Area,                 undefined,        #edf2f6,        undefined
+Default.Overview.Ribbon,                undefined,        #873960,        undefined
+Default.Overview.Area,                  undefined,        #f8f3f5,        undefined
+Default.Workout.Ribbon,                 undefined,        #382830,        undefined
+Default.Workout.Area,                   undefined,        #e3e1e2,        undefined
+Default.ReThink.Ribbon,                 undefined,        #324f46,        undefined
+Default.ReThink.Area,                   undefined,        #eff1f0,        undefined
+Default.ToolBar,                        undefined,        #2d2d2d,        undefined
+Default.ToolBar.Color,                  undefined,        #ffffff,        undefined
 

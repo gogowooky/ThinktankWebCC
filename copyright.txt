@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "b6e7813",
-  "commitDateTime": "2026-06-25-000027",
-  "commitMessage": "feat: implement dynamic panel and toolbar color customizable statusIDs"
+  "commitId": "541c99b",
+  "commitDateTime": "2026-06-25-075100",
+  "commitMessage": "refactor: remove unused TextEditor.SectionStyle.Preset1-5 properties"
 }

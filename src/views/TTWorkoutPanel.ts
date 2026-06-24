@@ -47,14 +47,7 @@ export class TextEditorSettings {
   HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];
   HighlightStyles: HighlightStyle[] = [...HIGHLIGHT_STYLE_DEFAULTS];
 
-  SectionStyleKey: string = 'TextEditor.SectionStyle.Preset1';
-  SectionPresets: Record<string, SectionStyle[]> = {
-    'TextEditor.SectionStyle.Preset1': [...SECTION_STYLE_DEFAULTS],
-    'TextEditor.SectionStyle.Preset2': [...SECTION_STYLE_DEFAULTS],
-    'TextEditor.SectionStyle.Preset3': [...SECTION_STYLE_DEFAULTS],
-    'TextEditor.SectionStyle.Preset4': [...SECTION_STYLE_DEFAULTS],
-    'TextEditor.SectionStyle.Preset5': [...SECTION_STYLE_DEFAULTS],
-  };
+
 
   HighlightStyleKey: string = 'WorkoutPanel.HighlightStyle.Preset1';
   HighlightPresets: Record<string, HighlightStyle[]> = {
