@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.18",
+  "version": "1.0.19",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "veneno-02",
-  "commitId": "a26b369",
-  "commitDateTime": "2026-06-24-180830",
-  "commitMessage": "style: remove status bar copyright scrolling and organize status bindings"
+  "commitPC": "E15",
+  "commitId": "b6e7813",
+  "commitDateTime": "2026-06-25-000027",
+  "commitMessage": "feat: implement dynamic panel and toolbar color customizable statusIDs"
 }
