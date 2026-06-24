@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "8aa5f4a",
-  "commitDateTime": "2026-06-24-172543",
-  "commitMessage": "docs: update Status/Action bindings, mark Overview.Thought.Name as OK and remove deprecated TextEditor.Style.Section"
+  "commitId": "a26b369",
+  "commitDateTime": "2026-06-24-180830",
+  "commitMessage": "style: remove status bar copyright scrolling and organize status bindings"
 }

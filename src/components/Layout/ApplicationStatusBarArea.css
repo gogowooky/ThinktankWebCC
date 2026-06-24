@@ -208,22 +208,20 @@
 .ApplicationStatusBarArea__author-banner {
   flex: 1;
   height: 20px;
+  display: flex;
+  align-items: center;
   overflow: hidden;
   cursor: pointer;
   min-width: 0;
+  padding: 0 6px;
 }
 
 .ApplicationStatusBarArea__author-banner-text {
-  display: inline-block;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.75);
   font-size: 11px;
-  animation: author-banner-scroll 28s linear infinite;
-}
-
-@keyframes author-banner-scroll {
-  0%   { transform: translateX(100vw); }
-  100% { transform: translateX(-100%); }
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── StatusPanel用スタイル ── */
