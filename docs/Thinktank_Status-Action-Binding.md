@@ -16,18 +16,6 @@
 # Action
 
 
-## 完了：　260626　TextEditor.CurrentFolding.Heading:UpperLevel
-　以下の手順を実装してください。
-　↓　カーソル位置のテキストが属するHeading行を把握
-　↓　現在位置が兄弟Heading行のなかで１番目である場合、親Heading行へ移動
-　↓　１番目の兄弟Heading行に移動
-
-## 完了：　260626　TextEditor.CurrentFolding.Heading:LowerLevel
-　以下の手順を実装してください。
-　↓　カーソル位置のテキストが属するHeading行を把握
-　↓　現在位置が兄弟Heading行のなかで最後である場合、親Heading行の次の兄弟Heading行へ移動
-　↓　最後の兄弟Heading行に移動
-
 ## 完了：　TextEditor.Section.IncLevel
 
 　選択されていない場合　
@@ -415,6 +403,23 @@ candidates:     ^.*$
 　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
 　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
 
+## 完了：　260626　TextEditor.CurrentFolding.Heading:SiblingFirst
+
+  IDをTextEditor.CurrentFolding.Heading:SiblingFirstへ変更
+
+　以下の手順を実装してください。
+　↓　カーソル位置のテキストが属するHeading行を把握
+　↓　現在位置が兄弟Heading行のなかで１番目である場合、親Heading行へ移動
+　↓　１番目の兄弟Heading行に移動
+
+## 完了：　260626　TextEditor.CurrentFolding.Heading:SiblingLast
+
+  IDをTextEditor.CurrentFolding.Heading:SiblingLastへ変更
+
+　以下の手順を実装してください。
+　↓　カーソル位置のテキストが属するHeading行を把握
+　↓　現在位置が兄弟Heading行のなかで最後である場合、親Heading行の次の兄弟Heading行へ移動
+　↓　最後の兄弟Heading行に移動
 ## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
 　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
 　現カーソル位置がHeading行である場合：次の兄弟Heading行へ移動
