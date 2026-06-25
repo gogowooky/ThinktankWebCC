@@ -358,7 +358,23 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
-  registerTextEditorActions();
+  // Dates
+  TTActions.Register({
+    ActionID: 'Application.Date:Next',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.Date', 'next');
+      item.Result = TTUIStateManager.instance.getProperty('Application.Date');
+    },
+  });
+  TTActions.Register({
+    ActionID: 'Application.Date:Prev',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.Date', 'prev');
+      item.Result = TTUIStateManager.instance.getProperty('Application.Date');
+    },
+  });
+
+  registerTextEditorActions(app);
 }
 
 // ── テキストエディタ専用のアクション登録 ──────────────────────────────────────────
@@ -422,7 +438,7 @@ function isLineFolded(editor: any, lineNumber: number): boolean {
   return false;
 }
 
-export function registerTextEditorActions(): void {
+export function registerTextEditorActions(app: TTApplication): void {
 
   // 1. TextEditor.CurrentFolding.Heading:VisibleForward
   TTActions.Register({
@@ -698,6 +714,8 @@ export function registerTextEditorActions(): void {
       }
     },
   });
+
+  registerTextEditorDateActions(app);
 }
 
 export interface HeadingAttribute {
@@ -803,4 +821,470 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
   }
 
   return attributes;
+}
+
+// ── 日付操作 (TextEditor.EditDate) 関連の実装 ───────────────────────────────
+
+export interface DateEditState {
+  originalText: string;
+  originalStartOffset: number;
+  originalLength: number;
+  currentDate: Date;
+  baseFormat: 'DateTag' | 'Date' | 'JDate' | 'GDate';
+  weekTimeSuffix: '' | 'W' | 'T' | 'WT';
+}
+
+let activeDateEditState: DateEditState | null = null;
+
+function getJapaneseEra(date: Date): { era: string; year: number } {
+  const y = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const dateVal = y * 10000 + m * 100 + d;
+  
+  if (dateVal >= 20190501) {
+    return { era: '令和', year: y - 2019 + 1 };
+  } else if (dateVal >= 19890108) {
+    return { era: '平成', year: y - 1989 + 1 };
+  } else if (dateVal >= 19261225) {
+    return { era: '昭和', year: y - 1926 + 1 };
+  } else if (dateVal >= 19120730) {
+    return { era: '大正', year: y - 1912 + 1 };
+  } else {
+    return { era: '明治', year: y - 1868 + 1 };
+  }
+}
+
+function formatDate(date: Date, formatKey: string): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const yyyy = String(date.getFullYear());
+  const MM = pad(date.getMonth() + 1);
+  const dd = pad(date.getDate());
+  const HH = pad(date.getHours());
+  const mm = pad(date.getMinutes());
+  const ddd = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
+
+  if (formatKey.startsWith('GDate')) {
+    const eraInfo = getJapaneseEra(date);
+    const ggyy = eraInfo.era + pad(eraInfo.year);
+    switch (formatKey) {
+      case 'GDate': return `${ggyy}年${MM}月${dd}日`;
+      case 'GDateW': return `${ggyy}年${MM}月${dd}日 (${ddd})`;
+      case 'GDateT': return `${ggyy}年${MM}月${dd}日 ${HH}時${mm}分`;
+      case 'GDateWT': return `${ggyy}年${MM}月${dd}日 (${ddd}) ${HH}時${mm}分`;
+      default: return `${ggyy}年${MM}月${dd}日`;
+    }
+  }
+
+  switch (formatKey) {
+    case 'DateTag': return `[${yyyy}-${MM}-${dd}]`;
+    case 'Date': return `${yyyy}/${MM}/${dd}`;
+    case 'DateW': return `${yyyy}/${MM}/${dd} (${ddd})`;
+    case 'DateT': return `${yyyy}/${MM}/${dd} ${HH}:${mm}`;
+    case 'DateWT': return `${yyyy}/${MM}/${dd} (${ddd}) ${HH}:${mm}`;
+    case 'JDate': return `${yyyy}年${MM}月${dd}日`;
+    case 'JDateW': return `${yyyy}年${MM}月${dd}日 (${ddd})`;
+    case 'JDateT': return `${yyyy}年${MM}月${dd}日 ${HH}:${mm}`;
+    case 'JDateWT': return `${yyyy}年${MM}月${dd}日 (${ddd}) ${HH}:${mm}`;
+    default: return `${yyyy}/${MM}/${dd}`;
+  }
+}
+
+function parseDateString(str: string, key: string): Date | null {
+  try {
+    if (key === 'DateTag') {
+      const clean = str.replace(/[\[\]]/g, '');
+      const parts = clean.split('-');
+      if (parts.length === 3) {
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      }
+    } else if (key === 'Date') {
+      const clean = str.replace(/\s\([日月火水木金土]\)/, '');
+      const parts = clean.split(/\s+/);
+      const dateParts = parts[0].split('/');
+      let hour = 0, minute = 0;
+      if (parts[1] && parts[1].includes(':')) {
+        const timeParts = parts[1].split(':');
+        hour = Number(timeParts[0]);
+        minute = Number(timeParts[1]);
+      }
+      return new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2]), hour, minute);
+    } else if (key === 'JDate') {
+      const clean = str.replace(/\s\([日月火水木金土]\)/, '');
+      const parts = clean.split(/\s+/);
+      const dateMatch = parts[0].match(/(\d+)年(\d+)月(\d+)日/);
+      if (!dateMatch) return null;
+      let hour = 0, minute = 0;
+      if (parts[1] && parts[1].includes(':')) {
+        const timeParts = parts[1].split(':');
+        hour = Number(timeParts[0]);
+        minute = Number(timeParts[1]);
+      }
+      return new Date(Number(dateMatch[1]), Number(dateMatch[2]) - 1, Number(dateMatch[3]), hour, minute);
+    } else if (key === 'GDate') {
+      const clean = str.replace(/\s\([日月火水木金土]\)/, '');
+      const parts = clean.split(/\s+/);
+      const dateMatch = parts[0].match(/^(明治|大正|昭和|平成|令和)(元|\d+)年(\d+)月(\d+)日/);
+      if (!dateMatch) return null;
+      
+      const era = dateMatch[1];
+      const eraYearStr = dateMatch[2];
+      const month = Number(dateMatch[3]);
+      const day = Number(dateMatch[4]);
+      
+      const eraYear = eraYearStr === '元' ? 1 : Number(eraYearStr);
+      let year = 0;
+      if (era === '令和') year = 2019 + eraYear - 1;
+      else if (era === '平成') year = 1989 + eraYear - 1;
+      else if (era === '昭和') year = 1926 + eraYear - 1;
+      else if (era === '大正') year = 1912 + eraYear - 1;
+      else if (era === '明治') year = 1868 + eraYear - 1;
+      
+      let hour = 0, minute = 0;
+      if (parts[1]) {
+        const timeMatch = parts[1].match(/(\d+)時(\d+)分/);
+        if (timeMatch) {
+          hour = Number(timeMatch[1]);
+          minute = Number(timeMatch[2]);
+        }
+      }
+      return new Date(year, month - 1, day, hour, minute);
+    }
+  } catch (e) {
+    console.error('Error parsing date string:', str, e);
+  }
+  return null;
+}
+
+export interface DateMatch {
+  key: 'DateTag' | 'Date' | 'JDate' | 'GDate';
+  value: string;
+  startColumn: number;
+  endColumn: number;
+  lineNumber: number;
+  date: Date;
+  hasWeek: boolean;
+  hasTime: boolean;
+}
+
+function findDateAtCaret(editor: any): DateMatch | null {
+  const model = editor.getModel();
+  if (!model) return null;
+  const position = editor.getPosition();
+  if (!position) return null;
+
+  const lineNumber = position.lineNumber;
+  const lineContent = model.getLineContent(lineNumber);
+  const caretColumn = position.column;
+
+  const regexes = [
+    { key: 'DateTag' as const, regex: /\[\d{4}-\d{2}-\d{2}\]/g },
+    { key: 'Date' as const, regex: /\d{4}\/\d{1,2}\/\d{1,2}(?:\s\([日月火水木金土]\))?(?:\s\d{2}:\d{2})?/g },
+    { key: 'JDate' as const, regex: /\d{4}年\d{1,2}月\d{1,2}日(?:\s\([日月火水木金土]\))?(?:\s\d{2}:\d{2})?/g },
+    { key: 'GDate' as const, regex: /(?:明治|大正|昭和|平成|令和)(?:\d{1,2}|元)年\d{1,2}月\d{1,2}日(?:\s\([日月火水木金土]\))?(?:\s\d{2}時\d{2}分)?/g }
+  ];
+
+  for (const item of regexes) {
+    let match;
+    item.regex.lastIndex = 0;
+    while ((match = item.regex.exec(lineContent)) !== null) {
+      const matchText = match[0];
+      const startIdx = match.index;
+      const endIdx = startIdx + matchText.length;
+      const startColumn = startIdx + 1;
+      const endColumn = endIdx + 1;
+
+      if (caretColumn >= startColumn && caretColumn <= endColumn) {
+        const parsedDate = parseDateString(matchText, item.key);
+        if (parsedDate) {
+          const hasWeek = matchText.includes('(');
+          const hasTime = matchText.includes(':') || matchText.includes('時');
+          return {
+            key: item.key,
+            value: matchText,
+            startColumn,
+            endColumn,
+            lineNumber,
+            date: parsedDate,
+            hasWeek,
+            hasTime
+          };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+export function registerTextEditorDateActions(app: TTApplication): void {
+  // 1. TextEditor.EditDate.InsertExDate
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.InsertExDate',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        if (!model) { item.Result = '[モデルなし]'; return; }
+
+        const match = findDateAtCaret(editor);
+        if (match) {
+          activeDateEditState = {
+            originalText: match.value,
+            originalStartOffset: model.getOffsetAt({ lineNumber: match.lineNumber, column: match.startColumn }),
+            originalLength: match.value.length,
+            currentDate: match.date,
+            baseFormat: match.key,
+            weekTimeSuffix: ((match.hasWeek ? 'W' : '') + (match.hasTime ? 'T' : '')) as any
+          };
+          // カーソルを先頭に移動
+          editor.setPosition({ lineNumber: match.lineNumber, column: match.startColumn });
+          app.Status.SetExMode('ExDate', item.Mods ?? '');
+          item.Result = `ExDateモード開始: ${match.value}`;
+        } else {
+          // 新規挿入
+          const now = new Date();
+          const initialText = formatDate(now, 'JDateW');
+          const pos = editor.getPosition();
+          if (!pos) { item.Result = '[位置なし]'; return; }
+
+          const range = new (window as any).monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column);
+          editor.executeEdits("insertExDate", [{
+            range: range,
+            text: initialText,
+            forceMoveMarkers: false
+          }]);
+
+          editor.setPosition(pos); // 挿入テキストの先頭に
+          activeDateEditState = {
+            originalText: initialText,
+            originalStartOffset: model.getOffsetAt(pos),
+            originalLength: initialText.length,
+            currentDate: now,
+            baseFormat: 'JDate',
+            weekTimeSuffix: 'W'
+          };
+          app.Status.SetExMode('ExDate', item.Mods ?? '');
+          item.Result = `ExDate新規挿入: ${initialText}`;
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  // 共通処理ヘルパー
+  const modifyDate = (item: any, updateFn: (state: DateEditState) => void) => {
+    try {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) { item.Result = '[エディタ未選択]'; return; }
+      if (!activeDateEditState) { item.Result = '[日付状態なし]'; return; }
+
+      const match = findDateAtCaret(editor);
+      if (!match) { item.Result = '[日付未検出]'; return; }
+
+      updateFn(activeDateEditState);
+
+      const formatKey = activeDateEditState.baseFormat === 'DateTag' ? 'DateTag' : (activeDateEditState.baseFormat + activeDateEditState.weekTimeSuffix);
+      const newText = formatDate(activeDateEditState.currentDate, formatKey);
+
+      const range = new (window as any).monaco.Range(match.lineNumber, match.startColumn, match.lineNumber, match.endColumn);
+      editor.executeEdits("changeDate", [{
+        range: range,
+        text: newText,
+        forceMoveMarkers: false
+      }]);
+
+      editor.setPosition({ lineNumber: match.lineNumber, column: match.startColumn });
+      item.Result = newText;
+    } catch (err: any) {
+      item.Result = `[エラー] ${err.message}`;
+    }
+  };
+
+  // 2. ChangeFormat
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.ChangeFormat',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        const baseFormats: ('DateTag' | 'Date' | 'JDate' | 'GDate')[] = ['DateTag', 'Date', 'JDate', 'GDate'];
+        const isShift = (item.Mods ?? '').toLowerCase().includes('shift');
+        const idx = baseFormats.indexOf(state.baseFormat);
+        const nextIdx = isShift
+          ? (idx - 1 + baseFormats.length) % baseFormats.length
+          : (idx + 1) % baseFormats.length;
+        state.baseFormat = baseFormats[nextIdx];
+      });
+    }
+  });
+
+  // 3. ToggleWeekday
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.ToggleWeekday',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        if (state.baseFormat === 'DateTag') {
+          state.baseFormat = 'Date';
+          state.weekTimeSuffix = 'W';
+          return;
+        }
+        if (state.weekTimeSuffix.includes('W')) {
+          state.weekTimeSuffix = state.weekTimeSuffix.replace('W', '') as any;
+        } else {
+          state.weekTimeSuffix = state.weekTimeSuffix.includes('T') ? 'WT' : 'W';
+        }
+      });
+    }
+  });
+
+  // 4. ToggleTime
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.ToggleTime',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        if (state.baseFormat === 'DateTag') {
+          state.baseFormat = 'Date';
+          state.weekTimeSuffix = 'T';
+          return;
+        }
+        if (state.weekTimeSuffix.includes('T')) {
+          state.weekTimeSuffix = state.weekTimeSuffix.replace('T', '') as any;
+        } else {
+          state.weekTimeSuffix = state.weekTimeSuffix.includes('W') ? 'WT' : 'T';
+        }
+      });
+    }
+  });
+
+  // 5. IncYear
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.IncYear',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setFullYear(state.currentDate.getFullYear() + 1);
+      });
+    }
+  });
+
+  // 6. DecYear
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.DecYear',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setFullYear(state.currentDate.getFullYear() - 1);
+      });
+    }
+  });
+
+  // 7. IncMonth
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.IncMonth',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setMonth(state.currentDate.getMonth() + 1);
+      });
+    }
+  });
+
+  // 8. DecMonth
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.DecMonth',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setMonth(state.currentDate.getMonth() - 1);
+      });
+    }
+  });
+
+  // 9. IncWeek
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.IncWeek',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setDate(state.currentDate.getDate() + 7);
+      });
+    }
+  });
+
+  // 10. DecWeek
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.DecWeek',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setDate(state.currentDate.getDate() - 7);
+      });
+    }
+  });
+
+  // 11. IncDay
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.IncDay',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setDate(state.currentDate.getDate() + 1);
+      });
+    }
+  });
+
+  // 12. DecDay
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.DecDay',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate.setDate(state.currentDate.getDate() - 1);
+      });
+    }
+  });
+
+  // 13. SetNow
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.SetNow',
+    Completion: (item) => {
+      modifyDate(item, (state) => {
+        state.currentDate = new Date();
+      });
+    }
+  });
+
+  // 14. Reset
+  TTActions.Register({
+    ActionID: 'TextEditor.EditDate.Reset',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        if (!activeDateEditState) { item.Result = '[日付状態なし]'; return; }
+
+        const match = findDateAtCaret(editor);
+        const model = editor.getModel();
+
+        if (match && model) {
+          const range = new (window as any).monaco.Range(match.lineNumber, match.startColumn, match.lineNumber, match.endColumn);
+          editor.executeEdits("resetDate", [{
+            range: range,
+            text: activeDateEditState.originalText,
+            forceMoveMarkers: false
+          }]);
+          editor.setPosition({ lineNumber: match.lineNumber, column: match.startColumn });
+        } else if (model) {
+          // フォールバック: 開始オフセットから復元
+          const startPos = model.getPositionAt(activeDateEditState.originalStartOffset);
+          const endPos = model.getPositionAt(activeDateEditState.originalStartOffset + activeDateEditState.originalLength);
+          const range = new (window as any).monaco.Range(startPos.lineNumber, startPos.column, endPos.lineNumber, endPos.column);
+          editor.executeEdits("resetDate", [{
+            range: range,
+            text: activeDateEditState.originalText,
+            forceMoveMarkers: false
+          }]);
+          editor.setPosition(startPos);
+        }
+        activeDateEditState = null;
+        app.Status.ClearExMode();
+        item.Result = '日付リセット/ExDate終了';
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
 }
