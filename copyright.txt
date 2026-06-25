@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.25",
+  "version": "1.0.26",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "22ee0fe",
-  "commitDateTime": "2026-06-25-173629",
-  "commitMessage": "fix: update default Bullet.StyleSet to include spaces"
+  "commitId": "aad992e",
+  "commitDateTime": "2026-06-25-174548",
+  "commitMessage": "fix: add auto-migration to update Bullet.StyleSet from old config values"
 }

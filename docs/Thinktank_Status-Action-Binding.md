@@ -37,6 +37,13 @@
 
 # Status
 ## 完了： 260625　TextEditor.Bullet.StyleSet
+description:    行頭文字
+key:            TextEditor.Bullet.StyleSet
+current:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
+default:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
+type:           string
+candidates:     .*
+
   行頭文字の文字セットを以下に修正。
 　"・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ," 
 

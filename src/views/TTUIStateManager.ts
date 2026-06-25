@@ -978,7 +978,14 @@ export class TTUIStateManager {
 
     // 通常の値変更：正規表現で検証
     if (pattern.test(value)) {
-      spec.set(this._app, value);
+      let finalValue = value;
+      if (key === 'TextEditor.Bullet.StyleSet') {
+        const targetVal = '・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,';
+        if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
+          finalValue = targetVal;
+        }
+      }
+      spec.set(this._app, finalValue);
     }
   }
 
