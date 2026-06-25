@@ -37,10 +37,10 @@
 
 # Status
 ## 完了： 260625　TextEditor.Bullet.StyleSet
-　[✓]の次は blank が登録されている。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
+  行頭文字の文字セットを以下に修正。
+　"・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ," 
 
-  行頭文字の文字セットをcsv形式で保持する。
-　"・,- ,* ,■,●,= ,> ,# ,↓,→,[✓]," 
+　[✓]の次は blank が登録されている。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
 
 ## 完了：　TextEditor.Numbering.StyleSet
   行頭文字の文字セットをcsv形式で保持する。

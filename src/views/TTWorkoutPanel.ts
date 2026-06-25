@@ -43,7 +43,7 @@ export class TextEditorSettings {
   CurrentFoldingHeadingOffset = '0';
   CurrentFoldingHeadingNumber = 'None';
 
-  Bullet = { StyleSet: "・,- ,* ,■,●,= ,> ,# ,↓,→,[✓]," };
+  Bullet = { StyleSet: "・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ," };
 
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };
   HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];

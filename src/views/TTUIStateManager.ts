@@ -260,7 +260,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'TextEditor.Bullet.StyleSet': {
     panel: 'WorkoutPanel',
-    default: '・,- ,* ,■,●,= ,> ,# ,↓,→,[✓],', type: 'string', candidates: '.*',
+    default: '・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,', type: 'string', candidates: '.*',
     description: '行頭文字の文字セット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.StyleSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleSet = v; },

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.24",
+  "version": "1.0.25",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "bab0c9f",
-  "commitDateTime": "2026-06-25-173154",
-  "commitMessage": "fix: support blank bullet transition between [✓] and ・"
+  "commitId": "22ee0fe",
+  "commitDateTime": "2026-06-25-173629",
+  "commitMessage": "fix: update default Bullet.StyleSet to include spaces"
 }
