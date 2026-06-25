@@ -715,6 +715,122 @@ export function registerTextEditorActions(app: TTApplication): void {
     },
   });
 
+  // 7. TextEditor.CurrentFolding.Heading:UpperLevel
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:UpperLevel',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
+
+        // 現在のカーソル位置から上方向に最も近い見出し H を取得
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
+        const h = matched[matched.length - 1];
+
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        // 兄弟Heading（非表示でないもの）を取得
+        const siblings = headings.filter(
+          d => d.level === h.level &&
+               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber &&
+               !d.isHidden
+        );
+
+        if (siblings.length === 0) { item.Result = '兄弟見出しなし'; return; }
+
+        const firstSibling = siblings[0];
+        if (h.line === firstSibling.line) {
+          // 親Heading行へ移動
+          const parentHeading = headings.find(d => d.headingNumber === parentNumber);
+          if (parentHeading) {
+            editor.setPosition({ lineNumber: parentHeading.line, column: 1 });
+            editor.revealLineInCenterIfOutsideViewport(parentHeading.line);
+            item.Result = `L${parentHeading.line}へ移動`;
+          } else {
+            item.Result = '親見出しなし';
+          }
+        } else {
+          // 1番目の兄弟Heading行に移動
+          editor.setPosition({ lineNumber: firstSibling.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(firstSibling.line);
+          item.Result = `L${firstSibling.line}へ移動`;
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    },
+  });
+
+  // 8. TextEditor.CurrentFolding.Heading:LowerLevel
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:LowerLevel',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) { item.Result = '[エディタ未選択]'; return; }
+        const model = editor.getModel();
+        const pos = editor.getPosition();
+        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
+
+        const headings = getHeadingAttributes(editor);
+        const targetOffset = model.getOffsetAt(pos);
+
+        // 現在のカーソル位置から上方向に最も近い見出し H を取得
+        const matched = headings.filter(h => h.offset <= targetOffset);
+        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
+        const h = matched[matched.length - 1];
+
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        // 兄弟Heading（非表示でないもの）を取得
+        const siblings = headings.filter(
+          d => d.level === h.level &&
+               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber &&
+               !d.isHidden
+        );
+
+        if (siblings.length === 0) { item.Result = '兄弟見出しなし'; return; }
+
+        const lastSibling = siblings[siblings.length - 1];
+        if (h.line === lastSibling.line) {
+          // 親Headingの次の兄弟Heading行へ移動
+          const parentHeading = headings.find(d => d.headingNumber === parentNumber);
+          if (parentHeading) {
+            const grandparentNumber = parentHeading.headingNumber.split('.').slice(0, -1).join('.');
+            const parentSiblings = headings.filter(
+              d => d.level === parentHeading.level &&
+                   d.headingNumber.split('.').slice(0, -1).join('.') === grandparentNumber &&
+                   !d.isHidden
+            );
+            const parentIdx = parentSiblings.findIndex(d => d.line === parentHeading.line);
+            if (parentIdx !== -1 && parentIdx < parentSiblings.length - 1) {
+              const nextParentSibling = parentSiblings[parentIdx + 1];
+              editor.setPosition({ lineNumber: nextParentSibling.line, column: 1 });
+              editor.revealLineInCenterIfOutsideViewport(nextParentSibling.line);
+              item.Result = `L${nextParentSibling.line}へ移動`;
+            } else {
+              item.Result = '親の次の兄弟見出しなし';
+            }
+          } else {
+            item.Result = '親見出しなし';
+          }
+        } else {
+          // 最後の兄弟Heading行に移動
+          editor.setPosition({ lineNumber: lastSibling.line, column: 1 });
+          editor.revealLineInCenterIfOutsideViewport(lastSibling.line);
+          item.Result = `L${lastSibling.line}へ移動`;
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    },
+  });
+
   registerTextEditorDateActions(app);
   registerTextEditorBulletActions(app);
   registerTextEditorCommentActions(app);

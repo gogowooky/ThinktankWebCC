@@ -14,22 +14,39 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
+
+
+## 完了：　260626　TextEditor.CurrentFolding.Heading:UpperLevel
+　以下の手順を実装してください。
+　↓　カーソル位置のテキストが属するHeading行を把握
+　↓　現在位置が兄弟Heading行のなかで１番目である場合、親Heading行へ移動
+　↓　１番目の兄弟Heading行に移動
+
+## 完了：　260626　TextEditor.CurrentFolding.Heading:LowerLevel
+　以下の手順を実装してください。
+　↓　カーソル位置のテキストが属するHeading行を把握
+　↓　現在位置が兄弟Heading行のなかで最後である場合、親Heading行の次の兄弟Heading行へ移動
+　↓　最後の兄弟Heading行に移動
+
 ## 完了：　TextEditor.Section.IncLevel
-　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り
+
+　選択されていない場合　
+
+　選択されている場合
 
 ## 完了：　TextEditor.Section.DecLevel
 
-## 実装：　TextEditor.Numbering.NextStyle
+## 完了：　TextEditor.Numbering.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、順番文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの文字
 　　TextEditor.Numbering.StyleSet に含まれる：　次の値に置換
 　　TextEditor.Numbering.StyleSet に含まれない：　1文字目の位置に、TextEditor.Numbering.StyleSetの1番目の文字を挿入
 　
-## 実装：　TextEditor.Numbering.PrevStyle
+## 完了：　TextEditor.Numbering.PrevStyle
 
 # Status
 
-## 実装：　TextEditor.Numbering.StyleSet
+## 完了：　TextEditor.Numbering.StyleSet
 description:    順番文字
 key:            TextEditor.Comment.StyleSet
 current:        1. , 1) , [1] , ① , a. , (A) ,
@@ -361,7 +378,10 @@ candidates:     .*
 
 　[✓]の次は blank。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
 
-# TextEditor Cursor =======================================================================================================
+## Action：　260619　TextEditor.EditText.Undo
+## Action：　260619　TextEditor.EditText.Redo
+
+# TextEditor Heading =======================================================================================================
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
 　以下の手順を実装してください。
 　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
@@ -408,10 +428,6 @@ candidates:     ^.*$
 ## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 
-
-
-## Action：　260619　TextEditor.EditText.Undo
-## Action：　260619　TextEditor.EditText.Redo
 
 
 # Color ============================================================================================================== 

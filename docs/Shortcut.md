@@ -9,8 +9,8 @@ Keyboard Shortcuts
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
 *TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
 *TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
-*TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingBackward  ,兄弟折畳行を前後移動
-*TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingForward   ,兄弟折畳行を後移動
+*TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:UpperLevel       ,最初の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:LowerLevel       ,最後の兄弟折畳行へ移動
 
 # アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
@@ -44,8 +44,8 @@ Keyboard Shortcuts
 *TextEditor ,       ,Ctrl+/             ,TextEditor.Bullet.NextStyle                    ,行頭文字を次に変更
 *TextEditor ,       ,Shift+Ctrl+?       ,TextEditor.Bullet.PrevStyle                    ,行頭文字を前に変更
 
-*TextEditor ,       ,Ctrl+;             ,TextEditor.Comment.NextStyle                   ,コメント文字を次に変更
-*TextEditor ,       ,Shift+Ctrl++       ,TextEditor.Comment.PrevStyle                   ,コメント文字を前に変更
+*TextEditor ,       ,Ctrl+.             ,TextEditor.Comment.NextStyle                   ,コメント文字を次に変更
+*TextEditor ,       ,Shift+Ctrl+>       ,TextEditor.Comment.PrevStyle                   ,コメント文字を前に変更
 
 # Editor 日付 編集モード
 *TextEditor ,       ,Alt+T              ,TextEditor.EditDate.InsertExDate               ,日付編集モード開始
