@@ -78,8 +78,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [updatedDate,  setUpdatedDate]  = useState('');
   const [updatedRange, setUpdatedRange] = useState('');
 
-  // 一覧表示する種別（初期は全種別ON）
-  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(ALL_CONTENT_TYPES));
+  // 一覧表示する種別（初期はThoughtのみON）
+  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(['thought']));
 
   // チャット state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
