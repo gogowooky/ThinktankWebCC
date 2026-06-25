@@ -62,6 +62,7 @@ export type ConfigKey =
   | 'ToolBar.Color'
   | 'TextEditor.LineNumbers.IsVisible'
   | 'TextEditor.Bullet.StyleSet'
+  | 'TextEditor.Comment.StyleSet'
   | 'TextEditor.WordWrap.IsVisible'
   | 'TextEditor.Minimap.IsVisible'
   | 'TextEditor.FullWidthSpace.IsVisible'
@@ -264,6 +265,13 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '行頭文字の文字セット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.StyleSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleSet = v; },
+  },
+  'TextEditor.Comment.StyleSet': {
+    panel: 'WorkoutPanel',
+    default: '> ,>> ,>>> ,; ,| ,# ,', type: 'string', candidates: '.*',
+    description: 'コメントの文字セット（CSV形式）',
+    get: (app) => app.WorkoutPanel.TextEditor.Comment.StyleSet,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.StyleSet = v; },
   },
   'TextEditor.WordWrap.IsVisible': {
     panel: 'WorkoutPanel',
@@ -981,6 +989,12 @@ export class TTUIStateManager {
       let finalValue = value;
       if (key === 'TextEditor.Bullet.StyleSet') {
         const targetVal = '・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,';
+        if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
+          finalValue = targetVal;
+        }
+      }
+      if (key === 'TextEditor.Comment.StyleSet') {
+        const targetVal = '> ,>> ,>>> ,; ,| ,# ,';
         if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
           finalValue = targetVal;
         }

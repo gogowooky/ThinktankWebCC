@@ -44,6 +44,7 @@ export class TextEditorSettings {
   CurrentFoldingHeadingNumber = 'None';
 
   Bullet = { StyleSet: "・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ," };
+  Comment = { StyleSet: "> ,>> ,>>> ,; ,| ,# ," };
 
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };
   HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];

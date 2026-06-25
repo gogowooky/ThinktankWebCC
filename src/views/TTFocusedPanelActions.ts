@@ -717,6 +717,7 @@ export function registerTextEditorActions(app: TTApplication): void {
 
   registerTextEditorDateActions(app);
   registerTextEditorBulletActions(app);
+  registerTextEditorCommentActions(app);
 }
 
 export interface HeadingAttribute {
@@ -1387,4 +1388,100 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
     }
   });
 }
+
+export function registerTextEditorCommentActions(app: TTApplication): void {
+  const getComments = (app: TTApplication): string[] => {
+    const raw = app.WorkoutPanel.TextEditor.Comment.StyleSet || '';
+    const parts = raw.split(',');
+    // 末尾の空文字列を活かしつつ、余計な空要素を除外します。
+    const comments = parts.filter((c, idx) => c !== '' || idx === parts.length - 1);
+    return comments;
+  };
+
+  const toggleCommentStyle = (item: any, direction: 'next' | 'prev') => {
+    try {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) { item.Result = '[エディタ未選択]'; return; }
+      const model = editor.getModel();
+      const selection = editor.getSelection();
+      if (!model || !selection) { item.Result = '[モデル/選択なし]'; return; }
+
+      const comments = getComments(app);
+      if (comments.length === 0) { item.Result = '[コメント設定空]'; return; }
+
+      // 各コメント記号を文字列の長さ順に降順ソート（空文字列は除外）
+      const sortedComments = comments.filter(c => c !== '').sort((a, b) => b.length - a.length);
+
+      const startLine = selection.startLineNumber;
+      const endLine = selection.endLineNumber;
+      const edits: any[] = [];
+
+      for (let line = startLine; line <= endLine; line++) {
+        const lineContent = model.getLineContent(line);
+
+        // コメント記号は「先頭の1文字目」から判定するため、インデントなし（行頭から）チェックします
+        let matchedComment: string | null = null;
+        for (const c of sortedComments) {
+          if (lineContent.startsWith(c)) {
+            matchedComment = c;
+            break;
+          }
+        }
+
+        let newText = '';
+        if (matchedComment !== null) {
+          // すでにコメントがある場合：切り替え
+          const originalIdx = comments.indexOf(matchedComment);
+          const idx = originalIdx >= 0 ? originalIdx : 0;
+          let nextIdx = 0;
+          if (direction === 'next') {
+            nextIdx = (idx + 1) % comments.length;
+          } else {
+            nextIdx = (idx - 1 + comments.length) % comments.length;
+          }
+          newText = comments[nextIdx] + lineContent.slice(matchedComment.length);
+        } else {
+          // コメントがない場合（blank状態）：blankのインデックス(空文字列)をベースに遷移
+          const blankIdx = comments.indexOf('');
+          const idx = blankIdx >= 0 ? blankIdx : comments.length - 1;
+          let nextIdx = 0;
+          if (direction === 'next') {
+            nextIdx = (idx + 1) % comments.length;
+          } else {
+            nextIdx = (idx - 1 + comments.length) % comments.length;
+          }
+          newText = comments[nextIdx] + lineContent;
+        }
+
+        edits.push({
+          range: new (window as any).monaco.Range(line, 1, line, lineContent.length + 1),
+          text: newText,
+          forceMoveMarkers: false
+        });
+      }
+
+      if (edits.length > 0) {
+        editor.executeEdits("toggleCommentStyle", edits);
+        item.Result = `コメント切替 (${direction}): ${startLine}-${endLine}行`;
+      }
+    } catch (err: any) {
+      item.Result = `[エラー] ${err.message}`;
+    }
+  };
+
+  TTActions.Register({
+    ActionID: 'TextEditor.Comment.NextStyle',
+    Completion: (item) => {
+      toggleCommentStyle(item, 'next');
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.Comment.PrevStyle',
+    Completion: (item) => {
+      toggleCommentStyle(item, 'prev');
+    }
+  });
+}
+
 
