@@ -14,64 +14,39 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## Action：　260625　TextEditor.EditDate.InsertExDate
-    カーソル位置に日付文字を挿入しExDateモードに入る。
-    ↓カーソル位置の日付文字を判別
-    　日付文字ではない場合：　初期日付フォーマットを JDateW としてカーソル位置に日付文字を入力
-    ↓カーソル位置の日付文字を認識し、original値、display値、format値として取得・保管する。
-    ↓ExDateモードに入ります。
-    日付入力の概要は過去のスクリプト docs\reference\script\TTPanel.ps1 を参照
-    日付文字判別用の正規表現は以下です。
-        @{ Key = 'DateTag'; Regex = [Regex]'\[\d{4}\-\d{2}\-\d{2}\]' }
-        @{ Key = 'Date'; Regex = [Regex]'\d{4}\/\d{1,2}\/\d{1,2}( \(.\))?( \d{2}:\d{2})?' }
-        @{ Key = 'JDate'; Regex = [Regex]'\d{4}年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}:\d{2})?' }
-        @{ Key = 'GDate'; Regex = [Regex]'(明治|大正|昭和|平成|令和)(\d{1,2}|元)年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}時\d{2}分)?' }
-　　日付文字挿入用のフォーマットは以下です。　ggyyは日本の元号です。
-        DateTag = @{ Format = '[yyyy-MM-dd]' }
-        Date    = @{ Format = 'yyyy/MM/dd' }
-        DateW   = @{ Format = 'yyyy/MM/dd (ddd)' }
-        DateT   = @{ Format = 'yyyy/MM/dd HH:mm' }
-        DateWT  = @{ Format = 'yyyy/MM/dd (ddd) HH:mm' }
-        JDate   = @{ Format = 'yyyy年MM月dd日' }
-        JDateW  = @{ Format = 'yyyy年MM月dd日 (ddd)' }
-        JDateT  = @{ Format = 'yyyy年MM月dd日 HH:mm' }
-        JDateWT = @{ Format = 'yyyy年MM月dd日 (ddd) HH:mm' }
-        GDate   = @{ Format = 'ggyy年MM月dd日' }
-        GDateW  = @{ Format = 'ggyy年MM月dd日 (ddd)' }
-        GDateT  = @{ Format = 'ggyy年MM月dd日 HH時mm分' }
-        GDateWT = @{ Format = 'ggyy年MM月dd日 (ddd) HH時mm分' }　
+## 完了：　TextEditor.Section.IncLevel
+　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り
 
-## Action：　260625　TextEditor.EditDate.ChangeFormat
-    カーソル位置の日時フォーマットを変更する。
-    変更の順番は過去のスクリプト docs\reference\script\TTPanel.ps1 を参照
+## 完了：　TextEditor.Section.DecLevel
 
-## Action：　260625　TextEditor.EditDate.ToggleWeekday
-    カーソル位置の曜日表示を変更する
+## 完了：　TextEditor.LineHeader.NextStyle
 
-## Action：　260625　TextEditor.EditDate.ToggleTime
-    カーソル位置の時間表示を変更する
-## Action：　260625　TextEditor.EditDate.IncYear
-    カーソル位置の年を1増やす
-## Action：　260625　TextEditor.EditDate.DecYear
-    カーソル位置の年を1減らす
-## Action：　260625　TextEditor.EditDate.IncMonth
-    カーソル位置の月を1増やす
-## Action：　260625　TextEditor.EditDate.DecMonth
-    カーソル位置の月を1減らす
-## Action：　260625　TextEditor.EditDate.IncWeek
-    カーソル位置の週を1増やす
-## Action：　260625　TextEditor.EditDate.DecWeek
-    カーソル位置の週を1減らす
-## Action：　260625　TextEditor.EditDate.IncDay
-    カーソル位置の日を1増やす
-## Action：　260625　TextEditor.EditDate.DecDay
-    カーソル位置の日を1減らす
-## Action：　260625　TextEditor.EditDate.SetNow
-    カーソル位置の日時を今にする　
-## Action：　260625　TextEditor.EditDate.Reset
-    カーソル位置の日時を元に戻す　
+## 完了：　TextEditor.LineHeader.PrevStyle
+
+## 完了： 260625　TextEditor.Bullet.NextStyle
+　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
+　各行における [ 　\t]* のあとの1文字目
+　　TextEditor.Bullet.StyleSet に含まれる：　次の値に置換
+　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの1番目の文字を挿入
+
+## 完了： 260625　TextEditor.Bullet.PrevStyle
+　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
+　各行における [ 　\t]* のあとの1文字目
+　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
+　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
 
 # Status
+## 完了： 260625　TextEditor.Bullet.StyleSet
+  行頭文字의 文字セットをcsv形式で保持する。
+ 　"・,- ,* ,■,●,= ,> ,# ,↓,→,[✓]," 
+
+## 完了：　TextEditor.Numbering.StyleSet
+  行頭文字の文字セットをcsv形式で保持する。
+　1., 1), [1], ①, a., (A), 
+
+## 完了：　TextEditor.Comment.StyleSet
+  行頭文字の文字セットをcsv形式で保持する。
+　>, >>>, ;, |
 
 
 
@@ -843,7 +818,7 @@ default:        #aac6aaff
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
 
-# TextEditor Option ==================================================================================================
+# TextEditor ExOpt ==================================================================================================
 ## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle
 ## Action：　260619　TextEditor.WordWrap.IsVisible:Toggle
 ## Action：　260619　TextEditor.Minimap.IsVisible:Toggle
@@ -895,6 +870,60 @@ type:           boolean
 candidates:     ^(true|false)$
 
 
+# TextEditor ExDate =============================================================================================
+## Action：　260625　TextEditor.EditDate.InsertExDate
+    カーソル位置に日付文字を挿入しExDateモードに入る。
+    ↓カーソル位置の日付文字を判別
+    　日付文字ではない場合：　初期日付フォーマットを JDateW としてカーソル位置に日付文字を入力
+    ↓カーソル位置の日付文字を認識し、original値、display値、format値として取得・保管する。
+    ↓ExDateモードに入ります。
+    日付入力の概要は過去のスクリプト docs\reference\script\TTPanel.ps1 を参照
+    日付文字判別用の正規表現は以下です。
+        @{ Key = 'DateTag'; Regex = [Regex]'\[\d{4}\-\d{2}\-\d{2}\]' }
+        @{ Key = 'Date'; Regex = [Regex]'\d{4}\/\d{1,2}\/\d{1,2}( \(.\))?( \d{2}:\d{2})?' }
+        @{ Key = 'JDate'; Regex = [Regex]'\d{4}年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}:\d{2})?' }
+        @{ Key = 'GDate'; Regex = [Regex]'(明治|大正|昭和|平成|令和)(\d{1,2}|元)年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}時\d{2}分)?' }
+　　日付文字挿入用のフォーマットは以下です。　ggyyは日本の元号です。
+        DateTag = @{ Format = '[yyyy-MM-dd]' }
+        Date    = @{ Format = 'yyyy/MM/dd' }
+        DateW   = @{ Format = 'yyyy/MM/dd (ddd)' }
+        DateT   = @{ Format = 'yyyy/MM/dd HH:mm' }
+        DateWT  = @{ Format = 'yyyy/MM/dd (ddd) HH:mm' }
+        JDate   = @{ Format = 'yyyy年MM月dd日' }
+        JDateW  = @{ Format = 'yyyy年MM月dd日 (ddd)' }
+        JDateT  = @{ Format = 'yyyy年MM月dd日 HH:mm' }
+        JDateWT = @{ Format = 'yyyy年MM月dd日 (ddd) HH:mm' }
+        GDate   = @{ Format = 'ggyy年MM月dd日' }
+        GDateW  = @{ Format = 'ggyy年MM月dd日 (ddd)' }
+        GDateT  = @{ Format = 'ggyy年MM月dd日 HH時mm分' }
+        GDateWT = @{ Format = 'ggyy年MM月dd日 (ddd) HH時mm分' }　
+## Action：　260625　TextEditor.EditDate.ChangeFormat
+    カーソル位置の日時フォーマットを変更する。
+    変更の順番は過去のスクリプト docs\reference\script\TTPanel.ps1 を参照
+## Action：　260625　TextEditor.EditDate.ToggleWeekday
+    カーソル位置の曜日表示を変更する
+## Action：　260625　TextEditor.EditDate.ToggleTime
+    カーソル位置の時間表示を変更する
+## Action：　260625　TextEditor.EditDate.IncYear
+    カーソル位置の年を1増やす
+## Action：　260625　TextEditor.EditDate.DecYear
+    カーソル位置の年を1減らす
+## Action：　260625　TextEditor.EditDate.IncMonth
+    カーソル位置の月を1増やす
+## Action：　260625　TextEditor.EditDate.DecMonth
+    カーソル位置の月を1減らす
+## Action：　260625　TextEditor.EditDate.IncWeek
+    カーソル位置の週を1増やす
+## Action：　260625　TextEditor.EditDate.DecWeek
+    カーソル位置の週を1減らす
+## Action：　260625　TextEditor.EditDate.IncDay
+    カーソル位置の日を1増やす
+## Action：　260625　TextEditor.EditDate.DecDay
+    カーソル位置の日を1減らす
+## Action：　260625　TextEditor.EditDate.SetNow
+    カーソル位置の日時を今にする　
+## Action：　260625　TextEditor.EditDate.Reset
+    カーソル位置の日時を元に戻す　
 
 # その他
 ## 完了:　260614　ToolBar.KeyActionのTextBox中に表示されている値を説明してください

@@ -42,7 +42,7 @@ Keyboard Shortcuts
 *           ,       ,Ctrl+Y             ,TextEditor.EditText.Redo    ,編集をやり直す
 
 # Editor 日付 編集モード
-*           ,       ,Alt+T              ,TextEditor.EditDate.InsertExDate               ,日付編集モード開始
+*TextEditor ,       ,Alt+T              ,TextEditor.EditDate.InsertExDate               ,日付編集モード開始
 *TextEditor ,ExDate ,Y                  ,TextEditor.EditDate.IncYear                    ,年を増やす
 *TextEditor ,ExDate ,Shift+Y            ,TextEditor.EditDate.DecYear                    ,年を減らす
 *TextEditor ,ExDate ,M                  ,TextEditor.EditDate.IncMonth                   ,月を増やす

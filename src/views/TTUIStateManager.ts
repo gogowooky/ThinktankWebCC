@@ -61,6 +61,7 @@ export type ConfigKey =
   | 'ToolBar.BgColor'
   | 'ToolBar.Color'
   | 'TextEditor.LineNumbers.IsVisible'
+  | 'TextEditor.Bullet.StyleSet'
   | 'TextEditor.WordWrap.IsVisible'
   | 'TextEditor.Minimap.IsVisible'
   | 'TextEditor.FullWidthSpace.IsVisible'
@@ -256,6 +257,13 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '行番号表示',
     get: (app) => String(app.WorkoutPanel.TextEditor.LineNumbers.IsVisible),
     set: (app, v) => { app.WorkoutPanel.TextEditor.LineNumbers.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.LineNumbers.IsVisible); },
+  },
+  'TextEditor.Bullet.StyleSet': {
+    panel: 'WorkoutPanel',
+    default: '・,- ,* ,■,●,= ,> ,# ,↓,→,[✓],', type: 'string', candidates: '.*',
+    description: '行頭文字の文字セット（CSV形式）',
+    get: (app) => app.WorkoutPanel.TextEditor.Bullet.StyleSet,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleSet = v; },
   },
   'TextEditor.WordWrap.IsVisible': {
     panel: 'WorkoutPanel',

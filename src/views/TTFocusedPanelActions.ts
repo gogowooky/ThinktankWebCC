@@ -716,6 +716,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   });
 
   registerTextEditorDateActions(app);
+  registerTextEditorBulletActions(app);
 }
 
 export interface HeadingAttribute {
@@ -1288,3 +1289,95 @@ export function registerTextEditorDateActions(app: TTApplication): void {
     }
   });
 }
+
+export function registerTextEditorBulletActions(app: TTApplication): void {
+  const getBullets = (app: TTApplication): string[] => {
+    const raw = app.WorkoutPanel.TextEditor.Bullet.StyleSet || '';
+    return raw.split(',').filter(b => b !== '');
+  };
+
+  const toggleBulletStyle = (item: any, direction: 'next' | 'prev') => {
+    try {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) { item.Result = '[エディタ未選択]'; return; }
+      const model = editor.getModel();
+      const selection = editor.getSelection();
+      if (!model || !selection) { item.Result = '[モデル/選択なし]'; return; }
+
+      const bullets = getBullets(app);
+      if (bullets.length === 0) { item.Result = '[バレット設定空]'; return; }
+
+      // 各バレットを文字列の長さ順に降順ソート
+      const sortedBullets = [...bullets].sort((a, b) => b.length - a.length);
+
+      const startLine = selection.startLineNumber;
+      const endLine = selection.endLineNumber;
+      const edits: any[] = [];
+
+      for (let line = startLine; line <= endLine; line++) {
+        const lineContent = model.getLineContent(line);
+        const matchIndent = lineContent.match(/^([ \t]*)/);
+        const indent = matchIndent ? matchIndent[1] : '';
+        const content = lineContent.slice(indent.length);
+
+        // バレットリストのいずれかで始まっているか確認
+        let matchedBullet: string | null = null;
+        for (const b of sortedBullets) {
+          if (content.startsWith(b)) {
+            matchedBullet = b;
+            break;
+          }
+        }
+
+        let newText = '';
+        if (matchedBullet !== null) {
+          // すでにバレットがある場合：切り替え
+          const originalIdx = bullets.indexOf(matchedBullet);
+          const idx = originalIdx >= 0 ? originalIdx : 0;
+          let nextIdx = 0;
+          if (direction === 'next') {
+            nextIdx = (idx + 1) % bullets.length;
+          } else {
+            nextIdx = (idx - 1 + bullets.length) % bullets.length;
+          }
+          newText = indent + bullets[nextIdx] + content.slice(matchedBullet.length);
+        } else {
+          // バレットがない場合：挿入
+          if (direction === 'next') {
+            newText = indent + bullets[0] + content;
+          } else {
+            newText = indent + bullets[bullets.length - 1] + content;
+          }
+        }
+
+        edits.push({
+          range: new (window as any).monaco.Range(line, 1, line, lineContent.length + 1),
+          text: newText,
+          forceMoveMarkers: false
+        });
+      }
+
+      if (edits.length > 0) {
+        editor.executeEdits("toggleBulletStyle", edits);
+        item.Result = `バレット切替 (${direction}): ${startLine}-${endLine}行`;
+      }
+    } catch (err: any) {
+      item.Result = `[エラー] ${err.message}`;
+    }
+  };
+
+  TTActions.Register({
+    ActionID: 'TextEditor.Bullet.NextStyle',
+    Completion: (item) => {
+      toggleBulletStyle(item, 'next');
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.Bullet.PrevStyle',
+    Completion: (item) => {
+      toggleBulletStyle(item, 'prev');
+    }
+  });
+}
+
