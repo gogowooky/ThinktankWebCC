@@ -19,34 +19,25 @@
 
 ## 完了：　TextEditor.Section.DecLevel
 
-## 完了： 260625　TextEditor.Comment.NextStyle
-　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
-　各行における 先頭の1文字目
-　　TextEditor.Comment.StyleSet に含まれる：　次の値に置換
-　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの1番目の文字を挿入
-
-## 完了： 260625　TextEditor.Comment.PrevStyle
-　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
-　各行における 先頭の1文字目
-　　TextEditor.Comment.StyleSet に含まれる：　前の値に置換
-　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの最後の文字を挿入
-
+## 実装：　TextEditor.Numbering.NextStyle
+　カーソル位置の行、または、選択されている全行を対象に、順番文字を設定する。　設定ルールは以下の通り。
+　各行における [ 　\t]* のあとの文字
+　　TextEditor.Numbering.StyleSet に含まれる：　次の値に置換
+　　TextEditor.Numbering.StyleSet に含まれない：　1文字目の位置に、TextEditor.Numbering.StyleSetの1番目の文字を挿入
+　
+## 実装：　TextEditor.Numbering.PrevStyle
 
 # Status
 
-## 完了：　TextEditor.Numbering.StyleSet
-  行頭文字の文字セットをcsv形式で保持する。
-　"1., 1), [1], ①, a., (A)"
-
-## 完了： 260625　TextEditor.Comment.StyleSet
-description:    行頭文字
+## 実装：　TextEditor.Numbering.StyleSet
+description:    順番文字
 key:            TextEditor.Comment.StyleSet
-current:        > ,>> ,>>> ,; ,| ,# ,
-default:        > ,>> ,>>> ,; ,| ,# ,
+current:        1. , 1) , [1] , ① , a. , (A) ,
+default:        1. , 1) , [1] , ① , a. , (A) ,
 type:           string
 candidates:     .*
 
-　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
+　（A）の次は blank。TextEditor.Numbering.NextStyleやTextEditor.Numbering.PrevStyleでは(A) と1. の間に行頭文字無し（blank）の状態に移行すること。
 
 
 # Application ========================================================================================================
@@ -330,6 +321,26 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 
 
 # TextEditor Edit =================================================================================================
+## Action： 260625　TextEditor.Comment.NextStyle
+　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
+　各行における 先頭の1文字目
+　　TextEditor.Comment.StyleSet に含まれる：　次の値に置換
+　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの1番目の文字を挿入
+## Action： 260625　TextEditor.Comment.PrevStyle
+　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
+　各行における 先頭の1文字目
+　　TextEditor.Comment.StyleSet に含まれる：　前の値に置換
+　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの最後の文字を挿入
+## Status： 260625　TextEditor.Comment.StyleSet
+description:    行頭文字
+key:            TextEditor.Comment.StyleSet
+current:        > ,>> ,>>> ,; ,| ,# ,
+default:        > ,>> ,>>> ,; ,| ,# ,
+type:           string
+candidates:     .*
+
+　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
+
 ## Action：　260625　TextEditor.Bullet.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの1文字目

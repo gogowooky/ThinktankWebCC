@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.27",
+  "version": "1.0.28",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "c68cc5d",
-  "commitDateTime": "2026-06-25-180300",
-  "commitMessage": "feat: implement TextEditor.Comment.* actions and status"
+  "commitId": "65fc608",
+  "commitDateTime": "2026-06-25-181400",
+  "commitMessage": "docs: update shortcut keys and binding docs for comments"
 }

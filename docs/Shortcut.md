@@ -44,6 +44,9 @@ Keyboard Shortcuts
 *TextEditor ,       ,Ctrl+/             ,TextEditor.Bullet.NextStyle                    ,行頭文字を次に変更
 *TextEditor ,       ,Shift+Ctrl+?       ,TextEditor.Bullet.PrevStyle                    ,行頭文字を前に変更
 
+*TextEditor ,       ,Ctrl+;             ,TextEditor.Comment.NextStyle                   ,コメント文字を次に変更
+*TextEditor ,       ,Shift+Ctrl++       ,TextEditor.Comment.PrevStyle                   ,コメント文字を前に変更
+
 # Editor 日付 編集モード
 *TextEditor ,       ,Alt+T              ,TextEditor.EditDate.InsertExDate               ,日付編集モード開始
 *TextEditor ,ExDate ,Y                  ,TextEditor.EditDate.IncYear                    ,年を増やす
