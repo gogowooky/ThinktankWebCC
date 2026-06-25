@@ -1293,7 +1293,10 @@ export function registerTextEditorDateActions(app: TTApplication): void {
 export function registerTextEditorBulletActions(app: TTApplication): void {
   const getBullets = (app: TTApplication): string[] => {
     const raw = app.WorkoutPanel.TextEditor.Bullet.StyleSet || '';
-    return raw.split(',').filter(b => b !== '');
+    const parts = raw.split(',');
+    // 末尾のカンマの後ろの空文字列を活かしつつ、余計な空要素を除外します。
+    const bullets = parts.filter((b, idx) => b !== '' || idx === parts.length - 1);
+    return bullets;
   };
 
   const toggleBulletStyle = (item: any, direction: 'next' | 'prev') => {
@@ -1307,8 +1310,8 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
       const bullets = getBullets(app);
       if (bullets.length === 0) { item.Result = '[バレット設定空]'; return; }
 
-      // 各バレットを文字列の長さ順に降順ソート
-      const sortedBullets = [...bullets].sort((a, b) => b.length - a.length);
+      // 各バレットを文字列の長さ順に降順ソート（ただし空文字列はstartsWithでマッチさせるため除外）
+      const sortedBullets = bullets.filter(b => b !== '').sort((a, b) => b.length - a.length);
 
       const startLine = selection.startLineNumber;
       const endLine = selection.endLineNumber;
@@ -1342,12 +1345,16 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
           }
           newText = indent + bullets[nextIdx] + content.slice(matchedBullet.length);
         } else {
-          // バレットがない場合：挿入
+          // バレットがない場合（blank状態）：blankのインデックス(空文字列)をベースに遷移
+          const blankIdx = bullets.indexOf('');
+          const idx = blankIdx >= 0 ? blankIdx : bullets.length - 1;
+          let nextIdx = 0;
           if (direction === 'next') {
-            newText = indent + bullets[0] + content;
+            nextIdx = (idx + 1) % bullets.length;
           } else {
-            newText = indent + bullets[bullets.length - 1] + content;
+            nextIdx = (idx - 1 + bullets.length) % bullets.length;
           }
+          newText = indent + bullets[nextIdx] + content;
         }
 
         edits.push({

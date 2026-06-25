@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "93fcbb0",
-  "commitDateTime": "2026-06-25-171926",
-  "commitMessage": "feat: implement TextEditor.Bullet.* actions and status"
+  "commitId": "bab0c9f",
+  "commitDateTime": "2026-06-25-173154",
+  "commitMessage": "fix: support blank bullet transition between [✓] and ・"
 }

@@ -23,13 +23,13 @@
 
 ## 完了：　TextEditor.LineHeader.PrevStyle
 
-## 完了： 260625　TextEditor.Bullet.NextStyle
+## 完了：　TextEditor.Bullet.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　次の値に置換
 　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの1番目の文字を挿入
 
-## 完了： 260625　TextEditor.Bullet.PrevStyle
+## 完了：　TextEditor.Bullet.PrevStyle
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
@@ -37,16 +37,18 @@
 
 # Status
 ## 完了： 260625　TextEditor.Bullet.StyleSet
-  行頭文字의 文字セットをcsv形式で保持する。
- 　"・,- ,* ,■,●,= ,> ,# ,↓,→,[✓]," 
+　[✓]の次は blank が登録されている。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
+
+  行頭文字の文字セットをcsv形式で保持する。
+　"・,- ,* ,■,●,= ,> ,# ,↓,→,[✓]," 
 
 ## 完了：　TextEditor.Numbering.StyleSet
   行頭文字の文字セットをcsv形式で保持する。
-　1., 1), [1], ①, a., (A), 
+　"1., 1), [1], ①, a., (A)"
 
 ## 完了：　TextEditor.Comment.StyleSet
   行頭文字の文字セットをcsv形式で保持する。
-　>, >>>, ;, |
+　">, >>>, ;, |"
 
 
 
