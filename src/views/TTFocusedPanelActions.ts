@@ -715,9 +715,9 @@ export function registerTextEditorActions(app: TTApplication): void {
     },
   });
 
-  // 7. TextEditor.CurrentFolding.Heading:UpperLevel
+  // 7. TextEditor.CurrentFolding.Heading:SiblingFirst
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:UpperLevel',
+    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingFirst',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -767,9 +767,9 @@ export function registerTextEditorActions(app: TTApplication): void {
     },
   });
 
-  // 8. TextEditor.CurrentFolding.Heading:LowerLevel
+  // 8. TextEditor.CurrentFolding.Heading:SiblingLast
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:LowerLevel',
+    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingLast',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
