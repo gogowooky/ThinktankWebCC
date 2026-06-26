@@ -15,14 +15,22 @@
 
 # Action
 
+## 完了：　260627　TextEditor.FoldingHeading.IncLevel
+　テキストが選択状態ではない場合　
+　　カーソル位置がHeading行の先頭の場合は、新しいHeading行を挿入する。
+　　カーソル位置がHeading行だが先頭ではない場合は、HeadingのLevelを１つ増やす。
+　　カーソル位置がHeading行ではない行の先頭の場合は、新しいHeading行を挿入する。
+　　カーソル位置がHeading行ではない行で先頭ではない場合は、先頭に# を挿入してHeading行とする
 
-## 完了：　TextEditor.Section.IncLevel
+　テキストが選択状態の場合
+　　選択範囲内のすべての行に対し
+　　　Heading行の場合は、HeadginのLevelを1つ増やす
+　　　Heading行でない場合はなにもしない。
 
-　選択されていない場合　
-
-　選択されている場合
-
-## 完了：　TextEditor.Section.DecLevel
+## 完了：　260627　TextEditor.FoldingHeading.DecLevel
+　カーソル行または選択範囲内のすべての行に対し
+　　Heading行の場合は、HeadginのLevelを1つ減らす。# の場合は# を削除する。
+　　Heading行でない場合はなにもしない。
 
 ## 完了：　TextEditor.Numbering.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、順番文字を設定する。　設定ルールは以下の通り。
@@ -403,18 +411,13 @@ candidates:     ^.*$
 　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
 　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
 
-## 完了：　260626　TextEditor.CurrentFolding.Heading:SiblingFirst
-
-  IDをTextEditor.CurrentFolding.Heading:SiblingFirstへ変更
+## Action：　260626　TextEditor.CurrentFolding.Heading:SiblingFirst
 
 　以下の手順を実装してください。
 　↓　カーソル位置のテキストが属するHeading行を把握
 　↓　現在位置が兄弟Heading行のなかで１番目である場合、親Heading行へ移動
 　↓　１番目の兄弟Heading行に移動
-
-## 完了：　260626　TextEditor.CurrentFolding.Heading:SiblingLast
-
-  IDをTextEditor.CurrentFolding.Heading:SiblingLastへ変更
+## Action：　260626　TextEditor.CurrentFolding.Heading:SiblingLast
 
 　以下の手順を実装してください。
 　↓　カーソル位置のテキストが属するHeading行を把握

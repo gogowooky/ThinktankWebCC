@@ -9,8 +9,8 @@ Keyboard Shortcuts
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
 *TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
 *TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
-*TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingFirst       ,最初の兄弟折畳行へ移動
-*TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingLast       ,最後の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 
 # アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
@@ -40,6 +40,9 @@ Keyboard Shortcuts
 # Editor 編集
 *           ,       ,Ctrl+Z             ,TextEditor.EditText.Undo    ,編集を元に戻す
 *           ,       ,Ctrl+Y             ,TextEditor.EditText.Redo    ,編集をやり直す
+
+*TextEditor ,       ,Ctrl+I             ,TextEditor.FoldingHeading.IncLevel             ,折り畳みレベルを上げる
+*TextEditor ,       ,Shift+Ctrl+I       ,TextEditor.FoldingHeading.DecLevel             ,折り畳みレベルを下げる
 
 *TextEditor ,       ,Ctrl+/             ,TextEditor.Bullet.NextStyle                    ,行頭文字を次に変更
 *TextEditor ,       ,Shift+Ctrl+?       ,TextEditor.Bullet.PrevStyle                    ,行頭文字を前に変更
