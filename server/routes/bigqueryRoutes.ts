@@ -96,6 +96,7 @@ export function createBigQueryRoutes() {
       fileDate = new Date(`${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}+09:00`);
     }
     const fileTimeStr = fileDate.toISOString();
+    const nowStr = new Date().toISOString();
 
     const record: VaultRecord = {
       file_id:     id,
@@ -108,7 +109,7 @@ export function createBigQueryRoutes() {
       size_bytes:  content ? Buffer.byteLength(content, 'utf8') : null,
       is_deleted:  false,
       created_at:  fileTimeStr,
-      updated_at:  fileTimeStr,
+      updated_at:  nowStr,
     };
     const result = await bigqueryService.save(record);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }

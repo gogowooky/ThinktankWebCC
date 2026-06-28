@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "23ea202",
-  "commitDateTime": "2026-06-28-140800",
-  "commitMessage": "feat: update created_at and updated_at based on file_id timestamp, execute BQ data migration"
+  "commitId": "e7779d8",
+  "commitDateTime": "2026-06-28-150400",
+  "commitMessage": "fix: update updated_at with system current time on save, keep created_at as file_id timestamp"
 }
