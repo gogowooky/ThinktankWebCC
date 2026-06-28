@@ -374,6 +374,24 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  TTActions.Register({
+    ActionID: 'Application.Resource.ExportToLocal',
+    Completion: (item) => {
+      return fetch('/api/bq/files/export', { method: 'POST' })
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error(`Export API failed: ${res.status}`);
+          }
+          const result = await res.json() as { success: boolean; count: number; path: string };
+          item.Result = `保存完了: ${result.count}件を ${result.path} に保存しました`;
+        })
+        .catch((err) => {
+          item.Result = `[エラー] ${err.message}`;
+          throw err;
+        });
+    },
+  });
+
   registerTextEditorActions(app);
 }
 

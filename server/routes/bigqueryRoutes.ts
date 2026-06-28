@@ -8,6 +8,8 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { bigqueryService } from '../services/BigQueryService.js';
 import type { VaultRecord } from '../services/BigQueryService.js';
+import fs from 'fs';
+import path from 'path';
 
 function toMeta(r: VaultRecord) {
   return {
@@ -98,6 +100,50 @@ export function createBigQueryRoutes() {
     const result = await bigqueryService.delete(fileId);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     res.json({ success: true });
+  });
+
+  // POST /api/bq/files/export  ← ローカル側へのエクスポート実行
+  router.post('/files/export', async (_req: Request, res: Response) => {
+    try {
+      const result = await bigqueryService.listAllWithContent();
+      if (!result.success) { res.status(500).json({ error: result.error }); return; }
+
+      const records = result.data;
+      const now = new Date();
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const yyyyMMdd = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+      
+      // 保存先フォルダのパス: {root}/../Thinktank_{yyyyMMdd}/
+      const exportDir = path.resolve(process.cwd(), '../', `Thinktank_${yyyyMMdd}`);
+
+      // 保存先ディレクトリを作成
+      if (!fs.existsSync(exportDir)) {
+        fs.mkdirSync(exportDir, { recursive: true });
+      }
+
+      for (const r of records) {
+        const fullContent = r.content ? `${r.title}\n${r.content}` : (r.title || '');
+        const fileId = r.file_id;
+        const category = r.category || 'unknown';
+
+        let targetPath = '';
+        if (category === 'memo') {
+          targetPath = path.join(exportDir, `${fileId}.md`);
+        } else {
+          const categoryDir = path.join(exportDir, category);
+          if (!fs.existsSync(categoryDir)) {
+            fs.mkdirSync(categoryDir, { recursive: true });
+          }
+          targetPath = path.join(categoryDir, `${fileId}.md`);
+        }
+
+        fs.writeFileSync(targetPath, fullContent, 'utf8');
+      }
+
+      res.json({ success: true, count: records.length, path: exportDir });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return router;

@@ -115,6 +115,31 @@ export class BigQueryService {
     }
   }
 
+  // ── 全件（コンテンツ含む）取得（エクスポート用） ────────────────────────
+  async listAllWithContent(): Promise<BqResult> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        SELECT t.file_id, t.file_type, t.category, t.title, t.content,
+               t.keywords, t.related_ids, t.size_bytes,
+               COALESCE(t.is_deleted, FALSE) AS is_deleted,
+               t.created_at, t.updated_at
+        FROM ${this.tbl} t
+        INNER JOIN (
+          SELECT file_id, MAX(updated_at) AS max_upd
+          FROM ${this.tbl}
+          WHERE COALESCE(is_deleted, FALSE) = FALSE
+          GROUP BY file_id
+        ) latest ON t.file_id = latest.file_id AND t.updated_at = latest.max_upd
+        WHERE COALESCE(t.is_deleted, FALSE) = FALSE
+      `;
+      const [rows] = await this.bigquery.query({ query });
+      return { success: true, data: rows as VaultRecord[] };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
   // ── content のみ取得 ────────────────────────────────────────────────
 
   async getContent(fileId: string): Promise<BqResult<string | null>> {

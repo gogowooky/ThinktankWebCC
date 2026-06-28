@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.31",
+  "version": "1.0.32",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "6f5bac5",
-  "commitDateTime": "2026-06-28-133300",
-  "commitMessage": "chore: update copyright.txt version to 1.0.31"
+  "commitId": "3a4a39b",
+  "commitDateTime": "2026-06-28-134500",
+  "commitMessage": "feat: implement Application.Resource.ExportToLocal action to export BigQuery data to local FS"
 }
