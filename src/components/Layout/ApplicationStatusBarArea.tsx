@@ -11,6 +11,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
+import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
@@ -226,8 +227,12 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   }, [mode, panel, text]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && mode === 'highlight' && text.trim()) {
-      panel.AddHighlightHistory(text.trim());
+    if (e.key === 'Enter') {
+      if (mode === 'highlight' && text.trim()) {
+        panel.AddHighlightHistory(text.trim());
+      } else if (mode === 'command' && text.trim()) {
+        TTShortcutManager.instance.executeActionDirect(text.trim());
+      }
     }
   }, [mode, panel, text]);
 

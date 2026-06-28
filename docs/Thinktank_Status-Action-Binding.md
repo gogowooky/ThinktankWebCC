@@ -14,43 +14,16 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
+## 実装：　Application.Resource.ExportToLocal
+　BQに保存されているThinkファイルデータをローカル側に保存する
+　保存先は {root}/../Thinktank_{yyyyMMdd}/ とする
+　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別ごとのフォルダに保存する。
+　　
 
-## 完了：　260627　TextEditor.FoldingHeading.IncLevel
-　テキストが選択状態ではない場合　
-　　カーソル位置がHeading行の先頭の場合は、新しいHeading行を挿入する。
-　　カーソル位置がHeading行だが先頭ではない場合は、HeadingのLevelを１つ増やす。
-　　カーソル位置がHeading行ではない行の先頭の場合は、新しいHeading行を挿入する。
-　　カーソル位置がHeading行ではない行で先頭ではない場合は、先頭に# を挿入してHeading行とする
+## 実装：　Application.Resource.ImportFromLocal
 
-　テキストが選択状態の場合
-　　選択範囲内のすべての行に対し
-　　　Heading行の場合は、HeadginのLevelを1つ増やす
-　　　Heading行でない場合はなにもしない。
-
-## 完了：　260627　TextEditor.FoldingHeading.DecLevel
-　カーソル行または選択範囲内のすべての行に対し
-　　Heading行の場合は、HeadginのLevelを1つ減らす。# の場合は# を削除する。
-　　Heading行でない場合はなにもしない。
-
-## 完了：　TextEditor.Numbering.NextStyle
-　カーソル位置の行、または、選択されている全行を対象に、順番文字を設定する。　設定ルールは以下の通り。
-　各行における [ 　\t]* のあとの文字
-　　TextEditor.Numbering.StyleSet に含まれる：　次の値に置換
-　　TextEditor.Numbering.StyleSet に含まれない：　1文字目の位置に、TextEditor.Numbering.StyleSetの1番目の文字を挿入
-　
-## 完了：　TextEditor.Numbering.PrevStyle
 
 # Status
-
-## 完了：　TextEditor.Numbering.StyleSet
-description:    順番文字
-key:            TextEditor.Comment.StyleSet
-current:        1. , 1) , [1] , ① , a. , (A) ,
-default:        1. , 1) , [1] , ① , a. , (A) ,
-type:           string
-candidates:     .*
-
-　（A）の次は blank。TextEditor.Numbering.NextStyleやTextEditor.Numbering.PrevStyleでは(A) と1. の間に行頭文字無し（blank）の状態に移行すること。
 
 
 # Application ========================================================================================================
@@ -334,6 +307,22 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 
 
 # TextEditor Edit =================================================================================================
+## Action：　260627　TextEditor.FoldingHeading.IncLevel
+　テキストが選択状態ではない場合　
+　　カーソル位置がHeading行の先頭の場合は、新しいHeading行を挿入する。
+　　カーソル位置がHeading行だが先頭ではない場合は、HeadingのLevelを１つ増やす。
+　　カーソル位置がHeading行ではない行の先頭の場合は、新しいHeading行を挿入する。
+　　カーソル位置がHeading行ではない行で先頭ではない場合は、先頭に# を挿入してHeading行とする
+
+　テキストが選択状態の場合
+　　選択範囲内のすべての行に対し
+　　　Heading行の場合は、HeadginのLevelを1つ増やす
+　　　Heading行でない場合はなにもしない。
+## Action：　260627　TextEditor.FoldingHeading.DecLevel
+　カーソル行または選択範囲内のすべての行に対し
+　　Heading行の場合は、HeadginのLevelを1つ減らす。# の場合は# を削除する。
+　　Heading行でない場合はなにもしない。
+
 ## Action： 260625　TextEditor.Comment.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
 　各行における 先頭の1文字目

@@ -326,9 +326,16 @@ export class TTShortcutManager {
         status?.SetLastActionDisplay(`${action}: ${res.Result || '✓'}`);
         return res.Allow;
       }
+    } else {
+      status?.SetLastActionDisplay(`${action}: [未定義]`);
     }
 
     return false;
+  }
+
+  /** アクションを直接実行し、結果をステータスバーに反映する */
+  executeActionDirect(action: string, mods: string = ''): boolean {
+    return this._executeAction(action, mods);
   }
 
   // ── コンテンツ管理 ─────────────────────────────────────────────────────
