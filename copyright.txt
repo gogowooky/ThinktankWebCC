@@ -1,1 +1,14 @@
-﻿
+{
+  "appName": "Thinktank",
+  "version": "1.0.30",
+  "copyright": {
+    "holder": "Shinichiro Egashira",
+    "holderJa": "江頭　慎一郎",
+    "year": 2026
+  },
+  "projectName": "ThinktankWebCC",
+  "commitPC": "VENENO-02",
+  "commitId": "895c97b",
+  "commitDateTime": "2026-06-28-133000",
+  "commitMessage": "fix: resolve blank page issue due to JSON parsing error of BOM UTF-8 copyright.txt"
+}

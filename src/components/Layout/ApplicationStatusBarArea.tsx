@@ -35,7 +35,7 @@ import {
 
 import './ApplicationStatusBarArea.css';
 
-const _cw = JSON.parse(copywriteRaw);
+const _cw = JSON.parse(copywriteRaw.replace(/^\uFEFF/, ''));
 const AUTHOR_BANNER_TEXT = `${_cw.appName} ver.${_cw.version}, ${_cw.copyright.holder}(${_cw.copyright.year}). --- [${_cw.projectName}:${_cw.commitId}](${_cw.commitDateTime}) --- ${_cw.commitMessage}`;
 
 type AuthorState = 'off' | 'banner' | 'static';

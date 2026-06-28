@@ -17,8 +17,7 @@
 ## 実装：　Application.Resource.ExportToLocal
 　BQに保存されているThinkファイルデータをローカル側に保存する
 　保存先は {root}/../Thinktank_{yyyyMMdd}/ とする
-　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別ごとのフォルダに保存する。
-　　
+　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別はファイル種別名毎のフォルダに保存する。
 
 ## 実装：　Application.Resource.ImportFromLocal
 
