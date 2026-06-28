@@ -42,6 +42,7 @@ export class TextEditorSettings {
 
   CurrentFoldingHeadingOffset = '0';
   CurrentFoldingHeadingNumber = 'None';
+  CurrentEditorCursorPos = '0';
 
   Bullet = { StyleSet: "・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ," };
   Comment = { StyleSet: "> ,>> ,>>> ,; ,| ,# ," };

@@ -420,6 +420,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  registerTextEditorCursorPosActions(app);
   registerTextEditorActions(app);
 }
 
@@ -1792,6 +1793,103 @@ export function registerTextEditorFoldingHeadingActions(app: TTApplication): voi
           item.Result = isSelectionEmpty ? `見出しレベルDOWN (L${startLine})` : `見出しレベルDOWN: ${startLine}-${endLine}行`;
         } else {
           item.Result = '変更なし';
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+}
+
+export function registerTextEditorCursorPosActions(app: TTApplication): void {
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:LineStart+',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) {
+          item.Result = '[エディタ未選択]';
+          return;
+        }
+        const pos = editor.getPosition();
+        if (!pos) {
+          item.Result = '[位置なし]';
+          return;
+        }
+
+        const lineNumber = pos.lineNumber;
+        const column = pos.column;
+
+        if (column > 1) {
+          const newPos = { lineNumber, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `行先頭（L${lineNumber}:C1）に移動しました`;
+        } else if (lineNumber > 1) {
+          const newPos = { lineNumber: 1, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = 'テキスト先頭（L1:C1）に移動しました';
+        } else {
+          const model = editor.getModel();
+          if (model) {
+            const lastLine = model.getLineCount();
+            const lastColumn = model.getLineMaxColumn(lastLine);
+            editor.setSelection({
+              startLineNumber: 1,
+              startColumn: 1,
+              endLineNumber: lastLine,
+              endColumn: lastColumn
+            });
+            item.Result = 'テキストすべてを選択しました';
+          }
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:LineEnd+',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) {
+          item.Result = '[エディタ未選択]';
+          return;
+        }
+        const pos = editor.getPosition();
+        const model = editor.getModel();
+        if (!pos || !model) {
+          item.Result = '[モデル/位置なし]';
+          return;
+        }
+
+        const lineNumber = pos.lineNumber;
+        const column = pos.column;
+        const lineMaxColumn = model.getLineMaxColumn(lineNumber);
+        const totalLines = model.getLineCount();
+        const lastLineMaxColumn = model.getLineMaxColumn(totalLines);
+
+        if (column < lineMaxColumn) {
+          const newPos = { lineNumber, column: lineMaxColumn };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `行末尾（L${lineNumber}:C${lineMaxColumn}）に移動しました`;
+        } else if (lineNumber < totalLines || column < lastLineMaxColumn) {
+          const newPos = { lineNumber: totalLines, column: lastLineMaxColumn };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `テキスト末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました`;
+        } else {
+          editor.setSelection({
+            startLineNumber: 1,
+            startColumn: 1,
+            endLineNumber: totalLines,
+            endColumn: lastLineMaxColumn
+          });
+          item.Result = 'テキストすべてを選択しました';
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;

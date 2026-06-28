@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.35",
+  "version": "1.0.36",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "e7779d8",
-  "commitDateTime": "2026-06-28-150400",
-  "commitMessage": "fix: update updated_at with system current time on save, keep created_at as file_id timestamp"
+  "commitId": "3ef9de4",
+  "commitDateTime": "2026-06-28-153000",
+  "commitMessage": "feat: implement TextEditor.CurrentEditor.CursorPos status and LineStart+/LineEnd+ actions"
 }

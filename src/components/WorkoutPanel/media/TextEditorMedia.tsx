@@ -140,8 +140,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         let offsetVal = '0';
         let numberVal = 'None';
         
+        let cursorOffsetStr = '0';
+
         if (pos && model) {
           const targetOffset = model.getOffsetAt(pos);
+          cursorOffsetStr = String(targetOffset);
           const matched = headings.filter(h => h.offset <= targetOffset);
           if (matched.length > 0) {
             const currentHeading = matched[matched.length - 1];
@@ -151,15 +154,24 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         }
 
         const workoutPanel = TTApplication.Instance.WorkoutPanel;
-        if (
-          workoutPanel.TextEditor.CurrentFoldingHeadingOffset !== offsetVal ||
-          workoutPanel.TextEditor.CurrentFoldingHeadingNumber !== numberVal
-        ) {
+        let isChanged = false;
+        if (workoutPanel.TextEditor.CurrentFoldingHeadingOffset !== offsetVal) {
           workoutPanel.TextEditor.CurrentFoldingHeadingOffset = offsetVal;
+          isChanged = true;
+        }
+        if (workoutPanel.TextEditor.CurrentFoldingHeadingNumber !== numberVal) {
           workoutPanel.TextEditor.CurrentFoldingHeadingNumber = numberVal;
+          isChanged = true;
+        }
+        if (workoutPanel.TextEditor.CurrentEditorCursorPos !== cursorOffsetStr) {
+          workoutPanel.TextEditor.CurrentEditorCursorPos = cursorOffsetStr;
+          isChanged = true;
+        }
 
+        if (isChanged) {
           TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
           TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
+          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentEditor.CursorPos');
         }
       }, 150);
     };

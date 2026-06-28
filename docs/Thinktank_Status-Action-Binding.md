@@ -16,8 +16,23 @@
 # Action
 
 ## 完了：　Application.Resource.ImportFromLocal
-
+## 完了：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
+　↓ CurPosが行先頭ではない場合、CurPosを現在行の先頭位置に移動する　→　終了
+　↓ CurPosが行先頭だがテキスト先頭ではない場合、CurPosをテキスト先頭位置に移動する　→　終了
+　↓ CurPosがテキスト先頭の場合、テキストすべてを選択する
+## 完了：　260628　TextEditor.CurrentEditor.CursorPos:LineEnd+
+　↓ CurPosが行末尾ではない場合、CurPosを行末尾位置に移動する　→　終了
+　↓ CurPosが行末尾だがテキスト末尾ではない場合、CurPosをテキスト末尾位置に移動する　→　終了
+　↓ CurPosがテキスト末尾の場合、テキストすべてを選択する
 # Status
+## 完了：　260628　TextEditor.CurrentEditor.CursorPos
+description:    現在のエディタのカーソル位置
+key:            TextEditor.CurrentEditor.CursorPos
+current:        0
+default:        0
+type:           string
+candidates:      .*
+
 
 # Application ========================================================================================================
 
@@ -367,6 +382,10 @@ candidates:     .*
 
 ## Action：　260619　TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo
+
+# TextEditor Cursor 
+=======================================================================================================
+
 
 # TextEditor Heading =======================================================================================================
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
