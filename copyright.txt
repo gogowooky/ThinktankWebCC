@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.36",
+  "version": "1.0.37",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "3ef9de4",
-  "commitDateTime": "2026-06-28-153000",
-  "commitMessage": "feat: implement TextEditor.CurrentEditor.CursorPos status and LineStart+/LineEnd+ actions"
+  "commitId": "584b166",
+  "commitDateTime": "2026-06-28-153700",
+  "commitMessage": "fix: select all with cursor at text start for LineStart+ action"
 }

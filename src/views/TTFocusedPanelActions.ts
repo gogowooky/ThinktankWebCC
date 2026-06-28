@@ -1836,10 +1836,10 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
             const lastLine = model.getLineCount();
             const lastColumn = model.getLineMaxColumn(lastLine);
             editor.setSelection({
-              startLineNumber: 1,
-              startColumn: 1,
-              endLineNumber: lastLine,
-              endColumn: lastColumn
+              selectionStartLineNumber: lastLine,
+              selectionStartColumn: lastColumn,
+              positionLineNumber: 1,
+              positionColumn: 1
             });
             item.Result = 'テキストすべてを選択しました';
           }
