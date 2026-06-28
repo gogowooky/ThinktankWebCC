@@ -110,6 +110,7 @@ export type ConfigKey =
   | 'Application.FocusedPanel.Name'
   | 'Application.FocusedArea.Name'
   | 'Application.Status.ExMode'
+  | 'Application.Resource.LocalExporting'
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
@@ -700,6 +701,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '一時拡張ショートカットモード',
     isConst: true,
     get: (app) => app.Status.ExMode || 'None',
+    set: () => {},
+  },
+  'Application.Resource.LocalExporting': {
+    panel: 'Application',
+    default: '0%', type: 'string', candidates: '.*',
+    description: 'エクスポート進捗率',
+    isConst: true,
+    get: (app) => app.Status.LocalExporting || '0%',
     set: () => {},
   },
   'WorkoutPanel.Pane.Count': {

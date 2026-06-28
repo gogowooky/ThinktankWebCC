@@ -23,7 +23,8 @@
 
 
 # Status
-
+## 完了：　260628　Application.Resource.LocalExporting
+　Application.Resource.ExportToLocalの実行中タスクの進捗率を表示してください。
 
 # Application ========================================================================================================
 ## Action：　260619　Application.FocusedPanel.Name:Next

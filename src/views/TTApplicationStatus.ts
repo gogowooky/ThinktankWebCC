@@ -16,10 +16,18 @@ export class TTApplicationStatus extends TTNotifyBase {
   private _exMode:            string = '';
   private _exModeModKey:      string = '';
   private _lastActionDisplay: string = '';
+  private _localExporting:    string = '0%';
 
   get ExMode():            string { return this._exMode; }
   get ExModeModKey():      string { return this._exModeModKey; }
   get LastActionDisplay(): string { return this._lastActionDisplay; }
+  get LocalExporting():    string { return this._localExporting; }
+
+  SetLocalExporting(v: string): void {
+    this._localExporting = v;
+    this.NotifyUpdated();
+    TTUIStateManager.instance.notifyConstPropertyChanged('Application.Resource.LocalExporting');
+  }
 
   /** ExMode を開始する。modKey には設定時点で押下中のモディファイア文字列を渡す。 */
   SetExMode(name: string, modKey: string): void {

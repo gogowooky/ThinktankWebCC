@@ -31,6 +31,20 @@ function toMeta(r: VaultRecord) {
   };
 }
 
+interface ExportStatus {
+  running: boolean;
+  total: number;
+  current: number;
+  path: string;
+}
+
+let exportStatus: ExportStatus = {
+  running: false,
+  total: 0,
+  current: 0,
+  path: ''
+};
+
 export function createBigQueryRoutes() {
   const router = Router();
 
@@ -104,6 +118,10 @@ export function createBigQueryRoutes() {
 
   // POST /api/bq/files/export  ← ローカル側へのエクスポート実行
   router.post('/files/export', async (_req: Request, res: Response) => {
+    if (exportStatus.running) {
+      res.status(409).json({ error: 'Export is already running' });
+      return;
+    }
     try {
       const result = await bigqueryService.listAllWithContent();
       if (!result.success) { res.status(500).json({ error: result.error }); return; }
@@ -121,6 +139,13 @@ export function createBigQueryRoutes() {
         fs.mkdirSync(exportDir, { recursive: true });
       }
 
+      exportStatus = {
+        running: true,
+        total: records.length,
+        current: 0,
+        path: exportDir
+      };
+
       for (const r of records) {
         const fullContent = r.content ? `${r.title}\n${r.content}` : (r.title || '');
         const fileId = r.file_id;
@@ -137,13 +162,21 @@ export function createBigQueryRoutes() {
           targetPath = path.join(categoryDir, `${fileId}.md`);
         }
 
-        fs.writeFileSync(targetPath, fullContent, 'utf8');
+        await fs.promises.writeFile(targetPath, fullContent, 'utf8');
+        exportStatus.current++;
       }
 
+      exportStatus.running = false;
       res.json({ success: true, count: records.length, path: exportDir });
     } catch (err: any) {
+      exportStatus.running = false;
       res.status(500).json({ error: err.message });
     }
+  });
+
+  // GET /api/bq/files/export/status  ← エクスポート進捗の取得
+  router.get('/files/export/status', (_req: Request, res: Response) => {
+    res.json(exportStatus);
   });
 
   return router;
