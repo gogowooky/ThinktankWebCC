@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "5587d43",
-  "commitDateTime": "2026-06-28-135800",
-  "commitMessage": "feat: implement Application.Resource.LocalExporting status for export progress"
+  "commitId": "23ea202",
+  "commitDateTime": "2026-06-28-140800",
+  "commitMessage": "feat: update created_at and updated_at based on file_id timestamp, execute BQ data migration"
 }

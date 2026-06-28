@@ -14,19 +14,22 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 完了：　260628　Application.Resource.ExportToLocal
-　BQに保存されているThinkファイルデータをローカル側に保存する
-　保存先は {root}/../Thinktank_{yyyyMMdd}/ とする
-　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別はファイル種別名毎のフォルダに保存する。
 
 ## 完了：　Application.Resource.ImportFromLocal
 
 
 # Status
-## 完了：　260628　Application.Resource.LocalExporting
-　Application.Resource.ExportToLocalの実行中タスクの進捗率を表示してください。
 
 # Application ========================================================================================================
+
+## Action：　260628　Application.Resource.ExportToLocal
+　BQに保存されているThinkファイルデータをローカル側に保存する
+　保存先は {root}/../Thinktank_{yyyyMMdd}/ とする
+　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別はファイル種別名毎のフォルダに保存する。
+## Status：　260628　Application.Resource.LocalExporting
+　Application.Resource.ExportToLocalの実行中タスクの進捗率を表示してください。
+
+
 ## Action：　260619　Application.FocusedPanel.Name:Next
 ## Action：　260619　Application.FocusedPanel.Name:Prev
 ## Status：　260615　Application.FocusedPanel.Name

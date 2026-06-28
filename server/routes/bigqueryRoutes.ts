@@ -89,7 +89,14 @@ export function createBigQueryRoutes() {
     if (!id || !contentType) {
       res.status(400).json({ error: 'id, contentType are required' }); return;
     }
-    const now = new Date().toISOString();
+    let fileDate = new Date();
+    const dateMatch = id.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$/);
+    if (dateMatch) {
+      const [_, yyyy, MM, dd, HH, mm, ss] = dateMatch;
+      fileDate = new Date(`${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}+09:00`);
+    }
+    const fileTimeStr = fileDate.toISOString();
+
     const record: VaultRecord = {
       file_id:     id,
       file_type:   'md',
@@ -100,8 +107,8 @@ export function createBigQueryRoutes() {
       related_ids: relatedIds ?? null,
       size_bytes:  content ? Buffer.byteLength(content, 'utf8') : null,
       is_deleted:  false,
-      created_at:  now,
-      updated_at:  now,
+      created_at:  fileTimeStr,
+      updated_at:  fileTimeStr,
     };
     const result = await bigqueryService.save(record);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
