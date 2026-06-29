@@ -1900,6 +1900,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Url:Open',
+    Description: 'ブラウザで対象のURLを開きます',
     Completion: (item) => {
       try {
         const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
@@ -1917,6 +1918,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:File:Open',
+    Description: 'OSの規定のアプリでローカルファイル/フォルダを起動します',
     Completion: (item) => {
       try {
         const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
@@ -1946,6 +1948,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open',
+    Description: 'タグを開く、またはフィルター検索を設定します',
     Completion: (item) => {
       try {
         const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
@@ -2042,6 +2045,185 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         item.Result = `[エラー] ${err.message}`;
       }
     }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Menu',
+    Description: 'カーソル位置のテキスト種別に応じたアクションメニューを表示します',
+    Completion: (item) => {
+      try {
+        const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
+        if (!text) {
+          item.Result = 'カーソル位置に対象テキストがありません';
+          return;
+        }
+
+        const prefixMap = {
+          url: 'TextEditor.CurrentEditor.DoOnCursorPos:Url:',
+          filepath: 'TextEditor.CurrentEditor.DoOnCursorPos:File:',
+          tag: 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:'
+        };
+
+        let prefix = '';
+        let typeLabel = '';
+        if (text.startsWith('http://') || text.startsWith('https://')) {
+          prefix = prefixMap.url;
+          typeLabel = 'URL アクション';
+        } else if (text.startsWith('[') && text.endsWith(']')) {
+          prefix = prefixMap.tag;
+          typeLabel = 'タグ アクション';
+        } else {
+          prefix = prefixMap.filepath;
+          typeLabel = 'パス アクション';
+        }
+
+        const allActions = TTActions.GetRegisteredActions();
+        const targetActions = allActions.filter(act => act.ActionID.startsWith(prefix));
+
+        if (targetActions.length === 0) {
+          item.Result = `${typeLabel}用の利用可能なアクションがありません`;
+          return;
+        }
+
+        return showActionMenu(`${typeLabel}の選択: [${text}]`, targetActions, item);
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+}
+
+function showActionMenu(
+  title: string,
+  actions: { ActionID: string; Description?: string; Completion: (item: any) => void | Promise<void> }[],
+  completionItem: any
+): Promise<void> {
+  return new Promise((resolve) => {
+    const existing = document.getElementById('action-menu-overlay');
+    if (existing) {
+      existing.remove();
+    }
+
+    const overlay = document.createElement('div');
+    overlay.id = 'action-menu-overlay';
+    overlay.className = 'action-menu-overlay';
+
+    const container = document.createElement('div');
+    container.className = 'action-menu-container';
+
+    const header = document.createElement('div');
+    header.className = 'action-menu-header';
+    header.innerHTML = `<span>${title}</span><span style="font-size: 10px; color: var(--text-muted); font-weight: normal;">ESCで閉じる</span>`;
+    container.appendChild(header);
+
+    const list = document.createElement('ul');
+    list.className = 'action-menu-list';
+
+    let selectedIndex = 0;
+
+    const renderItems = () => {
+      list.innerHTML = '';
+      actions.forEach((act, idx) => {
+        const li = document.createElement('li');
+        li.className = `action-menu-item${idx === selectedIndex ? ' selected' : ''}`;
+        
+        const actionParts = act.ActionID.split(':');
+        const shortName = actionParts[actionParts.length - 1];
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'action-menu-item-title';
+        titleSpan.textContent = shortName;
+
+        const descSpan = document.createElement('span');
+        descSpan.className = 'action-menu-item-desc';
+        descSpan.textContent = act.Description || act.ActionID;
+
+        li.appendChild(titleSpan);
+        li.appendChild(descSpan);
+
+        li.addEventListener('click', () => {
+          executeIndex(idx);
+        });
+
+        list.appendChild(li);
+      });
+    };
+
+    const executeIndex = (idx: number) => {
+      cleanup();
+      const act = actions[idx];
+      if (act) {
+        try {
+          const res = act.Completion(completionItem);
+          if (res instanceof Promise) {
+            res.then(() => resolve()).catch(err => {
+              completionItem.Result = `[エラー] ${err.message}`;
+              resolve();
+            });
+          } else {
+            resolve();
+          }
+        } catch (err: any) {
+          completionItem.Result = `[エラー] ${err.message}`;
+          resolve();
+        }
+      } else {
+        resolve();
+      }
+    };
+
+    const cleanup = () => {
+      document.removeEventListener('keydown', handleKeyDown, { capture: true });
+      overlay.remove();
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      if (e.key === 'ArrowDown') {
+        selectedIndex = (selectedIndex + 1) % actions.length;
+        renderItems();
+        const selectedEl = list.children[selectedIndex] as HTMLElement;
+        if (selectedEl) {
+          selectedEl.scrollIntoView({ block: 'nearest' });
+        }
+      } else if (e.key === 'ArrowUp') {
+        selectedIndex = (selectedIndex - 1 + actions.length) % actions.length;
+        renderItems();
+        const selectedEl = list.children[selectedIndex] as HTMLElement;
+        if (selectedEl) {
+          selectedEl.scrollIntoView({ block: 'nearest' });
+        }
+      } else if (e.key === 'Enter') {
+        executeIndex(selectedIndex);
+      } else if (e.key === 'Escape') {
+        cleanup();
+        completionItem.Result = 'メニューの選択をキャンセルしました';
+        resolve();
+      }
+    };
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        cleanup();
+        completionItem.Result = 'メニューの選択をキャンセルしました';
+        resolve();
+      }
+    });
+
+    document.addEventListener('keydown', handleKeyDown, { capture: true });
+
+    renderItems();
+    container.appendChild(list);
+
+    const footer = document.createElement('div');
+    footer.className = 'action-menu-footer';
+    footer.textContent = '↑↓: 選択 / Enter: 決定 / Esc: キャンセル';
+    container.appendChild(footer);
+
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
   });
 }
 

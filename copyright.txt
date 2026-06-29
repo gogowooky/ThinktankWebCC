@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.43",
+  "version": "1.0.44",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "3c73bc3",
-  "commitDateTime": "2026-06-30-073600",
-  "commitMessage": "feat: DoOnCursorPosアクションをUrl/File/Tagの3つのサブアクションに分割実装し、DoOnCursorPosはそれらを委譲呼び出しするように修正"
+  "commitId": "8f5b2e1",
+  "commitDateTime": "2026-06-30-074300",
+  "commitMessage": "feat: implement DoOnCursorPos:Menu action with premium modal popup overlay and add shortcut Alt+Shift+Enter"
 }

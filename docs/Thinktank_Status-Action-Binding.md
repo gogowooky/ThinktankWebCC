@@ -30,6 +30,12 @@
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
 　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open　を実施
 
+## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Menu
+　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
+　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
+　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
+　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
+
 
 ## 完了：　Application.Resource.ImportFromLocal
 ## 完了：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+

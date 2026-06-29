@@ -156,3 +156,104 @@ a {
 .workout-setting-panel__section-content .tooltip-wrapper > button {
   width: 100%;
 }
+
+/* ── アクション選択メニュー（DoOnCursorPos:Menu 用） ───────────────── */
+.action-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 17, 26, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.action-menu-container {
+  background: rgba(30, 32, 48, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  width: 500px;
+  max-width: 90%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  padding: 16px;
+  backdrop-filter: blur(20px);
+  animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
+}
+
+.action-menu-header {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-accent);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.action-menu-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.action-menu-item {
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.1s ease, transform 0.1s ease;
+}
+
+.action-menu-item:hover,
+.action-menu-item.selected {
+  background: var(--bg-selected);
+  color: #fff;
+}
+
+.action-menu-item-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.action-menu-item-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.action-menu-item:hover .action-menu-item-desc,
+.action-menu-item.selected .action-menu-item-desc {
+  color: #a9b1d6;
+}
+
+.action-menu-footer {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.96); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+

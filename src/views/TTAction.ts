@@ -32,6 +32,7 @@ export type ActionID =
   | 'TextEditor.CurrentEditor.DoOnCursorPos:Url:Open'
   | 'TextEditor.CurrentEditor.DoOnCursorPos:File:Open'
   | 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:Menu'
   | string; // 動的・外部定義のアクションを許容
 
 /** アクション実行コンテキスト。Completion 関数が Result / Allow を書き込む。 */
