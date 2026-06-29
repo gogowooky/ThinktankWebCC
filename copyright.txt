@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.39",
+  "version": "1.0.40",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "42d0724",
-  "commitDateTime": "2026-06-29-093200",
-  "commitMessage": "fix: TextEditor.CurrentEditor.CursorPos の双方向同期（値セット時のエディタカーソル移動）を実装"
+  "commitId": "487ec41",
+  "commitDateTime": "2026-06-29-130900",
+  "commitMessage": "fix: Monacoエディタ内のカーソル位置テキスト起動(DoOnCursorPos)およびテキスト取得(TextOnCursorPos)ステータスの実装"
 }

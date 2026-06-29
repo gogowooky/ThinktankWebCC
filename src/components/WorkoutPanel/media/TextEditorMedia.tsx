@@ -141,6 +141,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         let numberVal = 'None';
         
         let cursorOffsetStr = '0';
+        let textOnCursor = '';
 
         if (pos && model) {
           const targetOffset = model.getOffsetAt(pos);
@@ -150,6 +151,47 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
             const currentHeading = matched[matched.length - 1];
             offsetVal = String(currentHeading.offset);
             numberVal = currentHeading.headingNumber;
+          }
+
+          // カーソル下のテキスト（URL, FilePath, Tag）検出
+          const lineNumber = pos.lineNumber;
+          const column = pos.column;
+          const lineContent = model.getLineContent(lineNumber);
+
+          const urlRegex = /https?:\/\/[^\s")]+/g;
+          const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
+          const tagRegex = /\[([^\]]+)\]/g;
+
+          let match;
+          while ((match = urlRegex.exec(lineContent)) !== null) {
+            const startCol = match.index + 1;
+            const endCol = startCol + match[0].length;
+            if (column >= startCol && column <= endCol) {
+              textOnCursor = match[0];
+              break;
+            }
+          }
+
+          if (!textOnCursor) {
+            while ((match = fileRegex.exec(lineContent)) !== null) {
+              const startCol = match.index + 1;
+              const endCol = startCol + match[0].length;
+              if (column >= startCol && column <= endCol) {
+                textOnCursor = match[0];
+                break;
+              }
+            }
+          }
+
+          if (!textOnCursor) {
+            while ((match = tagRegex.exec(lineContent)) !== null) {
+              const startCol = match.index + 1;
+              const endCol = startCol + match[0].length;
+              if (column >= startCol && column <= endCol) {
+                textOnCursor = match[0];
+                break;
+              }
+            }
           }
         }
 
@@ -167,11 +209,16 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           workoutPanel.TextEditor.CurrentEditorCursorPos = cursorOffsetStr;
           isChanged = true;
         }
+        if (workoutPanel.TextEditor.CurrentEditorTextOnCursorPos !== textOnCursor) {
+          workoutPanel.TextEditor.CurrentEditorTextOnCursorPos = textOnCursor;
+          isChanged = true;
+        }
 
         if (isChanged) {
           TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
           TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
           TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentEditor.CursorPos');
+          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentEditor.TextOnCursorPos');
         }
       }, 150);
     };

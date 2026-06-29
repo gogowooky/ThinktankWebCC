@@ -8,6 +8,7 @@ Keyboard Shortcuts
 
 *TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+     ,行頭に移動→全選択
 *TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+       ,行末尾に移動→全選択
+*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos            ,URL・パス・タグの起動
 
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose

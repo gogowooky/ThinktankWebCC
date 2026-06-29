@@ -112,6 +112,7 @@ export type ConfigKey =
   | 'Application.Status.ExMode'
   | 'Application.Resource.LocalExporting'
   | 'TextEditor.CurrentEditor.CursorPos'
+  | 'TextEditor.CurrentEditor.TextOnCursorPos'
   | 'WorkoutPanel.Pane.Count'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
@@ -801,6 +802,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
         }
       }
     },
+  },
+  'TextEditor.CurrentEditor.TextOnCursorPos': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: '現在のエディタのカーソル位置のテキスト',
+    isConst: true,
+    get: (app) => app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos ?? '',
+    set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos = v; },
   },
 };
 

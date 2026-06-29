@@ -15,6 +15,13 @@
 
 # Action
 
+## 完了：　260629　TextEditor.CurrentEditor.DoOnCursorPos
+　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
+　url:      ブラウザで対象のURLを開きます。
+　filepath: サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動します。
+　tag:      大かっこ内のテキストを取り出し、コロン「:」がある場合はクエリとして各検索テンプレート（Google、Spotify等）をブラウザで開きます。また「memo:ID」の場合はアプリ内で対象のThinkを開きます。コロンがない通常タグ（例: [TODO]）の場合は左パネルのフィルター検索にそのキーワードを設定して絞り込みます。
+
+
 ## 完了：　Application.Resource.ImportFromLocal
 ## 完了：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
 　↓ CurPosが行先頭ではない場合、CurPosを現在行の先頭位置に移動する　→　終了
@@ -34,6 +41,13 @@ default:        0
 type:           string
 candidates:      .*
 
+## 完了：　260629　TextEditor.CurrentEditor.TextOnCursorPos
+description:    現在のエディタのカーソル位置のテキスト（URL、ファイルパス、タグなど）
+key:            TextEditor.CurrentEditor.TextOnCursorPos
+current:        
+default:        
+type:           string
+candidates:     .*
 
 # Application ========================================================================================================
 

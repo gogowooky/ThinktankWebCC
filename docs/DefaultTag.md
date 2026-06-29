@@ -1,0 +1,43 @@
+
+
+
+New-TTWebSearch     Spotify         'Spotify'                   'https://open.spotify.com/search/{0}'
+New-TTWebSearch     NET             '.NET API Browser'          'https://docs.microsoft.com/ja-jp/dotnet/api/?view=net-5.0&term={0}'
+New-TTWebSearch     VBAOutlook      'VBAOutlook'                'https://docs.microsoft.com/ja-jp/search/?category=outlook&search={0}'
+New-TTWebSearch     Pubmed          'Pubmed検索'                'https://pubmed.ncbi.nlm.nih.gov/?term={0}'
+New-TTWebSearch     NIPH            '国立保健医療科学院'        'https://rctportal.niph.go.jp/s/result?t=chiken&q={0}'
+New-TTWebSearch     CTG             'ClinicalTrials.gov'        'https://clinicaltrials.gov/ct2/results?term=&cntry=&state=&city=&dist=&cond={0}'
+New-TTWebSearch     Cortellis       'コルテリス'                'https://www.cortellis.com/intelligence/qsearch/{0}?indexBased=true&searchCategory=ALL'
+New-TTWebSearch     PMDA            '医薬品医療機器総合機構'    'https://ss.pmda.go.jp/ja_all/search.x?ie=UTF-8&page=1&q={0}'
+New-TTWebSearch     KAKEN           '日本学術振興会科研費'      'https://kaken.nii.ac.jp/ja/search/?kw={0}'
+New-TTWebSearch     EMA             '欧州医薬品庁'              'https://www.clinicaltrialsregister.eu/ctr-search/search?query={0}'
+New-TTWebSearch     JST             '科学技術振興機構'          'https://www.jstage.jst.go.jp/result/global/-char/ja?globalSearchKey={0}'
+New-TTWebSearch     PMC             'PubMed Central'            'https://www.ncbi.nlm.nih.gov/pmc/?term={0}'
+New-TTWebSearch     MHLW            '厚生労働省'                'https://www.mhlw.go.jp/search.html?q={0}'
+
+
+New-TTWebSearch     Google          'Google検索(J)'             'https://www.google.com/search?q={0}'
+New-TTWebSearch     GoogleE         'Google検索(E)'             'http://www.google.co.jp/search?lr=lang_en&q={0}'
+New-TTWebSearch     GoogleJE        'Google翻訳(JE)'            'https://translate.google.com/?hl=ja$op=translate&sl=ja&tl=en&text={0}'
+New-TTWebSearch     GoogleEJ        'Google翻訳(EJ)'            'https://translate.google.com/?hl=ja$&op=translate&sl=en&tl=ja&text={0}'
+New-TTWebSearch     GoogleMap       'Googleマップ'              'https://www.google.co.jp/maps/place/{0}'
+New-TTWebSearch     GScholar        'Googleスカラー'            'https://scholar.google.co.jp/scholar?q={0}'
+New-TTWebSearch     Youtube         'Youtube'                   'https://www.youtube.com/results?search_query={0}'
+New-TTWebSearch     Pubmed          'Pubmed検索'                'https://pubmed.ncbi.nlm.nih.gov/?term={0}'
+New-TTWebSearch     Wikipedia       'Wikipedia(J)'              'https://ja.wikipedia.org/wiki/{0}'
+New-TTWebSearch     WikipediaE      'Wikipedia(E)'              'https://en.wikipedia.org/wiki/{0}'
+New-TTWebSearch     Bing            'Bing'                      'https://www.bing.com/search?q={0}'
+New-TTWebSearch     DeepLEJ         'DeepL翻訳(EJ)'             'https://www.deepl.com/ja/translator#en/ja/{0}'
+New-TTWebSearch     DeepLJE         'DeepL翻訳(JE)'             'https://www.deepl.com/ja/translator#ja/en-us/{0}'
+
+
+        @{ Key = 'WebPath'; Regex = [Regex]'https?://[^") ]+' },
+        @{ Key = 'FilePath'; Regex = [Regex]'([a-zA-Z]:\\|\\\\)([^<>:"/\\|?*]+\\?)*' },
+        @{ Key = 'ChildPath'; Regex = [Regex]'^\s*\/([^<>:"\\\/|?*]+\\?)*' },
+        @{ Key = 'DateTag'; Regex = [Regex]'\[\d{4}\-\d{2}\-\d{2}\]' }, #::: [xxxx-xx-xxxx]  ※Tagより先に評価すること
+        @{ Key = 'Tag'; Regex = [Regex]'\[([^\]:]+)\]' },           #::: [1] [>1]
+        @{ Key = 'Query'; Regex = [Regex]'\[([^\]]+)\]' },            #::: [Google:xxx] [memo:xxx]
+        @{ Key = 'Date'; Regex = [Regex]'\d{4}\/\d{1,2}\/\d{1,2}( \(.\))?( \d{2}:\d{2})?' },
+        @{ Key = 'JDate'; Regex = [Regex]'\d{4}年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}:\d{2})?' },
+        @{ Key = 'GDate'; Regex = [Regex]'(明治|大正|昭和|平成|令和)(\d{1,2}|元)年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}時\d{2}分)?' }
+        @{ Key = 'PanDate'; Regex = [Regex]'(\[\d{4}\-\d{2}\-\d{2}\]|\d{4}\/\d{1,2}\/\d{1,2}( \(.\))?( \d{2}:\d{2})?|\d{4}年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}:\d{2})?|(明治|大正|昭和|平成|令和)(\d{1,2}|元)年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}時\d{2}分)?)' }

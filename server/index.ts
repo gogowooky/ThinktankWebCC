@@ -12,6 +12,7 @@ import { bigqueryService }        from './services/BigQueryService.js';
 import { createDriveRoutes }      from './routes/driveRoutes.js';
 import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
+import { createSystemRoutes }     from './routes/systemRoutes.js';
 import { vectorStoreService }     from './services/VectorStoreService.js';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
@@ -41,6 +42,9 @@ app.use('/api/drive', createDriveRoutes());
 
 // AI チャット（Phase 14）
 app.use('/api/chat', createChatRoutes());
+
+// システム関連API (DoOnCursorPos 用ローカルファイル起動)
+app.use('/api/system', createSystemRoutes());
 
 // 静的ファイル（本番ビルド）
 app.use(express.static(path.join(projectRoot, 'dist')));

@@ -1896,6 +1896,90 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
       }
     }
   });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos',
+    Completion: (item) => {
+      try {
+        const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
+        if (!text) {
+          item.Result = 'カーソル位置に対象テキストがありません';
+          return;
+        }
+
+        if (text.startsWith('http://') || text.startsWith('https://')) {
+          window.open(text, '_blank');
+          item.Result = `URL [${text}] を開きました`;
+        } else if (text.startsWith('[') && text.endsWith(']')) {
+          const innerText = text.slice(1, -1);
+          if (innerText.includes(':')) {
+            const parts = innerText.split(':');
+            const key = parts[0].trim();
+            const val = parts.slice(1).join(':').trim();
+
+            const WEB_SEARCH_TEMPLATES: Record<string, string> = {
+              Spotify: 'https://open.spotify.com/search/{0}',
+              NET: 'https://docs.microsoft.com/ja-jp/dotnet/api/?view=net-5.0&term={0}',
+              VBAOutlook: 'https://docs.microsoft.com/ja-jp/search/?category=outlook&search={0}',
+              Pubmed: 'https://pubmed.ncbi.nlm.nih.gov/?term={0}',
+              NIPH: 'https://rctportal.niph.go.jp/s/result?t=chiken&q={0}',
+              CTG: 'https://clinicaltrials.gov/ct2/results?term=&cntry=&state=&city=&dist=&cond={0}',
+              Cortellis: 'https://www.cortellis.com/intelligence/qsearch/{0}?indexBased=true&searchCategory=ALL',
+              PMDA: 'https://ss.pmda.go.jp/ja_all/search.x?ie=UTF-8&page=1&q={0}',
+              KAKEN: 'https://kaken.nii.ac.jp/ja/search/?kw={0}',
+              EMA: 'https://www.clinicaltrialsregister.eu/ctr-search/search?query={0}',
+              JST: 'https://www.jstage.jst.go.jp/result/global/-char/ja?globalSearchKey={0}',
+              PMC: 'https://www.ncbi.nlm.nih.gov/pmc/?term={0}',
+              MHLW: 'https://www.mhlw.go.jp/search.html?q={0}',
+              Google: 'https://www.google.com/search?q={0}',
+              GoogleE: 'http://www.google.co.jp/search?lr=lang_en&q={0}',
+              GoogleMap: 'https://www.google.co.jp/maps/place/{0}',
+              GScholar: 'https://scholar.google.co.jp/scholar?q={0}',
+              Youtube: 'https://www.youtube.com/results?search_query={0}',
+              Wikipedia: 'https://ja.wikipedia.org/wiki/{0}',
+              WikipediaE: 'https://en.wikipedia.org/wiki/{0}',
+              Bing: 'https://www.bing.com/search?q={0}',
+              DeepLEJ: 'https://www.deepl.com/ja/translator#en/ja/{0}',
+              DeepLJE: 'https://www.deepl.com/ja/translator#ja/en-us/{0}'
+            };
+
+            const template = WEB_SEARCH_TEMPLATES[key];
+            if (template) {
+              const url = template.replace('{0}', encodeURIComponent(val));
+              window.open(url, '_blank');
+              item.Result = `WebSearch [${key}:${val}] を開きました`;
+            } else if (key.toLowerCase() === 'memo' || key.toLowerCase() === 'thought' || key.toLowerCase() === 'table') {
+              app.OpenThinkInWorkout(val);
+              item.Result = `Think [${val}] を開きました`;
+            } else {
+              app.ThinktankPanel.IsAreaOpen = true;
+              app.ThinktankPanel.SetViewMode('filter');
+              app.ThinktankPanel.SetFilter(innerText);
+              item.Result = `タグ [${innerText}] で検索しました`;
+            }
+          } else {
+            app.ThinktankPanel.IsAreaOpen = true;
+            app.ThinktankPanel.SetViewMode('filter');
+            app.ThinktankPanel.SetFilter(innerText);
+            item.Result = `タグ [${innerText}] で検索しました`;
+          }
+        } else {
+          fetch('/api/system/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: text })
+          }).then(res => {
+            if (!res.ok) throw new Error('API failed');
+          }).catch(err => {
+            console.error('Failed to open path', err);
+          });
+          item.Result = `パス [${text}] の起動をリクエストしました`;
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
 }
 
 
