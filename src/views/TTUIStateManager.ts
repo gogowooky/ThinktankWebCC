@@ -1294,22 +1294,12 @@ export function parseMarkdownStatus(content: string): TableSection {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // 「## Status」で始まる見出しで新規ブロックを開始
-    // 全角・半角コロンや、日付・IDなどが続くケースを考慮
-    if (/^##\s*Status\s*[:：]/i.test(trimmed)) {
-      if (currentItem && currentItem.key) {
-        items.push(currentItem);
-      }
-      currentItem = {};
-      continue;
-    }
-
-    // 別の見出し (## Action や ## 完了 など) が来たら現在のブロックを閉じる
+    // 見出し (## または #) が来たら、前のブロックに key があれば保存し、常に新しいブロックを開始する
     if (trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
       if (currentItem && currentItem.key) {
         items.push(currentItem);
       }
-      currentItem = null;
+      currentItem = {};
       continue;
     }
 
