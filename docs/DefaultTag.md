@@ -1,6 +1,17 @@
 
 
 # ID,           Descrition,                     URL
+Google,         "Google検索(J)",                https://www.google.com/search?q={0}
+GoogleE,        "Google検索(E)",                http://www.google.co.jp/search?lr=lang_en&q={0}
+GoogleJE,       "Google翻訳(JE)",               https://translate.google.com/?hl=ja$op=translate&sl=ja&tl=en&text={0}
+GoogleEJ,       "Google翻訳(EJ)",               https://translate.google.com/?hl=ja$&op=translate&sl=en&tl=ja&text={0}
+GoogleMap,      "Googleマップ",                 https://www.google.co.jp/maps/place/{0}
+GScholar,       "Googleスカラー",               https://scholar.google.co.jp/scholar?q={0}
+Youtube,        "Youtube",                      https://www.youtube.com/results?search_query={0}
+Pubmed,         "Pubmed検索",                   https://pubmed.ncbi.nlm.nih.gov/?term={0}
+Wikipedia,      "Wikipedia(J)",                 https://ja.wikipedia.org/wiki/{0}
+WikipediaE,     "Wikipedia(E)",                 https://en.wikipedia.org/wiki/{0}
+Bing,           "Bing",                         https://www.bing.com/search?q={0}
 Spotify,        "Spotify",                      https://open.spotify.com/search/{0}
 NET,            ".NET API Browser",             https://docs.microsoft.com/ja-jp/dotnet/api/?view=net-5.0&term={0}
 VBAOutlook,     "VBAOutlook",                   https://docs.microsoft.com/ja-jp/search/?category=outlook&search={0}
@@ -14,19 +25,6 @@ EMA,            "欧州医薬品庁",                 https://www.clinicaltrials
 JST,            "科学技術振興機構",             https://www.jstage.jst.go.jp/result/global/-char/ja?globalSearchKey={0}
 PMC,            "PubMed Central",               https://www.ncbi.nlm.nih.gov/pmc/?term={0}
 MHLW,           "厚生労働省",                   https://www.mhlw.go.jp/search.html?q={0}
-Google,         "Google検索(J)",                https://www.google.com/search?q={0}
-GoogleE,        "Google検索(E)",                http://www.google.co.jp/search?lr=lang_en&q={0}
-GoogleJE,       "Google翻訳(JE)",               https://translate.google.com/?hl=ja$op=translate&sl=ja&tl=en&text={0}
-GoogleEJ,       "Google翻訳(EJ)",               https://translate.google.com/?hl=ja$&op=translate&sl=en&tl=ja&text={0}
-GoogleMap,      "Googleマップ",                 https://www.google.co.jp/maps/place/{0}
-GScholar,       "Googleスカラー",               https://scholar.google.co.jp/scholar?q={0}
-Youtube,        "Youtube",                      https://www.youtube.com/results?search_query={0}
-Pubmed,         "Pubmed検索",                   https://pubmed.ncbi.nlm.nih.gov/?term={0}
-Wikipedia,      "Wikipedia(J)",                 https://ja.wikipedia.org/wiki/{0}
-WikipediaE,     "Wikipedia(E)",                 https://en.wikipedia.org/wiki/{0}
-Bing,           "Bing",                         https://www.bing.com/search?q={0}
-DeepLEJ,        "DeepL翻訳(EJ)",               https://www.deepl.com/ja/translator#en/ja/{0}
-DeepLJE,        "DeepL翻訳(JE)",               https://www.deepl.com/ja/translator#ja/en-us/{0}
 
 
         @{ Key = 'WebPath'; Regex = [Regex]'https?://[^") ]+' },

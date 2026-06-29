@@ -15,11 +15,20 @@
 
 # Action
 
-## 完了：　260629　@@
+## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
+　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
+
+## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
+　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
+
+## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
+　CursorPos位置が、tagを表す部分であれば、大かっこ内のテキストを取り出し、コロン「:」がある場合はクエリとして各検索テンプレート（Google、Spotify等）をブラウザで開きます。また「memo:ID」の場合はアプリ内で対象のThinkを開きます。コロンがない通常タグ（例: [TODO]）の場合は左パネルのフィルター検索にそのキーワードを設定して絞り込んでください。
+
+## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
-　url:      ブラウザで対象のURLを開きます。
-　filepath: サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動します。
-　tag:      大かっこ内のテキストを取り出し、コロン「:」がある場合はクエリとして各検索テンプレート（Google、Spotify等）をブラウザで開きます。また「memo:ID」の場合はアプリ内で対象のThinkを開きます。コロンがない通常タグ（例: [TODO]）の場合は左パネルのフィルター検索にそのキーワードを設定して絞り込みます。
+　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
+　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
+　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open　を実施
 
 
 ## 完了：　Application.Resource.ImportFromLocal

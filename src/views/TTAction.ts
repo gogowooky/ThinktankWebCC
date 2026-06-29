@@ -29,6 +29,9 @@ export type ActionID =
   | 'TextEditor.FullWidthSpace.IsVisible:Toggle'
   | 'TextEditor.UnicodeHighlight.IsVisible:Toggle'
   | 'TextEditor.BracketPairColorization.IsVisible:Toggle'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:Url:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:File:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open'
   | string; // 動的・外部定義のアクションを許容
 
 /** アクション実行コンテキスト。Completion 関数が Result / Allow を書き込む。 */

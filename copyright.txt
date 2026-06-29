@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.42",
+  "version": "1.0.43",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "f5404eb",
-  "commitDateTime": "2026-06-29-234000",
-  "commitMessage": "docs: format DefaultTag.md to comma-separated format"
+  "commitId": "3c73bc3",
+  "commitDateTime": "2026-06-30-073600",
+  "commitMessage": "feat: DoOnCursorPosアクションをUrl/File/Tagの3つのサブアクションに分割実装し、DoOnCursorPosはそれらを委譲呼び出しするように修正"
 }
