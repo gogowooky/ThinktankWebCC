@@ -783,7 +783,24 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '現在のエディタのカーソル位置',
     isConst: true,
     get: (app) => app.WorkoutPanel.TextEditor.CurrentEditorCursorPos ?? '0',
-    set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentEditorCursorPos = v; },
+    set: (app, v) => {
+      app.WorkoutPanel.TextEditor.CurrentEditorCursorPos = v;
+      const offset = parseInt(v, 10);
+      if (!isNaN(offset)) {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (editor) {
+          const model = editor.getModel();
+          if (model) {
+            const pos = model.getPositionAt(offset);
+            const curPos = editor.getPosition();
+            if (curPos && (curPos.lineNumber !== pos.lineNumber || curPos.column !== pos.column)) {
+              editor.setPosition(pos);
+              editor.revealPositionInCenterIfOutsideViewport(pos);
+            }
+          }
+        }
+      }
+    },
   },
 };
 
