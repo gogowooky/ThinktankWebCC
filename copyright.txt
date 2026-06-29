@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.44",
+  "version": "1.0.45",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "8f5b2e1",
-  "commitDateTime": "2026-06-30-074300",
-  "commitMessage": "feat: implement DoOnCursorPos:Menu action with premium modal popup overlay and add shortcut Alt+Shift+Enter"
+  "commitId": "0a59d19",
+  "commitDateTime": "2026-06-30-075000",
+  "commitMessage": "fix: resolve link sync timing discrepancy when triggered via double-click (Left2) in Monaco editor"
 }

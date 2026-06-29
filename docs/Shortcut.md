@@ -11,6 +11,9 @@ Keyboard Shortcuts
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos            ,URL・パス・タグの起動
 *TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu       ,URL・パス・タグのメニュー表示
 
+*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos            ,URL・パス・タグの起動
+*TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos:Menu       ,URL・パス・タグのメニュー表示
+
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
 *TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動

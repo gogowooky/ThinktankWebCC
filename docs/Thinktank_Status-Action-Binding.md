@@ -29,6 +29,7 @@
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
 　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open　を実施
+　※ダブルクリック（Left2）起動時などの状態更新ズレ（一回前のリンクが起動する問題）をエディタ同期関数（syncTextOnCursor）の導入により修正完了。
 
 ## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Menu
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。

@@ -1898,12 +1898,72 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     }
   });
 
+  function getCurrentTextOnCursor(): string {
+    const editor = TTShortcutManager.instance.activeEditor;
+    if (!editor) return '';
+    const pos = editor.getPosition();
+    const model = editor.getModel();
+    if (!pos || !model) return '';
+
+    const lineNumber = pos.lineNumber;
+    const column = pos.column;
+    const lineContent = model.getLineContent(lineNumber);
+
+    const urlRegex = /https?:\/\/[^\s")]+/g;
+    const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
+    const tagRegex = /\[([^\]]+)\]/g;
+
+    let textOnCursor = '';
+    let match;
+    while ((match = urlRegex.exec(lineContent)) !== null) {
+      const startCol = match.index + 1;
+      const endCol = startCol + match[0].length;
+      if (column >= startCol && column <= endCol) {
+        textOnCursor = match[0];
+        break;
+      }
+    }
+
+    if (!textOnCursor) {
+      while ((match = fileRegex.exec(lineContent)) !== null) {
+        const startCol = match.index + 1;
+        const endCol = startCol + match[0].length;
+        if (column >= startCol && column <= endCol) {
+          textOnCursor = match[0];
+          break;
+        }
+      }
+    }
+
+    if (!textOnCursor) {
+      while ((match = tagRegex.exec(lineContent)) !== null) {
+        const startCol = match.index + 1;
+        const endCol = startCol + match[0].length;
+        if (column >= startCol && column <= endCol) {
+          textOnCursor = match[0];
+          break;
+        }
+      }
+    }
+
+    return textOnCursor;
+  }
+
+  function syncTextOnCursor(): string {
+    const text = getCurrentTextOnCursor();
+    if (text) {
+      TTUIStateManager.instance.applyProperty('TextEditor.CurrentEditor.TextOnCursorPos', text);
+      return text;
+    }
+    return TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos') || '';
+  }
+
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Url:Open',
     Description: 'ブラウザで対象のURLを開きます',
     Completion: (item) => {
       try {
-        const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
+        const text = syncTextOnCursor();
         if (!text || !(text.startsWith('http://') || text.startsWith('https://'))) {
           item.Result = 'カーソル位置のテキストがURLではありません';
           return;
@@ -1921,7 +1981,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Description: 'OSの規定のアプリでローカルファイル/フォルダを起動します',
     Completion: (item) => {
       try {
-        const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
+        const text = syncTextOnCursor();
         if (!text) {
           item.Result = 'カーソル位置に対象テキストがありません';
           return;
@@ -1951,7 +2011,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Description: 'タグを開く、またはフィルター検索を設定します',
     Completion: (item) => {
       try {
-        const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
+        const text = syncTextOnCursor();
         if (!text || !(text.startsWith('[') && text.endsWith(']'))) {
           item.Result = 'カーソル位置のテキストがタグではありません';
           return;
@@ -2018,7 +2078,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos',
     Completion: (item) => {
       try {
-        const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
+        const text = syncTextOnCursor();
         if (!text) {
           item.Result = 'カーソル位置に対象テキストがありません';
           return;
@@ -2052,7 +2112,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Description: 'カーソル位置のテキスト種別に応じたアクションメニューを表示します',
     Completion: (item) => {
       try {
-        const text = TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos');
+        const text = syncTextOnCursor();
         if (!text) {
           item.Result = 'カーソル位置に対象テキストがありません';
           return;
