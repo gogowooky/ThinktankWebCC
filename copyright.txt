@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.41",
+  "version": "1.0.42",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "d2a0d89",
-  "commitDateTime": "2026-06-29-233600",
-  "commitMessage": "docs: update status-action binding document"
+  "commitId": "f5404eb",
+  "commitDateTime": "2026-06-29-234000",
+  "commitMessage": "docs: format DefaultTag.md to comma-separated format"
 }
