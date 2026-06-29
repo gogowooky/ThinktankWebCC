@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.40",
+  "version": "1.0.41",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "VENENO-02",
-  "commitId": "487ec41",
-  "commitDateTime": "2026-06-29-130900",
-  "commitMessage": "fix: Monacoエディタ内のカーソル位置テキスト起動(DoOnCursorPos)およびテキスト取得(TextOnCursorPos)ステータスの実装"
+  "commitPC": "E15",
+  "commitId": "d2a0d89",
+  "commitDateTime": "2026-06-29-233600",
+  "commitMessage": "docs: update status-action binding document"
 }

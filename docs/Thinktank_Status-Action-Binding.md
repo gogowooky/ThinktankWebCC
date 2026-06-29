@@ -15,7 +15,7 @@
 
 # Action
 
-## 完了：　260629　TextEditor.CurrentEditor.DoOnCursorPos
+## 完了：　260629　@@
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
 　url:      ブラウザで対象のURLを開きます。
 　filepath: サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動します。
