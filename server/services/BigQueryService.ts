@@ -24,6 +24,14 @@ export interface VaultRecord {
   metadata?:   string | null;
 }
 
+function parseBqDate(d: string | object): Date {
+  if (d instanceof Date) return d;
+  if (typeof d === 'object' && d !== null && 'value' in d) {
+    return new Date((d as { value: string }).value);
+  }
+  return new Date(String(d));
+}
+
 type BqResult<T = VaultRecord[]> = { success: true; data: T } | { success: false; error: string };
 
 export class BigQueryService {
@@ -221,8 +229,8 @@ export class BigQueryService {
         related_ids: record.related_ids,
         size_bytes:  record.size_bytes,
         is_deleted:  record.is_deleted ?? false,
-        created_at:  new Date(record.created_at),
-        updated_at:  new Date(record.updated_at),
+        created_at:  parseBqDate(record.created_at),
+        updated_at:  parseBqDate(record.updated_at),
         metadata:    record.metadata ?? null,
       };
       const types = {

@@ -21,8 +21,17 @@ export function createChatRoutes(): Router {
       return;
     }
 
-    if (!process.env['ANTHROPIC_API_KEY']) {
+    const activeProvider = process.env['AI_PROVIDER'] || 'anthropic';
+    if (activeProvider === 'anthropic' && !process.env['ANTHROPIC_API_KEY']) {
       res.status(503).json({ error: 'ANTHROPIC_API_KEY not configured' });
+      return;
+    }
+    if (activeProvider === 'gemini' && !process.env['GEMINI_API_KEY']) {
+      res.status(503).json({ error: 'GEMINI_API_KEY not configured' });
+      return;
+    }
+    if (activeProvider === 'openai' && !process.env['OPENAI_API_KEY']) {
+      res.status(503).json({ error: 'OPENAI_API_KEY not configured' });
       return;
     }
 

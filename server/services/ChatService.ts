@@ -34,7 +34,10 @@ export async function streamChatResponse(
   };
 
   // デフォルトプロバイダーの判定
-  const activeProvider = provider || process.env['AI_PROVIDER'] || 'anthropic';
+  let activeProvider = provider || process.env['AI_PROVIDER'] || 'anthropic';
+  if (activeProvider === 'claude') {
+    activeProvider = 'anthropic';
+  }
 
   try {
     if (activeProvider === 'anthropic') {
@@ -93,7 +96,7 @@ export async function streamChatResponse(
         throw new Error('GEMINI_API_KEY is not configured');
       }
       const genAI = new GoogleGenerativeAI(apiKey);
-      const activeModel = model || process.env['GEMINI_MODEL'] || 'gemini-1.5-flash';
+      const activeModel = model || process.env['GEMINI_MODEL'] || 'gemini-2.5-flash';
 
       const genModel = genAI.getGenerativeModel({
         model: activeModel,

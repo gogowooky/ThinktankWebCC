@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.49",
+  "version": "1.0.50",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "9103485",
-  "commitDateTime": "2026-06-30-151745",
-  "commitMessage": "feat: think情報の表示・編集状態（metadata）の保存・復元、およびエクスポート機能の実装"
+  "commitId": "19d1f23",
+  "commitDateTime": "2026-06-30-171130",
+  "commitMessage": "chore: AI ChatのホストをGemini(gemini-2.5-flash)に切り替え、APIキーチェック及びBigQuery日付パースエラーの修正"
 }
