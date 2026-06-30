@@ -25,6 +25,19 @@ export class TTThink extends TTObject {
   /** 関連アイテム ID 群（カンマ区切り） */
   public RelatedIDs: string = '';
 
+  /** 表示・編集状態のメタデータ */
+  public Metadata: Record<string, any> = {};
+
+  private _metadataSaved: string = '{}';
+
+  public get IsMetadataDirty(): boolean {
+    return JSON.stringify(this.Metadata) !== this._metadataSaved;
+  }
+
+  public markMetadataSaved(): void {
+    this._metadataSaved = JSON.stringify(this.Metadata);
+  }
+
   /** true = メタデータのみ取得済み、content は未フェッチ */
   public IsMetaOnly: boolean = false;
 
@@ -97,8 +110,8 @@ export class TTThink extends TTObject {
     this.IsMetaOnly = false;
   }
 
-  public async SaveContent(): Promise<void> {
-    if (!this.IsDirty) return;
+  public async SaveContent(force: boolean = false): Promise<void> {
+    if (!this.IsDirty && !this.IsMetadataDirty && !force) return;
     try {
       const meta = await StorageManager.instance.save({
         id:          this.ID,
@@ -106,12 +119,14 @@ export class TTThink extends TTObject {
         fullContent: this.Content,
         keywords:    this.Keywords,
         relatedIds:  this.RelatedIDs,
+        metadata:    this.Metadata,
       });
       // 保存成功後: サーバーが返した updatedAt を反映
       if (meta.updatedAt) {
         this.UpdatedAt = meta.updatedAt;
       }
       this.markSaved();
+      this.markMetadataSaved();
       // 親 Vault に通知してDataGridを再描画させる（UpdateDateは自分自身では更新しない）
       if (this._parent) {
         this._parent.NotifyUpdated(false);

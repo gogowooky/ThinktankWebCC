@@ -26,6 +26,21 @@ function extractBody(content: string): string {
   return idx === -1 ? '' : content.slice(idx + 1);
 }
 
+function getClosedHeadings(editor: any): string {
+  const regions = (editor.getContribution?.('editor.contrib.folding') as any)
+    ?.foldingModel?.regions;
+  if (regions) {
+    const closed: number[] = [];
+    for (let i = 0; i < regions.length; i++) {
+      if (regions.isCollapsed(i)) {
+        closed.push(regions.getStartLineNumber(i));
+      }
+    }
+    return closed.join(',');
+  }
+  return '';
+}
+
 function getEditorValue(think: NonNullable<MediaProps['think']>): string {
   return (think.ContentType === 'thought' || think.ContentType === 'table' || think.ContentType === 'memo')
     ? (think.Content ?? '')
@@ -94,6 +109,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const editorRef   = useRef<any>(null);
   const disposablesRef = useRef<any[]>([]);
   const headingStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRestoringRef = useRef(true);
 
   useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focus() }));
   const [isDragOver, setIsDragOver] = useState(false);
@@ -128,6 +144,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     disposablesRef.current = [];
 
     const notifyHeadingStatus = () => {
+      if (isRestoringRef.current) return;
+
       if (headingStatusTimerRef.current) {
         clearTimeout(headingStatusTimerRef.current);
       }
@@ -220,6 +238,27 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentEditor.CursorPos');
           TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentEditor.TextOnCursorPos');
         }
+
+        // think.Metadata.editor に状態を保存
+        if (think && pos && model) {
+          const closed = getClosedHeadings(editor);
+          const sel = editor.getSelection();
+          let selectionData = null;
+          if (sel) {
+            selectionData = {
+              startLineNumber: sel.startLineNumber,
+              startColumn: sel.startColumn,
+              endLineNumber: sel.endLineNumber,
+              endColumn: sel.endColumn,
+            };
+          }
+          if (!think.Metadata) think.Metadata = {};
+          think.Metadata.editor = {
+            caret: { lineNumber: pos.lineNumber, column: pos.column },
+            selection: selectionData,
+            closedHeadings: closed,
+          };
+        }
       }, 150);
     };
 
@@ -252,6 +291,72 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       savedRef.current = body;
       onSave(reconstructContent(think, body));
     });
+
+    // 状態の復元
+    isRestoringRef.current = true;
+    const foldingController = editor.getContribution('editor.contrib.folding') as any;
+
+    const restoreEditorState = () => {
+      const editorState = think?.Metadata?.editor;
+      if (!editorState) {
+        isRestoringRef.current = false;
+        return;
+      }
+
+      // 折畳状態の復元
+      if (editorState.closedHeadings) {
+        const closedLines = editorState.closedHeadings
+          .split(',')
+          .map((s: string) => parseInt(s.trim()))
+          .filter((n: number) => !isNaN(n));
+        if (closedLines.length > 0) {
+          editor.trigger('tt', 'editor.fold', { selectionLines: closedLines.map((line: number) => line - 1) });
+        }
+      }
+
+      // カーソル・選択範囲の復元
+      if (editorState.caret) {
+        editor.setPosition(editorState.caret);
+        editor.revealPositionInCenter(editorState.caret);
+      }
+      if (editorState.selection) {
+        editor.setSelection(editorState.selection);
+      }
+
+      // 復元完了
+      isRestoringRef.current = false;
+    };
+
+    // セーフティタイムアウト（何らかの理由で復元イベントが走らなかった場合）
+    const safetyTimeout = setTimeout(() => {
+      if (isRestoringRef.current) {
+        console.warn('[TextEditorMedia] Restoration safety timeout triggered');
+        isRestoringRef.current = false;
+      }
+    }, 1000);
+    disposablesRef.current.push({ dispose: () => clearTimeout(safetyTimeout) });
+
+    if (foldingController) {
+      const checkAndSubscribe = () => {
+        const foldingModel = foldingController.foldingModel;
+        if (foldingModel) {
+          if (foldingModel.regions && foldingModel.regions.length > 0) {
+            restoreEditorState();
+            return;
+          }
+          const disposable = foldingModel.onDidChange(() => {
+            restoreEditorState();
+            disposable.dispose();
+          });
+          disposablesRef.current.push(disposable);
+        } else {
+          setTimeout(checkAndSubscribe, 50);
+        }
+      };
+      checkAndSubscribe();
+    } else {
+      restoreEditorState();
+    }
 
     updateDecorations();
   }, [onSave, think]); // updateDecorations は後で依存に追加

@@ -66,12 +66,56 @@ export function WorkoutArea({
   useEffect(() => {
     setIsDirty(false);
     const t = vault.GetThink(area.ResourceID);
-    if (!t || !t.IsMetaOnly) {
+    if (!t) {
       setLoadedResourceId(area.ResourceID);
       return;
     }
-    t.LoadContent().then(() => setLoadedResourceId(area.ResourceID));
-  }, [area.ResourceID]); // eslint-disable-line react-hooks/exhaustive-deps
+    const loadAndRestore = async () => {
+      if (t.IsMetaOnly) {
+        await t.LoadContent();
+      }
+      setLoadedResourceId(area.ResourceID);
+
+      // ハイライト文字の復元
+      if (t.Metadata?.highlightWord !== undefined) {
+        panel.SetHighlightWord(t.Metadata.highlightWord);
+      }
+    };
+    loadAndRestore();
+  }, [area.ResourceID, vault, panel]);
+
+  // ハイライト文字が変更されたら、フォーカスされているペインの think.Metadata に同期する
+  useEffect(() => {
+    if (isFocused && area.ResourceID) {
+      const t = vault.GetThink(area.ResourceID);
+      if (t) {
+        if (!t.Metadata) t.Metadata = {};
+        if (t.Metadata.highlightWord !== panel.HighlightWord) {
+          t.Metadata.highlightWord = panel.HighlightWord;
+        }
+      }
+    }
+  }, [panel.HighlightWord, isFocused, area.ResourceID, vault]);
+
+  // Ctrl+S での強制保存を WorkoutArea 全体でハンドリング
+  useEffect(() => {
+    const handleGlobalSave = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        const currentThink = vault.GetThink(area.ResourceID);
+        if (currentThink) {
+          e.preventDefault();
+          // メタデータだけでも強制保存
+          currentThink.SaveContent(true).then(() => {
+            setIsDirty(false);
+          }).catch(err => {
+            console.error('[WorkoutArea] Global Ctrl+S metadata save failed:', err);
+          });
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalSave);
+    return () => window.removeEventListener('keydown', handleGlobalSave);
+  }, [vault, area.ResourceID]);
 
   // タイトルへの URL/path D&D → 常に新規 links Think を作成して表示
   const handleUrlDrop = useCallback(async (url: string, title: string) => {

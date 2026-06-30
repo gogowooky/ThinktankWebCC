@@ -59,6 +59,7 @@ export interface ItemMeta {
   vault_id: string;
   is_meta_only: boolean;
   is_deleted: boolean;
+  metadata?: Record<string, any>;
 }
 
 export interface FileRecord extends ItemMeta {

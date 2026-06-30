@@ -14,6 +14,7 @@ export interface ThinkMeta {
   isDeleted:   boolean;
   createdAt:   string;
   updatedAt:   string;
+  metadata?:   Record<string, any>;
 }
 
 export interface SavePayload {
@@ -22,6 +23,7 @@ export interface SavePayload {
   fullContent: string;  // TTThink.Content（タイトル行 + 本文）
   keywords:    string;
   relatedIds:  string;
+  metadata?:   Record<string, any>;
 }
 
 export interface IStorageBackend {

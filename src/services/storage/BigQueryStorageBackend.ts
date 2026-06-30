@@ -40,6 +40,7 @@ export class BigQueryStorageBackend implements IStorageBackend {
         content:     body,
         keywords:    payload.keywords || null,
         relatedIds:  payload.relatedIds || null,
+        metadata:    payload.metadata || null,
       }),
     });
     if (!res.ok) throw new Error(`BQ save failed: ${res.status}`);

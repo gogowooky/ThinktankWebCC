@@ -291,6 +291,8 @@ export class TTVault extends TTCollection {
         think.ContentType = meta.contentType as ContentType;
         think.Keywords    = meta.keywords  ?? '';
         think.RelatedIDs  = meta.relatedIds ?? '';
+        think.Metadata    = meta.metadata  ?? {};
+        think.markMetadataSaved();
         think.IsMetaOnly  = true;
         think.UpdatedAt   = meta.updatedAt ?? '';
         think.setContentSilent(meta.title);

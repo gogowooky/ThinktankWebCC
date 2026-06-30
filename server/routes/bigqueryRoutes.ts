@@ -28,6 +28,7 @@ function toMeta(r: VaultRecord) {
                    typeof r.updated_at === 'object'
                      ? (r.updated_at as unknown as { value: string }).value
                      : String(r.updated_at),
+    metadata:    r.metadata ? (typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata) : undefined,
   };
 }
 
@@ -81,10 +82,11 @@ export function createBigQueryRoutes() {
 
   // POST /api/bq/files  ← 保存（Upsert）
   router.post('/files', async (req: Request, res: Response) => {
-    const { id, contentType, title, content, keywords, relatedIds } = req.body as {
+    const { id, contentType, title, content, keywords, relatedIds, metadata } = req.body as {
       id: string; contentType: string;
       title: string; content: string;
       keywords?: string; relatedIds?: string;
+      metadata?: any;
     };
     if (!id || !contentType) {
       res.status(400).json({ error: 'id, contentType are required' }); return;
@@ -110,6 +112,7 @@ export function createBigQueryRoutes() {
       is_deleted:  false,
       created_at:  fileTimeStr,
       updated_at:  nowStr,
+      metadata:    metadata ? JSON.stringify(metadata) : null,
     };
     const result = await bigqueryService.save(record);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
@@ -141,10 +144,14 @@ export function createBigQueryRoutes() {
       
       // 保存先フォルダのパス: {root}/../Thinktank_{yyyyMMdd}/
       const exportDir = path.resolve(process.cwd(), '../', `Thinktank_${yyyyMMdd}`);
+      const metaDir = path.join(exportDir, 'meta');
 
       // 保存先ディレクトリを作成
       if (!fs.existsSync(exportDir)) {
         fs.mkdirSync(exportDir, { recursive: true });
+      }
+      if (!fs.existsSync(metaDir)) {
+        fs.mkdirSync(metaDir, { recursive: true });
       }
 
       exportStatus = {
@@ -171,6 +178,12 @@ export function createBigQueryRoutes() {
         }
 
         await fs.promises.writeFile(targetPath, fullContent, 'utf8');
+
+        // メタデータの個別エクスポート
+        const metaPath = path.join(metaDir, `${fileId}.json`);
+        const metaObj = r.metadata ? (typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata) : {};
+        await fs.promises.writeFile(metaPath, JSON.stringify(metaObj, null, 2), 'utf8');
+
         exportStatus.current++;
       }
 

@@ -68,6 +68,26 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
     }
   }, [think?.ID, think?.Content]);
 
+  useEffect(() => {
+    if (html && mdRef.current && think) {
+      const savedScroll = think.ContentType === 'nettext'
+        ? (think.Metadata?.webtextScrollTop ?? 0)
+        : (think.Metadata?.markdownScrollTop ?? 0);
+      mdRef.current.scrollTop = savedScroll;
+    }
+  }, [html, think?.ID, think]);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (think) {
+      if (!think.Metadata) think.Metadata = {};
+      if (think.ContentType === 'nettext') {
+        think.Metadata.webtextScrollTop = e.currentTarget.scrollTop;
+      } else {
+        think.Metadata.markdownScrollTop = e.currentTarget.scrollTop;
+      }
+    }
+  };
+
   if (!think) {
     return <div className="media-empty"><span>エリアが未設定です</span></div>;
   }
@@ -77,6 +97,7 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
       ref={mdRef}
       tabIndex={-1}
       className="markdown-media"
+      onScroll={handleScroll}
       // biome-ignore lint/security/noDangerouslySetInnerHtml: marked でサニタイズ済み
       dangerouslySetInnerHTML={{ __html: html }}
     />

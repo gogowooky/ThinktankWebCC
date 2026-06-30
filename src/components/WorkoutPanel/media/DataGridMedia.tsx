@@ -328,13 +328,60 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
 
   // think 切り替え時、および section のカラム数変更時にリセット
   useEffect(() => {
-    setSections(parseTableContent(think.Content));
-    setActiveIdx(0);
+    const nextSections = parseTableContent(think.Content);
+    setSections(nextSections);
+    
+    // metadata から復元
+    const dg = think.Metadata?.datagrid;
+    const initialActiveIdx = (dg && typeof dg.activeIdx === 'number' && dg.activeIdx < nextSections.length) ? dg.activeIdx : 0;
+    setActiveIdx(initialActiveIdx);
+    
     setFilter('');
     setSortState(null);
-    setEditState(null);
+    
+    if (dg?.selectedCell) {
+      const { rowIdx, col } = dg.selectedCell;
+      const targetSec = nextSections[initialActiveIdx];
+      const val = targetSec?.rows[rowIdx]?.[col] ?? '';
+      setEditState({ rowIdx, col, value: val });
+    } else {
+      setEditState(null);
+    }
+    
     setIsDirty(false);
-  }, [think.ID]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // スクロール位置の復元
+    if (scrollRef.current && dg) {
+      if (typeof dg.scrollTop === 'number') {
+        scrollRef.current.scrollTop = dg.scrollTop;
+      }
+      if (typeof dg.scrollLeft === 'number') {
+        scrollRef.current.scrollLeft = dg.scrollLeft;
+      }
+    }
+  }, [think.ID]);
+
+  // 状態が変わったら think.Metadata に同期する
+  useEffect(() => {
+    if (think) {
+      if (!think.Metadata) think.Metadata = {};
+      const prevDg = think.Metadata.datagrid || {};
+      think.Metadata.datagrid = {
+        ...prevDg,
+        activeIdx,
+        selectedCell: editState ? { rowIdx: editState.rowIdx, col: editState.col } : null,
+      };
+    }
+  }, [activeIdx, editState, think]);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (think) {
+      if (!think.Metadata) think.Metadata = {};
+      if (!think.Metadata.datagrid) think.Metadata.datagrid = {};
+      think.Metadata.datagrid.scrollTop = e.currentTarget.scrollTop;
+      think.Metadata.datagrid.scrollLeft = e.currentTarget.scrollLeft;
+    }
+  }, [think]);
 
   useEffect(() => {
     if (section) {
@@ -605,7 +652,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
       </div>
 
       {/* スクロール領域 */}
-      <div className="table-grid__scroll" ref={scrollRef}>
+      <div className="table-grid__scroll" ref={scrollRef} onScroll={handleScroll}>
         <div style={{ minWidth: innerWidth }}>
 
           {/* 固定ヘッダー */}

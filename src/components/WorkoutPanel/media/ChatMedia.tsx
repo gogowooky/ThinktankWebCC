@@ -43,23 +43,47 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
   const [messages,  setMessages]  = useState<ChatMessage[]>(initialMessages);
   const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
+  const logRef                    = useRef<HTMLDivElement>(null);
   const bottomRef                 = useRef<HTMLDivElement>(null);
   const inputRef                  = useRef<HTMLTextAreaElement>(null);
   const abortRef                  = useRef<AbortController | null>(null);
   const accumulatedRef            = useRef('');
+  const [hasScrolledToSaved, setHasScrolledToSaved] = useState(false);
 
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
 
   useEffect(() => {
     setMessages(initialMessages);
     setInput('');
-  }, [think?.ID]); // eslint-disable-line react-hooks/exhaustive-deps
+    setHasScrolledToSaved(false);
+  }, [think?.ID, initialMessages]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isWaiting]);
+    if (logRef.current && think && !hasScrolledToSaved) {
+      const savedScroll = think.Metadata?.chatScrollTop;
+      if (typeof savedScroll === 'number') {
+        logRef.current.scrollTop = savedScroll;
+      } else {
+        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
+      }
+      setHasScrolledToSaved(true);
+    }
+  }, [messages, think?.ID, hasScrolledToSaved, think]);
+
+  useEffect(() => {
+    if (hasScrolledToSaved && messages.length > initialMessages.length) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isWaiting, hasScrolledToSaved, initialMessages.length]);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
+
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (think) {
+      if (!think.Metadata) think.Metadata = {};
+      think.Metadata.chatScrollTop = e.currentTarget.scrollTop;
+    }
+  }, [think]);
 
   const systemPrompt = useMemo(
     () => buildSystemPrompt(think?.Name ?? '', think?.Content ?? ''),
@@ -133,7 +157,7 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
       </div>
 
       {/* ログ出力エリア */}
-      <div className="chat-media__log">
+      <div className="chat-media__log" ref={logRef} onScroll={handleScroll}>
 
         <div className="chat-media__banner">
           <span className="chat-media__banner-line">Thinktank AI v5</span>

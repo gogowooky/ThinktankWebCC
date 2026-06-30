@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.48",
+  "version": "1.0.49",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "60f8232",
-  "commitDateTime": "2026-06-30-134552",
-  "commitMessage": "feat: Paneタイトルのドラッグ移動時に外部D&Dと同様のDropOverlayを表示（MoveArea追加・computeDropOverlay汎用化）"
+  "commitId": "9103485",
+  "commitDateTime": "2026-06-30-151745",
+  "commitMessage": "feat: think情報の表示・編集状態（metadata）の保存・復元、およびエクスポート機能の実装"
 }

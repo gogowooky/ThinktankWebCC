@@ -126,7 +126,8 @@
       "mcp__e996586d-c83a-422d-8d27-cd9ba3087a74__query_open_targets_graphql",
       "mcp__5c11760e-caf9-4c2a-8deb-4e78b914496e__get_article_metadata",
       "Bash(node_modules/.bin/electron --version)",
-      "Bash(npx electron *)"
+      "Bash(npx electron *)",
+      "Bash(git commit *)"
     ]
   }
 }

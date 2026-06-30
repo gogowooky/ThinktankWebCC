@@ -18,9 +18,10 @@ export interface VaultRecord {
   keywords:    string | null;
   related_ids: string | null;
   size_bytes:  number | null;
-  is_deleted:  boolean;
-  created_at:  string;
-  updated_at:  string;
+  is_deleted:  boolean | null;
+  created_at:  string | object;
+  updated_at:  string | object;
+  metadata?:   string | null;
 }
 
 type BqResult<T = VaultRecord[]> = { success: true; data: T } | { success: false; error: string };
@@ -62,6 +63,22 @@ export class BigQueryService {
     const [exists] = await table.exists();
     if (exists) {
       console.log(`[BigQueryService] Table ${DATASET_ID}.${TABLE_ID} confirmed`);
+      try {
+        const [metaData] = await table.getMetadata();
+        const fields = metaData.schema?.fields || [];
+        const hasMetadata = fields.some((f: any) => f.name === 'metadata');
+        if (!hasMetadata) {
+          console.log(`[BigQueryService] Adding missing 'metadata' column...`);
+          const newSchema = [
+            ...fields,
+            { name: 'metadata', type: 'STRING', mode: 'NULLABLE' }
+          ];
+          await table.setMetadata({ schema: newSchema });
+          console.log(`[BigQueryService] 'metadata' column added successfully`);
+        }
+      } catch (err) {
+        console.error(`[BigQueryService] Failed to update schema for 'metadata' column:`, err);
+      }
       return;
     }
 
@@ -82,6 +99,7 @@ export class BigQueryService {
         { name: 'is_deleted',  type: 'BOOL',      mode: 'NULLABLE' },
         { name: 'created_at',  type: 'TIMESTAMP', mode: 'REQUIRED' },
         { name: 'updated_at',  type: 'TIMESTAMP', mode: 'REQUIRED' },
+        { name: 'metadata',    type: 'STRING',    mode: 'NULLABLE' },
       ],
       clustering: { fields: ['category'] },
     });
@@ -97,7 +115,7 @@ export class BigQueryService {
         SELECT t.file_id, t.file_type, t.category, t.title,
                t.keywords, t.related_ids, t.size_bytes,
                COALESCE(t.is_deleted, FALSE) AS is_deleted,
-               t.created_at, t.updated_at
+               t.created_at, t.updated_at, t.metadata
         FROM ${this.tbl} t
         INNER JOIN (
           SELECT file_id, MAX(updated_at) AS max_upd
@@ -123,7 +141,7 @@ export class BigQueryService {
         SELECT t.file_id, t.file_type, t.category, t.title, t.content,
                t.keywords, t.related_ids, t.size_bytes,
                COALESCE(t.is_deleted, FALSE) AS is_deleted,
-               t.created_at, t.updated_at
+               t.created_at, t.updated_at, t.metadata
         FROM ${this.tbl} t
         INNER JOIN (
           SELECT file_id, MAX(updated_at) AS max_upd
@@ -172,7 +190,8 @@ export class BigQueryService {
                  @keywords AS keywords, @related_ids AS related_ids,
                  @size_bytes AS size_bytes,
                  @is_deleted AS is_deleted,
-                 @created_at AS created_at, @updated_at AS updated_at
+                 @created_at AS created_at, @updated_at AS updated_at,
+                 @metadata AS metadata
         ) AS source ON target.file_id = source.file_id
         WHEN MATCHED THEN UPDATE SET
           target.category    = source.category,
@@ -182,14 +201,15 @@ export class BigQueryService {
           target.related_ids = source.related_ids,
           target.size_bytes  = source.size_bytes,
           target.is_deleted  = source.is_deleted,
-          target.updated_at  = source.updated_at
+          target.updated_at  = source.updated_at,
+          target.metadata    = source.metadata
         WHEN NOT MATCHED THEN INSERT
           (file_id, file_type, category, title, content,
-           keywords, related_ids, size_bytes, is_deleted, created_at, updated_at)
+           keywords, related_ids, size_bytes, is_deleted, created_at, updated_at, metadata)
         VALUES
           (source.file_id, source.file_type, source.category,
            source.title, source.content, source.keywords, source.related_ids,
-           source.size_bytes, source.is_deleted, source.created_at, source.updated_at)
+           source.size_bytes, source.is_deleted, source.created_at, source.updated_at, source.metadata)
       `;
       const params = {
         file_id:     record.file_id,
@@ -203,12 +223,14 @@ export class BigQueryService {
         is_deleted:  record.is_deleted ?? false,
         created_at:  new Date(record.created_at),
         updated_at:  new Date(record.updated_at),
+        metadata:    record.metadata ?? null,
       };
       const types = {
         file_id: 'STRING', file_type: 'STRING', category: 'STRING',
         title: 'STRING', content: 'STRING', keywords: 'STRING', related_ids: 'STRING',
         size_bytes: 'INT64', is_deleted: 'BOOL',
         created_at: 'TIMESTAMP', updated_at: 'TIMESTAMP',
+        metadata: 'STRING',
       };
       await this.bigquery.query({ query, params, types });
       return { success: true, data: null };
@@ -237,6 +259,7 @@ export class BigQueryService {
         category: '', title: null, content: getResult.success ? getResult.data : null,
         keywords: null, related_ids: null, size_bytes: null,
         is_deleted: true, created_at: now, updated_at: now,
+        metadata: null,
       };
       return await this.save(row);
     } catch (e) {
@@ -253,7 +276,7 @@ export class BigQueryService {
         SELECT t.file_id, t.file_type, t.category, t.title,
                t.keywords, t.related_ids, t.size_bytes,
                COALESCE(t.is_deleted, FALSE) AS is_deleted,
-               t.created_at, t.updated_at
+               t.created_at, t.updated_at, t.metadata
         FROM ${this.tbl} t
         INNER JOIN (
           SELECT file_id, MAX(updated_at) AS max_upd
