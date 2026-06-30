@@ -4,8 +4,14 @@
  */
 
 import { Router } from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { streamChatResponse } from '../services/ChatService.js';
 import type { ChatRequestMessage } from '../services/ChatService.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const projectRoot = path.resolve(__dirname, '../..');
 
 export function createChatRoutes(): Router {
   const router = Router();
@@ -35,7 +41,21 @@ export function createChatRoutes(): Router {
       return;
     }
 
-    await streamChatResponse(messages, systemPrompt, res);
+    const configPath = path.join(projectRoot, '.thinktank/thinktank.md');
+    let thinktankConfig = '';
+    try {
+      if (fs.existsSync(configPath)) {
+        thinktankConfig = fs.readFileSync(configPath, 'utf8');
+      }
+    } catch (e) {
+      console.error('[chatRoutes] Failed to read thinktank config:', e);
+    }
+
+    const finalSystemPrompt = thinktankConfig
+      ? `${thinktankConfig}\n\n[Instructions]\nAbove is the definition of your task and behavior guidelines. Please act according to these instructions. Current system prompt:\n${systemPrompt}`
+      : systemPrompt;
+
+    await streamChatResponse(messages, finalSystemPrompt, res);
   });
 
   return router;

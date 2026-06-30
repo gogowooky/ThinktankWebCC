@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.50",
+  "version": "1.0.51",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "19d1f23",
-  "commitDateTime": "2026-06-30-171130",
-  "commitMessage": "chore: AI ChatのホストをGemini(gemini-2.5-flash)に切り替え、APIキーチェック及びBigQuery日付パースエラーの修正"
+  "commitId": "5c6384c",
+  "commitDateTime": "2026-06-30-174115",
+  "commitMessage": "feat: .thinktank/thinktank.mdをシステムプロンプトに動的結合してAIの対話誘導を実現"
 }
