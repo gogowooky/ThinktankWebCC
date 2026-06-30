@@ -53,7 +53,10 @@
 　IDをWorkoutPanel.Panes.Countに変更
 
 ## 完了：　260630　WorkoutPanel.Panes.IDs
-　WorkoutPanelに表示されている全PaneのIDをカンマ区切りで表示。次回起動時に再Loadされる
+　本IDは一旦廃止にします。
+
+WorkoutPanelに表示されている全PaneのIDをカンマ区切りで表示。次回起動時に再Loadされる
+
 description:    表示されているPaneのID
 key:            WorkoutPanel.Panes.IDs
 current:        ""

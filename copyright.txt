@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.46",
+  "version": "1.0.47",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "10d203d",
-  "commitDateTime": "2026-06-30-123313",
-  "commitMessage": "完了：WorkoutPanel.Pane.Count→Panes.Count修正済み確認、WorkoutPanel.Panes.IDs実装済み確認、両項目を完了に更新"
+  "commitId": "79caad6",
+  "commitDateTime": "2026-06-30-130632",
+  "commitMessage": "修正：WorkoutPanel.Panes.IDsを廃止（型定義・PROP_SPECS定義を削除）"
 }

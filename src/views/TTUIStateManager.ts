@@ -114,7 +114,6 @@ export type ConfigKey =
   | 'TextEditor.CurrentEditor.CursorPos'
   | 'TextEditor.CurrentEditor.TextOnCursorPos'
   | 'WorkoutPanel.Panes.Count'
-  | 'WorkoutPanel.Panes.IDs'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
   | 'WorkoutPanel.FocusedPane.Mode'
@@ -721,44 +720,6 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     isConst: true,
     get: (app) => String(app.WorkoutPanel.Areas.length),
     set: () => {},
-  },
-  'WorkoutPanel.Panes.IDs': {
-    panel: 'WorkoutPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: '表示されているPaneのID',
-    get: (app) => app.WorkoutPanel.Areas
-      .map(a => a.ResourceID ? `${a.ResourceID}:${a.MediaType}` : '')
-      .filter(Boolean)
-      .join(','),
-    set: (app, v) => {
-      if (!v || v === '""' || v === 'none') {
-        app.WorkoutPanel.ClearAll();
-        return;
-      }
-      const items = v.split(',').map(item => item.trim()).filter(Boolean);
-      app.WorkoutPanel.ClearAll();
-      items.forEach((item, idx) => {
-        const parts = item.split(':');
-        const id = parts[0];
-        let mediaType = (parts[1] || '') as MediaType;
-
-        const think = app.Models.Vault.GetThink(id);
-        const title = think?.Title ?? '';
-
-        if (!mediaType && think) {
-          if (think.ContentType === 'table') mediaType = 'datagrid';
-          else if (think.ContentType === 'chat') mediaType = 'chat';
-          else mediaType = 'texteditor';
-        }
-        if (!mediaType) mediaType = 'texteditor';
-
-        if (idx === 0) {
-          app.WorkoutPanel.AddFirst(id, mediaType, title);
-        } else {
-          app.WorkoutPanel.AddRight(id, mediaType, title);
-        }
-      });
-    },
   },
   'WorkoutPanel.FocusedPane.ID': {
     panel: 'WorkoutPanel',
