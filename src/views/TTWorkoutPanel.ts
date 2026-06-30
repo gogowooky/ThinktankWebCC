@@ -390,6 +390,31 @@ export class TTWorkoutPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
+  public MoveArea(
+    fromId: string,
+    toId: string | null,
+    dir: 'left' | 'right' | 'up' | 'down',
+    type: 'add' | 'split',
+  ): void {
+    if (!this.Layout || fromId === toId) return;
+    const newLayout = removeLeaf(this.Layout, fromId);
+    if (newLayout === null) return;
+    this.Layout = newLayout;
+    const fromLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: fromId };
+    if (type === 'add' || !toId) {
+      if (dir === 'left')       this.Layout = { id: newNodeId(), type: 'split', direction: 'v', first: fromLeaf, second: this.Layout };
+      else if (dir === 'right') this.Layout = { id: newNodeId(), type: 'split', direction: 'v', first: this.Layout, second: fromLeaf };
+      else if (dir === 'up')    this.Layout = { id: newNodeId(), type: 'split', direction: 'h', first: fromLeaf, second: this.Layout };
+      else                      this.Layout = { id: newNodeId(), type: 'split', direction: 'h', first: this.Layout, second: fromLeaf };
+    } else {
+      const bspDir: 'v' | 'h'          = (dir === 'left' || dir === 'right') ? 'v' : 'h';
+      const position: 'first' | 'second' = (dir === 'left'  || dir === 'up')  ? 'first' : 'second';
+      this.Layout = addToFocused(this.Layout, toId, fromId, bspDir, position);
+    }
+    this.FocusedAreaId = fromId;
+    this.NotifyUpdated();
+  }
+
   public SetMediaType(areaId: string, mediaType: MediaType): void {
     const area = this.GetArea(areaId);
     if (!area) return;

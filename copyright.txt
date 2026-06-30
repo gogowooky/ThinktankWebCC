@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.47",
+  "version": "1.0.48",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "79caad6",
-  "commitDateTime": "2026-06-30-130632",
-  "commitMessage": "修正：WorkoutPanel.Panes.IDsを廃止（型定義・PROP_SPECS定義を削除）"
+  "commitId": "60f8232",
+  "commitDateTime": "2026-06-30-134552",
+  "commitMessage": "feat: Paneタイトルのドラッグ移動時に外部D&Dと同様のDropOverlayを表示（MoveArea追加・computeDropOverlay汎用化）"
 }

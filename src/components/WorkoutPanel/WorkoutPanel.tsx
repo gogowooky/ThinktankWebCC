@@ -494,14 +494,19 @@ export function WorkoutPanel({ app }: Props) {
   const OUTER_RATIO   = 0.15; // パネル外縁15%以内 → エリア追加
   const NEW_PANE_FRAC = 0.35; // 追加時の新ペイン幅/高さ比率
 
-  const computeDropOverlay = useCallback((e: React.DragEvent) => {
+  const computeDropOverlay = useCallback((
+    e: { clientX: number; clientY: number },
+    opts: { skipRibbonCheck?: boolean; excludeAreaId?: string } = {},
+  ) => {
     const bodyEl = bodyRef.current;
     if (!bodyEl) return null;
 
     // タイトルバー（WorkoutAreaRibbon）上にいる場合はオーバーレイを表示しない
-    const elemsUnderCursor = document.elementsFromPoint(e.clientX, e.clientY);
-    if (elemsUnderCursor.some(el => el.classList.contains('workout-area-ribbon'))) {
-      return null;
+    if (!opts.skipRibbonCheck) {
+      const elemsUnderCursor = document.elementsFromPoint(e.clientX, e.clientY);
+      if (elemsUnderCursor.some(el => el.classList.contains('workout-area-ribbon'))) {
+        return null;
+      }
     }
 
     const br   = bodyEl.getBoundingClientRect();
@@ -539,7 +544,10 @@ export function WorkoutPanel({ app }: Props) {
 
     // 内側 → 各ペインで分割
     const els    = document.elementsFromPoint(e.clientX, e.clientY);
-    const areaEl = els.find(el => el.classList.contains('workout-area')) as HTMLElement | undefined;
+    const areaEl = els.find(el =>
+      el.classList.contains('workout-area') &&
+      el.getAttribute('data-area-id') !== opts.excludeAreaId,
+    ) as HTMLElement | undefined;
     if (!areaEl) return null;
     const areaId = areaEl.getAttribute('data-area-id');
     if (!areaId) return null;
@@ -645,10 +653,15 @@ export function WorkoutPanel({ app }: Props) {
 
     const onMouseMove = (ev: MouseEvent) => {
       setDragPos({ x: ev.clientX, y: ev.clientY });
+      const overlay = computeDropOverlay(ev, { skipRibbonCheck: true, excludeAreaId: areaId });
+      setDropOverlay(overlay);
     };
-    const onMouseUp = () => {
-      const targetId = overAreaIdRef.current;
-      if (targetId && targetId !== areaId) panel.SwapAreas(areaId, targetId);
+    const onMouseUp = (ev: MouseEvent) => {
+      const overlay = computeDropOverlay(ev, { skipRibbonCheck: true, excludeAreaId: areaId });
+      setDropOverlay(null);
+      if (overlay) {
+        panel.MoveArea(areaId, overlay.areaId ?? null, overlay.dir, overlay.type);
+      }
       overAreaIdRef.current = null;
       setDragId(null);
       setOverAreaId(null);
@@ -659,7 +672,7 @@ export function WorkoutPanel({ app }: Props) {
     };
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup',   onMouseUp);
-  }, [panel]);
+  }, [panel, computeDropOverlay]);
 
   const handleDragEnter = useCallback((areaId: string) => {
     if (dragId && dragId !== areaId) {
