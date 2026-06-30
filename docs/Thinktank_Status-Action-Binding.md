@@ -49,6 +49,18 @@
 　↓ CurPosがテキスト末尾の場合、テキストすべてを選択する
 
 # Status
+## 修正　WorkoutPanel.Pane.Count
+　IDをWorkoutPanel.Panes.Countに変更
+
+## 実装：　WorkoutPanel.Panes.IDs
+　WorkoutPanelに表示されている全PaneのIDをカンマ区切りで表示。次回起動時に再Loadされる
+description:    表示されているPaneのID
+key:            WorkoutPanel.Panes.IDs
+current:        ""
+default:        ""
+type:           string
+candidates:      .*
+
 ## 完了：　260629　TextEditor.CurrentEditor.CursorPos
 description:    現在のエディタのカーソルのOffset位置
 key:            TextEditor.CurrentEditor.CursorPos
@@ -312,7 +324,7 @@ candidates:     ^(Chat|Settings)$
 
 
 
-## Status：　260613　WorkoutPanel.Pane.Count
+
 
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev

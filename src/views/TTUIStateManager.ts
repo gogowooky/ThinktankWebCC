@@ -113,7 +113,8 @@ export type ConfigKey =
   | 'Application.Resource.LocalExporting'
   | 'TextEditor.CurrentEditor.CursorPos'
   | 'TextEditor.CurrentEditor.TextOnCursorPos'
-  | 'WorkoutPanel.Pane.Count'
+  | 'WorkoutPanel.Panes.Count'
+  | 'WorkoutPanel.Panes.IDs'
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
   | 'WorkoutPanel.FocusedPane.Mode'
@@ -713,13 +714,51 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.Status.LocalExporting || '0%',
     set: () => {},
   },
-  'WorkoutPanel.Pane.Count': {
+  'WorkoutPanel.Panes.Count': {
     panel: 'WorkoutPanel',
     default: '0', type: 'string', candidates: '^[0-9]+$',
     description: '表示されているペインの数',
     isConst: true,
     get: (app) => String(app.WorkoutPanel.Areas.length),
     set: () => {},
+  },
+  'WorkoutPanel.Panes.IDs': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: '表示されているPaneのID',
+    get: (app) => app.WorkoutPanel.Areas
+      .map(a => a.ResourceID ? `${a.ResourceID}:${a.MediaType}` : '')
+      .filter(Boolean)
+      .join(','),
+    set: (app, v) => {
+      if (!v || v === '""' || v === 'none') {
+        app.WorkoutPanel.ClearAll();
+        return;
+      }
+      const items = v.split(',').map(item => item.trim()).filter(Boolean);
+      app.WorkoutPanel.ClearAll();
+      items.forEach((item, idx) => {
+        const parts = item.split(':');
+        const id = parts[0];
+        let mediaType = (parts[1] || '') as MediaType;
+
+        const think = app.Models.Vault.GetThink(id);
+        const title = think?.Title ?? '';
+
+        if (!mediaType && think) {
+          if (think.ContentType === 'table') mediaType = 'datagrid';
+          else if (think.ContentType === 'chat') mediaType = 'chat';
+          else mediaType = 'texteditor';
+        }
+        if (!mediaType) mediaType = 'texteditor';
+
+        if (idx === 0) {
+          app.WorkoutPanel.AddFirst(id, mediaType, title);
+        } else {
+          app.WorkoutPanel.AddRight(id, mediaType, title);
+        }
+      });
+    },
   },
   'WorkoutPanel.FocusedPane.ID': {
     panel: 'WorkoutPanel',
@@ -857,6 +896,10 @@ export class TTUIStateManager {
     if (USE_LOCAL_FILES) {
       console.log('[TTUIStateManager] Loading initial UI state from local docs/Thinktank_Status-Action-Binding.md');
       this._applyContent(localStatusContent);
+      const stored = localStorage.getItem(TTUIStateManager.LS_KEY);
+      if (stored) {
+        this._applyContent(stored);
+      }
       return;
     }
     if (!this._app) return;
@@ -1077,7 +1120,8 @@ export class TTUIStateManager {
         .replace(/\bDefault\.TextEditor\.Text\.BgColor\b/g, 'TextEditor.Text.BgColor')
         .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
         .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
-        .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor');
+        .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
+        .replace(/\bWorkoutPanel\.Pane\.Count\b/g, 'WorkoutPanel.Panes.Count');
       let sections = parseTableContent(content);
       let section = sections[0];
 
@@ -1158,7 +1202,8 @@ export class TTUIStateManager {
         .replace(/\bDefault\.TextEditor\.Text\.BgColor\b/g, 'TextEditor.Text.BgColor')
         .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
         .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
-        .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor');
+        .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
+        .replace(/\bWorkoutPanel\.Pane\.Count\b/g, 'WorkoutPanel.Panes.Count');
       const updates: Record<string, Record<string, string>> = {};
       for (const [key, spec] of Object.entries(PROP_SPECS)) {
         if (!spec.isConst) {

@@ -9,6 +9,8 @@ import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
 
 export class TTWorkoutArea extends TTUIItem {
+  private static _areaCounter = 0;
+
   /** 表示形式 */
   public MediaType: MediaType = 'texteditor';
 
@@ -30,7 +32,7 @@ export class TTWorkoutArea extends TTUIItem {
 
   constructor() {
     super();
-    this.ID    = this.getNowString();
+    this.ID    = `${this.getNowString()}-${++TTWorkoutArea._areaCounter}`;
     this.Name  = 'WorkoutArea';
     this.Title = '';
   }

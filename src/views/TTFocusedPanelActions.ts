@@ -1949,13 +1949,8 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     return textOnCursor;
   }
 
-  function syncTextOnCursor(): string {
-    const text = getCurrentTextOnCursor();
-    if (text) {
-      TTUIStateManager.instance.applyProperty('TextEditor.CurrentEditor.TextOnCursorPos', text);
-      return text;
-    }
-    return TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos') || '';
+  function getTextOnCursorSafe(): string {
+    return getCurrentTextOnCursor() || TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos') || '';
   }
 
   TTActions.Register({
@@ -1963,7 +1958,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Description: 'ブラウザで対象のURLを開きます',
     Completion: (item) => {
       try {
-        const text = syncTextOnCursor();
+        const text = getTextOnCursorSafe();
         if (!text || !(text.startsWith('http://') || text.startsWith('https://'))) {
           item.Result = 'カーソル位置のテキストがURLではありません';
           return;
@@ -1981,7 +1976,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Description: 'OSの規定のアプリでローカルファイル/フォルダを起動します',
     Completion: (item) => {
       try {
-        const text = syncTextOnCursor();
+        const text = getTextOnCursorSafe();
         if (!text) {
           item.Result = 'カーソル位置に対象テキストがありません';
           return;
@@ -1990,16 +1985,20 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           item.Result = 'カーソル位置のテキストがファイルパスではありません';
           return;
         }
-        fetch('/api/system/open', {
+        return fetch('/api/system/open', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: text })
-        }).then(res => {
-          if (!res.ok) throw new Error('API failed');
+        }).then(async res => {
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP ${res.status}`);
+          }
+          item.Result = `パス [${text}] を起動しました`;
         }).catch(err => {
           console.error('Failed to open path', err);
+          item.Result = `[エラー] パスの起動に失敗しました: ${err.message}`;
         });
-        item.Result = `パス [${text}] の起動をリクエストしました`;
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
       }
@@ -2011,7 +2010,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Description: 'タグを開く、またはフィルター検索を設定します',
     Completion: (item) => {
       try {
-        const text = syncTextOnCursor();
+        const text = getTextOnCursorSafe();
         if (!text || !(text.startsWith('[') && text.endsWith(']'))) {
           item.Result = 'カーソル位置のテキストがタグではありません';
           return;
@@ -2078,7 +2077,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos',
     Completion: (item) => {
       try {
-        const text = syncTextOnCursor();
+        const text = getTextOnCursorSafe();
         if (!text) {
           item.Result = 'カーソル位置に対象テキストがありません';
           return;
@@ -2112,7 +2111,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Description: 'カーソル位置のテキスト種別に応じたアクションメニューを表示します',
     Completion: (item) => {
       try {
-        const text = syncTextOnCursor();
+        const text = getTextOnCursorSafe();
         if (!text) {
           item.Result = 'カーソル位置に対象テキストがありません';
           return;
