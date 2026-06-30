@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.0.45",
+  "version": "1.0.46",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "0a59d19",
-  "commitDateTime": "2026-06-30-075000",
-  "commitMessage": "fix: resolve link sync timing discrepancy when triggered via double-click (Left2) in Monaco editor"
+  "commitPC": "veneno-02",
+  "commitId": "10d203d",
+  "commitDateTime": "2026-06-30-123313",
+  "commitMessage": "完了：WorkoutPanel.Pane.Count→Panes.Count修正済み確認、WorkoutPanel.Panes.IDs実装済み確認、両項目を完了に更新"
 }

@@ -49,10 +49,10 @@
 　↓ CurPosがテキスト末尾の場合、テキストすべてを選択する
 
 # Status
-## 修正　WorkoutPanel.Pane.Count
+## 完了：　260630　WorkoutPanel.Pane.Count
 　IDをWorkoutPanel.Panes.Countに変更
 
-## 実装：　WorkoutPanel.Panes.IDs
+## 完了：　260630　WorkoutPanel.Panes.IDs
 　WorkoutPanelに表示されている全PaneのIDをカンマ区切りで表示。次回起動時に再Loadされる
 description:    表示されているPaneのID
 key:            WorkoutPanel.Panes.IDs
