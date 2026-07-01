@@ -164,7 +164,7 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
       <div className="rethink-chat__log" ref={logRef}>
 
         <div className="rethink-chat__banner">
-          <span className="rethink-chat__banner-line">Thinktank AI</span>
+          <span className="rethink-chat__banner-line">Thinktank Antigravity</span>
           <span className="rethink-chat__banner-line rethink-chat__dim">
             Thought / Think のコンテキストで AI と相談できます。
           </span>
@@ -187,13 +187,13 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
                 <div className="rethink-chat__ai-block">
                   {msg.content === '' && isLastStreaming ? (
                     <div className="rethink-chat__ai-line">
-                      <span className="rethink-chat__ai-prefix">AI▸</span>
+                      <span className="rethink-chat__ai-prefix">Antigravity▸</span>
                       <span className="rethink-chat__cursor">▋</span>
                     </div>
                   ) : (
                     msg.content.split('\n').map((line, li, arr) => (
                       <div key={li} className="rethink-chat__ai-line">
-                        <span className="rethink-chat__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
+                        <span className="rethink-chat__ai-prefix">{li === 0 ? 'Antigravity▸' : '             '}</span>
                         <span className="rethink-chat__ai-text">
                           {line || ' '}
                           {isLastStreaming && li === arr.length - 1 && (

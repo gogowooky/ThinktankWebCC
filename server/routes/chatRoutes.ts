@@ -52,7 +52,7 @@ export function createChatRoutes(): Router {
     }
 
     const finalSystemPrompt = thinktankConfig
-      ? `${thinktankConfig}\n\n[Instructions]\nAbove is the definition of your task and behavior guidelines. Please act according to these instructions. Current system prompt:\n${systemPrompt}`
+      ? `${thinktankConfig}\n\n【指示】\n上記はあなたのタスク定義と行動ガイドラインです。これらに従って動作してください。現在の追加プロンプト：\n${systemPrompt}`
       : systemPrompt;
 
     await streamChatResponse(messages, finalSystemPrompt, res);

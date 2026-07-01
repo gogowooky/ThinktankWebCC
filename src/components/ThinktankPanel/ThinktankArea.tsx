@@ -255,7 +255,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
     await streamChat(
       history,
-      'あなたは Thinktank の AI アシスタントです。ユーザーの Think（メモ・アイデア）の整理や分析を日本語で手伝ってください。',
+      'あなたは Thinktank の AI アシスタントである Antigravity です。ユーザーの Think（メモ・アイデア）の整理や分析を日本語で手伝ってください。',
       {
         onDelta: (delta) => {
           chatAccumulatedRef.current += delta;

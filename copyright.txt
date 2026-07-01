@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "veneno-02",
-  "commitId": "5c6384c",
-  "commitDateTime": "2026-06-30-174115",
-  "commitMessage": "feat: .thinktank/thinktank.mdをシステムプロンプトに動的結合してAIの対話誘導を実現"
+  "commitPC": "E15",
+  "commitId": "ae84ef3",
+  "commitDateTime": "2026-07-01-223500",
+  "commitMessage": "feat: Geminiへの切り替え、エージェント名Antigravityへの更新、およびthinktank.md要件定義の埋め込み"
 }

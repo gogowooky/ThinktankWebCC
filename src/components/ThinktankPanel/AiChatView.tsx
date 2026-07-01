@@ -147,13 +147,13 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
                 <div className="ai-chat-view__ai-block">
                   {msg.content === '' && isLastStreaming ? (
                     <div className="ai-chat-view__ai-line">
-                      <span className="ai-chat-view__ai-prefix">AI▸</span>
+                      <span className="ai-chat-view__ai-prefix">Antigravity▸</span>
                       <span className="ai-chat-view__cursor">▋</span>
                     </div>
                   ) : (
                     msg.content.split('\n').map((line, li, arr) => (
                       <div key={li} className="ai-chat-view__ai-line">
-                        <span className="ai-chat-view__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
+                        <span className="ai-chat-view__ai-prefix">{li === 0 ? 'Antigravity▸' : '             '}</span>
                         <span className="ai-chat-view__ai-text">
                           {line || ' '}
                           {isLastStreaming && li === arr.length - 1 && (

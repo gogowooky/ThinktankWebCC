@@ -1035,6 +1035,12 @@ candidates:     ^(true|false)$
     カーソル位置の日時を元に戻す　
 
 # その他
+## AI Chatの運用の仕方
+Thinktank>Chat では 問題解決の template, skelton 作成して、Overviewでパッケージ化して、workoutで内容書いて、ReThinkで回答を得るパターンがありえそうですね
+
+
+
+
 ## 完了:　260614　ToolBar.KeyActionのTextBox中に表示されている値を説明してください
  　A：ステータスバーの `KeyAction` モード（`StatusBarKeyActionPanel`）では、以下の項目が横並びで表示され、ユーザーの入力やフォーカス状態を監視します。
  　　- **focus** (フォーカスエリア名): 現在キーボードフォーカスがあるDOM要素に対応するエリア名。例: `Thinktank.Filter`, `Workout.Texteditor`, `ReThink.Chat` など。

@@ -99,7 +99,7 @@
   color: #1565c0;
   font-weight: 700;
   flex-shrink: 0;
-  width: 28px;
+  width: auto;
   user-select: none;
 }
 
