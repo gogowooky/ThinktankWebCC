@@ -1035,9 +1035,11 @@ candidates:     ^(true|false)$
     カーソル位置の日時を元に戻す　
 
 # その他
-## AI Chatの運用の仕方
+## AI Chatの運用の仕方１
 Thinktank>Chat では 問題解決の template, skelton 作成して、Overviewでパッケージ化して、workoutで内容書いて、ReThinkで回答を得るパターンがありえそうですね
 
+## AI Chatの運用の仕方２
+Thinktank>Chat で既存のlinksファイルを Referenceしながら概要を捉え、
 
 
 

@@ -10,7 +10,7 @@ export interface ChatRequestMessage {
 
 export interface ChatStreamCallbacks {
   onDelta: (text: string) => void;
-  onDone:  () => void;
+  onDone:  (metadata?: { createdFileId?: string; category?: string }) => void;
   onError: (message: string) => void;
 }
 
@@ -62,11 +62,11 @@ export async function streamChat(
         try {
           const event = JSON.parse(line.slice(6)) as
             | { type: 'delta'; text: string }
-            | { type: 'done' }
+            | { type: 'done'; createdFileId?: string; category?: string }
             | { type: 'error'; message: string };
 
           if (event.type === 'delta')  callbacks.onDelta(event.text);
-          else if (event.type === 'done')  callbacks.onDone();
+          else if (event.type === 'done')  callbacks.onDone(event.createdFileId ? { createdFileId: event.createdFileId, category: event.category } : undefined);
           else if (event.type === 'error') callbacks.onError(event.message);
         } catch {
           // ignore malformed SSE lines

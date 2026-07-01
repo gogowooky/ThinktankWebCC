@@ -238,7 +238,7 @@ export class BigQueryService {
         title: 'STRING', content: 'STRING', keywords: 'STRING', related_ids: 'STRING',
         size_bytes: 'INT64', is_deleted: 'BOOL',
         created_at: 'TIMESTAMP', updated_at: 'TIMESTAMP',
-        metadata: 'STRING',
+        metadata: 'JSON',
       };
       await this.bigquery.query({ query, params, types });
       return { success: true, data: null };

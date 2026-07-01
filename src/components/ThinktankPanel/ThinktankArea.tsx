@@ -262,7 +262,21 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           const accumulated = chatAccumulatedRef.current;
           setChatMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
         },
-        onDone:  () => { setChatWaiting(false); },
+        onDone:  (metadata) => {
+          setChatWaiting(false);
+          if (metadata?.createdFileId) {
+            onRefresh();
+            const targetId = metadata.createdFileId;
+            const cat = metadata.category;
+            setTimeout(() => {
+              if (cat === 'thought') {
+                app.OpenThought(targetId, 'datagrid');
+              } else {
+                app.OpenThinkInWorkout(targetId);
+              }
+            }, 600);
+          }
+        },
         onError: (message) => {
           setChatMessages(prev => prev.map(m =>
             m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
