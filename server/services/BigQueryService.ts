@@ -166,6 +166,28 @@ export class BigQueryService {
     }
   }
 
+  // ── 単一レコード取得（title/category/content を含む完全形） ──────────────
+
+  async getRecord(fileId: string): Promise<BqResult<VaultRecord | null>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const query = `
+        SELECT t.file_id, t.file_type, t.category, t.title, t.content,
+               t.keywords, t.related_ids, t.size_bytes,
+               COALESCE(t.is_deleted, FALSE) AS is_deleted,
+               t.created_at, t.updated_at, t.metadata
+        FROM ${this.tbl} t
+        WHERE t.file_id = @fileId
+          AND COALESCE(t.is_deleted, FALSE) = FALSE
+        ORDER BY t.updated_at DESC LIMIT 1
+      `;
+      const [rows] = await this.bigquery.query({ query, params: { fileId } });
+      return { success: true, data: (rows as VaultRecord[])[0] ?? null };
+    } catch (e) {
+      return { success: false, error: String(e) };
+    }
+  }
+
   // ── content のみ取得 ────────────────────────────────────────────────
 
   async getContent(fileId: string): Promise<BqResult<string | null>> {

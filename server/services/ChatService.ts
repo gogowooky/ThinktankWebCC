@@ -1,12 +1,13 @@
 /**
  * ChatService.ts
  * 複数の AI プロバイダー (Anthropic Claude, OpenAI, Google Gemini) をサポートする
- * SSE ストリーミングチャット。
+ * SSE ストリーミングチャット。Gemini は多段ツール呼び出し (multi-turn tool calling) に対応。
  */
 
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import type { FunctionDeclaration } from '@google/generative-ai';
 import type { Response } from 'express';
 import { bigqueryService } from './BigQueryService.js';
 
@@ -15,6 +16,236 @@ export interface ChatRequestMessage {
   content: string;
 }
 
+// ── Gemini ツール宣言 ─────────────────────────────────────────────────────
+
+const GEMINI_TOOL_DECLARATIONS: FunctionDeclaration[] = [
+  {
+    name: 'saveThink',
+    description: '個別データアイテム（memo や links）を作成・更新する。AI自身が1秒ずらしで生成したユニークIDを指定する。',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        id:       { type: SchemaType.STRING, description: '一意ID（形式: yyyy-MM-dd-HHmmss-memo / yyyy-MM-dd-HHmmss-links）' },
+        category: { type: SchemaType.STRING, description: '"memo" または "links"' },
+        title:    { type: SchemaType.STRING, description: 'タイトル（最大30文字程度）' },
+        content:  { type: SchemaType.STRING, description: 'Markdown 本文' },
+      },
+      required: ['id', 'category', 'title', 'content'],
+    },
+  },
+  {
+    name: 'saveThought',
+    description: 'Thought（主題を束ねる親エントリ）を新規作成する。AI自身が1秒ずらしで生成したユニークIDを指定する。',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        id:      { type: SchemaType.STRING, description: '一意ID（形式: yyyy-MM-dd-HHmmss-thought）' },
+        title:   { type: SchemaType.STRING, description: '主題名（例: 「妻の誕生日プレゼント企画」）' },
+        content: { type: SchemaType.STRING, description: '本文（形式: [Title]\\n* [think-id-1]\\n* [think-id-2]）' },
+      },
+      required: ['id', 'title', 'content'],
+    },
+  },
+  {
+    name: 'saveTable',
+    description: 'Markdown テーブル形式のデータ（比較表・一覧表）を category=table として保存する。',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        id:      { type: SchemaType.STRING, description: '一意ID（形式: yyyy-MM-dd-HHmmss-table）' },
+        title:   { type: SchemaType.STRING, description: 'テーブルのタイトル' },
+        content: { type: SchemaType.STRING, description: 'Markdown テーブル本文' },
+      },
+      required: ['id', 'title', 'content'],
+    },
+  },
+  {
+    name: 'updateThought',
+    description: '既存 Thought の末尾に Think / Links / Table の ID を追記して紐付けを更新する。事前に getThink で内容を確認してから呼ぶこと。',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        id:        { type: SchemaType.STRING, description: '更新対象の Thought ID' },
+        appendIds: {
+          type:  SchemaType.ARRAY,
+          items: { type: SchemaType.STRING },
+          description: '追記する Think / Links / Table の ID リスト',
+        },
+      },
+      required: ['id', 'appendIds'],
+    },
+  },
+  {
+    name: 'searchVault',
+    description: 'Vault を全文検索して既存の Think / Thought を見つける。類似データの検索（Step 4）に使う。',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        keyword:  { type: SchemaType.STRING, description: '検索キーワード' },
+        category: { type: SchemaType.STRING, description: '絞り込むカテゴリ（memo/thought/links/table/chat/nettext）省略可' },
+      },
+      required: ['keyword'],
+    },
+  },
+  {
+    name: 'getThink',
+    description: '指定 ID の Think または Thought のタイトル・カテゴリ・本文を取得する。updateThought 前の内容確認や既存データの参照に使う。',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        id: { type: SchemaType.STRING, description: '取得する Think / Thought の ID' },
+      },
+      required: ['id'],
+    },
+  },
+  {
+    name: 'fetchUrlContent',
+    description: 'URL にアクセスしてページタイトルと説明文を取得する。Links ファイル作成前に URL を確認するために使う。',
+    parameters: {
+      type: SchemaType.OBJECT,
+      properties: {
+        url: { type: SchemaType.STRING, description: '取得する URL（https://...）' },
+      },
+      required: ['url'],
+    },
+  },
+];
+
+// ── URL メタデータ取得 ─────────────────────────────────────────────────────
+
+async function fetchUrlMeta(url: string): Promise<{ title: string; description: string }> {
+  const ac    = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 5000);
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('http/https のみ対応');
+    const resp = await fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'Thinktank/1.0' } });
+    clearTimeout(timer);
+    const html = await resp.text();
+    const title = html.match(/<title[^>]*>([^<]{1,200})<\/title>/i)?.[1]?.trim() ?? url;
+    const desc  = (
+      html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']{1,300})["']/i) ??
+      html.match(/<meta[^>]+content=["']([^"']{1,300})["'][^>]+name=["']description["']/i) ??
+      html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']{1,300})["']/i)
+    )?.[1]?.trim() ?? '';
+    return { title, description: desc };
+  } catch {
+    clearTimeout(timer);
+    return { title: url, description: '取得失敗またはタイムアウト' };
+  }
+}
+
+// ── Gemini ツール実行（1 ツール単位） ─────────────────────────────────────
+
+async function executeGeminiTool(
+  name: string,
+  args: Record<string, unknown>,
+  writeSSE: (payload: object) => boolean,
+  nowStr: string,
+  createdIds: Array<{ id: string; category: string }>,
+): Promise<string> {
+  switch (name) {
+
+    case 'saveThink': {
+      const id       = String(args['id']       ?? '');
+      const category = String(args['category'] ?? 'memo');
+      const title    = String(args['title']    ?? '無題');
+      const content  = String(args['content']  ?? '');
+      const res = await bigqueryService.save({
+        file_id: id, file_type: 'md', category, title, content,
+        keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
+        is_deleted: false, created_at: nowStr, updated_at: nowStr, metadata: null,
+      });
+      if (!res.success) throw new Error(res.error);
+      const label = category === 'links' ? 'Links' : 'Think';
+      writeSSE({ type: 'delta', text: `\n\n*システム: [${label}ファイル「${title}」を自動登録しました。]*` });
+      createdIds.push({ id, category });
+      return `保存完了: id=${id}`;
+    }
+
+    case 'saveThought': {
+      const id      = String(args['id']      ?? '');
+      const title   = String(args['title']   ?? '無題のThought');
+      const content = String(args['content'] ?? '');
+      const res = await bigqueryService.save({
+        file_id: id, file_type: 'md', category: 'thought', title, content,
+        keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
+        is_deleted: false, created_at: nowStr, updated_at: nowStr, metadata: null,
+      });
+      if (!res.success) throw new Error(res.error);
+      writeSSE({ type: 'delta', text: `\n\n*システム: [Thought「${title}」を自動登録しました。]*` });
+      createdIds.push({ id, category: 'thought' });
+      return `保存完了: id=${id}`;
+    }
+
+    case 'saveTable': {
+      const id      = String(args['id']      ?? '');
+      const title   = String(args['title']   ?? '無題のTable');
+      const content = String(args['content'] ?? '');
+      const res = await bigqueryService.save({
+        file_id: id, file_type: 'md', category: 'table', title, content,
+        keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
+        is_deleted: false, created_at: nowStr, updated_at: nowStr, metadata: null,
+      });
+      if (!res.success) throw new Error(res.error);
+      writeSSE({ type: 'delta', text: `\n\n*システム: [Tableファイル「${title}」を自動登録しました。]*` });
+      createdIds.push({ id, category: 'table' });
+      return `保存完了: id=${id}`;
+    }
+
+    case 'updateThought': {
+      const id        = String(args['id'] ?? '');
+      const appendIds = Array.isArray(args['appendIds'])
+        ? (args['appendIds'] as unknown[]).map(String)
+        : [];
+      const existing = await bigqueryService.getRecord(id);
+      if (!existing.success || !existing.data) throw new Error(`Thought [${id}] が見つかりません`);
+      const rec      = existing.data;
+      const appended = `${rec.content ?? ''}\n${appendIds.map(a => `* ${a}`).join('\n')}`.trim();
+      const res = await bigqueryService.save({
+        ...rec,
+        content:    appended,
+        size_bytes: Buffer.byteLength(appended, 'utf8'),
+        updated_at: nowStr,
+      });
+      if (!res.success) throw new Error(res.error);
+      writeSSE({ type: 'delta', text: `\n\n*システム: [Thought「${rec.title}」に${appendIds.length}件を追記しました。]*` });
+      createdIds.push({ id, category: 'thought' });
+      return `更新完了: id=${id}, 追記=${appendIds.join(', ')}`;
+    }
+
+    case 'searchVault': {
+      const keyword  = String(args['keyword']  ?? '');
+      const category = args['category'] ? String(args['category']) : undefined;
+      const result   = await bigqueryService.search(keyword);
+      if (!result.success) throw new Error(result.error);
+      const rows    = category ? result.data.filter(r => r.category === category) : result.data;
+      const summary = rows.slice(0, 20).map(r => ({ id: r.file_id, category: r.category, title: r.title ?? '' }));
+      return `検索結果 ${rows.length}件（先頭20件表示）:\n${JSON.stringify(summary, null, 2)}`;
+    }
+
+    case 'getThink': {
+      const id     = String(args['id'] ?? '');
+      const result = await bigqueryService.getRecord(id);
+      if (!result.success) throw new Error(result.error);
+      if (!result.data)    return `ID [${id}] は見つかりませんでした`;
+      const r = result.data;
+      return JSON.stringify({ id: r.file_id, category: r.category, title: r.title, content: r.content });
+    }
+
+    case 'fetchUrlContent': {
+      const url  = String(args['url'] ?? '');
+      const meta = await fetchUrlMeta(url);
+      return JSON.stringify({ url, ...meta });
+    }
+
+    default:
+      throw new Error(`Unknown tool: ${name}`);
+  }
+}
+
+// ── メインのストリーミング関数 ─────────────────────────────────────────────
+
 export async function streamChatResponse(
   messages: ChatRequestMessage[],
   systemPrompt: string,
@@ -22,7 +253,6 @@ export async function streamChatResponse(
   provider?: string,
   model?: string,
 ): Promise<void> {
-  // SSE ヘッダーの送信
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -34,19 +264,14 @@ export async function streamChatResponse(
     return res.write(`data: ${JSON.stringify(payload)}\n\n`);
   };
 
-  // デフォルトプロバイダーの判定
   let activeProvider = provider || process.env['AI_PROVIDER'] || 'anthropic';
-  if (activeProvider === 'claude') {
-    activeProvider = 'anthropic';
-  }
+  if (activeProvider === 'claude') activeProvider = 'anthropic';
 
   try {
     if (activeProvider === 'anthropic') {
       const apiKey = process.env['ANTHROPIC_API_KEY'];
-      if (!apiKey) {
-        throw new Error('ANTHROPIC_API_KEY is not configured');
-      }
-      const client = new Anthropic({ apiKey });
+      if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not configured');
+      const client      = new Anthropic({ apiKey });
       const activeModel = model || process.env['ANTHROPIC_MODEL'] || 'claude-3-5-sonnet-20241022';
 
       const stream = client.messages.stream({
@@ -56,18 +281,13 @@ export async function streamChatResponse(
         messages: messages.map(m => ({ role: m.role, content: m.content })),
       });
 
-      stream.on('text', (textDelta) => {
-        writeSSE({ type: 'delta', text: textDelta });
-      });
-
+      stream.on('text', (textDelta) => { writeSSE({ type: 'delta', text: textDelta }); });
       await stream.finalMessage();
       writeSSE({ type: 'done' });
 
     } else if (activeProvider === 'openai') {
       const apiKey = process.env['OPENAI_API_KEY'];
-      if (!apiKey) {
-        throw new Error('OPENAI_API_KEY is not configured');
-      }
+      if (!apiKey) throw new Error('OPENAI_API_KEY is not configured');
       const client = new OpenAI({
         apiKey,
         baseURL: process.env['OPENAI_BASE_URL'] || undefined,
@@ -85,214 +305,98 @@ export async function streamChatResponse(
 
       for await (const chunk of stream) {
         const delta = chunk.choices[0]?.delta?.content || '';
-        if (delta) {
-          writeSSE({ type: 'delta', text: delta });
-        }
+        if (delta) writeSSE({ type: 'delta', text: delta });
       }
       writeSSE({ type: 'done' });
 
     } else if (activeProvider === 'gemini') {
       const apiKey = process.env['GEMINI_API_KEY'];
-      if (!apiKey) {
-        throw new Error('GEMINI_API_KEY is not configured');
-      }
-      const genAI = new GoogleGenerativeAI(apiKey);
+      if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
+
+      const genAI       = new GoogleGenerativeAI(apiKey);
       const activeModel = model || process.env['GEMINI_MODEL'] || 'gemini-2.5-flash';
 
       const genModel = genAI.getGenerativeModel({
         model: activeModel,
         ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
-        tools: [
-          {
-            functionDeclarations: [
-              {
-                name: 'saveThink',
-                description: '個別データアイテム（memo や links など）を作成・更新する。AI自身が1秒ずらしで作成したユニークIDを指定する。',
-                parameters: {
-                  type: SchemaType.OBJECT,
-                  properties: {
-                    id: {
-                      type: SchemaType.STRING,
-                      description: '自分で生成した一意なID（形式: yyyy-MM-dd-HHmmss-memo または yyyy-MM-dd-HHmmss-links）'
-                    },
-                    category: {
-                      type: SchemaType.STRING,
-                      description: 'コンテンツ種別（"memo" または "links"）'
-                    },
-                    title: {
-                      type: SchemaType.STRING,
-                      description: 'ファイルのタイトル（簡潔な名前、最大30文字程度）'
-                    },
-                    content: {
-                      type: SchemaType.STRING,
-                      description: 'ファイルの中身のテキスト（Markdown形式。見出し記号を含めて構成テンプレートやリンク集を記述する）'
-                    }
-                  },
-                  required: ['id', 'category', 'title', 'content']
-                }
-              },
-              {
-                name: 'saveThought',
-                description: 'Thought（特定の主題を束ねる階層フォルダ相当）を作成・更新する。AI自身が1秒ずらしで作成したユニークIDを指定する。',
-                parameters: {
-                  type: SchemaType.OBJECT,
-                  properties: {
-                    id: {
-                      type: SchemaType.STRING,
-                      description: '自分で生成した一意なID（形式: yyyy-MM-dd-HHmmss-thought）'
-                    },
-                    title: {
-                      type: SchemaType.STRING,
-                      description: 'Thoughtのタイトル（主題名、例：「妻の誕生日プレゼント企画」）'
-                    },
-                    content: {
-                      type: SchemaType.STRING,
-                      description: 'Thoughtの本文（形式: [Title]\\n* [think-id-1]\\n* [think-id-2] のように内包するThink/LinksのIDリストを箇条書きで並べる）'
-                    }
-                  },
-                  required: ['id', 'title', 'content']
-                }
-              }
-            ]
-          }
-        ]
+        tools: [{ functionDeclarations: GEMINI_TOOL_DECLARATIONS }],
       });
 
-      const contents = messages.map(m => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
+      const nowStr     = new Date().toISOString();
+      const createdIds: Array<{ id: string; category: string }> = [];
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let contents: any[] = messages.map(m => ({
+        role:  m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
       }));
 
-      const result = await genModel.generateContentStream({
-        contents,
-      });
+      // 多段ツール呼び出しループ（最大5ターン）
+      for (let turn = 0; turn < 5; turn++) {
+        const streamResult = await genModel.generateContentStream({ contents });
 
-      let functionCalls: any[] = [];
- 
-       for await (const chunk of result.stream) {
-         const calls = chunk.functionCalls();
-         if (calls && calls.length > 0) {
-           functionCalls.push(...calls);
-         }
- 
-         const text = chunk.text();
-         if (text) {
-           writeSSE({ type: 'delta', text: text });
-         }
-       }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const modelParts: any[] = [];
+        const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
 
-       if (functionCalls.length > 0) {
-         await handleToolCalls(functionCalls, writeSSE);
-       } else {
-         writeSSE({ type: 'done' });
-       }
-
-     } else {
-       throw new Error(`Unsupported AI provider: ${activeProvider}`);
-     }
-
-   } catch (err) {
-     const message = err instanceof Error ? err.message : 'Unknown error';
-     console.error(`[ChatService] [${activeProvider}] stream error:`, message);
-     writeSSE({ type: 'error', message });
-   } finally {
-     res.end();
-   }
-}
-
-async function handleToolCalls(calls: any[], writeSSE: (payload: object) => boolean): Promise<void> {
-  const now = new Date();
-  const nowStr = now.toISOString();
-
-  let createdThoughtId: string | null = null;
-  let lastCreatedId: string | null = null;
-  let lastCategory = 'thought';
-
-  try {
-    for (const call of calls) {
-      const { name, args } = call;
-
-      if (name === 'saveThink') {
-        const id = args.id;
-        const category = args.category || 'memo';
-        const title = args.title || '無題';
-        const content = args.content || '';
-
-        const record = {
-          file_id:     id,
-          file_type:   'md',
-          category,
-          title,
-          content,
-          keywords:    null,
-          related_ids: null,
-          size_bytes:  Buffer.byteLength(content, 'utf8'),
-          is_deleted:  false,
-          created_at:  nowStr,
-          updated_at:  nowStr,
-          metadata:    null,
-        };
-
-        const res = await bigqueryService.save(record);
-        if (!res.success) {
-          throw new Error(`Think [${title}] の保存に失敗しました: ${res.error}`);
+        for await (const chunk of streamResult.stream) {
+          const text = chunk.text();
+          if (text) {
+            writeSSE({ type: 'delta', text });
+            modelParts.push({ text });
+          }
+          const calls = chunk.functionCalls();
+          if (calls && calls.length > 0) {
+            for (const call of calls) {
+              functionCalls.push(call as { name: string; args: Record<string, unknown> });
+              modelParts.push({ functionCall: call });
+            }
+          }
         }
 
-        const catJa = category === 'links' ? 'Links' : 'Think';
-        writeSSE({ 
-          type: 'delta', 
-          text: `\n\n*システム: [${catJa}ファイル「${title}」を自動登録しました。]*` 
-        });
-        
-        lastCreatedId = id;
-        lastCategory = category;
+        if (functionCalls.length === 0) break; // ツール呼び出しがなければ終了
 
-      } else if (name === 'saveThought') {
-        const id = args.id;
-        const title = args.title || '無題のThought';
-        const content = args.content || '';
-
-        const record = {
-          file_id:     id,
-          file_type:   'md',
-          category:    'thought',
-          title,
-          content,
-          keywords:    null,
-          related_ids: null,
-          size_bytes:  Buffer.byteLength(content, 'utf8'),
-          is_deleted:  false,
-          created_at:  nowStr,
-          updated_at:  nowStr,
-          metadata:    null,
-        };
-
-        const res = await bigqueryService.save(record);
-        if (!res.success) {
-          throw new Error(`Thought [${title}] の保存に失敗しました: ${res.error}`);
+        // ツールを実行し、結果を収集
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const functionResponses: any[] = [];
+        for (const call of functionCalls) {
+          try {
+            const result = await executeGeminiTool(call.name, call.args, writeSSE, nowStr, createdIds);
+            functionResponses.push({ functionResponse: { name: call.name, response: { result } } });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            functionResponses.push({ functionResponse: { name: call.name, response: { error: msg } } });
+            writeSSE({ type: 'delta', text: `\n\n*システム: [エラー: ${msg}]*` });
+          }
         }
 
-        writeSSE({ 
-          type: 'delta', 
-          text: `\n\n*システム: [Thought「${title}」を自動登録しました。]*` 
-        });
-
-        createdThoughtId = id;
-        lastCreatedId = id;
-        lastCategory = 'thought';
-      } else {
-        throw new Error(`Unknown tool name: ${name}`);
+        // 次のターンに向けてコンテキストを更新
+        contents = [
+          ...contents,
+          { role: 'model', parts: modelParts },
+          { role: 'user',  parts: functionResponses },
+        ];
       }
-    }
 
-    const finalId = createdThoughtId || lastCreatedId;
-    if (finalId) {
-      writeSSE({ type: 'done', createdFileId: finalId, category: lastCategory });
+      // done イベント（最後に作成した Thought を優先して返す）
+      const lastThought = [...createdIds].reverse().find(x => x.category === 'thought');
+      const last        = createdIds[createdIds.length - 1];
+      const final       = lastThought ?? last;
+      if (final) {
+        writeSSE({ type: 'done', createdFileId: final.id, category: final.category });
+      } else {
+        writeSSE({ type: 'done' });
+      }
+
     } else {
-      writeSSE({ type: 'done' });
+      throw new Error(`Unsupported AI provider: ${activeProvider}`);
     }
 
-  } catch (err: any) {
-    writeSSE({ type: 'error', message: `自動登録プロセスでエラーが発生しました: ${err.message}` });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    console.error(`[ChatService] [${activeProvider}] stream error:`, message);
+    writeSSE({ type: 'error', message });
+  } finally {
+    res.end();
   }
 }
