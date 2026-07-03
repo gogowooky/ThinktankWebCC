@@ -47,7 +47,7 @@ const OVERVIEW_MODE_NAMES: Record<string, string> = {
   chat:     'AI相談',
 };
 
-const noop = () => {};
+const noop = () => Promise.resolve();
 
 interface Props {
   app:          TTApplication;

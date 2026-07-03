@@ -175,20 +175,21 @@ export function WorkoutArea({
   // 保存ハンドラー（TextEditorMedia から Ctrl+S で呼ばれる）
   const handleSave = useCallback((content: string) => {
     const think = vault.GetThink(area.ResourceID);
-    if (!think) return;
+    if (!think) return Promise.resolve();
     think.Content = content;
     // タイトル行が変わっていればペインタイトルも更新
     if (area.Title !== think.Name) {
       area.Title = think.Name;
       panel.NotifyUpdated();
     }
-    think.SaveContent().then(() => {
+    return think.SaveContent().then(() => {
       setIsDirty(false);
       // システム Think の保存を各マネージャーに通知
       TTUIStateManager.instance.onThinkSaved(think.ID, content);
       TTShortcutManager.instance.onThinkSaved(think.ID, content);
     }).catch(e => {
       console.error('[WorkoutArea] SaveContent failed:', e);
+      throw e;
     });
   }, [vault, area.ResourceID, area, panel]);
 

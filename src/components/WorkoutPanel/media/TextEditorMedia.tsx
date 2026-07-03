@@ -110,6 +110,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const disposablesRef = useRef<any[]>([]);
   const headingStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringRef = useRef(true);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const thinkRef = useRef(think);
+  const onSaveRef = useRef(onSave);
+
+  useEffect(() => {
+    thinkRef.current = think;
+    onSaveRef.current = onSave;
+  }, [think, onSave]);
 
   useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focus() }));
   const [isDragOver, setIsDragOver] = useState(false);
@@ -268,6 +276,24 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     });
     disposablesRef.current.push(focusDisposable);
 
+    const blurDisposable = editor.onDidBlurEditorText(() => {
+      const currentThink = thinkRef.current;
+      if (!currentThink) return;
+      const body = editor.getValue();
+      const currentSaved = getEditorValue(currentThink);
+      if (body !== currentSaved) {
+        const nextContent = reconstructContent(currentThink, body);
+        onSaveRef.current(nextContent)
+          .then(() => {
+            savedRef.current = body;
+          })
+          .catch((err: any) => {
+            console.error('[TextEditorMedia] Blur auto save failed:', err);
+          });
+      }
+    });
+    disposablesRef.current.push(blurDisposable);
+
     if (editor.hasTextFocus()) {
       TTShortcutManager.instance.setActiveEditor(editor);
       notifyHeadingStatus();
@@ -364,6 +390,25 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   // マウント/アンマウント時のアクティブエディタのクリーンアップ
   useEffect(() => {
     return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+
+      // アンマウント時に未保存の内容があれば即時保存
+      const editor = editorRef.current;
+      const currentThink = thinkRef.current;
+      const currentOnSave = onSaveRef.current;
+      if (editor && currentThink && currentOnSave) {
+        const body = editor.getValue();
+        const currentSaved = getEditorValue(currentThink);
+        if (body !== currentSaved) {
+          currentOnSave(reconstructContent(currentThink, body))
+            .catch((err: any) => {
+              console.error('[TextEditorMedia] Unmount auto save failed:', err);
+            });
+        }
+      }
+
       if (headingStatusTimerRef.current) {
         clearTimeout(headingStatusTimerRef.current);
       }
@@ -377,9 +422,6 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     };
   }, []);
 
-  // ビュー切り替え時の自動保存関数を autoSaveRef に登録
-  // 注意: savedRef は外部からの think.Content 更新（_scheduleSave 等）で stale になりうるため、
-  //       think.Content を直接比較に使う。これにより未保存編集の見落としを防ぐ。
   useEffect(() => {
     if (!autoSaveRef) return;
     autoSaveRef.current = () => {
@@ -388,8 +430,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const body = editor.getValue();
       const currentSaved = getEditorValue(think);
       if (body === currentSaved) return; // think.Content と一致 → 保存不要
-      savedRef.current = body;
-      onSave(reconstructContent(think, body));
+      const nextContent = reconstructContent(think, body);
+      onSave(nextContent)
+        .then(() => {
+          savedRef.current = body;
+        })
+        .catch((err: any) => {
+          console.error('[TextEditorMedia] Auto save failed:', err);
+        });
     };
     return () => { autoSaveRef.current = null; };
   }, [autoSaveRef, think, onSave]);
@@ -561,7 +609,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   const handleChange = useCallback((value: string | undefined) => {
     const v = value ?? '';
-    onDirtyChange(v !== savedRef.current);
+    const isDirty = v !== savedRef.current;
+    onDirtyChange(isDirty);
     updateDecorations();
     // thought / table / memo は第一行がタイトル → リアルタイム同期
     if (onTitleChange && think &&
@@ -572,7 +621,25 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         onTitleChange(newFirst);
       }
     }
-  }, [onDirtyChange, updateDecorations, onTitleChange, think]);
+
+    // デバウンス自動保存 (3秒後に自動保存)
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    if (isDirty && think) {
+      autoSaveTimerRef.current = setTimeout(() => {
+        const body = v;
+        const nextContent = reconstructContent(think, body);
+        onSave(nextContent)
+          .then(() => {
+            savedRef.current = body;
+          })
+          .catch((err: any) => {
+            console.error('[TextEditorMedia] Debounce auto save failed:', err);
+          });
+      }, 3000);
+    }
+  }, [onDirtyChange, updateDecorations, onTitleChange, think, onSave]);
 
   // ── ファイルドロップ ──────────────────────────────────────────────────────
 

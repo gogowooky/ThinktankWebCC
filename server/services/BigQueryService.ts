@@ -221,7 +221,7 @@ export class BigQueryService {
                  @size_bytes AS size_bytes,
                  @is_deleted AS is_deleted,
                  @created_at AS created_at, @updated_at AS updated_at,
-                 @metadata AS metadata
+                 SAFE_CAST(@metadata AS JSON) AS metadata
         ) AS source ON target.file_id = source.file_id
         WHEN MATCHED THEN UPDATE SET
           target.category    = source.category,

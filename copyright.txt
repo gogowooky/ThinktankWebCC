@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "e941556",
-  "commitDateTime": "2026-07-03-123100",
-  "commitMessage": "fix: OverviewのThink一覧からの除外ボタンが機能しないバグを修正（条件付きThoughtからの除外用にexcludeIdsブラックリストを実装）"
+  "commitId": "7aa6e52",
+  "commitDateTime": "2026-07-03-181951",
+  "commitMessage": "fix: 自動保存機能の追加とBigQuery保存エラーの修正（キャストエラーの解消、UIステートのPromise同期化）"
 }

@@ -467,25 +467,24 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
 
   const commitEdit = useCallback((rowIdx: number, col: number, value: string) => {
     const currentSection = sections[activeIdx];
-    const oldVal = currentSection?.rows[rowIdx]?.[col];
-    if (oldVal !== value) {
-      setIsDirty(true);
-    }
+    if (!currentSection) return;
+    const oldVal = currentSection.rows[rowIdx]?.[col];
 
-    setSections(prev => prev.map((s, si) => {
-      if (si !== activeIdx) return s;
-      return {
-        ...s,
-        rows: s.rows.map((row, ri) => {
-          if (ri !== rowIdx) return row;
-          const next = [...row];
-          next[col] = value;
-          return next;
-        }),
+    if (oldVal !== value) {
+      const updatedRows = currentSection.rows.map((row, ri) => {
+        if (ri !== rowIdx) return row;
+        const next = [...row];
+        next[col] = value;
+        return next;
+      });
+      const overrideSection = {
+        ...currentSection,
+        rows: updatedRows,
       };
-    }));
+      handleSave(overrideSection);
+    }
     setEditState(null);
-  }, [activeIdx, sections]);
+  }, [activeIdx, sections, handleSave]);
 
   const handleCellClick = useCallback((rowIdx: number, col: number, value: string) => {
     setEditState({ rowIdx, col, value });
@@ -501,19 +500,17 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
 
   const handleNewRowCommit = useCallback(() => {
     if (!section || newRowValues.every(v => v === '')) return;
-    setSections(prev => prev.map((s, si) => {
-      if (si !== activeIdx) return s;
-      const newRowIdx = s.rows.length;
-      const newRaw: RawLine = { type: 'data', text: '', rowIdx: newRowIdx };
-      return {
-        ...s,
-        rows:     [...s.rows, newRowValues],      // ファイル末尾に追加
-        rawLines: [...s.rawLines, newRaw],
-      };
-    }));
+    const newRowIdx = section.rows.length;
+    const newRaw: RawLine = { type: 'data', text: '', rowIdx: newRowIdx };
+    const overrideSection = {
+      ...section,
+      rows:     [...section.rows, newRowValues],
+      rawLines: [...section.rawLines, newRaw],
+    };
+
     setNewRowValues(Array(section.columns.length).fill(''));
-    setIsDirty(true);
-  }, [newRowValues, activeIdx, section]);
+    handleSave(overrideSection);
+  }, [newRowValues, section, handleSave]);
 
   // ── カラムドラッグ＆ドロップ ──────────────────────────────────────────
 
