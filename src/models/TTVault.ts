@@ -69,6 +69,7 @@ export class TTVault extends TTCollection {
 
     const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
     const finalIds = new Set<string>();
+    const excludeIds = new Set<string>();
 
     // 解析用パラメータ
     let filterKeyword = '';
@@ -97,6 +98,10 @@ export class TTVault extends TTCollection {
         } else {
           finalIds.add(id);
         }
+      }
+
+      if (parsed.excludeIds) {
+        parsed.excludeIds.forEach(id => excludeIds.add(id));
       }
 
       if (parsed.search.query) searchQuery = parsed.search.query;
@@ -164,7 +169,13 @@ export class TTVault extends TTCollection {
 
     // デフォルト: 何も指定がなければ全データ
     if (finalIds.size === 0 && !filterKeyword && !searchQuery && !filterCreatedRange && !filterUpdatedRange && !searchCreatedRange && !searchUpdatedRange) {
-      return allThinks;
+      const result = allThinks.filter(t => !excludeIds.has(t.ID));
+      this._thoughtThinksCache.set(thoughtId, result.map(t => t.ID));
+      return result;
+    }
+
+    for (const id of excludeIds) {
+      finalIds.delete(id);
     }
 
     const idMap = new Map(allThinks.map(t => [t.ID, t]));
@@ -188,6 +199,7 @@ export class TTVault extends TTCollection {
 
     const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
     const finalIds = new Set<string>();
+    const excludeIds = new Set<string>();
 
     let filterKeyword = '';
     let filterCreatedRange: { from: string; to: string } | null = null;
@@ -208,6 +220,10 @@ export class TTVault extends TTCollection {
         const sub = this.GetThink(id);
         if (sub?.ContentType === 'thought') collectParamsSync(id, visited);
         else finalIds.add(id);
+      }
+
+      if (parsed.excludeIds) {
+        parsed.excludeIds.forEach(id => excludeIds.add(id));
       }
 
       if (parsed.search.query) searchQuery = parsed.search.query;
@@ -256,7 +272,11 @@ export class TTVault extends TTCollection {
       !searchCreatedRange &&
       !searchUpdatedRange
     ) {
-      return allThinks;
+      return allThinks.filter(t => !excludeIds.has(t.ID));
+    }
+
+    for (const id of excludeIds) {
+      finalIds.delete(id);
     }
 
     const idMap = new Map(allThinks.map(t => [t.ID, t]));

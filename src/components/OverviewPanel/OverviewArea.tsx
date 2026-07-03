@@ -206,6 +206,9 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     
     const parsed = parseThought(thought.Content);
     const remaining = parsed.ids.filter(id => !panel.CheckedThoughtIDs.includes(id));
+    const currentExcludes = parsed.excludeIds || [];
+    const newExcludes = Array.from(new Set([...currentExcludes, ...panel.CheckedThoughtIDs]));
+
     const newContent = serializeThought({
       prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
       title: parsed.title,
@@ -218,10 +221,24 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         updatedRange: parsed.filter.updatedRange?.rangeStr || parsed.search.updatedRange?.rangeStr,
       },
       ids: remaining,
+      excludeIds: newExcludes,
     });
     
     thought.Content = newContent;
+
+    if (thought.RelatedIDs) {
+      const relIds = thought.RelatedIDs.split(',').filter(id => id.trim());
+      const newRelIds = relIds.filter(id => !panel.CheckedThoughtIDs.includes(id));
+      thought.RelatedIDs = newRelIds.join(',');
+    }
+
     await thought.SaveContent();
+
+    // 更新後のThink一覧を再取得してステートを更新し、変更を通知する
+    const newThinks = await vault.GetThinksForThoughtAsync(panel.ThoughtID);
+    setThinksInThought(newThinks);
+    vault.NotifyUpdated();
+
     panel.SetCheckedThoughtIDs([]);
   }, [panel, vault]);
 

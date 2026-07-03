@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "1eaa309",
-  "commitDateTime": "2026-07-03-075325",
-  "commitMessage": "feat: Gemini APIの多段ツール呼び出し(最大5ターン)対応およびBigQueryServiceの改善"
+  "commitPC": "veneno-02",
+  "commitId": "e941556",
+  "commitDateTime": "2026-07-03-123100",
+  "commitMessage": "fix: OverviewのThink一覧からの除外ボタンが機能しないバグを修正（条件付きThoughtからの除外用にexcludeIdsブラックリストを実装）"
 }

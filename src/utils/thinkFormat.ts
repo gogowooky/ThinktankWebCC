@@ -116,6 +116,7 @@ export interface ThoughtCondition {
 export interface ThoughtContent {
   title: string;
   ids: string[];
+  excludeIds?: string[];
   filter: {
     keyword?: string;
     createdRange?: ThoughtCondition;
@@ -138,9 +139,11 @@ export function parseThought(content: string): ThoughtContent {
   const bodyLines = lines.slice(1);
 
   const ids: string[] = [];
+  const excludeIds: string[] = [];
   const result: ThoughtContent = {
     title,
     ids,
+    excludeIds,
     filter: {},
     search: {},
   };
@@ -150,6 +153,9 @@ export function parseThought(content: string): ThoughtContent {
     if (s.startsWith('* ')) {
       const id = s.slice(2).trim();
       if (id) ids.push(id);
+    } else if (s.startsWith('- ')) {
+      const id = s.slice(2).trim();
+      if (id) excludeIds.push(id);
     } else if (s.startsWith('>> ')) {
       const body = s.slice(3).trim();
       if (body.startsWith('検索語：')) {
@@ -195,13 +201,14 @@ export interface ThoughtCreateOptions {
     updatedRange?: string;
   };
   ids?: string[];
+  excludeIds?: string[];
 }
 
 /**
  * オプションから thought 本文（テキスト）をシリアライズして生成する
  */
 export function serializeThought(options: ThoughtCreateOptions): string {
-  const { prefix, title, searchQuery, filterKeyword, dates, ids = [] } = options;
+  const { prefix, title, searchQuery, filterKeyword, dates, ids = [], excludeIds = [] } = options;
   let body = '';
 
   if (prefix === '>> ') {
@@ -224,6 +231,9 @@ export function serializeThought(options: ThoughtCreateOptions): string {
 
   if (ids.length > 0) {
     body += ids.map(id => `* ${id}`).join('\n') + '\n';
+  }
+  if (excludeIds.length > 0) {
+    body += excludeIds.map(id => `- ${id}`).join('\n') + '\n';
   }
 
   return `${title}\n${body.trim()}`;
