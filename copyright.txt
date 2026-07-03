@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "veneno-02",
-  "commitId": "7aa6e52",
-  "commitDateTime": "2026-07-03-181951",
-  "commitMessage": "fix: 自動保存機能の追加とBigQuery保存エラーの修正（キャストエラーの解消、UIステートのPromise同期化）"
+  "commitPC": "E15",
+  "commitId": "81d28e1",
+  "commitDateTime": "2026-07-04-002057",
+  "commitMessage": "docs: AI自動作成・協調ワークフロー仕様のアップデート、およびAIエージェント名をヨーコに変更"
 }

@@ -22,9 +22,11 @@ const keyPath = process.env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE;
 if (!keyPath) { console.error('GOOGLE_SERVICE_ACCOUNT_KEY_FILE not set'); process.exit(1); }
 
 // キーファイルはプロジェクトルート基準
-const absoluteKeyPath = existsSync(join(projectRoot, keyPath))
-  ? join(projectRoot, keyPath)
-  : join(projectRoot, 'server', keyPath);
+const absoluteKeyPath = existsSync(keyPath)
+  ? keyPath
+  : existsSync(join(projectRoot, keyPath))
+    ? join(projectRoot, keyPath)
+    : join(projectRoot, 'server', keyPath);
 if (!existsSync(absoluteKeyPath)) {
   console.error(`Service account key not found: ${absoluteKeyPath}`);
   process.exit(1);
