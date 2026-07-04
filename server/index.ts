@@ -6,6 +6,7 @@
 
 import express from 'express';
 import path    from 'path';
+import fs      from 'fs';
 import { fileURLToPath } from 'url';
 import { createBigQueryRoutes }   from './routes/bigqueryRoutes.js';
 import { bigqueryService }        from './services/BigQueryService.js';
@@ -51,7 +52,7 @@ app.use(express.static(path.join(projectRoot, 'dist')));
 app.get(/.*/, (req, res) => {
   if (req.path.startsWith('/api/')) { res.status(404).json({ error: 'Not found' }); return; }
   const indexPath = path.join(projectRoot, 'dist', 'index.html');
-  if (require('fs').existsSync(indexPath)) {
+  if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
     res.status(200).send('<p>Dev mode: open <a href="http://localhost:5173">http://localhost:5173</a></p>');

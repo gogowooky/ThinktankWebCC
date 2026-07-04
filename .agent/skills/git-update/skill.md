@@ -1,6 +1,6 @@
 ---
 name: git-update
-description: GitHubに更新分を登録し、その際version情報を更新する。
+description: 本アプリの更新分をGitHubに登録し、その際version情報を更新する。
 ---
 
 以下は確認なしで自律的に進めること。

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "81d28e1",
-  "commitDateTime": "2026-07-04-002057",
-  "commitMessage": "docs: AI自動作成・協調ワークフロー仕様のアップデート、およびAIエージェント名をヨーコに変更"
+  "commitId": "2d6b60d",
+  "commitDateTime": "2026-07-04-145133",
+  "commitMessage": "date"
 }

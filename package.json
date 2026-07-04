@@ -13,7 +13,8 @@
     "start": "node dist-server/index.js",
     "preview": "vite preview",
     "electron:dev": "concurrently -k -n server,vite,electron -c blue,green,yellow \"npm run server:dev\" \"wait-on http://localhost:8080/api/health && cross-env ELECTRON_DEV=true vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
-    "electron:build": "cross-env ELECTRON_BUILD=true tsc -p tsconfig.json && cross-env ELECTRON_BUILD=true vite build"
+    "electron:build": "cross-env ELECTRON_BUILD=true tsc -p tsconfig.json && cross-env ELECTRON_BUILD=true vite build",
+    "deploy": "gcloud config set project thinktankweb-483408 && gcloud run deploy ttweb --source . --region asia-northeast1 --allow-unauthenticated --quiet"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
