@@ -6,4 +6,4 @@ gcloud config set project thinktankweb-483408
 # 2. Cloud Runにデプロイを実行します（東京リージョン、未認証アクセス許可）
 gcloud run deploy ttweb --source . --region asia-northeast1 --allow-unauthenticated --quiet
 
-Write-Host "デプロイが完了しました。" -ForegroundColor Green
+Write-Host "Deployment completed successfully!" -ForegroundColor Green

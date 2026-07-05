@@ -7,7 +7,7 @@ description: 本アプリの更新分をGitHubに登録し、その際version情
 
 Githubにコミットする
 
-docs/copyright.txtを以下に従って更新する
+copyright.txtを以下に従って更新する
 　version: 3桁目を+1する
 　copyright.year: コミット年
 　commitPC: コミットしたPC名
