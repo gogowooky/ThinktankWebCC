@@ -6,9 +6,12 @@ Keyboard Shortcuts
 
 # Editor カーソル
 
-*TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+     ,行頭に移動→全選択
-*TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+       ,行末尾に移動→全選択
-*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos            ,URL・パス・タグの起動
+*TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine      ,カーソルを一つ上の行の行頭に移動する
+*TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine      ,カーソルを一つ下の行の行頭に移動する
+
+*TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+    ,行頭に移動→全選択
+*TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+      ,行末尾に移動→全選択
+*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos           ,URL・パス・タグの起動
 *TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu       ,URL・パス・タグのメニュー表示
 
 *TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos            ,URL・パス・タグの起動

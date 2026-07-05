@@ -14,71 +14,20 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-
-## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
-　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
-
-## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
-　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
-
-## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
-　CursorPos位置が、tagを表す部分であれば、大かっこ内のテキストを取り出し、コロン「:」がある場合はクエリとして各検索テンプレート（Google、Spotify等）をブラウザで開きます。また「memo:ID」の場合はアプリ内で対象のThinkを開きます。コロンがない通常タグ（例: [TODO]）の場合は左パネルのフィルター検索にそのキーワードを設定して絞り込んでください。
-
-## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos
-　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
-　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
-　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
-　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open　を実施
-　※ダブルクリック（Left2）起動時などの状態更新ズレ（一回前のリンクが起動する問題）をエディタ同期関数（syncTextOnCursor）の導入により修正完了。
-
-## 完了：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Menu
-　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
-　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
-　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
-　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
+## 完了：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
+　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
+　↓ CurPosを一つ上の行に移動する　→　終了
+## 完了：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
+　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
+　↓ CurPosを一つ下の行に移動する　→　終了
 
 
 ## 完了：　Application.Resource.ImportFromLocal
-## 完了：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
-　↓ CurPosが行先頭ではない場合、CurPosを現在行の先頭位置に移動する　→　終了
-　↓ CurPosが行先頭だがテキスト先頭ではない場合、CurPosをテキスト先頭位置に移動する　→　終了
-　↓ CurPosがテキスト先頭の場合、カーソルがテキスト先頭にある状態でテキストすべてを選択する
-## 完了：　260628　TextEditor.CurrentEditor.CursorPos:LineEnd+
-　↓ CurPosが行末尾ではない場合、CurPosを行末尾位置に移動する　→　終了
-　↓ CurPosが行末尾だがテキスト末尾ではない場合、CurPosをテキスト末尾位置に移動する　→　終了
-　↓ CurPosがテキスト末尾の場合、テキストすべてを選択する
 
 # Status
-## 完了：　260630　WorkoutPanel.Pane.Count
-　IDをWorkoutPanel.Panes.Countに変更
 
-## 完了：　260630　WorkoutPanel.Panes.IDs
-　本IDは一旦廃止にします。
 
-WorkoutPanelに表示されている全PaneのIDをカンマ区切りで表示。次回起動時に再Loadされる
 
-description:    表示されているPaneのID
-key:            WorkoutPanel.Panes.IDs
-current:        ""
-default:        ""
-type:           string
-candidates:      .*
-
-## 完了：　260629　TextEditor.CurrentEditor.CursorPos
-description:    現在のエディタのカーソルのOffset位置
-key:            TextEditor.CurrentEditor.CursorPos
-current:        0
-default:        0
-type:           string
-candidates:      .*
-
-## 完了：　260629　TextEditor.CurrentEditor.TextOnCursorPos
-description:    現在のエディタのカーソル位置のテキスト（URL、ファイルパス、タグなど）
-key:            TextEditor.CurrentEditor.TextOnCursorPos
-current:        
-default:        
-type:           string
-candidates:     .*
 
 # Application ========================================================================================================
 
@@ -367,7 +316,8 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 　　- `1`〜`6` （表示されているペインの配置順）
 　　- `0` （フォーカスされているペインがない場合）
 
-
+## Status：　260630　WorkoutPanel.Pane.Count
+　IDをWorkoutPanel.Panes.Countに変更
 
 # TextEditor Edit =================================================================================================
 ## Action：　260627　TextEditor.FoldingHeading.IncLevel
@@ -429,11 +379,54 @@ candidates:     .*
 ## Action：　260619　TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo
 
-# TextEditor Cursor 
-=======================================================================================================
+# TextEditor Action =================================================================================================
+
+## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Menu
+　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
+　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
+　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
+　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
+
+## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
+　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
+## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
+　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
+## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
+　CursorPos位置が、tagを表す部分であれば、大かっこ内のテキストを取り出し、コロン「:」がある場合はクエリとして各検索テンプレート（Google、Spotify等）をブラウザで開きます。また「memo:ID」の場合はアプリ内で対象のThinkを開きます。コロンがない通常タグ（例: [TODO]）の場合は左パネルのフィルター検索にそのキーワードを設定して絞り込んでください。
+## Status：　260630　TextEditor.CurrentEditor.DoOnCursorPos
+　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
+　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
+　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
+　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open　を実施
+　※ダブルクリック（Left2）起動時などの状態更新ズレ（一回前のリンクが起動する問題）をエディタ同期関数（syncTextOnCursor）の導入により修正完了。
+
+# TextEditor Cursor ================================================================================================
+## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
+　↓ CurPosが行先頭ではない場合、CurPosを現在行の先頭位置に移動する　→　終了
+　↓ CurPosが行先頭だがテキスト先頭ではない場合、CurPosをテキスト先頭位置に移動する　→　終了
+　↓ CurPosがテキスト先頭の場合、カーソルがテキスト先頭にある状態でテキストすべてを選択する
+## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineEnd+
+　↓ CurPosが行末尾ではない場合、CurPosを行末尾位置に移動する　→　終了
+　↓ CurPosが行末尾だがテキスト末尾ではない場合、CurPosをテキスト末尾位置に移動する　→　終了
+　↓ CurPosがテキスト末尾の場合、テキストすべてを選択する
+## Status：　260629　TextEditor.CurrentEditor.CursorPos
+description:    現在のエディタのカーソルのOffset位置
+key:            TextEditor.CurrentEditor.CursorPos
+current:        0
+default:        0
+type:           string
+candidates:      .*
+
+## Status：　260629　TextEditor.CurrentEditor.TextOnCursorPos
+description:    現在のエディタのカーソル位置のテキスト（URL、ファイルパス、タグなど）
+key:            TextEditor.CurrentEditor.TextOnCursorPos
+current:        
+default:        
+type:           string
+candidates:     .*
 
 
-# TextEditor Heading =======================================================================================================
+# TextEditor Heading ================================================================================================
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
 　以下の手順を実装してください。
 　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。

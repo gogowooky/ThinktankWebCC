@@ -1898,6 +1898,77 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     }
   });
 
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:PrevLine',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) {
+          item.Result = '[エディタ未選択]';
+          return;
+        }
+        const pos = editor.getPosition();
+        if (!pos) {
+          item.Result = '[位置なし]';
+          return;
+        }
+
+        const lineNumber = pos.lineNumber;
+
+        if (lineNumber <= 1) {
+          const newPos = { lineNumber: 1, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = '文書先頭（L1:C1）に移動しました';
+        } else {
+          const newPos = { lineNumber: lineNumber - 1, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `一つ上の行の行頭（L${lineNumber - 1}:C1）に移動しました`;
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:NextLine',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) {
+          item.Result = '[エディタ未選択]';
+          return;
+        }
+        const pos = editor.getPosition();
+        const model = editor.getModel();
+        if (!pos || !model) {
+          item.Result = '[モデル/位置なし]';
+          return;
+        }
+
+        const lineNumber = pos.lineNumber;
+        const totalLines = model.getLineCount();
+
+        if (lineNumber >= totalLines) {
+          const lastLineMaxColumn = model.getLineMaxColumn(totalLines);
+          const newPos = { lineNumber: totalLines, column: lastLineMaxColumn };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `文書末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました`;
+        } else {
+          const newPos = { lineNumber: lineNumber + 1, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `一つ下の行の行頭（L${lineNumber + 1}:C1）に移動しました`;
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
   function getCurrentTextOnCursor(): string {
     const editor = TTShortcutManager.instance.activeEditor;
     if (!editor) return '';
