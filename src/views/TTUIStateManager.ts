@@ -270,7 +270,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'TextEditor.Bullet.StyleSet': {
     panel: 'WorkoutPanel',
-    default: '・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,', type: 'string', candidates: '.*',
+    default: '・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,', type: 'string', candidates: '.*',
     description: '行頭文字の文字セット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.StyleSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleSet = v; },
@@ -284,8 +284,8 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'TextEditor.Bullet.AttrSet': {
     panel: 'WorkoutPanel',
-    default: 'undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined', type: 'string', candidates: '.*',
-    description: '行頭文字付行の属性のセット（CSV形式）',
+    default: 'undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined', type: 'string', candidates: '.*',
+    description: '行頭文字付行 of 属性のセット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.AttrSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.AttrSet = v; },
   },
@@ -1108,7 +1108,7 @@ export class TTUIStateManager {
     if (pattern.test(value)) {
       let finalValue = value;
       if (key === 'TextEditor.Bullet.StyleSet') {
-        const targetVal = '・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,';
+        const targetVal = '・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,';
         if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
           finalValue = targetVal;
         }

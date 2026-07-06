@@ -40,11 +40,11 @@ default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
 type:           string
 candidates:     .*
 
-## Status：　260625　TextEditor.Bullet.StyleSet
+## 完了： 260625 TextEditor.Bullet.StyleSet
 description:    行頭文字
 key:            TextEditor.Bullet.StyleSet
-current:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
-default:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
+current:        ・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,
+default:        ・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,
 type:           string
 candidates:     .*
 
@@ -68,8 +68,8 @@ TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
 
 description:    行頭文字付行の属性のセット
 key:            TextEditor.Bullet.AttrSet
-current:        undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined
-default:        undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined
+current:        undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined
+default:        undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined
 type:           string
 candidates:     .*
 
