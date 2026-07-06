@@ -291,14 +291,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'TextEditor.Comment.StyleSet': {
     panel: 'WorkoutPanel',
-    default: '> ,>> ,>>> ,; ,| ,# ,', type: 'string', candidates: '.*',
+    default: '> ,>> ,>>> ,; ,| ,', type: 'string', candidates: '.*',
     description: 'コメントの文字セット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Comment.StyleSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.StyleSet = v; },
   },
   'TextEditor.Comment.ColorSet': {
     panel: 'WorkoutPanel',
-    default: '#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined', type: 'string', candidates: '.*',
+    default: '#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined', type: 'string', candidates: '.*',
     description: 'コメント行の表示色（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Comment.ColorSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.ColorSet = v; },
@@ -1114,7 +1114,7 @@ export class TTUIStateManager {
         }
       }
       if (key === 'TextEditor.Comment.StyleSet') {
-        const targetVal = '> ,>> ,>>> ,; ,| ,# ,';
+        const targetVal = '> ,>> ,>>> ,; ,| ,';
         if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
           finalValue = targetVal;
         }

@@ -51,8 +51,8 @@ export class TextEditorSettings {
     AttrSet: "undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined"
   };
   Comment = {
-    StyleSet: "> ,>> ,>>> ,; ,| ,# ,",
-    ColorSet: "#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined"
+    StyleSet: "> ,>> ,>>> ,; ,| ,",
+    ColorSet: "#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined"
   };
 
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };

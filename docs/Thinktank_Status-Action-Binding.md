@@ -19,24 +19,21 @@
 
 # Status
 
-## Status： 260625　TextEditor.Comment.StyleSet
+## 完了： 260625　TextEditor.Comment.StyleSet
 description:    行頭文字
 key:            TextEditor.Comment.StyleSet
-current:        > ,>> ,>>> ,; ,| ,# ,
-default:        > ,>> ,>>> ,; ,| ,# ,
+current:        > ,>> ,>>> ,; ,| ,
+default:        > ,>> ,>>> ,; ,| ,
 type:           string
 candidates:     .*
 
 　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
 
 ## 完了： 260706 TextEditor.Comment.ColorSet
-TextEditor.Comment.StyleSetで複数の行頭文字が定義された。
-その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の表示色で行全体を表示する。
-
 description:    コメント行の表示色
 key:            TextEditor.Comment.ColorSet
-current:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
-default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
+current:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined
+default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined
 type:           string
 candidates:     .*
 
