@@ -64,6 +64,7 @@ export type ConfigKey =
   | 'TextEditor.LineNumbers.IsVisible'
   | 'TextEditor.Bullet.StyleSet'
   | 'TextEditor.Comment.StyleSet'
+  | 'TextEditor.Comment.ColorSet'
   | 'TextEditor.WordWrap.IsVisible'
   | 'TextEditor.Minimap.IsVisible'
   | 'TextEditor.FullWidthSpace.IsVisible'
@@ -278,6 +279,13 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: 'コメントの文字セット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Comment.StyleSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.StyleSet = v; },
+  },
+  'TextEditor.Comment.ColorSet': {
+    panel: 'WorkoutPanel',
+    default: '#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined', type: 'string', candidates: '.*',
+    description: 'コメント行の表示色（CSV形式）',
+    get: (app) => app.WorkoutPanel.TextEditor.Comment.ColorSet,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.ColorSet = v; },
   },
   'TextEditor.WordWrap.IsVisible': {
     panel: 'WorkoutPanel',

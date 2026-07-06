@@ -46,7 +46,10 @@ export class TextEditorSettings {
   CurrentEditorTextOnCursorPos = '';
 
   Bullet = { StyleSet: "・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ," };
-  Comment = { StyleSet: "> ,>> ,>>> ,; ,| ,# ," };
+  Comment = {
+    StyleSet: "> ,>> ,>>> ,; ,| ,# ,",
+    ColorSet: "#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined"
+  };
 
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };
   HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];

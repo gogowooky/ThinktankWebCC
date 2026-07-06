@@ -37,5 +37,7 @@ export interface MediaProps {
     selectionBackground: string;
     occurrenceBackground: string;
     headingStyles: { color: string; bgColor?: string; bold: boolean; underline: boolean }[];
+    commentStyleSet?: string;
+    commentColorSet?: string;
   };
 }

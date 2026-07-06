@@ -18,7 +18,14 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
-
+## 完了： 260706 TextEditor.Comment.ColorSet
+コメント行行頭文字に対応したコメント行全体の表示色。
+description:    コメント行の表示色
+key:            TextEditor.Comment.ColorSet
+current:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
+default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
+type:           string
+candidates:     .*
 
 
 
@@ -365,6 +372,17 @@ candidates:     .*
 
 　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
 
+## 完了： 260706 TextEditor.Comment.ColorSet
+行頭文字に対応したコメント行全体の表示色を設定する
+description:    コメント行の表示色
+key:            TextEditor.Comment.ColorSet
+current:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
+default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
+type:           string
+candidates:     .*
+
+
+
 ## Action：　260625　TextEditor.Bullet.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの1文字目
@@ -384,6 +402,24 @@ type:           string
 candidates:     .*
 
 　[✓]の次は blank。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
+
+## 実装： TextEditor.Bullet.ColorSet
+行頭文字に対応した行頭文字付行全体の表示色。
+description:    行頭文字付行の表示色
+key:            TextEditor.Comment.ColorSet
+current:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined
+default:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined
+type:           string
+candidates:     .*
+
+## 実装： TextEditor.Bullet.AttrSet
+行頭文字に対応した行頭文字付行全体の属性のセット。
+description:    行頭文字付行の属性のセット
+key:            TextEditor.Comment.AttrSet
+current:        undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined
+default:        undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined
+type:           string
+candidates:     .*
 
 ## Action：　260619　TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo

@@ -469,7 +469,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       }
     }
 
-    // 見出し用CSSの注入
+    // 見出し用CSS of 注入
     let styleEl = document.getElementById('text-editor-custom-styles');
     if (!styleEl) {
       styleEl = document.createElement('style');
@@ -492,6 +492,24 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
     styleEl.innerHTML = cssRules;
 
+    // コメント用CSSの注入
+    let commentStyleEl = document.getElementById('text-editor-comment-styles');
+    if (!commentStyleEl) {
+      commentStyleEl = document.createElement('style');
+      commentStyleEl.id = 'text-editor-comment-styles';
+      document.head.appendChild(commentStyleEl);
+    }
+    const colors = (editorSettings.commentColorSet || '').split(',').map(c => c.trim());
+    const commentRules = colors.map((color, index) => {
+      if (!color || color === 'undefined' || color === 'none') return '';
+      return `
+        .custom-comment-c${index + 1} {
+          color: ${color} !important;
+        }
+      `;
+    }).join('\n');
+    commentStyleEl.innerHTML = commentRules;
+
     updateDecorations();
 
   }, [editorSettings]);
@@ -506,6 +524,16 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
     const model = editor.getModel();
     if (!model) return;
+
+    // コメント設定のパース
+    const StyleSet = editorSettings.commentStyleSet || '';
+    const ColorSet = editorSettings.commentColorSet || '';
+    const commentParts = StyleSet.split(',');
+    const comments = commentParts
+      .filter((c, idx) => c !== '' || idx === commentParts.length - 1)
+      .map((text, originalIndex) => ({ text, originalIndex }));
+    const sortedComments = comments.filter(c => c.text !== '').sort((a, b) => b.text.length - a.text.length);
+    const colors = ColorSet.split(',').map(c => c.trim());
 
     // --- ハイライトグループの動的スタイル注入 ---
     let highlightStyleEl = document.getElementById('text-editor-highlight-styles');
@@ -552,6 +580,28 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
             minimap: minimapOptions
           }
         });
+      } else {
+        // コメント行の装飾
+        let matchedComment = null;
+        for (const c of sortedComments) {
+          if (lineContent.startsWith(c.text)) {
+            matchedComment = c;
+            break;
+          }
+        }
+
+        if (matchedComment) {
+          const color = colors[matchedComment.originalIndex];
+          if (color && color !== 'undefined' && color !== 'none') {
+            newDecorations.push({
+              range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
+              options: {
+                isWholeLine: true,
+                inlineClassName: `custom-comment-c${matchedComment.originalIndex + 1}`
+              }
+            });
+          }
+        }
       }
 
       // 全角スペースの装飾
