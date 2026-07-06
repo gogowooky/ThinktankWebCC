@@ -35,23 +35,23 @@ candidates:     .*
 
 
 
-## 完了： 260706 TextEditor.Bullet.ColorSet
+## 修正： 260706 TextEditor.Bullet.ColorSet
 TextEditor.Bullet.StyleSetの行頭文字に対応した行全体の表示色。
 
 key:            TextEditor.Bullet.StyleSet
 current:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
 
 description:    行頭文字付行の表示色
-key:            TextEditor.Comment.ColorSet
+key:            TextEditor.Bullet.ColorSet
 current:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined
 default:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined
 type:           string
 candidates:     .*
 
-## 完了： 260706 TextEditor.Bullet.AttrSet
+## 修正： 260706 TextEditor.Bullet.AttrSet
 TextEditor.Bullet.StyleSetの行頭文字に対応した行全体の文字属性。
 description:    行頭文字付行の属性のセット
-key:            TextEditor.Comment.AttrSet
+key:            TextEditor.Bullet.AttrSet
 current:        undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined
 default:        undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined
 type:           string
