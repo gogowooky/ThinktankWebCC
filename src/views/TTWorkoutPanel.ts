@@ -46,8 +46,8 @@ export class TextEditorSettings {
   CurrentEditorTextOnCursorPos = '';
 
   Bullet = {
-    StyleSet: "・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,",
-    ColorSet: "undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined",
+    StyleSet: "・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,",
+    ColorSet: "undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined",
     AttrSet: "undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined"
   };
   Comment = {

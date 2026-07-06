@@ -270,14 +270,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'TextEditor.Bullet.StyleSet': {
     panel: 'WorkoutPanel',
-    default: '・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,', type: 'string', candidates: '.*',
+    default: '・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,', type: 'string', candidates: '.*',
     description: '行頭文字の文字セット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.StyleSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleSet = v; },
   },
   'TextEditor.Bullet.ColorSet': {
     panel: 'WorkoutPanel',
-    default: 'undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined', type: 'string', candidates: '.*',
+    default: 'undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined', type: 'string', candidates: '.*',
     description: '行頭文字付行の表示色（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.ColorSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.ColorSet = v; },
@@ -889,7 +889,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
 
 export class TTUIStateManager {
   static readonly THINK_ID = '__tt_ui_state__';
-  private static readonly LS_KEY = 'tt-ui-state-v2';
+  private static readonly LS_KEY = 'tt-ui-state-v3';
   private static _instance: TTUIStateManager | null = null;
 
   private _app: TTApplication | null = null;
@@ -1108,7 +1108,7 @@ export class TTUIStateManager {
     if (pattern.test(value)) {
       let finalValue = value;
       if (key === 'TextEditor.Bullet.StyleSet') {
-        const targetVal = '・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,';
+        const targetVal = '・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,';
         if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
           finalValue = targetVal;
         }

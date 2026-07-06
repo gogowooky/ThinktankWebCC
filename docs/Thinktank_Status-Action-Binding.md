@@ -40,8 +40,8 @@ candidates:     .*
 ## 完了： 260625 TextEditor.Bullet.StyleSet
 description:    行頭文字
 key:            TextEditor.Bullet.StyleSet
-current:        ・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,
-default:        ・,- ,* ,■ ,● ,= ,> ,↓ ,→ ,[✓] ,
+current:        ・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,
+default:        ・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,
 type:           string
 candidates:     .*
 
@@ -54,8 +54,8 @@ TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
 
 description:    行頭文字付行の表示色
 key:            TextEditor.Bullet.ColorSet
-current:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined
-default:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined
+current:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined
+default:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined
 type:           string
 candidates:     .*
 
