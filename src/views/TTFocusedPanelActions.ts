@@ -1914,15 +1914,24 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         }
 
         const lineNumber = pos.lineNumber;
+        const hiddenAreas = (editor as any).getHiddenAreas() || [];
+        const isLineHidden = (l: number) => hiddenAreas.some((r: any) => l >= r.startLineNumber && l <= r.endLineNumber);
 
-        if (lineNumber <= 1) {
-          editor.trigger('keyboard', 'cursorLineStart', null);
+        let targetLine = lineNumber - 1;
+        while (targetLine > 1 && isLineHidden(targetLine)) {
+          targetLine--;
+        }
+
+        if (lineNumber <= 1 || (targetLine === 1 && isLineHidden(1))) {
+          const newPos = { lineNumber: 1, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
           item.Result = '文書先頭（L1:C1）に移動しました';
         } else {
-          // Monacoのビルトインコマンドを使用して、折りたたみを維持したまま移動する
-          editor.trigger('keyboard', 'cursorUp', null);
-          editor.trigger('keyboard', 'cursorLineStart', null);
-          item.Result = '一つ上の表示されている行の行頭に移動しました';
+          const newPos = { lineNumber: targetLine, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `一つ上の表示されている行の行頭（L${targetLine}:C1）に移動しました`;
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
@@ -1948,15 +1957,25 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
         const lineNumber = pos.lineNumber;
         const totalLines = model.getLineCount();
+        const hiddenAreas = (editor as any).getHiddenAreas() || [];
+        const isLineHidden = (l: number) => hiddenAreas.some((r: any) => l >= r.startLineNumber && l <= r.endLineNumber);
 
-        if (lineNumber >= totalLines) {
-          editor.trigger('keyboard', 'cursorEnd', null);
-          item.Result = '文書末尾に移動しました';
+        let targetLine = lineNumber + 1;
+        while (targetLine < totalLines && isLineHidden(targetLine)) {
+          targetLine++;
+        }
+
+        if (lineNumber >= totalLines || (targetLine === totalLines && isLineHidden(totalLines))) {
+          const lastLineMaxColumn = model.getLineMaxColumn(totalLines);
+          const newPos = { lineNumber: totalLines, column: lastLineMaxColumn };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `文書末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました`;
         } else {
-          // Monacoのビルトインコマンドを使用して、折りたたみを維持したまま移動する
-          editor.trigger('keyboard', 'cursorDown', null);
-          editor.trigger('keyboard', 'cursorLineStart', null);
-          item.Result = '一つ下の表示されている行の行頭に移動しました';
+          const newPos = { lineNumber: targetLine, column: 1 };
+          editor.setPosition(newPos);
+          editor.revealPosition(newPos);
+          item.Result = `一つ下の表示されている行の行頭（L${targetLine}:C1）に移動しました`;
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;

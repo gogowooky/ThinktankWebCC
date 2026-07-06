@@ -22,7 +22,7 @@
 
 
 
-# Application ========================================================================================================
+# Application ======================================================================================================
 
 ## Action：　260628　Application.Resource.ExportToLocal
 　BQに保存されているThinkファイルデータをローカル側に保存する
@@ -155,7 +155,7 @@ default:
 type:           string
 candidates:     .*
 
-# Panel ==============================================================================================================
+# Panel ============================================================================================================
 ## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
 ## Action：　260619　FocusedPanel.Mode.Name:Prev
 ## Action：　260619　FocusedPanel.Mode.Name:Next
@@ -328,7 +328,7 @@ default:        []
 type:           json
 candidates:     .*
 
-# TextEditor Edit =================================================================================================
+# TextEditor Edit ==================================================================================================
 ## Action：　260627　TextEditor.FoldingHeading.IncLevel
 　テキストが選択状態ではない場合　
 　　カーソル位置がHeading行の先頭の場合は、新しいHeading行を挿入する。
@@ -388,7 +388,7 @@ candidates:     .*
 ## Action：　260619　TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo
 
-# TextEditor Action =================================================================================================
+# TextEditor Action ================================================================================================
 
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Menu
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
@@ -410,10 +410,10 @@ candidates:     .*
 　※ダブルクリック（Left2）起動時などの状態更新ズレ（一回前のリンクが起動する問題）をエディタ同期関数（syncTextOnCursor）の導入により修正完了。
 
 # TextEditor Cursor ================================================================================================
-## Action：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
+## 完了：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
 　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
 　↓ CurPosを一つ上の表示されている行に移動する　→　終了
-## Action：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
+## 完了：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
 　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
 　↓ CurPosを一つ下の表示されている行に移動する　→　終了
 ## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
@@ -441,7 +441,7 @@ type:           string
 candidates:     .*
 
 
-# TextEditor Heading ================================================================================================
+# TextEditor Heading ===============================================================================================
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
 　以下の手順を実装してください。
 　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
@@ -502,7 +502,7 @@ candidates:     ^.*$
 
 
 
-# Color ============================================================================================================== 
+# Color ============================================================================================================ 
 ## Status：　260624　Thinktank.Ribbon.BgColor
 description:    Thinktank（左）パネルのヘッダー・リボン背景色
 key:            Thinktank.Ribbon.BgColor
@@ -935,7 +935,7 @@ default:        #aac6aaff
 type:           color
 candidates:     ^#[0-9a-fA-F]{6,8}$
 
-# TextEditor ExOpt ==================================================================================================
+# TextEditor ExOpt =================================================================================================
 ## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle
 ## Action：　260619　TextEditor.WordWrap.IsVisible:Toggle
 ## Action：　260619　TextEditor.Minimap.IsVisible:Toggle
@@ -987,7 +987,7 @@ type:           boolean
 candidates:     ^(true|false)$
 
 
-# TextEditor ExDate =============================================================================================
+# TextEditor ExDate ================================================================================================
 ## Action：　260625　TextEditor.EditDate.InsertExDate
     カーソル位置に日付文字を挿入しExDateモードに入る。
     ↓カーソル位置の日付文字を判別
