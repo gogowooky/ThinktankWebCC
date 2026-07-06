@@ -236,48 +236,68 @@ export function WorkoutArea({
   const think = vault.GetThink(area.ResourceID) ?? null;
   useAppUpdate(panel);
 
-  const editorSettings = useMemo(() => ({
-    lineNumbers:   panel?.TextEditor.LineNumbers.IsVisible ?? false,
-    wordWrap:      panel?.TextEditor.WordWrap.IsVisible ?? true,
-    minimap:       panel?.TextEditor.Minimap.IsVisible ?? false,
-    showFullWidthSpace: panel?.TextEditor.FullWidthSpace.IsVisible ?? false,
-    unicodeHighlight: panel?.TextEditor.UnicodeHighlight.IsVisible ?? false,
-    bracketPairColorization: panel?.TextEditor.BracketPairColorization.IsVisible ?? true,
-    highlightWord: panel?.HighlightWord ?? '',
-    highlightStyles: panel?.TextEditor.HighlightStyles ?? [
-      { backgroundColor: '#fff0b3', color: 'undefined', bold: false, underline: false },
-      { backgroundColor: '#ffb3b3', color: 'undefined', bold: false, underline: false },
-      { backgroundColor: '#b3e0ff', color: 'undefined', bold: false, underline: false },
-      { backgroundColor: '#b3ffb3', color: 'undefined', bold: false, underline: false },
-      { backgroundColor: '#e6b3ff', color: 'undefined', bold: false, underline: false },
-      { backgroundColor: '#e620ff', color: 'undefined', bold: false, underline: false },
-    ],
-    background:          panel?.TextEditor.Color.Background  ?? '#f5f5f5',
-    foreground:          panel?.TextEditor.Color.Text        ?? '#1e1e1e',
-    selectionBackground: panel?.TextEditor.Color.Selection   ?? '#c6e6c6ff',
-    occurrenceBackground: panel?.TextEditor.Color.Occurrence ?? '#aac6aaff',
-    headingStyles: panel?.TextEditor.HeadingStyles ?? [
-      { color: '#569cd6', bold: true, underline: false },
-      { color: '#4ec9b0', bold: true, underline: false },
-      { color: '#ce9178', bold: true, underline: false },
-      { color: '#dcdcaa', bold: true, underline: false },
-      { color: '#c586c0', bold: true, underline: false },
-    ],
-    commentStyleSet: panel?.TextEditor.Comment.StyleSet ?? '',
-    commentColorSet: panel?.TextEditor.Comment.ColorSet ?? '',
-    bulletStyleSet: panel?.TextEditor.Bullet.StyleSet ?? '',
-    bulletColorSet: panel?.TextEditor.Bullet.ColorSet ?? '',
-    bulletAttrSet: panel?.TextEditor.Bullet.AttrSet ?? '',
+  const editorSettings = useMemo(() => {
+    // Commentスタイルの配列構築
+    const commentStyles: { symbol: string; color: string; attr: string }[] = [];
+    const commentNum = panel?.TextEditor.Comment.StyleNum ?? 0;
+    for (let i = 1; i <= commentNum; i++) {
+      const val = (panel?.TextEditor.Comment as any)[`Style${i}`] || '';
+      const [symbol = '', color = 'undefined', attr = 'undefined'] = val.split(',').map((s: string) => s.trim());
+      if (symbol) {
+        commentStyles.push({ symbol, color, attr });
+      }
+    }
+
+    // Bulletスタイルの配列構築
+    const bulletStyles: { symbol: string; color: string; attr: string }[] = [];
+    const bulletNum = panel?.TextEditor.Bullet.StyleNum ?? 0;
+    for (let i = 1; i <= bulletNum; i++) {
+      const val = (panel?.TextEditor.Bullet as any)[`Style${i}`] || '';
+      const [symbol = '', color = 'undefined', attr = 'undefined'] = val.split(',').map((s: string) => s.trim());
+      if (symbol) {
+        bulletStyles.push({ symbol, color, attr });
+      }
+    }
+
+    return {
+      lineNumbers:   panel?.TextEditor.LineNumbers.IsVisible ?? false,
+      wordWrap:      panel?.TextEditor.WordWrap.IsVisible ?? true,
+      minimap:       panel?.TextEditor.Minimap.IsVisible ?? false,
+      showFullWidthSpace: panel?.TextEditor.FullWidthSpace.IsVisible ?? false,
+      unicodeHighlight: panel?.TextEditor.UnicodeHighlight.IsVisible ?? false,
+      bracketPairColorization: panel?.TextEditor.BracketPairColorization.IsVisible ?? true,
+      highlightWord: panel?.HighlightWord ?? '',
+      highlightStyles: panel?.TextEditor.HighlightStyles ?? [
+        { backgroundColor: '#fff0b3', color: 'undefined', bold: false, underline: false },
+        { backgroundColor: '#ffb3b3', color: 'undefined', bold: false, underline: false },
+        { backgroundColor: '#b3e0ff', color: 'undefined', bold: false, underline: false },
+        { backgroundColor: '#b3ffb3', color: 'undefined', bold: false, underline: false },
+        { backgroundColor: '#e6b3ff', color: 'undefined', bold: false, underline: false },
+        { backgroundColor: '#e620ff', color: 'undefined', bold: false, underline: false },
+      ],
+      background:          panel?.TextEditor.Color.Background  ?? '#f5f5f5',
+      foreground:          panel?.TextEditor.Color.Text        ?? '#1e1e1e',
+      selectionBackground: panel?.TextEditor.Color.Selection   ?? '#c6e6c6ff',
+      occurrenceBackground: panel?.TextEditor.Color.Occurrence ?? '#aac6aaff',
+      headingStyles: panel?.TextEditor.HeadingStyles ?? [
+        { color: '#569cd6', bold: true, underline: false },
+        { color: '#4ec9b0', bold: true, underline: false },
+        { color: '#ce9178', bold: true, underline: false },
+        { color: '#dcdcaa', bold: true, underline: false },
+        { color: '#c586c0', bold: true, underline: false },
+      ],
+      commentStyles,
+      bulletStyles
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
+  }, [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
        panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
        panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,
        panel?.TextEditor.HighlightStyles,
        panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
        panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.HeadingStyles,
-       panel?.TextEditor.Comment.StyleSet, panel?.TextEditor.Comment.ColorSet,
-       panel?.TextEditor.Bullet.StyleSet, panel?.TextEditor.Bullet.ColorSet, panel?.TextEditor.Bullet.AttrSet]);
+       JSON.stringify(panel?.TextEditor.Comment), JSON.stringify(panel?.TextEditor.Bullet)]);
 
   const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
 

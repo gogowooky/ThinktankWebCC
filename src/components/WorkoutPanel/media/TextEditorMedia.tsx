@@ -499,8 +499,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       commentStyleEl.id = 'text-editor-comment-styles';
       document.head.appendChild(commentStyleEl);
     }
-    const colors = (editorSettings.commentColorSet || '').split(',').map(c => c.trim());
-    const commentRules = colors.map((color, index) => {
+    const commentStyles = editorSettings.commentStyles || [];
+    const commentRules = commentStyles.map((s, index) => {
+      const color = s.color;
       if (!color || color === 'undefined' || color === 'none') return '';
       return `
         .custom-comment-c${index + 1}, .custom-comment-c${index + 1} * {
@@ -517,28 +518,26 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       bulletStyleEl.id = 'text-editor-bullet-styles';
       document.head.appendChild(bulletStyleEl);
     }
-    const bulletColors = (editorSettings.bulletColorSet || '').split(',').map(c => c.trim());
-    const bulletAttrs = (editorSettings.bulletAttrSet || '').split(',').map(c => c.trim());
-    const maxLen = Math.max(bulletColors.length, bulletAttrs.length);
-    const bulletRules = [];
-    for (let i = 0; i < maxLen; i++) {
-      const color = bulletColors[i];
-      const attr = bulletAttrs[i];
+    const bulletStyles = editorSettings.bulletStyles || [];
+    const bulletRules = bulletStyles.map((s, index) => {
+      const color = s.color;
+      const attr = s.attr;
       const hasColor = color && color !== 'undefined' && color !== 'none';
       const hasAttr = attr && attr !== 'undefined' && attr !== 'none';
       if (hasColor || hasAttr) {
         const isBold = hasAttr && attr.includes('bold');
         const isUnderline = hasAttr && attr.includes('underline');
-        bulletRules.push(`
-          .custom-bullet-b${i + 1}, .custom-bullet-b${i + 1} * {
+        return `
+          .custom-bullet-b${index + 1}, .custom-bullet-b${index + 1} * {
             ${hasColor ? `color: ${color} !important;` : ''}
             ${isBold ? `font-weight: bold !important;` : ''}
             ${isUnderline ? `text-decoration: underline !important;` : ''}
           }
-        `);
+        `;
       }
-    }
-    bulletStyleEl.innerHTML = bulletRules.join('\n');
+      return '';
+    }).join('\n');
+    bulletStyleEl.innerHTML = bulletRules;
 
     updateDecorations();
 
@@ -556,26 +555,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     if (!model) return;
 
     // コメント設定のパース
-    const StyleSet = editorSettings.commentStyleSet || '';
-    const ColorSet = editorSettings.commentColorSet || '';
-    const commentParts = StyleSet.split(',');
-    const comments = commentParts
-      .filter((c, idx) => c !== '' || idx === commentParts.length - 1)
-      .map((text, originalIndex) => ({ text, originalIndex }));
-    const sortedComments = comments.filter(c => c.text !== '').sort((a, b) => b.text.length - a.text.length);
-    const colors = ColorSet.split(',').map(c => c.trim());
-
-    // Bullet設定のパース
-    const BulletStyleSet = editorSettings.bulletStyleSet || '';
-    const BulletColorSet = editorSettings.bulletColorSet || '';
-    const BulletAttrSet = editorSettings.bulletAttrSet || '';
-    const bulletParts = BulletStyleSet.split(',');
-    const bullets = bulletParts
-      .filter((c, idx) => c !== '' || idx === bulletParts.length - 1)
-      .map((text, originalIndex) => ({ text, originalIndex }));
-    const sortedBullets = bullets.filter(b => b.text !== '').sort((a, b) => b.text.length - a.text.length);
-    const bulletColors = BulletColorSet.split(',').map(c => c.trim());
-    const bulletAttrs = BulletAttrSet.split(',').map(c => c.trim());
+    // Comment / Bullet のスタイルは editorSettings から配列で直接取得します
+    const commentStyles = editorSettings.commentStyles || [];
+    const bulletStyles = editorSettings.bulletStyles || [];
 
     // --- ハイライトグループの動的スタイル注入 ---
     let highlightStyleEl = document.getElementById('text-editor-highlight-styles');
@@ -629,37 +611,51 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
         // コメント行の装飾
         let matchedComment = null;
+        let commentIndex = -1;
+        const sortedComments = commentStyles
+          .map((s, idx) => ({ ...s, originalIndex: idx }))
+          .sort((a, b) => b.symbol.length - a.symbol.length);
+
         for (const c of sortedComments) {
-          if (textAfterIndent.startsWith(c.text)) {
+          const matchPattern = c.symbol.endsWith(' ') ? c.symbol : c.symbol + ' ';
+          if (textAfterIndent.startsWith(matchPattern)) {
             matchedComment = c;
+            commentIndex = c.originalIndex;
             break;
           }
         }
 
         if (matchedComment) {
-          const color = colors[matchedComment.originalIndex];
+          const color = matchedComment.color;
           if (color && color !== 'undefined' && color !== 'none') {
             newDecorations.push({
               range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
               options: {
                 isWholeLine: true,
-                inlineClassName: `custom-comment-c${matchedComment.originalIndex + 1}`
+                inlineClassName: `custom-comment-c${commentIndex + 1}`
               }
             });
           }
         } else {
           // コメントでなければ、Bulletの装飾をチェック
           let matchedBullet = null;
+          let bulletIndex = -1;
+          const sortedBullets = bulletStyles
+            .map((s, idx) => ({ ...s, originalIndex: idx }))
+            .sort((a, b) => b.symbol.length - a.symbol.length);
+
           for (const b of sortedBullets) {
-            if (textAfterIndent.startsWith(b.text)) {
+            const matchPattern = b.symbol.endsWith(' ') ? b.symbol : b.symbol + ' ';
+            if (textAfterIndent.startsWith(matchPattern)) {
               matchedBullet = b;
+              bulletIndex = b.originalIndex;
               break;
             }
           }
 
           if (matchedBullet) {
-            const color = bulletColors[matchedBullet.originalIndex];
-            const attr = bulletAttrs[matchedBullet.originalIndex];
+            const color = matchedBullet.color;
+            const attr = matchedBullet.attr;
             const hasColor = color && color !== 'undefined' && color !== 'none';
             const hasAttr = attr && attr !== 'undefined' && attr !== 'none';
 
@@ -668,7 +664,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
                 range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
                 options: {
                   isWholeLine: true,
-                  inlineClassName: `custom-bullet-b${matchedBullet.originalIndex + 1}`
+                  inlineClassName: `custom-bullet-b${bulletIndex + 1}`
                 }
               });
             }

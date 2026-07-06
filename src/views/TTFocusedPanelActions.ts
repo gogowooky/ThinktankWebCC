@@ -1458,11 +1458,19 @@ export function registerTextEditorDateActions(app: TTApplication): void {
 
 export function registerTextEditorBulletActions(app: TTApplication): void {
   const getBullets = (app: TTApplication): string[] => {
-    const raw = app.WorkoutPanel.TextEditor.Bullet.StyleSet || '';
-    const parts = raw.split(',');
-    // 末尾のカンマの後ろの空文字列を活かしつつ、余計な空要素を除外します。
-    const bullets = parts.filter((b, idx) => b !== '' || idx === parts.length - 1);
-    return bullets;
+    const styles: string[] = [];
+    const num = app.WorkoutPanel.TextEditor.Bullet.StyleNum ?? 0;
+    for (let i = 1; i <= num; i++) {
+      const val = (app.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`] || '';
+      const parts = val.split(',');
+      const symbol = (parts[0] || '').trim();
+      if (symbol) {
+        const formatSymbol = symbol.endsWith(' ') ? symbol : symbol + ' ';
+        styles.push(formatSymbol);
+      }
+    }
+    styles.push('');
+    return styles;
   };
 
   const toggleBulletStyle = (item: any, direction: 'next' | 'prev') => {
@@ -1556,11 +1564,19 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
 
 export function registerTextEditorCommentActions(app: TTApplication): void {
   const getComments = (app: TTApplication): string[] => {
-    const raw = app.WorkoutPanel.TextEditor.Comment.StyleSet || '';
-    const parts = raw.split(',');
-    // 末尾の空文字列を活かしつつ、余計な空要素を除外します。
-    const comments = parts.filter((c, idx) => c !== '' || idx === parts.length - 1);
-    return comments;
+    const styles: string[] = [];
+    const num = app.WorkoutPanel.TextEditor.Comment.StyleNum ?? 0;
+    for (let i = 1; i <= num; i++) {
+      const val = (app.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] || '';
+      const parts = val.split(',');
+      const symbol = (parts[0] || '').trim();
+      if (symbol) {
+        const formatSymbol = symbol.endsWith(' ') ? symbol : symbol + ' ';
+        styles.push(formatSymbol);
+      }
+    }
+    styles.push('');
+    return styles;
   };
 
   const toggleCommentStyle = (item: any, direction: 'next' | 'prev') => {

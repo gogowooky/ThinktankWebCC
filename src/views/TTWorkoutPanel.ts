@@ -45,14 +45,27 @@ export class TextEditorSettings {
   CurrentEditorCursorPos = '0';
   CurrentEditorTextOnCursorPos = '';
 
-  Bullet = {
-    StyleSet: "・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,",
-    ColorSet: "undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined",
-    AttrSet: "undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined"
+  Bullet: Record<string, any> = {
+    StyleNum: 9,
+    Style1: "・,undefined,undefined",
+    Style2: "-,undefined,undefined",
+    Style3: "*,#cc2222,undefined",
+    Style4: "■,#000000,underline",
+    Style5: "●,#000000,underline",
+    Style6: "=,#cccc22,undefined",
+    Style7: "↓,#000000,bold",
+    Style8: "→,undefined,underline",
+    Style9: "[✓],undefined,bold",
+    Style10: '', Style11: '', Style12: '', Style13: '', Style14: '', Style15: '', Style16: '', Style17: '', Style18: '', Style19: '', Style20: ''
   };
-  Comment = {
-    StyleSet: "> ,>> ,>>> ,; ,| ,",
-    ColorSet: "#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined"
+  Comment: Record<string, any> = {
+    StyleNum: 5,
+    Style1: ">,#bbddbb,undefined",
+    Style2: ">>,#bbbbdd,undefined",
+    Style3: ">>>,#ddbbbb,undefined",
+    Style4: ";,#bbbbbb,undefined",
+    Style5: "|,#ffaaaa,undefined",
+    Style6: '', Style7: '', Style8: '', Style9: '', Style10: '', Style11: '', Style12: '', Style13: '', Style14: '', Style15: '', Style16: '', Style17: '', Style18: '', Style19: '', Style20: ''
   };
 
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };

@@ -268,40 +268,19 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.TextEditor.LineNumbers.IsVisible),
     set: (app, v) => { app.WorkoutPanel.TextEditor.LineNumbers.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.LineNumbers.IsVisible); },
   },
-  'TextEditor.Bullet.StyleSet': {
+  'TextEditor.Bullet.StyleNum': {
     panel: 'WorkoutPanel',
-    default: '・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,', type: 'string', candidates: '.*',
-    description: '行頭文字の文字セット（CSV形式）',
-    get: (app) => app.WorkoutPanel.TextEditor.Bullet.StyleSet,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleSet = v; },
+    default: '9', type: 'integer', candidates: '^[0-9]+$',
+    description: '箇条書きスタイルの登録数',
+    get: (app) => String(app.WorkoutPanel.TextEditor.Bullet.StyleNum),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleNum = parseInt(v, 10) || 0; },
   },
-  'TextEditor.Bullet.ColorSet': {
+  'TextEditor.Comment.StyleNum': {
     panel: 'WorkoutPanel',
-    default: 'undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined', type: 'string', candidates: '.*',
-    description: '行頭文字付行の表示色（CSV形式）',
-    get: (app) => app.WorkoutPanel.TextEditor.Bullet.ColorSet,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.ColorSet = v; },
-  },
-  'TextEditor.Bullet.AttrSet': {
-    panel: 'WorkoutPanel',
-    default: 'undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined', type: 'string', candidates: '.*',
-    description: '行頭文字付行 of 属性のセット（CSV形式）',
-    get: (app) => app.WorkoutPanel.TextEditor.Bullet.AttrSet,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.AttrSet = v; },
-  },
-  'TextEditor.Comment.StyleSet': {
-    panel: 'WorkoutPanel',
-    default: '> ,>> ,>>> ,; ,| ,', type: 'string', candidates: '.*',
-    description: 'コメントの文字セット（CSV形式）',
-    get: (app) => app.WorkoutPanel.TextEditor.Comment.StyleSet,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.StyleSet = v; },
-  },
-  'TextEditor.Comment.ColorSet': {
-    panel: 'WorkoutPanel',
-    default: '#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined', type: 'string', candidates: '.*',
-    description: 'コメント行の表示色（CSV形式）',
-    get: (app) => app.WorkoutPanel.TextEditor.Comment.ColorSet,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.ColorSet = v; },
+    default: '5', type: 'integer', candidates: '^[0-9]+$',
+    description: 'コメントスタイルの登録数',
+    get: (app) => String(app.WorkoutPanel.TextEditor.Comment.StyleNum),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.StyleNum = parseInt(v, 10) || 0; },
   },
   'TextEditor.WordWrap.IsVisible': {
     panel: 'WorkoutPanel',
@@ -885,11 +864,53 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 };
 
+// コメントおよび箇条書きのStyle1〜Style20の登録
+const defaultCommentStyles: Record<number, string> = {
+  1: ">,#bbddbb,undefined",
+  2: ">>,#bbbbdd,undefined",
+  3: ">>>,#ddbbbb,undefined",
+  4: ";,#bbbbbb,undefined",
+  5: "|,#ffaaaa,undefined"
+};
+
+const defaultBulletStyles: Record<number, string> = {
+  1: "・,undefined,undefined",
+  2: "-,undefined,undefined",
+  3: "*,#cc2222,undefined",
+  4: "■,#000000,underline",
+  5: "●,#000000,underline",
+  6: "=,#cccc22,undefined",
+  7: "↓,#000000,bold",
+  8: "→,undefined,underline",
+  9: "[✓],undefined,bold"
+};
+
+for (let i = 1; i <= 20; i++) {
+  (PROP_SPECS as any)[`TextEditor.Comment.Style${i}`] = {
+    panel: 'WorkoutPanel',
+    default: defaultCommentStyles[i] ?? '',
+    type: 'string',
+    candidates: '.*',
+    description: `コメントスタイル${i}`,
+    get: (app: TTApplication) => (app.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] ?? '',
+    set: (app: TTApplication, v: string) => { (app.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] = v; },
+  };
+  (PROP_SPECS as any)[`TextEditor.Bullet.Style${i}`] = {
+    panel: 'WorkoutPanel',
+    default: defaultBulletStyles[i] ?? '',
+    type: 'string',
+    candidates: '.*',
+    description: `箇条書きスタイル${i}`,
+    get: (app: TTApplication) => (app.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`] ?? '',
+    set: (app: TTApplication, v: string) => { (app.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`] = v; },
+  };
+}
+
 // ── TTUIStateManager ──────────────────────────────────────────────────────────
 
 export class TTUIStateManager {
   static readonly THINK_ID = '__tt_ui_state__';
-  private static readonly LS_KEY = 'tt-ui-state-v3';
+  private static readonly LS_KEY = 'tt-ui-state-v4';
   private static _instance: TTUIStateManager | null = null;
 
   private _app: TTApplication | null = null;
@@ -1107,18 +1128,6 @@ export class TTUIStateManager {
     // 通常の値変更：正規表現で検証
     if (pattern.test(value)) {
       let finalValue = value;
-      if (key === 'TextEditor.Bullet.StyleSet') {
-        const targetVal = '・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,';
-        if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
-          finalValue = targetVal;
-        }
-      }
-      if (key === 'TextEditor.Comment.StyleSet') {
-        const targetVal = '> ,>> ,>>> ,; ,| ,';
-        if (value !== targetVal && value.replace(/\s+/g, '') === targetVal.replace(/\s+/g, '')) {
-          finalValue = targetVal;
-        }
-      }
       spec.set(this._app, finalValue);
     }
   }

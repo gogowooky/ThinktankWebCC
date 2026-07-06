@@ -37,10 +37,13 @@ export interface MediaProps {
     selectionBackground: string;
     occurrenceBackground: string;
     headingStyles: { color: string; bgColor?: string; bold: boolean; underline: boolean }[];
-    commentStyleSet?: string;
-    commentColorSet?: string;
-    bulletStyleSet?: string;
-    bulletColorSet?: string;
-    bulletAttrSet?: string;
+    commentStyles?: EditorStyleItem[];
+    bulletStyles?: EditorStyleItem[];
   };
+}
+
+export interface EditorStyleItem {
+  symbol: string;
+  color: string;
+  attr: string;
 }
