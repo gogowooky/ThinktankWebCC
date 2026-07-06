@@ -19,56 +19,7 @@
 
 # Status
 
-## 完了： 260625　TextEditor.Comment.StyleSet
-description:    行頭文字
-key:            TextEditor.Comment.StyleSet
-current:        > ,>> ,>>> ,; ,| ,
-default:        > ,>> ,>>> ,; ,| ,
-type:           string
-candidates:     .*
 
-　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
-
-## 完了： 260706 TextEditor.Comment.ColorSet
-description:    コメント行の表示色
-key:            TextEditor.Comment.ColorSet
-current:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined
-default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined
-type:           string
-candidates:     .*
-
-## 完了： 260625 TextEditor.Bullet.StyleSet
-description:    行頭文字
-key:            TextEditor.Bullet.StyleSet
-current:        ・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,
-default:        ・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,
-type:           string
-candidates:     .*
-
-　[✓]の次は blank。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
-
-
-## 完了： 260706 TextEditor.Bullet.ColorSet
-TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
-その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の表示色で行全体を表示する。
-
-description:    行頭文字付行の表示色
-key:            TextEditor.Bullet.ColorSet
-current:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined
-default:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined
-type:           string
-candidates:     .*
-
-## 完了： 260706 TextEditor.Bullet.AttrSet
-TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
-その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の文字属性で行全体を表示する。
-
-description:    行頭文字付行の属性のセット
-key:            TextEditor.Bullet.AttrSet
-current:        undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined
-default:        undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined
-type:           string
-candidates:     .*
 
 
 
@@ -405,6 +356,22 @@ candidates:     .*
 　各行における 先頭の1文字目
 　　TextEditor.Comment.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの最後の文字を挿入
+## 完了： 260625　TextEditor.Comment.StyleSet
+description:    行頭文字
+key:            TextEditor.Comment.StyleSet
+current:        > ,>> ,>>> ,; ,| ,
+default:        > ,>> ,>>> ,; ,| ,
+type:           string
+candidates:     .*
+
+　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
+## 完了： 260706　TextEditor.Comment.ColorSet
+description:    コメント行の表示色
+key:            TextEditor.Comment.ColorSet
+current:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined
+default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #ffaaaa, undefined
+type:           string
+candidates:     .*
 
 
 
@@ -418,7 +385,35 @@ candidates:     .*
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
+## 完了： 260625　TextEditor.Bullet.StyleSet
+description:    行頭文字
+key:            TextEditor.Bullet.StyleSet
+current:        ・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,
+default:        ・,- ,* ,■ ,● ,= ,↓ ,→ ,[✓] ,
+type:           string
+candidates:     .*
 
+　[✓]の次は blank。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
+## 完了： 260706　TextEditor.Bullet.ColorSet
+TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
+その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の表示色で行全体を表示する。
+
+description:    行頭文字付行の表示色
+key:            TextEditor.Bullet.ColorSet
+current:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined
+default:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #000000, #000000, undefined, undefined
+type:           string
+candidates:     .*
+## 完了： 260706　TextEditor.Bullet.AttrSet
+TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
+その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の文字属性で行全体を表示する。
+
+description:    行頭文字付行の属性のセット
+key:            TextEditor.Bullet.AttrSet
+current:        undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined
+default:        undefined, undefined, undefined, underline, underline, undefined, undefined, bold, underline, bold, undefined
+type:           string
+candidates:     .*
 
 ## Action：　260619　TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo
