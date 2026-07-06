@@ -16,11 +16,10 @@
 # Action
 ## 完了：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
 　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
-　↓ CurPosを一つ上の行に移動する　→　終了
+　↓ CurPosを一つ上の表示されている行に移動する　→　終了
 ## 完了：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
 　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
-　↓ CurPosを一つ下の行に移動する　→　終了
-
+　↓ CurPosを一つ下の表示されている行に移動する　→　終了
 
 ## 完了：　Application.Resource.ImportFromLocal
 
@@ -401,6 +400,13 @@ candidates:     .*
 　※ダブルクリック（Left2）起動時などの状態更新ズレ（一回前のリンクが起動する問題）をエディタ同期関数（syncTextOnCursor）の導入により修正完了。
 
 # TextEditor Cursor ================================================================================================
+## 完了：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
+　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
+　↓ CurPosを一つ上の行に移動する　→　終了
+## 完了：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
+　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
+　↓ CurPosを一つ下の行に移動する　→　終了
+
 ## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
 　↓ CurPosが行先頭ではない場合、CurPosを現在行の先頭位置に移動する　→　終了
 　↓ CurPosが行先頭だがテキスト先頭ではない場合、CurPosをテキスト先頭位置に移動する　→　終了

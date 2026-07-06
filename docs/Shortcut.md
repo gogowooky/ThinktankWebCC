@@ -2,27 +2,7 @@ Keyboard Shortcuts
 
 # Keyboard Shortcuts
 
-> focus     ,exmode ,key                ,action                                         ,description
-
-# Editor カーソル
-
-*TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine      ,カーソルを一つ上の行の行頭に移動する
-*TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine      ,カーソルを一つ下の行の行頭に移動する
-
-*TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+    ,行頭に移動→全選択
-*TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+      ,行末尾に移動→全選択
-*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos           ,URL・パス・タグの起動
-*TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu       ,URL・パス・タグのメニュー表示
-
-*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos            ,URL・パス・タグの起動
-*TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos:Menu       ,URL・パス・タグのメニュー表示
-
-*TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
-*TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
-*TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
-*TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
-*TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
-*TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
+> focus     ,exmode ,key                      ,action                                           ,description
 
 # アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
@@ -40,14 +20,31 @@ Keyboard Shortcuts
 *           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
 *           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
-# Editor オプション　モード
-*           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
-*           ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:Toggle        ,行番号On/Off
-*           ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:Toggle           ,折返しOn/Off
-*           ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:Toggle            ,ミニマップOn/Off
-*           ,ExOpt  ,F                  ,TextEditor.FullWidthSpace.IsVisible:Toggle     ,全角スペース表示On/Off
-*           ,ExOpt  ,U                  ,TextEditor.UnicodeHighlight.IsVisible:Toggle   ,エラー文字強調On/Off
-*           ,ExOpt  ,B                  ,TextEditor.BracketPairColorization.IsVisible:Toggle ,括弧強調On/Off
+
+# Editor カーソル
+
+*TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine        ,カーソルを一つ上の行の行頭に移動する
+*TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine        ,カーソルを一つ下の行の行頭に移動する
+
+*TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+      ,行頭に移動→全選択
+*TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+        ,行末尾に移動→全選択
+*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
+*TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
+*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
+*TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
+
+*TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
+*TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
+*TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
+*TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
+*TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+O                  ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
+*TextEditor ,       ,Alt+B                  ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
+*TextEditor ,       ,Alt+P                  ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
+*TextEditor ,       ,Alt+N                  ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
+*TextEditor ,       ,Alt+Shift+P            ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+Shift+N            ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 
 # Editor 編集
 *           ,       ,Ctrl+Z             ,TextEditor.EditText.Undo    ,編集を元に戻す
@@ -79,5 +76,13 @@ Keyboard Shortcuts
 *TextEditor ,ExDate ,N                  ,TextEditor.EditDate.SetNow                     ,現在日時に設定
 *TextEditor ,ExDate ,Q                  ,TextEditor.EditDate.Reset                      ,元に戻す
 
+# Editor オプション　モード
+*           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
+*           ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:Toggle        ,行番号On/Off
+*           ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:Toggle           ,折返しOn/Off
+*           ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:Toggle            ,ミニマップOn/Off
+*           ,ExOpt  ,F                  ,TextEditor.FullWidthSpace.IsVisible:Toggle     ,全角スペース表示On/Off
+*           ,ExOpt  ,U                  ,TextEditor.UnicodeHighlight.IsVisible:Toggle   ,エラー文字強調On/Off
+*           ,ExOpt  ,B                  ,TextEditor.BracketPairColorization.IsVisible:Toggle ,括弧強調On/Off
 
 
