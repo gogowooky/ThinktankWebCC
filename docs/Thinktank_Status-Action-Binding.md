@@ -20,7 +20,12 @@
 # Status
 
 ## 完了： 260706 TextEditor.Comment.ColorSet
-TextEditor.Comment.StyleSeの行頭文字に対応した行全体の表示色。
+TextEditor.Comment.StyleSetで複数の行頭文字が定義された。
+その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の表示色で行全体を表示する。
+
+key:            TextEditor.Comment.StyleSet
+current:        > ,>> ,>>> ,; ,| ,# ,
+
 description:    コメント行の表示色
 key:            TextEditor.Comment.ColorSet
 current:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
@@ -32,6 +37,10 @@ candidates:     .*
 
 ## 完了： 260706 TextEditor.Bullet.ColorSet
 TextEditor.Bullet.StyleSetの行頭文字に対応した行全体の表示色。
+
+key:            TextEditor.Bullet.StyleSet
+current:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
+
 description:    行頭文字付行の表示色
 key:            TextEditor.Comment.ColorSet
 current:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined

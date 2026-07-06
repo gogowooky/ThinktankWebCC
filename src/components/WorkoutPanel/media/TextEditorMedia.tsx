@@ -623,10 +623,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           }
         });
       } else {
+        // インデントのスキップ
+        const indentMatch = lineContent.match(/^([ \t\u3000]*)(.*)/);
+        const textAfterIndent = indentMatch ? indentMatch[2] : lineContent;
+
         // コメント行の装飾
         let matchedComment = null;
         for (const c of sortedComments) {
-          if (lineContent.startsWith(c.text)) {
+          if (textAfterIndent.startsWith(c.text)) {
             matchedComment = c;
             break;
           }
@@ -645,9 +649,6 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           }
         } else {
           // コメントでなければ、Bulletの装飾をチェック
-          const indentMatch = lineContent.match(/^([ \t\u3000]*)(.*)/);
-          const textAfterIndent = indentMatch ? indentMatch[2] : lineContent;
-
           let matchedBullet = null;
           for (const b of sortedBullets) {
             if (textAfterIndent.startsWith(b.text)) {
