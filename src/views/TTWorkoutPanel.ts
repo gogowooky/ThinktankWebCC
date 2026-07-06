@@ -45,7 +45,11 @@ export class TextEditorSettings {
   CurrentEditorCursorPos = '0';
   CurrentEditorTextOnCursorPos = '';
 
-  Bullet = { StyleSet: "・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ," };
+  Bullet = {
+    StyleSet: "・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,",
+    ColorSet: "undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined",
+    AttrSet: "undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined"
+  };
   Comment = {
     StyleSet: "> ,>> ,>>> ,; ,| ,# ,",
     ColorSet: "#bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined"

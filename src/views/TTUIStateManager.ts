@@ -63,6 +63,8 @@ export type ConfigKey =
   | 'ToolBar.Color'
   | 'TextEditor.LineNumbers.IsVisible'
   | 'TextEditor.Bullet.StyleSet'
+  | 'TextEditor.Bullet.ColorSet'
+  | 'TextEditor.Bullet.AttrSet'
   | 'TextEditor.Comment.StyleSet'
   | 'TextEditor.Comment.ColorSet'
   | 'TextEditor.WordWrap.IsVisible'
@@ -272,6 +274,20 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '行頭文字の文字セット（CSV形式）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.StyleSet,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleSet = v; },
+  },
+  'TextEditor.Bullet.ColorSet': {
+    panel: 'WorkoutPanel',
+    default: 'undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbbb, #000000, #000000, undefined, undefined', type: 'string', candidates: '.*',
+    description: '行頭文字付行の表示色（CSV形式）',
+    get: (app) => app.WorkoutPanel.TextEditor.Bullet.ColorSet,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.ColorSet = v; },
+  },
+  'TextEditor.Bullet.AttrSet': {
+    panel: 'WorkoutPanel',
+    default: 'undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined', type: 'string', candidates: '.*',
+    description: '行頭文字付行の属性のセット（CSV形式）',
+    get: (app) => app.WorkoutPanel.TextEditor.Bullet.AttrSet,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.AttrSet = v; },
   },
   'TextEditor.Comment.StyleSet': {
     panel: 'WorkoutPanel',

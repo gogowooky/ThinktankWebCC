@@ -265,6 +265,9 @@ export function WorkoutArea({
     ],
     commentStyleSet: panel?.TextEditor.Comment.StyleSet ?? '',
     commentColorSet: panel?.TextEditor.Comment.ColorSet ?? '',
+    bulletStyleSet: panel?.TextEditor.Bullet.StyleSet ?? '',
+    bulletColorSet: panel?.TextEditor.Bullet.ColorSet ?? '',
+    bulletAttrSet: panel?.TextEditor.Bullet.AttrSet ?? '',
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
        panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
@@ -273,7 +276,8 @@ export function WorkoutArea({
        panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
        panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.HeadingStyles,
-       panel?.TextEditor.Comment.StyleSet, panel?.TextEditor.Comment.ColorSet]);
+       panel?.TextEditor.Comment.StyleSet, panel?.TextEditor.Comment.ColorSet,
+       panel?.TextEditor.Bullet.StyleSet, panel?.TextEditor.Bullet.ColorSet, panel?.TextEditor.Bullet.AttrSet]);
 
   const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
 

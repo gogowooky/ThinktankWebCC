@@ -39,5 +39,8 @@ export interface MediaProps {
     headingStyles: { color: string; bgColor?: string; bold: boolean; underline: boolean }[];
     commentStyleSet?: string;
     commentColorSet?: string;
+    bulletStyleSet?: string;
+    bulletColorSet?: string;
+    bulletAttrSet?: string;
   };
 }

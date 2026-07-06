@@ -510,6 +510,36 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }).join('\n');
     commentStyleEl.innerHTML = commentRules;
 
+    // Bullet用CSSの注入
+    let bulletStyleEl = document.getElementById('text-editor-bullet-styles');
+    if (!bulletStyleEl) {
+      bulletStyleEl = document.createElement('style');
+      bulletStyleEl.id = 'text-editor-bullet-styles';
+      document.head.appendChild(bulletStyleEl);
+    }
+    const bulletColors = (editorSettings.bulletColorSet || '').split(',').map(c => c.trim());
+    const bulletAttrs = (editorSettings.bulletAttrSet || '').split(',').map(c => c.trim());
+    const maxLen = Math.max(bulletColors.length, bulletAttrs.length);
+    const bulletRules = [];
+    for (let i = 0; i < maxLen; i++) {
+      const color = bulletColors[i];
+      const attr = bulletAttrs[i];
+      const hasColor = color && color !== 'undefined' && color !== 'none';
+      const hasAttr = attr && attr !== 'undefined' && attr !== 'none';
+      if (hasColor || hasAttr) {
+        const isBold = hasAttr && attr.includes('bold');
+        const isUnderline = hasAttr && attr.includes('underline');
+        bulletRules.push(`
+          .custom-bullet-b${i + 1} {
+            ${hasColor ? `color: ${color} !important;` : ''}
+            ${isBold ? `font-weight: bold !important;` : ''}
+            ${isUnderline ? `text-decoration: underline !important;` : ''}
+          }
+        `);
+      }
+    }
+    bulletStyleEl.innerHTML = bulletRules.join('\n');
+
     updateDecorations();
 
   }, [editorSettings]);
@@ -534,6 +564,18 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       .map((text, originalIndex) => ({ text, originalIndex }));
     const sortedComments = comments.filter(c => c.text !== '').sort((a, b) => b.text.length - a.text.length);
     const colors = ColorSet.split(',').map(c => c.trim());
+
+    // Bullet設定のパース
+    const BulletStyleSet = editorSettings.bulletStyleSet || '';
+    const BulletColorSet = editorSettings.bulletColorSet || '';
+    const BulletAttrSet = editorSettings.bulletAttrSet || '';
+    const bulletParts = BulletStyleSet.split(',');
+    const bullets = bulletParts
+      .filter((c, idx) => c !== '' || idx === bulletParts.length - 1)
+      .map((text, originalIndex) => ({ text, originalIndex }));
+    const sortedBullets = bullets.filter(b => b.text !== '').sort((a, b) => b.text.length - a.text.length);
+    const bulletColors = BulletColorSet.split(',').map(c => c.trim());
+    const bulletAttrs = BulletAttrSet.split(',').map(c => c.trim());
 
     // --- ハイライトグループの動的スタイル注入 ---
     let highlightStyleEl = document.getElementById('text-editor-highlight-styles');
@@ -600,6 +642,35 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
                 inlineClassName: `custom-comment-c${matchedComment.originalIndex + 1}`
               }
             });
+          }
+        } else {
+          // コメントでなければ、Bulletの装飾をチェック
+          const indentMatch = lineContent.match(/^([ \t\u3000]*)(.*)/);
+          const textAfterIndent = indentMatch ? indentMatch[2] : lineContent;
+
+          let matchedBullet = null;
+          for (const b of sortedBullets) {
+            if (textAfterIndent.startsWith(b.text)) {
+              matchedBullet = b;
+              break;
+            }
+          }
+
+          if (matchedBullet) {
+            const color = bulletColors[matchedBullet.originalIndex];
+            const attr = bulletAttrs[matchedBullet.originalIndex];
+            const hasColor = color && color !== 'undefined' && color !== 'none';
+            const hasAttr = attr && attr !== 'undefined' && attr !== 'none';
+
+            if (hasColor || hasAttr) {
+              newDecorations.push({
+                range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
+                options: {
+                  isWholeLine: true,
+                  inlineClassName: `custom-bullet-b${matchedBullet.originalIndex + 1}`
+                }
+              });
+            }
           }
         }
       }
