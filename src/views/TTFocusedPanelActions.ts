@@ -1908,41 +1908,21 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           return;
         }
         const pos = editor.getPosition();
-        const model = editor.getModel();
-        if (!pos || !model) {
-          item.Result = '[モデル/位置なし]';
+        if (!pos) {
+          item.Result = '[位置なし]';
           return;
         }
 
         const lineNumber = pos.lineNumber;
 
         if (lineNumber <= 1) {
-          const newPos = { lineNumber: 1, column: 1 };
-          editor.setPosition(newPos);
-          editor.revealLineInCenterIfOutsideViewport(1);
+          editor.trigger('keyboard', 'cursorLineStart', null);
           item.Result = '文書先頭（L1:C1）に移動しました';
         } else {
-          // 上の行に向かって、最初に見つかる表示されている（折りたたまれていない）行を探索する
-          let targetLine = lineNumber - 1;
-          while (targetLine >= 1) {
-            if (isLineVisible(editor, targetLine, model)) {
-              break;
-            }
-            targetLine--;
-          }
-
-          if (targetLine >= 1) {
-            const newPos = { lineNumber: targetLine, column: 1 };
-            editor.setPosition(newPos);
-            editor.revealLineInCenterIfOutsideViewport(targetLine);
-            item.Result = `一つ上の表示されている行の行頭（L${targetLine}:C1）に移動しました`;
-          } else {
-            // 表示されている上の行が見つからない場合は先頭行へ
-            const newPos = { lineNumber: 1, column: 1 };
-            editor.setPosition(newPos);
-            editor.revealLineInCenterIfOutsideViewport(1);
-            item.Result = '文書先頭（L1:C1）に移動しました';
-          }
+          // Monacoのビルトインコマンドを使用して、折りたたみを維持したまま移動する
+          editor.trigger('keyboard', 'cursorUp', null);
+          editor.trigger('keyboard', 'cursorLineStart', null);
+          item.Result = '一つ上の表示されている行の行頭に移動しました';
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
@@ -1970,34 +1950,13 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         const totalLines = model.getLineCount();
 
         if (lineNumber >= totalLines) {
-          const lastLineMaxColumn = model.getLineMaxColumn(totalLines);
-          const newPos = { lineNumber: totalLines, column: lastLineMaxColumn };
-          editor.setPosition(newPos);
-          editor.revealLineInCenterIfOutsideViewport(totalLines);
-          item.Result = `文書末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました`;
+          editor.trigger('keyboard', 'cursorEnd', null);
+          item.Result = '文書末尾に移動しました';
         } else {
-          // 下の行に向かって、最初に見つかる表示されている（折りたたまれていない）行を探索する
-          let targetLine = lineNumber + 1;
-          while (targetLine <= totalLines) {
-            if (isLineVisible(editor, targetLine, model)) {
-              break;
-            }
-            targetLine++;
-          }
-
-          if (targetLine <= totalLines) {
-            const newPos = { lineNumber: targetLine, column: 1 };
-            editor.setPosition(newPos);
-            editor.revealLineInCenterIfOutsideViewport(targetLine);
-            item.Result = `一つ下の表示されている行の行頭（L${targetLine}:C1）に移動しました`;
-          } else {
-            // 表示されている下の行が見つからない場合は最終行末尾へ
-            const lastLineMaxColumn = model.getLineMaxColumn(totalLines);
-            const newPos = { lineNumber: totalLines, column: lastLineMaxColumn };
-            editor.setPosition(newPos);
-            editor.revealLineInCenterIfOutsideViewport(totalLines);
-            item.Result = `文書末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました`;
-          }
+          // Monacoのビルトインコマンドを使用して、折りたたみを維持したまま移動する
+          editor.trigger('keyboard', 'cursorDown', null);
+          editor.trigger('keyboard', 'cursorLineStart', null);
+          item.Result = '一つ下の表示されている行の行頭に移動しました';
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;

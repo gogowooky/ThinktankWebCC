@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "335abf7",
-  "commitDateTime": "2026-07-06-163300",
-  "commitMessage": "fix: カーソル移動で折りたたまれた見出しが展開されないように修正"
+  "commitId": "b070ab1",
+  "commitDateTime": "2026-07-06-164100",
+  "commitMessage": "fix: カーソル移動で折りたたまれた見出しが自動展開される問題をビルトインコマンドに切り替えて修正"
 }
