@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.9",
+  "version": "1.2.10",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "acea52b",
-  "commitDateTime": "2026-07-07-074150",
-  "commitMessage": "docs: Mark Comment and Bullet settings as completed in their new locations"
+  "commitId": "01d958d",
+  "commitDateTime": "2026-07-07-080204",
+  "commitMessage": "refactor: Change Comment and Bullet styles to composite parameter values"
 }
