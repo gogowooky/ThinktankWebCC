@@ -889,7 +889,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
 
 export class TTUIStateManager {
   static readonly THINK_ID = '__tt_ui_state__';
-  private static readonly LS_KEY = 'tt-ui-state-v1';
+  private static readonly LS_KEY = 'tt-ui-state-v2';
   private static _instance: TTUIStateManager | null = null;
 
   private _app: TTApplication | null = null;
