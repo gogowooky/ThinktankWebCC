@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "3cf35fa",
-  "commitDateTime": "2026-07-06-164700",
-  "commitMessage": "git-update: バージョン更新とコミットIDの同期"
+  "commitId": "cb41b09",
+  "commitDateTime": "2026-07-06-170800",
+  "commitMessage": "feat: ワークアウトパネルのペインレイアウトおよびロード状態の永続化と復元機能を追加"
 }

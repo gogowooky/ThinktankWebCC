@@ -29,6 +29,7 @@ import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
 import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
 import { SECTION_STYLE_DEFAULTS, HIGHLIGHT_STYLE_DEFAULTS, collectAreaIds } from './TTWorkoutPanel';
+import { TTWorkoutArea } from './TTWorkoutArea';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
@@ -117,6 +118,8 @@ export type ConfigKey =
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
   | 'WorkoutPanel.FocusedPane.Mode'
+  | 'WorkoutPanel.Pane.Layout'
+  | 'WorkoutPanel.Pane.Display'
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | string; // プリセットキーなどの動的拡張を許容
@@ -810,6 +813,51 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     isConst: true,
     get: (app) => app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos ?? '',
     set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos = v; },
+  },
+  'WorkoutPanel.Pane.Layout': {
+    panel: 'WorkoutPanel',
+    default: 'null', type: 'string', candidates: '.*',
+    description: 'Paneレイアウト構造(JSON)',
+    get: (app) => app.WorkoutPanel.Layout ? JSON.stringify(app.WorkoutPanel.Layout) : 'null',
+    set: (app, v) => {
+      try {
+        app.WorkoutPanel.Layout = (v && v !== 'null') ? JSON.parse(v) : null;
+      } catch (e) {
+        console.error('Failed to parse WorkoutPanel.Pane.Layout', e);
+      }
+    },
+  },
+  'WorkoutPanel.Pane.Display': {
+    panel: 'WorkoutPanel',
+    default: '[]', type: 'string', candidates: '.*',
+    description: '各Paneのロード状態(JSON)',
+    get: (app) => {
+      const list = app.WorkoutPanel.Areas.map(a => ({
+        id: a.ID,
+        resourceId: a.ResourceID,
+        mediaType: a.MediaType,
+        title: a.Title
+      }));
+      return JSON.stringify(list);
+    },
+    set: (app, v) => {
+      try {
+        const list = v ? JSON.parse(v) : [];
+        if (!Array.isArray(list)) return;
+        
+        // 既存の Areas を一度クリアし、ID情報を保持したまま再構築
+        app.WorkoutPanel.Areas = [];
+        for (const item of list) {
+          const area = new TTWorkoutArea();
+          area.ID = item.id;
+          area._parent = app.WorkoutPanel;
+          area.OpenThink(item.resourceId, item.mediaType, item.title);
+          app.WorkoutPanel.Areas = [...app.WorkoutPanel.Areas, area];
+        }
+      } catch (e) {
+        console.error('Failed to parse WorkoutPanel.Pane.Display', e);
+      }
+    },
   },
 };
 
