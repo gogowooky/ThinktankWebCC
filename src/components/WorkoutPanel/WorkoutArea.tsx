@@ -65,12 +65,24 @@ export function WorkoutArea({
 
   useEffect(() => {
     setIsDirty(false);
-    const t = vault.GetThink(area.ResourceID);
-    if (!t) {
-      setLoadedResourceId(area.ResourceID);
-      return;
-    }
+
     const loadAndRestore = async () => {
+      const t = vault.GetThink(area.ResourceID);
+      if (!t) {
+        if (!vault.IsLoaded) {
+          const updateKey = `WorkoutArea-load-${area.ID}`;
+          vault.AddOnUpdate(updateKey, () => {
+            if (vault.IsLoaded) {
+              vault.RemoveOnUpdate(updateKey);
+              loadAndRestore();
+            }
+          });
+        } else {
+          setLoadedResourceId(area.ResourceID);
+        }
+        return;
+      }
+
       if (t.IsMetaOnly) {
         await t.LoadContent();
       }
@@ -81,7 +93,12 @@ export function WorkoutArea({
         panel.SetHighlightWord(t.Metadata.highlightWord);
       }
     };
+
     loadAndRestore();
+
+    return () => {
+      vault.RemoveOnUpdate(`WorkoutArea-load-${area.ID}`);
+    };
   }, [area.ResourceID, vault, panel]);
 
   // ハイライト文字が変更されたら、フォーカスされているペインの think.Metadata に同期する

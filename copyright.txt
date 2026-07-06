@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "cb41b09",
-  "commitDateTime": "2026-07-06-170800",
-  "commitMessage": "feat: ワークアウトパネルのペインレイアウトおよびロード状態の永続化と復元機能を追加"
+  "commitId": "437d1db",
+  "commitDateTime": "2026-07-06-171100",
+  "commitMessage": "fix: アプリ新規起動時にペインの内容が表示されないタイミングバグを修正"
 }
