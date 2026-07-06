@@ -19,12 +19,19 @@
 
 # Status
 
+## Status： 260625　TextEditor.Comment.StyleSet
+description:    行頭文字
+key:            TextEditor.Comment.StyleSet
+current:        > ,>> ,>>> ,; ,| ,# ,
+default:        > ,>> ,>>> ,; ,| ,# ,
+type:           string
+candidates:     .*
+
+　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
+
 ## 完了： 260706 TextEditor.Comment.ColorSet
 TextEditor.Comment.StyleSetで複数の行頭文字が定義された。
 その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の表示色で行全体を表示する。
-
-key:            TextEditor.Comment.StyleSet
-current:        > ,>> ,>>> ,; ,| ,# ,
 
 description:    コメント行の表示色
 key:            TextEditor.Comment.ColorSet
@@ -33,13 +40,20 @@ default:        #bbddbb, #bbbbdd, #ddbbbb, #bbbbbb, #555555, #ffaaaa, undefined
 type:           string
 candidates:     .*
 
-
-
-## 修正： 260706 TextEditor.Bullet.ColorSet
-TextEditor.Bullet.StyleSetの行頭文字に対応した行全体の表示色。
-
+## Status：　260625　TextEditor.Bullet.StyleSet
+description:    行頭文字
 key:            TextEditor.Bullet.StyleSet
 current:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
+default:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
+type:           string
+candidates:     .*
+
+　[✓]の次は blank。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
+
+
+## 完了： 260706 TextEditor.Bullet.ColorSet
+TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
+その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の表示色で行全体を表示する。
 
 description:    行頭文字付行の表示色
 key:            TextEditor.Bullet.ColorSet
@@ -48,8 +62,10 @@ default:        undefined, undefined, #cc2222, #000000, #000000, #cccc22, #bbbbb
 type:           string
 candidates:     .*
 
-## 修正： 260706 TextEditor.Bullet.AttrSet
-TextEditor.Bullet.StyleSetの行頭文字に対応した行全体の文字属性。
+## 完了： 260706 TextEditor.Bullet.AttrSet
+TextEditor.Bullet.StyleSetで複数の行頭文字が定義された。
+その行頭文字または空白文字＋行頭文字で始まる行は、各行頭文字に対応し本設定値の文字属性で行全体を表示する。
+
 description:    行頭文字付行の属性のセット
 key:            TextEditor.Bullet.AttrSet
 current:        undefined, undefined, undefined, underline, underline, underline, undefined, undefined, bold, underline, bold, undefined
@@ -392,15 +408,6 @@ candidates:     .*
 　各行における 先頭の1文字目
 　　TextEditor.Comment.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの最後の文字を挿入
-## Status： 260625　TextEditor.Comment.StyleSet
-description:    行頭文字
-key:            TextEditor.Comment.StyleSet
-current:        > ,>> ,>>> ,; ,| ,# ,
-default:        > ,>> ,>>> ,; ,| ,# ,
-type:           string
-candidates:     .*
-
-　# の次は blank。TextEditor.Comment.NextStyleやTextEditor.Comment.PrevStyleでは# と> の間に行頭文字無し（blank）の状態に移行すること。
 
 
 
@@ -414,15 +421,6 @@ candidates:     .*
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
-## Status：　260625　TextEditor.Bullet.StyleSet
-description:    行頭文字
-key:            TextEditor.Bullet.StyleSet
-current:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
-default:        ・,- ,* ,■ ,● ,= ,> ,# ,↓ ,→ ,[✓] ,
-type:           string
-candidates:     .*
-
-　[✓]の次は blank。TextEditor.Bullet.NextStyleやTextEditor.Bullet.PrevStyleでは[✓]と・の間に行頭文字無し（blank）の状態に移行すること。
 
 
 ## Action：　260619　TextEditor.EditText.Undo
