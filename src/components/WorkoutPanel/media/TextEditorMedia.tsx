@@ -503,7 +503,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     const commentRules = colors.map((color, index) => {
       if (!color || color === 'undefined' || color === 'none') return '';
       return `
-        .custom-comment-c${index + 1} {
+        .custom-comment-c${index + 1}, .custom-comment-c${index + 1} * {
           color: ${color} !important;
         }
       `;
@@ -530,7 +530,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         const isBold = hasAttr && attr.includes('bold');
         const isUnderline = hasAttr && attr.includes('underline');
         bulletRules.push(`
-          .custom-bullet-b${i + 1} {
+          .custom-bullet-b${i + 1}, .custom-bullet-b${i + 1} * {
             ${hasColor ? `color: ${color} !important;` : ''}
             ${isBold ? `font-weight: bold !important;` : ''}
             ${isUnderline ? `text-decoration: underline !important;` : ''}
