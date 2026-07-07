@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.13",
+  "version": "1.2.14",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "b758137",
-  "commitDateTime": "2026-07-07-102458",
-  "commitMessage": "build: Bump version to 1.2.13 and update copyright.txt"
+  "commitId": "de0b53d",
+  "commitDateTime": "2026-07-07-111912",
+  "commitMessage": "feat: Rename TextEditor Url/Filepath/Tag Style1 keys to Style and restore TTUIStateManager"
 }

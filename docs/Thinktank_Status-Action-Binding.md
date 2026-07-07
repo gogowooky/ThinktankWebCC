@@ -18,17 +18,17 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
-## 実装：　TextEditor.Url.Style
+## 完了：　260707　TextEditor.Url.Style
 TextEditor.CurrentEditor.DoOnCursorPosで認識されるUrlの文字スタイル（文字色, 背景色, 属性）です。
 
 description:    Urlのスタイル
-key:            TextEditor.Highlighter.Style
+key:            TextEditor.Url.Style
 current:        #1010edff, undefined, underline
 default:        #1010edff, undefined, underline
 type:           string
 candidates:     .*
 
-## 実装：　TextEditor.Filepath.Style
+## 完了：　260707　TextEditor.Filepath.Style
 TextEditor.CurrentEditor.DoOnCursorPosで認識されるFilepathの文字スタイル（文字色, 背景色, 属性）です。
 
 description:    Filepathのスタイル
@@ -38,7 +38,7 @@ default:        undefined, undefined, underline
 type:           string
 candidates:     .*
 
-## 実装：　TextEditor.Tag.Style
+## 完了：　260707　TextEditor.Tag.Style
 TextEditor.CurrentEditor.DoOnCursorPosで認識されるTagの文字スタイル（文字色, 背景色, 属性）です。
 
 description:    Tagのスタイル

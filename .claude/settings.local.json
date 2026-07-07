@@ -128,7 +128,8 @@
       "Bash(node_modules/.bin/electron --version)",
       "Bash(npx electron *)",
       "Bash(git commit *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git push *)"
     ]
   }
 }
