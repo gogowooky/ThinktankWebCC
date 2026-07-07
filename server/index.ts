@@ -51,6 +51,14 @@ app.use('/api/system', createSystemRoutes());
 app.use(express.static(path.join(projectRoot, 'dist')));
 app.get(/.*/, (req, res) => {
   if (req.path.startsWith('/api/')) { res.status(404).json({ error: 'Not found' }); return; }
+
+  // アセット（/assets/以下）または明示的な拡張子を持つファイルへのリクエストで、
+  // 物理ファイルが存在しない場合は index.html ではなく 404 を返す
+  if (req.path.startsWith('/assets/') || /\.[a-zA-Z0-9]+$/.test(req.path)) {
+    res.status(404).send('Not Found');
+    return;
+  }
+
   const indexPath = path.join(projectRoot, 'dist', 'index.html');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);

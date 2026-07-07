@@ -1,4 +1,4 @@
-const CACHE_NAME = 'thinktank-pwa-v1';
+const CACHE_NAME = 'thinktank-pwa-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -35,12 +35,20 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Network-First 戦略: ネットワークから取得し、成功したらキャッシュを更新。失敗したらキャッシュから返す。
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(event.request);
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });
