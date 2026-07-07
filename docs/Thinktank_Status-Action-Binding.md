@@ -18,8 +18,37 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
+## 完了： 260707　TextEditor.Url.Style1
+Urlのスタイル（文字色, 背景色, 属性）です。
 
+description:    Urlのスタイル
+key:            TextEditor.Url.Style1
+current:        #1010edff, undefined, underline
+default:        #1010edff, undefined, underline
+type:           string
+candidates:     .*
 
+## 完了： 260707　TextEditor.Filepath.Style1
+Filepathのスタイル（文字色, 背景色, 属性）です。
+
+description:    Filepathのスタイル
+key:            TextEditor.Filepath.Style1
+current:        undefined, undefined, underline
+default:        undefined, undefined, underline
+type:           string
+candidates:     .*
+
+## 完了： 260707　TextEditor.Tag.Style1
+Tagのスタイル（文字色, 背景色, 属性）です。
+
+description:    Tagのスタイル
+key:            TextEditor.Tag.Style1
+current:        #4ba402ff, undefined, underline|bold
+default:        #4ba402ff, undefined, underline|bold
+type:           string
+candidates:     .*
+
+将来的にタグごとに分ける可能性あり、
 
 
 

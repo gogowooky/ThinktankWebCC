@@ -71,6 +71,9 @@ export class TextEditorSettings {
   Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };
   HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];
   HighlightStyles: HighlightStyle[] = [...HIGHLIGHT_STYLE_DEFAULTS];
+  UrlStyle: SectionStyle = { color: '#1010edff', bold: false, underline: true };
+  FilepathStyle: SectionStyle = { color: 'undefined', bold: false, underline: true };
+  TagStyle: SectionStyle = { color: '#4ba402ff', bold: true, underline: true };
 
 
 
@@ -256,6 +259,18 @@ export class TTWorkoutPanel extends TTUIItem {
       this.TextEditor.HighlightStyles = this.TextEditor.HighlightStyles.map((s, i) => i === groupIndex ? { ...s, ...style } : s);
       this.NotifyUpdated();
     }
+  }
+  public SetTextEditorUrlStyle(style: Partial<SectionStyle>) {
+    this.TextEditor.UrlStyle = { ...this.TextEditor.UrlStyle, ...style };
+    this.NotifyUpdated();
+  }
+  public SetTextEditorFilepathStyle(style: Partial<SectionStyle>) {
+    this.TextEditor.FilepathStyle = { ...this.TextEditor.FilepathStyle, ...style };
+    this.NotifyUpdated();
+  }
+  public SetTextEditorTagStyle(style: Partial<SectionStyle>) {
+    this.TextEditor.TagStyle = { ...this.TextEditor.TagStyle, ...style };
+    this.NotifyUpdated();
   }
 
   // ── Area CRUD ──────────────────────────────────────────────────────────

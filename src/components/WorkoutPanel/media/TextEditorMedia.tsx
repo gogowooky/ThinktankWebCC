@@ -539,6 +539,53 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }).join('\n');
     bulletStyleEl.innerHTML = bulletRules;
 
+    // URL/Filepath/Tag用のCSSの注入
+    let linkStyleEl = document.getElementById('text-editor-link-styles');
+    if (!linkStyleEl) {
+      linkStyleEl = document.createElement('style');
+      linkStyleEl.id = 'text-editor-link-styles';
+      document.head.appendChild(linkStyleEl);
+    }
+    const urlStyle = editorSettings.urlStyle;
+    const filepathStyle = editorSettings.filepathStyle;
+    const tagStyle = editorSettings.tagStyle;
+
+    const linkRules = [];
+    if (urlStyle) {
+      const hasBg = urlStyle.bgColor && urlStyle.bgColor !== 'undefined' && urlStyle.bgColor !== 'none';
+      linkRules.push(`
+        .custom-url-style {
+          color: ${urlStyle.color && urlStyle.color !== 'undefined' ? urlStyle.color : 'inherit'} !important;
+          ${hasBg ? `background-color: ${urlStyle.bgColor} !important;` : ''}
+          ${urlStyle.bold ? 'font-weight: bold !important;' : ''}
+          ${urlStyle.underline ? 'text-decoration: underline !important;' : ''}
+        }
+      `);
+    }
+    if (filepathStyle) {
+      const hasBg = filepathStyle.bgColor && filepathStyle.bgColor !== 'undefined' && filepathStyle.bgColor !== 'none';
+      linkRules.push(`
+        .custom-filepath-style {
+          color: ${filepathStyle.color && filepathStyle.color !== 'undefined' ? filepathStyle.color : 'inherit'} !important;
+          ${hasBg ? `background-color: ${filepathStyle.bgColor} !important;` : ''}
+          ${filepathStyle.bold ? 'font-weight: bold !important;' : ''}
+          ${filepathStyle.underline ? 'text-decoration: underline !important;' : ''}
+        }
+      `);
+    }
+    if (tagStyle) {
+      const hasBg = tagStyle.bgColor && tagStyle.bgColor !== 'undefined' && tagStyle.bgColor !== 'none';
+      linkRules.push(`
+        .custom-tag-style {
+          color: ${tagStyle.color && tagStyle.color !== 'undefined' ? tagStyle.color : 'inherit'} !important;
+          ${hasBg ? `background-color: ${tagStyle.bgColor} !important;` : ''}
+          ${tagStyle.bold ? 'font-weight: bold !important;' : ''}
+          ${tagStyle.underline ? 'text-decoration: underline !important;' : ''}
+        }
+      `);
+    }
+    linkStyleEl.innerHTML = linkRules.join('\n');
+
     updateDecorations();
 
   }, [editorSettings]);
@@ -717,7 +764,48 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
                 }
               });
             }
-          });
+        });
+      }
+
+      // URL のハイライト
+      const urlRegex = /https?:\/\/[^\s")]+/g;
+      let urlMatch;
+      while ((urlMatch = urlRegex.exec(lineContent)) !== null) {
+        const startCol = urlMatch.index + 1;
+        const endCol = startCol + urlMatch[0].length;
+        newDecorations.push({
+          range: new (window as any).monaco.Range(i, startCol, i, endCol),
+          options: {
+            inlineClassName: 'custom-url-style'
+          }
+        });
+      }
+
+      // Filepath のハイライト
+      const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
+      let fileMatch;
+      while ((fileMatch = fileRegex.exec(lineContent)) !== null) {
+        const startCol = fileMatch.index + 1;
+        const endCol = startCol + fileMatch[0].length;
+        newDecorations.push({
+          range: new (window as any).monaco.Range(i, startCol, i, endCol),
+          options: {
+            inlineClassName: 'custom-filepath-style'
+          }
+        });
+      }
+
+      // Tag のハイライト
+      const tagRegex = /\[([^\]]+)\]/g;
+      let tagMatch;
+      while ((tagMatch = tagRegex.exec(lineContent)) !== null) {
+        const startCol = tagMatch.index + 1;
+        const endCol = startCol + tagMatch[0].length;
+        newDecorations.push({
+          range: new (window as any).monaco.Range(i, startCol, i, endCol),
+          options: {
+            inlineClassName: 'custom-tag-style'
+          }
         });
       }
     }

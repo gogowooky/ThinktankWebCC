@@ -87,6 +87,9 @@ export type ConfigKey =
   | 'TextEditor.Highlighter.Style4'
   | 'TextEditor.Highlighter.Style5'
   | 'TextEditor.Highlighter.Style6'
+  | 'TextEditor.Url.Style1'
+  | 'TextEditor.Filepath.Style1'
+  | 'TextEditor.Tag.Style1'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
   | 'Application.FocusedPanel.Name'
@@ -398,6 +401,75 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       }];
     })
   ),
+  'TextEditor.Url.Style1': {
+    panel: 'WorkoutPanel',
+    default: '#1010edff, undefined, underline', type: 'string', candidates: '.*',
+    description: 'Urlのスタイル',
+    get: (app) => {
+      const style = app.WorkoutPanel.TextEditor.UrlStyle;
+      if (!style) return 'undefined, undefined, none';
+      const attrs: string[] = [];
+      if (style.bold) attrs.push('bold');
+      if (style.underline) attrs.push('underline');
+      const attrStr = attrs.join('|') || 'none';
+      return `${style.color}, ${style.bgColor ?? 'undefined'}, ${attrStr}`;
+    },
+    set: (app, v) => {
+      const parts = v.split(',').map(s => s.trim());
+      const color = parts[0] || 'undefined';
+      const bgColor = parts[1] || 'undefined';
+      const attrStr = parts[2] || 'none';
+      const bold = attrStr.includes('bold');
+      const underline = attrStr.includes('underline');
+      app.WorkoutPanel.SetTextEditorUrlStyle({ color, bgColor, bold, underline });
+    }
+  },
+  'TextEditor.Filepath.Style1': {
+    panel: 'WorkoutPanel',
+    default: 'undefined, undefined, underline', type: 'string', candidates: '.*',
+    description: 'Filepathのスタイル',
+    get: (app) => {
+      const style = app.WorkoutPanel.TextEditor.FilepathStyle;
+      if (!style) return 'undefined, undefined, none';
+      const attrs: string[] = [];
+      if (style.bold) attrs.push('bold');
+      if (style.underline) attrs.push('underline');
+      const attrStr = attrs.join('|') || 'none';
+      return `${style.color}, ${style.bgColor ?? 'undefined'}, ${attrStr}`;
+    },
+    set: (app, v) => {
+      const parts = v.split(',').map(s => s.trim());
+      const color = parts[0] || 'undefined';
+      const bgColor = parts[1] || 'undefined';
+      const attrStr = parts[2] || 'none';
+      const bold = attrStr.includes('bold');
+      const underline = attrStr.includes('underline');
+      app.WorkoutPanel.SetTextEditorFilepathStyle({ color, bgColor, bold, underline });
+    }
+  },
+  'TextEditor.Tag.Style1': {
+    panel: 'WorkoutPanel',
+    default: '#4ba402ff, undefined, underline|bold', type: 'string', candidates: '.*',
+    description: 'Tagのスタイル',
+    get: (app) => {
+      const style = app.WorkoutPanel.TextEditor.TagStyle;
+      if (!style) return 'undefined, undefined, none';
+      const attrs: string[] = [];
+      if (style.bold) attrs.push('bold');
+      if (style.underline) attrs.push('underline');
+      const attrStr = attrs.join('|') || 'none';
+      return `${style.color}, ${style.bgColor ?? 'undefined'}, ${attrStr}`;
+    },
+    set: (app, v) => {
+      const parts = v.split(',').map(s => s.trim());
+      const color = parts[0] || 'undefined';
+      const bgColor = parts[1] || 'undefined';
+      const attrStr = parts[2] || 'none';
+      const bold = attrStr.includes('bold');
+      const underline = attrStr.includes('underline');
+      app.WorkoutPanel.SetTextEditorTagStyle({ color, bgColor, bold, underline });
+    }
+  },
 
 
   // ── ToolBar 表示モード ────────────────────────────────────────────────

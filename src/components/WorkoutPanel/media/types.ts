@@ -39,6 +39,9 @@ export interface MediaProps {
     headingStyles: { color: string; bgColor?: string; bold: boolean; underline: boolean }[];
     commentStyles?: EditorStyleItem[];
     bulletStyles?: EditorStyleItem[];
+    urlStyle?: { color: string; bgColor?: string; bold: boolean; underline: boolean };
+    filepathStyle?: { color: string; bgColor?: string; bold: boolean; underline: boolean };
+    tagStyle?: { color: string; bgColor?: string; bold: boolean; underline: boolean };
   };
 }
 

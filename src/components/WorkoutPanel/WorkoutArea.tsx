@@ -287,7 +287,10 @@ export function WorkoutArea({
         { color: '#c586c0', bold: true, underline: false },
       ],
       commentStyles,
-      bulletStyles
+      bulletStyles,
+      urlStyle:            panel?.TextEditor.UrlStyle ?? { color: '#1010edff', bold: false, underline: true },
+      filepathStyle:       panel?.TextEditor.FilepathStyle ?? { color: 'undefined', bold: false, underline: true },
+      tagStyle:            panel?.TextEditor.TagStyle ?? { color: '#4ba402ff', bold: true, underline: true },
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
@@ -297,6 +300,7 @@ export function WorkoutArea({
        panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
        panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.HeadingStyles,
+       panel?.TextEditor.UrlStyle, panel?.TextEditor.FilepathStyle, panel?.TextEditor.TagStyle,
        JSON.stringify(panel?.TextEditor.Comment), JSON.stringify(panel?.TextEditor.Bullet)]);
 
   const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
