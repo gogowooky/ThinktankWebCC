@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.18",
+  "version": "1.2.19",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "veneno-02",
-  "commitId": "f252676",
-  "commitDateTime": "2026-07-07-122654",
-  "commitMessage": "chore: Bump version to 1.2.18"
+  "commitPC": "E15",
+  "commitId": "ac72ac9",
+  "commitDateTime": "2026-07-08-000055",
+  "commitMessage": "fix: Resolve deployment blank page issue by fixing SW caching and Express routing"
 }
