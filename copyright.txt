@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.19",
+  "version": "1.2.20",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "ac72ac9",
-  "commitDateTime": "2026-07-08-000055",
-  "commitMessage": "fix: Resolve deployment blank page issue by fixing SW caching and Express routing"
+  "commitId": "6422ca0",
+  "commitDateTime": "2026-07-08-000127",
+  "commitMessage": "build: Bump version to 1.2.19 and update copyright.txt"
 }
