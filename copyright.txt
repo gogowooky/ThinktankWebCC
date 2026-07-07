@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.14",
+  "version": "1.2.15",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "de0b53d",
-  "commitDateTime": "2026-07-07-111912",
-  "commitMessage": "feat: Rename TextEditor Url/Filepath/Tag Style1 keys to Style and restore TTUIStateManager"
+  "commitId": "5217c67",
+  "commitDateTime": "2026-07-07-112809",
+  "commitMessage": "fix: Restore emptied WorkoutPanel files and fix TextEditorMedia syntax error"
 }

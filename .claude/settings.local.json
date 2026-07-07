@@ -129,7 +129,8 @@
       "Bash(npx electron *)",
       "Bash(git commit *)",
       "Bash(git add *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npx tsc *)"
     ]
   }
 }
