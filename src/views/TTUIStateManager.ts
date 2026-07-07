@@ -76,39 +76,17 @@ export type ConfigKey =
   | 'TextEditor.Text.Color'
   | 'TextEditor.Selection.BgColor'
   | 'TextEditor.Occurrence.BgColor'
-  | 'TextEditor.Heading1.Color'
-  | 'TextEditor.Heading1.BgColor'
-  | 'TextEditor.Heading1.Attrs'
-  | 'TextEditor.Heading2.Color'
-  | 'TextEditor.Heading2.BgColor'
-  | 'TextEditor.Heading2.Attrs'
-  | 'TextEditor.Heading3.Color'
-  | 'TextEditor.Heading3.BgColor'
-  | 'TextEditor.Heading3.Attrs'
-  | 'TextEditor.Heading4.Color'
-  | 'TextEditor.Heading4.BgColor'
-  | 'TextEditor.Heading4.Attrs'
-  | 'TextEditor.Heading5.Color'
-  | 'TextEditor.Heading5.BgColor'
-  | 'TextEditor.Heading5.Attrs'
-  | 'TextEditor.Highlighter1.Color'
-  | 'TextEditor.Highlighter1.BgColor'
-  | 'TextEditor.Highlighter1.Attrs'
-  | 'TextEditor.Highlighter2.Color'
-  | 'TextEditor.Highlighter2.BgColor'
-  | 'TextEditor.Highlighter2.Attrs'
-  | 'TextEditor.Highlighter3.Color'
-  | 'TextEditor.Highlighter3.BgColor'
-  | 'TextEditor.Highlighter3.Attrs'
-  | 'TextEditor.Highlighter4.Color'
-  | 'TextEditor.Highlighter4.BgColor'
-  | 'TextEditor.Highlighter4.Attrs'
-  | 'TextEditor.Highlighter5.Color'
-  | 'TextEditor.Highlighter5.BgColor'
-  | 'TextEditor.Highlighter5.Attrs'
-  | 'TextEditor.Highlighter6.Color'
-  | 'TextEditor.Highlighter6.BgColor'
-  | 'TextEditor.Highlighter6.Attrs'
+  | 'TextEditor.Heading.Style1'
+  | 'TextEditor.Heading.Style2'
+  | 'TextEditor.Heading.Style3'
+  | 'TextEditor.Heading.Style4'
+  | 'TextEditor.Heading.Style5'
+  | 'TextEditor.Highlighter.Style1'
+  | 'TextEditor.Highlighter.Style2'
+  | 'TextEditor.Highlighter.Style3'
+  | 'TextEditor.Highlighter.Style4'
+  | 'TextEditor.Highlighter.Style5'
+  | 'TextEditor.Highlighter.Style6'
   | 'ToolBar.Mode.Name'
   | 'ToolBar.StatusMode.Text'
   | 'Application.FocusedPanel.Name'
@@ -135,7 +113,7 @@ interface PropDef {
   key:         ConfigKey;
   current:     string;
   default:     string;
-  type:        'boolean' | 'string' | 'color' | 'json';
+  type:        'boolean' | 'string' | 'color' | 'json' | 'integer';
   candidates:  string;
   description: string;
 }
@@ -347,82 +325,77 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   ...Object.fromEntries(
-    [1, 2, 3, 4, 5].flatMap(level => {
+    [1, 2, 3, 4, 5].map(level => {
       const idx = level - 1;
-      return [
-        [`TextEditor.Heading${level}.Color`, {
-          panel: 'WorkoutPanel',
-          default: SECTION_STYLE_DEFAULTS[idx].color, type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-          description: `見出し行レベル${level}の文字色`,
-          get: (app) => app.WorkoutPanel.TextEditor.HeadingStyles[idx]?.color ?? SECTION_STYLE_DEFAULTS[idx].color,
-          set: (app, v) => { app.WorkoutPanel.SetTextEditorHeadingStyle(level, { color: v }); },
-        }],
-        [`TextEditor.Heading${level}.BgColor`, {
-          panel: 'WorkoutPanel',
-          default: 'undefined', type: 'string', candidates: '^(undefined|#[0-9a-fA-F]{6,8})$',
-          description: `見出し行レベル${level}の背景色`,
-          get: (app) => app.WorkoutPanel.TextEditor.HeadingStyles[idx]?.bgColor ?? 'undefined',
-          set: (app, v) => { app.WorkoutPanel.SetTextEditorHeadingStyle(level, { bgColor: v }); },
-        }],
-        [`TextEditor.Heading${level}.Attrs`, {
-          panel: 'WorkoutPanel',
-          default: (SECTION_STYLE_DEFAULTS[idx].bold ? 'bold' : '') + (SECTION_STYLE_DEFAULTS[idx].underline ? '|underline' : '') || 'none',
-          type: 'string', candidates: '.*',
-          description: `見出し行レベル${level}の属性`,
-          get: (app) => {
-            const style = app.WorkoutPanel.TextEditor.HeadingStyles[idx];
-            if (!style) return 'none';
-            const attrs: string[] = [];
-            if (style.bold) attrs.push('bold');
-            if (style.underline) attrs.push('underline');
-            return attrs.join('|') || 'none';
-          },
-          set: (app, v) => {
-            const bold = v.includes('bold');
-            const underline = v.includes('underline');
-            app.WorkoutPanel.SetTextEditorHeadingStyle(level, { bold, underline });
-          },
-        }]
-      ];
+      return [`TextEditor.Heading.Style${level}`, {
+        panel: 'WorkoutPanel',
+        default: (() => {
+          const d = SECTION_STYLE_DEFAULTS[idx];
+          const attrs: string[] = [];
+          if (d.bold) attrs.push('bold');
+          if (d.underline) attrs.push('underline');
+          const attrStr = attrs.join('|') || 'none';
+          return `${d.color}, ${d.bgColor ?? 'undefined'}, ${attrStr}`;
+        })(),
+        type: 'string',
+        candidates: '.*',
+        description: `見出し行レベル${level}のスタイル (文字色, 背景色, 属性)`,
+        get: (app) => {
+          const style = app.WorkoutPanel.TextEditor.HeadingStyles[idx];
+          if (!style) return 'undefined, undefined, none';
+          const attrs: string[] = [];
+          if (style.bold) attrs.push('bold');
+          if (style.underline) attrs.push('underline');
+          const attrStr = attrs.join('|') || 'none';
+          return `${style.color}, ${style.bgColor ?? 'undefined'}, ${attrStr}`;
+        },
+        set: (app, v) => {
+          const parts = v.split(',').map(s => s.trim());
+          const color = parts[0] || 'undefined';
+          const bgColor = parts[1] || 'undefined';
+          const attrStr = parts[2] || 'none';
+          const bold = attrStr.includes('bold');
+          const underline = attrStr.includes('underline');
+          app.WorkoutPanel.SetTextEditorHeadingStyle(level, { color, bgColor, bold, underline });
+        }
+      }];
     })
   ),
   ...Object.fromEntries(
-    [1, 2, 3, 4, 5, 6].flatMap(group => {
+    [1, 2, 3, 4, 5, 6].map(group => {
       const idx = group - 1;
-      return [
-        [`TextEditor.Highlighter${group}.Color`, {
-          panel: 'WorkoutPanel',
-          default: HIGHLIGHT_STYLE_DEFAULTS[idx]?.color ?? 'undefined', type: 'string', candidates: '^(undefined|#[0-9a-fA-F]{6,8})$',
-          description: `ハイライト${group}の文字色`,
-          get: (app) => app.WorkoutPanel.TextEditor.HighlightStyles[idx]?.color ?? 'undefined',
-          set: (app, v) => { app.WorkoutPanel.SetTextEditorHighlightStyle(idx, { color: v }); },
-        }],
-        [`TextEditor.Highlighter${group}.BgColor`, {
-          panel: 'WorkoutPanel',
-          default: HIGHLIGHT_STYLE_DEFAULTS[idx]?.backgroundColor ?? 'undefined', type: 'string', candidates: '^(undefined|#[0-9a-fA-F]{6,8})$',
-          description: `ハイライト${group}の背景色`,
-          get: (app) => app.WorkoutPanel.TextEditor.HighlightStyles[idx]?.backgroundColor ?? 'undefined',
-          set: (app, v) => { app.WorkoutPanel.SetTextEditorHighlightStyle(idx, { backgroundColor: v }); },
-        }],
-        [`TextEditor.Highlighter${group}.Attrs`, {
-          panel: 'WorkoutPanel',
-          default: 'none', type: 'string', candidates: '.*',
-          description: `ハイライト${group}の属性`,
-          get: (app) => {
-            const style = app.WorkoutPanel.TextEditor.HighlightStyles[idx];
-            if (!style) return 'none';
-            const attrs: string[] = [];
-            if (style.bold) attrs.push('bold');
-            if (style.underline) attrs.push('underline');
-            return attrs.join('|') || 'none';
-          },
-          set: (app, v) => {
-            const bold = v.includes('bold');
-            const underline = v.includes('underline');
-            app.WorkoutPanel.SetTextEditorHighlightStyle(idx, { bold, underline });
-          },
-        }]
-      ];
+      return [`TextEditor.Highlighter.Style${group}`, {
+        panel: 'WorkoutPanel',
+        default: (() => {
+          const d = HIGHLIGHT_STYLE_DEFAULTS[idx];
+          const attrs: string[] = [];
+          if (d?.bold) attrs.push('bold');
+          if (d?.underline) attrs.push('underline');
+          const attrStr = attrs.join('|') || 'none';
+          return `${d?.color ?? 'undefined'}, ${d?.backgroundColor ?? 'undefined'}, ${attrStr}`;
+        })(),
+        type: 'string',
+        candidates: '.*',
+        description: `ハイライト${group}のスタイル (文字色, 背景色, 属性)`,
+        get: (app) => {
+          const style = app.WorkoutPanel.TextEditor.HighlightStyles[idx];
+          if (!style) return 'undefined, undefined, none';
+          const attrs: string[] = [];
+          if (style.bold) attrs.push('bold');
+          if (style.underline) attrs.push('underline');
+          const attrStr = attrs.join('|') || 'none';
+          return `${style.color ?? 'undefined'}, ${style.backgroundColor ?? 'undefined'}, ${attrStr}`;
+        },
+        set: (app, v) => {
+          const parts = v.split(',').map(s => s.trim());
+          const color = parts[0] || 'undefined';
+          const bgColor = parts[1] || 'undefined';
+          const attrStr = parts[2] || 'none';
+          const bold = attrStr.includes('bold');
+          const underline = attrStr.includes('underline');
+          app.WorkoutPanel.SetTextEditorHighlightStyle(idx, { color, backgroundColor: bgColor, bold, underline });
+        }
+      }];
     })
   ),
 
@@ -1193,15 +1166,64 @@ export class TTUIStateManager {
         updatedKeys.add(key);
       }
 
+      // 旧キーからのマイグレーション用集計バッファ
+      const oldHighlighters: Record<number, { color?: string; bgColor?: string; attrs?: string }> = {};
+      const oldHeadings: Record<number, { color?: string; bgColor?: string; attrs?: string }> = {};
+
       // 2nd pass: 通常エントリ → current 列の値を適用
       for (const row of section.rows) {
         const key = row[keyIdx]?.trim() ?? '';
         const val = row[applyIdx] ?? '';
         if (!key) continue;
+
+        // Highlighter 古いキーの検出とバッファリング
+        let match = key.match(/^TextEditor\.Highlighter(\d+)\.(Color|BgColor|Attrs)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          const prop = match[2];
+          if (!oldHighlighters[num]) oldHighlighters[num] = {};
+          if (prop === 'Color') oldHighlighters[num].color = val;
+          if (prop === 'BgColor') oldHighlighters[num].bgColor = val;
+          if (prop === 'Attrs') oldHighlighters[num].attrs = val;
+          continue;
+        }
+
+        // Heading 古いキーの検出とバッファリング
+        match = key.match(/^TextEditor\.Heading(\d+)\.(Color|BgColor|Attrs)$/);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          const prop = match[2];
+          if (!oldHeadings[num]) oldHeadings[num] = {};
+          if (prop === 'Color') oldHeadings[num].color = val;
+          if (prop === 'BgColor') oldHeadings[num].bgColor = val;
+          if (prop === 'Attrs') oldHeadings[num].attrs = val;
+          continue;
+        }
+
         const spec = PROP_SPECS[key];
         if (spec?.isConst) continue;
         this._applyProp(key, val);
         updatedKeys.add(key);
+      }
+
+      // 集計した古いキーを統合したStyleとして適用
+      for (const [numStr, s] of Object.entries(oldHighlighters)) {
+        const num = parseInt(numStr, 10);
+        const color = s.color || 'undefined';
+        const bgColor = s.bgColor || 'undefined';
+        const attrs = s.attrs || 'none';
+        const newKey = `TextEditor.Highlighter.Style${num}`;
+        this._applyProp(newKey, `${color}, ${bgColor}, ${attrs}`);
+        updatedKeys.add(newKey);
+      }
+      for (const [numStr, s] of Object.entries(oldHeadings)) {
+        const num = parseInt(numStr, 10);
+        const color = s.color || 'undefined';
+        const bgColor = s.bgColor || 'undefined';
+        const attrs = s.attrs || 'none';
+        const newKey = `TextEditor.Heading.Style${num}`;
+        this._applyProp(newKey, `${color}, ${bgColor}, ${attrs}`);
+        updatedKeys.add(newKey);
       }
 
       // 変更イベントを発火
