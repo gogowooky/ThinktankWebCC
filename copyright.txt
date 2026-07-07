@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.15",
+  "version": "1.2.16",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "5217c67",
-  "commitDateTime": "2026-07-07-112809",
-  "commitMessage": "fix: Restore emptied WorkoutPanel files and fix TextEditorMedia syntax error"
+  "commitId": "5f68d90",
+  "commitDateTime": "2026-07-07-115348",
+  "commitMessage": "feat: Load web search tags from docs/DefaultSearchTag.md via API instead of hardcoding"
 }

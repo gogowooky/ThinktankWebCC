@@ -15,6 +15,18 @@ import { TTShortcutManager } from './TTShortcutManager';
 import { TTUIStateManager } from './TTUIStateManager';
 import { collectAreaIds } from './TTWorkoutPanel';
 
+// ── 検索タグキャッシュ ────────────────────────────────────────────────────────
+let _searchTagCache: Record<string, string> | null = null;
+
+async function getSearchTags(): Promise<Record<string, string>> {
+  if (_searchTagCache) return _searchTagCache;
+  try {
+    const res = await fetch('/api/system/search-tags');
+    if (res.ok) _searchTagCache = await res.json() as Record<string, string>;
+  } catch { /* サーバー未起動時はキャッシュなしのまま */ }
+  return _searchTagCache ?? {};
+}
+
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
@@ -2109,7 +2121,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open',
     Description: 'タグを開く、またはフィルター検索を設定します',
-    Completion: (item) => {
+    Completion: async (item) => {
       try {
         const text = getTextOnCursorSafe();
         if (!text || !(text.startsWith('[') && text.endsWith(']'))) {
@@ -2122,32 +2134,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           const key = parts[0].trim();
           const val = parts.slice(1).join(':').trim();
 
-          const WEB_SEARCH_TEMPLATES: Record<string, string> = {
-            Spotify: 'https://open.spotify.com/search/{0}',
-            NET: 'https://docs.microsoft.com/ja-jp/dotnet/api/?view=net-5.0&term={0}',
-            VBAOutlook: 'https://docs.microsoft.com/ja-jp/search/?category=outlook&search={0}',
-            Pubmed: 'https://pubmed.ncbi.nlm.nih.gov/?term={0}',
-            NIPH: 'https://rctportal.niph.go.jp/s/result?t=chiken&q={0}',
-            CTG: 'https://clinicaltrials.gov/ct2/results?term=&cntry=&state=&city=&dist=&cond={0}',
-            Cortellis: 'https://www.cortellis.com/intelligence/qsearch/{0}?indexBased=true&searchCategory=ALL',
-            PMDA: 'https://ss.pmda.go.jp/ja_all/search.x?ie=UTF-8&page=1&q={0}',
-            KAKEN: 'https://kaken.nii.ac.jp/ja/search/?kw={0}',
-            EMA: 'https://www.clinicaltrialsregister.eu/ctr-search/search?query={0}',
-            JST: 'https://www.jstage.jst.go.jp/result/global/-char/ja?globalSearchKey={0}',
-            PMC: 'https://www.ncbi.nlm.nih.gov/pmc/?term={0}',
-            MHLW: 'https://www.mhlw.go.jp/search.html?q={0}',
-            Google: 'https://www.google.com/search?q={0}',
-            GoogleE: 'http://www.google.co.jp/search?lr=lang_en&q={0}',
-            GoogleMap: 'https://www.google.co.jp/maps/place/{0}',
-            GScholar: 'https://scholar.google.co.jp/scholar?q={0}',
-            Youtube: 'https://www.youtube.com/results?search_query={0}',
-            Wikipedia: 'https://ja.wikipedia.org/wiki/{0}',
-            WikipediaE: 'https://en.wikipedia.org/wiki/{0}',
-            Bing: 'https://www.bing.com/search?q={0}',
-            DeepLEJ: 'https://www.deepl.com/ja/translator#en/ja/{0}',
-            DeepLJE: 'https://www.deepl.com/ja/translator#ja/en-us/{0}'
-          };
-
+          const WEB_SEARCH_TEMPLATES = await getSearchTags();
           const template = WEB_SEARCH_TEMPLATES[key];
           if (template) {
             const url = template.replace('{0}', encodeURIComponent(val));

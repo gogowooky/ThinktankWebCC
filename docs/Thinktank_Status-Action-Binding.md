@@ -18,39 +18,6 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
-## 完了：　260707　TextEditor.Url.Style
-TextEditor.CurrentEditor.DoOnCursorPosで認識されるUrlの文字スタイル（文字色, 背景色, 属性）です。
-
-description:    Urlのスタイル
-key:            TextEditor.Url.Style
-current:        #1010edff, undefined, underline
-default:        #1010edff, undefined, underline
-type:           string
-candidates:     .*
-
-## 完了：　260707　TextEditor.Filepath.Style
-TextEditor.CurrentEditor.DoOnCursorPosで認識されるFilepathの文字スタイル（文字色, 背景色, 属性）です。
-
-description:    Filepathのスタイル
-key:            TextEditor.Filepath.Style
-current:        undefined, undefined, underline
-default:        undefined, undefined, underline
-type:           string
-candidates:     .*
-
-## 完了：　260707　TextEditor.Tag.Style
-TextEditor.CurrentEditor.DoOnCursorPosで認識されるTagの文字スタイル（文字色, 背景色, 属性）です。
-
-description:    Tagのスタイル
-key:            TextEditor.Tag.Style
-current:        #4ba402ff, undefined, underline|bold
-default:        #4ba402ff, undefined, underline|bold
-type:           string
-candidates:     .*
-
-将来的にタグごとに分ける可能性あり、
-
-
 
 # Application ======================================================================================================
 
@@ -642,7 +609,39 @@ candidates:     ^.*$
 
 
 
-# Color ============================================================================================================ 
+# Color,Style ====================================================================================================== 
+## Status：　260707　TextEditor.Url.Style
+TextEditor.CurrentEditor.DoOnCursorPosで認識されるUrlの文字スタイル（文字色, 背景色, 属性）です。
+
+description:    Urlのスタイル
+key:            TextEditor.Url.Style
+current:        #1010edff, undefined, underline
+default:        #1010edff, undefined, underline
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Filepath.Style
+TextEditor.CurrentEditor.DoOnCursorPosで認識されるFilepathの文字スタイル（文字色, 背景色, 属性）です。
+
+description:    Filepathのスタイル
+key:            TextEditor.Filepath.Style
+current:        undefined, undefined, underline
+default:        undefined, undefined, underline
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Tag.Style
+TextEditor.CurrentEditor.DoOnCursorPosで認識されるTagの文字スタイル（文字色, 背景色, 属性）です。
+
+description:    Tagのスタイル
+key:            TextEditor.Tag.Style
+current:        #4ba402ff, undefined, underline|bold
+default:        #4ba402ff, undefined, underline|bold
+type:           string
+candidates:     .*
+
+将来的にタグごとに分ける可能性あり、
+
+
+
 ## Status：　260624　Thinktank.Ribbon.BgColor
 description:    Thinktank（左）パネルのヘッダー・リボン背景色
 key:            Thinktank.Ribbon.BgColor

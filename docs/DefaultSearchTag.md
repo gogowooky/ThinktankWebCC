@@ -1,5 +1,3 @@
-
-
 # ID,           Descrition,                     URL
 Google,         "Google検索(J)",                https://www.google.com/search?q={0}
 GoogleE,        "Google検索(E)",                http://www.google.co.jp/search?lr=lang_en&q={0}
@@ -26,14 +24,3 @@ JST,            "科学技術振興機構",             https://www.jstage.jst.g
 PMC,            "PubMed Central",               https://www.ncbi.nlm.nih.gov/pmc/?term={0}
 MHLW,           "厚生労働省",                   https://www.mhlw.go.jp/search.html?q={0}
 
-
-        @{ Key = 'WebPath'; Regex = [Regex]'https?://[^") ]+' },
-        @{ Key = 'FilePath'; Regex = [Regex]'([a-zA-Z]:\\|\\\\)([^<>:"/\\|?*]+\\?)*' },
-        @{ Key = 'ChildPath'; Regex = [Regex]'^\s*\/([^<>:"\\\/|?*]+\\?)*' },
-        @{ Key = 'DateTag'; Regex = [Regex]'\[\d{4}\-\d{2}\-\d{2}\]' }, #::: [xxxx-xx-xxxx]  ※Tagより先に評価すること
-        @{ Key = 'Tag'; Regex = [Regex]'\[([^\]:]+)\]' },           #::: [1] [>1]
-        @{ Key = 'Query'; Regex = [Regex]'\[([^\]]+)\]' },            #::: [Google:xxx] [memo:xxx]
-        @{ Key = 'Date'; Regex = [Regex]'\d{4}\/\d{1,2}\/\d{1,2}( \(.\))?( \d{2}:\d{2})?' },
-        @{ Key = 'JDate'; Regex = [Regex]'\d{4}年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}:\d{2})?' },
-        @{ Key = 'GDate'; Regex = [Regex]'(明治|大正|昭和|平成|令和)(\d{1,2}|元)年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}時\d{2}分)?' }
-        @{ Key = 'PanDate'; Regex = [Regex]'(\[\d{4}\-\d{2}\-\d{2}\]|\d{4}\/\d{1,2}\/\d{1,2}( \(.\))?( \d{2}:\d{2})?|\d{4}年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}:\d{2})?|(明治|大正|昭和|平成|令和)(\d{1,2}|元)年\d{1,2}月\d{1,2}日( \(.\))?( \d{2}時\d{2}分)?)' }
