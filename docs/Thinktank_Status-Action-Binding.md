@@ -342,57 +342,52 @@ candidates:     .*
 　　Heading行の場合は、HeadginのLevelを1つ減らす。# の場合は# を削除する。
 　　Heading行でない場合はなにもしない。
 
-## Action： 260625　TextEditor.Comment.NextStyle
+## Action：　260625　TextEditor.Comment.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
 　各行における 先頭の1文字目
 　　TextEditor.Comment.StyleSet に含まれる：　次の値に置換
 　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの1番目の文字を挿入
-## Action： 260625　TextEditor.Comment.PrevStyle
+## Action：　260625　TextEditor.Comment.PrevStyle
 　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
 　各行における 先頭の1文字目
 　　TextEditor.Comment.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの最後の文字を挿入
-## 完了： 260707　TextEditor.Comment.StyleNum
+## Status：　260707　TextEditor.Comment.StyleNum
 description:    コメントスタイルの登録数
 key:            TextEditor.Comment.StyleNum
 current:        5
 default:        5
 type:           integer
 candidates:     ^[0-9]+$
-
-## 完了： 260707　TextEditor.Comment.Style1
+## Status：　260707　TextEditor.Comment.Style1
 description:    コメントスタイル1
 key:            TextEditor.Comment.Style1
 current:        >,#bbddbb,undefined
 default:        >,#bbddbb,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Comment.Style2
+## Status：　260707　TextEditor.Comment.Style2
 description:    コメントスタイル2
 key:            TextEditor.Comment.Style2
 current:        >>,#bbbbdd,undefined
 default:        >>,#bbbbdd,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Comment.Style3
+## Status：　260707　TextEditor.Comment.Style3
 description:    コメントスタイル3
 key:            TextEditor.Comment.Style3
 current:        >>>,#ddbbbb,undefined
 default:        >>>,#ddbbbb,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Comment.Style4
+## Status：　260707　TextEditor.Comment.Style4
 description:    コメントスタイル4
 key:            TextEditor.Comment.Style4
 current:        ;,#bbbbbb,undefined
 default:        ;,#bbbbbb,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Comment.Style5
+## Status：　260707　TextEditor.Comment.Style5
 description:    コメントスタイル5
 key:            TextEditor.Comment.Style5
 current:        |,#ffaaaa,undefined
@@ -412,79 +407,70 @@ candidates:     .*
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
-## 完了： 260707　TextEditor.Bullet.StyleNum
+## Status：　260707　TextEditor.Bullet.StyleNum
 description:    箇条書きスタイルの登録数
 key:            TextEditor.Bullet.StyleNum
 current:        9
 default:        9
 type:           integer
 candidates:     ^[0-9]+$
-
-## 完了： 260707　TextEditor.Bullet.Style1
+## Status：　260707　TextEditor.Bullet.Style1
 description:    箇条書きスタイル1
 key:            TextEditor.Bullet.Style1
 current:        ・,undefined,undefined
 default:        ・,undefined,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style2
+## Status：　260707　TextEditor.Bullet.Style2
 description:    箇条書きスタイル2
 key:            TextEditor.Bullet.Style2
 current:        -,undefined,undefined
 default:        -,undefined,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style3
+## Status：　260707　TextEditor.Bullet.Style3
 description:    箇条書きスタイル3
 key:            TextEditor.Bullet.Style3
 current:        *,#cc2222,undefined
 default:        *,#cc2222,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style4
+## Status：　260707　TextEditor.Bullet.Style4
 description:    箇条書きスタイル4
 key:            TextEditor.Bullet.Style4
 current:        ■,#000000,underline
 default:        ■,#000000,underline
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style5
+## Status：　260707　TextEditor.Bullet.Style5
 description:    箇条書きスタイル5
 key:            TextEditor.Bullet.Style5
 current:        ●,#000000,underline
 default:        ●,#000000,underline
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style6
+## Status：　260707　TextEditor.Bullet.Style6
 description:    箇条書きスタイル6
 key:            TextEditor.Bullet.Style6
 current:        =,#cccc22,undefined
 default:        =,#cccc22,undefined
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style7
+## Status：　260707　TextEditor.Bullet.Style7
 description:    箇条書きスタイル7
 key:            TextEditor.Bullet.Style7
 current:        ↓,#000000,bold
 default:        ↓,#000000,bold
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style8
+## Status：　260707　TextEditor.Bullet.Style8
 description:    箇条書きスタイル8
 key:            TextEditor.Bullet.Style8
 current:        →,undefined,underline
 default:        →,undefined,underline
 type:           string
 candidates:     .*
-
-## 完了： 260707　TextEditor.Bullet.Style9
+## Status：　260707　TextEditor.Bullet.Style9
 description:    箇条書きスタイル9
 key:            TextEditor.Bullet.Style9
 current:        [✓],undefined,bold
