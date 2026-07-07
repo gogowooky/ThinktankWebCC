@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.12",
+  "version": "1.2.13",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "e5720a7",
-  "commitDateTime": "2026-07-07-102156",
-  "commitMessage": "feat: Implement TextEditor.Url.Style1, TextEditor.Filepath.Style1, and TextEditor.Tag.Style1 status styles"
+  "commitId": "b758137",
+  "commitDateTime": "2026-07-07-102458",
+  "commitMessage": "build: Bump version to 1.2.13 and update copyright.txt"
 }
