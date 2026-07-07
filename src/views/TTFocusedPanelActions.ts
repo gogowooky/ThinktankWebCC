@@ -22,7 +22,13 @@ async function getSearchTags(): Promise<Record<string, string>> {
   if (_searchTagCache) return _searchTagCache;
   try {
     const res = await fetch('/api/system/search-tags');
-    if (res.ok) _searchTagCache = await res.json() as Record<string, string>;
+    if (res.ok) {
+      const raw = await res.json() as Record<string, string>;
+      // キーを小文字化して大文字・小文字を問わず検索できるようにする
+      _searchTagCache = Object.fromEntries(
+        Object.entries(raw).map(([k, v]) => [k.toLowerCase(), v])
+      );
+    }
   } catch { /* サーバー未起動時はキャッシュなしのまま */ }
   return _searchTagCache ?? {};
 }
@@ -2135,7 +2141,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           const val = parts.slice(1).join(':').trim();
 
           const WEB_SEARCH_TEMPLATES = await getSearchTags();
-          const template = WEB_SEARCH_TEMPLATES[key];
+          const template = WEB_SEARCH_TEMPLATES[key.toLowerCase()];
           if (template) {
             const url = template.replace('{0}', encodeURIComponent(val));
             window.open(url, '_blank');
