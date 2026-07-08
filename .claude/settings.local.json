@@ -142,7 +142,12 @@
       "PowerShell(Invoke-WebRequest -Uri \"https://ttweb-699735546730.asia-northeast1.run.app/assets/index-BFrF5qTu.js\" -UseBasicParsing)",
       "PowerShell(npx tsc -p tsconfig.json --noEmit 2>&1)",
       "PowerShell(\\(Invoke-WebRequest -Uri \"https://ttweb-699735546730.asia-northeast1.run.app/\" -UseBasicParsing\\).Content)",
-      "PowerShell(Invoke-WebRequest -Uri \"https://ttweb-699735546730.asia-northeast1.run.app/assets/index-BbitfvBN.js\" -UseBasicParsing)"
+      "PowerShell(Invoke-WebRequest -Uri \"https://ttweb-699735546730.asia-northeast1.run.app/assets/index-BbitfvBN.js\" -UseBasicParsing)",
+      "Bash(xargs grep -l \"ApplicationStatus\\\\|AppStatus\\\\|Status\")",
+      "Bash(xargs grep -l \"LayoutMode\\\\|StorageManager\")",
+      "Bash(git commit -m 'feat: Add Application.PanelDisplay.Mode status with StatusBar toggle and Simple mode behaviors *)",
+      "Bash(git commit -m 'build: Bump version to 1.2.23 and update copyright.txt *)",
+      "Bash(git commit -m 'chore: Update settings.local.json allowed commands *)"
     ]
   }
 }
