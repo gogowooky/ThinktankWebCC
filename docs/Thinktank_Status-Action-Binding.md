@@ -20,12 +20,17 @@
 # Status
 
 # その他：標準モードと簡易モード
-　現在、Thinktank>設定>データ編集に、標準モードと簡易モードの選択画面がありますが、
-　選択されたモードのアイコンを、StatusBar左端のアプリケーションの状態>モードのアイコンの右側に配置し、
-　クリックで変更できるようにしてください。
-　その値は、Status値、Application.PanelDisplay.Mode を実装して、そこに保存し、
-　値変更の Action、Application.PanelDisplay.Mode:Normal, 　Application.PanelDisplay.Mode:Simple も実装してください。
-　Simpleが設定された際は、ThinktankPanelのChatモードも非表示とし、ThinktankPanel>Think一覧において、Overview>設定Thought、Thinkイチタン、
+    現在、Thinktank>設定>データ編集に、標準モードと簡易モードの選択画面がありますが、
+    選択されたモードのアイコンを、StatusBar左端のアプリケーションの状態>モードのアイコンの右側に配置し、
+    クリックで変更できるようにしてください。
+    そのモード値は、Status変数：Application.PanelDisplay.Modeを実装して、そこに保存します。
+    さらに、値変更用Action、Application.PanelDisplay.Mode:Normal, 　Application.PanelDisplay.Mode:Simple も実装します。
+    値がSimpleの場合は、
+    1. ThinktankPanelのChatモードは非表示にします。
+    2. 現在、ThinktankPanel>Think一覧において、Overview.Thought.NameのThoughtファイルと、
+        Overview>Think一覧に表示されているすべてのアイテムについて、背景を薄いOverviewPanel色でマークしていますが、
+        そのマークもいたしません。
+
 # その他：メニュー
 # その他：タグ
 TextEditor.CurrentEditor.DoOnCursorPos で取得された Tag について以下のように分類して各Tagでアクションを定義することを考えています。
