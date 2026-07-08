@@ -19,6 +19,26 @@
 
 # Status
 
+# その他：標準モードと簡易モード
+　現在、Thinktank>設定>データ編集に、標準モードと簡易モードの選択画面がありますが、
+　選択されたモードのアイコンを、StatusBar左端のアプリケーションの状態>モードのアイコンの右側に配置し、
+　クリックで変更できるようにしてください。
+　その値は、Status値、Application.PanelDisplay.Mode を実装して、そこに保存し、
+　値変更の Action、Application.PanelDisplay.Mode:Normal, 　Application.PanelDisplay.Mode:Simple も実装してください。
+　Simpleが設定された際は、ThinktankPanelのChatモードも非表示とし、ThinktankPanel>Think一覧において、Overview>設定Thought、Thinkイチタン、
+# その他：メニュー
+# その他：タグ
+TextEditor.CurrentEditor.DoOnCursorPos で取得された Tag について以下のように分類して各Tagでアクションを定義することを考えています。
+
+Tag.Search          docs\DefaultSearchTag.mdで定義された WebSearch 用タグ　　[sitename:keywords]
+Tag.Route           GoogleMap, 電車                                        [GoogleRoute:keyword1,keyword2,keyword3]
+                                                                            [YahooTransfer:] 
+Tag.Memo            Memo全体検索、Thought内検索                             [memo:ID] [memo:keywords] 
+Tag.Mail            Mail検索（可能？）                                      [mail:ID] [mail:keywords]
+Tag.Chat            Chat用Pane作成                                          [chat:>] sentence
+Tag.AI              外部AIへ接続、                                          [ai:>] sentence
+Tag.Anchor          ファイル内での参照                                      [:>highlighter]  [:anchor]
+
 # Application ======================================================================================================
 
 ## Action：　260628　Application.Resource.ExportToLocal
@@ -341,7 +361,6 @@ candidates:     .*
 　カーソル行または選択範囲内のすべての行に対し
 　　Heading行の場合は、HeadginのLevelを1つ減らす。# の場合は# を削除する。
 　　Heading行でない場合はなにもしない。
-
 ## Action：　260625　TextEditor.Comment.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
 　各行における 先頭の1文字目
@@ -352,51 +371,6 @@ candidates:     .*
 　各行における 先頭の1文字目
 　　TextEditor.Comment.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの最後の文字を挿入
-## Status：　260707　TextEditor.Comment.StyleNum
-description:    コメントスタイルの登録数
-key:            TextEditor.Comment.StyleNum
-current:        5
-default:        5
-type:           integer
-candidates:     ^[0-9]+$
-## Status：　260707　TextEditor.Comment.Style1
-description:    コメントスタイル1
-key:            TextEditor.Comment.Style1
-current:        >,#bbddbb,undefined
-default:        >,#bbddbb,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style2
-description:    コメントスタイル2
-key:            TextEditor.Comment.Style2
-current:        >>,#bbbbdd,undefined
-default:        >>,#bbbbdd,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style3
-description:    コメントスタイル3
-key:            TextEditor.Comment.Style3
-current:        >>>,#ddbbbb,undefined
-default:        >>>,#ddbbbb,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style4
-description:    コメントスタイル4
-key:            TextEditor.Comment.Style4
-current:        ;,#bbbbbb,undefined
-default:        ;,#bbbbbb,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style5
-description:    コメントスタイル5
-key:            TextEditor.Comment.Style5
-current:        |,#ffaaaa,undefined
-default:        |,#ffaaaa,undefined
-type:           string
-candidates:     .*
-
-
-
 ## Action：　260625　TextEditor.Bullet.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの1文字目
@@ -407,76 +381,6 @@ candidates:     .*
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
-## Status：　260707　TextEditor.Bullet.StyleNum
-description:    箇条書きスタイルの登録数
-key:            TextEditor.Bullet.StyleNum
-current:        9
-default:        9
-type:           integer
-candidates:     ^[0-9]+$
-## Status：　260707　TextEditor.Bullet.Style1
-description:    箇条書きスタイル1
-key:            TextEditor.Bullet.Style1
-current:        ・,undefined,undefined
-default:        ・,undefined,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style2
-description:    箇条書きスタイル2
-key:            TextEditor.Bullet.Style2
-current:        -,undefined,undefined
-default:        -,undefined,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style3
-description:    箇条書きスタイル3
-key:            TextEditor.Bullet.Style3
-current:        *,#cc2222,undefined
-default:        *,#cc2222,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style4
-description:    箇条書きスタイル4
-key:            TextEditor.Bullet.Style4
-current:        ■,#000000,underline
-default:        ■,#000000,underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style5
-description:    箇条書きスタイル5
-key:            TextEditor.Bullet.Style5
-current:        ●,#000000,underline
-default:        ●,#000000,underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style6
-description:    箇条書きスタイル6
-key:            TextEditor.Bullet.Style6
-current:        =,#cccc22,undefined
-default:        =,#cccc22,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style7
-description:    箇条書きスタイル7
-key:            TextEditor.Bullet.Style7
-current:        ↓,#000000,bold
-default:        ↓,#000000,bold
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style8
-description:    箇条書きスタイル8
-key:            TextEditor.Bullet.Style8
-current:        →,undefined,underline
-default:        →,undefined,underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style9
-description:    箇条書きスタイル9
-key:            TextEditor.Bullet.Style9
-current:        [✓],undefined,bold
-default:        [✓],undefined,bold
-type:           string
-candidates:     .*
 
 ## Action：　260619　TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo
@@ -596,6 +500,122 @@ candidates:     ^.*$
 
 
 # Color,Style ====================================================================================================== 
+## Status：　260707　TextEditor.Bullet.StyleNum
+description:    箇条書きスタイルの登録数
+key:            TextEditor.Bullet.StyleNum
+current:        9
+default:        9
+type:           integer
+candidates:     ^[0-9]+$
+## Status：　260707　TextEditor.Bullet.Style1
+description:    箇条書きスタイル1
+key:            TextEditor.Bullet.Style1
+current:        ・,undefined,undefined
+default:        ・,undefined,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style2
+description:    箇条書きスタイル2
+key:            TextEditor.Bullet.Style2
+current:        -,undefined,undefined
+default:        -,undefined,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style3
+description:    箇条書きスタイル3
+key:            TextEditor.Bullet.Style3
+current:        *,#cc2222,undefined
+default:        *,#cc2222,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style4
+description:    箇条書きスタイル4
+key:            TextEditor.Bullet.Style4
+current:        ■,#000000,underline
+default:        ■,#000000,underline
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style5
+description:    箇条書きスタイル5
+key:            TextEditor.Bullet.Style5
+current:        ●,#000000,underline
+default:        ●,#000000,underline
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style6
+description:    箇条書きスタイル6
+key:            TextEditor.Bullet.Style6
+current:        =,#cccc22,undefined
+default:        =,#cccc22,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style7
+description:    箇条書きスタイル7
+key:            TextEditor.Bullet.Style7
+current:        ↓,#000000,bold
+default:        ↓,#000000,bold
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style8
+description:    箇条書きスタイル8
+key:            TextEditor.Bullet.Style8
+current:        →,undefined,underline
+default:        →,undefined,underline
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Bullet.Style9
+description:    箇条書きスタイル9
+key:            TextEditor.Bullet.Style9
+current:        [✓],undefined,bold
+default:        [✓],undefined,bold
+type:           string
+candidates:     .*
+
+## Status：　260707　TextEditor.Comment.StyleNum
+description:    コメントスタイルの登録数
+key:            TextEditor.Comment.StyleNum
+current:        5
+default:        5
+type:           integer
+candidates:     ^[0-9]+$
+## Status：　260707　TextEditor.Comment.Style1
+description:    コメントスタイル1
+key:            TextEditor.Comment.Style1
+current:        >,#bbddbb,undefined
+default:        >,#bbddbb,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Comment.Style2
+description:    コメントスタイル2
+key:            TextEditor.Comment.Style2
+current:        >>,#bbbbdd,undefined
+default:        >>,#bbbbdd,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Comment.Style3
+description:    コメントスタイル3
+key:            TextEditor.Comment.Style3
+current:        >>>,#ddbbbb,undefined
+default:        >>>,#ddbbbb,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Comment.Style4
+description:    コメントスタイル4
+key:            TextEditor.Comment.Style4
+current:        ;,#bbbbbb,undefined
+default:        ;,#bbbbbb,undefined
+type:           string
+candidates:     .*
+## Status：　260707　TextEditor.Comment.Style5
+description:    コメントスタイル5
+key:            TextEditor.Comment.Style5
+current:        |,#ffaaaa,undefined
+default:        |,#ffaaaa,undefined
+type:           string
+candidates:     .*
+
+
+
 ## Status：　260707　TextEditor.Url.Style
 TextEditor.CurrentEditor.DoOnCursorPosで認識されるUrlの文字スタイル（文字色, 背景色, 属性）です。
 

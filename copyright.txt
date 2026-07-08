@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.21",
+  "version": "1.2.22",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "9cde60e",
-  "commitDateTime": "2026-07-08-074752",
-  "commitMessage": "build: Bump version to 1.2.21 and update copyright.txt"
+  "commitPC": "veneno-02",
+  "commitId": "fd9ef5c",
+  "commitDateTime": "2026-07-08-173045",
+  "commitMessage": "build: Bump version to 1.2.22 and update copyright.txt"
 }
