@@ -35,6 +35,26 @@
   margin-right: 4px;
 }
 
+.ApplicationStatusBarArea__panel-display-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 70%, transparent);
+  flex-shrink: 0;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+}
+.ApplicationStatusBarArea__panel-display-mode-btn:hover {
+  color: var(--toolbar-color, #fff);
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 10%, transparent);
+}
+
 /* ── テキスト入力 ── */
 .ApplicationStatusBarArea__input {
   flex: 1;

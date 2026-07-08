@@ -18,6 +18,7 @@ import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
 import { useHighlight } from '../../contexts/HighlightContext';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './ThoughtsList.css';
 
 const ROW_HEIGHT = 36;
@@ -106,6 +107,7 @@ export function ThoughtsList({
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const { overviewThoughtIds, overviewIncludedIds, overviewCheckedIds, workoutIds, workoutFocusedId } = useHighlight();
+  const isSimpleMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Simple';
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const visibleCols = columns.filter(c => c.visible);
 
@@ -173,9 +175,9 @@ export function ThoughtsList({
           const thought = thoughts[vItem.index];
           const isSelected        = thought.ID === selectedId;
           const isChecked         = checkedIds.includes(thought.ID);
-          const isOverviewThought  = overviewThoughtIds.includes(thought.ID);
-          const isOverviewIncluded = overviewIncludedIds.includes(thought.ID);
-          const isOverviewChecked  = overviewCheckedIds.includes(thought.ID);
+          const isOverviewThought  = !isSimpleMode && overviewThoughtIds.includes(thought.ID);
+          const isOverviewIncluded = !isSimpleMode && overviewIncludedIds.includes(thought.ID);
+          const isOverviewChecked  = !isSimpleMode && overviewCheckedIds.includes(thought.ID);
           const isInWorkout        = workoutIds.includes(thought.ID);
           const isWorkoutFocused   = workoutFocusedId === thought.ID;
           const isFocused          = thought.ID === focusedId;

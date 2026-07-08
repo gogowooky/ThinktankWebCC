@@ -106,6 +106,7 @@ export type ConfigKey =
   | 'WorkoutPanel.Pane.Display'
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
+  | 'Application.PanelDisplay.Mode'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -747,6 +748,13 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
         }
       }
     },
+  },
+  'Application.PanelDisplay.Mode': {
+    panel: 'Application',
+    default: 'Normal', type: 'string', candidates: '^(Normal|Simple)$',
+    description: 'パネル表示モード（Normal=全表示, Simple=簡易表示）',
+    get: () => localStorage.getItem('tt-layout-mode') === 'simple' ? 'Simple' : 'Normal',
+    set: (_app, v) => { localStorage.setItem('tt-layout-mode', v === 'Simple' ? 'simple' : 'sipoc'); },
   },
   'Application.Status.ExMode': {
     panel: 'Application',

@@ -281,6 +281,22 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // PanelDisplay Mode
+  TTActions.Register({
+    ActionID: 'Application.PanelDisplay.Mode:Normal',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Normal');
+      item.Result = 'Normal';
+    },
+  });
+  TTActions.Register({
+    ActionID: 'Application.PanelDisplay.Mode:Simple',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Simple');
+      item.Result = 'Simple';
+    },
+  });
+
   // LineNumbers
   TTActions.Register({
     ActionID: 'TextEditor.LineNumbers.IsVisible:Toggle',

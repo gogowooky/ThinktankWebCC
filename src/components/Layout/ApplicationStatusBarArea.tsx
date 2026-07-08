@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Monitor, Globe } from 'lucide-react';
+import { Monitor, Globe, Columns4, Columns2 } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
@@ -250,6 +250,13 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   const storageMode = StorageManager.instance.mode;
   const isLocalMode = storageMode === 'electron' || storageMode === 'local';
 
+  const panelDisplayMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode');
+  const isSimpleMode = panelDisplayMode === 'Simple';
+
+  const handlePanelDisplayModeToggle = useCallback(() => {
+    TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', isSimpleMode ? 'Normal' : 'Simple');
+  }, [isSimpleMode]);
+
   // 左側コンテンツパネルの出し分け
   const renderPanel = () => {
     if (authorState === 'banner') {
@@ -305,6 +312,17 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       >
         {isLocalMode ? <Monitor size={14} /> : <Globe size={14} />}
       </div>
+      <div className="ApplicationStatusBarArea__indicator-divider" />
+
+      {/* パネル表示モードインジケータ */}
+      <button
+        className="ApplicationStatusBarArea__panel-display-mode-btn"
+        data-tip={isSimpleMode ? '簡易モード (クリックで標準モードへ)' : '標準モード (クリックで簡易モードへ)'}
+        aria-label={isSimpleMode ? '簡易モード' : '標準モード'}
+        onClick={handlePanelDisplayModeToggle}
+      >
+        {isSimpleMode ? <Columns2 size={14} /> : <Columns4 size={14} />}
+      </button>
       <div className="ApplicationStatusBarArea__indicator-divider" />
 
       {/* 左側コンテンツパネル領域 */}

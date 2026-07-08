@@ -13,8 +13,9 @@
  *   'simple' … OverviewPanel / ReThinkPanel を非表示
  */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { HighlightProvider } from '../../contexts/HighlightContext';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
@@ -53,7 +54,17 @@ export function AppLayout() {
 
   const handleLayoutModeChange = useCallback((mode: LayoutMode) => {
     setLayoutMode(mode);
-    localStorage.setItem(LS_LAYOUT_MODE, mode);
+    TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', mode === 'simple' ? 'Simple' : 'Normal');
+  }, []);
+
+  // TTUIStateManager から Application.PanelDisplay.Mode 変化を受け取って layoutMode を同期
+  useEffect(() => {
+    const listener = (_key: string, value: string) => {
+      const next: LayoutMode = value === 'Simple' ? 'simple' : 'sipoc';
+      setLayoutMode(next);
+    };
+    TTUIStateManager.instance.addListener('Application.PanelDisplay.Mode', listener);
+    return () => TTUIStateManager.instance.removeListener('Application.PanelDisplay.Mode', listener);
   }, []);
 
   // ── Splitter ハンドラー ──────────────────────────────────────────

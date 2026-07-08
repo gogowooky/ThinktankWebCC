@@ -56,6 +56,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   useAppUpdate(panel);
   useAppUpdate(vault);
 
+  // Simpleモード時にchatモードが選択されていたらfilterに切り替える
+  if (layoutMode === 'simple' && panel.ViewMode === 'chat') {
+    panel.SetViewMode('filter');
+  }
+
   // filter モードの可視アイテムとタイトルクエリはコールバックで受け取る
   const [filterVisible,    setFilterVisible]    = useState<TTThink[]>([]);
   const [filterTitleQuery, setFilterTitleQuery] = useState('');
