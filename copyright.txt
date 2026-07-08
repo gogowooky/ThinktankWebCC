@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.23",
+  "version": "1.2.24",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "b00d782",
-  "commitDateTime": "2026-07-08-175747",
-  "commitMessage": "feat: Add Application.PanelDisplay.Mode status with StatusBar toggle and Simple mode behaviors"
+  "commitId": "5cae410",
+  "commitDateTime": "2026-07-08-180750",
+  "commitMessage": "chore: Update settings.local.json allowed commands"
 }
