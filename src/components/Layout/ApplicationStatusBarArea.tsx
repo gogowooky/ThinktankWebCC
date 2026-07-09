@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Monitor, Globe, Columns4, Columns2 } from 'lucide-react';
+import { Monitor, Globe, Columns4, Columns2, Laptop } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
@@ -308,10 +308,10 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       <div
         id="StatusBarModeIndicator"
         className="ApplicationStatusBarArea__mode-indicator"
-        data-tip={isLocalMode ? '起動モード: Local' : '起動モード: Online'}
+        data-tip={`ExecutionMode:${storageMode === 'electron' ? 'Electron' : storageMode === 'local' ? 'Local' : 'PWA'}`}
         data-tip-side="right"
       >
-        {isLocalMode ? <Monitor size={14} /> : <Globe size={14} />}
+        {storageMode === 'electron' ? <Laptop size={14} /> : storageMode === 'local' ? <Monitor size={14} /> : <Globe size={14} />}
       </div>
       <div className="ApplicationStatusBarArea__indicator-divider" />
 
