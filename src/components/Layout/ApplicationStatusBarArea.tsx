@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Monitor, Globe, Columns4, Columns2, Laptop } from 'lucide-react';
+import { Monitor, Globe, Columns4, Columns2, Laptop, CheckCircle, RefreshCw, Clock, AlertCircle, WifiOff } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
@@ -312,6 +312,22 @@ export function ApplicationStatusBarArea({ panel }: Props) {
         data-tip-side="right"
       >
         {storageMode === 'electron' ? <Laptop size={14} /> : storageMode === 'local' ? <Monitor size={14} /> : <Globe size={14} />}
+      </div>
+      <div className="ApplicationStatusBarArea__indicator-divider" />
+
+      {/* 同期状態インジケータ */}
+      <div
+        id="StatusBarSyncIndicator"
+        className="ApplicationStatusBarArea__mode-indicator"
+        data-tip={`SynchronizationMode:${status.SyncState || 'synced'}`}
+        data-tip-side="right"
+      >
+        {status.SyncState === 'synced' && <CheckCircle size={14} />}
+        {status.SyncState === 'syncing' && <RefreshCw size={14} className="tt-statusbar-spin" />}
+        {status.SyncState === 'pending' && <Clock size={14} />}
+        {status.SyncState === 'error' && <AlertCircle size={14} />}
+        {status.SyncState === 'offline' && <WifiOff size={14} />}
+        {!status.SyncState && <CheckCircle size={14} />}
       </div>
       <div className="ApplicationStatusBarArea__indicator-divider" />
 

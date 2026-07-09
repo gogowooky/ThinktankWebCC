@@ -277,4 +277,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   padding: 0 6px;
+.tt-settings-spin {
+  animation: tt-settings-spin 1s linear infinite;
+}
+
+/* 同期中の回転アニメーション */
+.tt-statusbar-spin {
+  animation: tt-statusbar-spin 1s linear infinite;
+}
+
+@keyframes tt-statusbar-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }

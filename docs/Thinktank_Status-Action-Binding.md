@@ -18,14 +18,6 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
-## 完了：　260709　Application.Synchronization.Status
-　アプリケーションの尾月状態を示す状態変数です。
-description:    
-key:            Application.Synchronization.Status
-current:        synced
-default:        synced
-type:           string
-candidates:      ^(synced|syncing|pending|error|offline)$
 
 # 対応不要：その他：メニュー
 # 対応不要：その他：タグ
@@ -41,6 +33,15 @@ Tag.AI              外部AIへ接続、                                        
 Tag.Anchor          ファイル内での参照                                      [:>highlighter]  [:anchor]
 
 # Application ======================================================================================================
+## Status：　260709　Application.Synchronization.Status
+　アプリケーションの尾月状態を示す状態変数です。
+description:    
+key:            Application.Synchronization.Status
+current:        synced
+default:        synced
+type:           string
+candidates:      ^(synced|syncing|pending|error|offline)$
+
 ## Status：　260709　Application.Execution.Mode
 　アプリケーションの起動モードを示す状態変数です。
 description:    
