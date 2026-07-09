@@ -117,6 +117,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     return () => clearTimeout(timer);
   }, [panel.ViewMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 全種別検索フラグの監視
+  useEffect(() => {
+    if (panel.ShouldResetTypesToAll) {
+      panel.ShouldResetTypesToAll = false;
+      setVisibleTypes(new Set(ALL_CONTENT_TYPES));
+    }
+  }, [panel.ShouldResetTypesToAll, panel]);
+
   // 検索 state（ビュー切り替えで消えないよう ThinktankArea で保持）
   const [searchQuery,    setSearchQuery]    = useState('');
   const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);

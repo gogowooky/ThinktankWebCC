@@ -2154,7 +2154,12 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
       case 'think': case 'memo': return 'Think';
       case 'mail':          return 'Mail';
       case 'chat':          return 'Chat';
-      case 'ai':            return 'AI';
+      case 'ai':
+      case 'gemini':
+      case 'chatgpt':
+      case 'claude':
+      case 'gpt':
+        return 'AI';
       default:              return 'WebSearch';
     }
   }
@@ -2283,10 +2288,18 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           app.ThinktankPanel.SetViewMode('filter');
           app.ThinktankPanel.SetContentFilter(keywords);
           item.Result = `コンテンツ [${keywords}] で検索しました`;
-        } else {
-          // [THINK:id] → ThinkをIDで開く
+        } else if (/^\d{4}-\d{2}-\d{2}-\d{6}$/.test(val)) {
+          // [THINK:id] → ThinkをIDで直接開く
           app.OpenThinkInWorkout(val);
           item.Result = `Think [${val}] を開きました`;
+        } else {
+          // [THINK:keywords] / [MEMO:keywords] → 全種別を対象にタイトル欄に入力して検索
+          app.ThinktankPanel.IsAreaOpen = true;
+          app.ThinktankPanel.SetViewMode('filter');
+          app.ThinktankPanel.SetFilter(val);
+          app.ThinktankPanel.ShouldResetTypesToAll = true;
+          app.ThinktankPanel.NotifyUpdated();
+          item.Result = `全種別を対象に [${val}] でタイトル検索しました`;
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
@@ -2337,7 +2350,21 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         }
         const inner = text.slice(1, -1);
         const colonIdx = inner.indexOf(':');
-        const aiName = (colonIdx >= 0 ? inner.slice(colonIdx + 1).trim() : '').toLowerCase();
+        
+        let aiName = '';
+        if (colonIdx >= 0) {
+          const left = inner.slice(0, colonIdx).trim().toLowerCase();
+          const right = inner.slice(colonIdx + 1).trim().toLowerCase();
+          if (left === 'ai') {
+            aiName = right === '>' ? 'gemini' : right;
+          } else if (right === '>') {
+            aiName = left;
+          } else {
+            aiName = left;
+          }
+        } else {
+          aiName = inner.trim().toLowerCase();
+        }
 
         // タグ以降の行テキストをsentenceとして取得
         let sentence = '';
@@ -2359,9 +2386,9 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         } else if (aiName === 'claude') {
           url = q ? `https://claude.ai/new?q=${q}` : 'https://claude.ai/new';
         } else if (aiName === 'chatgpt' || aiName === 'gpt') {
-          url = 'https://chat.openai.com/';
+          url = q ? `https://chatgpt.com/?q=${q}` : 'https://chatgpt.com/';
         } else {
-          url = 'https://gemini.google.com/';
+          url = q ? `https://gemini.google.com/app?q=${q}` : 'https://gemini.google.com/';
         }
         window.open(url, '_blank');
         item.Result = `AI [${aiName || 'default'}] を開きました`;

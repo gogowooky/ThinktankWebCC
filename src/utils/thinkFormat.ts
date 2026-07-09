@@ -152,10 +152,20 @@ export function parseThought(content: string): ThoughtContent {
     const s = line.trim();
     if (s.startsWith('* ')) {
       const id = s.slice(2).trim();
-      if (id) ids.push(id);
+      if (id) {
+        if (/^\d{4}-\d{2}-\d{2}-\d{6}$/.test(id)) {
+          ids.push(id);
+        } else {
+          result.filter.keyword = result.filter.keyword ? `${result.filter.keyword} ${id}` : id;
+        }
+      }
     } else if (s.startsWith('- ')) {
       const id = s.slice(2).trim();
-      if (id) excludeIds.push(id);
+      if (id) {
+        if (/^\d{4}-\d{2}-\d{2}-\d{6}$/.test(id)) {
+          excludeIds.push(id);
+        }
+      }
     } else if (s.startsWith('>> ')) {
       const body = s.slice(3).trim();
       if (body.startsWith('検索語：')) {

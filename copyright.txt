@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.34",
+  "version": "1.2.35",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "36e1103",
-  "commitDateTime": "2026-07-09-232514",
-  "commitMessage": "docs: Update tag classification and GoogleMap URL"
+  "commitId": "a8f47c4",
+  "commitDateTime": "2026-07-10-075510",
+  "commitMessage": "feat: yyyy-MM-dd-hhmmss以外のIDをKeywordsとして処理、外部AIタグ（Gemini/ChatGPT/Claude）の修正、および[THINK:keywords][MEMO:keywords]による全種別検索機能の実装"
 }

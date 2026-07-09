@@ -43,6 +43,9 @@ export class TTThinktankPanel extends TTUIItem {
   /** チェック済みアイテムのみ表示するフラグ */
   public ShowCheckedOnly: boolean = false;
 
+  /** 全種別表示へのリセット要求フラグ */
+  public ShouldResetTypesToAll: boolean = false;
+
   public override get ClassName(): string {
     return 'TTThinktankPanel';
   }
