@@ -108,7 +108,7 @@ export type ConfigKey =
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | 'Application.PanelDisplay.Mode'
-  | 'Application.Execution.Mode'
+  | 'Application.Execution.Status'
   | 'Application.Synchronization.Status'
   | string; // プリセットキーなどの動的拡張を許容
 
@@ -759,7 +759,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: () => localStorage.getItem('tt-layout-mode') === 'simple' ? 'Simple' : 'Normal',
     set: (_app, v) => { localStorage.setItem('tt-layout-mode', v === 'Simple' ? 'simple' : 'sipoc'); },
   },
-  'Application.Execution.Mode': {
+  'Application.Execution.Status': {
     panel: 'Application',
     default: 'PWA', type: 'string', candidates: '^(PWA|Local|Electron)$',
     description: 'アプリケーションの起動モード',
