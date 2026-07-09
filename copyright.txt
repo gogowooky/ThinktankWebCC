@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.29",
+  "version": "1.2.30",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "fa96bf9",
-  "commitDateTime": "2026-07-09-100137",
-  "commitMessage": "chore: Add synchronization status icon and tooltip to status bar"
+  "commitId": "a0656e1",
+  "commitDateTime": "2026-07-09-100221",
+  "commitMessage": "fix(css): Fix CSS syntax warning by adding missing closing brace"
 }
