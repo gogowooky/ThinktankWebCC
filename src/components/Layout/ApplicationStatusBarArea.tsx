@@ -319,7 +319,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       <div
         id="StatusBarSyncIndicator"
         className="ApplicationStatusBarArea__mode-indicator"
-        data-tip={`SynchronizationMode:${status.SyncState || 'synced'}`}
+        data-tip={`Synchronization:${status.SyncState || 'synced'}`}
         data-tip-side="right"
       >
         {status.SyncState === 'synced' && <CheckCircle size={14} />}
