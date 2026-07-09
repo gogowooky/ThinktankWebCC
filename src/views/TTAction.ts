@@ -31,7 +31,14 @@ export type ActionID =
   | 'TextEditor.BracketPairColorization.IsVisible:Toggle'
   | 'TextEditor.CurrentEditor.DoOnCursorPos:Url:Open'
   | 'TextEditor.CurrentEditor.DoOnCursorPos:File:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:Think:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:AI:Open'
+  | 'TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open'
   | 'TextEditor.CurrentEditor.DoOnCursorPos:Menu'
   | string; // 動的・外部定義のアクションを許容
 

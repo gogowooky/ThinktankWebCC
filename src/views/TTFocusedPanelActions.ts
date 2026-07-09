@@ -2140,42 +2140,273 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     }
   });
 
+  // タグのsubTypeを判別するヘルパー
+  function classifyTagSubTag(text: string): string {
+    if (!text.startsWith('[') || !text.endsWith(']')) return 'Think';
+    const inner = text.slice(1, -1);
+    if (inner.startsWith(':')) return 'Anchor';
+    const colonIdx = inner.indexOf(':');
+    if (colonIdx < 0) return 'Think'; // [TAG] プレーンタグ → Thinkフィルター
+    const key = inner.slice(0, colonIdx).trim().toLowerCase();
+    switch (key) {
+      case 'googleroute':   return 'GoogleRoute';
+      case 'yahootransfer': return 'YahooTransfer';
+      case 'think': case 'memo': return 'Think';
+      case 'mail':          return 'Mail';
+      case 'chat':          return 'Chat';
+      case 'ai':            return 'AI';
+      default:              return 'WebSearch';
+    }
+  }
+
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open',
-    Description: 'タグを開く、またはフィルター検索を設定します',
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open',
+    Description: 'タグのキーに対応する検索テンプレートでブラウザを開きます',
     Completion: async (item) => {
       try {
         const text = getTextOnCursorSafe();
-        if (!text || !(text.startsWith('[') && text.endsWith(']'))) {
-          item.Result = 'カーソル位置のテキストがタグではありません';
+        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
+          item.Result = 'カーソル位置のテキストがWebSearchタグではありません';
           return;
         }
-        const innerText = text.slice(1, -1);
-        if (innerText.includes(':')) {
-          const parts = innerText.split(':');
-          const key = parts[0].trim();
-          const val = parts.slice(1).join(':').trim();
+        const inner = text.slice(1, -1);
+        const colonIdx = inner.indexOf(':');
+        if (colonIdx < 0) {
+          item.Result = 'WebSearchタグにはキーが必要です（例：[Google:キーワード]）';
+          return;
+        }
+        const key = inner.slice(0, colonIdx).trim();
+        const val = inner.slice(colonIdx + 1).trim();
+        const WEB_SEARCH_TEMPLATES = await getSearchTags();
+        const template = WEB_SEARCH_TEMPLATES[key.toLowerCase()];
+        if (!template) {
+          item.Result = `検索テンプレート [${key}] が見つかりません`;
+          return;
+        }
+        const url = template.replace('{0}', encodeURIComponent(val));
+        window.open(url, '_blank');
+        item.Result = `WebSearch [${key}:${val}] を開きました`;
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
 
-          const WEB_SEARCH_TEMPLATES = await getSearchTags();
-          const template = WEB_SEARCH_TEMPLATES[key.toLowerCase()];
-          if (template) {
-            const url = template.replace('{0}', encodeURIComponent(val));
-            window.open(url, '_blank');
-            item.Result = `WebSearch [${key}:${val}] を開きました`;
-          } else if (key.toLowerCase() === 'memo' || key.toLowerCase() === 'thought' || key.toLowerCase() === 'table') {
-            app.OpenThinkInWorkout(val);
-            item.Result = `Think [${val}] を開きました`;
-          } else {
-            app.ThinktankPanel.IsAreaOpen = true;
-            app.ThinktankPanel.SetViewMode('filter');
-            app.ThinktankPanel.SetFilter(innerText);
-            item.Result = `タグ [${innerText}] で検索しました`;
-          }
-        } else {
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open',
+    Description: 'Google Mapsで複数地点のルートを表示します',
+    Completion: (item) => {
+      try {
+        const text = getTextOnCursorSafe();
+        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
+          item.Result = 'カーソル位置のテキストがGoogleRouteタグではありません';
+          return;
+        }
+        const inner = text.slice(1, -1);
+        const colonIdx = inner.indexOf(':');
+        if (colonIdx < 0) { item.Result = 'GoogleRouteタグの形式が正しくありません'; return; }
+        const places = inner.slice(colonIdx + 1).split(',').map(p => p.trim()).filter(Boolean);
+        if (places.length < 2) { item.Result = '経由地は2つ以上指定してください'; return; }
+        const encoded = places.map(p => encodeURIComponent(p)).join('/');
+        window.open(`https://www.google.com/maps/dir/${encoded}/`, '_blank');
+        item.Result = `Google Mapsルート [${places.join(' → ')}] を開きました`;
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open',
+    Description: 'Yahoo乗換案内で電車の乗換を検索します',
+    Completion: (item) => {
+      try {
+        const text = getTextOnCursorSafe();
+        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
+          item.Result = 'カーソル位置のテキストがYahooTransferタグではありません';
+          return;
+        }
+        const inner = text.slice(1, -1);
+        const colonIdx = inner.indexOf(':');
+        if (colonIdx < 0) { item.Result = 'YahooTransferタグの形式が正しくありません'; return; }
+        const [from = '', to = '', via = '', timeStr = '', depArr = ''] =
+          inner.slice(colonIdx + 1).split(',').map(s => s.trim());
+        const params = new URLSearchParams();
+        if (from) params.set('from', from);
+        if (to)   params.set('to', to);
+        if (via)  params.set('via', via);
+        if (timeStr) {
+          const [hh = '0', mm = '0'] = timeStr.split(':');
+          const now = new Date();
+          params.set('y',  String(now.getFullYear()));
+          params.set('m',  String(now.getMonth() + 1));
+          params.set('d',  String(now.getDate()));
+          params.set('hh', hh.padStart(2, '0'));
+          const mmPad = mm.padStart(2, '0');
+          params.set('m1', mmPad[0]);
+          params.set('m2', mmPad[1]);
+        }
+        params.set('type', depArr.toLowerCase() === 'arrive' ? '4' : '1');
+        window.open(`https://transit.yahoo.co.jp/search/result?${params.toString()}`, '_blank');
+        item.Result = `Yahoo乗換案内 [${from} → ${to}] を開きました`;
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Think:Open',
+    Description: 'ThinkファイルをIDで開く、またはタイトル・コンテンツでフィルター検索します',
+    Completion: (item) => {
+      try {
+        const text = getTextOnCursorSafe();
+        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
+          item.Result = 'カーソル位置のテキストがThinkタグではありません';
+          return;
+        }
+        const inner = text.slice(1, -1);
+        const colonIdx = inner.indexOf(':');
+        if (colonIdx < 0) {
+          // [TAG] プレーンタグ → タイトルフィルター
           app.ThinktankPanel.IsAreaOpen = true;
           app.ThinktankPanel.SetViewMode('filter');
-          app.ThinktankPanel.SetFilter(innerText);
-          item.Result = `タグ [${innerText}] で検索しました`;
+          app.ThinktankPanel.SetFilter(inner);
+          item.Result = `タグ [${inner}] でタイトル検索しました`;
+          return;
+        }
+        const val = inner.slice(colonIdx + 1).trim();
+        if (val.startsWith('>')) {
+          // [THINK:>keywords] → コンテンツフィルター
+          const keywords = val.slice(1).trim();
+          app.ThinktankPanel.IsAreaOpen = true;
+          app.ThinktankPanel.SetViewMode('filter');
+          app.ThinktankPanel.SetContentFilter(keywords);
+          item.Result = `コンテンツ [${keywords}] で検索しました`;
+        } else {
+          // [THINK:id] → ThinkをIDで開く
+          app.OpenThinkInWorkout(val);
+          item.Result = `Think [${val}] を開きました`;
+        }
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open',
+    Description: 'メールを開く、またはメール検索を行います（未実装）',
+    Completion: (item) => {
+      item.Result = '[Mail] アクションは未実装です';
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open',
+    Description: 'Thinktank>Think一覧でchatフィルター付きでキーワード検索します',
+    Completion: (item) => {
+      try {
+        const text = getTextOnCursorSafe();
+        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
+          item.Result = 'カーソル位置のテキストがChatタグではありません';
+          return;
+        }
+        const inner = text.slice(1, -1);
+        const colonIdx = inner.indexOf(':');
+        const keywords = colonIdx >= 0 ? inner.slice(colonIdx + 1).trim() : '';
+        app.ThinktankPanel.IsAreaOpen = true;
+        app.ThinktankPanel.SetViewMode('filter');
+        if (keywords) app.ThinktankPanel.SetFilter(keywords);
+        item.Result = `Chat [${keywords}] で検索しました`;
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:AI:Open',
+    Description: '外部AI（Gemini/Claude/ChatGPT）へ接続します',
+    Completion: (item) => {
+      try {
+        const text = getTextOnCursorSafe();
+        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
+          item.Result = 'カーソル位置のテキストがAIタグではありません';
+          return;
+        }
+        const inner = text.slice(1, -1);
+        const colonIdx = inner.indexOf(':');
+        const aiName = (colonIdx >= 0 ? inner.slice(colonIdx + 1).trim() : '').toLowerCase();
+
+        // タグ以降の行テキストをsentenceとして取得
+        let sentence = '';
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (editor) {
+          const pos = editor.getPosition();
+          const model = editor.getModel();
+          if (pos && model) {
+            const lineContent = model.getLineContent(pos.lineNumber);
+            const tagIdx = lineContent.indexOf(text);
+            if (tagIdx >= 0) sentence = lineContent.slice(tagIdx + text.length).trim();
+          }
+        }
+
+        let url: string;
+        const q = sentence ? encodeURIComponent(sentence) : '';
+        if (aiName === 'gemini') {
+          url = q ? `https://gemini.google.com/app?q=${q}` : 'https://gemini.google.com/';
+        } else if (aiName === 'claude') {
+          url = q ? `https://claude.ai/new?q=${q}` : 'https://claude.ai/new';
+        } else if (aiName === 'chatgpt' || aiName === 'gpt') {
+          url = 'https://chat.openai.com/';
+        } else {
+          url = 'https://gemini.google.com/';
+        }
+        window.open(url, '_blank');
+        item.Result = `AI [${aiName || 'default'}] を開きました`;
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open',
+    Description: 'アンカーへ移動（[:>anchor]）、またはアンカーをHighlighterに設定（[:anchor]）します',
+    Completion: (item) => {
+      try {
+        const text = getTextOnCursorSafe();
+        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
+          item.Result = 'カーソル位置のテキストがAnchorタグではありません';
+          return;
+        }
+        const inner = text.slice(1, -1); // e.g. ':>anchor' or ':anchor'
+        if (inner.startsWith(':>')) {
+          // 8.1 ジャンプ: [:>anchor] → [:anchor] で始まる行を探して移動
+          const anchorName = inner.slice(2);
+          const searchTag = `[:${anchorName}]`;
+          const editor = TTShortcutManager.instance.activeEditor;
+          if (!editor) { item.Result = 'エディタが見つかりません'; return; }
+          const model = editor.getModel();
+          if (!model) { item.Result = 'エディタモデルが見つかりません'; return; }
+          const lineCount = model.getLineCount();
+          for (let i = 1; i <= lineCount; i++) {
+            if (model.getLineContent(i).trimStart().startsWith(searchTag)) {
+              editor.setPosition({ lineNumber: i, column: 1 });
+              editor.revealLineInCenter(i);
+              item.Result = `アンカー [:${anchorName}] (行${i}) へ移動しました`;
+              return;
+            }
+          }
+          item.Result = `アンカー [:${anchorName}] が見つかりませんでした`;
+        } else if (inner.startsWith(':')) {
+          // 8.2 Highlighter設定: [:anchor]
+          const anchorName = inner.slice(1);
+          TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.Text', anchorName);
+          item.Result = `Highlighter を [${anchorName}] に設定しました`;
+        } else {
+          item.Result = 'Anchorタグの形式が正しくありません（例：[:anchor] または [:>anchor]）';
         }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
@@ -2197,7 +2428,8 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         if (text.startsWith('http://') || text.startsWith('https://')) {
           subActionId = 'TextEditor.CurrentEditor.DoOnCursorPos:Url:Open';
         } else if (text.startsWith('[') && text.endsWith(']')) {
-          subActionId = 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open';
+          const subTag = classifyTagSubTag(text);
+          subActionId = `TextEditor.CurrentEditor.DoOnCursorPos:${subTag}:Open` as ActionID;
         } else {
           subActionId = 'TextEditor.CurrentEditor.DoOnCursorPos:File:Open';
         }
@@ -2230,7 +2462,6 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         const prefixMap = {
           url: 'TextEditor.CurrentEditor.DoOnCursorPos:Url:',
           filepath: 'TextEditor.CurrentEditor.DoOnCursorPos:File:',
-          tag: 'TextEditor.CurrentEditor.DoOnCursorPos:Tag:'
         };
 
         let prefix = '';
@@ -2239,8 +2470,9 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           prefix = prefixMap.url;
           typeLabel = 'URL アクション';
         } else if (text.startsWith('[') && text.endsWith(']')) {
-          prefix = prefixMap.tag;
-          typeLabel = 'タグ アクション';
+          const subTag = classifyTagSubTag(text);
+          prefix = `TextEditor.CurrentEditor.DoOnCursorPos:${subTag}:`;
+          typeLabel = `タグ(${subTag}) アクション`;
         } else {
           prefix = prefixMap.filepath;
           typeLabel = 'パス アクション';

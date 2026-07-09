@@ -156,4 +156,13 @@ export class TTThinktankPanel extends TTUIItem {
     this.Filter = '';
     this.NotifyUpdated();
   }
+
+  /** Thoughts絞り込みテキスト（コンテンツ検索用）*/
+  public ContentFilter: string = '';
+
+  /** ContentFilterテキストを更新する */
+  public SetContentFilter(filter: string): void {
+    this.ContentFilter = filter;
+    this.NotifyUpdated();
+  }
 }

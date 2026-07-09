@@ -21,8 +21,9 @@
 
 # 対応不要：その他：メニュー
 # 対応不要：その他：タグ
-TextEditor.CurrentEditor.DoOnCursorPos には取得された Tag が設定されますが、
-その後のアクションについて以下のように分類して各subTag毎でアクションを定義することを考えています。(大文字はタグ文字、ただし大文字小文字混和可)
+TextEditor.CurrentEditor.TextOnCursorPos にはカーソル位置で取得されたアクション用の Tag が設定されますが、
+そのTagのアクションについて以下のように分類しなおして、各subTag毎でアクションを再定義することを考えています。
+各subTagの例示において、大文字はタグ文字（ただし運用は大文字小文字混和可)、小文字はパラメータ文字です。
 1. Tag.WebSearch:       docs\DefaultSearchTag.mdで定義済みの WebSearch 用タグ
 2. Tag.GoogleRoute:     GoogleMapでplace1,2,3...を通るルートを表示するためのタグ        例：[GOOGLEROUTE:plasce1,place2,place3...]
 3. Tag.YahooTransfer:   Yahoo乗換案内で電車を検索するためのタグ                         例：[YAHOOTRANSFER:from,to,via,time,departure|arrive] 
@@ -36,9 +37,9 @@ TextEditor.CurrentEditor.DoOnCursorPos には取得された Tag が設定され
 8. Tag.Anchor           8.1 ファイル内で[:anchor]で始まる行に飛ぶためのタグ             例：[:>anchor]
                         8.2 anchorテキストをHighlighterとして設定するためのタグ         例：[:anchor]
 本方針を踏まえて、TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open は廃止する代わりに、
-各TextEditor.CurrentEditor.DoOnCursorPos:Tag.{subTag}:Open を作成します。
-そして、TextEditor.CurrentEditor.DoOnCursorPosは上記例示を参考に、Tag.{subTag}へと正しく分岐するように修正してください。
-TextEditor.CurrentEditor.TextOnCursorPosも正しい値になるよう修正してください。
+各TextEditor.CurrentEditor.DoOnCursorPos:{subTag}:Open を作成します。
+TextEditor.CurrentEditor.TextOnCursorPosは正しい{subTag}値になるよう修正してください。
+TextEditor.CurrentEditor.DoOnCursorPosは上記の例示を参考に、各TextEditor.CurrentEditor.DoOnCursorPos:{subTag}:Openへと正しく分岐するように修正してください。
 
 # Application ======================================================================================================
 ## Status：　260709　Application.Synchronization.Status
@@ -424,8 +425,17 @@ candidates:     .*
 　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
 　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
-## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
-　CursorPos位置が、tagを表す部分であれば、大かっこ内のテキストを取り出し、コロン「:」がある場合はクエリとして各検索テンプレート（Google、Spotify等）をブラウザで開きます。また「memo:ID」の場合はアプリ内で対象のThinkを開きます。コロンがない通常タグ（例: [TODO]）の場合は左パネルのフィルター検索にそのキーワードを設定して絞り込んでください。
+## 廃止：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
+　→ 各subTagアクション（WebSearch/GoogleRoute/YahooTransfer/Think/Mail/Chat/AI/Anchor）に分割。
+
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:AI:Open
+## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
