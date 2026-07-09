@@ -3,7 +3,7 @@ Google,         "Google検索(J)",                https://www.google.com/search?
 GoogleE,        "Google検索(E)",                http://www.google.co.jp/search?lr=lang_en&q={0}
 GoogleJE,       "Google翻訳(JE)",               https://translate.google.com/?hl=ja$op=translate&sl=ja&tl=en&text={0}
 GoogleEJ,       "Google翻訳(EJ)",               https://translate.google.com/?hl=ja$&op=translate&sl=en&tl=ja&text={0}
-GoogleMap,      "Googleマップ",                 https://www.google.co.jp/maps/place/{0}
+GoogleMap,      "Googleマップ",                 https://google.com/maps/search/{0}
 GScholar,       "Googleスカラー",               https://scholar.google.co.jp/scholar?q={0}
 Youtube,        "Youtube",                      https://www.youtube.com/results?search_query={0}
 Pubmed,         "Pubmed検索",                   https://pubmed.ncbi.nlm.nih.gov/?term={0}

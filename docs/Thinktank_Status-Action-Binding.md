@@ -21,19 +21,27 @@
 
 # 対応不要：その他：メニュー
 # 対応不要：その他：タグ
-TextEditor.CurrentEditor.DoOnCursorPos で取得された Tag について以下のように分類して各Tagでアクションを定義することを考えています。
-
-Tag.Search          docs\DefaultSearchTag.mdで定義された WebSearch 用タグ　　[sitename:keywords]
-Tag.Route           GoogleMap, 電車                                        [GoogleRoute:keyword1,keyword2,keyword3]
-                                                                            [YahooTransfer:] 
-Tag.Memo            Memo全体検索、Thought内検索                             [memo:ID] [memo:keywords] 
-Tag.Mail            Mail検索（可能？）                                      [mail:ID] [mail:keywords]
-Tag.Chat            Chat用Pane作成                                          [chat:>] sentence
-Tag.AI              外部AIへ接続、                                          [ai:>] sentence
-Tag.Anchor          ファイル内での参照                                      [:>highlighter]  [:anchor]
+TextEditor.CurrentEditor.DoOnCursorPos には取得された Tag が設定されますが、
+その後のアクションについて以下のように分類して各subTag毎でアクションを定義することを考えています。(大文字はタグ文字、ただし大文字小文字混和可)
+1. Tag.WebSearch:       docs\DefaultSearchTag.mdで定義済みの WebSearch 用タグ
+2. Tag.GoogleRoute:     GoogleMapでplace1,2,3...を通るルートを表示するためのタグ        例：[GOOGLEROUTE:plasce1,place2,place3...]
+3. Tag.YahooTransfer:   Yahoo乗換案内で電車を検索するためのタグ                         例：[YAHOOTRANSFER:from,to,via,time,departure|arrive] 
+4. Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用)
+                        4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)
+                        4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)
+5. Tag.Mail             5.1 特定mailを指定するタグ                                      例：[MAIL]:ID]（アクション未実装）
+                        5.2 mail検索をするためのタグ                                    例：[MAIL]:keywords]（アクション未実装）
+6. Tag.Chat             6.1 Thinktank>Think一覧でタイトル絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:keywords]
+7. Tag.AI              外部AI(ai:GEMINI,CLAUDE,CHATGTP)へ接続し、sentenceで問い合わせるためのタグ        例：[ai:>] sentence
+8. Tag.Anchor           8.1 ファイル内で[:anchor]で始まる行に飛ぶためのタグ             例：[:>anchor]
+                        8.2 anchorテキストをHighlighterとして設定するためのタグ         例：[:anchor]
+本方針を踏まえて、TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open は廃止する代わりに、
+各TextEditor.CurrentEditor.DoOnCursorPos:Tag.{subTag}:Open を作成します。
+そして、TextEditor.CurrentEditor.DoOnCursorPosは上記例示を参考に、Tag.{subTag}へと正しく分岐するように修正してください。
+TextEditor.CurrentEditor.TextOnCursorPosも正しい値になるよう修正してください。
 
 # Application ======================================================================================================
-## 完了：　260709　Application.Synchronization.Status
+## Status：　260709　Application.Synchronization.Status
 　アプリケーションの同期状態を示す状態変数です。
 description:    
 key:            Application.Synchronization.Status
@@ -41,7 +49,7 @@ current:        synced
 default:        synced
 type:           string
 candidates:      ^(synced|syncing|pending|error|offline)$
-## 完了：　260709　Application.Execution.Status
+## Status：　260709　Application.Execution.Status
 　アプリケーションの起動モードを示す状態変数です。
 description:    
 key:            Application.Execution.Status
@@ -418,12 +426,20 @@ candidates:     .*
 　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
 　CursorPos位置が、tagを表す部分であれば、大かっこ内のテキストを取り出し、コロン「:」がある場合はクエリとして各検索テンプレート（Google、Spotify等）をブラウザで開きます。また「memo:ID」の場合はアプリ内で対象のThinkを開きます。コロンがない通常タグ（例: [TODO]）の場合は左パネルのフィルター検索にそのキーワードを設定して絞り込んでください。
-## Status：　260630　TextEditor.CurrentEditor.DoOnCursorPos
+## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
 　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open　を実施
 　※ダブルクリック（Left2）起動時などの状態更新ズレ（一回前のリンクが起動する問題）をエディタ同期関数（syncTextOnCursor）の導入により修正完了。
+## Status：　260629　TextEditor.CurrentEditor.TextOnCursorPos
+description:    現在のエディタのカーソル位置のテキスト（URL、ファイルパス、タグなど）
+key:            TextEditor.CurrentEditor.TextOnCursorPos
+current:        
+default:        
+type:           string
+candidates:     .*
+
 
 # TextEditor Cursor ================================================================================================
 ## 完了：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
@@ -447,14 +463,6 @@ current:        0
 default:        0
 type:           string
 candidates:      .*
-
-## Status：　260629　TextEditor.CurrentEditor.TextOnCursorPos
-description:    現在のエディタのカーソル位置のテキスト（URL、ファイルパス、タグなど）
-key:            TextEditor.CurrentEditor.TextOnCursorPos
-current:        
-default:        
-type:           string
-candidates:     .*
 
 
 # TextEditor Heading ===============================================================================================

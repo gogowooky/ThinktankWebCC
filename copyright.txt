@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.33",
+  "version": "1.2.34",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "92bfd33",
-  "commitDateTime": "2026-07-09-100641",
-  "commitMessage": "chore: Remove Application Status section from settings view"
+  "commitId": "08c35b4",
+  "commitDateTime": "2026-07-09-232514",
+  "commitMessage": "docs: Update tag classification and GoogleMap URL"
 }
