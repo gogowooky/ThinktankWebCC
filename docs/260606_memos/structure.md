@@ -43,11 +43,11 @@
       │    │         │    │    └─ ヒット件数カウントテキスト表示
       │    │         │    ├─ 作成日フィルター行
       │    │         │    │    ├─ ［input[type=date]］基準日選択
-      │    │         │    │    ├─ ［input[type=text]］範囲指定入力欄 (+Nd / @N)
+      │    │         │    │    ├─ ［input[type=text]］範囲指定入力欄 (+Nd / @Nd)
       │    │         │    │    └─ ［X］クリアボタン
       │    │         │    └─ 更新日フィルター行
       │    │         │         ├─ ［input[type=date]］基準日選択
-      │    │         │         ├─ ［input[type=text]］範囲指定入力欄 (+Nd / @N)
+      │    │         │         ├─ ［input[type=text]］範囲指定入力欄 (+Nd / @Nd)
       │    │         │         └─ ［X］クリアボタン
 ##### │    │         └─ (ViewMode に応じた切り替え表示)
       │    │              ├─ ThinktankFilterView (Think一覧モード)

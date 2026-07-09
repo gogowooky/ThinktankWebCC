@@ -138,7 +138,7 @@ export const OverviewFilterPanel = React.memo(forwardRef<OverviewFilterPanelRef,
                 type="text"
                 value={createdRange}
                 onChange={e => onCreatedRangeChange(e.target.value)}
-                placeholder="+Nd / @N"
+                placeholder="+Nd / @Nd"
                 data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
                 data-tip-side="left"
               />
@@ -172,7 +172,7 @@ export const OverviewFilterPanel = React.memo(forwardRef<OverviewFilterPanelRef,
                 type="text"
                 value={updatedRange}
                 onChange={e => onUpdatedRangeChange(e.target.value)}
-                placeholder="+Nd / @N"
+                placeholder="+Nd / @Nd"
                 data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
                 data-tip-side="left"
               />

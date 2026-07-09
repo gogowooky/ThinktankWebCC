@@ -24,3 +24,4 @@ JST,            "科学技術振興機構",             https://www.jstage.jst.g
 PMC,            "PubMed Central",               https://www.ncbi.nlm.nih.gov/pmc/?term={0}
 MHLW,           "厚生労働省",                   https://www.mhlw.go.jp/search.html?q={0}
 Yahoo,          "Yahoo!検索",                    https://search.yahoo.co.jp/search?p={0}&fr=top_ga1_sa&ei=UTF-8&ts=1822&aq=-1&oq=&at=&ai=bfeb5a61-4500-491e-a69e-38786e766c4a
+
