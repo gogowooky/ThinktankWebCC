@@ -318,7 +318,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       {/* パネル表示モードインジケータ */}
       <button
         className="ApplicationStatusBarArea__panel-display-mode-btn"
-        data-tip="DisplayMode"
+        data-tip={`DisplayMode:${isSimpleMode ? 'Simple' : 'Normal'}`}
         data-tip-side="right"
         aria-label={isSimpleMode ? '簡易モード' : '標準モード'}
         onClick={handlePanelDisplayModeToggle}

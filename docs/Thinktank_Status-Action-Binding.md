@@ -18,15 +18,6 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
-## 完了：　260709　Application.Execution.Mode
-　アプリケーションの起動モードを示す状態変数です。
-
-description:    
-key:            Application.Execution.Mode
-current:        PWA
-default:        PWA
-type:           string
-candidates:      ^(PWA|Local|Electron)$
 
 # 対応不要：その他：標準モードと簡易モード
     選択されたモード（標準/簡易）のアイコンを、StatusBar左端のアプリケーションの状態>モードのアイコンの右側に配置し、
@@ -54,6 +45,15 @@ Tag.AI              外部AIへ接続、                                        
 Tag.Anchor          ファイル内での参照                                      [:>highlighter]  [:anchor]
 
 # Application ======================================================================================================
+## Status：　260709　Application.Execution.Mode
+　アプリケーションの起動モードを示す状態変数です。
+description:    
+key:            Application.Execution.Mode
+current:        PWA
+default:        PWA
+type:           string
+candidates:      ^(PWA|Local|Electron)$
+
 ## Action：　260708　Application.PanelDisplay.Mode:Simple
 ## Action：　260708　Application.PanelDisplay.Mode:Normal
 ## Status：　260708　Application.PanelDisplay.Mode

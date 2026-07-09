@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.25",
+  "version": "1.2.26",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "bbd999c",
-  "commitDateTime": "2026-07-09-092310",
-  "commitMessage": "feat: Implement Application.Execution.Mode status"
+  "commitId": "afc20dc",
+  "commitDateTime": "2026-07-09-092832",
+  "commitMessage": "chore: Update DisplayMode tooltip with current layout mode"
 }
