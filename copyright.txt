@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.32",
+  "version": "1.2.33",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "418f4d3",
-  "commitDateTime": "2026-07-09-100436",
-  "commitMessage": "chore: Rename state Application.Execution.Mode to Application.Execution.Status"
+  "commitId": "92bfd33",
+  "commitDateTime": "2026-07-09-100641",
+  "commitMessage": "chore: Remove Application Status section from settings view"
 }

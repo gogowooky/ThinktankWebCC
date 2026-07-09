@@ -1,32 +1,11 @@
 /**
  * ThinktankSettingsView.tsx
- * 保管庫名・アプリケーション状態・データ編集モードを設定するビュー。
+ * 保管庫名を設定するビュー。
  */
 
-import { useState, useCallback, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
-import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight } from 'lucide-react';
-import { StorageManager } from '../../services/storage/StorageManager';
-import type { SyncState } from '../../types';
-import { TTUIStateManager } from '../../views/TTUIStateManager';
+import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
+import { Save, ChevronDown, ChevronRight } from 'lucide-react';
 import './ThinktankSettingsView.css';
-
-const SYNC_LABEL: Record<SyncState, string> = {
-  synced:  '同期済み',
-  syncing: '同期中…',
-  pending: '同期待ち',
-  error:   '同期エラー',
-  offline: 'オフライン',
-};
-
-function SyncIcon({ state }: { state: SyncState }) {
-  switch (state) {
-    case 'synced':  return <CheckCircle size={13} />;
-    case 'syncing': return <RefreshCw   size={13} className="tt-settings-spin" />;
-    case 'pending': return <Clock       size={13} />;
-    case 'error':   return <AlertCircle size={13} />;
-    case 'offline': return <WifiOff     size={13} />;
-  }
-}
 
 export interface ThinktankSettingsViewRef {
   focus: () => void;
@@ -68,24 +47,10 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
     focus: () => vaultInputRef.current?.focus(),
   }));
 
-  const mode = StorageManager.instance.mode;
   const [value,          setValue]          = useState(loadValue);
   const [history,        setHistory]        = useState(loadHistory);
   const [saved,          setSaved]          = useState(false);
-  const [isStatusOpen,   setIsStatusOpen]   = useState(true);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
-
-  const [syncState, setSyncState] = useState<SyncState>(() =>
-    (TTUIStateManager.instance.getProperty('Application.Synchronization.Status') || 'synced') as SyncState
-  );
-
-  useEffect(() => {
-    const handleSyncChange = (_key: string, val: string) => {
-      setSyncState(val as SyncState);
-    };
-    TTUIStateManager.instance.addListener('Application.Synchronization.Status', handleSyncChange);
-    return () => TTUIStateManager.instance.removeListener('Application.Synchronization.Status', handleSyncChange);
-  }, []);
 
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';
@@ -104,31 +69,6 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   return (
     <div className="tt-settings-view">
 
-      {/* ── アプリケーションの状態 ── */}
-      <section className="tt-settings-section">
-        <div className="tt-settings-section__header" onClick={() => setIsStatusOpen(v => !v)}>
-          {isStatusOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">アプリケーションの状態</h2>
-        </div>
-        {isStatusOpen && (
-          <dl className="tt-settings-status">
-            <dt className="tt-settings-status__label">モード</dt>
-            <dd className="tt-settings-status__value">
-              <span className="tt-settings-status__badge tt-settings-status__badge--mode">
-                {mode === 'electron' ? <Laptop size={12} /> : mode === 'local' ? <Monitor size={12} /> : <Globe size={12} />}
-                {mode === 'electron' ? 'Electron' : mode === 'local' ? 'Local' : 'PWA'}
-              </span>
-            </dd>
-            <dt className="tt-settings-status__label">同期</dt>
-            <dd className="tt-settings-status__value">
-              <span className={`tt-settings-status__badge tt-settings-status__badge--sync tt-settings-status__badge--${syncState}`}>
-                <SyncIcon state={syncState} />
-                {SYNC_LABEL[syncState]}
-              </span>
-            </dd>
-          </dl>
-        )}
-      </section>
 
 
 
