@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "08c35b4",
+  "commitId": "36e1103",
   "commitDateTime": "2026-07-09-232514",
   "commitMessage": "docs: Update tag classification and GoogleMap URL"
 }
