@@ -4,10 +4,9 @@
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight, Columns4, Columns2 } from 'lucide-react';
+import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
 import type { SyncState } from '../../types';
-import type { LayoutMode } from '../Layout/AppLayout';
 import './ThinktankSettingsView.css';
 
 const SYNC_LABEL: Record<SyncState, string> = {
@@ -34,8 +33,6 @@ export interface ThinktankSettingsViewRef {
 
 interface Props {
   syncState?: SyncState;
-  layoutMode: LayoutMode;
-  onLayoutModeChange: (mode: LayoutMode) => void;
 }
 
 const LS_KEY_VALUE   = 'tt-vault-name';
@@ -64,12 +61,12 @@ function saveValue(name: string): string[] {
 }
 
 export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>(function ThinktankSettingsView(
-  { syncState = 'synced', layoutMode, onLayoutModeChange }: Props,
+  { syncState = 'synced' }: Props,
   ref,
 ) {
-  const firstRadioRef = useRef<HTMLInputElement>(null);
+  const vaultInputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => ({
-    focus: () => firstRadioRef.current?.focus(),
+    focus: () => vaultInputRef.current?.focus(),
   }));
 
   const mode = StorageManager.instance.mode;
@@ -78,7 +75,6 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   const [saved,          setSaved]          = useState(false);
   const [isStatusOpen,   setIsStatusOpen]   = useState(true);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
-  const [isEditModeOpen, setIsEditModeOpen] = useState(true);
 
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';
@@ -96,48 +92,6 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
 
   return (
     <div className="tt-settings-view">
-
-      {/* ── データ編集 ── */}
-      <section className="tt-settings-section">
-        <div className="tt-settings-section__header" onClick={() => setIsEditModeOpen(v => !v)}>
-          {isEditModeOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">データ編集</h2>
-        </div>
-        {isEditModeOpen && (
-          <div className="tt-settings-layout-modes">
-            <p className="tt-settings-section__desc">
-              画面のレイアウトモードを選択します。
-            </p>
-            <label className={`tt-settings-mode-option${layoutMode === 'sipoc' ? ' tt-settings-mode-option--active' : ''}`}>
-              <input
-                ref={firstRadioRef}
-                type="radio"
-                name="layout-mode"
-                value="sipoc"
-                checked={layoutMode === 'sipoc'}
-                onChange={() => onLayoutModeChange('sipoc')}
-                className="tt-settings-mode-radio"
-              />
-              <Columns4 size={13} className="tt-settings-mode-icon" />
-              <span className="tt-settings-mode-label">標準モード</span>
-              <span className="tt-settings-mode-desc">全パネルを表示する標準構成</span>
-            </label>
-            <label className={`tt-settings-mode-option${layoutMode === 'simple' ? ' tt-settings-mode-option--active' : ''}`}>
-              <input
-                type="radio"
-                name="layout-mode"
-                value="simple"
-                checked={layoutMode === 'simple'}
-                onChange={() => onLayoutModeChange('simple')}
-                className="tt-settings-mode-radio"
-              />
-              <Columns2 size={13} className="tt-settings-mode-icon" />
-              <span className="tt-settings-mode-label">簡易モード</span>
-              <span className="tt-settings-mode-desc">OverviewとReThinkPanelを非表示</span>
-            </label>
-          </div>
-        )}
-      </section>
 
       {/* ── アプリケーションの状態 ── */}
       <section className="tt-settings-section">
@@ -185,6 +139,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
                 {history.map(h => <option key={h} value={h} />)}
               </datalist>
               <input
+                ref={vaultInputRef}
                 className="tt-settings-input"
                 type="text"
                 list={DATALIST_ID}

@@ -36,6 +36,7 @@ import { getFocusName } from '../utils/getFocusName';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
 import { getHeadingAttributes } from './TTFocusedPanelActions';
+import { StorageManager } from '../services/storage/StorageManager';
 
 const USE_LOCAL_FILES = true;
 
@@ -107,6 +108,7 @@ export type ConfigKey =
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | 'Application.PanelDisplay.Mode'
+  | 'Application.Execution.Mode'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -755,6 +757,19 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: 'パネル表示モード（Normal=全表示, Simple=簡易表示）',
     get: () => localStorage.getItem('tt-layout-mode') === 'simple' ? 'Simple' : 'Normal',
     set: (_app, v) => { localStorage.setItem('tt-layout-mode', v === 'Simple' ? 'simple' : 'sipoc'); },
+  },
+  'Application.Execution.Mode': {
+    panel: 'Application',
+    default: 'PWA', type: 'string', candidates: '^(PWA|Local|Electron)$',
+    description: 'アプリケーションの起動モード',
+    isConst: true,
+    get: () => {
+      const mode = StorageManager.instance.mode;
+      if (mode === 'electron') return 'Electron';
+      if (mode === 'local') return 'Local';
+      return 'PWA';
+    },
+    set: () => {},
   },
   'Application.Status.ExMode': {
     panel: 'Application',

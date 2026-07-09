@@ -309,6 +309,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
         id="StatusBarModeIndicator"
         className="ApplicationStatusBarArea__mode-indicator"
         data-tip={isLocalMode ? '起動モード: Local' : '起動モード: Online'}
+        data-tip-side="right"
       >
         {isLocalMode ? <Monitor size={14} /> : <Globe size={14} />}
       </div>
@@ -317,7 +318,8 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       {/* パネル表示モードインジケータ */}
       <button
         className="ApplicationStatusBarArea__panel-display-mode-btn"
-        data-tip={isSimpleMode ? '簡易モード (クリックで標準モードへ)' : '標準モード (クリックで簡易モードへ)'}
+        data-tip="DisplayMode"
+        data-tip-side="right"
         aria-label={isSimpleMode ? '簡易モード' : '標準モード'}
         onClick={handlePanelDisplayModeToggle}
       >

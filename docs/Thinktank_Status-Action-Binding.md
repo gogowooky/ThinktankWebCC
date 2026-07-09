@@ -18,11 +18,20 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
+## 完了：　260709　Application.Execution.Mode
+　アプリケーションの起動モードを示す状態変数です。
 
-# その他：標準モードと簡易モード
-    現在、Thinktank>設定>データ編集に、標準モードと簡易モードの選択画面がありますが、
-    選択されたモードのアイコンを、StatusBar左端のアプリケーションの状態>モードのアイコンの右側に配置し、
-    クリックで変更できるようにしてください。
+description:    
+key:            Application.Execution.Mode
+current:        PWA
+default:        PWA
+type:           string
+candidates:      ^(PWA|Local|Electron)$
+
+# 対応不要：その他：標準モードと簡易モード
+    選択されたモード（標準/簡易）のアイコンを、StatusBar左端のアプリケーションの状態>モードのアイコンの右側に配置し、
+    クリックで変更できるようにしました。
+    （※これに伴い、Thinktank>設定>データ編集 にあった選択欄は廃止しました。）
     そのモード値は、Status変数：Application.PanelDisplay.Modeを実装して、そこに保存します。
     さらに、値変更用Action、Application.PanelDisplay.Mode:Normal, 　Application.PanelDisplay.Mode:Simple も実装します。
     値がSimpleの場合は、
@@ -31,8 +40,8 @@
         Overview>Think一覧に表示されているすべてのアイテムについて、背景を薄いOverviewPanel色でマークしていますが、
         そのマークもいたしません。
 
-# その他：メニュー
-# その他：タグ
+# 対応不要：その他：メニュー
+# 対応不要：その他：タグ
 TextEditor.CurrentEditor.DoOnCursorPos で取得された Tag について以下のように分類して各Tagでアクションを定義することを考えています。
 
 Tag.Search          docs\DefaultSearchTag.mdで定義された WebSearch 用タグ　　[sitename:keywords]
@@ -45,6 +54,15 @@ Tag.AI              外部AIへ接続、                                        
 Tag.Anchor          ファイル内での参照                                      [:>highlighter]  [:anchor]
 
 # Application ======================================================================================================
+## Action：　260708　Application.PanelDisplay.Mode:Simple
+## Action：　260708　Application.PanelDisplay.Mode:Normal
+## Status：　260708　Application.PanelDisplay.Mode
+description:    
+key:            Application.PanelDisplay.Mode
+current:        Normal
+default:        Normal
+type:           string
+candidates:      ^(Simple|Normal)$
 
 ## Action：　260628　Application.Resource.ExportToLocal
 　BQに保存されているThinkファイルデータをローカル側に保存する

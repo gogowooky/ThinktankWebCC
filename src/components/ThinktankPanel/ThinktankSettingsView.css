@@ -206,75 +206,7 @@
   color: var(--text-muted);
 }
 
-/* ── データ編集モード選択 ── */
 
-.tt-settings-layout-modes {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.tt-settings-mode-option {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  grid-template-rows: auto auto;
-  column-gap: 6px;
-  row-gap: 1px;
-  align-items: center;
-  padding: 7px 10px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.03);
-  cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
-  user-select: none;
-}
-
-.tt-settings-mode-option:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.tt-settings-mode-option--active {
-  border-color: var(--thinktank-ribbon-bg);
-  background: rgba(7, 55, 99, 0.25);
-}
-
-.tt-settings-mode-radio {
-  grid-row: 1 / 3;
-  grid-column: 1;
-  margin: 0;
-  width: 13px;
-  height: 13px;
-  accent-color: var(--thinktank-ribbon-bg);
-  cursor: pointer;
-}
-
-.tt-settings-mode-icon {
-  grid-row: 1;
-  grid-column: 2;
-  color: var(--text-muted);
-}
-
-.tt-settings-mode-option--active .tt-settings-mode-icon {
-  color: var(--text-accent);
-}
-
-.tt-settings-mode-label {
-  grid-row: 1;
-  grid-column: 3;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.tt-settings-mode-desc {
-  grid-row: 2;
-  grid-column: 2 / 4;
-  font-size: 10px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
 
 /* Phase 15: Embedding セクション */
 .tt-settings-embed {

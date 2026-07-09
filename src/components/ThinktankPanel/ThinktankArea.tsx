@@ -339,7 +339,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   if (panel.ViewMode === 'chat') {
     content = <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
   } else if (panel.ViewMode === 'settings') {
-    content = <ThinktankSettingsView ref={settingsViewRef} layoutMode={layoutMode} onLayoutModeChange={onLayoutModeChange} />;
+    content = <ThinktankSettingsView ref={settingsViewRef} />;
   } else {
     // filter モード（検索・Thought一覧を統合）
     content = (
