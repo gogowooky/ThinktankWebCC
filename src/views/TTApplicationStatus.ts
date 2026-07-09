@@ -18,15 +18,24 @@ export class TTApplicationStatus extends TTNotifyBase {
   private _lastActionDisplay: string = '';
   private _localExporting:    string = '0%';
 
+  private _syncState:         string = 'synced';
+
   get ExMode():            string { return this._exMode; }
   get ExModeModKey():      string { return this._exModeModKey; }
   get LastActionDisplay(): string { return this._lastActionDisplay; }
   get LocalExporting():    string { return this._localExporting; }
+  get SyncState():         string { return this._syncState; }
 
   SetLocalExporting(v: string): void {
     this._localExporting = v;
     this.NotifyUpdated();
     TTUIStateManager.instance.notifyConstPropertyChanged('Application.Resource.LocalExporting');
+  }
+
+  SetSyncState(v: string): void {
+    this._syncState = v;
+    this.NotifyUpdated();
+    TTUIStateManager.instance.notifyConstPropertyChanged('Application.Synchronization.Status');
   }
 
   /** ExMode を開始する。modKey には設定時点で押下中のモディファイア文字列を渡す。 */

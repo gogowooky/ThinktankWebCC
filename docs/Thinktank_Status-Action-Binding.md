@@ -18,18 +18,14 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
-
-# 対応不要：その他：標準モードと簡易モード
-    選択されたモード（標準/簡易）のアイコンを、StatusBar左端のアプリケーションの状態>モードのアイコンの右側に配置し、
-    クリックで変更できるようにしました。
-    （※これに伴い、Thinktank>設定>データ編集 にあった選択欄は廃止しました。）
-    そのモード値は、Status変数：Application.PanelDisplay.Modeを実装して、そこに保存します。
-    さらに、値変更用Action、Application.PanelDisplay.Mode:Normal, 　Application.PanelDisplay.Mode:Simple も実装します。
-    値がSimpleの場合は、
-    1. ThinktankPanelのChatモードは非表示にします。
-    2. 現在、ThinktankPanel>Think一覧において、Overview.Thought.NameのThoughtファイルと、
-        Overview>Think一覧に表示されているすべてのアイテムについて、背景を薄いOverviewPanel色でマークしていますが、
-        そのマークもいたしません。
+## 完了：　260709　Application.Synchronization.Status
+　アプリケーションの尾月状態を示す状態変数です。
+description:    
+key:            Application.Synchronization.Status
+current:        synced
+default:        synced
+type:           string
+candidates:      ^(synced|syncing|pending|error|offline)$
 
 # 対応不要：その他：メニュー
 # 対応不要：その他：タグ

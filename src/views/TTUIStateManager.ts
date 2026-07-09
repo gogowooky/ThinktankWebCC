@@ -109,6 +109,7 @@ export type ConfigKey =
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | 'Application.PanelDisplay.Mode'
   | 'Application.Execution.Mode'
+  | 'Application.Synchronization.Status'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -769,6 +770,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       if (mode === 'local') return 'Local';
       return 'PWA';
     },
+    set: () => {},
+  },
+  'Application.Synchronization.Status': {
+    panel: 'Application',
+    default: 'synced', type: 'string', candidates: '^(synced|syncing|pending|error|offline)$',
+    description: 'アプリケーションの同期状態',
+    isConst: true,
+    get: (app) => app.Status.SyncState || 'synced',
     set: () => {},
   },
   'Application.Status.ExMode': {

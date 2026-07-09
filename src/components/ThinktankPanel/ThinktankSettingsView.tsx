@@ -3,10 +3,11 @@
  * 保管庫名・アプリケーション状態・データ編集モードを設定するビュー。
  */
 
-import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
+import { useState, useCallback, useRef, useImperativeHandle, forwardRef, useEffect } from 'react';
 import { Save, Monitor, Globe, Laptop, CheckCircle, RefreshCw, AlertCircle, WifiOff, Clock, ChevronDown, ChevronRight } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
 import type { SyncState } from '../../types';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './ThinktankSettingsView.css';
 
 const SYNC_LABEL: Record<SyncState, string> = {
@@ -31,9 +32,7 @@ export interface ThinktankSettingsViewRef {
   focus: () => void;
 }
 
-interface Props {
-  syncState?: SyncState;
-}
+interface Props {}
 
 const LS_KEY_VALUE   = 'tt-vault-name';
 const LS_KEY_HISTORY = 'tt-vault-name-history';
@@ -61,7 +60,7 @@ function saveValue(name: string): string[] {
 }
 
 export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>(function ThinktankSettingsView(
-  { syncState = 'synced' }: Props,
+  _props,
   ref,
 ) {
   const vaultInputRef = useRef<HTMLInputElement>(null);
@@ -75,6 +74,18 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   const [saved,          setSaved]          = useState(false);
   const [isStatusOpen,   setIsStatusOpen]   = useState(true);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
+
+  const [syncState, setSyncState] = useState<SyncState>(() =>
+    (TTUIStateManager.instance.getProperty('Application.Synchronization.Status') || 'synced') as SyncState
+  );
+
+  useEffect(() => {
+    const handleSyncChange = (_key: string, val: string) => {
+      setSyncState(val as SyncState);
+    };
+    TTUIStateManager.instance.addListener('Application.Synchronization.Status', handleSyncChange);
+    return () => TTUIStateManager.instance.removeListener('Application.Synchronization.Status', handleSyncChange);
+  }, []);
 
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';

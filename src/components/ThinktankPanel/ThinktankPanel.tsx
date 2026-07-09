@@ -58,12 +58,17 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
 
   const isElectron = StorageManager.instance.mode === 'electron';
   const handleSync = useCallback(() => {
+    app.Status.SetSyncState('syncing');
     StorageManager.instance.syncFromServer()
       .then(r => {
         console.log(`[Sync] done: +${r.added} updated:${r.updated} skip:${r.skipped}`);
+        app.Status.SetSyncState('synced');
         app.RefreshAll();
       })
-      .catch(e => console.error('[Sync] failed:', e));
+      .catch(e => {
+        console.error('[Sync] failed:', e);
+        app.Status.SetSyncState('error');
+      });
   }, [app]);
 
   return (
