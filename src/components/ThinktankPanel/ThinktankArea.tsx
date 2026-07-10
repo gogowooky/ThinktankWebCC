@@ -30,6 +30,7 @@ import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import { serializeChat } from '../../utils/thinkFormat';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './ThinktankArea.css';
 
 import type { LayoutMode } from '../Layout/AppLayout';
@@ -64,6 +65,23 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // filter モードの可視アイテムとタイトルクエリはコールバックで受け取る
   const [filterVisible,    setFilterVisible]    = useState<TTThink[]>([]);
   const [filterTitleQuery, setFilterTitleQuery] = useState('');
+
+  const [focusedId, setFocusedId] = useState<string | null>(() => panel.CurrentItemID || null);
+
+  // 外部からの CurrentItem.ID の変更イベントを監視・同期
+  useEffect(() => {
+    const handleKeyChange = (key: string, val: string) => {
+      setFocusedId(val || null);
+    };
+    TTUIStateManager.instance.addListener('ThinktankPanel.CurrentItem.ID', handleKeyChange);
+    return () => {
+      TTUIStateManager.instance.removeListener('ThinktankPanel.CurrentItem.ID', handleKeyChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    setFocusedId(panel.CurrentItemID || null);
+  }, [panel.CurrentItemID]);
 
   const handleFilterVisibleChange = useCallback((items: TTThink[]) => {
     setFilterVisible(prev => {
@@ -211,6 +229,15 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       handleSelect(id);
     }
   }, [app, vault, handleSelect]);
+
+  const handleFocusChange = useCallback((id: string | null) => {
+    const nextVal = id || '';
+    if (panel.CurrentItemID !== nextVal) {
+      panel.CurrentItemID = nextVal;
+      setFocusedId(nextVal || null);
+      TTUIStateManager.instance.notifyPropertyChanged('ThinktankPanel.CurrentItem.ID');
+    }
+  }, [panel]);
 
   const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
     panel.ToggleCheck(id, force);
@@ -402,6 +429,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onToggleCheck={handleToggleCheck}
         onVisibleChange={handleFilterVisibleChange}
         titleQuery={filterTitleQuery}
+        focusedId={focusedId}
+        onFocusChange={handleFocusChange}
       />
     );
   }

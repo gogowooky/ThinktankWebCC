@@ -37,6 +37,7 @@ import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialo
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { parseThought, serializeThought, serializeChat } from '../../utils/thinkFormat';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './OverviewArea.css';
 
 const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
@@ -71,6 +72,23 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const [columns,          setColumns]          = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
+
+  const [focusedId, setFocusedId] = useState<string | null>(() => panel.CurrentItemID || null);
+
+  // 外部からの CurrentItem.ID の変更イベントを監視・同期
+  useEffect(() => {
+    const handleKeyChange = (key: string, val: string) => {
+      setFocusedId(val || null);
+    };
+    TTUIStateManager.instance.addListener('OverviewPanel.CurrentItem.ID', handleKeyChange);
+    return () => {
+      TTUIStateManager.instance.removeListener('OverviewPanel.CurrentItem.ID', handleKeyChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    setFocusedId(panel.CurrentItemID || null);
+  }, [panel.CurrentItemID]);
 
   // 一覧表示する種別（初期は全種別ON）
   const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(ALL_CONTENT_TYPES));
@@ -307,6 +325,15 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     }
   }, [searchQuery, vault]);
 
+  const handleFocusChange = useCallback((id: string | null) => {
+    const nextVal = id || '';
+    if (panel.CurrentItemID !== nextVal) {
+      panel.CurrentItemID = nextVal;
+      setFocusedId(nextVal || null);
+      TTUIStateManager.instance.notifyPropertyChanged('OverviewPanel.CurrentItem.ID');
+    }
+  }, [panel]);
+
   const handleToggleCheck = useCallback((id: string | string[], force?: boolean) => {
     const ids = Array.isArray(id) ? id : [id];
     const prev = panel.CheckedThoughtIDs;
@@ -488,6 +515,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
               columns={columns}
               onOpen={handleOpenThinkInWorkout}
               onToggleCheck={handleToggleCheck}
+              focusedId={focusedId}
+              onFocusChange={handleFocusChange}
             />
           )
         ) : panel.MediaType === 'chat' ? (

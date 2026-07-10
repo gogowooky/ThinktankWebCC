@@ -53,6 +53,9 @@ export class TTThinktankPanel extends TTUIItem {
   /** 全種別表示へのリセット要求フラグ */
   public ShouldResetTypesToAll: boolean = false;
 
+  /** 現在カーソル（フォーカス）が当たっているItemのID */
+  public CurrentItemID: string = '';
+
   public override get ClassName(): string {
     return 'TTThinktankPanel';
   }

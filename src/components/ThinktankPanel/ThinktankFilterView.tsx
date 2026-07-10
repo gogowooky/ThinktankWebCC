@@ -24,12 +24,14 @@ interface Props {
   onOpen: (id: string) => void;
   onToggleCheck: (id: string | string[], force?: boolean) => void;
   onVisibleChange?: (items: TTThink[]) => void;
+  focusedId: string | null;
+  onFocusChange: (id: string | null) => void;
 }
 
 export function ThinktankFilterView({
   thinks, selectedId, checkedIds, checkedOnly = false,
   titleQuery, createdDate, createdRange, updatedDate, updatedRange,
-  columns, onOpen, onToggleCheck, onVisibleChange,
+  columns, onOpen, onToggleCheck, onVisibleChange, focusedId, onFocusChange,
 }: Props) {
 
   const filtered = useMemo<TTThink[]>(() => {
@@ -62,6 +64,8 @@ export function ThinktankFilterView({
         columns={columns}
         onOpen={onOpen}
         onToggleCheck={onToggleCheck}
+        focusedId={focusedId}
+        onFocusChange={onFocusChange}
       />
     </div>
   );

@@ -361,6 +361,13 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     }
   }, [think.ID]);
 
+  // think.Content が外部からリアルタイム更新された場合の処理
+  useEffect(() => {
+    if (isDirty) return;
+    const nextSections = parseTableContent(think.Content);
+    setSections(nextSections);
+  }, [think.Content, isDirty]);
+
   // 状態が変わったら think.Metadata に同期する
   useEffect(() => {
     if (think) {

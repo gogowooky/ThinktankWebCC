@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.26",
+  "version": "1.2.27",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "veneno-02",
-  "commitId": "bf65bba",
-  "commitDateTime": "2026-07-10-180201",
-  "commitMessage": "docs: Update Status and Action bindings description for Mode and DoOnCursorPos subTags"
+  "commitPC": "E15",
+  "commitId": "7001479",
+  "commitDateTime": "2026-07-11-003432",
+  "commitMessage": "feat: implement bidirectional realtime synchronization for CurrentItem.ID properties"
 }

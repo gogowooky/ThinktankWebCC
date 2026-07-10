@@ -130,6 +130,21 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     onDirtyChange(false);
   }, [think?.ID, onDirtyChange]);
 
+  // 外部からの think.Content リアルタイム更新の反映
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || !think) return;
+    
+    const nextVal = getEditorValue(think);
+    
+    // 現在エディタに未保存の変更がない場合のみ外部の変更を反映
+    const currentEditorVal = editor.getValue();
+    if (currentEditorVal !== nextVal && currentEditorVal === savedRef.current) {
+      editor.setValue(nextVal);
+      savedRef.current = nextVal;
+    }
+  }, [think, think?.Content]);
+
   const showToast = useCallback((msg: string, type: Toast['type']) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ msg, type });

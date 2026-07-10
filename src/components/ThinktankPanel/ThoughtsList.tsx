@@ -11,7 +11,7 @@
  *   "-word" で NOT、"OR" キーワードは OR 接続（将来対応）。
  */
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Library, FileText, MessageSquare, Link, Table2, Globe, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
@@ -31,6 +31,8 @@ interface Props {
   columns?: ColumnConfig[];
   onOpen: (id: string) => void;
   onToggleCheck: (id: string | string[], force?: boolean) => void;
+  focusedId: string | null;
+  onFocusChange: (id: string | null) => void;
 }
 
 /** フィルタートークンを適用して TTThink[] を絞り込む */
@@ -104,11 +106,12 @@ export function ThoughtsList({
   columns = DEFAULT_COLUMNS,
   onOpen,
   onToggleCheck,
+  focusedId,
+  onFocusChange,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const { overviewThoughtIds, overviewIncludedIds, overviewCheckedIds, workoutIds, workoutFocusedId } = useHighlight();
   const isSimpleMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Simple';
-  const [focusedId, setFocusedId] = useState<string | null>(null);
   const visibleCols = columns.filter(c => c.visible);
 
   const virtualizer = useVirtualizer({
@@ -118,6 +121,16 @@ export function ThoughtsList({
     overscan: OVERSCAN,
   });
 
+  // 外部からの focusedId の変更を検知して、スクロール位置を自動調整する
+  useEffect(() => {
+    if (focusedId) {
+      const idx = thoughts.findIndex(t => t.ID === focusedId);
+      if (idx !== -1) {
+        virtualizer.scrollToIndex(idx, { align: 'auto' });
+      }
+    }
+  }, [focusedId, thoughts, virtualizer]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
@@ -126,7 +139,7 @@ export function ThoughtsList({
       const next = cur < 0
         ? (dir > 0 ? 0 : thoughts.length - 1)
         : Math.max(0, Math.min(thoughts.length - 1, cur + dir));
-      setFocusedId(thoughts[next]?.ID ?? null);
+      onFocusChange(thoughts[next]?.ID ?? null);
       virtualizer.scrollToIndex(next, { align: 'auto' });
     } else if (e.key === 'Enter') {
       if (focusedId) onOpen(focusedId);
@@ -146,12 +159,12 @@ export function ThoughtsList({
         const end = Math.max(fromIdx, toIdx);
         const idsInRange = thoughts.slice(start, end + 1).map(t => t.ID);
         onToggleCheck(idsInRange, nextChecked);
-        setFocusedId(id);
+        onFocusChange(id);
         return;
       }
     }
     onToggleCheck(id);
-    setFocusedId(id);
+    onFocusChange(id);
   };
 
   if (thoughts.length === 0) {
@@ -208,7 +221,7 @@ export function ThoughtsList({
                 right:  0,
                 height: ROW_HEIGHT,
               }}
-              onClick={() => setFocusedId(thought.ID)}
+              onClick={() => onFocusChange(thought.ID)}
               onDoubleClick={() => onOpen(thought.ID)}
             >
               <input

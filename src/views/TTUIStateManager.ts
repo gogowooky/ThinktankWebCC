@@ -199,8 +199,22 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => capitalize(app.ThinktankPanel.ViewMode),
     set: (app, v) => { app.ThinktankPanel.ViewMode = v.toLowerCase() as ThinktankViewMode; },
   },
+  'ThinktankPanel.CurrentItem.ID': {
+    panel: 'ThinktankPanel',
+    default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6})?$',
+    description: '左パネル現在フォーカス項目ID',
+    get: (app) => app.ThinktankPanel.CurrentItemID || '',
+    set: (app, v) => { app.ThinktankPanel.CurrentItemID = v; },
+  },
 
   // ── OverviewPanel ────────────────────────────────────────────────────────
+  'OverviewPanel.CurrentItem.ID': {
+    panel: 'OverviewPanel',
+    default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6})?$',
+    description: '上部パネル現在フォーカス項目ID',
+    get: (app) => app.OverviewPanel.CurrentItemID || '',
+    set: (app, v) => { app.OverviewPanel.CurrentItemID = v; },
+  },
   'OverviewPanel.Area.IsOpen': {
     panel: 'OverviewPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
@@ -1111,6 +1125,15 @@ export class TTUIStateManager {
     const val = spec.get(this._app);
     this._emit(key, val);
     this._app.NotifyUpdated(false);
+
+    if (this._vaultThink) {
+      this._applying = true;
+      try {
+        this._vaultThink.Content = this._serializePreservingStructure(this._app);
+      } finally {
+        this._applying = false;
+      }
+    }
   }
 
   /** 現在のアプリ状態を構造保持でシリアライズして返す（更新ボタン用） */

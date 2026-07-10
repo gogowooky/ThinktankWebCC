@@ -43,6 +43,9 @@ export class TTOverviewPanel extends TTUIItem {
   /** 全文検索テキスト */
   public SearchQuery: string = '';
 
+  /** 現在カーソル（フォーカス）が当たっているItemのID */
+  public CurrentItemID: string = '';
+
   public override get ClassName(): string {
     return 'TTOverviewPanel';
   }
