@@ -18,25 +18,20 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
-## 実装：　ThinktankPanel.CurrentItem.ID
-description:    Thinktank>Think一覧のカーソル位置アイテムID
-key:            ThinktankPanel.CurrentItem.ID
-current:        ''
-default:        ''
-type:           string
-candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
-
-## 実装：　OverviewPanel.CurrentItem.ID
-description:    Overview>Think一覧のカーソル位置アイテムID
-key:            OverviewPanel.CurrentItem.ID
-current:        ''
-default:        ''
-type:           string
-candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
 
 # 対応不要：その他：メニュー
 
 # Application ======================================================================================================
+## Status：　260710　Application.CheckedItem.IDs
+　IDをApplication.CheckedItem.IDs に変更します。
+
+description:    Think一覧のチェックされたアイテムID
+key:            Application.CheckedItem.IDs
+current:        ''
+default:        ''
+type:           string
+candidates:     ^(\d{4}\-\d{2}\-\d{2}\-\d{6},)*\d{4}\-\d{2}\-\d{2}\-\d{6}$|^$
+
 ## Status：　260709　Application.Synchronization.Status
 　アプリケーションの同期状態を示す状態変数です。
 description:    
@@ -221,7 +216,13 @@ candidates:     ^(Filter|Chat|Settings)$
 　　- Filter （フィルター / 検索）
 　　- Chat （AI相談チャット）
 　　- Settings （設定）
-
+## Status：　260711　ThinktankPanel.CurrentItem.ID
+description:    Thinktank>Think一覧のカーソル位置アイテムID
+key:            ThinktankPanel.CurrentItem.ID
+current:        ''
+default:        ''
+type:           string
+candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
 
 ## Status：　260619　OverviewPanel.Area.IsOpen
 
@@ -246,6 +247,13 @@ candidates:     ^(Datagrid|Graph|Chat|Settings)$
 　　- Graph （関係性グラフ）
 　　- Chat （AIチャット）
 　　- Settings （設定）
+## Status：　260711　OverviewPanel.CurrentItem.ID
+description:    Overview>Think一覧のカーソル位置アイテムID
+key:            OverviewPanel.CurrentItem.ID
+current:        ''
+default:        ''
+type:           string
+candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
 ## Status：　260624　Overview.Thought.Name
 　本StatusIDの中身
 　Overviewパネルに設定された thoughtファイルの IDです。
@@ -257,7 +265,6 @@ current:        none
 default:        none
 type:           string
 candidates:     .*
-
 
 ## Status：　260619　WorkoutSettingPanel.Area.IsOpen
 

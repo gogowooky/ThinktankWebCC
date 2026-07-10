@@ -110,6 +110,7 @@ export type ConfigKey =
   | 'Application.PanelDisplay.Mode'
   | 'Application.Execution.Status'
   | 'Application.Synchronization.Status'
+  | 'Application.CheckedItem.IDs'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -205,6 +206,20 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: '左パネル現在フォーカス項目ID',
     get: (app) => app.ThinktankPanel.CurrentItemID || '',
     set: (app, v) => { app.ThinktankPanel.CurrentItemID = v; },
+  },
+  'Application.CheckedItem.IDs': {
+    panel: 'Application',
+    default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6},)*\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6}$|^$',
+    description: 'チェックされたアイテムID群',
+    get: (app) => app.ThinktankPanel.CheckedThoughtIDs.join(','),
+    set: (app, v) => {
+      const ids = v ? v.split(',').map(id => id.trim()).filter(Boolean) : [];
+      const cur = app.ThinktankPanel.CheckedThoughtIDs;
+      if (cur.length !== ids.length || !cur.every((id, idx) => id === ids[idx])) {
+        app.ThinktankPanel.CheckedThoughtIDs = ids;
+        app.OverviewPanel.CheckedThoughtIDs = ids;
+      }
+    },
   },
 
   // ── OverviewPanel ────────────────────────────────────────────────────────

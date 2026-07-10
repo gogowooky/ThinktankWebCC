@@ -8,6 +8,7 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 import type { ContentType } from '../types/index';
+import { TTUIStateManager } from './TTUIStateManager';
 
 /** ThinktankArea の表示モード */
 export type ThinktankViewMode =
@@ -33,6 +34,7 @@ export class TTThinktankPanel extends TTUIItem {
         app.OverviewPanel.NotifyUpdated();
       }
     }
+    TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');
   }
 
   /** Thoughts絞り込みテキスト（タイトル/キーワード欄） */

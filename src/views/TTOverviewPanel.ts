@@ -30,6 +30,7 @@ export class TTOverviewPanel extends TTUIItem {
         app.ThinktankPanel.NotifyUpdated();
       }
     }
+    TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');
   }
 
   /** 表示モード（datagrid/graph/chat/settings）*/
