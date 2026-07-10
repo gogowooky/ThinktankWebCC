@@ -147,7 +147,8 @@
       "Bash(xargs grep -l \"LayoutMode\\\\|StorageManager\")",
       "Bash(git commit -m 'feat: Add Application.PanelDisplay.Mode status with StatusBar toggle and Simple mode behaviors *)",
       "Bash(git commit -m 'build: Bump version to 1.2.23 and update copyright.txt *)",
-      "Bash(git commit -m 'chore: Update settings.local.json allowed commands *)"
+      "Bash(git commit -m 'chore: Update settings.local.json allowed commands *)",
+      "Bash(git commit -m 'build: Bump version to 1.2.24 and update copyright.txt *)"
     ]
   }
 }

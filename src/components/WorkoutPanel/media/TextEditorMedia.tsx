@@ -768,46 +768,88 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         });
       }
 
-      // URL のハイライト
+      // 1. ダブルクォーテーションで囲まれたURIやファイルパスのハイライト
+      const quotedRegex = /"([^"]+)"/g;
+      let quotedMatch;
+      const decoratedRanges: { start: number; end: number }[] = [];
+
+      const isRangeDecorated = (start: number, end: number) => {
+        return decoratedRanges.some(r => {
+          return (start >= r.start && start < r.end) || (end > r.start && end <= r.end) || (start <= r.start && end >= r.end);
+        });
+      };
+
+      while ((quotedMatch = quotedRegex.exec(lineContent)) !== null) {
+        const content = quotedMatch[1];
+        const isUri = /^https?:\/\//i.test(content) || /^file:\/\//i.test(content);
+        const isFilePath = /^([a-zA-Z]:\\|\\\\)/.test(content) || /^([a-zA-Z]:\/)/.test(content);
+        if (isUri || isFilePath) {
+          const startCol = quotedMatch.index + 2; // " の次から
+          const endCol = startCol + content.length; // 内側の文字列の長さ分
+          
+          newDecorations.push({
+            range: new (window as any).monaco.Range(i, startCol, i, endCol),
+            options: {
+              inlineClassName: 'custom-filepath-style'
+            }
+          });
+          // ダブルクォーテーション全体を含む範囲を装飾済みとして記録する
+          decoratedRanges.push({ 
+            start: quotedMatch.index + 1, 
+            end: quotedMatch.index + 1 + quotedMatch[0].length 
+          });
+        }
+      }
+
+      // 2. URL のハイライト
       const urlRegex = /https?:\/\/[^\s")]+/g;
       let urlMatch;
       while ((urlMatch = urlRegex.exec(lineContent)) !== null) {
         const startCol = urlMatch.index + 1;
         const endCol = startCol + urlMatch[0].length;
+        if (isRangeDecorated(startCol, endCol)) continue;
+
         newDecorations.push({
           range: new (window as any).monaco.Range(i, startCol, i, endCol),
           options: {
             inlineClassName: 'custom-url-style'
           }
         });
+        decoratedRanges.push({ start: startCol, end: endCol });
       }
 
-      // Filepath のハイライト
+      // 3. Filepath のハイライト
       const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
       let fileMatch;
       while ((fileMatch = fileRegex.exec(lineContent)) !== null) {
         const startCol = fileMatch.index + 1;
         const endCol = startCol + fileMatch[0].length;
+        if (isRangeDecorated(startCol, endCol)) continue;
+
         newDecorations.push({
           range: new (window as any).monaco.Range(i, startCol, i, endCol),
           options: {
             inlineClassName: 'custom-filepath-style'
           }
         });
+        decoratedRanges.push({ start: startCol, end: endCol });
       }
 
-      // Tag のハイライト
+      // 4. Tag のハイライト
       const tagRegex = /\[([^\]]+)\]/g;
       let tagMatch;
       while ((tagMatch = tagRegex.exec(lineContent)) !== null) {
         const startCol = tagMatch.index + 1;
         const endCol = startCol + tagMatch[0].length;
+        if (isRangeDecorated(startCol, endCol)) continue;
+
         newDecorations.push({
           range: new (window as any).monaco.Range(i, startCol, i, endCol),
           options: {
             inlineClassName: 'custom-tag-style'
           }
         });
+        decoratedRanges.push({ start: startCol, end: endCol });
       }
     }
 

@@ -98,6 +98,35 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   const filterPanelRef   = useRef<ThinktankFilterPanelRef>(null);
   const settingsViewRef  = useRef<ThinktankSettingsViewRef>(null);
+  const pendingSearchQueryRef = useRef<string | null>(null);
+
+  // panel.Filter / panel.ContentFilter が外部からセットされたとき各フィールドに反映する
+  useEffect(() => {
+    if (!panel.Filter && !panel.ContentFilter) return;
+    // すべての欄を一旦クリア
+    setFilterTitleQuery('');
+    setSearchQuery('');
+    setSearchResults([]);
+    setSearchSearched(false);
+    setCreatedDate('');
+    setCreatedRange('');
+    setUpdatedDate('');
+    setUpdatedRange('');
+    // 種別フィルターと値をセット
+    const types = panel.FilterVisibleTypes
+      ? new Set(panel.FilterVisibleTypes)
+      : new Set(ALL_CONTENT_TYPES);
+    setVisibleTypes(types);
+    if (panel.Filter) {
+      setFilterTitleQuery(panel.Filter);
+    }
+    if (panel.ContentFilter) {
+      const q = panel.ContentFilter;
+      setSearchQuery(q);
+      pendingSearchQueryRef.current = q;
+    }
+    panel.ClearFilter();
+  }, [panel.Filter, panel.ContentFilter]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // mode 切り替え時: 適切な入力要素に自動フォーカス
   useEffect(() => {
@@ -339,6 +368,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       setSearchSearched(true);
     }
   }, [searchQuery, vault]);
+
+  // pendingSearchQueryRef がセットされていて searchQuery が一致したら検索実行
+  useEffect(() => {
+    if (pendingSearchQueryRef.current !== null && searchQuery === pendingSearchQueryRef.current) {
+      pendingSearchQueryRef.current = null;
+      handleSearch();
+    }
+  }, [searchQuery, handleSearch]);
 
   // ── モード別コンテンツ ───────────────────────────────────────────────────
 

@@ -2044,18 +2044,38 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     const column = pos.column;
     const lineContent = model.getLineContent(lineNumber);
 
+    const quotedRegex = /"([^"]+)"/g;
     const urlRegex = /https?:\/\/[^\s")]+/g;
     const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
     const tagRegex = /\[([^\]]+)\]/g;
 
     let textOnCursor = '';
     let match;
-    while ((match = urlRegex.exec(lineContent)) !== null) {
+
+    // 1. まずダブルクォーテーションで囲まれたURIやファイルパスを最優先で探索する
+    while ((match = quotedRegex.exec(lineContent)) !== null) {
       const startCol = match.index + 1;
       const endCol = startCol + match[0].length;
       if (column >= startCol && column <= endCol) {
-        textOnCursor = match[0];
-        break;
+        const content = match[1];
+        const isUri = /^https?:\/\//i.test(content) || /^file:\/\//i.test(content);
+        const isFilePath = /^([a-zA-Z]:\\|\\\\)/.test(content) || /^([a-zA-Z]:\/)/.test(content);
+        if (isUri || isFilePath) {
+          textOnCursor = content;
+          break;
+        }
+      }
+    }
+
+    // 2. ダブルクォーテーションに合致しなかった場合は従来のマッチングを行う
+    if (!textOnCursor) {
+      while ((match = urlRegex.exec(lineContent)) !== null) {
+        const startCol = match.index + 1;
+        const endCol = startCol + match[0].length;
+        if (column >= startCol && column <= endCol) {
+          textOnCursor = match[0];
+          break;
+        }
       }
     }
 

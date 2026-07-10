@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.35",
+  "version": "1.2.25",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "a8f47c4",
-  "commitDateTime": "2026-07-10-075510",
-  "commitMessage": "feat: yyyy-MM-dd-hhmmss以外のIDをKeywordsとして処理、外部AIタグ（Gemini/ChatGPT/Claude）の修正、および[THINK:keywords][MEMO:keywords]による全種別検索機能の実装"
+  "commitPC": "veneno-02",
+  "commitId": "7ca4cec",
+  "commitDateTime": "2026-07-10-152045",
+  "commitMessage": "feat: support double-quoted URIs and filepaths with spaces in DoOnCursorPos and syntax highlights"
 }

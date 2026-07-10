@@ -7,6 +7,7 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
+import type { ContentType } from '../types/index';
 
 /** ThinktankArea の表示モード */
 export type ThinktankViewMode =
@@ -34,8 +35,14 @@ export class TTThinktankPanel extends TTUIItem {
     }
   }
 
-  /** Thoughts絞り込みテキスト */
+  /** Thoughts絞り込みテキスト（タイトル/キーワード欄） */
   public Filter: string = '';
+
+  /** コンテンツ検索テキスト（全文検索欄、セット後に検索実行） */
+  public ContentFilter: string = '';
+
+  /** フィルター適用時に上書きする種別リスト（null = 変更しない） */
+  public FilterVisibleTypes: ContentType[] | null = null;
 
   /** ThinktankArea の表示モード */
   public ViewMode: ThinktankViewMode = 'filter';
@@ -148,24 +155,29 @@ export class TTThinktankPanel extends TTUIItem {
 
   // ── フィルター ────────────────────────────────────────────────────────
 
-  /** Filterテキストを更新する */
-  public SetFilter(filter: string): void {
+  /** タイトル/キーワード欄にフィルターをセットする */
+  public SetFilter(filter: string, visibleTypes?: ContentType[]): void {
     this.Filter = filter;
+    this.ContentFilter = '';
+    this.FilterVisibleTypes = visibleTypes ?? null;
     this.NotifyUpdated();
   }
 
-  /** Filterをクリアする */
+  /** コンテンツ検索欄にフィルターをセットし全文検索を起動する */
+  public SetContentFilter(query: string, visibleTypes?: ContentType[]): void {
+    this.ContentFilter = query;
+    this.Filter = '';
+    this.FilterVisibleTypes = visibleTypes ?? null;
+    this.NotifyUpdated();
+  }
+
+  /** フィルター状態をクリアする */
   public ClearFilter(): void {
     this.Filter = '';
+    this.ContentFilter = '';
+    this.FilterVisibleTypes = null;
     this.NotifyUpdated();
   }
 
-  /** Thoughts絞り込みテキスト（コンテンツ検索用）*/
-  public ContentFilter: string = '';
 
-  /** ContentFilterテキストを更新する */
-  public SetContentFilter(filter: string): void {
-    this.ContentFilter = filter;
-    this.NotifyUpdated();
-  }
 }
