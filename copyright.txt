@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.2.25",
+  "version": "1.2.26",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "7ca4cec",
-  "commitDateTime": "2026-07-10-152045",
-  "commitMessage": "feat: support double-quoted URIs and filepaths with spaces in DoOnCursorPos and syntax highlights"
+  "commitId": "bf65bba",
+  "commitDateTime": "2026-07-10-180201",
+  "commitMessage": "docs: Update Status and Action bindings description for Mode and DoOnCursorPos subTags"
 }

@@ -18,28 +18,23 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 # Status
+## 実装：　ThinktankPanel.CurrentItem.ID
+description:    Thinktank>Think一覧のカーソル位置アイテムID
+key:            ThinktankPanel.CurrentItem.ID
+current:        ''
+default:        ''
+type:           string
+candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
+
+## 実装：　OverviewPanel.CurrentItem.ID
+description:    Overview>Think一覧のカーソル位置アイテムID
+key:            OverviewPanel.CurrentItem.ID
+current:        ''
+default:        ''
+type:           string
+candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
 
 # 対応不要：その他：メニュー
-# 対応不要：その他：タグ
-TextEditor.CurrentEditor.TextOnCursorPos にはカーソル位置で取得されたアクション用の Tag が設定されますが、
-そのTagのアクションについて以下のように分類しなおして、各subTag毎でアクションを再定義することを考えています。
-各subTagの例示において、大文字はタグ文字（ただし運用は大文字小文字混和可)、小文字はパラメータ文字です。
-1. Tag.WebSearch:       docs\DefaultSearchTag.mdで定義済みの WebSearch 用タグ
-2. Tag.GoogleRoute:     GoogleMapでplace1,2,3...を通るルートを表示するためのタグ        例：[GOOGLEROUTE:plasce1,place2,place3...]
-3. Tag.YahooTransfer:   Yahoo乗換案内で電車を検索するためのタグ                         例：[YAHOOTRANSFER:from,to,via,time,departure|arrive] 
-4. Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用)
-                        4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)
-                        4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)
-5. Tag.Mail             5.1 特定mailを指定するタグ                                      例：[MAIL]:ID]（アクション未実装）
-                        5.2 mail検索をするためのタグ                                    例：[MAIL]:keywords]（アクション未実装）
-6. Tag.Chat             6.1 Thinktank>Think一覧でタイトル絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:keywords]
-7. Tag.AI              外部AI(ai:GEMINI,CLAUDE,CHATGTP)へ接続し、sentenceで問い合わせるためのタグ        例：[ai:>] sentence
-8. Tag.Anchor           8.1 ファイル内で[:anchor]で始まる行に飛ぶためのタグ             例：[:>anchor]
-                        8.2 anchorテキストをHighlighterとして設定するためのタグ         例：[:anchor]
-本方針を踏まえて、TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open は廃止する代わりに、
-各TextEditor.CurrentEditor.DoOnCursorPos:{subTag}:Open を作成します。
-TextEditor.CurrentEditor.TextOnCursorPosは正しい{subTag}値になるよう修正してください。
-TextEditor.CurrentEditor.DoOnCursorPosは上記の例示を参考に、各TextEditor.CurrentEditor.DoOnCursorPos:{subTag}:Openへと正しく分岐するように修正してください。
 
 # Application ======================================================================================================
 ## Status：　260709　Application.Synchronization.Status
@@ -227,6 +222,7 @@ candidates:     ^(Filter|Chat|Settings)$
 　　- Chat （AI相談チャット）
 　　- Settings （設定）
 
+
 ## Status：　260619　OverviewPanel.Area.IsOpen
 
 description:    上部パネル表示
@@ -261,6 +257,7 @@ current:        none
 default:        none
 type:           string
 candidates:     .*
+
 
 ## Status：　260619　WorkoutSettingPanel.Area.IsOpen
 
@@ -420,7 +417,6 @@ candidates:     .*
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
 　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
-
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
 　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
@@ -428,14 +424,14 @@ candidates:     .*
 ## 廃止：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
 　→ 各subTagアクション（WebSearch/GoogleRoute/YahooTransfer/Think/Mail/Chat/AI/Anchor）に分割。
 
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:AI:Open
-## 完了：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:AI:Open
+## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
@@ -452,10 +448,10 @@ candidates:     .*
 
 
 # TextEditor Cursor ================================================================================================
-## 完了：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
+## Action：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
 　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
 　↓ CurPosを一つ上の表示されている行に移動する　→　終了
-## 完了：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
+## Action：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
 　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
 　↓ CurPosを一つ下の表示されている行に移動する　→　終了
 ## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
@@ -1012,6 +1008,26 @@ Thinktank>Chat では 問題解決の template, skelton 作成して、Overview�
 Thinktank>Chat で既存のlinksファイルを Referenceしながら概要を捉え、
 
 
+## 完了：その他：タグ
+TextEditor.CurrentEditor.TextOnCursorPos にはカーソル位置で取得されたアクション用の Tag が設定されますが、
+そのTagのアクションについて以下のように分類しなおして、各subTag毎でアクションを再定義することを考えています。
+各subTagの例示において、大文字はタグ文字（ただし運用は大文字小文字混和可)、小文字はパラメータ文字です。
+1. Tag.WebSearch:       docs\DefaultSearchTag.mdで定義済みの WebSearch 用タグ
+2. Tag.GoogleRoute:     GoogleMapでplace1,2,3...を通るルートを表示するためのタグ        例：[GOOGLEROUTE:plasce1,place2,place3...]
+3. Tag.YahooTransfer:   Yahoo乗換案内で電車を検索するためのタグ                         例：[YAHOOTRANSFER:from,to,via,time,departure|arrive] 
+4. Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用)
+                        4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)
+                        4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)
+5. Tag.Mail             5.1 特定mailを指定するタグ                                      例：[MAIL]:ID]（アクション未実装）
+                        5.2 mail検索をするためのタグ                                    例：[MAIL]:keywords]（アクション未実装）
+6. Tag.Chat             6.1 Thinktank>Think一覧でタイトル絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:keywords]
+7. Tag.AI              外部AI(ai:GEMINI,CLAUDE,CHATGTP)へ接続し、sentenceで問い合わせるためのタグ        例：[ai:>] sentence
+8. Tag.Anchor           8.1 ファイル内で[:anchor]で始まる行に飛ぶためのタグ             例：[:>anchor]
+                        8.2 anchorテキストをHighlighterとして設定するためのタグ         例：[:anchor]
+本方針を踏まえて、TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open は廃止する代わりに、
+各TextEditor.CurrentEditor.DoOnCursorPos:{subTag}:Open を作成します。
+TextEditor.CurrentEditor.TextOnCursorPosは正しい{subTag}値になるよう修正してください。
+TextEditor.CurrentEditor.DoOnCursorPosは上記の例示を参考に、各TextEditor.CurrentEditor.DoOnCursorPos:{subTag}:Openへと正しく分岐するように修正してください。
 
 ## 完了:　260614　ToolBar.KeyActionのTextBox中に表示されている値を説明してください
  　A：ステータスバーの `KeyAction` モード（`StatusBarKeyActionPanel`）では、以下の項目が横並びで表示され、ユーザーの入力やフォーカス状態を監視します。
@@ -1024,3 +1040,4 @@ Thinktank>Chat で既存のlinksファイルを Referenceしながら概要を�
  　　- **exmod** (EX修飾キー): 拡張モードのトリガーになっている修飾キー。
  　　- **action** (直前アクション): 直前に実行されたショートカットやコマンド等のアクション名（例: `L20へ移動`, `L5折畳` など）。
 
+<!--  -->
