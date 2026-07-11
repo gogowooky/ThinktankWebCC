@@ -2171,7 +2171,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     switch (key) {
       case 'googleroute':   return 'GoogleRoute';
       case 'yahootransfer': return 'YahooTransfer';
-      case 'think': case 'memo': return 'Think';
+      case 'think': case 'thinktank': case 'memo': return 'Think';
       case 'mail':          return 'Mail';
       case 'chat':          return 'Chat';
       case 'ai':
@@ -2347,11 +2347,18 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         }
         const inner = text.slice(1, -1);
         const colonIdx = inner.indexOf(':');
-        const keywords = colonIdx >= 0 ? inner.slice(colonIdx + 1).trim() : '';
+        const val = colonIdx >= 0 ? inner.slice(colonIdx + 1).trim() : '';
         app.ThinktankPanel.IsAreaOpen = true;
         app.ThinktankPanel.SetViewMode('filter');
-        if (keywords) app.ThinktankPanel.SetFilter(keywords);
-        item.Result = `Chat [${keywords}] で検索しました`;
+
+        if (val.startsWith('>')) {
+          const keywords = val.slice(1).trim();
+          app.ThinktankPanel.SetContentFilter(keywords, ['chat']);
+          item.Result = `Chatコンテンツ [${keywords}] で検索しました`;
+        } else {
+          app.ThinktankPanel.SetFilter(val, ['chat']);
+          item.Result = `Chat [${val}] で検索しました`;
+        }
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
       }
