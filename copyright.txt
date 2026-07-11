@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "7fb1928",
-  "commitDateTime": "2026-07-11-074600",
-  "commitMessage": "point"
+  "commitId": "389c2b2",
+  "commitDateTime": "2026-07-12-075840",
+  "commitMessage": "feat: support chat content search and thinktank tag mapping in DoOnCursorPos"
 }
