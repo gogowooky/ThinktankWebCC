@@ -77,7 +77,7 @@ Keyboard Shortcuts
 *TextEditor ,ExDate ,Q                  ,TextEditor.EditDate.Reset                      ,元に戻す
 
 # Editor オプション　モード
-*           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
+*           ,       ,Alt+Q              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
 *           ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:Toggle        ,行番号On/Off
 *           ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:Toggle           ,折返しOn/Off
 *           ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:Toggle            ,ミニマップOn/Off
