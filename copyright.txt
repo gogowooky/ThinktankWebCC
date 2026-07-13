@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "2c2f84c",
-  "commitDateTime": "2026-07-12-233218",
-  "commitMessage": "docs: update shortcut key for ExOpt mode and status-action-binding notes"
+  "commitId": "8fa7823",
+  "commitDateTime": "2026-07-13-200556",
+  "commitMessage": "feat: add AI相談 chat panel to WorkoutSetting panel"
 }
