@@ -2,7 +2,7 @@
  * WorkoutSettingArea.tsx
  */
 
-import { useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import {
   GalleryThumbnails,
   PanelLeftDashed,
@@ -17,10 +17,16 @@ import {
   FilePlus,
   FileSpreadsheet,
   Save,
+  MonitorUp,
+  MonitorDown,
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
+import { AiChatView } from '../ThinktankPanel/AiChatView';
+import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
+import type { ChatMessage } from '../../types';
+import { streamChat } from '../../services/ChatApiService';
 import './WorkoutSettingArea.css';
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
@@ -75,6 +81,7 @@ interface Props {
   onCreateTable:    () => void;
   onReadTable:      () => void;
   onSaveTable:      () => void;
+  onSaveChat:       (messages: ChatMessage[]) => Promise<void>;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -86,11 +93,13 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
   onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
+  onSaveChat,
 }: Props, ref) {
   const panelRef           = useRef<HTMLDivElement>(null);
   const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
   const firstTexteditorRef = useRef<HTMLInputElement>(null);
   const firstDatagridRef   = useRef<HTMLButtonElement>(null);
+  const aiChatViewRef      = useRef<AiChatViewRef>(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -105,10 +114,64 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
           break;
         case 'texteditor': firstTexteditorRef.current?.focus(); break;
         case 'datagrid':   firstDatagridRef.current?.focus();   break;
+        case 'chat':       aiChatViewRef.current?.focus();      break;
         default:           panelRef.current?.focus();           break;
       }
     },
   }));
+
+  // ── AI相談チャット state ───────────────────────────────────────────────
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatWaiting,  setChatWaiting]  = useState(false);
+  const chatAbortRef                    = useRef<AbortController | null>(null);
+  const chatAccumulatedRef              = useRef('');
+
+  const handleChatSend = useCallback(async (text: string) => {
+    const ts = new Date().toISOString();
+    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
+    const aiId = `a-${Date.now() + 1}`;
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+
+    setChatMessages(prev => [...prev, userMsg, aiMsg]);
+    setChatWaiting(true);
+    chatAccumulatedRef.current = '';
+
+    chatAbortRef.current = new AbortController();
+
+    const history = [...chatMessages, userMsg].map(m => ({
+      role:    m.role as 'user' | 'assistant',
+      content: m.content,
+    }));
+
+    await streamChat(
+      history,
+      'あなたは Thinktank の AI アシスタントである Antigravity です。ユーザーの Think（メモ・アイデア）の整理や分析を日本語で手伝ってください。',
+      {
+        onDelta: (delta) => {
+          chatAccumulatedRef.current += delta;
+          const accumulated = chatAccumulatedRef.current;
+          setChatMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
+        },
+        onDone:  () => setChatWaiting(false),
+        onError: (message) => {
+          setChatMessages(prev => prev.map(m =>
+            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
+          ));
+          setChatWaiting(false);
+        },
+      },
+      chatAbortRef.current.signal,
+    );
+  }, [chatMessages]);
+
+  const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
+  const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
+
+  const handleSaveChat = useCallback(async () => {
+    if (chatMessages.length === 0 || chatWaiting) return;
+    await onSaveChat(chatMessages);
+    setChatMessages([]);
+  }, [chatMessages, chatWaiting, onSaveChat]);
 
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
@@ -126,8 +189,41 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 
       <div className="workout-setting-area__header">Workout&gt;{panelName}</div>
 
-      <div className="workout-setting-area__body">
-        {activeSettings === 'workout' ? (
+      <div className={`workout-setting-area__body${activeSettings === 'chat' ? ' workout-setting-area__body--chat' : ''}`}>
+        {activeSettings === 'chat' ? (
+          <div className="workout-setting-area__chat">
+            <div className="workout-setting-area__chat-toolbar">
+              <button
+                className="workout-setting-area__chat-btn"
+                onClick={handleScrollPrev}
+                data-tip="前のユーザーメッセージへ"
+              >
+                <MonitorUp size={14} className="ws-icon" />
+              </button>
+              <button
+                className="workout-setting-area__chat-btn"
+                onClick={handleScrollNext}
+                data-tip="次のユーザーメッセージへ"
+              >
+                <MonitorDown size={14} className="ws-icon" />
+              </button>
+              <button
+                className="workout-setting-area__chat-btn"
+                onClick={handleSaveChat}
+                disabled={chatMessages.length === 0 || chatWaiting}
+                data-tip="Chatを保管庫に保存"
+              >
+                <Save size={14} className="ws-icon" />
+              </button>
+            </div>
+            <AiChatView
+              ref={aiChatViewRef}
+              messages={chatMessages}
+              isWaiting={chatWaiting}
+              onSend={handleChatSend}
+            />
+          </div>
+        ) : activeSettings === 'workout' ? (
           <>
             {/* エリア管理 */}
             <div className="workout-setting-area__section">

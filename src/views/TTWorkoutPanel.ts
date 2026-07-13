@@ -7,7 +7,7 @@ import { TTUIItem } from '../models/TTUIItem';
 import { TTWorkoutArea } from './TTWorkoutArea';
 import type { MediaType } from '../types';
 
-export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph';
+export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'chat';
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
 

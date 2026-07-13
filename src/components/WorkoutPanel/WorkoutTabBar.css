@@ -28,3 +28,12 @@
   outline: 1px solid rgba(255, 255, 255, 0.7);
   outline-offset: 1px;
 }
+
+/* ── 区切り線（Graph設定 と AI相談 の間）──────────────── */
+.workout-tab-bar__divider {
+  width: 20px;
+  height: 1px;
+  margin: 4px auto;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}

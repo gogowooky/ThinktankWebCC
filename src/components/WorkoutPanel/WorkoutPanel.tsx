@@ -23,8 +23,9 @@ import { WorkoutSettingArea } from './WorkoutSettingArea';
 import type { WorkoutSettingAreaRef } from './WorkoutSettingArea';
 import { extractLinkDrop } from './WorkoutMenuRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
+import { serializeChat } from '../../utils/thinkFormat';
 import type { SettingsType } from './WorkoutTabBar';
-import type { MediaType } from '../../types';
+import type { MediaType, ChatMessage } from '../../types';
 import './WorkoutPanel.css';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
@@ -467,6 +468,14 @@ export function WorkoutPanel({ app }: Props) {
     }
   }, [panel, vault]);
 
+  const handleSaveChat = useCallback(async (messages: ChatMessage[]) => {
+    if (messages.length === 0) return;
+    const firstUser = messages.find(m => m.role === 'user')?.content ?? '';
+    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+    const body = serializeChat(messages);
+    await vault.CreateChatThink(`${title}\n${body}`);
+  }, [vault]);
+
   const handleClearAll = useCallback(() => {
     panel.ClearAll();
   }, [panel]);
@@ -758,6 +767,7 @@ export function WorkoutPanel({ app }: Props) {
           onCreateTable={handleCreateTable}
           onReadTable={handleReadTable}
           onSaveTable={handleSaveTable}
+          onSaveChat={handleSaveChat}
         />
       </PanelArea>
       {panel.IsAreaOpen && (

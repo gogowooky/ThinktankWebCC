@@ -34,12 +34,62 @@
   text-overflow: ellipsis;
 }
 
+/* ── AI相談チャット ─────────────────────────────────── */
+.workout-setting-area__chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* チャット白領域の最上部ツールバー（パネル色より少し薄い色）*/
+.workout-setting-area__chat-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 6px;
+  background: color-mix(in srgb, var(--workout-ribbon-bg, #2a2a2a) 82%, #ffffff 18%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.workout-setting-area__chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  transition: background 100ms ease, color 100ms ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.workout-setting-area__chat-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.workout-setting-area__chat-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 /* ── 本体 ──────────────────────────────────────────── */
 .workout-setting-area__body {
   flex: 1;
   overflow-y: auto;
   overflow-x: visible;
   padding: 8px 0;
+}
+
+/* AI相談チャットは本体全体を占有する（余白・スクロールは AiChatView 側で制御） */
+.workout-setting-area__body--chat {
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* ── セクション ─────────────────────────────────────── */

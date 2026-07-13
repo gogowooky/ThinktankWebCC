@@ -11,12 +11,13 @@
  * - 下部: フォーカスペインの Think タイトル（縦書き）
  */
 
-import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, type LucideIcon } from 'lucide-react';
+import { Fragment } from 'react';
+import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, MessageCircle, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
 import './WorkoutTabBar.css';
 
-export type SettingsType = Extract<MediaType, 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph'>;
+export type SettingsType = Extract<MediaType, 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'chat'>;
 
 interface SettingsEntry {
   type: SettingsType;
@@ -32,6 +33,7 @@ export const WORKOUT_SETTINGS: SettingsEntry[] = [
   { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定',   id: 'DataGrid' },
   { type: 'card',       Icon: IdCard,          name: 'Card設定',       id: 'Card' },
   { type: 'graph',      Icon: Share2,          name: 'Graph設定',      id: 'Graph' },
+  { type: 'chat',       Icon: MessageCircle,   name: 'AI相談',         id: 'AiChat' },
 ];
 
 interface Props {
@@ -56,19 +58,21 @@ export function WorkoutTabBar({ activeSettings, isOpen, thinkTitle, onToggle, on
       bottomLabel={thinkTitle}
     >
       {WORKOUT_SETTINGS.map(({ type, Icon, name, id }) => (
-        <button
-          key={type}
-          id={id}
-          className={[
-            'workout-tab-bar__btn',
-            activeSettings === type ? 'workout-tab-bar__btn--active' : '',
-          ].join(' ')}
-          onClick={() => handleClick(type)}
-          data-tip={name}
-          aria-label={id}
-        >
-          <Icon size={16} />
-        </button>
+        <Fragment key={type}>
+          {type === 'chat' && <div className="workout-tab-bar__divider" />}
+          <button
+            id={id}
+            className={[
+              'workout-tab-bar__btn',
+              activeSettings === type ? 'workout-tab-bar__btn--active' : '',
+            ].join(' ')}
+            onClick={() => handleClick(type)}
+            data-tip={name}
+            aria-label={id}
+          >
+            <Icon size={16} />
+          </button>
+        </Fragment>
       ))}
     </VerticalTabBar>
   );
