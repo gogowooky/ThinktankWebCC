@@ -120,6 +120,24 @@ export class TTOverviewPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
+  /** 指定した ID (群) のチェック状態を切り替える / 指定する */
+  public ToggleCheck(id: string | string[], forceChecked?: boolean): void {
+    const ids = Array.isArray(id) ? id : [id];
+    const current = new Set(this.CheckedThoughtIDs);
+
+    ids.forEach(targetId => {
+      const nextChecked = (forceChecked !== undefined) ? forceChecked : !current.has(targetId);
+      if (nextChecked) {
+        current.add(targetId);
+      } else {
+        current.delete(targetId);
+      }
+    });
+
+    this.CheckedThoughtIDs = Array.from(current);
+    this.NotifyUpdated();
+  }
+
   // ── 表示モード ────────────────────────────────────────────────────────
 
   /** 表示モードを切り替える */

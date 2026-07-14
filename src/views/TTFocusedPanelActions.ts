@@ -53,10 +53,20 @@ type PanelLike = {
   SetViewMode(mode: any):  void;
 };
 
-/** Think一覧のカーソル移動アクションが必要とするパネルの最小インターフェース */
+/** Think一覧のカーソルアクションが必要とするパネルの最小インターフェース */
 type FilterCursorPanel = {
-  CurrentItemID:    string;
-  FilteredThoughts: TTThink[];
+  CurrentItemID:       string;
+  FilteredThoughts:    TTThink[];
+  CheckedThoughtIDs:   string[];
+  ToggleCheck(id: string | string[], forceChecked?: boolean): void;
+};
+
+/** Think一覧を持つパネル（Thinktank / Overview）ごとのアクション生成定義 */
+type FilterPanelSpec = {
+  prefix:         'Thinktank' | 'Overview';
+  panelOf:        () => FilterCursorPanel;
+  currentItemKey: string;
+  open:           (id: string) => void;
 };
 
 function getPanel(app: TTApplication): PanelLike | null {
@@ -126,47 +136,88 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
-  // ── Filter CursorPos アクション ────────────────────────────────────────
-  const registerFilterCursorAction = (
-    actionID: ActionID,
-    panelOf: () => FilterCursorPanel,
-    currentItemKey: string,
-    cursorPosKey: string,
-    dir: -1 | 1,
-  ): void => {
-    TTActions.Register({
-      ActionID: actionID,
-      Completion: (item) => {
-        const panel = panelOf();
-        const list = panel.FilteredThoughts;
-        if (list.length === 0) { item.Result = '[一覧なし]'; return; }
-        const curIdx = panel.CurrentItemID
-          ? list.findIndex(t => t.ID === panel.CurrentItemID)
-          : -1;
-        // カーソル未表示（0行）からの移動は方向によらず先頭行へ
-        const nextIdx = curIdx < 0
-          ? 0
-          : Math.max(0, Math.min(curIdx + dir, list.length - 1));
-        panel.CurrentItemID = list[nextIdx].ID;
-        TTUIStateManager.instance.notifyPropertyChanged(currentItemKey);
-        TTUIStateManager.instance.notifyConstPropertyChanged(cursorPosKey);
-        item.Result = `行${nextIdx + 1}: ${list[nextIdx].Name || list[nextIdx].ID}`;
+  // ── Think一覧 カーソル アクション ──────────────────────────────────────
+  /** Think一覧を持つパネルごとの定義（Thinktank / Overview で共通のアクションを生成する） */
+  const FILTER_PANELS: FilterPanelSpec[] = [
+    {
+      prefix:         'Thinktank',
+      panelOf:        () => app.ThinktankPanel,
+      currentItemKey: 'ThinktankPanel.CurrentItem.ID',
+      // Thought はその場で Overview へ、それ以外は Workout へ（一覧ダブルクリックと同じ挙動）
+      open: (id) => {
+        if (app.Models.Vault.GetThink(id)?.ContentType === 'thought') {
+          app.OpenThought(id, 'datagrid');
+        } else {
+          app.OpenThinkInWorkout(id);
+        }
       },
-    });
+    },
+    {
+      prefix:         'Overview',
+      panelOf:        () => app.OverviewPanel,
+      currentItemKey: 'OverviewPanel.CurrentItem.ID',
+      open: (id) => { app.OpenThinkInWorkout(id); },
+    },
+  ];
+
+  /** カーソル位置の変化を Status へ通知する */
+  const notifyCursor = (spec: FilterPanelSpec): void => {
+    TTUIStateManager.instance.notifyPropertyChanged(spec.currentItemKey);
+    TTUIStateManager.instance.notifyConstPropertyChanged(`${spec.prefix}.Filter.CursorPos`);
+    TTUIStateManager.instance.notifyConstPropertyChanged(`${spec.prefix}.Filter.CursorPosID`);
   };
 
-  registerFilterCursorAction(
-    'Thinktank.Filter.CursorPos:PrevLine', () => app.ThinktankPanel,
-    'ThinktankPanel.CurrentItem.ID', 'Thinktank.Filter.CursorPos', -1);
-  registerFilterCursorAction(
-    'Thinktank.Filter.CursorPos:NextLine', () => app.ThinktankPanel,
-    'ThinktankPanel.CurrentItem.ID', 'Thinktank.Filter.CursorPos', 1);
-  registerFilterCursorAction(
-    'Overview.Filter.CursorPos:PrevLine', () => app.OverviewPanel,
-    'OverviewPanel.CurrentItem.ID', 'Overview.Filter.CursorPos', -1);
-  registerFilterCursorAction(
-    'Overview.Filter.CursorPos:NextLine', () => app.OverviewPanel,
-    'OverviewPanel.CurrentItem.ID', 'Overview.Filter.CursorPos', 1);
+  /** カーソル位置のThinkを返す（一覧が空 / カーソルなしの場合は null） */
+  const cursorThink = (spec: FilterPanelSpec): TTThink | null => {
+    const panel = spec.panelOf();
+    if (!panel.CurrentItemID) return null;
+    return panel.FilteredThoughts.find(t => t.ID === panel.CurrentItemID) ?? null;
+  };
+
+  for (const spec of FILTER_PANELS) {
+    for (const [suffix, dir] of [['PrevLine', -1], ['NextLine', 1]] as const) {
+      TTActions.Register({
+        ActionID: `${spec.prefix}.Filter.CursorPos:${suffix}` as ActionID,
+        Completion: (item) => {
+          const panel = spec.panelOf();
+          const list = panel.FilteredThoughts;
+          if (list.length === 0) { item.Result = '[一覧なし]'; return; }
+          const curIdx = panel.CurrentItemID
+            ? list.findIndex(t => t.ID === panel.CurrentItemID)
+            : -1;
+          // カーソル未表示（0行）からの移動は方向によらず先頭行へ
+          const nextIdx = curIdx < 0
+            ? 0
+            : Math.max(0, Math.min(curIdx + dir, list.length - 1));
+          panel.CurrentItemID = list[nextIdx].ID;
+          notifyCursor(spec);
+          item.Result = `行${nextIdx + 1}: ${list[nextIdx].Name || list[nextIdx].ID}`;
+        },
+      });
+    }
+
+    TTActions.Register({
+      ActionID: `${spec.prefix}.Filter.Cursor:Action` as ActionID,
+      Completion: (item) => {
+        const think = cursorThink(spec);
+        if (!think) { item.Result = '[カーソルなし]'; return; }
+        spec.open(think.ID);
+        item.Result = `開く: ${think.Name || think.ID}`;
+      },
+    });
+
+    TTActions.Register({
+      ActionID: `${spec.prefix}.Filter.Cursor:ToggleCheck` as ActionID,
+      Completion: (item) => {
+        const think = cursorThink(spec);
+        if (!think) { item.Result = '[カーソルなし]'; return; }
+        const panel = spec.panelOf();
+        panel.ToggleCheck(think.ID);
+        const checked = panel.CheckedThoughtIDs.includes(think.ID);
+        item.Result = `${checked ? 'チェック' : 'チェック解除'}: ${think.Name || think.ID}`;
+      },
+    });
+  }
 
   // ExMode 関連アクションの登録
   TTActions.Register({

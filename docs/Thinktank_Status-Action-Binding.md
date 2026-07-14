@@ -19,7 +19,18 @@
 
 
 
-## 実装：　260714　Thinktank.Filter.CursorPos
+## Action：　260714　Thinktank.Filter.Cursor:Action
+　↓ カーソル位置のアイテムを開く　→　終了
+## Action：　260714　Thinktank.Filter.Cursor:ToggleCheck
+　↓ カーソル位置のチェック状態をトグルする　→　終了
+## Status：　260714　Thinktank.Filter.CursorPosID
+description:    Thinktank>Think一覧のカーソル位置のID
+key:            Thinktank.Filter.CursorPosID
+current:        ''
+default:        ''
+type:           string
+candidates:      .*
+## Status：　260714　Thinktank.Filter.CursorPos
 値0は表示されていない、1以上はカーソルの行番号
 
 description:    Thinktank>Think一覧のカーソル位置
@@ -28,11 +39,22 @@ current:        0
 default:        0
 type:           string
 candidates:      .*
-## 実装：　260714　Thinktank.Filter.CursorPos:PrevLine
+## Actoin：　260714　Thinktank.Filter.CursorPos:PrevLine
 　↓ カーソルを１行前に移動する　→　終了
-## 実装：　260714　Thinktank.Filter.CursorPos:NextLine
+## Actoin：　260714　Thinktank.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
-## 実装：　260714　Overview.Filter.CursorPos
+## Action：　260714　Overview.Filter.Cursor:Action
+　↓ カーソル位置のアイテムを開く　→　終了
+## Action：　260714　Overview.Filter.Cursor:ToggleCheck
+　↓ カーソル位置のチェック状態をトグルする　→　終了
+## Status：　260714　Overview.Filter.CursorPosID
+description:    Overview>Think一覧のカーソル位置のID
+key:            Overview.Filter.CursorPosID
+current:        ''
+default:        ''
+type:           string
+candidates:      .*
+## Status：　260714　Overview.Filter.CursorPos
 値0は表示されていない、1以上はカーソルの行番号
 
 description:    Overview>Think一覧のカーソル位置
@@ -41,15 +63,21 @@ current:        0
 default:        0
 type:           string
 candidates:      .*
-## 実装：　260714　Overview.Filter.CursorPos:PrevLine
+## Actoin：　260714　Overview.Filter.CursorPos:PrevLine
 　↓ カーソルを１行前に移動する　→　終了
-## 実装：　260714　Overview.Filter.CursorPos:NextLine
+## Actoin：　260714　Overview.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
 
 　A：Status は TTUIStateManager に読み取り専用（isConst）の派生値として登録しました。
-　　値はフィルタ・ソート適用後のThink一覧における行番号で、カーソル未設定時は 0 です。
-　　Action は Ctrl+N / Ctrl+P に割当てました（docs\Shortcut.md）。
-　　行番号0（カーソル未表示）からの移動は、PrevLine/NextLineとも1行目へ移動します。
+　　CursorPos はフィルタ・ソート適用後のThink一覧における行番号（カーソル未設定時は 0）、
+　　CursorPosID はその行のThink ID（カーソル未設定時は空文字）です。
+　　一覧に存在しないID（フィルタ変更で消えた等）はカーソルなし（0 / 空文字）として扱います。
+　　Action の割当は以下です（docs\Shortcut.md）。
+　　- Ctrl+P / Ctrl+N          CursorPos:PrevLine / :NextLine （行番号0からはどちらも1行目へ）
+　　- Ctrl+Enter               Cursor:Action（カーソル位置のアイテムを開く）
+　　- Ctrl+K                   Cursor:ToggleCheck（カーソル位置のチェックを切替）
+　　Cursor:Action の開き方は一覧のダブルクリックと同じで、Thinktank側はThought種別ならOverviewへ、
+　　それ以外はWorkoutへ開きます。Overview側は常にWorkoutへ開きます。
 
 # Status
 

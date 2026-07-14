@@ -21,10 +21,14 @@ Keyboard Shortcuts
 
 
 # Think一覧 カーソル
-Thinktank.Filter,   ,Ctrl+P                 ,Thinktank.Filter.CursorPos:PrevLine                ,カーソルを一つ上の行の行頭に移動する
-Thinktank.Filter,   ,Ctrl+N                 ,Thinktank.Filter.CursorPos:NextLine                ,カーソルを一つ下の行の行頭に移動する
-Overview.Filter,    ,Ctrl+P                 ,Overview.Filter.CursorPos:PrevLine                 ,カーソルを一つ上の行の行頭に移動する
-Overview.Filter,    ,Ctrl+N                 ,Overview.Filter.CursorPos:NextLine                 ,カーソルを一つ下の行の行頭に移動する
+Thinktank.Filter,   ,Ctrl+P             ,Thinktank.Filter.CursorPos:PrevLine            ,Thinktank>Think一覧のカーソルを上に移動する
+Thinktank.Filter,   ,Ctrl+N             ,Thinktank.Filter.CursorPos:NextLine            ,Thinktank>Think一覧のカーソルを下に移動する
+Thinktank.Filter,   ,Ctrl+Enter         ,Thinktank.Filter.Cursor:Action                 ,Thinktank>Think一覧のカーソル位置のアイテムを開く
+Thinktank.Filter,   ,Ctrl+K             ,Thinktank.Filter.Cursor:ToggleCheck            ,Thinktank>Think一覧のカーソル位置のチェックを切替
+Overview.Filter,    ,Ctrl+P             ,Overview.Filter.CursorPos:PrevLine             ,Overview>Think一覧のカーソルを上に移動する
+Overview.Filter,    ,Ctrl+N             ,Overview.Filter.CursorPos:NextLine             ,Overview>Think一覧のカーソルを下に移動する
+Overview.Filter,    ,Ctrl+Enter         ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置のアイテムを開く
+Overview.Filter,    ,Ctrl+K             ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置のチェックを切替
 
 # Editor カーソル
 

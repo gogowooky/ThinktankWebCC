@@ -112,7 +112,9 @@ export type ConfigKey =
   | 'Application.Synchronization.Status'
   | 'Application.CheckedItem.IDs'
   | 'Thinktank.Filter.CursorPos'
+  | 'Thinktank.Filter.CursorPosID'
   | 'Overview.Filter.CursorPos'
+  | 'Overview.Filter.CursorPosID'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -308,6 +310,37 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       const idx = pos - 1;
       if (idx < list.length) {
         app.OverviewPanel.CurrentItemID = list[idx].ID;
+      }
+    },
+  },
+  'Thinktank.Filter.CursorPosID': {
+    panel: 'ThinktankPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: 'Thinktank>Think一覧のカーソル位置のID',
+    isConst: true,
+    get: (app) => {
+      const curId = app.ThinktankPanel.CurrentItemID;
+      // 一覧に存在しないID（フィルタ変更で消えた等）はカーソルなしとみなす
+      return app.ThinktankPanel.FilteredThoughts.some(t => t.ID === curId) ? curId : '';
+    },
+    set: (app, v) => {
+      if (!v || app.ThinktankPanel.FilteredThoughts.some(t => t.ID === v)) {
+        app.ThinktankPanel.CurrentItemID = v;
+      }
+    },
+  },
+  'Overview.Filter.CursorPosID': {
+    panel: 'OverviewPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: 'Overview>Think一覧のカーソル位置のID',
+    isConst: true,
+    get: (app) => {
+      const curId = app.OverviewPanel.CurrentItemID;
+      return app.OverviewPanel.FilteredThoughts.some(t => t.ID === curId) ? curId : '';
+    },
+    set: (app, v) => {
+      if (!v || app.OverviewPanel.FilteredThoughts.some(t => t.ID === v)) {
+        app.OverviewPanel.CurrentItemID = v;
       }
     },
   },
