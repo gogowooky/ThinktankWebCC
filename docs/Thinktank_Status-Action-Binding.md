@@ -17,6 +17,8 @@
 
 ## 完了：　Application.Resource.ImportFromLocal
 
+
+
 # Status
 
 # 対応不要： その他：ナビゲーション
@@ -458,7 +460,14 @@ candidates:     .*
 
 
 # TextEditor Cursor ================================================================================================
-## Action：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevChar
+　↓ カーソルを１文字前に移動する　→　終了
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextChar
+　↓ カーソルを１文字後に移動する　→　終了
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevWord
+　↓ カーソルを１ワード前に移動する　→　終了
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextWord
+　↓ カーソルを１ワード後に移動する　→　終了## Action：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
 　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
 　↓ CurPosを一つ上の表示されている行に移動する　→　終了
 ## Action：　260706　TextEditor.CurrentEditor.CursorPos:NextLine

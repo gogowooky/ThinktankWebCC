@@ -23,8 +23,15 @@ Keyboard Shortcuts
 
 # Editor カーソル
 
+
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine        ,カーソルを一つ上の行の行頭に移動する
 *TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine        ,カーソルを一つ下の行の行頭に移動する
+
+*TextEditor ,       ,Ctrl+B                 ,TextEditor.CurrentEditor.CursorPos:PrevWord        ,カーソルを１ワード前に移動する
+*TextEditor ,       ,Ctrl+F                 ,TextEditor.CurrentEditor.CursorPos:NextWord        ,カーソルを１ワード後に移動する
+
+*TextEditor ,       ,Ctrl+ArrowLeft         ,TextEditor.CurrentEditor.CursorPos:PrevWord        ,カーソルを１ワード前に移動する
+*TextEditor ,       ,Ctrl+ArrowRight        ,TextEditor.CurrentEditor.CursorPos:NextWord        ,カーソルを１ワード後に移動する
 
 *TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+      ,行頭に移動→全選択
 *TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+        ,行末尾に移動→全選択
