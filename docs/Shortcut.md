@@ -44,12 +44,10 @@ Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck     
 *TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
 *TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
 *TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
-
-# ToolBar Highlighter 入力欄
-*TextEditor ,       ,Alt+H                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
-*TextEditor ,       ,Shift+Alt+H            ,ToolBar.HighlighterMode.Text:Clear                     ,Highlighterをクリアする
-*           ,       ,Ctrl+Shift+H           ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
-ToolBar.Highlighter ,,Escape                ,ToolBar.HighlighterMode.Text:Unfocus                   ,Highlighter入力欄から元の位置に戻る
+*Highlighter        ,Alt+X                  ,ToolBar.HighlighterMode.Text:Unfocus                   ,Highlighter入力欄から元の位置に戻る
+*TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
+*TextEditor ,       ,Alt+S                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
+*TextEditor ,       ,Alt+Q                  ,ToolBar.HighlighterMode.Text:Clear                     ,Highlighterをクリアする
 
 # Editor カーソル
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine            ,カーソルを一つ上の行に移動する（ArrowUp相当）

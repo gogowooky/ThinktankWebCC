@@ -33,7 +33,9 @@ export function getFocusName(el: Element | null): string {
   }
 
   // 2. ToolBar.{ModeName}
-  if (el.closest('.workout-toolbar')) {
+  // 実際のツールバー（Highlighter/Command/...入力欄を含む）は .ApplicationStatusBarArea
+  // として描画される。.workout-toolbar は該当するDOM要素が存在しない廃止済みクラス名。
+  if (el.closest('.ApplicationStatusBarArea')) {
     const mode = app?.WorkoutPanel?.ToolBarMode ?? 'Copyright';
     return `ToolBar.${capitalize(mode)}`;
   }
@@ -116,11 +118,6 @@ export function getFocusName(el: Element | null): string {
     }
     const mode = app?.ReThinkPanel?.ViewMode ?? 'chat';
     return `ReThink.${capitalize(mode)}`;
-  }
-
-  // 8. Application.StatusBarArea 等、その他のフォールバック
-  if (el.closest('.ApplicationStatusBarArea')) {
-    return 'Application.StatusBarArea';
   }
 
   return 'None';

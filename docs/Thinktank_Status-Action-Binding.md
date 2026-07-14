@@ -148,7 +148,16 @@ candidates:      ^(None|Thinktank|Overview|WorkoutSetting|Workout|ReThink)\..*$
 　　- ToolBar.{ModeName} 
 　　- Workout.{MediaType}
 　　- ReThink.{ModeName}
-　　※フォーカスがどこにもない場合は None、ステータスバーにある場合は Application.StatusBarArea となります。
+　　※フォーカスがどこにもない場合は None です。
+
+　Q：ToolBar>HilighterのTextboxにフォーカスがあるとき、値はどうなりますか？
+　A：ToolBar.Highlighter となります（修正前は誤って Application.StatusBarArea を返していました）。
+　　原因は getFocusName.ts のツールバー判定が、実際には存在しない .workout-toolbar という
+　　クラス名を参照していたため、常にマッチせずフォールバックの Application.StatusBarArea に
+　　落ちていたことです。実際のツールバー（Highlighter/Command/...入力欄を含む）は
+　　.ApplicationStatusBarArea として描画されるため、判定をこちらに修正しました。
+　　これにより docs\Shortcut.md の `ToolBar.Highlighter ,,Escape` 等、focus列にToolBarの
+　　モード名を指定するショートカットが意図通り動作するようになりました。
 
 ## Action：　260616　ToolBar.Mode.Name:Next
 　ToolBar.Mode.Nameの設定値を次の値にする。値は循環式。
