@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "VENENO-02",
-  "commitId": "ac95e75",
-  "commitDateTime": "2026-07-14-185330",
-  "commitMessage": "feat: add cursor navigation actions and update shortcut docs"
+  "commitPC": "E15",
+  "commitId": "c44295d",
+  "commitDateTime": "2026-07-14-222055",
+  "commitMessage": "fix: save editor content to its source Think, not the pane's current one"
 }
