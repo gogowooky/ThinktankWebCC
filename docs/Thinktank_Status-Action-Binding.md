@@ -14,70 +14,20 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevLine
+　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
+　↓ CurPosを一つ上の表示されている行の同一カラム位置に移動する　→　終了
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextLine
+　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
+　↓ CurPosを一つ下の表示されている行の同一カラム位置に移動する　→　終了
+
+　A：行頭（C1）固定だった移動を、現在のカラム位置を維持する動作に修正しました。
+　　移動先の行が短い場合はその行の行末位置に丸めます（折り畳みで非表示の行はスキップ）。
+
 
 ## 完了：　Application.Resource.ImportFromLocal
 
 
-
-## Action：　260714　Thinktank.Filter.Cursor:Action
-　↓ カーソル位置のアイテムを開く　→　終了
-## Action：　260714　Thinktank.Filter.Cursor:ToggleCheck
-　↓ カーソル位置のチェック状態をトグルする　→　終了
-## Status：　260714　Thinktank.Filter.CursorPosID
-description:    Thinktank>Think一覧のカーソル位置のID
-key:            Thinktank.Filter.CursorPosID
-current:        ''
-default:        ''
-type:           string
-candidates:      .*
-## Status：　260714　Thinktank.Filter.CursorPos
-値0は表示されていない、1以上はカーソルの行番号
-
-description:    Thinktank>Think一覧のカーソル位置
-key:            Thinktank.Filter.CursorPos
-current:        0
-default:        0
-type:           string
-candidates:      .*
-## Actoin：　260714　Thinktank.Filter.CursorPos:PrevLine
-　↓ カーソルを１行前に移動する　→　終了
-## Actoin：　260714　Thinktank.Filter.CursorPos:NextLine
-　↓ カーソルを１行後に移動する　→　終了
-## Action：　260714　Overview.Filter.Cursor:Action
-　↓ カーソル位置のアイテムを開く　→　終了
-## Action：　260714　Overview.Filter.Cursor:ToggleCheck
-　↓ カーソル位置のチェック状態をトグルする　→　終了
-## Status：　260714　Overview.Filter.CursorPosID
-description:    Overview>Think一覧のカーソル位置のID
-key:            Overview.Filter.CursorPosID
-current:        ''
-default:        ''
-type:           string
-candidates:      .*
-## Status：　260714　Overview.Filter.CursorPos
-値0は表示されていない、1以上はカーソルの行番号
-
-description:    Overview>Think一覧のカーソル位置
-key:            Overview.Filter.CursorPos
-current:        0
-default:        0
-type:           string
-candidates:      .*
-## Actoin：　260714　Overview.Filter.CursorPos:PrevLine
-　↓ カーソルを１行前に移動する　→　終了
-## Actoin：　260714　Overview.Filter.CursorPos:NextLine
-　↓ カーソルを１行後に移動する　→　終了
-
-　A：Status は TTUIStateManager に読み取り専用（isConst）の派生値として登録しました。
-　　CursorPos はフィルタ・ソート適用後のThink一覧における行番号（カーソル未設定時は 0）、
-　　CursorPosID はその行のThink ID（カーソル未設定時は空文字）です。
-　　一覧に存在しないID（フィルタ変更で消えた等）はカーソルなし（0 / 空文字）として扱います。
-　　Action の割当は以下です（docs\Shortcut.md）。
-　　- Ctrl+P / Ctrl+N          CursorPos:PrevLine / :NextLine （行番号0からはどちらも1行目へ）
-　　- Ctrl+Enter               Cursor:Action（カーソル位置のアイテムを開く）
-　　- Ctrl+K                   Cursor:ToggleCheck（カーソル位置のチェックを切替）
-　　Cursor:Action の開き方は一覧のダブルクリックと同じで、Thinktank側はThought種別ならOverviewへ、
-　　それ以外はWorkoutへ開きます。Overview側は常にWorkoutへ開きます。
 
 # Status
 
@@ -260,6 +210,30 @@ candidates:     .*
 ## Action：　260619　FocusedPanel.Mode.Name:Prev
 ## Action：　260619　FocusedPanel.Mode.Name:Next
 
+## Action：　260714　Thinktank.Filter.Cursor:Action
+　↓ カーソル位置のアイテムを開く　→　終了
+## Action：　260714　Thinktank.Filter.Cursor:ToggleCheck
+　↓ カーソル位置のチェック状態をトグルする　→　終了
+## Status：　260714　Thinktank.Filter.CursorPosID
+description:    Thinktank>Think一覧のカーソル位置のID
+key:            Thinktank.Filter.CursorPosID
+current:        ''
+default:        ''
+type:           string
+candidates:      .*
+## Status：　260714　Thinktank.Filter.CursorPos
+値0は表示されていない、1以上はカーソルの行番号
+
+description:    Thinktank>Think一覧のカーソル位置
+key:            Thinktank.Filter.CursorPos
+current:        0
+default:        0
+type:           string
+candidates:      .*
+## Actoin：　260714　Thinktank.Filter.CursorPos:PrevLine
+　↓ カーソルを１行前に移動する　→　終了
+## Actoin：　260714　Thinktank.Filter.CursorPos:NextLine
+　↓ カーソルを１行後に移動する　→　終了
 ## Status：　260619　ThinktankPanel.Area.IsOpen
 description:    左パネル表示
 key:            ThinktankPanel.Area.IsOpen
@@ -289,6 +263,35 @@ default:        ''
 type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
 
+## Action：　260714　Overview.Filter.Cursor:Action
+　↓ カーソル位置のアイテムを開く　→　終了
+## Action：　260714　Overview.Filter.Cursor:ToggleCheck
+　↓ カーソル位置のチェック状態をトグルする　→　終了
+## Status：　260714　Overview.Filter.CursorPosID
+description:    Overview>Think一覧のカーソル位置のID
+key:            Overview.Filter.CursorPosID
+current:        ''
+default:        ''
+type:           string
+candidates:      .*
+## Status：　260714　Overview.Filter.CursorPos
+値0は表示されていない、1以上はカーソルの行番号
+
+description:    Overview>Think一覧のカーソル位置
+key:            Overview.Filter.CursorPos
+current:        0
+default:        0
+type:           string
+candidates:      .*
+## Actoin：　260714　Overview.Filter.CursorPos:PrevLine
+　↓ カーソルを１行前に移動する　→　終了
+## Actoin：　260714　Overview.Filter.CursorPos:NextLine
+　↓ カーソルを１行後に移動する　→　終了
+
+　A：Status は TTUIStateManager に読み取り専用（isConst）の派生値として登録しました。
+　　値はフィルタ・ソート適用後のThink一覧における行番号で、カーソル未設定時は 0 です。
+　　Action は Ctrl+N / Ctrl+P に割当てました（docs\Shortcut.md）。
+　　行番号0（カーソル未表示）からの移動は、PrevLine/NextLineとも1行目へ移動します。
 ## Status：　260619　OverviewPanel.Area.IsOpen
 
 description:    上部パネル表示
@@ -527,12 +530,7 @@ candidates:     .*
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevWord
 　↓ カーソルを１ワード前に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextWord
-　↓ カーソルを１ワード後に移動する　→　終了## Action：　260706　TextEditor.CurrentEditor.CursorPos:PrevLine
-　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
-　↓ CurPosを一つ上の表示されている行に移動する　→　終了
-## Action：　260706　TextEditor.CurrentEditor.CursorPos:NextLine
-　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
-　↓ CurPosを一つ下の表示されている行に移動する　→　終了
+　↓ カーソルを１ワード後に移動する　→　終了
 ## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
 　↓ CurPosが行先頭ではない場合、CurPosを現在行の先頭位置に移動する　→　終了
 　↓ CurPosが行先頭だがテキスト先頭ではない場合、CurPosをテキスト先頭位置に移動する　→　終了

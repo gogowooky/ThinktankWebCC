@@ -153,7 +153,8 @@
       "PowerShell(bq --project_id=thinktankweb-483408 query --nouse_legacy_sql --format=csv \"SELECT file_id, category, title, updated_at FROM ``thinktankweb-483408.thinktank.vault`` WHERE updated_at > TIMESTAMP_SUB\\(CURRENT_TIMESTAMP\\(\\), INTERVAL 25 MINUTE\\) ORDER BY updated_at DESC\")",
       "PowerShell(bq --project_id=thinktankweb-483408 query --nouse_legacy_sql --format=prettyjson \"SELECT file_id, category, tags, content FROM ``thinktankweb-483408.thinktank.vault`` WHERE file_id = '2026-01-05-091016'\")",
       "PowerShell(bq --project_id=thinktankweb-483408 query --nouse_legacy_sql --format=prettyjson \"SELECT file_id, category, content FROM ``thinktankweb-483408.thinktank.vault`` WHERE file_id = '2026-01-05-091016'\" | Out-File -Encoding utf8 \"$env:TEMP\\\\claude\\\\corrupt.json\"; Get-Content \"$env:TEMP\\\\claude\\\\corrupt.json\" -Encoding utf8)",
-      "PowerShell(bq --project_id=thinktankweb-483408 query --nouse_legacy_sql --format=csv \"SELECT ddl FROM ``thinktankweb-483408.thinktank.INFORMATION_SCHEMA.TABLES`` WHERE table_name='vault'\")"
+      "PowerShell(bq --project_id=thinktankweb-483408 query --nouse_legacy_sql --format=csv \"SELECT ddl FROM ``thinktankweb-483408.thinktank.INFORMATION_SCHEMA.TABLES`` WHERE table_name='vault'\")",
+      "PowerShell($env:COMPUTERNAME)"
     ]
   }
 }

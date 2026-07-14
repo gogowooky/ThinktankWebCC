@@ -41,8 +41,8 @@ Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck     
 
 # Editor カーソル
 
-*TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine        ,カーソルを一つ上の行の行頭に移動する
-*TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine        ,カーソルを一つ下の行の行頭に移動する
+*TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine        ,カーソルを一つ上の行の同一カラム位置に移動する
+*TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine        ,カーソルを一つ下の行の同一カラム位置に移動する
 
 *TextEditor ,       ,Ctrl+B                 ,TextEditor.CurrentEditor.CursorPos:PrevWord        ,カーソルを１ワード前に移動する
 *TextEditor ,       ,Ctrl+F                 ,TextEditor.CurrentEditor.CursorPos:NextWord        ,カーソルを１ワード後に移動する
