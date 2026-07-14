@@ -424,7 +424,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   const overviewModeLabel = showSettings
     ? '設定'
-    : (OVERVIEW_MODE_NAMES[panel.MediaType] ?? panel.MediaType);
+    : (OVERVIEW_MODE_NAMES[panel.ViewMode] ?? panel.ViewMode);
 
   return (
     <div className="overview-area">
