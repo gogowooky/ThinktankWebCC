@@ -16,13 +16,34 @@
 # Action
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevLine
 　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
-　↓ CurPosを一つ上の表示されている行の同一カラム位置に移動する　→　終了
+　↓ monaco editor defaultのArrowUpの移動位置に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextLine
 　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
-　↓ CurPosを一つ下の表示されている行の同一カラム位置に移動する　→　終了
+　↓ monaco editor defaultのArrowDownの移動位置に移動する　→　終了
 
-　A：行頭（C1）固定だった移動を、現在のカラム位置を維持する動作に修正しました。
-　　移動先の行が短い場合はその行の行末位置に丸めます（折り畳みで非表示の行はスキップ）。
+　A：独自のカラム計算をやめ、Monaco既定コマンド（cursorUp / cursorDown）に委譲しました。
+　　これにより折り畳み行のスキップ・折り返し行・カラムのスティッキー復元が既定どおりになります。
+
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevHighlighter
+　↓ Highlighterに設定されたテキストを検索して前のヒットへ移動する　→　終了
+　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextHighlighter
+　↓ Highlighterに設定されたテキストを検索して次のヒットへ移動する　→　終了
+　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
+
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:FirstHighlighter
+　↓ Highlighterに設定されたテキストを検索して先頭ヒットへ移動する　→　終了
+　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
+
+## Action：　260714　TextEditor.CurrentEditor.CursorPos:LastHighlighter
+　↓ Highlighterに設定されたテキストを検索して末尾ヒットへ移動する　→　終了
+　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
+
+　A：検索語は ToolBar.HighlighterMode.Text（= WorkoutPanel.HighlightWord）を、
+　　ハイライト表示と同じ規則でカンマ・空白区切りに分解し、OR条件（大文字小文字を区別）で検索します。
+　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
+　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
+　　キー割当（docs\Shortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
 
 
 ## 完了：　Application.Resource.ImportFromLocal

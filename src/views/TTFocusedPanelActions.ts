@@ -9,7 +9,7 @@
  */
 
 import type { TTApplication } from './TTApplication';
-import type { ActionID } from './TTAction';
+import type { ActionID, TTActionItem } from './TTAction';
 import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
@@ -2284,34 +2284,24 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           return;
         }
         const pos = editor.getPosition();
-        const model = editor.getModel();
-        if (!pos || !model) {
-          item.Result = '[モデル/位置なし]';
+        if (!pos) {
+          item.Result = '[位置なし]';
           return;
         }
 
-        const lineNumber = pos.lineNumber;
-        const hiddenAreas = getHiddenAreas(editor);
-        const isLineHidden = (l: number) => hiddenAreas.some((r: any) => l >= r.startLineNumber && l <= r.endLineNumber);
-
-        let targetLine = lineNumber - 1;
-        while (targetLine > 1 && isLineHidden(targetLine)) {
-          targetLine--;
-        }
-
-        if (lineNumber <= 1 || (targetLine === 1 && isLineHidden(1))) {
+        if (pos.lineNumber <= 1) {
           const newPos = { lineNumber: 1, column: 1 };
           editor.setPosition(newPos);
           editor.revealPosition(newPos);
           item.Result = '文書先頭（L1:C1）に移動しました';
-        } else {
-          // 移動先の行が短い場合は行末に丸める
-          const column = Math.min(pos.column, model.getLineMaxColumn(targetLine));
-          const newPos = { lineNumber: targetLine, column };
-          editor.setPosition(newPos);
-          editor.revealPosition(newPos);
-          item.Result = `一つ上の表示されている行（L${targetLine}:C${column}）に移動しました`;
+          return;
         }
+
+        // 折り畳み・折り返し・カラム維持は Monaco 既定の ArrowUp に委ねる
+        editor.trigger('keyboard', 'cursorUp', {});
+        const newPos = editor.getPosition();
+        editor.revealPosition(newPos);
+        item.Result = `一つ上の行（L${newPos.lineNumber}:C${newPos.column}）に移動しました`;
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
       }
@@ -2334,34 +2324,113 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
           return;
         }
 
-        const lineNumber = pos.lineNumber;
         const totalLines = model.getLineCount();
-        const hiddenAreas = getHiddenAreas(editor);
-        const isLineHidden = (l: number) => hiddenAreas.some((r: any) => l >= r.startLineNumber && l <= r.endLineNumber);
-
-        let targetLine = lineNumber + 1;
-        while (targetLine < totalLines && isLineHidden(targetLine)) {
-          targetLine++;
-        }
-
-        if (lineNumber >= totalLines || (targetLine === totalLines && isLineHidden(totalLines))) {
+        if (pos.lineNumber >= totalLines) {
           const lastLineMaxColumn = model.getLineMaxColumn(totalLines);
           const newPos = { lineNumber: totalLines, column: lastLineMaxColumn };
           editor.setPosition(newPos);
           editor.revealPosition(newPos);
           item.Result = `文書末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました`;
-        } else {
-          // 移動先の行が短い場合は行末に丸める
-          const column = Math.min(pos.column, model.getLineMaxColumn(targetLine));
-          const newPos = { lineNumber: targetLine, column };
-          editor.setPosition(newPos);
-          editor.revealPosition(newPos);
-          item.Result = `一つ下の表示されている行（L${targetLine}:C${column}）に移動しました`;
+          return;
         }
+
+        // 折り畳み・折り返し・カラム維持は Monaco 既定の ArrowDown に委ねる
+        editor.trigger('keyboard', 'cursorDown', {});
+        const newPos = editor.getPosition();
+        editor.revealPosition(newPos);
+        item.Result = `一つ下の行（L${newPos.lineNumber}:C${newPos.column}）に移動しました`;
       } catch (err: any) {
         item.Result = `[エラー] ${err.message}`;
       }
     }
+  });
+
+  // ── Highlighter 検索移動 ──────────────────────────────────────────────────
+  /**
+   * Highlighter（ToolBar.HighlighterMode.Text）のヒット位置を昇順で返す。
+   * ハイライト表示と同じ規則で、カンマ＝グループ区切り／空白＝単語区切りとして
+   * すべての単語を OR 条件で検索する。
+   */
+  const findHighlighterMatches = (editor: any): any[] => {
+    const model = editor.getModel();
+    if (!model) return [];
+    const words = app.WorkoutPanel.HighlightWord
+      .split(/[,\s]+/)
+      .map(w => w.trim())
+      .filter(w => w.length > 0);
+    if (words.length === 0) return [];
+
+    const pattern = words
+      .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('|');
+    return model.findMatches(pattern, true, true, false, null, false)
+      .map((m: any) => m.range)
+      .sort((a: any, b: any) =>
+        a.startLineNumber - b.startLineNumber || a.startColumn - b.startColumn);
+  };
+
+  const moveToHighlighter = (item: TTActionItem, pick: (ranges: any[], editor: any) => any | null): void => {
+    try {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) {
+        item.Result = '[エディタ未選択]';
+        return;
+      }
+      if (!app.WorkoutPanel.HighlightWord.trim()) {
+        item.Result = '[Highlighter未設定]';
+        return;
+      }
+      const ranges = findHighlighterMatches(editor);
+      if (ranges.length === 0) {
+        item.Result = '[ヒットなし]';
+        return;
+      }
+      const target = pick(ranges, editor);
+      if (!target) {
+        item.Result = '[これ以上ヒットなし]';
+        return;
+      }
+      const newPos = { lineNumber: target.startLineNumber, column: target.startColumn };
+      editor.setPosition(newPos);
+      editor.revealPositionInCenterIfOutsideViewport(newPos);
+      const hitIndex = ranges.findIndex((r: any) =>
+        r.startLineNumber === target.startLineNumber && r.startColumn === target.startColumn);
+      item.Result = `ヒット${hitIndex + 1}/${ranges.length}（L${newPos.lineNumber}:C${newPos.column}）に移動しました`;
+    } catch (err: any) {
+      item.Result = `[エラー] ${err.message}`;
+    }
+  };
+
+  const isBefore = (range: any, pos: any): boolean =>
+    range.startLineNumber < pos.lineNumber ||
+    (range.startLineNumber === pos.lineNumber && range.startColumn < pos.column);
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:PrevHighlighter',
+    Completion: (item) => moveToHighlighter(item, (ranges, editor) => {
+      const pos = editor.getPosition();
+      const before = ranges.filter(r => isBefore(r, pos));
+      return before.length > 0 ? before[before.length - 1] : null;
+    }),
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:NextHighlighter',
+    Completion: (item) => moveToHighlighter(item, (ranges, editor) => {
+      const pos = editor.getPosition();
+      return ranges.find(r => !isBefore(r, pos) &&
+        !(r.startLineNumber === pos.lineNumber && r.startColumn === pos.column)) ?? null;
+    }),
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:FirstHighlighter',
+    Completion: (item) => moveToHighlighter(item, (ranges) => ranges[0]),
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:LastHighlighter',
+    Completion: (item) => moveToHighlighter(item, (ranges) => ranges[ranges.length - 1]),
   });
 
   function getCurrentTextOnCursor(): string {
