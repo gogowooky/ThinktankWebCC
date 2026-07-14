@@ -239,7 +239,7 @@ type DisplayRow = { rowIdx: number; row: string[] };
 
 interface TableGridViewProps {
   think:          TTThink;
-  onSave?:        (content: string) => void;
+  onSave?:        (content: string, thinkId?: string) => void;
   onDirtyChange?: (dirty: boolean) => void;
   editorSettings?: MediaProps['editorSettings'];
 }
@@ -439,8 +439,8 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     const content = TTUIStateManager.instance.getLatestContent();
     if (!content) return;
     setSections(parseTableContent(content));
-    onSave?.(content);
-  }, [onSave]);
+    onSave?.(content, think.ID);
+  }, [onSave, think.ID]);
 
   const handleSave = useCallback((overrideSection?: TableSection | React.MouseEvent) => {
     if (!onSave) return;
@@ -456,13 +456,13 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     };
 
     // section.title を使う（think.Name は _extractTitle で # が剥ぎ取られる場合があるため）
-    onSave(tableSectionToContent(activeSection.title, reorderedSection));
+    onSave(tableSectionToContent(activeSection.title, reorderedSection), think.ID);
 
     // state を並び替え後の section で更新し、columnOrder をリセット
     setSections([reorderedSection]);
     setColumnOrder(Array.from({ length: reorderedSection.columns.length }, (_, i) => i));
     setIsDirty(false);
-  }, [onSave, section, columnOrder]);
+  }, [onSave, section, columnOrder, think.ID]);
 
   const handleSortToggle = useCallback((col: number) => {
     setSortState(prev => {

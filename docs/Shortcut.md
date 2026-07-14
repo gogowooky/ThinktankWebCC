@@ -10,9 +10,9 @@ Keyboard Shortcuts
 *           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,Workoutツールバー左
 *           ,ExApp  ,X                  ,ToolBar.Mode.Name:Next                         ,Workoutツールバー右
 
-*           ,ExApp  ,Q|O                ,FocusedPanel.Area.IsOpen:Toggle                ,パネル開閉
-*           ,ExApp  ,W|P                ,FocusedPanel.Mode.Name:Prev                    ,パネルモード上
-*           ,ExApp  ,D|N                ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
+*           ,ExApp  ,Q                  ,FocusedPanel.Area.IsOpen:Toggle                ,パネル開閉
+*           ,ExApp  ,W                  ,FocusedPanel.Mode.Name:Prev                    ,パネルモード上
+*           ,ExApp  ,D                  ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
 
 *           ,ExApp  ,ArrowDown          ,WorkoutPanel.FocusedPane.PaneNumber:Next       ,ペインを次に移動
 *           ,ExApp  ,ArrowUp            ,WorkoutPanel.FocusedPane.PaneNumber:Prev       ,ペインを前に移動
@@ -21,14 +21,23 @@ Keyboard Shortcuts
 
 
 # Think一覧 カーソル
-Thinktank.Filter,   ,Ctrl+P             ,Thinktank.Filter.CursorPos:PrevLine            ,Thinktank>Think一覧のカーソルを上に移動する
-Thinktank.Filter,   ,Ctrl+N             ,Thinktank.Filter.CursorPos:NextLine            ,Thinktank>Think一覧のカーソルを下に移動する
-Thinktank.Filter,   ,Ctrl+Enter         ,Thinktank.Filter.Cursor:Action                 ,Thinktank>Think一覧のカーソル位置のアイテムを開く
-Thinktank.Filter,   ,Ctrl+K             ,Thinktank.Filter.Cursor:ToggleCheck            ,Thinktank>Think一覧のカーソル位置のチェックを切替
-Overview.Filter,    ,Ctrl+P             ,Overview.Filter.CursorPos:PrevLine             ,Overview>Think一覧のカーソルを上に移動する
-Overview.Filter,    ,Ctrl+N             ,Overview.Filter.CursorPos:NextLine             ,Overview>Think一覧のカーソルを下に移動する
-Overview.Filter,    ,Ctrl+Enter         ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置のアイテムを開く
-Overview.Filter,    ,Ctrl+K             ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置のチェックを切替
+Thinktank.Filter,   ,Alt+P             ,Thinktank.Filter.CursorPos:PrevLine            ,Thinktank>Think一覧のカーソルを上に移動する
+Thinktank.Filter,   ,Alt+N             ,Thinktank.Filter.CursorPos:NextLine            ,Thinktank>Think一覧のカーソルを下に移動する
+Thinktank.Filter,   ,Alt+Enter         ,Thinktank.Filter.Cursor:Action                 ,Thinktank>Think一覧のカーソル位置を開く
+Thinktank.Filter,   ,Alt+K             ,Thinktank.Filter.Cursor:ToggleCheck            ,Thinktank>Think一覧のカーソル位置をチェック
+Overview.Filter,    ,Alt+P             ,Overview.Filter.CursorPos:PrevLine             ,Overview>Think一覧のカーソルを上に移動する
+Overview.Filter,    ,Alt+N             ,Overview.Filter.CursorPos:NextLine             ,Overview>Think一覧のカーソルを下に移動する
+Overview.Filter,    ,Alt+Enter         ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置を開く
+Overview.Filter,    ,Alt+K             ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
+
+Thinktank.Filter    ,ExApp  ,Alt+P      ,Thinktank.Filter.CursorPos:PrevLine            ,Thinktank>Think一覧のカーソルを上に移動する
+Thinktank.Filter    ,ExApp  ,Alt+N      ,Thinktank.Filter.CursorPos:NextLine            ,Thinktank>Think一覧のカーソルを下に移動する
+Thinktank.Filter    ,ExApp  ,Alt+Enter  ,Thinktank.Filter.Cursor:Action                 ,Thinktank>Think一覧のカーソル位置を開く
+Thinktank.Filter    ,ExApp  ,Alt+K      ,Thinktank.Filter.Cursor:ToggleCheck            ,Thinktank>Think一覧のカーソル位置をチェック
+Overview.Filter     ,ExApp  ,Alt+P      ,Overview.Filter.CursorPos:PrevLine             ,Overview>Think一覧のカーソルを上に移動する
+Overview.Filter     ,ExApp  ,Alt+N      ,Overview.Filter.CursorPos:NextLine             ,Overview>Think一覧のカーソルを下に移動する
+Overview.Filter     ,ExApp  ,Alt+Enter  ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置を開く
+Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
 
 # Editor カーソル
 

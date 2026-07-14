@@ -66,8 +66,13 @@ export function WorkoutArea({
   useEffect(() => {
     setIsDirty(false);
 
+    // 読み込み中に別Thinkが開かれた場合、遅れて完了したロードで
+    // 「読み込み済み」にしてしまわないよう、この実行が担当するIDを固定する
+    const targetId = area.ResourceID;
+    let cancelled = false;
+
     const loadAndRestore = async () => {
-      const t = vault.GetThink(area.ResourceID);
+      const t = vault.GetThink(targetId);
       if (!t) {
         if (!vault.IsLoaded) {
           const updateKey = `WorkoutArea-load-${area.ID}`;
@@ -77,8 +82,8 @@ export function WorkoutArea({
               loadAndRestore();
             }
           });
-        } else {
-          setLoadedResourceId(area.ResourceID);
+        } else if (!cancelled) {
+          setLoadedResourceId(targetId);
         }
         return;
       }
@@ -86,7 +91,8 @@ export function WorkoutArea({
       if (t.IsMetaOnly) {
         await t.LoadContent();
       }
-      setLoadedResourceId(area.ResourceID);
+      if (cancelled) return;
+      setLoadedResourceId(targetId);
 
       // ハイライト文字の復元
       if (t.Metadata?.highlightWord !== undefined) {
@@ -97,6 +103,7 @@ export function WorkoutArea({
     loadAndRestore();
 
     return () => {
+      cancelled = true;
       vault.RemoveOnUpdate(`WorkoutArea-load-${area.ID}`);
     };
   }, [area.ResourceID, vault, panel]);
@@ -189,18 +196,23 @@ export function WorkoutArea({
     area.OpenThink(thinkId, mediaType, title);
   }, [vault, area]);
 
-  // 保存ハンドラー（TextEditorMedia から Ctrl+S で呼ばれる）
-  const handleSave = useCallback((content: string) => {
-    const think = vault.GetThink(area.ResourceID);
+  // 保存ハンドラー（TextEditorMedia から Ctrl+S・自動保存で呼ばれる）
+  // 保存先は content の出所（thinkId）に固定する。area.ResourceID を参照すると、
+  // 遅延保存がペインの表示切替をまたいだときに別ファイルを上書きしてしまう。
+  const handleSave = useCallback((content: string, thinkId?: string) => {
+    const targetId = thinkId ?? area.ResourceID;
+    const think = vault.GetThink(targetId);
     if (!think) return Promise.resolve();
     think.Content = content;
-    // タイトル行が変わっていればペインタイトルも更新
-    if (area.Title !== think.Name) {
+
+    const isCurrentResource = targetId === area.ResourceID;
+    // タイトル行が変わっていればペインタイトルも更新（表示中のThinkのみ）
+    if (isCurrentResource && area.Title !== think.Name) {
       area.Title = think.Name;
       panel.NotifyUpdated();
     }
     return think.SaveContent().then(() => {
-      setIsDirty(false);
+      if (isCurrentResource) setIsDirty(false);
       // システム Think の保存を各マネージャーに通知
       TTUIStateManager.instance.onThinkSaved(think.ID, content);
       TTShortcutManager.instance.onThinkSaved(think.ID, content);

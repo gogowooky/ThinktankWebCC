@@ -129,7 +129,7 @@ function ThinkCard({ item, isFocus }: { item: TTThink; isFocus: boolean }) {
 
 interface TableCardViewProps {
   think:   TTThink;
-  onSave?: (content: string) => void;
+  onSave?: (content: string, thinkId?: string) => void;
 }
 
 function TableCardView({ think, onSave }: TableCardViewProps) {
@@ -143,8 +143,8 @@ function TableCardView({ think, onSave }: TableCardViewProps) {
     const content = TTUIStateManager.instance.getLatestContent();
     if (!content) return;
     setSections(parseTableContent(content));
-    onSave?.(content);
-  }, [onSave]);
+    onSave?.(content, think.ID);
+  }, [onSave, think.ID]);
 
   const filteredRows = useMemo<string[][]>(() => {
     if (!section) return [];

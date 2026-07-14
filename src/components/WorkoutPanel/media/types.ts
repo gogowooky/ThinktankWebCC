@@ -12,8 +12,13 @@ export interface MediaProps {
   think:         TTThink | null;
   /** Vault 参照（DataGrid / Card / Graph が利用）*/
   vault:         TTVault;
-  /** Ctrl+S 等で保存要求が来たときに呼ばれる。content = 編集後の文字列 */
-  onSave:        (content: string) => Promise<void>;
+  /**
+   * Ctrl+S 等で保存要求が来たときに呼ばれる。content = 編集後の文字列。
+   * thinkId は content の出所となった Think の ID。遅延保存（blur / デバウンス /
+   * アンマウント）がペインの表示切替をまたいで発火しても、別ファイルへ書き込まないよう
+   * 保存先を content の出所に固定するために必ず渡すこと。
+   */
+  onSave:        (content: string, thinkId?: string) => Promise<void>;
   /** エディタの変更状態が変わったときに呼ばれる */
   onDirtyChange: (dirty: boolean) => void;
   /** 第一行目（タイトル行）が変更されたときに呼ばれる */

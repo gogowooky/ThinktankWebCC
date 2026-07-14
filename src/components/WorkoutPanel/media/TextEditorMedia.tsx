@@ -298,7 +298,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const currentSaved = getEditorValue(currentThink);
       if (body !== currentSaved) {
         const nextContent = reconstructContent(currentThink, body);
-        onSaveRef.current(nextContent)
+        onSaveRef.current(nextContent, currentThink.ID)
           .then(() => {
             savedRef.current = body;
           })
@@ -330,7 +330,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       if (!think) return;
       const body = editor.getValue();
       savedRef.current = body;
-      onSave(reconstructContent(think, body));
+      onSave(reconstructContent(think, body), think.ID);
     });
 
     // 状態の復元
@@ -417,7 +417,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         const body = editor.getValue();
         const currentSaved = getEditorValue(currentThink);
         if (body !== currentSaved) {
-          currentOnSave(reconstructContent(currentThink, body))
+          currentOnSave(reconstructContent(currentThink, body), currentThink.ID)
             .catch((err: any) => {
               console.error('[TextEditorMedia] Unmount auto save failed:', err);
             });
@@ -446,7 +446,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const currentSaved = getEditorValue(think);
       if (body === currentSaved) return; // think.Content と一致 → 保存不要
       const nextContent = reconstructContent(think, body);
-      onSave(nextContent)
+      onSave(nextContent, think.ID)
         .then(() => {
           savedRef.current = body;
         })
@@ -894,7 +894,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       autoSaveTimerRef.current = setTimeout(() => {
         const body = v;
         const nextContent = reconstructContent(think, body);
-        onSave(nextContent)
+        onSave(nextContent, think.ID)
           .then(() => {
             savedRef.current = body;
           })
