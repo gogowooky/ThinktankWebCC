@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.8",
+  "version": "1.3.9",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "82f59ee",
-  "commitDateTime": "2026-07-14-234654",
-  "commitMessage": "docs: remap Highlighter cursor keys to Alt+W/D and tidy binding spec"
+  "commitId": "4218cbe",
+  "commitDateTime": "2026-07-15-081504",
+  "commitMessage": "fix: resolve ToolBar focus to Application.FocusedArea.Name correctly"
 }
