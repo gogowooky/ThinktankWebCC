@@ -40,20 +40,17 @@ Overview.Filter     ,ExApp  ,Alt+Enter  ,Overview.Filter.Cursor:Action          
 Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
 
 # Editor カーソル
+*TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
+*TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
+*TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
+*TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
 
-*TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine        ,カーソルを一つ上の行に移動する（ArrowUp相当）
-*TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine        ,カーソルを一つ下の行に移動する（ArrowDown相当）
-
-*TextEditor ,       ,Ctrl+Shift+P           ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter ,Highlighterの前のヒットに移動する
-*TextEditor ,       ,Ctrl+Shift+N           ,TextEditor.CurrentEditor.CursorPos:NextHighlighter ,Highlighterの次のヒットに移動する
-*TextEditor ,       ,Ctrl+Alt+P             ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter ,Highlighterの先頭ヒットに移動する
-*TextEditor ,       ,Ctrl+Alt+N             ,TextEditor.CurrentEditor.CursorPos:LastHighlighter ,Highlighterの末尾ヒットに移動する
-
-*TextEditor ,       ,Ctrl+B                 ,TextEditor.CurrentEditor.CursorPos:PrevWord        ,カーソルを１ワード前に移動する
-*TextEditor ,       ,Ctrl+F                 ,TextEditor.CurrentEditor.CursorPos:NextWord        ,カーソルを１ワード後に移動する
-
-*TextEditor ,       ,Ctrl+ArrowLeft         ,TextEditor.CurrentEditor.CursorPos:PrevWord        ,カーソルを１ワード前に移動する
-*TextEditor ,       ,Ctrl+ArrowRight        ,TextEditor.CurrentEditor.CursorPos:NextWord        ,カーソルを１ワード後に移動する
+*TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine            ,カーソルを一つ上の行に移動する（ArrowUp相当）
+*TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine            ,カーソルを一つ下の行に移動する（ArrowDown相当）
+*TextEditor ,       ,Ctrl+B                 ,TextEditor.CurrentEditor.CursorPos:PrevWord            ,カーソルを１ワード前に移動する
+*TextEditor ,       ,Ctrl+F                 ,TextEditor.CurrentEditor.CursorPos:NextWord            ,カーソルを１ワード後に移動する
+*TextEditor ,       ,Ctrl+ArrowLeft         ,TextEditor.CurrentEditor.CursorPos:PrevWord            ,カーソルを１ワード前に移動する
+*TextEditor ,       ,Ctrl+ArrowRight        ,TextEditor.CurrentEditor.CursorPos:NextWord            ,カーソルを１ワード後に移動する
 
 *TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+      ,行頭に移動→全選択
 *TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+        ,行末尾に移動→全選択
