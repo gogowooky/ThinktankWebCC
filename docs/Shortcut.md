@@ -20,7 +20,7 @@ Keyboard Shortcuts
 *           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
 
-# Think一覧 カーソル
+# Panel>Think一覧 カーソル
 Thinktank.Filter,   ,Alt+P             ,Thinktank.Filter.CursorPos:PrevLine            ,Thinktank>Think一覧のカーソルを上に移動する
 Thinktank.Filter,   ,Alt+N             ,Thinktank.Filter.CursorPos:NextLine            ,Thinktank>Think一覧のカーソルを下に移動する
 Thinktank.Filter,   ,Alt+Enter         ,Thinktank.Filter.Cursor:Action                 ,Thinktank>Think一覧のカーソル位置を開く
@@ -39,12 +39,19 @@ Overview.Filter     ,ExApp  ,Alt+N      ,Overview.Filter.CursorPos:NextLine     
 Overview.Filter     ,ExApp  ,Alt+Enter  ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置を開く
 Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
 
-# Editor カーソル
+# Editor カーソル　ハイライト
 *TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
 *TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
 *TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
 *TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
 
+# ToolBar Highlighter 入力欄
+*TextEditor ,       ,Alt+H                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
+*TextEditor ,       ,Shift+Alt+H            ,ToolBar.HighlighterMode.Text:Clear                     ,Highlighterをクリアする
+*           ,       ,Ctrl+Shift+H           ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
+ToolBar.Highlighter ,,Escape                ,ToolBar.HighlighterMode.Text:Unfocus                   ,Highlighter入力欄から元の位置に戻る
+
+# Editor カーソル
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine            ,カーソルを一つ上の行に移動する（ArrowUp相当）
 *TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine            ,カーソルを一つ下の行に移動する（ArrowDown相当）
 *TextEditor ,       ,Ctrl+B                 ,TextEditor.CurrentEditor.CursorPos:PrevWord            ,カーソルを１ワード前に移動する
@@ -54,11 +61,14 @@ Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck     
 
 *TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+      ,行頭に移動→全選択
 *TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+        ,行末尾に移動→全選択
+
+# Editor カーソル アクション文字
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
 *TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
 *TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
 *TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
 
+# Editor カーソル 折畳行
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
 *TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動

@@ -17,6 +17,24 @@
 
 ## 完了：　Application.Resource.ImportFromLocal
 
+## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
+FocusedPaneの選択テキストの内容をToolBar.HighlighterMode.TextにCSV形式で追加する。
+
+## Action：　260715　ToolBar.HighlighterMode.Text:Clear
+ToolBar.HighlighterMode.Textをクリアする
+
+## Action：　260715　ToolBar.HighlighterMode.Text:Unfocus
+ToolBar.HighlighterMode.Text:Focusで記憶した直前のFocus位置に戻る。
+
+## Action：　260715　ToolBar.HighlighterMode.Text:Focus
+ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その際、直前のFocus位置を記憶する。
+
+　A：4アクションとも TTFocusedPanelActions に実装しました。
+　　- AddSelected: FocusedPaneの選択テキスト（改行を含む場合は1行目）をカンマ区切りのグループとして追加。既存と重複する場合は追加しない。
+　　- Clear: ToolBar.HighlighterMode.Text（= WorkoutPanel.HighlightWord）を空にする。
+　　- Focus: 直前のフォーカス要素を記憶し、ToolBarをHighlighterモードに切り替えて入力欄（#StatusBarTextInput）にフォーカス。
+　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
+　　キー割当（docs\Shortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
 
 
 # Status

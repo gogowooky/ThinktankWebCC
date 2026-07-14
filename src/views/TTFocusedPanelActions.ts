@@ -2433,6 +2433,95 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Completion: (item) => moveToHighlighter(item, (ranges) => ranges[ranges.length - 1]),
   });
 
+  // ── ToolBar Highlighter 入力欄 ────────────────────────────────────────────
+  const HIGHLIGHTER_INPUT_ID = 'StatusBarTextInput';
+
+  /** :Focus で記憶した、Highlighter入力欄に入る直前のフォーカス要素 */
+  let highlighterPrevFocus: HTMLElement | null = null;
+
+  const getHighlighterInput = (): HTMLInputElement | null =>
+    document.getElementById(HIGHLIGHTER_INPUT_ID) as HTMLInputElement | null;
+
+  /** FocusedPane の選択テキスト（エディタ優先、なければ通常のDOM選択） */
+  const getSelectedTextInFocusedPane = (): string => {
+    const editor = TTShortcutManager.instance.activeEditor;
+    if (editor) {
+      const selection = editor.getSelection();
+      const model = editor.getModel();
+      if (selection && model && !selection.isEmpty()) {
+        return model.getValueInRange(selection);
+      }
+    }
+    return window.getSelection()?.toString() ?? '';
+  };
+
+  TTActions.Register({
+    ActionID: 'ToolBar.HighlighterMode.Text:AddSelected',
+    Completion: (item) => {
+      // 改行を含む選択は Highlighter の語として扱えないため1行目のみ採用する
+      const selected = getSelectedTextInFocusedPane().split('\n')[0].trim();
+      if (!selected) {
+        item.Result = '[選択テキストなし]';
+        return;
+      }
+
+      const current = app.WorkoutPanel.HighlightWord;
+      const groups = current.split(',').map(g => g.trim()).filter(g => g.length > 0);
+      if (groups.includes(selected)) {
+        item.Result = `登録済み: ${selected}`;
+        return;
+      }
+
+      groups.push(selected);
+      TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.Text', groups.join(','));
+      item.Result = `Highlighterに追加: ${selected}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.HighlighterMode.Text:Clear',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.Text', '');
+      item.Result = 'Highlighterをクリアしました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.HighlighterMode.Text:Focus',
+    Completion: (item) => {
+      const active = document.activeElement as HTMLElement | null;
+      // 入力欄自身にフォーカスがある場合は、戻り先を上書きしない
+      if (active && active.id !== HIGHLIGHTER_INPUT_ID) {
+        highlighterPrevFocus = active;
+      }
+
+      // ToolBar が Highlighter モードでなければ切り替える（入力欄はこの後に描画される）
+      if (app.WorkoutPanel.ToolBarMode !== 'Highlighter') {
+        TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'Highlighter');
+      }
+      // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
+      getHighlighterInput()?.focus();
+      requestAnimationFrame(() => getHighlighterInput()?.focus());
+      item.Result = 'Highlighter入力欄にフォーカスしました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.HighlighterMode.Text:Unfocus',
+    Completion: (item) => {
+      const prev = highlighterPrevFocus;
+      getHighlighterInput()?.blur();
+      if (prev && document.body.contains(prev)) {
+        prev.focus();
+        highlighterPrevFocus = null;
+        item.Result = 'フォーカスを元の位置に戻しました';
+        return;
+      }
+      highlighterPrevFocus = null;
+      item.Result = '[戻り先なし] 入力欄のフォーカスを外しました';
+    },
+  });
+
   function getCurrentTextOnCursor(): string {
     const editor = TTShortcutManager.instance.activeEditor;
     if (!editor) return '';
