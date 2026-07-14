@@ -8,9 +8,10 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
+import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
 
-export type OverviewViewMode = 'datagrid' | 'graph' | 'chat' | 'settings';
+export type OverviewViewMode = 'filter' | 'graph' | 'chat' | 'settings';
 
 export class TTOverviewPanel extends TTUIItem {
   /** OverviewAreaの開閉状態（true=開いている）*/
@@ -33,12 +34,13 @@ export class TTOverviewPanel extends TTUIItem {
     TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');
   }
 
-  /** 表示モード（datagrid/graph/chat/settings）*/
-  public ViewMode: OverviewViewMode = 'datagrid';
+  /** 表示モード（filter/graph/chat/settings）*/
+  public ViewMode: OverviewViewMode = 'filter';
 
   /** MediaTypeの後方互換ゲッター（ViewModeから導出）*/
   public get MediaType(): MediaType {
-    return (this.ViewMode === 'settings' ? 'datagrid' : this.ViewMode) as MediaType;
+    // Think一覧（filter）と設定は datagrid メディアで描画する
+    return (this.ViewMode === 'settings' || this.ViewMode === 'filter' ? 'datagrid' : this.ViewMode) as MediaType;
   }
 
   /** 全文検索テキスト */
@@ -46,6 +48,9 @@ export class TTOverviewPanel extends TTUIItem {
 
   /** 現在カーソル（フォーカス）が当たっているItemのID */
   public CurrentItemID: string = '';
+
+  /** フィルタ適用後の表示中Think一覧（CursorPosアクション用スナップショット） */
+  public FilteredThoughts: TTThink[] = [];
 
   public override get ClassName(): string {
     return 'TTOverviewPanel';
@@ -91,7 +96,8 @@ export class TTOverviewPanel extends TTUIItem {
     this.ThoughtID = thoughtId;
     this.CheckedThoughtIDs = []; // チェッククリア
     if (mediaType !== 'settings' as string) {
-      this.ViewMode = mediaType as OverviewViewMode;
+      // datagrid メディアは Think一覧（filter）モードにマップする
+      this.ViewMode = (mediaType === 'datagrid' ? 'filter' : mediaType) as OverviewViewMode;
     }
     if (!this.IsAreaOpen) {
       this.IsAreaOpen = true;
@@ -124,7 +130,8 @@ export class TTOverviewPanel extends TTUIItem {
 
   /** 後方互換：MediaTypeで表示モードを設定（settingsモード以外） */
   public SetMediaType(mediaType: MediaType): void {
-    this.ViewMode = mediaType as OverviewViewMode;
+    // datagrid メディアは Think一覧（filter）モードにマップする
+    this.ViewMode = (mediaType === 'datagrid' ? 'filter' : mediaType) as OverviewViewMode;
     this.NotifyUpdated();
   }
 

@@ -10,6 +10,7 @@
 
 import type { TTApplication } from './TTApplication';
 import type { ActionID } from './TTAction';
+import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTUIStateManager } from './TTUIStateManager';
@@ -37,7 +38,7 @@ async function getSearchTags(): Promise<Record<string, string>> {
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
   Thinktank:      ['filter', 'chat', 'settings'],
-  Overview:       ['datagrid', 'graph', 'chat', 'settings'],
+  Overview:       ['filter', 'graph', 'chat', 'settings'],
   WorkoutSetting: ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
   Workout:        ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
   ReThink:        ['chat', 'settings'],
@@ -50,6 +51,12 @@ type PanelLike = {
   IsAreaOpen:              boolean;
   ViewMode:                string;
   SetViewMode(mode: any):  void;
+};
+
+/** Think一覧のカーソル移動アクションが必要とするパネルの最小インターフェース */
+type FilterCursorPanel = {
+  CurrentItemID:    string;
+  FilteredThoughts: TTThink[];
 };
 
 function getPanel(app: TTApplication): PanelLike | null {
@@ -118,6 +125,48 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       item.Result = TTUIStateManager.instance.getProperty('ToolBar.Mode.Name');
     },
   });
+
+  // ── Filter CursorPos アクション ────────────────────────────────────────
+  const registerFilterCursorAction = (
+    actionID: ActionID,
+    panelOf: () => FilterCursorPanel,
+    currentItemKey: string,
+    cursorPosKey: string,
+    dir: -1 | 1,
+  ): void => {
+    TTActions.Register({
+      ActionID: actionID,
+      Completion: (item) => {
+        const panel = panelOf();
+        const list = panel.FilteredThoughts;
+        if (list.length === 0) { item.Result = '[一覧なし]'; return; }
+        const curIdx = panel.CurrentItemID
+          ? list.findIndex(t => t.ID === panel.CurrentItemID)
+          : -1;
+        // カーソル未表示（0行）からの移動は方向によらず先頭行へ
+        const nextIdx = curIdx < 0
+          ? 0
+          : Math.max(0, Math.min(curIdx + dir, list.length - 1));
+        panel.CurrentItemID = list[nextIdx].ID;
+        TTUIStateManager.instance.notifyPropertyChanged(currentItemKey);
+        TTUIStateManager.instance.notifyConstPropertyChanged(cursorPosKey);
+        item.Result = `行${nextIdx + 1}: ${list[nextIdx].Name || list[nextIdx].ID}`;
+      },
+    });
+  };
+
+  registerFilterCursorAction(
+    'Thinktank.Filter.CursorPos:PrevLine', () => app.ThinktankPanel,
+    'ThinktankPanel.CurrentItem.ID', 'Thinktank.Filter.CursorPos', -1);
+  registerFilterCursorAction(
+    'Thinktank.Filter.CursorPos:NextLine', () => app.ThinktankPanel,
+    'ThinktankPanel.CurrentItem.ID', 'Thinktank.Filter.CursorPos', 1);
+  registerFilterCursorAction(
+    'Overview.Filter.CursorPos:PrevLine', () => app.OverviewPanel,
+    'OverviewPanel.CurrentItem.ID', 'Overview.Filter.CursorPos', -1);
+  registerFilterCursorAction(
+    'Overview.Filter.CursorPos:NextLine', () => app.OverviewPanel,
+    'OverviewPanel.CurrentItem.ID', 'Overview.Filter.CursorPos', 1);
 
   // ExMode 関連アクションの登録
   TTActions.Register({

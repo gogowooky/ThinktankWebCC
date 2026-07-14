@@ -4,11 +4,11 @@
  *
  * - メニューリボン: ThinktankMenuRibbon 相当のボタン群
  * - Thought ストリップ: 選択中 Thought 名表示 + D&D ドロップターゲット
- * - フィルター / 日付フィルターバー: Think一覧モード(datagrid)のみ表示
+ * - フィルター / 日付フィルターバー: Think一覧モード(filter)のみ表示
  * - ColumnSortDialog
  * - 本体:
  *   - settings  → OverviewSettingsView（Thought プロファイル）
- *   - datagrid  → 選択 Thought 内の Think 一覧
+ *   - filter    → 選択 Thought 内の Think 一覧（datagrid メディアで描画）
  *   - markdown  → MarkdownMedia
  *   - graph     → GraphMedia
  *   - chat      → ChatMedia
@@ -43,9 +43,9 @@ import './OverviewArea.css';
 const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
 
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
-  datagrid: 'Think一覧',
-  graph:    'Thought分析',
-  chat:     'AI相談',
+  filter: 'Think一覧',
+  graph:  'Thought分析',
+  chat:   'AI相談',
 };
 
 const noop = () => Promise.resolve();
@@ -149,6 +149,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   }, [typeFilteredBase, showCheckedOnly, checkedSet, filter, dateFilter, sort]);
 
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
+
+  // Overview.Filter.CursorPos アクションが行番号を解決するための一覧スナップショット
+  useEffect(() => {
+    panel.FilteredThoughts = visibleThinks;
+  }, [panel, visibleThinks]);
 
   const allVaultChecked = useMemo(
     () => thinksInThought.length > 0 && thinksInThought.every(t => checkedSet.has(t.ID)),

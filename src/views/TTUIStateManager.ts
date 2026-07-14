@@ -111,6 +111,8 @@ export type ConfigKey =
   | 'Application.Execution.Status'
   | 'Application.Synchronization.Status'
   | 'Application.CheckedItem.IDs'
+  | 'Thinktank.Filter.CursorPos'
+  | 'Overview.Filter.CursorPos'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -222,7 +224,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     },
   },
 
-  // ── OverviewPanel ────────────────────────────────────────────────────────
+  // ── OverviewPanel ────────────────────────────────────────────────────────────────
   'OverviewPanel.CurrentItem.ID': {
     panel: 'OverviewPanel',
     default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6})?$',
@@ -239,7 +241,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'OverviewPanel.Mode.Name': {
     panel: 'OverviewPanel',
-    default: 'Datagrid', type: 'string', candidates: '^(Datagrid|Graph|Chat|Settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Graph|Chat|Settings)$',
     description: '上部パネル表示モード',
     get: (app) => capitalize(app.OverviewPanel.ViewMode),
     set: (app, v) => { app.OverviewPanel.SetViewMode(v.toLowerCase() as OverviewViewMode); },
@@ -258,7 +260,59 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     },
   },
 
-  // ── WorkoutPanel ─────────────────────────────────────────────────────
+  // ── Filter CursorPos ─────────────────────────────────────────────────────────────
+  'Thinktank.Filter.CursorPos': {
+    panel: 'ThinktankPanel',
+    default: '0', type: 'string', candidates: '.*',
+    description: 'Thinktank>Think一覧のカーソル位置',
+    isConst: true,
+    get: (app) => {
+      const list = app.ThinktankPanel.FilteredThoughts;
+      const curId = app.ThinktankPanel.CurrentItemID;
+      if (!curId || list.length === 0) return '0';
+      const idx = list.findIndex(t => t.ID === curId);
+      return idx >= 0 ? String(idx + 1) : '0';
+    },
+    set: (app, v) => {
+      const pos = parseInt(v, 10);
+      if (isNaN(pos) || pos <= 0) {
+        app.ThinktankPanel.CurrentItemID = '';
+        return;
+      }
+      const list = app.ThinktankPanel.FilteredThoughts;
+      const idx = pos - 1;
+      if (idx < list.length) {
+        app.ThinktankPanel.CurrentItemID = list[idx].ID;
+      }
+    },
+  },
+  'Overview.Filter.CursorPos': {
+    panel: 'OverviewPanel',
+    default: '0', type: 'string', candidates: '.*',
+    description: 'Overview>Think一覧のカーソル位置',
+    isConst: true,
+    get: (app) => {
+      const list = app.OverviewPanel.FilteredThoughts;
+      const curId = app.OverviewPanel.CurrentItemID;
+      if (!curId || list.length === 0) return '0';
+      const idx = list.findIndex(t => t.ID === curId);
+      return idx >= 0 ? String(idx + 1) : '0';
+    },
+    set: (app, v) => {
+      const pos = parseInt(v, 10);
+      if (isNaN(pos) || pos <= 0) {
+        app.OverviewPanel.CurrentItemID = '';
+        return;
+      }
+      const list = app.OverviewPanel.FilteredThoughts;
+      const idx = pos - 1;
+      if (idx < list.length) {
+        app.OverviewPanel.CurrentItemID = list[idx].ID;
+      }
+    },
+  },
+
+  // ── WorkoutPanel ───────────────────────────────────────────────────────────────
   'WorkoutSettingPanel.Area.IsOpen': {
     panel: 'WorkoutPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',

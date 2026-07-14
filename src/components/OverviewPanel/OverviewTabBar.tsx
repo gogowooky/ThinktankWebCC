@@ -20,7 +20,7 @@ import './OverviewTabBar.css';
 type OverviewContentMode = Exclude<OverviewViewMode, 'settings'>;
 
 const VIEW_BUTTONS: Array<{ mode: OverviewContentMode; Icon: LucideIcon; title: string; id: string }> = [
-  { mode: 'datagrid', Icon: Files,         title: 'Think一覧',   id: 'OverviewThinkList' },
+  { mode: 'filter',   Icon: Files,         title: 'Think一覧',   id: 'OverviewThinkList' },
   { mode: 'graph',    Icon: Microscope,    title: 'Thought分析', id: 'OverviewResearch' },
   { mode: 'chat',     Icon: MessageCircle, title: 'AI相談',      id: 'OverviewAI' },
 ];

@@ -1,7 +1,6 @@
 Keyboard Shortcuts
 
 # Keyboard Shortcuts
-
 > focus     ,exmode ,key                      ,action                                           ,description
 
 # アプリケーション モード
@@ -21,8 +20,13 @@ Keyboard Shortcuts
 *           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
 
-# Editor カーソル
+# Think一覧 カーソル
+Thinktank.Filter,   ,Ctrl+P                 ,Thinktank.Filter.CursorPos:PrevLine                ,カーソルを一つ上の行の行頭に移動する
+Thinktank.Filter,   ,Ctrl+N                 ,Thinktank.Filter.CursorPos:NextLine                ,カーソルを一つ下の行の行頭に移動する
+Overview.Filter,    ,Ctrl+P                 ,Overview.Filter.CursorPos:PrevLine                 ,カーソルを一つ上の行の行頭に移動する
+Overview.Filter,    ,Ctrl+N                 ,Overview.Filter.CursorPos:NextLine                 ,カーソルを一つ下の行の行頭に移動する
 
+# Editor カーソル
 
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine        ,カーソルを一つ上の行の行頭に移動する
 *TextEditor ,       ,Ctrl+N                 ,TextEditor.CurrentEditor.CursorPos:NextLine        ,カーソルを一つ下の行の行頭に移動する

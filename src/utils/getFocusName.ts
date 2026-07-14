@@ -79,7 +79,7 @@ export function getFocusName(el: Element | null): string {
   // 6. OverviewPanel (Overview.{ModeName})
   const ov = el.closest('.overview-panel, .overview-area');
   if (ov) {
-    const mode = app?.OverviewPanel?.ViewMode ?? 'datagrid';
+    const mode = app?.OverviewPanel?.ViewMode ?? 'filter';
     return `Overview.${capitalize(mode)}`;
   }
 
@@ -89,12 +89,12 @@ export function getFocusName(el: Element | null): string {
     const btn = el.closest('button');
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
-      if (id.includes('ThinkList')) return 'Overview.Datagrid';
+      if (id.includes('ThinkList')) return 'Overview.Filter';
       if (id.includes('Research') || id.includes('Graph')) return 'Overview.Graph';
       if (id.includes('AI') || id.includes('Chat')) return 'Overview.Chat';
       if (id.includes('Setting')) return 'Overview.Settings';
     }
-    const mode = app?.OverviewPanel?.ViewMode ?? 'datagrid';
+    const mode = app?.OverviewPanel?.ViewMode ?? 'filter';
     return `Overview.${capitalize(mode)}`;
   }
 

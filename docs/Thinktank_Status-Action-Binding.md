@@ -19,6 +19,38 @@
 
 
 
+## 実装：　260714　Thinktank.Filter.CursorPos
+値0は表示されていない、1以上はカーソルの行番号
+
+description:    Thinktank>Think一覧のカーソル位置
+key:            Thinktank.Filter.CursorPos
+current:        0
+default:        0
+type:           string
+candidates:      .*
+## 実装：　260714　Thinktank.Filter.CursorPos:PrevLine
+　↓ カーソルを１行前に移動する　→　終了
+## 実装：　260714　Thinktank.Filter.CursorPos:NextLine
+　↓ カーソルを１行後に移動する　→　終了
+## 実装：　260714　Overview.Filter.CursorPos
+値0は表示されていない、1以上はカーソルの行番号
+
+description:    Overview>Think一覧のカーソル位置
+key:            Overview.Filter.CursorPos
+current:        0
+default:        0
+type:           string
+candidates:      .*
+## 実装：　260714　Overview.Filter.CursorPos:PrevLine
+　↓ カーソルを１行前に移動する　→　終了
+## 実装：　260714　Overview.Filter.CursorPos:NextLine
+　↓ カーソルを１行後に移動する　→　終了
+
+　A：Status は TTUIStateManager に読み取り専用（isConst）の派生値として登録しました。
+　　値はフィルタ・ソート適用後のThink一覧における行番号で、カーソル未設定時は 0 です。
+　　Action は Ctrl+N / Ctrl+P に割当てました（docs\Shortcut.md）。
+　　行番号0（カーソル未表示）からの移動は、PrevLine/NextLineとも1行目へ移動します。
+
 # Status
 
 # 対応不要： その他：ナビゲーション

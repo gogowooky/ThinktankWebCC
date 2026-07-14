@@ -8,6 +8,7 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 import type { ContentType } from '../types/index';
+import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
 
 /** ThinktankArea の表示モード */
@@ -57,6 +58,9 @@ export class TTThinktankPanel extends TTUIItem {
 
   /** 現在カーソル（フォーカス）が当たっているItemのID */
   public CurrentItemID: string = '';
+
+  /** フィルタ適用後の表示中Think一覧（CursorPosアクション用スナップショット） */
+  public FilteredThoughts: TTThink[] = [];
 
   public override get ClassName(): string {
     return 'TTThinktankPanel';
