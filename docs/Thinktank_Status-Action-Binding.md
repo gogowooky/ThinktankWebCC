@@ -17,40 +17,8 @@
 
 ## 完了：　Application.Resource.ImportFromLocal
 
-## 実装：　260715　TextEditor.CurrentEditor.ShowFind
-　monacoeditorのdefaultの検索ダイアログボックスを表示してフォーカスする
-## 実装：　260715　TextEditor.CurrentEditor.ShowReplace
-　monacoeditorのdefaultの置換ダイアログボックスを表示してフォーカスする
-
-　A：monaco既定のアクション（actions.find / editor.action.startFindReplaceAction）を
-　　そのまま実行しています。ダイアログを開いた直後に、保存済みの検索・置換オプション
-　　（下記Status）をウィジェットへ反映します。
-　　※プレビュー実行環境では、monaco既定のCtrl+H等を直接押した場合と同様に、ダイアログの
-　　表示は行われるもののフォーカス移動が働かないことを確認しています（monaco側のrAF依存の
-　　フォーカス処理が環境要因で効かないためで、本アクション固有の問題ではありません）。
-
-## 実装：　260715　TextEditor.FindOption.MatchCase:Toggle
-　検索オプションの値を変更する
-## 実装：　260715　TextEditor.FindOption.MatchWholeWord:Toggle
-　検索オプションの値を変更する
-## 実装：　260715　TextEditor.FindOption.UseRexp:Toggle
-　検索オプションの値を変更する
-## 実装：　260715　TextEditor.ReplaceOption.PreserveCase:Toggle
-　置換オプションの値を変更する
-
-　A：値は WorkoutPanel.TextEditor.FindOption / ReplaceOption に永続化されます。
-　　検索/置換ダイアログが表示中の場合は、トグルと同時に開いているダイアログのチェック
-　　ボックス状態にも即座に反映されます。
 
 # Status
-## 実装：　260715　TextEditor.FindOption.MatchCase
-　検索オプションの値
-## 実装：　260715　TextEditor.FindOption.MatchWholeWord
-　検索オプションの値
-## 実装：　260715　TextEditor.FindOption.UseRexp
-　検索オプションの値
-## 実装：　260715　TextEditor.ReplaceOption.PreserveCase
-　置換オプションの値
 
 
 # 対応不要： その他： ToolBar>Highlighter ↔ Pane 切替
@@ -545,6 +513,40 @@ default:
 type:           string
 candidates:     .*
 
+
+
+# TextEditor Find/Replace ========================================================================================
+## Action：　260715　TextEditor.CurrentEditor.ShowFind
+　monacoeditorのdefaultの検索ダイアログボックスを表示してフォーカスする
+## Action：　260715　TextEditor.CurrentEditor.ShowReplace
+　monacoeditorのdefaultの置換ダイアログボックスを表示してフォーカスする
+
+　A：monaco既定のアクション（actions.find / editor.action.startFindReplaceAction）を
+　　そのまま実行しています。ダイアログを開いた直後に、保存済みの検索・置換オプション
+　　（下記Status）をウィジェットへ反映します。
+　　※プレビュー実行環境では、monaco既定のCtrl+H等を直接押した場合と同様に、ダイアログの
+　　表示は行われるもののフォーカス移動が働かないことを確認しています（monaco側のrAF依存の
+　　フォーカス処理が環境要因で効かないためで、本アクション固有の問題ではありません）。
+## Action：　260715　TextEditor.FindOption.MatchCase:Toggle
+　検索オプションの値を変更する
+## Action：　260715　TextEditor.FindOption.MatchWholeWord:Toggle
+　検索オプションの値を変更する
+## Action：　260715　TextEditor.FindOption.UseRexp:Toggle
+　検索オプションの値を変更する
+## Action：　260715　TextEditor.ReplaceOption.PreserveCase:Toggle
+　置換オプションの値を変更する
+
+　A：値は WorkoutPanel.TextEditor.FindOption / ReplaceOption に永続化されます。
+　　検索/置換ダイアログが表示中の場合は、トグルと同時に開いているダイアログのチェック
+　　ボックス状態にも即座に反映されます。
+## Status：　260715　TextEditor.FindOption.MatchCase
+　検索オプションの値
+## Status：　260715　TextEditor.FindOption.MatchWholeWord
+　検索オプションの値
+## Status：　260715　TextEditor.FindOption.UseRexp
+　検索オプションの値
+## Status：　260715　TextEditor.ReplaceOption.PreserveCase
+　置換オプションの値
 
 # TextEditor Cursor Highlighter ====================================================================================
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevHighlighter
