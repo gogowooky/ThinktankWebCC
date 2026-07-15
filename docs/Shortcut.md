@@ -77,7 +77,7 @@ Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck     
 *TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
 *TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
-*TextEditor ,       ,Alt+O                  ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
+*TextEditor ,       ,Alt+Shift+B            ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+B                  ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
 *TextEditor ,       ,Alt+P                  ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
 *TextEditor ,       ,Alt+N                  ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
@@ -115,7 +115,7 @@ Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck     
 *TextEditor ,ExDate ,Q                  ,TextEditor.EditDate.Reset                      ,元に戻す
 
 # Editor オプション　モード
-*           ,       ,Alt+Q              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
+*           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
 *           ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:Toggle        ,行番号On/Off
 *           ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:Toggle           ,折返しOn/Off
 *           ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:Toggle            ,ミニマップOn/Off
