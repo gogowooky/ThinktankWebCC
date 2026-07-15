@@ -13,7 +13,7 @@ import type { ActionID, TTActionItem } from './TTAction';
 import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
-import { TTUIStateManager } from './TTUIStateManager';
+import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import { collectAreaIds } from './TTWorkoutPanel';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
@@ -492,6 +492,67 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       item.Result = TTUIStateManager.instance.getProperty('TextEditor.BracketPairColorization.IsVisible');
     },
   });
+
+  // ── Editor 検索・置換 ─────────────────────────────────────────────────────
+  /** 現在保存されている検索・置換オプションを、開いているMonaco既定の検索/置換ウィジェットへ反映する */
+  const applyFindOptionsToController = (editor: any): void => {
+    const controller = editor.getContribution?.('editor.contrib.findController') as any;
+    const state = controller?.getState?.();
+    if (!state) return;
+    const findOpt = app.WorkoutPanel.TextEditor.FindOption;
+    const replaceOpt = app.WorkoutPanel.TextEditor.ReplaceOption;
+    state.change({
+      matchCase: findOpt.MatchCase,
+      wholeWord: findOpt.MatchWholeWord,
+      isRegex: findOpt.UseRexp,
+      preserveCase: replaceOpt.PreserveCase,
+    }, false);
+  };
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.ShowFind',
+    Completion: (item) => {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) {
+        item.Result = '[エディタ未選択]';
+        return;
+      }
+      editor.getAction('actions.find')?.run();
+      applyFindOptionsToController(editor);
+      item.Result = '検索ダイアログを表示しました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.ShowReplace',
+    Completion: (item) => {
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!editor) {
+        item.Result = '[エディタ未選択]';
+        return;
+      }
+      editor.getAction('editor.action.startFindReplaceAction')?.run();
+      applyFindOptionsToController(editor);
+      item.Result = '置換ダイアログを表示しました';
+    },
+  });
+
+  // FindOption / ReplaceOption Toggle（表示中の検索/置換ウィジェットがあれば即時反映する）
+  const registerFindOptionToggle = (actionId: ActionID, key: ConfigKey): void => {
+    TTActions.Register({
+      ActionID: actionId,
+      Completion: (item) => {
+        TTUIStateManager.instance.applyProperty(key, 'toggle');
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (editor) applyFindOptionsToController(editor);
+        item.Result = TTUIStateManager.instance.getProperty(key);
+      },
+    });
+  };
+  registerFindOptionToggle('TextEditor.FindOption.MatchCase:Toggle', 'TextEditor.FindOption.MatchCase');
+  registerFindOptionToggle('TextEditor.FindOption.MatchWholeWord:Toggle', 'TextEditor.FindOption.MatchWholeWord');
+  registerFindOptionToggle('TextEditor.FindOption.UseRexp:Toggle', 'TextEditor.FindOption.UseRexp');
+  registerFindOptionToggle('TextEditor.ReplaceOption.PreserveCase:Toggle', 'TextEditor.ReplaceOption.PreserveCase');
 
   // Dates
   TTActions.Register({

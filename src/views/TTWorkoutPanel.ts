@@ -45,6 +45,9 @@ export class TextEditorSettings {
   CurrentEditorCursorPos = '0';
   CurrentEditorTextOnCursorPos = '';
 
+  FindOption = { MatchCase: false, MatchWholeWord: false, UseRexp: false };
+  ReplaceOption = { PreserveCase: false };
+
   Bullet: Record<string, any> = {
     StyleNum: 9,
     Style1: "・,undefined,undefined",

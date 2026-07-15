@@ -73,6 +73,10 @@ export type ConfigKey =
   | 'TextEditor.FullWidthSpace.IsVisible'
   | 'TextEditor.UnicodeHighlight.IsVisible'
   | 'TextEditor.BracketPairColorization.IsVisible'
+  | 'TextEditor.FindOption.MatchCase'
+  | 'TextEditor.FindOption.MatchWholeWord'
+  | 'TextEditor.FindOption.UseRexp'
+  | 'TextEditor.ReplaceOption.PreserveCase'
   | 'TextEditor.Text.BgColor'
   | 'TextEditor.Text.Color'
   | 'TextEditor.Selection.BgColor'
@@ -359,6 +363,36 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: 'ワークアウト設定パネルモード',
     get: (app) => capitalize(app.WorkoutPanel.ViewMode),
     set: (app, v) => { app.WorkoutPanel.SetViewMode(v.toLowerCase() as WorkoutViewMode); },
+  },
+
+  // ── TextEditor 検索・置換オプション ────────────────────────────────────────
+  'TextEditor.FindOption.MatchCase': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
+    description: '検索オプション：大文字小文字を区別',
+    get: (app) => String(app.WorkoutPanel.TextEditor.FindOption.MatchCase),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.FindOption.MatchCase = parseBool(v, app.WorkoutPanel.TextEditor.FindOption.MatchCase); },
+  },
+  'TextEditor.FindOption.MatchWholeWord': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
+    description: '検索オプション：単語単位で検索',
+    get: (app) => String(app.WorkoutPanel.TextEditor.FindOption.MatchWholeWord),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.FindOption.MatchWholeWord = parseBool(v, app.WorkoutPanel.TextEditor.FindOption.MatchWholeWord); },
+  },
+  'TextEditor.FindOption.UseRexp': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
+    description: '検索オプション：正規表現を使用',
+    get: (app) => String(app.WorkoutPanel.TextEditor.FindOption.UseRexp),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.FindOption.UseRexp = parseBool(v, app.WorkoutPanel.TextEditor.FindOption.UseRexp); },
+  },
+  'TextEditor.ReplaceOption.PreserveCase': {
+    panel: 'WorkoutPanel',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
+    description: '置換オプション：大文字小文字を保持',
+    get: (app) => String(app.WorkoutPanel.TextEditor.ReplaceOption.PreserveCase),
+    set: (app, v) => { app.WorkoutPanel.TextEditor.ReplaceOption.PreserveCase = parseBool(v, app.WorkoutPanel.TextEditor.ReplaceOption.PreserveCase); },
   },
 
   // ── TextEditor（テキストエディタ設定）──────────────────────────────────────

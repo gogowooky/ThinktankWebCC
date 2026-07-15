@@ -17,27 +17,41 @@
 
 ## 完了：　Application.Resource.ImportFromLocal
 
-## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
-FocusedPaneの選択テキストの内容をToolBar.HighlighterMode.TextにCSV形式で追加する。
+## 実装：　260715　TextEditor.CurrentEditor.ShowFind
+　monacoeditorのdefaultの検索ダイアログボックスを表示してフォーカスする
+## 実装：　260715　TextEditor.CurrentEditor.ShowReplace
+　monacoeditorのdefaultの置換ダイアログボックスを表示してフォーカスする
 
-## Action：　260715　ToolBar.HighlighterMode.Text:Clear
-ToolBar.HighlighterMode.Textをクリアする
+　A：monaco既定のアクション（actions.find / editor.action.startFindReplaceAction）を
+　　そのまま実行しています。ダイアログを開いた直後に、保存済みの検索・置換オプション
+　　（下記Status）をウィジェットへ反映します。
+　　※プレビュー実行環境では、monaco既定のCtrl+H等を直接押した場合と同様に、ダイアログの
+　　表示は行われるもののフォーカス移動が働かないことを確認しています（monaco側のrAF依存の
+　　フォーカス処理が環境要因で効かないためで、本アクション固有の問題ではありません）。
 
-## Action：　260715　ToolBar.HighlighterMode.Text:Unfocus
-ToolBar.HighlighterMode.Text:Focusで記憶した直前のFocus位置に戻る。
+## 実装：　260715　TextEditor.FindOption.MatchCase:Toggle
+　検索オプションの値を変更する
+## 実装：　260715　TextEditor.FindOption.MatchWholeWord:Toggle
+　検索オプションの値を変更する
+## 実装：　260715　TextEditor.FindOption.UseRexp:Toggle
+　検索オプションの値を変更する
+## 実装：　260715　TextEditor.ReplaceOption.PreserveCase:Toggle
+　置換オプションの値を変更する
 
-## Action：　260715　ToolBar.HighlighterMode.Text:Focus
-ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その際、直前のFocus位置を記憶する。
-
-　A：4アクションとも TTFocusedPanelActions に実装しました。
-　　- AddSelected: FocusedPaneの選択テキスト（改行を含む場合は1行目）をカンマ区切りのグループとして追加。既存と重複する場合は追加しない。
-　　- Clear: ToolBar.HighlighterMode.Text（= WorkoutPanel.HighlightWord）を空にする。
-　　- Focus: 直前のフォーカス要素を記憶し、ToolBarをHighlighterモードに切り替えて入力欄（#StatusBarTextInput）にフォーカス。
-　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
-　　キー割当（docs\Shortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
-
+　A：値は WorkoutPanel.TextEditor.FindOption / ReplaceOption に永続化されます。
+　　検索/置換ダイアログが表示中の場合は、トグルと同時に開いているダイアログのチェック
+　　ボックス状態にも即座に反映されます。
 
 # Status
+## 実装：　260715　TextEditor.FindOption.MatchCase
+　検索オプションの値
+## 実装：　260715　TextEditor.FindOption.MatchWholeWord
+　検索オプションの値
+## 実装：　260715　TextEditor.FindOption.UseRexp
+　検索オプションの値
+## 実装：　260715　TextEditor.ReplaceOption.PreserveCase
+　置換オプションの値
+
 
 # 対応不要： その他： ToolBar>Highlighter ↔ Pane 切替
 # 対応不要： その他：ナビゲーション　ファイル内・ファイル間ジャンプ
@@ -430,7 +444,6 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 　　- `None` （フォーカスされているペインがない場合）
 
 
-
 ## Status：　260613　WorkoutPanel.FocusedPane.ID
 
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
@@ -445,7 +458,6 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 
 ## Status：　260630　WorkoutPanel.Pane.Count
 　IDをWorkoutPanel.Panes.Countに変更
-
 ## Status：　260706　WorkoutPanel.Pane.Layout
 description:    Paneレイアウト構造(JSON)
 key:            WorkoutPanel.Pane.Layout
@@ -453,7 +465,6 @@ current:        null
 default:        null
 type:           json
 candidates:     .*
-
 ## Status：　260706　WorkoutPanel.Pane.Display
 description:    各Paneのロード状態(JSON)
 key:            WorkoutPanel.Pane.Display
@@ -503,7 +514,6 @@ candidates:     .*
 ## Action：　260619　TextEditor.EditText.Redo
 
 # TextEditor Action ================================================================================================
-
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Menu
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
@@ -513,9 +523,6 @@ candidates:     .*
 　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
 　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
-## 廃止：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open
-　→ 各subTagアクション（WebSearch/GoogleRoute/YahooTransfer/Think/Mail/Chat/AI/Anchor）に分割。
-
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open
@@ -539,7 +546,7 @@ type:           string
 candidates:     .*
 
 
-# TextEditor Cursor ================================================================================================
+# TextEditor Cursor Highlighter ====================================================================================
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevHighlighter
 　↓ Highlighterに設定されたテキストを検索して前のヒットへ移動する　→　終了
 　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
@@ -558,6 +565,23 @@ candidates:     .*
 　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
 　　キー割当（docs\Shortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
+## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
+FocusedPaneの選択テキストの内容をToolBar.HighlighterMode.TextにCSV形式で追加する。
+## Action：　260715　ToolBar.HighlighterMode.Text:Clear
+ToolBar.HighlighterMode.Textをクリアする
+## Action：　260715　ToolBar.HighlighterMode.Text:Unfocus
+ToolBar.HighlighterMode.Text:Focusで記憶した直前のFocus位置に戻る。
+## Action：　260715　ToolBar.HighlighterMode.Text:Focus
+ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その際、直前のFocus位置を記憶する。
+
+　A：4アクションとも TTFocusedPanelActions に実装しました。
+　　- AddSelected: FocusedPaneの選択テキスト（改行を含む場合は1行目）をカンマ区切りのグループとして追加。既存と重複する場合は追加しない。
+　　- Clear: ToolBar.HighlighterMode.Text（= WorkoutPanel.HighlightWord）を空にする。
+　　- Focus: 直前のフォーカス要素を記憶し、ToolBarをHighlighterモードに切り替えて入力欄（#StatusBarTextInput）にフォーカス。
+　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
+　　キー割当（docs\Shortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
+
+# TextEditor Cursor ================================================================================================
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevChar
 　↓ カーソルを１文字前に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextChar
@@ -651,9 +675,7 @@ candidates:     ^.*$
 ## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 
-
-
-# Color,Style ====================================================================================================== 
+# Color Style ====================================================================================================== 
 ## Status：　260707　TextEditor.Bullet.StyleNum
 description:    箇条書きスタイルの登録数
 key:            TextEditor.Bullet.StyleNum

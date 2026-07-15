@@ -39,12 +39,16 @@ Overview.Filter     ,ExApp  ,Alt+N      ,Overview.Filter.CursorPos:NextLine     
 Overview.Filter     ,ExApp  ,Alt+Enter  ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置を開く
 Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
 
+# Editor Editor　検索
+*TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
+*TextEditor ,       ,Shift+Ctrl+H           ,TextEditor.CurrentEditor.ShowReplace       ,置換ダイアログを表示する
+
 # Editor カーソル　ハイライト
 *TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
 *TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
 *TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
 *TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
-*Highlighter        ,Alt+X                  ,ToolBar.HighlighterMode.Text:Unfocus                   ,Highlighter入力欄から元の位置に戻る
+*HighLighter,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Unfocus                   ,Highlighter入力欄から元の位置に戻る
 *TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
 *TextEditor ,       ,Alt+S                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+Q                  ,ToolBar.HighlighterMode.Text:Clear                     ,Highlighterをクリアする
