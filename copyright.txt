@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.10",
+  "version": "1.3.11",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "9124a09",
-  "commitDateTime": "2026-07-15-232119",
-  "commitMessage": "docs: reset Status-Action-Binding for next round of instructions"
+  "commitId": "9dd20be",
+  "commitDateTime": "2026-07-16-074802",
+  "commitMessage": "docs: tidy folding shortcuts and reset Status-Action-Binding"
 }
