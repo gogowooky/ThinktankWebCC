@@ -494,10 +494,13 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   // ── Editor 検索・置換 ─────────────────────────────────────────────────────
+  /** Monaco既定の検索/置換ウィジェットのコントローラーを取得する */
+  const getFindController = (editor: any): any =>
+    editor.getContribution?.('editor.contrib.findController') as any;
+
   /** 現在保存されている検索・置換オプションを、開いているMonaco既定の検索/置換ウィジェットへ反映する */
   const applyFindOptionsToController = (editor: any): void => {
-    const controller = editor.getContribution?.('editor.contrib.findController') as any;
-    const state = controller?.getState?.();
+    const state = getFindController(editor)?.getState?.();
     if (!state) return;
     const findOpt = app.WorkoutPanel.TextEditor.FindOption;
     const replaceOpt = app.WorkoutPanel.TextEditor.ReplaceOption;
@@ -517,6 +520,14 @@ export function registerFocusedPanelActions(app: TTApplication): void {
         item.Result = '[エディタ未選択]';
         return;
       }
+      const controller = getFindController(editor);
+      const state = controller?.getState?.();
+      // 検索ダイアログ（置換行を伴わない）が表示中なら閉じて終了する
+      if (state?.isRevealed && !state.isReplaceRevealed) {
+        controller.closeFindWidget();
+        item.Result = '検索ダイアログを閉じました';
+        return;
+      }
       editor.getAction('actions.find')?.run();
       applyFindOptionsToController(editor);
       item.Result = '検索ダイアログを表示しました';
@@ -529,6 +540,14 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       const editor = TTShortcutManager.instance.activeEditor;
       if (!editor) {
         item.Result = '[エディタ未選択]';
+        return;
+      }
+      const controller = getFindController(editor);
+      const state = controller?.getState?.();
+      // 置換ダイアログ（置換行を伴う）が表示中なら閉じて終了する
+      if (state?.isRevealed && state.isReplaceRevealed) {
+        controller.closeFindWidget();
+        item.Result = '置換ダイアログを閉じました';
         return;
       }
       editor.getAction('editor.action.startFindReplaceAction')?.run();
