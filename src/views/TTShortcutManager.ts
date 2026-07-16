@@ -25,6 +25,11 @@
  * ── key 書式 ─────────────────────────────────────────────────────────────
  *   キーボード: {ctrl|alt|shift|meta}+{key}  ※ 順不同・小文字
  *   マウス:     left1 / left2 / right1 / wheelup / wheeldown（修飾付き可）
+ *   D&D:        ThinkFileDrag / UrlDrag / FilePathDrag 等の疑似キー名（修飾付き可）
+ *               ※ D&Dは resolveDragAction() でActionIDの解決のみ行い、preventDefault や
+ *                 TTActions.Execute は呼び出し側（各Dropハンドラー）が担う。ドラッグ中の
+ *                 ペイロード（ThinkID・Drop位置等）はキーボード用の実行パイプラインに
+ *                 乗せず、呼び出し側で個別に扱う。
  *   複数指定:   | 区切りで複数キーを同一アクションに割り当て可能
  *               | 自体を指定したい場合は "" でくくる（例: "ctrl+|"）
  */
@@ -44,6 +49,7 @@ import {
   keyEventToStr,
   mouseEventToStr,
   wheelEventToStr,
+  dragEventToStr,
   currentModStr,
   MOD_ORDER,
 } from '../utils/keyboardUtils';
@@ -186,6 +192,22 @@ export class TTShortcutManager {
 
   handleWheelEvent(e: WheelEvent): void {
     this._processEvent(wheelEventToStr(e), e, currentModStr(e));
+  }
+
+  /**
+   * D&D用: 疑似キー名（ThinkFileDrag / UrlDrag / FilePathDrag 等）と修飾キーから
+   * 一致するActionIDを解決する。キーボード/マウス用の _processEvent とは異なり、
+   * preventDefault や TTActions.Execute は行わない（実行・ペイロード受け渡しは
+   * 呼び出し側のDropハンドラーが担う）。
+   * 一致するテーブル行が無い場合は null を返す（呼び出し側で既定動作にフォールバック）。
+   */
+  resolveDragAction(dragType: string, e: DragEvent | MouseEvent): string | null {
+    const keyStr = dragEventToStr(dragType, e);
+    const candidates = this._activeTable.get(keyStr) ?? [];
+    if (candidates.length === 0) return null;
+    // フォーカス固有指定（focus ≠ '*'）を優先し、なければ最初の一致（通常は focus='*'）を採る
+    const specific = candidates.find(s => (s.focus || '*') !== '*');
+    return (specific ?? candidates[0]).action;
   }
 
   // ── プライベート: インデックス構築 ─────────────────────────────────────

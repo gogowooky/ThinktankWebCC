@@ -80,6 +80,24 @@ export function mouseEventToStr(type: 'click' | 'dblclick' | 'contextmenu', e: M
   return [...mods, keyPart].join('+') || keyPart;
 }
 
+/**
+ * D&D用の疑似キー文字列を生成する（例: "alt+thinkfiledrag"）。
+ * dragType は呼び出し側が渡すドラッグ種別名（ThinkFileDrag / UrlDrag / FilePathDrag 等）で、
+ * ネイティブのキー/マウスイベントに存在しない値のため KEY_NAME_MAP には依存せず、
+ * 単純に小文字化してキー文字列を組み立てる。
+ */
+export function dragEventToStr(dragType: string, e: DragEvent | MouseEvent): string {
+  const keyPart = dragType.toLowerCase();
+  const mods = MOD_ORDER.filter(m => {
+    if (m === 'ctrl')  return e.ctrlKey;
+    if (m === 'alt')   return e.altKey;
+    if (m === 'shift') return e.shiftKey;
+    if (m === 'meta')  return e.metaKey;
+    return false;
+  });
+  return [...mods, keyPart].join('+') || keyPart;
+}
+
 export function wheelEventToStr(e: WheelEvent): string {
   const keyPart = e.deltaY < 0 ? 'wheelup' : 'wheeldown';
   const mods = MOD_ORDER.filter(m => {

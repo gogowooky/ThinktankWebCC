@@ -19,7 +19,6 @@ Keyboard Shortcuts
 *           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
 *           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
-
 # Panel>Think一覧 カーソル
 Thinktank.Filter,   ,Alt+P             ,Thinktank.Filter.CursorPos:PrevLine            ,Thinktank>Think一覧のカーソルを上に移動する
 Thinktank.Filter,   ,Alt+N             ,Thinktank.Filter.CursorPos:NextLine            ,Thinktank>Think一覧のカーソルを下に移動する
@@ -38,6 +37,11 @@ Overview.Filter     ,ExApp  ,Alt+P      ,Overview.Filter.CursorPos:PrevLine     
 Overview.Filter     ,ExApp  ,Alt+N      ,Overview.Filter.CursorPos:NextLine             ,Overview>Think一覧のカーソルを下に移動する
 Overview.Filter     ,ExApp  ,Alt+Enter  ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置を開く
 Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
+
+# Editor Editor　
+*,   ,ThinkFileDrag       ,WorkoutPanel.Load.DroppedFile   ,DropされたThinkファイルをPaneにLoadする
+*,   ,Alt+ThinkFileDrag   ,WorkoutPanel.Insert.DroppedFile ,DropされたThinkファイルをコンテンツ内に挿入する
+
 
 # Editor Editor　検索
 *TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
