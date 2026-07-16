@@ -136,7 +136,7 @@ interface Props {
   onDragStart:       (e: React.MouseEvent) => void;
   onMediaTypeChange: (type: MediaType) => void;
   onClose:           () => void;
-  onResourceDrop:    (thinkId: string) => void;
+  onResourceDrop:    (thinkId: string, e: React.DragEvent) => void;
   onUrlDrop?:        (url: string, title: string) => void;
 }
 
@@ -168,7 +168,7 @@ export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = fals
     e.stopPropagation();
     setIsDropTarget(false);
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
-    if (thinkId) { onResourceDrop(thinkId); return; }
+    if (thinkId) { onResourceDrop(thinkId, e); return; }
     const link = extractLinkDrop(e);
     if (link && onUrlDrop) onUrlDrop(link.url, link.title);
   }, [onResourceDrop, onUrlDrop]);

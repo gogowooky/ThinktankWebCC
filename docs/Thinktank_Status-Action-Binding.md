@@ -17,6 +17,23 @@
 
 ## 完了：　Application.Resource.ImportFromLocal
 
+## 実装：　260716　WorkoutPanel.Load.DroppedFile
+　DropされたThinkファイルをPaneにLoadする
+## 実装：　260716　WorkoutPanel.Insert.DroppedFile
+　DropされたThinkファイルの内容ではなく `[memo:{ID}]` タグをコンテンツ内に挿入する
+
+　A：ThinkFileDrag（修飾なし）/ Alt+ThinkFileDrag の判定は
+　　TTShortcutManager.resolveDragAction('ThinkFileDrag', e) で行い、docs\Shortcut.md の
+　　該当行からActionIDを解決しています。以下2箇所のドロップ先で共通の判定に従います。
+　　- ペインのタイトルバー（リボン）へのドロップ
+　　- テキストエディタのコンテンツ領域へのドロップ
+　　Load時は既存の area.OpenThink() でペイン全体をドロップしたThinkに差し替えます。
+　　Insert時はペインを差し替えず、現在のカーソル位置に `[memo:{ID}]` タグを挿入します
+　　（タイトルバーへドロップした場合はそのペインの現在のカーソル位置に挿入されます。
+　　ドロップ座標ではなく、既存のファイルドロップ機能と同じ「カーソル位置に挿入」方式）。
+　　Insertはテキストエディタ（texteditor/workout）でのみ実装しており、Markdown等の
+　　読み取り専用メディアや他のMediaTypeでは対象外です（それらは従来通りLoadのみ）。
+
 # Status
 
 

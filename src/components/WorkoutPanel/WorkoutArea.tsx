@@ -196,6 +196,18 @@ export function WorkoutArea({
     area.OpenThink(thinkId, mediaType, title);
   }, [vault, area]);
 
+  // タイトルへのThinkドロップ: Alt修飾の有無で Load / Insert を振り分ける
+  // （WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile、docs/Shortcut.md参照）
+  const handleThinkFileDrop = useCallback((thinkId: string, e: React.DragEvent) => {
+    const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
+    if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
+      const ref = mediaRef.current;
+      if (ref && 'insertText' in ref) ref.insertText(`[memo:${thinkId}]`);
+      return;
+    }
+    handleResourceDrop(thinkId);
+  }, [handleResourceDrop]);
+
   // 保存ハンドラー（TextEditorMedia から Ctrl+S・自動保存で呼ばれる）
   // 保存先は content の出所（thinkId）に固定する。area.ResourceID を参照すると、
   // 遅延保存がペインの表示切替をまたいだときに別ファイルを上書きしてしまう。
@@ -315,7 +327,7 @@ export function WorkoutArea({
        panel?.TextEditor.UrlStyle, panel?.TextEditor.FilepathStyle, panel?.TextEditor.TagStyle,
        JSON.stringify(panel?.TextEditor.Comment), JSON.stringify(panel?.TextEditor.Bullet)]);
 
-  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
+  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef, onThinkDrop: handleResourceDrop };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
@@ -365,7 +377,7 @@ export function WorkoutArea({
         onDragStart={handleDragStart}
         onMediaTypeChange={handleMediaChange}
         onClose={handleClose}
-        onResourceDrop={handleResourceDrop}
+        onResourceDrop={handleThinkFileDrop}
         onUrlDrop={handleUrlDrop}
       />
 

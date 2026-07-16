@@ -17,7 +17,11 @@ import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../views/TTFocusedPanelActions';
 import './TextEditorMedia.css';
 
-export interface TextEditorMediaRef { focus: () => void; }
+export interface TextEditorMediaRef {
+  focus: () => void;
+  /** WorkoutPanel.Insert.DroppedFile 用: カーソル位置にテキストを挿入する */
+  insertText: (text: string) => void;
+}
 
 interface Toast { msg: string; type: 'success' | 'error'; }
 
@@ -103,7 +107,7 @@ function registerMarkdownFolding(monaco: any) {
 }
 
 
-export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
+export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef, onThinkDrop }: MediaProps, ref) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
   const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
   const editorRef   = useRef<any>(null);
@@ -119,7 +123,16 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     onSaveRef.current = onSave;
   }, [think, onSave]);
 
-  useImperativeHandle(ref, () => ({ focus: () => editorRef.current?.focus() }));
+  useImperativeHandle(ref, () => ({
+    focus: () => editorRef.current?.focus(),
+    insertText: (text: string) => {
+      const editor = editorRef.current;
+      if (!editor) return;
+      const sel = editor.getSelection();
+      editor.executeEdits('think-drop', [{ range: sel, text, forceMoveMarkers: true }]);
+      editor.focus();
+    },
+  }));
   const [isDragOver, setIsDragOver] = useState(false);
   const [toast,      setToast]      = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -908,7 +921,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   // ── ファイルドロップ ──────────────────────────────────────────────────────
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (!e.dataTransfer.types.includes('Files')) return;
+    const types = e.dataTransfer.types;
+    if (!types.includes('Files') && !types.includes('application/x-thought-id')) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
@@ -921,6 +935,21 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     setIsDragOver(false);
+
+    // Thinkファイルのドロップ（WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile）
+    const thinkId = e.dataTransfer.getData('application/x-thought-id');
+    if (thinkId) {
+      e.preventDefault();
+      e.stopPropagation();
+      const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
+      if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
+        insertAtCursor(`[memo:${thinkId}]`);
+      } else {
+        onThinkDrop?.(thinkId);
+      }
+      return;
+    }
+
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
     e.preventDefault();
@@ -952,7 +981,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         }
       }
     }
-  }, [showToast, insertAtCursor]);
+  }, [showToast, insertAtCursor, onThinkDrop]);
 
   if (!think) {
     return (
