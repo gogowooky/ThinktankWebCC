@@ -921,8 +921,12 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   // ── ファイルドロップ ──────────────────────────────────────────────────────
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    const types = e.dataTransfer.types;
-    if (!types.includes('Files') && !types.includes('application/x-thought-id')) return;
+    // Thinkドロップ（application/x-thought-id）はここで preventDefault/stopPropagation せず
+    // WorkoutPanel の body-level ハンドラーへバブリングさせる。そちらで Load先Paneのゴースト
+    // オーバーレイ（dropOverlay）を計算・表示しており、ここで止めると出なくなる。
+    // ドロップ自体は下の handleDrop 側でこのイベントを直接検出して処理するため、ゴースト表示
+    // を優先してここでは Files ドラッグのみを処理する。
+    if (!e.dataTransfer.types.includes('Files')) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
