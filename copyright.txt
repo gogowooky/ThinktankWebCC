@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.11",
+  "version": "1.3.12",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "9dd20be",
-  "commitDateTime": "2026-07-16-074802",
-  "commitMessage": "docs: tidy folding shortcuts and reset Status-Action-Binding"
+  "commitPC": "veneno-02",
+  "commitId": "f8565c5",
+  "commitDateTime": "2026-07-16-131638",
+  "commitMessage": "feat: resolve D&D actions via pseudo key names (ThinkFileDrag etc.)"
 }
