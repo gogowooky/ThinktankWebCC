@@ -107,7 +107,7 @@ function registerMarkdownFolding(monaco: any) {
 }
 
 
-export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef, onThinkDrop }: MediaProps, ref) {
+export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
   const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
   const editorRef   = useRef<any>(null);
@@ -940,16 +940,17 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     setIsDragOver(false);
 
-    // Thinkファイルのドロップ（WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile）
+    // Thinkファイルのドロップ
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) {
-      e.preventDefault();
-      e.stopPropagation();
       const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
+      // Insert（Alt）のみここでカーソル位置にタグ挿入する。
+      // Load はこのエディタで消費せず WorkoutPanel の body-level ハンドラーへ
+      // バブリングさせ、ドロップ位置に応じた分割/追加/置換（ゴースト表示どおり）に委ねる。
       if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
+        e.preventDefault();
+        e.stopPropagation();
         insertAtCursor(`[memo:${thinkId}]`);
-      } else {
-        onThinkDrop?.(thinkId);
       }
       return;
     }
@@ -985,7 +986,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         }
       }
     }
-  }, [showToast, insertAtCursor, onThinkDrop]);
+  }, [showToast, insertAtCursor]);
 
   if (!think) {
     return (

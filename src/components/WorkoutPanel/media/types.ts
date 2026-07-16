@@ -23,13 +23,6 @@ export interface MediaProps {
   onDirtyChange: (dirty: boolean) => void;
   /** 第一行目（タイトル行）が変更されたときに呼ばれる */
   onTitleChange?: (title: string) => void;
-  /**
-   * WorkoutPanel.Load.DroppedFile: コンテンツ領域にThinkがドロップされ、
-   * ペイン全体をそのThinkに差し替える場合に呼ばれる（Alt修飾なし。テキストエディタのみ実装）。
-   * Alt修飾（WorkoutPanel.Insert.DroppedFile）の場合はコンポーネント内で
-   * `[memo:{ID}]` タグを直接カーソル位置に挿入するため、このコールバックは呼ばれない。
-   */
-  onThinkDrop?: (thinkId: string) => void;
   /** 外部からコンテンツが変更されたときにエディタを再マウントするためのカウンター */
   refreshKey?: number;
   /** ビュー切り替え時に TextEditorMedia が自動保存を実行するための関数を登録するRef */
