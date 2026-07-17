@@ -8,6 +8,12 @@ import type { TTThink } from '../../../models/TTThink';
 import type { TTVault } from '../../../models/TTVault';
 
 export interface MediaProps {
+  /**
+   * このメディアが属するWorkoutAreaのID。WorkoutPanel.Insert.DroppedFile がドロップ位置の
+   * Paneからエディタインスタンスを引くための TTShortcutManager.registerAreaEditor() 登録キー
+   * として使う（テキストエディタ系メディアのみ）。
+   */
+  areaId?:       string;
   /** 表示対象の Think（null = ResourceID 未設定）*/
   think:         TTThink | null;
   /** Vault 参照（DataGrid / Card / Graph が利用）*/

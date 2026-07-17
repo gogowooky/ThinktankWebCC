@@ -12,7 +12,6 @@ import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
 import { StorageManager } from '../../../services/storage/StorageManager';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
-import { TTActions } from '../../../views/TTActions';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../views/TTFocusedPanelActions';
@@ -112,7 +111,7 @@ function registerMarkdownFolding(monaco: any) {
 }
 
 
-export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
+export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
   const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
   const editorRef   = useRef<any>(null);
@@ -122,11 +121,13 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const thinkRef = useRef(think);
   const onSaveRef = useRef(onSave);
+  const areaIdRef = useRef(areaId);
 
   useEffect(() => {
     thinkRef.current = think;
     onSaveRef.current = onSave;
-  }, [think, onSave]);
+    areaIdRef.current = areaId;
+  }, [think, onSave, areaId]);
 
   useImperativeHandle(ref, () => ({
     focus: () => editorRef.current?.focus(),
@@ -173,6 +174,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
+    // WorkoutPanel.Insert.DroppedFile がドロップ位置のPaneからエディタを引けるよう登録する
+    if (areaId) TTShortcutManager.instance.registerAreaEditor(areaId, editor);
     registerMarkdownFolding(monaco);
 
     disposablesRef.current.forEach(d => d.dispose());
@@ -412,7 +415,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }
 
     updateDecorations();
-  }, [onSave, think]); // updateDecorations は後で依存に追加
+  }, [onSave, think, areaId]); // updateDecorations は後で依存に追加
 
   // マウント/アンマウント時のアクティブエディタのクリーンアップ
   useEffect(() => {
@@ -441,6 +444,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       }
       disposablesRef.current.forEach(d => d.dispose());
       disposablesRef.current = [];
+      if (areaIdRef.current) {
+        TTShortcutManager.instance.unregisterAreaEditor(areaIdRef.current, editorRef.current);
+      }
       if (TTShortcutManager.instance.activeEditor === editorRef.current) {
         TTShortcutManager.instance.setActiveEditor(null);
         TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
@@ -939,25 +945,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     setIsDragOver(false);
 
-    // Thinkファイルのドロップ
-    const thinkId = e.dataTransfer.getData('application/x-thought-id');
-    if (thinkId) {
-      const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
-      // Insert（Alt）のみここでこのエディタを対象に WorkoutPanel.Insert.DroppedFile を実行する。
-      // Load はこのエディタで消費せず WorkoutPanel の body-level ハンドラーへ
-      // バブリングさせ、ドロップ位置に応じた分割/追加/置換（ゴースト表示どおり）に委ねる。
-      if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
-        e.preventDefault();
-        e.stopPropagation();
-        const editor = editorRef.current;
-        if (editor) {
-          TTShortcutManager.instance.setActiveEditor(editor);
-          TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-          TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
-        }
-      }
-      return;
-    }
+    // Thinkファイルのドロップは、Load/Insertどちらの場合もここでは消費せず
+    // WorkoutPanel の body-level ハンドラーへバブリングさせる。ドロップ位置（カーソル直下の
+    // Pane）の判定とAlt判定を1箇所（WorkoutPanel.handleBodyDrop）に一本化することで、
+    // このコンポーネント側とのタイミング・判定不一致を避けている。
+    if (e.dataTransfer.types.includes('application/x-thought-id')) return;
 
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;

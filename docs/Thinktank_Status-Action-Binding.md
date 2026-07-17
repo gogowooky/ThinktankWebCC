@@ -47,7 +47,7 @@
 　　docs\Shortcut.md のキー割当（*, ThinkFileDrag / Alt+ThinkFileDrag）は
 　　dragEventToStr()の正規化ルールと一致しており、修正不要と確認済みです。
 
-　Q（260718）：Alt+ThinkFileDrag（Alt押下と同時にDrag開始）でもInsertにならない。
+　Q（260718・1回目）：Alt+ThinkFileDrag（Alt押下と同時にDrag開始）でもInsertにならない。
 　A：ネイティブDragEventのaltKeyは、ドラッグ開始前から押していた修飾キーの状態が
 　　dragover/drop時点まで正しく反映されないことがあり、ブラウザ・OS依存で不安定でした。
 　　window全体のkeydown/keyupでAlt等4修飾キーの押下状態を独自に追跡する仕組み
@@ -58,6 +58,27 @@
 　　ドロップ先各所（WorkoutMenuRibbon/WorkoutPanel）のdropEffectもAltを無視して
 　　常に'copy'固定になっていた点も、Alt押下時は'link'を示すよう修正しました
 　　（同一問題を引き起こしていた可能性のある副次的な要因のため、あわせて是正）。
+
+　Q（260718・2回目）：上記対応後、タイトルバーへのAlt+Dropでは正しくInsertになるが、
+　　コンテンツ領域へのAlt+Dropでは依然Loadになってしまう。
+　A：コンテンツ領域の判定は TextEditorMedia.handleDrop 単体で resolveDragAction() を
+　　呼び、Insert時のみそこで消費・それ以外はWorkoutPanelの body-level ハンドラーへ
+　　バブリングさせてLoadを行う、という2箇所の判定に分かれた設計になっていました。
+　　実機の実ドラッグでは、Monaco内部のDOM構造やイベント配送の都合で、この2箇所の
+　　判定・タイミングがずれてInsertを取りこぼすケースがあると判断し、コンテンツ領域への
+　　Thinkドロップの判定・実行を WorkoutPanel.handleBodyDrop 側の1箇所に一本化しました。
+　　- TTShortcutManager に areaId→生Monacoインスタンスのレジストリ
+　　　（registerAreaEditor/unregisterAreaEditor/getAreaEditor）を追加し、
+　　　TextEditorMediaがマウント/アンマウント時に自身のエディタを登録・解除する
+　　　（MediaProps.areaId、WorkoutAreaからarea.IDとして渡す）
+　　- WorkoutPanel.handleBodyDrop は、ドロップ位置の直下に既存Pane（overlay.areaId）が
+　　　あり、かつそのPaneのエディタが登録済みの場合のみresolveDragAction()でInsert判定を
+　　　行い、getAreaEditor()で取得したエディタを対象にInsertを実行する。それ以外
+　　　（新規Pane追加位置へのドロップ等、挿入先が無い場合）は従来通りLoadにフォールバックする
+　　- TextEditorMedia.handleDrop は application/x-thought-id を検出したら常に
+　　　早期returnし、Load/Insertいずれの判定も行わない（Files経由のドロップのみ処理する）
+　　実機での複数Pane環境でも、ドロップした特定Paneのエディタにのみ挿入され、
+　　他のPaneへ誤って挿入されないことを確認済みです。
 
 # Status
 

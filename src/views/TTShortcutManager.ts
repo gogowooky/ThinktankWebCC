@@ -120,10 +120,25 @@ export class TTShortcutManager {
   private _shortcuts:  ShortcutEntry[]      = [...DEFAULT_SHORTCUTS];
   private _activeEditor: any = null;
   private _pendingThinkDrop: ThinkDropContext | null = null;
+  /** WorkoutArea.ID → 生Monacoエディタインスタンス。D&D時にペイン単位でエディタを引くために使う */
+  private _areaEditors: Map<string, any> = new Map();
 
   get activeEditor(): any { return this._activeEditor; }
   setActiveEditor(editor: any): void {
     this._activeEditor = editor;
+  }
+
+  /** WorkoutPanel.Insert.DroppedFile用: 特定Paneのエディタインスタンスをマウント時に登録する */
+  registerAreaEditor(areaId: string, editor: any): void {
+    this._areaEditors.set(areaId, editor);
+  }
+  /** アンマウント時に登録解除する（登録済みインスタンスと一致する場合のみ、後勝ちの取り違えを防ぐ） */
+  unregisterAreaEditor(areaId: string, editor: any): void {
+    if (this._areaEditors.get(areaId) === editor) this._areaEditors.delete(areaId);
+  }
+  /** 指定PaneのエディタインスタンスをareaIdから取得する（未登録/非テキストエディタ系Paneはnull） */
+  getAreaEditor(areaId: string): any {
+    return this._areaEditors.get(areaId) ?? null;
   }
 
   /**

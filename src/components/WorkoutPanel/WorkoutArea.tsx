@@ -321,7 +321,7 @@ export function WorkoutArea({
        panel?.TextEditor.UrlStyle, panel?.TextEditor.FilepathStyle, panel?.TextEditor.TagStyle,
        JSON.stringify(panel?.TextEditor.Comment), JSON.stringify(panel?.TextEditor.Bullet)]);
 
-  const mediaProps = { think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
+  const mediaProps = { areaId: area.ID, think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {

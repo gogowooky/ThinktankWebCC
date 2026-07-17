@@ -582,11 +582,15 @@ export function WorkoutPanel({ app }: Props) {
     const hasLink  = types.includes('text/uri-list') || types.includes('Files') || types.includes('text/plain');
     if (!hasThink && !hasLink) return;
     e.preventDefault();
-    // Think＋Alt修飾（Insert）のときは 'link' を示し、既定（Load/URL等）は 'copy' のままにする
-    e.dataTransfer.dropEffect =
-      hasThink && TTShortcutManager.instance.isDragAltHeld(e.nativeEvent) ? 'link' : 'copy';
+    const overlay = computeDropOverlay(e);
+    // Insertが成立する条件（既存Pane上＋対象エディタ登録済み＋Alt修飾）のときのみ 'link' を示す。
+    // それ以外（新規Pane追加やLoad）は既定の 'copy' のままにする
+    const canInsert = hasThink && !!overlay?.areaId
+      && !!TTShortcutManager.instance.getAreaEditor(overlay.areaId)
+      && TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);
+    e.dataTransfer.dropEffect = canInsert ? 'link' : 'copy';
     setIsExternalDrag(true);
-    setDropOverlay(computeDropOverlay(e));
+    setDropOverlay(overlay);
   }, [computeDropOverlay]);
 
   const handleBodyDragLeave = useCallback((e: React.DragEvent) => {
@@ -603,11 +607,28 @@ export function WorkoutPanel({ app }: Props) {
     if (!overlay) return;
     e.preventDefault();
 
-    // Think D&D（WorkoutPanel.Load.DroppedFile、docs/Shortcut.md参照）
-    // ドロップ位置に応じたPane配置（overlay）は、ゴースト表示のためにここで既に計算済みの
-    // ものをそのままActionへ渡す（ジオメトリ計算はUI層の責務のためActionでは再計算しない）。
+    // Think D&D（WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile、
+    // docs/Shortcut.md参照）。コンテンツ領域へのThinkドロップはLoad/Insertいずれも
+    // ここで一元的に判定する（各Paneのコンポーネント側では消費しない）。個別コンポーネントの
+    // dragover/dropハンドラーとタイミング・判定がずれてAlt判定を取りこぼす問題を避けるため。
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) {
+      // Insertはカーソル直下に既存Paneがある場合のみ成立する（新規Pane追加＝overlay.areaIdなし
+      // の場合は挿入先が無いためLoadにフォールバックする）
+      if (overlay.areaId) {
+        const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
+        if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
+          const editor = TTShortcutManager.instance.getAreaEditor(overlay.areaId);
+          if (editor) {
+            TTShortcutManager.instance.setActiveEditor(editor);
+            TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
+            TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
+            return;
+          }
+        }
+      }
+      // ドロップ位置に応じたPane配置（overlay）は、ゴースト表示のためにここで既に計算済みの
+      // ものをそのままActionへ渡す（ジオメトリ計算はUI層の責務のためActionでは再計算しない）。
       TTShortcutManager.instance.setPendingThinkDrop(
         overlay.type === 'add'
           ? { thinkId, kind: 'load-place', overlayType: 'add', dir: overlay.dir }
