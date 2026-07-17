@@ -17,22 +17,35 @@
 
 ## 完了：　Application.Resource.ImportFromLocal
 
-## 実装：　260716　WorkoutPanel.Load.DroppedFile
+## 修正：　260718　WorkoutPanel.Load.DroppedFile
 　DropされたThinkファイルをPaneにLoadする
-## 実装：　260716　WorkoutPanel.Insert.DroppedFile
+## 修正：　260718　WorkoutPanel.Insert.DroppedFile
 　DropされたThinkファイルの内容ではなく `[memo:{ID}]` タグをコンテンツ内に挿入する
 
-　A：ThinkFileDrag（修飾なし）/ Alt+ThinkFileDrag の判定は
-　　TTShortcutManager.resolveDragAction('ThinkFileDrag', e) で行い、docs\Shortcut.md の
-　　該当行からActionIDを解決しています。以下2箇所のドロップ先で共通の判定に従います。
-　　- ペインのタイトルバー（リボン）へのドロップ
-　　- テキストエディタのコンテンツ領域へのドロップ
-　　Load時は既存の area.OpenThink() でペイン全体をドロップしたThinkに差し替えます。
-　　Insert時はペインを差し替えず、現在のカーソル位置に `[memo:{ID}]` タグを挿入します
-　　（タイトルバーへドロップした場合はそのペインの現在のカーソル位置に挿入されます。
-　　ドロップ座標ではなく、既存のファイルドロップ機能と同じ「カーソル位置に挿入」方式）。
+　A（260716時点）：ThinkFileDrag（修飾なし）/ Alt+ThinkFileDrag の判定を
+　　TTShortcutManager.resolveDragAction('ThinkFileDrag', e) で行っていましたが、この時点では
+　　ActionID文字列を各Dropハンドラー内でif分岐するだけで、TTActions.Registerによる正式な
+　　Action登録ができておらず、TTActions.Has('WorkoutPanel.Load.DroppedFile') が false を
+　　返す状態でした（＝「Actionの実装ができていない」状態）。
+
+　A（260718修正）：以下のとおり、TTActions.Registerで正式に2つのActionを登録し、
+　　全てのDropハンドラーがTTShortcutManager.resolveDragAction()でActionIDを解決した後、
+　　TTActions.Execute()経由で実行するよう統一しました。
+　　- ドラッグ中のペイロード（ThinkID・配置先情報）はキーボードイベントに乗せられないため、
+　　　TTShortcutManager.setPendingThinkDrop() / consumePendingThinkDrop() で明示的に
+　　　受け渡します（ThinkDropContext型、TTShortcutManager.tsに定義）。
+　　- WorkoutPanel.Load.DroppedFile: 'load-replace'（タイトルバードロップ、指定Areaを
+　　　丸ごと差し替え）と 'load-place'（コンテンツ領域の余白/端へのドロップ、WorkoutPanel側で
+　　　計算済みのオーバーレイ位置に新規Paneを追加）の2種類のcontextを受け取り分岐します。
+　　- WorkoutPanel.Insert.DroppedFile: thinkIdのみを受け取り、事前に
+　　　TTShortcutManager.setActiveEditor()でセットされたエディタのカーソル位置へ
+　　　`[memo:{ID}]` を挿入します。TextEditorMediaRef.getEditor()で対象ペインの
+　　　生Monacoインスタンスを取得し、タイトルバー・コンテンツ領域どちらのドロップでも
+　　　同じActionを共通実行します。
 　　Insertはテキストエディタ（texteditor/workout）でのみ実装しており、Markdown等の
 　　読み取り専用メディアや他のMediaTypeでは対象外です（それらは従来通りLoadのみ）。
+　　docs\Shortcut.md のキー割当（*, ThinkFileDrag / Alt+ThinkFileDrag）は
+　　dragEventToStr()の正規化ルールと一致しており、修正不要と確認済みです。
 
 # Status
 

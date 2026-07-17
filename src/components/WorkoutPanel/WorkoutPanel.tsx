@@ -9,6 +9,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { GripVertical } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
+import { TTShortcutManager } from '../../views/TTShortcutManager';
+import { TTActions } from '../../views/TTActions';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { LayoutNode, SplitNodeData, WorkoutViewMode } from '../../views/TTWorkoutPanel';
@@ -73,16 +75,6 @@ function computeEqualHeightRatios(
   computeEqualHeightRatios(node.second, out);
 }
 
-// Think の ContentType → MediaType マッピング
-function contentTypeToMediaType(contentType: string): MediaType {
-  switch (contentType) {
-    case 'markdown': return 'markdown';
-    case 'thought':  return 'datagrid';
-    case 'table':    return 'datagrid';
-    case 'chat':     return 'chat';
-    default:         return 'texteditor';
-  }
-}
 
 const DEFAULT_SETTINGS_WIDTH = 180;
 const MIN_SETTINGS_WIDTH     = 120;
@@ -609,24 +601,17 @@ export function WorkoutPanel({ app }: Props) {
     if (!overlay) return;
     e.preventDefault();
 
-    // Think D&D
+    // Think D&D（WorkoutPanel.Load.DroppedFile、docs/Shortcut.md参照）
+    // ドロップ位置に応じたPane配置（overlay）は、ゴースト表示のためにここで既に計算済みの
+    // ものをそのままActionへ渡す（ジオメトリ計算はUI層の責務のためActionでは再計算しない）。
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) {
-      const think     = vault.GetThink(thinkId);
-      const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
-      const title     = think?.Name ?? '';
-      if (overlay.type === 'add') {
-        if (overlay.dir === 'left')       panel.AddToLeft(thinkId,   mediaType, title);
-        else if (overlay.dir === 'right') panel.AddToRight(thinkId,  mediaType, title);
-        else if (overlay.dir === 'up')    panel.AddToTop(thinkId,    mediaType, title);
-        else                              panel.AddToBottom(thinkId, mediaType, title);
-      } else {
-        if (overlay.areaId) panel.FocusArea(overlay.areaId);
-        if (overlay.dir === 'left')       panel.AddLeft(thinkId,  mediaType, title);
-        else if (overlay.dir === 'right') panel.AddRight(thinkId, mediaType, title);
-        else if (overlay.dir === 'up')    panel.AddAbove(thinkId, mediaType, title);
-        else                              panel.AddBelow(thinkId, mediaType, title);
-      }
+      TTShortcutManager.instance.setPendingThinkDrop(
+        overlay.type === 'add'
+          ? { thinkId, kind: 'load-place', overlayType: 'add', dir: overlay.dir }
+          : { thinkId, kind: 'load-place', overlayType: 'split', dir: overlay.dir, areaId: overlay.areaId }
+      );
+      TTActions.Execute('WorkoutPanel.Load.DroppedFile');
       return;
     }
 

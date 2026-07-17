@@ -26,10 +26,12 @@
  *   キーボード: {ctrl|alt|shift|meta}+{key}  ※ 順不同・小文字
  *   マウス:     left1 / left2 / right1 / wheelup / wheeldown（修飾付き可）
  *   D&D:        ThinkFileDrag / UrlDrag / FilePathDrag 等の疑似キー名（修飾付き可）
- *               ※ D&Dは resolveDragAction() でActionIDの解決のみ行い、preventDefault や
- *                 TTActions.Execute は呼び出し側（各Dropハンドラー）が担う。ドラッグ中の
- *                 ペイロード（ThinkID・Drop位置等）はキーボード用の実行パイプラインに
- *                 乗せず、呼び出し側で個別に扱う。
+ *               ※ D&Dは preventDefault のタイミングがドロップ先DOM要素ごとに異なるため、
+ *                 resolveDragAction() でActionIDの解決のみを行い、preventDefault と
+ *                 TTActions.Execute() の呼び出しは各Dropハンドラー側が担う。ドラッグの
+ *                 ペイロード（ThinkID・配置先情報）はキーボードイベントに乗せられないため、
+ *                 setPendingThinkDrop() で明示的にセットしてから Execute() を呼ぶこと
+ *                 （Completion側は consumePendingThinkDrop() で読み取る）。
  *   複数指定:   | 区切りで複数キーを同一アクションに割り当て可能
  *               | 自体を指定したい場合は "" でくくる（例: "ctrl+|"）
  */
@@ -61,6 +63,24 @@ interface ShortcutEntry {
   action:      string;
   description: string;
 }
+
+/**
+ * ThinkFileDrag（D&D）用のペイロード。resolveDragAction() でActionIDを解決した
+ * 呼び出し側が setPendingThinkDrop() でセットし、WorkoutPanel.Load.DroppedFile /
+ * WorkoutPanel.Insert.DroppedFile の Completion が consumePendingThinkDrop() で読み取る。
+ *
+ *   'insert'      : WorkoutPanel.Insert.DroppedFile 用。thinkIdのみ必要
+ *                   （挿入先エディタは事前に setActiveEditor() で指定しておく）。
+ *   'load-replace': WorkoutPanel.Load.DroppedFile 用。指定Areaを丸ごとドロップされた
+ *                   Thinkに差し替える（タイトルバードロップ）。
+ *   'load-place'  : WorkoutPanel.Load.DroppedFile 用。ドロップ位置に応じて新規Paneを
+ *                   追加する（コンテンツ領域の余白/端へのドロップ。WorkoutPanel側で
+ *                   計算済みのオーバーレイ情報をそのまま渡す）。
+ */
+export type ThinkDropContext =
+  | { thinkId: string; kind: 'insert' }
+  | { thinkId: string; kind: 'load-replace'; areaId: string }
+  | { thinkId: string; kind: 'load-place'; overlayType: 'add' | 'split'; dir: 'left' | 'right' | 'up' | 'down'; areaId?: string };
 
 // ── デフォルトショートカット ──────────────────────────────────────────────
 
@@ -99,10 +119,28 @@ export class TTShortcutManager {
   private _app:        TTApplication | null = null;
   private _shortcuts:  ShortcutEntry[]      = [...DEFAULT_SHORTCUTS];
   private _activeEditor: any = null;
+  private _pendingThinkDrop: ThinkDropContext | null = null;
 
   get activeEditor(): any { return this._activeEditor; }
   setActiveEditor(editor: any): void {
     this._activeEditor = editor;
+  }
+
+  /**
+   * D&D用: WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile の
+   * Completion が参照するペイロード（ThinkID・配置先情報）をセットする。
+   * Drop ハンドラーが resolveDragAction() で ActionID を解決した直後、
+   * TTActions.Execute() を呼ぶ前に必ずセットすること。
+   */
+  setPendingThinkDrop(ctx: ThinkDropContext): void {
+    this._pendingThinkDrop = ctx;
+  }
+
+  /** ペイロードを取得し、同時にクリアする（Completion からの一度きりの消費を想定） */
+  consumePendingThinkDrop(): ThinkDropContext | null {
+    const ctx = this._pendingThinkDrop;
+    this._pendingThinkDrop = null;
+    return ctx;
   }
 
   // ── インデックス ──────────────────────────────────────────────────────

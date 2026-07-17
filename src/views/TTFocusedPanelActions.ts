@@ -3115,6 +3115,77 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
       }
     }
   });
+
+  // ── ThinkFileDrag（D&D）─────────────────────────────────────────────────
+  // 疑似キー ThinkFileDrag / Alt+ThinkFileDrag（docs/Shortcut.md）の実行先。
+  // ペイロード（ThinkID・配置先）は TTShortcutManager.setPendingThinkDrop() で
+  // 事前にセットされ、consumePendingThinkDrop() で一度だけ読み取る。
+  const contentTypeToMediaType = (contentType: string): import('../types').MediaType => {
+    switch (contentType) {
+      case 'markdown': return 'markdown';
+      case 'thought':  return 'datagrid';
+      case 'table':    return 'datagrid';
+      case 'chat':     return 'chat';
+      default:         return 'texteditor';
+    }
+  };
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.Load.DroppedFile',
+    Description: 'ドロップされたThinkファイルをPaneにLoadする',
+    Completion: (item) => {
+      const ctx = TTShortcutManager.instance.consumePendingThinkDrop();
+      if (!ctx) {
+        item.Result = '[ドロップ情報なし]';
+        return;
+      }
+      const think     = app.Models.Vault.GetThink(ctx.thinkId);
+      const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
+      const title     = think?.Name ?? ctx.thinkId;
+
+      if (ctx.kind === 'load-replace') {
+        const area = app.WorkoutPanel.GetArea(ctx.areaId);
+        if (!area) { item.Result = `[Pane未検出] ${ctx.areaId}`; return; }
+        area.OpenThink(ctx.thinkId, mediaType, title);
+        item.Result = `Load（差し替え）: ${title}`;
+        return;
+      }
+      if (ctx.kind !== 'load-place') {
+        item.Result = '[不正なドロップ情報]';
+        return;
+      }
+
+      if (ctx.overlayType === 'add') {
+        if (ctx.dir === 'left')       app.WorkoutPanel.AddToLeft(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'right') app.WorkoutPanel.AddToRight(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'up')    app.WorkoutPanel.AddToTop(ctx.thinkId, mediaType, title);
+        else                          app.WorkoutPanel.AddToBottom(ctx.thinkId, mediaType, title);
+      } else {
+        if (ctx.areaId) app.WorkoutPanel.FocusArea(ctx.areaId);
+        if (ctx.dir === 'left')       app.WorkoutPanel.AddLeft(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'right') app.WorkoutPanel.AddRight(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'up')    app.WorkoutPanel.AddAbove(ctx.thinkId, mediaType, title);
+        else                          app.WorkoutPanel.AddBelow(ctx.thinkId, mediaType, title);
+      }
+      item.Result = `Load（新規Pane・${ctx.dir}）: ${title}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.Insert.DroppedFile',
+    Description: 'ドロップされたThinkファイルを [memo:{ID}] タグとしてコンテンツ内に挿入する',
+    Completion: (item) => {
+      const ctx = TTShortcutManager.instance.consumePendingThinkDrop();
+      const editor = TTShortcutManager.instance.activeEditor;
+      if (!ctx) { item.Result = '[ドロップ情報なし]'; return; }
+      if (!editor) { item.Result = '[エディタ未選択]'; return; }
+      const sel = editor.getSelection();
+      const text = `[memo:${ctx.thinkId}]`;
+      editor.executeEdits('think-drop', [{ range: sel, text, forceMoveMarkers: true }]);
+      editor.focus();
+      item.Result = `Insert: ${text}`;
+    },
+  });
 }
 
 function showActionMenu(

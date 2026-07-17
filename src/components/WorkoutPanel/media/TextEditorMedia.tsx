@@ -12,6 +12,7 @@ import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
 import { StorageManager } from '../../../services/storage/StorageManager';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
+import { TTActions } from '../../../views/TTActions';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../views/TTFocusedPanelActions';
@@ -19,8 +20,12 @@ import './TextEditorMedia.css';
 
 export interface TextEditorMediaRef {
   focus: () => void;
-  /** WorkoutPanel.Insert.DroppedFile 用: カーソル位置にテキストを挿入する */
-  insertText: (text: string) => void;
+  /**
+   * WorkoutPanel.Insert.DroppedFile 用: 生のMonacoエディタインスタンスを取得する。
+   * 呼び出し側は TTShortcutManager.setActiveEditor() でこれを対象に設定してから
+   * 'WorkoutPanel.Insert.DroppedFile' Action を実行すること。
+   */
+  getEditor: () => any;
 }
 
 interface Toast { msg: string; type: 'success' | 'error'; }
@@ -125,13 +130,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   useImperativeHandle(ref, () => ({
     focus: () => editorRef.current?.focus(),
-    insertText: (text: string) => {
-      const editor = editorRef.current;
-      if (!editor) return;
-      const sel = editor.getSelection();
-      editor.executeEdits('think-drop', [{ range: sel, text, forceMoveMarkers: true }]);
-      editor.focus();
-    },
+    getEditor: () => editorRef.current,
   }));
   const [isDragOver, setIsDragOver] = useState(false);
   const [toast,      setToast]      = useState<Toast | null>(null);
@@ -944,13 +943,18 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) {
       const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
-      // Insert（Alt）のみここでカーソル位置にタグ挿入する。
+      // Insert（Alt）のみここでこのエディタを対象に WorkoutPanel.Insert.DroppedFile を実行する。
       // Load はこのエディタで消費せず WorkoutPanel の body-level ハンドラーへ
       // バブリングさせ、ドロップ位置に応じた分割/追加/置換（ゴースト表示どおり）に委ねる。
       if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
         e.preventDefault();
         e.stopPropagation();
-        insertAtCursor(`[memo:${thinkId}]`);
+        const editor = editorRef.current;
+        if (editor) {
+          TTShortcutManager.instance.setActiveEditor(editor);
+          TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
+          TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
+        }
       }
       return;
     }

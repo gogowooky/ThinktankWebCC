@@ -30,6 +30,7 @@ import type { ChatMediaRef }       from './media/ChatMedia';
 type AnyMediaRef = TextEditorMediaRef | MarkdownMediaRef | DataGridMediaRef | CardMediaRef | GraphMediaRef | ChatMediaRef;
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
+import { TTActions } from '../../views/TTActions';
 import './WorkoutArea.css';
 
 interface Props {
@@ -180,33 +181,26 @@ export function WorkoutArea({
     setContentRefreshKey(k => k + 1);
   }, [vault, area.ResourceID]);
 
-  // タイトルへのD&Dで表示内容を差し替える
-  const handleResourceDrop = useCallback((thinkId: string) => {
-    const think = vault.GetThink(thinkId);
-    let mediaType: import('../../types').MediaType = 'texteditor';
-    if (think) {
-      switch (think.ContentType) {
-        case 'thought': mediaType = 'datagrid'; break;
-        case 'table':   mediaType = 'datagrid'; break;
-        case 'chat':    mediaType = 'chat';     break;
-        default:        mediaType = 'texteditor'; break;
-      }
-    }
-    const title = think?.Name ?? thinkId;
-    area.OpenThink(thinkId, mediaType, title);
-  }, [vault, area]);
-
-  // タイトルへのThinkドロップ: Alt修飾の有無で Load / Insert を振り分ける
+  // タイトルへのThinkドロップ: Alt修飾の有無で Load（Pane差し替え）/ Insert（タグ挿入）を
+  // 振り分ける。疑似キー ThinkFileDrag の解決・実行は TTShortcutManager + TTActions
   // （WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile、docs/Shortcut.md参照）
+  // に委ねる。Insert時はこのペインのエディタを対象にするため、実行前に activeEditor を
+  // このペインのエディタへ同期する（editorがないメディア種別ではInsertは無効）。
   const handleThinkFileDrop = useCallback((thinkId: string, e: React.DragEvent) => {
     const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
+    if (!actionId) return;
     if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
       const ref = mediaRef.current;
-      if (ref && 'insertText' in ref) ref.insertText(`[memo:${thinkId}]`);
+      const editor = ref && 'getEditor' in ref ? ref.getEditor() : null;
+      if (!editor) return;
+      TTShortcutManager.instance.setActiveEditor(editor);
+      TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
+      TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
       return;
     }
-    handleResourceDrop(thinkId);
-  }, [handleResourceDrop]);
+    TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'load-replace', areaId: area.ID });
+    TTActions.Execute('WorkoutPanel.Load.DroppedFile');
+  }, [area.ID]);
 
   // 保存ハンドラー（TextEditorMedia から Ctrl+S・自動保存で呼ばれる）
   // 保存先は content の出所（thinkId）に固定する。area.ResourceID を参照すると、

@@ -40,6 +40,8 @@ export type ActionID =
   | 'TextEditor.CurrentEditor.DoOnCursorPos:AI:Open'
   | 'TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open'
   | 'TextEditor.CurrentEditor.DoOnCursorPos:Menu'
+  | 'WorkoutPanel.Load.DroppedFile'
+  | 'WorkoutPanel.Insert.DroppedFile'
   | string; // 動的・外部定義のアクションを許容
 
 /** アクション実行コンテキスト。Completion 関数が Result / Allow を書き込む。 */
