@@ -47,6 +47,18 @@
 　　docs\Shortcut.md のキー割当（*, ThinkFileDrag / Alt+ThinkFileDrag）は
 　　dragEventToStr()の正規化ルールと一致しており、修正不要と確認済みです。
 
+　Q（260718）：Alt+ThinkFileDrag（Alt押下と同時にDrag開始）でもInsertにならない。
+　A：ネイティブDragEventのaltKeyは、ドラッグ開始前から押していた修飾キーの状態が
+　　dragover/drop時点まで正しく反映されないことがあり、ブラウザ・OS依存で不安定でした。
+　　window全体のkeydown/keyupでAlt等4修飾キーの押下状態を独自に追跡する仕組み
+　　（TTShortcutManager._heldMods）を追加し、resolveDragAction()ではイベント自身の
+　　altKeyとこの追跡値をOR演算した実効値で判定するよう修正しました
+　　（ウィンドウがフォーカスを失った場合はblurで追跡値を全解除し、押しっぱなし誤検知を防止）。
+　　あわせて、ドラッグ元(ThoughtsList)のeffectAllowedが'copy'のみに制限され、
+　　ドロップ先各所（WorkoutMenuRibbon/WorkoutPanel）のdropEffectもAltを無視して
+　　常に'copy'固定になっていた点も、Alt押下時は'link'を示すよう修正しました
+　　（同一問題を引き起こしていた可能性のある副次的な要因のため、あわせて是正）。
+
 # Status
 
 

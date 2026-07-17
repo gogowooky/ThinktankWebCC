@@ -200,7 +200,9 @@ export function ThoughtsList({
               key={thought.ID}
               draggable
               onDragStart={e => {
-                e.dataTransfer.effectAllowed = 'copy';
+                // 'copy'のみだとOSによってはAlt修飾（Insert用）でのドロップ受理が
+                // 不安定になることがあるため、'link'も許可しておく
+                e.dataTransfer.effectAllowed = 'copyLink';
                 e.dataTransfer.setData('application/x-thought-id', thought.ID);
               }}
               className={[

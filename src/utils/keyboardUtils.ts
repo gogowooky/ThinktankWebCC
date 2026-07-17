@@ -80,13 +80,23 @@ export function mouseEventToStr(type: 'click' | 'dblclick' | 'contextmenu', e: M
   return [...mods, keyPart].join('+') || keyPart;
 }
 
+/** 修飾キー4種の押下状態のみを表す最小構造（DragEvent/MouseEvent実体を要求しないための型） */
+export interface ModifierKeysLike {
+  ctrlKey:  boolean;
+  altKey:   boolean;
+  shiftKey: boolean;
+  metaKey:  boolean;
+}
+
 /**
  * D&D用の疑似キー文字列を生成する（例: "alt+thinkfiledrag"）。
  * dragType は呼び出し側が渡すドラッグ種別名（ThinkFileDrag / UrlDrag / FilePathDrag 等）で、
  * ネイティブのキー/マウスイベントに存在しない値のため KEY_NAME_MAP には依存せず、
  * 単純に小文字化してキー文字列を組み立てる。
+ * e はネイティブイベントに限らず、実効的な修飾キー状態を表す任意のオブジェクトでよい
+ * （TTShortcutManager.resolveDragAction() はグローバル追跡値とOR演算した値を渡す）。
  */
-export function dragEventToStr(dragType: string, e: DragEvent | MouseEvent): string {
+export function dragEventToStr(dragType: string, e: ModifierKeysLike): string {
   const keyPart = dragType.toLowerCase();
   const mods = MOD_ORDER.filter(m => {
     if (m === 'ctrl')  return e.ctrlKey;

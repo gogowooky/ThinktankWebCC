@@ -18,6 +18,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   nettext: Globe,
 };
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
+import { TTShortcutManager } from '../../views/TTShortcutManager';
 import type { MediaType } from '../../types';
 import './WorkoutMenuRibbon.css';
 
@@ -155,7 +156,9 @@ export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = fals
     if (!hasThink && !hasLink) return;
     e.preventDefault();
     e.stopPropagation();
-    e.dataTransfer.dropEffect = 'copy';
+    // Think＋Alt修飾（Insert）のときは 'link' を示し、既定（Load/URL等）は 'copy' のままにする
+    e.dataTransfer.dropEffect =
+      hasThink && TTShortcutManager.instance.isDragAltHeld(e.nativeEvent) ? 'link' : 'copy';
     setIsDropTarget(true);
   }, []);
 

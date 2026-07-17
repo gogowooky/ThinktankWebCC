@@ -582,7 +582,9 @@ export function WorkoutPanel({ app }: Props) {
     const hasLink  = types.includes('text/uri-list') || types.includes('Files') || types.includes('text/plain');
     if (!hasThink && !hasLink) return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    // Think＋Alt修飾（Insert）のときは 'link' を示し、既定（Load/URL等）は 'copy' のままにする
+    e.dataTransfer.dropEffect =
+      hasThink && TTShortcutManager.instance.isDragAltHeld(e.nativeEvent) ? 'link' : 'copy';
     setIsExternalDrag(true);
     setDropOverlay(computeDropOverlay(e));
   }, [computeDropOverlay]);

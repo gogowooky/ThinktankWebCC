@@ -136,6 +136,14 @@ export class TTShortcutManager {
     this._pendingThinkDrop = ctx;
   }
 
+  /**
+   * D&D中のAlt押下判定（カーソル/ゴースト表示用）。イベント自身のaltKeyと
+   * グローバル追跡値のORを取る（resolveDragAction()と同じ実効値の考え方）。
+   */
+  isDragAltHeld(e: { altKey: boolean }): boolean {
+    return e.altKey || this._heldMods.alt;
+  }
+
   /** ペイロードを取得し、同時にクリアする（Completion からの一度きりの消費を想定） */
   consumePendingThinkDrop(): ThinkDropContext | null {
     const ctx = this._pendingThinkDrop;
@@ -155,12 +163,33 @@ export class TTShortcutManager {
 
   private _vaultThink: TTThink | null = null;
 
+  /**
+   * グローバルに追跡している修飾キーの押下状態。
+   * ネイティブDragEventのaltKey等はドラッグ中の値更新がブラウザ・OS依存で不安定なことがある
+   * （特にドラッグ開始前から押下していた修飾キーが、dragover/drop時点まで正しく反映されない
+   * ケースがある）ため、window全体のkeydown/keyupで独自に追跡した値をresolveDragAction()で
+   * OR演算のフォールバックとして用いる。
+   */
+  private _heldMods = { ctrl: false, alt: false, shift: false, meta: false };
+
   static get instance(): TTShortcutManager {
     if (!TTShortcutManager._instance) TTShortcutManager._instance = new TTShortcutManager();
     return TTShortcutManager._instance;
   }
 
-  private constructor() {}
+  private constructor() {
+    if (typeof window !== 'undefined') {
+      const sync = (e: KeyboardEvent) => {
+        this._heldMods = { ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey };
+      };
+      window.addEventListener('keydown', sync, { capture: true });
+      window.addEventListener('keyup', sync, { capture: true });
+      // ウィンドウがフォーカスを失うと以降keyupが来ない可能性があるため、その時点で全解除する
+      window.addEventListener('blur', () => {
+        this._heldMods = { ctrl: false, alt: false, shift: false, meta: false };
+      });
+    }
+  }
 
   init(app: TTApplication): void {
     this._app = app;
@@ -238,9 +267,19 @@ export class TTShortcutManager {
    * preventDefault や TTActions.Execute は行わない（実行・ペイロード受け渡しは
    * 呼び出し側のDropハンドラーが担う）。
    * 一致するテーブル行が無い場合は null を返す（呼び出し側で既定動作にフォールバック）。
+   *
+   * ネイティブDragEventのaltKey等は、ドラッグ開始前から押していた修飾キーがdrop時点まで
+   * 正しく反映されないなど、ブラウザ・OS依存で更新が不安定なことがあるため、window全体の
+   * keydown/keyupで独自追跡している _heldMods とOR演算した実効値で判定する。
    */
   resolveDragAction(dragType: string, e: DragEvent | MouseEvent): string | null {
-    const keyStr = dragEventToStr(dragType, e);
+    const effective = {
+      ctrlKey:  e.ctrlKey  || this._heldMods.ctrl,
+      altKey:   e.altKey   || this._heldMods.alt,
+      shiftKey: e.shiftKey || this._heldMods.shift,
+      metaKey:  e.metaKey  || this._heldMods.meta,
+    };
+    const keyStr = dragEventToStr(dragType, effective);
     const candidates = this._activeTable.get(keyStr) ?? [];
     if (candidates.length === 0) return null;
     // フォーカス固有指定（focus ≠ '*'）を優先し、なければ最初の一致（通常は focus='*'）を採る
