@@ -21,6 +21,8 @@
 　DropされたThinkファイルをPaneにLoadする
 ## 修正：　260718　WorkoutPanel.Insert.DroppedFile
 　DropされたThinkファイルの内容ではなく `[memo:{ID}]` タグをコンテンツ内に挿入する
+　Drop開始時にModifierキーを確認し、Alt+ThinkFileDragであればゴーストを表示せず、
+　mouseoverに合わせてカーソルを移動させる
 
 　A（260716時点）：ThinkFileDrag（修飾なし）/ Alt+ThinkFileDrag の判定を
 　　TTShortcutManager.resolveDragAction('ThinkFileDrag', e) で行っていましたが、この時点では
@@ -79,6 +81,22 @@
 　　　早期returnし、Load/Insertいずれの判定も行わない（Files経由のドロップのみ処理する）
 　　実機での複数Pane環境でも、ドロップした特定Paneのエディタにのみ挿入され、
 　　他のPaneへ誤って挿入されないことを確認済みです。
+
+　Q（260718・3回目）：Drop開始時にModifierキーを確認し、Alt+ThinkFileDragであれば
+　　ゴーストは表示せず、mouseoverに合わせてカーソルを移動させてほしい。
+　A：WorkoutPanel.handleBodyDragOver で、Insertが成立する条件（ドロップ位置直下に
+　　既存Pane＋対象エディタ登録済み＋Alt押下）を満たす場合は setDropOverlay(null) として
+　　Pane配置のゴーストを表示せず、代わりに対象エディタのカーソルをmouseover位置へ
+　　その場で移動させ、挿入位置をプレビューするようにしました。
+　　座標→モデル位置の変換は editor.getTargetAtClientPoint() を第一候補としつつ、
+　　（検証環境ではこのAPIが座標を解決できないケースが確認できたため）
+　　スクロール位置・行の高さ・文字幅から幾何計算するフォールバック
+　　（clientPointToPosition()）を用意し、どちらでも位置が求まらない場合のみ
+　　カーソル移動をスキップします。Alt修飾を外す/既存Paneが無い位置に移動すると、
+　　次のdragoverで従来通りのゴースト表示に戻ります。
+　　実機での検証で、mouseoverのY/X座標に応じてカーソルが正しい行・列へ追従し、
+　　ドロップ時にその位置へ `[memo:{ID}]` が挿入されること（ゴーストは非表示のまま）を
+　　確認しました。
 
 # Status
 
