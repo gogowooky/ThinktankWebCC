@@ -257,6 +257,7 @@ export function WorkoutPanel({ app }: Props) {
   useEffect(() => {
     const cleanup = () => {
       setDropOverlay(null);
+      setInsertCaret(null);
       setIsExternalDrag(false);
     };
     document.addEventListener('dragend', cleanup);
@@ -274,6 +275,12 @@ export function WorkoutPanel({ app }: Props) {
     areaId?: string;
   }
   const [dropOverlay, setDropOverlay] = useState<DropOverlay | null>(null);
+
+  // Alt+ThinkFileDrag（Insert）中の挿入位置プレビュー用カスタムCaret。
+  // ネイティブD&D中はブラウザがフォーカス移動を抑制するため editor.focus() で
+  // Monaco自身のカーソル描画に頼れず、独自にオーバーレイを描画して追随させる。
+  interface InsertCaret { left: number; top: number; height: number }
+  const [insertCaret, setInsertCaret] = useState<InsertCaret | null>(null);
 
   // ── フォーカスペインの Think タイトル ──────────────────────────────
   const focusedArea   = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
@@ -645,16 +652,36 @@ export function WorkoutPanel({ app }: Props) {
 
     if (canInsert) {
       // Alt+ThinkFileDrag: Pane配置のゴーストは表示せず、代わりにマウス直下の位置へ
-      // 対象エディタのカーソル（Caret）を追従させ、挿入位置をその場でプレビューする。
-      // フォーカスも合わせることでCaretが確実に可視状態（点滅）で表示されるようにする。
+      // 対象エディタのカーソルを追従させ、挿入位置をその場でプレビューする。
+      // editor.focus() はネイティブD&D中はブラウザがフォーカス移動そのものを
+      // 抑制するため、Monaco自身のCaret描画（DOMフォーカス依存）はあてにならない。
+      // 代わりに getScrolledVisiblePosition() でピクセル座標を求め、
+      // 独自のCaretオーバーレイ（insertCaret）をbodyRef基準で描画する。
       setDropOverlay(null);
       const pos = clientPointToPosition(targetEditor, e.clientX, e.clientY);
-      if (pos) targetEditor.setPosition(pos);
+      if (pos) {
+        targetEditor.setPosition(pos);
+        const coords = targetEditor.getScrolledVisiblePosition(pos);
+        const domRect = targetEditor.getDomNode()?.getBoundingClientRect();
+        const br = bodyRef.current?.getBoundingClientRect();
+        if (coords && domRect && br) {
+          setInsertCaret({
+            left:   domRect.left - br.left + coords.left,
+            top:    domRect.top  - br.top  + coords.top,
+            height: coords.height,
+          });
+        } else {
+          setInsertCaret(null);
+        }
+      } else {
+        setInsertCaret(null);
+      }
       if (TTShortcutManager.instance.activeEditor !== targetEditor) {
         targetEditor.focus();
         TTShortcutManager.instance.setActiveEditor(targetEditor);
       }
     } else {
+      setInsertCaret(null);
       setDropOverlay(computeDropOverlay(e));
     }
   }, [computeDropOverlay]);
@@ -662,6 +689,7 @@ export function WorkoutPanel({ app }: Props) {
   const handleBodyDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setDropOverlay(null);
+      setInsertCaret(null);
       setIsExternalDrag(false);
     }
   }, []);
@@ -669,6 +697,7 @@ export function WorkoutPanel({ app }: Props) {
   const handleBodyDrop = useCallback(async (e: React.DragEvent) => {
     const overlay = computeDropOverlay(e);
     setDropOverlay(null);
+    setInsertCaret(null);
     setIsExternalDrag(false);
     if (!overlay) return;
     e.preventDefault();
@@ -869,6 +898,20 @@ export function WorkoutPanel({ app }: Props) {
           <div
             className={`workout-panel__drop-overlay workout-panel__drop-overlay--${dropOverlay.type}`}
             style={{ position: 'absolute', pointerEvents: 'none', ...dropOverlay.style }}
+          />
+        )}
+
+        {/* Alt+ThinkFileDrag（Insert）挿入位置プレビューCaret */}
+        {insertCaret && (
+          <div
+            className="workout-panel__insert-caret"
+            style={{
+              position: 'absolute',
+              pointerEvents: 'none',
+              left: insertCaret.left,
+              top: insertCaret.top,
+              height: insertCaret.height,
+            }}
           />
         )}
 
