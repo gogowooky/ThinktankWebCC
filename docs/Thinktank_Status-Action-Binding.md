@@ -19,7 +19,7 @@
 
 ## 修正：　260718　WorkoutPanel.Load.DroppedFile
 　DropされたThinkファイルをPaneにLoadする
-## 修正：　260718　WorkoutPanel.Insert.DroppedFile
+## 修正：　260719　WorkoutPanel.Insert.DroppedFile
 　DropされたThinkファイルの内容ではなく `[memo:{ID}]` タグをコンテンツ内に挿入する
 　Drop開始時にModifierキーを確認し、Alt+ThinkFileDragであればゴーストを表示せず、
 　mouseoverに合わせてカーソルを移動させる
@@ -97,6 +97,33 @@
 　　実機での検証で、mouseoverのY/X座標に応じてカーソルが正しい行・列へ追従し、
 　　ドロップ時にその位置へ `[memo:{ID}]` が挿入されること（ゴーストは非表示のまま）を
 　　確認しました。
+
+　Q（260719・1回目）：Alt押下時、Paneコンテンツ内へのゴースト（水色）は消えるが、
+　　WorkoutPanel領域内への「新規Pane追加」ゴースト（緑）が消えず、Alt押下時にも
+　　関わらずInsertではなくLoadが起動してしまう。また、Alt押下時はDrop先のCaretを
+　　表示してマウスに追随させてほしい。
+　A：computeDropOverlay()は、既存Paneへのヒットテストより先に、WorkoutPanel本体の
+　　外縁からの距離（OUTER_RATIO=15%）だけでisOuterを判定し、trueなら無条件に
+　　「新規Pane追加」（緑ゴースト、overlay.areaIdなし）を返す実装でした。既存Paneは
+　　通常WorkoutPanel本体の端まで隙間なく敷き詰められるため、本体の外縁付近（15%
+　　マージン内）にある既存Paneをホバーした場合、isOuterがtrueになりoverlay.areaId
+　　が付かないまま「追加」ゴーストが確定してしまい、直前のInsert判定（overlay.areaId
+　　必須）が常にfalseになっていたことが原因でした（単一Pane構成では、本体の端＝Paneの
+　　端でもあるため必ず再現します）。
+　　isOuterの判定ロジック自体を変更するとLoad（新規Pane追加）側の既存挙動に影響するため、
+　　isOuterとは独立した findWorkoutAreaIdAtPoint(clientX, clientY) を新設し、
+　　document.elementsFromPoint() で座標直下の .workout-area[data-area-id] を
+　　直接ヒットテストするようにしました。handleBodyDragOver / handleBodyDrop の両方で、
+　　Alt押下時はcomputeDropOverlay()のisOuter判定より先にこちらを優先し、対象Paneの
+　　エディタが見つかればInsert確定（ゴースト非表示）、見つからなければ従来通り
+　　computeDropOverlay()にフォールバックします。
+　　あわせて、Alt押下中にカーソル移動先のエディタへ editor.focus() を呼び、
+　　Drop先のCaretを可視化してマウス位置に追随させました（同一エディタへの連続focus()
+　　呼び出しはactiveEditor参照の変化時のみに限定し、余計な再フォーカスは行いません）。
+　　実機検証（ブラウザ上での合成dragover/drop）で、単一Pane構成（本体端＝Pane端と
+　　なる典型ケース）において、Alt押下時はゴースト非表示・Caret追従・Insert実行
+　　（Pane数不変、正しい位置へのタグ挿入）を、Alt非押下時は従来通り緑ゴースト表示・
+　　Load実行（新規Pane追加）となることをそれぞれ確認しました。
 
 # Status
 

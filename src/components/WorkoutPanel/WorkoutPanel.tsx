@@ -112,6 +112,22 @@ function clientPointToPosition(editor: any, clientX: number, clientY: number): {
   return { lineNumber, column };
 }
 
+/**
+ * 画面座標(clientX/clientY)の直下にある WorkoutArea の ID を返す（無ければ null）。
+ * computeDropOverlay() の isOuter（パネル外縁判定）とは独立したヒットテスト。
+ * Alt+ThinkFileDrag（Insert）の対象判定は、パネル端に近いPane（よくあるレイアウト）でも
+ * 常にそのPaneをInsert対象にできるよう、isOuterによる新規Pane追加ゾーン判定より
+ * 優先してこちらを使う必要がある。
+ */
+function findWorkoutAreaIdAtPoint(clientX: number, clientY: number, excludeAreaId?: string): string | null {
+  const els = document.elementsFromPoint(clientX, clientY);
+  const areaEl = els.find(el =>
+    el.classList.contains('workout-area') &&
+    el.getAttribute('data-area-id') !== excludeAreaId,
+  ) as HTMLElement | undefined;
+  return areaEl?.getAttribute('data-area-id') ?? null;
+}
+
 // ── shared props（再帰コンポーネントに引き回す）───────────────────────
 
 interface SharedProps {
@@ -614,24 +630,32 @@ export function WorkoutPanel({ app }: Props) {
     const hasLink  = types.includes('text/uri-list') || types.includes('Files') || types.includes('text/plain');
     if (!hasThink && !hasLink) return;
     e.preventDefault();
-    const overlay = computeDropOverlay(e);
-    // Insertが成立する条件（既存Pane上＋対象エディタ登録済み＋Alt修飾）のときのみ 'link' を示す。
-    // それ以外（新規Pane追加やLoad）は既定の 'copy' のままにする
-    const targetEditor = hasThink && overlay?.areaId
-      ? TTShortcutManager.instance.getAreaEditor(overlay.areaId)
-      : null;
-    const canInsert = !!targetEditor && TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);
+
+    // Alt+ThinkFileDrag（Insert）は、computeDropOverlay()のisOuter（パネル外縁15%は
+    // 新規Pane追加ゾーン）判定より優先してカーソル直下の既存Paneを直接ヒットテストする。
+    // isOuter判定はパネル本体の端からの距離だけで決まるため、パネル端に近い既存Pane
+    // （よくあるレイアウト）の上にいても isOuter=true になり areaId が付かず、Insertが
+    // 一切成立しない不具合があった。Alt押下時は「マウス直下にPaneがあるか」だけで判定する。
+    const altHeld = hasThink && TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);
+    const hoveredAreaId = altHeld ? findWorkoutAreaIdAtPoint(e.clientX, e.clientY) : null;
+    const targetEditor = hoveredAreaId ? TTShortcutManager.instance.getAreaEditor(hoveredAreaId) : null;
+    const canInsert = !!targetEditor;
     e.dataTransfer.dropEffect = canInsert ? 'link' : 'copy';
     setIsExternalDrag(true);
 
     if (canInsert) {
       // Alt+ThinkFileDrag: Pane配置のゴーストは表示せず、代わりにマウス直下の位置へ
-      // 対象エディタのカーソルを追従させ、挿入位置をその場でプレビューする
+      // 対象エディタのカーソル（Caret）を追従させ、挿入位置をその場でプレビューする。
+      // フォーカスも合わせることでCaretが確実に可視状態（点滅）で表示されるようにする。
       setDropOverlay(null);
       const pos = clientPointToPosition(targetEditor, e.clientX, e.clientY);
       if (pos) targetEditor.setPosition(pos);
+      if (TTShortcutManager.instance.activeEditor !== targetEditor) {
+        targetEditor.focus();
+        TTShortcutManager.instance.setActiveEditor(targetEditor);
+      }
     } else {
-      setDropOverlay(overlay);
+      setDropOverlay(computeDropOverlay(e));
     }
   }, [computeDropOverlay]);
 
@@ -655,19 +679,19 @@ export function WorkoutPanel({ app }: Props) {
     // dragover/dropハンドラーとタイミング・判定がずれてAlt判定を取りこぼす問題を避けるため。
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) {
-      // Insertはカーソル直下に既存Paneがある場合のみ成立する（新規Pane追加＝overlay.areaIdなし
-      // の場合は挿入先が無いためLoadにフォールバックする）
-      if (overlay.areaId) {
-        const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
-        if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
-          const editor = TTShortcutManager.instance.getAreaEditor(overlay.areaId);
-          if (editor) {
-            TTShortcutManager.instance.setActiveEditor(editor);
-            TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-            TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
-            return;
-          }
-        }
+      // Insertは、computeDropOverlay()のisOuter（パネル外縁は新規Pane追加ゾーン）判定より
+      // 優先してカーソル直下の既存Paneを直接ヒットテストする（handleBodyDragOverと同じ理由。
+      // isOuter判定に引きずられるとパネル端に近い既存Pane上でもLoadにフォールバックしてしまう）。
+      const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
+      const hoveredAreaId = actionId === 'WorkoutPanel.Insert.DroppedFile'
+        ? findWorkoutAreaIdAtPoint(e.clientX, e.clientY)
+        : null;
+      const editor = hoveredAreaId ? TTShortcutManager.instance.getAreaEditor(hoveredAreaId) : null;
+      if (editor) {
+        TTShortcutManager.instance.setActiveEditor(editor);
+        TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
+        TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
+        return;
       }
       // ドロップ位置に応じたPane配置（overlay）は、ゴースト表示のためにここで既に計算済みの
       // ものをそのままActionへ渡す（ジオメトリ計算はUI層の責務のためActionでは再計算しない）。
