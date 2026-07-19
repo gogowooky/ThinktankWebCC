@@ -38,7 +38,7 @@ Overview.Filter     ,ExApp  ,Alt+N      ,Overview.Filter.CursorPos:NextLine     
 Overview.Filter     ,ExApp  ,Alt+Enter  ,Overview.Filter.Cursor:Action                  ,Overview>Think一覧のカーソル位置を開く
 Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
 
-# Editor Editor　
+# Editor Editor
 *,   ,ThinkFileDrag       ,WorkoutPanel.Load.DroppedFile   ,DropされたThinkファイルをPaneにLoadする
 *,   ,Alt+ThinkFileDrag   ,WorkoutPanel.Insert.DroppedFile ,DropされたThinkファイルをコンテンツ内に挿入する
 
