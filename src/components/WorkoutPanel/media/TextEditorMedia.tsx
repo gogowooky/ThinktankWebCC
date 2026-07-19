@@ -15,6 +15,7 @@ import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../views/TTFocusedPanelActions';
+import { splitContent } from '../../../utils/thinkFormat';
 import './TextEditorMedia.css';
 
 export interface TextEditorMediaRef {
@@ -30,8 +31,7 @@ export interface TextEditorMediaRef {
 interface Toast { msg: string; type: 'success' | 'error'; }
 
 function extractBody(content: string): string {
-  const idx = content.indexOf('\n');
-  return idx === -1 ? '' : content.slice(idx + 1);
+  return splitContent(content).body;
 }
 
 function getClosedHeadings(editor: any): string {

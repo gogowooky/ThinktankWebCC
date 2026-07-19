@@ -5,12 +5,7 @@
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
-
-function splitContent(fullContent: string): { title: string; body: string } {
-  const nl = fullContent.indexOf('\n');
-  if (nl === -1) return { title: fullContent, body: '' };
-  return { title: fullContent.slice(0, nl), body: fullContent.slice(nl + 1) };
-}
+import { splitContent } from '../../utils/thinkFormat';
 
 export class BigQueryStorageBackend implements IStorageBackend {
   private readonly base = '/api/bq';

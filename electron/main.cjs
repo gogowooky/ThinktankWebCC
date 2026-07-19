@@ -28,6 +28,19 @@ function toMeta(record) {
   return meta;
 }
 
+function buildRecord({ id, contentType, title, body, keywords, relatedIds, sizeBytes, isDeleted, createdAt, updatedAt }) {
+  return {
+    id, contentType, title,
+    content:    body,
+    keywords:   keywords   || null,
+    relatedIds: relatedIds || null,
+    sizeBytes,
+    isDeleted,
+    createdAt,
+    updatedAt,
+  };
+}
+
 // ── IPC ハンドラー ────────────────────────────────────────────────────────
 
 ipcMain.handle('storage:listMeta', () => {
@@ -64,16 +77,13 @@ ipcMain.handle('storage:save', (_event, payload) => {
     try { createdAt = JSON.parse(fs.readFileSync(p, 'utf8')).createdAt || now; } catch {}
   }
 
-  const record = {
-    id, contentType, title,
-    content:    body,
-    keywords:   keywords   || null,
-    relatedIds: relatedIds || null,
-    sizeBytes:  Buffer.byteLength(fullContent, 'utf8'),
-    isDeleted:  false,
+  const record = buildRecord({
+    id, contentType, title, body, keywords, relatedIds,
+    sizeBytes: Buffer.byteLength(fullContent, 'utf8'),
+    isDeleted: false,
     createdAt,
-    updatedAt:  now,
-  };
+    updatedAt: now,
+  });
 
   fs.writeFileSync(p, JSON.stringify(record, null, 2), 'utf8');
   return toMeta(record);
@@ -122,35 +132,41 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
   // 1. サーバーからメタ一覧を取得
   const serverMetas = await fetchJson(`${base}/api/bq/files/meta`);
 
-  let added = 0, updated = 0, skipped = 0;
-
-  for (const meta of serverMetas) {
+  // ローカルより新しいものだけを対象に絞る
+  let skipped = 0;
+  const toSync = serverMetas.filter(meta => {
     const p = recordPath(meta.id);
-    // ローカルより新しいものだけ取得
     if (fs.existsSync(p)) {
       const local = JSON.parse(fs.readFileSync(p, 'utf8'));
-      if (local.updatedAt >= meta.updatedAt) { skipped++; continue; }
+      if (local.updatedAt >= meta.updatedAt) { skipped++; return false; }
     }
+    return true;
+  });
 
-    // 2. コンテンツを取得
+  // 2. コンテンツを並行取得（対象が多くても順次待ちにしない）
+  const fetched = await Promise.all(toSync.map(async (meta) => {
+    const p = recordPath(meta.id);
+    const isNew = !fs.existsSync(p);
     const res = await fetch(`${base}/api/bq/files/${encodeURIComponent(meta.id)}/content`);
     const content = res.status === 404 ? '' : await res.json();
+    return { meta, content, isNew };
+  }));
 
-    const record = {
-      id:         meta.id,
-      contentType:meta.contentType,
-      title:      meta.title      || '',
-      content:    content         || '',
-      keywords:   meta.keywords   || null,
-      relatedIds: meta.relatedIds || null,
-      sizeBytes:  meta.sizeBytes  || 0,
-      isDeleted:  meta.isDeleted  || false,
-      createdAt:  meta.createdAt,
-      updatedAt:  meta.updatedAt,
-    };
-
-    const isNew = !fs.existsSync(p);
-    fs.writeFileSync(p, JSON.stringify(record, null, 2), 'utf8');
+  let added = 0, updated = 0;
+  for (const { meta, content, isNew } of fetched) {
+    const record = buildRecord({
+      id:          meta.id,
+      contentType: meta.contentType,
+      title:       meta.title || '',
+      body:        content || '',
+      keywords:    meta.keywords,
+      relatedIds:  meta.relatedIds,
+      sizeBytes:   meta.sizeBytes || 0,
+      isDeleted:   meta.isDeleted || false,
+      createdAt:   meta.createdAt,
+      updatedAt:   meta.updatedAt,
+    });
+    fs.writeFileSync(recordPath(meta.id), JSON.stringify(record, null, 2), 'utf8');
     isNew ? added++ : updated++;
   }
 

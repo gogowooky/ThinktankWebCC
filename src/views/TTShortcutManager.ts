@@ -38,14 +38,11 @@
 
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
-import { TTThink } from '../models/TTThink';
 import { parseTableContent } from '../utils/tableFormat';
 import { TTUIStateManager } from './TTUIStateManager';
 import { TTActions } from './TTActions';
 import { getFocusName } from '../utils/getFocusName';
 import localShortcutContent from '../../docs/Shortcut.md?raw';
-
-const USE_LOCAL_FILES = true;
 import {
   parseMultiKey,
   keyEventToStr,
@@ -63,6 +60,9 @@ interface ShortcutEntry {
   action:      string;
   description: string;
 }
+
+/** 未マッチ時に使い回す空配列（毎キーストロークでの `?? []` 割り当てを避ける） */
+const NO_CANDIDATES: readonly ShortcutEntry[] = [];
 
 /**
  * ThinkFileDrag（D&D）用のペイロード。resolveDragAction() でActionIDを解決した
@@ -176,8 +176,6 @@ export class TTShortcutManager {
   private _currentFocus:  string = 'None';
   private _currentExMode: string = '';
 
-  private _vaultThink: TTThink | null = null;
-
   /**
    * グローバルに追跡している修飾キーの押下状態。
    * ネイティブDragEventのaltKey等はドラッグ中の値更新がブラウザ・OS依存で不安定なことがある
@@ -214,26 +212,8 @@ export class TTShortcutManager {
     });
   }
 
-  async ensureThinkExists(vault: TTVault): Promise<void> {
-    if (USE_LOCAL_FILES) {
-      console.log('[TTShortcutManager] Loading shortcuts from local docs/Shortcut.md');
-      this._loadFromContent(localShortcutContent);
-      return;
-    }
-    let think = vault.GetThink(TTShortcutManager.THINK_ID);
-    if (!think) {
-      think = await vault.AddThinkWithContent(
-        TTShortcutManager.THINK_ID,
-        'Keyboard Shortcuts',
-        'table',
-        'system,shortcuts',
-        this._defaultContent(),
-      );
-    } else {
-      if (think.IsMetaOnly) await think.LoadContent();
-      this._loadFromContent(think.Content);
-    }
-    this._vaultThink = think;
+  async ensureThinkExists(_vault: TTVault): Promise<void> {
+    this._loadFromContent(localShortcutContent);
   }
 
   onThinkSaved(thinkId: string, content: string): void {
@@ -295,7 +275,7 @@ export class TTShortcutManager {
       metaKey:  e.metaKey  || this._heldMods.meta,
     };
     const keyStr = dragEventToStr(dragType, effective);
-    const candidates = this._activeTable.get(keyStr) ?? [];
+    const candidates = this._activeTable.get(keyStr) ?? NO_CANDIDATES;
     if (candidates.length === 0) return null;
     // フォーカス固有指定（focus ≠ '*'）を優先し、なければ最初の一致（通常は focus='*'）を採る
     const specific = candidates.find(s => (s.focus || '*') !== '*');
@@ -367,16 +347,21 @@ export class TTShortcutManager {
    *  ③ 通常グローバルショートカット（focus = '*'）: 入力系コントロール内では無効
    */
   private _processEvent(keyStr: string, e: Event, mods: string): void {
-    const candidates = this._activeTable.get(keyStr) ?? [];
+    const candidates = this._activeTable.get(keyStr) ?? NO_CANDIDATES;
+
+    // マッチしたショートカットを実行する。preventDefault/stopPropagation の発火と
+    // Allow による継続判定は3フェーズ共通のため、フェーズごとの絞り込み述語だけを渡す。
+    const tryExecute = (s: ShortcutEntry): boolean => {
+      e.preventDefault();
+      e.stopPropagation();
+      return this._executeAction(s.action, mods);
+    };
 
     // ① フォーカス固有（TextEditor.で始まるアクションはエディタ内で例外的に実行可能にする）
     for (const s of candidates) {
       const isEditorAction = s.action.startsWith('TextEditor.');
       if ((s.focus || '*') === '*' && !isEditorAction) continue;
-      e.preventDefault();
-      e.stopPropagation();
-      const allow = this._executeAction(s.action, mods);
-      if (!allow) return;
+      if (!tryExecute(s)) return;
     }
 
     // ② ExMode 関連グローバル（入力系コントロール内でも常に有効）
@@ -385,10 +370,7 @@ export class TTShortcutManager {
     for (const s of candidates) {
       if ((s.focus || '*') !== '*') continue;
       if (!s.exmode && !this._isExModeAction(s.action)) continue;
-      e.preventDefault();
-      e.stopPropagation();
-      const allow = this._executeAction(s.action, mods);
-      if (!allow) return;
+      if (!tryExecute(s)) return;
     }
 
     // ③ 通常グローバル（入力系コントロール内では無効）
@@ -398,10 +380,7 @@ export class TTShortcutManager {
     for (const s of candidates) {
       if ((s.focus || '*') !== '*') continue;
       if (s.exmode || this._isExModeAction(s.action)) continue;
-      e.preventDefault();
-      e.stopPropagation();
-      const allow = this._executeAction(s.action, mods);
-      if (!allow) return;
+      if (!tryExecute(s)) return;
     }
   }
 
@@ -453,22 +432,6 @@ export class TTShortcutManager {
   }
 
   // ── コンテンツ管理 ─────────────────────────────────────────────────────
-
-  private _defaultContent(): string {
-    const header = [
-      'Keyboard Shortcuts',
-      '# focus: フォーカス名（*=すべて、Workout*=Workout内すべて）',
-      '# exmode: ExMode名（空=ExModeなし）',
-      '# key: {ctrl|alt|shift|meta}+{key}  マウス: left1/left2/right1/wheelup/wheeldown  複数: | 区切り（| 自体は ""でくくる）',
-      '# action: ActionID または {状態変数}:{設定値} または ExMode:{name}',
-      '',
-      '> focus,exmode,key,action,description',
-    ];
-    const rows = DEFAULT_SHORTCUTS.map(
-      s => `${s.focus},${s.exmode},${s.key},${s.action},${s.description}`
-    );
-    return [...header, ...rows].join('\n');
-  }
 
 
   private _loadFromContent(content: string): void {

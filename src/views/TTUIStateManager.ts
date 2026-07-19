@@ -23,8 +23,7 @@
 
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
-import { TTThink } from '../models/TTThink';
-import { parseTableContent, tableSectionToContent, updateTableContent, TableSection } from '../utils/tableFormat';
+import { parseTableContent, tableSectionToContent, TableSection } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
 import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
@@ -37,8 +36,6 @@ import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?ra
 import { TTShortcutManager } from './TTShortcutManager';
 import { getHeadingAttributes } from './TTFocusedPanelActions';
 import { StorageManager } from '../services/storage/StorageManager';
-
-const USE_LOCAL_FILES = true;
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
@@ -1145,7 +1142,6 @@ export class TTUIStateManager {
   private _debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private _undoStack: string[] = [];
   private _redoStack: string[] = [];
-  private _vaultThink: TTThink | null = null;
   private _listeners = new Map<ConfigKey, Set<ConfigListener>>();
 
   static get instance(): TTUIStateManager {
@@ -1173,36 +1169,12 @@ export class TTUIStateManager {
   /**
    * Vault 読み込み完了後に呼ぶ。UIState Think を作成/同期する。
    */
-  async ensureThinkExists(vault: TTVault): Promise<void> {
-    if (USE_LOCAL_FILES) {
-      console.log('[TTUIStateManager] Loading initial UI state from local docs/Thinktank_Status-Action-Binding.md');
-      this._applyContent(localStatusContent);
-      const stored = localStorage.getItem(TTUIStateManager.LS_KEY);
-      if (stored) {
-        this._applyContent(stored);
-      }
-      return;
+  async ensureThinkExists(_vault: TTVault): Promise<void> {
+    this._applyContent(localStatusContent);
+    const stored = localStorage.getItem(TTUIStateManager.LS_KEY);
+    if (stored) {
+      this._applyContent(stored);
     }
-    if (!this._app) return;
-    let think = vault.GetThink(TTUIStateManager.THINK_ID);
-    if (!think) {
-      think = await vault.AddThinkWithContent(
-        TTUIStateManager.THINK_ID,
-        'UI Settings',
-        'table',
-        'system,ui-state',
-        localStatusContent,
-      );
-    } else {
-      if (think.IsMetaOnly) await think.LoadContent();
-      if (!localStorage.getItem(TTUIStateManager.LS_KEY)) {
-        this.onThinkSaved(think.ID, localStatusContent);
-      } else {
-        this._vaultThink = think;
-        think.setContentSilent(this._serializePreservingStructure(this._app));
-      }
-    }
-    this._vaultThink = think;
   }
 
   /** DataGrid/Card が UIState Think を保存したときのフック（WorkoutArea から呼ぶ）*/
@@ -1211,9 +1183,6 @@ export class TTUIStateManager {
     this._pushUndo();
     this._applyContent(content);
     this._saveToLocalStorage();
-    if (this._app && this._vaultThink) {
-      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
-    }
   }
 
   /** ショートカット等からの単一プロパティ変更 */
@@ -1230,9 +1199,6 @@ export class TTUIStateManager {
       this._applying = false;
     }
     this._saveToLocalStorage();
-    if (this._vaultThink) {
-      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
-    }
   }
 
   /** 指定したキーの現在値を文字列で取得する */
@@ -1261,21 +1227,12 @@ export class TTUIStateManager {
     const val = spec.get(this._app);
     this._emit(key, val);
     this._app.NotifyUpdated(false);
-
-    if (this._vaultThink) {
-      this._applying = true;
-      try {
-        this._vaultThink.Content = this._serializePreservingStructure(this._app);
-      } finally {
-        this._applying = false;
-      }
-    }
   }
 
-  /** 現在のアプリ状態を構造保持でシリアライズして返す（更新ボタン用） */
+  /** 現在のアプリ状態をシリアライズして返す（更新ボタン用） */
   getLatestContent(): string | null {
     if (!this._app) return null;
-    return this._serializePreservingStructure(this._app);
+    return this.serialize(this._app);
   }
 
   undo(): boolean {
@@ -1285,9 +1242,6 @@ export class TTUIStateManager {
     const prev = this._undoStack.pop()!;
     this._applyContent(prev);
     this._saveToLocalStorage();
-    if (this._vaultThink) {
-      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
-    }
     return true;
   }
 
@@ -1298,9 +1252,6 @@ export class TTUIStateManager {
     const next = this._redoStack.pop()!;
     this._applyContent(next);
     this._saveToLocalStorage();
-    if (this._vaultThink) {
-      this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
-    }
     return true;
   }
 
@@ -1500,53 +1451,6 @@ export class TTUIStateManager {
     }
   }
 
-  /**
-   * 現在の think 構造（コメント行・空行・rawLines）を維持しながら
-   * current 列だけを現在のアプリ状態で更新してシリアライズ。
-   * _vaultThink が未設定またはパース不能な場合は serialize() にフォールバック。
-   */
-  private _serializePreservingStructure(app: TTApplication): string {
-    let savedContent = this._vaultThink?.Content;
-    if (savedContent) {
-      savedContent = savedContent
-        .replace(/\bApplication\.KeyboardFocused\.AreaName\b/g, 'Application.FocusedArea.Name')
-        .replace(/\bApplication\.Focused\.ColumnName\b/g, 'Application.FocusedPanel.Name')
-        .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name')
-        .replace(/\bThinktankPanel\.Mode\.IsOpen\b/g, 'ThinktankPanel.Area.IsOpen')
-        .replace(/\bThinktankPanel\.IsAreaOpen\b/g, 'ThinktankPanel.Area.IsOpen')
-        .replace(/\bOverviewPanel\.Mode\.IsOpen\b/g, 'OverviewPanel.Area.IsOpen')
-        .replace(/\bOverviewPanel\.IsAreaOpen\b/g, 'OverviewPanel.Area.IsOpen')
-        .replace(/\bWorkoutSettingPanel\.Mode\.IsOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
-        .replace(/\bWorkoutPanel\.IsAreaOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
-        .replace(/\bReThinkPanel\.Mode\.IsOpen\b/g, 'ReThinkPanel.Area.IsOpen')
-        .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen')
-        .replace(/\bTextEditor\.Color\.Background\b/g, 'TextEditor.Text.BgColor')
-        .replace(/\bTextEditor\.Color\.Text\b/g, 'TextEditor.Text.Color')
-        .replace(/\bTextEditor\.Color\.Selection\b/g, 'TextEditor.Selection.BgColor')
-        .replace(/\bTextEditor\.Color\.Occurrence\b/g, 'TextEditor.Occurrence.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.BgColor\b/g, 'TextEditor.Text.BgColor')
-        .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
-        .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
-        .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
-        .replace(/\bWorkoutPanel\.Pane\.Count\b/g, 'WorkoutPanel.Panes.Count');
-      const updates: Record<string, Record<string, string>> = {};
-      for (const [key, spec] of Object.entries(PROP_SPECS)) {
-        if (!spec.isConst) {
-          updates[key] = { current: spec.get(app) };
-        }
-      }
-      return updateTableContent(
-        savedContent,
-        'key',
-        updates,
-        (key) => !!PROP_SPECS[key]?.isConst
-      );
-    }
-    return this.serialize(app);
-  }
-
   /** TTApplication 状態をテーブル形式にシリアライズ（新列構成）*/
   serialize(app: TTApplication): string {
     const props = this._getProps(app);
@@ -1612,9 +1516,6 @@ export class TTUIStateManager {
     if (this._debounceTimer) clearTimeout(this._debounceTimer);
     this._debounceTimer = setTimeout(() => {
       this._saveToLocalStorage();
-      if (this._app && this._vaultThink) {
-        this._vaultThink.setContentSilent(this._serializePreservingStructure(this._app));
-      }
     }, 500);
   }
 

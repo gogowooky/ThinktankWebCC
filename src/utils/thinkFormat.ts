@@ -250,3 +250,16 @@ export function serializeThought(options: ThoughtCreateOptions): string {
 }
 
 // #endregion
+
+// ════════════════════════════════════════════════════════════════════════
+// #region 共通: title\nbody 形式の分割
+// ════════════════════════════════════════════════════════════════════════
+
+/** 先頭行をtitle、残りをbodyとして分割する（全ContentType共通のThink格納形式） */
+export function splitContent(fullContent: string): { title: string; body: string } {
+  const nl = fullContent.indexOf('\n');
+  if (nl === -1) return { title: fullContent, body: '' };
+  return { title: fullContent.slice(0, nl), body: fullContent.slice(nl + 1) };
+}
+
+// #endregion

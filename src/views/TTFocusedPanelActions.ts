@@ -15,6 +15,7 @@ import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import { collectAreaIds } from './TTWorkoutPanel';
+import { shiftDate, type RangeUnit } from '../utils/dateUtils';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
 let _searchTagCache: Record<string, string> | null = null;
@@ -219,51 +220,19 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     });
   }
 
-  // ExMode 関連アクションの登録
-  TTActions.Register({
-    ActionID: 'Application.Status.ExMode:ExApp',
-    Completion: (item) => {
-      app.Status.SetExMode('ExApp', item.Mods ?? '');
-      item.Result = `ExMode→ExApp [${item.Mods ?? ''}]`;
-    },
-  });
-  TTActions.Register({
-    ActionID: 'ExMode:ExApp',
-    Completion: (item) => {
-      app.Status.SetExMode('ExApp', item.Mods ?? '');
-      item.Result = `ExMode→ExApp [${item.Mods ?? ''}]`;
-    },
-  });
-
-  TTActions.Register({
-    ActionID: 'Application.Status.ExMode:ExOpt',
-    Completion: (item) => {
-      app.Status.SetExMode('ExOpt', item.Mods ?? '');
-      item.Result = `ExMode→ExOpt [${item.Mods ?? ''}]`;
-    },
-  });
-  TTActions.Register({
-    ActionID: 'ExMode:ExOpt',
-    Completion: (item) => {
-      app.Status.SetExMode('ExOpt', item.Mods ?? '');
-      item.Result = `ExMode→ExOpt [${item.Mods ?? ''}]`;
-    },
-  });
-
-  TTActions.Register({
-    ActionID: 'Application.Status.ExMode:None',
-    Completion: (item) => {
-      app.Status.SetExMode('None', item.Mods ?? '');
-      item.Result = `ExMode→None [${item.Mods ?? ''}]`;
-    },
-  });
-  TTActions.Register({
-    ActionID: 'ExMode:None',
-    Completion: (item) => {
-      app.Status.SetExMode('None', item.Mods ?? '');
-      item.Result = `ExMode→None [${item.Mods ?? ''}]`;
-    },
-  });
+  // ExMode 関連アクションの登録（'Application.Status.ExMode:xxx' と 'ExMode:xxx' の
+  // 2つのActionID表記がショートカット定義側で使われるため、両方を同じハンドラに解決させる）
+  const registerExModeAction = (mode: string): void => {
+    const completion = (item: TTActionItem) => {
+      app.Status.SetExMode(mode, item.Mods ?? '');
+      item.Result = `ExMode→${mode} [${item.Mods ?? ''}]`;
+    };
+    TTActions.Register({ ActionID: `Application.Status.ExMode:${mode}`, Completion: completion });
+    TTActions.Register({ ActionID: `ExMode:${mode}`, Completion: completion });
+  };
+  registerExModeAction('ExApp');
+  registerExModeAction('ExOpt');
+  registerExModeAction('None');
 
   // UI状態 (Undo/Redo) アクションの登録
   TTActions.Register({
@@ -397,101 +366,29 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
-  // LineNumbers
-  TTActions.Register({
-    ActionID: 'TextEditor.LineNumbers.IsVisible:Toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.LineNumbers.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.LineNumbers.IsVisible');
-    },
-  });
-  TTActions.Register({
-    ActionID: 'TextEditor.LineNumbers.IsVisible:toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.LineNumbers.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.LineNumbers.IsVisible');
-    },
-  });
-
-  // WordWrap
-  TTActions.Register({
-    ActionID: 'TextEditor.WordWrap.IsVisible:Toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.WordWrap.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.WordWrap.IsVisible');
-    },
-  });
-  TTActions.Register({
-    ActionID: 'TextEditor.WordWrap.IsVisible:toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.WordWrap.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.WordWrap.IsVisible');
-    },
-  });
-
-  // Minimap
-  TTActions.Register({
-    ActionID: 'TextEditor.Minimap.IsVisible:Toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.Minimap.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.Minimap.IsVisible');
-    },
-  });
-  TTActions.Register({
-    ActionID: 'TextEditor.Minimap.IsVisible:toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.Minimap.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.Minimap.IsVisible');
-    },
-  });
-
-  // FullWidthSpace
-  TTActions.Register({
-    ActionID: 'TextEditor.FullWidthSpace.IsVisible:Toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.FullWidthSpace.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.FullWidthSpace.IsVisible');
-    },
-  });
-  TTActions.Register({
-    ActionID: 'TextEditor.FullWidthSpace.IsVisible:toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.FullWidthSpace.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.FullWidthSpace.IsVisible');
-    },
-  });
-
-  // UnicodeHighlight
-  TTActions.Register({
-    ActionID: 'TextEditor.UnicodeHighlight.IsVisible:Toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.UnicodeHighlight.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.UnicodeHighlight.IsVisible');
-    },
-  });
-  TTActions.Register({
-    ActionID: 'TextEditor.UnicodeHighlight.IsVisible:toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.UnicodeHighlight.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.UnicodeHighlight.IsVisible');
-    },
-  });
-
-  // BracketPairColorization
-  TTActions.Register({
-    ActionID: 'TextEditor.BracketPairColorization.IsVisible:Toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.BracketPairColorization.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.BracketPairColorization.IsVisible');
-    },
-  });
-  TTActions.Register({
-    ActionID: 'TextEditor.BracketPairColorization.IsVisible:toggle',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('TextEditor.BracketPairColorization.IsVisible', 'toggle');
-      item.Result = TTUIStateManager.instance.getProperty('TextEditor.BracketPairColorization.IsVisible');
-    },
-  });
+  // IsVisible 系トグル（LineNumbers/WordWrap/Minimap は TTShortcutManager の DEFAULT_SHORTCUTS が
+  // 小文字 `:toggle` で参照するため、大文字小文字どちらの ActionID でも同じハンドラに解決させる）
+  const registerToggleAction = (actionId: ActionID, key: ConfigKey): void => {
+    TTActions.Register({
+      ActionID: actionId,
+      Completion: (item) => {
+        TTUIStateManager.instance.applyProperty(key, 'toggle');
+        item.Result = TTUIStateManager.instance.getProperty(key);
+      },
+    });
+  };
+  const IS_VISIBLE_TOGGLE_KEYS: ConfigKey[] = [
+    'TextEditor.LineNumbers.IsVisible',
+    'TextEditor.WordWrap.IsVisible',
+    'TextEditor.Minimap.IsVisible',
+    'TextEditor.FullWidthSpace.IsVisible',
+    'TextEditor.UnicodeHighlight.IsVisible',
+    'TextEditor.BracketPairColorization.IsVisible',
+  ];
+  for (const key of IS_VISIBLE_TOGGLE_KEYS) {
+    registerToggleAction(`${key}:Toggle`, key);
+    registerToggleAction(`${key}:toggle`, key);
+  }
 
   // ── Editor 検索・置換 ─────────────────────────────────────────────────────
   /** Monaco既定の検索/置換ウィジェットのコントローラーを取得する */
@@ -787,14 +684,9 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:VisibleForward',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, headings, targetOffset } = ctx;
 
         // offset < targetOffset を満たす見出しを降順（後ろから）走査し、isHidden === false である最初の行を特定
         const target = [...headings].reverse().find(h => h.offset < targetOffset && !h.isHidden);
@@ -817,14 +709,9 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:VisibleBackward',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, headings, targetOffset } = ctx;
 
         // offset > targetOffset を満たす見出しを昇順（前から）走査し、isHidden === false である最初の行を特定
         const target = headings.find(h => h.offset > targetOffset && !h.isHidden);
@@ -847,19 +734,11 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
-
-        // 現在のカーソル位置から上方向に最も近い見出し H を取得
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
-        const h = matched[matched.length - 1];
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, model, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
 
         // ↓ 現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
         if (isLineFolded(editor, h.line)) {
@@ -903,19 +782,11 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:CloseStepwise',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
-
-        // 現在のカーソル位置から上方向に最も近い見出し H を取得
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
-        const h = matched[matched.length - 1];
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, pos, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
 
         // ↓ 現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
         if (pos.lineNumber !== h.line) {
@@ -964,19 +835,11 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingForward',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
-
-        // 現在のカーソル位置から上方向に最も近い見出し H を取得
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
-        const h = matched[matched.length - 1];
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, pos, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
 
         // 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動
         if (pos.lineNumber !== h.line) {
@@ -1013,19 +876,11 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingBackward',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
-
-        // 現在のカーソル位置から上方向に最も近い見出し H を取得
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
-        const h = matched[matched.length - 1];
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, pos, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
 
         // 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動
         if (pos.lineNumber !== h.line) {
@@ -1062,19 +917,11 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingFirst',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
-
-        // 現在のカーソル位置から上方向に最も近い見出し H を取得
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
-        const h = matched[matched.length - 1];
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
 
         const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
         // 兄弟Heading（非表示でないもの）を取得
@@ -1114,19 +961,11 @@ export function registerTextEditorActions(app: TTApplication): void {
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingLast',
     Completion: (item) => {
       try {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (!editor) { item.Result = '[エディタ未選択]'; return; }
-        const model = editor.getModel();
-        const pos = editor.getPosition();
-        if (!model || !pos) { item.Result = '[モデル/位置なし]'; return; }
-
-        const headings = getHeadingAttributes(editor);
-        const targetOffset = model.getOffsetAt(pos);
-
-        // 現在のカーソル位置から上方向に最も近い見出し H を取得
-        const matched = headings.filter(h => h.offset <= targetOffset);
-        if (matched.length === 0) { item.Result = '[見出し外]'; return; }
-        const h = matched[matched.length - 1];
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
 
         const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
         // 兄弟Heading（非表示でないもの）を取得
@@ -1282,6 +1121,33 @@ export function getHeadingAttributes(editor: any): HeadingAttribute[] {
   }
 
   return attributes;
+}
+
+/** 見出しナビゲーション系アクション共通の前準備（エディタ/モデル/カーソル位置/見出し一覧の取得）。失敗時は item.Result を設定して null を返す。 */
+interface HeadingNavContext {
+  editor: any;
+  model: any;
+  pos: any;
+  headings: HeadingAttribute[];
+  targetOffset: number;
+}
+
+function getHeadingNavContext(item: TTActionItem): HeadingNavContext | null {
+  const editor = TTShortcutManager.instance.activeEditor;
+  if (!editor) { item.Result = '[エディタ未選択]'; return null; }
+  const model = editor.getModel();
+  const pos = editor.getPosition();
+  if (!model || !pos) { item.Result = '[モデル/位置なし]'; return null; }
+  const headings = getHeadingAttributes(editor);
+  const targetOffset = model.getOffsetAt(pos);
+  return { editor, model, pos, headings, targetOffset };
+}
+
+/** カーソル位置から上方向に最も近い見出し H を取得する。無ければ item.Result を設定して null を返す。 */
+function getCurrentHeading(ctx: HeadingNavContext, item: TTActionItem): HeadingAttribute | null {
+  const matched = ctx.headings.filter(h => h.offset <= ctx.targetOffset);
+  if (matched.length === 0) { item.Result = '[見出し外]'; return null; }
+  return matched[matched.length - 1];
 }
 
 // ── 日付操作 (TextEditor.EditDate) 関連の実装 ───────────────────────────────
@@ -1618,85 +1484,23 @@ export function registerTextEditorDateActions(app: TTApplication): void {
     }
   });
 
-  // 5. IncYear
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.IncYear',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setFullYear(state.currentDate.getFullYear() + 1);
-      });
-    }
-  });
-
-  // 6. DecYear
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.DecYear',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setFullYear(state.currentDate.getFullYear() - 1);
-      });
-    }
-  });
-
-  // 7. IncMonth
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.IncMonth',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setMonth(state.currentDate.getMonth() + 1);
-      });
-    }
-  });
-
-  // 8. DecMonth
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.DecMonth',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setMonth(state.currentDate.getMonth() - 1);
-      });
-    }
-  });
-
-  // 9. IncWeek
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.IncWeek',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setDate(state.currentDate.getDate() + 7);
-      });
-    }
-  });
-
-  // 10. DecWeek
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.DecWeek',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setDate(state.currentDate.getDate() - 7);
-      });
-    }
-  });
-
-  // 11. IncDay
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.IncDay',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setDate(state.currentDate.getDate() + 1);
-      });
-    }
-  });
-
-  // 12. DecDay
-  TTActions.Register({
-    ActionID: 'TextEditor.EditDate.DecDay',
-    Completion: (item) => {
-      modifyDate(item, (state) => {
-        state.currentDate.setDate(state.currentDate.getDate() - 1);
-      });
-    }
-  });
+  // 5-12. Inc/DecYear, Inc/DecMonth, Inc/DecWeek, Inc/DecDay（dateUtils.shiftDate を共用）
+  const DATE_STEPS: Array<[string, RangeUnit, number]> = [
+    ['IncYear',  'y', 1], ['DecYear',  'y', -1],
+    ['IncMonth', 'm', 1], ['DecMonth', 'm', -1],
+    ['IncWeek',  'w', 1], ['DecWeek',  'w', -1],
+    ['IncDay',   'd', 1], ['DecDay',   'd', -1],
+  ];
+  for (const [suffix, unit, delta] of DATE_STEPS) {
+    TTActions.Register({
+      ActionID: `TextEditor.EditDate.${suffix}`,
+      Completion: (item) => {
+        modifyDate(item, (state) => {
+          state.currentDate = shiftDate(state.currentDate, delta, unit);
+        });
+      }
+    });
+  }
 
   // 13. SetNow
   TTActions.Register({

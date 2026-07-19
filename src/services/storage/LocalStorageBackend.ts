@@ -6,6 +6,7 @@
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import { splitContent } from '../../utils/thinkFormat';
 
 /** C# API が返す camelCase レスポンス */
 interface CsThinkRecord {
@@ -36,12 +37,6 @@ function toMeta(r: CsThinkRecord): ThinkMeta {
     createdAt:   r.createdAt,
     updatedAt:   r.updatedAt,
   };
-}
-
-function splitContent(fullContent: string): { title: string; body: string } {
-  const nl = fullContent.indexOf('\n');
-  if (nl === -1) return { title: fullContent, body: '' };
-  return { title: fullContent.slice(0, nl), body: fullContent.slice(nl + 1) };
 }
 
 export class LocalStorageBackend implements IStorageBackend {

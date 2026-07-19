@@ -3,46 +3,13 @@
  * アクション定義の型とアクション実行コンテキスト。
  */
 
-export type ActionID =
-  | 'FocusedPanel.Area.IsOpen:Toggle'
-  | 'FocusedPanel.Mode.Name:Prev'
-  | 'FocusedPanel.Mode.Name:Next'
-  | 'Application.FocusedPanel.Name:Next'
-  | 'Application.FocusedPanel.Name:Prev'
-  | 'WorkoutPanel.FocusedPane.PaneNumber:Next'
-  | 'WorkoutPanel.FocusedPane.PaneNumber:Prev'
-  | 'WorkoutPanel.FocusedPane.Mode:Next'
-  | 'WorkoutPanel.FocusedPane.Mode:Prev'
-  | 'TextEditor.EditText.Undo'
-  | 'TextEditor.EditText.Redo'
-  | 'TextEditor.CurrentFolding.Heading:VisibleForward'
-  | 'TextEditor.CurrentFolding.Heading:VisibleBackward'
-  | 'TextEditor.CurrentFolding.Heading:OpenStepwise'
-  | 'TextEditor.CurrentFolding.Heading:CloseStepwise'
-  | 'TextEditor.CurrentFolding.Heading:SiblingForward'
-  | 'TextEditor.CurrentFolding.Heading:SiblingBackward'
-  | 'TextEditor.CurrentFolding.Heading:SiblingFirst'
-  | 'TextEditor.CurrentFolding.Heading:SiblingLast'
-  | 'TextEditor.LineNumbers.IsVisible:Toggle'
-  | 'TextEditor.WordWrap.IsVisible:Toggle'
-  | 'TextEditor.Minimap.IsVisible:Toggle'
-  | 'TextEditor.FullWidthSpace.IsVisible:Toggle'
-  | 'TextEditor.UnicodeHighlight.IsVisible:Toggle'
-  | 'TextEditor.BracketPairColorization.IsVisible:Toggle'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:Url:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:File:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:Think:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:AI:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open'
-  | 'TextEditor.CurrentEditor.DoOnCursorPos:Menu'
-  | 'WorkoutPanel.Load.DroppedFile'
-  | 'WorkoutPanel.Insert.DroppedFile'
-  | string; // 動的・外部定義のアクションを許容
+/**
+ * アクションID。'Category.Property:Value' 形式の文字列（動的・外部定義のアクションを含む）。
+ * リテラルの列挙は行わない — `| string` を伴う和集合は string に潰れて型安全性を持たず、
+ * 実際に登録されるアクション数に対して追従できず乖離するため（TTFocusedPanelActions.ts 側で
+ * 随時アクションを追加登録できることを優先する）。
+ */
+export type ActionID = string;
 
 /** アクション実行コンテキスト。Completion 関数が Result / Allow を書き込む。 */
 export interface TTActionItem {

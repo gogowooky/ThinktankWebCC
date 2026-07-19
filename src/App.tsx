@@ -24,22 +24,12 @@ export default function App() {
     TTShortcutManager.instance.init(app)
     registerFocusedPanelActions(app)
 
-    // Vault ロード完了後にシステム Think を作成/同期
-    const initManagers = async () => {
-      await TTUIStateManager.instance.ensureThinkExists(vault)
-      await TTShortcutManager.instance.ensureThinkExists(vault)
-    }
-
-    if (vault.IsLoaded) {
-      initManagers()
-    } else {
-      const key = 'App-managers-init'
-      vault.AddOnUpdate(key, () => {
-        if (!vault.IsLoaded) return
-        vault.RemoveOnUpdate(key)
-        initManagers()
-      })
-    }
+    // UI状態/ショートカットのシステム Think はローカルファイルからの読み込みのみのため、
+    // Vault ロード完了を待たず並行して初期化する
+    void Promise.all([
+      TTUIStateManager.instance.ensureThinkExists(vault),
+      TTShortcutManager.instance.ensureThinkExists(vault),
+    ])
 
     // ③ グローバルキーボード / マウス / ホイールショートカットリスナー登録
     const handleKeyDown   = (e: KeyboardEvent) => TTShortcutManager.instance.handleKeyDown(e)
