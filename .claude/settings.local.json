@@ -160,7 +160,8 @@
       "Bash(echo \"EXIT:$?\")",
       "Bash(timeout 20 git log --oneline -5)",
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json','utf8'\\)\\); console.log\\('JSON_OK'\\)\")",
-      "Bash(echo \"TSC_EXIT:$?\")"
+      "Bash(echo \"TSC_EXIT:$?\")",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json'\\)\\).scripts, null, 2\\)\\)\")"
     ]
   }
 }

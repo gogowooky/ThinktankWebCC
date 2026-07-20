@@ -19,6 +19,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
 };
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
+import { detectLocalDragKind } from '../../utils/keyboardUtils';
 import type { MediaType } from '../../types';
 import './WorkoutMenuRibbon.css';
 
@@ -76,6 +77,54 @@ function fileUriToPath(uri: string): string {
   } catch {
     return uri;
   }
+}
+
+/**
+ * 疑似キー LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
+ * （docs/Shortcut.md）のデフォルトAction。ThinkFileDragのLoad/Insertと同じく、
+ * 通常ドロップ＝Load（Links Think作成・Pane差し替え）、Alt+ドロップ＝Insert
+ * （カーソル位置へのファイル参照挿入。TextEditorMedia.tsx側の既存アップロード/
+ * 挿入ロジック）に対応する。現状はどちらも既定動作のままだが、Shortcutテーブルで
+ * 別Actionへ振り替える／フォーカス限定するといった拡張の受け口として、呼び出し元
+ * （WorkoutMenuRibbon/WorkoutArea/WorkoutPanel/TextEditorMedia）は直接
+ * extractLinkDrop() の結果を使わず shouldAllowLocalDrop() / shouldInsertLocalDrop()
+ * を必ず経由する。
+ */
+const LOCAL_DROP_DEFAULT_ACTION = 'WorkoutPanel.Load.DroppedLink';
+const LOCAL_DROP_INSERT_ACTION  = 'WorkoutPanel.Insert.DroppedLink';
+
+/**
+ * OSファイルシステムからのFile/Dirドロップかどうかを判定し、疑似キー
+ * LocalFileDrag / LocalDirDrag としてShortcutテーブルに照会する。
+ * URL/テキストドラッグ（Filesを含まない）はこの仕組みの対象外のため null を返す。
+ */
+function resolveLocalDropAction(e: React.DragEvent): { actionId: string | null } | null {
+  const dragKind = detectLocalDragKind(e.dataTransfer);
+  if (!dragKind) return null;
+  return { actionId: TTShortcutManager.instance.resolveDragAction(dragKind, e.nativeEvent) };
+}
+
+/**
+ * 既定（Load）動作を実行してよいかを判定する。ローカルFile/Dirドラッグでなければ
+ * この仕組みの対象外としてそのまま許可する（true）。ローカルFile/Dirドラッグで、
+ * Shortcutテーブルで既定Action以外に振り替えられている場合やフォーカス不一致等で
+ * 解決できなかった場合は false を返し、呼び出し元は既定動作（リンク作成）を抑止する。
+ */
+export function shouldAllowLocalDrop(e: React.DragEvent): boolean {
+  const resolved = resolveLocalDropAction(e);
+  if (!resolved) return true;
+  return resolved.actionId === LOCAL_DROP_DEFAULT_ACTION;
+}
+
+/**
+ * Alt+ドロップ時のInsert動作（TextEditorMedia.tsx既存のアップロード/カーソル挿入）を
+ * 実行してよいかを判定する。ローカルFile/Dirドラッグでない場合や、Shortcutテーブルで
+ * Insert Action以外に解決された場合は false を返す。
+ */
+export function shouldInsertLocalDrop(e: React.DragEvent): boolean {
+  const resolved = resolveLocalDropAction(e);
+  if (!resolved) return false;
+  return resolved.actionId === LOCAL_DROP_INSERT_ACTION;
 }
 
 export function extractLinkDrop(e: React.DragEvent): { url: string; title: string } | null {
@@ -173,7 +222,7 @@ export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = fals
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) { onResourceDrop(thinkId, e); return; }
     const link = extractLinkDrop(e);
-    if (link && onUrlDrop) onUrlDrop(link.url, link.title);
+    if (link && shouldAllowLocalDrop(e) && onUrlDrop) onUrlDrop(link.url, link.title);
   }, [onResourceDrop, onUrlDrop]);
 
   return (

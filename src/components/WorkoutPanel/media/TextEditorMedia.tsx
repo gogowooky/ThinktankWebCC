@@ -16,6 +16,7 @@ import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../views/TTFocusedPanelActions';
 import { splitContent } from '../../../utils/thinkFormat';
+import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import './TextEditorMedia.css';
 
 export interface TextEditorMediaRef {
@@ -111,7 +112,7 @@ function registerMarkdownFolding(monaco: any) {
 }
 
 
-export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
+export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, vault, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
   const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
   const editorRef   = useRef<any>(null);
@@ -956,6 +957,22 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     e.preventDefault();
     e.stopPropagation();
 
+    // 通常ドロップ（Alt未使用）: 疑似キー LocalFileDrag/LocalDirDrag（docs/Shortcut.md）経由で
+    // Links Think を作成し、このPaneを差し替える（WorkoutArea.handleUrlDropと同じLoad系挙動）。
+    // Alt+ドロップは従来通りカーソル位置へファイル参照を挿入する（下のロジック）。
+    const altHeld = TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);
+    if (altHeld) {
+      if (!shouldInsertLocalDrop(e)) return;
+    } else {
+      if (!shouldAllowLocalDrop(e)) return;
+      const link = extractLinkDrop(e);
+      if (!link || !areaId) return;
+      const newThink = await vault.CreateLinksThink(link.title, link.url);
+      const area = TTApplication.Instance.WorkoutPanel.GetArea(areaId);
+      area?.OpenThink(newThink.ID, 'texteditor', newThink.Name);
+      return;
+    }
+
     const isElectron = StorageManager.instance.mode === 'electron';
 
     for (const file of files) {
@@ -966,23 +983,13 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         const localPath = byApi ?? byPlain ?? file.name;
         insertAtCursor(`[File:${file.name}](${localPath})`);
       } else {
-        // PWA: Google Drive にアップロード
-        showToast(`アップロード中: ${file.name}`, 'success');
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('date', new Date().toISOString().slice(0, 10));
-          const res = await fetch('/api/drive/upload', { method: 'POST', body: formData });
-          if (!res.ok) throw new Error(await res.text());
-          const { webViewLink } = await res.json() as { fileId: string; webViewLink: string };
-          insertAtCursor(`[File:${file.name}](${webViewLink})`);
-          showToast(`✓ 保存完了: ${file.name}`, 'success');
-        } catch (err) {
-          showToast(`✗ アップロード失敗: ${String(err)}`, 'error');
-        }
+        // PWA: サービスアカウントには個人のDriveストレージクォータが無く、
+        // Google Workspace共有ドライブも前提にできないためアップロード非対応。
+        // Electron版でのみファイル参照の挿入をサポートする。
+        showToast(`✗ ファイルアップロードはPWA版では未対応です: ${file.name}`, 'error');
       }
     }
-  }, [showToast, insertAtCursor]);
+  }, [showToast, insertAtCursor, areaId, vault]);
 
   if (!think) {
     return (

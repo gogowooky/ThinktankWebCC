@@ -25,13 +25,21 @@
  * ── key 書式 ─────────────────────────────────────────────────────────────
  *   キーボード: {ctrl|alt|shift|meta}+{key}  ※ 順不同・小文字
  *   マウス:     left1 / left2 / right1 / wheelup / wheeldown（修飾付き可）
- *   D&D:        ThinkFileDrag / UrlDrag / FilePathDrag 等の疑似キー名（修飾付き可）
+ *   D&D:        ThinkFileDrag / LocalFileDrag / LocalDirDrag 等の疑似キー名（修飾付き可）
  *               ※ D&Dは preventDefault のタイミングがドロップ先DOM要素ごとに異なるため、
  *                 resolveDragAction() でActionIDの解決のみを行い、preventDefault と
  *                 TTActions.Execute() の呼び出しは各Dropハンドラー側が担う。ドラッグの
  *                 ペイロード（ThinkID・配置先情報）はキーボードイベントに乗せられないため、
  *                 setPendingThinkDrop() で明示的にセットしてから Execute() を呼ぶこと
  *                 （Completion側は consumePendingThinkDrop() で読み取る）。
+ *                 LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
+ *                 （OSファイルシステムからのFile/Dirドロップ、docs/Shortcut.md参照）は、
+ *                 対応する4箇所の呼び出し元（WorkoutMenuRibbon/WorkoutArea/WorkoutPanel/
+ *                 TextEditorMedia）が既に同期的にLoad/Insert相当の処理を持っているため
+ *                 TTActions.Execute() は経由せず、resolveDragAction() の戻り値を
+ *                 shouldAllowLocalDrop() / shouldInsertLocalDrop()（WorkoutMenuRibbon.tsx）
+ *                 でActionID文字列の一致判定
+ *                 のみに使う。Shortcutテーブルの行を書き換える／削除するとDropを抑止できる。
  *   複数指定:   | 区切りで複数キーを同一アクションに割り当て可能
  *               | 自体を指定したい場合は "" でくくる（例: "ctrl+|"）
  */

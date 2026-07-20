@@ -12,7 +12,7 @@ import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { WorkoutMenuRibbon, extractLinkDrop } from './WorkoutMenuRibbon';
+import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
@@ -172,7 +172,7 @@ export function WorkoutArea({
     const current = vault.GetThink(area.ResourceID);
     if (current?.ContentType !== 'links') return;
     const link = extractLinkDrop(e);
-    if (!link) return;
+    if (!link || !shouldAllowLocalDrop(e)) return;
     e.preventDefault();
     e.stopPropagation(); // TextEditorMedia / Monaco に渡さない
     setIsContentLinkDrop(false);

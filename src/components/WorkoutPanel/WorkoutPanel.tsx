@@ -23,7 +23,7 @@ import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutTabBar } from './WorkoutTabBar';
 import { WorkoutSettingArea } from './WorkoutSettingArea';
 import type { WorkoutSettingAreaRef } from './WorkoutSettingArea';
-import { extractLinkDrop } from './WorkoutMenuRibbon';
+import { extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
 import { serializeChat } from '../../utils/thinkFormat';
 import type { SettingsType } from './WorkoutTabBar';
@@ -735,7 +735,7 @@ export function WorkoutPanel({ app }: Props) {
 
     // URL / path D&D → links Think を新規作成
     const link = extractLinkDrop(e);
-    if (link) {
+    if (link && shouldAllowLocalDrop(e)) {
       const newThink = await vault.CreateLinksThink(link.title, link.url);
       const id    = newThink.ID;
       const title = newThink.Name;

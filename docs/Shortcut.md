@@ -42,6 +42,12 @@ Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck     
 *,   ,ThinkFileDrag       ,WorkoutPanel.Load.DroppedFile   ,DropされたThinkファイルをPaneにLoadする
 *,   ,Alt+ThinkFileDrag   ,WorkoutPanel.Insert.DroppedFile ,DropされたThinkファイルをコンテンツ内に挿入する
 
+# Editor Editor ローカルファイルシステム D&D
+*,   ,LocalFileDrag       ,WorkoutPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う
+*,   ,LocalDirDrag        ,WorkoutPanel.Load.DroppedLink   ,ローカルディレクトリDropで既定動作（Links Think作成）を行う
+*,   ,Alt+LocalFileDrag   ,WorkoutPanel.Insert.DroppedLink ,ローカルファイルDropをコンテンツ内カーソル位置に挿入する
+*,   ,Alt+LocalDirDrag    ,WorkoutPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
+
 
 # Editor Editor　検索
 *TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
