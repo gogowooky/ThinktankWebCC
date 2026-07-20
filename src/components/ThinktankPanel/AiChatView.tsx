@@ -22,6 +22,10 @@ interface Props {
   messages:  ChatMessage[];
   isWaiting: boolean;
   onSend:    (text: string) => void;
+  /** ログの scrollTop 変化を通知する（Pane側での永続化用。省略可）*/
+  onScroll?: (scrollTop: number) => void;
+  /** 初回マウント時に復元する scrollTop。省略時は末尾へ自動スクロール */
+  initialScrollTop?: number;
 }
 
 const PLACEHOLDER = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
@@ -48,12 +52,13 @@ function topInContainer(el: HTMLElement, container: HTMLElement): number {
 }
 
 export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
-  { messages, isWaiting, onSend },
+  { messages, isWaiting, onSend, onScroll, initialScrollTop },
   ref,
 ) {
   const [input, setInput] = useState('');
   const logRef            = useRef<HTMLDivElement>(null);
   const textareaRef       = useRef<HTMLTextAreaElement>(null);
+  const hasRestoredRef    = useRef(false);
 
   useImperativeHandle(ref, () => ({
     scrollToPrevUser: () => {
@@ -92,8 +97,20 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
 
   useEffect(() => {
     const el = logRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, isWaiting]);
+    if (!el) return;
+    if (!hasRestoredRef.current) {
+      hasRestoredRef.current = true;
+      if (typeof initialScrollTop === 'number') {
+        el.scrollTop = initialScrollTop;
+        return;
+      }
+    }
+    el.scrollTop = el.scrollHeight;
+  }, [messages, isWaiting]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleLogScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    onScroll?.(e.currentTarget.scrollTop);
+  }, [onScroll]);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
@@ -123,7 +140,7 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
     <div className="ai-chat-view">
 
       {/* ── 会話ログ ─────────────────────────────────────────────── */}
-      <div className="ai-chat-view__log" ref={logRef}>
+      <div className="ai-chat-view__log" ref={logRef} onScroll={handleLogScroll}>
 
         {messages.length === 0 && !isWaiting && (
           <div className="ai-chat-view__empty">

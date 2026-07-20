@@ -1,17 +1,18 @@
 /**
  * ChatMedia.tsx
- * Phase 14: CLI 風ターミナル表示の AI チャットメディア。
- * Anthropic SSE ストリーミング対応。
- *
- * - think.Content が ContentType='chat' なら既存履歴をパース
- * - think データをシステムプロンプトのコンテキストとして渡す
+ * Thinktank / Overview / ReThink / WorkoutSetting と同一の AiChatView を用いた
+ * Pane 内 AI チャット。think.Content（ContentType='chat'）を保存先とし、
+ * AI応答が完了するたびに MediaProps.onSave 経由で永続化する。
  */
 
 import { useRef, useState, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
+import { MonitorUp, MonitorDown, Save } from 'lucide-react';
 import type { ChatMessage } from '../../../types';
 import type { MediaProps } from './types';
 import { streamChat } from '../../../services/ChatApiService';
-import { parseChat } from '../../../utils/thinkFormat';
+import { parseChat, serializeChat } from '../../../utils/thinkFormat';
+import { AiChatView } from '../../ThinktankPanel/AiChatView';
+import type { AiChatViewRef } from '../../ThinktankPanel/AiChatView';
 import './ChatMedia.css';
 
 function buildSystemPrompt(thinkName: string, thinkContent: string): string {
@@ -23,90 +24,78 @@ function buildSystemPrompt(thinkName: string, thinkContent: string): string {
   );
 }
 
-function formatTime(iso: string): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
-}
-
 export interface ChatMediaRef { focus: () => void; }
 
-export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think }: MediaProps, ref) {
+export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think, onSave, onDirtyChange }: MediaProps, ref) {
   const initialMessages = useMemo<ChatMessage[]>(() => {
     if (!think || think.ContentType !== 'chat') return [];
     return parseChat(think.Content);
   }, [think?.ID]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [messages,  setMessages]  = useState<ChatMessage[]>(initialMessages);
-  const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
-  const logRef                    = useRef<HTMLDivElement>(null);
-  const bottomRef                 = useRef<HTMLDivElement>(null);
-  const inputRef                  = useRef<HTMLTextAreaElement>(null);
-  const abortRef                  = useRef<AbortController | null>(null);
-  const accumulatedRef            = useRef('');
-  const [hasScrolledToSaved, setHasScrolledToSaved] = useState(false);
+  const aiChatViewRef              = useRef<AiChatViewRef>(null);
+  const abortRef                   = useRef<AbortController | null>(null);
+  const accumulatedRef             = useRef('');
+  const messagesRef                = useRef(messages);
+  const savedContentRef            = useRef(think?.Content ?? '');
 
-  useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
+  useImperativeHandle(ref, () => ({ focus: () => aiChatViewRef.current?.focus() }));
 
+  // think 切替: メッセージ・保存済み内容の基準をリセット
   useEffect(() => {
     setMessages(initialMessages);
-    setInput('');
-    setHasScrolledToSaved(false);
+    messagesRef.current = initialMessages;
+    savedContentRef.current = think?.Content ?? '';
   }, [think?.ID, initialMessages]);
-
-  useEffect(() => {
-    if (logRef.current && think && !hasScrolledToSaved) {
-      const savedScroll = think.Metadata?.chatScrollTop;
-      if (typeof savedScroll === 'number') {
-        logRef.current.scrollTop = savedScroll;
-      } else {
-        bottomRef.current?.scrollIntoView({ behavior: 'auto' });
-      }
-      setHasScrolledToSaved(true);
-    }
-  }, [messages, think?.ID, hasScrolledToSaved, think]);
-
-  useEffect(() => {
-    if (hasScrolledToSaved && messages.length > initialMessages.length) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, isWaiting, hasScrolledToSaved, initialMessages.length]);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
 
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    if (think) {
-      if (!think.Metadata) think.Metadata = {};
-      think.Metadata.chatScrollTop = e.currentTarget.scrollTop;
-    }
+  const buildContent = useCallback((msgs: ChatMessage[]) => {
+    if (!think) return '';
+    const firstLine = think.Content.split('\n')[0] ?? '';
+    const body = serializeChat(msgs);
+    return firstLine ? `${firstLine}\n${body}` : body;
   }, [think]);
+
+  const persistChat = useCallback((msgs: ChatMessage[]) => {
+    if (!think) return;
+    const content = buildContent(msgs);
+    if (content === savedContentRef.current) return;
+    onSave(content, think.ID).then(() => {
+      savedContentRef.current = content;
+      onDirtyChange(false);
+    });
+  }, [think, buildContent, onSave, onDirtyChange]);
+
+  // 未保存変更の検知（Ribbon の ● 表示に反映）
+  useEffect(() => {
+    if (!think) return;
+    onDirtyChange(buildContent(messages) !== savedContentRef.current);
+  }, [messages, think, buildContent, onDirtyChange]);
 
   const systemPrompt = useMemo(
     () => buildSystemPrompt(think?.Name ?? '', think?.Content ?? ''),
     [think?.Name, think?.Content], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
-  const handleSend = useCallback(async () => {
-    const text = input.trim();
-    if (!text || isWaiting) return;
-
+  const handleChatSend = useCallback(async (text: string) => {
     const ts = new Date().toISOString();
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
     const aiId = `a-${Date.now() + 1}`;
     const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
 
-    setMessages(prev => [...prev, userMsg, aiMsg]);
-    setInput('');
+    setMessages(prev => {
+      const next = [...prev, userMsg, aiMsg];
+      messagesRef.current = next;
+      return next;
+    });
     setIsWaiting(true);
     accumulatedRef.current = '';
 
     abortRef.current = new AbortController();
 
-    const history = [...messages, userMsg].map(m => ({
+    const history = [...messagesRef.current.filter(m => m.id !== aiId), userMsg].map(m => ({
       role:    m.role as 'user' | 'assistant',
       content: m.content,
     }));
@@ -118,107 +107,75 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
         onDelta: (delta) => {
           accumulatedRef.current += delta;
           const accumulated = accumulatedRef.current;
-          setMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
+          setMessages(prev => {
+            const next = prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m);
+            messagesRef.current = next;
+            return next;
+          });
         },
         onDone: () => {
           setIsWaiting(false);
+          persistChat(messagesRef.current);
         },
         onError: (message) => {
-          setMessages(prev => prev.map(m =>
-            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
-          ));
+          setMessages(prev => {
+            const next = prev.map(m => m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m);
+            messagesRef.current = next;
+            return next;
+          });
           setIsWaiting(false);
+          persistChat(messagesRef.current);
         },
       },
       abortRef.current.signal,
     );
-  }, [input, isWaiting, messages, systemPrompt]);
+  }, [systemPrompt, persistChat]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
+  const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
+  const handleSaveChat   = useCallback(() => persistChat(messagesRef.current), [persistChat]);
 
-  const lastMsg = messages[messages.length - 1];
+  const isDirty = think ? buildContent(messages) !== savedContentRef.current : false;
 
   return (
     <div className="chat-media">
-
-      {/* ターミナルヘッダー */}
-      <div className="chat-media__header">
-        <span className="chat-media__header-dots">
-          <span /><span /><span />
-        </span>
-        <span className="chat-media__header-title">
-          thinktank-ai{think ? ` — ${think.Name}` : ''}
-        </span>
+      <div className="chat-media__toolbar">
+        <button
+          className="chat-media__toolbar-btn"
+          onClick={handleScrollPrev}
+          data-tip="前のユーザーメッセージへ"
+        >
+          <MonitorUp size={14} />
+        </button>
+        <button
+          className="chat-media__toolbar-btn"
+          onClick={handleScrollNext}
+          data-tip="次のユーザーメッセージへ"
+        >
+          <MonitorDown size={14} />
+        </button>
+        <button
+          className="chat-media__toolbar-btn"
+          onClick={handleSaveChat}
+          disabled={!isDirty || isWaiting}
+          data-tip="変更をThinkに保存"
+        >
+          <Save size={14} />
+        </button>
       </div>
-
-      {/* ログ出力エリア */}
-      <div className="chat-media__log" ref={logRef} onScroll={handleScroll}>
-
-        <div className="chat-media__banner">
-          <span className="chat-media__banner-line">Thinktank AI v5</span>
-          <span className="chat-media__banner-line chat-media__dim">Type your message and press Enter to send.</span>
-          <span className="chat-media__banner-sep">{'─'.repeat(48)}</span>
-        </div>
-
-        {messages.map(msg => (
-          <div key={msg.id} className="chat-media__entry">
-            {msg.role === 'user' ? (
-              <div className="chat-media__user-line">
-                <span className="chat-media__prompt">{'>'}</span>
-                <span className="chat-media__user-text">{msg.content}</span>
-                {msg.timestamp && (
-                  <span className="chat-media__ts">{formatTime(msg.timestamp)}</span>
-                )}
-              </div>
-            ) : (
-              <div className="chat-media__ai-block">
-                {(msg.content || ' ').split('\n').map((line, li) => (
-                  <div key={li} className="chat-media__ai-line">
-                    <span className="chat-media__ai-prefix">{li === 0 ? 'AI▸' : '   '}</span>
-                    <span className="chat-media__ai-text">{line}</span>
-                    {li === 0 && msg.timestamp && !isWaiting && (
-                      <span className="chat-media__ts">{formatTime(msg.timestamp)}</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-
-        {/* ストリーム開始前の待機カーソル */}
-        {isWaiting && lastMsg?.role === 'assistant' && lastMsg.content === '' && (
-          <div className="chat-media__ai-block">
-            <div className="chat-media__ai-line">
-              <span className="chat-media__ai-prefix">AI▸</span>
-              <span className="chat-media__cursor">▋</span>
-            </div>
-          </div>
-        )}
-
-        <div ref={bottomRef} />
-      </div>
-
-      {/* 入力ライン */}
-      <div className="chat-media__input-row">
-        <span className="chat-media__input-prompt">{'>'}</span>
-        <textarea
-          ref={inputRef}
-          className="chat-media__input"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="コマンドを入力…　(Enter=送信 / Shift+Enter=改行)"
-          rows={1}
-          disabled={isWaiting}
-        />
-      </div>
-
+      <AiChatView
+        key={think?.ID ?? 'none'}
+        ref={aiChatViewRef}
+        messages={messages}
+        isWaiting={isWaiting}
+        onSend={handleChatSend}
+        initialScrollTop={think?.Metadata?.chatScrollTop}
+        onScroll={(top) => {
+          if (!think) return;
+          if (!think.Metadata) think.Metadata = {};
+          think.Metadata.chatScrollTop = top;
+        }}
+      />
     </div>
   );
 });
