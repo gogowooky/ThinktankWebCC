@@ -8,6 +8,7 @@
  */
 
 import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
+import './monacoSetup';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
 import { StorageManager } from '../../../services/storage/StorageManager';

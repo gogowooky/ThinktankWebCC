@@ -4,6 +4,13 @@ const { app, BrowserWindow, ipcMain, session } = require('electron');
 const path = require('path');
 const fs   = require('fs');
 
+// パッケージ版（electron-builder）は package.json の "name" からアプリ名・userDataパスを
+// 自動的に決定するが、開発時（`electron electron/main.cjs` を直接起動）は同じ仕組みが
+// 働かず、Electron既定の "Electron" にフォールバックしてしまう。userDataパスが
+// dev/パッケージ版で食い違わないよう、ここで明示的に固定する（app.getPath('userData')
+// を呼ぶ前に設定する必要がある）。
+app.setName('thinktank');
+
 const isDev    = process.env.NODE_ENV === 'development';
 const VAULT_DIR = path.join(app.getPath('userData'), 'thinktank', 'vault');
 
@@ -204,8 +211,12 @@ app.whenReady().then(() => {
       callback({
         responseHeaders: {
           ...details.responseHeaders,
+          // Monaco Editor（TextEditorMedia）は @monaco-editor/react のデフォルト挙動で
+          // CDN（cdn.jsdelivr.net）から vs/loader.js 等を取得する。開発時のみ許可する。
           'Content-Security-Policy': [
-            "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; connect-src 'self' ws://localhost:* http://localhost:*",
+            "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* https://cdn.jsdelivr.net; " +
+            "connect-src 'self' ws://localhost:* http://localhost:* https://cdn.jsdelivr.net; " +
+            "worker-src 'self' blob: https://cdn.jsdelivr.net;",
           ],
         },
       });
