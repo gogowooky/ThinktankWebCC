@@ -301,32 +301,46 @@ export class TTVault extends TTCollection {
 
   // ── ストレージ連携（Phase 13）────────────────────────────────────────
 
+  /**
+   * ローカルAPIモード（ThinktankLocal）では、シェル起動直後にAPIサーバーがまだ
+   * listenを開始していないタイミングでこの呼び出しが競合することがある
+   * （シェル側にreadiness gateが無いため）。一過性の接続失敗を「ロード済みだが
+   * 空」として確定させてしまわないよう、短い間隔でリトライしてから諦める。
+   */
   public override async LoadCache(): Promise<void> {
-    try {
-      const metas = await StorageManager.instance.listMeta();
-      for (const meta of metas) {
-        const think = new TTThink();
-        think.ID          = meta.id;
-        think.VaultID     = this.ID;
-        think.ContentType = meta.contentType as ContentType;
-        think.Keywords    = meta.keywords  ?? '';
-        think.RelatedIDs  = meta.relatedIds ?? '';
-        think.Metadata    = meta.metadata  ?? {};
-        think.markMetadataSaved();
-        think.IsMetaOnly  = true;
-        think.UpdatedAt   = meta.updatedAt ?? '';
-        think.setContentSilent(meta.title);
-        think.markSaved();
-        think._parent = this;
-        this._children.set(think.ID, think);
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const metas = await StorageManager.instance.listMeta();
+        for (const meta of metas) {
+          const think = new TTThink();
+          think.ID          = meta.id;
+          think.VaultID     = this.ID;
+          think.ContentType = meta.contentType as ContentType;
+          think.Keywords    = meta.keywords  ?? '';
+          think.RelatedIDs  = meta.relatedIds ?? '';
+          think.Metadata    = meta.metadata  ?? {};
+          think.markMetadataSaved();
+          think.IsMetaOnly  = true;
+          think.UpdatedAt   = meta.updatedAt ?? '';
+          think.setContentSilent(meta.title);
+          think.markSaved();
+          think._parent = this;
+          this._children.set(think.ID, think);
+        }
+        this.Count    = this._children.size;
+        this.IsLoaded = true;
+        this.NotifyRefresh();
+        console.log(`[TTVault] LoadCache: ${this.Count} items loaded (vault=${this.ID})`);
+        return;
+      } catch (e) {
+        console.error(`[TTVault] LoadCache failed (attempt ${attempt}/${maxAttempts}):`, e);
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+        }
+        // 最終試行も失敗した場合は IsLoaded を true にせず false のまま残す。
+        // ReloadAll() 等による再試行が「ロード済みだが空」に阻まれないようにするため。
       }
-      this.Count    = this._children.size;
-      this.IsLoaded = true;
-      this.NotifyRefresh();
-      console.log(`[TTVault] LoadCache: ${this.Count} items loaded (vault=${this.ID})`);
-    } catch (e) {
-      console.error('[TTVault] LoadCache failed:', e);
-      this.IsLoaded = true;
     }
   }
 
@@ -458,8 +472,8 @@ export class TTVault extends TTCollection {
     return this.CreateThoughtFromIds(ids, keyword, dates);
   }
 
-  /** 新規の空Thinkを作成して保存する */
-  public async CreateBlankThink(contentType: ContentType, initialName: string = ''): Promise<TTThink> {
+  /** 新規の空Thinkを作成して保存する。thoughtId を渡すと、そのThoughtのIDリストに新しいThinkを追加する。 */
+  public async CreateBlankThink(contentType: ContentType, initialName: string = '', thoughtId?: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
 
@@ -481,8 +495,34 @@ export class TTVault extends TTCollection {
       relatedIds:  '',
     });
     think.markSaved();
+
+    if (thoughtId) await this._linkThinkToThought(thoughtId, newId);
+
     this.NotifyUpdated();
     return think;
+  }
+
+  /** 指定した Thought の ID リストに newId を追加して保存する（内部ヘルパー） */
+  private async _linkThinkToThought(thoughtId: string, newId: string): Promise<void> {
+    const thought = this.GetThink(thoughtId);
+    if (!thought || thought.ContentType !== 'thought') return;
+    if (thought.IsMetaOnly) await thought.LoadContent();
+    const parsed = parseThought(thought.Content);
+    const newContent = serializeThought({
+      prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
+      title: parsed.title,
+      searchQuery: parsed.search.query,
+      filterKeyword: parsed.filter.keyword,
+      dates: {
+        createdDate: parsed.filter.createdRange?.dateStr || parsed.search.createdRange?.dateStr,
+        createdRange: parsed.filter.createdRange?.rangeStr || parsed.search.createdRange?.rangeStr,
+        updatedDate: parsed.filter.updatedRange?.dateStr || parsed.search.updatedRange?.dateStr,
+        updatedRange: parsed.filter.updatedRange?.rangeStr || parsed.search.updatedRange?.rangeStr,
+      },
+      ids: [...parsed.ids, newId],
+    });
+    thought.Content = newContent;
+    await thought.SaveContent();
   }
 
   /** links データ（URL/path リンク集）を作成して保存する */
@@ -538,28 +578,7 @@ export class TTVault extends TTCollection {
     });
     think.markSaved();
 
-    if (thoughtId) {
-      const thought = this.GetThink(thoughtId);
-      if (thought && thought.ContentType === 'thought') {
-        if (thought.IsMetaOnly) await thought.LoadContent();
-        const parsed = parseThought(thought.Content);
-        const newContent = serializeThought({
-          prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
-          title: parsed.title,
-          searchQuery: parsed.search.query,
-          filterKeyword: parsed.filter.keyword,
-          dates: {
-            createdDate: parsed.filter.createdRange?.dateStr || parsed.search.createdRange?.dateStr,
-            createdRange: parsed.filter.createdRange?.rangeStr || parsed.search.createdRange?.rangeStr,
-            updatedDate: parsed.filter.updatedRange?.dateStr || parsed.search.updatedRange?.dateStr,
-            updatedRange: parsed.filter.updatedRange?.rangeStr || parsed.search.updatedRange?.rangeStr,
-          },
-          ids: [...parsed.ids, newId],
-        });
-        thought.Content = newContent;
-        await thought.SaveContent();
-      }
-    }
+    if (thoughtId) await this._linkThinkToThought(thoughtId, newId);
 
     this.NotifyUpdated();
     return think;

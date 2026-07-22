@@ -104,10 +104,13 @@ export class TTThink extends TTObject {
         this.setContentSilent(titleLine + '\n' + body);
         this.markSaved();
       }
+      // 取得成功時（404で body===null の場合を含む）のみ IsMetaOnly を解除する。
+      // 例外時に解除すると、一過性の通信失敗（Localモード起動直後のAPIサーバー
+      // 未起動など）を「ロード済みだが空」として確定させ、二度と再取得されなくなる。
+      this.IsMetaOnly = false;
     } catch (e) {
       console.error(`[TTThink] LoadContent failed (${this.ID}):`, e);
     }
-    this.IsMetaOnly = false;
   }
 
   public async SaveContent(force: boolean = false): Promise<void> {

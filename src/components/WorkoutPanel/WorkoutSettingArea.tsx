@@ -2,7 +2,7 @@
  * WorkoutSettingArea.tsx
  */
 
-import { useState, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
+import { useState, useRef, useImperativeHandle, forwardRef, useCallback, useMemo, useEffect } from 'react';
 import {
   GalleryThumbnails,
   PanelLeftDashed,
@@ -17,16 +17,16 @@ import {
   FilePlus,
   FileSpreadsheet,
   Save,
-  MonitorUp,
-  MonitorDown,
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
+import type { TTVault } from '../../models/TTVault';
 import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
 import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import type { ChatMessage } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
+import { serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_WORKOUT } from '../../utils/thinkFormat';
 import './WorkoutSettingArea.css';
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
@@ -62,6 +62,8 @@ export interface WorkoutSettingAreaRef { focus: () => void; }
 interface Props {
   activeSettings:   SettingsType;
   panel:            TTWorkoutPanel;
+  vault:            TTVault;
+  overviewThoughtId:string;
   width:            number;
   onSplitLeft:      () => void;
   onSplitRight:     () => void;
@@ -87,7 +89,7 @@ interface Props {
 // ── Component ────────────────────────────────────────────────────────────
 
 export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(function WorkoutSettingArea({
-  activeSettings, panel, width,
+  activeSettings, panel, vault, overviewThoughtId, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
   onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
@@ -125,6 +127,22 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const [chatWaiting,  setChatWaiting]  = useState(false);
   const chatAbortRef                    = useRef<AbortController | null>(null);
   const chatAccumulatedRef              = useRef('');
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
+
+  // AI相談ドロップボックス用: Overview>Think一覧内の [todo:workout] memo Think 一覧
+  const todoMemoOptions = useMemo(
+    () => (overviewThoughtId ? vault.GetThinksForThought(overviewThoughtId) : [])
+      .filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_WORKOUT))
+      .map(t => ({ id: t.ID, name: t.Name })),
+    [vault, overviewThoughtId],
+  );
+
+  // 選択中の TODO メモが一覧から消えたら選択を空に戻す
+  useEffect(() => {
+    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+      setSelectedTodoMemoId('');
+    }
+  }, [todoMemoOptions, selectedTodoMemoId]);
 
   const handleChatSend = useCallback(async (text: string) => {
     const ts = new Date().toISOString();
@@ -164,14 +182,38 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
     );
   }, [chatMessages]);
 
-  const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
-  const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
-
+  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0 || chatWaiting) return;
+
+    if (selectedTodoMemoId) {
+      const think = vault.GetThink(selectedTodoMemoId);
+      if (!think) return;
+      const firstLine = think.Content.split('\n')[0] ?? '';
+      const body = serializeChat(chatMessages);
+      think.Content = firstLine ? `${firstLine}\n${body}` : body;
+      await think.SaveContent();
+      return;
+    }
+
     await onSaveChat(chatMessages);
     setChatMessages([]);
-  }, [chatMessages, chatWaiting, onSaveChat]);
+  }, [chatMessages, chatWaiting, onSaveChat, selectedTodoMemoId, vault]);
+
+  const saveChatTip = selectedTodoMemoId
+    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
+    : 'Chatをメモに保管します';
+
+  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  const handleSelectTodoMemo = useCallback(async (id: string) => {
+    setSelectedTodoMemoId(id);
+    chatAbortRef.current?.abort();
+    setChatWaiting(false);
+    if (!id) { setChatMessages([]); return; }
+    const think = vault.GetThink(id);
+    if (think?.IsMetaOnly) await think.LoadContent();
+    setChatMessages(loadChatFromThink(think));
+  }, [vault]);
 
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
@@ -195,26 +237,23 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
             <div className="workout-setting-area__chat-toolbar">
               <button
                 className="workout-setting-area__chat-btn"
-                onClick={handleScrollPrev}
-                data-tip="前のユーザーメッセージへ"
-              >
-                <MonitorUp size={14} className="ws-icon" />
-              </button>
-              <button
-                className="workout-setting-area__chat-btn"
-                onClick={handleScrollNext}
-                data-tip="次のユーザーメッセージへ"
-              >
-                <MonitorDown size={14} className="ws-icon" />
-              </button>
-              <button
-                className="workout-setting-area__chat-btn"
                 onClick={handleSaveChat}
                 disabled={chatMessages.length === 0 || chatWaiting}
-                data-tip="Chatを保管庫に保存"
+                data-tip={saveChatTip}
               >
                 <Save size={14} className="ws-icon" />
               </button>
+              <select
+                className="workout-setting-area__todo-select"
+                value={selectedTodoMemoId}
+                onChange={e => handleSelectTodoMemo(e.target.value)}
+                data-tip="TODOメモを選択してChatに読み込み"
+              >
+                <option value=""></option>
+                {todoMemoOptions.map(opt => (
+                  <option key={opt.id} value={opt.id}>{opt.name}</option>
+                ))}
+              </select>
             </div>
             <AiChatView
               ref={aiChatViewRef}

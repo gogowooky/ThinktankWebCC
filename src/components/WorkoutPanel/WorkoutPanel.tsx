@@ -223,6 +223,7 @@ export function WorkoutPanel({ app }: Props) {
   const vault = app.Models.Vault;
   useAppUpdate(panel);
   useAppUpdate(vault);
+  useAppUpdate(app.OverviewPanel);
 
   // 設定パネル: 開閉は panel.IsAreaOpen
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
@@ -515,13 +516,14 @@ export function WorkoutPanel({ app }: Props) {
     }
   }, [panel, vault]);
 
+  // TODOメモ未選択時: 新規メモとして保存する（Overviewの選択中Thoughtへリンク）
   const handleSaveChat = useCallback(async (messages: ChatMessage[]) => {
     if (messages.length === 0) return;
     const firstUser = messages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body = serializeChat(messages);
-    await vault.CreateChatThink(`${title}\n${body}`);
-  }, [vault]);
+    await vault.CreateBlankThink('memo', `${title}\n${body}`, app.OverviewPanel.ThoughtID || undefined);
+  }, [vault, app]);
 
   const handleClearAll = useCallback(() => {
     panel.ClearAll();
@@ -851,6 +853,8 @@ export function WorkoutPanel({ app }: Props) {
           ref={settingPanelRef}
           activeSettings={panel.ViewMode}
           panel={panel}
+          vault={vault}
+          overviewThoughtId={app.OverviewPanel.ThoughtID}
           width={settingsPanelWidth}
           onSplitLeft={handleSplitLeft}
           onSplitRight={handleSplitRight}

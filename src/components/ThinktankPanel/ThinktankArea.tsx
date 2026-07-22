@@ -29,7 +29,7 @@ import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
-import { serializeChat } from '../../utils/thinkFormat';
+import { serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_THINKTANK } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './ThinktankArea.css';
 
@@ -110,9 +110,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const chatAbortRef                    = useRef<AbortController | null>(null);
   const chatAccumulatedRef              = useRef('');
   const aiChatViewRef                   = useRef<AiChatViewRef>(null);
-
-  const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
-  const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
 
   const filterPanelRef   = useRef<ThinktankFilterPanelRef>(null);
   const settingsViewRef  = useRef<ThinktankSettingsViewRef>(null);
@@ -182,6 +180,21 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   // vault.Count が変わったとき（追加・削除）のみ再取得
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // AI相談ドロップボックス用: [todo:thinktank] で始まる memo Think 一覧（大文字・小文字を区別しない）
+  const todoMemoOptions = useMemo(
+    () => allThinks
+      .filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_THINKTANK))
+      .map(t => ({ id: t.ID, name: t.Name })),
+    [allThinks],
+  );
+
+  // 選択中の TODO メモが一覧から消えたら選択を空に戻す
+  useEffect(() => {
+    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+      setSelectedTodoMemoId('');
+    }
+  }, [todoMemoOptions, selectedTodoMemoId]);
 
   // 母集合: 検索語があれば検索結果、なければ全 Think
   const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : allThinks;
@@ -362,14 +375,41 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     );
   }, [chatMessages]);
 
+  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0) return;
+
+    if (selectedTodoMemoId) {
+      const think = vault.GetThink(selectedTodoMemoId);
+      if (!think) return;
+      const firstLine = think.Content.split('\n')[0] ?? '';
+      const body = serializeChat(chatMessages);
+      think.Content = firstLine ? `${firstLine}\n${body}` : body;
+      await think.SaveContent();
+      return;
+    }
+
     const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body = serializeChat(chatMessages);
-    await vault.CreateChatThink(`${title}\n${body}`);
+    await vault.CreateBlankThink('memo', `${title}\n${body}`);
     setChatMessages([]);
-  }, [chatMessages, vault]);
+  }, [chatMessages, vault, selectedTodoMemoId]);
+
+  const saveChatTip = selectedTodoMemoId
+    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
+    : 'Chatをメモに保管します';
+
+  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  const handleSelectTodoMemo = useCallback(async (id: string) => {
+    setSelectedTodoMemoId(id);
+    chatAbortRef.current?.abort();
+    setChatWaiting(false);
+    if (!id) { setChatMessages([]); return; }
+    const think = vault.GetThink(id);
+    if (think?.IsMetaOnly) await think.LoadContent();
+    setChatMessages(loadChatFromThink(think));
+  }, [vault]);
 
   // 検索実行
   const handleSearch = useCallback(async () => {
@@ -454,10 +494,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         showColumnDialog={showColumnDialog}
         canCreateThought={canCreateThought}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
+        saveChatTip={saveChatTip}
         visibleCount={filterVisible.length}
         totalCount={allThinks.length}
-        onScrollPrev={handleScrollPrev}
-        onScrollNext={handleScrollNext}
+        todoMemoOptions={todoMemoOptions}
+        selectedTodoMemoId={selectedTodoMemoId}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
@@ -466,6 +507,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onToggleColumnDialog={handleToggleColumnDialog}
         onCreateThought={handleCreateThought}
         onSaveChat={handleSaveChat}
+        onSelectTodoMemo={handleSelectTodoMemo}
         onRefresh={onRefresh}
       />
 

@@ -36,7 +36,7 @@ import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
-import { parseThought, serializeThought, serializeChat } from '../../utils/thinkFormat';
+import { parseThought, serializeThought, serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './OverviewArea.css';
 
@@ -108,9 +108,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const filterPanelRef                  = useRef<OverviewFilterPanelRef>(null);
   const settingsViewRef                 = useRef<OverviewSettingsViewRef>(null);
   const graphMediaRef                   = useRef<GraphMediaRef>(null);
-
-  const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
-  const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
 
   // ── Think 一覧（選択 Thought 内の全 Think → フィルタ適用）──────────────────
   const [thinksInThought, setThinksInThought] = useState(() =>
@@ -123,6 +121,19 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       vault.NotifyUpdated();
     });
   }, [panel.ThoughtID, vault, refreshKey, vault.IsLoaded, vault.Count]);
+
+  // AI相談ドロップボックス用: Overview>Think一覧内の [todo:overview] memo Think 一覧
+  const todoMemoOptions = useMemo(
+    () => thinksInThought.filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_OVERVIEW)).map(t => ({ id: t.ID, name: t.Name })),
+    [thinksInThought],
+  );
+
+  // 選択中の TODO メモが一覧から消えたら選択を空に戻す
+  useEffect(() => {
+    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+      setSelectedTodoMemoId('');
+    }
+  }, [todoMemoOptions, selectedTodoMemoId]);
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
@@ -409,14 +420,41 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     );
   }, [chatMessages, panel, vault]);
 
+  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（選択中Thoughtへリンク）
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0) return;
+
+    if (selectedTodoMemoId) {
+      const think = vault.GetThink(selectedTodoMemoId);
+      if (!think) return;
+      const firstLine = think.Content.split('\n')[0] ?? '';
+      const body = serializeChat(chatMessages);
+      think.Content = firstLine ? `${firstLine}\n${body}` : body;
+      await think.SaveContent();
+      return;
+    }
+
     const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body = serializeChat(chatMessages);
-    await vault.CreateChatThink(`${title}\n${body}`, panel.ThoughtID ?? undefined);
+    await vault.CreateBlankThink('memo', `${title}\n${body}`, panel.ThoughtID ?? undefined);
     setChatMessages([]);
-  }, [chatMessages, vault, panel]);
+  }, [chatMessages, vault, panel, selectedTodoMemoId]);
+
+  const saveChatTip = selectedTodoMemoId
+    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
+    : 'Chatをメモに保管します';
+
+  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  const handleSelectTodoMemo = useCallback(async (id: string) => {
+    setSelectedTodoMemoId(id);
+    chatAbortRef.current?.abort();
+    setChatWaiting(false);
+    if (!id) { setChatMessages([]); return; }
+    const think = vault.GetThink(id);
+    if (think?.IsMetaOnly) await think.LoadContent();
+    setChatMessages(loadChatFromThink(think));
+  }, [vault]);
 
   // ── 算出値 ────────────────────────────────────────────────────────────────
   const think = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) ?? null : null;
@@ -444,11 +482,13 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         allVaultChecked={allVaultChecked}
         showColumnDialog={showColumnDialog}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
+        saveChatTip={saveChatTip}
+        todoMemoOptions={todoMemoOptions}
+        selectedTodoMemoId={selectedTodoMemoId}
         visibleCount={visibleThinks.length}
         totalCount={typeFilteredBase.length}
         hasThought={!!panel.ThoughtID}
-        onScrollPrev={handleScrollPrev}
-        onScrollNext={handleScrollNext}
+        onSelectTodoMemo={handleSelectTodoMemo}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}

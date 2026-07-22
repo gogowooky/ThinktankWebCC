@@ -77,6 +77,33 @@
   cursor: not-allowed;
 }
 
+/* ── AI相談: TODOメモ選択ドロップボックス（パネル幅いっぱい） ── */
+.workout-setting-area__todo-select {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  outline: none;
+}
+
+.workout-setting-area__todo-select:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.workout-setting-area__todo-select:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.workout-setting-area__todo-select option {
+  color: #000;
+  background: #fff;
+}
+
 /* ── 本体 ──────────────────────────────────────────── */
 .workout-setting-area__body {
   flex: 1;

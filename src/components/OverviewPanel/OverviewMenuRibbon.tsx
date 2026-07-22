@@ -7,10 +7,11 @@
 import { useCallback } from 'react';
 import {
   CheckSquare, Square, ListX, ListCheck, LibrarySquare, SquareX,
-  ListChecks, List, ArrowDownAZ, Save, MonitorUp, MonitorDown, ListRestart,
+  ListChecks, List, ArrowDownAZ, Save, ListRestart,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './OverviewMenuRibbon.css';
+import type { TodoMemoOption } from '../ThinktankPanel/ThinktankMenuRibbon';
 
 interface Props {
   showSettings:         boolean;
@@ -21,10 +22,12 @@ interface Props {
   allVaultChecked:      boolean;
   showColumnDialog:     boolean;
   canSaveChat:          boolean;
+  saveChatTip:          string;
+  todoMemoOptions:      TodoMemoOption[];
+  selectedTodoMemoId:   string;
   visibleCount?:        number;
   totalCount?:          number;
-  onScrollPrev:         () => void;
-  onScrollNext:         () => void;
+  onSelectTodoMemo:     (id: string) => void;
   onCheckAll:           () => void;
   onClearChecks:        () => void;
   onExcludeChecked:     () => void;
@@ -43,10 +46,11 @@ export function OverviewMenuRibbon({
   mediaType,
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showColumnDialog,
-  canSaveChat,
+  canSaveChat, saveChatTip,
+  todoMemoOptions, selectedTodoMemoId,
   visibleCount, totalCount,
   hasThought,
-  onScrollPrev, onScrollNext,
+  onSelectTodoMemo,
   onCheckAll, onClearChecks, onExcludeChecked, onClearThought,
   onToggleCheckedOnly, onCreateThought, onToggleAllVault,
   onToggleColumnDialog,
@@ -69,21 +73,7 @@ export function OverviewMenuRibbon({
       <div className="menu-ribbon overview-menu-ribbon">
         {showChatControls && (
           <>
-            <button
-              className="menu-ribbon__btn menu-ribbon__btn--icon"
-              onClick={onScrollPrev}
-              data-tip="前のユーザーメッセージへ"
-            >
-              <MonitorUp size={14} />
-            </button>
-            <button
-              className="menu-ribbon__btn menu-ribbon__btn--icon"
-              onClick={onScrollNext}
-              data-tip="次のユーザーメッセージへ"
-            >
-              <MonitorDown size={14} />
-            </button>
-            <div className="tooltip-wrapper" data-tip="Chatを保管庫に保存" data-tip-side="left">
+            <div className="tooltip-wrapper" data-tip={saveChatTip} data-tip-side="right">
               <button
                 className="menu-ribbon__btn menu-ribbon__btn--icon"
                 onClick={onSaveChat}
@@ -92,10 +82,22 @@ export function OverviewMenuRibbon({
                 <Save size={14} />
               </button>
             </div>
+            <select
+              className="overview-ribbon__todo-select"
+              value={selectedTodoMemoId}
+              onChange={e => onSelectTodoMemo(e.target.value)}
+              data-tip="TODOメモを選択してChatに読み込み"
+              data-tip-side="left"
+            >
+              <option value=""></option>
+              {todoMemoOptions.map(opt => (
+                <option key={opt.id} value={opt.id}>{opt.name}</option>
+              ))}
+            </select>
           </>
         )}
-        
-        <div className="menu-ribbon__spacer" />
+
+        {!showChatControls && <div className="menu-ribbon__spacer" />}
 
         {/* 表示更新 */}
         <button

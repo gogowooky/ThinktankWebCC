@@ -4,9 +4,14 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, ArrowDownAZ, LibrarySquare, Save, MonitorUp, MonitorDown, ListRestart } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, ArrowDownAZ, LibrarySquare, Save, ListRestart } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
+
+export interface TodoMemoOption {
+  id:   string;
+  name: string;
+}
 
 interface Props {
   viewMode:              string;
@@ -17,10 +22,11 @@ interface Props {
   showColumnDialog:      boolean;
   canCreateThought:      boolean;
   canSaveChat:           boolean;
+  saveChatTip:           string;
   visibleCount?:         number;
   totalCount?:           number;
-  onScrollPrev:          () => void;
-  onScrollNext:          () => void;
+  todoMemoOptions:       TodoMemoOption[];
+  selectedTodoMemoId:    string;
   onCheckAll:            () => void;
   onClearChecks:         () => void;
   onDeleteChecked:       () => void;
@@ -29,6 +35,7 @@ interface Props {
   onToggleColumnDialog:  () => void;
   onCreateThought:       () => void;
   onSaveChat:            () => void;
+  onSelectTodoMemo:      (id: string) => void;
   onRefresh:             () => void;
 }
 
@@ -36,13 +43,13 @@ export function ThinktankMenuRibbon({
   viewMode,
   visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
   showColumnDialog,
-  canCreateThought, canSaveChat,
+  canCreateThought, canSaveChat, saveChatTip,
   visibleCount, totalCount,
-  onScrollPrev, onScrollNext,
+  todoMemoOptions, selectedTodoMemoId,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly, onToggleAllVault,
   onToggleColumnDialog,
-  onCreateThought, onSaveChat, onRefresh,
+  onCreateThought, onSaveChat, onSelectTodoMemo, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -59,25 +66,11 @@ export function ThinktankMenuRibbon({
     return <div className="menu-ribbon thinktank-menu-ribbon" />;
   }
 
-  /* ── AI モード: 保存ボタンのみ ──────────────────────────── */
+  /* ── AI モード: 保存ボタン＋TODOメモ選択 ────────────────── */
   if (viewMode === 'chat') {
     return (
       <div className="menu-ribbon thinktank-menu-ribbon">
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onScrollPrev}
-          data-tip="前のユーザーメッセージへ"
-        >
-          <MonitorUp size={14} />
-        </button>
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onScrollNext}
-          data-tip="次のユーザーメッセージへ"
-        >
-          <MonitorDown size={14} />
-        </button>
-        <div className="tooltip-wrapper" data-tip="Chatを保管庫に保存" data-tip-side="left">
+        <div className="tooltip-wrapper" data-tip={saveChatTip} data-tip-side="right">
           <button
             className="menu-ribbon__btn menu-ribbon__btn--icon"
             onClick={onSaveChat}
@@ -86,6 +79,26 @@ export function ThinktankMenuRibbon({
             <Save size={14} />
           </button>
         </div>
+        <select
+          className="thinktank-ribbon__todo-select"
+          value={selectedTodoMemoId}
+          onChange={e => onSelectTodoMemo(e.target.value)}
+          data-tip="TODOメモを選択してChatに読み込み"
+          data-tip-side="left"
+        >
+          <option value=""></option>
+          {todoMemoOptions.map(opt => (
+            <option key={opt.id} value={opt.id}>{opt.name}</option>
+          ))}
+        </select>
+        <button
+          className="menu-ribbon__btn menu-ribbon__btn--icon"
+          onClick={onRefresh}
+          data-tip="表示更新"
+          data-tip-side="left"
+        >
+          <ListRestart size={14} />
+        </button>
       </div>
     );
   }

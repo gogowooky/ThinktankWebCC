@@ -58,6 +58,42 @@ export function serializeChat(messages: ChatMessage[], title?: string): string {
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
+// #region AI相談: TODOメモ選択ドロップボックス共通ロジック
+// ════════════════════════════════════════════════════════════════════════
+
+/** AI相談ドロップボックスで一覧表示する TODO メモの識別プレフィックス（パネルごと・大文字小文字を区別しない） */
+export const TODO_MEMO_PREFIX_THINKTANK = '[todo:thinktank]';
+export const TODO_MEMO_PREFIX_OVERVIEW  = '[todo:overview]';
+export const TODO_MEMO_PREFIX_WORKOUT   = '[todo:workout]';
+export const TODO_MEMO_PREFIX_RETHINK   = '[todo:rethink]';
+
+/** memo Think が指定プレフィックスの TODO メモ（ドロップボックス表示対象）かどうかを判定する */
+export function isTodoMemoThink(think: { ContentType: string; Name: string }, prefix: string): boolean {
+  return think.ContentType === 'memo' && think.Name.toLowerCase().startsWith(prefix.toLowerCase());
+}
+
+/**
+ * 選択された Think の内容を Chat メッセージ配列としてロードする。
+ * chat形式（## ユーザー発言）ならそのまま復元し、そうでなければ本文
+ * （タイトル行を除く）をそのまま最初のユーザーメッセージとして扱う。
+ */
+export function loadChatFromThink(think: { Content: string } | undefined | null): ChatMessage[] {
+  if (!think) return [];
+  const parsed = parseChat(think.Content);
+  if (parsed.length > 0) return parsed;
+  const { body } = splitContent(think.Content);
+  if (!body.trim()) return [];
+  return [{
+    id:        `u-${Date.now()}`,
+    role:      'user',
+    content:   body.trim(),
+    timestamp: new Date().toISOString(),
+  }];
+}
+
+// #endregion
+
+// ════════════════════════════════════════════════════════════════════════
 // #region links 形式 (ContentType = 'links')
 // ════════════════════════════════════════════════════════════════════════
 

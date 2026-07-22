@@ -158,6 +158,13 @@ export class TTReThinkPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
+  /** 会話履歴を指定したメッセージ配列で置き換える（TODOメモ読み込み用）*/
+  public LoadChat(messages: ChatMessage[]): void {
+    this.ChatMessages = messages;
+    this.IsStreaming = false;
+    this.NotifyUpdated();
+  }
+
   /** ストリーミング状態を更新する */
   public SetStreaming(isStreaming: boolean): void {
     this.IsStreaming = isStreaming;

@@ -13,9 +13,8 @@ import { streamChat } from '../../services/ChatApiService';
 import './ReThinkChat.css';
 
 export interface ReThinkChatRef {
-  scrollToPrevUser: () => void;
-  scrollToNextUser: () => void;
-  focus:            () => void;
+  abortStreaming: () => void;
+  focus:          () => void;
 }
 
 const PLACEHOLDER = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
@@ -38,12 +37,6 @@ interface Props {
   systemPrompt: string;
 }
 
-function topInContainer(el: HTMLElement, container: HTMLElement): number {
-  const elRect = el.getBoundingClientRect();
-  const cRect  = container.getBoundingClientRect();
-  return elRect.top - cRect.top + container.scrollTop;
-}
-
 export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkChat(
   { panel, systemPrompt },
   ref,
@@ -56,36 +49,10 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
   const accumulatedRef            = useRef('');
 
   useImperativeHandle(ref, () => ({
-    scrollToPrevUser: () => {
-      const log = logRef.current;
-      if (!log) return;
-      const blocks = Array.from(
-        log.querySelectorAll<HTMLElement>('.rethink-chat__user-block'),
-      );
-      const current = log.scrollTop;
-      for (let i = blocks.length - 1; i >= 0; i--) {
-        const top = topInContainer(blocks[i], log);
-        if (top < current - 5) {
-          log.scrollTo({ top, behavior: 'smooth' });
-          return;
-        }
-      }
-      log.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    scrollToNextUser: () => {
-      const log = logRef.current;
-      if (!log) return;
-      const blocks = Array.from(
-        log.querySelectorAll<HTMLElement>('.rethink-chat__user-block'),
-      );
-      const current = log.scrollTop;
-      for (const el of blocks) {
-        const top = topInContainer(el, log);
-        if (top > current + 5) {
-          log.scrollTo({ top, behavior: 'smooth' });
-          return;
-        }
-      }
+    abortStreaming: () => {
+      abortRef.current?.abort();
+      setIsWaiting(false);
+      panel.SetStreaming(false);
     },
     focus: () => { textareaRef.current?.focus(); },
   }), []);

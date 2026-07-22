@@ -6,7 +6,7 @@
  * - 下部: ReThinkChat（AI との CLI ターミナル風チャット）
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, FileText } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -14,7 +14,7 @@ import { ReThinkChat } from './ReThinkChat';
 import type { ReThinkChatRef } from './ReThinkChat';
 import { ReThinkMenuRibbon } from './ReThinkMenuRibbon';
 import type { ReThinkViewMode } from './ReThinkTabBar';
-import { serializeChat } from '../../utils/thinkFormat';
+import { serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_RETHINK } from '../../utils/thinkFormat';
 import '../../components/Layout/MenuRibbon.css';
 import './ReThinkArea.css';
 
@@ -36,8 +36,10 @@ interface Props {
 export function ReThinkArea({ app, viewMode }: Props) {
   const panel = app.ReThinkPanel;
   useAppUpdate(panel);
+  useAppUpdate(app.OverviewPanel);
 
   const vault       = app.Models.Vault;
+  useAppUpdate(vault);
   const thoughtName = panel.LinkedThoughtID
     ? (vault.GetThink(panel.LinkedThoughtID)?.Name ?? panel.LinkedThoughtID)
     : null;
@@ -50,8 +52,23 @@ export function ReThinkArea({ app, viewMode }: Props) {
   // コンテキスト付きシステムプロンプトを生成
   const reThinkChatRef     = useRef<ReThinkChatRef>(null);
   const settingsCheckRef   = useRef<HTMLInputElement>(null);
-  const handleScrollPrev = useCallback(() => reThinkChatRef.current?.scrollToPrevUser(), []);
-  const handleScrollNext = useCallback(() => reThinkChatRef.current?.scrollToNextUser(), []);
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
+
+  // AI相談ドロップボックス用: Overview>Think一覧内の [todo:rethink] memo Think 一覧
+  const overviewThoughtId = app.OverviewPanel.ThoughtID;
+  const todoMemoOptions = useMemo(
+    () => (overviewThoughtId ? vault.GetThinksForThought(overviewThoughtId) : [])
+      .filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_RETHINK))
+      .map(t => ({ id: t.ID, name: t.Name })),
+    [vault, overviewThoughtId],
+  );
+
+  // 選択中の TODO メモが一覧から消えたら選択を空に戻す
+  useEffect(() => {
+    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+      setSelectedTodoMemoId('');
+    }
+  }, [todoMemoOptions, selectedTodoMemoId]);
 
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
@@ -62,14 +79,40 @@ export function ReThinkArea({ app, viewMode }: Props) {
     return () => clearTimeout(timer);
   }, [viewMode]);
 
+  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（Overviewの選択中Thoughtへリンク）
   const handleSaveChat = useCallback(async () => {
     const msgs = panel.ChatMessages;
     if (msgs.length === 0) return;
+
+    if (selectedTodoMemoId) {
+      const think = vault.GetThink(selectedTodoMemoId);
+      if (!think) return;
+      const firstLine = think.Content.split('\n')[0] ?? '';
+      const body = serializeChat(msgs);
+      think.Content = firstLine ? `${firstLine}\n${body}` : body;
+      await think.SaveContent();
+      return;
+    }
+
     const firstUser = msgs.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body  = serializeChat(msgs);
-    await vault.CreateChatThink(`${title}\n${body}`, panel.LinkedThoughtID ?? undefined);
+    await vault.CreateBlankThink('memo', `${title}\n${body}`, overviewThoughtId || undefined);
     panel.ClearChat();
+  }, [panel, vault, selectedTodoMemoId, overviewThoughtId]);
+
+  const saveChatTip = selectedTodoMemoId
+    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
+    : 'Chatをメモに保管します';
+
+  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  const handleSelectTodoMemo = useCallback(async (id: string) => {
+    setSelectedTodoMemoId(id);
+    reThinkChatRef.current?.abortStreaming();
+    if (!id) { panel.LoadChat([]); return; }
+    const think = vault.GetThink(id);
+    if (think?.IsMetaOnly) await think.LoadContent();
+    panel.LoadChat(loadChatFromThink(think));
   }, [panel, vault]);
 
   const systemPrompt = useMemo(() => {
@@ -112,9 +155,11 @@ export function ReThinkArea({ app, viewMode }: Props) {
       <ReThinkMenuRibbon
         viewMode={viewMode}
         canSaveChat={panel.ChatMessages.length > 0 && !panel.IsStreaming}
+        saveChatTip={saveChatTip}
+        todoMemoOptions={todoMemoOptions}
+        selectedTodoMemoId={selectedTodoMemoId}
         onSaveChat={handleSaveChat}
-        onScrollPrev={handleScrollPrev}
-        onScrollNext={handleScrollNext}
+        onSelectTodoMemo={handleSelectTodoMemo}
       />
 
       {/* ── ReThinkContextBar ─────────────────────────────────── */}
