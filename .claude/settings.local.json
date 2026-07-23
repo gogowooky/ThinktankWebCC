@@ -162,12 +162,19 @@
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json','utf8'\\)\\); console.log\\('JSON_OK'\\)\")",
       "Bash(echo \"TSC_EXIT:$?\")",
       "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json'\\)\\).scripts, null, 2\\)\\)\")",
+<<<<<<< HEAD
       "Bash(git -c core.quotepath=false diff -- \"docs/260720 Thinktankすること/thinktank_aitodo.md\")",
       "Bash(git -c core.quotepath=false status --porcelain)",
       "PowerShell(Get-Process -Id 41048,40208 -ErrorAction SilentlyContinue)",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=41048 or ProcessId=40208\")",
       "Read(//tmp/**)",
       "Bash(node --check electron/main.cjs)"
+=======
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\({name:p.name, build:p.build}, null, 2\\)\\)\")",
+      "Bash(powershell -NoProfile -Command \"Get-CimInstance Win32_Process -Filter \\\\\"Name='electron.exe'\\\\\" | Select-Object ProcessId,CreationDate,CommandLine | Format-List\")",
+      "Bash(node \"C:\\\\Users\\\\SHINIC~1.EGA\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-shinichiro-egashira-Documents-ThinktankWebCC\\\\ffbb36f0-974e-4d34-ba2b-2638bca7006b\\\\scratchpad\\\\test_listmeta.js\")",
+      "Bash(ELECTRON_RUN_AS_NODE=1 \"./node_modules/electron/dist/electron.exe\" \"C:\\\\Users\\\\SHINIC~1.EGA\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-shinichiro-egashira-Documents-ThinktankWebCC\\\\ffbb36f0-974e-4d34-ba2b-2638bca7006b\\\\scratchpad\\\\test_listmeta.js\")"
+>>>>>>> 2e79b18d51969343c164af30cbc15f53fbf05059
     ]
   }
 }
