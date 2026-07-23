@@ -161,7 +161,13 @@
       "Bash(timeout 20 git log --oneline -5)",
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json','utf8'\\)\\); console.log\\('JSON_OK'\\)\")",
       "Bash(echo \"TSC_EXIT:$?\")",
-      "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json'\\)\\).scripts, null, 2\\)\\)\")"
+      "Bash(node -e \"console.log\\(JSON.stringify\\(JSON.parse\\(require\\('fs'\\).readFileSync\\('package.json'\\)\\).scripts, null, 2\\)\\)\")",
+      "Bash(git -c core.quotepath=false diff -- \"docs/260720 Thinktankすること/thinktank_aitodo.md\")",
+      "Bash(git -c core.quotepath=false status --porcelain)",
+      "PowerShell(Get-Process -Id 41048,40208 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=41048 or ProcessId=40208\")",
+      "Read(//tmp/**)",
+      "Bash(node --check electron/main.cjs)"
     ]
   }
 }
