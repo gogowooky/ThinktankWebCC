@@ -183,23 +183,23 @@ export function WorkoutArea({
 
   // タイトルへのThinkドロップ: Alt修飾の有無で Load（Pane差し替え）/ Insert（タグ挿入）を
   // 振り分ける。疑似キー ThinkFileDrag の解決・実行は TTShortcutManager + TTActions
-  // （WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile、docs/Shortcut.md参照）
+  // （WorkoutPanel.DroppedFile.ID:Load / WorkoutPanel.DroppedFile.ID:Insert、docs/Shortcut.md参照）
   // に委ねる。Insert時はこのペインのエディタを対象にするため、実行前に activeEditor を
   // このペインのエディタへ同期する（editorがないメディア種別ではInsertは無効）。
   const handleThinkFileDrop = useCallback((thinkId: string, e: React.DragEvent) => {
     const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
     if (!actionId) return;
-    if (actionId === 'WorkoutPanel.Insert.DroppedFile') {
+    if (actionId === 'WorkoutPanel.DroppedFile.ID:Insert') {
       const ref = mediaRef.current;
       const editor = ref && 'getEditor' in ref ? ref.getEditor() : null;
       if (!editor) return;
       TTShortcutManager.instance.setActiveEditor(editor);
       TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-      TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
+      TTActions.Execute('WorkoutPanel.DroppedFile.ID:Insert');
       return;
     }
     TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'load-replace', areaId: area.ID });
-    TTActions.Execute('WorkoutPanel.Load.DroppedFile');
+    TTActions.Execute('WorkoutPanel.DroppedFile.ID:Load');
   }, [area.ID]);
 
   // 保存ハンドラー（TextEditorMedia から Ctrl+S・自動保存で呼ばれる）

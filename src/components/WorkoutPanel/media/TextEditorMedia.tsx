@@ -23,9 +23,9 @@ import './TextEditorMedia.css';
 export interface TextEditorMediaRef {
   focus: () => void;
   /**
-   * WorkoutPanel.Insert.DroppedFile 用: 生のMonacoエディタインスタンスを取得する。
+   * WorkoutPanel.DroppedFile.ID:Insert 用: 生のMonacoエディタインスタンスを取得する。
    * 呼び出し側は TTShortcutManager.setActiveEditor() でこれを対象に設定してから
-   * 'WorkoutPanel.Insert.DroppedFile' Action を実行すること。
+   * 'WorkoutPanel.DroppedFile.ID:Insert' Action を実行すること。
    */
   getEditor: () => any;
 }
@@ -176,7 +176,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
-    // WorkoutPanel.Insert.DroppedFile がドロップ位置のPaneからエディタを引けるよう登録する
+    // WorkoutPanel.DroppedFile.ID:Insert がドロップ位置のPaneからエディタを引けるよう登録する
     if (areaId) TTShortcutManager.instance.registerAreaEditor(areaId, editor);
     registerMarkdownFolding(monaco);
 

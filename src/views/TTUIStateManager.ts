@@ -104,6 +104,7 @@ export type ConfigKey =
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
   | 'WorkoutPanel.FocusedPane.Mode'
+  | 'WorkoutPanel.DroppedFile.ID'
   | 'WorkoutPanel.Pane.Layout'
   | 'WorkoutPanel.Pane.Display'
   | 'TextEditor.CurrentFolding.HeadingOffset'
@@ -991,6 +992,14 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
         }
       }
     },
+  },
+  'WorkoutPanel.DroppedFile.ID': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: '各パネルのThink一覧のThinkファイルがWorkoutパネル内にDropされた際に設定されるファイルID',
+    isConst: true,
+    get: (app) => app.WorkoutPanel.DroppedFileID || '',
+    set: () => {},
   },
   'TextEditor.CurrentFolding.HeadingOffset': {
     panel: 'WorkoutPanel',

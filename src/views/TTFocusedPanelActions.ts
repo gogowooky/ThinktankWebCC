@@ -2935,7 +2935,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
   };
 
   TTActions.Register({
-    ActionID: 'WorkoutPanel.Load.DroppedFile',
+    ActionID: 'WorkoutPanel.DroppedFile.ID:Load',
     Description: 'ドロップされたThinkファイルをPaneにLoadする',
     Completion: (item) => {
       const ctx = TTShortcutManager.instance.consumePendingThinkDrop();
@@ -2943,6 +2943,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         item.Result = '[ドロップ情報なし]';
         return;
       }
+      app.WorkoutPanel.DroppedFileID = ctx.thinkId;
       const think     = app.Models.Vault.GetThink(ctx.thinkId);
       const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
       const title     = think?.Name ?? ctx.thinkId;
@@ -2976,12 +2977,13 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'WorkoutPanel.Insert.DroppedFile',
+    ActionID: 'WorkoutPanel.DroppedFile.ID:Insert',
     Description: 'ドロップされたThinkファイルを [memo:{ID}] タグとしてコンテンツ内に挿入する',
     Completion: (item) => {
       const ctx = TTShortcutManager.instance.consumePendingThinkDrop();
       const editor = TTShortcutManager.instance.activeEditor;
       if (!ctx) { item.Result = '[ドロップ情報なし]'; return; }
+      app.WorkoutPanel.DroppedFileID = ctx.thinkId;
       if (!editor) { item.Result = '[エディタ未選択]'; return; }
       const sel = editor.getSelection();
       const text = `[memo:${ctx.thinkId}]`;

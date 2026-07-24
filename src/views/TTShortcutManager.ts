@@ -74,14 +74,14 @@ const NO_CANDIDATES: readonly ShortcutEntry[] = [];
 
 /**
  * ThinkFileDrag（D&D）用のペイロード。resolveDragAction() でActionIDを解決した
- * 呼び出し側が setPendingThinkDrop() でセットし、WorkoutPanel.Load.DroppedFile /
- * WorkoutPanel.Insert.DroppedFile の Completion が consumePendingThinkDrop() で読み取る。
+ * 呼び出し側が setPendingThinkDrop() でセットし、WorkoutPanel.DroppedFile.ID:Load /
+ * WorkoutPanel.DroppedFile.ID:Insert の Completion が consumePendingThinkDrop() で読み取る。
  *
- *   'insert'      : WorkoutPanel.Insert.DroppedFile 用。thinkIdのみ必要
+ *   'insert'      : WorkoutPanel.DroppedFile.ID:Insert 用。thinkIdのみ必要
  *                   （挿入先エディタは事前に setActiveEditor() で指定しておく）。
- *   'load-replace': WorkoutPanel.Load.DroppedFile 用。指定Areaを丸ごとドロップされた
+ *   'load-replace': WorkoutPanel.DroppedFile.ID:Load 用。指定Areaを丸ごとドロップされた
  *                   Thinkに差し替える（タイトルバードロップ）。
- *   'load-place'  : WorkoutPanel.Load.DroppedFile 用。ドロップ位置に応じて新規Paneを
+ *   'load-place'  : WorkoutPanel.DroppedFile.ID:Load 用。ドロップ位置に応じて新規Paneを
  *                   追加する（コンテンツ領域の余白/端へのドロップ。WorkoutPanel側で
  *                   計算済みのオーバーレイ情報をそのまま渡す）。
  */
@@ -136,7 +136,7 @@ export class TTShortcutManager {
     this._activeEditor = editor;
   }
 
-  /** WorkoutPanel.Insert.DroppedFile用: 特定Paneのエディタインスタンスをマウント時に登録する */
+  /** WorkoutPanel.DroppedFile.ID:Insert用: 特定Paneのエディタインスタンスをマウント時に登録する */
   registerAreaEditor(areaId: string, editor: any): void {
     this._areaEditors.set(areaId, editor);
   }
@@ -150,7 +150,7 @@ export class TTShortcutManager {
   }
 
   /**
-   * D&D用: WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile の
+   * D&D用: WorkoutPanel.DroppedFile.ID:Load / WorkoutPanel.DroppedFile.ID:Insert の
    * Completion が参照するペイロード（ThinkID・配置先情報）をセットする。
    * Drop ハンドラーが resolveDragAction() で ActionID を解決した直後、
    * TTActions.Execute() を呼ぶ前に必ずセットすること。

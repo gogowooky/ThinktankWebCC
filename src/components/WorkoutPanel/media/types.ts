@@ -9,7 +9,7 @@ import type { TTVault } from '../../../models/TTVault';
 
 export interface MediaProps {
   /**
-   * このメディアが属するWorkoutAreaのID。WorkoutPanel.Insert.DroppedFile がドロップ位置の
+   * このメディアが属するWorkoutAreaのID。WorkoutPanel.DroppedFile.ID:Insert がドロップ位置の
    * Paneからエディタインスタンスを引くための TTShortcutManager.registerAreaEditor() 登録キー
    * として使う（テキストエディタ系メディアのみ）。
    */

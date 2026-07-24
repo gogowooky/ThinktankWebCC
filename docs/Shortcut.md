@@ -39,8 +39,8 @@ Overview.Filter     ,ExApp  ,Alt+Enter  ,Overview.Filter.Cursor:Action          
 Overview.Filter     ,ExApp  ,Alt+K      ,Overview.Filter.Cursor:ToggleCheck             ,Overview>Think一覧のカーソル位置をチェック
 
 # Editor Editor
-*,   ,ThinkFileDrag       ,WorkoutPanel.Load.DroppedFile   ,DropされたThinkファイルをPaneにLoadする
-*,   ,Alt+ThinkFileDrag   ,WorkoutPanel.Insert.DroppedFile ,DropされたThinkファイルをコンテンツ内に挿入する
+*,   ,ThinkFileDrag       ,WorkoutPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
+*,   ,Alt+ThinkFileDrag   ,WorkoutPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
 
 # Editor Editor ローカルファイルシステム D&D
 *,   ,LocalFileDrag       ,WorkoutPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う

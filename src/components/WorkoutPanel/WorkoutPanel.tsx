@@ -704,7 +704,7 @@ export function WorkoutPanel({ app }: Props) {
     if (!overlay) return;
     e.preventDefault();
 
-    // Think D&D（WorkoutPanel.Load.DroppedFile / WorkoutPanel.Insert.DroppedFile、
+    // Think D&D（WorkoutPanel.DroppedFile.ID:Load / WorkoutPanel.DroppedFile.ID:Insert、
     // docs/Shortcut.md参照）。コンテンツ領域へのThinkドロップはLoad/Insertいずれも
     // ここで一元的に判定する（各Paneのコンポーネント側では消費しない）。個別コンポーネントの
     // dragover/dropハンドラーとタイミング・判定がずれてAlt判定を取りこぼす問題を避けるため。
@@ -714,14 +714,14 @@ export function WorkoutPanel({ app }: Props) {
       // 優先してカーソル直下の既存Paneを直接ヒットテストする（handleBodyDragOverと同じ理由。
       // isOuter判定に引きずられるとパネル端に近い既存Pane上でもLoadにフォールバックしてしまう）。
       const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
-      const hoveredAreaId = actionId === 'WorkoutPanel.Insert.DroppedFile'
+      const hoveredAreaId = actionId === 'WorkoutPanel.DroppedFile.ID:Insert'
         ? findWorkoutAreaIdAtPoint(e.clientX, e.clientY)
         : null;
       const editor = hoveredAreaId ? TTShortcutManager.instance.getAreaEditor(hoveredAreaId) : null;
       if (editor) {
         TTShortcutManager.instance.setActiveEditor(editor);
         TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-        TTActions.Execute('WorkoutPanel.Insert.DroppedFile');
+        TTActions.Execute('WorkoutPanel.DroppedFile.ID:Insert');
         return;
       }
       // ドロップ位置に応じたPane配置（overlay）は、ゴースト表示のためにここで既に計算済みの
@@ -731,7 +731,7 @@ export function WorkoutPanel({ app }: Props) {
           ? { thinkId, kind: 'load-place', overlayType: 'add', dir: overlay.dir }
           : { thinkId, kind: 'load-place', overlayType: 'split', dir: overlay.dir, areaId: overlay.areaId }
       );
-      TTActions.Execute('WorkoutPanel.Load.DroppedFile');
+      TTActions.Execute('WorkoutPanel.DroppedFile.ID:Load');
       return;
     }
 

@@ -187,6 +187,9 @@ export class TTWorkoutPanel extends TTUIItem {
   public Layout: LayoutNode | null = null;
   public FocusedAreaId: string | null = null;
 
+  /** WorkoutPanel内にThinkファイルがDropされた際に設定されるファイルID（WorkoutPanel.DroppedFile.ID） */
+  public DroppedFileID: string = '';
+
   public override get ClassName(): string { return 'TTWorkoutPanel'; }
 
   constructor() {

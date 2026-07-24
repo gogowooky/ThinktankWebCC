@@ -17,12 +17,26 @@
 
 ## 完了：　Application.Resource.ImportFromLocal
 
-## 修正：　260718　WorkoutPanel.Load.DroppedFile
+## 修正：　260724　WorkoutPanel.Load.DroppedFile
+　IDを WorkoutPanel.DroppedFile.ID:Load に修正してください。
+
 　DropされたThinkファイルをPaneにLoadする
-## 修正：　260719　WorkoutPanel.Insert.DroppedFile
+
+　A（260724修正）：ActionID を 'WorkoutPanel.Load.DroppedFile' から 'WorkoutPanel.DroppedFile.ID:Load'
+　　に変更しました（TTFocusedPanelActions.ts の TTActions.Register、WorkoutArea.tsx /
+　　WorkoutPanel.tsx の実行・判定箇所、docs\Shortcut.md の ThinkFileDrag 割当を統一）。
+　　命名規則（{Status ID}:*）に合わせ、対応するStatus WorkoutPanel.DroppedFile.ID の実装と
+　　あわせて対応しました。
+
+## 修正：　260724　WorkoutPanel.Insert.DroppedFile
+　IDを WorkoutPanel.DroppedFile.ID:Insert に修正してください。
+
 　DropされたThinkファイルの内容ではなく `[memo:{ID}]` タグをコンテンツ内に挿入する
 　Drop開始時にModifierキーを確認し、Alt+ThinkFileDragであればゴーストを表示せず、
 　mouseoverに合わせてカーソルを移動させる
+
+　A（260724修正）：ActionID を 'WorkoutPanel.Insert.DroppedFile' から
+　　'WorkoutPanel.DroppedFile.ID:Insert' に変更しました（対応箇所はLoad側と同様）。
 
 　A（260716時点）：ThinkFileDrag（修飾なし）/ Alt+ThinkFileDrag の判定を
 　　TTShortcutManager.resolveDragAction('ThinkFileDrag', e) で行っていましたが、この時点では
@@ -146,6 +160,23 @@
 　　一切表示されず従来通り緑ゴーストのみが出ることを確認しました。
 
 # Status
+
+## 実装：　260724　WorkoutPanel.DroppedFile.ID
+　各パネルのThink一覧のThinkファイルがWorkoutパネル内にDropされた際に、そのファイルのIDが設定されます。
+
+description:    WorkoutパネルにDropされたThinkファイルのID
+key:            WorkoutPanel.DroppedFile.ID
+current:        ''
+default:        ''
+type:           string
+candidates:     .*
+
+　A（260724実装）：TTUIStateManager に読み取り専用（isConst）のStatusとして登録しました。
+　　実体は TTWorkoutPanel.DroppedFileID（新設フィールド）で、WorkoutPanel.DroppedFile.ID:Load /
+　　WorkoutPanel.DroppedFile.ID:Insert の各Actionが、DropされたThinkの thinkId をドロップ成立
+　　直後（Load側はPane差し替え/新規Pane追加の成否によらず、Insert側はエディタ未選択でも）に
+　　設定します。
+
 
 # 対応不要： その他：ナビゲーション　ファイル内・ファイル間ジャンプ
 # 対応不要： その他：メニュー
