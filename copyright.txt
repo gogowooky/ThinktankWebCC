@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.18",
+  "version": "1.3.19",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "8af70a4",
-  "commitDateTime": "2026-07-23-075812",
-  "commitMessage": "fix: bundle Monaco locally and stabilize Electron dev data path"
+  "commitId": "c4a8979",
+  "commitDateTime": "2026-07-24-115602",
+  "commitMessage": "fix: rename WorkoutPanel drop ActionIDs to {Status ID}:* form; implement WorkoutPanel.DroppedFile.ID"
 }
