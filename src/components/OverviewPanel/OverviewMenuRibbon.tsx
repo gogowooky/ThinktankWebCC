@@ -6,8 +6,8 @@
 
 import { useCallback } from 'react';
 import {
-  CheckSquare, Square, ListX, ListCheck, LibrarySquare, SquareX,
-  ListChecks, List, ArrowDownAZ, Save, ListRestart,
+  CheckSquare, Square, ListX, ListCheck, SquareX,
+  ArrowDownAZ, Save, ListRestart,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './OverviewMenuRibbon.css';
@@ -19,7 +19,6 @@ interface Props {
   visibleIds:           string[];
   checkedIds:           string[];
   showCheckedOnly:      boolean;
-  allVaultChecked:      boolean;
   showColumnDialog:     boolean;
   canSaveChat:          boolean;
   saveChatTip:          string;
@@ -33,8 +32,6 @@ interface Props {
   onExcludeChecked:     () => void;
   onClearThought:       () => void;
   onToggleCheckedOnly:  () => void;
-  onCreateThought:      () => void;
-  onToggleAllVault:     () => void;
   onToggleColumnDialog: () => void;
   onSaveChat:           () => void;
   onRefresh:            () => void;
@@ -44,7 +41,7 @@ interface Props {
 export function OverviewMenuRibbon({
   showSettings,
   mediaType,
-  visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
+  visibleIds, checkedIds, showCheckedOnly,
   showColumnDialog,
   canSaveChat, saveChatTip,
   todoMemoOptions, selectedTodoMemoId,
@@ -52,7 +49,7 @@ export function OverviewMenuRibbon({
   hasThought,
   onSelectTodoMemo,
   onCheckAll, onClearChecks, onExcludeChecked, onClearThought,
-  onToggleCheckedOnly, onCreateThought, onToggleAllVault,
+  onToggleCheckedOnly,
   onToggleColumnDialog,
   onSaveChat, onRefresh,
 }: Props) {
@@ -135,15 +132,6 @@ export function OverviewMenuRibbon({
         </button>
       </div>
 
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${allVaultChecked ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={onToggleAllVault}
-        data-tip={allVaultChecked ? '全チェックをクリア' : '全アイテムをチェック（非表示含む）'}
-        data-tip-side="right"
-      >
-        {allVaultChecked ? <ListChecks size={14} /> : <List size={14} />}
-      </button>
-
       <div className="tooltip-wrapper" data-tip="チェック済みアイテムのみ表示">
         <button
           className={`menu-ribbon__btn menu-ribbon__btn--icon${showCheckedOnly ? ' menu-ribbon__btn--active' : ''}`}
@@ -161,16 +149,6 @@ export function OverviewMenuRibbon({
       >
         <ArrowDownAZ size={14} />
       </button>
-
-      <div className="tooltip-wrapper" data-tip="チェックアイテムからthoughtを作成">
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onCreateThought}
-          disabled={!hasChecked}
-        >
-          <LibrarySquare size={14} />
-        </button>
-      </div>
 
       {/* チェック中のアイテムをThoughtから除外（作成と削除の間）*/}
       <div className="tooltip-wrapper" data-tip="チェック中のアイテムをThoughtから除外">

@@ -166,10 +166,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     panel.FilteredThoughts = visibleThinks;
   }, [panel, visibleThinks]);
 
-  const allVaultChecked = useMemo(
-    () => thinksInThought.length > 0 && thinksInThought.every(t => checkedSet.has(t.ID)),
-    [thinksInThought, checkedSet],
-  );
 
   // ── ThoughtID 変化時: 一覧状態リセット ＋ MetaOnly なら Content をロード ─
   const prevThoughtIdRef = useRef(panel.ThoughtID);
@@ -275,18 +271,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
     panel.SetCheckedThoughtIDs([]);
   }, [panel, vault]);
-
-  const handleToggleAllVault = useCallback(() => {
-    const allChecked = thinksInThought.length > 0 && thinksInThought.every(t => checkedSet.has(t.ID));
-    panel.SetCheckedThoughtIDs(allChecked ? [] : thinksInThought.map(t => t.ID));
-  }, [thinksInThought, checkedSet, panel]);
-
-  const handleCreateThought = useCallback(async () => {
-    if (panel.CheckedThoughtIDs.length === 0) return;
-    const think = await vault.CreateThoughtFromIds(panel.CheckedThoughtIDs, filter);
-    panel.SetCheckedThoughtIDs([]);
-    app.OpenThought(think.ID);
-  }, [panel, vault, filter, app]);
 
   const handleToggleCheckedOnly   = useCallback(() => setShowCheckedOnly(v => !v), []);
   const handleToggleColumnDialog  = useCallback(() => setShowColumnDialog(v => !v), []);
@@ -479,7 +463,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         visibleIds={visibleIds}
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={showCheckedOnly}
-        allVaultChecked={allVaultChecked}
         showColumnDialog={showColumnDialog}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
         saveChatTip={saveChatTip}
@@ -494,8 +477,6 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         onExcludeChecked={handleExcludeChecked}
         onClearThought={() => panel.ClearThought()}
         onToggleCheckedOnly={handleToggleCheckedOnly}
-        onCreateThought={handleCreateThought}
-        onToggleAllVault={handleToggleAllVault}
         onToggleColumnDialog={handleToggleColumnDialog}
         onSaveChat={handleSaveChat}
         onRefresh={handleRefresh}

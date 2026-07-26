@@ -1,5 +1,5 @@
 import React, { useState, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Type, CalendarDays, CalendarClock, ChevronDown, X } from 'lucide-react';
+import { Type, CalendarPlus2, CalendarArrowUp, ChevronDown, X } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { parseRange } from '../../utils/dateUtils';
 import { FilterHistoryPulldown } from './FilterHistoryPulldown';
@@ -125,7 +125,7 @@ export const ThinktankFilterPanel = React.memo(forwardRef<ThinktankFilterPanelRe
           {/* 2行目: 作成日フィルタ */}
           <div className="unified-filter-row">
             <div className="unified-filter-row-left">
-              <CalendarDays size={12} className="unified-filter-icon" />
+              <CalendarPlus2 size={12} className="unified-filter-icon" />
               <input
                 className="unified-filter-date-input"
                 type="date"
@@ -159,7 +159,7 @@ export const ThinktankFilterPanel = React.memo(forwardRef<ThinktankFilterPanelRe
           {/* 3行目: 更新日フィルタ */}
           <div className="unified-filter-row">
             <div className="unified-filter-row-left">
-              <CalendarClock size={12} className="unified-filter-icon" />
+              <CalendarArrowUp size={12} className="unified-filter-icon" />
               <input
                 className="unified-filter-date-input"
                 type="date"

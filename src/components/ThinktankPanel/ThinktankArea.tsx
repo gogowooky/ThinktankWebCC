@@ -206,11 +206,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   );
   const sortedBase = useMemo(() => applySort(typeFilteredBase, sort), [typeFilteredBase, sort]);
 
-  const checkedSet = useMemo(
-    () => new Set(panel.CheckedThoughtIDs),
-    [panel.CheckedThoughtIDs],
-  );
-
   // chat / settings 以外はすべて Think一覧（filter）として扱う（旧モードの残存値対策）
   const isFilterMode = panel.ViewMode !== 'chat' && panel.ViewMode !== 'settings';
 
@@ -221,11 +216,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   useEffect(() => {
     panel.FilteredThoughts = visibleThinks;
   }, [panel, visibleThinks]);
-
-  const allVaultChecked = useMemo(
-    () => allThinks.length > 0 && allThinks.every(t => checkedSet.has(t.ID)),
-    [allThinks, checkedSet],
-  );
 
   // ── ハンドラ ─────────────────────────────────────────────────────────────
 
@@ -284,13 +274,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleToggleColumnDialog = useCallback(() => {
     setShowColumnDialog(v => !v);
   }, []);
-
-  const handleToggleAllVault = useCallback(() => {
-    const allIds = allThinks.map(t => t.ID);
-    const allChecked = allIds.length > 0 && allIds.every(id => checkedSet.has(id));
-    if (allChecked) panel.ClearChecks();
-    else panel.CheckAll(allIds);
-  }, [panel, allThinks, checkedSet]);
 
   const handleToggleType = useCallback((t: ContentType) => {
     setVisibleTypes(prev => {
@@ -490,7 +473,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         visibleIds={visibleIds}
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={panel.ShowCheckedOnly}
-        allVaultChecked={allVaultChecked}
         showColumnDialog={showColumnDialog}
         canCreateThought={canCreateThought}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
@@ -503,7 +485,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
-        onToggleAllVault={handleToggleAllVault}
         onToggleColumnDialog={handleToggleColumnDialog}
         onCreateThought={handleCreateThought}
         onSaveChat={handleSaveChat}

@@ -80,14 +80,50 @@ function getTypeIcon(contentType: string) {
   }
 }
 
-function renderCell(col: ColumnConfig, thought: TTThink): ReactNode {
+/** ISO日時文字列 → "yyyy-MM-dd-hhmmss"（タイムゾーン変換はせず文字列のまま抽出）*/
+function formatUpdatedAtSub(iso: string): string {
+  if (!iso || iso.length < 19) return '';
+  return `${iso.slice(0, 10)}-${iso.slice(11, 13)}${iso.slice(14, 16)}${iso.slice(17, 19)}`;
+}
+
+/** タイトル下に表示する 作成日(ID)/更新日 のサブテキストを、ダイアログの列順に従って組み立てる */
+function buildTitleSub(thought: TTThink, visibleCols: ColumnConfig[], showIdSub: boolean, showUpdatedSub: boolean): ReactNode {
+  if (!showIdSub && !showUpdatedSub) return null;
+  return visibleCols.map(col => {
+    if (col.field === 'ID' && showIdSub) {
+      return <span key="ID">{thought.ID}</span>;
+    }
+    if (col.field === 'UpdatedAt' && showUpdatedSub) {
+      return <span key="UpdatedAt">{` ↑${formatUpdatedAtSub(thought.UpdatedAt)}`}</span>;
+    }
+    return null;
+  });
+}
+
+function renderCell(col: ColumnConfig, thought: TTThink, visibleCols: ColumnConfig[], showIdSub: boolean, showUpdatedSub: boolean): ReactNode {
   switch (col.field) {
     case 'Name':
-      return <span key="Name" className="thoughts-list__title" data-tip={thought.Name} data-tip-side="left">{thought.Name || '（無題）'}</span>;
+      return (
+        <span key="Name" className="thoughts-list__title-block" data-tip={thought.Name} data-tip-side="left">
+          <span className="thoughts-list__title">{thought.Name || '（無題）'}</span>
+          {(showIdSub || showUpdatedSub) && (
+            <span className="thoughts-list__id-sub">
+              {buildTitleSub(thought, visibleCols, showIdSub, showUpdatedSub)}
+            </span>
+          )}
+        </span>
+      );
     case 'ID':
-      return <span key="ID" className="thoughts-list__date" data-tip="作成日(ID)" data-tip-side="left">{thought.ID.slice(0, 10)}</span>;
+      // 「作成日(ID)」はタイトル欄の下に表示するため、Name列が表示されている間は
+      // 独立したセルとしては描画しない（Name列が非表示の場合のみ単独表示）
+      return showIdSub ? null : (
+        <span key="ID" className="thoughts-list__date" data-tip="作成日(ID)" data-tip-side="left">{thought.ID}</span>
+      );
     case 'UpdatedAt':
-      return <span key="UpdatedAt" className="thoughts-list__date thoughts-list__date--updated" data-tip="更新日" data-tip-side="left">{thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}</span>;
+      // 更新日も同様にタイトル欄の下に表示する場合は独立セルを描画しない
+      return showUpdatedSub ? null : (
+        <span key="UpdatedAt" className="thoughts-list__date thoughts-list__date--updated" data-tip="更新日" data-tip-side="left">{thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}</span>
+      );
     case 'ContentType':
       return <span key="ContentType" className="thoughts-list__cell thoughts-list__cell--sm" data-tip="種別" data-tip-side="left">{thought.ContentType}</span>;
     case 'Keywords':
@@ -113,6 +149,9 @@ export function ThoughtsList({
   const { overviewThoughtIds, overviewIncludedIds, overviewCheckedIds, workoutIds, workoutFocusedId } = useHighlight();
   const isSimpleMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Simple';
   const visibleCols = columns.filter(c => c.visible);
+  const hasNameCol = visibleCols.some(c => c.field === 'Name');
+  const showIdSub      = hasNameCol && visibleCols.some(c => c.field === 'ID');
+  const showUpdatedSub = hasNameCol && visibleCols.some(c => c.field === 'UpdatedAt');
 
   const virtualizer = useVirtualizer({
     count: thoughts.length,
@@ -235,7 +274,7 @@ export function ThoughtsList({
                 aria-label={`${thought.Name} を選択`}
               />
               {getTypeIcon(thought.ContentType)}
-              {visibleCols.map(col => renderCell(col, thought))}
+              {visibleCols.map(col => renderCell(col, thought, visibleCols, showIdSub, showUpdatedSub))}
             </div>
           );
         })}

@@ -94,12 +94,29 @@
   color: #888;
 }
 
-.thoughts-list__title {
+.thoughts-list__title-block {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.thoughts-list__title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 500;
+}
+
+/* 作成日(ID) をタイトル下に表示する際の全文サブテキスト（小サイズ・薄色） */
+.thoughts-list__id-sub {
+  font-size: 9px;
+  color: #aaa;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .thoughts-list__date {

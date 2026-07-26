@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ListChecks, List, ArrowDownAZ, LibrarySquare, Save, ListRestart } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LibrarySquare, Save, ListRestart } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -18,7 +18,6 @@ interface Props {
   visibleIds:            string[];
   checkedIds:            string[];
   showCheckedOnly:       boolean;
-  allVaultChecked:       boolean;
   showColumnDialog:      boolean;
   canCreateThought:      boolean;
   canSaveChat:           boolean;
@@ -31,7 +30,6 @@ interface Props {
   onClearChecks:         () => void;
   onDeleteChecked:       () => void;
   onToggleCheckedOnly:   () => void;
-  onToggleAllVault:      () => void;
   onToggleColumnDialog:  () => void;
   onCreateThought:       () => void;
   onSaveChat:            () => void;
@@ -41,13 +39,13 @@ interface Props {
 
 export function ThinktankMenuRibbon({
   viewMode,
-  visibleIds, checkedIds, showCheckedOnly, allVaultChecked,
+  visibleIds, checkedIds, showCheckedOnly,
   showColumnDialog,
   canCreateThought, canSaveChat, saveChatTip,
   visibleCount, totalCount,
   todoMemoOptions, selectedTodoMemoId,
   onCheckAll, onClearChecks, onDeleteChecked,
-  onToggleCheckedOnly, onToggleAllVault,
+  onToggleCheckedOnly,
   onToggleColumnDialog,
   onCreateThought, onSaveChat, onSelectTodoMemo, onRefresh,
 }: Props) {
@@ -127,16 +125,6 @@ export function ThinktankMenuRibbon({
           {allChecked ? <CheckSquare size={14} /> : <Square size={14} />}
         </button>
       </div>
-
-      {/* AllVaultCheck: 表示・非表示にかかわらず全アイテムをチェック */}
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${allVaultChecked ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={onToggleAllVault}
-        data-tip={allVaultChecked ? '全チェックをクリア' : '全アイテムをチェック（非表示含む）'}
-        data-tip-side="right"
-      >
-        {allVaultChecked ? <ListChecks size={14} /> : <List size={14} />}
-      </button>
 
       {/* CheckSelect: チェックのみ表示 */}
       <div className="tooltip-wrapper" data-tip="チェック済みアイテムのみ表示">
