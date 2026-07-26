@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.22",
+  "version": "1.3.23",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "ab49930",
-  "commitDateTime": "2026-07-26-234624",
-  "commitMessage": "feat: rebuild AI相談 filter/DataGrid picker for Thinktank/Overview/WorkoutSetting/ReThink"
+  "commitId": "0314e5e",
+  "commitDateTime": "2026-07-27-001233",
+  "commitMessage": "fix: ReThink dialog positioning, chat empty-state text, and WorkoutSetting filter bg"
 }
