@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LibrarySquare, Save, ListRestart } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LayoutList, LibrarySquare, Save, ListRestart } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -19,6 +19,7 @@ interface Props {
   checkedIds:            string[];
   showCheckedOnly:       boolean;
   showColumnDialog:      boolean;
+  showFilterSelectDialog: boolean;
   canCreateThought:      boolean;
   canSaveChat:           boolean;
   saveChatTip:           string;
@@ -31,6 +32,7 @@ interface Props {
   onDeleteChecked:       () => void;
   onToggleCheckedOnly:   () => void;
   onToggleColumnDialog:  () => void;
+  onToggleFilterSelectDialog: () => void;
   onCreateThought:       () => void;
   onSaveChat:            () => void;
   onSelectTodoMemo:      (id: string) => void;
@@ -40,13 +42,13 @@ interface Props {
 export function ThinktankMenuRibbon({
   viewMode,
   visibleIds, checkedIds, showCheckedOnly,
-  showColumnDialog,
+  showColumnDialog, showFilterSelectDialog,
   canCreateThought, canSaveChat, saveChatTip,
   visibleCount, totalCount,
   todoMemoOptions, selectedTodoMemoId,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly,
-  onToggleColumnDialog,
+  onToggleColumnDialog, onToggleFilterSelectDialog,
   onCreateThought, onSaveChat, onSelectTodoMemo, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
@@ -144,6 +146,15 @@ export function ThinktankMenuRibbon({
         data-tip="表示項目とソート"
       >
         <ArrowDownAZ size={14} />
+      </button>
+
+      {/* FilterSelect: フィルター欄の表示/非表示設定 */}
+      <button
+        className={`menu-ribbon__btn menu-ribbon__btn--icon${showFilterSelectDialog ? ' menu-ribbon__btn--active' : ''}`}
+        onClick={onToggleFilterSelectDialog}
+        data-tip="フィルター選択"
+      >
+        <LayoutList size={14} />
       </button>
 
       {/* ChecktoThought: Thought作成 */}

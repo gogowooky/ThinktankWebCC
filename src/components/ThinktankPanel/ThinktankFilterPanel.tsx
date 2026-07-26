@@ -30,7 +30,8 @@ interface Props {
 
   onSearch?:        () => void;
   showTextFilter?:  boolean;
-  showDateFilters?: boolean;
+  showCreatedDateFilter?: boolean;
+  showUpdatedDateFilter?: boolean;
 
   /** テキスト入力欄のガイド（プレースホルダ）。省略時は既定文言 */
   textPlaceholder?: string;
@@ -48,7 +49,8 @@ export const ThinktankFilterPanel = React.memo(forwardRef<ThinktankFilterPanelRe
   visibleCount, totalCount,
   onSearch,
   showTextFilter = true,
-  showDateFilters = true,
+  showCreatedDateFilter = true,
+  showUpdatedDateFilter = true,
   textPlaceholder = 'タイトル・キーワードで絞り込み...',
   textIcon: TextIcon = Type,
 }, ref) {
@@ -120,76 +122,74 @@ export const ThinktankFilterPanel = React.memo(forwardRef<ThinktankFilterPanelRe
         </div>
       )}
 
-      {showDateFilters && (
-        <>
-          {/* 2行目: 作成日フィルタ */}
-          <div className="unified-filter-row">
-            <div className="unified-filter-row-left">
-              <CalendarPlus2 size={12} className="unified-filter-icon" />
-              <input
-                className="unified-filter-date-input"
-                type="date"
-                value={createdDate}
-                onChange={e => onCreatedDateChange(e.target.value)}
-                disabled={createdRange.trim().startsWith('@')}
-              />
-              <input
-                className={`unified-filter-range-input ${cRangeInvalid ? 'unified-filter-range-input--invalid' : ''}`}
-                type="text"
-                value={createdRange}
-                onChange={e => onCreatedRangeChange(e.target.value)}
-                placeholder="+Nd / @Nd"
-                data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
-                data-tip-side="left"
-              />
-            </div>
-            <div className="unified-filter-row-right">
-              <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">
-                <button 
-                  className="unified-filter-btn unified-filter-btn--clear"
-                  onClick={() => { onCreatedDateChange(''); onCreatedRangeChange(''); }}
-                  disabled={!createdDate && !createdRange}
-                >
-                  <X size={12} />
-                </button>
-              </div>
+      {showCreatedDateFilter && (
+        <div className="unified-filter-row">
+          <div className="unified-filter-row-left">
+            <CalendarPlus2 size={12} className="unified-filter-icon" />
+            <input
+              className="unified-filter-date-input"
+              type="date"
+              value={createdDate}
+              onChange={e => onCreatedDateChange(e.target.value)}
+              disabled={createdRange.trim().startsWith('@')}
+            />
+            <input
+              className={`unified-filter-range-input ${cRangeInvalid ? 'unified-filter-range-input--invalid' : ''}`}
+              type="text"
+              value={createdRange}
+              onChange={e => onCreatedRangeChange(e.target.value)}
+              placeholder="+Nd / @Nd"
+              data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+              data-tip-side="left"
+            />
+          </div>
+          <div className="unified-filter-row-right">
+            <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">
+              <button
+                className="unified-filter-btn unified-filter-btn--clear"
+                onClick={() => { onCreatedDateChange(''); onCreatedRangeChange(''); }}
+                disabled={!createdDate && !createdRange}
+              >
+                <X size={12} />
+              </button>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* 3行目: 更新日フィルタ */}
-          <div className="unified-filter-row">
-            <div className="unified-filter-row-left">
-              <CalendarArrowUp size={12} className="unified-filter-icon" />
-              <input
-                className="unified-filter-date-input"
-                type="date"
-                value={updatedDate}
-                onChange={e => onUpdatedDateChange(e.target.value)}
-                disabled={updatedRange.trim().startsWith('@')}
-              />
-              <input
-                className={`unified-filter-range-input ${uRangeInvalid ? 'unified-filter-range-input--invalid' : ''}`}
-                type="text"
-                value={updatedRange}
-                onChange={e => onUpdatedRangeChange(e.target.value)}
-                placeholder="+Nd / @Nd"
-                data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
-                data-tip-side="left"
-              />
-            </div>
-            <div className="unified-filter-row-right">
-              <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">
-                <button 
-                  className="unified-filter-btn unified-filter-btn--clear"
-                  onClick={() => { onUpdatedDateChange(''); onUpdatedRangeChange(''); }}
-                  disabled={!updatedDate && !updatedRange}
-                >
-                  <X size={12} />
-                </button>
-              </div>
+      {showUpdatedDateFilter && (
+        <div className="unified-filter-row">
+          <div className="unified-filter-row-left">
+            <CalendarArrowUp size={12} className="unified-filter-icon" />
+            <input
+              className="unified-filter-date-input"
+              type="date"
+              value={updatedDate}
+              onChange={e => onUpdatedDateChange(e.target.value)}
+              disabled={updatedRange.trim().startsWith('@')}
+            />
+            <input
+              className={`unified-filter-range-input ${uRangeInvalid ? 'unified-filter-range-input--invalid' : ''}`}
+              type="text"
+              value={updatedRange}
+              onChange={e => onUpdatedRangeChange(e.target.value)}
+              placeholder="+Nd / @Nd"
+              data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
+              data-tip-side="left"
+            />
+          </div>
+          <div className="unified-filter-row-right">
+            <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">
+              <button
+                className="unified-filter-btn unified-filter-btn--clear"
+                onClick={() => { onUpdatedDateChange(''); onUpdatedRangeChange(''); }}
+                disabled={!updatedDate && !updatedRange}
+              >
+                <X size={12} />
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

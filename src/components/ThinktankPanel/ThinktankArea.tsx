@@ -29,6 +29,8 @@ import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
+import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY } from './FilterSelectDialog';
+import type { FilterVisibility } from './FilterSelectDialog';
 import { serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_THINKTANK } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './ThinktankArea.css';
@@ -94,6 +96,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
+
+  // フィルター欄の表示/非表示設定
+  const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
+  const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
   // 日付フィルター state（常時表示）
   const [createdDate,  setCreatedDate]  = useState('');
@@ -273,6 +279,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   const handleToggleColumnDialog = useCallback(() => {
     setShowColumnDialog(v => !v);
+  }, []);
+
+  const handleToggleFilterSelectDialog = useCallback(() => {
+    setShowFilterSelectDialog(v => !v);
   }, []);
 
   const handleToggleType = useCallback((t: ContentType) => {
@@ -474,6 +484,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={panel.ShowCheckedOnly}
         showColumnDialog={showColumnDialog}
+        showFilterSelectDialog={showFilterSelectDialog}
         canCreateThought={canCreateThought}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
         saveChatTip={saveChatTip}
@@ -486,6 +497,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onDeleteChecked={handleDeleteChecked}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onToggleColumnDialog={handleToggleColumnDialog}
+        onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
         onCreateThought={handleCreateThought}
         onSaveChat={handleSaveChat}
         onSelectTodoMemo={handleSelectTodoMemo}
@@ -499,6 +511,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           onColumnsChange={setColumns}
           onSortChange={setSort}
           onClose={() => setShowColumnDialog(false)}
+        />
+      )}
+
+      {showFilterSelectDialog && (
+        <FilterSelectDialog
+          visibility={filterVisibility}
+          onChange={setFilterVisibility}
+          onClose={() => setShowFilterSelectDialog(false)}
         />
       )}
 
@@ -517,8 +537,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
             onUpdatedDateChange={setUpdatedDate}
             updatedRange={updatedRange}
             onUpdatedRangeChange={setUpdatedRange}
-            showTextFilter={true}
-            showDateFilters={true}
+            showTextFilter={filterVisibility.title}
+            showCreatedDateFilter={filterVisibility.createdDate}
+            showUpdatedDateFilter={filterVisibility.updatedDate}
           />
           <ThinktankSearchBar
             searchQuery={searchQuery}
@@ -528,6 +549,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
             visibleTypes={visibleTypes}
             onToggleType={handleToggleType}
             onSelectAllTypes={handleSelectAllTypes}
+            showContentFilter={filterVisibility.content}
+            showTypeFilter={filterVisibility.type}
             onClearAllTypes={handleClearAllTypes}
           />
         </>

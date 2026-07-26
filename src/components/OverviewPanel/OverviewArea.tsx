@@ -31,6 +31,8 @@ import type { OverviewFilterPanelRef } from './OverviewFilterPanel';
 import { OverviewSearchBar } from './OverviewSearchBar';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
+import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
+import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
@@ -72,6 +74,10 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const [columns,          setColumns]          = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
+
+  // フィルター欄の表示/非表示設定
+  const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
+  const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
   const [focusedId, setFocusedId] = useState<string | null>(() => panel.CurrentItemID || null);
 
@@ -274,6 +280,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   const handleToggleCheckedOnly   = useCallback(() => setShowCheckedOnly(v => !v), []);
   const handleToggleColumnDialog  = useCallback(() => setShowColumnDialog(v => !v), []);
+  const handleToggleFilterSelectDialog = useCallback(() => setShowFilterSelectDialog(v => !v), []);
 
   const handleDeleteChecked = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
@@ -464,6 +471,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={showCheckedOnly}
         showColumnDialog={showColumnDialog}
+        showFilterSelectDialog={showFilterSelectDialog}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
         saveChatTip={saveChatTip}
         todoMemoOptions={todoMemoOptions}
@@ -478,6 +486,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         onClearThought={() => panel.ClearThought()}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onToggleColumnDialog={handleToggleColumnDialog}
+        onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
         onSaveChat={handleSaveChat}
         onRefresh={handleRefresh}
       />
@@ -490,6 +499,15 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
           onColumnsChange={setColumns}
           onSortChange={setSort}
           onClose={() => setShowColumnDialog(false)}
+        />
+      )}
+
+      {/* ── フィルター選択ダイアログ ───────────────────────────── */}
+      {showFilterSelectDialog && (
+        <FilterSelectDialog
+          visibility={filterVisibility}
+          onChange={setFilterVisibility}
+          onClose={() => setShowFilterSelectDialog(false)}
         />
       )}
 
@@ -509,7 +527,9 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             onUpdatedDateChange={setUpdatedDate}
             updatedRange={updatedRange}
             onUpdatedRangeChange={setUpdatedRange}
-            showDateFilters={true}
+            showTextFilter={filterVisibility.title}
+            showCreatedDateFilter={filterVisibility.createdDate}
+            showUpdatedDateFilter={filterVisibility.updatedDate}
           />
           <OverviewSearchBar
             searchQuery={searchQuery}
@@ -520,6 +540,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             onToggleType={handleToggleType}
             onSelectAllTypes={handleSelectAllTypes}
             onClearAllTypes={handleClearAllTypes}
+            showContentFilter={filterVisibility.content}
+            showTypeFilter={filterVisibility.type}
           />
         </>
       )}

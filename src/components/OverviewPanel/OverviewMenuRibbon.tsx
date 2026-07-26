@@ -7,7 +7,7 @@
 import { useCallback } from 'react';
 import {
   CheckSquare, Square, ListX, ListCheck, SquareX,
-  ArrowDownAZ, Save, ListRestart,
+  ArrowDownAZ, LayoutList, Save, ListRestart,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './OverviewMenuRibbon.css';
@@ -20,6 +20,7 @@ interface Props {
   checkedIds:           string[];
   showCheckedOnly:      boolean;
   showColumnDialog:     boolean;
+  showFilterSelectDialog: boolean;
   canSaveChat:          boolean;
   saveChatTip:          string;
   todoMemoOptions:      TodoMemoOption[];
@@ -33,6 +34,7 @@ interface Props {
   onClearThought:       () => void;
   onToggleCheckedOnly:  () => void;
   onToggleColumnDialog: () => void;
+  onToggleFilterSelectDialog: () => void;
   onSaveChat:           () => void;
   onRefresh:            () => void;
   hasThought:           boolean;
@@ -42,7 +44,7 @@ export function OverviewMenuRibbon({
   showSettings,
   mediaType,
   visibleIds, checkedIds, showCheckedOnly,
-  showColumnDialog,
+  showColumnDialog, showFilterSelectDialog,
   canSaveChat, saveChatTip,
   todoMemoOptions, selectedTodoMemoId,
   visibleCount, totalCount,
@@ -50,7 +52,7 @@ export function OverviewMenuRibbon({
   onSelectTodoMemo,
   onCheckAll, onClearChecks, onExcludeChecked, onClearThought,
   onToggleCheckedOnly,
-  onToggleColumnDialog,
+  onToggleColumnDialog, onToggleFilterSelectDialog,
   onSaveChat, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
@@ -148,6 +150,15 @@ export function OverviewMenuRibbon({
         data-tip="表示項目とソート"
       >
         <ArrowDownAZ size={14} />
+      </button>
+
+      {/* FilterSelect: フィルター欄の表示/非表示設定 */}
+      <button
+        className={`menu-ribbon__btn menu-ribbon__btn--icon${showFilterSelectDialog ? ' menu-ribbon__btn--active' : ''}`}
+        onClick={onToggleFilterSelectDialog}
+        data-tip="フィルター選択"
+      >
+        <LayoutList size={14} />
       </button>
 
       {/* チェック中のアイテムをThoughtから除外（作成と削除の間）*/}
