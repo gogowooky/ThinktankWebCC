@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.20",
+  "version": "1.3.21",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "72014e5",
-  "commitDateTime": "2026-07-26-145821",
-  "commitMessage": "feat: refine Think一覧 list UI - remove unused buttons, restyle date columns"
+  "commitId": "e06f882",
+  "commitDateTime": "2026-07-26-163504",
+  "commitMessage": "feat: add フィルター選択 dialog to toggle Think一覧 filter rows"
 }
