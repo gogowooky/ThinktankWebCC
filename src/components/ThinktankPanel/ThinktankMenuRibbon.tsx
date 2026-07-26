@@ -4,14 +4,9 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LayoutList, LibrarySquare, Save, ListRestart } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LayoutList, LibrarySquare, Save, ListRestart, SquareX } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
-
-export interface TodoMemoOption {
-  id:   string;
-  name: string;
-}
 
 interface Props {
   viewMode:              string;
@@ -25,8 +20,6 @@ interface Props {
   saveChatTip:           string;
   visibleCount?:         number;
   totalCount?:           number;
-  todoMemoOptions:       TodoMemoOption[];
-  selectedTodoMemoId:    string;
   onCheckAll:            () => void;
   onClearChecks:         () => void;
   onDeleteChecked:       () => void;
@@ -35,7 +28,7 @@ interface Props {
   onToggleFilterSelectDialog: () => void;
   onCreateThought:       () => void;
   onSaveChat:            () => void;
-  onSelectTodoMemo:      (id: string) => void;
+  onClearTodoSelection:  () => void;
   onRefresh:             () => void;
 }
 
@@ -45,11 +38,10 @@ export function ThinktankMenuRibbon({
   showColumnDialog, showFilterSelectDialog,
   canCreateThought, canSaveChat, saveChatTip,
   visibleCount, totalCount,
-  todoMemoOptions, selectedTodoMemoId,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
-  onCreateThought, onSaveChat, onSelectTodoMemo, onRefresh,
+  onCreateThought, onSaveChat, onClearTodoSelection, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -66,7 +58,7 @@ export function ThinktankMenuRibbon({
     return <div className="menu-ribbon thinktank-menu-ribbon" />;
   }
 
-  /* ── AI モード: 保存ボタン＋TODOメモ選択 ────────────────── */
+  /* ── AI モード: 保存ボタン＋Think一覧共通の表示設定ボタン ──── */
   if (viewMode === 'chat') {
     return (
       <div className="menu-ribbon thinktank-menu-ribbon">
@@ -79,25 +71,41 @@ export function ThinktankMenuRibbon({
             <Save size={14} />
           </button>
         </div>
-        <select
-          className="thinktank-ribbon__todo-select"
-          value={selectedTodoMemoId}
-          onChange={e => onSelectTodoMemo(e.target.value)}
-          data-tip="TODOメモを選択してChatに読み込み"
-          data-tip-side="left"
-        >
-          <option value=""></option>
-          {todoMemoOptions.map(opt => (
-            <option key={opt.id} value={opt.id}>{opt.name}</option>
-          ))}
-        </select>
+
+        <div className="menu-ribbon__sep" />
+
         <button
           className="menu-ribbon__btn menu-ribbon__btn--icon"
           onClick={onRefresh}
           data-tip="表示更新"
-          data-tip-side="left"
+          data-tip-side="right"
         >
           <ListRestart size={14} />
+        </button>
+
+        <button
+          className={`menu-ribbon__btn menu-ribbon__btn--icon${showColumnDialog ? ' menu-ribbon__btn--active' : ''}`}
+          onClick={onToggleColumnDialog}
+          data-tip="表示項目とソート"
+        >
+          <ArrowDownAZ size={14} />
+        </button>
+
+        <button
+          className={`menu-ribbon__btn menu-ribbon__btn--icon${showFilterSelectDialog ? ' menu-ribbon__btn--active' : ''}`}
+          onClick={onToggleFilterSelectDialog}
+          data-tip="フィルター選択"
+        >
+          <LayoutList size={14} />
+        </button>
+
+        <button
+          className="menu-ribbon__btn menu-ribbon__btn--icon"
+          onClick={onClearTodoSelection}
+          data-tip="アイテム選択をクリア"
+          data-tip-side="left"
+        >
+          <SquareX size={14} />
         </button>
       </div>
     );

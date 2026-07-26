@@ -21,16 +21,18 @@ import { useHighlight } from '../../contexts/HighlightContext';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './ThoughtsList.css';
 
-const ROW_HEIGHT = 36;
+export const ROW_HEIGHT = 36;
 const OVERSCAN   = 5;
 
 interface Props {
   thoughts: TTThink[];
   selectedId: string;
-  checkedIds: string[];
+  checkedIds?: string[];
   columns?: ColumnConfig[];
+  /** チェックボックス列を表示するか（既定 true）。false の場合 onToggleCheck は不要 */
+  showCheckbox?: boolean;
   onOpen: (id: string) => void;
-  onToggleCheck: (id: string | string[], force?: boolean) => void;
+  onToggleCheck?: (id: string | string[], force?: boolean) => void;
   focusedId: string | null;
   onFocusChange: (id: string | null) => void;
 }
@@ -138,10 +140,11 @@ function renderCell(col: ColumnConfig, thought: TTThink, visibleCols: ColumnConf
 export function ThoughtsList({
   thoughts,
   selectedId,
-  checkedIds,
+  checkedIds = [],
   columns = DEFAULT_COLUMNS,
+  showCheckbox = true,
   onOpen,
-  onToggleCheck,
+  onToggleCheck = () => {},
   focusedId,
   onFocusChange,
 }: Props) {
@@ -265,14 +268,16 @@ export function ThoughtsList({
               onClick={() => onFocusChange(thought.ID)}
               onDoubleClick={() => onOpen(thought.ID)}
             >
-              <input
-                type="checkbox"
-                className="thoughts-list__check"
-                checked={isChecked}
-                onChange={() => { /* onChangeはonClickで処理するため空 */ }}
-                onClick={e => handleCheckClick(e, thought.ID)}
-                aria-label={`${thought.Name} を選択`}
-              />
+              {showCheckbox && (
+                <input
+                  type="checkbox"
+                  className="thoughts-list__check"
+                  checked={isChecked}
+                  onChange={() => { /* onChangeはonClickで処理するため空 */ }}
+                  onClick={e => handleCheckClick(e, thought.ID)}
+                  aria-label={`${thought.Name} を選択`}
+                />
+              )}
               {getTypeIcon(thought.ContentType)}
               {visibleCols.map(col => renderCell(col, thought, visibleCols, showIdSub, showUpdatedSub))}
             </div>

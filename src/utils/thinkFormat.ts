@@ -67,9 +67,14 @@ export const TODO_MEMO_PREFIX_OVERVIEW  = '[todo:overview]';
 export const TODO_MEMO_PREFIX_WORKOUT   = '[todo:workout]';
 export const TODO_MEMO_PREFIX_RETHINK   = '[todo:rethink]';
 
+/** タイトルが指定プレフィックスで始まる Think かどうかを判定する（ContentType不問、大文字小文字を区別しない） */
+export function isTodoThink(think: { Name: string }, prefix: string): boolean {
+  return think.Name.toLowerCase().startsWith(prefix.toLowerCase());
+}
+
 /** memo Think が指定プレフィックスの TODO メモ（ドロップボックス表示対象）かどうかを判定する */
 export function isTodoMemoThink(think: { ContentType: string; Name: string }, prefix: string): boolean {
-  return think.ContentType === 'memo' && think.Name.toLowerCase().startsWith(prefix.toLowerCase());
+  return think.ContentType === 'memo' && isTodoThink(think, prefix);
 }
 
 /**

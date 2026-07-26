@@ -29,9 +29,10 @@ import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
-import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY } from './FilterSelectDialog';
+import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from './FilterSelectDialog';
 import type { FilterVisibility } from './FilterSelectDialog';
-import { serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_THINKTANK } from '../../utils/thinkFormat';
+import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
+import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_THINKTANK } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './ThinktankArea.css';
 
@@ -97,8 +98,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
-  // フィルター欄の表示/非表示設定
+  // フィルター欄の表示/非表示設定（Think一覧用。AI相談モードは種別なし・タイトルのみデフォルトの別state）
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
+  const [chatFilterVisibility, setChatFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
   // 日付フィルター state（常時表示）
@@ -187,20 +189,18 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // vault.Count が変わったとき（追加・削除）のみ再取得
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // AI相談ドロップボックス用: [todo:thinktank] で始まる memo Think 一覧（大文字・小文字を区別しない）
-  const todoMemoOptions = useMemo(
-    () => allThinks
-      .filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_THINKTANK))
-      .map(t => ({ id: t.ID, name: t.Name })),
+  // AI相談 DataGrid 用: タイトルが [todo:thinktank] で始まる Think 一覧（種別不問、大文字小文字を区別しない）
+  const todoMemoThinks = useMemo(
+    () => allThinks.filter(t => isTodoThink(t, TODO_MEMO_PREFIX_THINKTANK)),
     [allThinks],
   );
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+    if (selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
-  }, [todoMemoOptions, selectedTodoMemoId]);
+  }, [todoMemoThinks, selectedTodoMemoId]);
 
   // 母集合: 検索語があれば検索結果、なければ全 Think
   const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : allThinks;
@@ -233,6 +233,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     }
     app.OpenThinkInWorkout(id);
   }, [app, vault]);
+
+  // AI相談 DataGrid のダブルクリック: Thought縛りなしでそのまま Workout へ開く
+  const handleOpenTodoMemoInWorkout = useCallback((id: string) => {
+    app.OpenThinkInWorkout(id);
+  }, [app]);
 
   // Thought 種別はその場で Overview へ、それ以外は Workout へ
   const handleOpenItem = useCallback((id: string) => {
@@ -447,7 +452,22 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   let content: React.ReactNode;
 
   if (panel.ViewMode === 'chat') {
-    content = <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />;
+    content = (
+      <div className="thinktank-area__chat-wrap">
+        <ThinktankChatMemoPicker
+          thinks={todoMemoThinks}
+          columns={columns}
+          sort={sort}
+          filterVisibility={chatFilterVisibility}
+          selectedId={selectedTodoMemoId}
+          onSelect={handleSelectTodoMemo}
+          onOpenInWorkout={handleOpenTodoMemoInWorkout}
+        />
+        <div className="thinktank-area__chat-body">
+          <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
+        </div>
+      </div>
+    );
   } else if (panel.ViewMode === 'settings') {
     content = <ThinktankSettingsView ref={settingsViewRef} />;
   } else {
@@ -490,8 +510,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         saveChatTip={saveChatTip}
         visibleCount={filterVisible.length}
         totalCount={allThinks.length}
-        todoMemoOptions={todoMemoOptions}
-        selectedTodoMemoId={selectedTodoMemoId}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
@@ -500,7 +518,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
         onCreateThought={handleCreateThought}
         onSaveChat={handleSaveChat}
-        onSelectTodoMemo={handleSelectTodoMemo}
+        onClearTodoSelection={() => handleSelectTodoMemo('')}
         onRefresh={onRefresh}
       />
 
@@ -515,11 +533,20 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       )}
 
       {showFilterSelectDialog && (
-        <FilterSelectDialog
-          visibility={filterVisibility}
-          onChange={setFilterVisibility}
-          onClose={() => setShowFilterSelectDialog(false)}
-        />
+        panel.ViewMode === 'chat' ? (
+          <FilterSelectDialog
+            visibility={chatFilterVisibility}
+            onChange={setChatFilterVisibility}
+            hiddenFields={['type']}
+            onClose={() => setShowFilterSelectDialog(false)}
+          />
+        ) : (
+          <FilterSelectDialog
+            visibility={filterVisibility}
+            onChange={setFilterVisibility}
+            onClose={() => setShowFilterSelectDialog(false)}
+          />
+        )
       )}
 
       {isFilterMode && (

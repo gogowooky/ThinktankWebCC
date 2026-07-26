@@ -17,6 +17,9 @@ import {
   FilePlus,
   FileSpreadsheet,
   Save,
+  ArrowDownAZ,
+  LayoutList,
+  ListRestart,
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { TTVault } from '../../models/TTVault';
@@ -24,9 +27,14 @@ import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
 import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
+import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
+import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
+import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
+import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
+import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import type { ChatMessage } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
-import { serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_WORKOUT } from '../../utils/thinkFormat';
+import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_WORKOUT } from '../../utils/thinkFormat';
 import './WorkoutSettingArea.css';
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
@@ -63,7 +71,6 @@ interface Props {
   activeSettings:   SettingsType;
   panel:            TTWorkoutPanel;
   vault:            TTVault;
-  overviewThoughtId:string;
   width:            number;
   onSplitLeft:      () => void;
   onSplitRight:     () => void;
@@ -84,18 +91,20 @@ interface Props {
   onReadTable:      () => void;
   onSaveTable:      () => void;
   onSaveChat:       (messages: ChatMessage[]) => Promise<void>;
+  onRefresh:        () => void;
+  onOpenInWorkout:  (id: string) => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
 
 export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(function WorkoutSettingArea({
-  activeSettings, panel, vault, overviewThoughtId, width,
+  activeSettings, panel, vault, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
   onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
   onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
-  onSaveChat,
+  onSaveChat, onRefresh, onOpenInWorkout,
 }: Props, ref) {
   const panelRef           = useRef<HTMLDivElement>(null);
   const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
@@ -128,21 +137,24 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const chatAbortRef                    = useRef<AbortController | null>(null);
   const chatAccumulatedRef              = useRef('');
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
+  const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
+  const [showColumnDialog, setShowColumnDialog] = useState(false);
+  const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
+  const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // AI相談ドロップボックス用: Overview>Think一覧内の [todo:workout] memo Think 一覧
-  const todoMemoOptions = useMemo(
-    () => (overviewThoughtId ? vault.GetThinksForThought(overviewThoughtId) : [])
-      .filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_WORKOUT))
-      .map(t => ({ id: t.ID, name: t.Name })),
-    [vault, overviewThoughtId],
+  // AI相談 DataGrid 用: タイトルが [todo:workout] で始まる Think 一覧（Vault全体・種別不問）
+  const todoMemoThinks = useMemo(
+    () => vault.GetThinks().filter(t => isTodoThink(t, TODO_MEMO_PREFIX_WORKOUT)),
+    [vault, vault.Count], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+    if (selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
-  }, [todoMemoOptions, selectedTodoMemoId]);
+  }, [todoMemoThinks, selectedTodoMemoId]);
 
   const handleChatSend = useCallback(async (text: string) => {
     const ts = new Date().toISOString();
@@ -215,6 +227,9 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
     setChatMessages(loadChatFromThink(think));
   }, [vault]);
 
+  const handleToggleColumnDialog = useCallback(() => setShowColumnDialog(v => !v), []);
+  const handleToggleFilterSelectDialog = useCallback(() => setShowFilterSelectDialog(v => !v), []);
+
   const hasFocus  = panel.Layout !== null;
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
   const panelName = entry?.name ?? '';
@@ -243,24 +258,74 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               >
                 <Save size={14} className="ws-icon" />
               </button>
-              <select
-                className="workout-setting-area__todo-select"
-                value={selectedTodoMemoId}
-                onChange={e => handleSelectTodoMemo(e.target.value)}
-                data-tip="TODOメモを選択してChatに読み込み"
+
+              <div className="workout-setting-area__chat-sep" />
+
+              <button
+                className="workout-setting-area__chat-btn"
+                onClick={onRefresh}
+                data-tip="表示更新"
               >
-                <option value=""></option>
-                {todoMemoOptions.map(opt => (
-                  <option key={opt.id} value={opt.id}>{opt.name}</option>
-                ))}
-              </select>
+                <ListRestart size={14} className="ws-icon" />
+              </button>
+              <button
+                className={`workout-setting-area__chat-btn${showColumnDialog ? ' workout-setting-area__chat-btn--active' : ''}`}
+                onClick={handleToggleColumnDialog}
+                data-tip="表示項目とソート"
+              >
+                <ArrowDownAZ size={14} className="ws-icon" />
+              </button>
+              <button
+                className={`workout-setting-area__chat-btn${showFilterSelectDialog ? ' workout-setting-area__chat-btn--active' : ''}`}
+                onClick={handleToggleFilterSelectDialog}
+                data-tip="フィルター選択"
+              >
+                <LayoutList size={14} className="ws-icon" />
+              </button>
+              <button
+                className="workout-setting-area__chat-btn"
+                onClick={() => handleSelectTodoMemo('')}
+                data-tip="アイテム選択をクリア"
+              >
+                <SquareX size={14} className="ws-icon" />
+              </button>
             </div>
-            <AiChatView
-              ref={aiChatViewRef}
-              messages={chatMessages}
-              isWaiting={chatWaiting}
-              onSend={handleChatSend}
+
+            {showColumnDialog && (
+              <ColumnSortDialog
+                columns={columns}
+                sort={sort}
+                onColumnsChange={setColumns}
+                onSortChange={setSort}
+                onClose={() => setShowColumnDialog(false)}
+              />
+            )}
+            {showFilterSelectDialog && (
+              <FilterSelectDialog
+                visibility={filterVisibility}
+                onChange={setFilterVisibility}
+                hiddenFields={['type']}
+                onClose={() => setShowFilterSelectDialog(false)}
+              />
+            )}
+
+            <ThinktankChatMemoPicker
+              thinks={todoMemoThinks}
+              columns={columns}
+              sort={sort}
+              filterVisibility={filterVisibility}
+              selectedId={selectedTodoMemoId}
+              onSelect={handleSelectTodoMemo}
+              onOpenInWorkout={onOpenInWorkout}
             />
+            <div className="workout-setting-area__chat-body">
+              <AiChatView
+                ref={aiChatViewRef}
+                messages={chatMessages}
+                isWaiting={chatWaiting}
+                onSend={handleChatSend}
+              />
+            </div>
           </div>
         ) : activeSettings === 'workout' ? (
           <>

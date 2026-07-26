@@ -25,3 +25,16 @@
   flex-direction: column;
   overflow: hidden;
 }
+
+/* AI相談モード: メモ選択(DataGrid) + AiChatView を縦積みする */
+.thinktank-area__chat-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.thinktank-area__chat-body {
+  flex: 1;
+  min-height: 0;
+}

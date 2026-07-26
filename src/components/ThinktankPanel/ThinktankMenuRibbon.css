@@ -34,32 +34,3 @@
   white-space: nowrap;
   padding: 0 4px;
 }
-
-/* ── AI相談: TODOメモ選択ドロップボックス（パネル幅いっぱい） ── */
-.thinktank-ribbon__todo-select {
-  flex: 1;
-  min-width: 0;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 11px;
-  outline: none;
-}
-
-.thinktank-ribbon__todo-select:hover {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-.thinktank-ribbon__todo-select:focus {
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.thinktank-ribbon__todo-select option {
-  color: #000;
-  background: #fff;
-  /* 一覧展開時のアイテム高さを基準(4px上下)から10%低くする */
-  padding: 3.6px 6px;
-}

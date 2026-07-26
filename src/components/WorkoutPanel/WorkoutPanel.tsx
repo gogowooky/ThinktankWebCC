@@ -525,6 +525,14 @@ export function WorkoutPanel({ app }: Props) {
     await vault.CreateBlankThink('memo', `${title}\n${body}`, app.OverviewPanel.ThoughtID || undefined);
   }, [vault, app]);
 
+  const handleSettingsRefresh = useCallback(() => {
+    app.RefreshAll().catch(e => console.error('[WorkoutPanel] RefreshAll failed:', e));
+  }, [app]);
+
+  const handleOpenTodoMemoInWorkout = useCallback((id: string) => {
+    app.OpenThinkInWorkout(id);
+  }, [app]);
+
   const handleClearAll = useCallback(() => {
     panel.ClearAll();
   }, [panel]);
@@ -854,7 +862,6 @@ export function WorkoutPanel({ app }: Props) {
           activeSettings={panel.ViewMode}
           panel={panel}
           vault={vault}
-          overviewThoughtId={app.OverviewPanel.ThoughtID}
           width={settingsPanelWidth}
           onSplitLeft={handleSplitLeft}
           onSplitRight={handleSplitRight}
@@ -875,6 +882,8 @@ export function WorkoutPanel({ app }: Props) {
           onReadTable={handleReadTable}
           onSaveTable={handleSaveTable}
           onSaveChat={handleSaveChat}
+          onRefresh={handleSettingsRefresh}
+          onOpenInWorkout={handleOpenTodoMemoInWorkout}
         />
       </PanelArea>
       {panel.IsAreaOpen && (

@@ -14,7 +14,12 @@ import { ReThinkChat } from './ReThinkChat';
 import type { ReThinkChatRef } from './ReThinkChat';
 import { ReThinkMenuRibbon } from './ReThinkMenuRibbon';
 import type { ReThinkViewMode } from './ReThinkTabBar';
-import { serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_RETHINK } from '../../utils/thinkFormat';
+import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
+import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
+import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
+import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
+import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
+import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_RETHINK } from '../../utils/thinkFormat';
 import '../../components/Layout/MenuRibbon.css';
 import './ReThinkArea.css';
 
@@ -53,22 +58,34 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const reThinkChatRef     = useRef<ReThinkChatRef>(null);
   const settingsCheckRef   = useRef<HTMLInputElement>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
+  const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
+  const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
+  const [showColumnDialog, setShowColumnDialog] = useState(false);
+  const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
+  const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // AI相談ドロップボックス用: Overview>Think一覧内の [todo:rethink] memo Think 一覧
+  // AI相談 DataGrid 用: タイトルが [todo:rethink] で始まる Think 一覧（Vault全体・種別不問）
   const overviewThoughtId = app.OverviewPanel.ThoughtID;
-  const todoMemoOptions = useMemo(
-    () => (overviewThoughtId ? vault.GetThinksForThought(overviewThoughtId) : [])
-      .filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_RETHINK))
-      .map(t => ({ id: t.ID, name: t.Name })),
-    [vault, overviewThoughtId],
+  const todoMemoThinks = useMemo(
+    () => vault.GetThinks().filter(t => isTodoThink(t, TODO_MEMO_PREFIX_RETHINK)),
+    [vault, vault.Count], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+    if (selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
-  }, [todoMemoOptions, selectedTodoMemoId]);
+  }, [todoMemoThinks, selectedTodoMemoId]);
+
+  const handleToggleColumnDialog = useCallback(() => setShowColumnDialog(v => !v), []);
+  const handleToggleFilterSelectDialog = useCallback(() => setShowFilterSelectDialog(v => !v), []);
+  const handleRefresh = useCallback(() => {
+    app.RefreshAll().catch(e => console.error('[ReThinkArea] RefreshAll failed:', e));
+  }, [app]);
+  const handleOpenInWorkout = useCallback((id: string) => {
+    app.OpenThinkInWorkout(id);
+  }, [app]);
 
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
@@ -156,11 +173,33 @@ export function ReThinkArea({ app, viewMode }: Props) {
         viewMode={viewMode}
         canSaveChat={panel.ChatMessages.length > 0 && !panel.IsStreaming}
         saveChatTip={saveChatTip}
-        todoMemoOptions={todoMemoOptions}
-        selectedTodoMemoId={selectedTodoMemoId}
+        showColumnDialog={showColumnDialog}
+        showFilterSelectDialog={showFilterSelectDialog}
         onSaveChat={handleSaveChat}
-        onSelectTodoMemo={handleSelectTodoMemo}
+        onToggleColumnDialog={handleToggleColumnDialog}
+        onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
+        onClearTodoSelection={() => handleSelectTodoMemo('')}
+        onRefresh={handleRefresh}
       />
+
+      {showColumnDialog && (
+        <ColumnSortDialog
+          columns={columns}
+          sort={sort}
+          onColumnsChange={setColumns}
+          onSortChange={setSort}
+          onClose={() => setShowColumnDialog(false)}
+        />
+      )}
+
+      {showFilterSelectDialog && (
+        <FilterSelectDialog
+          visibility={filterVisibility}
+          onChange={setFilterVisibility}
+          hiddenFields={['type']}
+          onClose={() => setShowFilterSelectDialog(false)}
+        />
+      )}
 
       {/* ── ReThinkContextBar ─────────────────────────────────── */}
       <div id="rethink-context-bar" className={`ReThinkContextBar${hasContext ? '' : ' ReThinkContextBar--empty'}`}>
@@ -192,7 +231,20 @@ export function ReThinkArea({ app, viewMode }: Props) {
             ReThink設定は今後追加予定です。
           </div>
         ) : (
-          <ReThinkChat ref={reThinkChatRef} panel={panel} systemPrompt={systemPrompt} />
+          <>
+            <ThinktankChatMemoPicker
+              thinks={todoMemoThinks}
+              columns={columns}
+              sort={sort}
+              filterVisibility={filterVisibility}
+              selectedId={selectedTodoMemoId}
+              onSelect={handleSelectTodoMemo}
+              onOpenInWorkout={handleOpenInWorkout}
+            />
+            <div className="rethink-area__chat-body">
+              <ReThinkChat ref={reThinkChatRef} panel={panel} systemPrompt={systemPrompt} />
+            </div>
+          </>
         )}
       </div>
 

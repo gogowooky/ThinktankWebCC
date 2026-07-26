@@ -23,6 +23,15 @@ export const DEFAULT_FILTER_VISIBILITY: FilterVisibility = {
   type:        true,
 };
 
+/** AI相談モードの DataGrid 用フィルター表示のデフォルト（タイトルのみ ON） */
+export const DEFAULT_CHAT_FILTER_VISIBILITY: FilterVisibility = {
+  title:       true,
+  createdDate: false,
+  updatedDate: false,
+  content:     false,
+  type:        false,
+};
+
 const FILTER_ITEMS: { field: keyof FilterVisibility; label: string }[] = [
   { field: 'title',       label: 'タイトル' },
   { field: 'createdDate', label: '作成日(ID)' },
@@ -32,15 +41,18 @@ const FILTER_ITEMS: { field: keyof FilterVisibility; label: string }[] = [
 ];
 
 interface Props {
-  visibility: FilterVisibility;
-  onChange:   (v: FilterVisibility) => void;
-  onClose:    () => void;
+  visibility:    FilterVisibility;
+  onChange:      (v: FilterVisibility) => void;
+  onClose:       () => void;
+  /** ダイアログの選択肢から除外するフィールド（省略時は全項目を表示） */
+  hiddenFields?: (keyof FilterVisibility)[];
 }
 
-export function FilterSelectDialog({ visibility, onChange, onClose }: Props) {
+export function FilterSelectDialog({ visibility, onChange, onClose, hiddenFields = [] }: Props) {
   const toggle = (field: keyof FilterVisibility) => {
     onChange({ ...visibility, [field]: !visibility[field] });
   };
+  const items = FILTER_ITEMS.filter(item => !hiddenFields.includes(item.field));
 
   return (
     <div className="col-sort-dialog__backdrop" onClick={onClose}>
@@ -57,7 +69,7 @@ export function FilterSelectDialog({ visibility, onChange, onClose }: Props) {
             </tr>
           </thead>
           <tbody>
-            {FILTER_ITEMS.map(item => (
+            {items.map(item => (
               <tr key={item.field} className="col-sort-dialog__row">
                 <td className="col-sort-dialog__td col-sort-dialog__td--check">
                   <input

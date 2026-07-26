@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './OverviewMenuRibbon.css';
-import type { TodoMemoOption } from '../ThinktankPanel/ThinktankMenuRibbon';
 
 interface Props {
   showSettings:         boolean;
@@ -23,11 +22,8 @@ interface Props {
   showFilterSelectDialog: boolean;
   canSaveChat:          boolean;
   saveChatTip:          string;
-  todoMemoOptions:      TodoMemoOption[];
-  selectedTodoMemoId:   string;
   visibleCount?:        number;
   totalCount?:          number;
-  onSelectTodoMemo:     (id: string) => void;
   onCheckAll:           () => void;
   onClearChecks:        () => void;
   onExcludeChecked:     () => void;
@@ -36,6 +32,7 @@ interface Props {
   onToggleColumnDialog: () => void;
   onToggleFilterSelectDialog: () => void;
   onSaveChat:           () => void;
+  onClearTodoSelection: () => void;
   onRefresh:            () => void;
   hasThought:           boolean;
 }
@@ -46,14 +43,12 @@ export function OverviewMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly,
   showColumnDialog, showFilterSelectDialog,
   canSaveChat, saveChatTip,
-  todoMemoOptions, selectedTodoMemoId,
   visibleCount, totalCount,
   hasThought,
-  onSelectTodoMemo,
   onCheckAll, onClearChecks, onExcludeChecked, onClearThought,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
-  onSaveChat, onRefresh,
+  onSaveChat, onClearTodoSelection, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -68,35 +63,62 @@ export function OverviewMenuRibbon({
   /* ── 設定モード / チャット・グラフモード ───────────────────── */
   if (showSettings || mediaType === 'chat' || mediaType === 'graph') {
     const showChatControls = !showSettings && mediaType === 'chat';
+
+    if (showChatControls) {
+      return (
+        <div className="menu-ribbon overview-menu-ribbon">
+          <div className="tooltip-wrapper" data-tip={saveChatTip} data-tip-side="right">
+            <button
+              className="menu-ribbon__btn menu-ribbon__btn--icon"
+              onClick={onSaveChat}
+              disabled={!canSaveChat}
+            >
+              <Save size={14} />
+            </button>
+          </div>
+
+          <div className="menu-ribbon__sep" />
+
+          <button
+            className="menu-ribbon__btn menu-ribbon__btn--icon"
+            onClick={onRefresh}
+            data-tip="表示更新"
+            data-tip-side="right"
+          >
+            <ListRestart size={14} />
+          </button>
+
+          <button
+            className={`menu-ribbon__btn menu-ribbon__btn--icon${showColumnDialog ? ' menu-ribbon__btn--active' : ''}`}
+            onClick={onToggleColumnDialog}
+            data-tip="表示項目とソート"
+          >
+            <ArrowDownAZ size={14} />
+          </button>
+
+          <button
+            className={`menu-ribbon__btn menu-ribbon__btn--icon${showFilterSelectDialog ? ' menu-ribbon__btn--active' : ''}`}
+            onClick={onToggleFilterSelectDialog}
+            data-tip="フィルター選択"
+          >
+            <LayoutList size={14} />
+          </button>
+
+          <button
+            className="menu-ribbon__btn menu-ribbon__btn--icon"
+            onClick={onClearTodoSelection}
+            data-tip="アイテム選択をクリア"
+            data-tip-side="left"
+          >
+            <SquareX size={14} />
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="menu-ribbon overview-menu-ribbon">
-        {showChatControls && (
-          <>
-            <div className="tooltip-wrapper" data-tip={saveChatTip} data-tip-side="right">
-              <button
-                className="menu-ribbon__btn menu-ribbon__btn--icon"
-                onClick={onSaveChat}
-                disabled={!canSaveChat}
-              >
-                <Save size={14} />
-              </button>
-            </div>
-            <select
-              className="overview-ribbon__todo-select"
-              value={selectedTodoMemoId}
-              onChange={e => onSelectTodoMemo(e.target.value)}
-              data-tip="TODOメモを選択してChatに読み込み"
-              data-tip-side="left"
-            >
-              <option value=""></option>
-              {todoMemoOptions.map(opt => (
-                <option key={opt.id} value={opt.id}>{opt.name}</option>
-              ))}
-            </select>
-          </>
-        )}
-
-        {!showChatControls && <div className="menu-ribbon__spacer" />}
+        <div className="menu-ribbon__spacer" />
 
         {/* 表示更新 */}
         <button

@@ -1,0 +1,20 @@
+/* ThinktankChatMemoPicker.css */
+
+.tt-chat-picker {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.tt-chat-picker__grid {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tt-chat-picker__grid .thoughts-list {
+  flex: 1;
+  min-height: 0;
+}

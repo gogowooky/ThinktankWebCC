@@ -156,6 +156,19 @@
   min-height: 0;
 }
 
+/* AI相談モード: メモ選択(DataGrid) + AiChatView を縦積みする */
+.overview-area__chat-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.overview-area__chat-body {
+  flex: 1;
+  min-height: 0;
+}
+
 /* ── 未選択 / 空状態 ──────────────────────────────────────────────── */
 
 .overview-area__empty {

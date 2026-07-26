@@ -31,14 +31,15 @@ import type { OverviewFilterPanelRef } from './OverviewFilterPanel';
 import { OverviewSearchBar } from './OverviewSearchBar';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
-import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
+import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
 import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
+import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
-import { parseThought, serializeThought, serializeChat, isTodoMemoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
+import { parseThought, serializeThought, serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './OverviewArea.css';
 
@@ -75,8 +76,9 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
-  // フィルター欄の表示/非表示設定
+  // フィルター欄の表示/非表示設定（Think一覧用。AI相談モードは種別なし・タイトルのみデフォルトの別state）
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
+  const [chatFilterVisibility, setChatFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
   const [focusedId, setFocusedId] = useState<string | null>(() => panel.CurrentItemID || null);
@@ -128,18 +130,19 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     });
   }, [panel.ThoughtID, vault, refreshKey, vault.IsLoaded, vault.Count]);
 
-  // AI相談ドロップボックス用: Overview>Think一覧内の [todo:overview] memo Think 一覧
-  const todoMemoOptions = useMemo(
-    () => thinksInThought.filter(t => isTodoMemoThink(t, TODO_MEMO_PREFIX_OVERVIEW)).map(t => ({ id: t.ID, name: t.Name })),
-    [thinksInThought],
+  // AI相談 DataGrid 用: タイトルが [todo:overview] で始まる Think 一覧（Vault全体・種別不問）
+  const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
+  const todoMemoThinks = useMemo(
+    () => allThinks.filter(t => isTodoThink(t, TODO_MEMO_PREFIX_OVERVIEW)),
+    [allThinks],
   );
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (selectedTodoMemoId && !todoMemoOptions.some(o => o.id === selectedTodoMemoId)) {
+    if (selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
-  }, [todoMemoOptions, selectedTodoMemoId]);
+  }, [todoMemoThinks, selectedTodoMemoId]);
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
@@ -474,12 +477,9 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         showFilterSelectDialog={showFilterSelectDialog}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
         saveChatTip={saveChatTip}
-        todoMemoOptions={todoMemoOptions}
-        selectedTodoMemoId={selectedTodoMemoId}
         visibleCount={visibleThinks.length}
         totalCount={typeFilteredBase.length}
         hasThought={!!panel.ThoughtID}
-        onSelectTodoMemo={handleSelectTodoMemo}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}
@@ -488,6 +488,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
         onSaveChat={handleSaveChat}
+        onClearTodoSelection={() => handleSelectTodoMemo('')}
         onRefresh={handleRefresh}
       />
 
@@ -504,11 +505,20 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
       {/* ── フィルター選択ダイアログ ───────────────────────────── */}
       {showFilterSelectDialog && (
-        <FilterSelectDialog
-          visibility={filterVisibility}
-          onChange={setFilterVisibility}
-          onClose={() => setShowFilterSelectDialog(false)}
-        />
+        panel.MediaType === 'chat' && !showSettings ? (
+          <FilterSelectDialog
+            visibility={chatFilterVisibility}
+            onChange={setChatFilterVisibility}
+            hiddenFields={['type']}
+            onClose={() => setShowFilterSelectDialog(false)}
+          />
+        ) : (
+          <FilterSelectDialog
+            visibility={filterVisibility}
+            onChange={setFilterVisibility}
+            onClose={() => setShowFilterSelectDialog(false)}
+          />
+        )
       )}
 
       {/* ── フィルターパネル + 検索バー（Think一覧モードのみ）────────── */}
@@ -568,7 +578,20 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             />
           )
         ) : panel.MediaType === 'chat' ? (
-          <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
+          <div className="overview-area__chat-wrap">
+            <ThinktankChatMemoPicker
+              thinks={todoMemoThinks}
+              columns={columns}
+              sort={sort}
+              filterVisibility={chatFilterVisibility}
+              selectedId={selectedTodoMemoId}
+              onSelect={handleSelectTodoMemo}
+              onOpenInWorkout={handleOpenThinkInWorkout}
+            />
+            <div className="overview-area__chat-body">
+              <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
+            </div>
+          </div>
         ) : !think ? (
           <div className="overview-area__empty">
             <span>Thought をドロップして選択してください</span>
