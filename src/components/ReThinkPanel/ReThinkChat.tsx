@@ -130,13 +130,11 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
       {/* ── ログ出力エリア ───────────────────────────────── */}
       <div className="rethink-chat__log" ref={logRef}>
 
-        <div className="rethink-chat__banner">
-          <span className="rethink-chat__banner-line">Thinktank Antigravity</span>
-          <span className="rethink-chat__banner-line rethink-chat__dim">
-            Thought / Think のコンテキストで AI と相談できます。
-          </span>
-          <span className="rethink-chat__banner-sep">{'─'.repeat(44)}</span>
-        </div>
+        {panel.ChatMessages.length === 0 && !isWaiting && (
+          <div className="rethink-chat__empty">
+            メッセージを入力して相談を開始してください
+          </div>
+        )}
 
         {panel.ChatMessages.map((msg, index) => {
           const isLastStreaming = isWaiting && index === panel.ChatMessages.length - 1 && msg.role === 'assistant';

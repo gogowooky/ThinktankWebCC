@@ -2,12 +2,10 @@
  * ReThinkArea.tsx
  * Phase 10: ReThinkPanel のメインエリア。
  *
- * - 上部 ReThinkContextBar: 連携中 Thought / Think 名を表示
- * - 下部: ReThinkChat（AI との CLI ターミナル風チャット）
+ * - メモ選択(DataGrid) + ReThinkChat（AI との CLI ターミナル風チャット）
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpen, FileText } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ReThinkChat } from './ReThinkChat';
@@ -45,14 +43,6 @@ export function ReThinkArea({ app, viewMode }: Props) {
 
   const vault       = app.Models.Vault;
   useAppUpdate(vault);
-  const thoughtName = panel.LinkedThoughtID
-    ? (vault.GetThink(panel.LinkedThoughtID)?.Name ?? panel.LinkedThoughtID)
-    : null;
-  const thinkName   = panel.LinkedThinkID
-    ? (vault.GetThink(panel.LinkedThinkID)?.Name ?? panel.LinkedThinkID)
-    : null;
-
-  const hasContext = !!thoughtName || !!thinkName;
 
   // コンテキスト付きシステムプロンプトを生成
   const reThinkChatRef     = useRef<ReThinkChatRef>(null);
@@ -200,27 +190,6 @@ export function ReThinkArea({ app, viewMode }: Props) {
           onClose={() => setShowFilterSelectDialog(false)}
         />
       )}
-
-      {/* ── ReThinkContextBar ─────────────────────────────────── */}
-      <div id="rethink-context-bar" className={`ReThinkContextBar${hasContext ? '' : ' ReThinkContextBar--empty'}`}>
-        {thoughtName ? (
-          <>
-            <BookOpen size={11} className="ReThinkContextBar__icon" />
-            <span className="ReThinkContextBar__label" title={thoughtName}>
-              {thoughtName}
-            </span>
-          </>
-        ) : thinkName ? (
-          <>
-            <FileText size={11} className="ReThinkContextBar__icon" />
-            <span className="ReThinkContextBar__label" title={thinkName}>
-              {thinkName}
-            </span>
-          </>
-        ) : (
-          <span className="ReThinkContextBar__none">コンテキスト未設定</span>
-        )}
-      </div>
 
       {/* ── コンテンツ ───────────────────────────────────────── */}
       <div className="rethink-area__chat">

@@ -10,45 +10,10 @@
   height: 100%;
   overflow: hidden;
   background: var(--rethink-area-bg);
-}
-
-/* ── ReThinkContextBar ─────────────────────────────── */
-
-.ReThinkContextBar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 5px 10px;
-  background: color-mix(in srgb, var(--rethink-area-bg) 75%, var(--rethink-ribbon-bg) 25%);
-  border-bottom: 1px solid rgba(30, 70, 32, 0.25);
-  flex-shrink: 0;
-  min-height: 28px;
-}
-
-.ReThinkContextBar--empty {
-  background: color-mix(in srgb, var(--rethink-area-bg) 90%, var(--rethink-ribbon-bg) 10%);
-}
-
-.ReThinkContextBar__icon {
-  color: var(--rethink-ribbon-bg);
-  flex-shrink: 0;
-}
-
-.ReThinkContextBar__label {
-  font-size: 11px;
-  font-weight: 600;
-  color: #1a3d1c;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-  min-width: 0;
-}
-
-.ReThinkContextBar__none {
-  font-size: 11px;
-  color: rgba(30, 70, 32, 0.45);
-  font-style: italic;
+  /* ColumnSortDialog/FilterSelectDialog(position:absolute)がこのエリア基準で
+     配置されるよう、他パネル(Thinktank/Overview/WorkoutSetting)と同様に
+     position:relative を明示する */
+  position: relative;
 }
 
 /* ── チャット ─────────────────────────────────────── */

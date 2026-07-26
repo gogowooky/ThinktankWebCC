@@ -35,22 +35,13 @@
 
 /* ── 起動バナー ──────────────────────────────────── */
 
-.rethink-chat__banner {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin-bottom: 8px;
-}
-.rethink-chat__banner-line {
-  color: rgba(30, 70, 32, 0.4);
+.rethink-chat__empty {
+  color: rgba(30, 70, 32, 0.35);
   font-size: 11px;
+  text-align: center;
+  padding: 24px 0;
+  font-family: inherit;
 }
-.rethink-chat__banner-sep {
-  color: rgba(30, 70, 32, 0.2);
-  font-size: 11px;
-  letter-spacing: -0.5px;
-}
-.rethink-chat__dim { color: rgba(30, 70, 32, 0.4); }
 
 /* ── エントリ ─────────────────────────────────────────────── */
 

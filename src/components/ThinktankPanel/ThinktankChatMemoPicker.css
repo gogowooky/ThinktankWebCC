@@ -7,6 +7,13 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
+/* WorkoutSettingはダーク基調のためフィルター欄が白背景前提のまま埋め込むと
+   文字が読めなくなる。他パネルのAI相談と同じく、パネル基本色を反映した
+   白系背景（--workout-area-bg）を明示的に敷く */
+.workout-setting-area .tt-chat-picker {
+  background: var(--workout-area-bg);
+}
+
 .tt-chat-picker__grid {
   display: flex;
   flex-direction: column;
