@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.21",
+  "version": "1.3.22",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "e06f882",
-  "commitDateTime": "2026-07-26-163504",
-  "commitMessage": "feat: add フィルター選択 dialog to toggle Think一覧 filter rows"
+  "commitId": "ab49930",
+  "commitDateTime": "2026-07-26-234624",
+  "commitMessage": "feat: rebuild AI相談 filter/DataGrid picker for Thinktank/Overview/WorkoutSetting/ReThink"
 }
