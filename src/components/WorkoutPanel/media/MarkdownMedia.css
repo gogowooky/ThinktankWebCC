@@ -65,6 +65,7 @@
 /* ── コードブロック ───────────────────────────────────── */
 .markdown-media pre {
   background: #1e1e1e;
+  color: #d4d4d4; /* 親の暗色文字(#24292e)を継承すると暗背景で読めなくなるため明示 */
   border-radius: 4px;
   padding: 12px 14px;
   margin: 0 0 12px;
