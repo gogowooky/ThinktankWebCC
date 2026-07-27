@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.24",
+  "version": "1.3.25",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "0d86c96",
-  "commitDateTime": "2026-07-27-081440",
-  "commitMessage": "fix: brighten code block text color in MarkdownMedia for dark background"
+  "commitId": "3197d80",
+  "commitDateTime": "2026-07-27-234119",
+  "commitMessage": "feat: register TextEditor.EditText.Delete/Backspace actions"
 }
