@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.25",
+  "version": "1.3.26",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "3197d80",
-  "commitDateTime": "2026-07-27-234119",
-  "commitMessage": "feat: register TextEditor.EditText.Delete/Backspace actions"
+  "commitId": "f696810",
+  "commitDateTime": "2026-07-27-234531",
+  "commitMessage": "fix: scope editor shortcuts to TextEditor focus, add Ctrl+D/Ctrl+H aliases"
 }
