@@ -40,7 +40,7 @@ async function getSearchTags(): Promise<Record<string, string>> {
 const PANEL_VIEW_MODES: Record<string, string[]> = {
   Thinktank:      ['filter', 'chat', 'settings'],
   Overview:       ['filter', 'graph', 'chat', 'settings'],
-  WorkoutSetting: ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  WorkoutSetting: ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph', 'chat'],
   Workout:        ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
   ReThink:        ['chat', 'settings'],
 };
@@ -261,6 +261,30 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       } else {
         TTUIStateManager.instance.redo();
         item.Result = 'UI State Redo';
+      }
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.EditText.Delete',
+    Completion: (item) => {
+      const editor = TTShortcutManager.instance.activeEditor;
+      const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
+      if (editor && isEditorFocused) {
+        editor.trigger('keyboard', 'deleteRight', {});
+        item.Result = 'Editor Delete';
+      }
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.EditText.Backspace',
+    Completion: (item) => {
+      const editor = TTShortcutManager.instance.activeEditor;
+      const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
+      if (editor && isEditorFocused) {
+        editor.trigger('keyboard', 'deleteLeft', {});
+        item.Result = 'Editor Backspace';
       }
     },
   });

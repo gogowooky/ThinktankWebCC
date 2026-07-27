@@ -15,6 +15,13 @@
 
 # Action
 
+## Action：　260727　TextEditor.EditText.Delete
+　monaco-editorでDeleteキーを押したときの動作
+
+## Action：　260727　TextEditor.EditText.Backspace
+　monaco-editorでBackspaceキーを押したときの動作
+
+
 ## 完了：　Application.Resource.ImportFromLocal
 
 
