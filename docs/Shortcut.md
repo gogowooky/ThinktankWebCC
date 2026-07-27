@@ -47,7 +47,7 @@ Overview.Filter     ,ExApp  ,Alt+ArrowDown  ,Overview.Filter.CursorPos:NextLine 
 Overview.Filter     ,ExApp  ,Alt+Enter      ,Overview.Filter.Cursor:Action              ,Overview>Think一覧のカーソル位置を開く
 Overview.Filter     ,ExApp  ,Alt+K          ,Overview.Filter.Cursor:ToggleCheck         ,Overview>Think一覧のカーソル位置をチェック
 
-# Editor Edit
+# Editor Drop
 *,   ,ThinkFileDrag       ,WorkoutPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
 *,   ,Alt+ThinkFileDrag   ,WorkoutPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
 
@@ -104,10 +104,12 @@ Overview.Filter     ,ExApp  ,Alt+K          ,Overview.Filter.Cursor:ToggleCheck 
 *TextEditor ,       ,Alt+Shift+N            ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 
 # Editor 編集
-*           ,       ,Ctrl+Z             ,TextEditor.EditText.Undo    ,編集を元に戻す
-*           ,       ,Ctrl+Y             ,TextEditor.EditText.Redo    ,編集をやり直す
-*           ,       ,Delete             ,TextEditor.EditText.Delete  ,カーソル右の文字を削除
-*           ,       ,Backspace          ,TextEditor.EditText.Backspace,カーソル左の文字を削除
+*TextEditor ,       ,Ctrl+Z             ,TextEditor.EditText.Undo                       ,編集を元に戻す
+*TextEditor ,       ,Ctrl+Y             ,TextEditor.EditText.Redo                       ,編集をやり直す
+*TextEditor ,       ,Delete             ,TextEditor.EditText.Delete                     ,カーソル右の文字を削除
+*TextEditor ,       ,Backspace          ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
+*TextEditor ,       ,Ctrl+D             ,TextEditor.EditText.Delete                     ,カーソル右の文字を削除
+*TextEditor ,       ,Ctrl+H             ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
 
 *TextEditor ,       ,Ctrl+I             ,TextEditor.FoldingHeading.IncLevel             ,折り畳みレベルを上げる
 *TextEditor ,       ,Shift+Ctrl+I       ,TextEditor.FoldingHeading.DecLevel             ,折り畳みレベルを下げる
