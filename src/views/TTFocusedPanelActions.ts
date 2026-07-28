@@ -378,6 +378,27 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.PaneNumber:ReFocus',
+    Description: 'WorkoutPanelの現在フォーカス中のPaneに再度フォーカスする',
+    Completion: (item) => {
+      const wPanel = app.WorkoutPanel;
+      const areaId = wPanel.FocusedAreaId;
+      if (!areaId) { item.Result = '[対象Paneなし]'; return; }
+
+      // FocusArea() は同一ID指定時 no-op のため、WorkoutArea側の
+      // フォーカス適用エフェクト（isFocused: false→true の変化）を
+      // 強制的に再発火させるため、一度 null にしてから次のマクロタスクで再設定する
+      // （同一タスク内での再設定は React のバッチ処理により変化なしと扱われるため効かない）
+      wPanel.FocusedAreaId = null;
+      wPanel.NotifyUpdated();
+      setTimeout(() => {
+        wPanel.FocusArea(areaId);
+      }, 0);
+      item.Result = 'Paneに再フォーカスしました';
+    },
+  });
+
+  TTActions.Register({
     ActionID: 'WorkoutPanel.FocusedPane.Mode:Next',
     Description: 'フォーカスペインの表示モードを次に切り替える',
     Completion: (item) => {
@@ -2550,6 +2571,70 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
       }
       commandPrevFocus = null;
       item.Result = '[戻り先なし] 入力欄のフォーカスを外しました';
+    },
+  });
+
+  // ── ToolBar 現在モード共通操作（Clear/Copy/Paste） ────────────────────────
+  const TOOLBAR_MODE_TEXT_KEY: Record<string, ConfigKey> = {
+    Highlighter: 'ToolBar.HighlighterMode.Text',
+    Command:     'ToolBar.CommandMode.Text',
+    Translate:   'ToolBar.TranslateMode.Text',
+    Reminder:    'ToolBar.ReminderMode.Text',
+  };
+
+  TTActions.Register({
+    ActionID: 'ToolBar.CurrentMode.Text:Clear',
+    Description: 'ToolBarの現在のモードの入力欄のテキストを消去する',
+    Completion: (item) => {
+      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkoutPanel.ToolBarMode];
+      if (!key) { item.Result = '[対象モードなし]'; return; }
+      TTUIStateManager.instance.applyProperty(key, '');
+      item.Result = `${app.WorkoutPanel.ToolBarMode}をクリアしました`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.CurrentMode.Text:Focus',
+    Description: 'ToolBarの現在のモードの入力欄にフォーカスする',
+    Completion: (item) => {
+      const mode = app.WorkoutPanel.ToolBarMode;
+      if (!TOOLBAR_MODE_TEXT_KEY[mode]) { item.Result = '[対象モードなし]'; return; }
+      const input = document.getElementById('StatusBarTextInput') as HTMLInputElement | null;
+      if (!input) { item.Result = '[入力欄なし]'; return; }
+      input.focus();
+      item.Result = `${mode}入力欄にフォーカスしました`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.CurrentMode.Text:Copy',
+    Description: 'ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする',
+    Completion: async (item) => {
+      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkoutPanel.ToolBarMode];
+      if (!key) { item.Result = '[対象モードなし]'; return; }
+      const value = TTUIStateManager.instance.getProperty(key);
+      try {
+        await navigator.clipboard.writeText(value);
+        item.Result = `コピーしました: ${value}`;
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.CurrentMode.Text:Paste',
+    Description: 'ToolBarの現在のモードの入力欄にクリップボードのテキストをペーストする',
+    Completion: async (item) => {
+      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkoutPanel.ToolBarMode];
+      if (!key) { item.Result = '[対象モードなし]'; return; }
+      try {
+        const clip = await navigator.clipboard.readText();
+        TTUIStateManager.instance.applyProperty(key, clip);
+        item.Result = `ペーストしました: ${clip}`;
+      } catch (err: any) {
+        item.Result = `[エラー] ${err.message}`;
+      }
     },
   });
 

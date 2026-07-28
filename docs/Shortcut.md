@@ -1,6 +1,5 @@
 Keyboard Shortcuts
 
-# Keyboard Shortcuts
 > focus     ,exmode ,key                      ,action                                           ,description
 
 # アプリケーション モード
@@ -47,11 +46,10 @@ Overview.Filter     ,ExApp  ,Alt+ArrowDown  ,Overview.Filter.CursorPos:NextLine 
 Overview.Filter     ,ExApp  ,Alt+Enter      ,Overview.Filter.Cursor:Action              ,Overview>Think一覧のカーソル位置を開く
 Overview.Filter     ,ExApp  ,Alt+K          ,Overview.Filter.Cursor:ToggleCheck         ,Overview>Think一覧のカーソル位置をチェック
 
-# Editor Drop
+# Editor D&D Thinkファイル,ローカルファイル
 *,   ,ThinkFileDrag       ,WorkoutPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
 *,   ,Alt+ThinkFileDrag   ,WorkoutPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
 
-# Editor Editor ローカルファイルシステム D&D
 *,   ,LocalFileDrag       ,WorkoutPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う
 *,   ,LocalDirDrag        ,WorkoutPanel.Load.DroppedLink   ,ローカルディレクトリDropで既定動作（Links Think作成）を行う
 *,   ,Alt+LocalFileDrag   ,WorkoutPanel.Insert.DroppedLink ,ローカルファイルDropをコンテンツ内カーソル位置に挿入する
@@ -67,13 +65,11 @@ Overview.Filter     ,ExApp  ,Alt+K          ,Overview.Filter.Cursor:ToggleCheck 
 *TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
 *TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
 *TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
-*HighLighter,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Unfocus                   ,Highlighter入力欄から元の位置に戻る
-*TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
 *TextEditor ,       ,Alt+S                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
-*TextEditor ,       ,Alt+Q                  ,ToolBar.HighlighterMode.Text:Clear                     ,Highlighterをクリアする
 
-*Command,           ,Alt+X                  ,ToolBar.CommandMode.Text:Unfocus                       ,Command入力欄から元の位置に戻る
-*Command ,          ,Alt+Q                  ,ToolBar.CommandMode.Text:Clear                         ,Commandをクリアする
+*TextEditor ,       ,Alt+X                  ,ToolBar.CurrentMode.Text:Focus                         ,Highlighter入力欄にフォーカスする
+ToolBar*    ,       ,Alt+Q                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
+ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
 
 # Editor カーソル
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine            ,カーソルを一つ上の行に移動する（ArrowUp相当）

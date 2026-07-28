@@ -15,23 +15,12 @@
 
 # Action
 
-## Action：　260728　ToolBar.CommandMode.Text:Unfocus
-description:    ToolBarのCommand入力欄から元の位置に戻る
-key:            ToolBar.CommandMode.Text:Unfocus
-　ToolBarのCommand入力欄から元の位置に戻る
-
-## Action：　260728　ToolBar.CommandMode.Text:Focus
-description:    ToolBarのCommand入力欄にフォーカスする
-key:            ToolBar.CommandMode.Text:Focus
-　ToolBarのCommand入力欄にフォーカスする
-
-## Action：　260728　ToolBar.CommandMode.Text:Clear
-description:    ToolBarのCommandをクリアする
-key:            ToolBar.CommandMode.Text:Clear
-　ToolBarのCommandをクリアする
-
 ## 完了：　Application.Resource.ImportFromLocal
 
+## Action：　260728　ToolBar.CurrentMode.Text:Focus
+description:    ToolBarの現在のモードの入力欄にフォーカスする
+key:            ToolBar.CurrentMode.Text:Focus
+　ToolBarの現在のモードの入力欄にフォーカスする
 
 # Status
 
@@ -238,6 +227,39 @@ current:
 default:        
 type:           string
 candidates:     .*
+
+## Action：　260728　ToolBar.CommandMode.Text:Unfocus
+description:    ToolBarのCommand入力欄から元の位置に戻る
+key:            ToolBar.CommandMode.Text:Unfocus
+　ToolBarのCommand入力欄から元の位置に戻る
+## Action：　260728　ToolBar.CommandMode.Text:Focus
+description:    ToolBarのCommand入力欄にフォーカスする
+key:            ToolBar.CommandMode.Text:Focus
+　ToolBarのCommand入力欄にフォーカスする
+## Action：　260728　ToolBar.CommandMode.Text:Clear
+description:    ToolBarのCommandをクリアする
+key:            ToolBar.CommandMode.Text:Clear
+　ToolBarのCommandをクリアする
+
+## Action：　260728　ToolBar.CurrentMode.Text:Clear
+description:    ToolBarの現在のモードの入力欄のテキストを消去する
+key:            ToolBar.CurrentMode.Text:Clear
+　ToolBarの現在のモードの入力欄に記載されたテキストを消去する
+## Action：　260728　ToolBar.CurrentMode.Text:Paste
+description:    ToolBarの現在のモードの入力欄にクリップボードのテキストをペーストする
+key:            ToolBar.CurrentMode.Text:Paste
+　ToolBarの現在のモードの入力欄にクリップボードのテキストをペーストする
+## Action：　260728　ToolBar.CurrentMode.Text:Copy
+description:    ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする
+key:            ToolBar.CurrentMode.Text:Copy
+　ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする
+## Action：　260728　WorkoutPanel.FocusedPane.PaneNumber:ReFocus
+description:    WorkoutPanelの現在フォーカス中のPaneに再度フォーカスする
+key:            WorkoutPanel.FocusedPane.PaneNumber:ReFocus
+　WorkoutPanelの指定のPane番号に再度フォーカスする
+  
+
+
 
 # Panel ============================================================================================================
 ## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
