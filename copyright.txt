@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.27",
+  "version": "1.3.28",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "4b214c6",
-  "commitDateTime": "2026-07-28-185030",
-  "commitMessage": "feat: add Command mode incremental search with descriptions, fix focus race"
+  "commitId": "3ae3925",
+  "commitDateTime": "2026-07-29-074950",
+  "commitMessage": "feat: add ToolBar current-mode text actions and Pane ReFocus"
 }
