@@ -5,16 +5,18 @@
  * 右: モードアイコン群 + ユーティリティボタン [TabBar]
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { Monitor, Globe, Columns4, Columns2, Laptop, CheckCircle, RefreshCw, Clock, AlertCircle, WifiOff } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
+import { TTActions } from '../../views/TTActions';
 import { getFocusName } from '../../utils/getFocusName';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
+import { CommandIncrementalSearch, type CommandCandidate } from './CommandIncrementalSearch';
 
 // 下位コンポーネントおよび型のインポート
 import {
@@ -62,8 +64,29 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   });
   const [authorState, setAuthorState] = useState<AuthorState>(() => panel.ToolBarMode === 'Copyright' ? 'static' : 'off');
   const [kaState,     setKaState]     = useState<KAState>(KA_INIT);
+  const [searchIndex, setSearchIndex] = useState(0);
   const inputRef       = useRef<HTMLInputElement>(null);
   const rafRef         = useRef<number>(0);
+
+  // Command モード: インクリメンタルサーチ候補（スペース区切りの各語でAND部分一致）
+  const commandCandidates: CommandCandidate[] = useMemo(() => {
+    if (mode !== 'command') return [];
+    const tokens = text.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (tokens.length === 0) return [];
+    return TTActions.GetRegisteredActions()
+      .filter(a => {
+        const lower = a.ActionID.toLowerCase();
+        return tokens.every(t => lower.includes(t));
+      })
+      .map(a => ({ id: a.ActionID, description: a.Description || '' }))
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .slice(0, 20);
+  }, [mode, text]);
+
+  // テキスト変化のたびに選択候補を先頭にリセット
+  useEffect(() => {
+    setSearchIndex(0);
+  }, [text]);
 
   // panel.ToolBarMode 変化（外部からの設定変更）をローカル state に反映
   useEffect(() => {
@@ -75,12 +98,19 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       if (mapped) {
         setMode(mapped);
         setAuthorState('off');
-        if (mapped !== 'keyaction') {
-          requestAnimationFrame(() => inputRef.current?.focus());
-        }
       }
     }
   }, [panel.ToolBarMode]);
+
+  // mode 変化（テキスト入力欄を持つモードへの切替）のたびに入力欄へフォーカスする。
+  // renderPanel() は mode を見て初めて <input> をマウントするため、直前の
+  // panel.ToolBarMode 変化検知のタイミングでは inputRef が未アタッチの場合がある。
+  // mode 自体に依存させることで、入力欄がマウント済みの状態でのみ実行される。
+  useEffect(() => {
+    if (mode !== 'keyaction') {
+      inputRef.current?.focus();
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (mode === 'highlight') setText(panel.HighlightWord);
@@ -227,6 +257,23 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   }, [mode, panel, text]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (mode === 'command' && commandCandidates.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSearchIndex(i => (i + 1) % commandCandidates.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSearchIndex(i => (i - 1 + commandCandidates.length) % commandCandidates.length);
+        return;
+      }
+      if (e.key === 'Enter' && !commandCandidates.some(c => c.id === text.trim())) {
+        e.preventDefault();
+        handleTextChange(commandCandidates[Math.min(searchIndex, commandCandidates.length - 1)].id);
+        return;
+      }
+    }
     if (e.key === 'Enter') {
       if (mode === 'highlight' && text.trim()) {
         panel.AddHighlightHistory(text.trim());
@@ -234,7 +281,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
         TTShortcutManager.instance.executeActionDirect(text.trim());
       }
     }
-  }, [mode, panel, text]);
+  }, [mode, panel, text, commandCandidates, searchIndex, handleTextChange]);
 
   const handleClear = useCallback(() => {
     setText('');
@@ -286,18 +333,27 @@ export function ApplicationStatusBarArea({ panel }: Props) {
 
     // 通常の入力フィールド (Highlight, Command, Translate, Reminder 等、または Copyrightの静的表示)
     return (
-      <StatusBarInputPanel
-        inputRef={inputRef}
-        value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
-        onChange={handleTextChange}
-        onClear={handleClear}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        placeholder={current.placeholder}
-        isReadOnly={authorState === 'static'}
-        showHistory={authorState === 'off' && mode === 'highlight'}
-        historyList={panel.HighlightHistory}
-      />
+      <div className="ApplicationStatusBarArea__input-wrap">
+        <StatusBarInputPanel
+          inputRef={inputRef}
+          value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
+          onChange={handleTextChange}
+          onClear={handleClear}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+          placeholder={current.placeholder}
+          isReadOnly={authorState === 'static'}
+          showHistory={authorState === 'off' && mode === 'highlight'}
+          historyList={panel.HighlightHistory}
+        />
+        {mode === 'command' && commandCandidates.length > 0 && (
+          <CommandIncrementalSearch
+            candidates={commandCandidates}
+            selectedIndex={Math.min(searchIndex, commandCandidates.length - 1)}
+            onSelect={handleTextChange}
+          />
+        )}
+      </div>
     );
   };
 

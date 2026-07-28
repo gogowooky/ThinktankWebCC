@@ -56,6 +56,14 @@
 }
 
 /* ── テキスト入力 ── */
+.ApplicationStatusBarArea__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
 .ApplicationStatusBarArea__input {
   flex: 1;
   height: 20px;
@@ -63,6 +71,7 @@
   background: transparent;
   border: none;
   color: var(--toolbar-color, rgba(255, 255, 255, 0.9));
+  font-family: inherit;
   font-size: 11px;
   outline: none;
   min-width: 0;

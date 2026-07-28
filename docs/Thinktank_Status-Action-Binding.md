@@ -15,12 +15,20 @@
 
 # Action
 
-## Action：　260727　TextEditor.EditText.Delete
-　monaco-editorでDeleteキーを押したときの動作
+## Action：　260728　ToolBar.CommandMode.Text:Unfocus
+description:    ToolBarのCommand入力欄から元の位置に戻る
+key:            ToolBar.CommandMode.Text:Unfocus
+　ToolBarのCommand入力欄から元の位置に戻る
 
-## Action：　260727　TextEditor.EditText.Backspace
-　monaco-editorでBackspaceキーを押したときの動作
+## Action：　260728　ToolBar.CommandMode.Text:Focus
+description:    ToolBarのCommand入力欄にフォーカスする
+key:            ToolBar.CommandMode.Text:Focus
+　ToolBarのCommand入力欄にフォーカスする
 
+## Action：　260728　ToolBar.CommandMode.Text:Clear
+description:    ToolBarのCommandをクリアする
+key:            ToolBar.CommandMode.Text:Clear
+　ToolBarのCommandをクリアする
 
 ## 完了：　Application.Resource.ImportFromLocal
 
@@ -64,7 +72,11 @@ type:           string
 candidates:      ^(PWA|Local|Electron)$
 
 ## Action：　260708　Application.PanelDisplay.Mode:Simple
+description:    パネル表示モードをSimpleにする
+key:            Application.PanelDisplay.Mode:Simple
 ## Action：　260708　Application.PanelDisplay.Mode:Normal
+description:    パネル表示モードをNormalにする
+key:            Application.PanelDisplay.Mode:Normal
 ## Status：　260708　Application.PanelDisplay.Mode
 description:    
 key:            Application.PanelDisplay.Mode
@@ -74,6 +86,8 @@ type:           string
 candidates:      ^(Simple|Normal)$
 
 ## Action：　260628　Application.Resource.ExportToLocal
+description:    BQ保存済みThinkファイルをローカルにエクスポートする
+key:            Application.Resource.ExportToLocal
 　BQに保存されているThinkファイルデータをローカル側に保存する
 　保存先は {root}/../Thinktank_{yyyyMMdd}/ とする
 　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別はファイル種別名毎のフォルダに保存する。
@@ -82,7 +96,11 @@ candidates:      ^(Simple|Normal)$
 
 
 ## Action：　260619　Application.FocusedPanel.Name:Next
+description:    フォーカスカラムを次のパネルに移動する
+key:            Application.FocusedPanel.Name:Next
 ## Action：　260619　Application.FocusedPanel.Name:Prev
+description:    フォーカスカラムを前のパネルに移動する
+key:            Application.FocusedPanel.Name:Prev
 ## Status：　260615　Application.FocusedPanel.Name
 description:    フォーカスカラム
 key:            Application.FocusedPanel.Name
@@ -102,7 +120,11 @@ candidates:      ^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$
 
 
 ## Action：　260619　Application.Status.ExMode:ExApp
+description:    拡張モードをExAppに設定する
+key:            Application.Status.ExMode:ExApp
 ## Action：　260619　Application.Status.ExMode:ExOpt
+description:    拡張モードをExOptに設定する
+key:            Application.Status.ExMode:ExOpt
 ## Status：　260619　Application.Status.ExMode
 description:    拡張モード
 key:            Application.Status.ExMode
@@ -151,8 +173,12 @@ candidates:      ^(None|Thinktank|Overview|WorkoutSetting|Workout|ReThink)\..*$
 　　モード名を指定するショートカットが意図通り動作するようになりました。
 
 ## Action：　260616　ToolBar.Mode.Name:Next
+description:    ToolBarのモードを次の値に切り替える（循環）
+key:            ToolBar.Mode.Name:Next
 　ToolBar.Mode.Nameの設定値を次の値にする。値は循環式。
 ## Action：　260616　ToolBar.Mode.Name:Prev
+description:    ToolBarのモードを前の値に切り替える（循環）
+key:            ToolBar.Mode.Name:Prev
 　ToolBar.Mode.Nameの設定値を前の値にする。値は循環式。
 ## Status：　260613　ToolBar.Mode.Name
 
@@ -215,12 +241,22 @@ candidates:     .*
 
 # Panel ============================================================================================================
 ## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
+description:    フォーカスパネルのエリア開閉をトグルする
+key:            FocusedPanel.Area.IsOpen:Toggle
 ## Action：　260619　FocusedPanel.Mode.Name:Prev
+description:    フォーカスパネルの表示モードを前に切り替える
+key:            FocusedPanel.Mode.Name:Prev
 ## Action：　260619　FocusedPanel.Mode.Name:Next
+description:    フォーカスパネルの表示モードを次に切り替える
+key:            FocusedPanel.Mode.Name:Next
 
 ## Action：　260714　Thinktank.Filter.Cursor:Action
+description:    Think一覧のカーソル位置のアイテムを開く
+key:            Thinktank.Filter.Cursor:Action
 　↓ カーソル位置のアイテムを開く　→　終了
 ## Action：　260714　Thinktank.Filter.Cursor:ToggleCheck
+description:    Think一覧のカーソル位置のチェック状態をトグルする
+key:            Thinktank.Filter.Cursor:ToggleCheck
 　↓ カーソル位置のチェック状態をトグルする　→　終了
 ## Status：　260714　Thinktank.Filter.CursorPosID
 description:    Thinktank>Think一覧のカーソル位置のID
@@ -238,9 +274,13 @@ current:        0
 default:        0
 type:           string
 candidates:      .*
-## Actoin：　260714　Thinktank.Filter.CursorPos:PrevLine
+## Action：　260714　Thinktank.Filter.CursorPos:PrevLine
+description:    Think一覧のカーソルを1行前に移動する
+key:            Thinktank.Filter.CursorPos:PrevLine
 　↓ カーソルを１行前に移動する　→　終了
-## Actoin：　260714　Thinktank.Filter.CursorPos:NextLine
+## Action：　260714　Thinktank.Filter.CursorPos:NextLine
+description:    Think一覧のカーソルを1行後に移動する
+key:            Thinktank.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
 ## Status：　260619　ThinktankPanel.Area.IsOpen
 description:    左パネル表示
@@ -272,8 +312,12 @@ type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
 
 ## Action：　260714　Overview.Filter.Cursor:Action
+description:    Think一覧のカーソル位置のアイテムを開く
+key:            Overview.Filter.Cursor:Action
 　↓ カーソル位置のアイテムを開く　→　終了
 ## Action：　260714　Overview.Filter.Cursor:ToggleCheck
+description:    Think一覧のカーソル位置のチェック状態をトグルする
+key:            Overview.Filter.Cursor:ToggleCheck
 　↓ カーソル位置のチェック状態をトグルする　→　終了
 ## Status：　260714　Overview.Filter.CursorPosID
 description:    Overview>Think一覧のカーソル位置のID
@@ -291,9 +335,13 @@ current:        0
 default:        0
 type:           string
 candidates:      .*
-## Actoin：　260714　Overview.Filter.CursorPos:PrevLine
+## Action：　260714　Overview.Filter.CursorPos:PrevLine
+description:    Think一覧のカーソルを1行前に移動する
+key:            Overview.Filter.CursorPos:PrevLine
 　↓ カーソルを１行前に移動する　→　終了
-## Actoin：　260714　Overview.Filter.CursorPos:NextLine
+## Action：　260714　Overview.Filter.CursorPos:NextLine
+description:    Think一覧のカーソルを1行後に移動する
+key:            Overview.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
 
 　A：Status は TTUIStateManager に読み取り専用（isConst）の派生値として登録しました。
@@ -397,7 +445,11 @@ candidates:     ^(Chat|Settings)$
 
 
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Next
+description:    フォーカスペインの表示モードを次に切り替える
+key:            WorkoutPanel.FocusedPane.Mode:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.Mode:Prev
+description:    フォーカスペインの表示モードを前に切り替える
+key:            WorkoutPanel.FocusedPane.Mode:Prev
 ## Status：　260619　WorkoutPanel.FocusedPane.Mode
 description:    ワークアウトパネルの表示モード
 key:            WorkoutPanel.FocusedPane.Mode
@@ -424,7 +476,11 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 ## Status：　260613　WorkoutPanel.FocusedPane.ID
 
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
+description:    フォーカスペインを次のペインに移動する
+key:            WorkoutPanel.FocusedPane.PaneNumber:Next
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Prev
+description:    フォーカスペインを前のペインに移動する
+key:            WorkoutPanel.FocusedPane.PaneNumber:Prev
 ## Status：　260619　WorkoutPanel.FocusedPane.PaneNumber
 
 　Q：設定値を記載してください。
@@ -452,6 +508,8 @@ candidates:     .*
 
 # Panel D&D ======================================================================================================
 ## Action：　260724　WorkoutPanel.DroppedFile.ID:Load
+description:    DropされたThinkファイルをPaneにLoadする
+key:            WorkoutPanel.DroppedFile.ID:Load
 　IDを WorkoutPanel.DroppedFile.ID:Load に修正してください。
 
 　DropされたThinkファイルをPaneにLoadする
@@ -462,6 +520,8 @@ candidates:     .*
 　　命名規則（{Status ID}:*）に合わせ、対応するStatus WorkoutPanel.DroppedFile.ID の実装と
 　　あわせて対応しました。
 ## Action：　260724　WorkoutPanel.DroppedFile.ID:Insert
+description:    DropされたThinkファイルを[memo:{ID}]タグとしてコンテンツ内に挿入する
+key:            WorkoutPanel.DroppedFile.ID:Insert
 　IDを WorkoutPanel.DroppedFile.ID:Insert に修正してください。
 
 　DropされたThinkファイルの内容ではなく `[memo:{ID}]` タグをコンテンツ内に挿入する
@@ -611,6 +671,8 @@ candidates:     .*
 
 # TextEditor Edit ==================================================================================================
 ## Action：　260627　TextEditor.FoldingHeading.IncLevel
+description:    見出し行のレベルを1つ上げる（非見出し行は見出し化）
+key:            TextEditor.FoldingHeading.IncLevel
 　テキストが選択状態ではない場合　
 　　カーソル位置がHeading行の先頭の場合は、新しいHeading行を挿入する。
 　　カーソル位置がHeading行だが先頭ではない場合は、HeadingのLevelを１つ増やす。
@@ -622,52 +684,99 @@ candidates:     .*
 　　　Heading行の場合は、HeadginのLevelを1つ増やす
 　　　Heading行でない場合はなにもしない。
 ## Action：　260627　TextEditor.FoldingHeading.DecLevel
+description:    見出し行のレベルを1つ下げる
+key:            TextEditor.FoldingHeading.DecLevel
 　カーソル行または選択範囲内のすべての行に対し
 　　Heading行の場合は、HeadginのLevelを1つ減らす。# の場合は# を削除する。
 　　Heading行でない場合はなにもしない。
 ## Action：　260625　TextEditor.Comment.NextStyle
+description:    行頭のコメント記号を次のスタイルに変更する
+key:            TextEditor.Comment.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
 　各行における 先頭の1文字目
 　　TextEditor.Comment.StyleSet に含まれる：　次の値に置換
 　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの1番目の文字を挿入
 ## Action：　260625　TextEditor.Comment.PrevStyle
+description:    行頭のコメント記号を前のスタイルに変更する
+key:            TextEditor.Comment.PrevStyle
 　カーソル位置の行、または、選択されている全行を対象に、コメント記号文字を設定する。　設定ルールは以下の通り。
 　各行における 先頭の1文字目
 　　TextEditor.Comment.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Comment.StyleSet に含まれない：　1文字目の位置に、TextEditor.Comment.StyleSetの最後の文字を挿入
 ## Action：　260625　TextEditor.Bullet.NextStyle
+description:    行頭の箇条書き文字を次のスタイルに変更する
+key:            TextEditor.Bullet.NextStyle
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　次の値に置換
 　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの1番目の文字を挿入
 ## Action：　260625　TextEditor.Bullet.PrevStyle
+description:    行頭の箇条書き文字を前のスタイルに変更する
+key:            TextEditor.Bullet.PrevStyle
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
 　各行における [ 　\t]* のあとの1文字目
 　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
 　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
 
 ## Action：　260619　TextEditor.EditText.Undo
+description:    編集を元に戻す（Undo）
+key:            TextEditor.EditText.Undo
 ## Action：　260619　TextEditor.EditText.Redo
+description:    編集をやり直す（Redo）
+key:            TextEditor.EditText.Redo
+## Action：　260727　TextEditor.EditText.Delete
+description:    カーソル右の文字を削除する
+key:            TextEditor.EditText.Delete
+　monaco-editorでDeleteキーを押したときの動作
+## Action：　260727　TextEditor.EditText.Backspace
+description:    カーソル左の文字を削除する
+key:            TextEditor.EditText.Backspace
+　monaco-editorでBackspaceキーを押したときの動作
+
 
 # TextEditor Action ================================================================================================
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Menu
+description:    カーソル位置のテキスト種別に応じたアクションメニューを表示する
+key:            TextEditor.CurrentEditor.DoOnCursorPos:Menu
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
 　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
+description:    カーソル位置のURLをブラウザで開く
+key:            TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
 　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
+description:    カーソル位置のファイルパスをOS既定アプリで開く
+key:            TextEditor.CurrentEditor.DoOnCursorPos:File:Open
 　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
+description:    カーソル位置のWebSearchタグでWeb検索する
+key:            TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
+description:    カーソル位置のGoogleRouteタグでGoogleマップのルートを開く
+key:            TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open
+description:    カーソル位置のYahooTransferタグでYahoo!乗換案内を開く
+key:            TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
+description:    カーソル位置のThinkタグで対象Thinkを開く、またはタイトル・コンテンツ検索する
+key:            TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
+description:    カーソル位置のMailタグでメールを開く、またはメール検索する
+key:            TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open
+description:    カーソル位置のChatタグでThink一覧をchatフィルター検索する
+key:            TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:AI:Open
+description:    カーソル位置のAIタグで外部AIに問い合わせる
+key:            TextEditor.CurrentEditor.DoOnCursorPos:AI:Open
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
+description:    カーソル位置のAnchorタグでファイル内アンカーへ移動、またはHighlighter設定する
+key:            TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos
+description:    カーソル位置がURL/パス/タグであれば対応するOpenアクションへ分岐実行する
+key:            TextEditor.CurrentEditor.DoOnCursorPos
 　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
 　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:Open　を実施
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
@@ -685,9 +794,13 @@ candidates:     .*
 
 # TextEditor Find/Replace ========================================================================================
 ## Action：　260716　TextEditor.CurrentEditor.ShowFind
+description:    検索ダイアログを表示/非表示トグルする
+key:            TextEditor.CurrentEditor.ShowFind
 　↓検索ダイアログボックスが表示されている場合は非表示にする　→終了
 　↓monacoeditorのdefaultの検索ダイアログボックスを表示してフォーカスする
 ## Action：　260716　TextEditor.CurrentEditor.ShowReplace
+description:    置換ダイアログを表示/非表示トグルする
+key:            TextEditor.CurrentEditor.ShowReplace
 　↓置換ダイアログボックスが表示されている場合は非表示にする　→終了
 　↓monacoeditorのdefaultの置換ダイアログボックスを表示してフォーカスする
 
@@ -706,12 +819,20 @@ candidates:     .*
 　　検索のみ表示中に ShowReplace を押すと置換行を追加して展開し、置換表示中に ShowFind を
 　　押しても閉じません（monaco既定の actions.find の挙動に委ねています）。
 ## Action：　260715　TextEditor.FindOption.MatchCase:Toggle
+description:    検索オプション「大文字小文字を区別」をトグルする
+key:            TextEditor.FindOption.MatchCase:Toggle
 　検索オプションの値を変更する
 ## Action：　260715　TextEditor.FindOption.MatchWholeWord:Toggle
+description:    検索オプション「単語単位で検索」をトグルする
+key:            TextEditor.FindOption.MatchWholeWord:Toggle
 　検索オプションの値を変更する
 ## Action：　260715　TextEditor.FindOption.UseRexp:Toggle
+description:    検索オプション「正規表現」をトグルする
+key:            TextEditor.FindOption.UseRexp:Toggle
 　検索オプションの値を変更する
 ## Action：　260715　TextEditor.ReplaceOption.PreserveCase:Toggle
+description:    置換オプション「大文字小文字を保持」をトグルする
+key:            TextEditor.ReplaceOption.PreserveCase:Toggle
 　置換オプションの値を変更する
 
 　A：値は WorkoutPanel.TextEditor.FindOption / ReplaceOption に永続化されます。
@@ -728,15 +849,23 @@ candidates:     .*
 
 # TextEditor Cursor Highlighter ====================================================================================
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevHighlighter
+description:    Highlighter検索の前のヒットへ移動する
+key:            TextEditor.CurrentEditor.CursorPos:PrevHighlighter
 　↓ Highlighterに設定されたテキストを検索して前のヒットへ移動する　→　終了
 　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextHighlighter
+description:    Highlighter検索の次のヒットへ移動する
+key:            TextEditor.CurrentEditor.CursorPos:NextHighlighter
 　↓ Highlighterに設定されたテキストを検索して次のヒットへ移動する　→　終了
 　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:FirstHighlighter
+description:    Highlighter検索の先頭ヒットへ移動する
+key:            TextEditor.CurrentEditor.CursorPos:FirstHighlighter
 　↓ Highlighterに設定されたテキストを検索して先頭ヒットへ移動する　→　終了
 　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:LastHighlighter
+description:    Highlighter検索の末尾ヒットへ移動する
+key:            TextEditor.CurrentEditor.CursorPos:LastHighlighter
 　↓ Highlighterに設定されたテキストを検索して末尾ヒットへ移動する　→　終了
 　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
 
@@ -746,12 +875,20 @@ candidates:     .*
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
 　　キー割当（docs\Shortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
 ## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
+description:    選択テキストをHighlighter検索語に追加する
+key:            ToolBar.HighlighterMode.Text:AddSelected
 FocusedPaneの選択テキストの内容をToolBar.HighlighterMode.TextにCSV形式で追加する。
 ## Action：　260715　ToolBar.HighlighterMode.Text:Clear
+description:    Highlighter検索語をクリアする
+key:            ToolBar.HighlighterMode.Text:Clear
 ToolBar.HighlighterMode.Textをクリアする
 ## Action：　260715　ToolBar.HighlighterMode.Text:Unfocus
+description:    Highlighter入力欄から直前のフォーカス位置に戻る
+key:            ToolBar.HighlighterMode.Text:Unfocus
 ToolBar.HighlighterMode.Text:Focusで記憶した直前のFocus位置に戻る。
 ## Action：　260715　ToolBar.HighlighterMode.Text:Focus
+description:    Highlighter入力欄にフォーカスする
+key:            ToolBar.HighlighterMode.Text:Focus
 ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その際、直前のFocus位置を記憶する。
 
 　A：4アクションとも TTFocusedPanelActions に実装しました。
@@ -763,27 +900,43 @@ ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その�
 
 # TextEditor Cursor ================================================================================================
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevChar
+description:    カーソルを1文字前に移動する
+key:            TextEditor.CurrentEditor.CursorPos:PrevChar
 　↓ カーソルを１文字前に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextChar
+description:    カーソルを1文字後に移動する
+key:            TextEditor.CurrentEditor.CursorPos:NextChar
 　↓ カーソルを１文字後に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevWord
+description:    カーソルを1ワード前に移動する
+key:            TextEditor.CurrentEditor.CursorPos:PrevWord
 　↓ カーソルを１ワード前に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextWord
+description:    カーソルを1ワード後に移動する
+key:            TextEditor.CurrentEditor.CursorPos:NextWord
 　↓ カーソルを１ワード後に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevLine
+description:    カーソルを1行前に移動する（文書先頭行では行頭へ）
+key:            TextEditor.CurrentEditor.CursorPos:PrevLine
 　↓ CurPosが文書先頭行だった場合　→　カーソルを先頭行行頭に移動する　→　終了
 　↓ monaco editor defaultのArrowUpの移動位置に移動する　→　終了
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:NextLine
+description:    カーソルを1行後に移動する（文書最終行では末尾へ）
+key:            TextEditor.CurrentEditor.CursorPos:NextLine
 　↓ CurPosが文書最終行だった場合　→　カーソルを最終行末尾に移動する　→　終了
 　↓ monaco editor defaultのArrowDownの移動位置に移動する　→　終了
 
 　A：独自のカラム計算をやめ、Monaco既定コマンド（cursorUp / cursorDown）に委譲しました。
 　　これにより折り畳み行のスキップ・折り返し行・カラムのスティッキー復元が既定どおりになります。
 ## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineStart+
+description:    カーソルを行頭→テキスト先頭の順に移動する。テキスト先頭では全選択する
+key:            TextEditor.CurrentEditor.CursorPos:LineStart+
 　↓ CurPosが行先頭ではない場合、CurPosを現在行の先頭位置に移動する　→　終了
 　↓ CurPosが行先頭だがテキスト先頭ではない場合、CurPosをテキスト先頭位置に移動する　→　終了
 　↓ CurPosがテキスト先頭の場合、カーソルがテキスト先頭にある状態でテキストすべてを選択する
 ## Action：　260628　TextEditor.CurrentEditor.CursorPos:LineEnd+
+description:    カーソルを行末→テキスト末尾の順に移動する。テキスト末尾では全選択する
+key:            TextEditor.CurrentEditor.CursorPos:LineEnd+
 　↓ CurPosが行末尾ではない場合、CurPosを行末尾位置に移動する　→　終了
 　↓ CurPosが行末尾だがテキスト末尾ではない場合、CurPosをテキスト末尾位置に移動する　→　終了
 　↓ CurPosがテキスト末尾の場合、テキストすべてを選択する
@@ -798,10 +951,14 @@ candidates:      .*
 
 # TextEditor Heading ===============================================================================================
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
+description:    見出し行を段階的に開く（Close→Open、Open→子をOpen）
+key:            TextEditor.CurrentFolding.Heading:OpenStepwise
 　以下の手順を実装してください。
 　↓　現カーソルがあるHeading行がCloseである場合は、Heading行をOpenにして終了します。
 　↓　現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
 ## Action：　260622　TextEditor.CurrentFolding.Heading:CloseStepwise
+description:    見出し行を段階的に閉じる（Open→Close、Close→兄弟をClose）
+key:            TextEditor.CurrentFolding.Heading:CloseStepwise
 　以下の手順を実装してください。
 　↓　現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
 　↓　現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
@@ -831,28 +988,40 @@ candidates:     ^.*$
 　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
 
 ## Action：　260626　TextEditor.CurrentFolding.Heading:SiblingFirst
+description:    最初の兄弟見出し行へ移動する
+key:            TextEditor.CurrentFolding.Heading:SiblingFirst
 
 　以下の手順を実装してください。
 　↓　カーソル位置のテキストが属するHeading行を把握
 　↓　現在位置が兄弟Heading行のなかで１番目である場合、親Heading行へ移動
 　↓　１番目の兄弟Heading行に移動
 ## Action：　260626　TextEditor.CurrentFolding.Heading:SiblingLast
+description:    最後の兄弟見出し行へ移動する
+key:            TextEditor.CurrentFolding.Heading:SiblingLast
 
 　以下の手順を実装してください。
 　↓　カーソル位置のテキストが属するHeading行を把握
 　↓　現在位置が兄弟Heading行のなかで最後である場合、親Heading行の次の兄弟Heading行へ移動
 　↓　最後の兄弟Heading行に移動
 ## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
+description:    次の兄弟見出し行へ移動する
+key:            TextEditor.CurrentFolding.Heading:SiblingForward
 　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
 　現カーソル位置がHeading行である場合：次の兄弟Heading行へ移動
 　兄弟Heading行とは、同じ親headingNumberをもつHeading行
 ## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingBackward
+description:    前の兄弟見出し行へ移動する
+key:            TextEditor.CurrentFolding.Heading:SiblingBackward
 　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
 　現カーソル位置がHeading行である場合：前の兄弟Heading行へ移動
 　兄弟Heading行とは、同じ親headingNumberをもつHeading行
 ## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
+description:    次の表示中見出し行へ移動する（非表示の見出しは除外）
+key:            TextEditor.CurrentFolding.Heading:VisibleForward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 ## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
+description:    前の表示中見出し行へ移動する（非表示の見出しは除外）
+key:            TextEditor.CurrentFolding.Heading:VisibleBackward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 
 # Color Style ====================================================================================================== 
@@ -1218,11 +1387,23 @@ candidates:     ^#[0-9a-fA-F]{6,8}$
 
 # TextEditor ExOpt =================================================================================================
 ## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle
+description:    行番号表示をトグルする
+key:            TextEditor.LineNumbers.IsVisible:Toggle
 ## Action：　260619　TextEditor.WordWrap.IsVisible:Toggle
+description:    折り返し表示をトグルする
+key:            TextEditor.WordWrap.IsVisible:Toggle
 ## Action：　260619　TextEditor.Minimap.IsVisible:Toggle
+description:    ミニマップ表示をトグルする
+key:            TextEditor.Minimap.IsVisible:Toggle
 ## Action：　260619　TextEditor.FullWidthSpace.IsVisible:Toggle
+description:    全角スペース強調表示をトグルする
+key:            TextEditor.FullWidthSpace.IsVisible:Toggle
 ## Action：　260619　TextEditor.UnicodeHighlight.IsVisible:Toggle
+description:    Unicode文字強調表示をトグルする
+key:            TextEditor.UnicodeHighlight.IsVisible:Toggle
 ## Action：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
+description:    括弧の色分けをトグルする
+key:            TextEditor.BracketPairColorization.IsVisible:Toggle
 
 ## Status：　260613　TextEditor.LineNumbers.IsVisible
 description:    行番号表示
@@ -1270,6 +1451,8 @@ candidates:     ^(true|false)$
 
 # TextEditor ExDate ================================================================================================
 ## Action：　260625　TextEditor.EditDate.InsertExDate
+description:    カーソル位置に日付文字を挿入しExDateモードに入る
+key:            TextEditor.EditDate.InsertExDate
     カーソル位置に日付文字を挿入しExDateモードに入る。
     ↓カーソル位置の日付文字を判別
     　日付文字ではない場合：　初期日付フォーマットを JDateW としてカーソル位置に日付文字を入力
@@ -1296,31 +1479,57 @@ candidates:     ^(true|false)$
         GDateT  = @{ Format = 'ggyy年MM月dd日 HH時mm分' }
         GDateWT = @{ Format = 'ggyy年MM月dd日 (ddd) HH時mm分' }　
 ## Action：　260625　TextEditor.EditDate.ChangeFormat
+description:    カーソル位置の日時フォーマットを変更する
+key:            TextEditor.EditDate.ChangeFormat
     カーソル位置の日時フォーマットを変更する。
     変更の順番は過去のスクリプト docs\reference\script\TTPanel.ps1 を参照
 ## Action：　260625　TextEditor.EditDate.ToggleWeekday
+description:    カーソル位置の曜日表示を変更する
+key:            TextEditor.EditDate.ToggleWeekday
     カーソル位置の曜日表示を変更する
 ## Action：　260625　TextEditor.EditDate.ToggleTime
+description:    カーソル位置の時間表示を変更する
+key:            TextEditor.EditDate.ToggleTime
     カーソル位置の時間表示を変更する
 ## Action：　260625　TextEditor.EditDate.IncYear
+description:    カーソル位置の年を1増やす
+key:            TextEditor.EditDate.IncYear
     カーソル位置の年を1増やす
 ## Action：　260625　TextEditor.EditDate.DecYear
+description:    カーソル位置の年を1減らす
+key:            TextEditor.EditDate.DecYear
     カーソル位置の年を1減らす
 ## Action：　260625　TextEditor.EditDate.IncMonth
+description:    カーソル位置の月を1増やす
+key:            TextEditor.EditDate.IncMonth
     カーソル位置の月を1増やす
 ## Action：　260625　TextEditor.EditDate.DecMonth
+description:    カーソル位置の月を1減らす
+key:            TextEditor.EditDate.DecMonth
     カーソル位置の月を1減らす
 ## Action：　260625　TextEditor.EditDate.IncWeek
+description:    カーソル位置の週を1増やす
+key:            TextEditor.EditDate.IncWeek
     カーソル位置の週を1増やす
 ## Action：　260625　TextEditor.EditDate.DecWeek
+description:    カーソル位置の週を1減らす
+key:            TextEditor.EditDate.DecWeek
     カーソル位置の週を1減らす
 ## Action：　260625　TextEditor.EditDate.IncDay
+description:    カーソル位置の日を1増やす
+key:            TextEditor.EditDate.IncDay
     カーソル位置の日を1増やす
 ## Action：　260625　TextEditor.EditDate.DecDay
+description:    カーソル位置の日を1減らす
+key:            TextEditor.EditDate.DecDay
     カーソル位置の日を1減らす
 ## Action：　260625　TextEditor.EditDate.SetNow
+description:    カーソル位置の日時を今にする
+key:            TextEditor.EditDate.SetNow
     カーソル位置の日時を今にする　
 ## Action：　260625　TextEditor.EditDate.Reset
+description:    カーソル位置の日時を元に戻す
+key:            TextEditor.EditDate.Reset
     カーソル位置の日時を元に戻す　
 
 # その他

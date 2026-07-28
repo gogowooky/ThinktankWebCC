@@ -87,6 +87,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'FocusedPanel.Area.IsOpen:Toggle',
+    Description: 'フォーカスパネルのエリア開閉をトグルする',
     Completion: (item) => {
       const panel = getPanel(app);
       if (!panel) { item.Result = '[対象なし]'; return; }
@@ -97,6 +98,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'FocusedPanel.Mode.Name:Prev',
+    Description: 'フォーカスパネルの表示モードを前に切り替える',
     Completion: (item) => {
       const panel = getPanel(app);
       const modes = PANEL_VIEW_MODES[app.FocusedColumn];
@@ -110,6 +112,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'FocusedPanel.Mode.Name:Next',
+    Description: 'フォーカスパネルの表示モードを次に切り替える',
     Completion: (item) => {
       const panel = getPanel(app);
       const modes = PANEL_VIEW_MODES[app.FocusedColumn];
@@ -123,6 +126,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'ToolBar.Mode.Name:Next',
+    Description: 'ToolBarのモードを次の値に切り替える（循環）',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'next');
       item.Result = TTUIStateManager.instance.getProperty('ToolBar.Mode.Name');
@@ -131,6 +135,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'ToolBar.Mode.Name:Prev',
+    Description: 'ToolBarのモードを前の値に切り替える（循環）',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'prev');
       item.Result = TTUIStateManager.instance.getProperty('ToolBar.Mode.Name');
@@ -179,6 +184,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     for (const [suffix, dir] of [['PrevLine', -1], ['NextLine', 1]] as const) {
       TTActions.Register({
         ActionID: `${spec.prefix}.Filter.CursorPos:${suffix}` as ActionID,
+        Description: `${spec.prefix}>Think一覧のカーソルを${suffix === 'PrevLine' ? '1行前' : '1行後'}に移動する`,
         Completion: (item) => {
           const panel = spec.panelOf();
           const list = panel.FilteredThoughts;
@@ -199,6 +205,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
     TTActions.Register({
       ActionID: `${spec.prefix}.Filter.Cursor:Action` as ActionID,
+      Description: `${spec.prefix}>Think一覧のカーソル位置のアイテムを開く`,
       Completion: (item) => {
         const think = cursorThink(spec);
         if (!think) { item.Result = '[カーソルなし]'; return; }
@@ -209,6 +216,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
     TTActions.Register({
       ActionID: `${spec.prefix}.Filter.Cursor:ToggleCheck` as ActionID,
+      Description: `${spec.prefix}>Think一覧のカーソル位置のチェック状態をトグルする`,
       Completion: (item) => {
         const think = cursorThink(spec);
         if (!think) { item.Result = '[カーソルなし]'; return; }
@@ -227,8 +235,9 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       app.Status.SetExMode(mode, item.Mods ?? '');
       item.Result = `ExMode→${mode} [${item.Mods ?? ''}]`;
     };
-    TTActions.Register({ ActionID: `Application.Status.ExMode:${mode}`, Completion: completion });
-    TTActions.Register({ ActionID: `ExMode:${mode}`, Completion: completion });
+    const description = `拡張モードを${mode}に設定する`;
+    TTActions.Register({ ActionID: `Application.Status.ExMode:${mode}`, Description: description, Completion: completion });
+    TTActions.Register({ ActionID: `ExMode:${mode}`, Description: description, Completion: completion });
   };
   registerExModeAction('ExApp');
   registerExModeAction('ExOpt');
@@ -237,6 +246,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // UI状態 (Undo/Redo) アクションの登録
   TTActions.Register({
     ActionID: 'TextEditor.EditText.Undo',
+    Description: '編集を元に戻す（Undo）',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
       const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
@@ -252,6 +262,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.EditText.Redo',
+    Description: '編集をやり直す（Redo）',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
       const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
@@ -267,6 +278,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.EditText.Delete',
+    Description: 'カーソル右の文字を削除する',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
       const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
@@ -279,6 +291,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.EditText.Backspace',
+    Description: 'カーソル左の文字を削除する',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
       const isEditorFocused = !!document.activeElement?.closest('.monaco-editor');
@@ -292,6 +305,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // 状態変数 (Property) 変更アクションの登録
   TTActions.Register({
     ActionID: 'Application.FocusedArea.Name:prev',
+    Description: 'フォーカスエリアを前に切り替える',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.FocusedArea.Name', 'prev');
       item.Result = TTUIStateManager.instance.getProperty('Application.FocusedArea.Name');
@@ -300,6 +314,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'Application.FocusedArea.Name:next',
+    Description: 'フォーカスエリアを次に切り替える',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.FocusedArea.Name', 'next');
       item.Result = TTUIStateManager.instance.getProperty('Application.FocusedArea.Name');
@@ -308,6 +323,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'Application.FocusedPanel.Name:Prev',
+    Description: 'フォーカスカラムを前のパネルに移動する',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.FocusedPanel.Name', 'prev');
       item.Result = TTUIStateManager.instance.getProperty('Application.FocusedPanel.Name');
@@ -316,6 +332,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'Application.FocusedPanel.Name:Next',
+    Description: 'フォーカスカラムを次のパネルに移動する',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.FocusedPanel.Name', 'next');
       item.Result = TTUIStateManager.instance.getProperty('Application.FocusedPanel.Name');
@@ -324,6 +341,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'WorkoutPanel.FocusedPane.PaneNumber:Next',
+    Description: 'フォーカスペインを次のペインに移動する',
     Completion: (item) => {
       const wPanel = app.WorkoutPanel;
       const layout = wPanel.Layout;
@@ -342,6 +360,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'WorkoutPanel.FocusedPane.PaneNumber:Prev',
+    Description: 'フォーカスペインを前のペインに移動する',
     Completion: (item) => {
       const wPanel = app.WorkoutPanel;
       const layout = wPanel.Layout;
@@ -360,6 +379,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'WorkoutPanel.FocusedPane.Mode:Next',
+    Description: 'フォーカスペインの表示モードを次に切り替える',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('WorkoutPanel.FocusedPane.Mode', 'next');
       item.Result = TTUIStateManager.instance.getProperty('WorkoutPanel.FocusedPane.Mode');
@@ -368,6 +388,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'WorkoutPanel.FocusedPane.Mode:Prev',
+    Description: 'フォーカスペインの表示モードを前に切り替える',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('WorkoutPanel.FocusedPane.Mode', 'prev');
       item.Result = TTUIStateManager.instance.getProperty('WorkoutPanel.FocusedPane.Mode');
@@ -377,6 +398,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // PanelDisplay Mode
   TTActions.Register({
     ActionID: 'Application.PanelDisplay.Mode:Normal',
+    Description: 'パネル表示モードをNormalにする',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Normal');
       item.Result = 'Normal';
@@ -384,6 +406,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
   TTActions.Register({
     ActionID: 'Application.PanelDisplay.Mode:Simple',
+    Description: 'パネル表示モードをSimpleにする',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Simple');
       item.Result = 'Simple';
@@ -392,26 +415,27 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   // IsVisible 系トグル（LineNumbers/WordWrap/Minimap は TTShortcutManager の DEFAULT_SHORTCUTS が
   // 小文字 `:toggle` で参照するため、大文字小文字どちらの ActionID でも同じハンドラに解決させる）
-  const registerToggleAction = (actionId: ActionID, key: ConfigKey): void => {
+  const registerToggleAction = (actionId: ActionID, key: ConfigKey, description: string): void => {
     TTActions.Register({
       ActionID: actionId,
+      Description: description,
       Completion: (item) => {
         TTUIStateManager.instance.applyProperty(key, 'toggle');
         item.Result = TTUIStateManager.instance.getProperty(key);
       },
     });
   };
-  const IS_VISIBLE_TOGGLE_KEYS: ConfigKey[] = [
-    'TextEditor.LineNumbers.IsVisible',
-    'TextEditor.WordWrap.IsVisible',
-    'TextEditor.Minimap.IsVisible',
-    'TextEditor.FullWidthSpace.IsVisible',
-    'TextEditor.UnicodeHighlight.IsVisible',
-    'TextEditor.BracketPairColorization.IsVisible',
+  const IS_VISIBLE_TOGGLE_KEYS: Array<[ConfigKey, string]> = [
+    ['TextEditor.LineNumbers.IsVisible',              '行番号表示をトグルする'],
+    ['TextEditor.WordWrap.IsVisible',                 '折り返し表示をトグルする'],
+    ['TextEditor.Minimap.IsVisible',                  'ミニマップ表示をトグルする'],
+    ['TextEditor.FullWidthSpace.IsVisible',            '全角スペース強調表示をトグルする'],
+    ['TextEditor.UnicodeHighlight.IsVisible',          'Unicode文字強調表示をトグルする'],
+    ['TextEditor.BracketPairColorization.IsVisible',   '括弧の色分けをトグルする'],
   ];
-  for (const key of IS_VISIBLE_TOGGLE_KEYS) {
-    registerToggleAction(`${key}:Toggle`, key);
-    registerToggleAction(`${key}:toggle`, key);
+  for (const [key, description] of IS_VISIBLE_TOGGLE_KEYS) {
+    registerToggleAction(`${key}:Toggle`, key, description);
+    registerToggleAction(`${key}:toggle`, key, description);
   }
 
   // ── Editor 検索・置換 ─────────────────────────────────────────────────────
@@ -435,6 +459,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.ShowFind',
+    Description: '検索ダイアログを表示/非表示トグルする',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
       if (!editor) {
@@ -457,6 +482,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.ShowReplace',
+    Description: '置換ダイアログを表示/非表示トグルする',
     Completion: (item) => {
       const editor = TTShortcutManager.instance.activeEditor;
       if (!editor) {
@@ -478,9 +504,10 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   // FindOption / ReplaceOption Toggle（表示中の検索/置換ウィジェットがあれば即時反映する）
-  const registerFindOptionToggle = (actionId: ActionID, key: ConfigKey): void => {
+  const registerFindOptionToggle = (actionId: ActionID, key: ConfigKey, description: string): void => {
     TTActions.Register({
       ActionID: actionId,
+      Description: description,
       Completion: (item) => {
         TTUIStateManager.instance.applyProperty(key, 'toggle');
         const editor = TTShortcutManager.instance.activeEditor;
@@ -489,14 +516,15 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       },
     });
   };
-  registerFindOptionToggle('TextEditor.FindOption.MatchCase:Toggle', 'TextEditor.FindOption.MatchCase');
-  registerFindOptionToggle('TextEditor.FindOption.MatchWholeWord:Toggle', 'TextEditor.FindOption.MatchWholeWord');
-  registerFindOptionToggle('TextEditor.FindOption.UseRexp:Toggle', 'TextEditor.FindOption.UseRexp');
-  registerFindOptionToggle('TextEditor.ReplaceOption.PreserveCase:Toggle', 'TextEditor.ReplaceOption.PreserveCase');
+  registerFindOptionToggle('TextEditor.FindOption.MatchCase:Toggle', 'TextEditor.FindOption.MatchCase', '検索オプション「大文字小文字を区別」をトグルする');
+  registerFindOptionToggle('TextEditor.FindOption.MatchWholeWord:Toggle', 'TextEditor.FindOption.MatchWholeWord', '検索オプション「単語単位で検索」をトグルする');
+  registerFindOptionToggle('TextEditor.FindOption.UseRexp:Toggle', 'TextEditor.FindOption.UseRexp', '検索オプション「正規表現」をトグルする');
+  registerFindOptionToggle('TextEditor.ReplaceOption.PreserveCase:Toggle', 'TextEditor.ReplaceOption.PreserveCase', '置換オプション「大文字小文字を保持」をトグルする');
 
   // Dates
   TTActions.Register({
     ActionID: 'Application.Date:Next',
+    Description: 'Application.Dateを次の値に切り替える',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.Date', 'next');
       item.Result = TTUIStateManager.instance.getProperty('Application.Date');
@@ -504,6 +532,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
   TTActions.Register({
     ActionID: 'Application.Date:Prev',
+    Description: 'Application.Dateを前の値に切り替える',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('Application.Date', 'prev');
       item.Result = TTUIStateManager.instance.getProperty('Application.Date');
@@ -512,6 +541,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'Application.Resource.ExportToLocal',
+    Description: 'BQ保存済みThinkファイルをローカルにエクスポートする',
     Completion: (item) => {
       const status = app.Status as any;
       if (status && typeof status.SetLocalExporting === 'function') {
@@ -706,6 +736,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 1. TextEditor.CurrentFolding.Heading:VisibleForward
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:VisibleForward',
+    Description: '次の表示中見出し行へ移動する（非表示の見出しは除外）',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -731,6 +762,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 2. TextEditor.CurrentFolding.Heading:VisibleBackward
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:VisibleBackward',
+    Description: '前の表示中見出し行へ移動する（非表示の見出しは除外）',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -756,6 +788,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 3. TextEditor.CurrentFolding.Heading:OpenStepwise
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
+    Description: '見出し行を段階的に開く（Close→Open、Open→子をOpen）',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -804,6 +837,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 4. TextEditor.CurrentFolding.Heading:CloseStepwise
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:CloseStepwise',
+    Description: '見出し行を段階的に閉じる（Open→Close、Close→兄弟をClose）',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -857,6 +891,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 5. TextEditor.CurrentFolding.Heading:SiblingForward
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingForward',
+    Description: '次の兄弟見出し行へ移動する',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -898,6 +933,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 6. TextEditor.CurrentFolding.Heading:SiblingBackward
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingBackward',
+    Description: '前の兄弟見出し行へ移動する',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -939,6 +975,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 7. TextEditor.CurrentFolding.Heading:SiblingFirst
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingFirst',
+    Description: '最初の兄弟見出し行へ移動する',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -983,6 +1020,7 @@ export function registerTextEditorActions(app: TTApplication): void {
   // 8. TextEditor.CurrentFolding.Heading:SiblingLast
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingLast',
+    Description: '最後の兄弟見出し行へ移動する',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -1372,6 +1410,7 @@ export function registerTextEditorDateActions(app: TTApplication): void {
   // 1. TextEditor.EditDate.InsertExDate
   TTActions.Register({
     ActionID: 'TextEditor.EditDate.InsertExDate',
+    Description: 'カーソル位置に日付文字を挿入しExDateモードに入る',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -1457,6 +1496,7 @@ export function registerTextEditorDateActions(app: TTApplication): void {
   // 2. ChangeFormat
   TTActions.Register({
     ActionID: 'TextEditor.EditDate.ChangeFormat',
+    Description: 'カーソル位置の日時フォーマットを変更する',
     Completion: (item) => {
       modifyDate(item, (state) => {
         const baseFormats: ('DateTag' | 'Date' | 'JDate' | 'GDate')[] = ['DateTag', 'Date', 'JDate', 'GDate'];
@@ -1473,6 +1513,7 @@ export function registerTextEditorDateActions(app: TTApplication): void {
   // 3. ToggleWeekday
   TTActions.Register({
     ActionID: 'TextEditor.EditDate.ToggleWeekday',
+    Description: 'カーソル位置の曜日表示を変更する',
     Completion: (item) => {
       modifyDate(item, (state) => {
         if (state.baseFormat === 'DateTag') {
@@ -1492,6 +1533,7 @@ export function registerTextEditorDateActions(app: TTApplication): void {
   // 4. ToggleTime
   TTActions.Register({
     ActionID: 'TextEditor.EditDate.ToggleTime',
+    Description: 'カーソル位置の時間表示を変更する',
     Completion: (item) => {
       modifyDate(item, (state) => {
         if (state.baseFormat === 'DateTag') {
@@ -1509,15 +1551,16 @@ export function registerTextEditorDateActions(app: TTApplication): void {
   });
 
   // 5-12. Inc/DecYear, Inc/DecMonth, Inc/DecWeek, Inc/DecDay（dateUtils.shiftDate を共用）
-  const DATE_STEPS: Array<[string, RangeUnit, number]> = [
-    ['IncYear',  'y', 1], ['DecYear',  'y', -1],
-    ['IncMonth', 'm', 1], ['DecMonth', 'm', -1],
-    ['IncWeek',  'w', 1], ['DecWeek',  'w', -1],
-    ['IncDay',   'd', 1], ['DecDay',   'd', -1],
+  const DATE_STEPS: Array<[string, RangeUnit, number, string]> = [
+    ['IncYear',  'y', 1,  'カーソル位置の年を1増やす'], ['DecYear',  'y', -1, 'カーソル位置の年を1減らす'],
+    ['IncMonth', 'm', 1,  'カーソル位置の月を1増やす'], ['DecMonth', 'm', -1, 'カーソル位置の月を1減らす'],
+    ['IncWeek',  'w', 1,  'カーソル位置の週を1増やす'], ['DecWeek',  'w', -1, 'カーソル位置の週を1減らす'],
+    ['IncDay',   'd', 1,  'カーソル位置の日を1増やす'], ['DecDay',   'd', -1, 'カーソル位置の日を1減らす'],
   ];
-  for (const [suffix, unit, delta] of DATE_STEPS) {
+  for (const [suffix, unit, delta, description] of DATE_STEPS) {
     TTActions.Register({
       ActionID: `TextEditor.EditDate.${suffix}`,
+      Description: description,
       Completion: (item) => {
         modifyDate(item, (state) => {
           state.currentDate = shiftDate(state.currentDate, delta, unit);
@@ -1529,6 +1572,7 @@ export function registerTextEditorDateActions(app: TTApplication): void {
   // 13. SetNow
   TTActions.Register({
     ActionID: 'TextEditor.EditDate.SetNow',
+    Description: 'カーソル位置の日時を今にする',
     Completion: (item) => {
       modifyDate(item, (state) => {
         state.currentDate = new Date();
@@ -1539,6 +1583,7 @@ export function registerTextEditorDateActions(app: TTApplication): void {
   // 14. Reset
   TTActions.Register({
     ActionID: 'TextEditor.EditDate.Reset',
+    Description: 'カーソル位置の日時を元に戻す',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -1671,6 +1716,7 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.Bullet.NextStyle',
+    Description: '行頭の箇条書き文字を次のスタイルに変更する',
     Completion: (item) => {
       toggleBulletStyle(item, 'next');
     }
@@ -1678,6 +1724,7 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.Bullet.PrevStyle',
+    Description: '行頭の箇条書き文字を前のスタイルに変更する',
     Completion: (item) => {
       toggleBulletStyle(item, 'prev');
     }
@@ -1774,6 +1821,7 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.Comment.NextStyle',
+    Description: '行頭のコメント記号を次のスタイルに変更する',
     Completion: (item) => {
       toggleCommentStyle(item, 'next');
     }
@@ -1781,6 +1829,7 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.Comment.PrevStyle',
+    Description: '行頭のコメント記号を前のスタイルに変更する',
     Completion: (item) => {
       toggleCommentStyle(item, 'prev');
     }
@@ -1790,6 +1839,7 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
 export function registerTextEditorFoldingHeadingActions(app: TTApplication): void {
   TTActions.Register({
     ActionID: 'TextEditor.FoldingHeading.IncLevel',
+    Description: '見出し行のレベルを1つ上げる（非見出し行は見出し化）',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -1881,6 +1931,7 @@ export function registerTextEditorFoldingHeadingActions(app: TTApplication): voi
 
   TTActions.Register({
     ActionID: 'TextEditor.FoldingHeading.DecLevel',
+    Description: '見出し行のレベルを1つ下げる',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -1943,6 +1994,7 @@ export function registerTextEditorFoldingHeadingActions(app: TTApplication): voi
 export function registerTextEditorCursorPosActions(app: TTApplication): void {
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:LineStart+',
+    Description: 'カーソルを行頭→テキスト先頭の順に移動する。テキスト先頭では全選択する',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -1991,6 +2043,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:LineEnd+',
+    Description: 'カーソルを行末→テキスト末尾の順に移動する。テキスト末尾では全選択する',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -2038,6 +2091,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:PrevChar',
+    Description: 'カーソルを1文字前に移動する',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -2056,6 +2110,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:NextChar',
+    Description: 'カーソルを1文字後に移動する',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -2074,6 +2129,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:PrevWord',
+    Description: 'カーソルを1ワード前に移動する',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -2129,6 +2185,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:NextWord',
+    Description: 'カーソルを1ワード後に移動する',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -2184,6 +2241,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:PrevLine',
+    Description: 'カーソルを1行前に移動する（文書先頭行では行頭へ）',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -2218,6 +2276,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:NextLine',
+    Description: 'カーソルを1行後に移動する（文書最終行では末尾へ）',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -2315,6 +2374,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:PrevHighlighter',
+    Description: 'Highlighter検索の前のヒットへ移動する',
     Completion: (item) => moveToHighlighter(item, (ranges, editor) => {
       const pos = editor.getPosition();
       const before = ranges.filter(r => isBefore(r, pos));
@@ -2324,6 +2384,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:NextHighlighter',
+    Description: 'Highlighter検索の次のヒットへ移動する',
     Completion: (item) => moveToHighlighter(item, (ranges, editor) => {
       const pos = editor.getPosition();
       return ranges.find(r => !isBefore(r, pos) &&
@@ -2333,11 +2394,13 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:FirstHighlighter',
+    Description: 'Highlighter検索の先頭ヒットへ移動する',
     Completion: (item) => moveToHighlighter(item, (ranges) => ranges[0]),
   });
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:LastHighlighter',
+    Description: 'Highlighter検索の末尾ヒットへ移動する',
     Completion: (item) => moveToHighlighter(item, (ranges) => ranges[ranges.length - 1]),
   });
 
@@ -2365,6 +2428,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'ToolBar.HighlighterMode.Text:AddSelected',
+    Description: '選択テキストをHighlighter検索語に追加する',
     Completion: (item) => {
       // 改行を含む選択は Highlighter の語として扱えないため1行目のみ採用する
       const selected = getSelectedTextInFocusedPane().split('\n')[0].trim();
@@ -2388,6 +2452,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'ToolBar.HighlighterMode.Text:Clear',
+    Description: 'Highlighter検索語をクリアする',
     Completion: (item) => {
       TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.Text', '');
       item.Result = 'Highlighterをクリアしました';
@@ -2396,6 +2461,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'ToolBar.HighlighterMode.Text:Focus',
+    Description: 'Highlighter入力欄にフォーカスする',
     Completion: (item) => {
       const active = document.activeElement as HTMLElement | null;
       // 入力欄自身にフォーカスがある場合は、戻り先を上書きしない
@@ -2416,6 +2482,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'ToolBar.HighlighterMode.Text:Unfocus',
+    Description: 'Highlighter入力欄から直前のフォーカス位置に戻る',
     Completion: (item) => {
       const prev = highlighterPrevFocus;
       getHighlighterInput()?.blur();
@@ -2426,6 +2493,62 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
         return;
       }
       highlighterPrevFocus = null;
+      item.Result = '[戻り先なし] 入力欄のフォーカスを外しました';
+    },
+  });
+
+  // ── ToolBar Command 入力欄 ────────────────────────────────────────────
+  const COMMAND_INPUT_ID = 'StatusBarTextInput';
+
+  /** :Focus で記憶した、Command入力欄に入る直前のフォーカス要素 */
+  let commandPrevFocus: HTMLElement | null = null;
+
+  const getCommandInput = (): HTMLInputElement | null =>
+    document.getElementById(COMMAND_INPUT_ID) as HTMLInputElement | null;
+
+  TTActions.Register({
+    ActionID: 'ToolBar.CommandMode.Text:Clear',
+    Description: 'ToolBarのCommandをクリアする',
+    Completion: (item) => {
+      TTUIStateManager.instance.applyProperty('ToolBar.CommandMode.Text', '');
+      item.Result = 'Commandをクリアしました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.CommandMode.Text:Focus',
+    Description: 'ToolBarのCommand入力欄にフォーカスする',
+    Completion: (item) => {
+      const active = document.activeElement as HTMLElement | null;
+      // 入力欄自身にフォーカスがある場合は、戻り先を上書きしない
+      if (active && active.id !== COMMAND_INPUT_ID) {
+        commandPrevFocus = active;
+      }
+
+      // ToolBar が Command モードでなければ切り替える（入力欄はこの後に描画される）
+      if (app.WorkoutPanel.ToolBarMode !== 'Command') {
+        TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'Command');
+      }
+      // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
+      getCommandInput()?.focus();
+      requestAnimationFrame(() => getCommandInput()?.focus());
+      item.Result = 'Command入力欄にフォーカスしました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.CommandMode.Text:Unfocus',
+    Description: 'ToolBarのCommand入力欄から元の位置に戻る',
+    Completion: (item) => {
+      const prev = commandPrevFocus;
+      getCommandInput()?.blur();
+      if (prev && document.body.contains(prev)) {
+        prev.focus();
+        commandPrevFocus = null;
+        item.Result = 'フォーカスを元の位置に戻しました';
+        return;
+      }
+      commandPrevFocus = null;
       item.Result = '[戻り先なし] 入力欄のフォーカスを外しました';
     },
   });
@@ -2867,6 +2990,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos',
+    Description: 'カーソル位置がURL/パス/タグであれば対応するOpenアクションへ分岐実行する',
     Completion: (item) => {
       try {
         const text = getTextOnCursorSafe();

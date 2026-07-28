@@ -1,0 +1,64 @@
+/* CommandIncrementalSearch.css */
+/* ToolBar (ApplicationStatusBarArea) と同じ配色トークン・フォントを踏襲する */
+
+.command-incremental-search {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 4px;
+  min-width: 280px;
+  max-width: 640px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--toolbar-bg, var(--workout-ribbon-bg, #2d2d2d));
+  border: 1px solid color-mix(in srgb, var(--toolbar-color, #fff) 20%, transparent);
+  border-radius: 4px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.35);
+  padding: 2px;
+  z-index: 200;
+}
+
+.command-incremental-search__list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 16px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.command-incremental-search__row {
+  display: contents;
+}
+
+.command-incremental-search__item-id,
+.command-incremental-search__item-desc {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: 'Inter', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.command-incremental-search__item-id {
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 85%, transparent);
+  padding-left: 8px;
+}
+
+.command-incremental-search__item-desc {
+  color: color-mix(in srgb, var(--toolbar-color, #fff) 50%, transparent);
+  padding-right: 8px;
+}
+
+.command-incremental-search__item-id--active,
+.command-incremental-search__item-desc--active {
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 18%, transparent);
+  color: var(--toolbar-color, #fff);
+}
+
+.command-incremental-search__row:hover .command-incremental-search__item-id:not(.command-incremental-search__item-id--active),
+.command-incremental-search__row:hover .command-incremental-search__item-desc:not(.command-incremental-search__item-desc--active) {
+  background: color-mix(in srgb, var(--toolbar-color, #fff) 10%, transparent);
+}
