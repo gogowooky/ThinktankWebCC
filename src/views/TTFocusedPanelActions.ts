@@ -2580,6 +2580,7 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Command:     'ToolBar.CommandMode.Text',
     Translate:   'ToolBar.TranslateMode.Text',
     Reminder:    'ToolBar.ReminderMode.Text',
+    Status:      'ToolBar.StatusMode.Text',
   };
 
   TTActions.Register({
@@ -2599,6 +2600,21 @@ export function registerTextEditorCursorPosActions(app: TTApplication): void {
     Completion: (item) => {
       const mode = app.WorkoutPanel.ToolBarMode;
       if (!TOOLBAR_MODE_TEXT_KEY[mode]) { item.Result = '[対象モードなし]'; return; }
+
+      // Statusモードは StatusBarStatusPanel を使用しており、他モード共通の
+      // #StatusBarTextInput を持たない（未フォーカス時はLabel、フォーカス後にInputへ切替わる）。
+      // そのためコンテナ要素を起点に、Input化済みならInputへ、未Input化ならLabel(tabIndex)へフォーカスする。
+      if (mode === 'Status') {
+        const container = document.querySelector(
+          '.ApplicationStatusBarArea__status-panel-container'
+        ) as HTMLElement | null;
+        if (!container) { item.Result = '[入力欄なし]'; return; }
+        const input = container.querySelector('input') as HTMLInputElement | null;
+        (input ?? container).focus();
+        item.Result = `${mode}入力欄にフォーカスしました`;
+        return;
+      }
+
       const input = document.getElementById('StatusBarTextInput') as HTMLInputElement | null;
       if (!input) { item.Result = '[入力欄なし]'; return; }
       input.focus();

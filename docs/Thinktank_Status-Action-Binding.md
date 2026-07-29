@@ -18,6 +18,13 @@
 ## 完了：　Application.Resource.ImportFromLocal
 
 
+## 修正：　　ToolBar.CurrentMode.Text:Focus
+　ToolBarの現在のモードの入力欄にフォーカスする
+　StatusModeの時は
+
+description:    ToolBarの現在のモードの入力欄にフォーカスする
+key:            ToolBar.CurrentMode.Text:Focus
+
 # Status
 
 # 対応不要： その他：ナビゲーション　ファイル内・ファイル間ジャンプ
@@ -237,10 +244,7 @@ description:    ToolBarのCommandをクリアする
 key:            ToolBar.CommandMode.Text:Clear
 　ToolBarのCommandをクリアする
 
-## Action：　260728　ToolBar.CurrentMode.Text:Focus
-description:    ToolBarの現在のモードの入力欄にフォーカスする
-key:            ToolBar.CurrentMode.Text:Focus
-　ToolBarの現在のモードの入力欄にフォーカスする
+
 ## Action：　260728　ToolBar.CurrentMode.Text:Clear
 description:    ToolBarの現在のモードの入力欄のテキストを消去する
 key:            ToolBar.CurrentMode.Text:Clear
