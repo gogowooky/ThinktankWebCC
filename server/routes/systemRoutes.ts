@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -31,28 +31,27 @@ export function createSystemRoutes(): Router {
   });
 
   router.post('/open', (req, res) => {
-    const { path: filePath } = req.body;
-    if (!filePath) {
+    const { path: filePath } = req.body as { path?: unknown };
+    if (!filePath || typeof filePath !== 'string') {
       res.status(400).json({ error: 'Path is required' });
       return;
     }
 
     console.log(`[Server] Attempting to open path: ${filePath}`);
 
+    // シェル文字列組み立てを避け、execFile + 引数配列で渡すことで
+    // コマンドインジェクション（`;`, `&&`, バッククォート等の注入）を防ぐ。
     const platform = process.platform;
-    let cmd = '';
-    if (platform === 'win32') {
-      cmd = `cmd /c start "" "${filePath}"`;
-    } else if (platform === 'darwin') {
-      cmd = `open "${filePath}"`;
-    } else {
-      cmd = `xdg-open "${filePath}"`;
-    }
+    const [cmd, args] = platform === 'win32'
+      ? ['cmd', ['/c', 'start', '', filePath]]
+      : platform === 'darwin'
+        ? ['open', [filePath]]
+        : ['xdg-open', [filePath]];
 
-    exec(cmd, (error) => {
+    execFile(cmd, args, (error) => {
       if (error) {
         console.error(`[Server] Failed to open path: ${filePath}`, error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'failed to open path' });
         return;
       }
       res.json({ success: true });

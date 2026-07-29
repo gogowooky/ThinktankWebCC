@@ -46,6 +46,10 @@ let exportStatus: ExportStatus = {
   path: ''
 };
 
+// id / contentType はそのままファイルパス（category ディレクトリ名 + ファイル名）に
+// 使われるため、パストラバーサル（"../" 等）を防ぐために厳格な文字種のみ許可する。
+const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,200}$/;
+
 export function createBigQueryRoutes() {
   const router = Router();
 
@@ -90,6 +94,9 @@ export function createBigQueryRoutes() {
     };
     if (!id || !contentType) {
       res.status(400).json({ error: 'id, contentType are required' }); return;
+    }
+    if (!SAFE_ID_RE.test(id) || !SAFE_ID_RE.test(contentType)) {
+      res.status(400).json({ error: 'id/contentType contain invalid characters' }); return;
     }
     let fileDate = new Date();
     const dateMatch = id.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$/);
@@ -161,10 +168,20 @@ export function createBigQueryRoutes() {
         path: exportDir
       };
 
+      const exportDirResolved = path.resolve(exportDir) + path.sep;
+
       for (const r of records) {
         const fullContent = r.content ? `${r.title}\n${r.content}` : (r.title || '');
         const fileId = r.file_id;
         const category = r.category || 'unknown';
+
+        // 既存レコードに旧バージョン由来の不正な id/category が混入している
+        // 可能性を考慮し、書き込み先が exportDir 配下から外れないことを検証する。
+        if (!SAFE_ID_RE.test(fileId) || !SAFE_ID_RE.test(category)) {
+          console.warn(`[bigqueryRoutes] export: skip unsafe id/category (${fileId} / ${category})`);
+          exportStatus.current++;
+          continue;
+        }
 
         let targetPath = '';
         if (category === 'memo') {
@@ -176,11 +193,18 @@ export function createBigQueryRoutes() {
           }
           targetPath = path.join(categoryDir, `${fileId}.md`);
         }
+        const metaPath = path.join(metaDir, `${fileId}.json`);
+
+        if (!path.resolve(targetPath).startsWith(exportDirResolved) ||
+            !path.resolve(metaPath).startsWith(exportDirResolved)) {
+          console.warn(`[bigqueryRoutes] export: blocked path traversal attempt (${fileId})`);
+          exportStatus.current++;
+          continue;
+        }
 
         await fs.promises.writeFile(targetPath, fullContent, 'utf8');
 
         // メタデータの個別エクスポート
-        const metaPath = path.join(metaDir, `${fileId}.json`);
         const metaObj = r.metadata ? (typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata) : {};
         await fs.promises.writeFile(metaPath, JSON.stringify(metaObj, null, 2), 'utf8');
 

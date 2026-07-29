@@ -135,7 +135,10 @@ export class TTThink extends TTObject {
         this._parent.NotifyUpdated(false);
       }
     } catch (e) {
+      // 呼び出し元が保存失敗を検知できるよう、ログのみで握りつぶさず再送出する。
+      // ここで飲み込むと「保存済みのはずが実は保存されていない」というデータ消失に繋がる。
       console.error(`[TTThink] SaveContent failed (${this.ID}):`, e);
+      throw e;
     }
   }
 

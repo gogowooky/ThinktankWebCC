@@ -15,7 +15,7 @@ import { StorageManager } from '../../../services/storage/StorageManager';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
-import { getHeadingAttributes } from '../../../views/TTFocusedPanelActions';
+import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent } from '../../../utils/thinkFormat';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import './TextEditorMedia.css';

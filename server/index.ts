@@ -4,6 +4,9 @@
  * port 8080: BigQuery CRUD API + AI チャット API + Embedding/セマンティック検索 API（Phase 15）
  */
 
+// 最初の import であることが重要（.env の値を参照する他モジュールより必ず先に評価させるため）
+import './loadEnv.js';
+
 import express from 'express';
 import path    from 'path';
 import fs      from 'fs';
@@ -15,6 +18,7 @@ import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
 import { createSystemRoutes }     from './routes/systemRoutes.js';
 import { vectorStoreService }     from './services/VectorStoreService.js';
+import { apiAuth }                from './middleware/apiAuth.js';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
@@ -23,17 +27,26 @@ const PORT = process.env['PORT'] ?? 8080;
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
-// CORS（Vite dev server + WPF WebView2）
-app.use((_req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+// CORS: 既知のオリジン（Vite dev server）以外にはヘッダーを返さない。
+// 同一オリジン（Cloud Run 上で dist/ を配信するケース）はブラウザが CORS
+// ヘッダーを参照しないため、ここに含めなくても正常に動作する。
+const CORS_ALLOWED_ORIGINS = new Set(['http://localhost:5173']);
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && CORS_ALLOWED_ORIGINS.has(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, X-Thinktank-Api-Key');
+  }
   next();
 });
 app.options(/(.*)/, (_req, res) => { res.sendStatus(204); });
 
-// ヘルスチェック
+// ヘルスチェック（認証不要）
 app.get('/api/health', (_req, res) => { res.json({ status: 'ok' }); });
+
+// 以降の /api/* は共有シークレット認証（API_SHARED_SECRET 未設定時はスキップ）
+app.use('/api', apiAuth);
 
 // BigQuery CRUD
 app.use('/api/bq', createBigQueryRoutes());

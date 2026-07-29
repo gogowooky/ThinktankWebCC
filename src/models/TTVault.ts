@@ -434,13 +434,21 @@ export class TTVault extends TTCollection {
     this._children.set(newId, think);
     this.Count = this._children.size;
 
-    await StorageManager.instance.save({
-      id:          newId,
-      contentType: 'thought',
-      fullContent,
-      keywords:    '',
-      relatedIds:  ids.join(','),
-    });
+    try {
+      await StorageManager.instance.save({
+        id:          newId,
+        contentType: 'thought',
+        fullContent,
+        keywords:    '',
+        relatedIds:  ids.join(','),
+      });
+    } catch (e) {
+      // 保存に失敗した場合、サーバーに存在しない「幻の」Thinkをメモリ上に
+      // 残さないようロールバックする（次回リロードで消える古い挙動より安全）。
+      this._children.delete(newId);
+      this.Count = this._children.size;
+      throw e;
+    }
     think.markSaved();
     this.NotifyUpdated();
     return think;
@@ -487,13 +495,19 @@ export class TTVault extends TTCollection {
     this._children.set(newId, think);
     this.Count = this._children.size;
 
-    await StorageManager.instance.save({
-      id:          newId,
-      contentType: contentType,
-      fullContent: initialName,
-      keywords:    '',
-      relatedIds:  '',
-    });
+    try {
+      await StorageManager.instance.save({
+        id:          newId,
+        contentType: contentType,
+        fullContent: initialName,
+        keywords:    '',
+        relatedIds:  '',
+      });
+    } catch (e) {
+      this._children.delete(newId);
+      this.Count = this._children.size;
+      throw e;
+    }
     think.markSaved();
 
     if (thoughtId) await this._linkThinkToThought(thoughtId, newId);
@@ -541,13 +555,19 @@ export class TTVault extends TTCollection {
     this._children.set(newId, think);
     this.Count = this._children.size;
 
-    await StorageManager.instance.save({
-      id:          newId,
-      contentType: 'links',
-      fullContent,
-      keywords:    '',
-      relatedIds:  '',
-    });
+    try {
+      await StorageManager.instance.save({
+        id:          newId,
+        contentType: 'links',
+        fullContent,
+        keywords:    '',
+        relatedIds:  '',
+      });
+    } catch (e) {
+      this._children.delete(newId);
+      this.Count = this._children.size;
+      throw e;
+    }
     think.markSaved();
     this.NotifyUpdated();
     return think;
@@ -569,13 +589,19 @@ export class TTVault extends TTCollection {
     this._children.set(newId, think);
     this.Count = this._children.size;
 
-    await StorageManager.instance.save({
-      id:          newId,
-      contentType: 'chat',
-      fullContent: content,
-      keywords:    '',
-      relatedIds:  '',
-    });
+    try {
+      await StorageManager.instance.save({
+        id:          newId,
+        contentType: 'chat',
+        fullContent: content,
+        keywords:    '',
+        relatedIds:  '',
+      });
+    } catch (e) {
+      this._children.delete(newId);
+      this.Count = this._children.size;
+      throw e;
+    }
     think.markSaved();
 
     if (thoughtId) await this._linkThinkToThought(thoughtId, newId);
@@ -605,20 +631,38 @@ export class TTVault extends TTCollection {
     think._parent     = this;
     this._children.set(id, think);
     this.Count = this._children.size;
-    await StorageManager.instance.save({ id, contentType, fullContent, keywords, relatedIds: '' });
+    try {
+      await StorageManager.instance.save({ id, contentType, fullContent, keywords, relatedIds: '' });
+    } catch (e) {
+      this._children.delete(id);
+      this.Count = this._children.size;
+      throw e;
+    }
     think.markSaved();
     this.NotifyUpdated();
     return think;
   }
 
-  /** 指定 ID の Think を BQ から削除しメモリからも除去する */
+  /** 指定 ID の Think を BQ から削除しメモリからも除去する。
+   *  一部の削除が失敗した場合でも成功した分はメモリからも除去し（サーバーと状態を
+   *  一致させる）、失敗した ID を含むエラーを呼び出し元に通知する。 */
   public async DeleteThinks(ids: string[]): Promise<void> {
-    await Promise.all(ids.map(id => StorageManager.instance.delete(id)));
-    for (const id of ids) {
-      this._children.delete(id);
-    }
+    const results = await Promise.allSettled(ids.map(id => StorageManager.instance.delete(id)));
+    const failedIds: string[] = [];
+    results.forEach((result, i) => {
+      const id = ids[i];
+      if (result.status === 'fulfilled') {
+        this._children.delete(id);
+      } else {
+        failedIds.push(id);
+        console.error(`[TTVault] DeleteThinks failed (${id}):`, result.reason);
+      }
+    });
     this.Count = this._children.size;
     this.NotifyUpdated();
+    if (failedIds.length > 0) {
+      throw new Error(`一部のThinkの削除に失敗しました: ${failedIds.join(', ')}`);
+    }
   }
 
   // ── LocalFS パスユーティリティ ─────────────────────────────────────

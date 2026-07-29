@@ -31,6 +31,16 @@ export default function App() {
       TTShortcutManager.instance.ensureThinkExists(vault),
     ])
 
+    // ② Vault保存/削除失敗（TTThink.SaveContent, TTVault.Create*/DeleteThinks等）は
+    // 呼び出し元で個別に catch されていない箇所があるため、未処理の Promise rejection を
+    // ここで一括捕捉し、ステータスバーの同期エラー表示（既存の SyncState='error' 導線）で
+    // ユーザーに知らせる。以前はここで何も起きず、保存失敗が完全に無音だった。
+    const handleUnhandledRejection = (e: PromiseRejectionEvent) => {
+      console.error('[App] Unhandled promise rejection:', e.reason)
+      app.Status.SetSyncState('error')
+    }
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
     // ③ グローバルキーボード / マウス / ホイールショートカットリスナー登録
     const handleKeyDown   = (e: KeyboardEvent) => TTShortcutManager.instance.handleKeyDown(e)
     const handleClick     = (e: MouseEvent)    => TTShortcutManager.instance.handleMouseEvent('click',       e)
@@ -91,6 +101,7 @@ export default function App() {
       document.removeEventListener('wheel',       handleWheel)
       document.removeEventListener('focusin',     handleFocusIn)
       window.removeEventListener('blur',          handleWindowBlur)
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       cancelAnimationFrame(_focusRaf)
     }
   }, [])

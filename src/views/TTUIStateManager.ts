@@ -34,7 +34,6 @@ import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
-import { getHeadingAttributes } from './TTFocusedPanelActions';
 import { StorageManager } from '../services/storage/StorageManager';
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────

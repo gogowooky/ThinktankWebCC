@@ -60,13 +60,8 @@ Overview.Filter     ,ExApp  ,Alt+K          ,Overview.Filter.Cursor:ToggleCheck 
 *TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
 *TextEditor ,       ,Shift+Ctrl+H           ,TextEditor.CurrentEditor.ShowReplace       ,置換ダイアログを表示する
 
-# Editor カーソル　ハイライト・コマンド
-*TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
-*TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
-*TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
-*TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
+# ToolBar ハイライト・コマンド
 *TextEditor ,       ,Alt+S                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
-
 *TextEditor ,       ,Alt+X                  ,ToolBar.CurrentMode.Text:Focus                         ,Highlighter入力欄にフォーカスする
 ToolBar*    ,       ,Alt+Q                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
 ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
@@ -79,8 +74,13 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Ctrl+ArrowLeft         ,TextEditor.CurrentEditor.CursorPos:PrevWord            ,カーソルを１ワード前に移動する
 *TextEditor ,       ,Ctrl+ArrowRight        ,TextEditor.CurrentEditor.CursorPos:NextWord            ,カーソルを１ワード後に移動する
 
-*TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+      ,行頭に移動→全選択
-*TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+        ,行末尾に移動→全選択
+*TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+          ,行頭に移動→全選択
+*TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+            ,行末尾に移動→全選択
+
+*TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
+*TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
+*TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
+*TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
 
 # Editor カーソル アクション文字
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
