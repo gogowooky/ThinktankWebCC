@@ -26,7 +26,9 @@ export function createPublicSystemRoutes(): Router {
         if (firstComma === -1 || firstComma === lastComma) continue;
         const id  = trimmed.slice(0, firstComma).trim();
         const url = trimmed.slice(lastComma + 1).trim();
-        if (id && url) tags[id] = url;
+        // NoURL は「WebSearchタグではないActionTag」のメニュー確認用の印であり、
+        // 実URLテンプレートではないため配信対象から除外する
+        if (id && url && url !== 'NoURL') tags[id] = url;
       }
       res.json(tags);
     } catch (e) {
