@@ -1,4 +1,4 @@
-# ID,           Descrition,                     URL
+# ID,           Description,                     URL
 Google,         "Google検索(J)",                https://www.google.com/search?q={0}
 GoogleE,        "Google検索(E)",                http://www.google.co.jp/search?lr=lang_en&q={0}
 GoogleJE,       "Google翻訳(JE)",               https://translate.google.com/?hl=ja$op=translate&sl=ja&tl=en&text={0}

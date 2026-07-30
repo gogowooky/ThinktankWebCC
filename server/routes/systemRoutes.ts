@@ -7,7 +7,11 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEARCH_TAG_FILE = resolve(__dirname, '../../docs/DefaultSearchTag.md');
 
-export function createSystemRoutes(): Router {
+// search-tags は副作用のない参照データ（検索URLテンプレート）の読み取り専用APIで、
+// 秘匿すべき情報を含まない。apiAuth（共有シークレット）の前段で公開し、
+// Viteのdevプロキシ経由でしかヘッダーが付与されない構成に依存させない
+// （パッケージ版Electronやプロキシなし環境でも動くようにするため）。
+export function createPublicSystemRoutes(): Router {
   const router = Router();
 
   router.get('/search-tags', (_req, res) => {
@@ -29,6 +33,12 @@ export function createSystemRoutes(): Router {
       res.status(500).json({ error: String(e) });
     }
   });
+
+  return router;
+}
+
+export function createSystemRoutes(): Router {
+  const router = Router();
 
   router.post('/open', (req, res) => {
     const { path: filePath } = req.body as { path?: unknown };

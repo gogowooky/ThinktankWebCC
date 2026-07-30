@@ -17,9 +17,12 @@ import { getErrorMessage } from '../../utils/errorMessage';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
 let _searchTagCache: Record<string, string> | null = null;
+// 一覧の取得自体に失敗した場合の理由（「該当キーなし」と区別して表示するため）
+let _searchTagLoadError: string | null = null;
 
 async function getSearchTags(): Promise<Record<string, string>> {
   if (_searchTagCache) return _searchTagCache;
+  _searchTagLoadError = null;
   try {
     const res = await fetch('/api/system/search-tags');
     if (res.ok) {
@@ -28,8 +31,12 @@ async function getSearchTags(): Promise<Record<string, string>> {
       _searchTagCache = Object.fromEntries(
         Object.entries(raw).map(([k, v]) => [k.toLowerCase(), v])
       );
+    } else {
+      _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（HTTP ${res.status}）`;
     }
-  } catch { /* サーバー未起動時はキャッシュなしのまま */ }
+  } catch (err) {
+    _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（サーバー未起動の可能性）: ${getErrorMessage(err)}`;
+  }
   return _searchTagCache ?? {};
 }
 
@@ -206,7 +213,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         const WEB_SEARCH_TEMPLATES = await getSearchTags();
         const template = WEB_SEARCH_TEMPLATES[key.toLowerCase()];
         if (!template) {
-          item.Result = `検索テンプレート [${key}] が見つかりません`;
+          item.Result = _searchTagLoadError ?? `検索テンプレート [${key}] が見つかりません`;
           return;
         }
         const url = template.replace('{0}', encodeURIComponent(val));

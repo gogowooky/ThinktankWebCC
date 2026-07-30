@@ -16,7 +16,7 @@ import { bigqueryService }        from './services/BigQueryService.js';
 import { createDriveRoutes }      from './routes/driveRoutes.js';
 import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
-import { createSystemRoutes }     from './routes/systemRoutes.js';
+import { createSystemRoutes, createPublicSystemRoutes } from './routes/systemRoutes.js';
 import { vectorStoreService }     from './services/VectorStoreService.js';
 import { apiAuth }                from './middleware/apiAuth.js';
 
@@ -44,6 +44,10 @@ app.options(/(.*)/, (_req, res) => { res.sendStatus(204); });
 
 // ヘルスチェック（認証不要）
 app.get('/api/health', (_req, res) => { res.json({ status: 'ok' }); });
+
+// 検索タグ一覧（認証不要・副作用のない参照データ）。Viteのdevプロキシに依存せず
+// パッケージ版Electron/本番でも動かすため apiAuth の手前で公開する。
+app.use('/api/system', createPublicSystemRoutes());
 
 // 以降の /api/* は共有シークレット認証（API_SHARED_SECRET 未設定時はスキップ）
 app.use('/api', apiAuth);
