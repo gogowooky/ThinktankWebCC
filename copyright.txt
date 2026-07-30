@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.30",
+  "version": "1.3.31",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "79050b7",
-  "commitDateTime": "2026-07-30-142542",
-  "commitMessage": "fix: search-tags を認証不要の公開データとして分離し401を解消"
+  "commitId": "84cdd06",
+  "commitDateTime": "2026-07-30-153837",
+  "commitMessage": "refactor: ContentType='thought' を 'bundle' にリネーム"
 }
