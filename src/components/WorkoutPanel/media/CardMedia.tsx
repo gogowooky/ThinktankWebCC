@@ -3,8 +3,8 @@
  * カード形式一覧メディア。
  *
  * - think.ContentType === 'table' → TableCardView（1行1カード、col:val形式）
- * - think が Thought → 参照 Think 一覧カード
- * - それ以外 → Vault の全 Think（thought 除く）カード
+ * - think が Bundle → 参照 Think 一覧カード
+ * - それ以外 → Vault の全 Think（bundle 除く）カード
  */
 
 import { useState, useMemo, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
@@ -23,7 +23,7 @@ import './CardMedia.css';
 
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo:    FileText,
-  thought: Lightbulb,
+  bundle:  Lightbulb,
   table:   Table,
   links:   Link,
   chat:    MessageCircle,
@@ -32,7 +32,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
 
 const CONTENT_COLORS: Record<ContentType, string> = {
   memo:    '#3b78c4',
-  thought: '#c9a227',
+  bundle:  '#c9a227',
   table:   '#2e7d32',
   links:   '#7b1fa2',
   chat:    '#d32f2f',
@@ -222,10 +222,10 @@ function ThinkCardView({ think, vault }: MediaProps) {
   const [filter, setFilter] = useState('');
 
   const allItems = useMemo<TTThink[]>(() => {
-    if (think?.ContentType === 'thought') {
-      return vault.GetThinksForThought(think.ID);
+    if (think?.ContentType === 'bundle') {
+      return vault.GetThinksForBundle(think.ID);
     }
-    return vault.GetThinks().filter(t => t.ContentType !== 'thought');
+    return vault.GetThinks().filter(t => t.ContentType !== 'bundle');
   }, [think, vault]);
 
   const filtered = useMemo<TTThink[]>(() => {

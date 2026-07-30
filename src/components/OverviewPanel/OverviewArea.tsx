@@ -3,12 +3,12 @@
  * OverviewPanel の表示エリア。
  *
  * - メニューリボン: ThinktankMenuRibbon 相当のボタン群
- * - Thought ストリップ: 選択中 Thought 名表示 + D&D ドロップターゲット
+ * - Bundle ストリップ: 選択中 Bundle 名表示 + D&D ドロップターゲット
  * - フィルター / 日付フィルターバー: Think一覧モード(filter)のみ表示
  * - ColumnSortDialog
  * - 本体:
- *   - settings  → OverviewSettingsView（Thought プロファイル）
- *   - filter    → 選択 Thought 内の Think 一覧（datagrid メディアで描画）
+ *   - settings  → OverviewSettingsView（Bundle プロファイル）
+ *   - filter    → 選択 Bundle 内の Think 一覧（datagrid メディアで描画）
  *   - markdown  → MarkdownMedia
  *   - graph     → GraphMedia
  *   - chat      → ChatMedia
@@ -39,15 +39,15 @@ import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
-import { parseThought, serializeThought, serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
+import { parseBundle, serializeBundle, serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './OverviewArea.css';
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext'];
 
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
   filter: 'Think一覧',
-  graph:  'Thought分析',
+  graph:  'Bundle分析',
   chat:   'AI相談',
 };
 
@@ -118,17 +118,17 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const graphMediaRef                   = useRef<GraphMediaRef>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
 
-  // ── Think 一覧（選択 Thought 内の全 Think → フィルタ適用）──────────────────
-  const [thinksInThought, setThinksInThought] = useState(() =>
-    panel.ThoughtID ? vault.GetThinksForThought(panel.ThoughtID) : []
+  // ── Think 一覧（選択 Bundle 内の全 Think → フィルタ適用）──────────────────
+  const [thinksInBundle, setThinksInBundle] = useState(() =>
+    panel.BundleID ? vault.GetThinksForBundle(panel.BundleID) : []
   );
   useEffect(() => {
-    if (!panel.ThoughtID) { setThinksInThought([]); return; }
-    vault.GetThinksForThoughtAsync(panel.ThoughtID).then(newThinks => {
-      setThinksInThought(newThinks);
+    if (!panel.BundleID) { setThinksInBundle([]); return; }
+    vault.GetThinksForBundleAsync(panel.BundleID).then(newThinks => {
+      setThinksInBundle(newThinks);
       vault.NotifyUpdated();
     });
-  }, [panel.ThoughtID, vault, refreshKey, vault.IsLoaded, vault.Count]);
+  }, [panel.BundleID, vault, refreshKey, vault.IsLoaded, vault.Count]);
 
   // AI相談 DataGrid 用: タイトルが [todo:overview] で始まる Think 一覧（Vault全体・種別不問）
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -153,8 +153,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   const checkedSet = useMemo(() => new Set(panel.CheckedThoughtIDs), [panel.CheckedThoughtIDs]);
 
-  // 母集合: 検索語があれば検索結果、なければ選択 Thought 内の Think
-  const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : thinksInThought;
+  // 母集合: 検索語があれば検索結果、なければ選択 Bundle 内の Think
+  const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : thinksInBundle;
 
   const typeFilteredBase = useMemo(
     () => searchBase.filter(t => visibleTypes.has(t.ContentType)),
@@ -176,11 +176,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   }, [panel, visibleThinks]);
 
 
-  // ── ThoughtID 変化時: 一覧状態リセット ＋ MetaOnly なら Content をロード ─
-  const prevThoughtIdRef = useRef(panel.ThoughtID);
+  // ── BundleID 変化時: 一覧状態リセット ＋ MetaOnly なら Content をロード ─
+  const prevBundleIdRef = useRef(panel.BundleID);
   useEffect(() => {
-    if (panel.ThoughtID === prevThoughtIdRef.current) return;
-    prevThoughtIdRef.current = panel.ThoughtID;
+    if (panel.BundleID === prevBundleIdRef.current) return;
+    prevBundleIdRef.current = panel.BundleID;
     setFilter('');
     panel.SetCheckedThoughtIDs([]);
     setShowCheckedOnly(false);
@@ -188,12 +188,12 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     setSearchResults([]);
     setSearchSearched(false);
 
-    if (!panel.ThoughtID) return;
-    const thought = vault.GetThink(panel.ThoughtID);
-    if (thought?.IsMetaOnly) {
-      thought.LoadContent().then(() => vault.NotifyUpdated());
+    if (!panel.BundleID) return;
+    const bundle = vault.GetThink(panel.BundleID);
+    if (bundle?.IsMetaOnly) {
+      bundle.LoadContent().then(() => vault.NotifyUpdated());
     }
-  }, [panel.ThoughtID, vault]);
+  }, [panel.BundleID, vault]);
 
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
@@ -212,22 +212,22 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   }, [showSettings, panel.MediaType]);
 
   const handleRefresh = useCallback(() => {
-    if (!panel.ThoughtID) return;
-    const thought = vault.GetThink(panel.ThoughtID);
-    if (!thought) return;
+    if (!panel.BundleID) return;
+    const bundle = vault.GetThink(panel.BundleID);
+    if (!bundle) return;
 
-    thought.LoadContent(true)
+    bundle.LoadContent(true)
       .then(() => {
-        return vault.GetThinksForThoughtAsync(panel.ThoughtID);
+        return vault.GetThinksForBundleAsync(panel.BundleID);
       })
       .then(newThinks => {
-        setThinksInThought(newThinks);
+        setThinksInBundle(newThinks);
         vault.NotifyUpdated();
       })
       .catch(e => {
         console.error('[OverviewArea] refresh failed:', e);
       });
-  }, [panel.ThoughtID, vault]);
+  }, [panel.BundleID, vault]);
 
   // ── メニューリボン ハンドラ ────────────────────────────────────────────────
 
@@ -238,17 +238,17 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const handleClearChecks = useCallback(() => panel.SetCheckedThoughtIDs([]), [panel]);
 
   const handleExcludeChecked = useCallback(async () => {
-    if (panel.CheckedThoughtIDs.length === 0 || !panel.ThoughtID) return;
-    const thought = vault.GetThink(panel.ThoughtID);
-    if (!thought || thought.ContentType !== 'thought') return;
-    if (thought.IsMetaOnly) await thought.LoadContent();
-    
-    const parsed = parseThought(thought.Content);
+    if (panel.CheckedThoughtIDs.length === 0 || !panel.BundleID) return;
+    const bundle = vault.GetThink(panel.BundleID);
+    if (!bundle || bundle.ContentType !== 'bundle') return;
+    if (bundle.IsMetaOnly) await bundle.LoadContent();
+
+    const parsed = parseBundle(bundle.Content);
     const remaining = parsed.ids.filter(id => !panel.CheckedThoughtIDs.includes(id));
     const currentExcludes = parsed.excludeIds || [];
     const newExcludes = Array.from(new Set([...currentExcludes, ...panel.CheckedThoughtIDs]));
 
-    const newContent = serializeThought({
+    const newContent = serializeBundle({
       prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
       title: parsed.title,
       searchQuery: parsed.search.query,
@@ -262,20 +262,20 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       ids: remaining,
       excludeIds: newExcludes,
     });
-    
-    thought.Content = newContent;
 
-    if (thought.RelatedIDs) {
-      const relIds = thought.RelatedIDs.split(',').filter(id => id.trim());
+    bundle.Content = newContent;
+
+    if (bundle.RelatedIDs) {
+      const relIds = bundle.RelatedIDs.split(',').filter(id => id.trim());
       const newRelIds = relIds.filter(id => !panel.CheckedThoughtIDs.includes(id));
-      thought.RelatedIDs = newRelIds.join(',');
+      bundle.RelatedIDs = newRelIds.join(',');
     }
 
-    await thought.SaveContent();
+    await bundle.SaveContent();
 
     // 更新後のThink一覧を再取得してステートを更新し、変更を通知する
-    const newThinks = await vault.GetThinksForThoughtAsync(panel.ThoughtID);
-    setThinksInThought(newThinks);
+    const newThinks = await vault.GetThinksForBundleAsync(panel.BundleID);
+    setThinksInBundle(newThinks);
     vault.NotifyUpdated();
 
     panel.SetCheckedThoughtIDs([]);
@@ -372,17 +372,17 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
     chatAbortRef.current = new AbortController();
 
-    // 選択中 Thought のコンテキストをシステムプロンプトに含める
-    const thoughtThink = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) : null;
+    // 選択中 Bundle のコンテキストをシステムプロンプトに含める
+    const bundleThink = panel.BundleID ? vault.GetThink(panel.BundleID) : null;
     const contextLines: string[] = [
-      'あなたは Thinktank の AI アシスタントです。ユーザーの Thought（テーマ集合）について分析・整理・提案を日本語で行ってください。',
+      'あなたは Thinktank の AI アシスタントです。ユーザーの Bundle（テーマ集合）について分析・整理・提案を日本語で行ってください。',
     ];
-    if (thoughtThink) {
-      contextLines.push(`\n## 選択中の Thought\nタイトル: ${thoughtThink.Name}`);
-      const thinksInThoughtNow = vault.GetThinksForThought(panel.ThoughtID);
-      if (thinksInThoughtNow.length > 0) {
+    if (bundleThink) {
+      contextLines.push(`\n## 選択中の Bundle\nタイトル: ${bundleThink.Name}`);
+      const thinksInBundleNow = vault.GetThinksForBundle(panel.BundleID);
+      if (thinksInBundleNow.length > 0) {
         contextLines.push(
-          '含まれる Think:\n' + thinksInThoughtNow.map(t => `- ${t.Name}`).join('\n'),
+          '含まれる Think:\n' + thinksInBundleNow.map(t => `- ${t.Name}`).join('\n'),
         );
       }
     }
@@ -414,7 +414,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     );
   }, [chatMessages, panel, vault]);
 
-  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（選択中Thoughtへリンク）
+  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（選択中Bundleへリンク）
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0) return;
 
@@ -431,7 +431,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body = serializeChat(chatMessages);
-    await vault.CreateBlankThink('memo', `${title}\n${body}`, panel.ThoughtID ?? undefined);
+    await vault.CreateBlankThink('memo', `${title}\n${body}`, panel.BundleID ?? undefined);
     setChatMessages([]);
   }, [chatMessages, vault, panel, selectedTodoMemoId]);
 
@@ -451,7 +451,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   }, [vault]);
 
   // ── 算出値 ────────────────────────────────────────────────────────────────
-  const think = panel.ThoughtID ? vault.GetThink(panel.ThoughtID) ?? null : null;
+  const think = panel.BundleID ? vault.GetThink(panel.BundleID) ?? null : null;
   const isThinkListMode = panel.MediaType === 'datagrid' && !showSettings;
 
   const overviewModeLabel = showSettings
@@ -479,11 +479,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         saveChatTip={saveChatTip}
         visibleCount={visibleThinks.length}
         totalCount={typeFilteredBase.length}
-        hasThought={!!panel.ThoughtID}
+        hasBundle={!!panel.BundleID}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}
-        onClearThought={() => panel.ClearThought()}
+        onClearBundle={() => panel.ClearBundle()}
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
@@ -559,11 +559,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       {/* ── 本体 ───────────────────────────────────────────────── */}
       <div className="overview-area__body">
         {showSettings ? (
-          <OverviewSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearThought()} />
+          <OverviewSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearBundle()} />
         ) : isThinkListMode ? (
-          !panel.ThoughtID ? (
+          !panel.BundleID ? (
             <div className="overview-area__empty">
-              <span>Thought をドロップして選択してください</span>
+              <span>Bundle をドロップして選択してください</span>
             </div>
           ) : (
             <ThoughtsList
@@ -594,7 +594,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
           </div>
         ) : !think ? (
           <div className="overview-area__empty">
-            <span>Thought をドロップして選択してください</span>
+            <span>Bundle をドロップして選択してください</span>
           </div>
         ) : panel.MediaType === 'graph' ? (
           <GraphMedia ref={graphMediaRef} think={think} vault={vault} onSave={noop} onDirtyChange={noop} />

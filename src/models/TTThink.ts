@@ -2,15 +2,15 @@
  * TTThink.ts
  * v5 個別データアイテム（旧 TTDataItem を v5 仕様にリネーム・更新）
  *
- * データ階層: TTVault > Thoughts > Thought > Think
+ * データ階層: TTVault > Bundles > Bundle > Think
  * Think = 個別データアイテム（BigQueryの1レコード）
- * Thought = ContentType='thought' の TTThink（ThinkIDリスト or Filter文字列を本文に持つ）
+ * Bundle = ContentType='bundle' の TTThink（ThinkIDリスト or Filter文字列を本文に持つ）
  */
 
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
-import { parseThought } from '../utils/thinkFormat';
+import { parseBundle } from '../utils/thinkFormat';
 
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
@@ -145,10 +145,10 @@ export class TTThink extends TTObject {
 
   // ── ヘルパー ───────────────────────────────────────────────────────
 
-  /** thought本文からThinkIDリストを取得する（ContentType='thought'専用）*/
+  /** bundle本文からThinkIDリストを取得する（ContentType='bundle'専用）*/
   public getThinkIds(): string[] {
-    if (this.ContentType !== 'thought') return [];
-    return parseThought(this._content).ids;
+    if (this.ContentType !== 'bundle') return [];
+    return parseBundle(this._content).ids;
   }
 
   private _extractTitle(): void {
@@ -158,7 +158,7 @@ export class TTThink extends TTObject {
     }
     const firstLine = this._content.split('\n')[0].trim();
     let title = firstLine.replace(/^#+\s*/, '');
-    if (this.ContentType === 'thought') {
+    if (this.ContentType === 'bundle') {
       title = title.replace(/^>>?\s*/, '');
     }
     this.Name = title || '新しいメモ';

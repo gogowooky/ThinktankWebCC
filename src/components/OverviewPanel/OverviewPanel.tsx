@@ -38,29 +38,29 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   const handleToggle = useCallback(() => panel.ToggleArea(), [panel]);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const handleThoughtDrop = useCallback(async (id: string) => {
+  const handleBundleDrop = useCallback(async (id: string) => {
     const dropped = vault.GetThink(id);
     if (!dropped) return;
 
     const checkedIds = app.ThinktankPanel.CheckedThoughtIDs;
     const isMultipleDrag = checkedIds.length > 0 && checkedIds.includes(id);
 
-    // 1ファイルのD&DでかつThoughtであった場合、または複数選択されておらずドラッグされたのがThoughtの場合
-    if (!isMultipleDrag && dropped.ContentType === 'thought') {
-      panel.OpenThought(id, 'datagrid');
+    // 1ファイルのD&DでかつBundleであった場合、または複数選択されておらずドラッグされたのがBundleの場合
+    if (!isMultipleDrag && dropped.ContentType === 'bundle') {
+      panel.OpenBundle(id, 'datagrid');
     } else {
       // 複数ファイルがチェックされている状態でドラッグされた場合、
-      // または単体ファイルでかつthought以外がドラッグされた場合
-      if (panel.ThoughtID) {
-        const targetThought = vault.GetThink(panel.ThoughtID);
-        if (targetThought && targetThought.ContentType === 'thought') {
-          // 追加対象のファイルIDリスト（自分自身のThoughtは除外）
-          const droppedIds = (isMultipleDrag ? checkedIds : [id]).filter(tid => tid !== panel.ThoughtID);
+      // または単体ファイルでかつbundle以外がドラッグされた場合
+      if (panel.BundleID) {
+        const targetBundle = vault.GetThink(panel.BundleID);
+        if (targetBundle && targetBundle.ContentType === 'bundle') {
+          // 追加対象のファイルIDリスト（自分自身のBundleは除外）
+          const droppedIds = (isMultipleDrag ? checkedIds : [id]).filter(tid => tid !== panel.BundleID);
           if (droppedIds.length === 0) return;
 
-          if (targetThought.IsMetaOnly) await targetThought.LoadContent();
+          if (targetBundle.IsMetaOnly) await targetBundle.LoadContent();
 
-          const contentLines = targetThought.Content.split('\n');
+          const contentLines = targetBundle.Content.split('\n');
           const hasFilter = contentLines.some(line => {
             const trimmed = line.trim();
             return trimmed.startsWith('>') || trimmed.startsWith('>>');
@@ -70,24 +70,24 @@ export function OverviewPanel({ app, width, onResize }: Props) {
 
           if (hasFilter) {
             // 現在のフィルター一致結果を非同期で取得
-            const currentMatchedThinks = await vault.GetThinksForThoughtAsync(targetThought.ID);
+            const currentMatchedThinks = await vault.GetThinksForBundleAsync(targetBundle.ID);
             const currentMatchedIds = currentMatchedThinks.map(t => t.ID);
             newIds = Array.from(new Set([...currentMatchedIds, ...droppedIds]));
 
             const titleLine = contentLines[0];
-            targetThought.Content = [titleLine, ...newIds.map(tid => `* ${tid}`)].join('\n');
+            targetBundle.Content = [titleLine, ...newIds.map(tid => `* ${tid}`)].join('\n');
           } else {
-            const existingIds = targetThought.getThinkIds();
+            const existingIds = targetBundle.getThinkIds();
             newIds = Array.from(new Set([...existingIds, ...droppedIds]));
 
             const nonIdLines = contentLines.filter(line => !line.trim().startsWith('* '));
-            targetThought.Content = [...nonIdLines, ...newIds.map(tid => `* ${tid}`)].join('\n');
+            targetBundle.Content = [...nonIdLines, ...newIds.map(tid => `* ${tid}`)].join('\n');
           }
 
-          await targetThought.SaveContent();
-          
+          await targetBundle.SaveContent();
+
           // キャッシュ更新と画面再ロード
-          await vault.GetThinksForThoughtAsync(targetThought.ID);
+          await vault.GetThinksForBundleAsync(targetBundle.ID);
           setRefreshKey(k => k + 1);
           vault.NotifyUpdated();
         }
@@ -114,9 +114,9 @@ export function OverviewPanel({ app, width, onResize }: Props) {
     setIsDragOver(false);
     const id = e.dataTransfer.getData('application/x-thought-id');
     if (id) {
-      handleThoughtDrop(id);
+      handleBundleDrop(id);
     }
-  }, [handleThoughtDrop]);
+  }, [handleBundleDrop]);
 
   const handleViewMode = useCallback((mode: Parameters<typeof panel.SetViewMode>[0]) => {
     if (!panel.IsAreaOpen) {
@@ -145,7 +145,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
         onToggle={handleToggle}
         onViewMode={handleViewMode}
         onToggleSettings={handleToggleSettings}
-        thoughtName={panel.ThoughtID ? (vault.GetThink(panel.ThoughtID)?.Name ?? panel.ThoughtID) : undefined}
+        bundleName={panel.BundleID ? (vault.GetThink(panel.BundleID)?.Name ?? panel.BundleID) : undefined}
       />
       <PanelArea
         panelId="overview"

@@ -1,7 +1,7 @@
 /**
  * OverviewSettingsView.tsx
  * OverviewPanel の設定ビュー。
- * 選択中の Thought のプロファイルを表示し、タイトルを編集・保存できる。
+ * 選択中の Bundle のプロファイルを表示し、タイトルを編集・保存できる。
  */
 
 import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
@@ -72,14 +72,14 @@ export const OverviewSettingsView = forwardRef<OverviewSettingsViewRef, Props>(f
     return (
       <div className="ov-settings-view ov-settings-view--empty">
         <Library size={24} className="ov-settings-view__empty-icon" />
-        <span>Thoughtをドロップして選択してください</span>
+        <span>Bundleをドロップして選択してください</span>
       </div>
     );
   }
 
   const thinkIds  = think.getThinkIds();
   const filterStr = think.Content.split('\n').slice(1).find(l => l.startsWith('> '))?.slice(2).trim() ?? '';
-  const thinks    = vault.GetThinksForThought(think.ID);
+  const thinks    = vault.GetThinksForBundle(think.ID);
 
   return (
     <div className="ov-settings-view">
@@ -118,9 +118,9 @@ export const OverviewSettingsView = forwardRef<OverviewSettingsViewRef, Props>(f
                 <button
                   className="ov-settings-clear-btn"
                   onClick={onClear}
-                  data-tip="Thoughtをクリア"
+                  data-tip="Bundleをクリア"
                   data-tip-side="left"
-                  aria-label="Thoughtをクリア"
+                  aria-label="Bundleをクリア"
                 >
                   <X size={12} />
                 </button>

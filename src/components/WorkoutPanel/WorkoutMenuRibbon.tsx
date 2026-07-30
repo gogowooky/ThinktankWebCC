@@ -11,7 +11,7 @@ import { FileText, Library, Table, Link, MessageCircle, Globe, NotebookPen, Book
 
 const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo:    FileText,
-  thought: Library,
+  bundle:  Library,
   table:   Table,
   links:   Link,
   chat:    MessageCircle,
@@ -28,7 +28,7 @@ const MEMO_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> 
   { type: 'markdown',   Icon: BookOpenText, title: 'Markdown' },
 ];
 
-const THOUGHT_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
+const BUNDLE_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
   { type: 'texteditor', Icon: NotebookPen,  title: 'テキストエディタ' },
   { type: 'datagrid',   Icon: Table,        title: 'テーブル' },
   { type: 'markdown',   Icon: BookOpenText, title: 'Markdown' },
@@ -192,7 +192,7 @@ interface Props {
 
 export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
-    : contentType === 'thought' ? THOUGHT_BUTTONS
+    : contentType === 'bundle' ? BUNDLE_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
     : MEMO_BUTTONS;
 

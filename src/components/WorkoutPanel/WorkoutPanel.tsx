@@ -516,13 +516,13 @@ export function WorkoutPanel({ app }: Props) {
     }
   }, [panel, vault]);
 
-  // TODOメモ未選択時: 新規メモとして保存する（Overviewの選択中Thoughtへリンク）
+  // TODOメモ未選択時: 新規メモとして保存する（Overviewの選択中Bundleへリンク）
   const handleSaveChat = useCallback(async (messages: ChatMessage[]) => {
     if (messages.length === 0) return;
     const firstUser = messages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body = serializeChat(messages);
-    await vault.CreateBlankThink('memo', `${title}\n${body}`, app.OverviewPanel.ThoughtID || undefined);
+    await vault.CreateBlankThink('memo', `${title}\n${body}`, app.OverviewPanel.BundleID || undefined);
   }, [vault, app]);
 
   const handleSettingsRefresh = useCallback(() => {

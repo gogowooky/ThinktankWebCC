@@ -2,7 +2,7 @@
  * TTOverviewPanel.ts
  * Phase 4: OverviewPanelのビューモデル。
  *
- * 選択されたThoughtの内容表示・分析モードと
+ * 選択されたBundleの内容表示・分析モードと
  * OverviewAreaの開閉状態を管理する。
  */
 
@@ -17,8 +17,8 @@ export class TTOverviewPanel extends TTUIItem {
   /** OverviewAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
 
-  /** 表示中のThoughtID（空 = 未選択）*/
-  public ThoughtID: string = '';
+  /** 表示中のBundleID（空 = 未選択）*/
+  public BundleID: string = '';
 
   /** チェックされているThink IDリスト（OverviewPanel内） */
   public SharedState = { checkedIds: [] as string[] };
@@ -86,14 +86,14 @@ export class TTOverviewPanel extends TTUIItem {
     }
   }
 
-  // ── Thought表示 ───────────────────────────────────────────────────────
+  // ── Bundle表示 ───────────────────────────────────────────────────────
 
   /**
-   * ThoughtをOverviewAreaで開く。
+   * BundleをOverviewAreaで開く。
    * Areaが閉じていれば自動的に開く。
    */
-  public OpenThought(thoughtId: string, mediaType: MediaType = 'datagrid'): void {
-    this.ThoughtID = thoughtId;
+  public OpenBundle(bundleId: string, mediaType: MediaType = 'datagrid'): void {
+    this.BundleID = bundleId;
     this.CheckedThoughtIDs = []; // チェッククリア
     if (mediaType !== 'settings' as string) {
       // datagrid メディアは Think一覧（filter）モードにマップする
@@ -103,15 +103,15 @@ export class TTOverviewPanel extends TTUIItem {
       this.IsAreaOpen = true;
     }
     this.NotifyUpdated();
-    TTUIStateManager.instance.notifyPropertyChanged('Overview.Thought.Name');
+    TTUIStateManager.instance.notifyPropertyChanged('Overview.Bundle.Name');
   }
 
-  /** Thought表示をクリアする */
-  public ClearThought(): void {
-    this.ThoughtID = '';
+  /** Bundle表示をクリアする */
+  public ClearBundle(): void {
+    this.BundleID = '';
     this.CheckedThoughtIDs = []; // チェッククリア
     this.NotifyUpdated();
-    TTUIStateManager.instance.notifyPropertyChanged('Overview.Thought.Name');
+    TTUIStateManager.instance.notifyPropertyChanged('Overview.Bundle.Name');
   }
 
   /** チェック状態を更新する */

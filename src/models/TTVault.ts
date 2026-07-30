@@ -2,7 +2,7 @@
  * TTVault.ts
  * v5 保管庫クラス。TTCollection の派生クラス。
  *
- * データ階層: TTVault > Thoughts > Thought > Think
+ * データ階層: TTVault > Bundles > Bundle > Think
  *
  * LocalFS パス: ./../ThinktankLocal/vault/{ContentType}/{ID}.md
  * BigQuery テーブル: thinktank.vault
@@ -15,7 +15,7 @@ import type { ContentType } from '../types';
 import { TTModels } from './TTModels';
 import { formatDateRangeJapanese, computeDateRange } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
-import { parseThought, serializeThought, serializeLinks } from '../utils/thinkFormat';
+import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
 
 export class TTVault extends TTCollection {
   /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
@@ -24,8 +24,8 @@ export class TTVault extends TTCollection {
   /** LocalFS ルートフォルダパス（Local モード用）*/
   public DataFolder: string = './../ThinktankLocal/vault';
 
-  /** GetThinksForThoughtAsync の結果をキャッシュする（同期版 GetThinksForThought 用）*/
-  private _thoughtThinksCache: Map<string, string[]> = new Map();
+  /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
+  private _bundleThinksCache: Map<string, string[]> = new Map();
 
   public override get ClassName(): string {
     return 'TTVault';
@@ -47,27 +47,27 @@ export class TTVault extends TTCollection {
   }
 
   /**
-   * Thoughts を取得する（ContentType='thought' の TTThink 一覧）
-   * Thoughts = TTVault を ContentType='thought' でフィルターした集合
+   * Bundles を取得する（ContentType='bundle' の TTThink 一覧）
+   * Bundles = TTVault を ContentType='bundle' でフィルターした集合
    */
-  public GetThoughts(): TTThink[] {
-    return this.GetThinks().filter(t => t.ContentType === 'thought');
+  public GetBundles(): TTThink[] {
+    return this.GetThinks().filter(t => t.ContentType === 'bundle');
   }
 
 
   /**
-   * 指定 Thought が参照する Think 群を非同期で返す（全文検索も含む）。
-   * 複数 thought File がある場合はタイトル行以外の行をすべてマージする。
+   * 指定 Bundle が参照する Think 群を非同期で返す（全文検索も含む）。
+   * 複数 bundle File がある場合はタイトル行以外の行をすべてマージする。
    * - `>` 行: Keyword、作成日、更新日で Filter
    * - `>>` 行: 検索語、作成日、更新日で全文検索
    * - `*` 行: 直接 ID 指定
    * 重複排除して TTThink[] を返す。
    */
-  public async GetThinksForThoughtAsync(thoughtId: string): Promise<TTThink[]> {
-    const rootThought = this.GetThink(thoughtId);
-    if (!rootThought || rootThought.ContentType !== 'thought') return [];
+  public async GetThinksForBundleAsync(bundleId: string): Promise<TTThink[]> {
+    const rootBundle = this.GetThink(bundleId);
+    if (!rootBundle || rootBundle.ContentType !== 'bundle') return [];
 
-    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'bundle');
     const finalIds = new Set<string>();
     const excludeIds = new Set<string>();
 
@@ -86,14 +86,14 @@ export class TTVault extends TTCollection {
       visited.add(tid);
 
       const t = this.GetThink(tid);
-      if (!t || t.ContentType !== 'thought') return;
+      if (!t || t.ContentType !== 'bundle') return;
       if (t.IsMetaOnly) await t.LoadContent();
 
-      const parsed = parseThought(t.Content);
+      const parsed = parseBundle(t.Content);
 
       for (const id of parsed.ids) {
         const sub = this.GetThink(id);
-        if (sub?.ContentType === 'thought') {
+        if (sub?.ContentType === 'bundle') {
           await collectParams(id, visited);
         } else {
           finalIds.add(id);
@@ -121,7 +121,7 @@ export class TTVault extends TTCollection {
       }
     };
 
-    await collectParams(thoughtId, new Set());
+    await collectParams(bundleId, new Set());
 
     // 1. フィルター実行
     if (filterKeyword || filterCreatedRange || filterUpdatedRange) {
@@ -147,7 +147,7 @@ export class TTVault extends TTCollection {
       try {
         const metas = await StorageManager.instance.search(searchQuery);
         for (const meta of metas) {
-          if (meta.contentType === 'thought') continue;
+          if (meta.contentType === 'bundle') continue;
           
           // 日付条件チェック
           if (searchCreatedRange) {
@@ -163,14 +163,14 @@ export class TTVault extends TTCollection {
           finalIds.add(meta.id);
         }
       } catch (e) {
-        console.error('[TTVault] GetThinksForThoughtAsync search failed:', e);
+        console.error('[TTVault] GetThinksForBundleAsync search failed:', e);
       }
     }
 
     // デフォルト: 何も指定がなければ全データ
     if (finalIds.size === 0 && !filterKeyword && !searchQuery && !filterCreatedRange && !filterUpdatedRange && !searchCreatedRange && !searchUpdatedRange) {
       const result = allThinks.filter(t => !excludeIds.has(t.ID));
-      this._thoughtThinksCache.set(thoughtId, result.map(t => t.ID));
+      this._bundleThinksCache.set(bundleId, result.map(t => t.ID));
       return result;
     }
 
@@ -180,24 +180,24 @@ export class TTVault extends TTCollection {
 
     const idMap = new Map(allThinks.map(t => [t.ID, t]));
     const result = [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
-    this._thoughtThinksCache.set(thoughtId, result.map(t => t.ID));
+    this._bundleThinksCache.set(bundleId, result.map(t => t.ID));
     return result;
   }
 
-  /** GetThinksForThoughtAsync の同期版（非同期ロードや検索はスキップ）*/
-  public GetThinksForThought(thoughtId: string): TTThink[] {
-    const cachedIds = this._thoughtThinksCache.get(thoughtId);
+  /** GetThinksForBundleAsync の同期版（非同期ロードや検索はスキップ）*/
+  public GetThinksForBundle(bundleId: string): TTThink[] {
+    const cachedIds = this._bundleThinksCache.get(bundleId);
     if (cachedIds) {
-      const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+      const allThinks = this.GetThinks().filter(t => t.ContentType !== 'bundle');
       const idMap = new Map(allThinks.map(t => [t.ID, t]));
       return cachedIds.map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
     }
 
-    const rootThought = this.GetThink(thoughtId);
-    if (!rootThought || rootThought.ContentType !== 'thought') return [];
-    if (rootThought.IsMetaOnly) return []; // 未ロードなら空
+    const rootBundle = this.GetThink(bundleId);
+    if (!rootBundle || rootBundle.ContentType !== 'bundle') return [];
+    if (rootBundle.IsMetaOnly) return []; // 未ロードなら空
 
-    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'thought');
+    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'bundle');
     const finalIds = new Set<string>();
     const excludeIds = new Set<string>();
 
@@ -212,13 +212,13 @@ export class TTVault extends TTCollection {
       if (visited.has(tid)) return;
       visited.add(tid);
       const t = this.GetThink(tid);
-      if (!t || t.ContentType !== 'thought' || t.IsMetaOnly) return;
+      if (!t || t.ContentType !== 'bundle' || t.IsMetaOnly) return;
 
-      const parsed = parseThought(t.Content);
+      const parsed = parseBundle(t.Content);
 
       for (const id of parsed.ids) {
         const sub = this.GetThink(id);
-        if (sub?.ContentType === 'thought') collectParamsSync(id, visited);
+        if (sub?.ContentType === 'bundle') collectParamsSync(id, visited);
         else finalIds.add(id);
       }
 
@@ -243,7 +243,7 @@ export class TTVault extends TTCollection {
       }
     };
 
-    collectParamsSync(thoughtId, new Set());
+    collectParamsSync(bundleId, new Set());
 
     if (filterKeyword || filterCreatedRange || filterUpdatedRange) {
       const q = filterKeyword.toLowerCase();
@@ -351,12 +351,12 @@ export class TTVault extends TTCollection {
     await this.LoadCache();
   }
 
-  /** 複数 thought を合成した新 thought を作成する
-   *  各 thought の ThinkID を展開・重複排除して `* id` 行にまとめる
+  /** 複数 bundle を合成した新 bundle を作成する
+   *  各 bundle の ThinkID を展開・重複排除して `* id` 行にまとめる
    *  タイトル: {count1}件＋{count2}件：{name1}＋{name2}＋...
    */
-  /** Thought一覧モード: 複数 thought を合成した新 thought を作成する */
-  public async CreateThoughtFromThoughts(ids: string[]): Promise<TTThink> {
+  /** Bundle一覧モード: 複数 bundle を合成した新 bundle を作成する */
+  public async CreateBundleFromBundles(ids: string[]): Promise<TTThink> {
     const titles: string[] = [];
     const allThinkIds = new Set<string>();
     for (const id of ids) {
@@ -367,9 +367,9 @@ export class TTVault extends TTCollection {
       }
     }
     const uniqueIds = [...allThinkIds];
-    const title = `${uniqueIds.length}件：Thoughtファイルの連結（${uniqueIds.join(' x ')}）`;
-    
-    return this._createThought({
+    const title = `${uniqueIds.length}件：Bundleファイルの連結（${uniqueIds.join(' x ')}）`;
+
+    return this._createBundle({
       prefix: '',
       title,
       ids: uniqueIds
@@ -377,7 +377,7 @@ export class TTVault extends TTCollection {
   }
 
   /** Think一覧モード (Filter): チェック済みアイテムまたは条件から作成 */
-  public async CreateThoughtFromIds(ids: string[], filter?: string, dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
+  public async CreateBundleFromIds(ids: string[], filter?: string, dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
     const titles: string[] = [];
     if (ids.length > 0) {
       const firstName = this.GetThink(ids[0])?.Name ?? ids[0];
@@ -388,7 +388,7 @@ export class TTVault extends TTCollection {
       if (dates?.createdDate || dates?.createdRange) titles.push(`作成：${formatDateRangeJapanese(dates.createdDate || '', dates.createdRange || '')}`);
     }
 
-    return this._createThought({
+    return this._createBundle({
       prefix: '> ',
       title: titles.join(' / '),
       filterKeyword: filter,
@@ -397,8 +397,8 @@ export class TTVault extends TTCollection {
     });
   }
 
-  /** thought新規作成の共通ロジック */
-  private async _createThought(options: {
+  /** bundle新規作成の共通ロジック */
+  private async _createBundle(options: {
     prefix: string,
     title: string,
     searchQuery?: string,
@@ -410,7 +410,7 @@ export class TTVault extends TTCollection {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
 
-    const fullContent = serializeThought({
+    const fullContent = serializeBundle({
       prefix,
       title,
       searchQuery,
@@ -427,7 +427,7 @@ export class TTVault extends TTCollection {
     const think = new TTThink();
     think.ID          = newId;
     think.VaultID     = this.ID;
-    think.ContentType = 'thought';
+    think.ContentType = 'bundle';
     think.IsMetaOnly  = false;
     think.setContentSilent(fullContent);
     think._parent     = this;
@@ -437,7 +437,7 @@ export class TTVault extends TTCollection {
     try {
       await StorageManager.instance.save({
         id:          newId,
-        contentType: 'thought',
+        contentType: 'bundle',
         fullContent,
         keywords:    '',
         relatedIds:  ids.join(','),
@@ -455,7 +455,7 @@ export class TTVault extends TTCollection {
   }
 
   /** 全文検索モード: 検索語と条件から作成 */
-  public async CreateThoughtFromSearch(query: string, ids: string[], dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
+  public async CreateBundleFromSearch(query: string, ids: string[], dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
     const titles: string[] = [];
     if (ids.length > 0) {
       const firstName = this.GetThink(ids[0])?.Name ?? ids[0];
@@ -466,7 +466,7 @@ export class TTVault extends TTCollection {
       if (dates?.createdDate || dates?.createdRange) titles.push(`作成：${formatDateRangeJapanese(dates.createdDate || '', dates.createdRange || '')}`);
     }
 
-    return this._createThought({
+    return this._createBundle({
       prefix: '>> ',
       title: titles.join(' / '),
       searchQuery: query,
@@ -475,13 +475,13 @@ export class TTVault extends TTCollection {
     });
   }
 
-  /** フィルターキーワードからthoughtを新規作成して保存する */
-  public async CreateThoughtFromFilter(keyword: string, ids: string[], dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
-    return this.CreateThoughtFromIds(ids, keyword, dates);
+  /** フィルターキーワードからbundleを新規作成して保存する */
+  public async CreateBundleFromFilter(keyword: string, ids: string[], dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string }): Promise<TTThink> {
+    return this.CreateBundleFromIds(ids, keyword, dates);
   }
 
-  /** 新規の空Thinkを作成して保存する。thoughtId を渡すと、そのThoughtのIDリストに新しいThinkを追加する。 */
-  public async CreateBlankThink(contentType: ContentType, initialName: string = '', thoughtId?: string): Promise<TTThink> {
+  /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */
+  public async CreateBlankThink(contentType: ContentType, initialName: string = '', bundleId?: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
 
@@ -510,19 +510,19 @@ export class TTVault extends TTCollection {
     }
     think.markSaved();
 
-    if (thoughtId) await this._linkThinkToThought(thoughtId, newId);
+    if (bundleId) await this._linkThinkToBundle(bundleId, newId);
 
     this.NotifyUpdated();
     return think;
   }
 
-  /** 指定した Thought の ID リストに newId を追加して保存する（内部ヘルパー） */
-  private async _linkThinkToThought(thoughtId: string, newId: string): Promise<void> {
-    const thought = this.GetThink(thoughtId);
-    if (!thought || thought.ContentType !== 'thought') return;
-    if (thought.IsMetaOnly) await thought.LoadContent();
-    const parsed = parseThought(thought.Content);
-    const newContent = serializeThought({
+  /** 指定した Bundle の ID リストに newId を追加して保存する（内部ヘルパー） */
+  private async _linkThinkToBundle(bundleId: string, newId: string): Promise<void> {
+    const bundle = this.GetThink(bundleId);
+    if (!bundle || bundle.ContentType !== 'bundle') return;
+    if (bundle.IsMetaOnly) await bundle.LoadContent();
+    const parsed = parseBundle(bundle.Content);
+    const newContent = serializeBundle({
       prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
       title: parsed.title,
       searchQuery: parsed.search.query,
@@ -535,8 +535,8 @@ export class TTVault extends TTCollection {
       },
       ids: [...parsed.ids, newId],
     });
-    thought.Content = newContent;
-    await thought.SaveContent();
+    bundle.Content = newContent;
+    await bundle.SaveContent();
   }
 
   /** links データ（URL/path リンク集）を作成して保存する */
@@ -574,8 +574,8 @@ export class TTVault extends TTCollection {
   }
 
   /** チャット会話を TTThink(ContentType='chat') として保存する。
-   *  thoughtId を渡すと、そのThoughtのIDリストに新しいThinkを追加する。 */
-  public async CreateChatThink(content: string, thoughtId?: string): Promise<TTThink> {
+   *  bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */
+  public async CreateChatThink(content: string, bundleId?: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
 
@@ -604,7 +604,7 @@ export class TTVault extends TTCollection {
     }
     think.markSaved();
 
-    if (thoughtId) await this._linkThinkToThought(thoughtId, newId);
+    if (bundleId) await this._linkThinkToBundle(bundleId, newId);
 
     this.NotifyUpdated();
     return think;

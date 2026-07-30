@@ -4,7 +4,7 @@
  *
  * 行形式: [チェック] [アイコン] タイトル [更新日]  行高さ 36px
  * チェックで複数 Thought 選択可能。
- * クリックで TTApplication.OpenThought(id) を呼ぶ。
+ * クリックで TTApplication.OpenBundle(id) を呼ぶ。
  *
  * フィルター構文:
  *   スペース区切りでトークンに分割し AND 検索。
@@ -71,7 +71,7 @@ export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
 
 function getTypeIcon(contentType: string) {
   switch (contentType.toLowerCase()) {
-    case 'thought':  return <Library       size={13} className="thoughts-list__icon" />;
+    case 'bundle':   return <Library       size={13} className="thoughts-list__icon" />;
     case 'memo':     return <FileText    size={13} className="thoughts-list__icon" />;
     case 'chat':     return <MessageSquare size={13} className="thoughts-list__icon" />;
     case 'links':    return <Link        size={13} className="thoughts-list__icon" />;
@@ -149,7 +149,7 @@ export function ThoughtsList({
   onFocusChange,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const { overviewThoughtIds, overviewIncludedIds, overviewCheckedIds, workoutIds, workoutFocusedId } = useHighlight();
+  const { overviewBundleIds, overviewIncludedIds, overviewCheckedIds, workoutIds, workoutFocusedId } = useHighlight();
   const isSimpleMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Simple';
   const visibleCols = columns.filter(c => c.visible);
   const hasNameCol = visibleCols.some(c => c.field === 'Name');
@@ -230,7 +230,7 @@ export function ThoughtsList({
           const thought = thoughts[vItem.index];
           const isSelected        = thought.ID === selectedId;
           const isChecked         = checkedIds.includes(thought.ID);
-          const isOverviewThought  = !isSimpleMode && overviewThoughtIds.includes(thought.ID);
+          const isOverviewBundle   = !isSimpleMode && overviewBundleIds.includes(thought.ID);
           const isOverviewIncluded = !isSimpleMode && overviewIncludedIds.includes(thought.ID);
           const isOverviewChecked  = !isSimpleMode && overviewCheckedIds.includes(thought.ID);
           const isInWorkout        = workoutIds.includes(thought.ID);
@@ -251,7 +251,7 @@ export function ThoughtsList({
                 'thoughts-list__row',
                 isSelected         ? 'thoughts-list__row--selected'         : '',
                 isChecked          ? 'thoughts-list__row--checked'          : '',
-                isOverviewThought  ? 'thoughts-list__row--overview-thought' : '',
+                isOverviewBundle   ? 'thoughts-list__row--overview-bundle'  : '',
                 isOverviewIncluded ? 'thoughts-list__row--overview-included' : '',
                 isOverviewChecked  ? 'thoughts-list__row--overview-checked' : '',
                 isInWorkout        ? 'thoughts-list__row--workout'          : '',

@@ -15,7 +15,7 @@ interface Props {
   showCheckedOnly:       boolean;
   showColumnDialog:      boolean;
   showFilterSelectDialog: boolean;
-  canCreateThought:      boolean;
+  canCreateBundle:       boolean;
   canSaveChat:           boolean;
   saveChatTip:           string;
   visibleCount?:         number;
@@ -26,7 +26,7 @@ interface Props {
   onToggleCheckedOnly:   () => void;
   onToggleColumnDialog:  () => void;
   onToggleFilterSelectDialog: () => void;
-  onCreateThought:       () => void;
+  onCreateBundle:        () => void;
   onSaveChat:            () => void;
   onClearTodoSelection:  () => void;
   onRefresh:             () => void;
@@ -36,12 +36,12 @@ export function ThinktankMenuRibbon({
   viewMode,
   visibleIds, checkedIds, showCheckedOnly,
   showColumnDialog, showFilterSelectDialog,
-  canCreateThought, canSaveChat, saveChatTip,
+  canCreateBundle, canSaveChat, saveChatTip,
   visibleCount, totalCount,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
-  onCreateThought, onSaveChat, onClearTodoSelection, onRefresh,
+  onCreateBundle, onSaveChat, onClearTodoSelection, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -165,12 +165,12 @@ export function ThinktankMenuRibbon({
         <LayoutList size={14} />
       </button>
 
-      {/* ChecktoThought: Thought作成 */}
-      <div className="tooltip-wrapper" data-tip="チェックアイテムからthoughtを作成">
+      {/* ChecktoBundle: Bundle作成 */}
+      <div className="tooltip-wrapper" data-tip="チェックアイテムからbundleを作成">
         <button
           className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onCreateThought}
-          disabled={!canCreateThought}
+          onClick={onCreateBundle}
+          disabled={!canCreateBundle}
         >
           <LibrarySquare size={14} />
         </button>

@@ -28,7 +28,7 @@ const RETHINK_MODE_NAMES: Record<ReThinkViewMode, string> = {
 
 const BASE_SYSTEM_PROMPT =
   'あなたは Thinktank という知識管理アプリのAIアシスタントです。' +
-  'ユーザーの Think（メモ・アイデア）や Thought（テーマ集合）について、' +
+  'ユーザーの Think（メモ・アイデア）や Bundle（テーマ集合）について、' +
   '整理・分析・次のアクションの提案などを日本語で丁寧に行ってください。';
 
 interface Props {
@@ -55,7 +55,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
   // AI相談 DataGrid 用: タイトルが [todo:rethink] で始まる Think 一覧（Vault全体・種別不問）
-  const overviewThoughtId = app.OverviewPanel.ThoughtID;
+  const overviewBundleId = app.OverviewPanel.BundleID;
   const todoMemoThinks = useMemo(
     () => vault.GetThinks().filter(t => isTodoThink(t, TODO_MEMO_PREFIX_RETHINK)),
     [vault, vault.Count], // eslint-disable-line react-hooks/exhaustive-deps
@@ -86,7 +86,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
     return () => clearTimeout(timer);
   }, [viewMode]);
 
-  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（Overviewの選択中Thoughtへリンク）
+  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（Overviewの選択中Bundleへリンク）
   const handleSaveChat = useCallback(async () => {
     const msgs = panel.ChatMessages;
     if (msgs.length === 0) return;
@@ -104,9 +104,9 @@ export function ReThinkArea({ app, viewMode }: Props) {
     const firstUser = msgs.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body  = serializeChat(msgs);
-    await vault.CreateBlankThink('memo', `${title}\n${body}`, overviewThoughtId || undefined);
+    await vault.CreateBlankThink('memo', `${title}\n${body}`, overviewBundleId || undefined);
     panel.ClearChat();
-  }, [panel, vault, selectedTodoMemoId, overviewThoughtId]);
+  }, [panel, vault, selectedTodoMemoId, overviewBundleId]);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatをメモ:${selectedTodoMemoId}に保管します`
@@ -125,11 +125,11 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const systemPrompt = useMemo(() => {
     const parts: string[] = [BASE_SYSTEM_PROMPT];
 
-    if (panel.LinkedThoughtID) {
-      const thought = vault.GetThink(panel.LinkedThoughtID);
-      if (thought) {
-        parts.push(`\n## 連携中の Thought\nタイトル: ${thought.Name}`);
-        const thinks = vault.GetThinksForThought(panel.LinkedThoughtID);
+    if (panel.LinkedBundleID) {
+      const bundle = vault.GetThink(panel.LinkedBundleID);
+      if (bundle) {
+        parts.push(`\n## 連携中の Bundle\nタイトル: ${bundle.Name}`);
+        const thinks = vault.GetThinksForBundle(panel.LinkedBundleID);
         if (thinks.length > 0) {
           parts.push(
             '含まれる Think（関連アイデア）:\n' +
@@ -148,7 +148,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
     }
 
     return parts.join('\n');
-  }, [panel.LinkedThoughtID, panel.LinkedThinkID, vault]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [panel.LinkedBundleID, panel.LinkedThinkID, vault]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="rethink-area">

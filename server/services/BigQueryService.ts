@@ -12,7 +12,7 @@ const TABLE_ID   = 'vault';
 export interface VaultRecord {
   file_id:     string;
   file_type:   string;        // 固定値 "md"
-  category:    string;        // ContentType (memo/thought/tables/links/chat/nettext)
+  category:    string;        // ContentType (memo/bundle/tables/links/chat/nettext)
   title:       string | null;
   content:     string | null; // タイトル行以降の本文
   keywords:    string | null;

@@ -13,7 +13,7 @@ import './ThinktankSearchBar.css';
 
 const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'memo',    Icon: FileText,      label: 'メモ' },
-  { type: 'thought', Icon: Library,       label: 'Thought' },
+  { type: 'bundle',  Icon: Library,       label: 'Bundle' },
   { type: 'table',   Icon: Table,         label: 'テーブル' },
   { type: 'links',   Icon: Link,          label: 'リンク' },
   { type: 'chat',    Icon: MessageCircle, label: 'チャット' },

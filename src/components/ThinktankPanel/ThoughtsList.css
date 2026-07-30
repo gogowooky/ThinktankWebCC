@@ -55,8 +55,8 @@
   background: color-mix(in srgb, var(--overview-ribbon-bg) 6%, #ffffff);
 }
 
-/* ② Overviewに設定されているThoughtファイル本体（中間） */
-.thoughts-list__row--overview-thought {
+/* ② Overviewに設定されているBundleファイル本体（中間） */
+.thoughts-list__row--overview-bundle {
   background: color-mix(in srgb, var(--overview-ribbon-bg) 14%, #ffffff) !important;
 }
 

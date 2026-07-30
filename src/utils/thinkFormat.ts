@@ -1,6 +1,6 @@
 /**
  * thinkFormat.ts
- * 各 ContentType（chat, links, thought）に対応する、一元化されたパース・シリアライズモジュール。
+ * 各 ContentType（chat, links, bundle）に対応する、一元化されたパース・シリアライズモジュール。
  */
 
 import type { ChatMessage } from '../types';
@@ -146,34 +146,34 @@ export function appendLinkToContent(content: string, link: LinkItem): string {
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
-// #region thought 形式 (ContentType = 'thought')
+// #region bundle 形式 (ContentType = 'bundle')
 // ════════════════════════════════════════════════════════════════════════
 
-export interface ThoughtCondition {
+export interface BundleCondition {
   dateStr: string;
   rangeStr: string;
 }
 
-export interface ThoughtContent {
+export interface BundleContent {
   title: string;
   ids: string[];
   excludeIds?: string[];
   filter: {
     keyword?: string;
-    createdRange?: ThoughtCondition;
-    updatedRange?: ThoughtCondition;
+    createdRange?: BundleCondition;
+    updatedRange?: BundleCondition;
   };
   search: {
     query?: string;
-    createdRange?: ThoughtCondition;
-    updatedRange?: ThoughtCondition;
+    createdRange?: BundleCondition;
+    updatedRange?: BundleCondition;
   };
 }
 
 /**
- * thought 本文を解析して構造化した ThoughtContent を返す
+ * bundle 本文を解析して構造化した BundleContent を返す
  */
-export function parseThought(content: string): ThoughtContent {
+export function parseBundle(content: string): BundleContent {
   const lines = content.split('\n');
   const rawTitle = lines[0] ?? '';
   const title = rawTitle.replace(/^>>?\s*/, '');
@@ -181,7 +181,7 @@ export function parseThought(content: string): ThoughtContent {
 
   const ids: string[] = [];
   const excludeIds: string[] = [];
-  const result: ThoughtContent = {
+  const result: BundleContent = {
     title,
     ids,
     excludeIds,
@@ -238,9 +238,9 @@ export function parseThought(content: string): ThoughtContent {
 }
 
 /**
- * thought 新規作成オプション
+ * bundle 新規作成オプション
  */
-export interface ThoughtCreateOptions {
+export interface BundleCreateOptions {
   prefix: string; // "> " または ">> "
   title: string;
   searchQuery?: string;
@@ -256,9 +256,9 @@ export interface ThoughtCreateOptions {
 }
 
 /**
- * オプションから thought 本文（テキスト）をシリアライズして生成する
+ * オプションから bundle 本文（テキスト）をシリアライズして生成する
  */
-export function serializeThought(options: ThoughtCreateOptions): string {
+export function serializeBundle(options: BundleCreateOptions): string {
   const { prefix, title, searchQuery, filterKeyword, dates, ids = [], excludeIds = [] } = options;
   let body = '';
 

@@ -2,7 +2,7 @@
  * HighlightContext.tsx
  * 全グリッドで共有するハイライトID群を提供する Context。
  *
- * overviewThoughtIds : OverviewPanelで選択中ThoughtのThink ID一覧
+ * overviewBundleIds  : OverviewPanelで選択中BundleのThink ID一覧
  * workoutIds         : WorkoutPanelで現在開いているThink ID一覧
  */
 
@@ -11,7 +11,7 @@ import { useAppUpdate } from '../hooks/useAppUpdate';
 import { TTApplication } from '../views/TTApplication';
 
 interface HighlightState {
-  overviewThoughtIds: string[];
+  overviewBundleIds: string[];
   overviewIncludedIds: string[];
   overviewCheckedIds: string[];
   workoutIds: string[];
@@ -19,7 +19,7 @@ interface HighlightState {
 }
 
 const HighlightContext = createContext<HighlightState>({
-  overviewThoughtIds: [],
+  overviewBundleIds: [],
   overviewIncludedIds: [],
   overviewCheckedIds: [],
   workoutIds: [],
@@ -40,11 +40,11 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
   useAppUpdate(workout);
   useAppUpdate(vault);
 
-  const overviewThoughtId = overview.ThoughtID;
-  const overviewThoughtIds = overviewThoughtId ? [overviewThoughtId] : [];
+  const overviewBundleId = overview.BundleID;
+  const overviewBundleIds = overviewBundleId ? [overviewBundleId] : [];
 
-  const overviewIncludedIds = overviewThoughtId
-    ? vault.GetThinksForThought(overviewThoughtId).map(t => t.ID)
+  const overviewIncludedIds = overviewBundleId
+    ? vault.GetThinksForBundle(overviewBundleId).map(t => t.ID)
     : [];
 
   const overviewCheckedIds = overview.CheckedThoughtIDs;
@@ -57,7 +57,7 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
   return (
     <HighlightContext.Provider
       value={{
-        overviewThoughtIds,
+        overviewBundleIds,
         overviewIncludedIds,
         overviewCheckedIds,
         workoutIds,

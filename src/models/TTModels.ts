@@ -2,7 +2,7 @@
  * TTModels.ts
  * v5 アプリ全体のモデルルート（シングルトン）
  *
- * データ階層: TTVault > Thoughts > Thought > Think
+ * データ階層: TTVault > Bundles > Bundle > Think
  * Phase 1-3: TTVault を中心とした基本構成
  * Phase 4 以降: TTApplication から参照される
  */

@@ -52,13 +52,13 @@ function getClosedHeadings(editor: any): string {
 }
 
 function getEditorValue(think: NonNullable<MediaProps['think']>): string {
-  return (think.ContentType === 'thought' || think.ContentType === 'table' || think.ContentType === 'memo')
+  return (think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo')
     ? (think.Content ?? '')
     : extractBody(think.Content);
 }
 
 function reconstructContent(think: NonNullable<MediaProps['think']>, body: string): string {
-  if (think.ContentType === 'thought' || think.ContentType === 'table' || think.ContentType === 'memo') return body;
+  if (think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo') return body;
   const firstLine = think.Content.split('\n')[0] ?? '';
   return body ? `${firstLine}\n${body}` : firstLine;
 }
@@ -896,9 +896,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     const isDirty = v !== savedRef.current;
     onDirtyChange(isDirty);
     updateDecorations();
-    // thought / table / memo は第一行がタイトル → リアルタイム同期
+    // bundle / table / memo は第一行がタイトル → リアルタイム同期
     if (onTitleChange && think &&
-        (think.ContentType === 'thought' || think.ContentType === 'table' || think.ContentType === 'memo')) {
+        (think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo')) {
       const newFirst = v.split('\n')[0] ?? '';
       if (newFirst !== firstLineRef.current) {
         firstLineRef.current = newFirst;

@@ -4,11 +4,11 @@
  *
  * ボタン構成（上から）:
  *   Sparkles    – AI相談（データ分析チャット）
- *   LayoutList  – Think一覧（選択Thought内のThinkリスト）
- *   BookUser    – Thoughtプロファイル（Markdown表示）
- *   BarChart2   – Thought分析（グラフ）
+ *   LayoutList  – Think一覧（選択Bundle内のThinkリスト）
+ *   BookUser    – Bundleプロファイル（Markdown表示）
+ *   BarChart2   – Bundle分析（グラフ）
  * ─────────────────── (spacer) ───────────────────
- *   Settings    – Overview設定（Thoughtプロファイル詳細）下寄せ
+ *   Settings    – Overview設定（Bundleプロファイル詳細）下寄せ
  */
 
 import { useCallback, useState } from 'react';
@@ -21,7 +21,7 @@ type OverviewContentMode = Exclude<OverviewViewMode, 'settings'>;
 
 const VIEW_BUTTONS: Array<{ mode: OverviewContentMode; Icon: LucideIcon; title: string; id: string }> = [
   { mode: 'filter',   Icon: Files,         title: 'Think一覧',   id: 'OverviewThinkList' },
-  { mode: 'graph',    Icon: Microscope,    title: 'Thought分析', id: 'OverviewResearch' },
+  { mode: 'graph',    Icon: Microscope,    title: 'Bundle分析', id: 'OverviewResearch' },
   { mode: 'chat',     Icon: MessageCircle, title: 'AI相談',      id: 'OverviewAI' },
 ];
 
@@ -32,11 +32,11 @@ interface Props {
   onViewMode:        (mode: OverviewViewMode) => void;
   onToggleSettings?: () => void;
   onRefresh?:        () => void;
-  thoughtName?:      string;
+  bundleName?:       string;
 }
 
 export function OverviewTabBar({
-  isOpen, viewMode, onToggle, onViewMode, onToggleSettings, onRefresh, thoughtName,
+  isOpen, viewMode, onToggle, onViewMode, onToggleSettings, onRefresh, bundleName,
 }: Props) {
   return (
     <VerticalTabBar
@@ -44,7 +44,7 @@ export function OverviewTabBar({
       side="left"
       isOpen={isOpen}
       onToggle={onToggle}
-      bottomLabel={thoughtName}
+      bottomLabel={bundleName}
     >
       {VIEW_BUTTONS.map(({ mode, Icon, title, id }) => (
         <button

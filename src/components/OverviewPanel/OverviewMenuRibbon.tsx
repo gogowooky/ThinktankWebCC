@@ -27,14 +27,14 @@ interface Props {
   onCheckAll:           () => void;
   onClearChecks:        () => void;
   onExcludeChecked:     () => void;
-  onClearThought:       () => void;
+  onClearBundle:        () => void;
   onToggleCheckedOnly:  () => void;
   onToggleColumnDialog: () => void;
   onToggleFilterSelectDialog: () => void;
   onSaveChat:           () => void;
   onClearTodoSelection: () => void;
   onRefresh:            () => void;
-  hasThought:           boolean;
+  hasBundle:            boolean;
 }
 
 export function OverviewMenuRibbon({
@@ -44,8 +44,8 @@ export function OverviewMenuRibbon({
   showColumnDialog, showFilterSelectDialog,
   canSaveChat, saveChatTip,
   visibleCount, totalCount,
-  hasThought,
-  onCheckAll, onClearChecks, onExcludeChecked, onClearThought,
+  hasBundle,
+  onCheckAll, onClearChecks, onExcludeChecked, onClearBundle,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
   onSaveChat, onClearTodoSelection, onRefresh,
@@ -183,8 +183,8 @@ export function OverviewMenuRibbon({
         <LayoutList size={14} />
       </button>
 
-      {/* チェック中のアイテムをThoughtから除外（作成と削除の間）*/}
-      <div className="tooltip-wrapper" data-tip="チェック中のアイテムをThoughtから除外">
+      {/* チェック中のアイテムをBundleから除外（作成と削除の間）*/}
+      <div className="tooltip-wrapper" data-tip="チェック中のアイテムをBundleから除外">
         <button
           className="menu-ribbon__btn menu-ribbon__btn--icon overview-ribbon__btn--danger"
           onClick={onExcludeChecked}
@@ -194,12 +194,12 @@ export function OverviewMenuRibbon({
         </button>
       </div>
 
-      {/* Thought設定クリア */}
-      <div className="tooltip-wrapper" data-tip="Thought設定をクリア" data-tip-side="left">
+      {/* Bundle設定クリア */}
+      <div className="tooltip-wrapper" data-tip="Bundle設定をクリア" data-tip-side="left">
         <button
           className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onClearThought}
-          disabled={!hasThought}
+          onClick={onClearBundle}
+          disabled={!hasBundle}
         >
           <SquareX size={14} />
         </button>

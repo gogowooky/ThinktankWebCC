@@ -3,7 +3,7 @@
  * ThinktankPanel のコンテンツエリア。
  * ViewMode に応じて表示を切り替える。
  *
- * Think一覧（filter）モードは「検索」「Thought一覧」を統合したもの:
+ * Think一覧（filter）モードは「検索」「Bundle一覧」を統合したもの:
  *   - 上部: タイトル/キーワードによる絞り込み欄
  *   - 日付フィルター（常時表示）
  *   - 全文/AI 検索のキーワード欄＋検索オプション
@@ -44,7 +44,7 @@ const THINKTANK_MODE_NAMES: Record<string, string> = {
   settings: '設定',
 };
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'thought', 'table', 'links', 'chat', 'nettext'];
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext'];
 
 interface Props {
   app: TTApplication;
@@ -109,8 +109,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [updatedDate,  setUpdatedDate]  = useState('');
   const [updatedRange, setUpdatedRange] = useState('');
 
-  // 一覧表示する種別（初期はThoughtのみON）
-  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(['thought']));
+  // 一覧表示する種別（初期はBundleのみON）
+  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(['bundle']));
 
   // チャット state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -226,24 +226,24 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // ── ハンドラ ─────────────────────────────────────────────────────────────
 
   const handleSelect = useCallback((id: string) => {
-    const thoughtId = app.OverviewPanel.ThoughtID;
-    if (thoughtId) {
-      const thinks = vault.GetThinksForThought(thoughtId);
+    const bundleId = app.OverviewPanel.BundleID;
+    if (bundleId) {
+      const thinks = vault.GetThinksForBundle(bundleId);
       if (!thinks.some(t => t.ID === id)) return;
     }
     app.OpenThinkInWorkout(id);
   }, [app, vault]);
 
-  // AI相談 DataGrid のダブルクリック: Thought縛りなしでそのまま Workout へ開く
+  // AI相談 DataGrid のダブルクリック: Bundle縛りなしでそのまま Workout へ開く
   const handleOpenTodoMemoInWorkout = useCallback((id: string) => {
     app.OpenThinkInWorkout(id);
   }, [app]);
 
-  // Thought 種別はその場で Overview へ、それ以外は Workout へ
+  // Bundle 種別はその場で Overview へ、それ以外は Workout へ
   const handleOpenItem = useCallback((id: string) => {
     const t = vault.GetThink(id);
-    if (t?.ContentType === 'thought') {
-      app.OpenThought(id, 'datagrid');
+    if (t?.ContentType === 'bundle') {
+      app.OpenBundle(id, 'datagrid');
     } else {
       handleSelect(id);
     }
@@ -308,14 +308,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     setSearchSearched(false);
   }, []);
 
-  const canCreateThought = true;
+  const canCreateBundle = true;
 
-  const handleCreateThought = useCallback(async () => {
+  const handleCreateBundle = useCallback(async () => {
     const dates = { createdDate, createdRange, updatedDate, updatedRange };
     if (searchSearched && searchQuery.trim() !== '') {
-      await vault.CreateThoughtFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs, dates);
+      await vault.CreateBundleFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs, dates);
     } else {
-      await vault.CreateThoughtFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs, dates);
+      await vault.CreateBundleFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs, dates);
     }
     panel.ClearChecks();
   }, [panel, vault, searchSearched, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
@@ -354,8 +354,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
             const targetId = metadata.createdFileId;
             const cat = metadata.category;
             setTimeout(() => {
-              if (cat === 'thought') {
-                app.OpenThought(targetId, 'datagrid');
+              if (cat === 'bundle') {
+                app.OpenBundle(targetId, 'datagrid');
               } else {
                 app.OpenThinkInWorkout(targetId);
               }
@@ -471,11 +471,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   } else if (panel.ViewMode === 'settings') {
     content = <ThinktankSettingsView ref={settingsViewRef} />;
   } else {
-    // filter モード（検索・Thought一覧を統合）
+    // filter モード（検索・Bundle一覧を統合）
     content = (
       <ThinktankFilterView
         thinks={sortedBase}
-        selectedId={panel.SelectedThoughtID}
+        selectedId={panel.SelectedBundleID}
         checkedIds={panel.CheckedThoughtIDs}
         checkedOnly={panel.ShowCheckedOnly}
         createdDate={createdDate}
@@ -505,7 +505,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         showCheckedOnly={panel.ShowCheckedOnly}
         showColumnDialog={showColumnDialog}
         showFilterSelectDialog={showFilterSelectDialog}
-        canCreateThought={canCreateThought}
+        canCreateBundle={canCreateBundle}
         canSaveChat={chatMessages.length > 0 && !chatWaiting}
         saveChatTip={saveChatTip}
         visibleCount={filterVisible.length}
@@ -516,7 +516,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
-        onCreateThought={handleCreateThought}
+        onCreateBundle={handleCreateBundle}
         onSaveChat={handleSaveChat}
         onClearTodoSelection={() => handleSelectTodoMemo('')}
         onRefresh={onRefresh}

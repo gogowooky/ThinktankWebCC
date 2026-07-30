@@ -3,7 +3,7 @@
  * Phase 10: ReThinkPanel 統合コンポーネント。
  *
  * 構造（右側パネル）: [Splitter] [PanelArea > ReThinkArea] [ReThinkTabBar]
- * Think/Thought の次の展開について AI と相談するパネル。
+ * Think/Bundle の次の展開について AI と相談するパネル。
  */
 
 import { useCallback } from 'react';

@@ -34,12 +34,12 @@ const GEMINI_TOOL_DECLARATIONS: FunctionDeclaration[] = [
     },
   },
   {
-    name: 'saveThought',
-    description: 'Thought（主題を束ねる親エントリ）を新規作成する。AI自身が1秒ずらしで生成したユニークIDを指定する。',
+    name: 'saveBundle',
+    description: 'Bundle（主題を束ねる親エントリ）を新規作成する。AI自身が1秒ずらしで生成したユニークIDを指定する。',
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
-        id:      { type: SchemaType.STRING, description: '一意ID（形式: yyyy-MM-dd-HHmmss-thought）' },
+        id:      { type: SchemaType.STRING, description: '一意ID（形式: yyyy-MM-dd-HHmmss-bundle）' },
         title:   { type: SchemaType.STRING, description: '主題名（例: 「妻の誕生日プレゼント企画」）' },
         content: { type: SchemaType.STRING, description: '本文（形式: [Title]\\n* [think-id-1]\\n* [think-id-2]）' },
       },
@@ -60,12 +60,12 @@ const GEMINI_TOOL_DECLARATIONS: FunctionDeclaration[] = [
     },
   },
   {
-    name: 'updateThought',
-    description: '既存 Thought の末尾に Think / Links / Table の ID を追記して紐付けを更新する。事前に getThink で内容を確認してから呼ぶこと。',
+    name: 'updateBundle',
+    description: '既存 Bundle の末尾に Think / Links / Table の ID を追記して紐付けを更新する。事前に getThink で内容を確認してから呼ぶこと。',
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
-        id:        { type: SchemaType.STRING, description: '更新対象の Thought ID' },
+        id:        { type: SchemaType.STRING, description: '更新対象の Bundle ID' },
         appendIds: {
           type:  SchemaType.ARRAY,
           items: { type: SchemaType.STRING },
@@ -77,23 +77,23 @@ const GEMINI_TOOL_DECLARATIONS: FunctionDeclaration[] = [
   },
   {
     name: 'searchVault',
-    description: 'Vault を全文検索して既存の Think / Thought を見つける。類似データの検索（Step 4）に使う。',
+    description: 'Vault を全文検索して既存の Think / Bundle を見つける。類似データの検索（Step 4）に使う。',
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
         keyword:  { type: SchemaType.STRING, description: '検索キーワード' },
-        category: { type: SchemaType.STRING, description: '絞り込むカテゴリ（memo/thought/links/table/chat/nettext）省略可' },
+        category: { type: SchemaType.STRING, description: '絞り込むカテゴリ（memo/bundle/links/table/chat/nettext）省略可' },
       },
       required: ['keyword'],
     },
   },
   {
     name: 'getThink',
-    description: '指定 ID の Think または Thought のタイトル・カテゴリ・本文を取得する。updateThought 前の内容確認や既存データの参照に使う。',
+    description: '指定 ID の Think または Bundle のタイトル・カテゴリ・本文を取得する。updateBundle 前の内容確認や既存データの参照に使う。',
     parameters: {
       type: SchemaType.OBJECT,
       properties: {
-        id: { type: SchemaType.STRING, description: '取得する Think / Thought の ID' },
+        id: { type: SchemaType.STRING, description: '取得する Think / Bundle の ID' },
       },
       required: ['id'],
     },
@@ -163,18 +163,18 @@ async function executeGeminiTool(
       return `保存完了: id=${id}`;
     }
 
-    case 'saveThought': {
+    case 'saveBundle': {
       const id      = String(args['id']      ?? '');
-      const title   = String(args['title']   ?? '無題のThought');
+      const title   = String(args['title']   ?? '無題のBundle');
       const content = String(args['content'] ?? '');
       const res = await bigqueryService.save({
-        file_id: id, file_type: 'md', category: 'thought', title, content,
+        file_id: id, file_type: 'md', category: 'bundle', title, content,
         keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
         is_deleted: false, created_at: nowStr, updated_at: nowStr, metadata: null,
       });
       if (!res.success) throw new Error(res.error);
-      writeSSE({ type: 'delta', text: `\n\n*システム: [Thought「${title}」を自動登録しました。]*` });
-      createdIds.push({ id, category: 'thought' });
+      writeSSE({ type: 'delta', text: `\n\n*システム: [Bundle「${title}」を自動登録しました。]*` });
+      createdIds.push({ id, category: 'bundle' });
       return `保存完了: id=${id}`;
     }
 
@@ -193,13 +193,13 @@ async function executeGeminiTool(
       return `保存完了: id=${id}`;
     }
 
-    case 'updateThought': {
+    case 'updateBundle': {
       const id        = String(args['id'] ?? '');
       const appendIds = Array.isArray(args['appendIds'])
         ? (args['appendIds'] as unknown[]).map(String)
         : [];
       const existing = await bigqueryService.getRecord(id);
-      if (!existing.success || !existing.data) throw new Error(`Thought [${id}] が見つかりません`);
+      if (!existing.success || !existing.data) throw new Error(`Bundle [${id}] が見つかりません`);
       const rec      = existing.data;
       const appended = `${rec.content ?? ''}\n${appendIds.map(a => `* ${a}`).join('\n')}`.trim();
       const res = await bigqueryService.save({
@@ -209,8 +209,8 @@ async function executeGeminiTool(
         updated_at: nowStr,
       });
       if (!res.success) throw new Error(res.error);
-      writeSSE({ type: 'delta', text: `\n\n*システム: [Thought「${rec.title}」に${appendIds.length}件を追記しました。]*` });
-      createdIds.push({ id, category: 'thought' });
+      writeSSE({ type: 'delta', text: `\n\n*システム: [Bundle「${rec.title}」に${appendIds.length}件を追記しました。]*` });
+      createdIds.push({ id, category: 'bundle' });
       return `更新完了: id=${id}, 追記=${appendIds.join(', ')}`;
     }
 
@@ -378,10 +378,10 @@ export async function streamChatResponse(
         ];
       }
 
-      // done イベント（最後に作成した Thought を優先して返す）
-      const lastThought = [...createdIds].reverse().find(x => x.category === 'thought');
+      // done イベント（最後に作成した Bundle を優先して返す）
+      const lastBundle  = [...createdIds].reverse().find(x => x.category === 'bundle');
       const last        = createdIds[createdIds.length - 1];
-      const final       = lastThought ?? last;
+      const final       = lastBundle ?? last;
       if (final) {
         writeSSE({ type: 'done', createdFileId: final.id, category: final.category });
       } else {

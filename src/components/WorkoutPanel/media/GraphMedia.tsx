@@ -4,7 +4,7 @@
  *
  * - 中心ノード: 現在の Think（赤橙）
  * - RelatedIDs に含まれる Think をエッジでつなぐ（青）
- * - ContentType='thought' の場合は参照 Think 群もエッジで表示（緑）
+ * - ContentType='bundle' の場合は参照 Think 群もエッジで表示（緑）
  * - コンテナサイズに追従（ResizeObserver）
  */
 
@@ -105,9 +105,9 @@ export const GraphMedia = forwardRef<GraphMediaRef, MediaProps>(function GraphMe
       links.push({ source: think.ID, target: related.ID });
     });
 
-    // Thought の参照 Think
-    if (think.ContentType === 'thought') {
-      vault.GetThinksForThought(think.ID).forEach(rt => {
+    // Bundle の参照 Think
+    if (think.ContentType === 'bundle') {
+      vault.GetThinksForBundle(think.ID).forEach(rt => {
         if (!nodes.find(n => n.id === rt.ID)) {
           nodes.push({ id: rt.ID, name: rt.Name, type: rt.ContentType, isRef: true });
         }

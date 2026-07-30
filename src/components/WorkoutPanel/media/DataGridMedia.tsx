@@ -3,8 +3,8 @@
  * テーブル形式一覧メディア。
  *
  * - think.ContentType === 'table' → TableGridView でスプレッドシート表示
- * - think が Thought → GetThinksForThought の結果を表示
- * - それ以外 → Vault の全 Think（thought 除く）を表示
+ * - think が Bundle → GetThinksForBundle の結果を表示
+ * - それ以外 → Vault の全 Think（bundle 除く）を表示
  */
 
 import { useRef, useState, useMemo, useCallback, useEffect, useLayoutEffect, forwardRef, useImperativeHandle } from 'react';
@@ -27,7 +27,7 @@ import './DataGridMedia.css';
 // ContentType アイコンマッピング
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo:    FileText,
-  thought: Lightbulb,
+  bundle:  Lightbulb,
   table:   Table,
   links:   Link,
   chat:    MessageCircle,
@@ -36,7 +36,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
 
 const CONTENT_LABELS: Record<ContentType, string> = {
   memo:    'メモ',
-  thought: '思考',
+  bundle:  '思考',
   table:   'テーブル',
   links:   'リンク',
   chat:    'チャット',
@@ -850,26 +850,26 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   );
 }
 
-// ── ThinkListMedia（thought/vault 一覧）────────────────────────────────────
+// ── ThinkListMedia（bundle/vault 一覧）────────────────────────────────────
 
 function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
   const [filter,    setFilter]   = useState('');
   const [selected,  setSelected] = useState<Set<string>>(new Set());
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const scrollRef                = useRef<HTMLDivElement>(null);
-  const { overviewThoughtIds, workoutIds } = useHighlight();
+  const { overviewBundleIds, workoutIds } = useHighlight();
 
   const [allItems, setAllItems] = useState<TTThink[]>(() => {
-    if (think?.ContentType === 'thought') return vault.GetThinksForThought(think.ID);
-    return vault.GetThinks().filter(t => t.ContentType !== 'thought');
+    if (think?.ContentType === 'bundle') return vault.GetThinksForBundle(think.ID);
+    return vault.GetThinks().filter(t => t.ContentType !== 'bundle');
   });
 
   useEffect(() => {
-    if (think?.ContentType !== 'thought') {
-      setAllItems(vault.GetThinks().filter(t => t.ContentType !== 'thought'));
+    if (think?.ContentType !== 'bundle') {
+      setAllItems(vault.GetThinks().filter(t => t.ContentType !== 'bundle'));
       return;
     }
-    vault.GetThinksForThoughtAsync(think.ID).then(setAllItems);
+    vault.GetThinksForBundleAsync(think.ID).then(setAllItems);
   }, [think?.ID, vault]);
 
   const filtered = useMemo<TTThink[]>(() => {
@@ -938,7 +938,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
             const Icon   = CONTENT_ICONS[item.ContentType] ?? FileText;
             const isSelected        = selected.has(item.ID);
             const isFocus           = think?.ID === item.ID;
-            const isOverviewThought = overviewThoughtIds.includes(item.ID);
+            const isOverviewBundle  = overviewBundleIds.includes(item.ID);
             const isInWorkout       = workoutIds.includes(item.ID);
             const isFocused         = item.ID === focusedId;
 
@@ -949,7 +949,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
                   'datagrid-media__row',
                   isSelected        ? 'datagrid-media__row--selected'        : '',
                   isFocus           ? 'datagrid-media__row--focus'           : '',
-                  isOverviewThought ? 'datagrid-media__row--overview-thought' : '',
+                  isOverviewBundle  ? 'datagrid-media__row--overview-bundle'  : '',
                   isInWorkout       ? 'datagrid-media__row--workout'         : '',
                   isFocused         ? 'datagrid-media__row--focused'         : '',
                 ].join(' ')}

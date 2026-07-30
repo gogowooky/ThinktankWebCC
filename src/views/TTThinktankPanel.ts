@@ -21,8 +21,8 @@ export class TTThinktankPanel extends TTUIItem {
   /** ThinktankAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
 
-  /** 現在選択中のThoughtID（空 = 未選択）*/
-  public SelectedThoughtID: string = '';
+  /** 現在選択中のBundleID（空 = 未選択）*/
+  public SelectedBundleID: string = '';
 
   /** 複数選択中のThoughtID一覧 */
   public SharedState = { checkedIds: [] as string[] };
@@ -96,21 +96,21 @@ export class TTThinktankPanel extends TTUIItem {
     }
   }
 
-  // ── Thought選択 ───────────────────────────────────────────────────────
+  // ── Bundle選択 ───────────────────────────────────────────────────────
 
   /**
-   * Thoughtを選択する。
-   * @returns 選択したThoughtID
+   * Bundleを選択する。
+   * @returns 選択したBundleID
    */
-  public SelectThought(thoughtId: string): string {
-    this.SelectedThoughtID = thoughtId;
+  public SelectBundle(bundleId: string): string {
+    this.SelectedBundleID = bundleId;
     this.NotifyUpdated();
-    return thoughtId;
+    return bundleId;
   }
 
-  /** Thought選択を解除する */
+  /** Bundle選択を解除する */
   public ClearSelection(): void {
-    this.SelectedThoughtID = '';
+    this.SelectedBundleID = '';
     this.NotifyUpdated();
   }
 

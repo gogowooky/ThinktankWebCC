@@ -2,7 +2,7 @@
  * ThinktankTabBar.tsx
  * ThinktankPanel の縦タブバー（旧Ribbon）ボタン群。
  *
- * 上部: Think一覧（検索・Thought一覧を統合）/ AI相談
+ * 上部: Think一覧（検索・Bundle一覧を統合）/ AI相談
  * 下部: 設定
  */
 

@@ -563,7 +563,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   const contentTypeToMediaType = (contentType: string): import('../../types').MediaType => {
     switch (contentType) {
       case 'markdown': return 'markdown';
-      case 'thought':  return 'datagrid';
+      case 'bundle':   return 'datagrid';
       case 'table':    return 'datagrid';
       case 'chat':     return 'chat';
       default:         return 'texteditor';

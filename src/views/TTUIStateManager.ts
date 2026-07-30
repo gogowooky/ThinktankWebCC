@@ -43,7 +43,7 @@ export type ConfigKey =
   | 'ThinktankPanel.Mode.Name'
   | 'OverviewPanel.Area.IsOpen'
   | 'OverviewPanel.Mode.Name'
-  | 'Overview.Thought.Name'
+  | 'Overview.Bundle.Name'
   | 'WorkoutSettingPanel.Area.IsOpen'
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
@@ -179,7 +179,7 @@ function getFocusedPaneAllowedModes(app: TTApplication): string[] {
   const mapping: Record<ContentType, MediaType[]> = {
     memo: ['texteditor', 'markdown'],
     nettext: ['texteditor', 'markdown'],
-    thought: ['texteditor', 'datagrid', 'markdown', 'card', 'graph'],
+    bundle: ['texteditor', 'datagrid', 'markdown', 'card', 'graph'],
     table: ['texteditor', 'datagrid', 'card'],
     chat: ['texteditor', 'chat'],
     links: ['texteditor', 'markdown'],
@@ -249,16 +249,16 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => capitalize(app.OverviewPanel.ViewMode),
     set: (app, v) => { app.OverviewPanel.SetViewMode(v.toLowerCase() as OverviewViewMode); },
   },
-  'Overview.Thought.Name': {
+  'Overview.Bundle.Name': {
     panel: 'OverviewPanel',
     default: 'none', type: 'string', candidates: '.*',
-    description: 'OverviewパネルのthoughtファイルID',
-    get: (app) => app.OverviewPanel.ThoughtID || 'none',
+    description: 'OverviewパネルのbundleファイルID',
+    get: (app) => app.OverviewPanel.BundleID || 'none',
     set: (app, v) => {
       if (v === 'none') {
-        app.OverviewPanel.ClearThought();
+        app.OverviewPanel.ClearBundle();
       } else {
-        app.OverviewPanel.OpenThought(v);
+        app.OverviewPanel.OpenBundle(v);
       }
     },
   },

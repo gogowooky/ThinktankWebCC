@@ -2,7 +2,7 @@
  * TTReThinkPanel.ts
  * Phase 4: ReThinkPanelのビューモデル。
  *
- * Think/Thoughtsの次の展開についてAIと相談するパネル。
+ * Think/Bundlesの次の展開についてAIと相談するパネル。
  * ReThinkAreaの開閉状態とAI会話履歴を管理する。
  */
 
@@ -25,8 +25,8 @@ export class TTReThinkPanel extends TTUIItem {
   /** 表示モード */
   public ViewMode: ReThinkViewMode = 'chat';
 
-  /** 連携中のThoughtID（空 = 未設定）*/
-  public LinkedThoughtID: string = '';
+  /** 連携中のBundleID（空 = 未設定）*/
+  public LinkedBundleID: string = '';
 
   /** 連携中のThinkID（空 = 未設定）*/
   public LinkedThinkID: string = '';
@@ -80,11 +80,11 @@ export class TTReThinkPanel extends TTUIItem {
   // ── コンテキスト連携 ──────────────────────────────────────────────────
 
   /**
-   * ThoughtをReThinkPanelのコンテキストとして連携する。
+   * BundleをReThinkPanelのコンテキストとして連携する。
    * Areaが閉じていれば自動的に開く。
    */
-  public LinkThought(thoughtId: string): void {
-    this.LinkedThoughtID = thoughtId;
+  public LinkBundle(bundleId: string): void {
+    this.LinkedBundleID = bundleId;
     this.LinkedThinkID = '';
     if (!this.IsAreaOpen) {
       this.IsAreaOpen = true;
@@ -102,7 +102,7 @@ export class TTReThinkPanel extends TTUIItem {
 
   /** コンテキスト連携をクリアする */
   public ClearLink(): void {
-    this.LinkedThoughtID = '';
+    this.LinkedBundleID = '';
     this.LinkedThinkID = '';
     this.NotifyUpdated();
   }

@@ -94,35 +94,35 @@ export class TTApplication extends TTUIItem {
   // ── 主要操作 ──────────────────────────────────────────────────────────
 
   /**
-   * ThoughtをOverviewPanelで開く。
+   * BundleをOverviewPanelで開く。
    * 同時にThinktankPanelの選択状態とReThinkPanelのコンテキストも更新する。
    *
-   * @param thoughtId ThoughtのID
+   * @param bundleId BundleのID
    * @param mediaType 表示形式（省略時はmarkdown）
    */
-  public OpenThought(thoughtId: string, mediaType: MediaType = 'markdown'): void {
+  public OpenBundle(bundleId: string, mediaType: MediaType = 'markdown'): void {
     // ThinktankPanel: 選択状態を更新
-    this.ThinktankPanel.SelectThought(thoughtId);
+    this.ThinktankPanel.SelectBundle(bundleId);
 
-    // OverviewPanel: Thoughtを表示
-    this.OverviewPanel.OpenThought(thoughtId, mediaType);
+    // OverviewPanel: Bundleを表示
+    this.OverviewPanel.OpenBundle(bundleId, mediaType);
 
     // ReThinkPanel: コンテキストを連携
-    this.ReThinkPanel.LinkThought(thoughtId);
+    this.ReThinkPanel.LinkBundle(bundleId);
 
-    // WorkoutPanel: thoughtに含まれないThinkのペインを削除
-    this._removeOutOfThoughtPanes(thoughtId);
+    // WorkoutPanel: bundleに含まれないThinkのペインを削除
+    this._removeOutOfBundlePanes(bundleId);
 
     this.NotifyUpdated();
   }
 
-  /** Thought に含まれない Think のペインを WorkoutPanel から削除する */
-  private _removeOutOfThoughtPanes(thoughtId: string): void {
-    if (!thoughtId) return; // 何も選択されていない時は削除しない
+  /** Bundle に含まれない Think のペインを WorkoutPanel から削除する */
+  private _removeOutOfBundlePanes(bundleId: string): void {
+    if (!bundleId) return; // 何も選択されていない時は削除しない
     const vault = this.Models.Vault;
-    const thinks = vault.GetThinksForThought(thoughtId);
+    const thinks = vault.GetThinksForBundle(bundleId);
     const allowed = new Set(thinks.map(t => t.ID));
-    allowed.add(thoughtId);
+    allowed.add(bundleId);
     const toRemove = this.WorkoutPanel.Areas
       .filter(a => !allowed.has(a.ResourceID))
       .map(a => a.ID);
@@ -183,7 +183,7 @@ export class TTApplication extends TTUIItem {
 
     this.ThinktankPanel.ClearSelection();
     this.ThinktankPanel.ClearChecks();
-    this.OverviewPanel.ClearThought();
+    this.OverviewPanel.ClearBundle();
     this.WorkoutPanel.ClearAll();
     this.ReThinkPanel.ClearLink();
 
@@ -195,7 +195,7 @@ export class TTApplication extends TTUIItem {
     this.ThinktankPanel.ClearSelection();
     this.ThinktankPanel.ClearChecks();
     this.ThinktankPanel.ClearFilter();
-    this.OverviewPanel.ClearThought();
+    this.OverviewPanel.ClearBundle();
     this.WorkoutPanel.ClearAll();
     this.ReThinkPanel.ClearLink();
     this.ReThinkPanel.ClearChat();

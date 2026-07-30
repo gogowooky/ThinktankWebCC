@@ -137,10 +137,10 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       prefix:         'Thinktank',
       panelOf:        () => app.ThinktankPanel,
       currentItemKey: 'ThinktankPanel.CurrentItem.ID',
-      // Thought はその場で Overview へ、それ以外は Workout へ（一覧ダブルクリックと同じ挙動）
+      // Bundle はその場で Overview へ、それ以外は Workout へ（一覧ダブルクリックと同じ挙動）
       open: (id) => {
-        if (app.Models.Vault.GetThink(id)?.ContentType === 'thought') {
-          app.OpenThought(id, 'datagrid');
+        if (app.Models.Vault.GetThink(id)?.ContentType === 'bundle') {
+          app.OpenBundle(id, 'datagrid');
         } else {
           app.OpenThinkInWorkout(id);
         }
