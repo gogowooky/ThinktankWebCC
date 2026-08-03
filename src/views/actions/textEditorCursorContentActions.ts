@@ -14,6 +14,7 @@ import { TTShortcutManager } from '../TTShortcutManager';
 import { TTUIStateManager } from '../TTUIStateManager';
 import { showActionMenu } from '../../utils/actionMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
+import { apiFetch } from '../../services/apiClient';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
 let _searchTagCache: Record<string, string> | null = null;
@@ -24,7 +25,7 @@ async function getSearchTags(): Promise<Record<string, string>> {
   if (_searchTagCache) return _searchTagCache;
   _searchTagLoadError = null;
   try {
-    const res = await fetch('/api/system/search-tags');
+    const res = await apiFetch('/api/system/search-tags');
     if (res.ok) {
       const raw = await res.json() as Record<string, string>;
       // キーを小文字化して大文字・小文字を問わず検索できるようにする
@@ -148,7 +149,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           item.Result = 'カーソル位置のテキストがファイルパスではありません';
           return;
         }
-        return fetch('/api/system/open', {
+        return apiFetch('/api/system/open', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ path: text })

@@ -3,6 +3,8 @@
  * Phase 14: サーバーの /api/chat/messages (SSE) を呼び出すクライアントヘルパー。
  */
 
+import { apiFetch } from './apiClient';
+
 export interface ChatRequestMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -14,7 +16,7 @@ export interface ChatStreamCallbacks {
   onError: (message: string) => void;
 }
 
-const CHAT_API_URL = '/api/chat/messages';
+const CHAT_API_PATH = '/api/chat/messages';
 
 export async function streamChat(
   messages: ChatRequestMessage[],
@@ -24,7 +26,7 @@ export async function streamChat(
 ): Promise<void> {
   let res: Response;
   try {
-    res = await fetch(CHAT_API_URL, {
+    res = await apiFetch(CHAT_API_PATH, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ messages, systemPrompt }),

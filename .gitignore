@@ -4,6 +4,8 @@ node_modules/
 # Build outputs
 dist/
 dist-server/
+release/
+release2/
 
 # Reference code (backup)
 reference2/node_modules/

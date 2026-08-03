@@ -9,31 +9,9 @@
  */
 
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
-import { Marked } from 'marked';
-import { markedHighlight } from 'marked-highlight';
-import hljs from 'highlight.js';
+import { renderMarkdown } from '../../../utils/markdownSanitize';
 import type { MediaProps } from './types';
 import './MarkdownMedia.css';
-
-// [File:name](url) などのリンクを新しいタブで開くレンダラー
-const linkRenderer = {
-  link({ href, title, text }: { href: string; title?: string | null; text: string }) {
-    const titleAttr = title ? ` title="${title}"` : '';
-    return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
-  },
-};
-
-// marked インスタンスを一度だけ構築
-const md = new Marked(
-  markedHighlight({
-    langPrefix: 'hljs language-',
-    highlight(code, lang) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      return hljs.highlight(code, { language }).value;
-    },
-  }),
-  { renderer: linkRenderer },
-);
 
 export interface MarkdownMediaRef { focus: () => void; }
 
@@ -59,8 +37,8 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
   useEffect(() => {
     if (!think) { setHtml(''); return; }
     const body = (think.Content ?? '').replace(/^[^\n]*\n?/, '');
-    const result = md.parse(body);
-    // marked v18: parse は string | Promise<string>
+    // renderMarkdown 内で DOMPurify によるサニタイズ済み
+    const result = renderMarkdown(body);
     if (typeof result === 'string') {
       setHtml(result);
     } else {
@@ -98,7 +76,7 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
       tabIndex={-1}
       className="markdown-media"
       onScroll={handleScroll}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: marked でサニタイズ済み
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: setHtml 前に DOMPurify を通している
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

@@ -14,6 +14,7 @@ import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
+import { apiFetch } from '../services/apiClient';
 import { collectAreaIds } from './TTWorkoutPanel';
 import { registerTextEditorDateActions } from './actions/textEditorDateActions';
 import { registerTextEditorBulletActions, registerTextEditorCommentActions } from './actions/textEditorStyleActions';
@@ -559,7 +560,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
       const pollInterval = setInterval(async () => {
         try {
-          const res = await fetch('/api/bq/files/export/status');
+          const res = await apiFetch('/api/bq/files/export/status');
           if (res.ok) {
             const progress = await res.json() as { running: boolean; total: number; current: number };
             if (progress.total > 0 && status && typeof status.SetLocalExporting === 'function') {
@@ -572,7 +573,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
         }
       }, 300);
 
-      return fetch('/api/bq/files/export', { method: 'POST' })
+      return apiFetch('/api/bq/files/export', { method: 'POST' })
         .then(async (res) => {
           clearInterval(pollInterval);
           if (!res.ok) {

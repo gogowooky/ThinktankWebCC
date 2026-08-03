@@ -4,13 +4,18 @@
  * Thinktank/yyyy-mm-dd フォルダにファイルをアップロードする
  */
 
-import { google } from 'googleapis';
+// googleapis は巨大で、モジュール読込だけで素の Node で約2.3秒、Electron を Node として
+// 使う場合（パッケージ版が dist-server を起動する経路）は約27秒かかる。トップレベルで
+// import すると listen 前にこの時間を丸ごと待つことになり、アプリが起動できない。
+// 型はここで type-only import して保持し（実行時には消える）、実体は initialize() 内で
+// 動的に読み込む。
+import type { drive_v3 } from 'googleapis';
 import { Readable } from 'stream';
 
 const PARENT_FOLDER_NAME = 'Thinktank';
 
 export class DriveService {
-  private drive: ReturnType<typeof google.drive> | null = null;
+  private drive: drive_v3.Drive | null = null;
   private parentFolderId: string | null = null;
   private initialized = false;
 
@@ -21,6 +26,7 @@ export class DriveService {
         console.log('[DriveService] GOOGLE_SERVICE_ACCOUNT_KEY not set — Drive disabled');
         return false;
       }
+      const { google } = await import('googleapis');
       const auth = new google.auth.GoogleAuth({
         credentials: JSON.parse(credentials),
         scopes: ['https://www.googleapis.com/auth/drive'],

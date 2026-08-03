@@ -18,11 +18,17 @@ import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
 import { createSystemRoutes, createPublicSystemRoutes } from './routes/systemRoutes.js';
 import { vectorStoreService }     from './services/VectorStoreService.js';
-import { apiAuth }                from './middleware/apiAuth.js';
+import { apiAuth, assertApiAuthConfigured } from './middleware/apiAuth.js';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, '..');
 const PORT = process.env['PORT'] ?? 8080;
+
+// Cloud Run はコンテナ外からの到達のため 0.0.0.0 バインドが必須。
+// それ以外（ローカル開発・パッケージ版 Electron が起動する常駐サーバー）は
+// ループバックに限定する。既定の 0.0.0.0 のままだと、公衆 Wi-Fi 等で
+// 同一ネットワークの第三者から /api/system/open 等に到達できてしまう。
+const HOST = process.env['K_SERVICE'] ? '0.0.0.0' : '127.0.0.1';
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
@@ -62,7 +68,13 @@ app.use('/api/drive', createDriveRoutes());
 app.use('/api/chat', createChatRoutes());
 
 // システム関連API (DoOnCursorPos 用ローカルファイル起動)
-app.use('/api/system', createSystemRoutes());
+// ローカル専用機能であり、公開ホスティング上では意味を持たない一方で
+// 「サーバー上の任意ファイルを起動する経路」になるため、Cloud Run では登録しない。
+if (!process.env['K_SERVICE']) {
+  app.use('/api/system', createSystemRoutes());
+} else {
+  console.log('[Server] /api/system/open is disabled on managed hosting');
+}
 
 // 静的ファイル（本番ビルド）
 app.use(express.static(path.join(projectRoot, 'dist')));
@@ -85,9 +97,18 @@ app.get(/.*/, (req, res) => {
 });
 
 async function start() {
+  // 認証設定の検証は listen より前に行う。公開環境で設定漏れがあれば
+  // 「無認証で待ち受ける」より「起動しない」ほうが安全なため。
+  try {
+    assertApiAuthConfigured();
+  } catch (e) {
+    console.error(e instanceof Error ? e.message : String(e));
+    process.exit(1);
+  }
+
   // 先に listen してリクエストを受け付ける（初期化完了を待たない）
-  app.listen(PORT, () => {
-    console.log(`[Server] Listening on http://localhost:${PORT}`);
+  app.listen(Number(PORT), HOST, () => {
+    console.log(`[Server] Listening on http://${HOST}:${PORT}`);
   });
 
   const key = process.env['GOOGLE_SERVICE_ACCOUNT_KEY'];

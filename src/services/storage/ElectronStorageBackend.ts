@@ -21,6 +21,11 @@ declare global {
         syncFromServer: (url: string)     => Promise<SyncResult>;
       };
       getPathForFile: (file: File) => string;
+      /**
+       * パッケージ版でメインプロセスが起動したローカルサーバーの接続情報。
+       * dev（vite proxy 経由で相対パスが通る）では undefined。
+       */
+      apiConfig?: { baseUrl: string; apiKey?: string };
     };
   }
 }

@@ -1,9 +1,115 @@
-# TTWeb Cloud Run デプロイ用スクリプト
+﻿# TTWeb Cloud Run デプロイ用スクリプト
+#
+# 【重要】このスクリプトは -AccessModel の明示を必須にしている。
+# 以前は `--allow-unauthenticated` かつ API_SHARED_SECRET 未設定でデプロイしており、
+# /api/bq（Vault全件の読み書き削除）・/api/chat（AI APIキー）・/api/system/open
+# （任意パス起動）がインターネットに無認証公開される状態だった。
+# 「うっかり公開」を構造的に不可能にするため、既定値は設けない。
+#
+# 使い方:
+#   .\deploy.ps1 -AccessModel Private        # 推奨: IAM認証必須。アプリ側の変更不要
+#   .\deploy.ps1 -AccessModel SharedSecret   # 公開のまま共有シークレット認証
+#
+# ※ SharedSecret は curl/bot は防げるが、ブラウザ版SPAは認証ヘッダーを送らないため
+#    401 になる（ヘッダー付与は vite dev proxy 専用の仕組みのため）。
+#    ブラウザから公開URLを使い続けたい場合は Cookie ログイン方式の実装が別途必要。
 
-# 1. デプロイ先のプロジェクトIDを設定します
-gcloud config set project thinktankweb-483408
+[CmdletBinding()]
+param(
+  [Parameter(Mandatory = $true)]
+  [ValidateSet('Private', 'SharedSecret')]
+  [string]$AccessModel
+)
 
-# 2. Cloud Runにデプロイを実行します（東京リージョン、未認証アクセス許可）
-gcloud run deploy ttweb --source . --region asia-northeast1 --allow-unauthenticated --quiet
+$ErrorActionPreference = 'Stop'
 
-Write-Host "Deployment completed successfully!" -ForegroundColor Green
+$ProjectId   = 'thinktankweb-483408'
+$ServiceName = 'ttweb'
+$Region      = 'asia-northeast1'
+
+# ── 共有シークレットの取得（環境変数 → server/.env の順）────────────────────
+
+function Get-SharedSecret {
+  if ($env:API_SHARED_SECRET) { return $env:API_SHARED_SECRET }
+
+  $envFile = Join-Path $PSScriptRoot 'server\.env'
+  if (Test-Path $envFile) {
+    foreach ($line in (Get-Content $envFile -Encoding UTF8)) {
+      if ($line -match '^\s*API_SHARED_SECRET\s*=\s*(.+?)\s*$') {
+        return $Matches[1].Trim('"').Trim("'")
+      }
+    }
+  }
+  return $null
+}
+
+$secret = Get-SharedSecret
+
+if (-not $secret) {
+  Write-Host ''
+  Write-Host 'API_SHARED_SECRET が未設定です。' -ForegroundColor Red
+  Write-Host 'サーバーは公開環境で未設定を検出すると起動を中止します（apiAuth のフェイルクローズ）。'
+  Write-Host ''
+  Write-Host '生成してから再実行してください:' -ForegroundColor Yellow
+  Write-Host ''
+  Write-Host '  $bytes = New-Object byte[] 32'
+  Write-Host '  [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)'
+  Write-Host '  $hex = -join ($bytes | ForEach-Object { $_.ToString("x2") })'
+  Write-Host '  Add-Content server\.env "API_SHARED_SECRET=$hex"'
+  Write-Host ''
+  exit 1
+}
+
+# gcloud の --update-env-vars はカンマ区切りで値を解釈するため、
+# 区切り文字を含むシークレットは黙って壊れる。事前に弾く。
+if ($secret -notmatch '^[A-Za-z0-9_\-]+$') {
+  Write-Host 'API_SHARED_SECRET に使用できない文字が含まれています。' -ForegroundColor Red
+  Write-Host '英数字・ハイフン・アンダースコアのみにしてください（gcloud の値パースが壊れるため）。'
+  exit 1
+}
+
+if ($secret.Length -lt 16) {
+  Write-Host "API_SHARED_SECRET が短すぎます（$($secret.Length)文字 / 最低16文字）。" -ForegroundColor Red
+  exit 1
+}
+
+# ── デプロイ ────────────────────────────────────────────────────────────────
+
+Write-Host "プロジェクトを設定します: $ProjectId" -ForegroundColor Cyan
+gcloud config set project $ProjectId
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+# --set-env-vars ではなく --update-env-vars を使う。
+# --set-env-vars は既存の環境変数をすべて置き換えるため、Cloud Run 側に設定済みの
+# ANTHROPIC_API_KEY / GOOGLE_SERVICE_ACCOUNT_KEY 等を消し飛ばしてしまう。
+$deployArgs = @(
+  'run', 'deploy', $ServiceName,
+  '--source', '.',
+  '--region', $Region,
+  '--update-env-vars', "API_SHARED_SECRET=$secret",
+  '--quiet'
+)
+
+if ($AccessModel -eq 'Private') {
+  Write-Host 'アクセス方式: Private（IAM認証必須）' -ForegroundColor Green
+  $deployArgs += '--no-allow-unauthenticated'
+} else {
+  Write-Host 'アクセス方式: SharedSecret（インターネット公開 + ヘッダー認証）' -ForegroundColor Yellow
+  Write-Host '  警告: ブラウザ版SPAは認証ヘッダーを送らないため 401 になります。' -ForegroundColor Yellow
+  $deployArgs += '--allow-unauthenticated'
+}
+
+Write-Host "Cloud Run にデプロイします: $ServiceName ($Region)" -ForegroundColor Cyan
+gcloud @deployArgs
+if ($LASTEXITCODE -ne 0) {
+  Write-Host 'デプロイに失敗しました。' -ForegroundColor Red
+  exit $LASTEXITCODE
+}
+
+Write-Host 'デプロイが完了しました。' -ForegroundColor Green
+
+if ($AccessModel -eq 'Private') {
+  Write-Host ''
+  Write-Host 'ブラウザで開くには次のコマンドでローカルにトンネルします:' -ForegroundColor Cyan
+  Write-Host "  gcloud run services proxy $ServiceName --region $Region"
+}
