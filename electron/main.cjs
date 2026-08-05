@@ -55,15 +55,26 @@ function buildRecord({ id, contentType, title, body, keywords, relatedIds, sizeB
 
 ipcMain.handle('storage:listMeta', () => {
   ensureVaultDir();
-  return fs.readdirSync(VAULT_DIR)
-    .filter(f => f.endsWith('.json'))
-    .map(f => {
-      try {
-        const data = JSON.parse(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8'));
-        return toMeta(data);
-      } catch { return null; }
-    })
-    .filter(Boolean);
+  const files = fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.json'));
+
+  // 読み取り失敗を握り潰すと「0件ロード」という結果だけが残り原因を追えなくなる。
+  // 権限エラー(EPERM/EACCES)とJSON破損を区別できるよう、種類ごとに集計して出す。
+  const errors = new Map();
+  const metas  = [];
+  for (const f of files) {
+    try {
+      metas.push(toMeta(JSON.parse(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8'))));
+    } catch (e) {
+      const key = `${e.code ?? 'parse'}: ${String(e.message).slice(0, 80)}`;
+      errors.set(key, (errors.get(key) ?? 0) + 1);
+    }
+  }
+
+  if (errors.size > 0) {
+    console.error(`[Vault] listMeta: ${files.length}件中 ${files.length - metas.length}件を読めませんでした`);
+    for (const [k, v] of errors) console.error(`  ${v}件  ${k}`);
+  }
+  return metas;
 });
 
 ipcMain.handle('storage:getContent', (_event, id) => {
@@ -464,6 +475,10 @@ function createWindow(startUrl) {
 app.whenReady()
   .then(async () => {
     ensureVaultDir();
+    // userData の解決結果が環境によって食い違う事故が起きうるため、
+    // 実際に読み書きするディレクトリと件数を起動時に必ず記録する
+    console.log(`[Vault] userData=${app.getPath('userData')}`);
+    console.log(`[Vault] dir=${VAULT_DIR} files=${fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.json')).length}`);
     installCsp();
 
     // dev: concurrently が起動済みの vite(5173) を読む。サーバーは二重起動しない

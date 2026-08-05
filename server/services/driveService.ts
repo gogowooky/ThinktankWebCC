@@ -20,24 +20,36 @@ export class DriveService {
   private initialized = false;
 
   async initialize(): Promise<boolean> {
+    // BigQuery と違い Drive は ADC では動かない可能性が高い。Cloud Run の
+    // メタデータサーバーが発行するトークンのスコープは cloud-platform であり、
+    // これは Workspace API である Drive のスコープを含まないため。
+    // Cloud Run 上で Drive を使う場合は鍵JSONを Secret Manager 経由で
+    // GOOGLE_SERVICE_ACCOUNT_KEY に渡すこと（鍵からは任意スコープを要求できる）。
+    const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
     try {
-      const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-      if (!credentials) {
-        console.log('[DriveService] GOOGLE_SERVICE_ACCOUNT_KEY not set — Drive disabled');
-        return false;
-      }
       const { google } = await import('googleapis');
       const auth = new google.auth.GoogleAuth({
-        credentials: JSON.parse(credentials),
+        ...(credentials ? { credentials: JSON.parse(credentials) } : {}),
         scopes: ['https://www.googleapis.com/auth/drive'],
       });
       this.drive = google.drive({ version: 'v3', auth });
       this.parentFolderId = await this._getOrCreateFolder(PARENT_FOLDER_NAME, null);
       this.initialized = true;
-      console.log(`[DriveService] Initialized (parent: ${this.parentFolderId})`);
+      console.log(
+        `[DriveService] Initialized (parent: ${this.parentFolderId}` +
+        `, auth: ${credentials ? 'service account key' : 'ADC'})`
+      );
       return true;
     } catch (e) {
-      console.error('[DriveService] Initialization failed:', e);
+      if (!credentials) {
+        console.error(
+          '[DriveService] ADC での初期化に失敗しました。Drive はスコープ不足で利用できません。' +
+          'GOOGLE_SERVICE_ACCOUNT_KEY に鍵JSONを設定してください:', e
+        );
+      } else {
+        console.error('[DriveService] Initialization failed:', e);
+      }
+      this.drive = null;
       return false;
     }
   }

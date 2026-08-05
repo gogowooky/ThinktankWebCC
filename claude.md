@@ -26,7 +26,9 @@ NODE_ENV=development npx electron electron/main.cjs
 ## 重要な注意事項
 - `dist-server/` は `server/` のビルド成果物。直接編集しない
 - Electronメインプロセスは `electron/main.cjs`
-- BigQuery/Drive の認証は `server/.env` の `GOOGLE_SERVICE_ACCOUNT_KEY_FILE` で管理
+- BigQuery/Drive の認証は、ローカルでは `server/.env` の `GOOGLE_SERVICE_ACCOUNT_KEY_FILE`、
+  Cloud Run では ADC と Secret Manager で管理。デプロイ手順は `docs/CloudRun_Deploy.md` を参照
+- 公開環境のアクセス制御は IAP（Cloud Run 直接統合）。`server/middleware/apiAuth.ts` が唯一の判定箇所
 - GPU キャッシュエラー（Windows）は無視してよい
 
 ## 変更を加える前に

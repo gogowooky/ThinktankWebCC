@@ -9,7 +9,8 @@ setlocal
 if "%~1"=="" (
   echo アクセス方式を指定してください。
   echo.
-  echo   deploy.bat Private        IAM認証必須（推奨）
+  echo   deploy.bat IAP            IAP認証（推奨。ブラウザからGoogleログインで利用可）
+  echo   deploy.bat Private        IAM認証必須
   echo   deploy.bat SharedSecret   公開のまま共有シークレット認証
   echo.
   echo 注意: SharedSecret ではブラウザ版SPAが 401 になります。

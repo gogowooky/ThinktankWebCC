@@ -111,12 +111,9 @@ async function start() {
     console.log(`[Server] Listening on http://${HOST}:${PORT}`);
   });
 
-  const key = process.env['GOOGLE_SERVICE_ACCOUNT_KEY'];
-  if (!key) {
-    console.log('[Server] GOOGLE_SERVICE_ACCOUNT_KEY not set — BigQuery/Drive/Embedding disabled');
-    return;
-  }
-
+  // 鍵JSONが無くても ADC（Cloud Run のランタイムサービスアカウント）で
+  // 初期化できるため、ここで早期リターンしてはならない。従来はこの分岐により
+  // Cloud Run 上で BigQuery/Drive が常に無効化されていた。
   const [bqOk, driveOk] = await Promise.all([
     bigqueryService.initialize(),
     driveService.initialize(),

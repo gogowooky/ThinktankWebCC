@@ -40,16 +40,24 @@ export class BigQueryService {
 
   async initialize(): Promise<boolean> {
     try {
+      // 鍵JSONが渡されていればそれを使い、無ければ ADC（Cloud Run のランタイム
+      // サービスアカウント）にフォールバックする。コンテナには鍵ファイルを
+      // 同梱しない（.dockerignore で除外）ため、公開環境では後者の経路になる。
       const credentials = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-      if (!credentials) {
-        console.error('[BigQueryService] GOOGLE_SERVICE_ACCOUNT_KEY not set');
-        return false;
+      if (credentials) {
+        const keyFile = JSON.parse(credentials);
+        this.bigquery = new BigQuery({ projectId: keyFile.project_id, credentials: keyFile });
+      } else {
+        this.bigquery = new BigQuery();
       }
-      const keyFile = JSON.parse(credentials);
-      this.projectId = keyFile.project_id as string | undefined;
-      this.bigquery = new BigQuery({ projectId: this.projectId, credentials: keyFile });
+      // ADC 経路では projectId がメタデータサーバー経由で遅延解決されるため、
+      // tbl でテーブル名を組み立てる前に必ずクライアントから取得しておく
+      this.projectId = await this.bigquery.getProjectId();
       await this.ensureTableExists();
-      console.log(`[BigQueryService] Initialized (project: ${this.projectId}, table: ${DATASET_ID}.${TABLE_ID})`);
+      console.log(
+        `[BigQueryService] Initialized (project: ${this.projectId}, table: ${DATASET_ID}.${TABLE_ID}` +
+        `, auth: ${credentials ? 'service account key' : 'ADC'})`
+      );
       return true;
     } catch (error) {
       console.error('[BigQueryService] Initialization failed:', error);
