@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.34",
+  "version": "1.4.1",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "db0df4a",
-  "commitDateTime": "2026-08-10-081338",
+  "commitId": "5e84388",
+  "commitDateTime": "2026-08-10-081910",
   "commitMessage": "fix: Cloud Run の IAP 有効化手順とデプロイ時のシークレット指定を修正"
 }
