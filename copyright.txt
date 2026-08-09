@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.33",
+  "version": "1.3.34",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "VENENO-02",
-  "commitId": "90e0cae",
-  "commitDateTime": "2026-08-05-121222",
-  "commitMessage": "feat: Cloud Run 公開対応（ADC/Secret Manager/IAP）と Vault 読み取り診断"
+  "commitPC": "E15",
+  "commitId": "db0df4a",
+  "commitDateTime": "2026-08-10-081338",
+  "commitMessage": "fix: Cloud Run の IAP 有効化手順とデプロイ時のシークレット指定を修正"
 }
