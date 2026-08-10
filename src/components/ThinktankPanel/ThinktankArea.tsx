@@ -370,8 +370,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         },
       },
       chatAbortRef.current.signal,
+      { provider: panel.AIChatProvider, model: panel.AIChatModel },
     );
-  }, [chatMessages]);
+  }, [chatMessages, panel]);
 
   // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する
   const handleSaveChat = useCallback(async () => {
@@ -464,7 +465,16 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           onOpenInWorkout={handleOpenTodoMemoInWorkout}
         />
         <div className="thinktank-area__chat-body">
-          <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
+          <AiChatView
+            ref={aiChatViewRef}
+            messages={chatMessages}
+            isWaiting={chatWaiting}
+            onSend={handleChatSend}
+            modelSelector={{
+              value:    { provider: panel.AIChatProvider, model: panel.AIChatModel },
+              onChange: (selection) => panel.SetAIChatModel(selection),
+            }}
+          />
         </div>
       </div>
     );

@@ -138,12 +138,54 @@
 
 .rethink-chat__input-area {
   display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  padding: 8px 10px;
+  flex-direction: column;
   background: #fff;
   border-top: 1px solid rgba(30, 70, 32, 0.2);
   flex-shrink: 0;
+}
+
+.rethink-chat__input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+/* ── AIモデル選択（入力欄フォーカス時のみ下から現れる）───────── */
+
+.rethink-chat__model-row {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  padding: 0 10px;
+  pointer-events: none;
+  transition: max-height 0.18s ease, opacity 0.15s ease, transform 0.18s ease, padding-bottom 0.18s ease;
+}
+
+.rethink-chat__model-row--visible {
+  max-height: 32px;
+  opacity: 1;
+  transform: translateY(0);
+  padding: 0 10px 8px;
+  pointer-events: auto;
+}
+
+.rethink-chat__model-select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 11px;
+  color: #1a3d1c;
+  background: rgba(30, 70, 32, 0.06);
+  border: 1px solid rgba(30, 70, 32, 0.25);
+  border-radius: 4px;
+  padding: 3px 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+.rethink-chat__model-select:focus {
+  border-color: rgba(30, 70, 32, 0.5);
 }
 
 .rethink-chat__input-prompt {

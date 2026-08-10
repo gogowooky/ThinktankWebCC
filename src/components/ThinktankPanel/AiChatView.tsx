@@ -10,12 +10,19 @@
 
 import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { ChatMessage } from '../../types';
+import { AI_MODEL_OPTIONS, PROVIDER_LABELS, parseSelectionValue, selectionToValue } from '../../services/aiModels';
+import type { AiModelSelection, AiProvider } from '../../services/aiModels';
 import './AiChatView.css';
 
 export interface AiChatViewRef {
   scrollToPrevUser: () => void;
   scrollToNextUser: () => void;
   focus:            () => void;
+}
+
+export interface AiModelSelectorProps {
+  value:    AiModelSelection;
+  onChange: (selection: AiModelSelection) => void;
 }
 
 interface Props {
@@ -26,7 +33,16 @@ interface Props {
   onScroll?: (scrollTop: number) => void;
   /** 初回マウント時に復元する scrollTop。省略時は末尾へ自動スクロール */
   initialScrollTop?: number;
+  /**
+   * AIモデル選択ドロップダウンを表示する場合に指定する。
+   * 省略時はドロップダウン自体を表示しない（例: WorkoutPane の Chat は
+   * WorkoutSettingArea 側の選択をそのまま使うため、ここでは選ばせない）。
+   * メッセージ入力欄がフォーカスされている間だけ下から現れる。
+   */
+  modelSelector?: AiModelSelectorProps;
 }
+
+const PROVIDER_ORDER: AiProvider[] = ['anthropic', 'openai', 'gemini'];
 
 const PLACEHOLDER = 'メッセージを入力…\n(Enter=送信 / Shift+Enter=改行)';
 
@@ -52,13 +68,21 @@ function topInContainer(el: HTMLElement, container: HTMLElement): number {
 }
 
 export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
-  { messages, isWaiting, onSend, onScroll, initialScrollTop },
+  { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector },
   ref,
 ) {
   const [input, setInput] = useState('');
+  const [isInputAreaFocused, setIsInputAreaFocused] = useState(false);
   const logRef            = useRef<HTMLDivElement>(null);
   const textareaRef       = useRef<HTMLTextAreaElement>(null);
   const hasRestoredRef    = useRef(false);
+
+  const handleInputAreaFocus = useCallback(() => setIsInputAreaFocused(true), []);
+  const handleInputAreaBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setIsInputAreaFocused(false);
+    }
+  }, []);
 
   useImperativeHandle(ref, () => ({
     scrollToPrevUser: () => {
@@ -192,17 +216,46 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
       </div>
 
       {/* ── 入力エリア（下部固定）────────────────────────────────── */}
-      <div className="ai-chat-view__input-area">
-        <textarea
-          ref={textareaRef}
-          className="ai-chat-view__input"
-          value={input}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={PLACEHOLDER}
-          disabled={isWaiting}
-          rows={2}
-        />
+      <div
+        className="ai-chat-view__input-area"
+        onFocus={handleInputAreaFocus}
+        onBlur={handleInputAreaBlur}
+      >
+        <div className="ai-chat-view__input-row">
+          <textarea
+            ref={textareaRef}
+            className="ai-chat-view__input"
+            value={input}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={PLACEHOLDER}
+            disabled={isWaiting}
+            rows={2}
+          />
+        </div>
+
+        {modelSelector && (
+          <div className={`ai-chat-view__model-row${isInputAreaFocused ? ' ai-chat-view__model-row--visible' : ''}`}>
+            <select
+              className="ai-chat-view__model-select"
+              value={selectionToValue(modelSelector.value)}
+              onChange={(e) => {
+                const parsed = parseSelectionValue(e.target.value);
+                if (parsed) modelSelector.onChange(parsed);
+              }}
+              tabIndex={isInputAreaFocused ? 0 : -1}
+              aria-label="AI Chat モデル選択"
+            >
+              {PROVIDER_ORDER.map(p => (
+                <optgroup key={p} label={PROVIDER_LABELS[p]}>
+                  {AI_MODEL_OPTIONS.filter(o => o.provider === p).map(o => (
+                    <option key={selectionToValue(o)} value={selectionToValue(o)}>{o.label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
     </div>

@@ -6,6 +6,10 @@
 import { TTUIItem } from '../models/TTUIItem';
 import { TTWorkoutArea } from './TTWorkoutArea';
 import type { MediaType } from '../types';
+import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
+import type { AiModelSelection, AiProvider } from '../services/aiModels';
+
+const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 
 export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'chat';
 
@@ -276,6 +280,23 @@ export class TTWorkoutPanel extends TTUIItem {
   }
   public SetTextEditorTagStyle(style: Partial<SectionStyle>) {
     this.TextEditor.TagStyle = { ...this.TextEditor.TagStyle, ...style };
+    this.NotifyUpdated();
+  }
+
+  // ── AI Chat モデル選択 ────────────────────────────────────────────────
+  // WorkoutSettingArea（設定パネルのChatタブ）と、各Pane内のChatMedia
+  // （WorkoutPanel.DoOnCursorPos:Chat 等で開くAI Chat Pane）が共通で使う。
+  // パネル単位で1つだけ選択を持ち、両者は常に同じモデルを参照する。
+
+  /** AI Chat のホストプロバイダ（ブラウザ再起動後も localStorage から復元） */
+  public AIChatProvider: AiProvider = loadAiModelSelection(AI_MODEL_STORAGE_KEY).provider;
+  /** AI Chat のホストモデルID */
+  public AIChatModel: string = loadAiModelSelection(AI_MODEL_STORAGE_KEY).model;
+
+  public SetAIChatModel(selection: AiModelSelection): void {
+    this.AIChatProvider = selection.provider;
+    this.AIChatModel = selection.model;
+    saveAiModelSelection(AI_MODEL_STORAGE_KEY, selection);
     this.NotifyUpdated();
   }
 

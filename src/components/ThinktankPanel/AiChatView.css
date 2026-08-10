@@ -138,12 +138,54 @@
 
 .ai-chat-view__input-area {
   display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  padding: 8px 10px;
+  flex-direction: column;
   background: #fff;
   border-top: 1px solid rgba(57, 73, 171, 0.2);
   flex-shrink: 0;
+}
+
+.ai-chat-view__input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+/* ── AIモデル選択（入力欄フォーカス時のみ下から現れる）───────── */
+
+.ai-chat-view__model-row {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-4px);
+  padding: 0 10px;
+  pointer-events: none;
+  transition: max-height 0.18s ease, opacity 0.15s ease, transform 0.18s ease, padding-bottom 0.18s ease;
+}
+
+.ai-chat-view__model-row--visible {
+  max-height: 32px;
+  opacity: 1;
+  transform: translateY(0);
+  padding: 0 10px 8px;
+  pointer-events: auto;
+}
+
+.ai-chat-view__model-select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 11px;
+  color: #1a2c5b;
+  background: rgba(57, 73, 171, 0.06);
+  border: 1px solid rgba(57, 73, 171, 0.25);
+  border-radius: 4px;
+  padding: 3px 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+.ai-chat-view__model-select:focus {
+  border-color: rgba(57, 73, 171, 0.5);
 }
 
 .ai-chat-view__input-prompt {

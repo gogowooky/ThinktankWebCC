@@ -26,7 +26,7 @@ function buildSystemPrompt(thinkName: string, thinkContent: string): string {
 
 export interface ChatMediaRef { focus: () => void; }
 
-export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think, onSave, onDirtyChange }: MediaProps, ref) {
+export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think, onSave, onDirtyChange, aiChatModel }: MediaProps, ref) {
   const initialMessages = useMemo<ChatMessage[]>(() => {
     if (!think || think.ContentType !== 'chat') return [];
     return parseChat(think.Content);
@@ -128,8 +128,9 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
         },
       },
       abortRef.current.signal,
+      aiChatModel,
     );
-  }, [systemPrompt, persistChat]);
+  }, [systemPrompt, persistChat, aiChatModel]);
 
   const handleScrollPrev = useCallback(() => aiChatViewRef.current?.scrollToPrevUser(), []);
   const handleScrollNext = useCallback(() => aiChatViewRef.current?.scrollToNextUser(), []);

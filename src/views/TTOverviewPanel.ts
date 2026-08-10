@@ -10,6 +10,10 @@ import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
 import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
+import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
+import type { AiModelSelection, AiProvider } from '../services/aiModels';
+
+const AI_MODEL_STORAGE_KEY = 'tt-ai-model-overview';
 
 export type OverviewViewMode = 'filter' | 'graph' | 'chat' | 'settings';
 
@@ -164,6 +168,20 @@ export class TTOverviewPanel extends TTUIItem {
   /** 全文検索をクリアする */
   public ClearSearch(): void {
     this.SearchQuery = '';
+    this.NotifyUpdated();
+  }
+
+  // ── AI Chat モデル選択 ────────────────────────────────────────────────
+
+  /** AI Chat のホストプロバイダ（このパネル専用。ブラウザ再起動後も localStorage から復元） */
+  public AIChatProvider: AiProvider = loadAiModelSelection(AI_MODEL_STORAGE_KEY).provider;
+  /** AI Chat のホストモデルID */
+  public AIChatModel: string = loadAiModelSelection(AI_MODEL_STORAGE_KEY).model;
+
+  public SetAIChatModel(selection: AiModelSelection): void {
+    this.AIChatProvider = selection.provider;
+    this.AIChatModel = selection.model;
+    saveAiModelSelection(AI_MODEL_STORAGE_KEY, selection);
     this.NotifyUpdated();
   }
 }

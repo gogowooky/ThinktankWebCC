@@ -10,7 +10,11 @@
 import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { TTReThinkPanel } from '../../views/TTReThinkPanel';
 import { streamChat } from '../../services/ChatApiService';
+import { AI_MODEL_OPTIONS, PROVIDER_LABELS, parseSelectionValue, selectionToValue } from '../../services/aiModels';
+import type { AiProvider } from '../../services/aiModels';
 import './ReThinkChat.css';
+
+const PROVIDER_ORDER: AiProvider[] = ['anthropic', 'openai', 'gemini'];
 
 export interface ReThinkChatRef {
   abortStreaming: () => void;
@@ -43,10 +47,18 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
 ) {
   const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
+  const [isInputAreaFocused, setIsInputAreaFocused] = useState(false);
   const logRef                    = useRef<HTMLDivElement>(null);
   const textareaRef               = useRef<HTMLTextAreaElement>(null);
   const abortRef                  = useRef<AbortController | null>(null);
   const accumulatedRef            = useRef('');
+
+  const handleInputAreaFocus = useCallback(() => setIsInputAreaFocused(true), []);
+  const handleInputAreaBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setIsInputAreaFocused(false);
+    }
+  }, []);
 
   useImperativeHandle(ref, () => ({
     abortStreaming: () => {
@@ -109,6 +121,7 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
         },
       },
       abortRef.current.signal,
+      { provider: panel.AIChatProvider, model: panel.AIChatModel },
     );
   }, [input, isWaiting, panel, systemPrompt]);
 
@@ -180,17 +193,44 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
       </div>
 
       {/* ── 入力エリア（下部固定）────────────────────────────── */}
-      <div className="rethink-chat__input-area">
-        <textarea
-          ref={textareaRef}
-          className="rethink-chat__input"
-          value={input}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          placeholder={PLACEHOLDER}
-          disabled={isWaiting}
-          rows={2}
-        />
+      <div
+        className="rethink-chat__input-area"
+        onFocus={handleInputAreaFocus}
+        onBlur={handleInputAreaBlur}
+      >
+        <div className="rethink-chat__input-row">
+          <textarea
+            ref={textareaRef}
+            className="rethink-chat__input"
+            value={input}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={PLACEHOLDER}
+            disabled={isWaiting}
+            rows={2}
+          />
+        </div>
+
+        <div className={`rethink-chat__model-row${isInputAreaFocused ? ' rethink-chat__model-row--visible' : ''}`}>
+          <select
+            className="rethink-chat__model-select"
+            value={selectionToValue({ provider: panel.AIChatProvider, model: panel.AIChatModel })}
+            onChange={(e) => {
+              const parsed = parseSelectionValue(e.target.value);
+              if (parsed) panel.SetAIChatModel(parsed);
+            }}
+            tabIndex={isInputAreaFocused ? 0 : -1}
+            aria-label="AI Chat モデル選択"
+          >
+            {PROVIDER_ORDER.map(p => (
+              <optgroup key={p} label={PROVIDER_LABELS[p]}>
+                {AI_MODEL_OPTIONS.filter(o => o.provider === p).map(o => (
+                  <option key={selectionToValue(o)} value={selectionToValue(o)}>{o.label}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </div>
       </div>
 
     </div>

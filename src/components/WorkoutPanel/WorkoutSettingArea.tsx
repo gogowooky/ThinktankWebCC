@@ -191,8 +191,9 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
         },
       },
       chatAbortRef.current.signal,
+      { provider: panel.AIChatProvider, model: panel.AIChatModel },
     );
-  }, [chatMessages]);
+  }, [chatMessages, panel]);
 
   // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する
   const handleSaveChat = useCallback(async () => {
@@ -324,6 +325,10 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                 messages={chatMessages}
                 isWaiting={chatWaiting}
                 onSend={handleChatSend}
+                modelSelector={{
+                  value:    { provider: panel.AIChatProvider, model: panel.AIChatModel },
+                  onChange: (selection) => panel.SetAIChatModel(selection),
+                }}
               />
             </div>
           </div>

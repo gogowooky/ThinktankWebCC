@@ -411,6 +411,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         },
       },
       chatAbortRef.current.signal,
+      { provider: panel.AIChatProvider, model: panel.AIChatModel },
     );
   }, [chatMessages, panel, vault]);
 
@@ -589,7 +590,16 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
               onOpenInWorkout={handleOpenThinkInWorkout}
             />
             <div className="overview-area__chat-body">
-              <AiChatView ref={aiChatViewRef} messages={chatMessages} isWaiting={chatWaiting} onSend={handleChatSend} />
+              <AiChatView
+                ref={aiChatViewRef}
+                messages={chatMessages}
+                isWaiting={chatWaiting}
+                onSend={handleChatSend}
+                modelSelector={{
+                  value:    { provider: panel.AIChatProvider, model: panel.AIChatModel },
+                  onChange: (selection) => panel.SetAIChatModel(selection),
+                }}
+              />
             </div>
           </div>
         ) : !think ? (

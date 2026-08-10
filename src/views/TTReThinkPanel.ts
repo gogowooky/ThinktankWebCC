@@ -7,6 +7,10 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
+import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
+import type { AiModelSelection, AiProvider } from '../services/aiModels';
+
+const AI_MODEL_STORAGE_KEY = 'tt-ai-model-rethink';
 
 export type ReThinkViewMode = 'chat' | 'settings';
 
@@ -168,6 +172,20 @@ export class TTReThinkPanel extends TTUIItem {
   /** ストリーミング状態を更新する */
   public SetStreaming(isStreaming: boolean): void {
     this.IsStreaming = isStreaming;
+    this.NotifyUpdated();
+  }
+
+  // ── AI Chat モデル選択 ────────────────────────────────────────────────
+
+  /** AI Chat のホストプロバイダ（このパネル専用。ブラウザ再起動後も localStorage から復元） */
+  public AIChatProvider: AiProvider = loadAiModelSelection(AI_MODEL_STORAGE_KEY).provider;
+  /** AI Chat のホストモデルID */
+  public AIChatModel: string = loadAiModelSelection(AI_MODEL_STORAGE_KEY).model;
+
+  public SetAIChatModel(selection: AiModelSelection): void {
+    this.AIChatProvider = selection.provider;
+    this.AIChatModel = selection.model;
+    saveAiModelSelection(AI_MODEL_STORAGE_KEY, selection);
     this.NotifyUpdated();
   }
 }

@@ -4,6 +4,7 @@
  */
 
 import { apiFetch } from './apiClient';
+import type { AiModelSelection } from './aiModels';
 
 export interface ChatRequestMessage {
   role: 'user' | 'assistant';
@@ -23,13 +24,19 @@ export async function streamChat(
   systemPrompt: string,
   callbacks: ChatStreamCallbacks,
   signal?: AbortSignal,
+  /** 省略時はサーバー側のデフォルト（環境変数）で動作する */
+  aiModel?: AiModelSelection,
 ): Promise<void> {
   let res: Response;
   try {
     res = await apiFetch(CHAT_API_PATH, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ messages, systemPrompt }),
+      body:    JSON.stringify({
+        messages,
+        systemPrompt,
+        ...(aiModel ? { provider: aiModel.provider, model: aiModel.model } : {}),
+      }),
       signal,
     });
   } catch (err) {
