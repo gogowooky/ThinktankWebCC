@@ -95,12 +95,19 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 # --set-env-vars は既存の環境変数をすべて置き換えるため、Cloud Run 側に設定済みの
 # ANTHROPIC_API_KEY / GOOGLE_SERVICE_ACCOUNT_KEY 等を消し飛ばしてしまう。
 # --update-secrets も同じ理由で --set-secrets を使わない。
+#
+# 【注意】同名の変数が「平文の環境変数」として既に設定されていると、Secret 参照へ
+# 切り替える際に次のエラーで落ちる:
+#   Cannot update environment variable [X] to the given type
+#   because it has already been set with a different type.
+# その場合は先に平文側を消してから再実行すること:
+#   gcloud run services update ttweb --region asia-northeast1 --remove-env-vars X
 $deployArgs = @(
   'run', 'deploy', $ServiceName,
   '--source', '.',
   '--region', $Region,
   '--service-account', $RuntimeSa,
-  '--update-secrets', 'ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,GOOGLE_SERVICE_ACCOUNT_KEY=GOOGLE_SERVICE_ACCOUNT_KEY:latest',
+  '--update-secrets', 'ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,GEMINI_API_KEY=GEMINI_API_KEY:latest,GOOGLE_SERVICE_ACCOUNT_KEY=GOOGLE_SERVICE_ACCOUNT_KEY:latest',
   '--quiet'
 )
 

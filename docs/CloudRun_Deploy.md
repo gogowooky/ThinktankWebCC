@@ -78,7 +78,10 @@ AI の APIキーを登録する（値の入力を促されるので貼り付け�
 gcloud secrets create ANTHROPIC_API_KEY --replication-policy=automatic --data-file=- --project=thinktankweb-483408
 ```
 
-Gemini も使う場合は同様に `GEMINI_API_KEY` を作成する。
+OpenAI / Gemini も使う場合は同様に `OPENAI_API_KEY` `GEMINI_API_KEY` を作成する。
+`deploy.ps1` は3つとも Cloud Run に渡すため、作成していないと**デプロイ自体が失敗する**
+（存在しない Secret を参照するため）。使わないプロバイダは `deploy.ps1` の
+`--update-secrets` から該当行を外すこと。
 
 Drive を使う場合のみ、鍵JSONを丸ごと登録する。
 Drive は ADC では動かない（Cloud Run のメタデータサーバーが発行するトークンは
@@ -107,8 +110,59 @@ IAP サービスエージェントを作成する。
 gcloud beta services identity create --service=iap.googleapis.com --project=thinktankweb-483408
 ```
 
-OAuth 同意画面が未設定なら、ここで設定を求められる（個人利用なので
-User Type は「内部」でよい）。
+### 3-1. カスタム OAuth クライアントの登録（組織なしプロジェクトでは必須）
+
+**この手順を飛ばすと、デプロイは成功するのに全リクエストが IAP の 502 で落ちる。**
+症状は「レスポンスヘッダーに `x-goog-iap-generated-response: true` が付いた空の 502」
+かつ「Cloud Run 側にリクエストログが1件も残らない」。IAP がコンテナに到達させる
+前で止めているためである。
+
+`thinktankweb-483408` は組織に属さない個人プロジェクトなので、IAP は自動では
+OAuth クライアントを用意しない。また `gcloud iap oauth-brands` / `oauth-clients` は
+2026-03-19 に完全停止済みで、`Project must belong to an organization.` を返すため
+使えない。`gcloud iap web enable` も `--resource-type` が `app-engine` と
+`backend-services` しか受け付けず Cloud Run には使えない。
+（`gcloud iap web update` というコマンドは存在しない。）
+
+したがって、**クライアントの作成だけは Console で行い、IAP への紐付けを gcloud で行う。**
+
+1. Console → Cloud Run → `ttweb` → 「セキュリティ」タブ → IAP →
+   「Configure in IAP」。ここから OAuth 同意画面（Google Auth Platform → Branding）の
+   設定に誘導される。**Audience type は「External」を選ぶ**
+   （個人 Gmail アカウントのプロジェクトでは「Internal」は選べない）。
+2. 「Auto generate credentials」を使うか、Google Auth Platform → 「クライアント」で
+   種類「ウェブ アプリケーション」の OAuth クライアントを自分で作成する。
+3. 手動作成した場合は、そのクライアントの**承認済みのリダイレクト URI** に
+   次を必ず追加する。抜けているとログイン時に `redirect_uri_mismatch` になる。
+
+   ```
+   https://iap.googleapis.com/v1/oauth/clientIds/CLIENT_ID:handleRedirect
+   ```
+
+   `CLIENT_ID` は `123456789-abcdef.apps.googleusercontent.com` のような完全な値。
+
+4. クライアント ID とシークレットを IAP に紐付ける。
+
+   ```bash
+   gcloud iap settings set iap_settings.yaml --project=thinktankweb-483408
+   ```
+
+   `iap_settings.yaml` の中身:
+
+   ```yaml
+   access_settings:
+     oauth_settings:
+       client_id: CLIENT_ID
+       client_secret: CLIENT_SECRET
+   ```
+
+   このファイルはシークレットを含むので、リポジトリに置かず適用後に削除すること。
+
+5. 紐付けを確認する。`oauth_settings` が出力されれば成功。
+
+   ```bash
+   gcloud iap settings get --project=thinktankweb-483408
+   ```
 
 ## 4. デプロイ
 
@@ -187,6 +241,35 @@ gcloud run services update ttweb --region=asia-northeast1 --no-iap
 
 無効化する場合は `IAP_ENABLED` も同時に外すこと。付けたままだと
 `apiAuth` が IAP を前提に素通しするため、公開状態になる。
+
+## トラブルシューティング
+
+### `Cannot update environment variable [X] to the given type`
+
+同名の変数が「平文の環境変数」として既に Cloud Run に設定されている状態で、
+Secret 参照へ切り替えようとすると出る。平文側を消してから再デプロイする。
+
+```bash
+gcloud run services update ttweb --region=asia-northeast1 --remove-env-vars GOOGLE_SERVICE_ACCOUNT_KEY
+```
+
+現在どちらの型で入っているかは次で確認できる。`value:` なら平文、
+`valueFrom.secretKeyRef` なら Secret 参照。
+
+```bash
+gcloud run services describe ttweb --region=asia-northeast1 --format="yaml(spec.template.spec.containers[0].env)"
+```
+
+### 公開URLが空の 502 を返す
+
+レスポンスに `x-goog-iap-generated-response: true` が付き、かつ Cloud Run 側に
+リクエストログが残らない場合は、IAP に OAuth クライアントが紐付いていない。
+手順 3-1 を実施する。
+
+### `[Server] GOOGLE_SERVICE_ACCOUNT_KEY not set — BigQuery/Drive/Embedding disabled`
+
+Secret がリビジョンに渡っていない。`Private` / `SharedSecret` で入れ替えた直後の
+リビジョンなどで起こる。`npm run deploy` を IAP 指定で再実行する。
 
 ## 既知の制約
 
