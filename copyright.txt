@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "GOGOW",
-  "commitId": "e0fa38e",
-  "commitDateTime": "2026-08-10-223547",
-  "commitMessage": "docs: CloudRun手順書のPC毎/プロジェクト毎の実施単位整理"
+  "commitPC": "E15",
+  "commitId": "a001d05",
+  "commitDateTime": "2026-08-10-230805",
+  "commitMessage": "feat: AI Chat にモデル選択ドロップダウンを追加"
 }
