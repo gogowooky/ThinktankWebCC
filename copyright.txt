@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.3.33",
+  "version": "1.3.34",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "90e0cae",
-  "commitDateTime": "2026-08-05-121222",
-  "commitMessage": "feat: Cloud Run 公開対応（ADC/Secret Manager/IAP）と Vault 読み取り診断"
+  "commitId": "07b2395",
+  "commitDateTime": "2026-08-10-102044",
+  "commitMessage": "fix: PWAインストール可否判定のためmanifestリンクにuse-credentialsを付与"
 }
