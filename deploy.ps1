@@ -50,6 +50,36 @@ function Get-SharedSecret {
   return $null
 }
 
+# ── モデル設定の取得（server/.env → Cloud Run）──────────────────────────────
+#
+# server/.env はコンテナに含まれないため、明示的に渡さないと Cloud Run 側は
+# ChatService.ts のフォールバック値で動く。ローカルと公開環境でモデルが
+# 食い違う原因になるので、.env の指定をそのまま引き継ぐ。
+
+function Get-EnvValue([string]$Name) {
+  $envFile = Join-Path $PSScriptRoot 'server\.env'
+  if (-not (Test-Path $envFile)) { return $null }
+  foreach ($line in (Get-Content $envFile -Encoding UTF8)) {
+    if ($line -match "^\s*$Name\s*=\s*(.+?)\s*$") {
+      return $Matches[1].Trim('"').Trim("'")
+    }
+  }
+  return $null
+}
+
+$modelVars = @()
+foreach ($name in @('AI_PROVIDER', 'ANTHROPIC_MODEL', 'OPENAI_MODEL', 'GEMINI_MODEL')) {
+  $value = Get-EnvValue $name
+  if (-not $value) { continue }
+
+  # --update-env-vars はカンマ区切りで値を解釈するため、区切り文字を含む値は黙って壊れる
+  if ($value -match '[,=]') {
+    Write-Host "$name に , または = が含まれているため送信をスキップします: $value" -ForegroundColor Yellow
+    continue
+  }
+  $modelVars += "$name=$value"
+}
+
 # IAP はエッジで認可するため共有シークレットを配らない運用になる。
 # それ以外の方式ではシークレットが唯一の防御なので必須にする。
 $secret = $null
@@ -111,21 +141,34 @@ $deployArgs = @(
   '--quiet'
 )
 
+# --update-env-vars は複数回指定しても最後の1つしか効かないため、
+# アクセス方式ごとの値とモデル設定を1つにまとめてから渡す。
+$envVars = @()
+
 switch ($AccessModel) {
   'IAP' {
     Write-Host 'アクセス方式: IAP（Googleアカウント認証。ロードバランサ不要）' -ForegroundColor Green
-    $deployArgs += @('--update-env-vars', 'IAP_ENABLED=true', '--no-allow-unauthenticated', '--iap')
+    $envVars += 'IAP_ENABLED=true'
+    $deployArgs += @('--no-allow-unauthenticated', '--iap')
   }
   'Private' {
     Write-Host 'アクセス方式: Private（IAM認証必須）' -ForegroundColor Green
-    $deployArgs += @('--update-env-vars', "API_SHARED_SECRET=$secret", '--no-allow-unauthenticated')
+    $envVars += "API_SHARED_SECRET=$secret"
+    $deployArgs += @('--no-allow-unauthenticated')
   }
   'SharedSecret' {
     Write-Host 'アクセス方式: SharedSecret（インターネット公開 + ヘッダー認証）' -ForegroundColor Yellow
     Write-Host '  警告: ブラウザ版SPAは認証ヘッダーを送らないため 401 になります。' -ForegroundColor Yellow
-    $deployArgs += @('--update-env-vars', "API_SHARED_SECRET=$secret", '--allow-unauthenticated')
+    $envVars += "API_SHARED_SECRET=$secret"
+    $deployArgs += @('--allow-unauthenticated')
   }
 }
+
+$envVars += $modelVars
+if ($modelVars.Count -gt 0) {
+  Write-Host "モデル設定を引き継ぎます: $($modelVars -join ', ')" -ForegroundColor Cyan
+}
+$deployArgs += @('--update-env-vars', ($envVars -join ','))
 
 Write-Host "Cloud Run にデプロイします: $ServiceName ($Region)" -ForegroundColor Cyan
 gcloud @deployArgs

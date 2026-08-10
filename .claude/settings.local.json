@@ -172,7 +172,17 @@
       "Bash(powershell -NoProfile -Command \"Get-CimInstance Win32_Process -Filter \\\\\"Name='electron.exe'\\\\\" | Select-Object ProcessId,CreationDate,CommandLine | Format-List\")",
       "Bash(node \"C:\\\\Users\\\\SHINIC~1.EGA\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-shinichiro-egashira-Documents-ThinktankWebCC\\\\ffbb36f0-974e-4d34-ba2b-2638bca7006b\\\\scratchpad\\\\test_listmeta.js\")",
       "Bash(ELECTRON_RUN_AS_NODE=1 \"./node_modules/electron/dist/electron.exe\" \"C:\\\\Users\\\\SHINIC~1.EGA\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-shinichiro-egashira-Documents-ThinktankWebCC\\\\ffbb36f0-974e-4d34-ba2b-2638bca7006b\\\\scratchpad\\\\test_listmeta.js\")",
-      "Bash(node -e *)"
+      "Bash(node -e *)",
+      "PowerShell(cd \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\"; powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -AccessModel IAP)",
+      "PowerShell(gcloud run services describe ttweb --region=asia-northeast1 --project=thinktankweb-483408 --format=\"yaml\\(spec.template.spec.containers[0].env\\)\")",
+      "PowerShell(curl.exe -s -o NUL -w \"STATUS=%{http_code}\\\\n\" \"https://ttweb-699735546730.asia-northeast1.run.app/\")",
+      "PowerShell(gcloud run services logs read ttweb --region=asia-northeast1 --project=thinktankweb-483408 --limit=20)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "PowerShell(gcloud run services describe ttweb --region=asia-northeast1 --project=thinktankweb-483408 --format=\"yaml\\(spec.template.spec.containers[0].env,status.traffic\\)\" 2>&1)",
+      "PowerShell($base = \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\\\\node_modules\"; foreach \\($p in @\\(\"@google\\\\generative-ai\",\"@anthropic-ai\\\\sdk\",\"openai\"\\)\\) { $f = Join-Path $base \"$p\\\\package.json\"; if \\(Test-Path $f\\) { $v = \\(Get-Content $f -Raw | ConvertFrom-Json\\).version; \"$p = $v\" } else { \"$p = NOT INSTALLED\" } })",
+      "PowerShell(\"--- anthropic models resource ---\")",
+      "PowerShell(\"--- openai models resource ---\")"
     ]
   }
 }

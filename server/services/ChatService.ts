@@ -272,7 +272,9 @@ export async function streamChatResponse(
       const apiKey = process.env['ANTHROPIC_API_KEY'];
       if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not configured');
       const client      = new Anthropic({ apiKey });
-      const activeModel = model || process.env['ANTHROPIC_MODEL'] || 'claude-3-5-sonnet-20241022';
+      // フォールバック値は必ず提供中のモデルにすること。
+      // 提供終了モデルを指定すると 404 not_found_error になる
+      const activeModel = model || process.env['ANTHROPIC_MODEL'] || 'claude-sonnet-5';
 
       const stream = client.messages.stream({
         model: activeModel,
