@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "GOGOW",
-  "commitId": "TBD",
-  "commitDateTime": "TBD",
+  "commitId": "e0fa38e",
+  "commitDateTime": "2026-08-10-223547",
   "commitMessage": "docs: CloudRun手順書のPC毎/プロジェクト毎の実施単位整理"
 }
