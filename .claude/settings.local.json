@@ -182,7 +182,9 @@
       "PowerShell(gcloud run services describe ttweb --region=asia-northeast1 --project=thinktankweb-483408 --format=\"yaml\\(spec.template.spec.containers[0].env,status.traffic\\)\" 2>&1)",
       "PowerShell($base = \"C:\\\\Users\\\\gogow\\\\Documents\\\\ThinktankWebCC\\\\node_modules\"; foreach \\($p in @\\(\"@google\\\\generative-ai\",\"@anthropic-ai\\\\sdk\",\"openai\"\\)\\) { $f = Join-Path $base \"$p\\\\package.json\"; if \\(Test-Path $f\\) { $v = \\(Get-Content $f -Raw | ConvertFrom-Json\\).version; \"$p = $v\" } else { \"$p = NOT INSTALLED\" } })",
       "PowerShell(\"--- anthropic models resource ---\")",
-      "PowerShell(\"--- openai models resource ---\")"
+      "PowerShell(\"--- openai models resource ---\")",
+      "Bash(git fetch *)",
+      "Bash(powershell -c \"Get-ChildItem 'C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankWebCC\\\\public'\")"
     ]
   }
 }
