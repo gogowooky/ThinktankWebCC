@@ -184,7 +184,18 @@
       "PowerShell(\"--- anthropic models resource ---\")",
       "PowerShell(\"--- openai models resource ---\")",
       "Bash(git fetch *)",
-      "Bash(powershell -c \"Get-ChildItem 'C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankWebCC\\\\public'\")"
+      "Bash(powershell -c \"Get-ChildItem 'C:\\\\Users\\\\shinichiro.egashira\\\\Documents\\\\ThinktankWebCC\\\\public'\")",
+      "Bash(gcloud run *)",
+      "Bash(curl -s -o /dev/null -w \"STATUS=%{http_code}\\\\n\" \"https://ttweb-699735546730.asia-northeast1.run.app/api/system/search-tags\" -H \"x-goog-iap-jwt-assertion: dummy\")",
+      "Bash(curl -s -D - -o /dev/null \"https://ttweb-699735546730.asia-northeast1.run.app/api/system/search-tags\")",
+      "Bash(gcloud beta *)",
+      "Bash(cat /tmp/proxy.log 2>&1)",
+      "Bash(pkill -f \"cloud-run-proxy\\\\|run services proxy\")",
+      "Bash(disown)",
+      "Bash(curl -s -w \"\\\\nSTATUS=%{http_code}\\\\n\" http://localhost:18080/api/system/search-tags)",
+      "Bash(taskkill //F //IM cloud-run-proxy.exe)",
+      "Bash(nohup gcloud run services proxy ttweb --region=asia-northeast1 --project=thinktankweb-483408 --port=18081)",
+      "Bash(curl -s -w \"\\\\nSTATUS=%{http_code}\\\\n\" http://localhost:18081/api/system/search-tags)"
     ]
   }
 }

@@ -263,12 +263,31 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         const inner = text.slice(1, -1);
         const colonIdx = inner.indexOf(':');
         if (colonIdx < 0) { item.Result = 'YahooTransferタグの形式が正しくありません'; return; }
-        const [from = '', to = '', via = '', timeStr = '', depArr = ''] =
-          inner.slice(colonIdx + 1).split(',').map(s => s.trim());
+
+        // パラメータは "key value" 形式をカンマ区切りで列挙する（例：from 東京駅,to 大阪駅,dep 10:00）
+        const paramMap: Record<string, string> = {};
+        inner.slice(colonIdx + 1).split(',').forEach(token => {
+          const trimmed = token.trim();
+          if (!trimmed) return;
+          const spaceIdx = trimmed.indexOf(' ');
+          if (spaceIdx < 0) return;
+          const key = trimmed.slice(0, spaceIdx).trim().toLowerCase();
+          const val = trimmed.slice(spaceIdx + 1).trim();
+          if (['from', 'to', 'dep', 'arr', 'via'].includes(key) && val) {
+            paramMap[key] = val;
+          }
+        });
+
+        const { from = '', to = '', via = '', dep = '', arr = '' } = paramMap;
+        if (!from || !to) { item.Result = 'YahooTransferタグには from と to が必要です'; return; }
+
         const params = new URLSearchParams();
-        if (from) params.set('from', from);
-        if (to)   params.set('to', to);
-        if (via)  params.set('via', via);
+        params.set('from', from);
+        params.set('to', to);
+        if (via) params.set('via', via);
+
+        // dep（出発時刻）と arr（到着時刻）が両方指定された場合は dep を優先する
+        const timeStr = dep || arr;
         if (timeStr) {
           const [hh = '0', mm = '0'] = timeStr.split(':');
           const now = new Date();
@@ -280,7 +299,8 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           params.set('m1', mmPad[0]);
           params.set('m2', mmPad[1]);
         }
-        params.set('type', depArr.toLowerCase() === 'arrive' ? '4' : '1');
+        params.set('type', arr && !dep ? '4' : '1');
+
         window.open(`https://transit.yahoo.co.jp/search/result?${params.toString()}`, '_blank');
         item.Result = `Yahoo乗換案内 [${from} → ${to}] を開きました`;
       } catch (err) {

@@ -33,6 +33,8 @@ key:            ToolBar.CurrentMode.Text:Focus
 　Thinktank/Overviewからのthinkメモの D&D
 　ファイルシステムからのファイル/ディレクトリの D&D
 　ブラウザからの urlの D&D
+# 対応不要： その他：設定ファイルの仕組みFix
+# 対応不要： その他：AI調整
 　
 
 # Application ======================================================================================================
@@ -1571,7 +1573,8 @@ TextEditor.CurrentEditor.TextOnCursorPos にはカーソル位置で取得され
 各subTagの例示において、大文字はタグ文字（ただし運用は大文字小文字混和可)、小文字はパラメータ文字です。
 1. Tag.WebSearch:       docs\DefaultSearchTag.mdで定義済みの WebSearch 用タグ
 2. Tag.GoogleRoute:     GoogleMapでplace1,2,3...を通るルートを表示するためのタグ        例：[GOOGLEROUTE:plasce1,place2,place3...]
-3. Tag.YahooTransfer:   Yahoo乗換案内で電車を検索するためのタグ                         例：[YAHOOTRANSFER:from,to,via,time,departure|arrive] 
+3. Tag.YahooTransfer:   Yahoo乗換案内で電車を検索するためのタグ                         パラメータは "key value" 形式のCSV（key: from/to/dep/arr/via、viaは省略可、dep/arrはhh:mm形式、dep優先）
+                        例：[YAHOOTRANSFER:from 東京駅,to 大阪駅,via 名古屋駅,dep 10:00]
 4. Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用)
                         4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)
                         4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)

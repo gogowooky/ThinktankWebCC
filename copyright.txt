@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "a001d05",
-  "commitDateTime": "2026-08-10-230805",
-  "commitMessage": "feat: AI Chat にモデル選択ドロップダウンを追加"
+  "commitPC": "GOGOW",
+  "commitId": "TBD",
+  "commitDateTime": "TBD",
+  "commitMessage": "feat: YahooTransferタグをkey-value形式パラメータに対応 / DefaultSearchTag整理"
 }
