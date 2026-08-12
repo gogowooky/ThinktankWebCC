@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "2d407d6",
-  "commitDateTime": "2026-08-13-000009",
-  "commitMessage": "feat: TextEditor.CurrentEditor.DoOnCursorPos:Menuにタグ挿入メニューを追加"
+  "commitId": "3148651",
+  "commitDateTime": "2026-08-13-074219",
+  "commitMessage": "feat: タグ挿入メニューをmonaco F1風のツリー型メニューに再構成"
 }
