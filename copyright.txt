@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.5",
+  "version": "1.4.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "GOGOW",
-  "commitId": "295a063",
-  "commitDateTime": "2026-08-11-235626",
-  "commitMessage": "feat: YahooTransferタグをkey-value形式パラメータに対応 / DefaultSearchTag整理"
+  "commitPC": "E15",
+  "commitId": "2d407d6",
+  "commitDateTime": "2026-08-13-000009",
+  "commitMessage": "feat: TextEditor.CurrentEditor.DoOnCursorPos:Menuにタグ挿入メニューを追加"
 }
