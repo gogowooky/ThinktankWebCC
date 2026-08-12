@@ -86,6 +86,29 @@ export function createPublicSystemRoutes(): Router {
     }
   });
 
+  // search-tag-items は TextEditor.CurrentEditor.DoOnCursorPos:Menu（タグ挿入メニュー）用に、
+  // ID と Description（"親)親名 > 子)子名" 形式）を NoURL 行も含めて全件返す。
+  // /search-tags と異なり URL テンプレートの有無で絞り込まない（ActionTag系もメニュー対象のため）。
+  router.get('/search-tag-items', (_req, res) => {
+    try {
+      const text = readFileSync(SEARCH_TAG_FILE, 'utf-8');
+      const items: { id: string; description: string }[] = [];
+      for (const line of text.split('\n')) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const firstComma = trimmed.indexOf(',');
+        const lastComma  = trimmed.lastIndexOf(',');
+        if (firstComma === -1 || firstComma === lastComma) continue;
+        const id          = trimmed.slice(0, firstComma).trim();
+        const description = trimmed.slice(firstComma + 1, lastComma).trim().replace(/^"|"$/g, '');
+        if (id && description) items.push({ id, description });
+      }
+      res.json(items);
+    } catch (e) {
+      res.status(500).json({ error: String(e) });
+    }
+  });
+
   return router;
 }
 

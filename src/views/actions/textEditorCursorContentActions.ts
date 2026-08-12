@@ -13,6 +13,7 @@ import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { TTUIStateManager } from '../TTUIStateManager';
 import { showActionMenu } from '../../utils/actionMenu';
+import { showTagInsertMenu } from '../../utils/tagInsertMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { apiFetch } from '../../services/apiClient';
 
@@ -539,8 +540,29 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       try {
         const text = getTextOnCursorSafe();
         if (!text) {
-          item.Result = 'カーソル位置に対象テキストがありません';
-          return;
+          // カーソル位置が url/filepath/tag のいずれでもない場合は、
+          // docs/DefaultSearchTag.md を元にしたタグ挿入メニューを表示する
+          const editor = TTShortcutManager.instance.activeEditor;
+          if (!editor) {
+            item.Result = 'エディタが見つかりません';
+            return;
+          }
+          return showTagInsertMenu().then(id => {
+            if (!id) {
+              item.Result = 'メニューの選択をキャンセルしました';
+              return;
+            }
+            const sel = editor.getSelection();
+            const insertText = `[${id}:]`;
+            editor.executeEdits('tag-insert-menu', [{ range: sel, text: insertText, forceMoveMarkers: true }]);
+            // カーソルを ':' と ']' の間（値を続けて入力できる位置）に移動する
+            editor.setPosition({
+              lineNumber: sel.startLineNumber,
+              column: sel.startColumn + insertText.length - 1,
+            });
+            editor.focus();
+            item.Result = `タグ [${insertText}] を挿入しました`;
+          });
         }
 
         const prefixMap = {

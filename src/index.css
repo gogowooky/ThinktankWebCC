@@ -247,6 +247,19 @@ a {
   padding-top: 8px;
 }
 
+/* ── タグ挿入メニュー（DoOnCursorPos:Menu、カーソル位置がurl/filepath/tagでない場合）── */
+.tag-insert-menu-container {
+  width: 420px;
+}
+
+.action-menu-group-header {
+  padding: 6px 12px 2px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
