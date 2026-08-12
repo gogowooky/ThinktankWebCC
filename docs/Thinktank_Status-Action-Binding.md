@@ -16,39 +16,6 @@
 # Action
 
 
-## 修正：　260812　TextEditor.CurrentEditor.DoOnCursorPos:Menu
-　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、既存の動作を実行してください。
-　CursorPos位置が、url, filepath, tag のいずれかを表す部分ではない場合、以下で説明するMenuで選択したタグを挿入してください。
-　Menuは「Think一覧>フィルター項目」と似たスタイルとし、タイトルは「タグ挿入」とします。
-　Menuは、docs\DefaultSearchTag.md の Description を参照して作成します。　> は子アイテムで、同じ親アイテムのものはまとめて表示してください。　
-　Menuは、基本は↑↓キー、Enter、ESCで選択、決定、キャンセルですが、先頭の一文字でも選択・決定できます。
-　決定されれば、選択アイテムの #ID のタグを挿入し、メニューを閉じます。　
-
-description:    カーソル位置のテキスト種別に応じたアクションメニューを表示する
-key:            TextEditor.CurrentEditor.DoOnCursorPos:Menu
-　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
-　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
-　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
-　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
-
-　A（260812修正）：カーソル位置がurl/filepath/tagのいずれかの場合は、従来通りTTActions.GetRegisteredActionsから
-　　該当プレフィックス（Url:/File:/{subTag}:）のアクションを絞り込みshowActionMenuで選択メニューを表示する
-　　既存動作を変更せず維持しました。
-　　新規に、カーソル位置がそのいずれでもない場合の「タグ挿入」メニューを追加しました（src\utils\tagInsertMenu.ts）。
-　　- サーバー側に /api/system/search-tag-items（apiAuth前段の公開API）を追加し、docs\DefaultSearchTag.md の
-　　　各行から ID と Description（"親)親名 > 子)子名" 形式、NoURL行含む全件）を返すようにしました。
-　　- クライアント側では Description を " > " で分割し、親アイテムの見出し（グルーピング、同じ親は
-　　　ファイル内での出現順に関わらずまとめて表示）と、子アイテム（ニーモニック文字＋ラベル＋ID）の
-　　　一覧に変換して表示します（action-menu-* のスタイルを流用し、グループ見出し用に
-　　　.action-menu-group-header を追加）。
-　　- ↑↓キーでの選択移動、Enterでの決定、Escでのキャンセルに加え、Description中の「X)ラベル」の
-　　　先頭一文字（ニーモニック）を押すと、その子アイテムを選択と同時に即決定します。
-　　- 決定されると、選択アイテムのIDを用いて `[ID:]` をカーソル位置に挿入し、カーソルを `:` と `]` の
-　　　間（値を続けて入力できる位置）に移動してメニューを閉じます。
-　　実機検証（Vite+Expressのdevサーバー、Monacoエディタへの実キー入力）で、既存のurl/filepath/tag
-　　メニュー分岐が従来通り動作すること、非該当時に「タグ挿入」メニューが親グループ見出し付きで
-　　表示されること、先頭文字（例："b"→Bing）で即座に `[Bing:]` が挿入されカーソルが`:`と`]`の間に
-　　位置することを確認しました。
 
 ## 完了：　Application.Resource.ImportFromLocal
 ## 完了？：　　ToolBar.CurrentMode.Text:Focus
@@ -797,6 +764,73 @@ key:            TextEditor.EditText.Backspace
 
 
 # TextEditor Action ================================================================================================
+
+## Action：　260813 TextEditor.CurrentEditor.DoOnCursorPos:Menu
+description:    カーソル位置のテキスト種別に応じたアクションメニューを表示する
+key:            TextEditor.CurrentEditor.DoOnCursorPos:Menu
+　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、下記のそれぞれについて実行してください。
+　url:      TextEditor.CurrentEditor.DoOnCursorPos:Url:*　をメニューで表示し選択して実施
+　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
+　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
+　いずれでもない場合はmenuからtagを選択して挿入します。
+
+今回のメニューは想定と異なりますので、再構成をお願いします。
+F1押下で出てくるmonaco editorオリジナルメニューのようなスタイルにしてください。
+menuはwindows context menuのようなmenutree型です。docs\DefaultSearchTag.md の Description を参照、">"で区切られるアイテムでツリー構造を作り、同じ親でまとめて表示してください。　
+menuの最上部にmenuタイトルを表示します。今回のタイトルは「タグ挿入」です。
+Menuは、基本は↑↓キー、Enter、ESCで選択、決定、キャンセルですが、先頭の一文字でも選択・決定できます。
+
+　> 260812
+　CursorPos位置が、url, filepath, tag のいずれかを表す部分であれば、既存の動作を実行してください。
+　CursorPos位置が、url, filepath, tag のいずれかを表す部分ではない場合、以下で説明するMenuで選択したタグを挿入してください。
+　Menuは「Think一覧>フィルター項目」と似たスタイルとし、タイトルは「タグ挿入」とします。
+　Menuは、docs\DefaultSearchTag.md の Description を参照して作成します。　> は子アイテムで、同じ親アイテムのものはまとめて表示してください。　
+　Menuは、基本は↑↓キー、Enter、ESCで選択、決定、キャンセルですが、先頭の一文字でも選択・決定できます。
+　決定されれば、選択アイテムの #ID のタグを挿入し、メニューを閉じます。　
+
+
+　A（260812修正）：カーソル位置がurl/filepath/tagのいずれかの場合は、従来通りTTActions.GetRegisteredActionsから
+　　該当プレフィックス（Url:/File:/{subTag}:）のアクションを絞り込みshowActionMenuで選択メニューを表示する
+　　既存動作を変更せず維持しました。
+　　新規に、カーソル位置がそのいずれでもない場合の「タグ挿入」メニューを追加しました（src\utils\tagInsertMenu.ts）。
+　　- サーバー側に /api/system/search-tag-items（apiAuth前段の公開API）を追加し、docs\DefaultSearchTag.md の
+　　　各行から ID と Description（"親)親名 > 子)子名" 形式、NoURL行含む全件）を返すようにしました。
+　　- クライアント側では Description を " > " で分割し、親アイテムの見出し（グルーピング、同じ親は
+　　　ファイル内での出現順に関わらずまとめて表示）と、子アイテム（ニーモニック文字＋ラベル＋ID）の
+　　　一覧に変換して表示します（action-menu-* のスタイルを流用し、グループ見出し用に
+　　　.action-menu-group-header を追加）。
+　　- ↑↓キーでの選択移動、Enterでの決定、Escでのキャンセルに加え、Description中の「X)ラベル」の
+　　　先頭一文字（ニーモニック）を押すと、その子アイテムを選択と同時に即決定します。
+　　- 決定されると、選択アイテムのIDを用いて `[ID:]` をカーソル位置に挿入し、カーソルを `:` と `]` の
+　　　間（値を続けて入力できる位置）に移動してメニューを閉じます。
+　　実機検証（Vite+Expressのdevサーバー、Monacoエディタへの実キー入力）で、既存のurl/filepath/tag
+　　メニュー分岐が従来通り動作すること、非該当時に「タグ挿入」メニューが親グループ見出し付きで
+　　表示されること、先頭文字（例："b"→Bing）で即座に `[Bing:]` が挿入されカーソルが`:`と`]`の間に
+　　位置することを確認しました。
+
+　A（260813再構成）：260812版はフラットな一覧＋グループ見出しで、要求された menutree 型では
+　　なかったため、メニューを全面的に作り直しました（src\utils\tagInsertMenu.ts）。
+　　サーバーAPI（/api/system/search-tag-items）と、url/filepath/tag時の既存分岐は変更していません。
+　　- 構造：Description を ">" 区切りのパスとみなしてツリーを構築します（同一ラベルの親は1つに
+　　　集約。2階層固定ではなく任意段数に対応）。ルートには親アイテムのみが並び、末尾に "›" を
+　　　表示します。親を決定すると、その子メニューが Windows のコンテキストメニューと同様に
+　　　右側へフライアウトします（右端に収まらない場合は左側へ反転）。
+　　- スタイル：monaco の F1（Quick Input）ウィジェットに寄せ、対象エディタ上端の中央に配置します
+　　　（背景 #252734／1px #3c4048 ボーダー／角丸4px／ドロップシャドウ、選択行は #04395e）。
+　　　パネル最上部にメニュータイトル（今回は「タグ挿入」）を表示します。CSSは .tag-menu-* として
+　　　新設し、旧 .tag-insert-menu-container / .action-menu-group-header は廃止しました。
+　　- 操作：↑↓で選択、→またはEnterで子メニューを展開、←で1階層戻る、Escは子メニューが
+　　　開いていれば1階層戻り・ルートのみならキャンセル、葉でEnterすると決定します。
+　　　先頭一文字（ニーモニック）は、その階層で一致が1件なら選択と同時に決定（親なら展開）し、
+　　　複数一致する場合はWindowsのメニューと同様に候補間を巡回するだけに留めます
+　　　（例：「製薬」配下は P)Pubmed検索 と P)医薬品医療機器総合機構 が重複するため巡回）。
+　　　マウスでもホバーで選択・子メニュー展開、クリックで決定できます。
+　　- 決定時の挿入内容は260812版と同じく `[ID:]` で、カーソルは `:` と `]` の間に置きます。
+　　実機検証（Vite+Expressのdevサーバー）で、ルートが親8件（検索/辞書/場所/Media/科学/製薬/IT/Tag）
+　　のツリーになること、→での子メニューのフライアウト位置、←/Escでの階層戻り、ルートEscでの
+　　キャンセル、"g"→"y" の2階層ニーモニックで `[YahooTransfer:]` が挿入されカーソルが`:`と`]`の
+　　間に来ること、"p" 重複時は決定されず巡回しEnterで `[PMDA:]` が入ること、カーソルがタグ上に
+　　ある場合は従来通り既存のアクション選択メニューが出ることを確認しました。
 
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
 description:    カーソル位置のURLをブラウザで開く

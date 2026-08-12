@@ -195,7 +195,12 @@
       "Bash(curl -s -w \"\\\\nSTATUS=%{http_code}\\\\n\" http://localhost:18080/api/system/search-tags)",
       "Bash(taskkill //F //IM cloud-run-proxy.exe)",
       "Bash(nohup gcloud run services proxy ttweb --region=asia-northeast1 --project=thinktankweb-483408 --port=18081)",
-      "Bash(curl -s -w \"\\\\nSTATUS=%{http_code}\\\\n\" http://localhost:18081/api/system/search-tags)"
+      "Bash(curl -s -w \"\\\\nSTATUS=%{http_code}\\\\n\" http://localhost:18081/api/system/search-tags)",
+      "Bash(curl -s -o /dev/null -w \"5173=%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"5174=%{http_code}\\\\n\" http://localhost:5174/)",
+      "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 5173,8080 -ErrorAction SilentlyContinue | Select-Object LocalPort, OwningProcess | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{Port=$_.LocalPort; PID=$_.OwningProcess; Name=$p.ProcessName} })",
+      "PowerShell(Stop-Process -Id 19868,18228 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 5173,8080 -ErrorAction SilentlyContinue)"
     ]
   }
 }

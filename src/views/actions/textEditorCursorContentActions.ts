@@ -547,7 +547,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
             item.Result = 'エディタが見つかりません';
             return;
           }
-          return showTagInsertMenu().then(id => {
+          return showTagInsertMenu('タグ挿入', editor.getDomNode?.() ?? null).then(id => {
             if (!id) {
               item.Result = 'メニューの選択をキャンセルしました';
               return;
