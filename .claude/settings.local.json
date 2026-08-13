@@ -200,7 +200,12 @@
       "Bash(curl -s -o /dev/null -w \"5174=%{http_code}\\\\n\" http://localhost:5174/)",
       "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 5173,8080 -ErrorAction SilentlyContinue | Select-Object LocalPort, OwningProcess | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; [PSCustomObject]@{Port=$_.LocalPort; PID=$_.OwningProcess; Name=$p.ProcessName} })",
       "PowerShell(Stop-Process -Id 19868,18228 -Force -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 5173,8080 -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 5173,8080 -ErrorAction SilentlyContinue)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\n\" https://ttweb-lmhmpec7oa-an.a.run.app/)",
+      "Bash(curl -s -D - -o /dev/null https://ttweb-lmhmpec7oa-an.a.run.app/)",
+      "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:8080/api/system/search-tag-items)",
+      "Bash(curl -s http://localhost:8080/api/system/search-tag-items)",
+      "Bash(curl -s http://127.0.0.1:8080/api/system/search-tag-items -o tags.json -w \"status=%{http_code}\\\\n\")"
     ]
   }
 }

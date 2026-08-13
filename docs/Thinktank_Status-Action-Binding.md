@@ -832,6 +832,24 @@ Menuは、基本は↑↓キー、Enter、ESCで選択、決定、キャンセ�
 　　間に来ること、"p" 重複時は決定されず巡回しEnterで `[PMDA:]` が入ること、カーソルがタグ上に
 　　ある場合は従来通り既存のアクション選択メニューが出ることを確認しました。
 
+　A（260813修正・タグ挿入内容）：以下3点を修正しました。
+　　- Tag.AI の廃止：docs\DefaultSearchTag.md の `AI, "T)Tag > A)外部AI"` 行を（Mailと同じ方式で）
+　　　`##` でコメントアウトし、タグ挿入メニューの候補から外しました。メニューは
+　　　/api/system/search-tag-items 経由で同ファイルから組み立てているため、コード変更は不要です。
+　　　なお既存ノート中の `[ai:...]` タグを開く動作（DoOnCursorPos:AI:Open）は、過去の記述が
+　　　動かなくなるのを避けるため残しています（今回の指示はMenuの機能範囲のため）。
+　　- 挿入書式の個別指定：既定は従来通り `[ID:]` ですが、アンカー系はID名を含まない固定書式に
+　　　なるため、textEditorCursorContentActions.ts に TAG_INSERT_TEXT を追加しました。
+　　　　Jump（Tag.Anchor 8.1）      → `[:>]`
+　　　　Reference（Tag.Anchor 8.2） → `[:]`
+　　- カーソル位置：挿入後のカーソルは「閉じ括弧の直前」に置く1つの規則に統一しました。
+　　　これにより `[ID:]` は `:` の後ろ、`[:>]` は `>` の後ろ、`[:]` は `:` の後ろとなり、
+　　　3件とも指示どおりになります（計算式 startColumn + length - 1 は従来のまま）。
+　　実機検証で、Tag配下の候補が7件（Jump/参照先/QueryID/QueryTitle/QueryContent/ChatTitle検索/
+　　ChatContent検索）となり「外部AI」が消えていること、"t"→"j" で `[:>]` がカーソル `>` の直後
+　　（次文字が `]`）に、"t"→"r" で `[:]` がカーソル `:` の直後に挿入されること、通常タグ
+　　（"q"→"b"）は従来どおり `[Bing:]` でカーソルが `:` の直後になることを確認しました。
+
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
 description:    カーソル位置のURLをブラウザで開く
 key:            TextEditor.CurrentEditor.DoOnCursorPos:Url:Open

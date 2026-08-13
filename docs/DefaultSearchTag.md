@@ -64,8 +64,8 @@ ChatTitle,      "T)Tag > C)ChatTitle検索",      NoURL
 ## Tag.Chat             6.2 Thinktank>Think一覧のコンテンツ絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:>keywords]
 ChatContents,   "T)Tag > H)ChatContent検索",    NoURL
 
-## Tag.AI              外部AI(ai:GEMINI,CLAUDE,CHATGTP)へ接続し、sentenceで問い合わせるためのタグ        例：[ai:>] sentence
-AI,             "T)Tag > A)外部AI",             NoURL
+## Tag.AI（廃止）      外部AI(ai:GEMINI,CLAUDE,CHATGTP)へ接続し、sentenceで問い合わせるためのタグ        例：[ai:>] sentence
+## AI,             "T)Tag > A)外部AI",             NoURL
 
 
 ## Tag.Mail             5.1 特定mailを指定するタグ                                      例：[MAIL:ID]（アクション未実装）

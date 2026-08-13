@@ -22,6 +22,13 @@ let _searchTagCache: Record<string, string> | null = null;
 // 一覧の取得自体に失敗した場合の理由（「該当キーなし」と区別して表示するため）
 let _searchTagLoadError: string | null = null;
 
+// タグ挿入メニューで挿入する本文。既定は `[ID:]` だが、アンカー系はID名を含まない
+// 固定書式（docs/DefaultSearchTag.md の Tag.Anchor 8.1 / 8.2 の記法）になる。
+const TAG_INSERT_TEXT: Record<string, string> = {
+  Jump:      '[:>]', // 8.1 [:anchor] で始まる行へのジャンプ
+  Reference: '[:]',  // 8.2 anchorテキストのHighlighter設定
+};
+
 async function getSearchTags(): Promise<Record<string, string>> {
   if (_searchTagCache) return _searchTagCache;
   _searchTagLoadError = null;
@@ -553,9 +560,10 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
               return;
             }
             const sel = editor.getSelection();
-            const insertText = `[${id}:]`;
+            const insertText = TAG_INSERT_TEXT[id] ?? `[${id}:]`;
             editor.executeEdits('tag-insert-menu', [{ range: sel, text: insertText, forceMoveMarkers: true }]);
-            // カーソルを ':' と ']' の間（値を続けて入力できる位置）に移動する
+            // カーソルを閉じ括弧の直前（値を続けて入力できる位置）に移動する。
+            // [ID:] なら ':' の後ろ、[:>] なら '>' の後ろ、[:] なら ':' の後ろになる。
             editor.setPosition({
               lineNumber: sel.startLineNumber,
               column: sel.startColumn + insertText.length - 1,
