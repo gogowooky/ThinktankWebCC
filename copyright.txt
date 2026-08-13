@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.7",
+  "version": "1.4.8",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "3148651",
-  "commitDateTime": "2026-08-13-074219",
-  "commitMessage": "feat: タグ挿入メニューをmonaco F1風のツリー型メニューに再構成"
+  "commitId": "fcb6482",
+  "commitDateTime": "2026-08-13-115142",
+  "commitMessage": "feat: タグ挿入メニューのAI廃止とアンカー系タグの挿入書式を修正"
 }
