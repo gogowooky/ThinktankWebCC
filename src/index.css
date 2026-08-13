@@ -157,106 +157,16 @@ a {
   width: 100%;
 }
 
-/* ── アクション選択メニュー（DoOnCursorPos:Menu 用） ───────────────── */
-.action-menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 17, 26, 0.6);
-  backdrop-filter: blur(8px);
-  z-index: 99999;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  animation: fadeIn 0.15s ease-out;
-}
-
-.action-menu-container {
-  background: rgba(30, 32, 48, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  width: 500px;
-  max-width: 90%;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  padding: 16px;
-  backdrop-filter: blur(20px);
-  animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: 'Inter', system-ui, sans-serif;
-  color: var(--text-primary);
-}
-
-.action-menu-header {
-  font-size: 14px;
-  font-weight: 600;
-  margin-bottom: 12px;
-  color: var(--text-accent);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-}
-
-.action-menu-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.action-menu-item {
-  padding: 10px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  transition: background 0.1s ease, transform 0.1s ease;
-}
-
-.action-menu-item:hover,
-.action-menu-item.selected {
-  background: var(--bg-selected);
-  color: #fff;
-}
-
-.action-menu-item-title {
-  font-weight: 600;
-  font-size: 13px;
-}
-
-.action-menu-item-desc {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.action-menu-item:hover .action-menu-item-desc,
-.action-menu-item.selected .action-menu-item-desc {
-  color: #a9b1d6;
-}
-
-.action-menu-footer {
-  margin-top: 12px;
-  font-size: 10px;
-  color: var(--text-muted);
-  text-align: right;
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
-}
-
-/* ── タグ挿入メニュー（DoOnCursorPos:Menu、カーソル位置がurl/filepath/tagでない場合）──
+/* ── メニュー（DoOnCursorPos:Menu のアクション選択／タグ挿入で共用）──
    monaco の F1（Quick Input）ウィジェット風の見た目で、Windowsのコンテキストメニューと
-   同じくツリー（親→子のフライアウト）として表示する。 */
-.tag-menu-overlay {
+   同じくツリー（親→子のフライアウト）として表示する。実装は utils/monacoMenu.ts。 */
+.tt-menu-overlay {
   position: fixed;
   inset: 0;
   z-index: 99999;
 }
 
-.tag-menu-panel {
+.tt-menu-panel {
   position: absolute;
   width: 300px;
   background: #252734;
@@ -269,7 +179,7 @@ a {
   overflow: hidden;
 }
 
-.tag-menu-title {
+.tt-menu-title {
   padding: 6px 10px 8px;
   margin-bottom: 4px;
   font-size: 12px;
@@ -278,12 +188,12 @@ a {
   border-bottom: 1px solid #3c4048;
 }
 
-.tag-menu-list {
+.tt-menu-list {
   max-height: 420px;
   overflow-y: auto;
 }
 
-.tag-menu-row {
+.tt-menu-row {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -294,12 +204,12 @@ a {
   white-space: nowrap;
 }
 
-.tag-menu-row.is-selected {
+.tt-menu-row.is-selected {
   background: #04395e;
   color: #fff;
 }
 
-.tag-menu-row__key {
+.tt-menu-row__key {
   flex: 0 0 12px;
   text-align: center;
   font-weight: 600;
@@ -307,49 +217,40 @@ a {
   color: var(--text-highlight);
 }
 
-.tag-menu-row.is-selected .tag-menu-row__key {
+.tt-menu-row.is-selected .tt-menu-row__key {
   color: #ffd79b;
 }
 
-.tag-menu-row__label {
+.tt-menu-row__label {
   flex: 1 1 auto;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.tag-menu-row__id {
+.tt-menu-row__detail {
   flex: 0 0 auto;
   font-size: 10px;
   color: var(--text-muted);
 }
 
-.tag-menu-row.is-selected .tag-menu-row__id {
+.tt-menu-row.is-selected .tt-menu-row__detail {
   color: #a9b1d6;
 }
 
-.tag-menu-row__arrow {
+.tt-menu-row__arrow {
   flex: 0 0 auto;
   font-size: 14px;
   color: var(--text-muted);
 }
 
-.tag-menu-row.is-selected .tag-menu-row__arrow {
+.tt-menu-row.is-selected .tt-menu-row__arrow {
   color: #fff;
 }
 
-.tag-menu-message {
+.tt-menu-message {
   padding: 6px 10px;
   font-size: 12px;
   color: var(--text-muted);
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes scaleIn {
-  from { transform: scale(0.96); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
 

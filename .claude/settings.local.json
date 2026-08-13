@@ -205,7 +205,8 @@
       "Bash(curl -s -D - -o /dev/null https://ttweb-lmhmpec7oa-an.a.run.app/)",
       "Bash(curl -s -o /dev/null -w \"status=%{http_code}\\\\n\" http://localhost:8080/api/system/search-tag-items)",
       "Bash(curl -s http://localhost:8080/api/system/search-tag-items)",
-      "Bash(curl -s http://127.0.0.1:8080/api/system/search-tag-items -o tags.json -w \"status=%{http_code}\\\\n\")"
+      "Bash(curl -s http://127.0.0.1:8080/api/system/search-tag-items -o tags.json -w \"status=%{http_code}\\\\n\")",
+      "PowerShell($c = Get-NetTCPConnection -State Listen -LocalPort 8080,5173 -ErrorAction SilentlyContinue; if \\($c\\) { $c | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; \"$\\($_.LocalPort\\) PID=$\\($_.OwningProcess\\) $\\($p.ProcessName\\)\" } } else { \"free\" })"
     ]
   }
 }

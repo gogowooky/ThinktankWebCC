@@ -12,7 +12,7 @@ import type { ActionID, TTActionItem } from '../TTAction';
 import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { TTUIStateManager } from '../TTUIStateManager';
-import { showActionMenu } from '../../utils/actionMenu';
+import { showMonacoMenu } from '../../utils/monacoMenu';
 import { showTagInsertMenu } from '../../utils/tagInsertMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { apiFetch } from '../../services/apiClient';
@@ -600,7 +600,34 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           return;
         }
 
-        return showActionMenu(`${typeLabel}の選択: [${text}]`, targetActions, item);
+        // タグ挿入メニューと同じ monaco F1 風メニューで選択させる。
+        // ニーモニックはアクションID末尾（Open 等）の先頭一文字。
+        const actionNodes = targetActions.map(act => {
+          const shortName = act.ActionID.split(':').pop() ?? act.ActionID;
+          return {
+            key:    shortName.charAt(0),
+            label:  act.Description || act.ActionID,
+            detail: shortName,
+            value:  act.ActionID,
+          };
+        });
+
+        const editor = TTShortcutManager.instance.activeEditor;
+        return showMonacoMenu({
+          title:  `${typeLabel}: ${text}`,
+          nodes:  actionNodes,
+          anchor: editor?.getDomNode?.() ?? null,
+        }).then(actionId => {
+          if (!actionId) {
+            item.Result = 'メニューの選択をキャンセルしました';
+            return;
+          }
+          const res = TTActions.Execute(actionId, item.Mods);
+          if (res instanceof Promise) {
+            return res.then(subItem => { item.Result = subItem.Result; });
+          }
+          item.Result = res.Result;
+        });
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
       }

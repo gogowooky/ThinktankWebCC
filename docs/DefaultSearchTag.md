@@ -46,26 +46,23 @@ YahooTransfer,  "G)場所 > Y)Yahoo乗換案内",     NoURL
 ## Tag.Anchor           8.1 ファイル内で[:anchor]で始まる行に飛ぶためのタグ             例：[:>anchor]
 Jump,           "T)Tag > J)Jump",               NoURL
 
-##                      8.2 anchorテキストをHighlighterとして設定するためのタグ         例：[:anchor]
+## Tag.Reference　      8.2 anchorテキストをHighlighterとして設定するためのタグ         例：[:anchor]
 Reference,      "T)Tag > R)参照先",             NoURL
 
 ## Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用)
 ThinkID,        "T)Tag > I)QueryID",            NoURL
 
-##                      4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)
+## Tag.ThinkTitle       4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)
 ThinkTitle,     "T)Tag > T)QueryTitle",         NoURL
 
-##                      4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)
+## Tag.ThinkContents    4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)
 ThinkContents,  "T)Tag > K)QueryContent",       NoURL
 
-## Tag.Chat             6.1 Thinktank>Think一覧でタイトル絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:keywords]
+## Tag.ChatTitle        6.1 Thinktank>Think一覧でタイトル絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:keywords]
 ChatTitle,      "T)Tag > C)ChatTitle検索",      NoURL
 
-## Tag.Chat             6.2 Thinktank>Think一覧のコンテンツ絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:>keywords]
+## Tag.ChatContents     6.2 Thinktank>Think一覧のコンテンツ絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:>keywords]
 ChatContents,   "T)Tag > H)ChatContent検索",    NoURL
-
-## Tag.AI（廃止）      外部AI(ai:GEMINI,CLAUDE,CHATGTP)へ接続し、sentenceで問い合わせるためのタグ        例：[ai:>] sentence
-## AI,             "T)Tag > A)外部AI",             NoURL
 
 
 ## Tag.Mail             5.1 特定mailを指定するタグ                                      例：[MAIL:ID]（アクション未実装）
