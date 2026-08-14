@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.10",
+  "version": "1.4.11",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "1334db5",
-  "commitDateTime": "2026-08-14-112835",
-  "commitMessage": "chore: Bashコマンド許可リストにポート確認用コマンドを追加"
+  "commitId": "b91a442",
+  "commitDateTime": "2026-08-14-125741",
+  "commitMessage": "feat: WorkoutPanel.FocusedPane.FileHistory:Next / :Prev を実装"
 }
