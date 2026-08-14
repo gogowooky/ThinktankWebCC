@@ -86,6 +86,9 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
 
 # Editor カーソル アクション文字
+*TextEditor ,       ,Shift+Alt+Backspace    ,WorkoutPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を次に移動
+*TextEditor ,       ,Alt+Backspace          ,WorkoutPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を前に移動
+
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
 *TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
 *TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動

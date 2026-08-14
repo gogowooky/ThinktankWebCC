@@ -81,7 +81,7 @@ export class TTWorkoutArea extends TTUIItem {
     return entry;
   }
 
-  /** Loadされたファイルを履歴末尾に追加し、HistoryPos を末尾に合わせる */
+  /** Loadされたファイルを HistoryPos の次に追加し、以降の履歴を破棄する */
   private _pushHistory(resourceId: string, mediaType: MediaType, title: string): void {
     if (!resourceId) return;
 
@@ -93,7 +93,9 @@ export class TTWorkoutArea extends TTUIItem {
       return;
     }
 
-    this.FileHistory = [...this.FileHistory, { id: resourceId, mediaType, title }];
+    // 履歴を戻った状態（HistoryPos < HistoryMax）での新規Loadは、
+    // HistoryPos の次に追加して HistoryMax をそこまで切り詰める
+    this.FileHistory = [...this.FileHistory.slice(0, this.HistoryPos), { id: resourceId, mediaType, title }];
     // 上限超過時は先頭を捨てて末尾に詰める（HistoryPos/HistoryMax は上限値のまま）
     if (this.FileHistory.length > FILE_HISTORY_MAX) {
       this.FileHistory = this.FileHistory.slice(this.FileHistory.length - FILE_HISTORY_MAX);

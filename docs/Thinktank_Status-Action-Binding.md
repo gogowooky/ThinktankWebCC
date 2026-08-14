@@ -31,6 +31,9 @@
 　　- 1件目のLoadでHistoryPos/HistoryMaxが1になり、以降のLoadで末尾に追加して+1します。
 　　- 31件目のLoadでは先頭を捨てて末尾に詰め（2-30→1-29、30番目に新ID）、
 　　　HistoryPos/HistoryMaxは30のままとします。
+　　- （260814修正）履歴を戻った状態（HistoryPos < HistoryMax）で新しいファイルを
+　　　Loadした場合は、HistoryPos+1 の位置に新IDを記録し、HistoryMax をその値まで
+　　　切り詰めます（それ以降の履歴は破棄。ブラウザの戻る/進むと同じ挙動）。
 　　- 履歴エントリにはIDに加えLoad時点のMediaType・タイトルも保持し、履歴移動時に
 　　　当時の表示形式のまま復元します。
 　　- 同一ファイルの再Load（既にその位置で開いているファイルのLoad）では履歴を増やさず、
@@ -44,6 +47,8 @@
 　　各位置のファイルがLoadされること、HistoryPos=1でそれ以上戻らないこと、35件Load時に
 　　履歴が30件へスライドしHistoryPos/HistoryMaxが30に留まること、ExApp+Eで実行されることを
 　　確認しました。
+　　5件Load→3回戻る（pos=2/5）→新規Loadで pos=3/3・履歴が3件へ切り詰められることも
+　　確認済みです。
 
 ## 実装：　260814　WorkoutPanel.FocusedPane.FileHistory:Prev
 
