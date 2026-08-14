@@ -18,8 +18,8 @@ Keyboard Shortcuts
 *           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
 *           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
-*           ,ExApp  ,E                  ,WorkoutPanel.FocusedPane.FileHistory:Next      ,ペインのファイル履歴を1つ前に戻る
-*           ,ExApp  ,R                  ,WorkoutPanel.FocusedPane.FileHistory:Prev      ,ペインのファイル履歴を1つ後に進む
+*           ,ExApp  ,E                  ,WorkoutPanel.FocusedPane.FileHistory:Next      ,ペインのファイル履歴を1つ後に進む
+*           ,ExApp  ,R                  ,WorkoutPanel.FocusedPane.FileHistory:Prev      ,ペインのファイル履歴を1つ前に戻る
 
 # Panel>Think一覧 カーソル
 Thinktank.Filter,   ,Alt+P                  ,Thinktank.Filter.CursorPos:PrevLine        ,Thinktank>Think一覧のカーソルを上に移動する
@@ -86,8 +86,8 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
 
 # Editor カーソル アクション文字
-*TextEditor ,       ,Shift+Alt+Backspace    ,WorkoutPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を次に移動
-*TextEditor ,       ,Alt+Backspace          ,WorkoutPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を前に移動
+*TextEditor ,       ,Shift+Alt+Backspace    ,WorkoutPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
+*TextEditor ,       ,Alt+Backspace          ,WorkoutPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を1つ前に戻る
 *TextEditor ,       ,Ctrl+Alt+Backspace     ,WorkoutPanel.FocusedPane.FileHistory:Menu          ,ファイル履歴をメニューで表示
 
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
