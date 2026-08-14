@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.14",
+  "version": "1.4.15",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "cea8e56",
-  "commitDateTime": "2026-08-14-140321",
-  "commitMessage": "fix: FileHistory:Next / :Prev の動作を入れ替え"
+  "commitId": "5c14676",
+  "commitDateTime": "2026-08-14-150102",
+  "commitMessage": "feat: Markdown表示に見出し単位の折り畳みを追加"
 }
