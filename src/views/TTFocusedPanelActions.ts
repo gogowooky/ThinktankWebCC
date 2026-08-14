@@ -387,6 +387,48 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // ── Pane毎のLoadファイル履歴 ───────────────────────────────────────────
+  /** フォーカスされているPane（WorkoutArea）を返す */
+  const focusedArea = () => {
+    const id = app.WorkoutPanel.FocusedAreaId;
+    return id ? (app.WorkoutPanel.GetArea(id) ?? null) : null;
+  };
+
+  const notifyFileHistory = (): void => {
+    TTUIStateManager.instance.notifyConstPropertyChanged('WorkoutPanel.FocusedPane.FileHistory');
+    TTUIStateManager.instance.notifyConstPropertyChanged('WorkoutPanel.FocusedPane.FileHistoryPos');
+    TTUIStateManager.instance.notifyConstPropertyChanged('WorkoutPanel.FocusedPane.FileHistoryMax');
+  };
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.FileHistory:Next',
+    Description: 'フォーカスペインのファイル履歴を1つ前の位置に戻す',
+    Completion: (item) => {
+      const area = focusedArea();
+      if (!area) { item.Result = '[対象Paneなし]'; return; }
+      if (area.HistoryPos <= 1) { item.Result = '[履歴の先頭]'; return; }
+      const entry = area.LoadHistoryAt(area.HistoryPos - 1);
+      if (!entry) { item.Result = '[履歴なし]'; return; }
+      notifyFileHistory();
+      item.Result = `履歴 ${area.HistoryPos}/${area.HistoryMax}: ${entry.title || entry.id}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.FileHistory:Prev',
+    Description: 'フォーカスペインのファイル履歴を1つ後の位置に進める',
+    Completion: (item) => {
+      const area = focusedArea();
+      if (!area) { item.Result = '[対象Paneなし]'; return; }
+      // 末尾位置には進む先のIDが無いため、HistoryMaxが上限(30)か否かに関わらずロードしない
+      if (area.HistoryPos >= area.HistoryMax) { item.Result = '[履歴の末尾]'; return; }
+      const entry = area.LoadHistoryAt(area.HistoryPos + 1);
+      if (!entry) { item.Result = '[履歴なし]'; return; }
+      notifyFileHistory();
+      item.Result = `履歴 ${area.HistoryPos}/${area.HistoryMax}: ${entry.title || entry.id}`;
+    },
+  });
+
   TTActions.Register({
     ActionID: 'WorkoutPanel.FocusedPane.Mode:Next',
     Description: 'フォーカスペインの表示モードを次に切り替える',

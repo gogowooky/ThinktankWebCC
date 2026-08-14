@@ -103,6 +103,9 @@ export type ConfigKey =
   | 'WorkoutPanel.FocusedPane.ID'
   | 'WorkoutPanel.FocusedPane.PaneNumber'
   | 'WorkoutPanel.FocusedPane.Mode'
+  | 'WorkoutPanel.FocusedPane.FileHistory'
+  | 'WorkoutPanel.FocusedPane.FileHistoryPos'
+  | 'WorkoutPanel.FocusedPane.FileHistoryMax'
   | 'WorkoutPanel.DroppedFile.ID'
   | 'WorkoutPanel.Pane.Layout'
   | 'WorkoutPanel.Pane.Display'
@@ -186,6 +189,12 @@ function getFocusedPaneAllowedModes(app: TTApplication): string[] {
   };
   const allowed = mapping[think.ContentType] || ['texteditor', 'markdown'];
   return allowed.map(m => capitalize(m));
+}
+
+/** フォーカスされているPane（WorkoutArea）を返す */
+function getFocusedArea(app: TTApplication): TTWorkoutArea | null {
+  const id = app.WorkoutPanel.FocusedAreaId;
+  return id ? (app.WorkoutPanel.GetArea(id) ?? null) : null;
 }
 
 const PROP_SPECS: Record<ConfigKey, PropSpec> = {
@@ -1005,6 +1014,30 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
         }
       }
     },
+  },
+  'WorkoutPanel.FocusedPane.FileHistory': {
+    panel: 'WorkoutPanel',
+    default: '', type: 'string', candidates: '.*',
+    description: 'フォーカスがあるペインのLoadファイル履歴（古い順・最大30件のCSV）',
+    isConst: true,
+    get: (app) => getFocusedArea(app)?.FileHistory.map(h => h.id).join(',') ?? '',
+    set: () => {},
+  },
+  'WorkoutPanel.FocusedPane.FileHistoryPos': {
+    panel: 'WorkoutPanel',
+    default: '0', type: 'string', candidates: '^[0-9]+$',
+    description: 'フォーカスがあるペインのファイル履歴の現在位置（1始まり。0=履歴なし）',
+    isConst: true,
+    get: (app) => String(getFocusedArea(app)?.HistoryPos ?? 0),
+    set: () => {},
+  },
+  'WorkoutPanel.FocusedPane.FileHistoryMax': {
+    panel: 'WorkoutPanel',
+    default: '0', type: 'string', candidates: '^[0-9]+$',
+    description: 'フォーカスがあるペインのファイル履歴の件数（最大30）',
+    isConst: true,
+    get: (app) => String(getFocusedArea(app)?.HistoryMax ?? 0),
+    set: () => {},
   },
   'WorkoutPanel.DroppedFile.ID': {
     panel: 'WorkoutPanel',

@@ -18,6 +18,9 @@ Keyboard Shortcuts
 *           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
 *           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
+*           ,ExApp  ,E                  ,WorkoutPanel.FocusedPane.FileHistory:Next      ,ペインのファイル履歴を1つ前に戻る
+*           ,ExApp  ,R                  ,WorkoutPanel.FocusedPane.FileHistory:Prev      ,ペインのファイル履歴を1つ後に進む
+
 # Panel>Think一覧 カーソル
 Thinktank.Filter,   ,Alt+P                  ,Thinktank.Filter.CursorPos:PrevLine        ,Thinktank>Think一覧のカーソルを上に移動する
 Thinktank.Filter,   ,Alt+N                  ,Thinktank.Filter.CursorPos:NextLine        ,Thinktank>Think一覧のカーソルを下に移動する
