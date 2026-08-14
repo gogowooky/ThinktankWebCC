@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.9",
+  "version": "1.4.10",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "11b4f81",
-  "commitDateTime": "2026-08-13-201006",
-  "commitMessage": "refactor: アクション選択メニューをタグ挿入と同じmonaco F1風スタイルに統一"
+  "commitPC": "VENENO-02",
+  "commitId": "1334db5",
+  "commitDateTime": "2026-08-14-112835",
+  "commitMessage": "chore: Bashコマンド許可リストにポート確認用コマンドを追加"
 }
