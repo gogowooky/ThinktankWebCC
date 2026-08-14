@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.12",
+  "version": "1.4.13",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "VENENO-02",
-  "commitId": "869f764",
-  "commitDateTime": "2026-08-14-130801",
-  "commitMessage": "fix: 履歴を戻った状態での新規Loadは以降の履歴を切り詰める"
+  "commitId": "366baf7",
+  "commitDateTime": "2026-08-14-133817",
+  "commitMessage": "feat: WorkoutPanel.FocusedPane.FileHistory:Menu を実装"
 }
