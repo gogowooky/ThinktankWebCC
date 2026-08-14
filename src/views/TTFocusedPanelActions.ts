@@ -15,6 +15,7 @@ import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import { apiFetch } from '../services/apiClient';
+import { showMonacoMenu } from '../utils/monacoMenu';
 import { collectAreaIds } from './TTWorkoutPanel';
 import { registerTextEditorDateActions } from './actions/textEditorDateActions';
 import { registerTextEditorBulletActions, registerTextEditorCommentActions } from './actions/textEditorStyleActions';
@@ -426,6 +427,36 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       if (!entry) { item.Result = '[履歴なし]'; return; }
       notifyFileHistory();
       item.Result = `履歴 ${area.HistoryPos}/${area.HistoryMax}: ${entry.title || entry.id}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkoutPanel.FocusedPane.FileHistory:Menu',
+    Description: 'フォーカスペインのファイル履歴をメニューで表示して選択する',
+    Completion: (item) => {
+      const area = focusedArea();
+      if (!area) { item.Result = '[対象Paneなし]'; return; }
+      if (area.HistoryMax === 0) { item.Result = '[履歴なし]'; return; }
+
+      // 古いもの順（履歴の並び順そのまま）。1〜9番目はニーモニック（数字キー）で直接決定できる
+      const nodes = area.FileHistory.map((entry, idx) => {
+        const pos = idx + 1;
+        return {
+          key:    String(pos),
+          label:  `${pos === area.HistoryPos ? '● ' : ''}${entry.title || entry.id}`,
+          detail: entry.id,
+          value:  String(pos),
+        };
+      });
+
+      const anchor = document.querySelector<HTMLElement>(`.workout-area[data-area-id="${area.ID}"]`);
+      return showMonacoMenu({ title: 'ファイル履歴', nodes, anchor }).then(value => {
+        if (!value) { item.Result = 'メニューの選択をキャンセルしました'; return; }
+        const entry = area.LoadHistoryAt(Number(value));
+        if (!entry) { item.Result = '[履歴なし]'; return; }
+        notifyFileHistory();
+        item.Result = `履歴 ${area.HistoryPos}/${area.HistoryMax}: ${entry.title || entry.id}`;
+      });
     },
   });
 

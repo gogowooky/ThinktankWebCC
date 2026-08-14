@@ -15,58 +15,6 @@
 
 # Action
 
-## 実装：　260814　WorkoutPanel.FocusedPane.FileHistory:Next
-　Workoutパネルに表示されているPane毎に、最大30個までのLoadファイルの履歴リストを設定し、以下ルールで運用してください。
-　1. 最初のファイルがLoadされると、ファイル履歴にIDを記録し、HistoryPosとHistoryMaxを1にします。
-　2. 次のファイルがLoadされると、ファイル履歴にIDを追加し、HistoryPosとHistoryMaxを+1します。
-　3. HistoryMaxが31に達した場合は、履歴の2-30を1-29にスライドし、30番目に新しいIDを追加し、HistoryPosとHistoryMaxは30のままにしてください。
-
-　このActionは、フォーカスのあるPaneのファイル履歴において、HistoryPosのみを-1し、その位置のIDをLoadします。　HistoryPosが1のときは何もロードしません。
-
-　A（260814実装）：履歴の実体は Pane（TTWorkoutArea）ごとの FileHistory / HistoryPos として
-　　src\views\TTWorkoutArea.ts に持たせました。HistoryMax は FileHistory の件数から求まる
-　　派生値（getter）です。履歴への記録は TTWorkoutArea.OpenThink()（＝Paneへのファイル
-　　Loadが必ず通る唯一の入口）で行うため、Think一覧からのオープン・D&D・タグからのジャンプ・
-　　起動時のPane復元など、経路によらず同じルールで記録されます。
-　　- 1件目のLoadでHistoryPos/HistoryMaxが1になり、以降のLoadで末尾に追加して+1します。
-　　- 31件目のLoadでは先頭を捨てて末尾に詰め（2-30→1-29、30番目に新ID）、
-　　　HistoryPos/HistoryMaxは30のままとします。
-　　- （260814修正）履歴を戻った状態（HistoryPos < HistoryMax）で新しいファイルを
-　　　Loadした場合は、HistoryPos+1 の位置に新IDを記録し、HistoryMax をその値まで
-　　　切り詰めます（それ以降の履歴は破棄。ブラウザの戻る/進むと同じ挙動）。
-　　- 履歴エントリにはIDに加えLoad時点のMediaType・タイトルも保持し、履歴移動時に
-　　　当時の表示形式のまま復元します。
-　　- 同一ファイルの再Load（既にその位置で開いているファイルのLoad）では履歴を増やさず、
-　　　MediaType・タイトルのみ最新化します（連続重複の抑止。仕様に明記のない点の補完）。
-　　本ActionはフォーカスPaneのHistoryPosを-1して、その位置のIDをLoadします。
-　　HistoryPosが1のときは何もロードしません（履歴移動によるLoadは履歴に記録しません）。
-　　Status（読み取り専用）として WorkoutPanel.FocusedPane.FileHistory（IDのCSV）／
-　　FileHistoryPos／FileHistoryMax の3つを TTUIStateManager に登録しました。
-　　キー割当は docs\Shortcut.md に ExApp+E（Next）／ExApp+R（Prev）を追加しました。
-　　実機検証（Vite+Expressのdevサーバー）で、4件Load後のNextで 4→3→2→1 と位置が下がり
-　　各位置のファイルがLoadされること、HistoryPos=1でそれ以上戻らないこと、35件Load時に
-　　履歴が30件へスライドしHistoryPos/HistoryMaxが30に留まること、ExApp+Eで実行されることを
-　　確認しました。
-　　5件Load→3回戻る（pos=2/5）→新規Loadで pos=3/3・履歴が3件へ切り詰められることも
-　　確認済みです。
-
-## 実装：　260814　WorkoutPanel.FocusedPane.FileHistory:Prev
-
-　このActionは、フォーカスのあるPaneのファイル履歴において、
-　　HistoryPos < HistoryMaxのときは、HistoryPosのみを+1し、
-　　HistoryPos = HistoryMaxのときは、HistoryPosとHistoryMaxを+1し、
-　その位置のIDをLoadします。　HistoryMaxが30のときは何もロードしません。
-
-　A（260814実装）：HistoryPos < HistoryMax のときにHistoryPosを+1し、その位置のIDを
-　　Loadします（履歴には記録しません）。
-　　なお HistoryPos = HistoryMax のケースは、記載どおりHistoryPos/HistoryMaxを+1しても
-　　その位置（末尾の次）に対応するIDが履歴に存在せずLoadできないため、HistoryMaxが30か
-　　否かに関わらず「何もロードしない」実装としました。仕様のご意図が別にある場合は
-　　ご指示ください。
-　　実機検証で、Nextで戻した位置からPrevで 1件ずつ進み末尾（HistoryPos=HistoryMax）で
-　　停止すること、ExApp+Rで実行されることを確認しました。
-
-
 ## 完了：　Application.Resource.ImportFromLocal
 ## 完了：　260814　ToolBar.CurrentMode.Text:Focus
 　ToolBarの現在のモードの入力欄にフォーカスする
@@ -80,6 +28,30 @@ key:            ToolBar.CurrentMode.Text:Focus
 　　.ApplicationStatusBarArea__status-panel-container を起点に、input化済みなら
 　　inputへ、未input化ならlabel（tabIndex）へフォーカスする分岐が既に実装されており、
 　　「StatusModeの時は」の懸念点は解消済みと確認しました。コード変更なし。
+
+## 実装：　260814　WorkoutPanel.FocusedPane.FileHistory:Menu
+　フォーカスのあるPaneのファイル履歴を古いもの順でメニューに表示し、上下キーとEnterで選択する
+　メニューのスタイルは TextEditor.CurrentEditor.DoOnCursorPos:Menu と同じにしてください。
+
+　A（260814実装）：TTFocusedPanelActions.ts に登録しました。メニューの描画・操作は
+　　DoOnCursorPos:Menu と共通の src\utils\monacoMenu.ts（showMonacoMenu / monaco F1風）を
+　　そのまま使うため、スタイル・キー操作は完全に同一です。
+　　- 並び順は履歴の並びそのまま（＝古いもの順）で、1行に「位置番号／タイトル（無ければID）／
+　　　ID」を表示します。現在位置（HistoryPos）の行には先頭に ● を付けます。
+　　- ↑↓で選択、Enterで決定してその位置のファイルをLoadします（LoadHistoryAt。履歴移動なので
+　　　履歴自体は増えません）。Escでキャンセル、1〜9はニーモニック（数字キー）で即決定できます。
+　　- メニューはフォーカスPane（.workout-area[data-area-id]）の上端中央に表示します。
+　　- Paneが無い場合は[対象Paneなし]、履歴が0件の場合は[履歴なし]としてメニューを出しません。
+　　キー割当は docs\Shortcut.md に *TextEditor の Ctrl+Alt+Backspace を追加しました
+　　（既存の Alt+Backspace＝Prev / Shift+Alt+Backspace＝Next と揃えています）。
+　　実機検証（Vite+Expressのdevサーバー）で、4件の履歴が古い順に並びタイトル「ファイル履歴」で
+　　表示されること、現在位置に●が付くこと、↑↓で選択が動きEnterでその位置のファイルがLoadされ
+　　HistoryPosが移動すること（履歴件数は不変）、Escでキャンセルされ位置が変わらないこと、
+　　数字キー4で4番目が即決定されることを確認しました。
+　　なお本検証環境のプレビューは document.visibilityState が hidden で requestAnimationFrame が
+　　発火しないため、フォーカス判定（focusin→rAF）に依存する *TextEditor 限定のキー割当だけは
+　　実キー入力での確認ができていません（アクション本体はショートカットと同じ TTActions.Execute
+　　経路で検証済みです）。
 
 # Status
 
@@ -891,6 +863,56 @@ key:            TextEditor.EditText.Backspace
 
 
 # TextEditor Action ================================================================================================
+## Action：　260814　WorkoutPanel.FocusedPane.FileHistory:Next
+　Workoutパネルに表示されているPane毎に、最大30個までのLoadファイルの履歴リストを設定し、以下ルールで運用してください。
+　1. 最初のファイルがLoadされると、ファイル履歴にIDを記録し、HistoryPosとHistoryMaxを1にします。
+　2. 次のファイルがLoadされると、ファイル履歴にIDを追加し、HistoryPosとHistoryMaxを+1します。
+　3. HistoryMaxが31に達した場合は、履歴の2-30を1-29にスライドし、30番目に新しいIDを追加し、HistoryPosとHistoryMaxは30のままにしてください。
+
+　このActionは、フォーカスのあるPaneのファイル履歴において、HistoryPosのみを-1し、その位置のIDをLoadします。　HistoryPosが1のときは何もロードしません。
+
+### A（260814実装）：履歴の実体は Pane（TTWorkoutArea）ごとの FileHistory / HistoryPos として
+　　src\views\TTWorkoutArea.ts に持たせました。HistoryMax は FileHistory の件数から求まる
+　　派生値（getter）です。履歴への記録は TTWorkoutArea.OpenThink()（＝Paneへのファイル
+　　Loadが必ず通る唯一の入口）で行うため、Think一覧からのオープン・D&D・タグからのジャンプ・
+　　起動時のPane復元など、経路によらず同じルールで記録されます。
+　　- 1件目のLoadでHistoryPos/HistoryMaxが1になり、以降のLoadで末尾に追加して+1します。
+　　- 31件目のLoadでは先頭を捨てて末尾に詰め（2-30→1-29、30番目に新ID）、
+　　　HistoryPos/HistoryMaxは30のままとします。
+　　- （260814修正）履歴を戻った状態（HistoryPos < HistoryMax）で新しいファイルを
+　　　Loadした場合は、HistoryPos+1 の位置に新IDを記録し、HistoryMax をその値まで
+　　　切り詰めます（それ以降の履歴は破棄。ブラウザの戻る/進むと同じ挙動）。
+　　- 履歴エントリにはIDに加えLoad時点のMediaType・タイトルも保持し、履歴移動時に
+　　　当時の表示形式のまま復元します。
+　　- 同一ファイルの再Load（既にその位置で開いているファイルのLoad）では履歴を増やさず、
+　　　MediaType・タイトルのみ最新化します（連続重複の抑止。仕様に明記のない点の補完）。
+　　本ActionはフォーカスPaneのHistoryPosを-1して、その位置のIDをLoadします。
+　　HistoryPosが1のときは何もロードしません（履歴移動によるLoadは履歴に記録しません）。
+　　Status（読み取り専用）として WorkoutPanel.FocusedPane.FileHistory（IDのCSV）／
+　　FileHistoryPos／FileHistoryMax の3つを TTUIStateManager に登録しました。
+　　キー割当は docs\Shortcut.md に ExApp+E（Next）／ExApp+R（Prev）を追加しました。
+　　実機検証（Vite+Expressのdevサーバー）で、4件Load後のNextで 4→3→2→1 と位置が下がり
+　　各位置のファイルがLoadされること、HistoryPos=1でそれ以上戻らないこと、35件Load時に
+　　履歴が30件へスライドしHistoryPos/HistoryMaxが30に留まること、ExApp+Eで実行されることを
+　　確認しました。
+　　5件Load→3回戻る（pos=2/5）→新規Loadで pos=3/3・履歴が3件へ切り詰められることも
+　　確認済みです。
+## Action：　260814　WorkoutPanel.FocusedPane.FileHistory:Prev
+
+　このActionは、フォーカスのあるPaneのファイル履歴において、
+　　HistoryPos < HistoryMaxのときは、HistoryPosのみを+1し、
+　　HistoryPos = HistoryMaxのときは、HistoryPosとHistoryMaxを+1し、
+　その位置のIDをLoadします。　HistoryMaxが30のときは何もロードしません。
+
+　A（260814実装）：HistoryPos < HistoryMax のときにHistoryPosを+1し、その位置のIDを
+　　Loadします（履歴には記録しません）。
+　　なお HistoryPos = HistoryMax のケースは、記載どおりHistoryPos/HistoryMaxを+1しても
+　　その位置（末尾の次）に対応するIDが履歴に存在せずLoadできないため、HistoryMaxが30か
+　　否かに関わらず「何もロードしない」実装としました。仕様のご意図が別にある場合は
+　　ご指示ください。
+　　実機検証で、Nextで戻した位置からPrevで 1件ずつ進み末尾（HistoryPos=HistoryMax）で
+　　停止すること、ExApp+Rで実行されることを確認しました。
+
 ## Action：　260813　TextEditor.CurrentEditor.DoOnCursorPos:Menu
 description:    カーソル位置のテキスト種別に応じたアクションメニューを表示する
 key:            TextEditor.CurrentEditor.DoOnCursorPos:Menu
