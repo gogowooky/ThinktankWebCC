@@ -34,6 +34,7 @@ import type { FilterVisibility } from './FilterSelectDialog';
 import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
 import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_THINKTANK } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
+import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './ThinktankArea.css';
 
 import type { LayoutMode } from '../Layout/AppLayout';
@@ -414,6 +415,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (!q) return;
+    addContentSearchKeywordToHighlighter(q);
     setSearchLoading(true);
     try {
       const metas = await StorageManager.instance.search(q);
@@ -447,6 +449,13 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       handleSearch();
     }
   }, [searchQuery, handleSearch]);
+
+  // タイトル絞り込み実行（Enter確定時）
+  const handleTitleFilterSearch = useCallback(() => {
+    const q = filterTitleQuery.trim();
+    if (!q) return;
+    addTitleSearchKeywordToHighlighter(q);
+  }, [filterTitleQuery]);
 
   // ── モード別コンテンツ ───────────────────────────────────────────────────
 
@@ -566,6 +575,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
             historyKey="tt-filter"
             textValue={filterTitleQuery}
             onTextChange={setFilterTitleQuery}
+            onSearch={handleTitleFilterSearch}
             createdDate={createdDate}
             onCreatedDateChange={setCreatedDate}
             createdRange={createdRange}

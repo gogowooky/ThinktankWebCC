@@ -648,6 +648,20 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.WorkoutPanel.HighlightWord || '',
     set: (app, v) => { app.WorkoutPanel.HighlightWord = v; },
   },
+  'ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag': {
+    panel: 'WorkoutPanel',
+    default: 'true', type: 'boolean', candidates: '^(true|false)$',
+    description: 'コンテンツで絞込みのキーワードをハイライトする',
+    get: (app) => String(app.WorkoutPanel.AddContentSearchKeywordFlag),
+    set: (app, v) => { app.WorkoutPanel.AddContentSearchKeywordFlag = parseBool(v, app.WorkoutPanel.AddContentSearchKeywordFlag); },
+  },
+  'ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag': {
+    panel: 'WorkoutPanel',
+    default: 'true', type: 'boolean', candidates: '^(true|false)$',
+    description: 'タイトルで絞込みのキーワードをハイライトする',
+    get: (app) => String(app.WorkoutPanel.AddTitleSearchKeywordFlag),
+    set: (app, v) => { app.WorkoutPanel.AddTitleSearchKeywordFlag = parseBool(v, app.WorkoutPanel.AddTitleSearchKeywordFlag); },
+  },
   'ToolBar.CommandMode.Text': {
     panel: 'WorkoutPanel',
     default: '', type: 'string', candidates: '.*',

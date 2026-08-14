@@ -231,6 +231,11 @@ export class TTWorkoutPanel extends TTUIItem {
   public HighlightWord: string = '';
   public HighlightHistory: string[] = [];
 
+  /** Think一覧/AI相談の「コンテンツで絞込み」実行時、キーワードをHighlighterへ追加するか */
+  public AddContentSearchKeywordFlag: boolean = true;
+  /** Think一覧/AI相談の「タイトルで絞込み」実行時、キーワードをHighlighterへ追加するか */
+  public AddTitleSearchKeywordFlag: boolean = true;
+
   public SetHighlightWord(v: string) { this.HighlightWord = v; this.NotifyUpdated(); }
   public AddHighlightHistory(v: string) {
     if (!v.trim()) return;

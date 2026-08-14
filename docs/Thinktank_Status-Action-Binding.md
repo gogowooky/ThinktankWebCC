@@ -15,7 +15,6 @@
 
 # Action
 
-
 ## Action： 260813 TextEditor.CurrentEditor.DoOnCursorPos:Menu
 description:    カーソル位置のテキスト種別に応じたアクションメニューを表示する
 key:            TextEditor.CurrentEditor.DoOnCursorPos:Menu
@@ -128,16 +127,69 @@ Menuは、基本は↑↓キー、Enter、ESCで選択、決定、キャンセ�
 
 
 ## 完了：　Application.Resource.ImportFromLocal
-## 完了？：　　ToolBar.CurrentMode.Text:Focus
+## 完了：　260814　ToolBar.CurrentMode.Text:Focus
 　ToolBarの現在のモードの入力欄にフォーカスする
 　StatusModeの時は
 
 description:    ToolBarの現在のモードの入力欄にフォーカスする
 key:            ToolBar.CurrentMode.Text:Focus
 
-
+　A（260814調査）：実装済みでした。textEditorHighlighterToolbarActions.ts の
+　　ToolBar.CurrentMode.Text:Focus アクションで、StatusModeの場合は
+　　.ApplicationStatusBarArea__status-panel-container を起点に、input化済みなら
+　　inputへ、未input化ならlabel（tabIndex）へフォーカスする分岐が既に実装されており、
+　　「StatusModeの時は」の懸念点は解消済みと確認しました。コード変更なし。
 
 # Status
+
+## 実装：　260814　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+description:    コンテンツで絞込みのキーワードをハイライトする
+key:            ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+current:        'true'
+default:        'true'
+type:           bool
+candidates:     ^(true|false)^$
+
+　A（260814実装）：TTWorkoutPanel.AddContentSearchKeywordFlag（既定true）として実体を追加し、
+　　TTUIStateManagerにStatusとして登録しました。実行判定は共通ユーティリティ
+　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter() が担い、
+　　既存の「選択テキストをHighlighterへ追加」（AddSelected）と同じグループ重複排除ロジックで
+　　ToolBar.HighlighterMode.Text にキーワードを追加します。
+　　「実行したとき」= コンテンツ絞り込み欄でEnter確定した瞬間とし、以下3箇所に適用しました。
+　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleSearch）
+　　- OverviewPanel Think一覧（OverviewArea.tsx handleSearch）
+　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx、従来onSearchが
+　　　NOOPだったためEnter確定時に追加する処理を新設。ライブ絞り込み自体の挙動は変更なし）
+　　実機検証（Vite+Expressのdevサーバー）で、Think一覧のコンテンツ絞り込みEnter確定時に
+　　ToolBar.HighlighterMode.Text へキーワードが追加されること、フラグをfalseにすると
+　　追加されないことを確認しました。
+
+## 実装：　260814　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+description:    タイトルで絞込みのキーワードをハイライトする
+key:            ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+current:        'true'
+default:        'true'
+type:           bool
+candidates:     ^(true|false)^$
+
+　A（260814実装）：TTWorkoutPanel.AddTitleSearchKeywordFlag（既定true）として実体を追加し、
+　　TTUIStateManagerにStatusとして登録しました。追加判定は addContentSearchKeywordToHighlighter
+　　と同じユーティリティファイルの addTitleSearchKeywordToHighlighter() で行います。
+　　タイトル絞り込み欄（ThinktankFilterPanel/OverviewFilterPanel）はEnterキーで
+　　saveHistory()に加えonSearch?.()を呼ぶ実装が既にありましたが、呼び出し元3箇所で
+　　onSearchが未接続（ThinktankArea/OverviewArea）またはNOOP（ThinktankChatMemoPicker）
+　　だったため、いずれもEnter確定時に上記ユーティリティを呼ぶハンドラーを新設・接続しました。
+　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleTitleFilterSearch）
+　　- OverviewPanel Think一覧（OverviewArea.tsx handleTitleFilterSearch）
+　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx handleTitleSearch）
+　　既存のタイトル絞り込み自体（都度ライブ適用）の挙動は変更していません。
+　　実機検証で、Think一覧のタイトル絞り込みEnter確定時にToolBar.HighlighterMode.Text へ
+　　キーワードが追加されること、フラグをfalseにすると追加されないことを確認しました。
+
 
 # 対応不要： その他：ナビゲーション　ファイル内・ファイル間ジャンプ
 # 対応不要： その他：メニュー

@@ -18,6 +18,7 @@ import { ThinktankFilterPanel } from './ThinktankFilterPanel';
 import { ThinktankSearchBar } from './ThinktankSearchBar';
 import { ThoughtsList, applyFilter, ROW_HEIGHT } from './ThoughtsList';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
+import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import type { ContentType } from '../../types';
 import './ThinktankChatMemoPicker.css';
 
@@ -72,12 +73,27 @@ export function ThinktankChatMemoPicker({
     if (id) onSelect(id);
   }, [onSelect]);
 
+  // タイトル絞り込み実行（Enter確定時）
+  const handleTitleSearch = useCallback(() => {
+    const q = titleQuery.trim();
+    if (!q) return;
+    addTitleSearchKeywordToHighlighter(q);
+  }, [titleQuery]);
+
+  // コンテンツ絞り込み実行（Enter確定時）
+  const handleContentSearch = useCallback(() => {
+    const q = contentQuery.trim();
+    if (!q) return;
+    addContentSearchKeywordToHighlighter(q);
+  }, [contentQuery]);
+
   return (
     <div className="tt-chat-picker" onFocus={handleFocus} onBlur={handleBlur}>
       <ThinktankFilterPanel
         historyKey="tt-chat-picker"
         textValue={titleQuery}
         onTextChange={setTitleQuery}
+        onSearch={handleTitleSearch}
         createdDate={createdDate}
         onCreatedDateChange={setCreatedDate}
         createdRange={createdRange}
@@ -93,7 +109,7 @@ export function ThinktankChatMemoPicker({
       <ThinktankSearchBar
         searchQuery={contentQuery}
         onSearchQueryChange={setContentQuery}
-        onSearch={NOOP}
+        onSearch={handleContentSearch}
         loading={false}
         visibleTypes={EMPTY_TYPES}
         onToggleType={NOOP}

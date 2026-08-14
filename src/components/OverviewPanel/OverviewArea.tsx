@@ -41,6 +41,7 @@ import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { parseBundle, serializeBundle, serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
+import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './OverviewArea.css';
 
 const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext'];
@@ -313,6 +314,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (!q) return;
+    addContentSearchKeywordToHighlighter(q);
     setSearchLoading(true);
     try {
       const metas = await StorageManager.instance.search(q);
@@ -334,6 +336,13 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       setSearchSearched(true);
     }
   }, [searchQuery, vault]);
+
+  // タイトル絞り込み実行（Enter確定時）
+  const handleTitleFilterSearch = useCallback(() => {
+    const q = filter.trim();
+    if (!q) return;
+    addTitleSearchKeywordToHighlighter(q);
+  }, [filter]);
 
   const handleFocusChange = useCallback((id: string | null) => {
     const nextVal = id || '';
@@ -530,6 +539,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             historyKey="ov-filter"
             textValue={filter}
             onTextChange={setFilter}
+            onSearch={handleTitleFilterSearch}
             createdDate={createdDate}
             onCreatedDateChange={setCreatedDate}
             createdRange={createdRange}
