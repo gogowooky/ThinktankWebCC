@@ -46,6 +46,55 @@
   margin: 12px 0 6px;
 }
 
+/* ── セクション折り畳み ──────────────────────────────── */
+/* 見出しの上マージンは summary 内で潰すため、セクション側で肩代わりする */
+.markdown-media .md-section {
+  margin: 0;
+}
+.markdown-media .md-section-l2 { margin-top: 20px; }
+.markdown-media .md-section-l3 { margin-top: 16px; }
+.markdown-media .md-section-l4,
+.markdown-media .md-section-l5,
+.markdown-media .md-section-l6 { margin-top: 12px; }
+
+.markdown-media .md-section > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.markdown-media .md-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* マーカーは padding 内へはみ出させ、見出しの左端位置を折り畳み無効時と揃える */
+.markdown-media .md-section > summary::before {
+  content: '▾';
+  flex: 0 0 auto;
+  margin-left: -14px;
+  width: 10px;
+  font-size: 9px;
+  color: rgba(0, 0, 0, 0.35);
+}
+.markdown-media .md-section:not([open]) > summary::before {
+  content: '▸';
+}
+.markdown-media .md-section > summary:hover::before {
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.markdown-media .md-section > summary > h1,
+.markdown-media .md-section > summary > h2,
+.markdown-media .md-section > summary > h3,
+.markdown-media .md-section > summary > h4,
+.markdown-media .md-section > summary > h5,
+.markdown-media .md-section > summary > h6 {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
+}
+
 /* ── 段落 ────────────────────────────────────────────── */
 .markdown-media p {
   margin: 0 0 10px;

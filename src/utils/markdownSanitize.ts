@@ -15,6 +15,7 @@ import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
 import DOMPurify from 'dompurify';
+import { buildSectionTree, type MarkdownSection } from './markdownSections';
 
 /** 属性値へ埋め込む前に HTML 特殊文字を無害化する */
 export function escapeHtml(s: string): string {
@@ -85,4 +86,70 @@ export function renderMarkdown(markdown: string): string | Promise<string> {
   return typeof result === 'string'
     ? sanitizeHtml(result)
     : result.then(sanitizeHtml);
+}
+
+// 参照リンク定義（[label]: url）は文書のどこにあっても全体から参照できる。
+// セクション単位に切り分けて描画すると定義が別チャンクに落ちてリンクが壊れるため、
+// 全チャンクの末尾へ付け足す。重複定義は marked が先勝ちで無視し、描画結果には現れない。
+const LINK_DEF_RE = /^\s{0,3}\[[^\]]+\]:\s*\S/;
+
+/**
+ * Markdown をセクション（見出し）単位の <details> で包んで描画する。
+ *
+ * closedSourceLines には折り畳んだ状態で描画したい見出し行（Markdown原文の1始まり行番号）を渡す。
+ * lineOffset は data-tt-line に載せるエディタ行番号への変換値（markdownSections.editorLineOffset）。
+ *
+ * セクション境界は必ず見出し行なので、原文を行単位で切り出しても構文は壊れない
+ * （collectHeadings がコードフェンス内の # を見出しとして拾わないため）。
+ * ラッパー自体はここで組み立てる静的なマークアップで、埋め込む値は数値のみ。
+ * 本文は各チャンクごとに renderMarkdown を通しており、サニタイズ経路は変わらない。
+ */
+export async function renderMarkdownSections(
+  markdown: string,
+  closedSourceLines: ReadonlySet<number>,
+  lineOffset: number,
+): Promise<string> {
+  const lines = markdown.split('\n');
+  const { sections, preambleEndLine } = buildSectionTree(markdown);
+
+  const linkDefs = lines.filter((line) => LINK_DEF_RE.test(line));
+  const linkDefSuffix = linkDefs.length > 0 ? `\n\n${linkDefs.join('\n')}` : '';
+
+  const renderLines = async (from: number, to: number): Promise<string> => {
+    if (to < from) return '';
+    const chunk = lines.slice(from - 1, to).join('\n');
+    if (chunk.trim() === '') return '';
+    return await renderMarkdown(chunk + linkDefSuffix);
+  };
+
+  const renderSection = async (section: MarkdownSection): Promise<string> => {
+    const headingHtml = await renderLines(section.startLine, section.startLine);
+
+    // 中身のない見出しは Monaco 側でも折り畳み対象外なので <details> にしない
+    if (section.endLine <= section.startLine) return headingHtml;
+
+    const parts: string[] = [];
+    let cursor = section.startLine + 1;
+    for (const child of section.children) {
+      parts.push(await renderLines(cursor, child.startLine - 1));
+      parts.push(await renderSection(child));
+      cursor = child.endLine + 1;
+    }
+    parts.push(await renderLines(cursor, section.endLine));
+
+    const openAttr = closedSourceLines.has(section.startLine) ? '' : ' open';
+    return (
+      `<details class="md-section md-section-l${section.level}"` +
+      ` data-tt-line="${section.startLine + lineOffset}"${openAttr}>` +
+      `<summary class="md-section-summary">${headingHtml}</summary>` +
+      `<div class="md-section-body">${parts.join('')}</div>` +
+      `</details>`
+    );
+  };
+
+  const html: string[] = [await renderLines(1, preambleEndLine)];
+  for (const section of sections) {
+    html.push(await renderSection(section));
+  }
+  return html.join('');
 }

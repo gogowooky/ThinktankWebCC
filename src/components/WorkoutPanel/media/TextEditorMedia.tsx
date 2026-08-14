@@ -17,6 +17,7 @@ import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent } from '../../../utils/thinkFormat';
+import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import './TextEditorMedia.css';
 
@@ -52,13 +53,13 @@ function getClosedHeadings(editor: any): string {
 }
 
 function getEditorValue(think: NonNullable<MediaProps['think']>): string {
-  return (think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo')
+  return editorValueIncludesTitleLine(think.ContentType)
     ? (think.Content ?? '')
     : extractBody(think.Content);
 }
 
 function reconstructContent(think: NonNullable<MediaProps['think']>, body: string): string {
-  if (think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo') return body;
+  if (editorValueIncludesTitleLine(think.ContentType)) return body;
   const firstLine = think.Content.split('\n')[0] ?? '';
   return body ? `${firstLine}\n${body}` : firstLine;
 }
@@ -69,46 +70,15 @@ function registerMarkdownFolding(monaco: any) {
   if (isMarkdownFoldingRegistered) return;
   isMarkdownFoldingRegistered = true;
 
+  // 範囲の算出は markdownSections に集約している。MarkdownMedia の <details> 折り畳みと
+  // think.Metadata.editor.closedHeadings（行番号）を共有するため、ここで独自に数えないこと。
   monaco.languages.registerFoldingRangeProvider('markdown', {
-    provideFoldingRanges: (model: any) => {
-      const ranges: any[] = [];
-      const linesCount = model.getLineCount();
-      const stack: { level: number; startLine: number }[] = [];
-
-      for (let i = 1; i <= linesCount; i++) {
-        const line = model.getLineContent(i);
-        const match = line.match(/^(#+)\s/);
-        
-        if (match) {
-          const level = match[1].length;
-          
-          while (stack.length > 0 && stack[stack.length - 1].level >= level) {
-            const popped = stack.pop()!;
-            const endLine = i - 1;
-            if (endLine > popped.startLine) {
-              ranges.push({
-                start: popped.startLine,
-                end: endLine,
-                kind: monaco.languages.FoldingRangeKind.Region
-              });
-            }
-          }
-          stack.push({ level, startLine: i });
-        }
-      }
-
-      while (stack.length > 0) {
-        const popped = stack.pop()!;
-        if (linesCount > popped.startLine) {
-          ranges.push({
-            start: popped.startLine,
-            end: linesCount,
-            kind: monaco.languages.FoldingRangeKind.Region
-          });
-        }
-      }
-      return ranges;
-    }
+    provideFoldingRanges: (model: any) =>
+      toFoldingRanges(model.getValue()).map((range) => ({
+        start: range.start,
+        end: range.end,
+        kind: monaco.languages.FoldingRangeKind.Region,
+      })),
   });
 }
 
