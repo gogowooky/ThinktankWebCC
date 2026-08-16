@@ -15,44 +15,6 @@
 
 # Action
 
-## 完了：　Application.Resource.ImportFromLocal
-## 完了：　260814　ToolBar.CurrentMode.Text:Focus
-　ToolBarの現在のモードの入力欄にフォーカスする
-　StatusModeの時は
-
-description:    ToolBarの現在のモードの入力欄にフォーカスする
-key:            ToolBar.CurrentMode.Text:Focus
-
-　A（260814調査）：実装済みでした。textEditorHighlighterToolbarActions.ts の
-　　ToolBar.CurrentMode.Text:Focus アクションで、StatusModeの場合は
-　　.ApplicationStatusBarArea__status-panel-container を起点に、input化済みなら
-　　inputへ、未input化ならlabel（tabIndex）へフォーカスする分岐が既に実装されており、
-　　「StatusModeの時は」の懸念点は解消済みと確認しました。コード変更なし。
-
-## 実装：　260814　WorkoutPanel.FocusedPane.FileHistory:Menu
-　フォーカスのあるPaneのファイル履歴を古いもの順でメニューに表示し、上下キーとEnterで選択する
-　メニューのスタイルは TextEditor.CurrentEditor.DoOnCursorPos:Menu と同じにしてください。
-
-　A（260814実装）：TTFocusedPanelActions.ts に登録しました。メニューの描画・操作は
-　　DoOnCursorPos:Menu と共通の src\utils\monacoMenu.ts（showMonacoMenu / monaco F1風）を
-　　そのまま使うため、スタイル・キー操作は完全に同一です。
-　　- 並び順は履歴の並びそのまま（＝古いもの順）で、1行に「位置番号／タイトル（無ければID）／
-　　　ID」を表示します。現在位置（HistoryPos）の行には先頭に ● を付けます。
-　　- ↑↓で選択、Enterで決定してその位置のファイルをLoadします（LoadHistoryAt。履歴移動なので
-　　　履歴自体は増えません）。Escでキャンセル、1〜9はニーモニック（数字キー）で即決定できます。
-　　- メニューはフォーカスPane（.workout-area[data-area-id]）の上端中央に表示します。
-　　- Paneが無い場合は[対象Paneなし]、履歴が0件の場合は[履歴なし]としてメニューを出しません。
-　　キー割当は docs\Shortcut.md に *TextEditor の Ctrl+Alt+Backspace を追加しました
-　　（既存の Alt+Backspace＝Prev / Shift+Alt+Backspace＝Next と揃えています）。
-　　実機検証（Vite+Expressのdevサーバー）で、4件の履歴が古い順に並びタイトル「ファイル履歴」で
-　　表示されること、現在位置に●が付くこと、↑↓で選択が動きEnterでその位置のファイルがLoadされ
-　　HistoryPosが移動すること（履歴件数は不変）、Escでキャンセルされ位置が変わらないこと、
-　　数字キー4で4番目が即決定されることを確認しました。
-　　なお本検証環境のプレビューは document.visibilityState が hidden で requestAnimationFrame が
-　　発火しないため、フォーカス判定（focusin→rAF）に依存する *TextEditor 限定のキー割当だけは
-　　実キー入力での確認ができていません（アクション本体はショートカットと同じ TTActions.Execute
-　　経路で検証済みです）。
-
 # Status
 
 ## 実装：　260814　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
@@ -243,6 +205,7 @@ candidates:      ^(None|Thinktank|Overview|WorkoutSetting|Workout|ReThink)\..*$
 　　これにより docs\Shortcut.md の `ToolBar.Highlighter ,,Escape` 等、focus列にToolBarの
 　　モード名を指定するショートカットが意図通り動作するようになりました。
 
+
 ## Action：　260616　ToolBar.Mode.Name:Next
 description:    ToolBarのモードを次の値に切り替える（循環）
 key:            ToolBar.Mode.Name:Next
@@ -324,6 +287,18 @@ key:            ToolBar.CommandMode.Text:Clear
 　ToolBarのCommandをクリアする
 
 
+## Action：　260814　ToolBar.CurrentMode.Text:Focus
+　ToolBarの現在のモードの入力欄にフォーカスする
+　StatusModeの時は
+
+description:    ToolBarの現在のモードの入力欄にフォーカスする
+key:            ToolBar.CurrentMode.Text:Focus
+
+　A（260814調査）：実装済みでした。textEditorHighlighterToolbarActions.ts の
+　　ToolBar.CurrentMode.Text:Focus アクションで、StatusModeの場合は
+　　.ApplicationStatusBarArea__status-panel-container を起点に、input化済みなら
+　　inputへ、未input化ならlabel（tabIndex）へフォーカスする分岐が既に実装されており、
+　　「StatusModeの時は」の懸念点は解消済みと確認しました。コード変更なし。
 ## Action：　260728　ToolBar.CurrentMode.Text:Clear
 description:    ToolBarの現在のモードの入力欄のテキストを消去する
 key:            ToolBar.CurrentMode.Text:Clear
@@ -577,6 +552,7 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 　　- `None` （フォーカスされているペインがない場合）
 
 
+
 ## Status：　260613　WorkoutPanel.FocusedPane.ID
 
 ## Action：　260619　WorkoutPanel.FocusedPane.PaneNumber:Next
@@ -593,6 +569,29 @@ key:            WorkoutPanel.FocusedPane.PaneNumber:Prev
 　　- `1`〜`6` （表示されているペインの配置順）
 　　- `0` （フォーカスされているペインがない場合）
 
+## Action：　260814　WorkoutPanel.FocusedPane.FileHistory:Menu
+　フォーカスのあるPaneのファイル履歴を古いもの順でメニューに表示し、上下キーとEnterで選択する
+　メニューのスタイルは TextEditor.CurrentEditor.DoOnCursorPos:Menu と同じにしてください。
+
+　A（260814実装）：TTFocusedPanelActions.ts に登録しました。メニューの描画・操作は
+　　DoOnCursorPos:Menu と共通の src\utils\monacoMenu.ts（showMonacoMenu / monaco F1風）を
+　　そのまま使うため、スタイル・キー操作は完全に同一です。
+　　- 並び順は履歴の並びそのまま（＝古いもの順）で、1行に「位置番号／タイトル（無ければID）／
+　　　ID」を表示します。現在位置（HistoryPos）の行には先頭に ● を付けます。
+　　- ↑↓で選択、Enterで決定してその位置のファイルをLoadします（LoadHistoryAt。履歴移動なので
+　　　履歴自体は増えません）。Escでキャンセル、1〜9はニーモニック（数字キー）で即決定できます。
+　　- メニューはフォーカスPane（.workout-area[data-area-id]）の上端中央に表示します。
+　　- Paneが無い場合は[対象Paneなし]、履歴が0件の場合は[履歴なし]としてメニューを出しません。
+　　キー割当は docs\Shortcut.md に *TextEditor の Ctrl+Alt+Backspace を追加しました
+　　（既存の Alt+Backspace＝Prev / Shift+Alt+Backspace＝Next と揃えています）。
+　　実機検証（Vite+Expressのdevサーバー）で、4件の履歴が古い順に並びタイトル「ファイル履歴」で
+　　表示されること、現在位置に●が付くこと、↑↓で選択が動きEnterでその位置のファイルがLoadされ
+　　HistoryPosが移動すること（履歴件数は不変）、Escでキャンセルされ位置が変わらないこと、
+　　数字キー4で4番目が即決定されることを確認しました。
+　　なお本検証環境のプレビューは document.visibilityState が hidden で requestAnimationFrame が
+　　発火しないため、フォーカス判定（focusin→rAF）に依存する *TextEditor 限定のキー割当だけは
+　　実キー入力での確認ができていません（アクション本体はショートカットと同じ TTActions.Execute
+　　経路で検証済みです）。
 ## Status：　260814　WorkoutPanel.FocusedPane.FileHistory
 　フォーカスがあるPaneでLoadしたファイルの履歴（古い順・最大30件）をCSVで返す読み取り専用Statusです。
 
@@ -1307,6 +1306,38 @@ key:            TextEditor.CurrentFolding.Heading:VisibleBackward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
 
 # Color Style ====================================================================================================== 
+
+
+## Status：　260624　TextEditor.Text.BgColor
+description:    エディタ背景色
+key:            TextEditor.Text.BgColor
+current:        #f5f5f5
+default:        #f5f5f5
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Text.Color
+description:    エディタ文字色
+key:            TextEditor.Text.Color
+current:        #1e1e1e
+default:        #1e1e1e
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Selection.BgColor
+description:    エディタのテキスト選択範囲の背景色
+key:            TextEditor.Selection.BgColor
+current:        #cba8ff
+default:        #c6e6c6ff
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　TextEditor.Occurrence.BgColor
+description:    エディタで選択した語と同一の単語の強調色
+key:            TextEditor.Occurrence.BgColor
+current:        #fff0fd
+default:        #aac6aaff
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+
+
 ## Status：　260707　TextEditor.Bullet.StyleNum
 description:    箇条書きスタイルの登録数
 key:            TextEditor.Bullet.StyleNum
@@ -1420,8 +1451,6 @@ current:        |,#ffaaaa,undefined
 default:        |,#ffaaaa,undefined
 type:           string
 candidates:     .*
-
-
 
 ## Status：　260707　TextEditor.Url.Style
 TextEditor.CurrentEditor.DoOnCursorPosで認識されるUrlの文字スタイル（文字色, 背景色, 属性）です。
@@ -1638,34 +1667,6 @@ default:        #c586c0, undefined, bold|underline
 type:           string
 candidates:     .*
 
-## Status：　260624　TextEditor.Text.BgColor
-description:    エディタ背景色
-key:            TextEditor.Text.BgColor
-current:        #f5f5f5
-default:        #f5f5f5
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　TextEditor.Text.Color
-description:    エディタ文字色
-key:            TextEditor.Text.Color
-current:        #1e1e1e
-default:        #1e1e1e
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　TextEditor.Selection.BgColor
-description:    エディタのテキスト選択範囲の背景色
-key:            TextEditor.Selection.BgColor
-current:        #cba8ff
-default:        #c6e6c6ff
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　TextEditor.Occurrence.BgColor
-description:    エディタで選択した語と同一の単語の強調色
-key:            TextEditor.Occurrence.BgColor
-current:        #fff0fd
-default:        #aac6aaff
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
 
 # TextEditor ExOpt =================================================================================================
 ## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle
