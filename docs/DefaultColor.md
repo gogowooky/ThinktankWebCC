@@ -31,19 +31,19 @@ TextEditor.Comment.Style4,          #bbbbbb,       undefined,        undefined
 TextEditor.Comment.Style5,          #ffaaaa,       undefined,        undefined
 TextEditor.Comment.Style6,          #ffaaaa,       undefined,        undefined
 
-## TextEditor.Highlighter.Style1,        undefined,        #fff0b3,        undefined
-## TextEditor.Highlighter.Style2,        undefined,        #ffb3b3,        undefined
-## TextEditor.Highlighter.Style3,        undefined,        #b3e0ff,        undefined
-## TextEditor.Highlighter.Style4,        undefined,        #b3ffb3,        undefined
-## TextEditor.Highlighter.Style5,        undefined,        #e6b3ff,        undefined
-## TextEditor.Highlighter.Style6,        undefined,        #e620ff,        undefined
+TextEditor.Highlighter.Style1,      undefined,      #fff0b3,          undefined
+TextEditor.Highlighter.Style2,      undefined,      #ffb3b3,          undefined
+TextEditor.Highlighter.Style3,      undefined,      #b3e0ff,          undefined
+TextEditor.Highlighter.Style4,      undefined,      #b3ffb3,          undefined
+TextEditor.Highlighter.Style5,      undefined,      #e6b3ff,          undefined
+TextEditor.Highlighter.Style6,      undefined,      #e620ff,          undefined
 
-## TextEditor.Heading.Style1,            #569cd6,        undefined,        bold|underline
-## TextEditor.Heading.Style2,            #4ec9b0,        undefined,        bold|underline
-## TextEditor.Heading.Style3,            #ce9178,        undefined,        bold|underline
-## TextEditor.Heading.Style4,            #dcdcaa,        undefined,        bold|underline
-## TextEditor.Heading.Style5,            #c586c0,        undefined,        bold|underline
-## TextEditor.Heading.Style6,            #569cd6,        undefined,        bold|underline
+TextEditor.Heading.Style1,          #569cd6,        undefined,        bold|underline
+TextEditor.Heading.Style2,          #4ec9b0,        undefined,        bold|underline
+TextEditor.Heading.Style3,          #ce9178,        undefined,        bold|underline
+TextEditor.Heading.Style4,          #dcdcaa,        undefined,        bold|underline
+TextEditor.Heading.Style5,          #c586c0,        undefined,        bold|underline
+TextEditor.Heading.Style6,          #569cd6,        undefined,        bold|underline
 
 
 ## Thinktank.Color,                #1d618f,        #ffffff,        undefined

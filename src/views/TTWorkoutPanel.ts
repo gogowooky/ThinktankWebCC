@@ -9,7 +9,7 @@ import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import {
-  DEFAULT_MARKS, createColorStatusDefaults, defaultColorValue, getDefaultColorStyle,
+  DEFAULT_MARKS, createColorStatusDefaults, defaultColorValue, getDefaultColorStyle, toggleAttr,
 } from '../utils/defaultColor';
 import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 
@@ -18,27 +18,6 @@ const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'chat';
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
-
-export type SectionStyle = { color: string; bgColor?: string; bold: boolean; underline: boolean };
-
-export const SECTION_STYLE_DEFAULTS: SectionStyle[] = [
-  { color: '#569cd6', bold: true, underline: false },
-  { color: '#4ec9b0', bold: true, underline: false },
-  { color: '#ce9178', bold: true, underline: false },
-  { color: '#dcdcaa', bold: true, underline: false },
-  { color: '#c586c0', bold: true, underline: false },
-];
-
-export type HighlightStyle = { backgroundColor: string; color: string; bold?: boolean; underline?: boolean };
-
-export const HIGHLIGHT_STYLE_DEFAULTS: HighlightStyle[] = [
-  { backgroundColor: '#fff0b3', color: 'undefined', bold: false, underline: false },
-  { backgroundColor: '#ffb3b3', color: 'undefined', bold: false, underline: false },
-  { backgroundColor: '#b3e0ff', color: 'undefined', bold: false, underline: false },
-  { backgroundColor: '#b3ffb3', color: 'undefined', bold: false, underline: false },
-  { backgroundColor: '#e6b3ff', color: 'undefined', bold: false, underline: false },
-  { backgroundColor: '#e620ff', color: 'undefined', bold: false, underline: false },
-];
 
 export class TextEditorSettings {
   LineNumbers = { IsVisible: false };
@@ -72,10 +51,9 @@ export class TextEditorSettings {
     Selection:  defaultColorValue('TextEditor.Selection',  'BgColor', '#c6e6c6ff'),
     Occurrence: defaultColorValue('TextEditor.Occurrence', 'BgColor', '#aac6aaff'),
   };
-  HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];
-  HighlightStyles: HighlightStyle[] = [...HIGHLIGHT_STYLE_DEFAULTS];
-  // Url / Filepath / Tag のスタイルは ColorStatus（docs/DefaultColor.md の
-  // TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）が持つ。
+  // Heading / Highlighter / Url / Filepath / Tag のスタイルも ColorStatus が持つ
+  // （docs/DefaultColor.md の TextEditor.Heading.Style(1..6).* / .Highlighter.Style(1..6).*
+  //   / .Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
 
   /**
    * docs/DefaultColor.md 由来の色設定。キーは StatusID名（例: 'TextEditor.Bold'）で、
@@ -83,17 +61,6 @@ export class TextEditorSettings {
    * 登録と読み書きは TTUIStateManager の PROP_SPECS が担う。
    */
   ColorStatus: Record<string, ColorStyle> = createColorStatusDefaults();
-
-
-
-  HighlightStyleKey: string = 'WorkoutPanel.HighlightStyle.Preset1';
-  HighlightPresets: Record<string, HighlightStyle[]> = {
-    'WorkoutPanel.HighlightStyle.Preset1': [...HIGHLIGHT_STYLE_DEFAULTS],
-    'WorkoutPanel.HighlightStyle.Preset2': [...HIGHLIGHT_STYLE_DEFAULTS],
-    'WorkoutPanel.HighlightStyle.Preset3': [...HIGHLIGHT_STYLE_DEFAULTS],
-    'WorkoutPanel.HighlightStyle.Preset4': [...HIGHLIGHT_STYLE_DEFAULTS],
-    'WorkoutPanel.HighlightStyle.Preset5': [...HIGHLIGHT_STYLE_DEFAULTS],
-  };
 }
 
 // ── BSP ノード型 ──────────────────────────────────────────────────────
@@ -266,17 +233,6 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetTextEditorColorText(color: string)        { this.TextEditor.Color.Text        = color; this.NotifyUpdated(); }
   public SetTextEditorColorSelection(color: string)   { this.TextEditor.Color.Selection   = color; this.NotifyUpdated(); }
   public SetTextEditorColorOccurrence(color: string)  { this.TextEditor.Color.Occurrence  = color; this.NotifyUpdated(); }
-  public SetTextEditorHeadingStyle(level: number, style: { color?: string; bgColor?: string; bold?: boolean; underline?: boolean }) {
-    if (level < 1 || level > 5) return;
-    this.TextEditor.HeadingStyles = this.TextEditor.HeadingStyles.map((s, i) => i === level - 1 ? { ...s, ...style } : s);
-    this.NotifyUpdated();
-  }
-  public SetTextEditorHighlightStyle(groupIndex: number, style: Partial<{ backgroundColor: string; color: string; bold: boolean; underline: boolean }>) {
-    if (groupIndex >= 0 && groupIndex <= 5) {
-      this.TextEditor.HighlightStyles = this.TextEditor.HighlightStyles.map((s, i) => i === groupIndex ? { ...s, ...style } : s);
-      this.NotifyUpdated();
-    }
-  }
 
   /**
    * docs/DefaultColor.md 由来の StatusID変数を1項目だけ書き換える。
@@ -294,6 +250,11 @@ export class TTWorkoutPanel extends TTUIItem {
   /** StatusID の現在の色設定を返す（未登録IDは既定値） */
   public GetColorStatus(statusId: string): ColorStyle {
     return this.TextEditor.ColorStatus[statusId] ?? getDefaultColorStyle(statusId);
+  }
+
+  /** StatusID の Attrs に表示属性（bold / underline 等）を足す・外す */
+  public ToggleColorStatusAttr(statusId: string, attr: string, on: boolean) {
+    this.SetColorStatus(statusId, 'Attrs', toggleAttr(this.GetColorStatus(statusId).Attrs, attr, on));
   }
 
   // ── AI Chat モデル選択 ────────────────────────────────────────────────

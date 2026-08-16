@@ -20,7 +20,7 @@ import { splitContent } from '../../../utils/thinkFormat';
 import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
 import {
   INLINE_MASK_CHAR, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS, colorStyleToCss,
-  injectInlineStyleCss, inlineStyleClass, linkStyleClass, markStyleClass,
+  injectInlineStyleCss, inlineStyleClass, isUnset, linkStyleClass, styleClass,
 } from '../../../utils/defaultColor';
 import type { LinkStyleName, MarkKind, MarkStyle } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
@@ -87,7 +87,7 @@ function matchMarkStyle(
     const pattern = c.mark.endsWith(' ') ? c.mark : c.mark + ' ';
     if (!textAfterIndent.startsWith(pattern)) continue;
     return colorStyleToCss(c.style)
-      ? { className: markStyleClass(kind, c.index + 1) }
+      ? { className: styleClass(kind, c.index + 1) }
       : null;
   }
   return null;
@@ -503,7 +503,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       }
     }
 
-    // 見出し用CSS of 注入
+    // 見出し用CSSの注入
+    // 色・属性は docs/DefaultColor.md 由来の TextEditor.Heading.Style(1..6).* に従う
     let styleEl = document.getElementById('text-editor-custom-styles');
     if (!styleEl) {
       styleEl = document.createElement('style');
@@ -512,17 +513,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }
 
     const cssRules = editorSettings.headingStyles.map((style, index) => {
-      const level = index + 1;
-      const hasBg = style.bgColor && style.bgColor !== 'undefined' && style.bgColor !== 'none';
-      return `
-        .custom-heading-${level} {
-          color: ${style.color} !important;
-          ${hasBg ? `background-color: ${style.bgColor} !important;` : ''}
-          ${style.bold ? 'font-weight: bold !important;' : ''}
-          ${style.underline ? 'text-decoration: underline !important;' : ''}
-        }
-      `;
-    }).join('\n');
+      const decls = colorStyleToCss(style);
+      return decls ? `.${styleClass('Heading', index + 1)} { ${decls} }` : '';
+    }).filter(Boolean).join('\n');
 
     styleEl.innerHTML = cssRules;
 
@@ -532,7 +525,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       styles.map((s, index) => {
         const decls = colorStyleToCss(s.style);
         if (!decls) return '';
-        const cls = markStyleClass(kind, index + 1);
+        const cls = styleClass(kind, index + 1);
         return `.${cls}, .${cls} * { ${decls} }`;
       }).filter(Boolean).join('\n');
 
@@ -597,18 +590,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       highlightStyleEl.id = 'text-editor-highlight-styles';
       document.head.appendChild(highlightStyleEl);
     }
-    const highlightStylesCss = editorSettings.highlightStyles.map((style, index) => {
-      const hasBg = style.backgroundColor && style.backgroundColor !== 'undefined';
-      const hasFg = style.color && style.color !== 'undefined';
-      return `.custom-highlight-g${index + 1} {
-        ${hasBg ? `background-color: ${style.backgroundColor};` : ''}
-        ${hasFg ? `color: ${style.color} !important;` : ''}
-        ${style.bold ? 'font-weight: bold !important;' : ''}
-        ${style.underline ? 'text-decoration: underline !important;' : ''}
-        border-radius: 2px;
-      }`;
-    }).join('\n');
-    highlightStyleEl.textContent = highlightStylesCss;
+    // 色・属性は docs/DefaultColor.md 由来の TextEditor.Highlighter.Style(1..6).* に従う
+    highlightStyleEl.textContent = editorSettings.highlightStyles.map((style, index) => {
+      const decls = colorStyleToCss(style);
+      return decls ? `.${styleClass('Highlighter', index + 1)} { ${decls} border-radius: 2px; }` : '';
+    }).filter(Boolean).join('\n');
 
     const newDecorations: any[] = [];
     const linesCount = model.getLineCount();
@@ -617,13 +603,13 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const lineContent = model.getLineContent(i);
       
       // 見出しの装飾
-      const match = lineContent.match(/^(\s{0,3})(#{1,5})\s/);
+      const match = lineContent.match(/^(\s{0,3})(#{1,6})\s/);
       if (match) {
         const level = match[2].length;
         const style = editorSettings.headingStyles[level - 1];
-        
-        const minimapOptions = style?.color ? {
-          color: style.color,
+
+        const minimapOptions = style && !isUnset(style.Color) ? {
+          color: style.Color,
           position: 1 // (window as any).monaco.editor.MinimapPosition.Inline
         } : undefined;
 
@@ -631,7 +617,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
           options: {
             isWholeLine: true,
-            inlineClassName: `custom-heading-${level}`,
+            inlineClassName: styleClass('Heading', level),
             minimap: minimapOptions
           }
         });
@@ -692,9 +678,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
               newDecorations.push({
                 range: new (window as any).monaco.Range(i, startCol, i, endCol),
                 options: {
-                  inlineClassName: `custom-highlight-g${groupIndex + 1}`,
-                  minimap: groupStyle?.backgroundColor ? {
-                    color: groupStyle.backgroundColor,
+                  inlineClassName: styleClass('Highlighter', groupIndex + 1),
+                  minimap: groupStyle && !isUnset(groupStyle.BgColor) ? {
+                    color: groupStyle.BgColor,
                     position: 1 // Inline
                   } : undefined
                 }

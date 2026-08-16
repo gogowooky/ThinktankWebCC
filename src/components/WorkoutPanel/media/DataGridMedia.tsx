@@ -21,6 +21,7 @@ import type { MediaProps } from './types';
 import type { TableSection, RawLine } from '../../../utils/tableFormat';
 import { useHighlight } from '../../../contexts/HighlightContext';
 import { parseTableContent, tableSectionToContent } from '../../../utils/tableFormat';
+import { colorStyleToInlineStyle, styleClass } from '../../../utils/defaultColor';
 import { applyFilter } from '../../ThinktankPanel/ThoughtsList';
 import './DataGridMedia.css';
 
@@ -282,11 +283,8 @@ function HighlightedText({ text, editorSettings }: { text: string; editorSetting
         seg.groupIdx !== undefined ? (
           <span
             key={i}
-            className={`datagrid-highlight custom-highlight-g${seg.groupIdx + 1}`}
-            style={{
-              backgroundColor: editorSettings.highlightStyles[seg.groupIdx]?.backgroundColor,
-              color: editorSettings.highlightStyles[seg.groupIdx]?.color
-            }}
+            className={`datagrid-highlight ${styleClass('Highlighter', seg.groupIdx + 1)}`}
+            style={colorStyleToInlineStyle(editorSettings.highlightStyles[seg.groupIdx])}
           >
             {seg.text}
           </span>

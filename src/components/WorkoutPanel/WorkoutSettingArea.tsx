@@ -35,6 +35,7 @@ import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPick
 import type { ChatMessage } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_WORKOUT } from '../../utils/thinkFormat';
+import { isUnset, parseAttrs, styleStatusId } from '../../utils/defaultColor';
 import './WorkoutSettingArea.css';
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
@@ -599,33 +600,35 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     />
                   </div>
 
-                  {[1, 2, 3, 4, 5].map(level => {
-                    const style = panel.TextEditor.HeadingStyles[level - 1];
-                    const fw = ['１', '２', '３', '４', '５'][level - 1];
-                    const hasBg = style.bgColor !== undefined && style.bgColor !== 'undefined';
+                  {[1, 2, 3, 4, 5, 6].map(level => {
+                    const statusId = styleStatusId('Heading', level);
+                    const style = panel.GetColorStatus(statusId);
+                    const fw = ['１', '２', '３', '４', '５', '６'][level - 1];
+                    const attrs = parseAttrs(style.Attrs);
+                    const hasBg = !isUnset(style.BgColor);
                     return (
                       <div key={level} className="workout-setting-area__heading-style-row">
                         <span className="workout-setting-area__heading-style-label">セクション{fw}</span>
                         <input
                           type="color"
                           className="workout-setting-area__color-picker"
-                          value={style.color}
-                          onChange={e => panel.SetTextEditorHeadingStyle(level, { color: e.target.value })}
+                          value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
+                          onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
                           data-tip={`セクション${fw}の文字色`}
                         />
                         <label className="workout-setting-area__small-checkbox">
                           <input
                             type="checkbox"
-                            checked={style.bold}
-                            onChange={e => panel.SetTextEditorHeadingStyle(level, { bold: e.target.checked })}
+                            checked={attrs.has('bold')}
+                            onChange={e => panel.ToggleColorStatusAttr(statusId, 'bold', e.target.checked)}
                           />
                           B
                         </label>
                         <label className="workout-setting-area__small-checkbox">
                           <input
                             type="checkbox"
-                            checked={style.underline}
-                            onChange={e => panel.SetTextEditorHeadingStyle(level, { underline: e.target.checked })}
+                            checked={attrs.has('underline')}
+                            onChange={e => panel.ToggleColorStatusAttr(statusId, 'underline', e.target.checked)}
                           />
                           U
                         </label>
@@ -633,7 +636,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                           <input
                             type="checkbox"
                             checked={hasBg}
-                            onChange={e => panel.SetTextEditorHeadingStyle(level, { bgColor: e.target.checked ? '#ffffff' : 'undefined' })}
+                            onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.checked ? '#ffffff' : 'undefined')}
                           />
                           BG
                         </label>
@@ -641,8 +644,8 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                           <input
                             type="color"
                             className="workout-setting-area__color-picker"
-                            value={style.bgColor && style.bgColor !== 'undefined' ? style.bgColor.slice(0, 7) : '#ffffff'}
-                            onChange={e => panel.SetTextEditorHeadingStyle(level, { bgColor: e.target.value })}
+                            value={style.BgColor.slice(0, 7)}
+                            onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
                             data-tip={`セクション${fw}の背景色`}
                           />
                         )}
@@ -667,10 +670,12 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               {isHighlightColorOpen && (
                 <div className="workout-setting-area__section-content">
                   {[1, 2, 3, 4, 5, 6].map(group => {
-                    const style = panel.TextEditor.HighlightStyles[group - 1] || { backgroundColor: '#ffffff', color: 'undefined', bold: false, underline: false };
+                    const statusId = styleStatusId('Highlighter', group);
+                    const style = panel.GetColorStatus(statusId);
                     const fw = ['１', '２', '３', '４', '５', '６'][group - 1];
-                    const hasBg = style.backgroundColor !== undefined && style.backgroundColor !== 'undefined';
-                    const hasFg = style.color !== undefined && style.color !== 'undefined';
+                    const attrs = parseAttrs(style.Attrs);
+                    const hasBg = !isUnset(style.BgColor);
+                    const hasFg = !isUnset(style.Color);
                     return (
                       <div key={group} className="workout-setting-area__color-row" style={{ flexWrap: 'wrap', gap: '4px' }}>
                         <span className="workout-setting-area__color-label" style={{ minWidth: '50px' }}>グループ{fw}</span>
@@ -679,7 +684,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                             <input
                               type="checkbox"
                               checked={hasBg}
-                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { backgroundColor: e.target.checked ? '#ffffff' : 'undefined' })}
+                              onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.checked ? '#ffffff' : 'undefined')}
                             />
                             BG
                           </label>
@@ -687,17 +692,17 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                             <input
                               type="color"
                               className="workout-setting-area__color-picker"
-                              value={style.backgroundColor.slice(0, 7)}
-                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { backgroundColor: e.target.value })}
+                              value={style.BgColor.slice(0, 7)}
+                              onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
                               data-tip={`グループ${fw}の背景色`}
                             />
                           )}
-                          
+
                           <label className="workout-setting-area__small-checkbox">
                             <input
                               type="checkbox"
                               checked={hasFg}
-                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { color: e.target.checked ? '#000000' : 'undefined' })}
+                              onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.checked ? '#000000' : 'undefined')}
                             />
                             FG
                           </label>
@@ -705,8 +710,8 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                             <input
                               type="color"
                               className="workout-setting-area__color-picker"
-                              value={style.color.slice(0, 7)}
-                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { color: e.target.value })}
+                              value={style.Color.slice(0, 7)}
+                              onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
                               data-tip={`グループ${fw}の文字色`}
                             />
                           )}
@@ -714,16 +719,16 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                           <label className="workout-setting-area__small-checkbox">
                             <input
                               type="checkbox"
-                              checked={style.bold ?? false}
-                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { bold: e.target.checked })}
+                              checked={attrs.has('bold')}
+                              onChange={e => panel.ToggleColorStatusAttr(statusId, 'bold', e.target.checked)}
                             />
                             B
                           </label>
                           <label className="workout-setting-area__small-checkbox">
                             <input
                               type="checkbox"
-                              checked={style.underline ?? false}
-                              onChange={e => panel.SetTextEditorHighlightStyle(group - 1, { underline: e.target.checked })}
+                              checked={attrs.has('underline')}
+                              onChange={e => panel.ToggleColorStatusAttr(statusId, 'underline', e.target.checked)}
                             />
                             U
                           </label>

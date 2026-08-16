@@ -116,13 +116,45 @@ export function colorStyleToCss(style: ColorStyle): string {
   return decls.join(' ');
 }
 
-// ── 行頭記号のスタイル（Bullet / Comment）────────────────────────────────
-//
-// どちらも「記号は TextEditor.<種別>.Marks（CSV）、色・表示属性は
-// docs/DefaultColor.md の TextEditor.<種別>.Style(1..N).*」という同じ構造を持つ。
-// Marks の n 番目のアイテムが StyleN に対応する。
+/**
+ * ColorStyle を style 属性用のオブジェクトに変換する。
+ * 注入済みCSSクラスが使えない場所（DataGrid のセル等）で使う。
+ */
+export function colorStyleToInlineStyle(style: ColorStyle | undefined): Record<string, string> {
+  const css: Record<string, string> = {};
+  if (!style) return css;
+  if (!isUnset(style.Color))   css.color = style.Color;
+  if (!isUnset(style.BgColor)) css.backgroundColor = style.BgColor;
 
+  const attrs = parseAttrs(style.Attrs);
+  if (attrs.has('bold'))   css.fontWeight = 'bold';
+  if (attrs.has('italic')) css.fontStyle = 'italic';
+
+  const decoration: string[] = [];
+  if (attrs.has('underline'))     decoration.push('underline');
+  if (attrs.has('strikethrough')) decoration.push('line-through');
+  if (decoration.length > 0) css.textDecoration = decoration.join(' ');
+
+  return css;
+}
+
+// ── 番号付きスタイル（Bullet / Comment / Heading / Highlighter）──────────────
+//
+// いずれも docs/DefaultColor.md の TextEditor.<種別>.Style(1..N).* が色・表示属性を持つ。
+// Bullet / Comment は行頭記号を TextEditor.<種別>.Marks（CSV）に別途持ち、
+// その n 番目のアイテムが StyleN に対応する。
+// Heading は見出しレベル、Highlighter はハイライトグループ番号が n になる。
+
+export type StyleKind = 'Bullet' | 'Comment' | 'Heading' | 'Highlighter';
+
+/** 行頭記号を持つ種別（記号は Marks 側、色は StyleN 側） */
 export type MarkKind = 'Bullet' | 'Comment';
+
+/** 番号で引く種別と、その登録数 */
+export const INDEXED_STYLE_COUNT: Record<'Heading' | 'Highlighter', number> = {
+  Heading:     6,
+  Highlighter: 6,
+};
 
 /** TextEditor.<種別>.Marks の既定値 */
 export const DEFAULT_MARKS: Record<MarkKind, string> = {
@@ -137,13 +169,36 @@ export function parseMarks(marks: string | undefined): string[] {
 }
 
 /** n 番目（1始まり）のスタイルの StatusID */
-export function markStatusId(kind: MarkKind, index: number): string {
+export function styleStatusId(kind: StyleKind, index: number): string {
   return `TextEditor.${kind}.Style${index}`;
 }
 
 /** n 番目（1始まり）のデコレーションのCSSクラス名 */
-export function markStyleClass(kind: MarkKind, index: number): string {
-  return kind === 'Bullet' ? `custom-bullet-b${index}` : `custom-comment-c${index}`;
+export function styleClass(kind: StyleKind, index: number): string {
+  switch (kind) {
+    case 'Bullet':      return `custom-bullet-b${index}`;
+    case 'Comment':     return `custom-comment-c${index}`;
+    case 'Heading':     return `custom-heading-${index}`;
+    case 'Highlighter': return `custom-highlight-g${index}`;
+  }
+}
+
+/** ColorStatus ストアから n 番目のスタイルを取り出す */
+export function pickStyle(
+  kind: StyleKind,
+  index: number,
+  store: Record<string, ColorStyle> | undefined,
+): ColorStyle {
+  const statusId = styleStatusId(kind, index);
+  return store?.[statusId] ?? getDefaultColorStyle(statusId);
+}
+
+/** Heading / Highlighter のスタイル一覧（配列の添字0が Style1）*/
+export function pickIndexedStyles(
+  kind: 'Heading' | 'Highlighter',
+  store: Record<string, ColorStyle> | undefined,
+): ColorStyle[] {
+  return Array.from({ length: INDEXED_STYLE_COUNT[kind] }, (_, i) => pickStyle(kind, i + 1, store));
 }
 
 export interface MarkStyle {
@@ -159,10 +214,14 @@ export function pickMarkStyles(
   marks: string | undefined,
   store: Record<string, ColorStyle> | undefined,
 ): MarkStyle[] {
-  return parseMarks(marks).map((mark, i) => {
-    const statusId = markStatusId(kind, i + 1);
-    return { mark, style: store?.[statusId] ?? getDefaultColorStyle(statusId) };
-  });
+  return parseMarks(marks).map((mark, i) => ({ mark, style: pickStyle(kind, i + 1, store) }));
+}
+
+/** Attrs 値（`bold|underline` 形式）に属性を足す/外した新しい値を返す */
+export function toggleAttr(attrs: string | undefined, attr: string, on: boolean): string {
+  const set = parseAttrs(attrs);
+  if (on) set.add(attr); else set.delete(attr);
+  return set.size > 0 ? [...set].join('|') : UNSET;
 }
 
 // ── TextEditor の Url / Filepath / Tag スタイル ─────────────────────────────

@@ -26,8 +26,8 @@ import type { TTVault } from '../models/TTVault';
 import { parseTableContent, tableSectionToContent, TableSection } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
 import type { OverviewViewMode } from './TTOverviewPanel';
-import type { WorkoutViewMode, SectionStyle } from './TTWorkoutPanel';
-import { SECTION_STYLE_DEFAULTS, HIGHLIGHT_STYLE_DEFAULTS, collectAreaIds } from './TTWorkoutPanel';
+import type { WorkoutViewMode } from './TTWorkoutPanel';
+import { collectAreaIds } from './TTWorkoutPanel';
 import { TTWorkoutArea } from './TTWorkoutArea';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
@@ -507,80 +507,6 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Occurrence = v; },
   },
 
-  ...Object.fromEntries(
-    [1, 2, 3, 4, 5].map(level => {
-      const idx = level - 1;
-      return [`TextEditor.Heading.Style${level}`, {
-        panel: 'WorkoutPanel',
-        default: (() => {
-          const d = SECTION_STYLE_DEFAULTS[idx];
-          const attrs: string[] = [];
-          if (d.bold) attrs.push('bold');
-          if (d.underline) attrs.push('underline');
-          const attrStr = attrs.join('|') || 'none';
-          return `${d.color}, ${d.bgColor ?? 'undefined'}, ${attrStr}`;
-        })(),
-        type: 'string',
-        candidates: '.*',
-        description: `見出し行レベル${level}のスタイル (文字色, 背景色, 属性)`,
-        get: (app) => {
-          const style = app.WorkoutPanel.TextEditor.HeadingStyles[idx];
-          if (!style) return 'undefined, undefined, none';
-          const attrs: string[] = [];
-          if (style.bold) attrs.push('bold');
-          if (style.underline) attrs.push('underline');
-          const attrStr = attrs.join('|') || 'none';
-          return `${style.color}, ${style.bgColor ?? 'undefined'}, ${attrStr}`;
-        },
-        set: (app, v) => {
-          const parts = v.split(',').map(s => s.trim());
-          const color = parts[0] || 'undefined';
-          const bgColor = parts[1] || 'undefined';
-          const attrStr = parts[2] || 'none';
-          const bold = attrStr.includes('bold');
-          const underline = attrStr.includes('underline');
-          app.WorkoutPanel.SetTextEditorHeadingStyle(level, { color, bgColor, bold, underline });
-        }
-      }];
-    })
-  ),
-  ...Object.fromEntries(
-    [1, 2, 3, 4, 5, 6].map(group => {
-      const idx = group - 1;
-      return [`TextEditor.Highlighter.Style${group}`, {
-        panel: 'WorkoutPanel',
-        default: (() => {
-          const d = HIGHLIGHT_STYLE_DEFAULTS[idx];
-          const attrs: string[] = [];
-          if (d?.bold) attrs.push('bold');
-          if (d?.underline) attrs.push('underline');
-          const attrStr = attrs.join('|') || 'none';
-          return `${d?.color ?? 'undefined'}, ${d?.backgroundColor ?? 'undefined'}, ${attrStr}`;
-        })(),
-        type: 'string',
-        candidates: '.*',
-        description: `ハイライト${group}のスタイル (文字色, 背景色, 属性)`,
-        get: (app) => {
-          const style = app.WorkoutPanel.TextEditor.HighlightStyles[idx];
-          if (!style) return 'undefined, undefined, none';
-          const attrs: string[] = [];
-          if (style.bold) attrs.push('bold');
-          if (style.underline) attrs.push('underline');
-          const attrStr = attrs.join('|') || 'none';
-          return `${style.color ?? 'undefined'}, ${style.backgroundColor ?? 'undefined'}, ${attrStr}`;
-        },
-        set: (app, v) => {
-          const parts = v.split(',').map(s => s.trim());
-          const color = parts[0] || 'undefined';
-          const bgColor = parts[1] || 'undefined';
-          const attrStr = parts[2] || 'none';
-          const bold = attrStr.includes('bold');
-          const underline = attrStr.includes('underline');
-          app.WorkoutPanel.SetTextEditorHighlightStyle(idx, { color, backgroundColor: bgColor, bold, underline });
-        }
-      }];
-    })
-  ),
 
 
   // ── ToolBar 表示モード ────────────────────────────────────────────────

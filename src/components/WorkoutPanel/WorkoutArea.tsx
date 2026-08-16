@@ -15,7 +15,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
-import { defaultColorValue, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
+import { defaultColorValue, pickIndexedStyles, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -268,25 +268,12 @@ export function WorkoutArea({
       unicodeHighlight: panel?.TextEditor.UnicodeHighlight.IsVisible ?? false,
       bracketPairColorization: panel?.TextEditor.BracketPairColorization.IsVisible ?? true,
       highlightWord: panel?.HighlightWord ?? '',
-      highlightStyles: panel?.TextEditor.HighlightStyles ?? [
-        { backgroundColor: '#fff0b3', color: 'undefined', bold: false, underline: false },
-        { backgroundColor: '#ffb3b3', color: 'undefined', bold: false, underline: false },
-        { backgroundColor: '#b3e0ff', color: 'undefined', bold: false, underline: false },
-        { backgroundColor: '#b3ffb3', color: 'undefined', bold: false, underline: false },
-        { backgroundColor: '#e6b3ff', color: 'undefined', bold: false, underline: false },
-        { backgroundColor: '#e620ff', color: 'undefined', bold: false, underline: false },
-      ],
+      highlightStyles: pickIndexedStyles('Highlighter', panel?.TextEditor.ColorStatus),
       background:          panel?.TextEditor.Color.Background  ?? defaultColorValue('TextEditor.Text',       'BgColor', '#f5f5f5'),
       foreground:          panel?.TextEditor.Color.Text        ?? defaultColorValue('TextEditor.Text',       'Color',   '#1e1e1e'),
       selectionBackground: panel?.TextEditor.Color.Selection   ?? defaultColorValue('TextEditor.Selection',  'BgColor', '#c6e6c6ff'),
       occurrenceBackground: panel?.TextEditor.Color.Occurrence ?? defaultColorValue('TextEditor.Occurrence', 'BgColor', '#aac6aaff'),
-      headingStyles: panel?.TextEditor.HeadingStyles ?? [
-        { color: '#569cd6', bold: true, underline: false },
-        { color: '#4ec9b0', bold: true, underline: false },
-        { color: '#ce9178', bold: true, underline: false },
-        { color: '#dcdcaa', bold: true, underline: false },
-        { color: '#c586c0', bold: true, underline: false },
-      ],
+      headingStyles:   pickIndexedStyles('Heading',     panel?.TextEditor.ColorStatus),
       commentStyles,
       bulletStyles,
       linkStyles:          pickLinkStyles(panel?.TextEditor.ColorStatus),
@@ -296,10 +283,8 @@ export function WorkoutArea({
   }, [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
        panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
        panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,
-       panel?.TextEditor.HighlightStyles,
        panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
        panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
-       panel?.TextEditor.HeadingStyles,
        panel?.TextEditor.ColorStatus,
        panel?.TextEditor.Bullet.Marks, panel?.TextEditor.Comment.Marks]);
 
