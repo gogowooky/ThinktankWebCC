@@ -18,7 +18,11 @@ import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent } from '../../../utils/thinkFormat';
 import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
-import { INLINE_MASK_CHAR, INLINE_STYLE_RULES, injectInlineStyleCss, inlineStyleClass } from '../../../utils/defaultColor';
+import {
+  INLINE_MASK_CHAR, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS,
+  colorStyleToCss, injectInlineStyleCss, inlineStyleClass, linkStyleClass,
+} from '../../../utils/defaultColor';
+import type { LinkStyleName } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import './TextEditorMedia.css';
 
@@ -552,45 +556,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       linkStyleEl.id = 'text-editor-link-styles';
       document.head.appendChild(linkStyleEl);
     }
-    const urlStyle = editorSettings.urlStyle;
-    const filepathStyle = editorSettings.filepathStyle;
-    const tagStyle = editorSettings.tagStyle;
-
-    const linkRules = [];
-    if (urlStyle) {
-      const hasBg = urlStyle.bgColor && urlStyle.bgColor !== 'undefined' && urlStyle.bgColor !== 'none';
-      linkRules.push(`
-        .custom-url-style {
-          color: ${urlStyle.color && urlStyle.color !== 'undefined' ? urlStyle.color : 'inherit'} !important;
-          ${hasBg ? `background-color: ${urlStyle.bgColor} !important;` : ''}
-          ${urlStyle.bold ? 'font-weight: bold !important;' : ''}
-          ${urlStyle.underline ? 'text-decoration: underline !important;' : ''}
-        }
-      `);
-    }
-    if (filepathStyle) {
-      const hasBg = filepathStyle.bgColor && filepathStyle.bgColor !== 'undefined' && filepathStyle.bgColor !== 'none';
-      linkRules.push(`
-        .custom-filepath-style {
-          color: ${filepathStyle.color && filepathStyle.color !== 'undefined' ? filepathStyle.color : 'inherit'} !important;
-          ${hasBg ? `background-color: ${filepathStyle.bgColor} !important;` : ''}
-          ${filepathStyle.bold ? 'font-weight: bold !important;' : ''}
-          ${filepathStyle.underline ? 'text-decoration: underline !important;' : ''}
-        }
-      `);
-    }
-    if (tagStyle) {
-      const hasBg = tagStyle.bgColor && tagStyle.bgColor !== 'undefined' && tagStyle.bgColor !== 'none';
-      linkRules.push(`
-        .custom-tag-style {
-          color: ${tagStyle.color && tagStyle.color !== 'undefined' ? tagStyle.color : 'inherit'} !important;
-          ${hasBg ? `background-color: ${tagStyle.bgColor} !important;` : ''}
-          ${tagStyle.bold ? 'font-weight: bold !important;' : ''}
-          ${tagStyle.underline ? 'text-decoration: underline !important;' : ''}
-        }
-      `);
-    }
-    linkStyleEl.innerHTML = linkRules.join('\n');
+    // 色・属性は docs/DefaultColor.md 由来の TextEditor.<種別>.Style.* に従う
+    const linkStyles = editorSettings.linkStyles;
+    linkStyleEl.textContent = linkStyles
+      ? (Object.keys(LINK_STYLE_STATUS_IDS) as LinkStyleName[]).map(name => {
+          const decls = colorStyleToCss(linkStyles[name]);
+          return decls ? `.${linkStyleClass(name)} { ${decls} }` : '';
+        }).filter(Boolean).join('\n')
+      : '';
 
     // インライン書式（**bold** / *italic* / __underline__ / ~~strikethrough~~）用CSSの注入。
     // 色・属性は docs/DefaultColor.md 由来の TextEditor.<書式名>.* に従う。
@@ -801,7 +774,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           newDecorations.push({
             range: new (window as any).monaco.Range(i, startCol, i, endCol),
             options: {
-              inlineClassName: 'custom-filepath-style'
+              inlineClassName: linkStyleClass('filepath')
             }
           });
           // ダブルクォーテーション全体を含む範囲を装飾済みとして記録する
@@ -823,7 +796,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         newDecorations.push({
           range: new (window as any).monaco.Range(i, startCol, i, endCol),
           options: {
-            inlineClassName: 'custom-url-style'
+            inlineClassName: linkStyleClass('url')
           }
         });
         decoratedRanges.push({ start: startCol, end: endCol });
@@ -840,7 +813,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         newDecorations.push({
           range: new (window as any).monaco.Range(i, startCol, i, endCol),
           options: {
-            inlineClassName: 'custom-filepath-style'
+            inlineClassName: linkStyleClass('filepath')
           }
         });
         decoratedRanges.push({ start: startCol, end: endCol });
@@ -857,7 +830,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         newDecorations.push({
           range: new (window as any).monaco.Range(i, startCol, i, endCol),
           options: {
-            inlineClassName: 'custom-tag-style'
+            inlineClassName: linkStyleClass('tag')
           }
         });
         decoratedRanges.push({ start: startCol, end: endCol });

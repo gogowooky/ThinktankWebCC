@@ -1307,36 +1307,16 @@ key:            TextEditor.CurrentFolding.Heading:VisibleBackward
 
 # Color Style ====================================================================================================== 
 
+　TextEditor.Text.* / TextEditor.Selection.* / TextEditor.Occurrence.* は docs/DefaultColor.md で定義します。
+　（StatusID名, Color, BgColor, Attrs のCSV1行から <StatusID>.Color / .BgColor / .Attrs の3変数が作られます）
 
-## Status：　260624　TextEditor.Text.BgColor
-description:    エディタ背景色
-key:            TextEditor.Text.BgColor
-current:        #f5f5f5
-default:        #f5f5f5
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　TextEditor.Text.Color
-description:    エディタ文字色
-key:            TextEditor.Text.Color
-current:        #1e1e1e
-default:        #1e1e1e
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　TextEditor.Selection.BgColor
-description:    エディタのテキスト選択範囲の背景色
-key:            TextEditor.Selection.BgColor
-current:        #cba8ff
-default:        #c6e6c6ff
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　TextEditor.Occurrence.BgColor
-description:    エディタで選択した語と同一の単語の強調色
-key:            TextEditor.Occurrence.BgColor
-current:        #fff0fd
-default:        #aac6aaff
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-
+## Status：　TextEditor.Bullet.Marks
+description:    箇条書きのマーク
+key:            TextEditor.Bullet.Marks
+current:        ・,-,*,■,●,=,↓,→,[✓]
+default:        ・,-,*,■,●,=,↓,→,[✓]
+type:           string
+candidates:     .*
 
 ## Status：　260707　TextEditor.Bullet.StyleNum
 description:    箇条書きスタイルの登録数
@@ -1452,33 +1432,8 @@ default:        |,#ffaaaa,undefined
 type:           string
 candidates:     .*
 
-## Status：　260707　TextEditor.Url.Style
-TextEditor.CurrentEditor.DoOnCursorPosで認識されるUrlの文字スタイル（文字色, 背景色, 属性）です。
-
-description:    Urlのスタイル
-key:            TextEditor.Url.Style
-current:        #1010edff, undefined, underline
-default:        #1010edff, undefined, underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Filepath.Style
-TextEditor.CurrentEditor.DoOnCursorPosで認識されるFilepathの文字スタイル（文字色, 背景色, 属性）です。
-
-description:    Filepathのスタイル
-key:            TextEditor.Filepath.Style
-current:        undefined, undefined, underline
-default:        undefined, undefined, underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Tag.Style
-TextEditor.CurrentEditor.DoOnCursorPosで認識されるTagの文字スタイル（文字色, 背景色, 属性）です。
-
-description:    Tagのスタイル
-key:            TextEditor.Tag.Style
-current:        #4ba402ff, undefined, underline|bold
-default:        #4ba402ff, undefined, underline|bold
-type:           string
-candidates:     .*
+　TextEditor.CurrentEditor.DoOnCursorPos で認識される Url / Filepath / Tag の文字スタイルは
+　docs/DefaultColor.md で定義します（TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
 
 将来的にタグごとに分ける可能性あり、
 

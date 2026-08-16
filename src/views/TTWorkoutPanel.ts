@@ -8,7 +8,7 @@ import { TTWorkoutArea } from './TTWorkoutArea';
 import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
-import { createColorStatusDefaults, getDefaultColorStyle } from '../utils/defaultColor';
+import { createColorStatusDefaults, defaultColorValue, getDefaultColorStyle } from '../utils/defaultColor';
 import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
@@ -77,12 +77,18 @@ export class TextEditorSettings {
     Style6: '', Style7: '', Style8: '', Style9: '', Style10: '', Style11: '', Style12: '', Style13: '', Style14: '', Style15: '', Style16: '', Style17: '', Style18: '', Style19: '', Style20: ''
   };
 
-  Color = { Background: '#f5f5f5', Text: '#1e1e1e', Selection: '#c6e6c6ff', Occurrence: '#aac6aaff' };
+  // 既定値は docs/DefaultColor.md の TextEditor.Text / .Selection / .Occurrence が定義元。
+  // 第3引数はファイル側で無設定（コメントアウト等）だった場合のフォールバック。
+  Color = {
+    Background: defaultColorValue('TextEditor.Text',       'BgColor', '#f5f5f5'),
+    Text:       defaultColorValue('TextEditor.Text',       'Color',   '#1e1e1e'),
+    Selection:  defaultColorValue('TextEditor.Selection',  'BgColor', '#c6e6c6ff'),
+    Occurrence: defaultColorValue('TextEditor.Occurrence', 'BgColor', '#aac6aaff'),
+  };
   HeadingStyles: SectionStyle[]   = [...SECTION_STYLE_DEFAULTS];
   HighlightStyles: HighlightStyle[] = [...HIGHLIGHT_STYLE_DEFAULTS];
-  UrlStyle: SectionStyle = { color: '#1010edff', bold: false, underline: true };
-  FilepathStyle: SectionStyle = { color: 'undefined', bold: false, underline: true };
-  TagStyle: SectionStyle = { color: '#4ba402ff', bold: true, underline: true };
+  // Url / Filepath / Tag のスタイルは ColorStatus（docs/DefaultColor.md の
+  // TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）が持つ。
 
   /**
    * docs/DefaultColor.md 由来の色設定。キーは StatusID名（例: 'TextEditor.Bold'）で、
@@ -283,18 +289,6 @@ export class TTWorkoutPanel extends TTUIItem {
       this.TextEditor.HighlightStyles = this.TextEditor.HighlightStyles.map((s, i) => i === groupIndex ? { ...s, ...style } : s);
       this.NotifyUpdated();
     }
-  }
-  public SetTextEditorUrlStyle(style: Partial<SectionStyle>) {
-    this.TextEditor.UrlStyle = { ...this.TextEditor.UrlStyle, ...style };
-    this.NotifyUpdated();
-  }
-  public SetTextEditorFilepathStyle(style: Partial<SectionStyle>) {
-    this.TextEditor.FilepathStyle = { ...this.TextEditor.FilepathStyle, ...style };
-    this.NotifyUpdated();
-  }
-  public SetTextEditorTagStyle(style: Partial<SectionStyle>) {
-    this.TextEditor.TagStyle = { ...this.TextEditor.TagStyle, ...style };
-    this.NotifyUpdated();
   }
 
   /**

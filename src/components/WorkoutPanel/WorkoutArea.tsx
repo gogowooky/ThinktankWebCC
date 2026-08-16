@@ -15,7 +15,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
-import { pickInlineStyles } from '../../utils/defaultColor';
+import { defaultColorValue, pickInlineStyles, pickLinkStyles } from '../../utils/defaultColor';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -294,10 +294,10 @@ export function WorkoutArea({
         { backgroundColor: '#e6b3ff', color: 'undefined', bold: false, underline: false },
         { backgroundColor: '#e620ff', color: 'undefined', bold: false, underline: false },
       ],
-      background:          panel?.TextEditor.Color.Background  ?? '#f5f5f5',
-      foreground:          panel?.TextEditor.Color.Text        ?? '#1e1e1e',
-      selectionBackground: panel?.TextEditor.Color.Selection   ?? '#c6e6c6ff',
-      occurrenceBackground: panel?.TextEditor.Color.Occurrence ?? '#aac6aaff',
+      background:          panel?.TextEditor.Color.Background  ?? defaultColorValue('TextEditor.Text',       'BgColor', '#f5f5f5'),
+      foreground:          panel?.TextEditor.Color.Text        ?? defaultColorValue('TextEditor.Text',       'Color',   '#1e1e1e'),
+      selectionBackground: panel?.TextEditor.Color.Selection   ?? defaultColorValue('TextEditor.Selection',  'BgColor', '#c6e6c6ff'),
+      occurrenceBackground: panel?.TextEditor.Color.Occurrence ?? defaultColorValue('TextEditor.Occurrence', 'BgColor', '#aac6aaff'),
       headingStyles: panel?.TextEditor.HeadingStyles ?? [
         { color: '#569cd6', bold: true, underline: false },
         { color: '#4ec9b0', bold: true, underline: false },
@@ -307,9 +307,7 @@ export function WorkoutArea({
       ],
       commentStyles,
       bulletStyles,
-      urlStyle:            panel?.TextEditor.UrlStyle ?? { color: '#1010edff', bold: false, underline: true },
-      filepathStyle:       panel?.TextEditor.FilepathStyle ?? { color: 'undefined', bold: false, underline: true },
-      tagStyle:            panel?.TextEditor.TagStyle ?? { color: '#4ba402ff', bold: true, underline: true },
+      linkStyles:          pickLinkStyles(panel?.TextEditor.ColorStatus),
       inlineStyles:        pickInlineStyles(panel?.TextEditor.ColorStatus),
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -320,7 +318,6 @@ export function WorkoutArea({
        panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
        panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.HeadingStyles,
-       panel?.TextEditor.UrlStyle, panel?.TextEditor.FilepathStyle, panel?.TextEditor.TagStyle,
        panel?.TextEditor.ColorStatus,
        JSON.stringify(panel?.TextEditor.Comment), JSON.stringify(panel?.TextEditor.Bullet)]);
 

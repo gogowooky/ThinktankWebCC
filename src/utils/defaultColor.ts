@@ -71,6 +71,16 @@ export function getDefaultColorStyle(statusId: string): ColorStyle {
   return style ? { ...style } : { Color: UNSET, BgColor: UNSET, Attrs: UNSET };
 }
 
+/**
+ * StatusID変数1つぶんの既定値を返す。
+ * DefaultColor.md に行がない（コメントアウト等）か無設定の場合は fallback を使う。
+ * 既存の設定値（TextEditorSettings 等）の初期値を DefaultColor.md 側へ寄せるために使う。
+ */
+export function defaultColorValue(statusId: string, prop: ColorProp, fallback: string): string {
+  const value = DEFAULT_COLOR_MAP[statusId]?.[prop];
+  return value && !isUnset(value) ? value : fallback;
+}
+
 /** 全 StatusID の既定スタイルを複製した実行時ストアを作る */
 export function createColorStatusDefaults(): Record<string, ColorStyle> {
   return Object.fromEntries(DEFAULT_COLOR_ENTRIES.map(e => [e.statusId, { ...e.style }]));
@@ -104,6 +114,34 @@ export function colorStyleToCss(style: ColorStyle): string {
   if (decoration.length > 0) decls.push(`text-decoration: ${decoration.join(' ')} !important;`);
 
   return decls.join(' ');
+}
+
+// ── TextEditor の Url / Filepath / Tag スタイル ─────────────────────────────
+
+export type LinkStyleName = 'url' | 'filepath' | 'tag';
+
+/** TextEditor.CurrentEditor.DoOnCursorPos が認識する要素と、その表示属性を持つ StatusID */
+export const LINK_STYLE_STATUS_IDS: Record<LinkStyleName, string> = {
+  url:      'TextEditor.Url.Style',
+  filepath: 'TextEditor.Filepath.Style',
+  tag:      'TextEditor.Tag.Style',
+};
+
+export type LinkStyles = Record<LinkStyleName, ColorStyle>;
+
+/** Url / Filepath / Tag デコレーションのCSSクラス名 */
+export function linkStyleClass(name: LinkStyleName): string {
+  return `custom-${name}-style`;
+}
+
+/** ColorStatus ストアから Url / Filepath / Tag のスタイルを取り出す */
+export function pickLinkStyles(store: Record<string, ColorStyle> | undefined): LinkStyles {
+  const result = {} as LinkStyles;
+  for (const name of Object.keys(LINK_STYLE_STATUS_IDS) as LinkStyleName[]) {
+    const statusId = LINK_STYLE_STATUS_IDS[name];
+    result[name] = store?.[statusId] ?? getDefaultColorStyle(statusId);
+  }
+  return result;
 }
 
 // ── TextEditor のインライン書式 ────────────────────────────────────────────
