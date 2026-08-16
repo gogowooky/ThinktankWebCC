@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.15",
+  "version": "1.4.16",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "VENENO-02",
-  "commitId": "5c14676",
-  "commitDateTime": "2026-08-14-150102",
-  "commitMessage": "feat: Markdown表示に見出し単位の折り畳みを追加"
+  "commitPC": "E15",
+  "commitId": "ce5101d",
+  "commitDateTime": "2026-08-16-152446",
+  "commitMessage": "feat: 色設定を docs/DefaultColor.md に集約しインライン書式に対応"
 }
