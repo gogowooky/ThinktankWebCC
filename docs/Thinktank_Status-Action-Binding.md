@@ -1310,7 +1310,11 @@ key:            TextEditor.CurrentFolding.Heading:VisibleBackward
 　TextEditor.Text.* / TextEditor.Selection.* / TextEditor.Occurrence.* は docs/DefaultColor.md で定義します。
 　（StatusID名, Color, BgColor, Attrs のCSV1行から <StatusID>.Color / .BgColor / .Attrs の3変数が作られます）
 
-## Status：　TextEditor.Bullet.Marks
+## Status：　260816　TextEditor.Bullet.Marks
+　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Bullet.Style(1..9).* に順に対応します
+　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
+　TextEditor.Bullet.StyleNum はこのCSVのアイテム数から自動で決まるため、ここでは定義しません。
+
 description:    箇条書きのマーク
 key:            TextEditor.Bullet.Marks
 current:        ・,-,*,■,●,=,↓,→,[✓]
@@ -1318,76 +1322,11 @@ default:        ・,-,*,■,●,=,↓,→,[✓]
 type:           string
 candidates:     .*
 
-## Status：　260707　TextEditor.Bullet.StyleNum
-description:    箇条書きスタイルの登録数
-key:            TextEditor.Bullet.StyleNum
-current:        9
-default:        9
-type:           integer
-candidates:     ^[0-9]+$
-## Status：　260707　TextEditor.Bullet.Style1
-description:    箇条書きスタイル1
-key:            TextEditor.Bullet.Style1
-current:        ・,undefined,undefined
-default:        ・,undefined,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style2
-description:    箇条書きスタイル2
-key:            TextEditor.Bullet.Style2
-current:        -,undefined,undefined
-default:        -,undefined,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style3
-description:    箇条書きスタイル3
-key:            TextEditor.Bullet.Style3
-current:        *,#cc2222,undefined
-default:        *,#cc2222,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style4
-description:    箇条書きスタイル4
-key:            TextEditor.Bullet.Style4
-current:        ■,#000000,underline
-default:        ■,#000000,underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style5
-description:    箇条書きスタイル5
-key:            TextEditor.Bullet.Style5
-current:        ●,#000000,underline
-default:        ●,#000000,underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style6
-description:    箇条書きスタイル6
-key:            TextEditor.Bullet.Style6
-current:        =,#cccc22,undefined
-default:        =,#cccc22,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style7
-description:    箇条書きスタイル7
-key:            TextEditor.Bullet.Style7
-current:        ↓,#000000,bold
-default:        ↓,#000000,bold
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style8
-description:    箇条書きスタイル8
-key:            TextEditor.Bullet.Style8
-current:        →,undefined,underline
-default:        →,undefined,underline
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Bullet.Style9
-description:    箇条書きスタイル9
-key:            TextEditor.Bullet.Style9
-current:        [✓],undefined,bold
-default:        [✓],undefined,bold
-type:           string
-candidates:     .*
+## Status：　TextEditor.Comment.Marks
+description:    コメントマーク
+key:            TextEditor.Comment.Marks
+current:        >,>>,>>>,;,|,//
+
 
 ## Status：　260707　TextEditor.Comment.StyleNum
 description:    コメントスタイルの登録数

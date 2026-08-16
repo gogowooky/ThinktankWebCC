@@ -116,6 +116,45 @@ export function colorStyleToCss(style: ColorStyle): string {
   return decls.join(' ');
 }
 
+// ── TextEditor の箇条書き（Bullet）スタイル ────────────────────────────────
+
+/** TextEditor.Bullet.Marks の既定値（CSVの各アイテムが Style1..N に順に対応する） */
+export const DEFAULT_BULLET_MARKS = '・,-,*,■,●,=,↓,→,[✓]';
+
+/** Marks（CSV）を行頭記号の配列に分解する。空アイテムは登録なしとして捨てる */
+export function parseBulletMarks(marks: string | undefined): string[] {
+  if (!marks) return [];
+  return marks.split(',').map(m => m.trim()).filter(Boolean);
+}
+
+/** n 番目（1始まり）の箇条書きスタイルの StatusID */
+export function bulletStatusId(index: number): string {
+  return `TextEditor.Bullet.Style${index}`;
+}
+
+/** n 番目（1始まり）の箇条書きデコレーションのCSSクラス名 */
+export function bulletStyleClass(index: number): string {
+  return `custom-bullet-b${index}`;
+}
+
+export interface BulletStyle {
+  /** 行頭記号（TextEditor.Bullet.Marks の n 番目） */
+  mark:  string;
+  /** 色・表示属性（docs/DefaultColor.md の TextEditor.Bullet.StyleN.*） */
+  style: ColorStyle;
+}
+
+/** Marks と ColorStatus ストアから箇条書きスタイル一覧を組み立てる */
+export function pickBulletStyles(
+  marks: string | undefined,
+  store: Record<string, ColorStyle> | undefined,
+): BulletStyle[] {
+  return parseBulletMarks(marks).map((mark, i) => {
+    const statusId = bulletStatusId(i + 1);
+    return { mark, style: store?.[statusId] ?? getDefaultColorStyle(statusId) };
+  });
+}
+
 // ── TextEditor の Url / Filepath / Tag スタイル ─────────────────────────────
 
 export type LinkStyleName = 'url' | 'filepath' | 'tag';

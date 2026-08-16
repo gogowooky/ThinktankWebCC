@@ -15,7 +15,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
-import { defaultColorValue, pickInlineStyles, pickLinkStyles } from '../../utils/defaultColor';
+import { defaultColorValue, pickBulletStyles, pickInlineStyles, pickLinkStyles } from '../../utils/defaultColor';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -267,16 +267,8 @@ export function WorkoutArea({
       }
     }
 
-    // Bulletスタイルの配列構築
-    const bulletStyles: { symbol: string; color: string; attr: string }[] = [];
-    const bulletNum = panel?.TextEditor.Bullet.StyleNum ?? 0;
-    for (let i = 1; i <= bulletNum; i++) {
-      const val = (panel?.TextEditor.Bullet as any)[`Style${i}`] || '';
-      const [symbol = '', color = 'undefined', attr = 'undefined'] = val.split(',').map((s: string) => s.trim());
-      if (symbol) {
-        bulletStyles.push({ symbol, color, attr });
-      }
-    }
+    // Bullet は行頭記号（TextEditor.Bullet.Marks）と色・属性（DefaultColor.md）を突き合わせる
+    const bulletStyles = pickBulletStyles(panel?.TextEditor.Bullet.Marks, panel?.TextEditor.ColorStatus);
 
     return {
       lineNumbers:   panel?.TextEditor.LineNumbers.IsVisible ?? false,
@@ -318,8 +310,8 @@ export function WorkoutArea({
        panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
        panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.HeadingStyles,
-       panel?.TextEditor.ColorStatus,
-       JSON.stringify(panel?.TextEditor.Comment), JSON.stringify(panel?.TextEditor.Bullet)]);
+       panel?.TextEditor.ColorStatus, panel?.TextEditor.Bullet.Marks,
+       JSON.stringify(panel?.TextEditor.Comment)]);
 
   const aiChatModel = { provider: panel.AIChatProvider, model: panel.AIChatModel };
 

@@ -8,8 +8,11 @@ import { TTWorkoutArea } from './TTWorkoutArea';
 import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
-import { createColorStatusDefaults, defaultColorValue, getDefaultColorStyle } from '../utils/defaultColor';
-import type { ColorProp, ColorStyle } from '../utils/defaultColor';
+import {
+  DEFAULT_BULLET_MARKS, createColorStatusDefaults, defaultColorValue,
+  getDefaultColorStyle, pickBulletStyles,
+} from '../utils/defaultColor';
+import type { BulletStyle, ColorProp, ColorStyle } from '../utils/defaultColor';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 
@@ -54,19 +57,17 @@ export class TextEditorSettings {
   FindOption = { MatchCase: false, MatchWholeWord: false, UseRexp: false };
   ReplaceOption = { PreserveCase: false };
 
-  Bullet: Record<string, any> = {
-    StyleNum: 9,
-    Style1: "・,undefined,undefined",
-    Style2: "-,undefined,undefined",
-    Style3: "*,#cc2222,undefined",
-    Style4: "■,#000000,underline",
-    Style5: "●,#000000,underline",
-    Style6: "=,#cccc22,undefined",
-    Style7: "↓,#000000,bold",
-    Style8: "→,undefined,underline",
-    Style9: "[✓],undefined,bold",
-    Style10: '', Style11: '', Style12: '', Style13: '', Style14: '', Style15: '', Style16: '', Style17: '', Style18: '', Style19: '', Style20: ''
-  };
+  /**
+   * 箇条書き。行頭記号は Marks（CSV）だけが持ち、色・表示属性は ColorStatus
+   * （docs/DefaultColor.md の TextEditor.Bullet.Style(1..N).*）が持つ。
+   * CSVの n 番目のアイテムが StyleN に対応する。
+   */
+  Bullet = { Marks: DEFAULT_BULLET_MARKS };
+
+  /** Bullet.Marks を分解した行頭記号の配列。StyleNum はこの件数 */
+  get BulletStyles(): BulletStyle[] {
+    return pickBulletStyles(this.Bullet.Marks, this.ColorStatus);
+  }
   Comment: Record<string, any> = {
     StyleNum: 5,
     Style1: ">,#bbddbb,undefined",

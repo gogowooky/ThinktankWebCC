@@ -32,7 +32,7 @@ import { TTWorkoutArea } from './TTWorkoutArea';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
-import { COLOR_PROPS, DEFAULT_COLOR_ENTRIES, isUnset } from '../utils/defaultColor';
+import { COLOR_PROPS, DEFAULT_BULLET_MARKS, DEFAULT_COLOR_ENTRIES, isUnset, parseBulletMarks } from '../utils/defaultColor';
 import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
@@ -411,12 +411,21 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.TextEditor.LineNumbers.IsVisible),
     set: (app, v) => { app.WorkoutPanel.TextEditor.LineNumbers.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.LineNumbers.IsVisible); },
   },
+  'TextEditor.Bullet.Marks': {
+    panel: 'WorkoutPanel',
+    default: DEFAULT_BULLET_MARKS, type: 'string', candidates: '.*',
+    description: '箇条書きの行頭記号（CSV。n番目が TextEditor.Bullet.StyleN に対応）',
+    get: (app) => app.WorkoutPanel.TextEditor.Bullet.Marks,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.Marks = v; },
+  },
   'TextEditor.Bullet.StyleNum': {
     panel: 'WorkoutPanel',
-    default: '9', type: 'integer', candidates: '^[0-9]+$',
-    description: '箇条書きスタイルの登録数',
-    get: (app) => String(app.WorkoutPanel.TextEditor.Bullet.StyleNum),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.StyleNum = parseInt(v, 10) || 0; },
+    default: String(parseBulletMarks(DEFAULT_BULLET_MARKS).length),
+    type: 'integer', candidates: '^[0-9]+$',
+    // Marks のアイテム数そのものなので直接は書き換えられない（登録数を変えるには Marks を編集する）
+    description: '箇条書きスタイルの登録数（TextEditor.Bullet.Marks のアイテム数）',
+    get: (app) => String(parseBulletMarks(app.WorkoutPanel.TextEditor.Bullet.Marks).length),
+    set: () => {},
   },
   'TextEditor.Comment.StyleNum': {
     panel: 'WorkoutPanel',
@@ -1076,25 +1085,15 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 };
 
-// コメントおよび箇条書きのStyle1〜Style20の登録
+// コメントのStyle1〜Style20の登録
+// （箇条書きは行頭記号を TextEditor.Bullet.Marks、色・属性を docs/DefaultColor.md の
+//   TextEditor.Bullet.Style(1..N).* に分けたため、ここでは登録しない）
 const defaultCommentStyles: Record<number, string> = {
   1: ">,#bbddbb,undefined",
   2: ">>,#bbbbdd,undefined",
   3: ">>>,#ddbbbb,undefined",
   4: ";,#bbbbbb,undefined",
   5: "|,#ffaaaa,undefined"
-};
-
-const defaultBulletStyles: Record<number, string> = {
-  1: "・,undefined,undefined",
-  2: "-,undefined,undefined",
-  3: "*,#cc2222,undefined",
-  4: "■,#000000,underline",
-  5: "●,#000000,underline",
-  6: "=,#cccc22,undefined",
-  7: "↓,#000000,bold",
-  8: "→,undefined,underline",
-  9: "[✓],undefined,bold"
 };
 
 for (let i = 1; i <= 20; i++) {
@@ -1106,15 +1105,6 @@ for (let i = 1; i <= 20; i++) {
     description: `コメントスタイル${i}`,
     get: (app: TTApplication) => (app.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] ?? '',
     set: (app: TTApplication, v: string) => { (app.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] = v; },
-  };
-  (PROP_SPECS as any)[`TextEditor.Bullet.Style${i}`] = {
-    panel: 'WorkoutPanel',
-    default: defaultBulletStyles[i] ?? '',
-    type: 'string',
-    candidates: '.*',
-    description: `箇条書きスタイル${i}`,
-    get: (app: TTApplication) => (app.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`] ?? '',
-    set: (app: TTApplication, v: string) => { (app.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`] = v; },
   };
 }
 

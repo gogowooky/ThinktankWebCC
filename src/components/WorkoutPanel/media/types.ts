@@ -7,7 +7,7 @@ import type React from 'react';
 import type { TTThink } from '../../../models/TTThink';
 import type { TTVault } from '../../../models/TTVault';
 import type { AiModelSelection } from '../../../services/aiModels';
-import type { InlineStyles, LinkStyles } from '../../../utils/defaultColor';
+import type { BulletStyle, InlineStyles, LinkStyles } from '../../../utils/defaultColor';
 
 export interface MediaProps {
   /**
@@ -56,7 +56,8 @@ export interface MediaProps {
     occurrenceBackground: string;
     headingStyles: { color: string; bgColor?: string; bold: boolean; underline: boolean }[];
     commentStyles?: EditorStyleItem[];
-    bulletStyles?: EditorStyleItem[];
+    /** 行頭記号（TextEditor.Bullet.Marks）と色・表示属性（TextEditor.Bullet.StyleN.*）の組 */
+    bulletStyles?: BulletStyle[];
     /** カーソル位置判定の対象になる Url / Filepath / Tag の表示属性 */
     linkStyles?: LinkStyles;
     /** `**bold**` / `*italic*` / `__underline__` / `~~strikethrough~~` の表示属性 */

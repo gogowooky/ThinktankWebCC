@@ -12,6 +12,7 @@ import type { TTApplication } from '../TTApplication';
 import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { getErrorMessage } from '../../utils/errorMessage';
+import { parseBulletMarks } from '../../utils/defaultColor';
 
 interface StylePrefixConfig {
   actionPrefix: 'Bullet' | 'Comment';
@@ -21,23 +22,15 @@ interface StylePrefixConfig {
   descLabel: string;
   /** true: 行頭インデントを保持したまま記号だけ切り替える（Bullet用） */
   respectIndent: boolean;
-  getStyleNum: (app: TTApplication) => number | undefined;
-  getRawStyle: (app: TTApplication, i: number) => string;
+  /** 切り替え対象の行頭記号を登録順に返す */
+  getMarks: (app: TTApplication) => string[];
 }
 
 function registerStylePrefixActions(app: TTApplication, cfg: StylePrefixConfig): void {
   const getStyles = (): string[] => {
-    const styles: string[] = [];
-    const num = cfg.getStyleNum(app) ?? 0;
-    for (let i = 1; i <= num; i++) {
-      const val = cfg.getRawStyle(app, i) || '';
-      const parts = val.split(',');
-      const symbol = (parts[0] || '').trim();
-      if (symbol) {
-        const formatSymbol = symbol.endsWith(' ') ? symbol : symbol + ' ';
-        styles.push(formatSymbol);
-      }
-    }
+    const styles = cfg.getMarks(app)
+      .filter(Boolean)
+      .map(symbol => (symbol.endsWith(' ') ? symbol : symbol + ' '));
     styles.push('');
     return styles;
   };
@@ -132,8 +125,7 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
     shortLabel: 'バレット',
     descLabel: '箇条書き文字',
     respectIndent: true,
-    getStyleNum: (a) => a.WorkoutPanel.TextEditor.Bullet.StyleNum,
-    getRawStyle: (a, i) => (a.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`],
+    getMarks: (a) => parseBulletMarks(a.WorkoutPanel.TextEditor.Bullet.Marks),
   });
 }
 
@@ -143,7 +135,15 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
     shortLabel: 'コメント',
     descLabel: 'コメント記号',
     respectIndent: false,
-    getStyleNum: (a) => a.WorkoutPanel.TextEditor.Comment.StyleNum,
-    getRawStyle: (a, i) => (a.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`],
+    // コメントは「記号,色,属性」を1つの文字列に持つ形式のままなので、先頭の記号だけ取り出す
+    getMarks: (a) => {
+      const num = a.WorkoutPanel.TextEditor.Comment.StyleNum ?? 0;
+      const marks: string[] = [];
+      for (let i = 1; i <= num; i++) {
+        const val = (a.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] || '';
+        marks.push((val.split(',')[0] || '').trim());
+      }
+      return marks;
+    },
   });
 }

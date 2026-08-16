@@ -14,21 +14,22 @@ TextEditor.Url.Style,               #0000ff,      undefined,        underline
 TextEditor.Filepath.Style,          undefined,      undefined,        underline    
 TextEditor.Tag.Style,               #4ba402ff,    undefined,        underline|bold
 
-## TextEditor.Bullet.Style1,           undefined,      undefined,        undefined
-## TextEditor.Bullet.Style2,           undefined,      undefined,        undefined
-## TextEditor.Bullet.Style3,       #cc2222,        undefined,        undefined
-## TextEditor.Bullet.Style4,       #000000,        undefined,        underline
-## TextEditor.Bullet.Style5,       #000000,        undefined,        underline
-## TextEditor.Bullet.Style6,       #cccc22,        undefined,        undefined
-## TextEditor.Bullet.Style7,       #000000,        undefined,        bold
-## TextEditor.Bullet.Style8,       undefined,        undefined,        underline
-## TextEditor.Bullet.Style9,       undefined,        undefined,        bold
+TextEditor.Bullet.Style1,           undefined,      undefined,        undefined
+TextEditor.Bullet.Style2,           undefined,      undefined,        undefined
+TextEditor.Bullet.Style3,           #cc2222,      undefined,        undefined
+TextEditor.Bullet.Style4,           #000000,      undefined,        underline
+TextEditor.Bullet.Style5,           #000000,      undefined,        underline
+TextEditor.Bullet.Style6,           #cccc22,      undefined,        undefined
+TextEditor.Bullet.Style7,           #000000,      undefined,        bold
+TextEditor.Bullet.Style8,           undefined,      undefined,        underline
+TextEditor.Bullet.Style9,           undefined,      undefined,        bold
 
-## TextEditor.Comment.Style1,       #bbddbb,       undefined,        undefined
-## TextEditor.Comment.Style2,       #bbbbdd,       undefined,        undefined
-## TextEditor.Comment.Style3,       #ddbbbb,       undefined,        undefined
-## TextEditor.Comment.Style4,       #bbbbbb,       undefined,        undefined
-## TextEditor.Comment.Style5,       #ffaaaa,       undefined,        undefined
+TextEditor.Comment.Style1,          #bbddbb,       undefined,        undefined
+TextEditor.Comment.Style2,          #bbbbdd,       undefined,        undefined
+TextEditor.Comment.Style3,          #ddbbbb,       undefined,        undefined
+TextEditor.Comment.Style4,          #bbbbbb,       undefined,        undefined
+TextEditor.Comment.Style5,          #ffaaaa,       undefined,        undefined
+TextEditor.Comment.Style6,          #ffaaaa,       undefined,        undefined
 
 ## TextEditor.Highlighter.Style1,        undefined,        #fff0b3,        undefined
 ## TextEditor.Highlighter.Style2,        undefined,        #ffb3b3,        undefined

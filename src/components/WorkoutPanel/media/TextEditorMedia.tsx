@@ -19,7 +19,7 @@ import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent } from '../../../utils/thinkFormat';
 import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
 import {
-  INLINE_MASK_CHAR, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS,
+  INLINE_MASK_CHAR, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS, bulletStyleClass,
   colorStyleToCss, injectInlineStyleCss, inlineStyleClass, linkStyleClass,
 } from '../../../utils/defaultColor';
 import type { LinkStyleName } from '../../../utils/defaultColor';
@@ -528,26 +528,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       bulletStyleEl.id = 'text-editor-bullet-styles';
       document.head.appendChild(bulletStyleEl);
     }
+    // 色・属性は docs/DefaultColor.md 由来の TextEditor.Bullet.Style(1..N).* に従う
     const bulletStyles = editorSettings.bulletStyles || [];
-    const bulletRules = bulletStyles.map((s, index) => {
-      const color = s.color;
-      const attr = s.attr;
-      const hasColor = color && color !== 'undefined' && color !== 'none';
-      const hasAttr = attr && attr !== 'undefined' && attr !== 'none';
-      if (hasColor || hasAttr) {
-        const isBold = hasAttr && attr.includes('bold');
-        const isUnderline = hasAttr && attr.includes('underline');
-        return `
-          .custom-bullet-b${index + 1}, .custom-bullet-b${index + 1} * {
-            ${hasColor ? `color: ${color} !important;` : ''}
-            ${isBold ? `font-weight: bold !important;` : ''}
-            ${isUnderline ? `text-decoration: underline !important;` : ''}
-          }
-        `;
-      }
-      return '';
-    }).join('\n');
-    bulletStyleEl.innerHTML = bulletRules;
+    bulletStyleEl.textContent = bulletStyles.map((b, index) => {
+      const decls = colorStyleToCss(b.style);
+      if (!decls) return '';
+      const cls = bulletStyleClass(index + 1);
+      return `.${cls}, .${cls} * { ${decls} }`;
+    }).filter(Boolean).join('\n');
 
     // URL/Filepath/Tag用のCSSの注入
     let linkStyleEl = document.getElementById('text-editor-link-styles');
@@ -672,11 +660,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           let matchedBullet = null;
           let bulletIndex = -1;
           const sortedBullets = bulletStyles
-            .map((s, idx) => ({ ...s, originalIndex: idx }))
-            .sort((a, b) => b.symbol.length - a.symbol.length);
+            .map((b, idx) => ({ ...b, originalIndex: idx }))
+            .sort((a, b) => b.mark.length - a.mark.length);
 
           for (const b of sortedBullets) {
-            const matchPattern = b.symbol.endsWith(' ') ? b.symbol : b.symbol + ' ';
+            const matchPattern = b.mark.endsWith(' ') ? b.mark : b.mark + ' ';
             if (textAfterIndent.startsWith(matchPattern)) {
               matchedBullet = b;
               bulletIndex = b.originalIndex;
@@ -684,21 +672,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
             }
           }
 
-          if (matchedBullet) {
-            const color = matchedBullet.color;
-            const attr = matchedBullet.attr;
-            const hasColor = color && color !== 'undefined' && color !== 'none';
-            const hasAttr = attr && attr !== 'undefined' && attr !== 'none';
-
-            if (hasColor || hasAttr) {
-              newDecorations.push({
-                range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
-                options: {
-                  isWholeLine: true,
-                  inlineClassName: `custom-bullet-b${bulletIndex + 1}`
-                }
-              });
-            }
+          if (matchedBullet && colorStyleToCss(matchedBullet.style)) {
+            newDecorations.push({
+              range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
+              options: {
+                isWholeLine: true,
+                inlineClassName: bulletStyleClass(bulletIndex + 1)
+              }
+            });
           }
         }
       }
