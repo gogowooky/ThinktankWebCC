@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.16",
+  "version": "1.4.17",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "ce5101d",
-  "commitDateTime": "2026-08-16-152446",
-  "commitMessage": "feat: 色設定を docs/DefaultColor.md に集約しインライン書式に対応"
+  "commitId": "a2385cc",
+  "commitDateTime": "2026-08-16-195319",
+  "commitMessage": "refactor: Comment スタイルも記号と色を分離し Bullet と共通化"
 }
