@@ -13,12 +13,13 @@
 import { useEffect, useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import { renderMarkdownSections } from '../../../utils/markdownSanitize';
 import { editorLineOffset, parseClosedHeadings, serializeClosedHeadings } from '../../../utils/markdownSections';
+import { injectInlineStyleCss } from '../../../utils/defaultColor';
 import type { MediaProps } from './types';
 import './MarkdownMedia.css';
 
 export interface MarkdownMediaRef { focus: () => void; }
 
-export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function MarkdownMedia({ think }: MediaProps, ref) {
+export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function MarkdownMedia({ think, editorSettings }: MediaProps, ref) {
   const [html, setHtml] = useState('');
   const mdRef = useRef<HTMLDivElement>(null);
 
@@ -40,6 +41,12 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
       sel?.addRange(range);
     },
   }));
+
+  // TextEditor ペインが開いていなくても書式が効くよう、こちらでも注入する
+  // （同じスタイルシートを共有するので、両方開いていても二重にはならない）
+  useEffect(() => {
+    injectInlineStyleCss(editorSettings?.inlineStyles);
+  }, [editorSettings?.inlineStyles]);
 
   useEffect(() => {
     if (!think) { setHtml(''); return; }

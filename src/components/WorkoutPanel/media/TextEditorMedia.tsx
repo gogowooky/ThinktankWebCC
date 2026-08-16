@@ -18,6 +18,7 @@ import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent } from '../../../utils/thinkFormat';
 import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
+import { INLINE_MASK_CHAR, INLINE_STYLE_RULES, injectInlineStyleCss, inlineStyleClass } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import './TextEditorMedia.css';
 
@@ -591,6 +592,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }
     linkStyleEl.innerHTML = linkRules.join('\n');
 
+    // インライン書式（**bold** / *italic* / __underline__ / ~~strikethrough~~）用CSSの注入。
+    // 色・属性は docs/DefaultColor.md 由来の TextEditor.<書式名>.* に従う。
+    // MarkdownMedia と同じスタイルシートを共有するので、どちらのビューでも同じ見た目になる。
+    injectInlineStyleCss(editorSettings.inlineStyles);
+
     updateDecorations();
 
   }, [editorSettings]);
@@ -855,6 +861,34 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           }
         });
         decoratedRanges.push({ start: startCol, end: endCol });
+      }
+
+      // 5. インライン書式（**bold** / __underline__ / ~~strikethrough~~ / *italic*）
+      // URL/Tag の decoratedRanges とは独立に判定する。両方に該当する範囲は
+      // Monaco が両方の inlineClassName を適用するため、片方を捨てる必要はない。
+      // 判定の済んだ記号だけを伏せ字にして次のルールへ渡すことで、`**太字**` の `*` が
+      // 斜体の記号として再解釈されるのを防ぎつつ、`*斜体の中の **太字**` の入れ子は残す。
+      let scanLine = lineContent;
+      for (const rule of INLINE_STYLE_RULES) {
+        const regex = new RegExp(rule.pattern, 'g');
+        const markers: number[] = [];
+        let inlineMatch;
+        while ((inlineMatch = regex.exec(scanLine)) !== null) {
+          const startCol = inlineMatch.index + 1;
+          const endCol = startCol + inlineMatch[0].length;
+          newDecorations.push({
+            range: new (window as any).monaco.Range(i, startCol, i, endCol),
+            options: {
+              inlineClassName: inlineStyleClass(rule.name)
+            }
+          });
+          markers.push(inlineMatch.index, inlineMatch.index + inlineMatch[0].length - rule.marker.length);
+        }
+        for (const at of markers) {
+          scanLine = scanLine.slice(0, at)
+            + INLINE_MASK_CHAR.repeat(rule.marker.length)
+            + scanLine.slice(at + rule.marker.length);
+        }
       }
     }
 

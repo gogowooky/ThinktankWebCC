@@ -211,7 +211,12 @@
       "Bash(git commit -m '@ *)",
       "Bash(xargs wc -l)",
       "Bash(sort -u -t: -k3)",
-      "PowerShell(npx tsc -p tsconfig.json --noEmit)"
+      "PowerShell(npx tsc -p tsconfig.json --noEmit)",
+      "Bash(curl -s \"http://localhost:8080/api/bigquery/files/2026-08-16-111039/content\")",
+      "Bash(echo \"--- status $?\")",
+      "Bash(curl -s -o /dev/null -w \"8080:%{http_code}\\\\n\" http://localhost:8080/api/health)",
+      "Bash(curl -s \"http://localhost:5173/src/utils/markdownSanitize.ts\")",
+      "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 5173,8080 -ErrorAction SilentlyContinue | Select-Object LocalPort,OwningProcess | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; \"$\\($_.LocalPort\\) pid=$\\($_.OwningProcess\\) name=$\\($p.ProcessName\\) started=$\\($p.StartTime\\)\" })"
     ]
   }
 }

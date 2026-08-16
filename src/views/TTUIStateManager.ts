@@ -32,6 +32,8 @@ import { TTWorkoutArea } from './TTWorkoutArea';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
+import { COLOR_PROPS, DEFAULT_COLOR_ENTRIES, isUnset } from '../utils/defaultColor';
+import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
 import { StorageManager } from '../services/storage/StorageManager';
@@ -1183,6 +1185,68 @@ for (let i = 1; i <= 20; i++) {
     get: (app: TTApplication) => (app.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`] ?? '',
     set: (app: TTApplication, v: string) => { (app.WorkoutPanel.TextEditor.Bullet as any)[`Style${i}`] = v; },
   };
+}
+
+// ── docs/DefaultColor.md 由来の StatusID変数 ──────────────────────────────────
+//
+// 1行（StatusID名, Color, BgColor, Attrs）から
+// `<StatusID>.Color` / `<StatusID>.BgColor` / `<StatusID>.Attrs` の3変数を登録し、
+// CSVの各値をその既定値にする。
+// 既存キーと重なる場合は get/set を既存定義のまま残し、既定値だけをファイル側で上書きする
+// （色の既定値の定義元を DefaultColor.md に一本化するため）。
+// `undefined` は無設定値なので、既存キーの既定値は上書きしない。
+
+const COLOR_PROP_TYPE: Record<ColorProp, PropDef['type']> = {
+  Color:   'color',
+  BgColor: 'color',
+  Attrs:   'string',
+};
+
+const COLOR_VALUE_PATTERN = '^(#[0-9a-fA-F]{3,8}|undefined|none)$';
+const ATTR_NAMES = 'bold|italic|underline|strikethrough';
+
+const COLOR_PROP_CANDIDATES: Record<ColorProp, string> = {
+  Color:   COLOR_VALUE_PATTERN,
+  BgColor: COLOR_VALUE_PATTERN,
+  Attrs:   `^(undefined|none|(${ATTR_NAMES})(\\|(${ATTR_NAMES}))*)$`,
+};
+
+const COLOR_PROP_LABEL: Record<ColorProp, string> = {
+  Color:   '文字色',
+  BgColor: '背景色',
+  Attrs:   `表示属性 (${ATTR_NAMES})`,
+};
+
+function colorStatusPanel(statusId: string): PanelKey {
+  const prefix = statusId.split('.')[0];
+  if (prefix === 'Thinktank') return 'ThinktankPanel';
+  if (prefix === 'Overview')  return 'OverviewPanel';
+  if (prefix === 'ReThink')   return 'ReThinkPanel';
+  if (prefix === 'Application') return 'Application';
+  return 'WorkoutPanel';
+}
+
+for (const entry of DEFAULT_COLOR_ENTRIES) {
+  for (const prop of COLOR_PROPS) {
+    const key      = `${entry.statusId}.${prop}`;
+    const defValue = entry.style[prop];
+    const existing = (PROP_SPECS as Record<string, PropSpec | undefined>)[key];
+
+    if (existing) {
+      if (!isUnset(defValue)) existing.default = defValue;
+      continue;
+    }
+
+    (PROP_SPECS as Record<string, PropSpec>)[key] = {
+      panel: colorStatusPanel(entry.statusId),
+      default: defValue,
+      type: COLOR_PROP_TYPE[prop],
+      candidates: COLOR_PROP_CANDIDATES[prop],
+      description: `${entry.statusId} の${COLOR_PROP_LABEL[prop]}`,
+      get: (app: TTApplication) => app.WorkoutPanel.GetColorStatus(entry.statusId)[prop],
+      set: (app: TTApplication, v: string) => { app.WorkoutPanel.SetColorStatus(entry.statusId, prop, v, false); },
+    };
+  }
 }
 
 // ── TTUIStateManager ──────────────────────────────────────────────────────────

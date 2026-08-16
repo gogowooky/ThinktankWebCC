@@ -7,6 +7,7 @@ import type React from 'react';
 import type { TTThink } from '../../../models/TTThink';
 import type { TTVault } from '../../../models/TTVault';
 import type { AiModelSelection } from '../../../services/aiModels';
+import type { InlineStyles } from '../../../utils/defaultColor';
 
 export interface MediaProps {
   /**
@@ -59,6 +60,8 @@ export interface MediaProps {
     urlStyle?: { color: string; bgColor?: string; bold: boolean; underline: boolean };
     filepathStyle?: { color: string; bgColor?: string; bold: boolean; underline: boolean };
     tagStyle?: { color: string; bgColor?: string; bold: boolean; underline: boolean };
+    /** `**bold**` / `*italic*` / `__underline__` / `~~strikethrough~~` の表示属性 */
+    inlineStyles?: InlineStyles;
   };
 }
 

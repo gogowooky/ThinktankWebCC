@@ -8,6 +8,8 @@ import { TTWorkoutArea } from './TTWorkoutArea';
 import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
+import { createColorStatusDefaults, getDefaultColorStyle } from '../utils/defaultColor';
+import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 
@@ -81,6 +83,13 @@ export class TextEditorSettings {
   UrlStyle: SectionStyle = { color: '#1010edff', bold: false, underline: true };
   FilepathStyle: SectionStyle = { color: 'undefined', bold: false, underline: true };
   TagStyle: SectionStyle = { color: '#4ba402ff', bold: true, underline: true };
+
+  /**
+   * docs/DefaultColor.md 由来の色設定。キーは StatusID名（例: 'TextEditor.Bold'）で、
+   * 値は Color / BgColor / Attrs の3項目。StatusID変数 `<StatusID>.<項目>` の実体であり、
+   * 登録と読み書きは TTUIStateManager の PROP_SPECS が担う。
+   */
+  ColorStatus: Record<string, ColorStyle> = createColorStatusDefaults();
 
 
 
@@ -286,6 +295,24 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetTextEditorTagStyle(style: Partial<SectionStyle>) {
     this.TextEditor.TagStyle = { ...this.TextEditor.TagStyle, ...style };
     this.NotifyUpdated();
+  }
+
+  /**
+   * docs/DefaultColor.md 由来の StatusID変数を1項目だけ書き換える。
+   * notify=false は PROP_SPECS.set() 経由の呼び出し用（通知は _applyContent がまとめて行う）。
+   */
+  public SetColorStatus(statusId: string, prop: ColorProp, value: string, notify = true) {
+    const current = this.TextEditor.ColorStatus[statusId] ?? getDefaultColorStyle(statusId);
+    this.TextEditor.ColorStatus = {
+      ...this.TextEditor.ColorStatus,
+      [statusId]: { ...current, [prop]: value },
+    };
+    if (notify) this.NotifyUpdated();
+  }
+
+  /** StatusID の現在の色設定を返す（未登録IDは既定値） */
+  public GetColorStatus(statusId: string): ColorStyle {
+    return this.TextEditor.ColorStatus[statusId] ?? getDefaultColorStyle(statusId);
   }
 
   // ── AI Chat モデル選択 ────────────────────────────────────────────────

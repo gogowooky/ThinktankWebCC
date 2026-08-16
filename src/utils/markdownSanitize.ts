@@ -16,6 +16,7 @@ import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js';
 import DOMPurify from 'dompurify';
 import { buildSectionTree, type MarkdownSection } from './markdownSections';
+import { inlineStyleClass } from './defaultColor';
 
 /** 属性値へ埋め込む前に HTML 特殊文字を無害化する */
 export function escapeHtml(s: string): string {
@@ -33,7 +34,10 @@ const SAFE_LINK_SCHEME = /^(?:https?|mailto|tel):/i;
 // [File:name](url) などのリンクを新しいタブで開くレンダラー。
 // href / title を素の文字列連結で埋めると javascript: スキームや
 // title="..." からの属性ブレイクアウトを許すため、両方を検証・エスケープする。
-const linkRenderer = {
+//
+// strong / em / del には docs/DefaultColor.md 由来のクラスを付ける。TextEditor（Monaco）の
+// デコレーションと同じクラス名なので、両ビューで同じ表示属性になる。
+const renderer = {
   link({ href, title, text }: { href: string; title?: string | null; text: string }) {
     const trimmed = (href ?? '').trim();
     const safeHref = SAFE_LINK_SCHEME.test(trimmed) ? escapeHtml(trimmed) : '';
@@ -41,6 +45,38 @@ const linkRenderer = {
     // 許可スキーム外は遷移させず、リンク文言だけを残す
     if (!safeHref) return `<span${titleAttr}>${text}</span>`;
     return `<a href="${safeHref}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+  },
+  strong(this: any, { tokens }: { tokens: unknown[] }) {
+    return `<strong class="${inlineStyleClass('bold')}">${this.parser.parseInline(tokens)}</strong>`;
+  },
+  em(this: any, { tokens }: { tokens: unknown[] }) {
+    return `<em class="${inlineStyleClass('italic')}">${this.parser.parseInline(tokens)}</em>`;
+  },
+  del(this: any, { tokens }: { tokens: unknown[] }) {
+    return `<del class="${inlineStyleClass('strikethrough')}">${this.parser.parseInline(tokens)}</del>`;
+  },
+};
+
+// `__text__` を下線として扱う拡張。
+// marked（CommonMark）は `__text__` を `**text**` と同じ strong に潰してしまうため、
+// 標準の emStrong より先に走るインライン拡張で横取りする
+// （Lexer は options.extensions.inline を組み込みトークナイザより先に評価する）。
+const underlineExtension = {
+  name: 'ttUnderline',
+  level: 'inline' as const,
+  start(src: string) { return src.indexOf('__'); },
+  tokenizer(this: any, src: string) {
+    const match = /^__(?!_)([\s\S]+?)__(?!_)/.exec(src);
+    if (!match) return undefined;
+    return {
+      type:   'ttUnderline',
+      raw:    match[0],
+      text:   match[1],
+      tokens: this.lexer.inlineTokens(match[1]),
+    };
+  },
+  renderer(this: any, token: { tokens: unknown[] }) {
+    return `<u class="${inlineStyleClass('underline')}">${this.parser.parseInline(token.tokens)}</u>`;
   },
 };
 
@@ -53,7 +89,7 @@ const md = new Marked(
       return hljs.highlight(code, { language }).value;
     },
   }),
-  { renderer: linkRenderer },
+  { renderer, extensions: [underlineExtension] },
 );
 
 // 生き残ったリンクに target/rel を付け直す。
