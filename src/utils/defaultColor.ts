@@ -116,41 +116,51 @@ export function colorStyleToCss(style: ColorStyle): string {
   return decls.join(' ');
 }
 
-// ── TextEditor の箇条書き（Bullet）スタイル ────────────────────────────────
+// ── 行頭記号のスタイル（Bullet / Comment）────────────────────────────────
+//
+// どちらも「記号は TextEditor.<種別>.Marks（CSV）、色・表示属性は
+// docs/DefaultColor.md の TextEditor.<種別>.Style(1..N).*」という同じ構造を持つ。
+// Marks の n 番目のアイテムが StyleN に対応する。
 
-/** TextEditor.Bullet.Marks の既定値（CSVの各アイテムが Style1..N に順に対応する） */
-export const DEFAULT_BULLET_MARKS = '・,-,*,■,●,=,↓,→,[✓]';
+export type MarkKind = 'Bullet' | 'Comment';
+
+/** TextEditor.<種別>.Marks の既定値 */
+export const DEFAULT_MARKS: Record<MarkKind, string> = {
+  Bullet:  '・,-,*,■,●,=,↓,→,[✓]',
+  Comment: '>,>>,>>>,;,|,//',
+};
 
 /** Marks（CSV）を行頭記号の配列に分解する。空アイテムは登録なしとして捨てる */
-export function parseBulletMarks(marks: string | undefined): string[] {
+export function parseMarks(marks: string | undefined): string[] {
   if (!marks) return [];
   return marks.split(',').map(m => m.trim()).filter(Boolean);
 }
 
-/** n 番目（1始まり）の箇条書きスタイルの StatusID */
-export function bulletStatusId(index: number): string {
-  return `TextEditor.Bullet.Style${index}`;
+/** n 番目（1始まり）のスタイルの StatusID */
+export function markStatusId(kind: MarkKind, index: number): string {
+  return `TextEditor.${kind}.Style${index}`;
 }
 
-/** n 番目（1始まり）の箇条書きデコレーションのCSSクラス名 */
-export function bulletStyleClass(index: number): string {
-  return `custom-bullet-b${index}`;
+/** n 番目（1始まり）のデコレーションのCSSクラス名 */
+export function markStyleClass(kind: MarkKind, index: number): string {
+  return kind === 'Bullet' ? `custom-bullet-b${index}` : `custom-comment-c${index}`;
 }
 
-export interface BulletStyle {
-  /** 行頭記号（TextEditor.Bullet.Marks の n 番目） */
+export interface MarkStyle {
+  /** 行頭記号（TextEditor.<種別>.Marks の n 番目） */
   mark:  string;
-  /** 色・表示属性（docs/DefaultColor.md の TextEditor.Bullet.StyleN.*） */
+  /** 色・表示属性（docs/DefaultColor.md の TextEditor.<種別>.StyleN.*） */
   style: ColorStyle;
 }
 
-/** Marks と ColorStatus ストアから箇条書きスタイル一覧を組み立てる */
-export function pickBulletStyles(
+/** Marks と ColorStatus ストアから行頭記号スタイル一覧を組み立てる */
+export function pickMarkStyles(
+  kind: MarkKind,
   marks: string | undefined,
   store: Record<string, ColorStyle> | undefined,
-): BulletStyle[] {
-  return parseBulletMarks(marks).map((mark, i) => {
-    const statusId = bulletStatusId(i + 1);
+): MarkStyle[] {
+  return parseMarks(marks).map((mark, i) => {
+    const statusId = markStatusId(kind, i + 1);
     return { mark, style: store?.[statusId] ?? getDefaultColorStyle(statusId) };
   });
 }

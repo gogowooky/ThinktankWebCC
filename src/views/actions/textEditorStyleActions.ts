@@ -12,7 +12,7 @@ import type { TTApplication } from '../TTApplication';
 import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { getErrorMessage } from '../../utils/errorMessage';
-import { parseBulletMarks } from '../../utils/defaultColor';
+import { parseMarks } from '../../utils/defaultColor';
 
 interface StylePrefixConfig {
   actionPrefix: 'Bullet' | 'Comment';
@@ -125,7 +125,7 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
     shortLabel: 'バレット',
     descLabel: '箇条書き文字',
     respectIndent: true,
-    getMarks: (a) => parseBulletMarks(a.WorkoutPanel.TextEditor.Bullet.Marks),
+    getMarks: (a) => parseMarks(a.WorkoutPanel.TextEditor.Bullet.Marks),
   });
 }
 
@@ -135,15 +135,6 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
     shortLabel: 'コメント',
     descLabel: 'コメント記号',
     respectIndent: false,
-    // コメントは「記号,色,属性」を1つの文字列に持つ形式のままなので、先頭の記号だけ取り出す
-    getMarks: (a) => {
-      const num = a.WorkoutPanel.TextEditor.Comment.StyleNum ?? 0;
-      const marks: string[] = [];
-      for (let i = 1; i <= num; i++) {
-        const val = (a.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] || '';
-        marks.push((val.split(',')[0] || '').trim());
-      }
-      return marks;
-    },
+    getMarks: (a) => parseMarks(a.WorkoutPanel.TextEditor.Comment.Marks),
   });
 }

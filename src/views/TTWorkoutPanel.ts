@@ -9,10 +9,9 @@ import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import {
-  DEFAULT_BULLET_MARKS, createColorStatusDefaults, defaultColorValue,
-  getDefaultColorStyle, pickBulletStyles,
+  DEFAULT_MARKS, createColorStatusDefaults, defaultColorValue, getDefaultColorStyle,
 } from '../utils/defaultColor';
-import type { BulletStyle, ColorProp, ColorStyle } from '../utils/defaultColor';
+import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 
@@ -58,25 +57,12 @@ export class TextEditorSettings {
   ReplaceOption = { PreserveCase: false };
 
   /**
-   * 箇条書き。行頭記号は Marks（CSV）だけが持ち、色・表示属性は ColorStatus
-   * （docs/DefaultColor.md の TextEditor.Bullet.Style(1..N).*）が持つ。
+   * 箇条書き・コメント。行頭記号は Marks（CSV）だけが持ち、色・表示属性は ColorStatus
+   * （docs/DefaultColor.md の TextEditor.<種別>.Style(1..N).*）が持つ。
    * CSVの n 番目のアイテムが StyleN に対応する。
    */
-  Bullet = { Marks: DEFAULT_BULLET_MARKS };
-
-  /** Bullet.Marks を分解した行頭記号の配列。StyleNum はこの件数 */
-  get BulletStyles(): BulletStyle[] {
-    return pickBulletStyles(this.Bullet.Marks, this.ColorStatus);
-  }
-  Comment: Record<string, any> = {
-    StyleNum: 5,
-    Style1: ">,#bbddbb,undefined",
-    Style2: ">>,#bbbbdd,undefined",
-    Style3: ">>>,#ddbbbb,undefined",
-    Style4: ";,#bbbbbb,undefined",
-    Style5: "|,#ffaaaa,undefined",
-    Style6: '', Style7: '', Style8: '', Style9: '', Style10: '', Style11: '', Style12: '', Style13: '', Style14: '', Style15: '', Style16: '', Style17: '', Style18: '', Style19: '', Style20: ''
-  };
+  Bullet  = { Marks: DEFAULT_MARKS.Bullet };
+  Comment = { Marks: DEFAULT_MARKS.Comment };
 
   // 既定値は docs/DefaultColor.md の TextEditor.Text / .Selection / .Occurrence が定義元。
   // 第3引数はファイル側で無設定（コメントアウト等）だった場合のフォールバック。

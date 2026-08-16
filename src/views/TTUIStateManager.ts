@@ -32,7 +32,7 @@ import { TTWorkoutArea } from './TTWorkoutArea';
 import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
-import { COLOR_PROPS, DEFAULT_BULLET_MARKS, DEFAULT_COLOR_ENTRIES, isUnset, parseBulletMarks } from '../utils/defaultColor';
+import { COLOR_PROPS, DEFAULT_COLOR_ENTRIES, DEFAULT_MARKS, isUnset, parseMarks } from '../utils/defaultColor';
 import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
@@ -413,26 +413,35 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
   'TextEditor.Bullet.Marks': {
     panel: 'WorkoutPanel',
-    default: DEFAULT_BULLET_MARKS, type: 'string', candidates: '.*',
+    default: DEFAULT_MARKS.Bullet, type: 'string', candidates: '.*',
     description: '箇条書きの行頭記号（CSV。n番目が TextEditor.Bullet.StyleN に対応）',
     get: (app) => app.WorkoutPanel.TextEditor.Bullet.Marks,
     set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.Marks = v; },
   },
   'TextEditor.Bullet.StyleNum': {
     panel: 'WorkoutPanel',
-    default: String(parseBulletMarks(DEFAULT_BULLET_MARKS).length),
+    default: String(parseMarks(DEFAULT_MARKS.Bullet).length),
     type: 'integer', candidates: '^[0-9]+$',
     // Marks のアイテム数そのものなので直接は書き換えられない（登録数を変えるには Marks を編集する）
     description: '箇条書きスタイルの登録数（TextEditor.Bullet.Marks のアイテム数）',
-    get: (app) => String(parseBulletMarks(app.WorkoutPanel.TextEditor.Bullet.Marks).length),
+    get: (app) => String(parseMarks(app.WorkoutPanel.TextEditor.Bullet.Marks).length),
     set: () => {},
+  },
+  'TextEditor.Comment.Marks': {
+    panel: 'WorkoutPanel',
+    default: DEFAULT_MARKS.Comment, type: 'string', candidates: '.*',
+    description: 'コメントの行頭記号（CSV。n番目が TextEditor.Comment.StyleN に対応）',
+    get: (app) => app.WorkoutPanel.TextEditor.Comment.Marks,
+    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.Marks = v; },
   },
   'TextEditor.Comment.StyleNum': {
     panel: 'WorkoutPanel',
-    default: '5', type: 'integer', candidates: '^[0-9]+$',
-    description: 'コメントスタイルの登録数',
-    get: (app) => String(app.WorkoutPanel.TextEditor.Comment.StyleNum),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.StyleNum = parseInt(v, 10) || 0; },
+    default: String(parseMarks(DEFAULT_MARKS.Comment).length),
+    type: 'integer', candidates: '^[0-9]+$',
+    // Bullet.StyleNum と同じく Marks のアイテム数そのもの（直接は書き換えられない）
+    description: 'コメントスタイルの登録数（TextEditor.Comment.Marks のアイテム数）',
+    get: (app) => String(parseMarks(app.WorkoutPanel.TextEditor.Comment.Marks).length),
+    set: () => {},
   },
   'TextEditor.WordWrap.IsVisible': {
     panel: 'WorkoutPanel',
@@ -1085,28 +1094,9 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 };
 
-// コメントのStyle1〜Style20の登録
-// （箇条書きは行頭記号を TextEditor.Bullet.Marks、色・属性を docs/DefaultColor.md の
-//   TextEditor.Bullet.Style(1..N).* に分けたため、ここでは登録しない）
-const defaultCommentStyles: Record<number, string> = {
-  1: ">,#bbddbb,undefined",
-  2: ">>,#bbbbdd,undefined",
-  3: ">>>,#ddbbbb,undefined",
-  4: ";,#bbbbbb,undefined",
-  5: "|,#ffaaaa,undefined"
-};
-
-for (let i = 1; i <= 20; i++) {
-  (PROP_SPECS as any)[`TextEditor.Comment.Style${i}`] = {
-    panel: 'WorkoutPanel',
-    default: defaultCommentStyles[i] ?? '',
-    type: 'string',
-    candidates: '.*',
-    description: `コメントスタイル${i}`,
-    get: (app: TTApplication) => (app.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] ?? '',
-    set: (app: TTApplication, v: string) => { (app.WorkoutPanel.TextEditor.Comment as any)[`Style${i}`] = v; },
-  };
-}
+// Bullet / Comment の Style1..20（記号,色,属性 の結合値）は廃止した。
+// 行頭記号は TextEditor.<種別>.Marks、色・表示属性は docs/DefaultColor.md の
+// TextEditor.<種別>.Style(1..N).* に分かれ、後者は下の DEFAULT_COLOR_ENTRIES ループが登録する。
 
 // ── docs/DefaultColor.md 由来の StatusID変数 ──────────────────────────────────
 //

@@ -1321,55 +1321,18 @@ current:        ・,-,*,■,●,=,↓,→,[✓]
 default:        ・,-,*,■,●,=,↓,→,[✓]
 type:           string
 candidates:     .*
+## Status：　260816　TextEditor.Comment.Marks
+　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Comment.Style(1..6).* に順に対応します
+　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
+　TextEditor.Comment.StyleNum はこのCSVのアイテム数から自動で決まるため、ここでは定義しません。
 
-## Status：　TextEditor.Comment.Marks
-description:    コメントマーク
+description:    コメントのマーク
 key:            TextEditor.Comment.Marks
 current:        >,>>,>>>,;,|,//
+default:        >,>>,>>>,;,|,//
+type:           string
+candidates:     .*
 
-
-## Status：　260707　TextEditor.Comment.StyleNum
-description:    コメントスタイルの登録数
-key:            TextEditor.Comment.StyleNum
-current:        5
-default:        5
-type:           integer
-candidates:     ^[0-9]+$
-## Status：　260707　TextEditor.Comment.Style1
-description:    コメントスタイル1
-key:            TextEditor.Comment.Style1
-current:        >,#bbddbb,undefined
-default:        >,#bbddbb,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style2
-description:    コメントスタイル2
-key:            TextEditor.Comment.Style2
-current:        >>,#bbbbdd,undefined
-default:        >>,#bbbbdd,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style3
-description:    コメントスタイル3
-key:            TextEditor.Comment.Style3
-current:        >>>,#ddbbbb,undefined
-default:        >>>,#ddbbbb,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style4
-description:    コメントスタイル4
-key:            TextEditor.Comment.Style4
-current:        ;,#bbbbbb,undefined
-default:        ;,#bbbbbb,undefined
-type:           string
-candidates:     .*
-## Status：　260707　TextEditor.Comment.Style5
-description:    コメントスタイル5
-key:            TextEditor.Comment.Style5
-current:        |,#ffaaaa,undefined
-default:        |,#ffaaaa,undefined
-type:           string
-candidates:     .*
 
 　TextEditor.CurrentEditor.DoOnCursorPos で認識される Url / Filepath / Tag の文字スタイルは
 　docs/DefaultColor.md で定義します（TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
@@ -1377,77 +1340,6 @@ candidates:     .*
 将来的にタグごとに分ける可能性あり、
 
 
-
-## Status：　260624　Thinktank.Ribbon.BgColor
-description:    Thinktank（左）パネルのヘッダー・リボン背景色
-key:            Thinktank.Ribbon.BgColor
-current:        #1d618f
-default:        #1d618f
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Thinktank.Area.BgColor
-description:    Thinktank（左）パネルのメインエリア背景色
-key:            Thinktank.Area.BgColor
-current:        #edf2f6
-default:        #edf2f6
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Overview.Ribbon.BgColor
-description:    Overview（上）パネルのヘッダー・リボン背景色
-key:            Overview.Ribbon.BgColor
-current:        #873960
-default:        #873960
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Overview.Area.BgColor
-description:    Overview（上）パネルのメインエリア背景色
-key:            Overview.Area.BgColor
-current:        #f8f3f5
-default:        #f8f3f5
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Workout.Ribbon.BgColor
-description:    Workout（中）パネルのヘッダー・リボン背景色
-key:            Workout.Ribbon.BgColor
-current:        #382830
-default:        #382830
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Workout.Area.BgColor
-description:    Workout（中）パネルのメインエリア背景色
-key:            Workout.Area.BgColor
-current:        #e3e1e2
-default:        #e3e1e2
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ReThink.Ribbon.BgColor
-description:    ReThink（右）パネルのヘッダー・リボン背景色
-key:            ReThink.Ribbon.BgColor
-current:        #324f46
-default:        #324f46
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ReThink.Area.BgColor
-description:    ReThink（右）パネルのメインエリア背景色
-key:            ReThink.Area.BgColor
-current:        #eff1f0
-default:        #eff1f0
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ToolBar.BgColor
-description:    ツールバー（ステータスバー）の背景色
-key:            ToolBar.BgColor
-current:        #2d2d2d
-default:        #2d2d2d
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ToolBar.Color
-description:    ツールバー（ステータスバー）の文字色
-key:            ToolBar.Color
-current:        #ffffff
-default:        #ffffff
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
 
 ## Status：　260707　TextEditor.Highlighter.Style1
 ハイライト1のスタイル（文字色, 背景色, 属性）
@@ -1560,6 +1452,78 @@ current:        #c586c0, undefined, bold|underline
 default:        #c586c0, undefined, bold|underline
 type:           string
 candidates:     .*
+
+
+## Status：　260624　Thinktank.Ribbon.BgColor
+description:    Thinktank（左）パネルのヘッダー・リボン背景色
+key:            Thinktank.Ribbon.BgColor
+current:        #1d618f
+default:        #1d618f
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Thinktank.Area.BgColor
+description:    Thinktank（左）パネルのメインエリア背景色
+key:            Thinktank.Area.BgColor
+current:        #edf2f6
+default:        #edf2f6
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Overview.Ribbon.BgColor
+description:    Overview（上）パネルのヘッダー・リボン背景色
+key:            Overview.Ribbon.BgColor
+current:        #873960
+default:        #873960
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Overview.Area.BgColor
+description:    Overview（上）パネルのメインエリア背景色
+key:            Overview.Area.BgColor
+current:        #f8f3f5
+default:        #f8f3f5
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Workout.Ribbon.BgColor
+description:    Workout（中）パネルのヘッダー・リボン背景色
+key:            Workout.Ribbon.BgColor
+current:        #382830
+default:        #382830
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　Workout.Area.BgColor
+description:    Workout（中）パネルのメインエリア背景色
+key:            Workout.Area.BgColor
+current:        #e3e1e2
+default:        #e3e1e2
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ReThink.Ribbon.BgColor
+description:    ReThink（右）パネルのヘッダー・リボン背景色
+key:            ReThink.Ribbon.BgColor
+current:        #324f46
+default:        #324f46
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ReThink.Area.BgColor
+description:    ReThink（右）パネルのメインエリア背景色
+key:            ReThink.Area.BgColor
+current:        #eff1f0
+default:        #eff1f0
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ToolBar.BgColor
+description:    ツールバー（ステータスバー）の背景色
+key:            ToolBar.BgColor
+current:        #2d2d2d
+default:        #2d2d2d
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
+## Status：　260624　ToolBar.Color
+description:    ツールバー（ステータスバー）の文字色
+key:            ToolBar.Color
+current:        #ffffff
+default:        #ffffff
+type:           color
+candidates:     ^#[0-9a-fA-F]{6,8}$
 
 
 # TextEditor ExOpt =================================================================================================

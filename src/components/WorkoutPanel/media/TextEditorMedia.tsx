@@ -19,10 +19,10 @@ import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent } from '../../../utils/thinkFormat';
 import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
 import {
-  INLINE_MASK_CHAR, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS, bulletStyleClass,
-  colorStyleToCss, injectInlineStyleCss, inlineStyleClass, linkStyleClass,
+  INLINE_MASK_CHAR, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS, colorStyleToCss,
+  injectInlineStyleCss, inlineStyleClass, linkStyleClass, markStyleClass,
 } from '../../../utils/defaultColor';
-import type { LinkStyleName } from '../../../utils/defaultColor';
+import type { LinkStyleName, MarkKind, MarkStyle } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import './TextEditorMedia.css';
 
@@ -67,6 +67,30 @@ function reconstructContent(think: NonNullable<MediaProps['think']>, body: strin
   if (editorValueIncludesTitleLine(think.ContentType)) return body;
   const firstLine = think.Content.split('\n')[0] ?? '';
   return body ? `${firstLine}\n${body}` : firstLine;
+}
+
+/**
+ * インデント除去後のテキストが Bullet / Comment のどの行頭記号で始まるかを判定する。
+ * 記号は長いものから照合する（">>>" を ">" より優先させるため）。
+ * 表示属性が空のスタイルは装飾しても見た目が変わらないので該当なし扱いにする。
+ */
+function matchMarkStyle(
+  kind: MarkKind,
+  styles: MarkStyle[],
+  textAfterIndent: string,
+): { className: string } | null {
+  const candidates = styles
+    .map((s, index) => ({ ...s, index }))
+    .sort((a, b) => b.mark.length - a.mark.length);
+
+  for (const c of candidates) {
+    const pattern = c.mark.endsWith(' ') ? c.mark : c.mark + ' ';
+    if (!textAfterIndent.startsWith(pattern)) continue;
+    return colorStyleToCss(c.style)
+      ? { className: markStyleClass(kind, c.index + 1) }
+      : null;
+  }
+  return null;
 }
 
 let isMarkdownFoldingRegistered = false;
@@ -502,40 +526,28 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
     styleEl.innerHTML = cssRules;
 
-    // コメント用CSSの注入
-    let commentStyleEl = document.getElementById('text-editor-comment-styles');
-    if (!commentStyleEl) {
-      commentStyleEl = document.createElement('style');
-      commentStyleEl.id = 'text-editor-comment-styles';
-      document.head.appendChild(commentStyleEl);
-    }
-    const commentStyles = editorSettings.commentStyles || [];
-    const commentRules = commentStyles.map((s, index) => {
-      const color = s.color;
-      if (!color || color === 'undefined' || color === 'none') return '';
-      return `
-        .custom-comment-c${index + 1}, .custom-comment-c${index + 1} * {
-          color: ${color} !important;
-        }
-      `;
-    }).join('\n');
-    commentStyleEl.innerHTML = commentRules;
+    // Bullet / Comment 用CSSの注入
+    // 色・属性は docs/DefaultColor.md 由来の TextEditor.<種別>.Style(1..N).* に従う
+    const markStyleCss = (kind: MarkKind, styles: MarkStyle[]) =>
+      styles.map((s, index) => {
+        const decls = colorStyleToCss(s.style);
+        if (!decls) return '';
+        const cls = markStyleClass(kind, index + 1);
+        return `.${cls}, .${cls} * { ${decls} }`;
+      }).filter(Boolean).join('\n');
 
-    // Bullet用CSSの注入
-    let bulletStyleEl = document.getElementById('text-editor-bullet-styles');
-    if (!bulletStyleEl) {
-      bulletStyleEl = document.createElement('style');
-      bulletStyleEl.id = 'text-editor-bullet-styles';
-      document.head.appendChild(bulletStyleEl);
+    for (const [elementId, kind, styles] of [
+      ['text-editor-comment-styles', 'Comment', editorSettings.commentStyles ?? []],
+      ['text-editor-bullet-styles',  'Bullet',  editorSettings.bulletStyles  ?? []],
+    ] as [string, MarkKind, MarkStyle[]][]) {
+      let el = document.getElementById(elementId);
+      if (!el) {
+        el = document.createElement('style');
+        el.id = elementId;
+        document.head.appendChild(el);
+      }
+      el.textContent = markStyleCss(kind, styles);
     }
-    // 色・属性は docs/DefaultColor.md 由来の TextEditor.Bullet.Style(1..N).* に従う
-    const bulletStyles = editorSettings.bulletStyles || [];
-    bulletStyleEl.textContent = bulletStyles.map((b, index) => {
-      const decls = colorStyleToCss(b.style);
-      if (!decls) return '';
-      const cls = bulletStyleClass(index + 1);
-      return `.${cls}, .${cls} * { ${decls} }`;
-    }).filter(Boolean).join('\n');
 
     // URL/Filepath/Tag用のCSSの注入
     let linkStyleEl = document.getElementById('text-editor-link-styles');
@@ -628,59 +640,18 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         const indentMatch = lineContent.match(/^([ \t\u3000]*)(.*)/);
         const textAfterIndent = indentMatch ? indentMatch[2] : lineContent;
 
-        // コメント行の装飾
-        let matchedComment = null;
-        let commentIndex = -1;
-        const sortedComments = commentStyles
-          .map((s, idx) => ({ ...s, originalIndex: idx }))
-          .sort((a, b) => b.symbol.length - a.symbol.length);
+        // 行頭記号の装飾。Comment を先に見て、該当しなければ Bullet を見る
+        const matched = matchMarkStyle('Comment', commentStyles, textAfterIndent)
+                     ?? matchMarkStyle('Bullet',  bulletStyles,  textAfterIndent);
 
-        for (const c of sortedComments) {
-          const matchPattern = c.symbol.endsWith(' ') ? c.symbol : c.symbol + ' ';
-          if (textAfterIndent.startsWith(matchPattern)) {
-            matchedComment = c;
-            commentIndex = c.originalIndex;
-            break;
-          }
-        }
-
-        if (matchedComment) {
-          const color = matchedComment.color;
-          if (color && color !== 'undefined' && color !== 'none') {
-            newDecorations.push({
-              range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
-              options: {
-                isWholeLine: true,
-                inlineClassName: `custom-comment-c${commentIndex + 1}`
-              }
-            });
-          }
-        } else {
-          // コメントでなければ、Bulletの装飾をチェック
-          let matchedBullet = null;
-          let bulletIndex = -1;
-          const sortedBullets = bulletStyles
-            .map((b, idx) => ({ ...b, originalIndex: idx }))
-            .sort((a, b) => b.mark.length - a.mark.length);
-
-          for (const b of sortedBullets) {
-            const matchPattern = b.mark.endsWith(' ') ? b.mark : b.mark + ' ';
-            if (textAfterIndent.startsWith(matchPattern)) {
-              matchedBullet = b;
-              bulletIndex = b.originalIndex;
-              break;
+        if (matched) {
+          newDecorations.push({
+            range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
+            options: {
+              isWholeLine: true,
+              inlineClassName: matched.className
             }
-          }
-
-          if (matchedBullet && colorStyleToCss(matchedBullet.style)) {
-            newDecorations.push({
-              range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
-              options: {
-                isWholeLine: true,
-                inlineClassName: bulletStyleClass(bulletIndex + 1)
-              }
-            });
-          }
+          });
         }
       }
 

@@ -15,7 +15,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
-import { defaultColorValue, pickBulletStyles, pickInlineStyles, pickLinkStyles } from '../../utils/defaultColor';
+import { defaultColorValue, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -256,19 +256,9 @@ export function WorkoutArea({
   useAppUpdate(panel);
 
   const editorSettings = useMemo(() => {
-    // Commentスタイルの配列構築
-    const commentStyles: { symbol: string; color: string; attr: string }[] = [];
-    const commentNum = panel?.TextEditor.Comment.StyleNum ?? 0;
-    for (let i = 1; i <= commentNum; i++) {
-      const val = (panel?.TextEditor.Comment as any)[`Style${i}`] || '';
-      const [symbol = '', color = 'undefined', attr = 'undefined'] = val.split(',').map((s: string) => s.trim());
-      if (symbol) {
-        commentStyles.push({ symbol, color, attr });
-      }
-    }
-
-    // Bullet は行頭記号（TextEditor.Bullet.Marks）と色・属性（DefaultColor.md）を突き合わせる
-    const bulletStyles = pickBulletStyles(panel?.TextEditor.Bullet.Marks, panel?.TextEditor.ColorStatus);
+    // Bullet / Comment は行頭記号（TextEditor.<種別>.Marks）と色・属性（DefaultColor.md）を突き合わせる
+    const bulletStyles  = pickMarkStyles('Bullet',  panel?.TextEditor.Bullet.Marks,  panel?.TextEditor.ColorStatus);
+    const commentStyles = pickMarkStyles('Comment', panel?.TextEditor.Comment.Marks, panel?.TextEditor.ColorStatus);
 
     return {
       lineNumbers:   panel?.TextEditor.LineNumbers.IsVisible ?? false,
@@ -310,8 +300,8 @@ export function WorkoutArea({
        panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
        panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.HeadingStyles,
-       panel?.TextEditor.ColorStatus, panel?.TextEditor.Bullet.Marks,
-       JSON.stringify(panel?.TextEditor.Comment)]);
+       panel?.TextEditor.ColorStatus,
+       panel?.TextEditor.Bullet.Marks, panel?.TextEditor.Comment.Marks]);
 
   const aiChatModel = { provider: panel.AIChatProvider, model: panel.AIChatModel };
 
