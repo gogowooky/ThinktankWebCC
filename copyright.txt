@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.17",
+  "version": "1.4.18",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "a2385cc",
-  "commitDateTime": "2026-08-16-195319",
-  "commitMessage": "refactor: Comment スタイルも記号と色を分離し Bullet と共通化"
+  "commitId": "dd7edfe",
+  "commitDateTime": "2026-08-16-201331",
+  "commitMessage": "feat: Highlighter/Heading も DefaultColor.md 由来にし Heading を6レベル化"
 }
