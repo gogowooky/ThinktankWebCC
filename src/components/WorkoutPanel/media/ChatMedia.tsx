@@ -170,6 +170,7 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
         messages={messages}
         isWaiting={isWaiting}
         onSend={handleChatSend}
+        aiModel={aiChatModel}
         initialScrollTop={think?.Metadata?.chatScrollTop}
         onScroll={(top) => {
           if (!think) return;

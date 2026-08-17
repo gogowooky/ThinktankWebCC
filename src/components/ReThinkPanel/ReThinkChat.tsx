@@ -10,7 +10,7 @@
 import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { TTReThinkPanel } from '../../views/TTReThinkPanel';
 import { streamChat } from '../../services/ChatApiService';
-import { AI_MODEL_OPTIONS, PROVIDER_LABELS, parseSelectionValue, selectionToValue } from '../../services/aiModels';
+import { AI_MODEL_OPTIONS, PROVIDER_LABELS, modelLabel, parseSelectionValue, selectionToValue } from '../../services/aiModels';
 import type { AiProvider } from '../../services/aiModels';
 import './ReThinkChat.css';
 
@@ -52,6 +52,9 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
   const textareaRef               = useRef<HTMLTextAreaElement>(null);
   const abortRef                  = useRef<AbortController | null>(null);
   const accumulatedRef            = useRef('');
+
+  // 発言者名は選択中のAIモデル名
+  const aiName = modelLabel({ provider: panel.AIChatProvider, model: panel.AIChatModel });
 
   const handleInputAreaFocus = useCallback(() => setIsInputAreaFocused(true), []);
   const handleInputAreaBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
@@ -163,27 +166,21 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
                 </div>
               ) : (
                 <div className="rethink-chat__ai-block">
-                  {msg.content === '' && isLastStreaming ? (
-                    <div className="rethink-chat__ai-line">
-                      <span className="rethink-chat__ai-prefix">Antigravity▸</span>
-                      <span className="rethink-chat__cursor">▋</span>
-                    </div>
-                  ) : (
-                    msg.content.split('\n').map((line, li, arr) => (
-                      <div key={li} className="rethink-chat__ai-line">
-                        <span className="rethink-chat__ai-prefix">{li === 0 ? 'Antigravity▸' : '             '}</span>
-                        <span className="rethink-chat__ai-text">
-                          {line || ' '}
-                          {isLastStreaming && li === arr.length - 1 && (
-                            <span className="rethink-chat__cursor">▋</span>
-                          )}
-                        </span>
-                        {li === 0 && msg.timestamp && !isWaiting && (
-                          <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
-                        )}
-                      </div>
-                    ))
-                  )}
+                  {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめ、AI名をその中の
+                      先頭に置く（AI名は block なので直後で改行される）。本文の全行が
+                      AI名と同じ左端に揃い、モデル名の長さが変わっても位置は動かない。 */}
+                  <div className="rethink-chat__ai-line">
+                    <span className="rethink-chat__ai-text">
+                      {/* 時刻は float。行として並べると本文の全行から幅を奪うため、
+                          1行目だけを避けて流し込ませる */}
+                      {msg.timestamp && !isWaiting && (
+                        <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
+                      )}
+                      <span className="rethink-chat__ai-prefix">{aiName}▸</span>
+                      {msg.content}
+                      {isLastStreaming && <span className="rethink-chat__cursor">▋</span>}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>

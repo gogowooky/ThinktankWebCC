@@ -63,6 +63,14 @@ export function selectionToValue(selection: AiModelSelection): string {
   return `${selection.provider}:${selection.model}`;
 }
 
+/** 選択中モデルの表示名（チャットの発言者名などに使う）。未登録IDはモデルIDをそのまま返す */
+export function modelLabel(selection: AiModelSelection): string {
+  const found = AI_MODEL_OPTIONS.find(
+    o => o.provider === selection.provider && o.model === selection.model,
+  );
+  return found ? found.label : selection.model;
+}
+
 /**
  * localStorage からパネル別のモデル選択を読み込む。
  * 未選択・不正値・localStorage 利用不可（プライベートモード等）の場合はデフォルトを返す。

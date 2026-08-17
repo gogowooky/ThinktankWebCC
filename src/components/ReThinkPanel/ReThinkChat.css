@@ -95,11 +95,12 @@
   gap: 7px;
 }
 
+/* AI名は本文（pre-wrap）の中に置き、block にして直後で改行する。
+   本文は次の行のこの要素と同じ左端から始まる */
 .rethink-chat__ai-prefix {
+  display: block;
   color: #1e4620;
   font-weight: 700;
-  flex-shrink: 0;
-  width: auto;
   user-select: none;
 }
 
@@ -120,6 +121,12 @@
   flex-shrink: 0;
   margin-left: auto;
   padding-left: 12px;
+}
+
+/* AI応答の時刻は本文の中に float させるので、flex 用の margin-left:auto は効かない */
+.rethink-chat__ai-text > .rethink-chat__ts {
+  float: right;
+  margin-left: 0;
 }
 
 /* ── 待機カーソル ────────────────────────────────────────── */

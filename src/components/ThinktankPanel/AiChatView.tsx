@@ -10,7 +10,7 @@
 
 import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { ChatMessage } from '../../types';
-import { AI_MODEL_OPTIONS, PROVIDER_LABELS, parseSelectionValue, selectionToValue } from '../../services/aiModels';
+import { AI_MODEL_OPTIONS, DEFAULT_AI_MODEL_SELECTION, PROVIDER_LABELS, modelLabel, parseSelectionValue, selectionToValue } from '../../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../../services/aiModels';
 import './AiChatView.css';
 
@@ -40,6 +40,11 @@ interface Props {
    * メッセージ入力欄がフォーカスされている間だけ下から現れる。
    */
   modelSelector?: AiModelSelectorProps;
+  /**
+   * 発言者名の表示に使うモデル。ドロップダウンを出さない場合（WorkoutPane の Chat）に指定する。
+   * modelSelector がある場合はそちらの選択値を使うので不要。
+   */
+  aiModel?: AiModelSelection;
 }
 
 const PROVIDER_ORDER: AiProvider[] = ['anthropic', 'openai', 'gemini'];
@@ -68,9 +73,12 @@ function topInContainer(el: HTMLElement, container: HTMLElement): number {
 }
 
 export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
-  { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector },
+  { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector, aiModel },
   ref,
 ) {
+  // 発言者名は選択中のAIモデル名
+  const aiName = modelLabel(aiModel ?? modelSelector?.value ?? DEFAULT_AI_MODEL_SELECTION);
+
   const [input, setInput] = useState('');
   const [isInputAreaFocused, setIsInputAreaFocused] = useState(false);
   const logRef            = useRef<HTMLDivElement>(null);
@@ -186,27 +194,21 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
                 </div>
               ) : (
                 <div className="ai-chat-view__ai-block">
-                  {msg.content === '' && isLastStreaming ? (
-                    <div className="ai-chat-view__ai-line">
-                      <span className="ai-chat-view__ai-prefix">Antigravity▸</span>
-                      <span className="ai-chat-view__cursor">▋</span>
-                    </div>
-                  ) : (
-                    msg.content.split('\n').map((line, li, arr) => (
-                      <div key={li} className="ai-chat-view__ai-line">
-                        <span className="ai-chat-view__ai-prefix">{li === 0 ? 'Antigravity▸' : '             '}</span>
-                        <span className="ai-chat-view__ai-text">
-                          {line || ' '}
-                          {isLastStreaming && li === arr.length - 1 && (
-                            <span className="ai-chat-view__cursor">▋</span>
-                          )}
-                        </span>
-                        {li === 0 && msg.timestamp && (
-                          <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
-                        )}
-                      </div>
-                    ))
-                  )}
+                  {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめ、AI名をその中の
+                      先頭に置く（AI名は block なので直後で改行される）。本文の全行が
+                      AI名と同じ左端に揃い、モデル名の長さが変わっても位置は動かない。 */}
+                  <div className="ai-chat-view__ai-line">
+                    <span className="ai-chat-view__ai-text">
+                      {/* 時刻は float。行として並べると本文の全行から幅を奪うため、
+                          1行目だけを避けて流し込ませる */}
+                      {msg.timestamp && (
+                        <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
+                      )}
+                      <span className="ai-chat-view__ai-prefix">{aiName}▸</span>
+                      {msg.content}
+                      {isLastStreaming && <span className="ai-chat-view__cursor">▋</span>}
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
