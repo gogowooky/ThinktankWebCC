@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.18",
+  "version": "1.4.19",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "dd7edfe",
-  "commitDateTime": "2026-08-16-201331",
-  "commitMessage": "feat: Highlighter/Heading も DefaultColor.md 由来にし Heading を6レベル化"
+  "commitId": "c5ea526",
+  "commitDateTime": "2026-08-17-103452",
+  "commitMessage": "feat: パネル色を <Panel>.Theme.* に集約し基礎色から派生させる"
 }
