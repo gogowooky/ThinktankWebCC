@@ -32,7 +32,7 @@
   margin: 0;
   border: 1px solid #999;
   border-radius: 50%;
-  background: #fff;
+  background: var(--thinktank-content-bg);
   position: relative;
   cursor: pointer;
 }

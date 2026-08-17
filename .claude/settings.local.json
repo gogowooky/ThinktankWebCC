@@ -221,7 +221,11 @@
       "Bash(cd \"C:/Users/gogow/Documents/ThinktankWebCC\" && rm -f vite.config.ts.timestamp-*.mjs && git status --short && echo \"--- stat\" && git diff --stat)",
       "PowerShell(Get-NetTCPConnection -State Listen -LocalPort 5173,8080 -ErrorAction SilentlyContinue | Select-Object LocalPort,OwningProcess | ForEach-Object { $p = Get-Process -Id $_.OwningProcess -ErrorAction SilentlyContinue; \"$\\($_.LocalPort\\) pid=$\\($_.OwningProcess\\) name=$\\($p.ProcessName\\) started=$\\($p.StartTime\\)\" }; \"electron procs: \" + \\(\\(Get-Process electron -ErrorAction SilentlyContinue | Measure-Object\\).Count\\))",
       "PowerShell(Start-Sleep -Milliseconds 1200; $mine = Get-NetTCPConnection -State Listen -LocalPort 5174 -ErrorAction SilentlyContinue; if \\($mine\\) { $mine | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue } }; Start-Sleep -Milliseconds 600; $c = Get-NetTCPConnection -State Listen -LocalPort 5173,5174,8080 -ErrorAction SilentlyContinue; if \\($c\\) { $c | Select-Object LocalPort,OwningProcess } else { \"all free\" })",
-      "Bash(grep -rn \"1,5\\\\|{1,5}\\\\|#{1,\\\\|level.*5\\\\|Preset\" src/utils/markdownHeadings.ts src/utils/markdownSections.ts src/views/TTWorkoutPanel.ts src/views/TTUIStateManager.ts src/components/WorkoutPanel/media/TextEditorMedia.tsx)"
+      "Bash(grep -rn \"1,5\\\\|{1,5}\\\\|#{1,\\\\|level.*5\\\\|Preset\" src/utils/markdownHeadings.ts src/utils/markdownSections.ts src/views/TTWorkoutPanel.ts src/views/TTUIStateManager.ts src/components/WorkoutPanel/media/TextEditorMedia.tsx)",
+      "Bash(cd \"C:/Users/gogow/Documents/ThinktankWebCC\" && npx tsc -p tsconfig.json --noEmit 2>&1 | head -20 && echo \"[tsc done]\" && npx vite build 2>&1 | tail -2 && rm -f vite.config.ts.timestamp-*.mjs)",
+      "Bash(cd \"C:/Users/gogow/Documents/ThinktankWebCC\" && npx tsc -p tsconfig.json --noEmit 2>&1 | head -10 && echo \"[tsc ok]\" && npx vite build 2>&1 | tail -2 && rm -f vite.config.ts.timestamp-*.mjs)",
+      "Bash(grep -nE \"^\\\\s*\\(color|background|border\\)[^;]*\\(#[0-9a-fA-F]{3,8}|rgba\\)\" src/components/WorkoutPanel/media/DataGridMedia.css)",
+      "Bash(grep -nE \"^\\\\s*\\(color|background|border\\)[^;]*\\(#[0-9a-fA-F]{3,8}|rgba\\)\" src/components/ThinktankPanel/AiChatView.css)"
     ]
   }
 }

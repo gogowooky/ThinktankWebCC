@@ -161,7 +161,7 @@
   left: 0;
   width: 100%; /* 親 (wrapper) の幅に合わせる */
   max-width: 400px; /* 横長になりすぎないように */
-  background: #ffffff; /* 履歴は白背景で見やすく */
+  background: var(--overview-content-bg); /* 履歴は白背景で見やすく */
   border: 1px solid #d0d7de;
   border-radius: 0 0 4px 4px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);

@@ -46,17 +46,11 @@ TextEditor.Heading.Style5,          #c586c0,        undefined,        bold|under
 TextEditor.Heading.Style6,          #569cd6,        undefined,        bold|underline
 
 
-## Thinktank.Color,                #1d618f,        #ffffff,        undefined
-## Thinktank.ToolArea,             #477ea4,        undefined,        undefined
-## Thinktank.FilterArea,           #e4e9ec,        undefined,        undefined
-## Thinktank.Area,                 undefined,        #edf2f6,        undefined
-## Overview.Ribbon,                undefined,        #873960,        undefined
-## Overview.Area,                  undefined,        #f8f3f5,        undefined
-## Workout.Ribbon,                 undefined,        #382830,        undefined
-## Workout.Area,                   undefined,        #e3e1e2,        undefined
-## ReThink.Ribbon,                 undefined,        #324f46,        undefined
-## ReThink.Area,                   undefined,        #eff1f0,        undefined
-## ToolBar,                        undefined,        #2d2d2d,        undefined
-## ToolBar.Color,                  undefined,        #ffffff,        undefined
+# Color=パネルの基礎色（リボン等）／BgColor=コンテンツ表示部の背景。他の色はこの2色から生成する
+Thinktank.Theme,                    #1d618f,        #ffffff,          undefined
+Overview.Theme,                     #873960,        #ffffff,          undefined
+Workout.Theme,                      #382830,        #ffffff,          undefined
+ReThink.Theme,                      #324f46,        #ffffff,          undefined
+ToolBar.Theme,                      #2d2d2d,        #ffffff,          undefined
 
 

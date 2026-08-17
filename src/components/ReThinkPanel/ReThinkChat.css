@@ -139,7 +139,7 @@
 .rethink-chat__input-area {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--rethink-content-bg);
   border-top: 1px solid rgba(30, 70, 32, 0.2);
   flex-shrink: 0;
 }
@@ -217,7 +217,7 @@
 
 .rethink-chat__input:focus {
   border-color: rgba(30, 70, 32, 0.5);
-  background: #fff;
+  background: var(--rethink-content-bg);
 }
 
 .rethink-chat__input:disabled {

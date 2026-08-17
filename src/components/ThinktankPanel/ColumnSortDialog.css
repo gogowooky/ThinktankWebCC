@@ -10,7 +10,7 @@
   position: absolute;
   top: 60px;
   left: 6px;
-  background: #fff;
+  background: var(--thinktank-content-bg);
   border: 1px solid rgba(0, 0, 0, 0.2);
   border-radius: 6px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);

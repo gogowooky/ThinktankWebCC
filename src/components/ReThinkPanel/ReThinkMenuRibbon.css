@@ -1,6 +1,6 @@
 /* ReThinkMenuRibbon.css */
 
 .rethink-menu-ribbon {
-  background: color-mix(in srgb, var(--rethink-ribbon-bg) 80%, var(--rethink-area-bg) 20%);
+  background: var(--rethink-ribbon-soft);
   color: rgba(255, 255, 255, 0.9);
 }

@@ -22,6 +22,7 @@ import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
 import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
 import { ReThinkPanel } from '../ReThinkPanel/ReThinkPanel';
 import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
+import { PANEL_THEME_KINDS, applyPanelThemeCss } from '../../utils/panelTheme';
 import './AppLayout.css';
 
 // パネル幅の初期値・最小値
@@ -66,6 +67,22 @@ export function AppLayout() {
     TTUIStateManager.instance.addListener('Application.PanelDisplay.Mode', listener);
     return () => TTUIStateManager.instance.removeListener('Application.PanelDisplay.Mode', listener);
   }, []);
+
+  // パネルのテーマ色（<Panel>.Theme.*）を CSS 変数へ展開する。
+  // 派生色は color-mix() で作るため、基礎色1つの変更が関連色すべてに波及する。
+  useEffect(() => {
+    const apply = () => applyPanelThemeCss(app.WorkoutPanel.TextEditor.ColorStatus);
+    apply();
+    const listener = () => apply();
+    for (const kind of PANEL_THEME_KINDS) {
+      TTUIStateManager.instance.addListener(`${kind}.Theme.*`, listener);
+    }
+    return () => {
+      for (const kind of PANEL_THEME_KINDS) {
+        TTUIStateManager.instance.removeListener(`${kind}.Theme.*`, listener);
+      }
+    };
+  }, [app]);
 
   // ── Splitter ハンドラー ──────────────────────────────────────────
 

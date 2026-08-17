@@ -1,12 +1,19 @@
 /* ThoughtsList.css */
 
+/* このリストは Thinktank / Overview の両パネルで使うため、既定は Thinktank の
+   コンテンツ色にし、Overview 配下ではそちらのコンテンツ色で上書きする */
 .thoughts-list {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
-  background-color: #ffffff; /* リスト全体の背景は白 */
+  background-color: var(--thinktank-content-bg);
+}
+
+.overview-area .thoughts-list,
+.overview-area .thoughts-list__row {
+  background-color: var(--overview-content-bg);
 }
 
 .thoughts-list--empty {
@@ -28,14 +35,18 @@
   cursor: pointer;
   font-size: 12px;
   color: #1a1a2e;
-  background-color: #ffffff; /* アイテムの背景色は白 */
+  background-color: var(--thinktank-content-bg); /* アイテムの背景色は白 */
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   transition: background 100ms ease;
   overflow: hidden;
 }
 
 .thoughts-list__row:hover {
-  background: color-mix(in srgb, var(--thinktank-ribbon-bg) 8%, transparent);
+  background: var(--thinktank-hover);
+}
+
+.overview-area .thoughts-list__row:hover {
+  background: var(--overview-hover);
 }
 
 /* 選択中（開いている）行の背景色（薄青）は仕様外のため廃止 */
@@ -52,12 +63,12 @@
 
 /* ① Overviewに含まれる/表示されているThinkファイル（最も淡い。ThinktankPanel側のみ適用） */
 .thinktank-area .thoughts-list__row--overview-included {
-  background: color-mix(in srgb, var(--overview-ribbon-bg) 6%, #ffffff);
+  background: var(--overview-tint-weak);
 }
 
 /* ② Overviewに設定されているBundleファイル本体（中間） */
 .thoughts-list__row--overview-bundle {
-  background: color-mix(in srgb, var(--overview-ribbon-bg) 14%, #ffffff) !important;
+  background: var(--overview-tint) !important;
 }
 
 /* ③ Overviewでチェックされているファイル（背景色変更なし） */
@@ -66,12 +77,12 @@
 
 /* WorkoutPanelで表示されているThinkデータ（ThinktankPanel側：ベース色 6%） */
 .thinktank-area .thoughts-list__row--workout {
-  background: color-mix(in srgb, var(--thinktank-ribbon-bg) 6%, #ffffff);
+  background: var(--thinktank-tint-weak);
 }
 
 /* WorkoutPanelで表示されているThinkデータ（OverviewPanel側：ベース色 6%） */
 .overview-area .thoughts-list__row--workout {
-  background: color-mix(in srgb, var(--overview-ribbon-bg) 6%, #ffffff);
+  background: var(--overview-tint-weak);
 }
 
 /* WorkoutPanelでフォーカスされているThinkデータは下線 */

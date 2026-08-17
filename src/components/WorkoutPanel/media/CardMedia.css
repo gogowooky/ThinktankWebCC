@@ -16,7 +16,7 @@
   padding: 8px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
   flex-shrink: 0;
-  background: #fff;
+  background: var(--workout-content-bg);
 }
 
 .card-media__filter {
@@ -26,7 +26,7 @@
   border-radius: 4px;
   padding: 0 8px;
   font-size: 11px;
-  background: #fff;
+  background: var(--workout-content-bg);
   outline: none;
   min-width: 0;
 }
@@ -46,7 +46,7 @@
   font-size: 11px;
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 4px;
-  background: #fff;
+  background: var(--workout-content-bg);
   color: rgba(0, 0, 0, 0.6);
   cursor: pointer;
   white-space: nowrap;
@@ -87,7 +87,7 @@
 .card-media__card {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--workout-content-bg);
   border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);

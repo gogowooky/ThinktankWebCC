@@ -1345,76 +1345,9 @@ candidates:     .*
 　（WorkoutSettingPanel>TextEditor設定 の ハイライト色 / 文字設定 での変更もそちらの値を書き換えます）
 
 
-## Status：　260624　Thinktank.Ribbon.BgColor
-description:    Thinktank（左）パネルのヘッダー・リボン背景色
-key:            Thinktank.Ribbon.BgColor
-current:        #1d618f
-default:        #1d618f
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Thinktank.Area.BgColor
-description:    Thinktank（左）パネルのメインエリア背景色
-key:            Thinktank.Area.BgColor
-current:        #edf2f6
-default:        #edf2f6
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Overview.Ribbon.BgColor
-description:    Overview（上）パネルのヘッダー・リボン背景色
-key:            Overview.Ribbon.BgColor
-current:        #873960
-default:        #873960
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Overview.Area.BgColor
-description:    Overview（上）パネルのメインエリア背景色
-key:            Overview.Area.BgColor
-current:        #f8f3f5
-default:        #f8f3f5
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Workout.Ribbon.BgColor
-description:    Workout（中）パネルのヘッダー・リボン背景色
-key:            Workout.Ribbon.BgColor
-current:        #382830
-default:        #382830
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　Workout.Area.BgColor
-description:    Workout（中）パネルのメインエリア背景色
-key:            Workout.Area.BgColor
-current:        #e3e1e2
-default:        #e3e1e2
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ReThink.Ribbon.BgColor
-description:    ReThink（右）パネルのヘッダー・リボン背景色
-key:            ReThink.Ribbon.BgColor
-current:        #324f46
-default:        #324f46
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ReThink.Area.BgColor
-description:    ReThink（右）パネルのメインエリア背景色
-key:            ReThink.Area.BgColor
-current:        #eff1f0
-default:        #eff1f0
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ToolBar.BgColor
-description:    ツールバー（ステータスバー）の背景色
-key:            ToolBar.BgColor
-current:        #2d2d2d
-default:        #2d2d2d
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
-## Status：　260624　ToolBar.Color
-description:    ツールバー（ステータスバー）の文字色
-key:            ToolBar.Color
-current:        #ffffff
-default:        #ffffff
-type:           color
-candidates:     ^#[0-9a-fA-F]{6,8}$
+　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Overview|Workout|ReThink|ToolBar).Theme.* で定義します。
+　　Color   … パネルの基礎色（リボン等）。他のパネル色はこの色から生成します。
+　　BgColor … コンテンツ表示部（一覧・チャット等の白地）の背景色。
 
 
 # TextEditor ExOpt =================================================================================================

@@ -7,7 +7,7 @@
   font-size: 13px;
   line-height: 1.7;
   color: #24292e;
-  background: #fff;
+  background: var(--workout-content-bg);
   box-sizing: border-box;
 }
 

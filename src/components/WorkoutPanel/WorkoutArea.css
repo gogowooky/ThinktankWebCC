@@ -8,7 +8,7 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  background: #fff;
+  background: var(--workout-content-bg);
   transition: opacity 150ms ease;
   position: relative;
   cursor: default;

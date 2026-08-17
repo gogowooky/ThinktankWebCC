@@ -22,15 +22,66 @@
   --radius:           6px;
   --transition-panel: 200ms ease;
 
-  /* パネル別テーマ色 */
-  --thinktank-ribbon-bg: #1d618f;
-  --thinktank-area-bg:   #edf2f6;
-  --overview-ribbon-bg:  #873960;
-  --overview-area-bg:    #f8f3f5;
-  --workout-ribbon-bg:   #382830;
-  --workout-area-bg:     #e3e1e2;
-  --rethink-ribbon-bg:  #324f46;
-  --rethink-area-bg:    #eff1f0;
+  /* ── パネル別テーマ色 ─────────────────────────────────────────────
+     ユーザーが設定するのは docs/DefaultColor.md の <Panel>.Theme.Color /
+     .BgColor だけで、その2色が --*-base / --*-content-bg に入る
+     （utils/panelTheme.ts が :root へ書き込む。ここの値は未設定時の既定）。
+     以下の派生色はすべて基礎色から作るので、基礎色を変えれば一斉に追従する。 */
+
+  --thinktank-base:       #1d618f;
+  --thinktank-content-bg: #ffffff;
+  --overview-base:        #873960;
+  --overview-content-bg:  #ffffff;
+  --workout-base:         #382830;
+  --workout-content-bg:   #ffffff;
+  --rethink-base:         #324f46;
+  --rethink-content-bg:   #ffffff;
+  --toolbar-base:         #2d2d2d;
+  --toolbar-content-bg:   #ffffff;
+
+  /* リボン＝基礎色そのもの */
+  --thinktank-ribbon-bg: var(--thinktank-base);
+  --overview-ribbon-bg:  var(--overview-base);
+  --workout-ribbon-bg:   var(--workout-base);
+  --rethink-ribbon-bg:   var(--rethink-base);
+
+  /* パネルの地色＝コンテンツ色に基礎色をごく薄く重ねたもの。
+     Workout だけ濃いのは、地色がコンテンツの「まわり」ではなく Pane の「背後」にあり、
+     白い Pane との境目が見える必要があるため。 */
+  --thinktank-area-bg: color-mix(in srgb, var(--thinktank-base)  8%, var(--thinktank-content-bg));
+  --overview-area-bg:  color-mix(in srgb, var(--overview-base)   8%, var(--overview-content-bg));
+  --rethink-area-bg:   color-mix(in srgb, var(--rethink-base)    8%, var(--rethink-content-bg));
+  --workout-area-bg:   color-mix(in srgb, var(--workout-base)   14%, var(--workout-content-bg));
+
+  /* リボン内の濃淡（メニューリボン等） */
+  --thinktank-ribbon-soft: color-mix(in srgb, var(--thinktank-base) 80%, var(--thinktank-content-bg));
+  --overview-ribbon-soft:  color-mix(in srgb, var(--overview-base)  80%, var(--overview-content-bg));
+  --workout-ribbon-soft:   color-mix(in srgb, var(--workout-base)   80%, var(--workout-content-bg));
+  --rethink-ribbon-soft:   color-mix(in srgb, var(--rethink-base)   80%, var(--rethink-content-bg));
+
+  /* 一覧・ボタンの状態色（下地を透かすので transparent 合成） */
+  --thinktank-hover:    color-mix(in srgb, var(--thinktank-base)  8%, transparent);
+  --thinktank-selected: color-mix(in srgb, var(--thinktank-base) 14%, transparent);
+  --thinktank-border:   color-mix(in srgb, var(--thinktank-base) 25%, transparent);
+  --overview-hover:     color-mix(in srgb, var(--overview-base)   8%, transparent);
+  --overview-selected:  color-mix(in srgb, var(--overview-base)  14%, transparent);
+  --overview-border:    color-mix(in srgb, var(--overview-base)  25%, transparent);
+  --workout-hover:      color-mix(in srgb, var(--workout-base)    8%, transparent);
+  --workout-selected:   color-mix(in srgb, var(--workout-base)   14%, transparent);
+  --workout-border:     color-mix(in srgb, var(--workout-base)   25%, transparent);
+  --rethink-hover:      color-mix(in srgb, var(--rethink-base)    8%, transparent);
+  --rethink-selected:   color-mix(in srgb, var(--rethink-base)   14%, transparent);
+  --rethink-border:     color-mix(in srgb, var(--rethink-base)   25%, transparent);
+
+  /* 一覧行など、透過ではなく不透明が要る場所の淡色 */
+  --thinktank-tint-weak: color-mix(in srgb, var(--thinktank-base)  6%, var(--thinktank-content-bg));
+  --thinktank-tint:      color-mix(in srgb, var(--thinktank-base) 14%, var(--thinktank-content-bg));
+  --overview-tint-weak:  color-mix(in srgb, var(--overview-base)   6%, var(--overview-content-bg));
+  --overview-tint:       color-mix(in srgb, var(--overview-base)  14%, var(--overview-content-bg));
+
+  /* ツールバーはコンテンツ表示部を持たないので BgColor を文字色に使う */
+  --toolbar-bg:    var(--toolbar-base);
+  --toolbar-color: var(--toolbar-content-bg);
 
   /* 同期インジケーター */
   --sync-synced:  var(--text-muted);
@@ -42,6 +93,17 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* テーマ色の切替中はトランジションを止める。
+   transition: background が効いている要素は、CSS変数だけが変わっても
+   古い色のまま固まってしまう（再描画されるまで追従しない）ため。
+   utils/panelTheme.ts が適用の前後でこのクラスを付け外しする。 */
+.tt-theme-switching,
+.tt-theme-switching *,
+.tt-theme-switching *::before,
+.tt-theme-switching *::after {
+  transition: none !important;
 }
 
 html, body, #root {

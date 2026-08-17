@@ -50,7 +50,7 @@
   flex-shrink: 0;
   height: 28px;
   padding: 0 6px;
-  background: color-mix(in srgb, var(--workout-ribbon-bg, #2a2a2a) 82%, #ffffff 18%);
+  background: var(--workout-ribbon-soft);
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
 

@@ -614,77 +614,8 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     set: (app, v) => { app.ReThinkPanel.SetViewMode(v.toLowerCase() as ReThinkViewMode); },
   },
 
-  // ── Theme Panel & ToolBar Colors ──────────────────────────────────────────
-  'Thinktank.Ribbon.BgColor': {
-    panel: 'ThinktankPanel',
-    default: '#1d618f', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'Thinktank（左）パネルのリボン背景色',
-    get: () => getCssVariable('--thinktank-ribbon-bg', '#1d618f'),
-    set: (_app, v) => setCssVariable('--thinktank-ribbon-bg', v),
-  },
-  'Thinktank.Area.BgColor': {
-    panel: 'ThinktankPanel',
-    default: '#edf2f6', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'Thinktank（左）パネルのメインエリア背景色',
-    get: () => getCssVariable('--thinktank-area-bg', '#edf2f6'),
-    set: (_app, v) => setCssVariable('--thinktank-area-bg', v),
-  },
-  'Overview.Ribbon.BgColor': {
-    panel: 'OverviewPanel',
-    default: '#873960', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'Overview（上）パネルのリボン背景色',
-    get: () => getCssVariable('--overview-ribbon-bg', '#873960'),
-    set: (_app, v) => setCssVariable('--overview-ribbon-bg', v),
-  },
-  'Overview.Area.BgColor': {
-    panel: 'OverviewPanel',
-    default: '#f8f3f5', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'Overview（上）パネルのメインエリア背景色',
-    get: () => getCssVariable('--overview-area-bg', '#f8f3f5'),
-    set: (_app, v) => setCssVariable('--overview-area-bg', v),
-  },
-  'Workout.Ribbon.BgColor': {
-    panel: 'WorkoutPanel',
-    default: '#382830', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'Workout（中）パネルのリボン背景色',
-    get: () => getCssVariable('--workout-ribbon-bg', '#382830'),
-    set: (_app, v) => setCssVariable('--workout-ribbon-bg', v),
-  },
-  'Workout.Area.BgColor': {
-    panel: 'WorkoutPanel',
-    default: '#e3e1e2', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'Workout（中）パネルのメインエリア背景色',
-    get: () => getCssVariable('--workout-area-bg', '#e3e1e2'),
-    set: (_app, v) => setCssVariable('--workout-area-bg', v),
-  },
-  'ReThink.Ribbon.BgColor': {
-    panel: 'ReThinkPanel',
-    default: '#324f46', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'ReThink（右）パネルのリボン背景色',
-    get: () => getCssVariable('--rethink-ribbon-bg', '#324f46'),
-    set: (_app, v) => setCssVariable('--rethink-ribbon-bg', v),
-  },
-  'ReThink.Area.BgColor': {
-    panel: 'ReThinkPanel',
-    default: '#eff1f0', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'ReThink（右）パネルのメインエリア背景色',
-    get: () => getCssVariable('--rethink-area-bg', '#eff1f0'),
-    set: (_app, v) => setCssVariable('--rethink-area-bg', v),
-  },
-  'ToolBar.BgColor': {
-    panel: 'WorkoutPanel',
-    default: '#2d2d2d', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'ツールバー（ステータスバー）の背景色',
-    get: () => getCssVariable('--toolbar-bg', '#2d2d2d'),
-    set: (_app, v) => setCssVariable('--toolbar-bg', v),
-  },
-  'ToolBar.Color': {
-    panel: 'WorkoutPanel',
-    default: '#ffffff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: 'ツールバー（ステータスバー）の文字色',
-    get: () => getCssVariable('--toolbar-color', '#ffffff'),
-    set: (_app, v) => setCssVariable('--toolbar-color', v),
-  },
+  // パネル・ツールバーのテーマ色は docs/DefaultColor.md の <Panel>.Theme.* が定義元。
+  // 下の DEFAULT_COLOR_ENTRIES ループが登録し、CSS変数への展開は utils/panelTheme.ts が行う。
 
   // ── KeyboardFocus & Pane Info ──────────────────────────────────────────────
   'Application.FocusedArea.Name': {
@@ -1306,7 +1237,15 @@ export class TTUIStateManager {
         .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
         .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
         .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
-        .replace(/\bWorkoutPanel\.Pane\.Count\b/g, 'WorkoutPanel.Panes.Count');
+        .replace(/\bWorkoutPanel\.Pane\.Count\b/g, 'WorkoutPanel.Panes.Count')
+        // パネル色は <Panel>.Theme.Color（基礎色）へ集約。旧 Area.BgColor は基礎色からの
+        // 派生になったので引き継がない（旧キーは spec が無いため読み飛ばされる）。
+        .replace(/\bThinktank\.Ribbon\.BgColor\b/g, 'Thinktank.Theme.Color')
+        .replace(/\bOverview\.Ribbon\.BgColor\b/g,  'Overview.Theme.Color')
+        .replace(/\bWorkout\.Ribbon\.BgColor\b/g,   'Workout.Theme.Color')
+        .replace(/\bReThink\.Ribbon\.BgColor\b/g,   'ReThink.Theme.Color')
+        .replace(/\bToolBar\.BgColor\b/g,           'ToolBar.Theme.Color')
+        .replace(/\bToolBar\.Color\b/g,             'ToolBar.Theme.BgColor');
       let sections = parseTableContent(content);
       let section = sections[0];
 
@@ -1598,13 +1537,3 @@ export function parseMarkdownStatus(content: string): TableSection {
   };
 }
 
-function getCssVariable(name: string, fallback: string): string {
-  if (typeof document === 'undefined') return fallback;
-  const val = document.documentElement.style.getPropertyValue(name);
-  return val ? val.trim() : fallback;
-}
-
-function setCssVariable(name: string, value: string): void {
-  if (typeof document === 'undefined') return;
-  document.documentElement.style.setProperty(name, value);
-}
