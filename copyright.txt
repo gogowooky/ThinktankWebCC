@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.19",
+  "version": "1.4.20",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "c5ea526",
-  "commitDateTime": "2026-08-17-103452",
-  "commitMessage": "feat: パネル色を <Panel>.Theme.* に集約し基礎色から派生させる"
+  "commitId": "ed60792",
+  "commitDateTime": "2026-08-17-144908",
+  "commitMessage": "feat: パネル間ボーダーのフォーカス色を FocusingBorder.Theme に定義"
 }
