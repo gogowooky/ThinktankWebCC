@@ -10,6 +10,7 @@ import { MonitorUp, MonitorDown, Save } from 'lucide-react';
 import type { ChatMessage } from '../../../types';
 import type { MediaProps } from './types';
 import { streamChat } from '../../../services/ChatApiService';
+import { DEFAULT_AI_MODEL_SELECTION, aiSpeakerPrefix } from '../../../services/aiModels';
 import { parseChat, serializeChat } from '../../../utils/thinkFormat';
 import { AiChatView } from '../../ThinktankPanel/AiChatView';
 import type { AiChatViewRef } from '../../ThinktankPanel/AiChatView';
@@ -26,7 +27,7 @@ function buildSystemPrompt(thinkName: string, thinkContent: string): string {
 
 export interface ChatMediaRef { focus: () => void; }
 
-export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think, onSave, onDirtyChange, aiChatModel }: MediaProps, ref) {
+export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia({ think, onSave, onDirtyChange, aiChatModel, onAiChatModelChange }: MediaProps, ref) {
   const initialMessages = useMemo<ChatMessage[]>(() => {
     if (!think || think.ContentType !== 'chat') return [];
     return parseChat(think.Content);
@@ -83,7 +84,9 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
     const ts = new Date().toISOString();
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
     const aiId = `a-${Date.now() + 1}`;
-    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
+    const aiPrefix = aiSpeakerPrefix(aiChatModel ?? DEFAULT_AI_MODEL_SELECTION);
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: aiPrefix, timestamp: new Date().toISOString() };
 
     setMessages(prev => {
       const next = [...prev, userMsg, aiMsg];
@@ -91,7 +94,7 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
       return next;
     });
     setIsWaiting(true);
-    accumulatedRef.current = '';
+    accumulatedRef.current = aiPrefix;
 
     abortRef.current = new AbortController();
 
@@ -119,7 +122,7 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
         },
         onError: (message) => {
           setMessages(prev => {
-            const next = prev.map(m => m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m);
+            const next = prev.map(m => m.id === aiId ? { ...m, content: `${aiPrefix}[エラー] ${message}` } : m);
             messagesRef.current = next;
             return next;
           });
@@ -170,13 +173,16 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
         messages={messages}
         isWaiting={isWaiting}
         onSend={handleChatSend}
-        aiModel={aiChatModel}
         initialScrollTop={think?.Metadata?.chatScrollTop}
         onScroll={(top) => {
           if (!think) return;
           if (!think.Metadata) think.Metadata = {};
           think.Metadata.chatScrollTop = top;
         }}
+        modelSelector={onAiChatModelChange ? {
+          value:    aiChatModel ?? DEFAULT_AI_MODEL_SELECTION,
+          onChange: onAiChatModelChange,
+        } : undefined}
       />
     </div>
   );

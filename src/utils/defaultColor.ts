@@ -71,6 +71,14 @@ export function getDefaultColorStyle(statusId: string): ColorStyle {
   return style ? { ...style } : { Color: UNSET, BgColor: UNSET, Attrs: UNSET };
 }
 
+/** ColorStatus ストアから StatusID のスタイルを取り出す（未登録IDは DefaultColor.md の既定値）*/
+export function pickColorStyle(
+  statusId: string,
+  store: Record<string, ColorStyle> | undefined,
+): ColorStyle {
+  return store?.[statusId] ?? getDefaultColorStyle(statusId);
+}
+
 /**
  * StatusID変数1つぶんの既定値を返す。
  * DefaultColor.md に行がない（コメントアウト等）か無設定の場合は fallback を使う。
@@ -242,6 +250,28 @@ export function linkStyleClass(name: LinkStyleName): string {
   return `custom-${name}-style`;
 }
 
+/**
+ * Url / Filepath / Tag のCSSを組み立てる。
+ *
+ * URL には Monaco のリンク検出が `.monaco-editor .detected-link { text-decoration: underline }` を
+ * 当てるため、設定から underline を外しただけでは下線が残る。先に打ち消しを置いてから
+ * 設定値を当てることで、TextEditor.<種別>.Style.Attrs の指定どおりの見た目にする。
+ */
+export function linkStyleCss(styles: LinkStyles | undefined): string {
+  if (!styles) return '';
+
+  const names = Object.keys(LINK_STYLE_STATUS_IDS) as LinkStyleName[];
+  const reset = names.map(name => `.${linkStyleClass(name)}`).join(', ')
+    + ' { text-decoration: none !important; }';
+
+  const rules = names.map(name => {
+    const decls = colorStyleToCss(styles[name]);
+    return decls ? `.${linkStyleClass(name)} { ${decls} }` : '';
+  }).filter(Boolean);
+
+  return [reset, ...rules].join('\n');
+}
+
 /** ColorStatus ストアから Url / Filepath / Tag のスタイルを取り出す */
 export function pickLinkStyles(store: Record<string, ColorStyle> | undefined): LinkStyles {
   const result = {} as LinkStyles;
@@ -250,6 +280,27 @@ export function pickLinkStyles(store: Record<string, ColorStyle> | undefined): L
     result[name] = store?.[statusId] ?? getDefaultColorStyle(statusId);
   }
   return result;
+}
+
+// ── TextEditor の折り畳まれている行（折り畳みヘッダ行）────────────────────
+
+export const FOLDING_HEADER_STATUS_ID = 'TextEditor.FoldingHeader';
+
+/** 折り畳まれている行のCSSクラス名（行全体の背景。isWholeLine の className に付ける）*/
+export const FOLDING_HEADER_BG_CLASS = 'custom-folding-header-bg';
+
+/**
+ * 折り畳まれている行のCSSを組み立てる。
+ * 扱うのは BgColor だけで、文字色・表示属性（Color / Attrs）は使わない
+ * （折り畳まれた行の文字は見出し等その行本来のスタイルのままにする）。
+ */
+export function foldingHeaderStyleCss(style: ColorStyle | undefined): string {
+  if (!style || isUnset(style.BgColor)) return '';
+
+  // 選択の描画（.cslr）に z-index を与えて折り畳み行の背景より前面に出す手は使わないこと。
+  // .lines-content は stacking context を作らないため、選択の矩形が本文（.view-lines）より
+  // 前面に来て文字が塗り潰される。
+  return `.monaco-editor .${FOLDING_HEADER_BG_CLASS} { background-color: ${style.BgColor} !important; }`;
 }
 
 // ── TextEditor のインライン書式 ────────────────────────────────────────────

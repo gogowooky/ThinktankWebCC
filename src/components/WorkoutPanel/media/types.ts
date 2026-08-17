@@ -37,9 +37,14 @@ export interface MediaProps {
   autoSaveRef?: React.MutableRefObject<(() => void) | null>;
   /**
    * AI Chat（ChatMedia）が使うホストモデル。WorkoutSettingArea の選択（panel単位）を
-   * そのまま渡す。ChatMedia 側には選択用ドロップダウンを出さず、常にこれを使う。
+   * そのまま渡す。
    */
   aiChatModel?: AiModelSelection;
+  /**
+   * ChatMedia のモデル選択ドロップダウンで選び直したときに呼ばれる。
+   * 選択は panel 単位で1つなので、WorkoutSettingArea の AI相談 と同じ値が変わる。
+   */
+  onAiChatModelChange?: (selection: AiModelSelection) => void;
   /** TextEditor 用の設定 */
   editorSettings?: {
     lineNumbers: boolean;
@@ -51,6 +56,7 @@ export interface MediaProps {
     highlightWord: string;
     /** ハイライトグループ1..6の表示属性（TextEditor.Highlighter.StyleN.*） */
     highlightStyles: ColorStyle[];
+    /** エディタの基本色（TextEditor.Text.* / .Selection.* / .Occurrence.*） */
     background: string;
     foreground: string;
     selectionBackground: string;
@@ -64,5 +70,7 @@ export interface MediaProps {
     linkStyles?: LinkStyles;
     /** `**bold**` / `*italic*` / `__underline__` / `~~strikethrough~~` の表示属性 */
     inlineStyles?: InlineStyles;
+    /** 折り畳まれている行の表示属性（TextEditor.FoldingHeader.*） */
+    foldingHeaderStyle?: ColorStyle;
   };
 }

@@ -213,10 +213,21 @@
 }
 
 /* ── アイコンボタン行（4×1）──────────────────────── */
+/* アイコンは行幅いっぱいに等分せず、正方形のまま左に詰める */
 .workout-setting-area__icon-row {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   gap: 4px;
+}
+
+/* 直接の子（ボタン、またはツールチップ用ラッパ）を28px角に固定する */
+.workout-setting-area__icon-row > * {
+  flex: 0 0 28px;
+}
+
+.workout-setting-area__icon-row .workout-setting-area__icon-btn {
+  width: 100%;
 }
 
 .workout-setting-area__icon-btn {
@@ -277,12 +288,46 @@
 }
 
 /* ── 色設定 ──────────────────────────────────── */
+/*
+ * 色設定の各行（文字設定 / セクション / タグ色 / ハイライト色）は、
+ * パネル幅に合わせて縮めたり折り返したりせず、常に同じ位置を保つ。
+ * 幅が足りなくなった分は行からはみ出して隠れる（overflow: hidden）。
+ */
+.workout-setting-area__color-row,
+.workout-setting-area__heading-style-row {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.workout-setting-area__color-row > *,
+.workout-setting-area__heading-style-row > *,
+.workout-setting-area__color-cell > * {
+  flex-shrink: 0;
+}
+
+/* ラベルも折り返さない（「基本」が2行になると行の高さが変わってしまう）*/
+.workout-setting-area__color-label,
+.workout-setting-area__heading-style-label,
+.workout-setting-area__small-checkbox {
+  white-space: nowrap;
+}
+
 .workout-setting-area__color-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
   padding: 2px 8px;
+}
+
+/* 1行に2項目（基本｜選択 / 出現｜折畳）を並べるためのセル。
+   行幅を等分せず、内容の幅のまま左に詰める */
+.workout-setting-area__color-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .workout-setting-area__color-label {

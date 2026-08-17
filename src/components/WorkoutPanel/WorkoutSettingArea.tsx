@@ -34,9 +34,47 @@ import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import type { ChatMessage } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
+import { aiSpeakerPrefix } from '../../services/aiModels';
 import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_WORKOUT } from '../../utils/thinkFormat';
-import { isUnset, parseAttrs, styleStatusId } from '../../utils/defaultColor';
+import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, styleStatusId } from '../../utils/defaultColor';
 import './WorkoutSettingArea.css';
+
+/**
+ * 「文字設定」の先頭に並べるエディタの基本色。値の実体は docs/DefaultColor.md の
+ * 各StatusID（TextEditor.Text / .Selection / .Occurrence / .FoldingHeader）で、
+ * ここでは Color / BgColor だけを扱う（Attrs のUIは持たない）。
+ *
+ * 文字色を持つのは基本（TextEditor.Text）だけ。
+ * 　選択 … Monaco は選択中の文字色（editor.selectionForeground）を高コントラストテーマでしか適用しない
+ * 　出現 … Monaco の wordHighlight に前景色のテーマ項目がない
+ * 　折畳 … 折り畳まれた行の文字はその行本来のスタイル（見出し等）のままにする
+ */
+const TEXT_EDITOR_BASE_COLORS: {
+  statusId: string;
+  label:    string;
+  hasColor: boolean;
+}[][] = [
+  // 配列1つが1行。基本｜選択 / 出現｜折畳 の2列に並べる
+  [
+    { statusId: 'TextEditor.Text',       label: '基本', hasColor: true  },
+    { statusId: 'TextEditor.Selection',  label: '選択', hasColor: false },
+  ],
+  [
+    { statusId: 'TextEditor.Occurrence',  label: '出現', hasColor: false },
+    { statusId: FOLDING_HEADER_STATUS_ID, label: '折畳', hasColor: false },
+  ],
+];
+
+/**
+ * 「タグ色」に並べる Url / Filepath / Tag のスタイル。
+ * 値の実体は docs/DefaultColor.md の TextEditor.<種別>.Style.* で、
+ * TextEditor.CurrentEditor.DoOnCursorPos が認識する要素と同じもの。
+ */
+const TEXT_EDITOR_TAG_COLORS: { statusId: string; label: string }[] = [
+  { statusId: LINK_STYLE_STATUS_IDS.url,      label: 'URL' },
+  { statusId: LINK_STYLE_STATUS_IDS.filepath, label: 'パス' },
+  { statusId: LINK_STYLE_STATUS_IDS.tag,      label: 'タグ' },
+];
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
 
@@ -161,11 +199,13 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
     const ts = new Date().toISOString();
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
     const aiId = `a-${Date.now() + 1}`;
-    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
+    const aiPrefix = aiSpeakerPrefix({ provider: panel.AIChatProvider, model: panel.AIChatModel });
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: aiPrefix, timestamp: new Date().toISOString() };
 
     setChatMessages(prev => [...prev, userMsg, aiMsg]);
     setChatWaiting(true);
-    chatAccumulatedRef.current = '';
+    chatAccumulatedRef.current = aiPrefix;
 
     chatAbortRef.current = new AbortController();
 
@@ -186,7 +226,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
         onDone:  () => setChatWaiting(false),
         onError: (message) => {
           setChatMessages(prev => prev.map(m =>
-            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
+            m.id === aiId ? { ...m, content: `${aiPrefix}[エラー] ${message}` } : m,
           ));
           setChatWaiting(false);
         },
@@ -239,6 +279,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const [isAreaSettingsOpen,      setIsAreaSettingsOpen]      = useState(true);
   const [isDisplaySettingsOpen,   setIsDisplaySettingsOpen]   = useState(true);
   const [isColorSettingsOpen,     setIsColorSettingsOpen]     = useState(true);
+  const [isTagColorOpen,          setIsTagColorOpen]          = useState(true);
   const [isHighlightColorOpen,    setIsHighlightColorOpen]    = useState(true);
   const [isMemoSettingsOpen,      setIsMemoSettingsOpen]      = useState(true);
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
@@ -560,45 +601,35 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 
               {isColorSettingsOpen && (
                 <div className="workout-setting-area__section-content">
-                  <div className="workout-setting-area__color-row">
-                    <span className="workout-setting-area__color-label">背景色</span>
-                    <input
-                      type="color"
-                      className="workout-setting-area__color-picker"
-                      value={panel.TextEditor.Color.Background.slice(0, 7)}
-                      onChange={e => panel.SetTextEditorColorBackground(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="workout-setting-area__color-row">
-                    <span className="workout-setting-area__color-label">文字色</span>
-                    <input
-                      type="color"
-                      className="workout-setting-area__color-picker"
-                      value={panel.TextEditor.Color.Text.slice(0, 7)}
-                      onChange={e => panel.SetTextEditorColorText(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="workout-setting-area__color-row">
-                    <span className="workout-setting-area__color-label">選択色</span>
-                    <input
-                      type="color"
-                      className="workout-setting-area__color-picker"
-                      value={panel.TextEditor.Color.Selection.slice(0, 7)}
-                      onChange={e => panel.SetTextEditorColorSelection(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="workout-setting-area__color-row">
-                    <span className="workout-setting-area__color-label">一致色</span>
-                    <input
-                      type="color"
-                      className="workout-setting-area__color-picker"
-                      value={panel.TextEditor.Color.Occurrence.slice(0, 7)}
-                      onChange={e => panel.SetTextEditorColorOccurrence(e.target.value)}
-                    />
-                  </div>
+                  {/* エディタの基本色。docs/DefaultColor.md の各StatusIDを直接編集する（Attrs は扱わない）*/}
+                  {TEXT_EDITOR_BASE_COLORS.map((row, rowIndex) => (
+                    <div key={rowIndex} className="workout-setting-area__color-row">
+                      {row.map(({ statusId, label, hasColor }) => {
+                        const style = panel.GetColorStatus(statusId);
+                        return (
+                          <div key={statusId} className="workout-setting-area__color-cell">
+                            <span className="workout-setting-area__color-label">{label}</span>
+                            {hasColor && (
+                              <input
+                                type="color"
+                                className="workout-setting-area__color-picker"
+                                value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
+                                onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
+                                data-tip={`${label}の文字色`}
+                              />
+                            )}
+                            <input
+                              type="color"
+                              className="workout-setting-area__color-picker"
+                              value={isUnset(style.BgColor) ? '#ffffff' : style.BgColor.slice(0, 7)}
+                              onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
+                              data-tip={`${label}の背景色`}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
 
                   {[1, 2, 3, 4, 5, 6].map(level => {
                     const statusId = styleStatusId('Heading', level);
@@ -657,6 +688,73 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
             </div>
             <div className="workout-setting-area__divider" />
 
+            {/* タグ色設定（Url / Filepath / Tag）*/}
+            <div className="workout-setting-area__section">
+              <div
+                className="workout-setting-area__section-header"
+                onClick={() => setIsTagColorOpen(!isTagColorOpen)}
+              >
+                {isTagColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>タグ色</span>
+              </div>
+
+              {isTagColorOpen && (
+                <div className="workout-setting-area__section-content">
+                  {TEXT_EDITOR_TAG_COLORS.map(({ statusId, label }) => {
+                    const style = panel.GetColorStatus(statusId);
+                    const attrs = parseAttrs(style.Attrs);
+                    const hasBg = !isUnset(style.BgColor);
+                    return (
+                      <div key={statusId} className="workout-setting-area__heading-style-row">
+                        <span className="workout-setting-area__heading-style-label">{label}</span>
+                        <input
+                          type="color"
+                          className="workout-setting-area__color-picker"
+                          value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
+                          onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
+                          data-tip={`${label}の文字色`}
+                        />
+                        <label className="workout-setting-area__small-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={attrs.has('bold')}
+                            onChange={e => panel.ToggleColorStatusAttr(statusId, 'bold', e.target.checked)}
+                          />
+                          B
+                        </label>
+                        <label className="workout-setting-area__small-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={attrs.has('underline')}
+                            onChange={e => panel.ToggleColorStatusAttr(statusId, 'underline', e.target.checked)}
+                          />
+                          U
+                        </label>
+                        <label className="workout-setting-area__small-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={hasBg}
+                            onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.checked ? '#ffffff' : 'undefined')}
+                          />
+                          BG
+                        </label>
+                        {hasBg && (
+                          <input
+                            type="color"
+                            className="workout-setting-area__color-picker"
+                            value={style.BgColor.slice(0, 7)}
+                            onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
+                            data-tip={`${label}の背景色`}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="workout-setting-area__divider" />
+
             {/* ハイライトグループ色設定 */}
             <div className="workout-setting-area__section">
               <div
@@ -677,9 +775,9 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     const hasBg = !isUnset(style.BgColor);
                     const hasFg = !isUnset(style.Color);
                     return (
-                      <div key={group} className="workout-setting-area__color-row" style={{ flexWrap: 'wrap', gap: '4px' }}>
+                      <div key={group} className="workout-setting-area__color-row" style={{ gap: '4px' }}>
                         <span className="workout-setting-area__color-label" style={{ minWidth: '50px' }}>グループ{fw}</span>
-                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
                           <label className="workout-setting-area__small-checkbox">
                             <input
                               type="checkbox"

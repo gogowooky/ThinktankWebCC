@@ -225,7 +225,11 @@
       "Bash(cd \"C:/Users/gogow/Documents/ThinktankWebCC\" && npx tsc -p tsconfig.json --noEmit 2>&1 | head -20 && echo \"[tsc done]\" && npx vite build 2>&1 | tail -2 && rm -f vite.config.ts.timestamp-*.mjs)",
       "Bash(cd \"C:/Users/gogow/Documents/ThinktankWebCC\" && npx tsc -p tsconfig.json --noEmit 2>&1 | head -10 && echo \"[tsc ok]\" && npx vite build 2>&1 | tail -2 && rm -f vite.config.ts.timestamp-*.mjs)",
       "Bash(grep -nE \"^\\\\s*\\(color|background|border\\)[^;]*\\(#[0-9a-fA-F]{3,8}|rgba\\)\" src/components/WorkoutPanel/media/DataGridMedia.css)",
-      "Bash(grep -nE \"^\\\\s*\\(color|background|border\\)[^;]*\\(#[0-9a-fA-F]{3,8}|rgba\\)\" src/components/ThinktankPanel/AiChatView.css)"
+      "Bash(grep -nE \"^\\\\s*\\(color|background|border\\)[^;]*\\(#[0-9a-fA-F]{3,8}|rgba\\)\" src/components/ThinktankPanel/AiChatView.css)",
+      "PowerShell(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 5173,5174,3000,8080,3001 } | Select-Object LocalPort, OwningProcess)",
+      "Bash(TMPDIR=\"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad\" node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad/checkFolding.mjs\")",
+      "Bash(curl -s -D - -o /dev/null http://localhost:5173/@vite/client)",
+      "Bash(python -)"
     ]
   }
 }

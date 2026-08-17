@@ -39,6 +39,7 @@ import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
+import { aiSpeakerPrefix } from '../../services/aiModels';
 import { parseBundle, serializeBundle, serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
@@ -373,11 +374,13 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     const ts = new Date().toISOString();
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
     const aiId = `a-${Date.now() + 1}`;
-    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
+    const aiPrefix = aiSpeakerPrefix({ provider: panel.AIChatProvider, model: panel.AIChatModel });
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: aiPrefix, timestamp: new Date().toISOString() };
 
     setChatMessages(prev => [...prev, userMsg, aiMsg]);
     setChatWaiting(true);
-    chatAccumulatedRef.current = '';
+    chatAccumulatedRef.current = aiPrefix;
 
     chatAbortRef.current = new AbortController();
 
@@ -414,7 +417,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         onDone:  () => { setChatWaiting(false); },
         onError: (message) => {
           setChatMessages(prev => prev.map(m =>
-            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
+            m.id === aiId ? { ...m, content: `${aiPrefix}[エラー] ${message}` } : m,
           ));
           setChatWaiting(false);
         },
@@ -424,7 +427,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     );
   }, [chatMessages, panel, vault]);
 
-  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（選択中Bundleへリンク）
+  // 選択中のThinkがあればそこへ上書き保存、なければ新規の chat Think として保存する（選択中Bundleへリンク）
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0) return;
 
@@ -441,13 +444,13 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body = serializeChat(chatMessages);
-    await vault.CreateBlankThink('memo', `${title}\n${body}`, panel.BundleID ?? undefined);
+    await vault.CreateChatThink(`${title}\n${body}`, panel.BundleID ?? undefined);
     setChatMessages([]);
   }, [chatMessages, vault, panel, selectedTodoMemoId]);
 
   const saveChatTip = selectedTodoMemoId
-    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
-    : 'Chatをメモに保管します';
+    ? `Chatを${selectedTodoMemoId}に保管します`
+    : 'Chatを新規のchatとして保管します';
 
   // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
   const handleSelectTodoMemo = useCallback(async (id: string) => {

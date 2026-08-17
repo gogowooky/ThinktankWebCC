@@ -11,11 +11,12 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
+import type { AiModelSelection } from '../../services/aiModels';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
-import { defaultColorValue, pickIndexedStyles, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
+import { FOLDING_HEADER_STATUS_ID, isUnset, pickColorStyle, pickIndexedStyles, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -260,6 +261,13 @@ export function WorkoutArea({
     const bulletStyles  = pickMarkStyles('Bullet',  panel?.TextEditor.Bullet.Marks,  panel?.TextEditor.ColorStatus);
     const commentStyles = pickMarkStyles('Comment', panel?.TextEditor.Comment.Marks, panel?.TextEditor.ColorStatus);
 
+    // エディタの基本色。Monaco のテーマには必ず値を渡す必要があるため、
+    // DefaultColor.md 側が無設定のときだけ最終フォールバックを当てる。
+    const textStyle       = pickColorStyle('TextEditor.Text',       panel?.TextEditor.ColorStatus);
+    const selectionStyle  = pickColorStyle('TextEditor.Selection',  panel?.TextEditor.ColorStatus);
+    const occurrenceStyle = pickColorStyle('TextEditor.Occurrence', panel?.TextEditor.ColorStatus);
+    const colorOr = (value: string, fallback: string) => (isUnset(value) ? fallback : value);
+
     return {
       lineNumbers:   panel?.TextEditor.LineNumbers.IsVisible ?? false,
       wordWrap:      panel?.TextEditor.WordWrap.IsVisible ?? true,
@@ -269,28 +277,29 @@ export function WorkoutArea({
       bracketPairColorization: panel?.TextEditor.BracketPairColorization.IsVisible ?? true,
       highlightWord: panel?.HighlightWord ?? '',
       highlightStyles: pickIndexedStyles('Highlighter', panel?.TextEditor.ColorStatus),
-      background:          panel?.TextEditor.Color.Background  ?? defaultColorValue('TextEditor.Text',       'BgColor', '#f5f5f5'),
-      foreground:          panel?.TextEditor.Color.Text        ?? defaultColorValue('TextEditor.Text',       'Color',   '#1e1e1e'),
-      selectionBackground: panel?.TextEditor.Color.Selection   ?? defaultColorValue('TextEditor.Selection',  'BgColor', '#c6e6c6ff'),
-      occurrenceBackground: panel?.TextEditor.Color.Occurrence ?? defaultColorValue('TextEditor.Occurrence', 'BgColor', '#aac6aaff'),
+      background:           colorOr(textStyle.BgColor,       '#f5f5f5'),
+      foreground:           colorOr(textStyle.Color,         '#1e1e1e'),
+      selectionBackground:  colorOr(selectionStyle.BgColor,  '#cba8ff'),
+      occurrenceBackground: colorOr(occurrenceStyle.BgColor, '#ccffdd'),
       headingStyles:   pickIndexedStyles('Heading',     panel?.TextEditor.ColorStatus),
       commentStyles,
       bulletStyles,
       linkStyles:          pickLinkStyles(panel?.TextEditor.ColorStatus),
       inlineStyles:        pickInlineStyles(panel?.TextEditor.ColorStatus),
+      foldingHeaderStyle:  pickColorStyle(FOLDING_HEADER_STATUS_ID, panel?.TextEditor.ColorStatus),
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
        panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
        panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,
-       panel?.TextEditor.Color.Background, panel?.TextEditor.Color.Text,
-       panel?.TextEditor.Color.Selection, panel?.TextEditor.Color.Occurrence,
        panel?.TextEditor.ColorStatus,
        panel?.TextEditor.Bullet.Marks, panel?.TextEditor.Comment.Marks]);
 
+  // AI Chat のモデルは panel 単位で1つ。Pane の Chat と WorkoutSetting の AI相談 が同じ値を見る
   const aiChatModel = { provider: panel.AIChatProvider, model: panel.AIChatModel };
+  const handleAiChatModelChange = (selection: AiModelSelection) => panel.SetAIChatModel(selection);
 
-  const mediaProps = { areaId: area.ID, think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef, aiChatModel };
+  const mediaProps = { areaId: area.ID, think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef, aiChatModel, onAiChatModelChange: handleAiChatModelChange };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {

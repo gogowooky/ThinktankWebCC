@@ -72,11 +72,6 @@ export function isTodoThink(think: { Name: string }, prefix: string): boolean {
   return think.Name.toLowerCase().startsWith(prefix.toLowerCase());
 }
 
-/** memo Think が指定プレフィックスの TODO メモ（ドロップボックス表示対象）かどうかを判定する */
-export function isTodoMemoThink(think: { ContentType: string; Name: string }, prefix: string): boolean {
-  return think.ContentType === 'memo' && isTodoThink(think, prefix);
-}
-
 /**
  * 選択された Think の内容を Chat メッセージ配列としてロードする。
  * chat形式（## ユーザー発言）ならそのまま復元し、そうでなければ本文

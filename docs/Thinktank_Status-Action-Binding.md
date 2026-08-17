@@ -860,6 +860,77 @@ description:    カーソル左の文字を削除する
 key:            TextEditor.EditText.Backspace
 　monaco-editorでBackspaceキーを押したときの動作
 
+## Status：　260816　TextEditor.Bullet.Marks
+　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Bullet.Style(1..9).* に順に対応します
+　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
+　TextEditor.Bullet.StyleNum はこのCSVのアイテム数から自動で決まるため、ここでは定義しません。
+
+description:    箇条書きのマーク
+key:            TextEditor.Bullet.Marks
+current:        ・,-,*,■,●,=,↓,→,[✓]
+default:        ・,-,*,■,●,=,↓,→,[✓]
+type:           string
+candidates:     .*
+## Status：　260816　TextEditor.Comment.Marks
+　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Comment.Style(1..6).* に順に対応します
+　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
+　TextEditor.Comment.StyleNum はこのCSVのアイテム数から自動で決まるため、ここでは定義しません。
+
+description:    コメントのマーク
+key:            TextEditor.Comment.Marks
+current:        >,>>,>>>,;,|,//
+default:        >,>>,>>>,;,|,//
+type:           string
+candidates:     .*
+
+　TextEditor.CurrentEditor.DoOnCursorPos で認識される Url / Filepath / Tag の文字スタイルは
+　docs/DefaultColor.md で定義します（TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
+
+将来的にタグごとに分ける可能性あり、
+
+　TextEditor.Highlighter.Style(1..6).* / TextEditor.Heading.Style(1..6).* は docs/DefaultColor.md で定義します。
+　（WorkoutSettingPanel>TextEditor設定 の ハイライト色 / 文字設定 での変更もそちらの値を書き換えます）
+
+　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Overview|Workout|ReThink|ToolBar).Theme.* で定義します。
+　　Color   … パネルの基礎色（リボン等）。他のパネル色はこの色から生成します。
+　　BgColor … コンテンツ表示部（一覧・チャット等の白地）の背景色。
+
+　パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色は
+　docs/DefaultColor.md の FocusingBorder.Theme.Color で定義します（BgColor / Attrs は未使用）。
+
+## Status：　260817　TextEditor.FoldingHeader
+　TextEditor で折り畳まれている（閉じている）行のスタイルは
+　docs/DefaultColor.md の TextEditor.FoldingHeader.BgColor で定義します（BgColor のみ。Color / Attrs は使いません）。
+　装飾の対象は閉じている範囲の開始行（`⋯` が出る、画面に見えている行）のみで、行全体に背景色を敷きます。
+　文字は見出し等その行本来のスタイル（TextEditor.Heading.Style(1..6).* 等）のままです。
+
+　TextEditor.Selection（カーソルで選択された部分）の色は混ざりません。Monaco の既定では
+　折り畳み行の色 editor.foldBackground が「選択色の30%」であるため選択色が混ざるので、
+　Monaco 標準の折り畳みハイライト（foldingHighlight）を切って断ち切っています。
+　ミニマップの印も FoldingHeader の背景色から出します。
+
+　ただし描画順は Monaco の既定のままです（選択 → デコレーションの順に描かれる）。
+　折り畳み行の上で選択したとき、その行だけ選択色が背景色に隠れます（文字は本文レイヤなので見えます）。
+　折り畳み行でも選択色を見せたい場合は BgColor をアルファ付き8桁（例 #ffddff80）にしてください。
+　選択の描画に z-index を与えて前面に出す方法は使わないこと。.lines-content が stacking context を
+　作らないため、選択の矩形が本文より前面に来て文字が塗り潰されます。
+
+## Status：　260817　エディタ基本色のUI（WorkoutSettingPanel>TextEditor設定>文字設定）
+　「文字設定」先頭にあった 背景色 / 文字色 / 選択色 / 一致色 の4項目（旧 TextEditor.Color.*）は廃止し、
+　同じ位置で以下のStatusIDを直接編集するUIに置き換えました。Color と BgColor のみを扱い、Attrs のUIは持ちません。
+　　基本 … TextEditor.Text.(Color,BgColor)
+　　選択 … TextEditor.Selection.BgColor
+　　出現 … TextEditor.Occurrence.BgColor
+　　折畳 … TextEditor.FoldingHeader.BgColor
+　文字色のUIを持つのは基本だけです。選択は Monaco が選択中の文字色（editor.selectionForeground）を
+　高コントラストテーマでしか適用せず、出現は wordHighlight に前景色のテーマ項目がないため、いずれも反映できません。
+　なお TextEditor.Selection.BgColor は、エディタのフォーカスの有無にかかわらず同じ色になります。
+　Monaco の既定では非フォーカス時に同色の50%（editor.inactiveSelectionBackground の既定値）になるため、
+　テーマ側で editor.inactiveSelectionBackground にも同じ値を明示しています。
+　既定値の定義元は他と同じく docs/DefaultColor.md で、専用フィールドを廃止したため値の実体は ColorStatus に一本化されました。
+
+
+
 
 # TextEditor Action ================================================================================================
 ## Action：　260814　WorkoutPanel.FocusedPane.FileHistory:Next
@@ -1304,51 +1375,6 @@ key:            TextEditor.CurrentFolding.Heading:VisibleForward
 description:    前の表示中見出し行へ移動する（非表示の見出しは除外）
 key:            TextEditor.CurrentFolding.Heading:VisibleBackward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
-
-# Color Style ====================================================================================================== 
-
-　TextEditor.Text.* / TextEditor.Selection.* / TextEditor.Occurrence.* は docs/DefaultColor.md で定義します。
-　（StatusID名, Color, BgColor, Attrs のCSV1行から <StatusID>.Color / .BgColor / .Attrs の3変数が作られます）
-
-## Status：　260816　TextEditor.Bullet.Marks
-　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Bullet.Style(1..9).* に順に対応します
-　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
-　TextEditor.Bullet.StyleNum はこのCSVのアイテム数から自動で決まるため、ここでは定義しません。
-
-description:    箇条書きのマーク
-key:            TextEditor.Bullet.Marks
-current:        ・,-,*,■,●,=,↓,→,[✓]
-default:        ・,-,*,■,●,=,↓,→,[✓]
-type:           string
-candidates:     .*
-## Status：　260816　TextEditor.Comment.Marks
-　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Comment.Style(1..6).* に順に対応します
-　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
-　TextEditor.Comment.StyleNum はこのCSVのアイテム数から自動で決まるため、ここでは定義しません。
-
-description:    コメントのマーク
-key:            TextEditor.Comment.Marks
-current:        >,>>,>>>,;,|,//
-default:        >,>>,>>>,;,|,//
-type:           string
-candidates:     .*
-
-　TextEditor.CurrentEditor.DoOnCursorPos で認識される Url / Filepath / Tag の文字スタイルは
-　docs/DefaultColor.md で定義します（TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
-
-将来的にタグごとに分ける可能性あり、
-
-　TextEditor.Highlighter.Style(1..6).* / TextEditor.Heading.Style(1..6).* は docs/DefaultColor.md で定義します。
-　（WorkoutSettingPanel>TextEditor設定 の ハイライト色 / 文字設定 での変更もそちらの値を書き換えます）
-
-　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Overview|Workout|ReThink|ToolBar).Theme.* で定義します。
-　　Color   … パネルの基礎色（リボン等）。他のパネル色はこの色から生成します。
-　　BgColor … コンテンツ表示部（一覧・チャット等の白地）の背景色。
-
-　パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色は
-　docs/DefaultColor.md の FocusingBorder.Theme.Color で定義します（BgColor / Attrs は未使用）。
-
-
 
 # TextEditor ExOpt =================================================================================================
 ## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle

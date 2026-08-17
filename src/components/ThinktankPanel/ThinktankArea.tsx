@@ -25,6 +25,7 @@ import { AiChatView } from './AiChatView';
 import type { AiChatViewRef } from './AiChatView';
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
+import { aiSpeakerPrefix } from '../../services/aiModels';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
@@ -326,11 +327,13 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     const ts = new Date().toISOString();
     const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
     const aiId = `a-${Date.now() + 1}`;
-    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: '', timestamp: new Date().toISOString() };
+    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
+    const aiPrefix = aiSpeakerPrefix({ provider: panel.AIChatProvider, model: panel.AIChatModel });
+    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: aiPrefix, timestamp: new Date().toISOString() };
 
     setChatMessages(prev => [...prev, userMsg, aiMsg]);
     setChatWaiting(true);
-    chatAccumulatedRef.current = '';
+    chatAccumulatedRef.current = aiPrefix;
 
     chatAbortRef.current = new AbortController();
 
@@ -365,7 +368,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         },
         onError: (message) => {
           setChatMessages(prev => prev.map(m =>
-            m.id === aiId ? { ...m, content: `[エラー] ${message}` } : m,
+            m.id === aiId ? { ...m, content: `${aiPrefix}[エラー] ${message}` } : m,
           ));
           setChatWaiting(false);
         },
@@ -375,7 +378,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     );
   }, [chatMessages, panel]);
 
-  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する
+  // 選択中のThinkがあればそこへ上書き保存、なければ新規の chat Think として保存する
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0) return;
 
@@ -392,13 +395,13 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body = serializeChat(chatMessages);
-    await vault.CreateBlankThink('memo', `${title}\n${body}`);
+    await vault.CreateChatThink(`${title}\n${body}`);
     setChatMessages([]);
   }, [chatMessages, vault, selectedTodoMemoId]);
 
   const saveChatTip = selectedTodoMemoId
-    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
-    : 'Chatをメモに保管します';
+    ? `Chatを${selectedTodoMemoId}に保管します`
+    : 'Chatを新規のchatとして保管します';
 
   // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
   const handleSelectTodoMemo = useCallback(async (id: string) => {

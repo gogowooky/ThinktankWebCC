@@ -86,7 +86,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
     return () => clearTimeout(timer);
   }, [viewMode]);
 
-  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する（Overviewの選択中Bundleへリンク）
+  // 選択中のThinkがあればそこへ上書き保存、なければ新規の chat Think として保存する（Overviewの選択中Bundleへリンク）
   const handleSaveChat = useCallback(async () => {
     const msgs = panel.ChatMessages;
     if (msgs.length === 0) return;
@@ -104,13 +104,13 @@ export function ReThinkArea({ app, viewMode }: Props) {
     const firstUser = msgs.find(m => m.role === 'user')?.content ?? '';
     const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
     const body  = serializeChat(msgs);
-    await vault.CreateBlankThink('memo', `${title}\n${body}`, overviewBundleId || undefined);
+    await vault.CreateChatThink(`${title}\n${body}`, overviewBundleId || undefined);
     panel.ClearChat();
   }, [panel, vault, selectedTodoMemoId, overviewBundleId]);
 
   const saveChatTip = selectedTodoMemoId
-    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
-    : 'Chatをメモに保管します';
+    ? `Chatを${selectedTodoMemoId}に保管します`
+    : 'Chatを新規のchatとして保管します';
 
   // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
   const handleSelectTodoMemo = useCallback(async (id: string) => {

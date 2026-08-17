@@ -9,6 +9,8 @@ TextEditor.Bold,                    undefined,      undefined,        bold
 TextEditor.Text,                    #1e1e1e,      #f5f5f5,        undefined
 TextEditor.Selection,               undefined,      #cba8ff,        undefined
 TextEditor.Occurrence,              undefined,      #ccffdd,        undefined
+TextEditor.FoldingHeader,           undefined,      #ffddff,        undefined
+
 
 TextEditor.Url.Style,               #0000ff,      undefined,        underline
 TextEditor.Filepath.Style,          undefined,      undefined,        underline    

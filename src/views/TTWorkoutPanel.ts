@@ -9,7 +9,7 @@ import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import {
-  DEFAULT_MARKS, createColorStatusDefaults, defaultColorValue, getDefaultColorStyle, toggleAttr,
+  DEFAULT_MARKS, createColorStatusDefaults, getDefaultColorStyle, toggleAttr,
 } from '../utils/defaultColor';
 import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 
@@ -43,14 +43,8 @@ export class TextEditorSettings {
   Bullet  = { Marks: DEFAULT_MARKS.Bullet };
   Comment = { Marks: DEFAULT_MARKS.Comment };
 
-  // 既定値は docs/DefaultColor.md の TextEditor.Text / .Selection / .Occurrence が定義元。
-  // 第3引数はファイル側で無設定（コメントアウト等）だった場合のフォールバック。
-  Color = {
-    Background: defaultColorValue('TextEditor.Text',       'BgColor', '#f5f5f5'),
-    Text:       defaultColorValue('TextEditor.Text',       'Color',   '#1e1e1e'),
-    Selection:  defaultColorValue('TextEditor.Selection',  'BgColor', '#c6e6c6ff'),
-    Occurrence: defaultColorValue('TextEditor.Occurrence', 'BgColor', '#aac6aaff'),
-  };
+  // エディタの基本色（TextEditor.Text / .Selection / .Occurrence / .FoldingHeader）も
+  // 下の ColorStatus が持つ。専用フィールド（旧 TextEditor.Color.*）は廃止した。
   // Heading / Highlighter / Url / Filepath / Tag のスタイルも ColorStatus が持つ
   // （docs/DefaultColor.md の TextEditor.Heading.Style(1..6).* / .Highlighter.Style(1..6).*
   //   / .Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
@@ -228,11 +222,6 @@ export class TTWorkoutPanel extends TTUIItem {
   public SetTextEditorFullWidthSpaceVisible(v: boolean) { this.TextEditor.FullWidthSpace.IsVisible = v; this.NotifyUpdated(); }
   public SetTextEditorUnicodeHighlightVisible(v: boolean) { this.TextEditor.UnicodeHighlight.IsVisible = v; this.NotifyUpdated(); }
   public SetTextEditorBracketPairColorizationVisible(v: boolean) { this.TextEditor.BracketPairColorization.IsVisible = v; this.NotifyUpdated(); }
-
-  public SetTextEditorColorBackground(color: string)  { this.TextEditor.Color.Background  = color; this.NotifyUpdated(); }
-  public SetTextEditorColorText(color: string)        { this.TextEditor.Color.Text        = color; this.NotifyUpdated(); }
-  public SetTextEditorColorSelection(color: string)   { this.TextEditor.Color.Selection   = color; this.NotifyUpdated(); }
-  public SetTextEditorColorOccurrence(color: string)  { this.TextEditor.Color.Occurrence  = color; this.NotifyUpdated(); }
 
   /**
    * docs/DefaultColor.md 由来の StatusID変数を1項目だけ書き換える。

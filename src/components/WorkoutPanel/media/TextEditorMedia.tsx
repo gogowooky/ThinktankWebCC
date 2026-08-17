@@ -19,10 +19,11 @@ import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent } from '../../../utils/thinkFormat';
 import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
 import {
-  INLINE_MASK_CHAR, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS, colorStyleToCss,
-  injectInlineStyleCss, inlineStyleClass, isUnset, linkStyleClass, styleClass,
+  FOLDING_HEADER_BG_CLASS,
+  INLINE_MASK_CHAR, INLINE_STYLE_RULES, colorStyleToCss, foldingHeaderStyleCss,
+  injectInlineStyleCss, inlineStyleClass, isUnset, linkStyleClass, linkStyleCss, styleClass,
 } from '../../../utils/defaultColor';
-import type { LinkStyleName, MarkKind, MarkStyle } from '../../../utils/defaultColor';
+import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import './TextEditorMedia.css';
 
@@ -42,19 +43,23 @@ function extractBody(content: string): string {
   return splitContent(content).body;
 }
 
-function getClosedHeadings(editor: any): string {
+/** 折り畳まれている（＝閉じている）範囲の開始行番号。画面に見えているのはこの行だけになる */
+function getCollapsedStartLines(editor: any): number[] {
   const regions = (editor.getContribution?.('editor.contrib.folding') as any)
     ?.foldingModel?.regions;
-  if (regions) {
-    const closed: number[] = [];
-    for (let i = 0; i < regions.length; i++) {
-      if (regions.isCollapsed(i)) {
-        closed.push(regions.getStartLineNumber(i));
-      }
+  if (!regions) return [];
+
+  const closed: number[] = [];
+  for (let i = 0; i < regions.length; i++) {
+    if (regions.isCollapsed(i)) {
+      closed.push(regions.getStartLineNumber(i));
     }
-    return closed.join(',');
   }
-  return '';
+  return closed;
+}
+
+function getClosedHeadings(editor: any): string {
+  return getCollapsedStartLines(editor).join(',');
 }
 
 function getEditorValue(think: NonNullable<MediaProps['think']>): string {
@@ -341,6 +346,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     disposablesRef.current.push(contentDisposable);
 
     decorationsCollectionRef.current = editor.createDecorationsCollection();
+    foldedDecorationsRef.current = editor.createDecorationsCollection();
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (!think) return;
@@ -397,6 +403,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const checkAndSubscribe = () => {
         const foldingModel = foldingController.foldingModel;
         if (foldingModel) {
+          // 折り畳み状態が変わるたびに、折り畳まれている行の装飾を貼り直す
+          const foldedDisposable = foldingModel.onDidChange(() => updateFoldedDecorations());
+          disposablesRef.current.push(foldedDisposable);
+          updateFoldedDecorations();
+
           if (foldingModel.regions && foldingModel.regions.length > 0) {
             restoreEditorState();
             return;
@@ -494,6 +505,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           colors: {
             'editor.background':                    editorSettings.background,
             'editor.selectionBackground':            editorSettings.selectionBackground,
+            // フォーカスが外れたときの選択色。明示しないと Monaco が
+            // editor.selectionBackground の50%を使い、フォーカスの有無で色が変わる
+            'editor.inactiveSelectionBackground':    editorSettings.selectionBackground,
             'editor.wordHighlightBackground':        editorSettings.occurrenceBackground,
             'editor.wordHighlightStrongBackground':  editorSettings.occurrenceBackground,
             'editor.selectionHighlightBackground':   editorSettings.occurrenceBackground,
@@ -550,22 +564,60 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       document.head.appendChild(linkStyleEl);
     }
     // 色・属性は docs/DefaultColor.md 由来の TextEditor.<種別>.Style.* に従う
-    const linkStyles = editorSettings.linkStyles;
-    linkStyleEl.textContent = linkStyles
-      ? (Object.keys(LINK_STYLE_STATUS_IDS) as LinkStyleName[]).map(name => {
-          const decls = colorStyleToCss(linkStyles[name]);
-          return decls ? `.${linkStyleClass(name)} { ${decls} }` : '';
-        }).filter(Boolean).join('\n')
-      : '';
+    linkStyleEl.textContent = linkStyleCss(editorSettings.linkStyles);
 
     // インライン書式（**bold** / *italic* / __underline__ / ~~strikethrough~~）用CSSの注入。
     // 色・属性は docs/DefaultColor.md 由来の TextEditor.<書式名>.* に従う。
     // MarkdownMedia と同じスタイルシートを共有するので、どちらのビューでも同じ見た目になる。
     injectInlineStyleCss(editorSettings.inlineStyles);
 
+    // 折り畳まれている行用CSSの注入
+    // 色・属性は docs/DefaultColor.md 由来の TextEditor.FoldingHeader.* に従う
+    let foldingStyleEl = document.getElementById('text-editor-folding-header-styles');
+    if (!foldingStyleEl) {
+      foldingStyleEl = document.createElement('style');
+      foldingStyleEl.id = 'text-editor-folding-header-styles';
+      document.head.appendChild(foldingStyleEl);
+    }
+    foldingStyleEl.textContent = foldingHeaderStyleCss(editorSettings.foldingHeaderStyle);
+    // 折り畳みモデルの購読はマウント時のクロージャを掴むため、ミニマップ色は ref 経由で渡す
+    foldingHeaderStyleRef.current = editorSettings.foldingHeaderStyle;
+
     updateDecorations();
+    updateFoldedDecorations();
 
   }, [editorSettings]);
+
+  // ── 折り畳まれている行のデコレーション ──────────────────────────────────
+  //
+  // 開閉は本文の変更を伴わないため updateDecorations（onDidChangeModelContent 起点）では
+  // 追随できない。折り畳みモデルの変更を起点に、別のコレクションとして貼り直す。
+
+  const foldedDecorationsRef = useRef<any>(null);
+  const foldingHeaderStyleRef = useRef<ColorStyle | undefined>(undefined);
+
+  const updateFoldedDecorations = useCallback(() => {
+    const editor = editorRef.current;
+    const collection = foldedDecorationsRef.current;
+    if (!editor || !collection) return;
+
+    // Monaco 標準の折り畳みハイライト（選択色由来）は切ってあるので、
+    // ミニマップの印も TextEditor.FoldingHeader の背景色から出す
+    const style = foldingHeaderStyleRef.current;
+    const minimapOptions = style && !isUnset(style.BgColor) ? {
+      color: style.BgColor,
+      position: 1 // MinimapPosition.Inline
+    } : undefined;
+
+    collection.set(getCollapsedStartLines(editor).map(line => ({
+      range: new (window as any).monaco.Range(line, 1, line, 1),
+      options: {
+        isWholeLine: true,
+        className: FOLDING_HEADER_BG_CLASS,
+        minimap: minimapOptions,
+      },
+    })));
+  }, []);
 
   // ── 見出しデコレーションの更新 ──────────────────────────────────────────
 
@@ -943,6 +995,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           smoothScrolling:    true,
           folding:            true,
           showFoldingControls: 'always',
+          // Monaco 標準の折り畳みハイライト（.folded-background）を切る。
+          // その色 editor.foldBackground の既定値は「選択色の30%」で、切らないと
+          // TextEditor.Selection の変更が折り畳み行の色に混ざる。折り畳み行の色は
+          // TextEditor.FoldingHeader だけが決めるようにする。
+          foldingHighlight:   false,
           unicodeHighlight: {
             ambiguousCharacters: editorSettings?.unicodeHighlight ?? true,
             invisibleCharacters: editorSettings?.unicodeHighlight ?? true,

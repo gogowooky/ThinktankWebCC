@@ -75,10 +75,6 @@ export type ConfigKey =
   | 'TextEditor.FindOption.MatchWholeWord'
   | 'TextEditor.FindOption.UseRexp'
   | 'TextEditor.ReplaceOption.PreserveCase'
-  | 'TextEditor.Text.BgColor'
-  | 'TextEditor.Text.Color'
-  | 'TextEditor.Selection.BgColor'
-  | 'TextEditor.Occurrence.BgColor'
   | 'TextEditor.Heading.Style1'
   | 'TextEditor.Heading.Style2'
   | 'TextEditor.Heading.Style3'
@@ -478,36 +474,8 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible),
     set: (app, v) => { app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible); },
   },
-  'TextEditor.Text.BgColor': {
-    panel: 'WorkoutPanel',
-    default: '#f5f5f5', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '背景色',
-    get: (app) => app.WorkoutPanel.TextEditor.Color.Background,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Background = v; },
-  },
-  'TextEditor.Text.Color': {
-    panel: 'WorkoutPanel',
-    default: '#1e1e1e', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '文字色',
-    get: (app) => app.WorkoutPanel.TextEditor.Color.Text,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Text = v; },
-  },
-  'TextEditor.Selection.BgColor': {
-    panel: 'WorkoutPanel',
-    default: '#c6e6c6ff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '選択色',
-    get: (app) => app.WorkoutPanel.TextEditor.Color.Selection,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Selection = v; },
-  },
-  'TextEditor.Occurrence.BgColor': {
-    panel: 'WorkoutPanel',
-    default: '#aac6aaff', type: 'color', candidates: '^#[0-9a-fA-F]{6,8}$',
-    description: '一致色',
-    get: (app) => app.WorkoutPanel.TextEditor.Color.Occurrence,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Color.Occurrence = v; },
-  },
-
-
+  // TextEditor.Text / .Selection / .Occurrence / .FoldingHeader の色は専用の定義を持たず、
+  // 下の DEFAULT_COLOR_ENTRIES ループが docs/DefaultColor.md から登録する（実体は ColorStatus）。
 
   // ── ToolBar 表示モード ────────────────────────────────────────────────
   'ToolBar.Mode.Name': {

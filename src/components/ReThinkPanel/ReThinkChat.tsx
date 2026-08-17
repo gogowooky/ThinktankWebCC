@@ -10,7 +10,7 @@
 import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { TTReThinkPanel } from '../../views/TTReThinkPanel';
 import { streamChat } from '../../services/ChatApiService';
-import { AI_MODEL_OPTIONS, PROVIDER_LABELS, modelLabel, parseSelectionValue, selectionToValue } from '../../services/aiModels';
+import { AI_MODEL_OPTIONS, PROVIDER_LABELS, aiSpeakerPrefix, parseSelectionValue, selectionToValue } from '../../services/aiModels';
 import type { AiProvider } from '../../services/aiModels';
 import './ReThinkChat.css';
 
@@ -53,9 +53,6 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
   const abortRef                  = useRef<AbortController | null>(null);
   const accumulatedRef            = useRef('');
 
-  // 発言者名は選択中のAIモデル名
-  const aiName = modelLabel({ provider: panel.AIChatProvider, model: panel.AIChatModel });
-
   const handleInputAreaFocus = useCallback(() => setIsInputAreaFocused(true), []);
   const handleInputAreaBlur = useCallback((e: React.FocusEvent<HTMLDivElement>) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
@@ -92,9 +89,11 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
       ta.style.overflowY = 'hidden';
     }
     setIsWaiting(true);
-    accumulatedRef.current = '';
+    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
+    const aiPrefix = aiSpeakerPrefix({ provider: panel.AIChatProvider, model: panel.AIChatModel });
+    accumulatedRef.current = aiPrefix;
 
-    const assistantId = panel.AddAssistantMessage('');
+    const assistantId = panel.AddAssistantMessage(aiPrefix);
     panel.SetStreaming(true);
 
     abortRef.current = new AbortController();
@@ -118,7 +117,7 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
           setIsWaiting(false);
         },
         onError: (message) => {
-          panel.UpdateMessage(assistantId, `[エラー] ${message}`);
+          panel.UpdateMessage(assistantId, `${aiPrefix}[エラー] ${message}`);
           panel.SetStreaming(false);
           setIsWaiting(false);
         },
@@ -166,9 +165,9 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
                 </div>
               ) : (
                 <div className="rethink-chat__ai-block">
-                  {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめ、AI名をその中の
-                      先頭に置く（AI名は block なので直後で改行される）。本文の全行が
-                      AI名と同じ左端に揃い、モデル名の長さが変わっても位置は動かない。 */}
+                  {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめる。
+                      モデル名は本文の先頭行「(モデル名)」として発言自体に含まれるので、
+                      発言者名の別表示は持たない（aiSpeakerPrefix）。 */}
                   <div className="rethink-chat__ai-line">
                     <span className="rethink-chat__ai-text">
                       {/* 時刻は float。行として並べると本文の全行から幅を奪うため、
@@ -176,7 +175,6 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
                       {msg.timestamp && !isWaiting && (
                         <span className="rethink-chat__ts">{formatTime(msg.timestamp)}</span>
                       )}
-                      <span className="rethink-chat__ai-prefix">{aiName}▸</span>
                       {msg.content}
                       {isLastStreaming && <span className="rethink-chat__cursor">▋</span>}
                     </span>

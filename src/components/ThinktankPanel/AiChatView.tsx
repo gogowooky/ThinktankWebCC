@@ -10,7 +10,7 @@
 
 import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { ChatMessage } from '../../types';
-import { AI_MODEL_OPTIONS, DEFAULT_AI_MODEL_SELECTION, PROVIDER_LABELS, modelLabel, parseSelectionValue, selectionToValue } from '../../services/aiModels';
+import { AI_MODEL_OPTIONS, PROVIDER_LABELS, parseSelectionValue, selectionToValue } from '../../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../../services/aiModels';
 import './AiChatView.css';
 
@@ -34,17 +34,10 @@ interface Props {
   /** 初回マウント時に復元する scrollTop。省略時は末尾へ自動スクロール */
   initialScrollTop?: number;
   /**
-   * AIモデル選択ドロップダウンを表示する場合に指定する。
-   * 省略時はドロップダウン自体を表示しない（例: WorkoutPane の Chat は
-   * WorkoutSettingArea 側の選択をそのまま使うため、ここでは選ばせない）。
+   * AIモデル選択ドロップダウンを表示する場合に指定する。省略時は表示しない。
    * メッセージ入力欄がフォーカスされている間だけ下から現れる。
    */
   modelSelector?: AiModelSelectorProps;
-  /**
-   * 発言者名の表示に使うモデル。ドロップダウンを出さない場合（WorkoutPane の Chat）に指定する。
-   * modelSelector がある場合はそちらの選択値を使うので不要。
-   */
-  aiModel?: AiModelSelection;
 }
 
 const PROVIDER_ORDER: AiProvider[] = ['anthropic', 'openai', 'gemini'];
@@ -73,12 +66,9 @@ function topInContainer(el: HTMLElement, container: HTMLElement): number {
 }
 
 export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
-  { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector, aiModel },
+  { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector },
   ref,
 ) {
-  // 発言者名は選択中のAIモデル名
-  const aiName = modelLabel(aiModel ?? modelSelector?.value ?? DEFAULT_AI_MODEL_SELECTION);
-
   const [input, setInput] = useState('');
   const [isInputAreaFocused, setIsInputAreaFocused] = useState(false);
   const logRef            = useRef<HTMLDivElement>(null);
@@ -194,9 +184,9 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
                 </div>
               ) : (
                 <div className="ai-chat-view__ai-block">
-                  {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめ、AI名をその中の
-                      先頭に置く（AI名は block なので直後で改行される）。本文の全行が
-                      AI名と同じ左端に揃い、モデル名の長さが変わっても位置は動かない。 */}
+                  {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめる。
+                      モデル名は本文の先頭行「(モデル名)」として発言自体に含まれるので、
+                      発言者名の別表示は持たない（aiSpeakerPrefix）。 */}
                   <div className="ai-chat-view__ai-line">
                     <span className="ai-chat-view__ai-text">
                       {/* 時刻は float。行として並べると本文の全行から幅を奪うため、
@@ -204,7 +194,6 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
                       {msg.timestamp && (
                         <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
                       )}
-                      <span className="ai-chat-view__ai-prefix">{aiName}▸</span>
                       {msg.content}
                       {isLastStreaming && <span className="ai-chat-view__cursor">▋</span>}
                     </span>

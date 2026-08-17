@@ -72,6 +72,15 @@ export function modelLabel(selection: AiModelSelection): string {
 }
 
 /**
+ * AI発言の先頭に付ける「(モデル名)」の1行（末尾の改行を含む）。
+ * 発言そのものに含めるので、保管したチャットにもどのモデルの回答かが残る。
+ * 表示側はこの行を含む本文をそのまま描画する（発言者名の別表示は持たない）。
+ */
+export function aiSpeakerPrefix(selection: AiModelSelection): string {
+  return `(${modelLabel(selection)})\n`;
+}
+
+/**
  * localStorage からパネル別のモデル選択を読み込む。
  * 未選択・不正値・localStorage 利用不可（プライベートモード等）の場合はデフォルトを返す。
  */
