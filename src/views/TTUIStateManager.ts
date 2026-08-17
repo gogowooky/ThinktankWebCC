@@ -990,7 +990,8 @@ function colorStatusPanel(statusId: string): PanelKey {
   if (prefix === 'Thinktank') return 'ThinktankPanel';
   if (prefix === 'Overview')  return 'OverviewPanel';
   if (prefix === 'ReThink')   return 'ReThinkPanel';
-  if (prefix === 'Application') return 'Application';
+  if (prefix === 'Application')    return 'Application';
+  if (prefix === 'FocusingBorder') return 'Application';
   return 'WorkoutPanel';
 }
 

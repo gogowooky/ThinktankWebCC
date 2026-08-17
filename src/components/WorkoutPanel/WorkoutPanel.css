@@ -111,8 +111,9 @@ body[data-focus-column="WorkoutSetting"] .vertical-tab-bar--workout .vertical-ta
 .workout-panel__split--v > .splitter {
   background: rgba(0, 0, 0, 0.15);
 }
-.workout-panel__split--v > .splitter:hover {
-  background: var(--text-accent);
+.workout-panel__split--v > .splitter:hover,
+.workout-panel__split--v > .splitter--dragging {
+  background: var(--focusing-border);
 }
 
 /* ────────────────────────────────────────

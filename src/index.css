@@ -39,6 +39,10 @@
   --toolbar-base:         #2d2d2d;
   --toolbar-content-bg:   #ffffff;
 
+  /* パネル間ボーダー（スプリッター）のマウスオーバー・ドラッグ中の色。
+     どのパネルにも属さないので FocusingBorder.Theme.Color として単独で持つ。 */
+  --focusing-border:      #5cbeff;
+
   /* リボン＝基礎色そのもの */
   --thinktank-ribbon-bg: var(--thinktank-base);
   --overview-ribbon-bg:  var(--overview-base);

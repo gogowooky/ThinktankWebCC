@@ -8,6 +8,10 @@
  * の2色だけ。ここが書き込むのも `--<panel>-base` / `--<panel>-content-bg` の2つだけで、
  * ホバー・境界線・淡い地色などの派生は index.css が color-mix() で組み立てる。
  * 派生の定義をCSS側に置くことで、色の関係を1箇所（index.css）で読めるようにしている。
+ *
+ * パネル間ボーダー（スプリッター）のマウスオーバー／ドラッグ中の色だけは
+ * どのパネルにも属さないため FocusingBorder.Theme.Color として別に持ち、
+ * `--focusing-border` へ流し込む。
  */
 
 import { getDefaultColorStyle, isUnset } from './defaultColor';
@@ -33,6 +37,15 @@ export function panelThemeStatusId(kind: PanelThemeKind): string {
   return `${kind}.Theme`;
 }
 
+/** パネル間ボーダーのマウスオーバー／ドラッグ中の色を持つ StatusID */
+export const FOCUSING_BORDER_STATUS_ID = 'FocusingBorder.Theme';
+
+/** applyPanelThemeCss を呼び直すべき StatusID変数のワイルドカード一覧 */
+export const THEME_STATUS_KEYS: string[] = [
+  ...PANEL_THEME_KINDS.map(kind => `${panelThemeStatusId(kind)}.*`),
+  `${FOCUSING_BORDER_STATUS_ID}.*`,
+];
+
 /** テーマ適用中だけトランジションを止めるクラス（index.css で定義） */
 const SWITCHING_CLASS = 'tt-theme-switching';
 
@@ -57,6 +70,10 @@ export function applyPanelThemeCss(store: Record<string, ColorStyle> | undefined
     setVar(root, `--${prefix}-base`,       theme.Color);
     setVar(root, `--${prefix}-content-bg`, theme.BgColor);
   }
+
+  const focusing: ColorStyle =
+    store?.[FOCUSING_BORDER_STATUS_ID] ?? getDefaultColorStyle(FOCUSING_BORDER_STATUS_ID);
+  setVar(root, '--focusing-border', focusing.Color);
 
   // 新しい色で1フレーム描かせてからトランジションを戻す
   requestAnimationFrame(() => {

@@ -22,7 +22,7 @@ import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
 import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
 import { ReThinkPanel } from '../ReThinkPanel/ReThinkPanel';
 import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
-import { PANEL_THEME_KINDS, applyPanelThemeCss } from '../../utils/panelTheme';
+import { THEME_STATUS_KEYS, applyPanelThemeCss } from '../../utils/panelTheme';
 import './AppLayout.css';
 
 // パネル幅の初期値・最小値
@@ -68,18 +68,18 @@ export function AppLayout() {
     return () => TTUIStateManager.instance.removeListener('Application.PanelDisplay.Mode', listener);
   }, []);
 
-  // パネルのテーマ色（<Panel>.Theme.*）を CSS 変数へ展開する。
+  // パネルのテーマ色（<Panel>.Theme.* / FocusingBorder.Theme.*）を CSS 変数へ展開する。
   // 派生色は color-mix() で作るため、基礎色1つの変更が関連色すべてに波及する。
   useEffect(() => {
     const apply = () => applyPanelThemeCss(app.WorkoutPanel.TextEditor.ColorStatus);
     apply();
     const listener = () => apply();
-    for (const kind of PANEL_THEME_KINDS) {
-      TTUIStateManager.instance.addListener(`${kind}.Theme.*`, listener);
+    for (const key of THEME_STATUS_KEYS) {
+      TTUIStateManager.instance.addListener(key, listener);
     }
     return () => {
-      for (const kind of PANEL_THEME_KINDS) {
-        TTUIStateManager.instance.removeListener(`${kind}.Theme.*`, listener);
+      for (const key of THEME_STATUS_KEYS) {
+        TTUIStateManager.instance.removeListener(key, listener);
       }
     };
   }, [app]);

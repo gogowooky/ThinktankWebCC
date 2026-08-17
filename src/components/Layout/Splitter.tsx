@@ -4,7 +4,7 @@
  * pointer capture を使用してパネル外へのカーソル移動でもドラッグが途切れない。
  */
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import './Splitter.css';
 
 interface Props {
@@ -15,12 +15,15 @@ interface Props {
 export function Splitter({ onResize, onResizeEnd }: Props) {
   const dragging = useRef(false);
   const lastX    = useRef(0);
+  // ドラッグ中の色付け用。ref と別に持つのは再描画を起こす必要があるため
+  const [isDragging, setIsDragging] = useState(false);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);   // カーソルが外に出てもイベント受信継続
     dragging.current = true;
     lastX.current    = e.clientX;
+    setIsDragging(true);
     document.body.style.cursor    = 'col-resize';
     document.body.style.userSelect = 'none';
   }, []);
@@ -35,6 +38,7 @@ export function Splitter({ onResize, onResizeEnd }: Props) {
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragging.current) return;
     dragging.current = false;
+    setIsDragging(false);
     document.body.style.cursor    = '';
     document.body.style.userSelect = '';
     onResizeEnd?.();
@@ -42,7 +46,7 @@ export function Splitter({ onResize, onResizeEnd }: Props) {
 
   return (
     <div
-      className="splitter"
+      className={`splitter${isDragging ? ' splitter--dragging' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

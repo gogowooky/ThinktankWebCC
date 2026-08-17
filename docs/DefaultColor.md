@@ -53,4 +53,6 @@ Workout.Theme,                      #382830,        #ffffff,          undefined
 ReThink.Theme,                      #324f46,        #ffffff,          undefined
 ToolBar.Theme,                      #2d2d2d,        #ffffff,          undefined
 
+# パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色。Color のみ使う
+FocusingBorder.Theme,               #5cbeff,        undefined,          undefined
 

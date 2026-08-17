@@ -17,6 +17,9 @@
   inset: -4px 0;
 }
 
-.workout-h-splitter:hover {
-  background: var(--text-accent);
+/* マウスオーバー・ドラッグ中の色は FocusingBorder.Theme.Color（docs/DefaultColor.md）。
+   ドラッグ中はカーソルがボーダーから外れても色を保つ必要があるためクラスで持つ。 */
+.workout-h-splitter:hover,
+.workout-h-splitter--dragging {
+  background: var(--focusing-border);
 }

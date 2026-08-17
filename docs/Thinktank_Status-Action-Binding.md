@@ -1333,21 +1333,21 @@ default:        >,>>,>>>,;,|,//
 type:           string
 candidates:     .*
 
-
 　TextEditor.CurrentEditor.DoOnCursorPos で認識される Url / Filepath / Tag の文字スタイルは
 　docs/DefaultColor.md で定義します（TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
 
 将来的にタグごとに分ける可能性あり、
 
-
-
 　TextEditor.Highlighter.Style(1..6).* / TextEditor.Heading.Style(1..6).* は docs/DefaultColor.md で定義します。
 　（WorkoutSettingPanel>TextEditor設定 の ハイライト色 / 文字設定 での変更もそちらの値を書き換えます）
-
 
 　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Overview|Workout|ReThink|ToolBar).Theme.* で定義します。
 　　Color   … パネルの基礎色（リボン等）。他のパネル色はこの色から生成します。
 　　BgColor … コンテンツ表示部（一覧・チャット等の白地）の背景色。
+
+　パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色は
+　docs/DefaultColor.md の FocusingBorder.Theme.Color で定義します（BgColor / Attrs は未使用）。
+
 
 
 # TextEditor ExOpt =================================================================================================
