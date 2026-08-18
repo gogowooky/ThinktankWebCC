@@ -33,7 +33,10 @@ import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from './FilterSelectDialog';
 import type { FilterVisibility } from './FilterSelectDialog';
 import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
-import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_THINKTANK } from '../../utils/thinkFormat';
+import {
+  serializeChat, isTodoChatThink, loadChatFromThink, chatContentTitle,
+  NEW_CHAT_SENTINEL_ID, TODO_CHAT_PREFIX_THINKTANK,
+} from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './ThinktankArea.css';
@@ -191,9 +194,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // vault.Count が変わったとき（追加・削除）のみ再取得
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // AI相談 DataGrid 用: タイトルが [todo:thinktank] で始まる Think 一覧（種別不問、大文字小文字を区別しない）
+  // AI相談 DataGrid 用: タイトルが @Thinktank で始まる chat Think 一覧（大文字小文字を区別しない）
   const todoMemoThinks = useMemo(
-    () => allThinks.filter(t => isTodoThink(t, TODO_MEMO_PREFIX_THINKTANK)),
+    () => allThinks.filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_THINKTANK)),
     [allThinks],
   );
 
@@ -235,11 +238,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     }
     app.OpenThinkInWorkout(id);
   }, [app, vault]);
-
-  // AI相談 DataGrid のダブルクリック: Bundle縛りなしでそのまま Workout へ開く
-  const handleOpenTodoMemoInWorkout = useCallback((id: string) => {
-    app.OpenThinkInWorkout(id);
-  }, [app]);
 
   // Bundle 種別はその場で Overview へ、それ以外は Workout へ
   const handleOpenItem = useCallback((id: string) => {
@@ -392,24 +390,27 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       return;
     }
 
-    const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
-    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+    const title = chatContentTitle(TODO_CHAT_PREFIX_THINKTANK, chatMessages);
     const body = serializeChat(chatMessages);
-    await vault.CreateChatThink(`${title}\n${body}`);
-    setChatMessages([]);
+    const think = await vault.CreateChatThink(`${title}\n${body}`);
+    setSelectedTodoMemoId(think.ID);
   }, [chatMessages, vault, selectedTodoMemoId]);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatを${selectedTodoMemoId}に保管します`
     : 'Chatを新規のchatとして保管します';
 
-  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
+  // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
+  // ファイルとして保存されるのは、保存ボタンが押された時（handleSaveChat）だけ
   const handleSelectTodoMemo = useCallback(async (id: string) => {
-    setSelectedTodoMemoId(id);
     chatAbortRef.current?.abort();
     setChatWaiting(false);
-    if (!id) { setChatMessages([]); return; }
-    const think = vault.GetThink(id);
+
+    const targetId = id === NEW_CHAT_SENTINEL_ID ? '' : id;
+    setSelectedTodoMemoId(targetId);
+    if (!targetId) { setChatMessages([]); return; }
+    const think = vault.GetThink(targetId);
     if (think?.IsMetaOnly) await think.LoadContent();
     setChatMessages(loadChatFromThink(think));
   }, [vault]);
@@ -474,7 +475,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           filterVisibility={chatFilterVisibility}
           selectedId={selectedTodoMemoId}
           onSelect={handleSelectTodoMemo}
-          onOpenInWorkout={handleOpenTodoMemoInWorkout}
+          checkedIds={panel.CheckedThoughtIDs}
+          onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
         />
         <div className="thinktank-area__chat-body">
           <AiChatView

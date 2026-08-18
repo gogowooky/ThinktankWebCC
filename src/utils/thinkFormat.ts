@@ -58,18 +58,23 @@ export function serializeChat(messages: ChatMessage[], title?: string): string {
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
-// #region AI相談: TODOメモ選択ドロップボックス共通ロジック
+// #region AI相談: chatファイル選択ドロップボックス共通ロジック
 // ════════════════════════════════════════════════════════════════════════
 
-/** AI相談ドロップボックスで一覧表示する TODO メモの識別プレフィックス（パネルごと・大文字小文字を区別しない） */
-export const TODO_MEMO_PREFIX_THINKTANK = '[todo:thinktank]';
-export const TODO_MEMO_PREFIX_OVERVIEW  = '[todo:overview]';
-export const TODO_MEMO_PREFIX_WORKOUT   = '[todo:workout]';
-export const TODO_MEMO_PREFIX_RETHINK   = '[todo:rethink]';
+/** 各パネルのAI相談で扱う chat Think の識別プレフィックス（パネルごと・大文字小文字を区別しない） */
+export const TODO_CHAT_PREFIX_THINKTANK = '@Thinktank';
+export const TODO_CHAT_PREFIX_OVERVIEW  = '@Overview';
+export const TODO_CHAT_PREFIX_WORKOUT   = '@Workout';
+export const TODO_CHAT_PREFIX_RETHINK   = '@ReThink';
 
 /** タイトルが指定プレフィックスで始まる Think かどうかを判定する（ContentType不問、大文字小文字を区別しない） */
 export function isTodoThink(think: { Name: string }, prefix: string): boolean {
   return think.Name.toLowerCase().startsWith(prefix.toLowerCase());
+}
+
+/** chat Think が指定プレフィックスで始まる、AI相談の取り扱い対象かどうかを判定する */
+export function isTodoChatThink(think: { ContentType: string; Name: string }, prefix: string): boolean {
+  return think.ContentType === 'chat' && isTodoThink(think, prefix);
 }
 
 /**
@@ -89,6 +94,30 @@ export function loadChatFromThink(think: { Content: string } | undefined | null)
     content:   body.trim(),
     timestamp: new Date().toISOString(),
   }];
+}
+
+/** AI相談のDataGrid先頭に置く「新規チャット」行の仮想ID。実在するThinkのIDとは衝突しない特殊値 */
+export const NEW_CHAT_SENTINEL_ID = '__new_chat__';
+
+/** タイトルにできる内容が chat に何もない場合のフォールバック（プレフィックス + 保存日時） */
+export function newChatTitle(prefix: string): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  return `${prefix} ${date} ${time}`;
+}
+
+/**
+ * 未保存の chat を初めて保存するときのタイトルを、会話内容から組み立てる
+ * （最初のユーザー発言の冒頭を要約として使う）。
+ * プレフィックスを付けるのは、保存後もAI相談のドロップボックス一覧（@プレフィックス始まりの
+ * chat のみを対象とする）から見えるようにするため。
+ */
+export function chatContentTitle(prefix: string, messages: ChatMessage[]): string {
+  const firstUser = messages.find(m => m.role === 'user')?.content.trim() ?? '';
+  const summary = firstUser.replace(/\s+/g, ' ').slice(0, 40);
+  return summary ? `${prefix} ${summary}` : newChatTitle(prefix);
 }
 
 // #endregion

@@ -229,7 +229,14 @@
       "PowerShell(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -in 5173,5174,3000,8080,3001 } | Select-Object LocalPort, OwningProcess)",
       "Bash(TMPDIR=\"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad\" node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad/checkFolding.mjs\")",
       "Bash(curl -s -D - -o /dev/null http://localhost:5173/@vite/client)",
-      "Bash(python -)"
+      "Bash(python -)",
+      "PowerShell(gcloud run services describe ttweb --region=asia-northeast1 --project=thinktankweb-483408 --format=\"value\\(metadata.annotations['run.googleapis.com/iap-enabled'],status.url,status.latestReadyRevisionName\\)\")",
+      "PowerShell(gcloud run services logs read ttweb --region=asia-northeast1 --project=thinktankweb-483408 --limit=30)",
+      "Bash(TMPDIR=\"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-425e-86d5-875b522a6601/scratchpad\" node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-425e-86d5-875b522a6601/scratchpad/checkChatTitle.mjs\")",
+      "Bash(TMPDIR=\"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-420c-9131-845679850911/scratchpad\" node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-420c-9131-845679850911/scratchpad/checkChatTitle.mjs\")",
+      "Bash(TMPDIR=\"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad\" node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad/checkChatTitle.mjs\")",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -AccessModel IAP)",
+      "Bash(grep -n \"express.static\\\\|sendFile\\\\|app.get\\\\|app.use\\\\|catch-all\\\\|\\\\\\\\*\\\\|index.html\" server/index.ts)"
     ]
   }
 }

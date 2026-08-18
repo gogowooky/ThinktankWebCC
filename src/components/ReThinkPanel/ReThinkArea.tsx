@@ -17,7 +17,10 @@ import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialo
 import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
 import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
-import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_RETHINK } from '../../utils/thinkFormat';
+import {
+  serializeChat, isTodoChatThink, loadChatFromThink, chatContentTitle,
+  NEW_CHAT_SENTINEL_ID, TODO_CHAT_PREFIX_RETHINK,
+} from '../../utils/thinkFormat';
 import '../../components/Layout/MenuRibbon.css';
 import './ReThinkArea.css';
 
@@ -54,10 +57,10 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // AI相談 DataGrid 用: タイトルが [todo:rethink] で始まる Think 一覧（Vault全体・種別不問）
+  // AI相談 DataGrid 用: タイトルが @ReThink で始まる chat Think 一覧（Vault全体）
   const overviewBundleId = app.OverviewPanel.BundleID;
   const todoMemoThinks = useMemo(
-    () => vault.GetThinks().filter(t => isTodoThink(t, TODO_MEMO_PREFIX_RETHINK)),
+    () => vault.GetThinks().filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_RETHINK)),
     [vault, vault.Count], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
@@ -73,10 +76,6 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const handleRefresh = useCallback(() => {
     app.RefreshAll().catch(e => console.error('[ReThinkArea] RefreshAll failed:', e));
   }, [app]);
-  const handleOpenInWorkout = useCallback((id: string) => {
-    app.OpenThinkInWorkout(id);
-  }, [app]);
-
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -101,23 +100,26 @@ export function ReThinkArea({ app, viewMode }: Props) {
       return;
     }
 
-    const firstUser = msgs.find(m => m.role === 'user')?.content ?? '';
-    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+    const title = chatContentTitle(TODO_CHAT_PREFIX_RETHINK, msgs);
     const body  = serializeChat(msgs);
-    await vault.CreateChatThink(`${title}\n${body}`, overviewBundleId || undefined);
-    panel.ClearChat();
+    const think = await vault.CreateChatThink(`${title}\n${body}`, overviewBundleId || undefined);
+    setSelectedTodoMemoId(think.ID);
   }, [panel, vault, selectedTodoMemoId, overviewBundleId]);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatを${selectedTodoMemoId}に保管します`
     : 'Chatを新規のchatとして保管します';
 
-  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
+  // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
+  // ファイルとして保存されるのは、保存ボタンが押された時（handleSaveChat）だけ
   const handleSelectTodoMemo = useCallback(async (id: string) => {
-    setSelectedTodoMemoId(id);
     reThinkChatRef.current?.abortStreaming();
-    if (!id) { panel.LoadChat([]); return; }
-    const think = vault.GetThink(id);
+
+    const targetId = id === NEW_CHAT_SENTINEL_ID ? '' : id;
+    setSelectedTodoMemoId(targetId);
+    if (!targetId) { panel.LoadChat([]); return; }
+    const think = vault.GetThink(targetId);
     if (think?.IsMetaOnly) await think.LoadContent();
     panel.LoadChat(loadChatFromThink(think));
   }, [panel, vault]);
@@ -208,7 +210,8 @@ export function ReThinkArea({ app, viewMode }: Props) {
               filterVisibility={filterVisibility}
               selectedId={selectedTodoMemoId}
               onSelect={handleSelectTodoMemo}
-              onOpenInWorkout={handleOpenInWorkout}
+              checkedIds={panel.CheckedThoughtIDs}
+              onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
             />
             <div className="rethink-area__chat-body">
               <ReThinkChat ref={reThinkChatRef} panel={panel} systemPrompt={systemPrompt} />

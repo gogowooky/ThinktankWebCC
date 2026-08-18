@@ -35,8 +35,8 @@ export class TTThinktankPanel extends TTUIItem {
     this.SharedState.checkedIds = val;
     if (this._parent) {
       const app = this._parent as any;
-      if (app.OverviewPanel) {
-        app.OverviewPanel.NotifyUpdated();
+      for (const key of ['OverviewPanel', 'WorkoutPanel', 'ReThinkPanel']) {
+        app[key]?.NotifyUpdated();
       }
     }
     TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');

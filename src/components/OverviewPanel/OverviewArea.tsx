@@ -40,7 +40,10 @@ import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialo
 import type { ChatMessage, ContentType } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { aiSpeakerPrefix } from '../../services/aiModels';
-import { parseBundle, serializeBundle, serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_OVERVIEW } from '../../utils/thinkFormat';
+import {
+  parseBundle, serializeBundle, serializeChat, isTodoChatThink, loadChatFromThink, chatContentTitle,
+  NEW_CHAT_SENTINEL_ID, TODO_CHAT_PREFIX_OVERVIEW,
+} from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './OverviewArea.css';
@@ -132,10 +135,10 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     });
   }, [panel.BundleID, vault, refreshKey, vault.IsLoaded, vault.Count]);
 
-  // AI相談 DataGrid 用: タイトルが [todo:overview] で始まる Think 一覧（Vault全体・種別不問）
+  // AI相談 DataGrid 用: タイトルが @Overview で始まる chat Think 一覧（Vault全体）
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
   const todoMemoThinks = useMemo(
-    () => allThinks.filter(t => isTodoThink(t, TODO_MEMO_PREFIX_OVERVIEW)),
+    () => allThinks.filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_OVERVIEW)),
     [allThinks],
   );
 
@@ -441,24 +444,27 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       return;
     }
 
-    const firstUser = chatMessages.find(m => m.role === 'user')?.content ?? '';
-    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+    const title = chatContentTitle(TODO_CHAT_PREFIX_OVERVIEW, chatMessages);
     const body = serializeChat(chatMessages);
-    await vault.CreateChatThink(`${title}\n${body}`, panel.BundleID ?? undefined);
-    setChatMessages([]);
+    const think = await vault.CreateChatThink(`${title}\n${body}`, panel.BundleID ?? undefined);
+    setSelectedTodoMemoId(think.ID);
   }, [chatMessages, vault, panel, selectedTodoMemoId]);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatを${selectedTodoMemoId}に保管します`
     : 'Chatを新規のchatとして保管します';
 
-  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
+  // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
+  // ファイルとして保存されるのは、保存ボタンが押された時（handleSaveChat）だけ
   const handleSelectTodoMemo = useCallback(async (id: string) => {
-    setSelectedTodoMemoId(id);
     chatAbortRef.current?.abort();
     setChatWaiting(false);
-    if (!id) { setChatMessages([]); return; }
-    const think = vault.GetThink(id);
+
+    const targetId = id === NEW_CHAT_SENTINEL_ID ? '' : id;
+    setSelectedTodoMemoId(targetId);
+    if (!targetId) { setChatMessages([]); return; }
+    const think = vault.GetThink(targetId);
     if (think?.IsMetaOnly) await think.LoadContent();
     setChatMessages(loadChatFromThink(think));
   }, [vault]);
@@ -600,7 +606,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
               filterVisibility={chatFilterVisibility}
               selectedId={selectedTodoMemoId}
               onSelect={handleSelectTodoMemo}
-              onOpenInWorkout={handleOpenThinkInWorkout}
+              checkedIds={panel.CheckedThoughtIDs}
+              onToggleCheck={handleToggleCheck}
             />
             <div className="overview-area__chat-body">
               <AiChatView

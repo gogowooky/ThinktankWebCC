@@ -24,15 +24,15 @@ export class TTOverviewPanel extends TTUIItem {
   /** 表示中のBundleID（空 = 未選択）*/
   public BundleID: string = '';
 
-  /** チェックされているThink IDリスト（OverviewPanel内） */
+  /** チェックされているThink IDリスト（Thinktank/Overview/Workout/ReThink で共通） */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {
     this.SharedState.checkedIds = val;
     if (this._parent) {
       const app = this._parent as any;
-      if (app.ThinktankPanel) {
-        app.ThinktankPanel.NotifyUpdated();
+      for (const key of ['ThinktankPanel', 'WorkoutPanel', 'ReThinkPanel']) {
+        app[key]?.NotifyUpdated();
       }
     }
     TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');

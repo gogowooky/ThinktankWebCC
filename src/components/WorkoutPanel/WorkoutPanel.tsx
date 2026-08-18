@@ -25,7 +25,8 @@ import { WorkoutSettingArea } from './WorkoutSettingArea';
 import type { WorkoutSettingAreaRef } from './WorkoutSettingArea';
 import { extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
-import { serializeChat } from '../../utils/thinkFormat';
+import { serializeChat, chatContentTitle, TODO_CHAT_PREFIX_WORKOUT } from '../../utils/thinkFormat';
+import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './WorkoutTabBar';
 import type { MediaType, ChatMessage } from '../../types';
 import './WorkoutPanel.css';
@@ -516,21 +517,17 @@ export function WorkoutPanel({ app }: Props) {
     }
   }, [panel, vault]);
 
-  // TODOメモ未選択時: 新規の chat Think として保存する（Overviewの選択中Bundleへリンク）
-  const handleSaveChat = useCallback(async (messages: ChatMessage[]) => {
-    if (messages.length === 0) return;
-    const firstUser = messages.find(m => m.role === 'user')?.content ?? '';
-    const title = firstUser.slice(0, 50) || `Chat ${new Date().toLocaleDateString('ja-JP')}`;
+  // chatファイル未選択時の保存: チャット内容から想定されるタイトルで新規の chat Think を作る
+  // （Overviewの選択中Bundleへリンク）。作成した Think を返し、以降はそれを選択中として続けられるようにする
+  const handleSaveChat = useCallback(async (messages: ChatMessage[]): Promise<TTThink | undefined> => {
+    if (messages.length === 0) return undefined;
+    const title = chatContentTitle(TODO_CHAT_PREFIX_WORKOUT, messages);
     const body = serializeChat(messages);
-    await vault.CreateChatThink(`${title}\n${body}`, app.OverviewPanel.BundleID || undefined);
+    return vault.CreateChatThink(`${title}\n${body}`, app.OverviewPanel.BundleID || undefined);
   }, [vault, app]);
 
   const handleSettingsRefresh = useCallback(() => {
     app.RefreshAll().catch(e => console.error('[WorkoutPanel] RefreshAll failed:', e));
-  }, [app]);
-
-  const handleOpenTodoMemoInWorkout = useCallback((id: string) => {
-    app.OpenThinkInWorkout(id);
   }, [app]);
 
   const handleClearAll = useCallback(() => {
@@ -883,7 +880,6 @@ export function WorkoutPanel({ app }: Props) {
           onSaveTable={handleSaveTable}
           onSaveChat={handleSaveChat}
           onRefresh={handleSettingsRefresh}
-          onOpenInWorkout={handleOpenTodoMemoInWorkout}
         />
       </PanelArea>
       {panel.IsAreaOpen && (

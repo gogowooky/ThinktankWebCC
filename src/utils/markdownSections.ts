@@ -33,13 +33,16 @@ export interface MarkdownDocSections {
 }
 
 /**
- * エディタが編集対象とする文字列にタイトル行（先頭行）が含まれる ContentType。
- * TextEditorMedia.getEditorValue() の分岐と一致させること。
+ * エディタが編集対象とする文字列にタイトル行（先頭行）が含まれるかどうか。
+ *
+ * TTThink はどの ContentType でも Content の1行目がタイトルであり（TTThink._extractTitle
+ * が種別を問わず1行目を Name にする、thinkFormat.splitContent も同様）、これは全 ContentType
+ * に共通の格納形式である。したがってエディタ側も種別で出し分けず常にタイトル行を含める。
+ * かつては 'bundle' / 'table' / 'memo' のみの許可リストだったが、'chat' 等その他の種別を
+ * texteditor で開いたときにタイトル行が編集領域から消えてしまう不整合があったため統一した。
  */
-const EDITOR_VALUE_INCLUDES_TITLE: readonly ContentType[] = ['bundle', 'table', 'memo'];
-
-export function editorValueIncludesTitleLine(contentType: ContentType): boolean {
-  return EDITOR_VALUE_INCLUDES_TITLE.includes(contentType);
+export function editorValueIncludesTitleLine(_contentType: ContentType): boolean {
+  return true;
 }
 
 /**

@@ -43,6 +43,21 @@ export class TTCollection extends TTObject {
     return this._children.get(id);
   }
 
+  /**
+   * `_itemsCache` を無効化する。
+   *
+   * サブクラス（TTVault）が `AddItem`/`DeleteItem` を経由せず `_children` を直接
+   * 操作する箇所（Create*Think 系: `_children.set(...)` の直後、await を挟む前）で、
+   * `Count` の更新と同じタイミングで必ず呼ぶこと。
+   * `_itemsCache` は `NotifyUpdated()` でも無効化されるが、それは通常 await の後
+   * （StorageManager への保存完了後）にしか呼ばれない。その間に `GetItems()` が
+   * 呼ばれると、`Count` は新しい値なのに一覧はまだ古いキャッシュを返す
+   * （＝作成直後の Think が一覧に出ない）不整合が起きるため、ここで先に閉じる。
+   */
+  protected InvalidateItemsCache(): void {
+    this._itemsCache = null;
+  }
+
   public override NotifyUpdated(updateProperty: boolean = true): void {
     this._itemsCache = null;
     super.NotifyUpdated(updateProperty);

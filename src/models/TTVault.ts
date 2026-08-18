@@ -433,6 +433,7 @@ export class TTVault extends TTCollection {
     think._parent     = this;
     this._children.set(newId, think);
     this.Count = this._children.size;
+    this.InvalidateItemsCache();
 
     try {
       await StorageManager.instance.save({
@@ -447,6 +448,7 @@ export class TTVault extends TTCollection {
       // 残さないようロールバックする（次回リロードで消える古い挙動より安全）。
       this._children.delete(newId);
       this.Count = this._children.size;
+      this.InvalidateItemsCache();
       throw e;
     }
     think.markSaved();
@@ -494,6 +496,7 @@ export class TTVault extends TTCollection {
     think._parent     = this;
     this._children.set(newId, think);
     this.Count = this._children.size;
+    this.InvalidateItemsCache();
 
     try {
       await StorageManager.instance.save({
@@ -506,6 +509,7 @@ export class TTVault extends TTCollection {
     } catch (e) {
       this._children.delete(newId);
       this.Count = this._children.size;
+      this.InvalidateItemsCache();
       throw e;
     }
     think.markSaved();
@@ -554,6 +558,7 @@ export class TTVault extends TTCollection {
     think._parent     = this;
     this._children.set(newId, think);
     this.Count = this._children.size;
+    this.InvalidateItemsCache();
 
     try {
       await StorageManager.instance.save({
@@ -566,6 +571,7 @@ export class TTVault extends TTCollection {
     } catch (e) {
       this._children.delete(newId);
       this.Count = this._children.size;
+      this.InvalidateItemsCache();
       throw e;
     }
     think.markSaved();
@@ -588,6 +594,7 @@ export class TTVault extends TTCollection {
     think._parent     = this;
     this._children.set(newId, think);
     this.Count = this._children.size;
+    this.InvalidateItemsCache();
 
     try {
       await StorageManager.instance.save({
@@ -600,6 +607,7 @@ export class TTVault extends TTCollection {
     } catch (e) {
       this._children.delete(newId);
       this.Count = this._children.size;
+      this.InvalidateItemsCache();
       throw e;
     }
     think.markSaved();
@@ -631,11 +639,13 @@ export class TTVault extends TTCollection {
     think._parent     = this;
     this._children.set(id, think);
     this.Count = this._children.size;
+    this.InvalidateItemsCache();
     try {
       await StorageManager.instance.save({ id, contentType, fullContent, keywords, relatedIds: '' });
     } catch (e) {
       this._children.delete(id);
       this.Count = this._children.size;
+      this.InvalidateItemsCache();
       throw e;
     }
     think.markSaved();
@@ -659,6 +669,7 @@ export class TTVault extends TTCollection {
       }
     });
     this.Count = this._children.size;
+    this.InvalidateItemsCache();
     this.NotifyUpdated();
     if (failedIds.length > 0) {
       throw new Error(`一部のThinkの削除に失敗しました: ${failedIds.join(', ')}`);

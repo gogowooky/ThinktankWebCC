@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { TTVault } from '../../models/TTVault';
+import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
@@ -35,7 +36,10 @@ import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPick
 import type { ChatMessage } from '../../types';
 import { streamChat } from '../../services/ChatApiService';
 import { aiSpeakerPrefix } from '../../services/aiModels';
-import { serializeChat, isTodoThink, loadChatFromThink, TODO_MEMO_PREFIX_WORKOUT } from '../../utils/thinkFormat';
+import {
+  serializeChat, isTodoChatThink, loadChatFromThink,
+  NEW_CHAT_SENTINEL_ID, TODO_CHAT_PREFIX_WORKOUT,
+} from '../../utils/thinkFormat';
 import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, styleStatusId } from '../../utils/defaultColor';
 import './WorkoutSettingArea.css';
 
@@ -129,9 +133,9 @@ interface Props {
   onCreateTable:    () => void;
   onReadTable:      () => void;
   onSaveTable:      () => void;
-  onSaveChat:       (messages: ChatMessage[]) => Promise<void>;
+  /** chatファイル未選択時の保存。作成した Think を返す（続けて選択中として扱うため） */
+  onSaveChat:       (messages: ChatMessage[]) => Promise<TTThink | undefined>;
   onRefresh:        () => void;
-  onOpenInWorkout:  (id: string) => void;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -143,7 +147,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
   onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
-  onSaveChat, onRefresh, onOpenInWorkout,
+  onSaveChat, onRefresh,
 }: Props, ref) {
   const panelRef           = useRef<HTMLDivElement>(null);
   const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
@@ -182,9 +186,9 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // AI相談 DataGrid 用: タイトルが [todo:workout] で始まる Think 一覧（Vault全体・種別不問）
+  // AI相談 DataGrid 用: タイトルが @Workout で始まる chat Think 一覧（Vault全体）
   const todoMemoThinks = useMemo(
-    () => vault.GetThinks().filter(t => isTodoThink(t, TODO_MEMO_PREFIX_WORKOUT)),
+    () => vault.GetThinks().filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_WORKOUT)),
     [vault, vault.Count], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
@@ -236,7 +240,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
     );
   }, [chatMessages, panel]);
 
-  // 表示中メモがあればそのメモへ上書き保存、なければ新規メモとして保存する
+  // 選択中のchatファイルがあればそこへ上書き保存、なければ新規の chat Think として保存する
   const handleSaveChat = useCallback(async () => {
     if (chatMessages.length === 0 || chatWaiting) return;
 
@@ -250,21 +254,25 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
       return;
     }
 
-    await onSaveChat(chatMessages);
-    setChatMessages([]);
+    const think = await onSaveChat(chatMessages);
+    if (think) setSelectedTodoMemoId(think.ID);
   }, [chatMessages, chatWaiting, onSaveChat, selectedTodoMemoId, vault]);
 
   const saveChatTip = selectedTodoMemoId
-    ? `Chatをメモ:${selectedTodoMemoId}に保管します`
-    : 'Chatをメモに保管します';
+    ? `Chatを${selectedTodoMemoId}に保管します`
+    : 'Chatを新規のchatとして保管します';
 
-  // TODOメモ選択: 選択されたmemoファイルの内容をChatにロードする（空選択でクリア）
+  // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
+  // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
+  // ファイルとして保存されるのは、保存ボタンが押された時（handleSaveChat）だけ
   const handleSelectTodoMemo = useCallback(async (id: string) => {
-    setSelectedTodoMemoId(id);
     chatAbortRef.current?.abort();
     setChatWaiting(false);
-    if (!id) { setChatMessages([]); return; }
-    const think = vault.GetThink(id);
+
+    const targetId = id === NEW_CHAT_SENTINEL_ID ? '' : id;
+    setSelectedTodoMemoId(targetId);
+    if (!targetId) { setChatMessages([]); return; }
+    const think = vault.GetThink(targetId);
     if (think?.IsMetaOnly) await think.LoadContent();
     setChatMessages(loadChatFromThink(think));
   }, [vault]);
@@ -359,7 +367,8 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               filterVisibility={filterVisibility}
               selectedId={selectedTodoMemoId}
               onSelect={handleSelectTodoMemo}
-              onOpenInWorkout={onOpenInWorkout}
+              checkedIds={panel.CheckedThoughtIDs}
+              onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
             />
             <div className="workout-setting-area__chat-body">
               <AiChatView

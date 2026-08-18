@@ -5,6 +5,7 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 import { TTWorkoutArea } from './TTWorkoutArea';
+import { TTUIStateManager } from './TTUIStateManager';
 import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
@@ -156,6 +157,35 @@ export class TTWorkoutPanel extends TTUIItem {
 
   /** WorkoutPanel内にThinkファイルがDropされた際に設定されるファイルID（WorkoutPanel.DroppedFile.ID） */
   public DroppedFileID: string = '';
+
+  // ── チェックボックス選択（Think一覧/chat選択欄で共通。TTApplication が4パネル分をまとめて共有）───
+
+  /** チェックされているThink IDリスト（Thinktank/Overview/Workout/ReThink で共通） */
+  public SharedState = { checkedIds: [] as string[] };
+  public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
+  public set CheckedThoughtIDs(val: string[]) {
+    this.SharedState.checkedIds = val;
+    if (this._parent) {
+      const app = this._parent as any;
+      for (const key of ['ThinktankPanel', 'OverviewPanel', 'ReThinkPanel']) {
+        app[key]?.NotifyUpdated();
+      }
+    }
+    TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');
+  }
+
+  /** 指定した ID (群) のチェック状態を切り替える / 指定する */
+  public ToggleCheck(id: string | string[], forceChecked?: boolean): void {
+    const ids = Array.isArray(id) ? id : [id];
+    const current = new Set(this.CheckedThoughtIDs);
+    ids.forEach(targetId => {
+      const isChecked = current.has(targetId);
+      const nextChecked = (forceChecked !== undefined) ? forceChecked : !isChecked;
+      if (nextChecked) current.add(targetId); else current.delete(targetId);
+    });
+    this.CheckedThoughtIDs = Array.from(current);
+    this.NotifyUpdated();
+  }
 
   public override get ClassName(): string { return 'TTWorkoutPanel'; }
 

@@ -58,10 +58,12 @@ export class TTApplication extends TTUIItem {
     this.ReThinkPanel._parent   = this;
     this.Status._parent         = this;
 
-    // チェック選択の共有ステートを同期
+    // チェック選択の共有ステートを同期（Think一覧とAI相談のchat選択欄で共通。4パネルすべてで共有）
     const sharedCheckedState = { checkedIds: [] as string[] };
     this.ThinktankPanel.SharedState = sharedCheckedState;
     this.OverviewPanel.SharedState = sharedCheckedState;
+    this.WorkoutPanel.SharedState = sharedCheckedState;
+    this.ReThinkPanel.SharedState = sharedCheckedState;
 
     // TTUIStateManager からのプロパティ更新を購読して、対象パネルを更新する
     const stateManager = TTUIStateManager.instance;

@@ -19,6 +19,7 @@ import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
 import { useHighlight } from '../../contexts/HighlightContext';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
+import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import './ThoughtsList.css';
 
 export const ROW_HEIGHT = 36;
@@ -31,7 +32,8 @@ interface Props {
   columns?: ColumnConfig[];
   /** チェックボックス列を表示するか（既定 true）。false の場合 onToggleCheck は不要 */
   showCheckbox?: boolean;
-  onOpen: (id: string) => void;
+  /** ダブルクリック時に呼ばれる。省略時はダブルクリックしても何も起きない（例: AI相談のchat選択欄は D&D のみで Workout へ渡す） */
+  onOpen?: (id: string) => void;
   onToggleCheck?: (id: string | string[], force?: boolean) => void;
   focusedId: string | null;
   onFocusChange: (id: string | null) => void;
@@ -103,12 +105,16 @@ function buildTitleSub(thought: TTThink, visibleCols: ColumnConfig[], showIdSub:
 }
 
 function renderCell(col: ColumnConfig, thought: TTThink, visibleCols: ColumnConfig[], showIdSub: boolean, showUpdatedSub: boolean): ReactNode {
+  // 「新規チャット」仮想行は実在の Think ではないため、ID・更新日等の列は表示しない
+  const isNewChatRow = thought.ID === NEW_CHAT_SENTINEL_ID;
+  if (isNewChatRow && col.field !== 'Name') return null;
+
   switch (col.field) {
     case 'Name':
       return (
         <span key="Name" className="thoughts-list__title-block" data-tip={thought.Name} data-tip-side="left">
           <span className="thoughts-list__title">{thought.Name || '（無題）'}</span>
-          {(showIdSub || showUpdatedSub) && (
+          {(showIdSub || showUpdatedSub) && !isNewChatRow && (
             <span className="thoughts-list__id-sub">
               {buildTitleSub(thought, visibleCols, showIdSub, showUpdatedSub)}
             </span>
@@ -184,7 +190,7 @@ export function ThoughtsList({
       onFocusChange(thoughts[next]?.ID ?? null);
       virtualizer.scrollToIndex(next, { align: 'auto' });
     } else if (e.key === 'Enter') {
-      if (focusedId) onOpen(focusedId);
+      if (focusedId) onOpen?.(focusedId);
     }
   };
 
@@ -236,11 +242,12 @@ export function ThoughtsList({
           const isInWorkout        = workoutIds.includes(thought.ID);
           const isWorkoutFocused   = workoutFocusedId === thought.ID;
           const isFocused          = thought.ID === focusedId;
+          const isNewChatRow       = thought.ID === NEW_CHAT_SENTINEL_ID;
 
           return (
             <div
               key={thought.ID}
-              draggable
+              draggable={!isNewChatRow}
               onDragStart={e => {
                 // 'copy'のみだとOSによってはAlt修飾（Insert用）でのドロップ受理が
                 // 不安定になることがあるため、'link'も許可しておく
@@ -257,6 +264,7 @@ export function ThoughtsList({
                 isInWorkout        ? 'thoughts-list__row--workout'          : '',
                 isWorkoutFocused   ? 'thoughts-list__row--workout-focused'  : '',
                 isFocused          ? 'thoughts-list__row--focused'          : '',
+                isNewChatRow       ? 'thoughts-list__row--new-chat'         : '',
               ].join(' ')}
               style={{
                 position: 'absolute',
@@ -266,17 +274,23 @@ export function ThoughtsList({
                 height: ROW_HEIGHT,
               }}
               onClick={() => onFocusChange(thought.ID)}
-              onDoubleClick={() => onOpen(thought.ID)}
+              onDoubleClick={() => onOpen?.(thought.ID)}
             >
               {showCheckbox && (
-                <input
-                  type="checkbox"
-                  className="thoughts-list__check"
-                  checked={isChecked}
-                  onChange={() => { /* onChangeはonClickで処理するため空 */ }}
-                  onClick={e => handleCheckClick(e, thought.ID)}
-                  aria-label={`${thought.Name} を選択`}
-                />
+                isNewChatRow
+                  // 実在しない仮想行はチェック対象外。他行とアイコン/タイトルの位置を
+                  // 揃えるため、チェックボックスと同じ大きさの空要素で場所だけ確保する
+                  ? <span className="thoughts-list__check" aria-hidden="true" />
+                  : (
+                    <input
+                      type="checkbox"
+                      className="thoughts-list__check"
+                      checked={isChecked}
+                      onChange={() => { /* onChangeはonClickで処理するため空 */ }}
+                      onClick={e => handleCheckClick(e, thought.ID)}
+                      aria-label={`${thought.Name} を選択`}
+                    />
+                  )
               )}
               {getTypeIcon(thought.ContentType)}
               {visibleCols.map(col => renderCell(col, thought, visibleCols, showIdSub, showUpdatedSub))}
