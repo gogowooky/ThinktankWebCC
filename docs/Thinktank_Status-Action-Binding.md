@@ -17,6 +17,7 @@
 
 # Status
 
+
 ## 実装：　260814　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
 　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
 

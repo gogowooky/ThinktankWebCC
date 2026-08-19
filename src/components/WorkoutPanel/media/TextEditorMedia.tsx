@@ -116,6 +116,65 @@ function registerMarkdownFolding(monaco: any) {
   });
 }
 
+/** #RGB / #RGBA / #RRGGBB / #RRGGBBAA を Monaco の色情報（0-1レンジ）に変換する */
+function hexToColor(hex: string): { red: number; green: number; blue: number; alpha: number } {
+  const expand = hex.length <= 4
+    ? hex.split('').map(c => c + c).join('')
+    : hex;
+  const r = parseInt(expand.slice(0, 2), 16) / 255;
+  const g = parseInt(expand.slice(2, 4), 16) / 255;
+  const b = parseInt(expand.slice(4, 6), 16) / 255;
+  const a = expand.length >= 8 ? parseInt(expand.slice(6, 8), 16) / 255 : 1;
+  return { red: r, green: g, blue: b, alpha: a };
+}
+
+function colorToHex(color: { red: number; green: number; blue: number; alpha: number }): string {
+  const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, '0');
+  const rgb = `${toHex(color.red)}${toHex(color.green)}${toHex(color.blue)}`;
+  return `#${color.alpha < 1 ? rgb + toHex(color.alpha) : rgb}`;
+}
+
+const HEX_COLOR_REGEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b/g;
+
+let isColorProviderRegistered = false;
+
+/**
+ * #RRGGBB 等のHexコードにVSCode同様の色swatchを表示し、クリックで色変更ダイアログを開けるようにする。
+ * Monacoの colorDecorators はこのプロバイダの登録有無に関わらずONだが、プロバイダが無いと
+ * 何もハイライトされない。
+ */
+function registerHexColorProvider(monaco: any) {
+  if (isColorProviderRegistered) return;
+  isColorProviderRegistered = true;
+
+  monaco.languages.registerColorProvider('markdown', {
+    provideDocumentColors(model: any) {
+      const text = model.getValue();
+      const results: any[] = [];
+      let match: RegExpExecArray | null;
+      HEX_COLOR_REGEX.lastIndex = 0;
+      while ((match = HEX_COLOR_REGEX.exec(text)) !== null) {
+        const startPos = model.getPositionAt(match.index);
+        const endPos = model.getPositionAt(match.index + match[0].length);
+        results.push({
+          color: hexToColor(match[0].slice(1)),
+          range: {
+            startLineNumber: startPos.lineNumber,
+            startColumn: startPos.column,
+            endLineNumber: endPos.lineNumber,
+            endColumn: endPos.column,
+          },
+        });
+      }
+      return results;
+    },
+    provideColorPresentations(_model: any, colorInfo: any) {
+      const hex = colorToHex(colorInfo.color);
+      return [{ label: hex, textEdit: { range: colorInfo.range, text: hex } }];
+    },
+  });
+}
+
 
 export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, vault, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
@@ -183,6 +242,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // WorkoutPanel.DroppedFile.ID:Insert がドロップ位置のPaneからエディタを引けるよう登録する
     if (areaId) TTShortcutManager.instance.registerAreaEditor(areaId, editor);
     registerMarkdownFolding(monaco);
+    registerHexColorProvider(monaco);
 
     disposablesRef.current.forEach(d => d.dispose());
     disposablesRef.current = [];
