@@ -81,7 +81,7 @@ function fileUriToPath(uri: string): string {
 
 /**
  * 疑似キー LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
- * （docs/Shortcut.md）のデフォルトAction。ThinkFileDragのLoad/Insertと同じく、
+ * （docs/DefaultShortcut.md）のデフォルトAction。ThinkFileDragのLoad/Insertと同じく、
  * 通常ドロップ＝Load（Links Think作成・Pane差し替え）、Alt+ドロップ＝Insert
  * （カーソル位置へのファイル参照挿入。TextEditorMedia.tsx側の既存アップロード/
  * 挿入ロジック）に対応する。現状はどちらも既定動作のままだが、Shortcutテーブルで

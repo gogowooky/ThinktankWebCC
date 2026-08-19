@@ -635,7 +635,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   });
 
   // ── ThinkFileDrag（D&D）─────────────────────────────────────────────────
-  // 疑似キー ThinkFileDrag / Alt+ThinkFileDrag（docs/Shortcut.md）の実行先。
+  // 疑似キー ThinkFileDrag / Alt+ThinkFileDrag（docs/DefaultShortcut.md）の実行先。
   // ペイロード（ThinkID・配置先）は TTShortcutManager.setPendingThinkDrop() で
   // 事前にセットされ、consumePendingThinkDrop() で一度だけ読み取る。
   const contentTypeToMediaType = (contentType: string): import('../../types').MediaType => {

@@ -202,7 +202,7 @@ candidates:      ^(None|Thinktank|Overview|WorkoutSetting|Workout|ReThink)\..*$
 　　クラス名を参照していたため、常にマッチせずフォールバックの Application.StatusBarArea に
 　　落ちていたことです。実際のツールバー（Highlighter/Command/...入力欄を含む）は
 　　.ApplicationStatusBarArea として描画されるため、判定をこちらに修正しました。
-　　これにより docs\Shortcut.md の `ToolBar.Highlighter ,,Escape` 等、focus列にToolBarの
+　　これにより docs\DefaultShortcut.md の `ToolBar.Highlighter ,,Escape` 等、focus列にToolBarの
 　　モード名を指定するショートカットが意図通り動作するようになりました。
 
 
@@ -425,7 +425,7 @@ key:            OverviewPanel.Filter.CursorPos:NextLine
 
 　A：Status は TTUIStateManager に読み取り専用（isConst）の派生値として登録しました。
 　　値はフィルタ・ソート適用後のThink一覧における行番号で、カーソル未設定時は 0 です。
-　　Action は Ctrl+N / Ctrl+P に割当てました（docs\Shortcut.md）。
+　　Action は Ctrl+N / Ctrl+P に割当てました（docs\DefaultShortcut.md）。
 　　行番号0（カーソル未表示）からの移動は、PrevLine/NextLineとも1行目へ移動します。
 ## Status：　260619　OverviewPanel.Area.IsOpen
 
@@ -582,7 +582,7 @@ key:            WorkoutPanel.FocusedPane.PaneNumber:Prev
 　　　履歴自体は増えません）。Escでキャンセル、1〜9はニーモニック（数字キー）で即決定できます。
 　　- メニューはフォーカスPane（.workout-area[data-area-id]）の上端中央に表示します。
 　　- Paneが無い場合は[対象Paneなし]、履歴が0件の場合は[履歴なし]としてメニューを出しません。
-　　キー割当は docs\Shortcut.md に *TextEditor の Ctrl+Alt+Backspace を追加しました
+　　キー割当は docs\DefaultShortcut.md に *TextEditor の Ctrl+Alt+Backspace を追加しました
 　　（既存の Alt+Backspace＝Prev / Shift+Alt+Backspace＝Next と揃えています）。
 　　実機検証（Vite+Expressのdevサーバー）で、4件の履歴が古い順に並びタイトル「ファイル履歴」で
 　　表示されること、現在位置に●が付くこと、↑↓で選択が動きEnterでその位置のファイルがLoadされ
@@ -643,7 +643,7 @@ key:            WorkoutPanel.DroppedFile.ID:Load
 
 　A（260724修正）：ActionID を 'WorkoutPanel.Load.DroppedFile' から 'WorkoutPanel.DroppedFile.ID:Load'
 　　に変更しました（TTFocusedPanelActions.ts の TTActions.Register、WorkoutArea.tsx /
-　　WorkoutPanel.tsx の実行・判定箇所、docs\Shortcut.md の ThinkFileDrag 割当を統一）。
+　　WorkoutPanel.tsx の実行・判定箇所、docs\DefaultShortcut.md の ThinkFileDrag 割当を統一）。
 　　命名規則（{Status ID}:*）に合わせ、対応するStatus WorkoutPanel.DroppedFile.ID の実装と
 　　あわせて対応しました。
 ## Action：　260724　WorkoutPanel.DroppedFile.ID:Insert
@@ -680,7 +680,7 @@ key:            WorkoutPanel.DroppedFile.ID:Insert
 　　　同じActionを共通実行します。
 　　Insertはテキストエディタ（texteditor/workout）でのみ実装しており、Markdown等の
 　　読み取り専用メディアや他のMediaTypeでは対象外です（それらは従来通りLoadのみ）。
-　　docs\Shortcut.md のキー割当（*, ThinkFileDrag / Alt+ThinkFileDrag）は
+　　docs\DefaultShortcut.md のキー割当（*, ThinkFileDrag / Alt+ThinkFileDrag）は
 　　dragEventToStr()の正規化ルールと一致しており、修正不要と確認済みです。
 
 　Q（260718・1回目）：Alt+ThinkFileDrag（Alt押下と同時にDrag開始）でもInsertにならない。
@@ -959,7 +959,7 @@ candidates:     .*
 　　　MediaType・タイトルのみ最新化します（連続重複の抑止。仕様に明記のない点の補完）。
 　　Status（読み取り専用）として WorkoutPanel.FocusedPane.FileHistory（IDのCSV）／
 　　FileHistoryPos／FileHistoryMax の3つを TTUIStateManager に登録しました。
-　　キー割当は docs\Shortcut.md の ExApp+E／Shift+Alt+Backspace（Next）、
+　　キー割当は docs\DefaultShortcut.md の ExApp+E／Shift+Alt+Backspace（Next）、
 　　ExApp+R／Alt+Backspace（Prev）です。
 　　実機検証（Vite+Expressのdevサーバー）で、35件Load時に履歴が30件へスライドし
 　　HistoryPos/HistoryMaxが30に留まること、5件Load→3回戻る（pos=2/5）→新規Loadで
@@ -969,7 +969,7 @@ candidates:     .*
 　　本Action（:Next）はフォーカスPaneのHistoryPosを+1して、その位置のIDをLoadします。
 　　HistoryPos = HistoryMax（末尾）のときは進む先のIDが無いため何もロードしません
 　　（履歴移動によるLoadは履歴に記録しません）。
-　　docs\Shortcut.md のキーとActionIDの対応は変更していないため、各キーの動作は反転します
+　　docs\DefaultShortcut.md のキーとActionIDの対応は変更していないため、各キーの動作は反転します
 　　（Shift+Alt+Backspace＝進む、Alt+Backspace＝戻る、ExApp+E＝進む、ExApp+R＝戻る）。
 　　実機検証で、4件Load後にPrevで 4→3→2→1 と戻り、Nextで 1→2→3→4 と進むこと、
 　　先頭・末尾でそれぞれ停止することを確認しました。
@@ -1225,7 +1225,7 @@ key:            TextEditor.CurrentEditor.CursorPos:LastHighlighter
 　　ハイライト表示と同じ規則でカンマ・空白区切りに分解し、OR条件（大文字小文字を区別）で検索します。
 　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
-　　キー割当（docs\Shortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
+　　キー割当（docs\DefaultShortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
 ## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
 description:    選択テキストをHighlighter検索語に追加する
 key:            ToolBar.HighlighterMode.Text:AddSelected
@@ -1248,7 +1248,7 @@ ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その�
 　　- Clear: ToolBar.HighlighterMode.Text（= WorkoutPanel.HighlightWord）を空にする。
 　　- Focus: 直前のフォーカス要素を記憶し、ToolBarをHighlighterモードに切り替えて入力欄（#StatusBarTextInput）にフォーカス。
 　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
-　　キー割当（docs\Shortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
+　　キー割当（docs\DefaultShortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
 
 # TextEditor Cursor ================================================================================================
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevChar

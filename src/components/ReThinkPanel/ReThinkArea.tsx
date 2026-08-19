@@ -57,7 +57,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // AI相談 DataGrid 用: タイトルが @ReThink で始まる chat Think 一覧（Vault全体）
+  // AI相談 DataGrid 用: タイトルが TODO:ReThink で始まる chat Think 一覧（Vault全体）
   const overviewBundleId = app.OverviewPanel.BundleID;
   const todoMemoThinks = useMemo(
     () => vault.GetThinks().filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_RETHINK)),

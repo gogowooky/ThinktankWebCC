@@ -185,7 +185,7 @@ export function WorkoutArea({
 
   // タイトルへのThinkドロップ: Alt修飾の有無で Load（Pane差し替え）/ Insert（タグ挿入）を
   // 振り分ける。疑似キー ThinkFileDrag の解決・実行は TTShortcutManager + TTActions
-  // （WorkoutPanel.DroppedFile.ID:Load / WorkoutPanel.DroppedFile.ID:Insert、docs/Shortcut.md参照）
+  // （WorkoutPanel.DroppedFile.ID:Load / WorkoutPanel.DroppedFile.ID:Insert、docs/DefaultShortcut.md参照）
   // に委ねる。Insert時はこのペインのエディタを対象にするため、実行前に activeEditor を
   // このペインのエディタへ同期する（editorがないメディア種別ではInsertは無効）。
   const handleThinkFileDrop = useCallback((thinkId: string, e: React.DragEvent) => {
