@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.24",
+  "version": "1.4.25",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "veneno-02",
-  "commitId": "baec43b",
-  "commitDateTime": "2026-08-19-112315",
-  "commitMessage": "feat: AI相談chatのタイトルプレフィックスをTODO:方式に変更しShortcut.mdをDefaultShortcut.mdへリネーム"
+  "commitPC": "E15",
+  "commitId": "f440147",
+  "commitDateTime": "2026-08-19-230949",
+  "commitMessage": "refactor: Thinktank.Filter.* / Overview.Filter.* のAction・Status変数名をThinktankPanel.Filter.* / OverviewPanel.Filter.* に統一"
 }
