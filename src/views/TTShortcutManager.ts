@@ -33,7 +33,7 @@
  *                 setPendingThinkDrop() で明示的にセットしてから Execute() を呼ぶこと
  *                 （Completion側は consumePendingThinkDrop() で読み取る）。
  *                 LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
- *                 （OSファイルシステムからのFile/Dirドロップ、docs/Shortcut.md参照）は、
+ *                 （OSファイルシステムからのFile/Dirドロップ、docs/DefaultShortcut.md参照）は、
  *                 対応する4箇所の呼び出し元（WorkoutMenuRibbon/WorkoutArea/WorkoutPanel/
  *                 TextEditorMedia）が既に同期的にLoad/Insert相当の処理を持っているため
  *                 TTActions.Execute() は経由せず、resolveDragAction() の戻り値を
@@ -50,7 +50,7 @@ import { parseTableContent } from '../utils/tableFormat';
 import { TTUIStateManager } from './TTUIStateManager';
 import { TTActions } from './TTActions';
 import { getFocusName } from '../utils/getFocusName';
-import localShortcutContent from '../../docs/Shortcut.md?raw';
+import localShortcutContent from '../../docs/DefaultShortcut.md?raw';
 import {
   parseMultiKey,
   keyEventToStr,

@@ -186,7 +186,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // AI相談 DataGrid 用: タイトルが @Workout で始まる chat Think 一覧（Vault全体）
+  // AI相談 DataGrid 用: タイトルが TODO:Workout で始まる chat Think 一覧（Vault全体）
   const todoMemoThinks = useMemo(
     () => vault.GetThinks().filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_WORKOUT)),
     [vault, vault.Count], // eslint-disable-line react-hooks/exhaustive-deps

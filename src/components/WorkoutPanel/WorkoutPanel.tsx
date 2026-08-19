@@ -710,7 +710,7 @@ export function WorkoutPanel({ app }: Props) {
     e.preventDefault();
 
     // Think D&D（WorkoutPanel.DroppedFile.ID:Load / WorkoutPanel.DroppedFile.ID:Insert、
-    // docs/Shortcut.md参照）。コンテンツ領域へのThinkドロップはLoad/Insertいずれも
+    // docs/DefaultShortcut.md参照）。コンテンツ領域へのThinkドロップはLoad/Insertいずれも
     // ここで一元的に判定する（各Paneのコンポーネント側では消費しない）。個別コンポーネントの
     // dragover/dropハンドラーとタイミング・判定がずれてAlt判定を取りこぼす問題を避けるため。
     const thinkId = e.dataTransfer.getData('application/x-thought-id');

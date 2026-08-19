@@ -62,10 +62,10 @@ export function serializeChat(messages: ChatMessage[], title?: string): string {
 // ════════════════════════════════════════════════════════════════════════
 
 /** 各パネルのAI相談で扱う chat Think の識別プレフィックス（パネルごと・大文字小文字を区別しない） */
-export const TODO_CHAT_PREFIX_THINKTANK = '@Thinktank';
-export const TODO_CHAT_PREFIX_OVERVIEW  = '@Overview';
-export const TODO_CHAT_PREFIX_WORKOUT   = '@Workout';
-export const TODO_CHAT_PREFIX_RETHINK   = '@ReThink';
+export const TODO_CHAT_PREFIX_THINKTANK = 'TODO:Thinktank｜';
+export const TODO_CHAT_PREFIX_OVERVIEW  = 'TODO:Overview｜';
+export const TODO_CHAT_PREFIX_WORKOUT   = 'TODO:Workout｜';
+export const TODO_CHAT_PREFIX_RETHINK   = 'TODO:ReThink｜';
 
 /** タイトルが指定プレフィックスで始まる Think かどうかを判定する（ContentType不問、大文字小文字を区別しない） */
 export function isTodoThink(think: { Name: string }, prefix: string): boolean {
@@ -105,7 +105,7 @@ export function newChatTitle(prefix: string): string {
   const pad = (n: number) => String(n).padStart(2, '0');
   const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
-  return `${prefix} ${date} ${time}`;
+  return `${prefix}${date} ${time}`;
 }
 
 /**
@@ -117,7 +117,7 @@ export function newChatTitle(prefix: string): string {
 export function chatContentTitle(prefix: string, messages: ChatMessage[]): string {
   const firstUser = messages.find(m => m.role === 'user')?.content.trim() ?? '';
   const summary = firstUser.replace(/\s+/g, ' ').slice(0, 40);
-  return summary ? `${prefix} ${summary}` : newChatTitle(prefix);
+  return summary ? `${prefix}${summary}` : newChatTitle(prefix);
 }
 
 // #endregion

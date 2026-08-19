@@ -135,7 +135,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     });
   }, [panel.BundleID, vault, refreshKey, vault.IsLoaded, vault.Count]);
 
-  // AI相談 DataGrid 用: タイトルが @Overview で始まる chat Think 一覧（Vault全体）
+  // AI相談 DataGrid 用: タイトルが TODO:Overview で始まる chat Think 一覧（Vault全体）
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
   const todoMemoThinks = useMemo(
     () => allThinks.filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_OVERVIEW)),

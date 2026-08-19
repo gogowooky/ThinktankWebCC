@@ -925,7 +925,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     e.preventDefault();
     e.stopPropagation();
 
-    // 通常ドロップ（Alt未使用）: 疑似キー LocalFileDrag/LocalDirDrag（docs/Shortcut.md）経由で
+    // 通常ドロップ（Alt未使用）: 疑似キー LocalFileDrag/LocalDirDrag（docs/DefaultShortcut.md）経由で
     // Links Think を作成し、このPaneを差し替える（WorkoutArea.handleUrlDropと同じLoad系挙動）。
     // Alt+ドロップは従来通りカーソル位置へファイル参照を挿入する（下のロジック）。
     const altHeld = TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);

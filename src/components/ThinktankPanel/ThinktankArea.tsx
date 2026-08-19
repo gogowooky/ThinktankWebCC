@@ -194,7 +194,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // vault.Count が変わったとき（追加・削除）のみ再取得
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // AI相談 DataGrid 用: タイトルが @Thinktank で始まる chat Think 一覧（大文字小文字を区別しない）
+  // AI相談 DataGrid 用: タイトルが TODO:Thinktank で始まる chat Think 一覧（大文字小文字を区別しない）
   const todoMemoThinks = useMemo(
     () => allThinks.filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_THINKTANK)),
     [allThinks],
