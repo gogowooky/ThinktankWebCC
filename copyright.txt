@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.23",
+  "version": "1.4.24",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "aae8bcc",
-  "commitDateTime": "2026-08-18-233056",
-  "commitMessage": "feat: AI相談チャット選択を@プレフィックス方式に刷新し新規チャット・チェックボックス選択を追加"
+  "commitPC": "veneno-02",
+  "commitId": "baec43b",
+  "commitDateTime": "2026-08-19-112315",
+  "commitMessage": "feat: AI相談chatのタイトルプレフィックスをTODO:方式に変更しShortcut.mdをDefaultShortcut.mdへリネーム"
 }
