@@ -54,7 +54,7 @@ type FilterCursorPanel = {
 
 /** Think一覧を持つパネル（Thinktank / Overview）ごとのアクション生成定義 */
 type FilterPanelSpec = {
-  prefix:         'Thinktank' | 'Overview';
+  prefix:         'ThinktankPanel' | 'OverviewPanel';
   panelOf:        () => FilterCursorPanel;
   currentItemKey: string;
   open:           (id: string) => void;
@@ -136,7 +136,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   /** Think一覧を持つパネルごとの定義（Thinktank / Overview で共通のアクションを生成する） */
   const FILTER_PANELS: FilterPanelSpec[] = [
     {
-      prefix:         'Thinktank',
+      prefix:         'ThinktankPanel',
       panelOf:        () => app.ThinktankPanel,
       currentItemKey: 'ThinktankPanel.CurrentItem.ID',
       // Bundle はその場で Overview へ、それ以外は Workout へ（一覧ダブルクリックと同じ挙動）
@@ -149,7 +149,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       },
     },
     {
-      prefix:         'Overview',
+      prefix:         'OverviewPanel',
       panelOf:        () => app.OverviewPanel,
       currentItemKey: 'OverviewPanel.CurrentItem.ID',
       open: (id) => { app.OpenThinkInWorkout(id); },

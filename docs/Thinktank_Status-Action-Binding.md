@@ -329,37 +329,37 @@ key:            FocusedPanel.Mode.Name:Prev
 description:    フォーカスパネルの表示モードを次に切り替える
 key:            FocusedPanel.Mode.Name:Next
 
-## Action：　260714　Thinktank.Filter.Cursor:Action
+## Action：　260714　ThinktankPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
-key:            Thinktank.Filter.Cursor:Action
+key:            ThinktankPanel.Filter.Cursor:Action
 　↓ カーソル位置のアイテムを開く　→　終了
-## Action：　260714　Thinktank.Filter.Cursor:ToggleCheck
+## Action：　260714　ThinktankPanel.Filter.Cursor:ToggleCheck
 description:    Think一覧のカーソル位置のチェック状態をトグルする
-key:            Thinktank.Filter.Cursor:ToggleCheck
+key:            ThinktankPanel.Filter.Cursor:ToggleCheck
 　↓ カーソル位置のチェック状態をトグルする　→　終了
-## Status：　260714　Thinktank.Filter.CursorPosID
+## Status：　260714　ThinktankPanel.Filter.CursorPosID
 description:    Thinktank>Think一覧のカーソル位置のID
-key:            Thinktank.Filter.CursorPosID
+key:            ThinktankPanel.Filter.CursorPosID
 current:        ''
 default:        ''
 type:           string
 candidates:      .*
-## Status：　260714　Thinktank.Filter.CursorPos
+## Status：　260714　ThinktankPanel.Filter.CursorPos
 値0は表示されていない、1以上はカーソルの行番号
 
 description:    Thinktank>Think一覧のカーソル位置
-key:            Thinktank.Filter.CursorPos
+key:            ThinktankPanel.Filter.CursorPos
 current:        0
 default:        0
 type:           string
 candidates:      .*
-## Action：　260714　Thinktank.Filter.CursorPos:PrevLine
+## Action：　260714　ThinktankPanel.Filter.CursorPos:PrevLine
 description:    Think一覧のカーソルを1行前に移動する
-key:            Thinktank.Filter.CursorPos:PrevLine
+key:            ThinktankPanel.Filter.CursorPos:PrevLine
 　↓ カーソルを１行前に移動する　→　終了
-## Action：　260714　Thinktank.Filter.CursorPos:NextLine
+## Action：　260714　ThinktankPanel.Filter.CursorPos:NextLine
 description:    Think一覧のカーソルを1行後に移動する
-key:            Thinktank.Filter.CursorPos:NextLine
+key:            ThinktankPanel.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
 ## Status：　260619　ThinktankPanel.Area.IsOpen
 description:    左パネル表示
@@ -390,37 +390,37 @@ default:        ''
 type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
 
-## Action：　260714　Overview.Filter.Cursor:Action
+## Action：　260714　OverviewPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
-key:            Overview.Filter.Cursor:Action
+key:            OverviewPanel.Filter.Cursor:Action
 　↓ カーソル位置のアイテムを開く　→　終了
-## Action：　260714　Overview.Filter.Cursor:ToggleCheck
+## Action：　260714　OverviewPanel.Filter.Cursor:ToggleCheck
 description:    Think一覧のカーソル位置のチェック状態をトグルする
-key:            Overview.Filter.Cursor:ToggleCheck
+key:            OverviewPanel.Filter.Cursor:ToggleCheck
 　↓ カーソル位置のチェック状態をトグルする　→　終了
-## Status：　260714　Overview.Filter.CursorPosID
+## Status：　260714　OverviewPanel.Filter.CursorPosID
 description:    Overview>Think一覧のカーソル位置のID
-key:            Overview.Filter.CursorPosID
+key:            OverviewPanel.Filter.CursorPosID
 current:        ''
 default:        ''
 type:           string
 candidates:      .*
-## Status：　260714　Overview.Filter.CursorPos
+## Status：　260714　OverviewPanel.Filter.CursorPos
 値0は表示されていない、1以上はカーソルの行番号
 
 description:    Overview>Think一覧のカーソル位置
-key:            Overview.Filter.CursorPos
+key:            OverviewPanel.Filter.CursorPos
 current:        0
 default:        0
 type:           string
 candidates:      .*
-## Action：　260714　Overview.Filter.CursorPos:PrevLine
+## Action：　260714　OverviewPanel.Filter.CursorPos:PrevLine
 description:    Think一覧のカーソルを1行前に移動する
-key:            Overview.Filter.CursorPos:PrevLine
+key:            OverviewPanel.Filter.CursorPos:PrevLine
 　↓ カーソルを１行前に移動する　→　終了
-## Action：　260714　Overview.Filter.CursorPos:NextLine
+## Action：　260714　OverviewPanel.Filter.CursorPos:NextLine
 description:    Think一覧のカーソルを1行後に移動する
-key:            Overview.Filter.CursorPos:NextLine
+key:            OverviewPanel.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
 
 　A：Status は TTUIStateManager に読み取り専用（isConst）の派生値として登録しました。

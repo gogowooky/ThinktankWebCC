@@ -113,10 +113,10 @@ export type ConfigKey =
   | 'Application.Execution.Status'
   | 'Application.Synchronization.Status'
   | 'Application.CheckedItem.IDs'
-  | 'Thinktank.Filter.CursorPos'
-  | 'Thinktank.Filter.CursorPosID'
-  | 'Overview.Filter.CursorPos'
-  | 'Overview.Filter.CursorPosID'
+  | 'ThinktankPanel.Filter.CursorPos'
+  | 'ThinktankPanel.Filter.CursorPosID'
+  | 'OverviewPanel.Filter.CursorPos'
+  | 'OverviewPanel.Filter.CursorPosID'
   | string; // プリセットキーなどの動的拡張を許容
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
@@ -271,7 +271,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
   },
 
   // ── Filter CursorPos ─────────────────────────────────────────────────────────────
-  'Thinktank.Filter.CursorPos': {
+  'ThinktankPanel.Filter.CursorPos': {
     panel: 'ThinktankPanel',
     default: '0', type: 'string', candidates: '.*',
     description: 'Thinktank>Think一覧のカーソル位置',
@@ -296,7 +296,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       }
     },
   },
-  'Overview.Filter.CursorPos': {
+  'OverviewPanel.Filter.CursorPos': {
     panel: 'OverviewPanel',
     default: '0', type: 'string', candidates: '.*',
     description: 'Overview>Think一覧のカーソル位置',
@@ -321,7 +321,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       }
     },
   },
-  'Thinktank.Filter.CursorPosID': {
+  'ThinktankPanel.Filter.CursorPosID': {
     panel: 'ThinktankPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'Thinktank>Think一覧のカーソル位置のID',
@@ -337,7 +337,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       }
     },
   },
-  'Overview.Filter.CursorPosID': {
+  'OverviewPanel.Filter.CursorPosID': {
     panel: 'OverviewPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'Overview>Think一覧のカーソル位置のID',

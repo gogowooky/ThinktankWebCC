@@ -223,7 +223,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const visibleThinks = isFilterMode ? filterVisible : [];
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
 
-  // Thinktank.Filter.CursorPos アクションが行番号を解決するための一覧スナップショット
+  // ThinktankPanel.Filter.CursorPos アクションが行番号を解決するための一覧スナップショット
   useEffect(() => {
     panel.FilteredThoughts = visibleThinks;
   }, [panel, visibleThinks]);

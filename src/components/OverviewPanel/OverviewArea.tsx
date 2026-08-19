@@ -175,7 +175,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
 
-  // Overview.Filter.CursorPos アクションが行番号を解決するための一覧スナップショット
+  // OverviewPanel.Filter.CursorPos アクションが行番号を解決するための一覧スナップショット
   useEffect(() => {
     panel.FilteredThoughts = visibleThinks;
   }, [panel, visibleThinks]);
