@@ -458,13 +458,13 @@ current:        ''
 default:        ''
 type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
-## Status：　260624　Overview.Thought.Name
+## Status：　260624　OverviewPanel.Bundle.Name
 　本StatusIDの中身
-　Overviewパネルに設定された thoughtファイルの IDです。
+　Overviewパネルに設定された Bundleファイルの IDです。
 　※ 起動時のロードおよびD&Dドロップ時の即時反映対応完了。
 
-description:    OverviewパネルのthoughtファイルID
-key:            Overview.Thought.Name
+description:    OverviewパネルのBundleファイルID
+key:            OverviewPanel.Bundle.Name
 current:        none
 default:        none
 type:           string
@@ -619,16 +619,16 @@ candidates:     ^[0-9]+$
 
 ## Status：　260630　WorkoutPanel.Pane.Count
 　IDをWorkoutPanel.Panes.Countに変更
-## Status：　260706　WorkoutPanel.Pane.Layout
+## Status：　260706　WorkoutPanel.Panes.Layout
 description:    Paneレイアウト構造(JSON)
-key:            WorkoutPanel.Pane.Layout
+key:            WorkoutPanel.Panes.Layout
 current:        null
 default:        null
 type:           json
 candidates:     .*
-## Status：　260706　WorkoutPanel.Pane.Display
+## Status：　260706　WorkoutPanel.Panes.Display
 description:    各Paneのロード状態(JSON)
-key:            WorkoutPanel.Pane.Display
+key:            WorkoutPanel.Panes.Display
 current:        []
 default:        []
 type:           json

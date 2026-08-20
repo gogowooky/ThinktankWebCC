@@ -7,7 +7,7 @@ ThinktankPanel.IsAreaOpen,false,true,boolean,^(true|false)$,左パネル表示
 ThinktankPanel.ViewMode,settings,filter,string,^(filter|chat|settings)$,左パネルモード
 OverviewPanel.IsAreaOpen,false,false,boolean,^(true|false)$,上部パネル表示
 OverviewPanel.ViewMode,chat,datagrid,string,^(datagrid|graph|chat|settings)$,上部パネル表示モード
-Overview.Thought.Name,none,none,string,.*,OverviewパネルのthoughtファイルID
+OverviewPanel.Bundle.Name,none,none,string,.*,OverviewパネルのBundleファイルID
 WorkoutPanel.IsAreaOpen,false,true,boolean,^(true|false)$,ワークアウトパネル表示
 WorkoutPanel.ViewMode,workout,workout,string,^(workout|texteditor|markdown|datagrid|card|graph)$,ワークアウト設定パネルモード
 TextEditor.LineNumbers.IsVisible,false,false,boolean,^(true|false)$,行番号表示
