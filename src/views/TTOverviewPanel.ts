@@ -107,7 +107,7 @@ export class TTOverviewPanel extends TTUIItem {
       this.IsAreaOpen = true;
     }
     this.NotifyUpdated();
-    TTUIStateManager.instance.notifyPropertyChanged('OverviewPanel.Bundle.Name');
+    TTUIStateManager.instance.notifyPropertyChanged('OverviewPanel.Bundle.ID');
   }
 
   /** Bundle表示をクリアする */
@@ -115,7 +115,7 @@ export class TTOverviewPanel extends TTUIItem {
     this.BundleID = '';
     this.CheckedThoughtIDs = []; // チェッククリア
     this.NotifyUpdated();
-    TTUIStateManager.instance.notifyPropertyChanged('OverviewPanel.Bundle.Name');
+    TTUIStateManager.instance.notifyPropertyChanged('OverviewPanel.Bundle.ID');
   }
 
   /** チェック状態を更新する */

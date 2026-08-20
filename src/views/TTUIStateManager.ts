@@ -45,7 +45,7 @@ export type ConfigKey =
   | 'ThinktankPanel.Mode.Name'
   | 'OverviewPanel.Area.IsOpen'
   | 'OverviewPanel.Mode.Name'
-  | 'OverviewPanel.Bundle.Name'
+  | 'OverviewPanel.Bundle.ID'
   | 'WorkoutSettingPanel.Area.IsOpen'
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
@@ -256,7 +256,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => capitalize(app.OverviewPanel.ViewMode),
     set: (app, v) => { app.OverviewPanel.SetViewMode(v.toLowerCase() as OverviewViewMode); },
   },
-  'OverviewPanel.Bundle.Name': {
+  'OverviewPanel.Bundle.ID': {
     panel: 'OverviewPanel',
     default: 'none', type: 'string', candidates: '.*',
     description: 'OverviewパネルのbundleファイルID',
@@ -1213,7 +1213,8 @@ export class TTUIStateManager {
         // 派生になったので引き継がない（旧キーは spec が無いため読み飛ばされる）。
         .replace(/\bThinktank\.Ribbon\.BgColor\b/g, 'Thinktank.Theme.Color')
         .replace(/\bOverview\.Ribbon\.BgColor\b/g,  'Overview.Theme.Color')
-        .replace(/\bOverview\.Bundle\.Name\b/g,     'OverviewPanel.Bundle.Name')
+        .replace(/\bOverview\.Bundle\.Name\b/g,     'OverviewPanel.Bundle.ID')
+        .replace(/\bOverviewPanel\.Bundle\.Name\b/g, 'OverviewPanel.Bundle.ID')
         .replace(/\bWorkout\.Ribbon\.BgColor\b/g,   'Workout.Theme.Color')
         .replace(/\bReThink\.Ribbon\.BgColor\b/g,   'ReThink.Theme.Color')
         .replace(/\bToolBar\.BgColor\b/g,           'ToolBar.Theme.Color')

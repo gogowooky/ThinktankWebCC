@@ -458,13 +458,13 @@ current:        ''
 default:        ''
 type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
-## Status：　260624　OverviewPanel.Bundle.Name
+## Status：　260624　OverviewPanel.Bundle.ID
 　本StatusIDの中身
 　Overviewパネルに設定された Bundleファイルの IDです。
 　※ 起動時のロードおよびD&Dドロップ時の即時反映対応完了。
 
 description:    OverviewパネルのBundleファイルID
-key:            OverviewPanel.Bundle.Name
+key:            OverviewPanel.Bundle.ID
 current:        none
 default:        none
 type:           string

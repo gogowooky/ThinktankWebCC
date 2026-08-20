@@ -11,6 +11,7 @@ import {
   PanelBottomDashed,
   SquareX,
   CopyX,
+  LibraryBig,
   ChevronsLeftRightEllipsis,
   ChevronDown,
   ChevronRight,
@@ -125,6 +126,8 @@ interface Props {
   onAddBottom:      () => void;
   onRemoveFocused:  () => void;
   onClearAll:       () => void;
+  onCloseNotInBundle: () => void;
+  hasBundle:        boolean;
   onEqualizeWidths: () => void;
   onEqualizeHeights:() => void;
   onCreateMemo:     () => void;
@@ -144,7 +147,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   activeSettings, panel, vault, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
-  onRemoveFocused, onClearAll, onEqualizeWidths, onEqualizeHeights,
+  onRemoveFocused, onClearAll, onCloseNotInBundle, hasBundle, onEqualizeWidths, onEqualizeHeights,
   onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
   onSaveChat, onRefresh,
@@ -496,6 +499,15 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                       >
                         <CopyX size={16} className="ws-icon" />
                       </button>
+                      <div className="tooltip-wrapper" data-tip="選択中BundleにないPaneをすべて消去">
+                        <button
+                          className="workout-setting-area__icon-btn workout-setting-area__icon-btn--danger"
+                          onClick={hasBundle ? onCloseNotInBundle : undefined}
+                          disabled={!hasBundle}
+                        >
+                          <LibraryBig size={16} className="ws-icon" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 

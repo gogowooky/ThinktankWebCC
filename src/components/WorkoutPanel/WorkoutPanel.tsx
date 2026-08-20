@@ -534,6 +534,16 @@ export function WorkoutPanel({ app }: Props) {
     panel.ClearAll();
   }, [panel]);
 
+  // OverviewPanel.Bundle.ID で選択中のBundleに記載されていないThinkのPaneをすべて閉じる
+  const handleCloseNotInBundle = useCallback(() => {
+    const bundleId = app.OverviewPanel.BundleID;
+    if (!bundleId) return;
+    const idsInBundle = new Set(vault.GetThinksForBundle(bundleId).map(t => t.ID));
+    panel.Areas
+      .filter(a => a.ResourceID && !idsInBundle.has(a.ResourceID))
+      .forEach(a => panel.RemoveArea(a.ID));
+  }, [app, vault, panel]);
+
   const handleEqualizeWidths = useCallback(() => {
     if (!panel.Layout) return;
     setSplitRatios(prev => {
@@ -870,6 +880,8 @@ export function WorkoutPanel({ app }: Props) {
           onAddBottom={handleAddBelow}
           onRemoveFocused={handleRemoveFocused}
           onClearAll={handleClearAll}
+          onCloseNotInBundle={handleCloseNotInBundle}
+          hasBundle={!!app.OverviewPanel.BundleID}
           onEqualizeWidths={handleEqualizeWidths}
           onEqualizeHeights={handleEqualizeHeights}
           onCreateMemo={handleCreateMemo}

@@ -17,6 +17,20 @@
 .workout-menu-ribbon--focused {
 }
 
+/* OverviewPanel.Bundle.ID で選択中のBundleに記載されていないThinkを表示中のリボン。
+   WorkoutSettingパネルの縦型ToolBar選択アイコン（.workout-tab-bar__btn--active）は
+   Workout基本色の地の上に rgba(255,255,255,0.18) を重ねて「薄くした基本色」に見せているが、
+   このリボンの背後はWorkout基本色ではないため、同じ計算結果になる不透明色を直接指定する
+   （= Workout基本色(--workout-base)に18%の白を混ぜた色）。*/
+.workout-menu-ribbon--outside-bundle {
+  background: color-mix(in srgb, white 18%, var(--workout-base));
+}
+
+.workout-menu-ribbon--outside-bundle .workout-menu-ribbon__title {
+  font-weight: normal;
+  color: rgba(255, 255, 255, 0.80);
+}
+
 body[data-focus-column="Workout"] .workout-menu-ribbon--focused .workout-menu-ribbon__title {
   text-decoration: underline;
   text-underline-offset: 3px;
