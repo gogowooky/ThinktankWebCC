@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.27",
+  "version": "1.4.28",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "VENENO-02",
-  "commitId": "674b443",
-  "commitDateTime": "2026-08-20-122439",
-  "commitMessage": "feat: Bundle外Pane判別（薄色ヘッダー）とBundle外Pane一括消去ボタンを追加"
+  "commitPC": "E15",
+  "commitId": "7a00800",
+  "commitDateTime": "2026-08-24-210020",
+  "commitMessage": "fix: パス起動失敗時のエラーメッセージにパス名を含める"
 }
