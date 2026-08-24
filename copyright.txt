@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.25",
+  "version": "1.4.27",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "f440147",
-  "commitDateTime": "2026-08-19-230949",
-  "commitMessage": "refactor: Thinktank.Filter.* / Overview.Filter.* のAction・Status変数名をThinktankPanel.Filter.* / OverviewPanel.Filter.* に統一"
+  "commitPC": "VENENO-02",
+  "commitId": "674b443",
+  "commitDateTime": "2026-08-20-122439",
+  "commitMessage": "feat: Bundle外Pane判別（薄色ヘッダー）とBundle外Pane一括消去ボタンを追加"
 }

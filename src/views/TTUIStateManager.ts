@@ -45,7 +45,7 @@ export type ConfigKey =
   | 'ThinktankPanel.Mode.Name'
   | 'OverviewPanel.Area.IsOpen'
   | 'OverviewPanel.Mode.Name'
-  | 'Overview.Bundle.Name'
+  | 'OverviewPanel.Bundle.ID'
   | 'WorkoutSettingPanel.Area.IsOpen'
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
@@ -105,8 +105,8 @@ export type ConfigKey =
   | 'WorkoutPanel.FocusedPane.FileHistoryPos'
   | 'WorkoutPanel.FocusedPane.FileHistoryMax'
   | 'WorkoutPanel.DroppedFile.ID'
-  | 'WorkoutPanel.Pane.Layout'
-  | 'WorkoutPanel.Pane.Display'
+  | 'WorkoutPanel.Panes.Layout'
+  | 'WorkoutPanel.Panes.Display'
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | 'Application.PanelDisplay.Mode'
@@ -256,7 +256,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => capitalize(app.OverviewPanel.ViewMode),
     set: (app, v) => { app.OverviewPanel.SetViewMode(v.toLowerCase() as OverviewViewMode); },
   },
-  'Overview.Bundle.Name': {
+  'OverviewPanel.Bundle.ID': {
     panel: 'OverviewPanel',
     default: 'none', type: 'string', candidates: '.*',
     description: 'OverviewパネルのbundleファイルID',
@@ -872,7 +872,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     get: (app) => app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos ?? '',
     set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos = v; },
   },
-  'WorkoutPanel.Pane.Layout': {
+  'WorkoutPanel.Panes.Layout': {
     panel: 'WorkoutPanel',
     default: 'null', type: 'string', candidates: '.*',
     description: 'Paneレイアウト構造(JSON)',
@@ -881,11 +881,11 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
       try {
         app.WorkoutPanel.Layout = (v && v !== 'null') ? JSON.parse(v) : null;
       } catch (e) {
-        console.error('Failed to parse WorkoutPanel.Pane.Layout', e);
+        console.error('Failed to parse WorkoutPanel.Panes.Layout', e);
       }
     },
   },
-  'WorkoutPanel.Pane.Display': {
+  'WorkoutPanel.Panes.Display': {
     panel: 'WorkoutPanel',
     default: '[]', type: 'string', candidates: '.*',
     description: '各Paneのロード状態(JSON)',
@@ -913,7 +913,7 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
           app.WorkoutPanel.Areas = [...app.WorkoutPanel.Areas, area];
         }
       } catch (e) {
-        console.error('Failed to parse WorkoutPanel.Pane.Display', e);
+        console.error('Failed to parse WorkoutPanel.Panes.Display', e);
       }
     },
   },
@@ -1207,10 +1207,14 @@ export class TTUIStateManager {
         .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
         .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
         .replace(/\bWorkoutPanel\.Pane\.Count\b/g, 'WorkoutPanel.Panes.Count')
+        .replace(/\bWorkoutPanel\.Pane\.Layout\b/g, 'WorkoutPanel.Panes.Layout')
+        .replace(/\bWorkoutPanel\.Pane\.Display\b/g, 'WorkoutPanel.Panes.Display')
         // パネル色は <Panel>.Theme.Color（基礎色）へ集約。旧 Area.BgColor は基礎色からの
         // 派生になったので引き継がない（旧キーは spec が無いため読み飛ばされる）。
         .replace(/\bThinktank\.Ribbon\.BgColor\b/g, 'Thinktank.Theme.Color')
         .replace(/\bOverview\.Ribbon\.BgColor\b/g,  'Overview.Theme.Color')
+        .replace(/\bOverview\.Bundle\.Name\b/g,     'OverviewPanel.Bundle.ID')
+        .replace(/\bOverviewPanel\.Bundle\.Name\b/g, 'OverviewPanel.Bundle.ID')
         .replace(/\bWorkout\.Ribbon\.BgColor\b/g,   'Workout.Theme.Color')
         .replace(/\bReThink\.Ribbon\.BgColor\b/g,   'ReThink.Theme.Color')
         .replace(/\bToolBar\.BgColor\b/g,           'ToolBar.Theme.Color')

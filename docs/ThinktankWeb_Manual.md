@@ -209,7 +209,7 @@ CSVをベースにした独自形式のデータです。
 | `ThinktankPanel.ViewMode` | `ThinktankPanel` | `string` (filter / chat / settings) | `filter` | 左パネルの表示モード |
 | `OverviewPanel.IsAreaOpen` | `OverviewPanel` | `boolean` (true / false) | `false` | 中央左パネル（OverviewPanel）の開閉状態 |
 | `OverviewPanel.ViewMode` | `OverviewPanel` | `string` (datagrid / graph / chat / settings) | `datagrid` | 中央左パネルの表示モード |
-| `Overview.Thought.Name` | `OverviewPanel` | `string` (任意のID) | `none` | OverviewパネルのthoughtファイルID |
+| `OverviewPanel.Bundle.ID` | `OverviewPanel` | `string` (任意のID) | `none` | OverviewパネルのBundleファイルID |
 | `WorkoutPanel.IsAreaOpen` | `WorkoutPanel` | `boolean` (true / false) | `true` | 中央右パネル（WorkoutPanel）の開閉状態 |
 | `WorkoutPanel.ViewMode` | `WorkoutPanel` | `string` (workout / texteditor / markdown / datagrid / card / graph) | `workout` | 中央右パネルの表示モード |
 | `TextEditor.LineNumbers.IsVisible` | `WorkoutPanel` | `boolean` (true / false) | `false` | エディタでの行番号の表示・非表示 |

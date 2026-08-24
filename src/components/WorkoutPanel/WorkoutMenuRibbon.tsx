@@ -183,6 +183,7 @@ interface Props {
   contentType?:      string;
   isFocused:         boolean;
   isDirty?:          boolean;
+  isOutsideBundle?:  boolean;
   onDragStart:       (e: React.MouseEvent) => void;
   onMediaTypeChange: (type: MediaType) => void;
   onClose:           () => void;
@@ -190,7 +191,7 @@ interface Props {
   onUrlDrop?:        (url: string, title: string) => void;
 }
 
-export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
+export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
     : contentType === 'bundle' ? BUNDLE_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
@@ -229,8 +230,9 @@ export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = fals
     <div
       className={[
         'workout-menu-ribbon',
-        isFocused    ? 'workout-menu-ribbon--focused'     : '',
-        isDropTarget ? 'workout-menu-ribbon--drop-target' : '',
+        isFocused       ? 'workout-menu-ribbon--focused'        : '',
+        isOutsideBundle ? 'workout-menu-ribbon--outside-bundle' : '',
+        isDropTarget    ? 'workout-menu-ribbon--drop-target'    : '',
       ].join(' ')}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

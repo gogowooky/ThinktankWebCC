@@ -13,6 +13,7 @@ import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
 import type { AiModelSelection } from '../../services/aiModels';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { useHighlight } from '../../contexts/HighlightContext';
 import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
@@ -256,6 +257,12 @@ export function WorkoutArea({
   const think = vault.GetThink(area.ResourceID) ?? null;
   useAppUpdate(panel);
 
+  // OverviewPanel.Bundle.ID が設定されていて、かつそのBundleに記載されていないThinkを表示中か
+  const { overviewBundleIds, overviewIncludedIds } = useHighlight();
+  const isOutsideBundle = overviewBundleIds.length > 0
+    && !!area.ResourceID
+    && !overviewIncludedIds.includes(area.ResourceID);
+
   const editorSettings = useMemo(() => {
     // Bullet / Comment は行頭記号（TextEditor.<種別>.Marks）と色・属性（DefaultColor.md）を突き合わせる
     const bulletStyles  = pickMarkStyles('Bullet',  panel?.TextEditor.Bullet.Marks,  panel?.TextEditor.ColorStatus);
@@ -346,6 +353,7 @@ export function WorkoutArea({
         contentType={think?.ContentType}
         isFocused={isFocused}
         isDirty={isDirty}
+        isOutsideBundle={isOutsideBundle}
         onDragStart={handleDragStart}
         onMediaTypeChange={handleMediaChange}
         onClose={handleClose}
