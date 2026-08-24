@@ -25,7 +25,7 @@ let _searchTagLoadError: string | null = null;
 // タグ挿入メニューで挿入する本文。既定は `[ID:]` だが、アンカー系はID名を含まない
 // 固定書式（docs/DefaultSearchTag.md の Tag.Anchor 8.1 / 8.2 の記法）になる。
 const TAG_INSERT_TEXT: Record<string, string> = {
-  Jump:      '[:>]', // 8.1 [:anchor] で始まる行へのジャンプ
+  Jump: '[:>]', // 8.1 [:anchor] で始まる行へのジャンプ
   Reference: '[:]',  // 8.2 anchorテキストのHighlighter設定
 };
 
@@ -169,7 +169,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           item.Result = `パス [${text}] を起動しました`;
         }).catch((err: unknown) => {
           console.error('Failed to open path', err);
-          item.Result = `[エラー] パスの起動に失敗しました: ${getErrorMessage(err)}`;
+          item.Result = `[エラー] パス [${text}] の起動に失敗しました: ${getErrorMessage(err)}`;
         });
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
@@ -186,18 +186,18 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     if (colonIdx < 0) return 'Think'; // [TAG] プレーンタグ → Thinkフィルター
     const key = inner.slice(0, colonIdx).trim().toLowerCase();
     switch (key) {
-      case 'googleroute':   return 'GoogleRoute';
+      case 'googleroute': return 'GoogleRoute';
       case 'yahootransfer': return 'YahooTransfer';
       case 'think': case 'thinktank': case 'memo': return 'Think';
-      case 'mail':          return 'Mail';
-      case 'chat':          return 'Chat';
+      case 'mail': return 'Mail';
+      case 'chat': return 'Chat';
       case 'ai':
       case 'gemini':
       case 'chatgpt':
       case 'claude':
       case 'gpt':
         return 'AI';
-      default:              return 'WebSearch';
+      default: return 'WebSearch';
     }
   }
 
@@ -299,9 +299,9 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         if (timeStr) {
           const [hh = '0', mm = '0'] = timeStr.split(':');
           const now = new Date();
-          params.set('y',  String(now.getFullYear()));
-          params.set('m',  String(now.getMonth() + 1));
-          params.set('d',  String(now.getDate()));
+          params.set('y', String(now.getFullYear()));
+          params.set('m', String(now.getMonth() + 1));
+          params.set('d', String(now.getDate()));
           params.set('hh', hh.padStart(2, '0'));
           const mmPad = mm.padStart(2, '0');
           params.set('m1', mmPad[0]);
@@ -605,17 +605,17 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         const actionNodes = targetActions.map(act => {
           const shortName = act.ActionID.split(':').pop() ?? act.ActionID;
           return {
-            key:    shortName.charAt(0),
-            label:  act.Description || act.ActionID,
+            key: shortName.charAt(0),
+            label: act.Description || act.ActionID,
             detail: shortName,
-            value:  act.ActionID,
+            value: act.ActionID,
           };
         });
 
         const editor = TTShortcutManager.instance.activeEditor;
         return showMonacoMenu({
-          title:  `${typeLabel}: ${text}`,
-          nodes:  actionNodes,
+          title: `${typeLabel}: ${text}`,
+          nodes: actionNodes,
           anchor: editor?.getDomNode?.() ?? null,
         }).then(actionId => {
           if (!actionId) {
@@ -641,10 +641,10 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   const contentTypeToMediaType = (contentType: string): import('../../types').MediaType => {
     switch (contentType) {
       case 'markdown': return 'markdown';
-      case 'bundle':   return 'datagrid';
-      case 'table':    return 'datagrid';
-      case 'chat':     return 'chat';
-      default:         return 'texteditor';
+      case 'bundle': return 'datagrid';
+      case 'table': return 'datagrid';
+      case 'chat': return 'chat';
+      default: return 'texteditor';
     }
   };
 
@@ -658,9 +658,9 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         return;
       }
       app.WorkoutPanel.DroppedFileID = ctx.thinkId;
-      const think     = app.Models.Vault.GetThink(ctx.thinkId);
+      const think = app.Models.Vault.GetThink(ctx.thinkId);
       const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
-      const title     = think?.Name ?? ctx.thinkId;
+      const title = think?.Name ?? ctx.thinkId;
 
       if (ctx.kind === 'load-replace') {
         const area = app.WorkoutPanel.GetArea(ctx.areaId);
@@ -675,16 +675,16 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       }
 
       if (ctx.overlayType === 'add') {
-        if (ctx.dir === 'left')       app.WorkoutPanel.AddToLeft(ctx.thinkId, mediaType, title);
+        if (ctx.dir === 'left') app.WorkoutPanel.AddToLeft(ctx.thinkId, mediaType, title);
         else if (ctx.dir === 'right') app.WorkoutPanel.AddToRight(ctx.thinkId, mediaType, title);
-        else if (ctx.dir === 'up')    app.WorkoutPanel.AddToTop(ctx.thinkId, mediaType, title);
-        else                          app.WorkoutPanel.AddToBottom(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'up') app.WorkoutPanel.AddToTop(ctx.thinkId, mediaType, title);
+        else app.WorkoutPanel.AddToBottom(ctx.thinkId, mediaType, title);
       } else {
         if (ctx.areaId) app.WorkoutPanel.FocusArea(ctx.areaId);
-        if (ctx.dir === 'left')       app.WorkoutPanel.AddLeft(ctx.thinkId, mediaType, title);
+        if (ctx.dir === 'left') app.WorkoutPanel.AddLeft(ctx.thinkId, mediaType, title);
         else if (ctx.dir === 'right') app.WorkoutPanel.AddRight(ctx.thinkId, mediaType, title);
-        else if (ctx.dir === 'up')    app.WorkoutPanel.AddAbove(ctx.thinkId, mediaType, title);
-        else                          app.WorkoutPanel.AddBelow(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'up') app.WorkoutPanel.AddAbove(ctx.thinkId, mediaType, title);
+        else app.WorkoutPanel.AddBelow(ctx.thinkId, mediaType, title);
       }
       item.Result = `Load（新規Pane・${ctx.dir}）: ${title}`;
     },
