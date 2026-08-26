@@ -21,6 +21,7 @@ import { registerTextEditorDateActions } from './actions/textEditorDateActions';
 import { registerTextEditorBulletActions, registerTextEditorCommentActions } from './actions/textEditorStyleActions';
 import { registerTextEditorFoldingHeadingActions } from './actions/textEditorFoldingActions';
 import { registerTextEditorHeadingNavActions } from './actions/textEditorHeadingNavActions';
+import { registerTextEditorCurrentFoldingActions } from './actions/textEditorCurrentFoldingActions';
 import { registerTextEditorCursorMoveActions } from './actions/textEditorCursorMoveActions';
 import { registerTextEditorHighlighterToolbarActions } from './actions/textEditorHighlighterToolbarActions';
 import { registerTextEditorCursorContentActions } from './actions/textEditorCursorContentActions';
@@ -673,6 +674,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   registerTextEditorHighlighterToolbarActions(app);
   registerTextEditorCursorContentActions(app);
   registerTextEditorHeadingNavActions(app);
+  registerTextEditorCurrentFoldingActions(app);
   registerTextEditorDateActions(app);
   registerTextEditorBulletActions(app);
   registerTextEditorCommentActions(app);

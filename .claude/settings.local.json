@@ -236,7 +236,22 @@
       "Bash(TMPDIR=\"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-420c-9131-845679850911/scratchpad\" node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-420c-9131-845679850911/scratchpad/checkChatTitle.mjs\")",
       "Bash(TMPDIR=\"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad\" node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/02913294-0f3b-457e-86d5-875b522a6601/scratchpad/checkChatTitle.mjs\")",
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -AccessModel IAP)",
-      "Bash(grep -n \"express.static\\\\|sendFile\\\\|app.get\\\\|app.use\\\\|catch-all\\\\|\\\\\\\\*\\\\|index.html\" server/index.ts)"
+      "Bash(grep -n \"express.static\\\\|sendFile\\\\|app.get\\\\|app.use\\\\|catch-all\\\\|\\\\\\\\*\\\\|index.html\" server/index.ts)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8080/api/health)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173)",
+      "Bash(curl -s \"http://localhost:8080/api/bq/files/2025-04-28-151934/content\")",
+      "Bash(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\d3b12060-35da-460b-8c2c-e02d86793f01\\\\scratchpad\\\\bq_time_travel_check.mjs\")",
+      "Bash(node _bq_time_travel_check.mjs)",
+      "Bash(node _bq_time_travel_restore.mjs)",
+      "Bash(tasklist /FI \"PID eq 27272\" /FO LIST)",
+      "Bash(tasklist /FI \"PID eq 18452\" /FO LIST)",
+      "PowerShell(Get-Process -Id 27272,18452 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=27272 or ProcessId=18452\")",
+      "PowerShell(Stop-Process -Id 27272 -Force)",
+      "PowerShell(Get-Process -Id 27272 -ErrorAction SilentlyContinue)",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\d3b12060-35da-460b-8c2c-e02d86793f01\\\\scratchpad\\\\test_parse.mjs\")",
+      "Bash(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\d3b12060-35da-460b-8c2c-e02d86793f01\\\\scratchpad\\\\verify_current.mjs\")"
     ]
   }
 }

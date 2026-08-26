@@ -383,4 +383,91 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
       }
     },
   });
+
+  // 9. TextEditor.CurrentFolding.Heading:Parent
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:Parent',
+    Description: '親見出し行へ移動する',
+    Completion: (item) => {
+      try {
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
+
+        // カーソル位置のテキストが属するHeading行(h)の親Heading行を取得
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        if (!parentNumber) { item.Result = '親見出しなし'; return; }
+        const parent = headings.find(d => d.headingNumber === parentNumber);
+        if (!parent) { item.Result = '親見出しなし'; return; }
+
+        editor.setPosition({ lineNumber: parent.line, column: 1 });
+        editor.revealLineInCenterIfOutsideViewport(parent.line);
+        item.Result = `L${parent.line}へ移動`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
+  // 10. TextEditor.CurrentFolding.Heading:SiblingNext
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingNext',
+    Description: '次の兄弟見出し行へ移動する',
+    Completion: (item) => {
+      try {
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
+
+        // カーソル位置のテキストが属するHeading行(h)の次の兄弟Heading行を取得
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        const nextSibling = headings.find(
+          d => d.offset > h.offset &&
+               d.level === h.level &&
+               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber
+        );
+        if (!nextSibling) { item.Result = '次の兄弟見出しなし'; return; }
+
+        editor.setPosition({ lineNumber: nextSibling.line, column: 1 });
+        editor.revealLineInCenterIfOutsideViewport(nextSibling.line);
+        item.Result = `L${nextSibling.line}へ移動`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
+  // 11. TextEditor.CurrentFolding.Heading:SiblingPrev
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingPrev',
+    Description: '前の兄弟見出し行へ移動する',
+    Completion: (item) => {
+      try {
+        const ctx = getHeadingNavContext(item);
+        if (!ctx) return;
+        const { editor, headings } = ctx;
+        const h = getCurrentHeading(ctx, item);
+        if (!h) return;
+
+        // カーソル位置のテキストが属するHeading行(h)の前の兄弟Heading行を取得
+        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
+        const prevSibling = [...headings].reverse().find(
+          d => d.offset < h.offset &&
+               d.level === h.level &&
+               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber
+        );
+        if (!prevSibling) { item.Result = '前の兄弟見出しなし'; return; }
+
+        editor.setPosition({ lineNumber: prevSibling.line, column: 1 });
+        editor.revealLineInCenterIfOutsideViewport(prevSibling.line);
+        item.Result = `L${prevSibling.line}へ移動`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
 }

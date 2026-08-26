@@ -31,17 +31,25 @@ export function normalizeKeyStr(raw: string): string {
 
 /**
  * key フィールドの複数値を | で分割して返す。
- * ダブルクォートで囲まれた部分の | はリテラルとして扱う。
- * 例: 'ctrl+z|"ctrl+|"' → ['ctrl+z', 'ctrl+|']
+ * リテラルな | を含めたいキーは \| とエスケープする。
+ * 例: 'ctrl+z|ctrl+\|' → ['ctrl+z', 'ctrl+|']
+ *
+ * " はここでは何のエスケープ用途も持たない、ただの1文字として扱う。DefaultShortcut.md自体は
+ * RFC4180準拠のCSVとして読み込まれる（tableFormat.ts の parseCsvLine）ため、" を含むキーを
+ * 書きたい場合はCSV層のエスケープ規約（フィールド全体を"…"で囲み、内部の"は""と二重化する）
+ * だけに従えばよく、ここではそれをさらにエスケープし直す必要はない。
+ * 例: key列に `"Ctrl+"""` と書くと、CSV層で `Ctrl+"` に解決され、ここではそのまま
+ *     literalな " を含むキーとして扱われる。
  */
 export function parseMultiKey(raw: string): string[] {
   const result: string[] = [];
   let current = '';
-  let inQuote = false;
-  for (const ch of raw) {
-    if (ch === '"') {
-      inQuote = !inQuote;
-    } else if (ch === '|' && !inQuote) {
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i];
+    if (ch === '\\' && raw[i + 1] === '|') {
+      current += '|';
+      i++;
+    } else if (ch === '|') {
       const k = normalizeKeyStr(current);
       if (k) result.push(k);
       current = '';
