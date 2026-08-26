@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.28",
+  "version": "1.4.29",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "7a00800",
-  "commitDateTime": "2026-08-24-210020",
-  "commitMessage": "fix: パス起動失敗時のエラーメッセージにパス名を含める"
+  "commitId": "c96ff33",
+  "commitDateTime": "2026-08-26-181712",
+  "commitMessage": "feat: 見出しレベル別の折り畳みアクションと兄弟見出し移動アクションを追加"
 }
