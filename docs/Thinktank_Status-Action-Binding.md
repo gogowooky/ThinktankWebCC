@@ -14,29 +14,6 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 実装：　260826　TextEditor.CurrentFolding.Heading:SiblingNext
-　以下の手順を実装してください。
-　↓　カーソル位置のテキストが属するHeading行を把握
-　↓　次の兄弟Heading行に移動（次の兄弟Heading行が存在しない場合は、移動しません。）
-
-　A（260826実装）：views/actions/textEditorHeadingNavActions.ts の
-　　registerTextEditorHeadingNavActions に10番目のアクションとして追加しました。
-　　既存のParentアクションと同じ流儀で、カーソル位置が属するHeading(h)のheadingNumberから
-　　親のheadingNumber（末尾セグメントを除いたもの）を求め、同じ親を持ち・同レベルで・
-　　h自身より後方（offsetが大きい）にある最初のHeadingへ移動します。既存の
-　　SiblingForwardと異なり、カーソルがHeading行自体にあるかどうかで挙動を分けず、
-　　常に直接「次の兄弟」へ移動する単純な一手順です。次の兄弟が存在しない場合は
-　　「次の兄弟見出しなし」を返すのみで、カーソルは移動しません。
-
-## 実装：　260826　TextEditor.CurrentFolding.Heading:SiblingPrev
-　以下の手順を実装してください。
-　↓　カーソル位置のテキストが属するHeading行を把握
-　↓　前の兄弟Heading行に移動（前の兄弟Heading行が存在しない場合は、移動しません。）
-
-　A（260826実装）：SiblingNextと同じ textEditorHeadingNavActions.ts に11番目のアクションとして
-　　追加しました。同じ親・同レベルで、h自身より前方（offsetが小さい）にある直近のHeadingへ
-　　移動する点以外はSiblingNextと共通のロジックです。前の兄弟が存在しない場合は
-　　「前の兄弟見出しなし」を返すのみで、カーソルは移動しません。
 
 # Status
 
@@ -1363,6 +1340,39 @@ candidates:     ^.*$
 　Textが修正されるタイミングで cursor位置のgetHeadingAttributesを保存し、その headingNumberを設定する
 　docs\260606_Thinktank仕様書\04_状態管理・アクション・ショートカット仕様.md > ### 4.2 属性情報を利用した見出し操作プロセス を参照
 
+## Action：　260826　TextEditor.CurrentFolding.Heading:Parent
+　以下の手順を実装してください。
+　↓　カーソル位置のテキストが属するHeading行を把握
+　↓　親Heading行へ移動して終了
+
+　A（260826実装）：views/actions/textEditorHeadingNavActions.ts の
+　　registerTextEditorHeadingNavActions に9番目のアクションとして追加しました。
+　　既存のSiblingFirst/SiblingLastと同じ流儀で、カーソル位置が属するHeading(h)の
+　　headingNumberから親のheadingNumber（末尾セグメントを除いたもの）を求め、一致する
+　　Headingへ移動します。ルートレベル(Level1)や親が見つからない場合は「親見出しなし」を
+　　返します。
+## Action：　260826　TextEditor.CurrentFolding.Heading:SiblingNext
+　以下の手順を実装してください。
+　↓　カーソル位置のテキストが属するHeading行を把握
+　↓　次の兄弟Heading行に移動（次の兄弟Heading行が存在しない場合は、移動しません。）
+
+　A（260826実装）：views/actions/textEditorHeadingNavActions.ts の
+　　registerTextEditorHeadingNavActions に10番目のアクションとして追加しました。
+　　既存のParentアクションと同じ流儀で、カーソル位置が属するHeading(h)のheadingNumberから
+　　親のheadingNumber（末尾セグメントを除いたもの）を求め、同じ親を持ち・同レベルで・
+　　h自身より後方（offsetが大きい）にある最初のHeadingへ移動します。既存の
+　　SiblingForwardと異なり、カーソルがHeading行自体にあるかどうかで挙動を分けず、
+　　常に直接「次の兄弟」へ移動する単純な一手順です。次の兄弟が存在しない場合は
+　　「次の兄弟見出しなし」を返すのみで、カーソルは移動しません。
+## Action：　260826　TextEditor.CurrentFolding.Heading:SiblingPrev
+　以下の手順を実装してください。
+　↓　カーソル位置のテキストが属するHeading行を把握
+　↓　前の兄弟Heading行に移動（前の兄弟Heading行が存在しない場合は、移動しません。）
+
+　A（260826実装）：SiblingNextと同じ textEditorHeadingNavActions.ts に11番目のアクションとして
+　　追加しました。同じ親・同レベルで、h自身より前方（offsetが小さい）にある直近のHeadingへ
+　　移動する点以外はSiblingNextと共通のロジックです。前の兄弟が存在しない場合は
+　　「前の兄弟見出しなし」を返すのみで、カーソルは移動しません。
 ## Action：　260626　TextEditor.CurrentFolding.Heading:SiblingFirst
 description:    最初の兄弟見出し行へ移動する
 key:            TextEditor.CurrentFolding.Heading:SiblingFirst
@@ -1399,17 +1409,6 @@ key:            TextEditor.CurrentFolding.Heading:VisibleForward
 description:    前の表示中見出し行へ移動する（非表示の見出しは除外）
 key:            TextEditor.CurrentFolding.Heading:VisibleBackward
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
-## Action：　260826　TextEditor.CurrentFolding.Heading:Parent
-　以下の手順を実装してください。
-　↓　カーソル位置のテキストが属するHeading行を把握
-　↓　親Heading行へ移動して終了
-
-　A（260826実装）：views/actions/textEditorHeadingNavActions.ts の
-　　registerTextEditorHeadingNavActions に9番目のアクションとして追加しました。
-　　既存のSiblingFirst/SiblingLastと同じ流儀で、カーソル位置が属するHeading(h)の
-　　headingNumberから親のheadingNumber（末尾セグメントを除いたもの）を求め、一致する
-　　Headingへ移動します。ルートレベル(Level1)や親が見つからない場合は「親見出しなし」を
-　　返します。
 
 ## Action：　260826　TextEditor.CurrentEditor.Folding:OpenAll
 　以下の手順を実装してください。
