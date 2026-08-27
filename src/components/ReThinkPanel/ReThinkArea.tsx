@@ -196,7 +196,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
       {/* ── コンテンツ ───────────────────────────────────────── */}
       <div className="rethink-area__chat">
         {viewMode === 'settings' ? (
-          <div style={{ padding: '16px', fontSize: '12px', color: 'var(--text-muted)', position: 'relative' }}>
+          <div style={{ padding: '16px', fontSize: 'calc(12px * var(--tt-font-scale, 1))', color: 'var(--text-muted)', position: 'relative' }}>
             <input ref={settingsCheckRef} type="checkbox" aria-hidden="true"
               style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
             ReThink設定は今後追加予定です。

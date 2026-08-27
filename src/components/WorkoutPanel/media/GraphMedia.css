@@ -17,7 +17,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.3);
 }
 
@@ -32,7 +32,7 @@
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
   padding: 4px 8px;
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   pointer-events: none;
 }
 

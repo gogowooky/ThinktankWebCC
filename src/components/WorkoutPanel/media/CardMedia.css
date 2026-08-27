@@ -25,7 +25,7 @@
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 4px;
   padding: 0 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   background: var(--workout-content-bg);
   outline: none;
   min-width: 0;
@@ -43,7 +43,7 @@
   height: 24px;
   width: 26px;
   padding: 0;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 4px;
   background: var(--workout-content-bg);
@@ -61,7 +61,7 @@
 }
 
 .card-media__count {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.35);
   white-space: nowrap;
   flex-shrink: 0;
@@ -122,7 +122,7 @@
 }
 
 .card-media__card-title {
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: #1a1a1a;
   overflow: hidden;
@@ -134,7 +134,7 @@
 /* 本文（全文表示、長い場合は折りたたみトグル付き）*/
 .card-media__card-body {
   padding: 0 10px 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.5);
   line-height: 1.5;
   white-space: pre-wrap;
@@ -148,7 +148,7 @@
   gap: 2px;
   margin-top: 4px;
   padding: 1px 4px;
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   color: #4a7cf7;
   background: none;
   border: none;
@@ -167,7 +167,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 4px 10px 7px;
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.3);
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   gap: 6px;
@@ -210,7 +210,7 @@
 
 /* ラベル */
 .card-media__field-label {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: rgba(0, 0, 0, 0.4);
   white-space: nowrap;
@@ -226,7 +226,7 @@
 
 /* 値（折り返し表示、長い場合は折りたたみ）*/
 .card-media__field-value {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: #1a1a1a;
   word-break: break-all;
   white-space: pre-wrap;
@@ -246,7 +246,7 @@
 /* 折りたたみボタン */
 .card-media__expand-btn {
   display: inline-block;
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   color: #4a7cf7;
   background: none;
   border: none;
@@ -268,7 +268,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.3);
 }
 
@@ -277,7 +277,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.35);
   text-align: center;
   line-height: 1.7;

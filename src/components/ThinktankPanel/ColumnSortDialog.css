@@ -30,7 +30,7 @@
 }
 
 .col-sort-dialog__title {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: #333;
 }
@@ -55,7 +55,7 @@
 .col-sort-dialog__table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
 }
 
 .col-sort-dialog__th {
@@ -63,7 +63,7 @@
   text-align: center;
   color: #888;
   font-weight: normal;
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 

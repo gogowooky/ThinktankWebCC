@@ -388,7 +388,7 @@ export function WorkoutArea({
             border: '2px dashed rgba(80, 200, 120, 0.7)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ color: 'rgba(80,200,120,0.9)', fontSize: 12, fontWeight: 600 }}>リンクを追記</span>
+            <span style={{ color: 'rgba(80,200,120,0.9)', fontSize: 'calc(12px * var(--tt-font-scale, 1))', fontWeight: 600 }}>リンクを追記</span>
           </div>
         )}
       </div>

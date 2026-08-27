@@ -4,7 +4,8 @@
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Save, ChevronDown, ChevronRight } from 'lucide-react';
+import { Save, ChevronDown, ChevronRight, AArrowUp, AArrowDown } from 'lucide-react';
+import { TTActions } from '../../views/TTActions';
 import './ThinktankSettingsView.css';
 
 export interface ThinktankSettingsViewRef {
@@ -51,6 +52,11 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   const [history,        setHistory]        = useState(loadHistory);
   const [saved,          setSaved]          = useState(false);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
+  const [isZoomOpen,     setIsZoomOpen]     = useState(true);
+
+  const handleZoom = useCallback((actionId: 'Application.Display.Zoom:ZoomIn' | 'Application.Display.Zoom:ZoomOut') => {
+    TTActions.Execute(actionId);
+  }, []);
 
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';
@@ -69,8 +75,39 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   return (
     <div className="tt-settings-view">
 
-
-
+      {/* ── 表示サイズ ── */}
+      <section className="tt-settings-section">
+        <div className="tt-settings-section__header" onClick={() => setIsZoomOpen(v => !v)}>
+          {isZoomOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="tt-settings-section__title">表示サイズ</h2>
+        </div>
+        {isZoomOpen && (
+          <div className="tt-settings-zoom">
+            <div className="tt-settings-zoom__row">
+              <span className="tt-settings-zoom__label">拡大</span>
+              <button
+                className="tt-settings-zoom__icon"
+                onClick={() => handleZoom('Application.Display.Zoom:ZoomIn')}
+                data-tip="拡大表示"
+                aria-label="拡大表示"
+              >
+                <AArrowUp size={16} />
+              </button>
+            </div>
+            <div className="tt-settings-zoom__row">
+              <span className="tt-settings-zoom__label">縮小</span>
+              <button
+                className="tt-settings-zoom__icon"
+                onClick={() => handleZoom('Application.Display.Zoom:ZoomOut')}
+                data-tip="縮小表示"
+                aria-label="縮小表示"
+              >
+                <AArrowDown size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
 
 
       {/* ── 保管庫名 ── */}

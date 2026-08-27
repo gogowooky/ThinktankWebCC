@@ -25,7 +25,12 @@ import {
 } from '../../../utils/defaultColor';
 import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
+import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import './TextEditorMedia.css';
+
+/** Monaco の等倍時 fontSize / lineHeight（表示文字サイズ倍率の基準値）。 */
+const EDITOR_BASE_FONT_SIZE = 13;
+const EDITOR_BASE_LINE_HEIGHT = 20;
 
 export interface TextEditorMediaRef {
   focus: () => void;
@@ -201,6 +206,21 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const [isDragOver, setIsDragOver] = useState(false);
   const [toast,      setToast]      = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // 表示文字サイズ（拡大表示 / 縮小表示）。Monaco は CSS を継承しないため
+  // fontSize / lineHeight にこの倍率を掛けて渡す。
+  const [fontScale, setFontScale] = useState(getAppFontScale);
+  useEffect(() => {
+    const onScale = (e: Event) => setFontScale((e as CustomEvent<number>).detail);
+    window.addEventListener(FONT_SCALE_EVENT, onScale);
+    return () => window.removeEventListener(FONT_SCALE_EVENT, onScale);
+  }, []);
+  useEffect(() => {
+    editorRef.current?.updateOptions({
+      fontSize:   Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
+      lineHeight: Math.round(EDITOR_BASE_LINE_HEIGHT * fontScale),
+    });
+  }, [fontScale]);
 
   useEffect(() => {
     savedRef.current   = think ? getEditorValue(think) : '';
@@ -1044,8 +1064,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         loading={<div className="text-editor-media__loading">エディタ読み込み中…</div>}
         options={{
           minimap:            { enabled: editorSettings?.minimap ?? false },
-          fontSize:           13,
-          lineHeight:         20,
+          fontSize:           Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
+          lineHeight:         Math.round(EDITOR_BASE_LINE_HEIGHT * fontScale),
           lineNumbers:        (editorSettings?.lineNumbers ?? true) ? 'on' : 'off',
           wordWrap:           (editorSettings?.wordWrap ?? true) ? 'on' : 'off',
           scrollBeyondLastLine: false,

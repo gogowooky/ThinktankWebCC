@@ -119,6 +119,27 @@ default:        Normal
 type:           string
 candidates:      ^(Simple|Normal)$
 
+## Action：　260827　Application.Display.Zoom:ZoomIn
+description:    拡大表示
+key:            Application.Display.Zoom:ZoomIn
+　表示文字サイズを 10% 拡大する（上限 200%）。utils/appZoom.ts が <html> に CSS変数
+　--tt-font-scale を設定し、全 CSS の font-size は calc(Npx * var(--tt-font-scale, 1)) に
+　統一されている。文字だけが拡大・縮小し、余白・パネル幅・レイアウトは不変で再フローする
+　（zoom はブラウザ差が大きいため不使用）。Monaco エディタは CSS 非継承なので
+　TextEditorMedia が fontSize/lineHeight にこの倍率を掛けて updateOptions する。
+　倍率は localStorage（tt-app-zoom）に永続化。Thinktank>設定>表示サイズ のアイコンから呼び出す。
+## Action：　260827　Application.Display.Zoom:ZoomOut
+description:    縮小表示
+key:            Application.Display.Zoom:ZoomOut
+　表示文字サイズを 10% 縮小する（下限 50%）。
+## Status：　260827　Application.Display.Zoom
+description:    表示文字サイズの倍率（％。50〜200、10刻み）
+key:            Application.Display.Zoom
+current:        100
+default:        100
+type:           integer
+candidates:      ^[0-9]{2,3}$
+
 ## Action：　260628　Application.Resource.ExportToLocal
 description:    BQ保存済みThinkファイルをローカルにエクスポートする
 key:            Application.Resource.ExportToLocal
@@ -1360,8 +1381,8 @@ candidates:     ^.*$
 　　registerTextEditorHeadingNavActions に10番目のアクションとして追加しました。
 　　既存のParentアクションと同じ流儀で、カーソル位置が属するHeading(h)のheadingNumberから
 　　親のheadingNumber（末尾セグメントを除いたもの）を求め、同じ親を持ち・同レベルで・
-　　h自身より後方（offsetが大きい）にある最初のHeadingへ移動します。既存の
-　　SiblingForwardと異なり、カーソルがHeading行自体にあるかどうかで挙動を分けず、
+　　h自身より後方（offsetが大きい）にある最初のHeadingへ移動します。旧
+　　SiblingForward（260827廃止）と異なり、カーソルがHeading行自体にあるかどうかで挙動を分けず、
 　　常に直接「次の兄弟」へ移動する単純な一手順です。次の兄弟が存在しない場合は
 　　「次の兄弟見出しなし」を返すのみで、カーソルは移動しません。
 ## Action：　260826　TextEditor.CurrentFolding.Heading:SiblingPrev
@@ -1389,26 +1410,16 @@ key:            TextEditor.CurrentFolding.Heading:SiblingLast
 　↓　カーソル位置のテキストが属するHeading行を把握
 　↓　現在位置が兄弟Heading行のなかで最後である場合、親Heading行の次の兄弟Heading行へ移動
 　↓　最後の兄弟Heading行に移動
-## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingForward
-description:    次の兄弟見出し行へ移動する
-key:            TextEditor.CurrentFolding.Heading:SiblingForward
-　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
-　現カーソル位置がHeading行である場合：次の兄弟Heading行へ移動
-　兄弟Heading行とは、同じ親headingNumberをもつHeading行
-## Action：　260621　TextEditor.CurrentFolding.Heading:SiblingBackward
-description:    前の兄弟見出し行へ移動する
-key:            TextEditor.CurrentFolding.Heading:SiblingBackward
-　現カーソル位置がHeading行にない場合：カーソル位置のテキストが属するHeading行へ移動
-　現カーソル位置がHeading行である場合：前の兄弟Heading行へ移動
-　兄弟Heading行とは、同じ親headingNumberをもつHeading行
-## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleForward
+## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleNext
 description:    次の表示中見出し行へ移動する（非表示の見出しは除外）
-key:            TextEditor.CurrentFolding.Heading:VisibleForward
+key:            TextEditor.CurrentFolding.Heading:VisibleNext
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
-## Action：　260621　TextEditor.CurrentFolding.Heading:VisibleBackward
+　（260827：ActionIDを VisibleForward から VisibleNext に変更。処理内容の変更はありません。）
+## Action：　260621　TextEditor.CurrentFolding.Heading:VisiblePrev
 description:    前の表示中見出し行へ移動する（非表示の見出しは除外）
-key:            TextEditor.CurrentFolding.Heading:VisibleBackward
+key:            TextEditor.CurrentFolding.Heading:VisiblePrev
 　親HeadingのCloseによって非表示のHeadingには移動しません。すべての親Headingが表示されているHeadingにのみ移動するように修正してください。　
+　（260827：ActionIDを VisibleBackward から VisiblePrev に変更。処理内容の変更はありません。）
 
 ## Action：　260826　TextEditor.CurrentEditor.Folding:OpenAll
 　以下の手順を実装してください。

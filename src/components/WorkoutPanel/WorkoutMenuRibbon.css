@@ -68,7 +68,7 @@ body[data-focus-column="Workout"] .workout-menu-ribbon--focused .workout-menu-ri
 /* タイトル */
 .workout-menu-ribbon__title {
   flex: 1;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -82,7 +82,7 @@ body[data-focus-column="Workout"] .workout-menu-ribbon--focused .workout-menu-ri
 /* 未保存マーカー */
 .workout-menu-ribbon__dirty {
   color: #e07b3a;
-  font-size: 9px;
+  font-size: calc(9px * var(--tt-font-scale, 1));
   flex-shrink: 0;
   line-height: 1;
 }

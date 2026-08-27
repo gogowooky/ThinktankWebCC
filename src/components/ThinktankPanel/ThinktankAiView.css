@@ -17,13 +17,13 @@
 }
 
 .tt-ai-view__title {
-  font-size: 13px;
+  font-size: calc(13px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: var(--text-muted);
 }
 
 .tt-ai-view__desc {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: var(--text-muted);
   line-height: 1.6;
   opacity: 0.7;

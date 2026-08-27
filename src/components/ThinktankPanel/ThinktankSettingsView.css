@@ -17,7 +17,7 @@
 }
 
 .tt-settings-section__title {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -57,7 +57,7 @@
 }
 
 .tt-settings-sub-section__title {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: var(--text-muted);
   margin: 0;
@@ -67,7 +67,7 @@
 }
 
 .tt-settings-section__desc {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
@@ -90,7 +90,7 @@
   border: 1px solid var(--border);
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   min-width: 0;
 }
 
@@ -108,7 +108,7 @@
   border-radius: 4px;
   background: var(--thinktank-ribbon-bg);
   color: rgba(255, 255, 255, 0.85);
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   white-space: nowrap;
   flex-shrink: 0;
   transition: opacity 150ms ease, background 200ms ease;
@@ -122,6 +122,46 @@
   background: var(--color-success, #2e7d32);
 }
 
+/* ── 表示サイズ ──
+   寸法（ラベル幅 28px / アイコンボタン 28px角 / アイコン 16px）は
+   Workout>Workout設定>エリアの「分割」行に合わせる。
+   配色は当パネルが明るい地色のため、白系ではなく他の設定テキストと同じ
+   var(--text-muted) を使う（.tt-settings-section__desc 等と同じ）。 */
+
+.tt-settings-zoom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tt-settings-zoom__row {
+  display: flex;
+  align-items: center;
+}
+
+.tt-settings-zoom__label {
+  font-size: calc(10px * var(--tt-font-scale, 1));
+  color: var(--text-muted);
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.tt-settings-zoom__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.tt-settings-zoom__icon:hover {
+  background: var(--thinktank-hover);
+  color: var(--thinktank-base);
+}
+
 /* ── 保存先 ── */
 
 .tt-settings-paths {
@@ -133,7 +173,7 @@
 }
 
 .tt-settings-paths__label {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: var(--text-muted);
   white-space: nowrap;
@@ -144,7 +184,7 @@
 }
 
 .tt-settings-paths__value code {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   color: var(--text-secondary, var(--text-muted));
   word-break: break-all;
   line-height: 1.5;
@@ -169,7 +209,7 @@
 }
 
 .tt-settings-embed__progress {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: var(--text-muted);
   padding: 4px 0;
 }

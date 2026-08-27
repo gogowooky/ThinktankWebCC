@@ -31,7 +31,7 @@
 }
 
 .filter-history-pulldown__title {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: var(--text-muted, #888);
   text-transform: uppercase;
@@ -39,7 +39,7 @@
 }
 
 .filter-history-pulldown__clear-all {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   color: var(--accent-color, #007bff);
   background: none;
   border: none;
@@ -80,7 +80,7 @@
 
 .filter-history-pulldown__item-text {
   flex: 1;
-  font-size: 13px;
+  font-size: calc(13px * var(--tt-font-scale, 1));
   color: var(--text-main, #333);
   white-space: nowrap;
   overflow: hidden;
@@ -110,5 +110,5 @@
   padding: 40px 20px;
   text-align: center;
   color: var(--text-muted, #bbb);
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
 }

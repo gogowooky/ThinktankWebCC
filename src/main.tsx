@@ -2,6 +2,13 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
+import { seedMobileDisplayDefaults } from './utils/deviceInfo'
+import { applyAppZoom } from './utils/appZoom'
+
+// iPhone 表示時はレンダリング前に簡易レイアウトへ先行設定する（初回描画のちらつき防止）
+seedMobileDisplayDefaults()
+// 保存済みの表示倍率をレンダリング前に反映する（初回描画のちらつき防止）
+applyAppZoom()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

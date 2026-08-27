@@ -14,6 +14,7 @@ import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
+import { ZOOM_DEFAULT, ZOOM_STEP } from '../utils/appZoom';
 import { apiFetch } from '../services/apiClient';
 import { showMonacoMenu } from '../utils/monacoMenu';
 import { collectAreaIds } from './TTWorkoutPanel';
@@ -495,6 +496,24 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Simple');
       item.Result = 'Simple';
     },
+  });
+
+  // Display Zoom（表示文字サイズの拡大表示 / 縮小表示）
+  const stepAppZoom = (item: TTActionItem, deltaSign: 1 | -1): void => {
+    const current = parseInt(TTUIStateManager.instance.getProperty('Application.Display.Zoom'), 10) || ZOOM_DEFAULT;
+    const next = current + deltaSign * ZOOM_STEP;
+    TTUIStateManager.instance.applyProperty('Application.Display.Zoom', String(next));
+    item.Result = `${TTUIStateManager.instance.getProperty('Application.Display.Zoom')}%`;
+  };
+  TTActions.Register({
+    ActionID: 'Application.Display.Zoom:ZoomIn',
+    Description: '拡大表示',
+    Completion: (item) => stepAppZoom(item, 1),
+  });
+  TTActions.Register({
+    ActionID: 'Application.Display.Zoom:ZoomOut',
+    Description: '縮小表示',
+    Completion: (item) => stepAppZoom(item, -1),
   });
 
   // IsVisible 系トグル（LineNumbers/WordWrap/Minimap は TTShortcutManager の DEFAULT_SHORTCUTS が

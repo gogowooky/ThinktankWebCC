@@ -52,13 +52,13 @@
 }
 
 .panel-placeholder__title {
-  font-size: 13px;
+  font-size: calc(13px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: #1a1a2e;
 }
 
 .panel-placeholder__desc {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: #444;
 }
 

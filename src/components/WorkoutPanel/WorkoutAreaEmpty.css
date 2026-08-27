@@ -29,7 +29,7 @@
   align-items: center;
   gap: 6px;
   color: #555;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   padding: 16px;
   border-radius: 6px;
   transition: background 150ms ease, color 150ms ease;
