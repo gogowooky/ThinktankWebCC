@@ -33,6 +33,7 @@ import type { ReThinkViewMode } from './TTReThinkPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
 import { COLOR_PROPS, DEFAULT_COLOR_ENTRIES, DEFAULT_MARKS, isUnset, parseMarks } from '../utils/defaultColor';
+import { getAppZoom, setAppZoom } from '../utils/appZoom';
 import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
@@ -110,6 +111,7 @@ export type ConfigKey =
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | 'Application.PanelDisplay.Mode'
+  | 'Application.Display.Zoom'
   | 'Application.Execution.Status'
   | 'Application.Synchronization.Status'
   | 'Application.CheckedItem.IDs'
@@ -704,6 +706,13 @@ const PROP_SPECS: Record<ConfigKey, PropSpec> = {
     description: 'パネル表示モード（Normal=全表示, Simple=簡易表示）',
     get: () => localStorage.getItem('tt-layout-mode') === 'simple' ? 'Simple' : 'Normal',
     set: (_app, v) => { localStorage.setItem('tt-layout-mode', v === 'Simple' ? 'simple' : 'sipoc'); },
+  },
+  'Application.Display.Zoom': {
+    panel: 'Application',
+    default: '100', type: 'integer', candidates: '^[0-9]{2,3}$',
+    description: '表示文字サイズの倍率（％。50〜200、10刻み）',
+    get: () => String(getAppZoom()),
+    set: (_app, v) => { setAppZoom(parseInt(v, 10) || 100); },
   },
   'Application.Execution.Status': {
     panel: 'Application',

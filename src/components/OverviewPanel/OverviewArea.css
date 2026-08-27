@@ -43,7 +43,7 @@
 }
 
 .overview-area__strip-name {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   font-weight: 500;
   color: #2c3e6f;
   white-space: nowrap;
@@ -53,7 +53,7 @@
 }
 
 .overview-area__strip-placeholder {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: rgba(57, 73, 171, 0.45);
   white-space: nowrap;
 }
@@ -103,7 +103,7 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: #1a1a2e;
   font-family: inherit;
   min-width: 0;
@@ -132,7 +132,7 @@
   background: transparent;
   border: none;
   outline: none;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: #1a1a2e;
   font-family: inherit;
   text-align: right;
@@ -177,7 +177,7 @@
   align-items: center;
   justify-content: center;
   color: rgba(57, 73, 171, 0.5);
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   padding: 24px;
   text-align: center;
 }

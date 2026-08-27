@@ -402,7 +402,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                 <div className="workout-setting-area__section-content">
                   {/* 分割 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>分割</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>分割</span>
                     <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="左に分割して新Pane追加">
                         <button
@@ -446,7 +446,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 
                   {/* 追加 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>追加</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>追加</span>
                     <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
                         className="workout-setting-area__icon-btn"
@@ -481,7 +481,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 
                   {/* 消去 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>消去</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>消去</span>
                     <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="フォーカスペインを消去">
                         <button
@@ -513,7 +513,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 
                   {/* 均等 */}
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>均等</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>均等</span>
                     <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="幅を均等化">
                         <button
@@ -873,7 +873,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               {isMemoSettingsOpen && (
                 <div className="workout-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
                     <button
                       className="workout-setting-area__icon-btn"
                       onClick={onCreateMemo}
@@ -883,7 +883,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     </button>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
                     <button
                       className="workout-setting-area__icon-btn"
                       onClick={onReadMemo}
@@ -893,7 +893,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     </button>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
                     <button
                       className="workout-setting-area__icon-btn"
                       onClick={onSaveMemo}
@@ -920,7 +920,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               {isTableSettingsOpen && (
                 <div className="workout-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
                     <button
                       ref={firstDatagridRef}
                       className="workout-setting-area__icon-btn"
@@ -931,7 +931,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     </button>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
                     <button
                       className="workout-setting-area__icon-btn"
                       onClick={onReadTable}
@@ -941,7 +941,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     </button>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
                     <button
                       className="workout-setting-area__icon-btn"
                       onClick={onSaveTable}

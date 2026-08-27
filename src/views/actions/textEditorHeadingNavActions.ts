@@ -43,9 +43,9 @@ function getCurrentHeading(ctx: HeadingNavContext, item: TTActionItem): HeadingA
 
 export function registerTextEditorHeadingNavActions(app: TTApplication): void {
 
-  // 1. TextEditor.CurrentFolding.Heading:VisibleForward
+  // 1. TextEditor.CurrentFolding.Heading:VisibleNext
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:VisibleForward',
+    ActionID: 'TextEditor.CurrentFolding.Heading:VisibleNext',
     Description: '次の表示中見出し行へ移動する（非表示の見出しは除外）',
     Completion: (item) => {
       try {
@@ -69,9 +69,9 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
     },
   });
 
-  // 2. TextEditor.CurrentFolding.Heading:VisibleBackward
+  // 2. TextEditor.CurrentFolding.Heading:VisiblePrev
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:VisibleBackward',
+    ActionID: 'TextEditor.CurrentFolding.Heading:VisiblePrev',
     Description: '前の表示中見出し行へ移動する（非表示の見出しは除外）',
     Completion: (item) => {
       try {
@@ -198,91 +198,7 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
     },
   });
 
-  // 5. TextEditor.CurrentFolding.Heading:SiblingForward
-  TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingForward',
-    Description: '次の兄弟見出し行へ移動する',
-    Completion: (item) => {
-      try {
-        const ctx = getHeadingNavContext(item);
-        if (!ctx) return;
-        const { editor, pos, headings } = ctx;
-        const h = getCurrentHeading(ctx, item);
-        if (!h) return;
-
-        // 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動
-        if (pos.lineNumber !== h.line) {
-          editor.setPosition({ lineNumber: h.line, column: 1 });
-          editor.revealLineInCenterIfOutsideViewport(h.line);
-          item.Result = `L${h.line}へ移動`;
-          return;
-        }
-
-        // 現カーソル位置が Heading 行である場合：次の兄弟 Heading 行へ移動
-        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
-        const nextSibling = headings.find(
-          d => d.offset > h.offset &&
-               d.level === h.level &&
-               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber &&
-               !d.isHidden
-        );
-
-        if (nextSibling) {
-          editor.setPosition({ lineNumber: nextSibling.line, column: 1 });
-          editor.revealLineInCenterIfOutsideViewport(nextSibling.line);
-          item.Result = `L${nextSibling.line}へ移動`;
-        } else {
-          item.Result = '次の兄弟見出しなし';
-        }
-      } catch (err) {
-        item.Result = `[エラー] ${getErrorMessage(err)}`;
-      }
-    },
-  });
-
-  // 6. TextEditor.CurrentFolding.Heading:SiblingBackward
-  TTActions.Register({
-    ActionID: 'TextEditor.CurrentFolding.Heading:SiblingBackward',
-    Description: '前の兄弟見出し行へ移動する',
-    Completion: (item) => {
-      try {
-        const ctx = getHeadingNavContext(item);
-        if (!ctx) return;
-        const { editor, pos, headings } = ctx;
-        const h = getCurrentHeading(ctx, item);
-        if (!h) return;
-
-        // 現カーソル位置が Heading 行にない場合：カーソル位置のテキストが属する Heading 行へ移動
-        if (pos.lineNumber !== h.line) {
-          editor.setPosition({ lineNumber: h.line, column: 1 });
-          editor.revealLineInCenterIfOutsideViewport(h.line);
-          item.Result = `L${h.line}へ移動`;
-          return;
-        }
-
-        // 現カーソル位置が Heading 行である場合：前の兄弟 Heading 行へ移動
-        const parentNumber = h.headingNumber.split('.').slice(0, -1).join('.');
-        const prevSibling = [...headings].reverse().find(
-          d => d.offset < h.offset &&
-               d.level === h.level &&
-               d.headingNumber.split('.').slice(0, -1).join('.') === parentNumber &&
-               !d.isHidden
-        );
-
-        if (prevSibling) {
-          editor.setPosition({ lineNumber: prevSibling.line, column: 1 });
-          editor.revealLineInCenterIfOutsideViewport(prevSibling.line);
-          item.Result = `L${prevSibling.line}へ移動`;
-        } else {
-          item.Result = '前の兄弟見出しなし';
-        }
-      } catch (err) {
-        item.Result = `[エラー] ${getErrorMessage(err)}`;
-      }
-    },
-  });
-
-  // 7. TextEditor.CurrentFolding.Heading:SiblingFirst
+  // 5. TextEditor.CurrentFolding.Heading:SiblingFirst
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingFirst',
     Description: '最初の兄弟見出し行へ移動する',
@@ -327,7 +243,7 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
     },
   });
 
-  // 8. TextEditor.CurrentFolding.Heading:SiblingLast
+  // 6. TextEditor.CurrentFolding.Heading:SiblingLast
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingLast',
     Description: '最後の兄弟見出し行へ移動する',
@@ -384,7 +300,7 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
     },
   });
 
-  // 9. TextEditor.CurrentFolding.Heading:Parent
+  // 7. TextEditor.CurrentFolding.Heading:Parent
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:Parent',
     Description: '親見出し行へ移動する',
@@ -411,7 +327,7 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
     },
   });
 
-  // 10. TextEditor.CurrentFolding.Heading:SiblingNext
+  // 8. TextEditor.CurrentFolding.Heading:SiblingNext
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingNext',
     Description: '次の兄弟見出し行へ移動する',
@@ -441,7 +357,7 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
     },
   });
 
-  // 11. TextEditor.CurrentFolding.Heading:SiblingPrev
+  // 9. TextEditor.CurrentFolding.Heading:SiblingPrev
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:SiblingPrev',
     Description: '前の兄弟見出し行へ移動する',

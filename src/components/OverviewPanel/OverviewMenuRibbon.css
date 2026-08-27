@@ -15,7 +15,7 @@
 }
 
 .overview-ribbon__check-count {
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   color: rgba(255, 255, 255, 0.6);
   white-space: nowrap;
   padding: 0 4px;

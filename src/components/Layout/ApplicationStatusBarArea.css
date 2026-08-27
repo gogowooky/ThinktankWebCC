@@ -72,7 +72,7 @@
   border: none;
   color: var(--toolbar-color, rgba(255, 255, 255, 0.9));
   font-family: inherit;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   outline: none;
   min-width: 0;
 }
@@ -182,7 +182,7 @@
 }
 
 .ApplicationStatusBarArea__ka-label {
-  font-size: 9px;
+  font-size: calc(9px * var(--tt-font-scale, 1));
   color: color-mix(in srgb, var(--toolbar-color, #fff) 35%, transparent);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -190,7 +190,7 @@
 }
 
 .ApplicationStatusBarArea__ka-value {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   font-family: monospace;
   color: color-mix(in srgb, var(--toolbar-color, #fff) 85%, transparent);
   background: color-mix(in srgb, var(--toolbar-color, #fff) 8%, transparent);
@@ -203,7 +203,7 @@
 
 .ApplicationStatusBarArea__ka-sep {
   color: color-mix(in srgb, var(--toolbar-color, #fff) 20%, transparent);
-  font-size: 10px;
+  font-size: calc(10px * var(--tt-font-scale, 1));
   flex-shrink: 0;
 }
 
@@ -249,7 +249,7 @@
 .ApplicationStatusBarArea__author-banner-text {
   white-space: nowrap;
   color: color-mix(in srgb, var(--toolbar-color, #fff) 75%, transparent);
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -274,12 +274,12 @@
   border: 1px solid color-mix(in srgb, var(--toolbar-color, #fff) 15%, transparent);
   border-radius: 3px;
   color: var(--toolbar-color, rgba(255, 255, 255, 0.9));
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   outline: none;
 }
 
 .ApplicationStatusBarArea__status-text {
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   font-family: monospace;
   color: color-mix(in srgb, var(--toolbar-color, #fff) 85%, transparent);
   white-space: nowrap;

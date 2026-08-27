@@ -131,7 +131,7 @@ body[data-focus-column="WorkoutSetting"] .vertical-tab-bar--workout .vertical-ta
   background: var(--workout-ribbon-bg, #3f3f3f);
   color: rgba(255, 255, 255, 0.92);
   border-radius: 4px;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   font-weight: 500;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   white-space: nowrap;

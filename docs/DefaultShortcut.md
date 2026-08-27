@@ -98,14 +98,14 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 # Editor カーソル 折畳行
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
-*TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
-*TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
+*TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleNext      ,折畳行を前移動
+*TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisiblePrev      ,折畳行を後移動
 *TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+B            ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+B                  ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
-*TextEditor ,       ,Alt+P                  ,TextEditor.CurrentFolding.Heading:VisibleForward   ,折畳行を前移動
-*TextEditor ,       ,Alt+N                  ,TextEditor.CurrentFolding.Heading:VisibleBackward  ,折畳行を後移動
+*TextEditor ,       ,Alt+P                  ,TextEditor.CurrentFolding.Heading:VisibleNext      ,折畳行を前移動
+*TextEditor ,       ,Alt+N                  ,TextEditor.CurrentFolding.Heading:VisiblePrev      ,折畳行を後移動
 *TextEditor ,       ,Alt+Shift+P            ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+N            ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Ctrl+P             ,TextEditor.CurrentFolding.Heading:Parent           ,親折畳行へ移動

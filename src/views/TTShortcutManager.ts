@@ -101,8 +101,8 @@ const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   { focus: '*', exmode: 'ExPanel', key: 'o', action: 'FocusedPanel.Area.IsOpen:Toggle', description: 'フォーカスパネル開閉' },
   { focus: '*', exmode: 'ExPanel', key: 'p', action: 'FocusedPanel.Mode.Name:Prev',      description: 'フォーカスパネルモード前' },
   { focus: '*', exmode: 'ExPanel', key: 'n', action: 'FocusedPanel.Mode.Name:Next',      description: 'フォーカスパネルモード次' },
-  { focus: '*TextEditor', exmode: '', key: 'alt+arrowup',    action: 'TextEditor.CurrentFolding.Heading:VisibleForward',       description: '現表示範囲の折畳タイトル行を前方向に探索してカーソル移動' },
-  { focus: '*TextEditor', exmode: '', key: 'alt+arrowdown',  action: 'TextEditor.CurrentFolding.Heading:VisibleBackward',      description: '現表示範囲の折畳タイトル行を後方向に探索してカーソル移動' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowup',    action: 'TextEditor.CurrentFolding.Heading:VisibleNext',          description: '現表示範囲の折畳タイトル行を前方向に探索してカーソル移動' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowdown',  action: 'TextEditor.CurrentFolding.Heading:VisiblePrev',          description: '現表示範囲の折畳タイトル行を後方向に探索してカーソル移動' },
   { focus: '*TextEditor', exmode: '', key: 'alt+arrowright', action: 'TextEditor.CurrentFolding.Heading:OpenStepwise', description: 'カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく' },
   { focus: '*TextEditor', exmode: '', key: 'alt+arrowleft',  action: 'TextEditor.CurrentFolding.Heading:CloseStepwise',description: 'カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく' },
 ];

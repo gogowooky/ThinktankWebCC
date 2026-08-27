@@ -13,6 +13,7 @@ import { TTUIStateManager } from './views/TTUIStateManager'
 import { TTShortcutManager } from './views/TTShortcutManager'
 import { registerFocusedPanelActions } from './views/TTFocusedPanelActions'
 import { getFocusName } from './utils/getFocusName'
+import { isIPhone } from './utils/deviceInfo'
 
 export default function App() {
   useEffect(() => {
@@ -29,7 +30,19 @@ export default function App() {
     void Promise.all([
       TTUIStateManager.instance.ensureThinkExists(vault),
       TTShortcutManager.instance.ensureThinkExists(vault),
-    ])
+    ]).then(() => {
+      // iPhone 表示時は、保存済み UI 状態に関わらず簡易モード・WordWrap を強制する
+      // （狭幅画面ではサイドパネルが実質使えず、折り返し無しだと横スクロールが多発するため）
+      if (isIPhone()) {
+        const ui = TTUIStateManager.instance
+        if (ui.getProperty('Application.PanelDisplay.Mode') !== 'Simple') {
+          ui.applyProperty('Application.PanelDisplay.Mode', 'Simple')
+        }
+        if (ui.getProperty('TextEditor.WordWrap.IsVisible') !== 'true') {
+          ui.applyProperty('TextEditor.WordWrap.IsVisible', 'true')
+        }
+      }
+    })
 
     // ② Vault保存/削除失敗（TTThink.SaveContent, TTVault.Create*/DeleteThinks等）は
     // 呼び出し元で個別に catch されていない箇所があるため、未処理の Promise rejection を

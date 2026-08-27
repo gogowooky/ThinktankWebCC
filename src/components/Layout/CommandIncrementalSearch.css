@@ -34,7 +34,7 @@
 .command-incremental-search__item-id,
 .command-incremental-search__item-desc {
   padding: 3px 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   font-family: 'Inter', 'Hiragino Kaku Gothic ProN', system-ui, sans-serif;
   white-space: nowrap;
   overflow: hidden;

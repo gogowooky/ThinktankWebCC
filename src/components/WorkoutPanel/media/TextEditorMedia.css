@@ -21,7 +21,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.35);
   background: var(--workout-content-bg);
 }
@@ -44,7 +44,7 @@
 }
 
 .text-editor-media__drop-label {
-  font-size: 18px;
+  font-size: calc(18px * var(--tt-font-scale, 1));
   font-weight: 600;
   color: #fff;
   padding: 12px 24px;
@@ -62,7 +62,7 @@
   left: 50%;
   transform: translateX(-50%);
   z-index: 20;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   padding: 6px 14px;
   border-radius: 6px;
   white-space: nowrap;
@@ -103,7 +103,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  font-size: 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.3);
   user-select: none;
   background: #fafafa;

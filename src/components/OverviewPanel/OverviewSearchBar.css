@@ -19,7 +19,7 @@
   display: inline-flex;
   align-items: center;
   gap: 3px;
-  font-size: 11px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
   color: #666;
   cursor: pointer;
 }
