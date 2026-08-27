@@ -133,6 +133,24 @@ button {
   font: inherit;
 }
 
+/* ── アイコン（lucide-react）をフォントと同じ倍率で拡大縮小する ──────────────
+   lucide-react は <svg width={size} height={size} class="lucide ..."> という
+   プレゼンテーション属性でサイズを指定するため、font-size 側の
+   --tt-font-scale（body の font-size 参照）を当てても連動しない。
+   プレゼンテーション属性はCSSの優先度が最も低く、単純な属性セレクタでも
+   上書きできるため、実際に使われているサイズ値ごとに width/height を
+   calc() で上書きし、他の文字サイズと同じ倍率で追従・reflowさせる。
+   新しいサイズ値を size={} で使う場合は、ここに対応行を追加すること。 */
+svg.lucide[width="10"] { width: calc(10px * var(--tt-font-scale, 1)); height: calc(10px * var(--tt-font-scale, 1)); }
+svg.lucide[width="11"] { width: calc(11px * var(--tt-font-scale, 1)); height: calc(11px * var(--tt-font-scale, 1)); }
+svg.lucide[width="12"] { width: calc(12px * var(--tt-font-scale, 1)); height: calc(12px * var(--tt-font-scale, 1)); }
+svg.lucide[width="13"] { width: calc(13px * var(--tt-font-scale, 1)); height: calc(13px * var(--tt-font-scale, 1)); }
+svg.lucide[width="14"] { width: calc(14px * var(--tt-font-scale, 1)); height: calc(14px * var(--tt-font-scale, 1)); }
+svg.lucide[width="16"] { width: calc(16px * var(--tt-font-scale, 1)); height: calc(16px * var(--tt-font-scale, 1)); }
+svg.lucide[width="20"] { width: calc(20px * var(--tt-font-scale, 1)); height: calc(20px * var(--tt-font-scale, 1)); }
+svg.lucide[width="24"] { width: calc(24px * var(--tt-font-scale, 1)); height: calc(24px * var(--tt-font-scale, 1)); }
+svg.lucide[width="28"] { width: calc(28px * var(--tt-font-scale, 1)); height: calc(28px * var(--tt-font-scale, 1)); }
+
 a {
   color: var(--text-accent);
   text-decoration: none;
