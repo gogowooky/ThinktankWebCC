@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.29",
+  "version": "1.4.30",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "c96ff33",
-  "commitDateTime": "2026-08-26-181712",
-  "commitMessage": "feat: 見出しレベル別の折り畳みアクションと兄弟見出し移動アクションを追加"
+  "commitId": "fa701d6",
+  "commitDateTime": "2026-08-27-223458",
+  "commitMessage": "chore: DefaultShortcut.mdの折り畳み系ショートカットの修飾キー構成を調整"
 }
