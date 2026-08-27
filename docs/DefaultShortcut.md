@@ -110,13 +110,13 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Alt+Shift+N            ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Ctrl+P             ,TextEditor.CurrentFolding.Heading:Parent           ,親折畳行へ移動
 
-*TextEditor ,       ,Alt+Ctrl+Shift+!       ,TextEditor.CurrentEditor.Folding:CloseAll          ,全折畳行をClose
-*TextEditor ,       ,Alt+Ctrl+Shift+""""    ,TextEditor.CurrentEditor.Folding:OpenLv1           ,レベル1の折畳行をOpen
-*TextEditor ,       ,Alt+Ctrl+Shift+#       ,TextEditor.CurrentEditor.Folding:OpenLv2           ,レベル2の折畳行をOpen
-*TextEditor ,       ,Alt+Ctrl+Shift+$       ,TextEditor.CurrentEditor.Folding:OpenAll           ,全折畳行をOpen
+*TextEditor ,       ,Alt+Shift+!            ,TextEditor.CurrentEditor.Folding:CloseAll          ,全折畳行をClose
+*TextEditor ,       ,Alt+Shift+""""         ,TextEditor.CurrentEditor.Folding:OpenLv1           ,レベル1の折畳行をOpen
+*TextEditor ,       ,Alt+Shift+#            ,TextEditor.CurrentEditor.Folding:OpenLv2           ,レベル2の折畳行をOpen
+*TextEditor ,       ,Alt+Shift+$            ,TextEditor.CurrentEditor.Folding:OpenAll           ,全折畳行をOpen
 
-*TextEditor ,       ,Alt+Ctrl+Shift+P       ,TextEditor.CurrentFolding.Heading:SiblingPrev       ,前の兄弟折畳行へ移動
-*TextEditor ,       ,Alt+Ctrl+Shift+N       ,TextEditor.CurrentFolding.Heading:SiblingNext       ,次の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+Shift+Ctrl+P       ,TextEditor.CurrentFolding.Heading:SiblingPrev       ,前の兄弟折畳行へ移動
+*TextEditor ,       ,Alt+Shift+Ctrl+N       ,TextEditor.CurrentFolding.Heading:SiblingNext       ,次の兄弟折畳行へ移動
 
 
 # Editor 編集

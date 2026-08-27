@@ -251,7 +251,9 @@
       "PowerShell(Get-Process -Id 27272 -ErrorAction SilentlyContinue)",
       "Bash(node --input-type=module -e ' *)",
       "Bash(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\d3b12060-35da-460b-8c2c-e02d86793f01\\\\scratchpad\\\\test_parse.mjs\")",
-      "Bash(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\d3b12060-35da-460b-8c2c-e02d86793f01\\\\scratchpad\\\\verify_current.mjs\")"
+      "Bash(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\d3b12060-35da-460b-8c2c-e02d86793f01\\\\scratchpad\\\\verify_current.mjs\")",
+      "Bash(gcloud --version)",
+      "Bash(gcloud auth *)"
     ]
   }
 }
