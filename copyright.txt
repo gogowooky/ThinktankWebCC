@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.29",
+  "version": "1.4.30",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "c96ff33",
-  "commitDateTime": "2026-08-26-181712",
-  "commitMessage": "feat: 見出しレベル別の折り畳みアクションと兄弟見出し移動アクションを追加"
+  "commitPC": "veneno-02",
+  "commitId": "2c88bc7",
+  "commitDateTime": "2026-08-27-215850",
+  "commitMessage": "feat: 表示文字サイズの拡大/縮小、iPhone表示の既定、見出しナビアクションの整理"
 }
