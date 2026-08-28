@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.33",
+  "version": "1.4.34",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "027d0e6",
-  "commitDateTime": "2026-08-28-144256",
-  "commitMessage": "feat: TextEditor設定にメモ先頭移動と音声入力(編集セクション)を追加、折畳ステップ実行を子孫方向に修正"
+  "commitId": "276bfac",
+  "commitDateTime": "2026-08-28-151020",
+  "commitMessage": "fix: 音声入力の失敗理由をUIに表示し、診断用ログを追加"
 }
