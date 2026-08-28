@@ -45,6 +45,9 @@ interface SpeechRecognitionLike extends EventTarget {
   onresult: ((event: SpeechRecognitionEventLike) => void) | null;
   onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
+  onstart: (() => void) | null;
+  onaudiostart: (() => void) | null;
+  onspeechstart: (() => void) | null;
 }
 
 interface SpeechRecognitionCtorLike {
@@ -67,6 +70,31 @@ export function isVoiceInputSupported(): boolean {
 }
 
 type StatusListener = (listening: boolean) => void;
+type ErrorListener = (message: string | null) => void;
+
+/**
+ * SpeechRecognition の error コードを日本語の説明文に変換する。
+ * ユーザー操作による中止（aborted）はエラー表示しないため null を返す。
+ */
+function describeSpeechError(code: string): string | null {
+  switch (code) {
+    case 'not-allowed':
+    case 'permission-denied':
+      return 'マイクの使用が許可されていません（ブラウザ・OSの設定でマイクへのアクセスを許可してください）';
+    case 'audio-capture':
+      return 'マイクを利用できません（マイクが接続されているか確認してください）';
+    case 'no-speech':
+      return '音声が検出されませんでした';
+    case 'network':
+      return '音声認識サービスに接続できませんでした（Electron版はGoogleの音声認識サービスに未対応の場合があります。ブラウザ版でお試しください）';
+    case 'service-not-allowed':
+      return '音声認識サービスを利用できません';
+    case 'aborted':
+      return null;
+    default:
+      return `音声認識エラー: ${code}`;
+  }
+}
 
 export class TTVoiceInput {
   private static _instance: TTVoiceInput | null = null;
@@ -81,9 +109,12 @@ export class TTVoiceInput {
   private insertStartOffset = 0;
   private insertedLength    = 0;
   private listening         = false;
+  private errorMessage:     string | null = null;
   private listeners         = new Set<StatusListener>();
+  private errorListeners    = new Set<ErrorListener>();
 
   get isListening(): boolean { return this.listening; }
+  get lastError(): string | null { return this.errorMessage; }
 
   /** listening状態の変化を購読する。戻り値の関数で解除する。 */
   onStatusChange(fn: StatusListener): () => void {
@@ -91,28 +122,50 @@ export class TTVoiceInput {
     return () => this.listeners.delete(fn);
   }
 
+  /** エラーメッセージの変化を購読する（null = エラー解消）。戻り値の関数で解除する。 */
+  onErrorChange(fn: ErrorListener): () => void {
+    this.errorListeners.add(fn);
+    return () => this.errorListeners.delete(fn);
+  }
+
   private notify(): void {
     for (const fn of this.listeners) fn(this.listening);
+  }
+
+  private setError(message: string | null): void {
+    this.errorMessage = message;
+    for (const fn of this.errorListeners) fn(message);
   }
 
   /**
    * 音声入力を開始する。対象は指定エディタ（省略時は現在フォーカス中のエディタ）で、
    * 現在のカーソル位置から認識結果を挿入していく。
    * 既に音声入力中の場合は何もしない（多重開始防止）。
+   * 開始できなかった場合は lastError / onErrorChange で理由を確認できる。
    */
   start(editor?: MonacoEditor.IStandaloneCodeEditor): boolean {
     if (this.listening) return true;
 
     const Ctor = getSpeechWindow().SpeechRecognition ?? getSpeechWindow().webkitSpeechRecognition;
-    if (!Ctor) return false;
+    if (!Ctor) {
+      this.setError('このブラウザは音声入力に対応していません');
+      return false;
+    }
 
     const target = editor ?? (TTShortcutManager.instance.activeEditor as MonacoEditor.IStandaloneCodeEditor | null);
-    if (!target) return false;
+    if (!target) {
+      this.setError('音声入力の対象となるテキストエディタが見つかりません。編集したいメモをクリックしてフォーカスしてから実行してください。');
+      return false;
+    }
 
     const model = target.getModel();
     const pos = target.getPosition();
-    if (!model || !pos) return false;
+    if (!model || !pos) {
+      this.setError('音声入力の対象となるテキストエディタが見つかりません。編集したいメモをクリックしてフォーカスしてから実行してください。');
+      return false;
+    }
 
+    this.setError(null);
     this.targetEditor = target;
     this.insertStartOffset = model.getOffsetAt(pos);
     this.insertedLength = 0;
@@ -125,25 +178,38 @@ export class TTVoiceInput {
     let finalText = '';
 
     recognition.onresult = (event) => {
-      let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        const transcript = result[0]?.transcript ?? '';
-        if (result.isFinal) finalText += transcript;
-        else interim += transcript;
+      try {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const transcript = result[0]?.transcript ?? '';
+          if (result.isFinal) finalText += transcript;
+          else interim += transcript;
+        }
+        console.log('[TTVoiceInput] onresult:', { resultIndex: event.resultIndex, finalText, interim });
+        this.replaceInsertedText(finalText + interim);
+      } catch (err) {
+        console.error('[TTVoiceInput] onresult内でエラー:', err);
+        this.setError(`テキスト挿入でエラーが発生しました: ${err instanceof Error ? err.message : String(err)}`);
       }
-      this.replaceInsertedText(finalText + interim);
     };
     recognition.onerror = (event) => {
       console.error('[TTVoiceInput] 音声認識エラー:', event.error);
+      const message = describeSpeechError(event.error);
+      if (message) this.setError(message);
       this.listening = false;
       this.notify();
     };
     recognition.onend = () => {
+      console.log('[TTVoiceInput] onend（音声認識セッション終了）');
       this.listening = false;
       this.notify();
     };
+    recognition.onstart = () => console.log('[TTVoiceInput] onstart（セッション開始）');
+    recognition.onaudiostart = () => console.log('[TTVoiceInput] onaudiostart（マイク音声のキャプチャ開始）');
+    recognition.onspeechstart = () => console.log('[TTVoiceInput] onspeechstart（発話を検出）');
 
+    console.log('[TTVoiceInput] start: 音声認識を開始します', { targetLine: pos.lineNumber, targetColumn: pos.column });
     this.recognition = recognition;
     recognition.start();
     this.listening = true;
@@ -162,6 +228,9 @@ export class TTVoiceInput {
       this.recognition.onresult = null;
       this.recognition.onerror = null;
       this.recognition.onend = null;
+      this.recognition.onstart = null;
+      this.recognition.onaudiostart = null;
+      this.recognition.onspeechstart = null;
       this.recognition.abort();
       this.recognition = null;
     }

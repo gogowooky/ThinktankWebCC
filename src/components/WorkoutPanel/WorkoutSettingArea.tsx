@@ -303,7 +303,9 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   // ── 音声入力 ───────────────────────────────────────────────────────────
   const voiceSupported = useMemo(() => isVoiceInputSupported(), []);
   const [isVoiceListening, setIsVoiceListening] = useState(TTVoiceInput.instance.isListening);
+  const [voiceError, setVoiceError] = useState(TTVoiceInput.instance.lastError);
   useEffect(() => TTVoiceInput.instance.onStatusChange(setIsVoiceListening), []);
+  useEffect(() => TTVoiceInput.instance.onErrorChange(setVoiceError), []);
   const handleVoiceMicOn   = useCallback(() => { TTVoiceInput.instance.start(); }, []);
   const handleVoiceMicOff  = useCallback(() => { TTVoiceInput.instance.stop(); }, []);
   const handleVoiceEraser  = useCallback(() => { TTVoiceInput.instance.cancel(); }, []);
@@ -643,6 +645,16 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                       </button>
                     </div>
                   </div>
+                  {voiceError && (
+                    <div style={{
+                      fontSize: 'calc(10px * var(--tt-font-scale, 1))',
+                      color: 'var(--text-error)',
+                      marginTop: '4px',
+                      lineHeight: 1.4,
+                    }}>
+                      {voiceError}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
