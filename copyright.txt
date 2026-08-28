@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.34",
+  "version": "1.4.35",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "276bfac",
-  "commitDateTime": "2026-08-28-151020",
-  "commitMessage": "fix: 音声入力の失敗理由をUIに表示し、診断用ログを追加"
+  "commitId": "fc766ca",
+  "commitDateTime": "2026-08-28-223728",
+  "commitMessage": "fix: iOSでのオートフィル候補（鍵/カード/位置情報アイコン）表示を抑制"
 }
