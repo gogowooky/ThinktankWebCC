@@ -222,6 +222,7 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
             placeholder={PLACEHOLDER}
             disabled={isWaiting}
             rows={2}
+            autoComplete="off"
           />
         </div>
 

@@ -639,6 +639,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
           placeholder="絞り込み…"
           value={filter}
           onChange={e => setFilter(e.target.value)}
+          autoComplete="off"
         />
         {isUISettings && (
           <button className="table-grid__refresh-btn" onClick={handleRefresh} data-tip="UIから更新" data-tip-side="left">
@@ -767,6 +768,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
                             type="text"
                             className="table-grid__cell-color-text"
                             autoFocus
+                            autoComplete="off"
                             value={editState.value}
                             onChange={e => setEditState(prev => prev ? { ...prev, value: e.target.value } : null)}
                             onBlur={() => commitEdit(rowIdx, colIdx, editState.value)}
@@ -912,6 +914,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
           placeholder="タイトル・キーワードで絞り込み…"
           value={filter}
           onChange={e => setFilter(e.target.value)}
+          autoComplete="off"
         />
         <span className="datagrid-media__count">{filtered.length}/{allItems.length}</span>
       </div>

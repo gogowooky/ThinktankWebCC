@@ -68,6 +68,7 @@ export const OverviewSearchBar = forwardRef<OverviewSearchBarRef, Props>(functio
                 onKeyDown={handleKeyDown}
                 placeholder="コンテンツで絞り込み"
                 spellCheck={false}
+                autoComplete="off"
               />
             </div>
           </div>

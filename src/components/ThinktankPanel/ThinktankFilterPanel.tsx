@@ -88,6 +88,7 @@ export const ThinktankFilterPanel = React.memo(forwardRef<ThinktankFilterPanelRe
                 onKeyDown={handleTextKeyDown}
                 placeholder={textPlaceholder}
                 spellCheck={false}
+                autoComplete="off"
               />
               <ChevronDown 
                 size={12} 
@@ -141,6 +142,7 @@ export const ThinktankFilterPanel = React.memo(forwardRef<ThinktankFilterPanelRe
               placeholder="+Nd / @Nd"
               data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
               data-tip-side="left"
+              autoComplete="off"
             />
           </div>
           <div className="unified-filter-row-right">
@@ -174,6 +176,7 @@ export const ThinktankFilterPanel = React.memo(forwardRef<ThinktankFilterPanelRe
               value={updatedRange}
               onChange={e => onUpdatedRangeChange(e.target.value)}
               placeholder="+Nd / @Nd"
+              autoComplete="off"
               data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
               data-tip-side="left"
             />

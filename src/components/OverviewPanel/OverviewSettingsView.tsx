@@ -104,6 +104,7 @@ export const OverviewSettingsView = forwardRef<OverviewSettingsViewRef, Props>(f
                   onChange={e => { setTitleValue(e.target.value.slice(0, 100)); setSaved(false); }}
                   onKeyDown={handleKeyDown}
                   spellCheck={false}
+                  autoComplete="off"
                 />
                 <button
                   className={`ov-settings-save-btn${saved ? ' ov-settings-save-btn--saved' : ''}`}

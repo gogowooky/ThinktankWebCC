@@ -109,6 +109,7 @@ export function StatusBarStatusPanel({ focus }: StatusPanelProps) {
           onChange={e => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           autoFocus
+          autoComplete="off"
           placeholder="StatusIDs (comma separated)"
         />
       </div>
@@ -241,6 +242,7 @@ export function StatusBarInputPanel({
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         spellCheck={false}
+        autoComplete="off"
       />
       {showHistory && historyList.length > 0 && (
         <datalist id={historyId}>

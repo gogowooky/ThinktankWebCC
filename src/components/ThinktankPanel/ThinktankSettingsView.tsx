@@ -136,6 +136,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
                 onChange={e => { setValue(e.target.value); setSaved(false); }}
                 onKeyDown={handleKeyDown}
                 spellCheck={false}
+                autoComplete="off"
               />
               <button
                 className={`tt-settings-save-btn${saved ? ' tt-settings-save-btn--saved' : ''}`}

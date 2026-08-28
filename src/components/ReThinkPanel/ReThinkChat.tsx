@@ -203,6 +203,7 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
             placeholder={PLACEHOLDER}
             disabled={isWaiting}
             rows={2}
+            autoComplete="off"
           />
         </div>
 

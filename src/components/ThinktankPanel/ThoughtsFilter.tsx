@@ -27,6 +27,7 @@ export function ThoughtsFilter({ value, onChange, visibleCount, totalCount }: Pr
         onChange={e => onChange(e.target.value)}
         placeholder="タイトルで絞り込み..."
         spellCheck={false}
+        autoComplete="off"
       />
       {value && (
         <button

@@ -68,6 +68,7 @@ export const ThinktankSearchBar = forwardRef<ThinktankSearchBarRef, Props>(funct
                 onKeyDown={handleKeyDown}
                 placeholder="コンテンツで絞り込み"
                 spellCheck={false}
+                autoComplete="off"
               />
             </div>
           </div>

@@ -175,6 +175,7 @@ function TableCardView({ think, onSave }: TableCardViewProps) {
           placeholder="絞り込み…"
           value={filter}
           onChange={e => setFilter(e.target.value)}
+          autoComplete="off"
         />
         {isUISettings && (
           <button
@@ -241,6 +242,7 @@ function ThinkCardView({ think, vault }: MediaProps) {
           placeholder="タイトル・キーワードで絞り込み…"
           value={filter}
           onChange={e => setFilter(e.target.value)}
+          autoComplete="off"
         />
         <span className="card-media__count">
           {filtered.length}/{allItems.length}
