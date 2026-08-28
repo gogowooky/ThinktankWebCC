@@ -98,7 +98,7 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
   // 3. TextEditor.CurrentFolding.Heading:OpenStepwise
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:OpenStepwise',
-    Description: '見出し行を段階的に開く（Close→Open、Open→子をOpen）',
+    Description: '見出し行を段階的に開く（Close→Open、Open→子孫中の最も上位をOpen）',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
@@ -114,27 +114,19 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
           return;
         }
 
-        // ↓ 現カーソルがあるHeading行がOpenである場合、子Heading行をすべて抽出し、自Heading行や孫Heading行が含まれないことを確認し、抽出した子HeadingのすべてをOpenにして終了します
+        // ↓ h配下（子Heading、孫Heading、以下）の見出しをすべて抽出する
         const scopeEnd = headingScopeEnd(headings, headings.indexOf(h), model.getLineCount());
-        const childHeadings = headings.filter(
-          d => d.line > h.line &&
-               d.line <= scopeEnd &&
-               d.level === h.level + 1 &&
-               d.headingNumber.startsWith(h.headingNumber + '.')
-        );
+        const descendants = headings.filter(d => d.line > h.line && d.line <= scopeEnd && d.level > h.level);
 
-        // 自Heading行や孫Heading行が含まれないことを確認
-        const hasSelfOrGrandchild = childHeadings.some(
-          c => c.line === h.line || c.level !== h.level + 1 || !c.headingNumber.startsWith(h.headingNumber + '.')
-        );
-        if (hasSelfOrGrandchild) {
-          console.warn('[Assertion Failed] 子Headingリストに自Headingまたは孫Headingが含まれています。');
-        }
-
-        const targets = childHeadings.filter(c => isLineFolded(editor, c.line));
-        if (targets.length > 0) {
+        // ↓ 子孫のうちcloseになっているHeading行で、最も上位レベル（レベル数値が最小）の
+        //   ものだけをOpenにして終了します。子孫がすべてOpen（またはh自身に子孫がない）
+        //   場合は何もせず終了します
+        const closedDescendants = descendants.filter(d => isLineFolded(editor, d.line));
+        if (closedDescendants.length > 0) {
+          const shallowestLevel = Math.min(...closedDescendants.map(d => d.level));
+          const targets = closedDescendants.filter(d => d.level === shallowestLevel);
           editor.trigger('tt', 'editor.unfold', { selectionLines: targets.map(t => t.line - 1) });
-          item.Result = `子${targets.length}件展開`;
+          item.Result = `上位Lv${shallowestLevel}を${targets.length}件展開`;
         } else {
           item.Result = '子すべて展開済み';
         }
@@ -147,22 +139,39 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
   // 4. TextEditor.CurrentFolding.Heading:CloseStepwise
   TTActions.Register({
     ActionID: 'TextEditor.CurrentFolding.Heading:CloseStepwise',
-    Description: '見出し行を段階的に閉じる（Open→Close、Close→兄弟をClose）',
+    Description: '見出し行を段階的に閉じる（子孫中の最も末端をClose、子孫すべてClose→自身をClose、Close→兄弟をClose）',
     Completion: (item) => {
       try {
         const ctx = getHeadingNavContext(item);
         if (!ctx) return;
-        const { editor, pos, headings } = ctx;
+        const { editor, model, pos, headings } = ctx;
         const h = getCurrentHeading(ctx, item);
         if (!h) return;
 
         // ↓ 現カーソル位置がHeading行にない場合は、カーソル位置のテキストが属するHeading行へ移動
+        //   （h自身は以降どの分岐でも畳まれないため、カーソルはここに置いたままで
+        //   　子孫のfold操作によって非表示にならず安全に可視のまま残る）
         if (pos.lineNumber !== h.line) {
           editor.setPosition({ lineNumber: h.line, column: 1 });
           editor.revealLineInCenterIfOutsideViewport(h.line);
         }
 
-        // ↓ 現カーソルがあるHeading行がOpenである場合は、Heading行をCloseにして終了します
+        // ↓ h配下（子Heading、孫Heading、以下）の見出しをすべて抽出する
+        const scopeEnd = headingScopeEnd(headings, headings.indexOf(h), model.getLineCount());
+        const descendants = headings.filter(d => d.line > h.line && d.line <= scopeEnd && d.level > h.level);
+
+        // ↓ 子孫のうちopenになっているHeading行で、最も末端レベル（レベル数値が最大）の
+        //   ものだけをCloseにして終了します
+        const openDescendants = descendants.filter(d => !isLineFolded(editor, d.line));
+        if (openDescendants.length > 0) {
+          const deepestLevel = Math.max(...openDescendants.map(d => d.level));
+          const targets = openDescendants.filter(d => d.level === deepestLevel);
+          editor.trigger('tt', 'editor.fold', { selectionLines: targets.map(t => t.line - 1) });
+          item.Result = `末端Lv${deepestLevel}を${targets.length}件折畳`;
+          return;
+        }
+
+        // ↓ 子孫がすべてClose（またはh自身に子孫がない）場合は、h自身をCloseにして終了します
         if (!isLineFolded(editor, h.line)) {
           editor.trigger('tt', 'editor.fold', { selectionLines: [h.line - 1] });
           item.Result = `L${h.line}折畳`;

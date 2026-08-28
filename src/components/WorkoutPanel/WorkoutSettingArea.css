@@ -251,6 +251,16 @@
   cursor: not-allowed;
 }
 
+.workout-setting-area__icon-btn--active {
+  background: rgba(247, 118, 142, 0.25);
+  color: #f7768e;
+}
+
+.workout-setting-area__icon-btn--active:hover:not(:disabled) {
+  background: rgba(247, 118, 142, 0.35);
+  color: #f7768e;
+}
+
 /* ── セクション区切り ──────────────────────────────── */
 .workout-setting-area__divider {
   height: 1px;

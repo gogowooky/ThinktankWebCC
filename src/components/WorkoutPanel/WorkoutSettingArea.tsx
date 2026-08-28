@@ -21,10 +21,14 @@ import {
   ArrowDownAZ,
   LayoutList,
   ListRestart,
+  Mic,
+  MicOff,
+  Eraser,
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
+import { TTVoiceInput, isVoiceInputSupported } from '../../views/TTVoiceInput';
 import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
 import { AiChatView } from '../ThinktankPanel/AiChatView';
@@ -154,7 +158,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 }: Props, ref) {
   const panelRef           = useRef<HTMLDivElement>(null);
   const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
-  const firstTexteditorRef = useRef<HTMLInputElement>(null);
+  const firstTexteditorRef = useRef<HTMLButtonElement>(null);
   const firstDatagridRef   = useRef<HTMLButtonElement>(null);
   const aiChatViewRef      = useRef<AiChatViewRef>(null);
 
@@ -293,7 +297,16 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const [isTagColorOpen,          setIsTagColorOpen]          = useState(true);
   const [isHighlightColorOpen,    setIsHighlightColorOpen]    = useState(true);
   const [isMemoSettingsOpen,      setIsMemoSettingsOpen]      = useState(true);
+  const [isEditSettingsOpen,      setIsEditSettingsOpen]      = useState(true);
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
+
+  // ── 音声入力 ───────────────────────────────────────────────────────────
+  const voiceSupported = useMemo(() => isVoiceInputSupported(), []);
+  const [isVoiceListening, setIsVoiceListening] = useState(TTVoiceInput.instance.isListening);
+  useEffect(() => TTVoiceInput.instance.onStatusChange(setIsVoiceListening), []);
+  const handleVoiceMicOn   = useCallback(() => { TTVoiceInput.instance.start(); }, []);
+  const handleVoiceMicOff  = useCallback(() => { TTVoiceInput.instance.stop(); }, []);
+  const handleVoiceEraser  = useCallback(() => { TTVoiceInput.instance.cancel(); }, []);
 
   return (
     <div ref={panelRef} className="workout-setting-area" style={{ width }} tabIndex={-1}>
@@ -541,20 +554,113 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
           </>
         ) : activeSettings === 'texteditor' ? (
           <>
+            {/* メモ操作 */}
             <div className="workout-setting-area__section">
-              <div 
+              <div
+                className="workout-setting-area__section-header"
+                onClick={() => setIsMemoSettingsOpen(!isMemoSettingsOpen)}
+              >
+                {isMemoSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>メモ</span>
+              </div>
+
+              {isMemoSettingsOpen && (
+                <div className="workout-setting-area__section-content">
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
+                    <button
+                      ref={firstTexteditorRef}
+                      className="workout-setting-area__icon-btn"
+                      onClick={onCreateMemo}
+                      data-tip="新規メモファイルを作成"
+                    >
+                      <FilePlus size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
+                    <button
+                      className="workout-setting-area__icon-btn"
+                      onClick={onReadMemo}
+                      data-tip="txt / md / xdoc を読み取って新規メモを作成"
+                    >
+                      <FileSpreadsheet size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
+                    <button
+                      className="workout-setting-area__icon-btn"
+                      onClick={onSaveMemo}
+                      data-tip="表示中のメモを .md ファイルで保存"
+                    >
+                      <Save size={16} className="ws-icon" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="workout-setting-area__divider" />
+
+            {/* 編集 */}
+            <div className="workout-setting-area__section">
+              <div
+                className="workout-setting-area__section-header"
+                onClick={() => setIsEditSettingsOpen(!isEditSettingsOpen)}
+              >
+                {isEditSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>編集</span>
+              </div>
+
+              {isEditSettingsOpen && (
+                <div className="workout-setting-area__section-content">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>音声入力</span>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className={`workout-setting-area__icon-btn${isVoiceListening ? ' workout-setting-area__icon-btn--active' : ''}`}
+                        onClick={handleVoiceMicOn}
+                        disabled={!voiceSupported}
+                        data-tip={voiceSupported ? '音声入力をONにする' : 'このブラウザは音声入力に対応していません'}
+                      >
+                        <Mic size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={handleVoiceMicOff}
+                        disabled={!voiceSupported}
+                        data-tip="音声入力をOFFにする"
+                      >
+                        <MicOff size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={handleVoiceEraser}
+                        disabled={!voiceSupported}
+                        data-tip="音声入力したテキストを取り消す"
+                      >
+                        <Eraser size={16} className="ws-icon" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="workout-setting-area__divider" />
+
+            <div className="workout-setting-area__section">
+              <div
                 className="workout-setting-area__section-header"
                 onClick={() => setIsDisplaySettingsOpen(!isDisplaySettingsOpen)}
               >
                 {isDisplaySettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>表示設定</span>
               </div>
-              
+
               {isDisplaySettingsOpen && (
                 <div className="workout-setting-area__section-content">
                   <label className="workout-setting-area__checkbox-label">
                     <input
-                      ref={firstTexteditorRef}
                       type="checkbox"
                       checked={panel.TextEditor.LineNumbers.IsVisible}
                       onChange={e => panel.SetTextEditorLineNumbersVisible(e.target.checked)}
@@ -855,53 +961,6 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                       </div>
                     );
                   })}
-                </div>
-              )}
-            </div>
-            <div className="workout-setting-area__divider" />
-
-            {/* メモ操作 */}
-            <div className="workout-setting-area__section">
-              <div
-                className="workout-setting-area__section-header"
-                onClick={() => setIsMemoSettingsOpen(!isMemoSettingsOpen)}
-              >
-                {isMemoSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>メモ</span>
-              </div>
-
-              {isMemoSettingsOpen && (
-                <div className="workout-setting-area__section-content">
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
-                    <button
-                      className="workout-setting-area__icon-btn"
-                      onClick={onCreateMemo}
-                      data-tip="新規メモファイルを作成"
-                    >
-                      <FilePlus size={16} className="ws-icon" />
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
-                    <button
-                      className="workout-setting-area__icon-btn"
-                      onClick={onReadMemo}
-                      data-tip="txt / md / xdoc を読み取って新規メモを作成"
-                    >
-                      <FileSpreadsheet size={16} className="ws-icon" />
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
-                    <button
-                      className="workout-setting-area__icon-btn"
-                      onClick={onSaveMemo}
-                      data-tip="表示中のメモを .md ファイルで保存"
-                    >
-                      <Save size={16} className="ws-icon" />
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
