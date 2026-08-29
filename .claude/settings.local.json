@@ -259,7 +259,11 @@
       "PowerShell(Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Get-Process -Id $_ -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime })",
       "PowerShell(Stop-Process -Id 15532 -Force -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Process -Id 15532 -ErrorAction SilentlyContinue)",
-      "WebFetch(domain:unpkg.com)"
+      "WebFetch(domain:unpkg.com)",
+      "Bash(grep -iE \"\\\\.json$\")",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(xargs -I{} sh -c 'echo \"$\\(grep -Ec \":\\\\s*any\\\\b|as any\" {}\\) {}\"')",
+      "Bash(awk -F: '{s+=$2} END {print s}')"
     ]
   }
 }
