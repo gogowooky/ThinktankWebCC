@@ -226,6 +226,14 @@ a {
   transform: translateX(-50%);
 }
 
+/* アイコン上方・左端をアイコン左端にそろえる */
+[data-tip-side="top-start"]::after {
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: auto;
+  transform: none;
+}
+
 /* 無効なボタンでもツールチップを表示するためのラッパー用 */
 .tooltip-wrapper {
   display: inline-flex;

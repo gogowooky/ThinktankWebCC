@@ -15,8 +15,12 @@ import {
   ChevronsLeftRightEllipsis,
   ChevronDown,
   ChevronRight,
+  File,
+  FileText,
+  FileClock,
   FilePlus,
   FileSpreadsheet,
+  DatabaseBackup,
   Save,
   ArrowDownAZ,
   LayoutList,
@@ -28,6 +32,7 @@ import {
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
+import { TTActions } from '../../views/TTActions';
 import { TTVoiceInput, isVoiceInputSupported } from '../../views/TTVoiceInput';
 import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
@@ -107,6 +112,35 @@ function AddIcon({ dir }: { dir: Dir }) {
     case 'down': transform = 'rotate(180deg)'; break;
   }
   return <GalleryThumbnails size={16} className="ws-icon" style={{ transform }} />;
+}
+
+/**
+ * lucide の `database-arrow-down`。現行 lucide-react (0.474) には未収録のため、
+ * lucide-static v1.35 の同名アイコンを lucide 互換のストロークSVGで再現する。
+ */
+function DatabaseArrowDown({ size = 16, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m16 19 3 3 3-3" />
+      <path d="M19 16v6" />
+      <path d="M21 12.536V5" />
+      <path d="M3 12A9 3 0 0 0 15.182 14.806" />
+      <path d="M3 5V19A9 3 0 0 0 13.318 21.968" />
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+    </svg>
+  );
 }
 
 // ── Ref ─────────────────────────────────────────────────────────────────
@@ -570,34 +604,67 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                 <div className="workout-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
-                    <button
-                      ref={firstTexteditorRef}
-                      className="workout-setting-area__icon-btn"
-                      onClick={onCreateMemo}
-                      data-tip="新規メモファイルを作成"
-                    >
-                      <FilePlus size={16} className="ws-icon" />
-                    </button>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
+                      <button
+                        ref={firstTexteditorRef}
+                        className="workout-setting-area__icon-btn"
+                        onClick={onCreateMemo}
+                        data-tip="新規メモファイルを作成"
+                        data-tip-side="top-start"
+                      >
+                        <File size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={onReadMemo}
+                        data-tip="docを読み取って新規メモファイルを作成"
+                        data-tip-side="top-start"
+                      >
+                        <FileText size={16} className="ws-icon" />
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
-                    <button
-                      className="workout-setting-area__icon-btn"
-                      onClick={onReadMemo}
-                      data-tip="txt / md / xdoc を読み取って新規メモを作成"
-                    >
-                      <FileSpreadsheet size={16} className="ws-icon" />
-                    </button>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={onSaveMemo}
+                        data-tip="表示中のメモを .md ファイルで保存"
+                        data-tip-side="top-start"
+                      >
+                        <Save size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('Application.Resource.ExportToLocal')}
+                        data-tip="BQ保存済みThinkファイルをローカルにエクスポート"
+                        data-tip-side="top-start"
+                      >
+                        <DatabaseArrowDown size={16} className="ws-icon" />
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
-                    <button
-                      className="workout-setting-area__icon-btn"
-                      onClick={onSaveMemo}
-                      data-tip="表示中のメモを .md ファイルで保存"
-                    >
-                      <Save size={16} className="ws-icon" />
-                    </button>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>巻戻</span>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('Application.Resource.RollbackFocusedThink')}
+                        data-tip="直前にフォーカスされたThinkファイル1つをBQで1時間前の状態に戻す"
+                        data-tip-side="top-start"
+                      >
+                        <FileClock size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('Application.Resource.RollbackAll')}
+                        data-tip="BQ全体を1時間前の状態に戻す"
+                        data-tip-side="top-start"
+                      >
+                        <DatabaseBackup size={16} className="ws-icon" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -624,6 +691,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                         onClick={handleVoiceMicOn}
                         disabled={!voiceSupported}
                         data-tip={voiceSupported ? '音声入力をONにする' : 'このブラウザは音声入力に対応していません'}
+                        data-tip-side="top-start"
                       >
                         <Mic size={16} className="ws-icon" />
                       </button>
@@ -632,6 +700,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                         onClick={handleVoiceMicOff}
                         disabled={!voiceSupported}
                         data-tip="音声入力をOFFにする"
+                        data-tip-side="top-start"
                       >
                         <MicOff size={16} className="ws-icon" />
                       </button>
@@ -640,6 +709,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                         onClick={handleVoiceEraser}
                         disabled={!voiceSupported}
                         data-tip="音声入力したテキストを取り消す"
+                        data-tip-side="top-start"
                       >
                         <Eraser size={16} className="ws-icon" />
                       </button>

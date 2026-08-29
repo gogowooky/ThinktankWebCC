@@ -689,6 +689,38 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // ── 巻戻（BQ time travel による1時間前への復元）──────────────────────────
+  // TODO: バックエンドに BigQuery time travel（FOR SYSTEM_TIME AS OF）を使う
+  //       復元APIを新設し、下記2アクションの中身を実装する。
+  //        - 単一Think:  直前にフォーカスされた file_id 1件のみを1時間前のレコードで上書き
+  //          （対象は WorkoutPanel.FocusedPane.FileHistory の先頭）
+  //        - BQ全体:     thinktank.vault 全体を1時間前のスナップショットで置換
+  //       現状はUIの受け皿のみで、実行しても復元は行われない。
+  TTActions.Register({
+    ActionID: 'Application.Resource.RollbackFocusedThink',
+    Description: '直前にフォーカスされたThinkファイル１つをBQで1時間前の状態に戻す',
+    Completion: (item) => {
+      const status = app.Status as any;
+      const msg = '巻戻（Think1件）: 未実装です';
+      if (status && typeof status.SetLastActionDisplay === 'function') {
+        status.SetLastActionDisplay(msg);
+      }
+      item.Result = `[未実装] ${item.ActionID}`;
+    },
+  });
+  TTActions.Register({
+    ActionID: 'Application.Resource.RollbackAll',
+    Description: 'BQ全体を1時間前の状態に戻す',
+    Completion: (item) => {
+      const status = app.Status as any;
+      const msg = '巻戻（BQ全体）: 未実装です';
+      if (status && typeof status.SetLastActionDisplay === 'function') {
+        status.SetLastActionDisplay(msg);
+      }
+      item.Result = `[未実装] ${item.ActionID}`;
+    },
+  });
+
   registerTextEditorCursorMoveActions(app);
   registerTextEditorHighlighterToolbarActions(app);
   registerTextEditorCursorContentActions(app);

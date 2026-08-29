@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Save, ChevronDown, ChevronRight, AArrowUp, AArrowDown } from 'lucide-react';
+import { Save, ChevronDown, ChevronRight, AArrowUp, AArrowDown, Columns2, Columns4 } from 'lucide-react';
 import { TTActions } from '../../views/TTActions';
 import './ThinktankSettingsView.css';
 
@@ -58,6 +58,10 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
     TTActions.Execute(actionId);
   }, []);
 
+  const handleMode = useCallback((actionId: 'Application.PanelDisplay.Mode:Simple' | 'Application.PanelDisplay.Mode:Normal') => {
+    TTActions.Execute(actionId);
+  }, []);
+
   const handleSave = useCallback(() => {
     const trimmed = value.trim() || 'vault';
     setValue(trimmed);
@@ -75,16 +79,16 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   return (
     <div className="tt-settings-view">
 
-      {/* ── 表示サイズ ── */}
+      {/* ── 表示 ── */}
       <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsZoomOpen(v => !v)}>
           {isZoomOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">表示サイズ</h2>
+          <h2 className="tt-settings-section__title">表示</h2>
         </div>
         {isZoomOpen && (
           <div className="tt-settings-zoom">
             <div className="tt-settings-zoom__row">
-              <span className="tt-settings-zoom__label">拡大</span>
+              <span className="tt-settings-zoom__label">サイズ</span>
               <button
                 className="tt-settings-zoom__icon"
                 onClick={() => handleZoom('Application.Display.Zoom:ZoomIn')}
@@ -93,9 +97,6 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
               >
                 <AArrowUp size={16} />
               </button>
-            </div>
-            <div className="tt-settings-zoom__row">
-              <span className="tt-settings-zoom__label">縮小</span>
               <button
                 className="tt-settings-zoom__icon"
                 onClick={() => handleZoom('Application.Display.Zoom:ZoomOut')}
@@ -103,6 +104,25 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
                 aria-label="縮小表示"
               >
                 <AArrowDown size={16} />
+              </button>
+            </div>
+            <div className="tt-settings-zoom__row">
+              <span className="tt-settings-zoom__label">モード</span>
+              <button
+                className="tt-settings-zoom__icon"
+                onClick={() => handleMode('Application.PanelDisplay.Mode:Simple')}
+                data-tip="簡易表示"
+                aria-label="簡易表示"
+              >
+                <Columns2 size={16} />
+              </button>
+              <button
+                className="tt-settings-zoom__icon"
+                onClick={() => handleMode('Application.PanelDisplay.Mode:Normal')}
+                data-tip="全表示"
+                aria-label="全表示"
+              >
+                <Columns4 size={16} />
               </button>
             </div>
           </div>

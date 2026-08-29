@@ -122,9 +122,10 @@
   background: var(--color-success, #2e7d32);
 }
 
-/* ── 表示サイズ ──
-   寸法（ラベル幅 28px / アイコンボタン 28px角 / アイコン 16px）は
+/* ── 表示 ──
+   アイコンボタン 28px角 / アイコン 16px は
    Workout>Workout設定>エリアの「分割」行に合わせる。
+   ラベルは「サイズ」の3文字が収まるよう 40px。
    配色は当パネルが明るい地色のため、白系ではなく他の設定テキストと同じ
    var(--text-muted) を使う（.tt-settings-section__desc 等と同じ）。 */
 
@@ -137,12 +138,13 @@
 .tt-settings-zoom__row {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
 .tt-settings-zoom__label {
   font-size: calc(10px * var(--tt-font-scale, 1));
   color: var(--text-muted);
-  width: 28px;
+  width: 40px;
   flex-shrink: 0;
 }
 

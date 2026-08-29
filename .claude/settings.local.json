@@ -258,7 +258,8 @@
       "Bash(nslookup oauth2.googleapis.com)",
       "PowerShell(Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Get-Process -Id $_ -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, StartTime })",
       "PowerShell(Stop-Process -Id 15532 -Force -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-Process -Id 15532 -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Process -Id 15532 -ErrorAction SilentlyContinue)",
+      "WebFetch(domain:unpkg.com)"
     ]
   }
 }
