@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.36",
+  "version": "1.4.37",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "032a1cd",
-  "commitDateTime": "2026-08-29-155232",
-  "commitMessage": "feat: Thinktank設定「表示」にモード切替、Workout>TextEditor設定に巻戻/エクスポートを追加"
+  "commitId": "2cb35fc",
+  "commitDateTime": "2026-08-29-172703",
+  "commitMessage": "docs: プロジェクト全体の大規模レビュー報告書を追加"
 }
