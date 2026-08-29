@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.35",
+  "version": "1.4.36",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "fc766ca",
-  "commitDateTime": "2026-08-28-223728",
-  "commitMessage": "fix: iOSでのオートフィル候補（鍵/カード/位置情報アイコン）表示を抑制"
+  "commitId": "032a1cd",
+  "commitDateTime": "2026-08-29-155232",
+  "commitMessage": "feat: Thinktank設定「表示」にモード切替、Workout>TextEditor設定に巻戻/エクスポートを追加"
 }
