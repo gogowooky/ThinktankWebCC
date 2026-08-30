@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.38",
+  "version": "1.4.39",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "d22d642",
-  "commitDateTime": "2026-08-30-170140",
-  "commitMessage": "test: Vitest 導入と純粋関数の単体テスト、CI(型チェック+テスト)を追加"
+  "commitId": "0525c61",
+  "commitDateTime": "2026-08-30-171726",
+  "commitMessage": "fix(ci): package-lock.json を再生成し、CI を Node 22 / actions v5 に修正"
 }
