@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.39",
+  "version": "1.4.40",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "0525c61",
-  "commitDateTime": "2026-08-30-171726",
-  "commitMessage": "fix(ci): package-lock.json を再生成し、CI を Node 22 / actions v5 に修正"
+  "commitId": "395fe1b",
+  "commitDateTime": "2026-08-30-174808",
+  "commitMessage": "chore(lint): ESLint 最小構成を導入し、no-floating-promises 違反25件を修正"
 }
