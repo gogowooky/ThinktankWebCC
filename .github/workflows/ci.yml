@@ -13,11 +13,14 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20' # Dockerfile（本番ランタイム）と揃える
+          # electron / vitest / jsdom などのツールが Node 22.12+ を要求するため 22 を使う。
+          # 本番サーバー(dist-server)は Dockerfile の node:20 で動くが、server/ の型チェックは
+          # コードを実行しないので Node バージョンに依存しない。
+          node-version: '22'
           cache: npm
 
       - run: npm ci
