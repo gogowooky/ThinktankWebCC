@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.40",
+  "version": "1.4.41",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "395fe1b",
-  "commitDateTime": "2026-08-30-174808",
-  "commitMessage": "chore(lint): ESLint 最小構成を導入し、no-floating-promises 違反25件を修正"
+  "commitId": "ba2d797",
+  "commitDateTime": "2026-08-30-180038",
+  "commitMessage": "docs: Phase 1・2（テスト/Lint/CI 基盤）の完了記録を追加"
 }
