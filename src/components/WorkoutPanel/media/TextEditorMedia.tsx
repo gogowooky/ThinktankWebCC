@@ -432,7 +432,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       if (!think) return;
       const body = editor.getValue();
       savedRef.current = body;
-      onSave(reconstructContent(think, body), think.ID);
+      // 保存失敗時は App.tsx の unhandledrejection ハンドラーが SyncState='error' を出す。
+      void onSave(reconstructContent(think, body), think.ID);
     });
 
     // 状態の復元

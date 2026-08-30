@@ -62,7 +62,7 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
     // スクロール位置の復元が畳む前の高さを基準にしてしまうため。
     let cancelled = false;
     // renderMarkdownSections 内で DOMPurify によるサニタイズ済み
-    renderMarkdownSections(body, closedSourceLines, offset).then((result) => {
+    void renderMarkdownSections(body, closedSourceLines, offset).then((result) => {
       if (!cancelled) setHtml(result);
     });
     return () => { cancelled = true; };
@@ -131,7 +131,8 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
       tabIndex={-1}
       className="markdown-media"
       onScroll={handleScroll}
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: setHtml 前に DOMPurify を通している
+      // html は setHtml 前に必ず renderMarkdownSections → DOMPurify を通している
+      // （サニタイズ経路: src/utils/markdownSanitize.ts）
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

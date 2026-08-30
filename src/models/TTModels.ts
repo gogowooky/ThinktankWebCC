@@ -29,8 +29,10 @@ export class TTModels extends TTCollection {
     this.Vault = new TTVault('vault');
     this.AddItem(this.Vault);
 
-    this.Vault.LoadCache();
-    this.LoadCache();
+    // 失敗は握り潰され（LoadCache 内で 3 回リトライ + ログ）、通知されない設計。
+    // 呼び出し側は結果を待たない。
+    void this.Vault.LoadCache();
+    void this.LoadCache();
   }
 
   public static get Instance(): TTModels {

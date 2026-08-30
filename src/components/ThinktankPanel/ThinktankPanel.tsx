@@ -63,7 +63,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
       .then(r => {
         console.log(`[Sync] done: +${r.added} updated:${r.updated} skip:${r.skipped}`);
         app.Status.SetSyncState('synced');
-        app.RefreshAll();
+        return app.RefreshAll();
       })
       .catch(e => {
         console.error('[Sync] failed:', e);

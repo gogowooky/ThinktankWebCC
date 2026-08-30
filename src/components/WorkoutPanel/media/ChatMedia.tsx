@@ -63,7 +63,9 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
     if (!think) return;
     const content = buildContent(msgs);
     if (content === savedContentRef.current) return;
-    onSave(content, think.ID).then(() => {
+    // 保存失敗時は App.tsx の unhandledrejection ハンドラーが SyncState='error' を出す。
+    // ローカルでのリトライ・ユーザー通知は PROJECT_REVIEW_REPORT.md D-1 / D-9 の課題。
+    void onSave(content, think.ID).then(() => {
       savedContentRef.current = content;
       onDirtyChange(false);
     });

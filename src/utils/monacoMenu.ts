@@ -282,7 +282,7 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
 
     if (typeof source === 'function') {
       showMessage('読み込み中...');
-      source().then(loaded => {
+      void source().then(loaded => {
         if (!overlay.isConnected) return;
         applyNodes(loaded);
       });

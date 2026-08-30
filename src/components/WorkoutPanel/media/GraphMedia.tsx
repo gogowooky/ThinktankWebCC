@@ -76,7 +76,7 @@ export const GraphMedia = forwardRef<GraphMediaRef, MediaProps>(function GraphMe
 
   // react-force-graph 動的ロード
   useEffect(() => {
-    loadForceGraph().then(() => {
+    void loadForceGraph().then(() => {
       setLoaded(true);
       forceUpdate(n => n + 1);
     });

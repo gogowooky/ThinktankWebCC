@@ -29,6 +29,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # ESLint（最小構成。error は no-floating-promises と rules-of-hooks のみ。
+      # warning は許容 = 既存の exhaustive-deps 16件では落ちない）
+      - name: Lint
+        run: npm run lint
+
       # 純粋関数の単体テスト（vitest run）
       - name: Unit tests
         run: npm run test

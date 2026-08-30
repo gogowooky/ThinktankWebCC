@@ -129,7 +129,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   );
   useEffect(() => {
     if (!panel.BundleID) { setThinksInBundle([]); return; }
-    vault.GetThinksForBundleAsync(panel.BundleID).then(newThinks => {
+    void vault.GetThinksForBundleAsync(panel.BundleID).then(newThinks => {
       setThinksInBundle(newThinks);
       vault.NotifyUpdated();
     });
@@ -196,7 +196,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     if (!panel.BundleID) return;
     const bundle = vault.GetThink(panel.BundleID);
     if (bundle?.IsMetaOnly) {
-      bundle.LoadContent().then(() => vault.NotifyUpdated());
+      void bundle.LoadContent().then(() => vault.NotifyUpdated());
     }
   }, [panel.BundleID, vault]);
 

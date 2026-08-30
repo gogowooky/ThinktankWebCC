@@ -114,7 +114,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
     setIsDragOver(false);
     const id = e.dataTransfer.getData('application/x-thought-id');
     if (id) {
-      handleBundleDrop(id);
+      void handleBundleDrop(id);
     }
   }, [handleBundleDrop]);
 

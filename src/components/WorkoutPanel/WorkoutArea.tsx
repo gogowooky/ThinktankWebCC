@@ -83,7 +83,7 @@ export function WorkoutArea({
           vault.AddOnUpdate(updateKey, () => {
             if (vault.IsLoaded) {
               vault.RemoveOnUpdate(updateKey);
-              loadAndRestore();
+              void loadAndRestore();
             }
           });
         } else if (!cancelled) {
@@ -104,7 +104,7 @@ export function WorkoutArea({
       }
     };
 
-    loadAndRestore();
+    void loadAndRestore();
 
     return () => {
       cancelled = true;
@@ -198,11 +198,11 @@ export function WorkoutArea({
       if (!editor) return;
       TTShortcutManager.instance.setActiveEditor(editor);
       TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-      TTActions.Execute('WorkoutPanel.DroppedFile.ID:Insert');
+      void TTActions.Execute('WorkoutPanel.DroppedFile.ID:Insert');
       return;
     }
     TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'load-replace', areaId: area.ID });
-    TTActions.Execute('WorkoutPanel.DroppedFile.ID:Load');
+    void TTActions.Execute('WorkoutPanel.DroppedFile.ID:Load');
   }, [area.ID]);
 
   // 保存ハンドラー（TextEditorMedia から Ctrl+S・自動保存で呼ばれる）

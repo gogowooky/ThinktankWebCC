@@ -39,7 +39,7 @@ export const OverviewSettingsView = forwardRef<OverviewSettingsViewRef, Props>(f
     setContentLoaded(false);
     if (!think) return;
     if (think.IsMetaOnly) {
-      think.LoadContent().then(() => setContentLoaded(true));
+      void think.LoadContent().then(() => setContentLoaded(true));
     } else {
       setContentLoaded(true);
     }
@@ -65,7 +65,7 @@ export const OverviewSettingsView = forwardRef<OverviewSettingsViewRef, Props>(f
   }, [think, titleValue]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSaveTitle();
+    if (e.key === 'Enter') void handleSaveTitle();
   }, [handleSaveTitle]);
 
   if (!think) {

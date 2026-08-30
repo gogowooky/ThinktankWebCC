@@ -869,7 +869,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
       setAllItems(vault.GetThinks().filter(t => t.ContentType !== 'bundle'));
       return;
     }
-    vault.GetThinksForBundleAsync(think.ID).then(setAllItems);
+    void vault.GetThinksForBundleAsync(think.ID).then(setAllItems);
   }, [think?.ID, vault]);
 
   const filtered = useMemo<TTThink[]>(() => {

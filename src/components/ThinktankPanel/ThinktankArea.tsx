@@ -450,7 +450,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   useEffect(() => {
     if (pendingSearchQueryRef.current !== null && searchQuery === pendingSearchQueryRef.current) {
       pendingSearchQueryRef.current = null;
-      handleSearch();
+      void handleSearch();
     }
   }, [searchQuery, handleSearch]);
 

@@ -736,7 +736,7 @@ export function WorkoutPanel({ app }: Props) {
       if (editor) {
         TTShortcutManager.instance.setActiveEditor(editor);
         TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-        TTActions.Execute('WorkoutPanel.DroppedFile.ID:Insert');
+        void TTActions.Execute('WorkoutPanel.DroppedFile.ID:Insert');
         return;
       }
       // ドロップ位置に応じたPane配置（overlay）は、ゴースト表示のためにここで既に計算済みの
@@ -746,7 +746,7 @@ export function WorkoutPanel({ app }: Props) {
           ? { thinkId, kind: 'load-place', overlayType: 'add', dir: overlay.dir }
           : { thinkId, kind: 'load-place', overlayType: 'split', dir: overlay.dir, areaId: overlay.areaId }
       );
-      TTActions.Execute('WorkoutPanel.DroppedFile.ID:Load');
+      void TTActions.Execute('WorkoutPanel.DroppedFile.ID:Load');
       return;
     }
 

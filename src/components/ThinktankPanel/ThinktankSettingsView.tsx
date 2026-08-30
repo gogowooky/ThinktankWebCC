@@ -55,11 +55,11 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   const [isZoomOpen,     setIsZoomOpen]     = useState(true);
 
   const handleZoom = useCallback((actionId: 'Application.Display.Zoom:ZoomIn' | 'Application.Display.Zoom:ZoomOut') => {
-    TTActions.Execute(actionId);
+    void TTActions.Execute(actionId);
   }, []);
 
   const handleMode = useCallback((actionId: 'Application.PanelDisplay.Mode:Simple' | 'Application.PanelDisplay.Mode:Normal') => {
-    TTActions.Execute(actionId);
+    void TTActions.Execute(actionId);
   }, []);
 
   const handleSave = useCallback(() => {

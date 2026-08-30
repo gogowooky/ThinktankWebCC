@@ -275,7 +275,10 @@
       "Bash(rm -f package-lock.json)",
       "Bash(rm -rf node_modules)",
       "Bash(echo \"CI-EXIT: $?\")",
-      "Bash(echo \"TC-EXIT: $?\")"
+      "Bash(echo \"TC-EXIT: $?\")",
+      "Bash(npx eslint *)",
+      "Bash(echo \"ESLINT-EXIT: $?\")",
+      "Bash(echo \"npm ci exit: $?\")"
     ]
   }
 }

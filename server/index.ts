@@ -129,4 +129,7 @@ async function start() {
   }
 }
 
-start();
+start().catch((err) => {
+  console.error('[Server] fatal startup error:', err);
+  process.exitCode = 1;
+});
