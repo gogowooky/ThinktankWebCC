@@ -263,7 +263,13 @@
       "Bash(grep -iE \"\\\\.json$\")",
       "Bash(echo \"EXIT: $?\")",
       "Bash(xargs -I{} sh -c 'echo \"$\\(grep -Ec \":\\\\s*any\\\\b|as any\" {}\\) {}\"')",
-      "Bash(awk -F: '{s+=$2} END {print s}')"
+      "Bash(awk -F: '{s+=$2} END {print s}')",
+      "Bash(npm -v)",
+      "Bash(npx vitest *)",
+      "Bash(echo \"TYPECHECK EXIT: $?\")",
+      "Bash(echo \"BUILD EXIT: $?\")",
+      "Bash(git check-ignore *)",
+      "Bash(npm ci *)"
     ]
   }
 }

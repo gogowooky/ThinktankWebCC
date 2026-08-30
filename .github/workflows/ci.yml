@@ -1,0 +1,35 @@
+name: CI
+
+# push / PR のたびに型チェックと単体テストを走らせる。
+# 目的: マージ前に「型崩れ」「純粋関数の退行」を機械的に検出する
+#       （PROJECT_REVIEW_REPORT.md D-6 / F1-6, F1-7 への対応の第一歩）。
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Dockerfile（本番ランタイム）と揃える
+          cache: npm
+
+      - run: npm ci
+
+      # フロント + サーバーの両 tsconfig を型チェック（build:server 忘れの検出も兼ねる）
+      - name: Typecheck
+        run: npm run typecheck
+
+      # 純粋関数の単体テスト（vitest run）
+      - name: Unit tests
+        run: npm run test
+
+      # 本番ビルドが壊れていないかの確認（任意だが早期検出に有効）
+      - name: Production build
+        run: npm run build
