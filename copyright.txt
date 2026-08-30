@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.37",
+  "version": "1.4.38",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "2cb35fc",
-  "commitDateTime": "2026-08-29-172703",
-  "commitMessage": "docs: プロジェクト全体の大規模レビュー報告書を追加"
+  "commitId": "d22d642",
+  "commitDateTime": "2026-08-30-170140",
+  "commitMessage": "test: Vitest 導入と純粋関数の単体テスト、CI(型チェック+テスト)を追加"
 }
