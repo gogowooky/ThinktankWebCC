@@ -182,15 +182,31 @@ stale ファイルが lint 対象になっていた。recommended の巨大な�
 
 `PROJECT_REVIEW_REPORT.md` §D / §F の Phase 0:
 
-| ID | 概要 | 重要度 |
-|---|---|---|
-| D-1 | `beforeunload` 不在 + 保存失敗リトライなし → 未保存データ損失 | Critical |
-| D-2 | BigQuery MERGE 無条件・バージョン照合なし → 複数端末の同時編集で無警告上書き | High |
-| D-3 | AI ツールが Gemini 分岐のみ → 既定 `anthropic` で「AI が自動で Think 登録」が動かない | High |
-| D-4 | `fetchUrlMeta` の SSRF（プライベート IP 帯ブロックなし） | High |
-| D-5 | AI 書き込みが `SAFE_ID_RE` 検証を迂回、ID 形式が `parseBundle` と不整合 | High |
+| ID | 概要 | 重要度 | 状態 |
+|---|---|---|---|
+| D-1 | `beforeunload` 不在 → 未保存データ損失 | Critical | **一部対応（2026-08-31）**。下記参照 |
+| D-2 | BigQuery MERGE 無条件・バージョン照合なし → 複数端末の同時編集で無警告上書き | High | 未対応 |
+| D-3 | AI ツールが Gemini 分岐のみ → 既定 `anthropic` で「AI が自動で Think 登録」が動かない | High | 未対応（本番は `AI_PROVIDER=gemini` のため実害は限定的） |
+| D-4 | `fetchUrlMeta` の SSRF（プライベート IP 帯ブロックなし） | High | 未対応 |
+| D-5 | AI 書き込みが `SAFE_ID_RE` 検証を迂回、ID 形式が `parseBundle` と不整合 | High | 未対応 |
 
-→ これらは新機能追加の前に着手することを引き続き推奨。テスト基盤ができたので、修正時の回帰は今なら検出できる（例: D-5 修正 → `thinkFormat.test.ts` を更新）。
+**D-1 一部対応（2026-08-31）— "無警告消失" を止めた**
+
+- `src/utils/unsavedGuard.ts`（新規）: 開いている TextEditor ペインの「保留中の自動保存を即実行する」関数のレジストリ。
+- `src/App.tsx`: `beforeunload` で `area.IsDirty` を確認し、未保存があればブラウザ標準の離脱確認で止める。
+  `pagehide` / `visibilitychange:hidden` で保留中の自動保存（3秒デバウンス待ち）を先行フラッシュ。
+  `window.__ttHasUnsavedChanges()` / `window.__ttFlushAllSaves()` を公開。
+- `electron/main.cjs`: `win.on('close')` で上記 window 関数を `executeJavaScript` で呼び、未保存があれば
+  「保存して終了 / 保存せず終了 / キャンセル」ダイアログを出す（Electron は browser の beforeunload だけでは
+  ダイアログを出さないため）。
+- `src/components/WorkoutPanel/media/TextEditorMedia.tsx`: 既存の autoSaveRef のフラッシュ関数を
+  レジストリにも登録し、Promise を返すように変更（呼び出し側が完了を待てる）。
+- 検証: `unsavedGuard.test.ts`（5件）+ 実ブラウザで「dirty → beforeunload が preventDefault」「clean → 素通し」を確認。
+
+**未対応（D-1 の残り）**: 保存失敗時の指数バックオフ再試行・`online` イベントでのフラッシュ。
+これは D-9（`SyncState` が error から回復しない）と一体で対応するのが素直。
+
+→ D-2〜D-5 は新機能追加の前に着手することを引き続き推奨。テスト基盤ができたので、修正時の回帰は今なら検出できる（例: D-5 修正 → `thinkFormat.test.ts` を更新）。
 
 ### Lint 強化 — Phase 3 で対応済み / 残り
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain, session, dialog } = require('electron');
 const path   = require('path');
 const fs     = require('fs');
 const net    = require('net');
@@ -418,6 +418,49 @@ function createWindow(startUrl) {
 
   win.webContents.on('did-fail-load', (_e, code, desc, url) => {
     console.error(`[main] 画面の読み込みに失敗: ${desc} (${code}) ${url}`);
+  });
+
+  // 未保存の変更があるまま閉じられるのを防ぐ（PROJECT_REVIEW_REPORT.md D-1）。
+  // ブラウザの beforeunload だけでは Electron はダイアログを出さないため、
+  // メインプロセス側で確認する。判定・フラッシュはレンダラー（App.tsx）が公開する
+  // window 関数を executeJavaScript で呼び出す（IPC 配線を増やさない）。
+  let forceClose = false;
+  win.on('close', (e) => {
+    if (forceClose) return;
+    e.preventDefault();
+    (async () => {
+      let dirty = false;
+      try {
+        dirty = await win.webContents.executeJavaScript(
+          '!!(window.__ttHasUnsavedChanges && window.__ttHasUnsavedChanges())'
+        );
+      } catch (err) {
+        console.error('[main] 未保存チェックに失敗:', err);
+      }
+      if (!dirty) { forceClose = true; win.close(); return; }
+
+      const { response } = await dialog.showMessageBox(win, {
+        type: 'warning',
+        buttons: ['保存して終了', '保存せず終了', 'キャンセル'],
+        defaultId: 0,
+        cancelId: 2,
+        noLink: true,
+        message: '未保存の変更があります',
+        detail: 'エディタに保存されていない変更があります。',
+      });
+      if (response === 2) return; // キャンセル
+      if (response === 0) {
+        try {
+          await win.webContents.executeJavaScript(
+            '(window.__ttFlushAllSaves ? window.__ttFlushAllSaves() : null)', true
+          );
+        } catch (err) {
+          console.error('[main] 保存フラッシュに失敗:', err);
+        }
+      }
+      forceClose = true;
+      win.close();
+    })();
   });
 
   // TT_SELFTEST=1 のときだけ、レンダラーから API へ実際に到達できるかを検証する

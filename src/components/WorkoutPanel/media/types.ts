@@ -33,8 +33,11 @@ export interface MediaProps {
   onTitleChange?: (title: string) => void;
   /** 外部からコンテンツが変更されたときにエディタを再マウントするためのカウンター */
   refreshKey?: number;
-  /** ビュー切り替え時に TextEditorMedia が自動保存を実行するための関数を登録するRef */
-  autoSaveRef?: React.MutableRefObject<(() => void) | null>;
+  /**
+   * ビュー切り替え時に TextEditorMedia が自動保存を実行するための関数を登録する Ref。
+   * 関数は保留中の保存の Promise を返す（呼び出し側は完了を待てる）。
+   */
+  autoSaveRef?: React.MutableRefObject<(() => void | Promise<unknown>) | null>;
   /**
    * AI Chat（ChatMedia）が使うホストモデル。WorkoutSettingArea の選択（panel単位）を
    * そのまま渡す。

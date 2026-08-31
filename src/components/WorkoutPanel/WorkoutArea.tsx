@@ -57,7 +57,7 @@ export function WorkoutArea({
 }: Props) {
   const [isDirty,         setIsDirty]         = useState(false);
   const [loadedResourceId, setLoadedResourceId] = useState<string | null>(null);
-  const autoSaveRef = useRef<(() => void) | null>(null);
+  const autoSaveRef = useRef<(() => void | Promise<unknown>) | null>(null);
   const mediaRef = useRef<AnyMediaRef | null>(null);
   const contentReady = loadedResourceId === area.ResourceID;
 
@@ -324,7 +324,7 @@ export function WorkoutArea({
   const handleMediaChange  = useCallback((type: MediaType) => {
     // TextEditor から離れるとき、未保存の内容を自動保存する（isDirty 不問、内部で差分チェック）
     if (area.MediaType === 'texteditor' || area.MediaType === 'workout') {
-      autoSaveRef.current?.();
+      void autoSaveRef.current?.();
     }
     onMediaTypeChange(area.ID, type);
   }, [area.MediaType, area.ID, onMediaTypeChange]);

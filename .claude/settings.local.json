@@ -285,7 +285,11 @@
       "Bash(node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/4b4471d3-ca41-4a56-a1bc-76bb9a0dfca9/scratchpad/fix-bom.mjs\")",
       "Bash(git diff *)",
       "Bash(grep -E \"^\\(\\\\+\\\\+\\\\+|@@|[+-] *$|[+-].*eslint-disable|[+-].*\\\\], *$|[+-].*\\\\\\); *$\\)\")",
-      "Bash(echo \"=== TC exit: $? ===\")"
+      "Bash(echo \"=== TC exit: $? ===\")",
+      "Bash(curl -s -o /dev/null -w \"5173:%{http_code} \" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"5174:%{http_code}\\\\n\" http://localhost:5174/)",
+      "Bash(curl -s http://localhost:5174/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5174/src/main.tsx)"
     ]
   }
 }

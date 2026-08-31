@@ -26,6 +26,7 @@ import {
 import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
+import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
 import './TextEditorMedia.css';
 
 /** Monaco の等倍時 fontSize / lineHeight（表示文字サイズ倍率の基準値）。 */
@@ -549,24 +550,34 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   }, []);
 
   useEffect(() => {
-    if (!autoSaveRef) return;
-    autoSaveRef.current = () => {
+    // 保留中の編集を即保存する。Promise を返すので呼び出し側は完了を待てる
+    // （ビュー切替・ウィンドウ終了・タブ非表示時のフラッシュに使う。D-1）。
+    const flush = (): Promise<void> | void => {
       const editor = editorRef.current;
       if (!editor || !think) return;
       const body = editor.getValue();
       const currentSaved = getEditorValue(think);
       if (body === currentSaved) return; // think.Content と一致 → 保存不要
       const nextContent = reconstructContent(think, body);
-      onSave(nextContent, think.ID)
+      return onSave(nextContent, think.ID)
         .then(() => {
           savedRef.current = body;
         })
-        .catch((err: any) => {
+        .catch((err: unknown) => {
           console.error('[TextEditorMedia] Auto save failed:', err);
         });
     };
-    return () => { autoSaveRef.current = null; };
-  }, [autoSaveRef, think, onSave]);
+
+    if (autoSaveRef) autoSaveRef.current = flush;
+    // ウィンドウ終了時などの一括フラッシュ用レジストリにも登録する
+    const guardKey = `${areaId ?? 'pane'}-${think?.ID ?? 'none'}`;
+    registerPaneFlush(guardKey, flush);
+
+    return () => {
+      if (autoSaveRef) autoSaveRef.current = null;
+      unregisterPaneFlush(guardKey);
+    };
+  }, [autoSaveRef, areaId, think, onSave]);
 
   // ── 動的スタイルの生成 ───────────────────────────────────────────────────
 

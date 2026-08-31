@@ -14,6 +14,7 @@ import { TTShortcutManager } from './views/TTShortcutManager'
 import { registerFocusedPanelActions } from './views/TTFocusedPanelActions'
 import { getFocusName } from './utils/getFocusName'
 import { isIPhone } from './utils/deviceInfo'
+import { flushAllPanes } from './utils/unsavedGuard'
 
 export default function App() {
   useEffect(() => {
@@ -53,6 +54,29 @@ export default function App() {
       app.Status.SetSyncState('error')
     }
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    // ②' 未保存データ損失の防止（PROJECT_REVIEW_REPORT.md D-1）
+    //   - 開いているペインに未保存の変更（area.IsDirty）があればウィンドウ終了を確認で止める
+    //   - タブ非表示・終了直前には保留中の自動保存（3秒デバウンス待ち）を先行実行する
+    //   - Electron のパッケージ版は electron/main.cjs の close ハンドラーが下の window 関数を使う
+    const hasUnsavedChanges = () => app.WorkoutPanel.Areas.some(a => a.IsDirty)
+    window.__ttHasUnsavedChanges = hasUnsavedChanges
+    window.__ttFlushAllSaves = () => flushAllPanes()
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      void flushAllPanes()
+      if (hasUnsavedChanges()) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    const handlePageHide = () => { void flushAllPanes() }
+    const handleFlushOnHide = () => {
+      if (document.visibilityState === 'hidden') void flushAllPanes()
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('pagehide', handlePageHide)
+    document.addEventListener('visibilitychange', handleFlushOnHide)
 
     // ③ グローバルキーボード / マウス / ホイールショートカットリスナー登録
     const handleKeyDown   = (e: KeyboardEvent) => TTShortcutManager.instance.handleKeyDown(e)
@@ -115,6 +139,11 @@ export default function App() {
       document.removeEventListener('focusin',     handleFocusIn)
       window.removeEventListener('blur',          handleWindowBlur)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handlePageHide)
+      document.removeEventListener('visibilitychange', handleFlushOnHide)
+      delete window.__ttHasUnsavedChanges
+      delete window.__ttFlushAllSaves
       cancelAnimationFrame(_focusRaf)
     }
   }, [])
