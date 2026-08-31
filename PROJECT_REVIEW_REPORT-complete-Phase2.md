@@ -184,11 +184,11 @@ stale ファイルが lint 対象になっていた。recommended の巨大な�
 
 | ID | 概要 | 重要度 | 状態 |
 |---|---|---|---|
-| D-1 | `beforeunload` 不在 → 未保存データ損失 | Critical | **一部対応（2026-08-31）**。下記参照 |
-| D-2 | BigQuery MERGE 無条件・バージョン照合なし → 複数端末の同時編集で無警告上書き | High | 未対応 |
+| D-1 | `beforeunload` 不在 → 未保存データ損失 | Critical | **一部対応（2026-08-31, `03469a1`）**。下記参照 |
+| D-2 | BigQuery MERGE 無条件・バージョン照合なし → 複数端末の同時編集で無警告上書き | High | **対応（2026-08-31, `fdd34cd`）**。下記参照 |
 | D-3 | AI ツールが Gemini 分岐のみ → 既定 `anthropic` で「AI が自動で Think 登録」が動かない | High | 未対応（本番は `AI_PROVIDER=gemini` のため実害は限定的） |
-| D-4 | `fetchUrlMeta` の SSRF（プライベート IP 帯ブロックなし） | High | 未対応 |
-| D-5 | AI 書き込みが `SAFE_ID_RE` 検証を迂回、ID 形式が `parseBundle` と不整合 | High | 未対応 |
+| D-4 | `fetchUrlMeta` の SSRF（プライベート IP 帯ブロックなし） | High | **対応（2026-08-31, `f95daef`）**。下記参照 |
+| D-5 | AI 書き込みが検証を迂回、ID 形式が `parseBundle` と不整合 | High | **対応（2026-08-31, `1757345`）**。下記参照 |
 
 **D-1 一部対応（2026-08-31）— "無警告消失" を止めた**
 
@@ -206,7 +206,41 @@ stale ファイルが lint 対象になっていた。recommended の巨大な�
 **未対応（D-1 の残り）**: 保存失敗時の指数バックオフ再試行・`online` イベントでのフラッシュ。
 これは D-9（`SyncState` が error から回復しない）と一体で対応するのが素直。
 
-→ D-2〜D-5 は新機能追加の前に着手することを引き続き推奨。テスト基盤ができたので、修正時の回帰は今なら検出できる（例: D-5 修正 → `thinkFormat.test.ts` を更新）。
+**D-4 対応（2026-08-31, `f95daef`）— SSRF を塞いだ**
+
+- `server/services/ssrfGuard.ts`（新規）: `isBlockedIp()`（RFC1918 / ループバック / リンクローカル
+  169.254 / ULA / CGN / マルチキャストを IPv4・IPv6 判定）、`assertPublicHttpUrl()`（http/https 検証 +
+  名前解決した全 IP を検証）。
+- `ChatService.fetchUrlMeta`: `fetch` を `redirect:'manual'` にし、ホップごとに `assertPublicHttpUrl` を通す。
+- server テストを CI に組み込み（`vite.config.ts` の vitest include に `server/**/*.test.ts`、
+  `server/tsconfig.json` は `*.test.ts` を exclude）。
+- 限界: undici は接続時に再解決するため DNS リバインドは完全には防げない。
+
+**D-5 対応（2026-08-31, `1757345`）— 書き込み検証の集約と AI ID の整合**
+
+- `server/services/vaultKey.ts`（新規）: `validateVaultKey`（`file_id` / `category`）、`normalizeThinkId`
+  （角括弧除去）、`stripBracketedIdsInBundleContent`。
+- `BigQueryService.save` の最下層で検証（HTTP ルートと AI ツールの両方を守る）。
+- `bigqueryRoutes` は `category` を enum 検証、日付 ID 抽出をサフィックス対応。
+- `ChatService` の 4 ツールで ID を正規化、bundle content の角括弧を除去。
+- `src/utils/thinkFormat.ts`: `THINK_ID_RE` を新設し、`parseBundle` が `-memo` / `-a3f9`
+  サフィックス ID・角括弧付き ID を認識するように（AI が作った Bundle のリンクが解決するようになった）。
+
+**D-2 対応（2026-08-31, `fdd34cd`）— 同時編集の無警告上書きを防止（楽観ロック）**
+
+- 既存の MERGE クエリは触らず、保存ルートの事前チェックで衝突を検出。
+- `SavePayload.baseUpdatedAt`（読み込み時のサーバー `updatedAt`）+ `StorageConflictError` を新設。
+- `bigqueryRoutes POST /files`: `baseUpdatedAt` より新しいレコードがあれば 409。
+- `BigQueryStorageBackend.save`: 409 → `StorageConflictError` を throw。
+- `TTThink.SaveContent`: `force` でない限り `baseUpdatedAt` を送る。
+- `App.tsx`: `StorageConflictError` を捕捉し確認ダイアログ（OK=自分の変更で上書き / キャンセル=再読み込み）。
+- `src/utils/saveError.ts`: 保存失敗ログの共通ヘルパー（衝突は握り潰さず再送出）。
+- `server/services/vaultVersion.ts` + test: TIMESTAMP 正規化と新旧比較（純粋関数）。
+- 対象は BigQuery のみ。Local / Electron（単一マシン）は `baseUpdatedAt` を無視。
+- 限界: 照合〜保存の間の TOCTOU は残る（数時間空くシナリオのリスクは大幅減）。
+
+**Phase 0 の残り**: D-1 のリトライ部分、D-3（本番は gemini のため優先度低）。
+テスト基盤ができたので、修正時の回帰は今なら検出できる。
 
 ### Lint 強化 — Phase 3 で対応済み / 残り
 
@@ -241,4 +275,8 @@ stale ファイルが lint 対象になっていた。recommended の巨大な�
 | `0525c61` | CI 修正: `package-lock.json` 再生成 + Node 22 / actions v5 | v1.4.39 |
 | `395fe1b` | Phase 2: ESLint 最小構成 + `no-floating-promises` 25件修正 | v1.4.40 |
 | `ba2d797` | この完了記録を追加 | v1.4.41 |
-| （本コミット） | Phase 3: ESLint recommended 土台化 + ConfigKey 補完 + `reportUnusedDisableDirectives` 復帰 | — |
+| `3415119` | Phase 3: ESLint recommended 土台化 + ConfigKey 補完 + `reportUnusedDisableDirectives` 復帰 | v1.4.42 |
+| `03469a1` | D-1（一部）: 未保存データ損失の終了ガード | v1.4.43 |
+| `f95daef` | D-4: `fetchUrlMeta` の SSRF 対策 | — |
+| `1757345` | D-5: Vault 書き込み検証の集約 + AI 生成 ID の整合 | — |
+| `fdd34cd` | D-2: 同時編集の無警告上書きを防ぐ楽観ロック | — |
