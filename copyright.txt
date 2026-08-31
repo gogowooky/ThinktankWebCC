@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.42",
+  "version": "1.4.43",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "3415119",
-  "commitDateTime": "2026-08-31-181211",
-  "commitMessage": "chore(lint): ESLint を recommended 土台に格上げ（Phase 3）+ ConfigKey 補完"
+  "commitId": "03469a1",
+  "commitDateTime": "2026-08-31-192748",
+  "commitMessage": "feat(save): 未保存データ損失を防ぐ終了ガードを追加（D-1 一部対応）"
 }
