@@ -81,14 +81,21 @@ describe('bundle 形式の往復', () => {
     expect(parsed.filter.keyword).toBe('設計');
   });
 
-  // ── D-5（既知の不整合）を固定するテスト ────────────────────────────────
-  // parseBundle の ID 判定は /^\d{4}-\d{2}-\d{2}-\d{6}$/ で、サフィックス付き ID
-  // （AI が .thinktank/thinktank.md の指示どおり生成する `-memo` 等）にマッチしない。
-  // その結果、ID 行がキーワードフィルタとして解釈される。
-  // これは PROJECT_REVIEW_REPORT.md D-5 の症状。修正時にこのテストを更新すること。
-  it('【現状の挙動】サフィックス付き ID は ID として認識されずキーワード扱いになる', () => {
-    const parsed = parseBundle('束\n* 2026-07-01-232001-memo');
+  // ── D-5（対応済み 2026-08-31）────────────────────────────────────────
+  it('サフィックス付き ID（AI 生成の -memo / 衝突回避の -a3f9 等）を ID として認識する', () => {
+    const parsed = parseBundle('束\n* 2026-07-01-232001-memo\n* 2026-07-01-232002-a3f9');
+    expect(parsed.ids).toEqual(['2026-07-01-232001-memo', '2026-07-01-232002-a3f9']);
+    expect(parsed.filter.keyword).toBeUndefined();
+  });
+
+  it('角括弧付きの ID 行も許容する', () => {
+    const parsed = parseBundle('束\n* [2026-07-01-232001-memo]');
+    expect(parsed.ids).toEqual(['2026-07-01-232001-memo']);
+  });
+
+  it('数字を含まない `* 行` は引き続きキーワード扱い', () => {
+    const parsed = parseBundle('束\n* 設計メモ');
     expect(parsed.ids).toEqual([]);
-    expect(parsed.filter.keyword).toBe('2026-07-01-232001-memo');
+    expect(parsed.filter.keyword).toBe('設計メモ');
   });
 });

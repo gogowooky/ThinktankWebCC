@@ -5,6 +5,7 @@
  */
 
 import { BigQuery } from '@google-cloud/bigquery';
+import { validateVaultKey } from './vaultKey.js';
 
 const DATASET_ID = 'thinktank';
 const TABLE_ID   = 'vault';
@@ -218,6 +219,14 @@ export class BigQueryService {
 
   async save(record: VaultRecord, retries = 3): Promise<BqResult<null>> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
+
+    // 書き込み前の検証（PROJECT_REVIEW_REPORT.md D-5）。HTTP ルートと AI ツールの
+    // 両方がここを通るため、不正な file_id / category はこの最下層で弾く。
+    const keyCheck = validateVaultKey(record.file_id, record.category, {
+      isDeleted: record.is_deleted === true,
+    });
+    if (!keyCheck.ok) return { success: false, error: keyCheck.error };
+
     try {
       const query = `
         MERGE ${this.tbl} AS target

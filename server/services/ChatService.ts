@@ -11,6 +11,7 @@ import type { FunctionDeclaration } from '@google/generative-ai';
 import type { Response } from 'express';
 import { bigqueryService } from './BigQueryService.js';
 import { assertPublicHttpUrl } from './ssrfGuard.js';
+import { normalizeThinkId, stripBracketedIdsInBundleContent } from './vaultKey.js';
 
 export interface ChatRequestMessage {
   role: 'user' | 'assistant';
@@ -42,7 +43,7 @@ const GEMINI_TOOL_DECLARATIONS: FunctionDeclaration[] = [
       properties: {
         id:      { type: SchemaType.STRING, description: '一意ID（形式: yyyy-MM-dd-HHmmss-bundle）' },
         title:   { type: SchemaType.STRING, description: '主題名（例: 「妻の誕生日プレゼント企画」）' },
-        content: { type: SchemaType.STRING, description: '本文（形式: [Title]\\n* [think-id-1]\\n* [think-id-2]）' },
+        content: { type: SchemaType.STRING, description: '本文（形式: 1行目にタイトル、2行目以降に "* <think-id>" を1行ずつ。角括弧は付けない）' },
       },
       required: ['id', 'title', 'content'],
     },
@@ -166,7 +167,7 @@ async function executeGeminiTool(
   switch (name) {
 
     case 'saveThink': {
-      const id       = String(args['id']       ?? '');
+      const id       = normalizeThinkId(args['id']);
       const category = String(args['category'] ?? 'memo');
       const title    = String(args['title']    ?? '無題');
       const content  = String(args['content']  ?? '');
@@ -183,9 +184,10 @@ async function executeGeminiTool(
     }
 
     case 'saveBundle': {
-      const id      = String(args['id']      ?? '');
+      const id      = normalizeThinkId(args['id']);
       const title   = String(args['title']   ?? '無題のBundle');
-      const content = String(args['content'] ?? '');
+      // AI が `* [<id>]` と角括弧付きで書きがちなので外す（parseBundle は素の ID を期待）
+      const content = stripBracketedIdsInBundleContent(String(args['content'] ?? ''));
       const res = await bigqueryService.save({
         file_id: id, file_type: 'md', category: 'bundle', title, content,
         keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
@@ -198,7 +200,7 @@ async function executeGeminiTool(
     }
 
     case 'saveTable': {
-      const id      = String(args['id']      ?? '');
+      const id      = normalizeThinkId(args['id']);
       const title   = String(args['title']   ?? '無題のTable');
       const content = String(args['content'] ?? '');
       const res = await bigqueryService.save({
@@ -213,9 +215,9 @@ async function executeGeminiTool(
     }
 
     case 'updateBundle': {
-      const id        = String(args['id'] ?? '');
+      const id        = normalizeThinkId(args['id']);
       const appendIds = Array.isArray(args['appendIds'])
-        ? (args['appendIds'] as unknown[]).map(String)
+        ? (args['appendIds'] as unknown[]).map(normalizeThinkId).filter(Boolean)
         : [];
       const existing = await bigqueryService.getRecord(id);
       if (!existing.success || !existing.data) throw new Error(`Bundle [${id}] が見つかりません`);

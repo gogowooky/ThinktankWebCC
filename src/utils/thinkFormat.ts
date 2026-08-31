@@ -4,7 +4,6 @@
  */
 
 import type { ChatMessage } from '../types';
-import { computeDateRange } from './dateUtils';
 
 // ════════════════════════════════════════════════════════════════════════
 // #region chat 形式 (ContentType = 'chat')
@@ -195,6 +194,12 @@ export interface BundleContent {
 }
 
 /**
+ * Think ID とみなす形式。yyyy-MM-dd-HHmmss、および末尾サフィックス（AI 生成の -memo /
+ * 衝突回避の -a3f9 等）を許容する。PROJECT_REVIEW_REPORT.md D-5。
+ */
+export const THINK_ID_RE = /^\d{4}-\d{2}-\d{2}-\d{6}(?:-[A-Za-z0-9]+)?$/;
+
+/**
  * bundle 本文を解析して構造化した BundleContent を返す
  */
 export function parseBundle(content: string): BundleContent {
@@ -216,18 +221,19 @@ export function parseBundle(content: string): BundleContent {
   for (const line of bodyLines) {
     const s = line.trim();
     if (s.startsWith('* ')) {
-      const id = s.slice(2).trim();
+      // 角括弧付き（AI が付けがち）も許容し、日付 ID + 任意サフィックス（-memo / -a3f9 等）を ID とみなす
+      const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
       if (id) {
-        if (/^\d{4}-\d{2}-\d{2}-\d{6}$/.test(id)) {
+        if (THINK_ID_RE.test(id)) {
           ids.push(id);
         } else {
           result.filter.keyword = result.filter.keyword ? `${result.filter.keyword} ${id}` : id;
         }
       }
     } else if (s.startsWith('- ')) {
-      const id = s.slice(2).trim();
+      const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
       if (id) {
-        if (/^\d{4}-\d{2}-\d{2}-\d{6}$/.test(id)) {
+        if (THINK_ID_RE.test(id)) {
           excludeIds.push(id);
         }
       }

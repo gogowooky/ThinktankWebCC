@@ -8,6 +8,7 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { bigqueryService } from '../services/BigQueryService.js';
 import type { VaultRecord } from '../services/BigQueryService.js';
+import { isValidCategory, SAFE_FILE_ID_RE } from '../services/vaultKey.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -48,7 +49,8 @@ let exportStatus: ExportStatus = {
 
 // id / contentType はそのままファイルパス（category ディレクトリ名 + ファイル名）に
 // 使われるため、パストラバーサル（"../" 等）を防ぐために厳格な文字種のみ許可する。
-const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,200}$/;
+// 実体は server/services/vaultKey.ts（BigQueryService と共有）。
+const SAFE_ID_RE = SAFE_FILE_ID_RE;
 
 export function createBigQueryRoutes() {
   const router = Router();
@@ -95,11 +97,15 @@ export function createBigQueryRoutes() {
     if (!id || !contentType) {
       res.status(400).json({ error: 'id, contentType are required' }); return;
     }
-    if (!SAFE_ID_RE.test(id) || !SAFE_ID_RE.test(contentType)) {
-      res.status(400).json({ error: 'id/contentType contain invalid characters' }); return;
+    if (!SAFE_ID_RE.test(id)) {
+      res.status(400).json({ error: 'id contains invalid characters' }); return;
+    }
+    if (!isValidCategory(contentType)) {
+      res.status(400).json({ error: `unsupported contentType: ${contentType}` }); return;
     }
     let fileDate = new Date();
-    const dateMatch = id.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})$/);
+    // 日付 ID（サフィックス -memo, -a3f9 等を含む場合も先頭の日時部分を採用）
+    const dateMatch = id.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})(?:-\w+)?$/);
     if (dateMatch) {
       const [_, yyyy, MM, dd, HH, mm, ss] = dateMatch;
       fileDate = new Date(`${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}+09:00`);
