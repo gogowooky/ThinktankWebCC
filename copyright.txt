@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.41",
+  "version": "1.4.42",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "ba2d797",
-  "commitDateTime": "2026-08-30-180038",
-  "commitMessage": "docs: Phase 1・2（テスト/Lint/CI 基盤）の完了記録を追加"
+  "commitId": "3415119",
+  "commitDateTime": "2026-08-31-181211",
+  "commitMessage": "chore(lint): ESLint を recommended 土台に格上げ（Phase 3）+ ConfigKey 補完"
 }
