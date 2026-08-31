@@ -79,7 +79,7 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
 
   const systemPrompt = useMemo(
     () => buildSystemPrompt(think?.Name ?? '', think?.Content ?? ''),
-    [think?.Name, think?.Content], // eslint-disable-line react-hooks/exhaustive-deps
+    [think?.Name, think?.Content],
   );
 
   const handleChatSend = useCallback(async (text: string) => {

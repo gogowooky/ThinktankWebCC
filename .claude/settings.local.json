@@ -278,7 +278,14 @@
       "Bash(echo \"TC-EXIT: $?\")",
       "Bash(npx eslint *)",
       "Bash(echo \"ESLINT-EXIT: $?\")",
-      "Bash(echo \"npm ci exit: $?\")"
+      "Bash(echo \"npm ci exit: $?\")",
+      "Bash(gcloud config *)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -AccessModel IAP)",
+      "Bash(grep -vE '^\\\\.*$')",
+      "Bash(node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/4b4471d3-ca41-4a56-a1bc-76bb9a0dfca9/scratchpad/fix-bom.mjs\")",
+      "Bash(git diff *)",
+      "Bash(grep -E \"^\\(\\\\+\\\\+\\\\+|@@|[+-] *$|[+-].*eslint-disable|[+-].*\\\\], *$|[+-].*\\\\\\); *$\\)\")",
+      "Bash(echo \"=== TC exit: $? ===\")"
     ]
   }
 }

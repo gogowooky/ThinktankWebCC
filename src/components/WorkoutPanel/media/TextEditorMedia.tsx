@@ -776,7 +776,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
       // 全角スペースの装飾
       if (editorSettings.showFullWidthSpace) {
-        let regex = /\u3000/g;
+        const regex = /\u3000/g;
         let spaceMatch;
         while ((spaceMatch = regex.exec(lineContent)) !== null) {
           const startCol = spaceMatch.index + 1;
@@ -803,7 +803,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
           words.forEach(word => {
             const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            let regex = new RegExp(escapedWord, 'g');
+            const regex = new RegExp(escapedWord, 'g');
             let wordMatch;
             while ((wordMatch = regex.exec(lineContent)) !== null) {
               const startCol = wordMatch.index + 1;

@@ -173,7 +173,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       }
     }, 50);
     return () => clearTimeout(timer);
-  }, [panel.ViewMode]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [panel.ViewMode]);
 
   // 全種別検索フラグの監視
   useEffect(() => {

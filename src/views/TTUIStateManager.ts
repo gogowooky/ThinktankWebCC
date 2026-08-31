@@ -119,7 +119,12 @@ export type ConfigKey =
   | 'ThinktankPanel.Filter.CursorPosID'
   | 'OverviewPanel.Filter.CursorPos'
   | 'OverviewPanel.Filter.CursorPosID'
-  | string; // プリセットキーなどの動的拡張を許容
+  // `| string` だと上記リテラルが string に潰れて補完が一切効かなくなる。
+  // `(string & {})` なら「既知キーの補完を出しつつ任意の文字列も受ける」
+  // （色設定・プリセット等の動的キーのため任意文字列は引き続き許容）。
+  // 注: これは補完のための緩和であり、typo の型レベル検出はしない。
+  // 完全な typo 検出には PROP_SPECS を単一の真実として再構成する必要がある（D-8）。
+  | (string & {});
 
 export type ConfigListener = (key: ConfigKey, value: string) => void;
 
@@ -197,7 +202,9 @@ function getFocusedArea(app: TTApplication): TTWorkoutArea | null {
   return id ? (app.WorkoutPanel.GetArea(id) ?? null) : null;
 }
 
-const PROP_SPECS: Record<ConfigKey, PropSpec> = {
+// 静的な文字列インデックス（色設定・プリセット等の動的キーを許容するため）。
+// ConfigKey は呼び出し側の補完のためだけの型で、PROP_SPECS の網羅は強制しない。
+const PROP_SPECS: Record<string, PropSpec> = {
 
   // ── ThinktankPanel ──────────────────────────────────────────────────────
   'ThinktankPanel.Area.IsOpen': {
@@ -1179,7 +1186,7 @@ export class TTUIStateManager {
 
     // 通常の値変更：正規表現で検証
     if (pattern.test(value)) {
-      let finalValue = value;
+      const finalValue = value;
       spec.set(this._app, finalValue);
     }
   }

@@ -295,7 +295,6 @@ export function WorkoutArea({
       inlineStyles:        pickInlineStyles(panel?.TextEditor.ColorStatus),
       foldingHeaderStyle:  pickColorStyle(FOLDING_HEADER_STATUS_ID, panel?.TextEditor.ColorStatus),
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
        panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
        panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,

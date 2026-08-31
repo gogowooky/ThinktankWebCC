@@ -150,7 +150,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
     }
 
     return parts.join('\n');
-  }, [panel.LinkedBundleID, panel.LinkedThinkID, vault]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [panel.LinkedBundleID, panel.LinkedThinkID, vault]);
 
   return (
     <div className="rethink-area">

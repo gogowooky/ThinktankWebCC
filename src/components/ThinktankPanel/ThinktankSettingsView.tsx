@@ -12,7 +12,7 @@ export interface ThinktankSettingsViewRef {
   focus: () => void;
 }
 
-interface Props {}
+type Props = Record<never, never>; // props なし
 
 const LS_KEY_VALUE   = 'tt-vault-name';
 const LS_KEY_HISTORY = 'tt-vault-name-history';

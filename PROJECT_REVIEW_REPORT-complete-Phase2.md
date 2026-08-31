@@ -1,13 +1,13 @@
-# レビュー対応 完了記録 — Phase 1・2（テスト / Lint / CI 基盤）
+# レビュー対応 完了記録 — Phase 1・2・3（テスト / Lint / CI 基盤）
 
-**対象**: `PROJECT_REVIEW_REPORT.md` の **D-6 / F1-6 / F1-7**（「テスト・Lint・CI がゼロ」への対応）
-**実施日**: 2026-08-30
+**対象**: `PROJECT_REVIEW_REPORT.md` の **D-6 / D-8 / F1-6 / F1-7**（「テスト・Lint・CI がゼロ」＋ 型の緩さ）
+**実施日**: 2026-08-30（Phase 1・2）／ 2026-08-31（Phase 3）
 **ブランチ**: `TTWeb260526`
-**状態**: 完了。CI 3 回連続 green（`19b70da` 時点で全ステップ通過）
+**状態**: 完了。CI green 継続。
 
 > このドキュメントは「テスト/Lint/CI 基盤」だけの完了記録である。
 > `PROJECT_REVIEW_REPORT.md` の Phase 0 ブロッカー（D-1〜D-5）や、
-> Phase 1/2 に挙がっていた他項目（beforeunload、楽観ロック、FilterPanel 統合、
+> レビュー §F の他項目（beforeunload、楽観ロック、FilterPanel 統合、
 > React.lazy 化 等）は**未着手**。§E を参照。
 
 ---
@@ -64,6 +64,52 @@ push / pull_request
 ```
 
 Node 22 の理由: `electron@42` / `vitest@4` / `jsdom` が Node 22.12+ を要求。本番サーバー（`dist-server`）は Dockerfile の `node:20` で動くが、型チェックはコードを実行しないので影響なし。
+
+### Phase 3 — ESLint を recommended 土台へ / ConfigKey の補完 / disable 検出の復帰（2026-08-31）
+
+Phase 2 は「recommended セット不採用・error 2 本だけ」だった。Phase 3 で `eslint` +
+`typescript-eslint` の **recommended を土台に採用**し、既存コードに大量に出るものは warn に固定、
+ノイズなし（自動修正済み・件数 0）のものを error に格上げした。
+
+**ルール構成（`eslint.config.js`）**
+
+| レベル | ルール | 状態 |
+|---|---|---|
+| **error** | `@typescript-eslint/no-floating-promises` | 既存 0（Phase 2 で25件修正済み） |
+| **error** | `react-hooks/rules-of-hooks` | 既存 0 |
+| **error** | `prefer-const` | 3件を `--fix` で修正 → 0 |
+| **error** | `no-irregular-whitespace`（コメント/文字列/テンプレは除外） | BOM 正規表現1件を `﻿` エスケープに修正 → 0 |
+| **error** | `@typescript-eslint/no-empty-object-type` | `interface Props {}` 1件を `Record<never,never>` に → 0 |
+| **error** | recommended 由来で既存 0 のもの（`no-unreachable` / `no-unused-expressions` / `ban-ts-comment` / `no-require-imports` 等） | 新規混入のみ止める |
+| warn | `@typescript-eslint/no-explicit-any`（111件） | 負債の可視化 |
+| warn | `@typescript-eslint/no-unused-vars`（30件、`^_` は除外） | 一部は本物の dead code |
+| warn | `no-useless-escape`（5件） | ESLint が誤修正リスクで自動修正しない仕様のため手動対応まで warn |
+| warn | `no-useless-assignment`（1件） | |
+| warn | `react-hooks/exhaustive-deps`（16件） | Phase 2 から不変 |
+
+**`--fix` の副作用**: 実際には不要だった `// eslint-disable-line react-hooks/exhaustive-deps` を
+4 箇所自動削除（依存配列は元々網羅されていた）。
+
+**`ignores` に追加**: `.agent/**` `.claude/**`（過去セッションの git worktree。数千の
+stale ファイルが lint 対象になっていた。recommended の巨大な違反数の正体はこれだった）。
+
+**`reportUnusedDisableDirectives`**: `off` → **`warn` に復帰**。recommended を入れたことで
+`no-explicit-any` 等の disable コメントが「使用中」になり、誤検出のノイズが消えたため。
+
+**ConfigKey の `| string`（D-8 の一部）**
+
+`src/views/TTUIStateManager.ts` の `ConfigKey` 末尾 `| string` → **`| (string & {})`** に変更。
+- 効果: `applyProperty('...')` 等の呼び出しで**既知キー約70個の補完が効く**ようになった
+  （`| string` だとリテラル union が string に潰れて補完ゼロだった）。
+- `PROP_SPECS` の型注釈は `Record<ConfigKey, PropSpec>` → `Record<string, PropSpec>` に
+  （`(string & {})` は文字列インデックス signature を与えないため）。
+- **限界**: これは補完のための緩和であり、typo の**型レベル拒否はしない**。完全な typo 検出には
+  `PROP_SPECS` を単一の真実として再構成し、リテラル union を実キーと同期させる必要がある（§E に残す）。
+
+**ActionID**: `export type ActionID = string` のまま（`src/views/TTAction.ts` のコメントが
+理由を明記: アクションは多数ファイルで動的登録されるため単一のリテラル一覧を持てない）。
+実行時の `[未定義]` 表示が安全機構。将来 `DefaultShortcut.md` の action がすべて登録済みかを
+検証するテストを足すのが実務的（§E）。
 
 ### 副産物として得た教訓
 
@@ -146,13 +192,22 @@ Node 22 の理由: `electron@42` / `vitest@4` / `jsdom` が Node 22.12+ を要�
 
 → これらは新機能追加の前に着手することを引き続き推奨。テスト基盤ができたので、修正時の回帰は今なら検出できる（例: D-5 修正 → `thinkFormat.test.ts` を更新）。
 
-### Phase 3（Lint 強化 — 急がない）
+### Lint 強化 — Phase 3 で対応済み / 残り
 
-- recommended ルールの段階導入（`prefer-const` → `no-explicit-any` を warn 固定 → …）。
-- `--fix` で自動修正できるもの（164 件）を一括適用してから警告を絞る。
-- `reportUnusedDisableDirectives` を `off` → `warn` に戻す（recommended 導入と同時）。
-- Monaco 用の拡張 interface を 1 本定義して `any` を集約（`TextEditorMedia.tsx` の 27 件が主対象）。
-- `ConfigKey` の `| string` を `ConfigKey | (string & {})` にして typo を型で検出。
+**対応済み（2026-08-31、§A 参照）**
+- recommended（eslint + typescript-eslint）を土台に採用。error/warn を仕分け。
+- `prefer-const` / `no-empty-object-type` / BOM 正規表現を修正して error 化。
+- `reportUnusedDisableDirectives` を `warn` に復帰。
+- `ConfigKey` の `| string` → `| (string & {})`（補完が効くように）。
+
+**残り（急がない）**
+- warn の削減: `no-explicit-any`（111）を段階的に減らして warn→error。
+  Monaco 用の拡張 interface を 1 本定義すると `TextEditorMedia.tsx` の分がまとめて消える。
+- `no-unused-vars`（30）を精査 — 一部は本物の dead code。
+- `no-useless-escape`（5）の正規表現を手で潰して error 化。
+- **D-8 の本丸**: `PROP_SPECS` を単一の真実に再構成し、`ConfigKey` のリテラル union を
+  実キーと同期（今の union には廃止済みキーが約29個混じっている）。これで typo の型レベル拒否が可能に。
+- `ActionID` の安全網: `DefaultShortcut.md` の全 action が `TTActions` に登録済みかを検証するテスト。
 
 ### テスト拡充（機能追加のたびに）
 
@@ -169,3 +224,5 @@ Node 22 の理由: `electron@42` / `vitest@4` / `jsdom` が Node 22.12+ を要�
 | `d22d642` | Phase 1: Vitest + テスト59件 + CI | v1.4.38 |
 | `0525c61` | CI 修正: `package-lock.json` 再生成 + Node 22 / actions v5 | v1.4.39 |
 | `395fe1b` | Phase 2: ESLint 最小構成 + `no-floating-promises` 25件修正 | v1.4.40 |
+| `ba2d797` | この完了記録を追加 | v1.4.41 |
+| （本コミット） | Phase 3: ESLint recommended 土台化 + ConfigKey 補完 + `reportUnusedDisableDirectives` 復帰 | — |

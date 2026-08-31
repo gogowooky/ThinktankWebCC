@@ -462,7 +462,7 @@ export function WorkoutPanel({ app }: Props) {
 
       if (file.name.toLowerCase().endsWith('.csv')) {
         const text  = await file.text();
-        const lines = text.replace(/^﻿/, '').split(/\r?\n/).filter(l => l.trim());
+        const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim());
         if (lines.length > 0) {
           const columns = parseCsvLine(lines[0]);
           const rows    = lines.slice(1).map(parseCsvLine);
