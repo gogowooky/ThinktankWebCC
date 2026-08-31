@@ -123,6 +123,8 @@ export class TTThink extends TTObject {
         keywords:    this.Keywords,
         relatedIds:  this.RelatedIDs,
         metadata:    this.Metadata,
+        // 楽観ロック（D-2）。force 時は照合をスキップして自分の変更で上書きする。
+        baseUpdatedAt: force ? undefined : (this.UpdatedAt || undefined),
       });
       // 保存成功後: サーバーが返した updatedAt を反映
       if (meta.updatedAt) {

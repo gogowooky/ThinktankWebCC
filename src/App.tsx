@@ -15,6 +15,7 @@ import { registerFocusedPanelActions } from './views/TTFocusedPanelActions'
 import { getFocusName } from './utils/getFocusName'
 import { isIPhone } from './utils/deviceInfo'
 import { flushAllPanes } from './utils/unsavedGuard'
+import { StorageConflictError } from './services/storage/IStorageBackend'
 
 export default function App() {
   useEffect(() => {
@@ -49,7 +50,32 @@ export default function App() {
     // 呼び出し元で個別に catch されていない箇所があるため、未処理の Promise rejection を
     // ここで一括捕捉し、ステータスバーの同期エラー表示（既存の SyncState='error' 導線）で
     // ユーザーに知らせる。以前はここで何も起きず、保存失敗が完全に無音だった。
+    // 楽観ロックの衝突（PROJECT_REVIEW_REPORT.md D-2）は専用の確認ダイアログで扱う。
+    // 同じ衝突で連続表示しないよう、対応中の thinkId を覚えておく。
+    let conflictPromptOpen = false
+    const handleConflict = (err: StorageConflictError) => {
+      if (conflictPromptOpen) return
+      conflictPromptOpen = true
+      const think = app.Models.Vault.GetThink(err.thinkId)
+      const name  = think?.Name || err.thinkId
+      const ok = window.confirm(
+        `「${name}」はサーバー側でも更新されています。\n\n` +
+        `［OK］ 自分の変更で上書きする\n` +
+        `［キャンセル］ ページを再読み込みしてサーバー版を取得する（このメモの未保存の変更は失われます）`,
+      )
+      if (ok) {
+        void think?.SaveContent(true).finally(() => { conflictPromptOpen = false })
+      } else {
+        window.location.reload()
+      }
+    }
+
     const handleUnhandledRejection = (e: PromiseRejectionEvent) => {
+      if (e.reason instanceof StorageConflictError) {
+        e.preventDefault()
+        handleConflict(e.reason)
+        return
+      }
       console.error('[App] Unhandled promise rejection:', e.reason)
       app.Status.SetSyncState('error')
     }

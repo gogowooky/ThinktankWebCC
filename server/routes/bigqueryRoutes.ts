@@ -9,6 +9,7 @@ import type { Request, Response } from 'express';
 import { bigqueryService } from '../services/BigQueryService.js';
 import type { VaultRecord } from '../services/BigQueryService.js';
 import { isValidCategory, SAFE_FILE_ID_RE } from '../services/vaultKey.js';
+import { isServerNewer } from '../services/vaultVersion.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -88,11 +89,12 @@ export function createBigQueryRoutes() {
 
   // POST /api/bq/files  ← 保存（Upsert）
   router.post('/files', async (req: Request, res: Response) => {
-    const { id, contentType, title, content, keywords, relatedIds, metadata } = req.body as {
+    const { id, contentType, title, content, keywords, relatedIds, metadata, baseUpdatedAt } = req.body as {
       id: string; contentType: string;
       title: string; content: string;
       keywords?: string; relatedIds?: string;
       metadata?: any;
+      baseUpdatedAt?: string;
     };
     if (!id || !contentType) {
       res.status(400).json({ error: 'id, contentType are required' }); return;
@@ -112,6 +114,19 @@ export function createBigQueryRoutes() {
     }
     const fileTimeStr = fileDate.toISOString();
     const nowStr = new Date().toISOString();
+
+    // 楽観ロック（PROJECT_REVIEW_REPORT.md D-2）: baseUpdatedAt が渡され、かつサーバー側の
+    // 現在レコードがそれより新しければ、無警告上書きせず 409 を返す。
+    if (baseUpdatedAt) {
+      const existing = await bigqueryService.getRecord(id);
+      if (existing.success && existing.data && isServerNewer(baseUpdatedAt, existing.data.updated_at)) {
+        const serverUpdatedAt = typeof existing.data.updated_at === 'object' && existing.data.updated_at !== null
+          ? (existing.data.updated_at as { value: string }).value
+          : String(existing.data.updated_at);
+        res.status(409).json({ error: 'conflict', serverUpdatedAt });
+        return;
+      }
+    }
 
     const record: VaultRecord = {
       file_id:     id,

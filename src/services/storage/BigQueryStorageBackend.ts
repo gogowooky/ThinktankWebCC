@@ -5,6 +5,7 @@
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import { StorageConflictError } from './IStorageBackend';
 import { splitContent } from '../../utils/thinkFormat';
 import { apiFetch } from '../apiClient';
 
@@ -37,8 +38,13 @@ export class BigQueryStorageBackend implements IStorageBackend {
         keywords:    payload.keywords || null,
         relatedIds:  payload.relatedIds || null,
         metadata:    payload.metadata || null,
+        baseUpdatedAt: payload.baseUpdatedAt || undefined,
       }),
     });
+    if (res.status === 409) {
+      const j = await res.json().catch(() => ({})) as { serverUpdatedAt?: string };
+      throw new StorageConflictError(payload.id, j.serverUpdatedAt ?? '');
+    }
     if (!res.ok) throw new Error(`BQ save failed: ${res.status}`);
     return res.json() as Promise<ThinkMeta>;
   }

@@ -17,6 +17,7 @@ import { useHighlight } from '../../contexts/HighlightContext';
 import { WorkoutMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
+import { reportSaveError } from '../../utils/saveError';
 import { FOLDING_HEADER_STATUS_ID, isUnset, pickColorStyle, pickIndexedStyles, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
@@ -132,11 +133,11 @@ export function WorkoutArea({
         const currentThink = vault.GetThink(area.ResourceID);
         if (currentThink) {
           e.preventDefault();
-          // メタデータだけでも強制保存
-          currentThink.SaveContent(true).then(() => {
+          // 本文・メタデータを保存（楽観ロックの照合を通す。衝突は reportSaveError が再送出）
+          currentThink.SaveContent().then(() => {
             setIsDirty(false);
           }).catch(err => {
-            console.error('[WorkoutArea] Global Ctrl+S metadata save failed:', err);
+            reportSaveError('[WorkoutArea] Global Ctrl+S save failed:', err);
           });
         }
       }

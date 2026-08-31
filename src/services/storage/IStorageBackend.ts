@@ -24,6 +24,23 @@ export interface SavePayload {
   keywords:    string;
   relatedIds:  string;
   metadata?:   Record<string, any>;
+  /**
+   * この Think を読み込んだ時点のサーバー側 updatedAt。指定すると、保存前にサーバーが
+   * それより新しいレコードを持っていた場合に StorageConflictError で弾く（楽観ロック。
+   * PROJECT_REVIEW_REPORT.md D-2）。現状 BigQuery バックエンドのみ対応。
+   */
+  baseUpdatedAt?: string;
+}
+
+/** 楽観ロックの衝突（サーバー側に自分の知らない更新がある）*/
+export class StorageConflictError extends Error {
+  constructor(
+    public readonly thinkId: string,
+    public readonly serverUpdatedAt: string,
+  ) {
+    super(`サーバー側に「${thinkId}」の新しい変更があります`);
+    this.name = 'StorageConflictError';
+  }
 }
 
 export interface IStorageBackend {

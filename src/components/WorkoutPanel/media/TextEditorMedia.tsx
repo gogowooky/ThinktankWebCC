@@ -27,6 +27,7 @@ import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColo
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkoutMenuRibbon';
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
+import { reportSaveError } from '../../../utils/saveError';
 import './TextEditorMedia.css';
 
 /** Monaco の等倍時 fontSize / lineHeight（表示文字サイズ倍率の基準値）。 */
@@ -404,8 +405,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           .then(() => {
             savedRef.current = body;
           })
-          .catch((err: any) => {
-            console.error('[TextEditorMedia] Blur auto save failed:', err);
+          .catch((err: unknown) => {
+            reportSaveError('[TextEditorMedia] Blur auto save failed:', err);
           });
       }
     });
@@ -527,8 +528,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         const currentSaved = getEditorValue(currentThink);
         if (body !== currentSaved) {
           currentOnSave(reconstructContent(currentThink, body), currentThink.ID)
-            .catch((err: any) => {
-              console.error('[TextEditorMedia] Unmount auto save failed:', err);
+            .catch((err: unknown) => {
+              reportSaveError('[TextEditorMedia] Unmount auto save failed:', err);
             });
         }
       }
@@ -564,7 +565,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           savedRef.current = body;
         })
         .catch((err: unknown) => {
-          console.error('[TextEditorMedia] Auto save failed:', err);
+          reportSaveError('[TextEditorMedia] Auto save failed:', err);
         });
     };
 
@@ -977,8 +978,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           .then(() => {
             savedRef.current = body;
           })
-          .catch((err: any) => {
-            console.error('[TextEditorMedia] Debounce auto save failed:', err);
+          .catch((err: unknown) => {
+            reportSaveError('[TextEditorMedia] Debounce auto save failed:', err);
           });
       }, 3000);
     }
