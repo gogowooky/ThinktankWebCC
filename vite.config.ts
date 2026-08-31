@@ -39,7 +39,7 @@ export default defineConfig({
     // 既定は Node 環境（純粋関数用・高速）。DOM を要するテストは
     // ファイル先頭の `// @vitest-environment jsdom` で個別に切り替える。
     environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.ts'],
     coverage: {
       provider: 'v8',
       include: ['src/utils/**', 'src/views/**', 'src/models/**'],

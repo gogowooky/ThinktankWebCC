@@ -289,7 +289,9 @@
       "Bash(curl -s -o /dev/null -w \"5173:%{http_code} \" http://localhost:5173/)",
       "Bash(curl -s -o /dev/null -w \"5174:%{http_code}\\\\n\" http://localhost:5174/)",
       "Bash(curl -s http://localhost:5174/)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5174/src/main.tsx)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5174/src/main.tsx)",
+      "Bash(echo \"=== TC: $? ===\")",
+      "Bash(echo \"=== bs: $? ===\")"
     ]
   }
 }

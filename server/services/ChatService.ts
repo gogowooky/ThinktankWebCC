@@ -10,6 +10,7 @@ import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import type { FunctionDeclaration } from '@google/generative-ai';
 import type { Response } from 'express';
 import { bigqueryService } from './BigQueryService.js';
+import { assertPublicHttpUrl } from './ssrfGuard.js';
 
 export interface ChatRequestMessage {
   role: 'user' | 'assistant';
@@ -117,10 +118,28 @@ async function fetchUrlMeta(url: string): Promise<{ title: string; description: 
   const ac    = new AbortController();
   const timer = setTimeout(() => ac.abort(), 5000);
   try {
-    const parsed = new URL(url);
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('http/https のみ対応');
-    const resp = await fetch(url, { signal: ac.signal, headers: { 'User-Agent': 'Thinktank/1.0' } });
+    // SSRF 対策（PROJECT_REVIEW_REPORT.md D-4）: 宛先 IP を検証し、リダイレクトは
+    // manual で辿ってホップごとに再検証する。
+    let currentUrl = url;
+    // 注: このファイルの Response は express の型なので、fetch の戻り値は推論に任せる
+    let resp: Awaited<ReturnType<typeof fetch>> | undefined;
+    for (let hop = 0; hop < 4; hop++) {
+      await assertPublicHttpUrl(currentUrl);
+      resp = await fetch(currentUrl, {
+        signal: ac.signal,
+        redirect: 'manual',
+        headers: { 'User-Agent': 'Thinktank/1.0' },
+      });
+      if (resp.status >= 300 && resp.status < 400) {
+        const loc = resp.headers.get('location');
+        if (!loc) break;
+        currentUrl = new URL(loc, currentUrl).toString();
+        continue;
+      }
+      break;
+    }
     clearTimeout(timer);
+    if (!resp) throw new Error('リダイレクトが多すぎます');
     const html = await resp.text();
     const title = html.match(/<title[^>]*>([^<]{1,200})<\/title>/i)?.[1]?.trim() ?? url;
     const desc  = (

@@ -12,5 +12,6 @@
     "allowImportingTsExtensions": false,
     "resolveJsonModule": true
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts"],
+  "exclude": ["**/*.test.ts", "dist-server"]
 }
