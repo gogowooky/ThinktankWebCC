@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.43",
+  "version": "1.4.44",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "03469a1",
-  "commitDateTime": "2026-08-31-192748",
-  "commitMessage": "feat(save): 未保存データ損失を防ぐ終了ガードを追加（D-1 一部対応）"
+  "commitId": "1c38d6f",
+  "commitDateTime": "2026-08-31-233548",
+  "commitMessage": "Phase 0: D-1(一部)/D-4/D-5/D-2 対応（未保存損失ガード・SSRF・書き込み検証・楽観ロック）"
 }
