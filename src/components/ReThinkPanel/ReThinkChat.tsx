@@ -7,11 +7,12 @@
  * - ユーザーメッセージは緑系背景で識別
  */
 
-import { useRef, useState, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useState, useEffect, useMemo, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { TTReThinkPanel } from '../../views/TTReThinkPanel';
 import { streamChat } from '../../services/ChatApiService';
 import { AI_MODEL_OPTIONS, PROVIDER_LABELS, aiSpeakerPrefix, parseSelectionValue, selectionToValue } from '../../services/aiModels';
 import type { AiProvider } from '../../services/aiModels';
+import { useAiProviderAvailability } from '../../hooks/useAiProviderAvailability';
 import './ReThinkChat.css';
 
 const PROVIDER_ORDER: AiProvider[] = ['anthropic', 'openai', 'gemini'];
@@ -45,9 +46,25 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
   { panel, systemPrompt },
   ref,
 ) {
+  const providerAvailability = useAiProviderAvailability();
   const [input,     setInput]     = useState('');
   const [isWaiting, setIsWaiting] = useState(false);
   const [isInputAreaFocused, setIsInputAreaFocused] = useState(false);
+
+  const visibleProviders = useMemo(
+    () => PROVIDER_ORDER.filter(
+      p => AI_MODEL_OPTIONS.some(o => o.provider === p && providerAvailability[p]),
+    ),
+    [providerAvailability],
+  );
+
+  // 保存済みの選択が「今は使えないプロバイダ」なら先頭の利用可能モデルへ寄せる
+  useEffect(() => {
+    if (visibleProviders.length === 0) return;
+    if (providerAvailability[panel.AIChatProvider]) return;
+    const fallback = AI_MODEL_OPTIONS.find(o => o.provider === visibleProviders[0]);
+    if (fallback) panel.SetAIChatModel({ provider: fallback.provider, model: fallback.model });
+  }, [providerAvailability, visibleProviders, panel]);
   const logRef                    = useRef<HTMLDivElement>(null);
   const textareaRef               = useRef<HTMLTextAreaElement>(null);
   const abortRef                  = useRef<AbortController | null>(null);
@@ -218,7 +235,7 @@ export const ReThinkChat = forwardRef<ReThinkChatRef, Props>(function ReThinkCha
             tabIndex={isInputAreaFocused ? 0 : -1}
             aria-label="AI Chat モデル選択"
           >
-            {PROVIDER_ORDER.map(p => (
+            {visibleProviders.map(p => (
               <optgroup key={p} label={PROVIDER_LABELS[p]}>
                 {AI_MODEL_OPTIONS.filter(o => o.provider === p).map(o => (
                   <option key={selectionToValue(o)} value={selectionToValue(o)}>{o.label}</option>

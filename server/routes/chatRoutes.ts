@@ -17,6 +17,16 @@ const projectRoot = path.resolve(__dirname, '../..');
 export function createChatRoutes(): Router {
   const router = Router();
 
+  // クライアントの AI モデル選択ドロップダウンが、API キー未設定のプロバイダを
+  // 表示しないようにするための可用性チェック。判定基準は /messages と同じ環境変数。
+  router.get('/providers', (_req, res) => {
+    res.json({
+      anthropic: Boolean(process.env['ANTHROPIC_API_KEY']),
+      openai:    Boolean(process.env['OPENAI_API_KEY']),
+      gemini:    Boolean(process.env['GEMINI_API_KEY']),
+    });
+  });
+
   router.post('/messages', async (req, res) => {
     const { messages, systemPrompt = '', provider, model } = req.body as {
       messages: ChatRequestMessage[];

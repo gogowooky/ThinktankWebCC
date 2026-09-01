@@ -8,10 +8,11 @@
  * - forwardRef でスクロールメソッドを公開（MonitorUp/Down ボタン用）
  */
 
-import { useRef, useEffect, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, useMemo, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { ChatMessage } from '../../types';
 import { AI_MODEL_OPTIONS, PROVIDER_LABELS, parseSelectionValue, selectionToValue } from '../../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../../services/aiModels';
+import { useAiProviderAvailability } from '../../hooks/useAiProviderAvailability';
 import './AiChatView.css';
 
 export interface AiChatViewRef {
@@ -69,6 +70,7 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
   { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector },
   ref,
 ) {
+  const providerAvailability = useAiProviderAvailability();
   const [input, setInput] = useState('');
   const [isInputAreaFocused, setIsInputAreaFocused] = useState(false);
   const logRef            = useRef<HTMLDivElement>(null);
@@ -81,6 +83,24 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
       setIsInputAreaFocused(false);
     }
   }, []);
+
+  const visibleProviders = useMemo(
+    () => PROVIDER_ORDER.filter(
+      p => AI_MODEL_OPTIONS.some(o => o.provider === p && providerAvailability[p]),
+    ),
+    [providerAvailability],
+  );
+
+  // 保存済みの選択が「今は使えないプロバイダ」だった場合、先頭の利用可能モデルへ寄せる。
+  // 放置すると <select> の value が候補に無くなり空欄表示になるため。
+  const selectedProvider = modelSelector?.value.provider;
+  const onModelChange    = modelSelector?.onChange;
+  useEffect(() => {
+    if (!selectedProvider || !onModelChange || visibleProviders.length === 0) return;
+    if (providerAvailability[selectedProvider]) return;
+    const fallback = AI_MODEL_OPTIONS.find(o => o.provider === visibleProviders[0]);
+    if (fallback) onModelChange({ provider: fallback.provider, model: fallback.model });
+  }, [providerAvailability, selectedProvider, onModelChange, visibleProviders]);
 
   useImperativeHandle(ref, () => ({
     scrollToPrevUser: () => {
@@ -238,7 +258,7 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
               tabIndex={isInputAreaFocused ? 0 : -1}
               aria-label="AI Chat モデル選択"
             >
-              {PROVIDER_ORDER.map(p => (
+              {visibleProviders.map(p => (
                 <optgroup key={p} label={PROVIDER_LABELS[p]}>
                   {AI_MODEL_OPTIONS.filter(o => o.provider === p).map(o => (
                     <option key={selectionToValue(o)} value={selectionToValue(o)}>{o.label}</option>

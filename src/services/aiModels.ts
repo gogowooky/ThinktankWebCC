@@ -42,6 +42,43 @@ export const PROVIDER_LABELS: Record<AiProvider, string> = {
   gemini:    'Gemini',
 };
 
+/** サーバーで API キーが設定済みか（プロバイダ別）。true のものだけ選択肢に出す。 */
+export type AiProviderAvailability = Record<AiProvider, boolean>;
+
+const ALL_PROVIDERS_AVAILABLE: AiProviderAvailability = {
+  anthropic: true,
+  openai:    true,
+  gemini:    true,
+};
+
+/**
+ * サーバーの /api/chat/providers を叩き、利用可能なプロバイダを返す。
+ * 取得失敗時は「全て利用可能」を返す（フェイルオープン）。
+ * 実際に使えないプロバイダを選んでも送信はサーバー側で 503 になるだけで、
+ * ネットワーク一時障害でドロップダウンが空になるより害が小さい。
+ */
+export async function fetchAiProviderAvailability(
+  apiFetch: (path: string, init?: RequestInit) => Promise<Response>,
+): Promise<AiProviderAvailability> {
+  try {
+    const res = await apiFetch('/api/chat/providers');
+    if (!res.ok) return { ...ALL_PROVIDERS_AVAILABLE };
+    const raw = (await res.json()) as Partial<AiProviderAvailability>;
+    return {
+      anthropic: raw.anthropic === true,
+      openai:    raw.openai    === true,
+      gemini:    raw.gemini    === true,
+    };
+  } catch {
+    return { ...ALL_PROVIDERS_AVAILABLE };
+  }
+}
+
+/** 利用可能なプロバイダのモデルだけに絞った選択肢一覧 */
+export function availableModelOptions(availability: AiProviderAvailability): AiModelOption[] {
+  return AI_MODEL_OPTIONS.filter(o => availability[o.provider]);
+}
+
 function isValidSelection(v: unknown): v is AiModelSelection {
   if (!v || typeof v !== 'object') return false;
   const s = v as Record<string, unknown>;
