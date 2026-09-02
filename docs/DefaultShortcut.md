@@ -5,21 +5,27 @@ Keyboard Shortcuts
 # アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
 *           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,フォーカスカラム左
-*           ,ExApp  ,S                  ,Application.FocusedPanel.Name:Next             ,フォーカスカラム右
+*           ,ExApp  ,Shift+A            ,Application.FocusedPanel.Name:Next             ,フォーカスカラム右
 *           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,Workoutツールバー左
-*           ,ExApp  ,X                  ,ToolBar.Mode.Name:Next                         ,Workoutツールバー右
+*           ,ExApp  ,Shift+Z            ,ToolBar.Mode.Name:Next                         ,Workoutツールバー右
 
 *           ,ExApp  ,Q                  ,FocusedPanel.Area.IsOpen:Toggle                ,パネル開閉
+*           ,ExApp  ,S                  ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
 *           ,ExApp  ,W                  ,FocusedPanel.Mode.Name:Prev                    ,パネルモード上
-*           ,ExApp  ,D                  ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
 
-*           ,ExApp  ,ArrowDown          ,WorkoutPanel.FocusedPane.PaneNumber:Next       ,ペインを次に移動
-*           ,ExApp  ,ArrowUp            ,WorkoutPanel.FocusedPane.PaneNumber:Prev       ,ペインを前に移動
-*           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
-*           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
+Workout*    ,ExApp  ,N                  ,WorkoutPanel.FocusedPane.PaneNumber:Next       ,ペインを次に移動
+Workout*    ,ExApp  ,P                  ,WorkoutPanel.FocusedPane.PaneNumber:Prev       ,ペインを前に移動
+Workout*    ,ExApp  ,M                  ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
+Workout*    ,ExApp  ,Shift+M            ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
-*           ,ExApp  ,E                  ,WorkoutPanel.FocusedPane.FileHistory:Next      ,ペインのファイル履歴を1つ後に進む
-*           ,ExApp  ,R                  ,WorkoutPanel.FocusedPane.FileHistory:Prev      ,ペインのファイル履歴を1つ前に戻る
+*Filter    ,ExApp  ,N                   ,CurrentPanel.Filter.CursorPos:NextLine         ,フォーカスパネルのThink一覧のカーソルを上に移動する
+*Filter    ,ExApp  ,P                   ,CurrentPanel.Filter.CursorPos:PrevLine         ,フォーカスパネルのThink一覧のカーソルを下に移動する
+*Filter    ,ExApp  ,Enter               ,CurrentPanel.Filter.Cursor:Action              ,フォーカスパネルのThink一覧のカーソル位置を開く
+
+*Chat      ,ExApp  ,N                   ,CurrentPanel.AIChat.CursorPos:NextLine         ,フォーカスパネルのAI相談のカーソルを上に移動する
+*Chat      ,ExApp  ,P                   ,CurrentPanel.AIChat.CursorPos:PrevLine         ,フォーカスパネルのAI相談のカーソルを下に移動する
+*Chat      ,ExApp  ,Enter               ,CurrentPanel.AIChat.Cursor:Action              ,フォーカスパネルのAI相談のカーソル位置を開く
+
 
 # Panel>Think一覧 カーソル
 Thinktank.Filter,   ,Alt+P                  ,ThinktankPanel.Filter.CursorPos:PrevLine        ,Thinktank>Think一覧のカーソルを上に移動する
@@ -59,7 +65,7 @@ Overview.Filter     ,ExApp  ,Alt+K          ,OverviewPanel.Filter.Cursor:ToggleC
 *,   ,Alt+LocalDirDrag    ,WorkoutPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
 
 
-# Editor Editor　検索
+# Editor Editor 検索
 *TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
 *TextEditor ,       ,Shift+Ctrl+H           ,TextEditor.CurrentEditor.ShowReplace       ,置換ダイアログを表示する
 

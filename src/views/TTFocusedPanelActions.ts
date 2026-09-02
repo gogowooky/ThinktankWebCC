@@ -220,6 +220,91 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     });
   }
 
+  // ── CurrentPanel（フォーカス中パネル）向けの委譲アクション ────────────────
+  // docs\DefaultShortcut.md の focus 列を Thinktank/Overview で使い分けずに1定義で
+  // 済ませるための、フォーカス中パネルへディスパッチする総称アクション。
+
+  /** フォーカス中パネルが持つ Think一覧のアクションプレフィックス（持たなければ null） */
+  const focusedFilterPrefix = (): 'ThinktankPanel' | 'OverviewPanel' | null => {
+    switch (app.FocusedColumn) {
+      case 'Thinktank': return 'ThinktankPanel';
+      case 'Overview':  return 'OverviewPanel';
+      default:          return null;
+    }
+  };
+
+  for (const [suffix, label] of [
+    ['CursorPos:PrevLine', 'カーソルを1行前に移動する'],
+    ['CursorPos:NextLine', 'カーソルを1行後に移動する'],
+    ['Cursor:Action',      'カーソル位置のアイテムを開く'],
+  ] as const) {
+    TTActions.Register({
+      ActionID: `CurrentPanel.Filter.${suffix}`,
+      Description: `フォーカスパネルのThink一覧の${label}`,
+      Completion: (item) => {
+        const prefix = focusedFilterPrefix();
+        if (!prefix) { item.Result = '[Think一覧なし]'; return; }
+        const res = TTActions.Execute(`${prefix}.Filter.${suffix}`, item.Mods);
+        if (res instanceof Promise) return res.then(r => { item.Result = r.Result; });
+        item.Result = res.Result;
+      },
+    });
+  }
+
+  // ── AI相談メモピッカーのカーソル操作（軽量: フォーカス中パネルの DOM 経由）──
+  // AI相談の chat ファイル一覧（ThinktankChatMemoPicker）は React ローカル state 駆動で
+  // モデル層のカーソルを持たないため、その ThoughtsList（ArrowUp/Down/Enter 対応済み）へ
+  // 直接キーイベントを送って操作する。
+
+  /** フォーカス中パネル（Thinktank / Overview）の AI相談メモピッカー内 ThoughtsList 要素 */
+  const focusedChatMemoList = (): HTMLElement | null => {
+    let rootSel: string;
+    switch (app.FocusedColumn) {
+      case 'Thinktank': rootSel = '.thinktank-panel, .thinktank-area'; break;
+      case 'Overview':  rootSel = '.overview-panel, .overview-area'; break;
+      default:          return null;
+    }
+    for (const root of document.querySelectorAll(rootSel)) {
+      const list = root.querySelector<HTMLElement>('.tt-chat-picker .thoughts-list');
+      if (list) return list;
+    }
+    return null;
+  };
+
+  for (const [suffix, key, label] of [
+    ['CursorPos:PrevLine', 'ArrowUp',   'カーソルを1行前に移動する'],
+    ['CursorPos:NextLine', 'ArrowDown', 'カーソルを1行後に移動する'],
+  ] as const) {
+    TTActions.Register({
+      ActionID: `CurrentPanel.AIChat.${suffix}`,
+      Description: `フォーカスパネルのAI相談の${label}`,
+      Completion: (item) => {
+        const list = focusedChatMemoList();
+        if (!list) { item.Result = '[AI相談なし]'; return; }
+        list.focus();
+        list.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+        item.Result = suffix === 'CursorPos:PrevLine' ? '1行前' : '1行後';
+      },
+    });
+  }
+
+  TTActions.Register({
+    ActionID: 'CurrentPanel.AIChat.Cursor:Action',
+    Description: 'フォーカスパネルのAI相談のカーソル位置を開く',
+    Completion: (item) => {
+      // メモピッカーはカーソル移動時に対象 chat を即ロードするため、
+      // 「開く」= その対話へ入る（チャット入力欄へフォーカスを移す）
+      const list = focusedChatMemoList();
+      if (!list) { item.Result = '[AI相談なし]'; return; }
+      const input = list
+        .closest('.thinktank-area__chat-wrap, .overview-area__chat-wrap')
+        ?.querySelector<HTMLTextAreaElement>('.ai-chat-view__input');
+      if (!input) { item.Result = '[入力欄なし]'; return; }
+      input.focus();
+      item.Result = '対話へ移動';
+    },
+  });
+
   // ExMode 関連アクションの登録（'Application.Status.ExMode:xxx' と 'ExMode:xxx' の
   // 2つのActionID表記がショートカット定義側で使われるため、両方を同じハンドラに解決させる）
   const registerExModeAction = (mode: string): void => {
