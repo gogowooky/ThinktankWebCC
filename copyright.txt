@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.46",
+  "version": "1.4.47",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "a77e627",
-  "commitDateTime": "2026-09-02-132821",
-  "commitMessage": "feat: CurrentPanel.Filter / CurrentPanel.AIChat カーソル操作アクションを実装"
+  "commitId": "a71819f",
+  "commitDateTime": "2026-09-02-163115",
+  "commitMessage": "refactor: FocusedPanel.Filter.ContentType:Action / Menu:Action を FocusedIcon:Action に統合"
 }
