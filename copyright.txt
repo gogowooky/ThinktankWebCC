@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.45",
+  "version": "1.4.46",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "b0c8724",
-  "commitDateTime": "2026-09-01-184455",
-  "commitMessage": "feat(ai): 使用不可のAIプロバイダをモデル選択ドロップダウンから隠す"
+  "commitPC": "veneno-02",
+  "commitId": "a77e627",
+  "commitDateTime": "2026-09-02-132821",
+  "commitMessage": "feat: CurrentPanel.Filter / CurrentPanel.AIChat カーソル操作アクションを実装"
 }
