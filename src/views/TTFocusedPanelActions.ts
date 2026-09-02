@@ -305,6 +305,61 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // ── Think一覧 ContentType アイコンのフォーカス移動・トグル（軽量: DOM 経由）──
+  // 種別アイコン（6種別 + 右端の全種別クリア/選択）は React ローカル state 駆動で
+  // モデル層のカーソルを持たないため、実 DOM のボタン要素をキーボードフォーカスの
+  // カーソルとして扱い、Toggle は click() で既存のトグル処理へ委譲する。
+
+  /** フォーカス中パネル（Thinktank / Overview）の Think一覧 種別アイコン群（左→右順） */
+  const focusedTypeFilterButtons = (): HTMLElement[] => {
+    let rootSel: string;
+    switch (app.FocusedColumn) {
+      case 'Thinktank': rootSel = '.thinktank-panel, .thinktank-area'; break;
+      case 'Overview':  rootSel = '.overview-panel, .overview-area'; break;
+      default:          return [];
+    }
+    for (const root of document.querySelectorAll(rootSel)) {
+      const group = root.querySelector('.tt-search-bar__types');
+      if (group) {
+        return Array.from(
+          group.querySelectorAll<HTMLElement>('.tt-search-bar__type-btn, .tt-search-bar__type-all'),
+        );
+      }
+    }
+    return [];
+  };
+
+  for (const [suffix, dir] of [['Prev', -1], ['Next', 1]] as const) {
+    TTActions.Register({
+      ActionID: `FocusedPanel.Filter.ContentType:${suffix}`,
+      Description: `フォーカスパネルのThink一覧の種別アイコンフォーカスを${suffix === 'Prev' ? '前' : '次'}に移動する`,
+      Completion: (item) => {
+        const btns = focusedTypeFilterButtons();
+        if (btns.length === 0) { item.Result = '[種別フィルタなし]'; return; }
+        const cur = btns.indexOf(document.activeElement as HTMLElement);
+        // 未フォーカスからは Next=先頭 / Prev=末尾、以降は循環
+        const next = cur < 0
+          ? (dir > 0 ? 0 : btns.length - 1)
+          : (cur + dir + btns.length) % btns.length;
+        btns[next].focus();
+        item.Result = `${btns[next].getAttribute('aria-label') ?? ''}（${next + 1}/${btns.length}）`;
+      },
+    });
+  }
+
+  TTActions.Register({
+    ActionID: 'FocusedPanel.Filter.ContentType:Toggle',
+    Description: 'フォーカスパネルのThink一覧のフォーカス中の種別アイコンの状態を切り替える',
+    Completion: (item) => {
+      const btns = focusedTypeFilterButtons();
+      if (btns.length === 0) { item.Result = '[種別フィルタなし]'; return; }
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !btns.includes(active)) { item.Result = '[アイコン未フォーカス]'; return; }
+      active.click();
+      item.Result = `${active.getAttribute('aria-label') ?? '切替'}`;
+    },
+  });
+
   // ExMode 関連アクションの登録（'Application.Status.ExMode:xxx' と 'ExMode:xxx' の
   // 2つのActionID表記がショートカット定義側で使われるため、両方を同じハンドラに解決させる）
   const registerExModeAction = (mode: string): void => {

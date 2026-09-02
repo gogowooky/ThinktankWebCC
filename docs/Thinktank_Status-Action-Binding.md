@@ -15,8 +15,32 @@
 
 # Action
 
-## 実装：　FocusedPanel.Filter.Cursor
+## 完了：　260902　FocusedPanel.Filter.ContentType:Next
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを次のアイコンに移動します。
+　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
 
+## 完了：　260902　FocusedPanel.Filter.ContentType:Prev
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを前のアイコンに移動します。
+　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
+
+## 完了：　260902　FocusedPanel.Filter.ContentType:Toggle
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のフォーカスされているContentTypeアイコンの状態を変更します。
+
+　A（260902実装）：src\views\TTFocusedPanelActions.ts に3アクションを登録しました。
+　　種別アイコン（6種別 + 右端の「全種別クリア/選択」）はモデル層のカーソルを持たず
+　　React ローカル state 駆動のため、フォーカス中パネル（Thinktank / Overview）配下の
+　　.tt-search-bar__types 内のボタン要素（.tt-search-bar__type-btn / .tt-search-bar__type-all）
+　　を左→右順に取得し、キーボードフォーカス（document.activeElement）をカーソルとして扱います。
+　　- :Next / :Prev — 現在フォーカス中のボタンの次／前へ .focus() を移動（循環。未フォーカス
+　　　からは Next=先頭 / Prev=末尾）。フォーカス位置は ThinktankSearchBar.css の
+　　　:focus-visible アウトラインで可視化。
+　　- :Toggle — フォーカス中のボタンが種別アイコン群のいずれかなら .click() し、
+　　　既存の onToggleType（種別トグル）/ onClearAllTypes・onSelectAllTypes（全種別）へ委譲。
+　　　種別アイコン未フォーカス時は [アイコン未フォーカス]。
+　　いずれもフォーカス中パネルが Thinktank / Overview 以外、または Think一覧の種別フィルタ
+　　（filterVisibility.type）が非表示のときは [種別フィルタなし]。
+　　※ キー割当は docs\DefaultShortcut.md 側で focus 列 *Filter / exmode ExApp などに
+　　　追加してください（本アクションは TTActions.Execute 経由でも実行可能）。
 
 # Status
 
