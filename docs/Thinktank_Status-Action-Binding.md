@@ -33,14 +33,25 @@
 　　を左→右順に取得し、キーボードフォーカス（document.activeElement）をカーソルとして扱います。
 　　- :Next / :Prev — 現在フォーカス中のボタンの次／前へ .focus() を移動（循環。未フォーカス
 　　　からは Next=先頭 / Prev=末尾）。フォーカス位置は ThinktankSearchBar.css の
-　　　:focus-visible アウトラインで可視化。
+　　　:focus アウトラインで可視化。
 　　- :Toggle — フォーカス中のボタンが種別アイコン群のいずれかなら .click() し、
 　　　既存の onToggleType（種別トグル）/ onClearAllTypes・onSelectAllTypes（全種別）へ委譲。
 　　　種別アイコン未フォーカス時は [アイコン未フォーカス]。
 　　いずれもフォーカス中パネルが Thinktank / Overview 以外、または Think一覧の種別フィルタ
 　　（filterVisibility.type）が非表示のときは [種別フィルタなし]。
-　　※ キー割当は docs\DefaultShortcut.md 側で focus 列 *Filter / exmode ExApp などに
-　　　追加してください（本アクションは TTActions.Execute 経由でも実行可能）。
+　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter / exmode ExApp（M / Shift+M / Space）。
+
+　　A（260902修正・不具合対応）：「動かない」報告を受け以下3点を修正。
+　　　1. 対象パネルの解決を app.FocusedColumn（focusin→rAF 経由の遅延キャッシュで、
+　　　　 rAF 未発火時などに古い値が残る）から、getFocusName(document.activeElement) 基準の
+　　　　 focusedColumnLive() に変更。ショートカットの focus 条件（*Filter / *Chat）と同じ
+　　　　 判定基準になり、実際にキーボードフォーカスがあるパネルへ確実にディスパッチする。
+　　　　 FocusedPanel.Filter.CursorPos:* / FocusedPanel.AIChat.* も同修正で堅牢化。
+　　　2. Space キーが効かない問題。KeyboardEvent.key はスペースを ' '（半角スペース）で
+　　　　 返すため、keyboardUtils.ts の KEY_NAME_MAP に ' ' → 'space' を追加しキー定義の
+　　　　 "Space" と一致させた。
+　　　3. .focus() は :focus-visible ヒューリスティックに乗らずアウトラインが出ないため、
+　　　　 CSS を :focus に変更。
 
 # Status
 
@@ -392,10 +403,11 @@ key:            FocusedPanel.Mode.Name:Next
 
 　A（260902実装）：src\views\TTFocusedPanelActions.ts に6アクションを登録しました。
 　　- FocusedPanel.Filter.CursorPos:PrevLine / NextLine / Cursor:Action
-　　　app.FocusedColumn が Thinktank / Overview のとき、既存の
-　　　{ThinktankPanel|OverviewPanel}.Filter.* へ TTActions.Execute で委譲します
-　　　（それ以外のパネルは [Think一覧なし]）。カーソル状態は既存の
-　　　panel.CurrentItemID / FilteredThoughts をそのまま使うため挙動は Think一覧と同一です。
+　　　キーボードフォーカスがあるパネル（getFocusName 基準の focusedColumnLive()。
+　　　260902修正前は app.FocusedColumn 参照で遅延キャッシュのズレにより誤爆していた）が
+　　　Thinktank / Overview のとき、既存の {ThinktankPanel|OverviewPanel}.Filter.* へ
+　　　TTActions.Execute で委譲します（それ以外のパネルは [Think一覧なし]）。カーソル状態は
+　　　既存の panel.CurrentItemID / FilteredThoughts をそのまま使うため挙動は Think一覧と同一です。
 　　- FocusedPanel.AIChat.CursorPos:PrevLine / NextLine
 　　　AI相談の chat ファイル一覧（ThinktankChatMemoPicker）はモデル層のカーソルを持たず
 　　　React ローカル state 駆動のため、フォーカス中パネル（Thinktank / Overview）配下の

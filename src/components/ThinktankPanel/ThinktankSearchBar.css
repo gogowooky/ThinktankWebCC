@@ -87,9 +87,11 @@
   color: #555;
 }
 
-/* キーボード（FocusedPanel.Filter.ContentType:Next/Prev）でのフォーカス位置を明示する */
-.tt-search-bar__type-btn:focus-visible,
-.tt-search-bar__type-all:focus-visible {
+/* キーボード（FocusedPanel.Filter.ContentType:Next/Prev）でのフォーカス位置を明示する。
+   アクションは要素へ .focus() を呼ぶだけで :focus-visible のヒューリスティックには乗らないため
+   :focus で描画する（このボタン群はクリックでも短時間フォーカスされる程度で実害はない）。 */
+.tt-search-bar__type-btn:focus,
+.tt-search-bar__type-all:focus {
   outline: 2px solid rgba(7, 55, 99, 0.7);
   outline-offset: 1px;
   color: #333;

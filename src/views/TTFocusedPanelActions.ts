@@ -13,6 +13,7 @@ import type { ActionID, TTActionItem } from './TTAction';
 import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
+import { getFocusName } from '../utils/getFocusName';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import { ZOOM_DEFAULT, ZOOM_STEP } from '../utils/appZoom';
 import { apiFetch } from '../services/apiClient';
@@ -224,9 +225,27 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // docs\DefaultShortcut.md の focus 列を Thinktank/Overview で使い分けずに1定義で
   // 済ませるための、フォーカス中パネルへディスパッチする総称アクション。
 
+  // キーボードフォーカスが実際に今ある位置からパネル名を解決する。
+  // app.FocusedColumn は focusin→rAF 経由の遅延キャッシュで、rAF 未発火時や
+  // パネルレベルの名前が取れないときに古い値が残る。ショートカットの focus 条件
+  // (*Filter / *Chat) と同じ getFocusName を基準にして齟齬をなくす。
+  const focusedColumnLive = (): string => {
+    const col = getFocusName(document.activeElement).split('.')[0];
+    return col && col !== 'None' ? col : app.FocusedColumn;
+  };
+
+  /** フォーカス中パネル配下の要素集合（Thinktank / Overview 以外は空） */
+  const focusedFilterPanelRoots = (): Element[] => {
+    switch (focusedColumnLive()) {
+      case 'Thinktank': return Array.from(document.querySelectorAll('.thinktank-panel, .thinktank-area'));
+      case 'Overview':  return Array.from(document.querySelectorAll('.overview-panel, .overview-area'));
+      default:          return [];
+    }
+  };
+
   /** フォーカス中パネルが持つ Think一覧のアクションプレフィックス（持たなければ null） */
   const focusedFilterPrefix = (): 'ThinktankPanel' | 'OverviewPanel' | null => {
-    switch (app.FocusedColumn) {
+    switch (focusedColumnLive()) {
       case 'Thinktank': return 'ThinktankPanel';
       case 'Overview':  return 'OverviewPanel';
       default:          return null;
@@ -258,13 +277,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   /** フォーカス中パネル（Thinktank / Overview）の AI相談メモピッカー内 ThoughtsList 要素 */
   const focusedChatMemoList = (): HTMLElement | null => {
-    let rootSel: string;
-    switch (app.FocusedColumn) {
-      case 'Thinktank': rootSel = '.thinktank-panel, .thinktank-area'; break;
-      case 'Overview':  rootSel = '.overview-panel, .overview-area'; break;
-      default:          return null;
-    }
-    for (const root of document.querySelectorAll(rootSel)) {
+    for (const root of focusedFilterPanelRoots()) {
       const list = root.querySelector<HTMLElement>('.tt-chat-picker .thoughts-list');
       if (list) return list;
     }
@@ -312,13 +325,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   /** フォーカス中パネル（Thinktank / Overview）の Think一覧 種別アイコン群（左→右順） */
   const focusedTypeFilterButtons = (): HTMLElement[] => {
-    let rootSel: string;
-    switch (app.FocusedColumn) {
-      case 'Thinktank': rootSel = '.thinktank-panel, .thinktank-area'; break;
-      case 'Overview':  rootSel = '.overview-panel, .overview-area'; break;
-      default:          return [];
-    }
-    for (const root of document.querySelectorAll(rootSel)) {
+    for (const root of focusedFilterPanelRoots()) {
       const group = root.querySelector('.tt-search-bar__types');
       if (group) {
         return Array.from(
