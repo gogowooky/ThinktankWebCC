@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.47",
+  "version": "1.4.48",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "a71819f",
-  "commitDateTime": "2026-09-02-163115",
-  "commitMessage": "refactor: FocusedPanel.Filter.ContentType:Action / Menu:Action を FocusedIcon:Action に統合"
+  "commitId": "edf324e",
+  "commitDateTime": "2026-09-02-181824",
+  "commitMessage": "feat: TextEditor.EditText.PasteMarkdown を実装"
 }
