@@ -23,7 +23,7 @@ Workout*    ,ExApp  ,Shift+M            ,WorkoutPanel.FocusedPane.Mode:Prev     
 *Filter     ,ExApp  ,Enter              ,FocusedPanel.Filter.Cursor:Action              ,フォーカスパネルのThink一覧のカーソル位置を開く
 *Filter     ,ExApp  ,M                  ,FocusedPanel.Filter.ContentType:Next           ,フォーカスパネルのThink一覧のContentTypeのフォーカスを次のアイコンに移動します。
 *Filter     ,ExApp  ,Shift+M            ,FocusedPanel.Filter.ContentType:Prev           ,フォーカスパネルのThink一覧のContentTypeのフォーカスを前のアイコンに移動します。
-*Filter     ,ExApp  ,","                ,FocusedPanel.Filter.ContentType:Toggle         ,フォーカスパネルのThink一覧のContentTypeのフォーカスされているアイコンの状態を変更します。
+*Filter     ,ExApp  ,","                ,FocusedPanel.Filter.ContentType:Action         ,フォーカスパネルのThink一覧のContentTypeのフォーカスされているアイコンを押下します。
 
 *Chat       ,ExApp  ,N                  ,FocusedPanel.AIChat.CursorPos:NextLine         ,フォーカスパネルのAI相談のカーソルを上に移動する
 *Chat       ,ExApp  ,P                  ,FocusedPanel.AIChat.CursorPos:PrevLine         ,フォーカスパネルのAI相談のカーソルを下に移動する

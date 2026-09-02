@@ -318,10 +318,49 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
-  // ── Think一覧 ContentType アイコンのフォーカス移動・トグル（軽量: DOM 経由）──
-  // 種別アイコン（6種別 + 右端の全種別クリア/選択）は React ローカル state 駆動で
-  // モデル層のカーソルを持たないため、実 DOM のボタン要素をキーボードフォーカスの
-  // カーソルとして扱い、Toggle は click() で既存のトグル処理へ委譲する。
+  // ── Think一覧 アイコンストリップのフォーカス移動・押下（軽量: DOM 経由）──
+  // 種別アイコン群やメニューリボンのボタンは React ローカル state 駆動でモデル層の
+  // カーソルを持たないため、実 DOM のボタン要素をキーボードフォーカスのカーソルとして
+  // 扱い、:Action は click() で既存のハンドラへ委譲する。
+
+  /** 1つのボタン群に対して :Next / :Prev（循環フォーカス移動）と :Action（押下）を登録する */
+  const registerIconStripActions = (
+    base:      string,
+    noun:      string,
+    getButtons: () => HTMLElement[],
+    emptyMsg:  string,
+    labelOf:   (el: HTMLElement) => string,
+  ): void => {
+    for (const [suffix, dir] of [['Prev', -1], ['Next', 1]] as const) {
+      TTActions.Register({
+        ActionID: `${base}:${suffix}`,
+        Description: `フォーカスパネルのThink一覧の${noun}フォーカスを${suffix === 'Prev' ? '前' : '次'}に移動する`,
+        Completion: (item) => {
+          const btns = getButtons();
+          if (btns.length === 0) { item.Result = emptyMsg; return; }
+          const cur = btns.indexOf(document.activeElement as HTMLElement);
+          // 未フォーカスからは Next=先頭 / Prev=末尾、以降は循環
+          const next = cur < 0
+            ? (dir > 0 ? 0 : btns.length - 1)
+            : (cur + dir + btns.length) % btns.length;
+          btns[next].focus();
+          item.Result = `${labelOf(btns[next])}（${next + 1}/${btns.length}）`;
+        },
+      });
+    }
+    TTActions.Register({
+      ActionID: `${base}:Action`,
+      Description: `フォーカスパネルのThink一覧のフォーカス中の${noun}を押下する`,
+      Completion: (item) => {
+        const btns = getButtons();
+        if (btns.length === 0) { item.Result = emptyMsg; return; }
+        const active = document.activeElement as HTMLElement | null;
+        if (!active || !btns.includes(active)) { item.Result = '[アイコン未フォーカス]'; return; }
+        active.click();
+        item.Result = labelOf(active);
+      },
+    });
+  };
 
   /** フォーカス中パネルの Think一覧 種別アイコン群（左→右順）。
    *  Thinktank は .tt-search-bar__*、Overview は .ov-search-bar__* と接頭辞が異なる。 */
@@ -339,36 +378,31 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     return [];
   };
 
-  for (const [suffix, dir] of [['Prev', -1], ['Next', 1]] as const) {
-    TTActions.Register({
-      ActionID: `FocusedPanel.Filter.ContentType:${suffix}`,
-      Description: `フォーカスパネルのThink一覧の種別アイコンフォーカスを${suffix === 'Prev' ? '前' : '次'}に移動する`,
-      Completion: (item) => {
-        const btns = focusedTypeFilterButtons();
-        if (btns.length === 0) { item.Result = '[種別フィルタなし]'; return; }
-        const cur = btns.indexOf(document.activeElement as HTMLElement);
-        // 未フォーカスからは Next=先頭 / Prev=末尾、以降は循環
-        const next = cur < 0
-          ? (dir > 0 ? 0 : btns.length - 1)
-          : (cur + dir + btns.length) % btns.length;
-        btns[next].focus();
-        item.Result = `${btns[next].getAttribute('aria-label') ?? ''}（${next + 1}/${btns.length}）`;
-      },
-    });
-  }
+  /** フォーカス中パネルの Think一覧 メニューリボンのボタン群（左→右順、無効ボタンは除く） */
+  const focusedMenuRibbonButtons = (): HTMLElement[] => {
+    for (const root of focusedFilterPanelRoots()) {
+      const ribbon = root.querySelector('.thinktank-menu-ribbon, .overview-menu-ribbon');
+      if (ribbon) {
+        return Array.from(ribbon.querySelectorAll<HTMLButtonElement>('.menu-ribbon__btn'))
+          .filter(b => !b.disabled);
+      }
+    }
+    return [];
+  };
 
-  TTActions.Register({
-    ActionID: 'FocusedPanel.Filter.ContentType:Toggle',
-    Description: 'フォーカスパネルのThink一覧のフォーカス中の種別アイコンの状態を切り替える',
-    Completion: (item) => {
-      const btns = focusedTypeFilterButtons();
-      if (btns.length === 0) { item.Result = '[種別フィルタなし]'; return; }
-      const active = document.activeElement as HTMLElement | null;
-      if (!active || !btns.includes(active)) { item.Result = '[アイコン未フォーカス]'; return; }
-      active.click();
-      item.Result = `${active.getAttribute('aria-label') ?? '切替'}`;
-    },
-  });
+  registerIconStripActions(
+    'FocusedPanel.Filter.ContentType', '種別アイコン', focusedTypeFilterButtons,
+    '[種別フィルタなし]',
+    el => el.getAttribute('aria-label') ?? '切替',
+  );
+
+  registerIconStripActions(
+    'FocusedPanel.Filter.Menu', 'メニューアイコン', focusedMenuRibbonButtons,
+    '[メニューなし]',
+    el => el.getAttribute('data-tip')
+      ?? el.closest('.tooltip-wrapper')?.getAttribute('data-tip')
+      ?? 'メニュー',
+  );
 
   // ExMode 関連アクションの登録（'Application.Status.ExMode:xxx' と 'ExMode:xxx' の
   // 2つのActionID表記がショートカット定義側で使われるため、両方を同じハンドラに解決させる）

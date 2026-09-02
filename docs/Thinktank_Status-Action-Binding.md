@@ -15,56 +15,14 @@
 
 # Action
 
-## 実装：　FocusedPanel.Filter.Menu:Next
-## 実装：　FocusedPanel.Filter.Menu:Prev
-## 実装：　FocusedPanel.Filter.Menu:Action
+## 完了：　260902　FocusedPanel.Filter.Menu:Next
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のMenuアイコンのフォーカスを次のアイコンに移動します。
+## 完了：　260902　FocusedPanel.Filter.Menu:Prev
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のMenuアイコンのフォーカスを前のアイコンに移動します。
+## 完了：　260902　FocusedPanel.Filter.Menu:Action
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のフォーカスされているMenuアイコンを押下します。
+　（実装内容は下部 # Panel セクションの FocusedPanel.Filter.Menu の A（260902実装）を参照）
 
-
-
-## 完了：　260902　FocusedPanel.Filter.ContentType:Next
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを次のアイコンに移動します。
-　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
-
-## 完了：　260902　FocusedPanel.Filter.ContentType:Prev
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを前のアイコンに移動します。
-　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
-
-## 完了：　260902　FocusedPanel.Filter.ContentType:Toggle
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のフォーカスされているContentTypeアイコンの状態を変更します。
-
-　A（260902実装）：src\views\TTFocusedPanelActions.ts に3アクションを登録しました。
-　　種別アイコン（6種別 + 右端の「全種別クリア/選択」）はモデル層のカーソルを持たず
-　　React ローカル state 駆動のため、フォーカス中パネル（Thinktank / Overview）配下の
-　　.tt-search-bar__types 内のボタン要素（.tt-search-bar__type-btn / .tt-search-bar__type-all）
-　　を左→右順に取得し、キーボードフォーカス（document.activeElement）をカーソルとして扱います。
-　　- :Next / :Prev — 現在フォーカス中のボタンの次／前へ .focus() を移動（循環。未フォーカス
-　　　からは Next=先頭 / Prev=末尾）。フォーカス位置は ThinktankSearchBar.css の
-　　　:focus アウトラインで可視化。
-　　- :Toggle — フォーカス中のボタンが種別アイコン群のいずれかなら .click() し、
-　　　既存の onToggleType（種別トグル）/ onClearAllTypes・onSelectAllTypes（全種別）へ委譲。
-　　　種別アイコン未フォーカス時は [アイコン未フォーカス]。
-　　いずれもフォーカス中パネルが Thinktank / Overview 以外、または Think一覧の種別フィルタ
-　　（filterVisibility.type）が非表示のときは [種別フィルタなし]。
-　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter / exmode ExApp（M / Shift+M / Space）。
-
-　　A（260902修正・不具合対応）：「動かない」報告を受け以下3点を修正。
-　　　1. 対象パネルの解決を app.FocusedColumn（focusin→rAF 経由の遅延キャッシュで、
-　　　　 rAF 未発火時などに古い値が残る）から、getFocusName(document.activeElement) 基準の
-　　　　 focusedColumnLive() に変更。ショートカットの focus 条件（*Filter / *Chat）と同じ
-　　　　 判定基準になり、実際にキーボードフォーカスがあるパネルへ確実にディスパッチする。
-　　　　 FocusedPanel.Filter.CursorPos:* / FocusedPanel.AIChat.* も同修正で堅牢化。
-　　　2. Space キーが効かない問題。KeyboardEvent.key はスペースを ' '（半角スペース）で
-　　　　 返すため、keyboardUtils.ts の KEY_NAME_MAP に ' ' → 'space' を追加しキー定義の
-　　　　 "Space" と一致させた。
-　　　3. .focus() は :focus-visible ヒューリスティックに乗らずアウトラインが出ないため、
-　　　　 CSS を :focus に変更。
-
-　　A（260902修正・不具合対応その2）：「Overview の Think一覧では効かない」報告を受け修正。
-　　　Overview の検索バーは Thinktank の .tt-search-bar__* ではなく .ov-search-bar__* の
-　　　接頭辞を使う別コンポーネント（OverviewSearchBar）だった。focusedTypeFilterButtons() の
-　　　セレクタに .ov-search-bar__types / __type-btn / __type-all を追加し、
-　　　OverviewSearchBar.css にも同じ :focus アウトラインを追加。Thinktank / Overview 両方で
-　　　Next / Prev / Toggle が動くことを実機確認（FocusedColumn を別パネルにしても正しく動作）。
 
 # Status
 
@@ -432,8 +390,55 @@ key:            FocusedPanel.Mode.Name:Next
 　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter（FocusedPanel.Filter.*）/
 　　*Chat（FocusedPanel.AIChat.*）で、それぞれ getFocusName が返す Thinktank.Filter /
 　　Overview.Filter、Thinktank.Chat / Overview.Chat に後方一致でマッチします。
+## Action：　260902　FocusedPanel.Filter.ContentType:Next
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを次のアイコンに移動します。
+　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
+## Action：　260902　FocusedPanel.Filter.ContentType:Prev
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを前のアイコンに移動します。
+　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
+## Action：　260902　FocusedPanel.Filter.ContentType:Action
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のフォーカスされているContentTypeアイコンを押下します。
+## Action：　260902　FocusedPanel.Filter.Menu:Next / Prev / Action
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧の
+　メニューリボン（.thinktank-menu-ribbon / .overview-menu-ribbon）のアイコンを
+　キーボードフォーカスのカーソルとして前後移動・押下します。
 
+　A（260902実装）：src\views\TTFocusedPanelActions.ts の共通ヘルパー
+　　registerIconStripActions() で ContentType / Menu 2系統を登録しました。
+　　対象ボタン群はモデル層のカーソルを持たず React ローカル state 駆動のため、
+　　フォーカス中パネル（getFocusName 基準の focusedColumnLive()。Thinktank / Overview）
+　　配下の実 DOM ボタン要素を左→右順に取得し、document.activeElement をカーソルとして扱います。
+　　- ContentType: .tt-search-bar__types / .ov-search-bar__types 内の
+　　　.tt|ov-search-bar__type-btn / __type-all（6種別 + 右端の全種別クリア/選択）。
+　　　空なら [種別フィルタなし]。
+　　- Menu: .thinktank-menu-ribbon / .overview-menu-ribbon 内の .menu-ribbon__btn
+　　　（無効ボタンは除外）。空なら [メニューなし]。
+　　- :Next / :Prev — 次／前へ .focus() を循環移動（未フォーカスからは Next=先頭 / Prev=末尾）。
+　　　フォーカス位置は各 CSS の :focus アウトライン（ThinktankSearchBar.css /
+　　　OverviewSearchBar.css / Layout/MenuRibbon.css）で可視化。
+　　- :Action — フォーカス中のボタンが対象群のいずれかなら .click() で既存ハンドラへ委譲。
+　　　未フォーカス時は [アイコン未フォーカス]。
+　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter / exmode ExApp。
+　　ContentType は M / Shift+M / "," 、Menu は未割当（TTActions.Execute でも実行可）。
 
+　　A（260902修正・不具合対応）：「動かない」報告を受け以下3点を修正。
+　　　1. 対象パネルの解決を app.FocusedColumn（focusin→rAF 経由の遅延キャッシュで、
+　　　　 rAF 未発火時などに古い値が残る）から、getFocusName(document.activeElement) 基準の
+　　　　 focusedColumnLive() に変更。ショートカットの focus 条件（*Filter / *Chat）と同じ
+　　　　 判定基準になり、実際にキーボードフォーカスがあるパネルへ確実にディスパッチする。
+　　　　 FocusedPanel.Filter.CursorPos:* / FocusedPanel.AIChat.* も同修正で堅牢化。
+　　　2. Space キーが効かない問題。KeyboardEvent.key はスペースを ' '（半角スペース）で
+　　　　 返すため、keyboardUtils.ts の KEY_NAME_MAP に ' ' → 'space' を追加しキー定義の
+　　　　 "Space" と一致させた。
+　　　3. .focus() は :focus-visible ヒューリスティックに乗らずアウトラインが出ないため、
+　　　　 CSS を :focus に変更。
+
+　　A（260902修正・不具合対応その2）：「Overview の Think一覧では効かない」報告を受け修正。
+　　　Overview の検索バーは Thinktank の .tt-search-bar__* ではなく .ov-search-bar__* の
+　　　接頭辞を使う別コンポーネント（OverviewSearchBar）だった。focusedTypeFilterButtons() の
+　　　セレクタに .ov-search-bar__types / __type-btn / __type-all を追加し、
+　　　OverviewSearchBar.css にも同じ :focus アウトラインを追加。Thinktank / Overview 両方で
+　　　Next / Prev / Toggle が動くことを実機確認（FocusedColumn を別パネルにしても正しく動作）。
 
 ## Action：　260714　ThinktankPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
