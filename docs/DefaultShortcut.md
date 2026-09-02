@@ -6,8 +6,6 @@ Keyboard Shortcuts
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
 *           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,フォーカスカラム左
 *           ,ExApp  ,Shift+A            ,Application.FocusedPanel.Name:Next             ,フォーカスカラム右
-*           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,Workoutツールバー左
-*           ,ExApp  ,Shift+Z            ,ToolBar.Mode.Name:Next                         ,Workoutツールバー右
 
 *           ,ExApp  ,Q                  ,FocusedPanel.Area.IsOpen:Toggle                ,パネル開閉
 *           ,ExApp  ,S                  ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
@@ -20,17 +18,19 @@ Workout*    ,ExApp  ,Shift+M            ,WorkoutPanel.FocusedPane.Mode:Prev     
 
 *Filter     ,ExApp  ,N                  ,FocusedPanel.Filter.CursorPos:NextLine         ,フォーカスパネルのThink一覧のカーソルを上に移動する
 *Filter     ,ExApp  ,P                  ,FocusedPanel.Filter.CursorPos:PrevLine         ,フォーカスパネルのThink一覧のカーソルを下に移動する
-*Filter     ,ExApp  ,Enter              ,FocusedPanel.Filter.Cursor:Action              ,フォーカスパネルのThink一覧のカーソル位置を開く
 *Filter     ,ExApp  ,M                  ,FocusedPanel.Filter.ContentType:Next           ,フォーカスパネルのThink一覧のContentTypeのフォーカスを次のアイコンに移動します。
 *Filter     ,ExApp  ,Shift+M            ,FocusedPanel.Filter.ContentType:Prev           ,フォーカスパネルのThink一覧のContentTypeのフォーカスを前のアイコンに移動します。
 *Filter     ,ExApp  ,K                  ,FocusedPanel.Filter.Menu:Next                  ,フォーカスパネルのThink一覧のメニューアイコンのフォーカスを次のアイコンに移動します。
 *Filter     ,ExApp  ,Shift+K            ,FocusedPanel.Filter.Menu:Prev                  ,フォーカスパネルのThink一覧のメニューアイコンのフォーカスを前のアイコンに移動します。
+*Filter     ,ExApp  ,Enter              ,FocusedPanel.Filter.Cursor:Action              ,フォーカスパネルのThink一覧のカーソル位置を開く
 *Filter     ,ExApp  ,","                ,FocusedPanel.Filter.FocusedIcon:Action         ,フォーカスパネルのThink一覧のフォーカスされているアイコンを押下します。
-
 
 *Chat       ,ExApp  ,N                  ,FocusedPanel.AIChat.CursorPos:NextLine         ,フォーカスパネルのAI相談のカーソルを上に移動する
 *Chat       ,ExApp  ,P                  ,FocusedPanel.AIChat.CursorPos:PrevLine         ,フォーカスパネルのAI相談のカーソルを下に移動する
 *Chat       ,ExApp  ,Enter              ,FocusedPanel.AIChat.Cursor:Action              ,フォーカスパネルのAI相談のカーソル位置を開く
+
+*           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,Workoutツールバー左
+*           ,ExApp  ,Shift+Z            ,ToolBar.Mode.Name:Next                         ,Workoutツールバー右
 
 
 
@@ -75,6 +75,7 @@ Overview.Filter     ,ExApp  ,Alt+K          ,OverviewPanel.Filter.Cursor:ToggleC
 # Editor Editor 検索
 *TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
 *TextEditor ,       ,Shift+Ctrl+H           ,TextEditor.CurrentEditor.ShowReplace       ,置換ダイアログを表示する
+*TextEditor ,       ,Ctrl+V                 ,TextEditor.EditText.PasteMarkdown          ,ペースト（Markdown判定付加）
 
 # ToolBar ハイライト・コマンド
 *TextEditor ,       ,Alt+S                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
