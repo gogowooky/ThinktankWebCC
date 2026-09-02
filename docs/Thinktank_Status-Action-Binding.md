@@ -19,9 +19,11 @@
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のMenuアイコンのフォーカスを次のアイコンに移動します。
 ## 完了：　260902　FocusedPanel.Filter.Menu:Prev
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のMenuアイコンのフォーカスを前のアイコンに移動します。
-## 完了：　260902　FocusedPanel.Filter.Menu:Action
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のフォーカスされているMenuアイコンを押下します。
-　（実装内容は下部 # Panel セクションの FocusedPanel.Filter.Menu の A（260902実装）を参照）
+## 完了：　260902　FocusedPanel.Filter.FocusedIcon:Action
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧で
+　フォーカスされているアイコン（種別アイコン / メニューアイコンのいずれか）を押下します。
+　（旧 ContentType:Action / Menu:Action を統合。実装内容は下部 # Panel セクションの
+　　FocusedPanel.Filter の A（260902実装）を参照）
 
 
 # Status
@@ -396,30 +398,34 @@ key:            FocusedPanel.Mode.Name:Next
 ## Action：　260902　FocusedPanel.Filter.ContentType:Prev
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを前のアイコンに移動します。
 　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
-## Action：　260902　FocusedPanel.Filter.ContentType:Action
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のフォーカスされているContentTypeアイコンを押下します。
-## Action：　260902　FocusedPanel.Filter.Menu:Next / Prev / Action
+## Action：　260902　FocusedPanel.Filter.Menu:Next / Prev
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧の
 　メニューリボン（.thinktank-menu-ribbon / .overview-menu-ribbon）のアイコンを
-　キーボードフォーカスのカーソルとして前後移動・押下します。
+　キーボードフォーカスのカーソルとして前後移動します。
+## Action：　260902　FocusedPanel.Filter.FocusedIcon:Action
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧で
+　いまフォーカスされているアイコン（種別アイコン / メニューアイコンのいずれか）を押下します。
+　（旧 FocusedPanel.Filter.ContentType:Action / FocusedPanel.Filter.Menu:Action を統合）
 
-　A（260902実装）：src\views\TTFocusedPanelActions.ts の共通ヘルパー
-　　registerIconStripActions() で ContentType / Menu 2系統を登録しました。
+　A（260902実装）：src\views\TTFocusedPanelActions.ts に登録しました。
 　　対象ボタン群はモデル層のカーソルを持たず React ローカル state 駆動のため、
 　　フォーカス中パネル（getFocusName 基準の focusedColumnLive()。Thinktank / Overview）
 　　配下の実 DOM ボタン要素を左→右順に取得し、document.activeElement をカーソルとして扱います。
-　　- ContentType: .tt-search-bar__types / .ov-search-bar__types 内の
+　　- ContentType 群: .tt-search-bar__types / .ov-search-bar__types 内の
 　　　.tt|ov-search-bar__type-btn / __type-all（6種別 + 右端の全種別クリア/選択）。
 　　　空なら [種別フィルタなし]。
-　　- Menu: .thinktank-menu-ribbon / .overview-menu-ribbon 内の .menu-ribbon__btn
+　　- Menu 群: .thinktank-menu-ribbon / .overview-menu-ribbon 内の .menu-ribbon__btn
 　　　（無効ボタンは除外）。空なら [メニューなし]。
-　　- :Next / :Prev — 次／前へ .focus() を循環移動（未フォーカスからは Next=先頭 / Prev=末尾）。
+　　- ContentType:Next/Prev・Menu:Next/Prev（共通ヘルパー registerIconStripNav）—
+　　　次／前へ .focus() を循環移動（未フォーカスからは Next=先頭 / Prev=末尾）。
 　　　フォーカス位置は各 CSS の :focus アウトライン（ThinktankSearchBar.css /
 　　　OverviewSearchBar.css / Layout/MenuRibbon.css）で可視化。
-　　- :Action — フォーカス中のボタンが対象群のいずれかなら .click() で既存ハンドラへ委譲。
-　　　未フォーカス時は [アイコン未フォーカス]。
-　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter / exmode ExApp。
-　　ContentType は M / Shift+M / "," 、Menu は未割当（TTActions.Execute でも実行可）。
+　　- FocusedIcon:Action — document.activeElement が上記いずれかの群のボタンなら
+　　　.click() で既存ハンドラへ委譲（種別トグル / 全種別 / リボン各操作）。
+　　　対象アイコン未フォーカス時は [アイコン未フォーカス]。
+　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter / exmode ExApp
+　　（ContentType:Next/Prev = M / Shift+M、Menu:Next/Prev = K / Shift+K、
+　　　FocusedIcon:Action = ","）。
 
 　　A（260902修正・不具合対応）：「動かない」報告を受け以下3点を修正。
 　　　1. 対象パネルの解決を app.FocusedColumn（focusin→rAF 経由の遅延キャッシュで、

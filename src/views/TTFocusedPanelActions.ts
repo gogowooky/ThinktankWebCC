@@ -321,15 +321,21 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // ── Think一覧 アイコンストリップのフォーカス移動・押下（軽量: DOM 経由）──
   // 種別アイコン群やメニューリボンのボタンは React ローカル state 駆動でモデル層の
   // カーソルを持たないため、実 DOM のボタン要素をキーボードフォーカスのカーソルとして
-  // 扱い、:Action は click() で既存のハンドラへ委譲する。
+  // 扱う。押下は種別/メニュー共通の FocusedIcon:Action が click() で委譲する。
 
-  /** 1つのボタン群に対して :Next / :Prev（循環フォーカス移動）と :Action（押下）を登録する */
-  const registerIconStripActions = (
+  /** アイコン要素の表示ラベル（aria-label → data-tip → 親 .tooltip-wrapper の data-tip） */
+  const iconLabelOf = (el: HTMLElement): string =>
+    el.getAttribute('aria-label')
+    ?? el.getAttribute('data-tip')
+    ?? el.closest('.tooltip-wrapper')?.getAttribute('data-tip')
+    ?? 'アイコン';
+
+  /** 1つのボタン群に対して :Next / :Prev（循環フォーカス移動）を登録する */
+  const registerIconStripNav = (
     base:      string,
     noun:      string,
     getButtons: () => HTMLElement[],
     emptyMsg:  string,
-    labelOf:   (el: HTMLElement) => string,
   ): void => {
     for (const [suffix, dir] of [['Prev', -1], ['Next', 1]] as const) {
       TTActions.Register({
@@ -344,22 +350,10 @@ export function registerFocusedPanelActions(app: TTApplication): void {
             ? (dir > 0 ? 0 : btns.length - 1)
             : (cur + dir + btns.length) % btns.length;
           btns[next].focus();
-          item.Result = `${labelOf(btns[next])}（${next + 1}/${btns.length}）`;
+          item.Result = `${iconLabelOf(btns[next])}（${next + 1}/${btns.length}）`;
         },
       });
     }
-    TTActions.Register({
-      ActionID: `${base}:Action`,
-      Description: `フォーカスパネルのThink一覧のフォーカス中の${noun}を押下する`,
-      Completion: (item) => {
-        const btns = getButtons();
-        if (btns.length === 0) { item.Result = emptyMsg; return; }
-        const active = document.activeElement as HTMLElement | null;
-        if (!active || !btns.includes(active)) { item.Result = '[アイコン未フォーカス]'; return; }
-        active.click();
-        item.Result = labelOf(active);
-      },
-    });
   };
 
   /** フォーカス中パネルの Think一覧 種別アイコン群（左→右順）。
@@ -390,19 +384,22 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     return [];
   };
 
-  registerIconStripActions(
-    'FocusedPanel.Filter.ContentType', '種別アイコン', focusedTypeFilterButtons,
-    '[種別フィルタなし]',
-    el => el.getAttribute('aria-label') ?? '切替',
-  );
+  registerIconStripNav('FocusedPanel.Filter.ContentType', '種別アイコン', focusedTypeFilterButtons, '[種別フィルタなし]');
+  registerIconStripNav('FocusedPanel.Filter.Menu',        'メニューアイコン', focusedMenuRibbonButtons, '[メニューなし]');
 
-  registerIconStripActions(
-    'FocusedPanel.Filter.Menu', 'メニューアイコン', focusedMenuRibbonButtons,
-    '[メニューなし]',
-    el => el.getAttribute('data-tip')
-      ?? el.closest('.tooltip-wrapper')?.getAttribute('data-tip')
-      ?? 'メニュー',
-  );
+  // 種別 / メニューを問わず、いまキーボードフォーカスがあるアイコンを押下する
+  TTActions.Register({
+    ActionID: 'FocusedPanel.Filter.FocusedIcon:Action',
+    Description: 'フォーカスパネルのThink一覧でフォーカス中のアイコンを押下する',
+    Completion: (item) => {
+      const active = document.activeElement as HTMLElement | null;
+      if (!active) { item.Result = '[アイコン未フォーカス]'; return; }
+      const known = [...focusedTypeFilterButtons(), ...focusedMenuRibbonButtons()];
+      if (!known.includes(active)) { item.Result = '[アイコン未フォーカス]'; return; }
+      active.click();
+      item.Result = iconLabelOf(active);
+    },
+  });
 
   // ExMode 関連アクションの登録（'Application.Status.ExMode:xxx' と 'ExMode:xxx' の
   // 2つのActionID表記がショートカット定義側で使われるため、両方を同じハンドラに解決させる）
