@@ -323,13 +323,16 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // モデル層のカーソルを持たないため、実 DOM のボタン要素をキーボードフォーカスの
   // カーソルとして扱い、Toggle は click() で既存のトグル処理へ委譲する。
 
-  /** フォーカス中パネル（Thinktank / Overview）の Think一覧 種別アイコン群（左→右順） */
+  /** フォーカス中パネルの Think一覧 種別アイコン群（左→右順）。
+   *  Thinktank は .tt-search-bar__*、Overview は .ov-search-bar__* と接頭辞が異なる。 */
   const focusedTypeFilterButtons = (): HTMLElement[] => {
     for (const root of focusedFilterPanelRoots()) {
-      const group = root.querySelector('.tt-search-bar__types');
+      const group = root.querySelector('.tt-search-bar__types, .ov-search-bar__types');
       if (group) {
         return Array.from(
-          group.querySelectorAll<HTMLElement>('.tt-search-bar__type-btn, .tt-search-bar__type-all'),
+          group.querySelectorAll<HTMLElement>(
+            '.tt-search-bar__type-btn, .tt-search-bar__type-all, .ov-search-bar__type-btn, .ov-search-bar__type-all',
+          ),
         );
       }
     }

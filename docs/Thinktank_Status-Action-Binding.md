@@ -15,6 +15,12 @@
 
 # Action
 
+## 実装：　FocusedPanel.Filter.Menu:Next
+## 実装：　FocusedPanel.Filter.Menu:Prev
+## 実装：　FocusedPanel.Filter.Menu:Action
+
+
+
 ## 完了：　260902　FocusedPanel.Filter.ContentType:Next
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを次のアイコンに移動します。
 　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
@@ -52,6 +58,13 @@
 　　　　 "Space" と一致させた。
 　　　3. .focus() は :focus-visible ヒューリスティックに乗らずアウトラインが出ないため、
 　　　　 CSS を :focus に変更。
+
+　　A（260902修正・不具合対応その2）：「Overview の Think一覧では効かない」報告を受け修正。
+　　　Overview の検索バーは Thinktank の .tt-search-bar__* ではなく .ov-search-bar__* の
+　　　接頭辞を使う別コンポーネント（OverviewSearchBar）だった。focusedTypeFilterButtons() の
+　　　セレクタに .ov-search-bar__types / __type-btn / __type-all を追加し、
+　　　OverviewSearchBar.css にも同じ :focus アウトラインを追加。Thinktank / Overview 両方で
+　　　Next / Prev / Toggle が動くことを実機確認（FocusedColumn を別パネルにしても正しく動作）。
 
 # Status
 
