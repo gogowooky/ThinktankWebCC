@@ -15,36 +15,7 @@
 
 # Action
 
-## 完了：　260902　CurrentPanel.Filter.CursorPos:PrevLine
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のカーソルを1行上に移動します。
-## 完了：　260902　CurrentPanel.Filter.CursorPos:NextLine
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のカーソルを1行下に移動します。
-## 完了：　260902　CurrentPanel.Filter.Cursor:Action
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のカーソル位置を開きます。
-## 完了：　260902　CurrentPanel.AIChat.CursorPos:PrevLine
-　現在フォーカスされているパネルにAI相談パネルがある場合、そのパネルのAI相談のカーソルを1行上に移動します。
-## 完了：　260902　CurrentPanel.AIChat.CursorPos:NextLine
-　現在フォーカスされているパネルにAI相談パネルがある場合、そのパネルのAI相談のカーソルを1行下に移動します。
-## 完了：　260902　CurrentPanel.AIChat.Cursor:Action
-　現在フォーカスされているパネルにAI相談パネルがある場合、そのパネルのAI相談のカーソル位置を開きます。
-
-　A（260902実装）：src\views\TTFocusedPanelActions.ts に6アクションを登録しました。
-　　- CurrentPanel.Filter.CursorPos:PrevLine / NextLine / Cursor:Action
-　　　app.FocusedColumn が Thinktank / Overview のとき、既存の
-　　　{ThinktankPanel|OverviewPanel}.Filter.* へ TTActions.Execute で委譲します
-　　　（それ以外のパネルは [Think一覧なし]）。カーソル状態は既存の
-　　　panel.CurrentItemID / FilteredThoughts をそのまま使うため挙動は Think一覧と同一です。
-　　- CurrentPanel.AIChat.CursorPos:PrevLine / NextLine
-　　　AI相談の chat ファイル一覧（ThinktankChatMemoPicker）はモデル層のカーソルを持たず
-　　　React ローカル state 駆動のため、フォーカス中パネル（Thinktank / Overview）配下の
-　　　.tt-chat-picker .thoughts-list（ArrowUp/Down/Enter 対応済み）へ keydown を送出して
-　　　カーソル移動します。メモピッカーはカーソル移動時に対象 chat を即ロードします。
-　　- CurrentPanel.AIChat.Cursor:Action
-　　　上記のとおり移動時点で chat はロード済みのため、「開く」= その対話へ入る、として
-　　　同パネルの .ai-chat-view__input（チャット入力欄）へフォーカスを移します。
-　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter（CurrentPanel.Filter.*）/
-　　*Chat（CurrentPanel.AIChat.*）で、それぞれ getFocusName が返す Thinktank.Filter /
-　　Overview.Filter、Thinktank.Chat / Overview.Chat に後方一致でマッチします。
+## 実装：　FocusedPanel.Filter.Cursor
 
 
 # Status
@@ -382,6 +353,38 @@ key:            FocusedPanel.Mode.Name:Prev
 ## Action：　260619　FocusedPanel.Mode.Name:Next
 description:    フォーカスパネルの表示モードを次に切り替える
 key:            FocusedPanel.Mode.Name:Next
+## Action：　260902　FocusedPanel.Filter.CursorPos:PrevLine
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のカーソルを1行上に移動します。
+## Action：　260902　FocusedPanel.Filter.CursorPos:NextLine
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のカーソルを1行下に移動します。
+## Action：　260902　FocusedPanel.Filter.Cursor:Action
+　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のカーソル位置を開きます。
+## Action：　260902　FocusedPanel.AIChat.CursorPos:PrevLine
+　現在フォーカスされているパネルにAI相談パネルがある場合、そのパネルのAI相談のカーソルを1行上に移動します。
+## Action：　260902　FocusedPanel.AIChat.CursorPos:NextLine
+　現在フォーカスされているパネルにAI相談パネルがある場合、そのパネルのAI相談のカーソルを1行下に移動します。
+## Action：　260902　FocusedPanel.AIChat.Cursor:Action
+　現在フォーカスされているパネルにAI相談パネルがある場合、そのパネルのAI相談のカーソル位置を開きます。
+
+　A（260902実装）：src\views\TTFocusedPanelActions.ts に6アクションを登録しました。
+　　- FocusedPanel.Filter.CursorPos:PrevLine / NextLine / Cursor:Action
+　　　app.FocusedColumn が Thinktank / Overview のとき、既存の
+　　　{ThinktankPanel|OverviewPanel}.Filter.* へ TTActions.Execute で委譲します
+　　　（それ以外のパネルは [Think一覧なし]）。カーソル状態は既存の
+　　　panel.CurrentItemID / FilteredThoughts をそのまま使うため挙動は Think一覧と同一です。
+　　- FocusedPanel.AIChat.CursorPos:PrevLine / NextLine
+　　　AI相談の chat ファイル一覧（ThinktankChatMemoPicker）はモデル層のカーソルを持たず
+　　　React ローカル state 駆動のため、フォーカス中パネル（Thinktank / Overview）配下の
+　　　.tt-chat-picker .thoughts-list（ArrowUp/Down/Enter 対応済み）へ keydown を送出して
+　　　カーソル移動します。メモピッカーはカーソル移動時に対象 chat を即ロードします。
+　　- FocusedPanel.AIChat.Cursor:Action
+　　　上記のとおり移動時点で chat はロード済みのため、「開く」= その対話へ入る、として
+　　　同パネルの .ai-chat-view__input（チャット入力欄）へフォーカスを移します。
+　　キー割当は docs\DefaultShortcut.md の focus 列 *Filter（FocusedPanel.Filter.*）/
+　　*Chat（FocusedPanel.AIChat.*）で、それぞれ getFocusName が返す Thinktank.Filter /
+　　Overview.Filter、Thinktank.Chat / Overview.Chat に後方一致でマッチします。
+
+
 
 ## Action：　260714　ThinktankPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く

@@ -18,13 +18,13 @@ Workout*    ,ExApp  ,P                  ,WorkoutPanel.FocusedPane.PaneNumber:Pre
 Workout*    ,ExApp  ,M                  ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
 Workout*    ,ExApp  ,Shift+M            ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
 
-*Filter    ,ExApp  ,N                   ,CurrentPanel.Filter.CursorPos:NextLine         ,フォーカスパネルのThink一覧のカーソルを上に移動する
-*Filter    ,ExApp  ,P                   ,CurrentPanel.Filter.CursorPos:PrevLine         ,フォーカスパネルのThink一覧のカーソルを下に移動する
-*Filter    ,ExApp  ,Enter               ,CurrentPanel.Filter.Cursor:Action              ,フォーカスパネルのThink一覧のカーソル位置を開く
+*Filter    ,ExApp  ,N                   ,FocusedPanel.Filter.CursorPos:NextLine         ,フォーカスパネルのThink一覧のカーソルを上に移動する
+*Filter    ,ExApp  ,P                   ,FocusedPanel.Filter.CursorPos:PrevLine         ,フォーカスパネルのThink一覧のカーソルを下に移動する
+*Filter    ,ExApp  ,Enter               ,FocusedPanel.Filter.Cursor:Action              ,フォーカスパネルのThink一覧のカーソル位置を開く
 
-*Chat      ,ExApp  ,N                   ,CurrentPanel.AIChat.CursorPos:NextLine         ,フォーカスパネルのAI相談のカーソルを上に移動する
-*Chat      ,ExApp  ,P                   ,CurrentPanel.AIChat.CursorPos:PrevLine         ,フォーカスパネルのAI相談のカーソルを下に移動する
-*Chat      ,ExApp  ,Enter               ,CurrentPanel.AIChat.Cursor:Action              ,フォーカスパネルのAI相談のカーソル位置を開く
+*Chat      ,ExApp  ,N                   ,FocusedPanel.AIChat.CursorPos:NextLine         ,フォーカスパネルのAI相談のカーソルを上に移動する
+*Chat      ,ExApp  ,P                   ,FocusedPanel.AIChat.CursorPos:PrevLine         ,フォーカスパネルのAI相談のカーソルを下に移動する
+*Chat      ,ExApp  ,Enter               ,FocusedPanel.AIChat.Cursor:Action              ,フォーカスパネルのAI相談のカーソル位置を開く
 
 
 # Panel>Think一覧 カーソル

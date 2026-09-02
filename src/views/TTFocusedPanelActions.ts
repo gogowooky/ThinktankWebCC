@@ -220,7 +220,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     });
   }
 
-  // ── CurrentPanel（フォーカス中パネル）向けの委譲アクション ────────────────
+  // ── FocusedPanel（フォーカス中パネル）向けの委譲アクション ────────────────
   // docs\DefaultShortcut.md の focus 列を Thinktank/Overview で使い分けずに1定義で
   // 済ませるための、フォーカス中パネルへディスパッチする総称アクション。
 
@@ -239,7 +239,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     ['Cursor:Action',      'カーソル位置のアイテムを開く'],
   ] as const) {
     TTActions.Register({
-      ActionID: `CurrentPanel.Filter.${suffix}`,
+      ActionID: `FocusedPanel.Filter.${suffix}`,
       Description: `フォーカスパネルのThink一覧の${label}`,
       Completion: (item) => {
         const prefix = focusedFilterPrefix();
@@ -276,7 +276,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     ['CursorPos:NextLine', 'ArrowDown', 'カーソルを1行後に移動する'],
   ] as const) {
     TTActions.Register({
-      ActionID: `CurrentPanel.AIChat.${suffix}`,
+      ActionID: `FocusedPanel.AIChat.${suffix}`,
       Description: `フォーカスパネルのAI相談の${label}`,
       Completion: (item) => {
         const list = focusedChatMemoList();
@@ -289,7 +289,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   }
 
   TTActions.Register({
-    ActionID: 'CurrentPanel.AIChat.Cursor:Action',
+    ActionID: 'FocusedPanel.AIChat.Cursor:Action',
     Description: 'フォーカスパネルのAI相談のカーソル位置を開く',
     Completion: (item) => {
       // メモピッカーはカーソル移動時に対象 chat を即ロードするため、
