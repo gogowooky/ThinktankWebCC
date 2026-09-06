@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.52 chore(git-update): README.md追記項目にコミット済みバージョン番号を追加
+- 日付: 2026-09-07
+- コミット番号: 3522995
+
+git-updateスキル（.claude/skills/git-update/skill.md、.agent/skills/git-update/skill.md）を
+更新し、README.mdへ追記するエントリに「コミットしたバージョン番号」を含めるようにした。
+以後のエントリは見出しに `v{version}` を付す形式になる。
+
 ### docs: 完了済みの実装依頼を各カタログセクションへ整理・統合
 - 日付: 2026-09-07
 - コミット番号: 0b8a204
