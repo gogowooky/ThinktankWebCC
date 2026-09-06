@@ -15,87 +15,9 @@
 
 # Action
 
-## 完了：　260906　TextEditor.CurrentEditor.CursorPos:Focus
-現在フォーカスがあるTextEditorのCursorPosにFocusします。
-
-　A（260906実装）：src\views\actions\textEditorCursorMoveActions.ts に
-　　TextEditor.CurrentEditor.CursorPos:Focus を登録しました。
-　　TTShortcutManager.instance.activeEditor（＝現在のTextEditor）に対し
-　　Monaco の editor.focus() を呼び、カーソル位置を保持したままフォーカスを戻します。
-　　位置が判れば revealPositionInCenterIfOutsideViewport でその行を可視化します。
-　　ツールバー入力欄（ToolBar.*Mode.Text:Focus）やメニューからエディタ本文へ
-　　復帰するための復路アクションで、エディタ未選択時は [エディタ未選択] を返します。
-　　既存の TextEditor.CurrentEditor.CursorPos:* 群と同じ登録関数・同じ activeEditor 参照。
-　　キー割当は docs\DefaultShortcut.md には追加せず、TTActions.Execute / コマンドから実行可能。
-
-## 完了：　260902　TextEditor.EditText.PasteMarkdown
-↓Pasteされるテキストがmarkdownかどうかを判定する → markdownではない場合はそのままPasteして終了
-↓markdownの場合は、貼付位置のHeadingレベルを判定し、Pasteテキスト中のHeadingを貼付位置の「子Heading」としてPasteされるようにHeadingの#マークを修正してからPasteする
-　（実装内容は下部 # Editor 編集 セクションの TextEditor.EditText.PasteMarkdown の A（260902実装）を参照）
-
-
-
 
 # Status
 
-
-## 完了：　260906　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
-　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
-
-　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
-　　TTWorkoutPanel.AddContentSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
-　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter()／
-　　ThinktankArea・OverviewArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
-
-description:    コンテンツで絞込みのキーワードをハイライトする
-key:            ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
-current:        'true'
-default:        'true'
-type:           bool
-candidates:     ^(true|false)^$
-
-　A（260814実装）：TTWorkoutPanel.AddContentSearchKeywordFlag（既定true）として実体を追加し、
-　　TTUIStateManagerにStatusとして登録しました。実行判定は共通ユーティリティ
-　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter() が担い、
-　　既存の「選択テキストをHighlighterへ追加」（AddSelected）と同じグループ重複排除ロジックで
-　　ToolBar.HighlighterMode.Text にキーワードを追加します。
-　　「実行したとき」= コンテンツ絞り込み欄でEnter確定した瞬間とし、以下3箇所に適用しました。
-　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleSearch）
-　　- OverviewPanel Think一覧（OverviewArea.tsx handleSearch）
-　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx、従来onSearchが
-　　　NOOPだったためEnter確定時に追加する処理を新設。ライブ絞り込み自体の挙動は変更なし）
-　　実機検証（Vite+Expressのdevサーバー）で、Think一覧のコンテンツ絞り込みEnter確定時に
-　　ToolBar.HighlighterMode.Text へキーワードが追加されること、フラグをfalseにすると
-　　追加されないことを確認しました。
-
-## 完了：　260906　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
-　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
-
-　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
-　　TTWorkoutPanel.AddTitleSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
-　　src\utils\highlighterKeyword.ts の addTitleSearchKeywordToHighlighter()／
-　　ThinktankArea・OverviewArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
-
-description:    タイトルで絞込みのキーワードをハイライトする
-key:            ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
-current:        'true'
-default:        'true'
-type:           bool
-candidates:     ^(true|false)^$
-
-　A（260814実装）：TTWorkoutPanel.AddTitleSearchKeywordFlag（既定true）として実体を追加し、
-　　TTUIStateManagerにStatusとして登録しました。追加判定は addContentSearchKeywordToHighlighter
-　　と同じユーティリティファイルの addTitleSearchKeywordToHighlighter() で行います。
-　　タイトル絞り込み欄（ThinktankFilterPanel/OverviewFilterPanel）はEnterキーで
-　　saveHistory()に加えonSearch?.()を呼ぶ実装が既にありましたが、呼び出し元3箇所で
-　　onSearchが未接続（ThinktankArea/OverviewArea）またはNOOP（ThinktankChatMemoPicker）
-　　だったため、いずれもEnter確定時に上記ユーティリティを呼ぶハンドラーを新設・接続しました。
-　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleTitleFilterSearch）
-　　- OverviewPanel Think一覧（OverviewArea.tsx handleTitleFilterSearch）
-　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx handleTitleSearch）
-　　既存のタイトル絞り込み自体（都度ライブ適用）の挙動は変更していません。
-　　実機検証で、Think一覧のタイトル絞り込みEnter確定時にToolBar.HighlighterMode.Text へ
-　　キーワードが追加されること、フラグをfalseにすると追加されないことを確認しました。
 
 
 # 対応不要： その他：ナビゲーション　ファイル内・ファイル間ジャンプ
@@ -1016,6 +938,10 @@ key:            TextEditor.EditText.PasteMarkdown
 　　クリップボード読取失敗時は [エラー] を返す。純ロジック reparentPastedHeadings は
 　　同ファイルから export（テスト用）。
 
+↓Pasteされるテキストがmarkdownかどうかを判定する → markdownではない場合はそのままPasteして終了
+↓markdownの場合は、貼付位置のHeadingレベルを判定し、Pasteテキスト中のHeadingを貼付位置の「子Heading」としてPasteされるようにHeadingの#マークを修正してからPasteする
+　（実装内容は下部 # Editor 編集 セクションの TextEditor.EditText.PasteMarkdown の A（260902実装）を参照）
+
 ## Status：　260816　TextEditor.Bullet.Marks
 　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Bullet.Style(1..9).* に順に対応します
 　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
@@ -1382,6 +1308,62 @@ key:            TextEditor.CurrentEditor.CursorPos:LastHighlighter
 　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
 　　キー割当（docs\DefaultShortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
+## Action：　260906　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
+　　TTWorkoutPanel.AddContentSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter()／
+　　ThinktankArea・OverviewArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
+
+description:    コンテンツで絞込みのキーワードをハイライトする
+key:            ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+current:        'true'
+default:        'true'
+type:           bool
+candidates:     ^(true|false)^$
+
+　A（260814実装）：TTWorkoutPanel.AddContentSearchKeywordFlag（既定true）として実体を追加し、
+　　TTUIStateManagerにStatusとして登録しました。実行判定は共通ユーティリティ
+　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter() が担い、
+　　既存の「選択テキストをHighlighterへ追加」（AddSelected）と同じグループ重複排除ロジックで
+　　ToolBar.HighlighterMode.Text にキーワードを追加します。
+　　「実行したとき」= コンテンツ絞り込み欄でEnter確定した瞬間とし、以下3箇所に適用しました。
+　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleSearch）
+　　- OverviewPanel Think一覧（OverviewArea.tsx handleSearch）
+　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx、従来onSearchが
+　　　NOOPだったためEnter確定時に追加する処理を新設。ライブ絞り込み自体の挙動は変更なし）
+　　実機検証（Vite+Expressのdevサーバー）で、Think一覧のコンテンツ絞り込みEnter確定時に
+　　ToolBar.HighlighterMode.Text へキーワードが追加されること、フラグをfalseにすると
+　　追加されないことを確認しました。
+## Action：　260906　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
+　　TTWorkoutPanel.AddTitleSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　src\utils\highlighterKeyword.ts の addTitleSearchKeywordToHighlighter()／
+　　ThinktankArea・OverviewArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
+
+description:    タイトルで絞込みのキーワードをハイライトする
+key:            ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+current:        'true'
+default:        'true'
+type:           bool
+candidates:     ^(true|false)^$
+
+　A（260814実装）：TTWorkoutPanel.AddTitleSearchKeywordFlag（既定true）として実体を追加し、
+　　TTUIStateManagerにStatusとして登録しました。追加判定は addContentSearchKeywordToHighlighter
+　　と同じユーティリティファイルの addTitleSearchKeywordToHighlighter() で行います。
+　　タイトル絞り込み欄（ThinktankFilterPanel/OverviewFilterPanel）はEnterキーで
+　　saveHistory()に加えonSearch?.()を呼ぶ実装が既にありましたが、呼び出し元3箇所で
+　　onSearchが未接続（ThinktankArea/OverviewArea）またはNOOP（ThinktankChatMemoPicker）
+　　だったため、いずれもEnter確定時に上記ユーティリティを呼ぶハンドラーを新設・接続しました。
+　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleTitleFilterSearch）
+　　- OverviewPanel Think一覧（OverviewArea.tsx handleTitleFilterSearch）
+　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx handleTitleSearch）
+　　既存のタイトル絞り込み自体（都度ライブ適用）の挙動は変更していません。
+　　実機検証で、Think一覧のタイトル絞り込みEnter確定時にToolBar.HighlighterMode.Text へ
+　　キーワードが追加されること、フラグをfalseにすると追加されないことを確認しました。
 ## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
 description:    選択テキストをHighlighter検索語に追加する
 key:            ToolBar.HighlighterMode.Text:AddSelected
@@ -1407,6 +1389,18 @@ ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その�
 　　キー割当（docs\DefaultShortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
 
 # TextEditor Cursor ================================================================================================
+## Action：　260906　TextEditor.CurrentEditor.CursorPos:Focus
+現在フォーカスがあるTextEditorのCursorPosにFocusします。
+
+　A（260906実装）：src\views\actions\textEditorCursorMoveActions.ts に
+　　TextEditor.CurrentEditor.CursorPos:Focus を登録しました。
+　　TTShortcutManager.instance.activeEditor（＝現在のTextEditor）に対し
+　　Monaco の editor.focus() を呼び、カーソル位置を保持したままフォーカスを戻します。
+　　位置が判れば revealPositionInCenterIfOutsideViewport でその行を可視化します。
+　　ツールバー入力欄（ToolBar.*Mode.Text:Focus）やメニューからエディタ本文へ
+　　復帰するための復路アクションで、エディタ未選択時は [エディタ未選択] を返します。
+　　既存の TextEditor.CurrentEditor.CursorPos:* 群と同じ登録関数・同じ activeEditor 参照。
+　　キー割当は docs\DefaultShortcut.md には追加せず、TTActions.Execute / コマンドから実行可能。
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevChar
 description:    カーソルを1文字前に移動する
 key:            TextEditor.CurrentEditor.CursorPos:PrevChar
