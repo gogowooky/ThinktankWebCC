@@ -14,6 +14,20 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
+
+## 完了：　260906　TextEditor.CurrentEditor.CursorPos:Focus
+現在フォーカスがあるTextEditorのCursorPosにFocusします。
+
+　A（260906実装）：src\views\actions\textEditorCursorMoveActions.ts に
+　　TextEditor.CurrentEditor.CursorPos:Focus を登録しました。
+　　TTShortcutManager.instance.activeEditor（＝現在のTextEditor）に対し
+　　Monaco の editor.focus() を呼び、カーソル位置を保持したままフォーカスを戻します。
+　　位置が判れば revealPositionInCenterIfOutsideViewport でその行を可視化します。
+　　ツールバー入力欄（ToolBar.*Mode.Text:Focus）やメニューからエディタ本文へ
+　　復帰するための復路アクションで、エディタ未選択時は [エディタ未選択] を返します。
+　　既存の TextEditor.CurrentEditor.CursorPos:* 群と同じ登録関数・同じ activeEditor 参照。
+　　キー割当は docs\DefaultShortcut.md には追加せず、TTActions.Execute / コマンドから実行可能。
+
 ## 完了：　260902　TextEditor.EditText.PasteMarkdown
 ↓Pasteされるテキストがmarkdownかどうかを判定する → markdownではない場合はそのままPasteして終了
 ↓markdownの場合は、貼付位置のHeadingレベルを判定し、Pasteテキスト中のHeadingを貼付位置の「子Heading」としてPasteされるようにHeadingの#マークを修正してからPasteする
@@ -25,8 +39,13 @@
 # Status
 
 
-## 実装：　260814　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+## 完了：　260906　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
 　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
+　　TTWorkoutPanel.AddContentSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter()／
+　　ThinktankArea・OverviewArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
 
 description:    コンテンツで絞込みのキーワードをハイライトする
 key:            ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
@@ -49,8 +68,13 @@ candidates:     ^(true|false)^$
 　　ToolBar.HighlighterMode.Text へキーワードが追加されること、フラグをfalseにすると
 　　追加されないことを確認しました。
 
-## 実装：　260814　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+## 完了：　260906　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
 　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
+　　TTWorkoutPanel.AddTitleSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　src\utils\highlighterKeyword.ts の addTitleSearchKeywordToHighlighter()／
+　　ThinktankArea・OverviewArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
 
 description:    タイトルで絞込みのキーワードをハイライトする
 key:            ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
