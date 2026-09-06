@@ -231,6 +231,16 @@ export class TTShortcutManager {
 
   GetShortcuts(): ShortcutEntry[] { return [...this._shortcuts]; }
 
+  /** 任意のテーブル形式コンテンツ（Vaultメモ等）でショートカット設定を上書きする */
+  applyContent(content: string): void {
+    this._loadFromContent(content);
+  }
+
+  /** ショートカット設定を DefaultShortcut.md の内容にリセットする */
+  resetToDefault(): void {
+    this._loadFromContent(localShortcutContent);
+  }
+
   // ── 状態変化ハンドラー（App.tsx / useShortcuts から呼び出す）─────────
 
   /** フォーカス変化時に呼び出す（rAF 後の focusin ハンドラーから）*/

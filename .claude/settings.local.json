@@ -292,7 +292,14 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5174/src/main.tsx)",
       "Bash(echo \"=== TC: $? ===\")",
       "Bash(echo \"=== bs: $? ===\")",
-      "Bash(echo \"TC done: $?\")"
+      "Bash(echo \"TC done: $?\")",
+      "Bash(npm view *)",
+      "Bash(curl -s https://cdn.jsdelivr.net/npm/lucide-react@0.577.0/dist/lucide-react.d.ts)",
+      "Bash(curl -s https://cdn.jsdelivr.net/npm/lucide-react@0.500.0/dist/lucide-react.d.ts)",
+      "Bash(python3 -)",
+      "Bash(grep -rEo \"#[0-9a-fA-F]{3,8}\\\\b\" src --include=\"*.css\")",
+      "Bash(grep -rEo \"[A-Za-z_.-]+\\\\.css:[0-9]+:.*#[0-9a-fA-F]{3,8}\" src --include=\"*.css\" -n)",
+      "Bash(grep -rn \"#[0-9a-fA-F]\\\\{3,8\\\\}\" src --include=\"*.css\")"
     ]
   }
 }

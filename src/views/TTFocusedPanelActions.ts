@@ -26,6 +26,8 @@ import { registerTextEditorCurrentFoldingActions } from './actions/textEditorCur
 import { registerTextEditorCursorMoveActions } from './actions/textEditorCursorMoveActions';
 import { registerTextEditorHighlighterToolbarActions } from './actions/textEditorHighlighterToolbarActions';
 import { registerTextEditorCursorContentActions } from './actions/textEditorCursorContentActions';
+import { registerTextEditorKeyBindingActions } from './actions/textEditorKeyBindingActions';
+import { registerTextEditorColorBindingActions } from './actions/textEditorColorBindingActions';
 
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
@@ -725,6 +727,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   registerTextEditorHighlighterToolbarActions(app);
   registerTextEditorCursorContentActions(app);
   registerTextEditorHeadingNavActions(app);
+  registerTextEditorKeyBindingActions(app);
+  registerTextEditorColorBindingActions(app);
   registerTextEditorCurrentFoldingActions(app);
   registerTextEditorDateActions(app);
   registerTextEditorBulletActions(app);

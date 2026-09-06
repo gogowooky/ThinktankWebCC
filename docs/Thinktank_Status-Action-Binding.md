@@ -1555,6 +1555,35 @@ type:           boolean
 candidates:     ^(true|false)$
 
 
+# TextEditor Settings ===============================================================================================
+## Action：　260905　TextEditor.KeyBinding.Load
+description:    Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定を上書きする
+key:            TextEditor.KeyBinding.Load
+　Workout>TextEditor設定>設定>キー設定のStarアイコンボタンから実行する。
+　Vault内でタイトルが「ThinktankKeyBinding」（大文字小文字不問）のMemoを検索し、見つかればその内容
+　（docs/DefaultShortcut.md と同じテーブル形式）でショートカット設定を実行中のみ上書きする（見つからない
+　場合は何もしない）。TTShortcutManager はUndo/Redoの対象外のため、この変更もUndo対象外。
+　アプリ再起動時には反映されない（起動時は常に docs/DefaultShortcut.md を読み込む）。
+## Action：　260905　TextEditor.KeyBinding.Reset
+description:    キー設定をDefaultの状態に戻す
+key:            TextEditor.KeyBinding.Reset
+　Workout>TextEditor設定>設定>キー設定のPowerアイコンボタンから実行する。
+　docs/DefaultShortcut.md の内容でショートカット設定を初期状態に戻す。
+## Action：　260905　TextEditor.ColorBinding.Load
+description:    Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定を上書きする
+key:            TextEditor.ColorBinding.Load
+　Workout>TextEditor設定>設定>Color設定のStarアイコンボタンから実行する。
+　Vault内でタイトルが「ThinktankColorBinding」（大文字小文字不問）のMemoを検索し、見つかればその内容
+　（docs/DefaultColor.md と同じCSV形式：StatusID, Color, BgColor, Attrs）で色設定を上書きする
+　（見つからない場合は何もしない）。TTUIStateManager.applyProperties() を pushUndo=false で呼ぶため、
+　Undoスタックへの記録は行わない。localStorage / __tt_ui_state__ には反映されるため、次回起動後も残る。
+## Action：　260905　TextEditor.ColorBinding.Reset
+description:    色設定をDefaultの状態に戻す
+key:            TextEditor.ColorBinding.Reset
+　Workout>TextEditor設定>設定>Color設定のPowerアイコンボタンから実行する。
+　docs/DefaultColor.md の内容で色設定を初期状態に戻す。Load同様、Undoスタックへの記録は行わない。
+
+
 # TextEditor ExDate ================================================================================================
 ## Action：　260625　TextEditor.EditDate.InsertExDate
 description:    カーソル位置に日付文字を挿入しExDateモードに入る

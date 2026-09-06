@@ -15,4 +15,10 @@ copyright.txtを以下に従って更新する
 　commitDateTime: コミット日時
 　commitDateTime: コミットメッセージ
 
+README.mdの先頭（見出し直下）に、以下を新しいエントリとして追記する（新しい順）
+　・コミットタイトル
+　・コミット日、コミット番号
+　・コミット内容
+README.mdが存在しない場合は新規作成する
+
 Githubにプッシュする

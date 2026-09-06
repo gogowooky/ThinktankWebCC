@@ -28,6 +28,8 @@ import {
   Mic,
   MicOff,
   Eraser,
+  Star,
+  Power,
 } from 'lucide-react';
 import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
 import type { TTVault } from '../../models/TTVault';
@@ -332,6 +334,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const [isHighlightColorOpen,    setIsHighlightColorOpen]    = useState(true);
   const [isMemoSettingsOpen,      setIsMemoSettingsOpen]      = useState(true);
   const [isEditSettingsOpen,      setIsEditSettingsOpen]      = useState(true);
+  const [isKeySettingsOpen,       setIsKeySettingsOpen]       = useState(true);
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
 
   // ── 音声入力 ───────────────────────────────────────────────────────────
@@ -725,6 +728,65 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                       {voiceError}
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+            <div className="workout-setting-area__divider" />
+
+            {/* 設定 */}
+            <div className="workout-setting-area__section">
+              <div
+                className="workout-setting-area__section-header"
+                onClick={() => setIsKeySettingsOpen(!isKeySettingsOpen)}
+              >
+                {isKeySettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>設定</span>
+              </div>
+
+              {isKeySettingsOpen && (
+                <div className="workout-setting-area__section-content">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>キー設定</span>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('TextEditor.KeyBinding.Load')}
+                        data-tip="Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定を上書きする"
+                        data-tip-side="top-start"
+                      >
+                        <Star size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('TextEditor.KeyBinding.Reset')}
+                        data-tip="キー設定をDefaultの状態に戻す"
+                        data-tip-side="top-start"
+                      >
+                        <Power size={16} className="ws-icon" />
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>Color設定</span>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('TextEditor.ColorBinding.Load')}
+                        data-tip="Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定を上書きする"
+                        data-tip-side="top-start"
+                      >
+                        <Star size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('TextEditor.ColorBinding.Reset')}
+                        data-tip="色設定をDefaultの状態に戻す"
+                        data-tip-side="top-start"
+                      >
+                        <Power size={16} className="ws-icon" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

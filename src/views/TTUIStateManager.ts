@@ -1073,6 +1073,37 @@ export class TTUIStateManager {
     this._saveToLocalStorage();
   }
 
+  /**
+   * 複数プロパティを1回のUndo単位・1回の保存でまとめて適用する
+   * （Vaultメモからの一括読込・Defaultへの一括リセット等、多数のキーを1操作で変える場合向け）。
+   *
+   * `pushUndo=false` を渡すとUndoスタックへの記録自体を省略する。ColorBinding.Load/Reset のように
+   * 単一キーずつ applyProperty() をループ呼びすると1回の操作でUndoスタックが数十〜百件超も
+   * 消費されてしまう（Ctrl+Zで全体を一度に戻せなくなる）ケースを避けるために使う。
+   */
+  applyProperties(entries: [ConfigKey, string][], pushUndo: boolean = true): void {
+    if (!this._app) return;
+    if (pushUndo) this._pushUndo();
+    this._applying = true;
+    const updatedKeys = new Set<ConfigKey>();
+    try {
+      for (const [key, value] of entries) {
+        this._applyProp(key, value);
+        updatedKeys.add(key);
+      }
+      // Thinktank.Theme.* 等のパネル配色は、AppLayout.tsx がキー別リスナー経由でのみ
+      // CSS変数を再適用するため、変更したキーそれぞれで _emit() を呼ぶ必要がある。
+      for (const key of updatedKeys) {
+        const val = PROP_SPECS[key]?.get(this._app) ?? '';
+        this._emit(key, val);
+      }
+      this._app.NotifyUpdated(false);
+    } finally {
+      this._applying = false;
+    }
+    this._saveToLocalStorage();
+  }
+
   /** 指定したキーの現在値を文字列で取得する */
   getProperty(key: ConfigKey): string {
     if (!this._app) return '';
