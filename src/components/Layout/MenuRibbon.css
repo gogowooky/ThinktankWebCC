@@ -48,6 +48,14 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* キーボード（FocusedPanel.Filter.Menu:Next/Prev）でのフォーカス位置を明示する。
+   アクションは要素へ .focus() を呼ぶだけで :focus-visible には乗らないため :focus で描画する。 */
+.menu-ribbon__btn:focus {
+  opacity: 1;
+  outline: 2px solid rgba(120, 170, 255, 0.9);
+  outline-offset: 1px;
+}
+
 .menu-ribbon__btn--active {
   opacity: 1;
   background: rgba(255, 255, 255, 0.18);

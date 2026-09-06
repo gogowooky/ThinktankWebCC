@@ -64,6 +64,32 @@ function isWordBoundaryAt(text: string, i: number): boolean {
 
 export function registerTextEditorCursorMoveActions(app: TTApplication): void {
   TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.CursorPos:Focus',
+    Description: '現在のTextEditorにカーソル位置でフォーカスを戻す',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        if (!editor) {
+          item.Result = '[エディタ未選択]';
+          return;
+        }
+        const pos = editor.getPosition();
+        // Monaco の focus() はカーソル位置を保持したままフォーカスを戻す。
+        // ツールバー入力欄やメニューからエディタ本文へ復帰するための復路として使う。
+        editor.focus();
+        if (pos) {
+          editor.revealPositionInCenterIfOutsideViewport(pos);
+          item.Result = `エディタにフォーカスしました（L${pos.lineNumber}:C${pos.column}）`;
+        } else {
+          item.Result = 'エディタにフォーカスしました';
+        }
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    }
+  });
+
+  TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.CursorPos:LineStart+',
     Description: 'カーソルを行頭→テキスト先頭の順に移動する。テキスト先頭では全選択する',
     Completion: (item) => {

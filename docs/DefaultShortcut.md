@@ -4,22 +4,35 @@ Keyboard Shortcuts
 
 # アプリケーション モード
 *           ,       ,Alt+A              ,Application.Status.ExMode:ExApp                ,アプリケーションモード
-*           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,フォーカスカラム左
-*           ,ExApp  ,S                  ,Application.FocusedPanel.Name:Next             ,フォーカスカラム右
-*           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,Workoutツールバー左
-*           ,ExApp  ,X                  ,ToolBar.Mode.Name:Next                         ,Workoutツールバー右
+*           ,ExApp  ,A                  ,Application.FocusedPanel.Name:Prev             ,パネル左
+*           ,ExApp  ,Shift+A            ,Application.FocusedPanel.Name:Next             ,パネル右
+*           ,ExApp  ,D                  ,Application.FocusedPanel.Name:Next             ,パネル右
 
 *           ,ExApp  ,Q                  ,FocusedPanel.Area.IsOpen:Toggle                ,パネル開閉
 *           ,ExApp  ,W                  ,FocusedPanel.Mode.Name:Prev                    ,パネルモード上
-*           ,ExApp  ,D                  ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
+*           ,ExApp  ,S                  ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
 
-*           ,ExApp  ,ArrowDown          ,WorkoutPanel.FocusedPane.PaneNumber:Next       ,ペインを次に移動
-*           ,ExApp  ,ArrowUp            ,WorkoutPanel.FocusedPane.PaneNumber:Prev       ,ペインを前に移動
-*           ,ExApp  ,ArrowRight         ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモードを次に変更
-*           ,ExApp  ,ArrowLeft          ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモードを前に変更
+*Filter     ,ExApp  ,N                  ,FocusedPanel.Filter.CursorPos:NextLine         ,Think一覧のカーソル上
+*Filter     ,ExApp  ,P                  ,FocusedPanel.Filter.CursorPos:PrevLine         ,Think一覧のカーソル下
+*Filter     ,ExApp  ,Enter              ,FocusedPanel.Filter.Cursor:Action              ,Think一覧のカーソル開く
+*Filter     ,ExApp  ,M                  ,FocusedPanel.Filter.Menu:Prev                  ,Think一覧のメニュー左
+*Filter     ,ExApp  ,Shift+M            ,FocusedPanel.Filter.Menu:Next                  ,Think一覧のメニュー右
+*Filter     ,ExApp  ,K                  ,FocusedPanel.Filter.ContentType:Prev           ,Think一覧のContentType左
+*Filter     ,ExApp  ,Shift+K            ,FocusedPanel.Filter.ContentType:Next           ,Think一覧のContentType右
 
-*           ,ExApp  ,E                  ,WorkoutPanel.FocusedPane.FileHistory:Next      ,ペインのファイル履歴を1つ後に進む
-*           ,ExApp  ,R                  ,WorkoutPanel.FocusedPane.FileHistory:Prev      ,ペインのファイル履歴を1つ前に戻る
+*Chat       ,ExApp  ,N                  ,FocusedPanel.AIChat.CursorPos:NextLine         ,AI相談のカーソル上
+*Chat       ,ExApp  ,P                  ,FocusedPanel.AIChat.CursorPos:PrevLine         ,AI相談のカーソル下
+*Chat       ,ExApp  ,Enter              ,FocusedPanel.AIChat.Cursor:Action              ,AI相談のカーソル開く
+
+Workout*    ,ExApp  ,N                  ,WorkoutPanel.FocusedPane.PaneNumber:Next       ,ペイン次
+Workout*    ,ExApp  ,P                  ,WorkoutPanel.FocusedPane.PaneNumber:Prev       ,ペイン前
+Workout*    ,ExApp  ,M                  ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモード左
+Workout*    ,ExApp  ,Shift+M            ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモード右
+
+*           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,ツールバー左
+*           ,ExApp  ,Shift+Z            ,ToolBar.Mode.Name:Next                         ,ツールバー右
+
+
 
 # Panel>Think一覧 カーソル
 Thinktank.Filter,   ,Alt+P                  ,ThinktankPanel.Filter.CursorPos:PrevLine        ,Thinktank>Think一覧のカーソルを上に移動する
@@ -28,6 +41,7 @@ Thinktank.Filter,   ,Alt+ArrowUp            ,ThinktankPanel.Filter.CursorPos:Pre
 Thinktank.Filter,   ,Alt+ArrowDown          ,ThinktankPanel.Filter.CursorPos:NextLine        ,Thinktank>Think一覧のカーソルを下に移動する
 Thinktank.Filter,   ,Alt+Enter              ,ThinktankPanel.Filter.Cursor:Action             ,Thinktank>Think一覧のカーソル位置を開く
 Thinktank.Filter,   ,Alt+K                  ,ThinktankPanel.Filter.Cursor:ToggleCheck        ,Thinktank>Think一覧のカーソル位置をチェック
+
 Overview.Filter,    ,Alt+P                  ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
 Overview.Filter,    ,Alt+N                  ,OverviewPanel.Filter.CursorPos:NextLine         ,Overview>Think一覧のカーソルを下に移動する
 Overview.Filter,    ,Alt+ArrowUp            ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
@@ -42,6 +56,7 @@ Thinktank.Filter    ,ExApp  ,Alt+ArrowUP    ,ThinktankPanel.Filter.CursorPos:Pre
 Thinktank.Filter    ,ExApp  ,Alt+ArrowDown  ,ThinktankPanel.Filter.CursorPos:NextLine        ,Thinktank>Think一覧のカーソルを下に移動する
 Thinktank.Filter    ,ExApp  ,Alt+Enter      ,ThinktankPanel.Filter.Cursor:Action             ,Thinktank>Think一覧のカーソル位置を開く
 Thinktank.Filter    ,ExApp  ,Alt+K          ,ThinktankPanel.Filter.Cursor:ToggleCheck        ,Thinktank>Think一覧のカーソル位置をチェック
+
 Overview.Filter     ,ExApp  ,Alt+P          ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
 Overview.Filter     ,ExApp  ,Alt+N          ,OverviewPanel.Filter.CursorPos:NextLine         ,Overview>Think一覧のカーソルを下に移動する
 Overview.Filter     ,ExApp  ,Alt+ArrowUP    ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
@@ -59,12 +74,18 @@ Overview.Filter     ,ExApp  ,Alt+K          ,OverviewPanel.Filter.Cursor:ToggleC
 *,   ,Alt+LocalDirDrag    ,WorkoutPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
 
 
-# Editor Editor　検索
+# Editor Editor 検索
 *TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
 *TextEditor ,       ,Shift+Ctrl+H           ,TextEditor.CurrentEditor.ShowReplace       ,置換ダイアログを表示する
+*TextEditor ,       ,Ctrl+V                 ,TextEditor.EditText.PasteMarkdown          ,ペースト（Markdown判定付加）
 
-# ToolBar ハイライト・コマンド
-*TextEditor ,       ,Alt+S                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
+# ハイライト関連
+*TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
+*TextEditor ,       ,Alt+S                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
+*TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
+*TextEditor ,       ,Shift+Alt+S            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
+
+*TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.CurrentMode.Text:Focus                         ,Highlighter入力欄にフォーカスする
 ToolBar*    ,       ,Alt+Q                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
 ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
@@ -80,10 +101,6 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Ctrl+A                 ,TextEditor.CurrentEditor.CursorPos:LineStart+          ,行頭に移動→全選択
 *TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+            ,行末尾に移動→全選択
 
-*TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
-*TextEditor ,       ,Alt+D                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
-*TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
-*TextEditor ,       ,Shift+Alt+D            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
 
 # Editor カーソル アクション文字
 *TextEditor ,       ,Shift+Alt+Backspace    ,WorkoutPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
@@ -98,14 +115,14 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 # Editor カーソル 折畳行
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
-*TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisibleNext      ,折畳行を前移動
-*TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisiblePrev      ,折畳行を後移動
+*TextEditor ,       ,Alt+ArrowUp            ,TextEditor.CurrentFolding.Heading:VisiblePrev      ,折畳行を前移動
+*TextEditor ,       ,Alt+ArrowDown          ,TextEditor.CurrentFolding.Heading:VisibleNext      ,折畳行を後移動
 *TextEditor ,       ,Alt+Shift+ArrowUp      ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+ArrowDown    ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+B            ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+B                  ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
-*TextEditor ,       ,Alt+P                  ,TextEditor.CurrentFolding.Heading:VisibleNext      ,折畳行を前移動
-*TextEditor ,       ,Alt+N                  ,TextEditor.CurrentFolding.Heading:VisiblePrev      ,折畳行を後移動
+*TextEditor ,       ,Alt+P                  ,TextEditor.CurrentFolding.Heading:VisiblePrev      ,折畳行を前移動
+*TextEditor ,       ,Alt+N                  ,TextEditor.CurrentFolding.Heading:VisibleNext      ,折畳行を後移動
 *TextEditor ,       ,Alt+Shift+P            ,TextEditor.CurrentFolding.Heading:SiblingFirst     ,最初の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+N            ,TextEditor.CurrentFolding.Heading:SiblingLast      ,最後の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Ctrl+P             ,TextEditor.CurrentFolding.Heading:Parent           ,親折畳行へ移動

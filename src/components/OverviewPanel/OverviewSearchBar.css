@@ -87,6 +87,15 @@
   color: #555;
 }
 
+/* キーボード（FocusedPanel.Filter.ContentType:Next/Prev）でのフォーカス位置を明示する。
+   アクションは要素へ .focus() を呼ぶだけで :focus-visible には乗らないため :focus で描画する。 */
+.ov-search-bar__type-btn:focus,
+.ov-search-bar__type-all:focus {
+  outline: 2px solid rgba(7, 55, 99, 0.7);
+  outline-offset: 1px;
+  color: #333;
+}
+
 /* ON: 背景を濃いめ・線を薄め（反転）*/
 .ov-search-bar__type-btn--active {
   background: rgba(7, 55, 99, 0.45);

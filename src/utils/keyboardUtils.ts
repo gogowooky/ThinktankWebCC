@@ -15,6 +15,9 @@ export const KEY_NAME_MAP: Record<string, string> = {
   left:       'arrowleft',
   right:      'arrowright',
   esc:        'escape',
+  // KeyboardEvent.key はスペースを ' '（半角スペース）で返すため、キー定義の "Space" と揃える
+  ' ':        'space',
+  spacebar:   'space',
 };
 
 export function normalizeKeyName(k: string): string {
