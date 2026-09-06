@@ -300,7 +300,8 @@
       "Bash(grep -rEo \"#[0-9a-fA-F]{3,8}\\\\b\" src --include=\"*.css\")",
       "Bash(grep -rEo \"[A-Za-z_.-]+\\\\.css:[0-9]+:.*#[0-9a-fA-F]{3,8}\" src --include=\"*.css\" -n)",
       "Bash(grep -rn \"#[0-9a-fA-F]\\\\{3,8\\\\}\" src --include=\"*.css\")",
-      "Bash(git rebase *)"
+      "Bash(git rebase *)",
+      "Bash(echo \"---exit $?---\")"
     ]
   }
 }
