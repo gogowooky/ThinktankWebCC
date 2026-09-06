@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.48",
+  "version": "1.4.49",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "veneno-02",
-  "commitId": "edf324e",
-  "commitDateTime": "2026-09-02-181824",
-  "commitMessage": "feat: TextEditor.EditText.PasteMarkdown を実装"
+  "commitId": "4ea78ad",
+  "commitDateTime": "2026-09-06-190526",
+  "commitMessage": "docs: DefaultShortcut のショートカット定義を整理・更新"
 }
