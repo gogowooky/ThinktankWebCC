@@ -7,6 +7,16 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### docs: 完了済みの実装依頼を各カタログセクションへ整理・統合
+- 日付: 2026-09-07
+- コミット番号: 0b8a204
+
+docs/Thinktank_Status-Action-Binding.md の先頭にある実装依頼欄（AIへの指示欄）で
+対応完了していたエントリ（TextEditor.CurrentEditor.CursorPos:Focus、
+ToolBar.HighlighterMode.Text の Content/Title 絞り込みキーワードフラグ2件）を、
+それぞれ該当するカタログセクション（# TextEditor Cursor、# Status）へ移動・統合し、
+依頼欄を次の依頼に備えて整理した。
+
 ### feat(texteditor): Vaultメモからキー設定・色設定を読み込むアクションを追加
 - 日付: 2026-09-06
 - コミット番号: da7e0ff

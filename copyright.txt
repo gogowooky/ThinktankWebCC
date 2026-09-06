@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.50",
+  "version": "1.4.51",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "da7e0ff",
-  "commitDateTime": "2026-09-06-235743",
-  "commitMessage": "feat(texteditor): Vaultメモからキー設定・色設定を読み込むアクションを追加"
+  "commitId": "0b8a204",
+  "commitDateTime": "2026-09-07-002614",
+  "commitMessage": "docs: 完了済みの実装依頼を各カタログセクションへ整理・統合"
 }
