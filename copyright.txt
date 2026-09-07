@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.52",
+  "version": "1.4.53",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "3522995",
-  "commitDateTime": "2026-09-07-002952",
-  "commitMessage": "chore(git-update): README.md追記項目にコミット済みバージョン番号を追加"
+  "commitId": "f93fffa",
+  "commitDateTime": "2026-09-07-182955",
+  "commitMessage": "feat(texteditor): SearchTagのVaultメモ読込を追加、KeyBinding.Loadのマージ不整合を修正"
 }

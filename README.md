@@ -7,6 +7,19 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.53 feat(texteditor): SearchTagのVaultメモ読込を追加、KeyBinding.Loadのマージ不整合を修正
+- 日付: 2026-09-07
+- コミット番号: f93fffa
+
+TextEditor.SearchTag.Load/Reset を追加。Vault内の「ThinktankSearchTag」というMemoを
+検索し、docs/DefaultSearchTag.mdと同じID,Description,URL形式でタグ定義を上書きする
+（id一致分のみ置換、他は維持）。DefaultSearchTag.mdはサーバーAPI経由で配信されるため
+サーバーは無改修とし、クライアント側の2消費モジュールにサーバー取得分とVault上書き分を
+分けて持たせ、idキーでマージするよう変更した。
+あわせて、TextEditor.KeyBinding.Loadが従来「メモに書かれていないショートカットが消える」
+不整合な挙動だった問題を修正（現在の設定へid一致分だけをマージするmergeContent()を新設）。
+Workout>TextEditor設定>設定に「タグ設定」項目を追加し、「Color設定」は「色設定」に改名。
+
 ### v1.4.52 chore(git-update): README.md追記項目にコミット済みバージョン番号を追加
 - 日付: 2026-09-07
 - コミット番号: 3522995
