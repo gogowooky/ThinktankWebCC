@@ -29,6 +29,7 @@ import { registerTextEditorHighlighterToolbarActions } from './actions/textEdito
 import { registerTextEditorCursorContentActions } from './actions/textEditorCursorContentActions';
 import { registerTextEditorKeyBindingActions } from './actions/textEditorKeyBindingActions';
 import { registerTextEditorColorBindingActions } from './actions/textEditorColorBindingActions';
+import { registerTextEditorSearchTagActions } from './actions/textEditorSearchTagActions';
 import { registerTextEditorPasteActions } from './actions/textEditorPasteActions';
 
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
@@ -911,6 +912,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   registerTextEditorHeadingNavActions(app);
   registerTextEditorKeyBindingActions(app);
   registerTextEditorColorBindingActions(app);
+  registerTextEditorSearchTagActions(app);
   registerTextEditorCurrentFoldingActions(app);
   registerTextEditorDateActions(app);
   registerTextEditorBulletActions(app);

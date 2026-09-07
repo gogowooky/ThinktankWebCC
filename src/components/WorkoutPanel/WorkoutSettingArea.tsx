@@ -751,7 +751,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                       <button
                         className="workout-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.KeyBinding.Load')}
-                        data-tip="Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定を上書きする"
+                        data-tip="Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定を上書きする（key一致分のみ置換、他は維持）"
                         data-tip-side="top-start"
                       >
                         <Star size={16} className="ws-icon" />
@@ -767,12 +767,12 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>Color設定</span>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>色設定</span>
                     <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
                         className="workout-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.ColorBinding.Load')}
-                        data-tip="Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定を上書きする"
+                        data-tip="Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定を上書きする（id一致分のみ置換、他は維持）"
                         data-tip-side="top-start"
                       >
                         <Star size={16} className="ws-icon" />
@@ -781,6 +781,27 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                         className="workout-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.ColorBinding.Reset')}
                         data-tip="色設定をDefaultの状態に戻す"
+                        data-tip-side="top-start"
+                      >
+                        <Power size={16} className="ws-icon" />
+                      </button>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>タグ設定</span>
+                    <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('TextEditor.SearchTag.Load')}
+                        data-tip="Vault内の「ThinktankSearchTag」という名前のMemoを読み込み、タグ定義を上書きする（id一致分のみ置換、他は維持）"
+                        data-tip-side="top-start"
+                      >
+                        <Star size={16} className="ws-icon" />
+                      </button>
+                      <button
+                        className="workout-setting-area__icon-btn"
+                        onClick={() => TTActions.Execute('TextEditor.SearchTag.Reset')}
+                        data-tip="タグ定義をDefaultの状態に戻す"
                         data-tip-side="top-start"
                       >
                         <Power size={16} className="ws-icon" />

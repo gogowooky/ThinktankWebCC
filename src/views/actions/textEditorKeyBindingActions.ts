@@ -12,7 +12,7 @@ const KEY_BINDING_THINK_NAME = 'ThinktankKeyBinding';
 export function registerTextEditorKeyBindingActions(app: TTApplication): void {
   TTActions.Register({
     ActionID: 'TextEditor.KeyBinding.Load',
-    Description: `Vault内の「${KEY_BINDING_THINK_NAME}」という名前のMemoを読み込み、キー設定を上書きする`,
+    Description: `Vault内の「${KEY_BINDING_THINK_NAME}」という名前のMemoを読み込み、キー設定を上書きする（key一致分のみ置換、他は維持）`,
     Completion: async (item) => {
       const think = app.Models.Vault
         .GetThinks()
@@ -24,7 +24,7 @@ export function registerTextEditorKeyBindingActions(app: TTApplication): void {
       }
 
       await think.LoadContent();
-      TTShortcutManager.instance.applyContent(think.Content);
+      TTShortcutManager.instance.mergeContent(think.Content);
       item.Result = `キー設定を「${KEY_BINDING_THINK_NAME}」から読み込みました`;
     },
   });

@@ -46,7 +46,7 @@
 
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
-import { parseTableContent } from '../utils/tableFormat';
+import { parseTableContent, type TableSection } from '../utils/tableFormat';
 import { TTUIStateManager } from './TTUIStateManager';
 import { TTActions } from './TTActions';
 import { getFocusName } from '../utils/getFocusName';
@@ -230,11 +230,6 @@ export class TTShortcutManager {
   }
 
   GetShortcuts(): ShortcutEntry[] { return [...this._shortcuts]; }
-
-  /** 任意のテーブル形式コンテンツ（Vaultメモ等）でショートカット設定を上書きする */
-  applyContent(content: string): void {
-    this._loadFromContent(content);
-  }
 
   /** ショートカット設定を DefaultShortcut.md の内容にリセットする */
   resetToDefault(): void {
@@ -451,12 +446,8 @@ export class TTShortcutManager {
 
   // ── コンテンツ管理 ─────────────────────────────────────────────────────
 
-
-  private _loadFromContent(content: string): void {
-    const sections = parseTableContent(content);
-    const section  = sections[0];
-    if (!section) { this._shortcuts = [...DEFAULT_SHORTCUTS]; this._buildKeyIndex(); return; }
-
+  /** テーブル1セクション分を ShortcutEntry[] に変換する（列名不正なら空配列） */
+  private _parseTableRows(section: TableSection): ShortcutEntry[] {
     // 列名のスペース・大文字を正規化してインデックス検索
     const col = (name: string) =>
       section.columns.findIndex(c => c.trim().toLowerCase() === name);
@@ -467,13 +458,9 @@ export class TTShortcutManager {
     const actIdx = col('action');
     const dscIdx = col('description');
 
-    if (keyIdx < 0 || actIdx < 0) {
-      this._shortcuts = [...DEFAULT_SHORTCUTS];
-      this._buildKeyIndex();
-      return;
-    }
+    if (keyIdx < 0 || actIdx < 0) return [];
 
-    const tableShortcuts = section.rows.flatMap(row => {
+    return section.rows.flatMap(row => {
       const focus       = focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*';
       const exmode      = emIdx  >= 0 ? (row[emIdx]?.trim().toLowerCase() ?? '') : '';
       const action      = row[actIdx]?.trim() ?? '';
@@ -483,12 +470,39 @@ export class TTShortcutManager {
         .filter(k => k && action)
         .map(key => ({ focus, exmode, key, action, description }));
     });
+  }
+
+  private _loadFromContent(content: string): void {
+    const sections = parseTableContent(content);
+    const section  = sections[0];
+    const tableShortcuts = section ? this._parseTableRows(section) : [];
 
     // テーブルで定義されていない DEFAULT_SHORTCUTS のエントリを補完する。
     // key が同一のエントリはテーブル側を優先（ユーザーが意図的に上書きした場合を尊重）。
     const tableKeys = new Set(tableShortcuts.map(s => s.key));
     const defaults  = DEFAULT_SHORTCUTS.filter(s => !tableKeys.has(s.key));
     this._shortcuts = [...defaults, ...tableShortcuts];
+
+    this._buildKeyIndex();
+  }
+
+  /**
+   * 現在のショートカット設定へ、指定コンテンツ内のエントリだけを上書きマージする
+   * （key が一致する行だけ置換し、それ以外の現在の設定はそのまま維持する）。
+   * `_loadFromContent`（起動時ロード／Reset／__tt_shortcuts__ 保存時）が全件差し替えなのに対し、
+   * こちらは Vault メモ（ThinktankKeyBinding）からの部分的な上書き専用。
+   */
+  mergeContent(content: string): void {
+    const sections = parseTableContent(content);
+    const section  = sections[0];
+    if (!section) return;
+
+    const incoming = this._parseTableRows(section);
+    if (incoming.length === 0) return;
+
+    const incomingKeys = new Set(incoming.map(s => s.key));
+    const kept = this._shortcuts.filter(s => !incomingKeys.has(s.key));
+    this._shortcuts = [...kept, ...incoming];
 
     this._buildKeyIndex();
   }

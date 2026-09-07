@@ -16,9 +16,13 @@ import { showMonacoMenu } from '../../utils/monacoMenu';
 import { showTagInsertMenu } from '../../utils/tagInsertMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { apiFetch } from '../../services/apiClient';
+import type { SearchTagRow } from '../../utils/searchTagFormat';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
-let _searchTagCache: Record<string, string> | null = null;
+// サーバー（docs/DefaultSearchTag.md）から取得した基礎データ
+let _baseSearchTags: Record<string, string> | null = null;
+// Vaultメモ（ThinktankSearchTag）由来の上書き分。id一致分のみ _baseSearchTags を置換する
+let _overrideSearchTags: Record<string, string> | null = null;
 // 一覧の取得自体に失敗した場合の理由（「該当キーなし」と区別して表示するため）
 let _searchTagLoadError: string | null = null;
 
@@ -30,23 +34,43 @@ const TAG_INSERT_TEXT: Record<string, string> = {
 };
 
 async function getSearchTags(): Promise<Record<string, string>> {
-  if (_searchTagCache) return _searchTagCache;
-  _searchTagLoadError = null;
-  try {
-    const res = await apiFetch('/api/system/search-tags');
-    if (res.ok) {
-      const raw = await res.json() as Record<string, string>;
-      // キーを小文字化して大文字・小文字を問わず検索できるようにする
-      _searchTagCache = Object.fromEntries(
-        Object.entries(raw).map(([k, v]) => [k.toLowerCase(), v])
-      );
-    } else {
-      _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（HTTP ${res.status}）`;
+  if (!_baseSearchTags) {
+    _searchTagLoadError = null;
+    try {
+      const res = await apiFetch('/api/system/search-tags');
+      if (res.ok) {
+        const raw = await res.json() as Record<string, string>;
+        // キーを小文字化して大文字・小文字を問わず検索できるようにする
+        _baseSearchTags = Object.fromEntries(
+          Object.entries(raw).map(([k, v]) => [k.toLowerCase(), v])
+        );
+      } else {
+        _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（HTTP ${res.status}）`;
+        return _overrideSearchTags ?? {};
+      }
+    } catch (err) {
+      _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（サーバー未起動の可能性）: ${getErrorMessage(err)}`;
+      return _overrideSearchTags ?? {};
     }
-  } catch (err) {
-    _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（サーバー未起動の可能性）: ${getErrorMessage(err)}`;
   }
-  return _searchTagCache ?? {};
+  return { ...(_baseSearchTags ?? {}), ...(_overrideSearchTags ?? {}) };
+}
+
+/**
+ * Vaultメモ（ThinktankSearchTag）由来の行で検索URLテンプレートを上書きマージする
+ * （idが一致する項目だけ置換し、それ以外はサーバー取得分のまま維持する。NoURL行は除外）。
+ */
+export function applySearchTagUrlOverride(rows: SearchTagRow[]): void {
+  _overrideSearchTags = Object.fromEntries(
+    rows
+      .filter(r => r.url && r.url !== 'NoURL')
+      .map(r => [r.id.toLowerCase(), r.url])
+  );
+}
+
+/** 上書きを解除し、サーバー取得分（docs/DefaultSearchTag.md）に戻す */
+export function resetSearchTagUrlOverride(): void {
+  _overrideSearchTags = null;
 }
 
 export function registerTextEditorCursorContentActions(app: TTApplication): void {
