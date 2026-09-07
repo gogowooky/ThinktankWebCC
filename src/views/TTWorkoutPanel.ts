@@ -16,7 +16,7 @@ import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 
-export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'chat';
+export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
 

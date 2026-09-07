@@ -1070,7 +1070,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       <Editor
         key={`${think.ID}-${refreshKey ?? 0}`}
         defaultValue={getEditorValue(think)}
-        language="markdown"
+        language={think?.ContentType === 'html' ? 'html' : 'markdown'}
         theme={editorSettings ? "custom-markdown-theme" : "vs-dark"}
         onMount={handleMount}
         onChange={handleChange}

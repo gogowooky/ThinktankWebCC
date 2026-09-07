@@ -170,6 +170,7 @@ interface Props {
   hasBundle:        boolean;
   onEqualizeWidths: () => void;
   onEqualizeHeights:() => void;
+  onCreateHtml:     () => void;
   onCreateMemo:     () => void;
   onReadMemo:       () => void;
   onSaveMemo:       () => void;
@@ -188,7 +189,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
   onRemoveFocused, onClearAll, onCloseNotInBundle, hasBundle, onEqualizeWidths, onEqualizeHeights,
-  onCreateMemo, onReadMemo, onSaveMemo,
+  onCreateHtml, onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
   onSaveChat, onRefresh,
 }: Props, ref) {
@@ -196,6 +197,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
   const firstTexteditorRef = useRef<HTMLButtonElement>(null);
   const firstDatagridRef   = useRef<HTMLButtonElement>(null);
+  const firstHtmlRef       = useRef<HTMLButtonElement>(null);
   const aiChatViewRef      = useRef<AiChatViewRef>(null);
 
   useImperativeHandle(ref, () => ({
@@ -211,6 +213,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
           break;
         case 'texteditor': firstTexteditorRef.current?.focus(); break;
         case 'datagrid':   firstDatagridRef.current?.focus();   break;
+        case 'html':       firstHtmlRef.current?.focus();       break;
         case 'chat':       aiChatViewRef.current?.focus();      break;
         default:           panelRef.current?.focus();           break;
       }
@@ -617,10 +620,10 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                       >
                         <File size={16} className="ws-icon" />
                       </button>
-                      <button
-                        className="workout-setting-area__icon-btn"
+                      <button className="workout-setting-area__icon-btn"
                         onClick={onReadMemo}
-                        data-tip="docを読み取って新規メモファイルを作成"
+                        data-tip="テキスト・HTMLファイルを読み込む"
+                        aria-label="テキスト・HTMLファイルを読み込む"
                         data-tip-side="top-start"
                       >
                         <FileText size={16} className="ws-icon" />
@@ -633,7 +636,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                       <button
                         className="workout-setting-area__icon-btn"
                         onClick={onSaveMemo}
-                        data-tip="表示中のメモを .md ファイルで保存"
+                        data-tip="表示中のメモ・HTML資料をファイルで保存"
                         data-tip-side="top-start"
                       >
                         <Save size={16} className="ws-icon" />
@@ -1130,6 +1133,26 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               )}
             </div>
           </>
+        ) : activeSettings === 'html' ? (
+          <div className="workout-setting-area__section">
+            <div className="workout-setting-area__section-header">
+              <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>Html</span>
+            </div>
+            <div className="workout-setting-area__section-content">
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
+                <button
+                  ref={firstHtmlRef}
+                  className="workout-setting-area__icon-btn"
+                  onClick={onCreateHtml}
+                  aria-label="Htmlファイルを新規作成"
+                  data-tip="Htmlファイルを新規作成"
+                >
+                  <FilePlus size={16} className="ws-icon" />
+                </button>
+              </div>
+            </div>
+          </div>
         ) : activeSettings === 'datagrid' ? (
           <>
             <div className="workout-setting-area__section">

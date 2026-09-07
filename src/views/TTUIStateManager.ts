@@ -178,14 +178,15 @@ interface PropSpec {
 function getFocusedPaneAllowedModes(app: TTApplication): string[] {
   const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
   if (!area || !area.ResourceID) {
-    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat'];
+    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
   }
   const think = app.Models.Vault.GetThink(area.ResourceID);
   if (!think) {
-    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat'];
+    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
   }
   const mapping: Record<ContentType, MediaType[]> = {
     memo: ['texteditor', 'markdown'],
+    html: ['texteditor', 'html'],
     nettext: ['texteditor', 'markdown'],
     bundle: ['texteditor', 'datagrid', 'markdown', 'card', 'graph'],
     table: ['texteditor', 'datagrid', 'card'],
@@ -372,7 +373,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'WorkoutSettingPanel.Mode.Name': {
     panel: 'WorkoutPanel',
-    default: 'Workout', type: 'string', candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph)$',
+    default: 'Workout', type: 'string', candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
     description: 'ワークアウト設定パネルモード',
     get: (app) => capitalize(app.WorkoutPanel.ViewMode),
     set: (app, v) => { app.WorkoutPanel.SetViewMode(v.toLowerCase() as WorkoutViewMode); },
@@ -791,7 +792,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
   'WorkoutPanel.FocusedPane.Mode': {
     panel: 'WorkoutPanel',
     default: 'Workout', type: 'string',
-    candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph|Chat)$',
+    candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
     description: 'フォーカスがあるペインの表示モード',
     getValues: (app) => getFocusedPaneAllowedModes(app),
     get: (app) => {

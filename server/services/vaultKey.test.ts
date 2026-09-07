@@ -28,7 +28,7 @@ describe('isValidFileId', () => {
 });
 
 describe('isValidCategory', () => {
-  it.each(['memo', 'bundle', 'table', 'links', 'chat', 'nettext'])('OK: %s', (c) =>
+  it.each(['memo', 'bundle', 'table', 'links', 'chat', 'nettext', 'html'])('OK: %s', (c) =>
     expect(isValidCategory(c)).toBe(true),
   );
   it.each(['', 'md', 'MEMO', 'tables', 'note', undefined])('NG: %s', (c) =>

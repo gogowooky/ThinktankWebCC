@@ -49,7 +49,7 @@ const THINKTANK_MODE_NAMES: Record<string, string> = {
   settings: '設定',
 };
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext'];
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext', 'html'];
 
 interface Props {
   app: TTApplication;

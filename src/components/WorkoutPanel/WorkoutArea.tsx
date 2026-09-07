@@ -31,7 +31,9 @@ import type { GraphMediaRef }      from './media/GraphMedia';
 import { ChatMedia }       from './media/ChatMedia';
 import type { ChatMediaRef }       from './media/ChatMedia';
 
-type AnyMediaRef = TextEditorMediaRef | MarkdownMediaRef | DataGridMediaRef | CardMediaRef | GraphMediaRef | ChatMediaRef;
+import { HtmlMedia, type HtmlMediaRef } from './media/HtmlMedia';
+
+type AnyMediaRef = HtmlMediaRef | TextEditorMediaRef | MarkdownMediaRef | DataGridMediaRef | CardMediaRef | GraphMediaRef | ChatMediaRef;
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTActions } from '../../views/TTActions';
@@ -313,6 +315,7 @@ export function WorkoutArea({
     switch (area.MediaType) {
       case 'workout':    return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
       case 'texteditor': return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
+      case 'html': return <HtmlMedia ref={mediaRef as React.Ref<HtmlMediaRef>} {...mediaProps} />;
       case 'markdown':   return <MarkdownMedia   ref={mediaRef as React.Ref<MarkdownMediaRef>}   {...mediaProps} />;
       case 'datagrid':   return <DataGridMedia   ref={mediaRef as React.Ref<DataGridMediaRef>}   {...mediaProps} />;
       case 'card':       return <CardMedia       ref={mediaRef as React.Ref<CardMediaRef>}       {...mediaProps} />;

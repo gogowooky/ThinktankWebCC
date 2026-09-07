@@ -1,0 +1,4 @@
+.html-media { display:flex; flex-direction:column; height:100%; min-height:0; background:#fff; color:#172b4d; }
+.html-media__toolbar { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:10px 12px; border-bottom:1px solid #cbd5e1; font-size:14px; }
+.html-media__toolbar select { font:inherit; padding:4px; color:#172b4d; background:#fff; }
+.html-media iframe { width:100%; flex:1; min-height:0; border:0; background:#fff; }

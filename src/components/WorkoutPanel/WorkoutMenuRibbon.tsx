@@ -15,6 +15,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   table:   Table,
   links:   Link,
   chat:    MessageCircle,
+  html: Globe,
   nettext: Globe,
 };
 import type { TTWorkoutArea } from '../../views/TTWorkoutArea';
@@ -26,6 +27,11 @@ import './WorkoutMenuRibbon.css';
 const MEMO_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
   { type: 'texteditor', Icon: NotebookPen,  title: 'テキストエディタ' },
   { type: 'markdown',   Icon: BookOpenText, title: 'Markdown' },
+];
+
+const HTML_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
+  { type: 'texteditor', Icon: NotebookPen, title: 'HTMLソース編集' },
+  { type: 'html', Icon: Globe, title: 'HTML表示' },
 ];
 
 const BUNDLE_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
@@ -195,6 +201,7 @@ export function WorkoutMenuRibbon({ area, contentType, isFocused, isDirty = fals
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
     : contentType === 'bundle' ? BUNDLE_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
+    : contentType === 'html' ? HTML_BUTTONS
     : MEMO_BUTTONS;
 
   const [isDropTarget, setIsDropTarget] = useState(false);

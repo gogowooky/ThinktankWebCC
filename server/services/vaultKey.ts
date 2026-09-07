@@ -13,7 +13,7 @@
 export const SAFE_FILE_ID_RE = /^[A-Za-z0-9_-]{1,200}$/;
 
 /** category に使える値（src/types/index.ts の ContentType と一致させること） */
-export const VALID_CATEGORIES = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext'] as const;
+export const VALID_CATEGORIES = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext', 'html'] as const;
 export type VaultCategory = (typeof VALID_CATEGORIES)[number];
 
 export function isValidFileId(fileId: unknown): fileId is string {

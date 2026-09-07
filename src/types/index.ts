@@ -26,6 +26,7 @@ export type ContentType =
   | 'table'    // テーブルデータ（独自形式md）
   | 'links'    // URL/ローカルURI等へのリンク集
   | 'chat'     // AIとの対話記録
+  | 'html'    // HTML資料（1行目タイトル、以降HTML本文）
   | 'nettext'; // ネット等からダウンロードしたテキスト
 
 // #endregion
@@ -41,6 +42,7 @@ export type MediaType =
   | 'datagrid'    // テーブル形式一覧
   | 'card'        // カード形式
   | 'graph'       // ノードグラフ
+  | 'html'       // 隔離したHTMLプレビュー
   | 'chat';       // AIチャット
 
 // #endregion

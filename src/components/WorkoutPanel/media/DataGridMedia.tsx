@@ -32,6 +32,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   table:   Table,
   links:   Link,
   chat:    MessageCircle,
+  html: Globe,
   nettext: Globe,
 };
 
@@ -41,6 +42,7 @@ const CONTENT_LABELS: Record<ContentType, string> = {
   table:   'テーブル',
   links:   'リンク',
   chat:    'チャット',
+  html: 'HTML',
   nettext: 'Web文書',
 };
 

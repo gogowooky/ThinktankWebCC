@@ -47,8 +47,9 @@ import {
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './OverviewArea.css';
+import { BundleStatusView } from './BundleStatusView';
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext'];
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext', 'html'];
 
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
   filter: 'Think一覧',
@@ -120,6 +121,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const aiChatViewRef                   = useRef<AiChatViewRef>(null);
   const filterPanelRef                  = useRef<OverviewFilterPanelRef>(null);
   const settingsViewRef                 = useRef<OverviewSettingsViewRef>(null);
+  const [analysisView, setAnalysisView] = useState<'status' | 'graph'>('status');
+  const statusViewRef = useRef<{ focus: () => void }>(null);
   const graphMediaRef                   = useRef<GraphMediaRef>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
 
@@ -210,11 +213,12 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       } else if (panel.MediaType === 'chat') {
         aiChatViewRef.current?.focus();
       } else if (panel.MediaType === 'graph') {
-        graphMediaRef.current?.focus();
+        if (analysisView === 'status') statusViewRef.current?.focus();
+        else graphMediaRef.current?.focus();
       }
     }, 50);
     return () => clearTimeout(timer);
-  }, [showSettings, panel.MediaType]);
+  }, [showSettings, panel.MediaType, analysisView]);
 
   const handleRefresh = useCallback(() => {
     if (!panel.BundleID) return;
@@ -627,7 +631,15 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             <span>Bundle をドロップして選択してください</span>
           </div>
         ) : panel.MediaType === 'graph' ? (
-          <GraphMedia ref={graphMediaRef} think={think} vault={vault} onSave={noop} onDirtyChange={noop} />
+          <div className="bundle-analysis">
+            <div className="bundle-analysis-tabs" aria-label="Bundle分析の表示">
+              <button aria-pressed={analysisView === 'status'} onClick={() => setAnalysisView('status')}>この課題の状況</button>
+              <button aria-pressed={analysisView === 'graph'} onClick={() => setAnalysisView('graph')}>関係グラフ</button>
+            </div>
+            <div className="bundle-analysis-content">{analysisView === 'status'
+              ? <BundleStatusView ref={statusViewRef} vault={vault} bundleId={panel.BundleID} onOpen={handleOpenThinkInWorkout} />
+              : <GraphMedia ref={graphMediaRef} think={think} vault={vault} onSave={noop} onDirtyChange={noop} />}</div>
+          </div>
         ) : null}
       </div>
 

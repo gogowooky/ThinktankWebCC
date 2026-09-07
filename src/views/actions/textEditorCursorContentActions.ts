@@ -664,6 +664,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   // 事前にセットされ、consumePendingThinkDrop() で一度だけ読み取る。
   const contentTypeToMediaType = (contentType: string): import('../../types').MediaType => {
     switch (contentType) {
+      case 'html': return 'html';
       case 'markdown': return 'markdown';
       case 'bundle': return 'datagrid';
       case 'table': return 'datagrid';

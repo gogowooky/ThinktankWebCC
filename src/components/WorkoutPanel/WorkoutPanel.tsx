@@ -21,6 +21,7 @@ import { WorkoutHSplitter } from './WorkoutHSplitter';
 import { WorkoutArea } from './WorkoutArea';
 import { WorkoutAreaEmpty } from './WorkoutAreaEmpty';
 import { WorkoutTabBar } from './WorkoutTabBar';
+import { NEW_HTML_CONTENT } from '../../utils/htmlPreview';
 import { WorkoutSettingArea } from './WorkoutSettingArea';
 import type { WorkoutSettingAreaRef } from './WorkoutSettingArea';
 import { extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
@@ -407,6 +408,16 @@ export function WorkoutPanel({ app }: Props) {
     if (panel.FocusedAreaId) panel.RemoveArea(panel.FocusedAreaId);
   }, [panel]);
 
+  const handleCreateHtml = useCallback(async () => {
+    try {
+      const t = await vault.CreateBlankThink('html', NEW_HTML_CONTENT);
+      panel.AddToRight(t.ID, 'html', t.Name);
+    } catch (error) {
+      console.error('[WorkoutPanel] HTML creation failed', error);
+      window.alert('HTML資料を保存できませんでした。接続を確認して再度お試しください。');
+    }
+  }, [vault, panel]);
+
   const handleCreateMemo = useCallback(async () => {
     const t = await vault.CreateBlankThink('memo', '新規メモ');
     panel.AddToRight(t.ID, 'texteditor', t.Name);
@@ -415,17 +426,21 @@ export function WorkoutPanel({ app }: Props) {
   const handleReadMemo = useCallback(() => {
     const input = document.createElement('input');
     input.type   = 'file';
-    input.accept = '.txt,.md,.xdoc';
+    input.accept = '.txt,.md,.xdoc,.html,.htm';
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
       const title   = file.name.replace(/\.[^/.]+$/, '');
       const text    = await file.text();
       const content = `${title}\n${text}`;
-      const t = await vault.CreateBlankThink('memo', title);
-      t.Content = content;
-      await t.SaveContent();
-      panel.AddToRight(t.ID, 'markdown', t.Name);
+      try {
+        const isHtml = /\.html?$/i.test(file.name);
+        const t = await vault.CreateBlankThink(isHtml ? 'html' : 'memo', content);
+        panel.AddToRight(t.ID, isHtml ? 'html' : 'markdown', t.Name);
+      } catch (error) {
+        console.error('[WorkoutPanel] import failed', error);
+        window.alert('ファイルを保存できませんでした。接続を確認して再度お試しください。');
+      }
     };
     input.click();
   }, [vault, panel]);
@@ -434,12 +449,14 @@ export function WorkoutPanel({ app }: Props) {
     const focusedArea = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
     if (!focusedArea) return;
     const think = vault.GetThink(focusedArea.ResourceID);
-    if (!think || think.ContentType !== 'memo') return;
-    const blob = new Blob([think.Content], { type: 'text/markdown;charset=utf-8' });
+    if (!think || !['memo', 'html'].includes(think.ContentType)) return;
+    const isHtml = think.ContentType === 'html';
+    const content = isHtml ? think.Content.split('\n').slice(1).join('\n') : think.Content;
+    const blob = new Blob([content], { type: isHtml ? 'text/html;charset=utf-8' : 'text/markdown;charset=utf-8' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href     = url;
-    a.download = `${think.Name}.md`;
+    a.download = `${think.Name}.${isHtml ? 'html' : 'md'}`;
     a.click();
     URL.revokeObjectURL(url);
   }, [panel, vault]);
@@ -884,6 +901,7 @@ export function WorkoutPanel({ app }: Props) {
           hasBundle={!!app.OverviewPanel.BundleID}
           onEqualizeWidths={handleEqualizeWidths}
           onEqualizeHeights={handleEqualizeHeights}
+          onCreateHtml={handleCreateHtml}
           onCreateMemo={handleCreateMemo}
           onReadMemo={handleReadMemo}
           onSaveMemo={handleSaveMemo}

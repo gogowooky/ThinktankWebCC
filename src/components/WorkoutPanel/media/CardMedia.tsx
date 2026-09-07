@@ -27,6 +27,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   table:   Table,
   links:   Link,
   chat:    MessageCircle,
+  html: Globe,
   nettext: Globe,
 };
 
@@ -36,6 +37,7 @@ const CONTENT_COLORS: Record<ContentType, string> = {
   table:   '#2e7d32',
   links:   '#7b1fa2',
   chat:    '#d32f2f',
+  html: '#00695c',
   nettext: '#00838f',
 };
 

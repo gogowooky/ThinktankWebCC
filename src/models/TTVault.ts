@@ -63,7 +63,7 @@ export class TTVault extends TTCollection {
    * - `*` 行: 直接 ID 指定
    * 重複排除して TTThink[] を返す。
    */
-  public async GetThinksForBundleAsync(bundleId: string): Promise<TTThink[]> {
+  public async GetThinksForBundleAsync(bundleId: string, strict: boolean = false): Promise<TTThink[]> {
     const rootBundle = this.GetThink(bundleId);
     if (!rootBundle || rootBundle.ContentType !== 'bundle') return [];
 
@@ -88,6 +88,7 @@ export class TTVault extends TTCollection {
       const t = this.GetThink(tid);
       if (!t || t.ContentType !== 'bundle') return;
       if (t.IsMetaOnly) await t.LoadContent();
+      if (strict && t.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした');
 
       const parsed = parseBundle(t.Content);
 
@@ -163,6 +164,7 @@ export class TTVault extends TTCollection {
           finalIds.add(meta.id);
         }
       } catch (e) {
+        if (strict) throw e;
         console.error('[TTVault] GetThinksForBundleAsync search failed:', e);
       }
     }

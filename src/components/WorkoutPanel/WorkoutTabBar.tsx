@@ -4,7 +4,7 @@
  *
  * ボタン構成（上から）:
  *   Workout設定 / TextEditor設定 / Markdown設定 /
- *   DataGrid設定 / Card設定 / Graph設定
+ *   DataGrid設定 / Card設定 / Graph設定 / Html設定 / AI相談
  *
  * - 押下で対応する設定パネルを開く
  * - 開いている設定パネルのボタン再押下で閉じる
@@ -12,12 +12,12 @@
  */
 
 import { Fragment } from 'react';
-import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, MessageCircle, type LucideIcon } from 'lucide-react';
+import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, FileCode, MessageCircle, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
 import './WorkoutTabBar.css';
 
-export type SettingsType = Extract<MediaType, 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'chat'>;
+export type SettingsType = Extract<MediaType, 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'>;
 
 interface SettingsEntry {
   type: SettingsType;
@@ -33,6 +33,7 @@ export const WORKOUT_SETTINGS: SettingsEntry[] = [
   { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定',   id: 'DataGrid' },
   { type: 'card',       Icon: IdCard,          name: 'Card設定',       id: 'Card' },
   { type: 'graph',      Icon: Share2,          name: 'Graph設定',      id: 'Graph' },
+  { type: 'html',       Icon: FileCode,        name: 'Html設定',       id: 'Html' },
   { type: 'chat',       Icon: MessageCircle,   name: 'AI相談',         id: 'AiChat' },
 ];
 

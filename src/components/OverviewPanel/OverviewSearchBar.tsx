@@ -17,6 +17,7 @@ const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'table',   Icon: Table,         label: 'テーブル' },
   { type: 'links',   Icon: Link,          label: 'リンク' },
   { type: 'chat',    Icon: MessageCircle, label: 'チャット' },
+  { type: 'html', Icon: Globe, label: 'HTML' },
   { type: 'nettext', Icon: Globe,         label: 'WebText' },
 ];
 

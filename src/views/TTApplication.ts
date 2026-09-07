@@ -152,10 +152,11 @@ export class TTApplication extends TTUIItem {
    * @param mediaType 表示形式
    * @returns 開いたTTWorkoutArea（満杯の場合はnull）
    */
-  public OpenThinkInWorkout(thinkId: string, mediaType: MediaType = 'texteditor') {
+  public OpenThinkInWorkout(thinkId: string, mediaType?: MediaType) {
     const vault = this.Models.Vault;
     const think = vault.GetThink(thinkId);
     const title = think?.Name ?? thinkId;
+    mediaType ??= think?.ContentType === 'html' ? 'html' : 'texteditor';
 
     return this.WorkoutPanel.ReplaceFocused(thinkId, mediaType, title)
         ?? this.WorkoutPanel.AddFirst(thinkId, mediaType, title);
