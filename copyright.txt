@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.53",
+  "version": "1.4.54",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "f93fffa",
-  "commitDateTime": "2026-09-07-182955",
-  "commitMessage": "feat(texteditor): SearchTagのVaultメモ読込を追加、KeyBinding.Loadのマージ不整合を修正"
+  "commitId": "401ff2e",
+  "commitDateTime": "2026-09-07-220624",
+  "commitMessage": "feat: HTML Media対応、BundleStatusView、managedChatを追加"
 }

@@ -7,6 +7,19 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.54 feat: HTML Media対応、BundleStatusView、managedChatを追加
+- 日付: 2026-09-07
+- コミット番号: 401ff2e
+
+思考支援UIを追加（詳細はdocs/ThoughtSupport_UI_Plan.md参照）。
+Overview「Bundle分析」に「この課題の状況」を追加し、対象Bundle配下の管理Chatを
+タイトル解析（種類:担当｜[状態]タイトル、TODO/PROJ/ASK/EVNT/LOOPを認識）した
+状態別一覧として表示、各行からWorkoutで元Thinkを開けるようにした。
+Memo/Chat/Tableと同じContentTypeとして`html`を新設し、隔離iframe（スクリプト・
+フォーム送信・外部通信は禁止、閲覧専用）でのHTML表示とテキストエディタでの
+ソース編集を切り替え可能にした。TextEditor設定から`.html`/`.htm`の取り込み・
+書き出しにも対応。既存142件のテストに加えHTML保存・再読込テストを1件追加。
+
 ### v1.4.53 feat(texteditor): SearchTagのVaultメモ読込を追加、KeyBinding.Loadのマージ不整合を修正
 - 日付: 2026-09-07
 - コミット番号: f93fffa
