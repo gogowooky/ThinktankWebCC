@@ -47,3 +47,5 @@ obj/
 
 # Vitest coverage output
 coverage/
+
+tmp/

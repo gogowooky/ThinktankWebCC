@@ -6,7 +6,7 @@
  */
 
 import React, { useImperativeHandle, forwardRef, useRef } from 'react';
-import { TextSearch, X, FileText, Library, Table, Link, MessageCircle, Globe, SquareCheck, type LucideIcon } from 'lucide-react';
+import { TextSearch, X, FileText, Library, Table, Link, MessageCircle, Globe, FileCode, SquareCheck, type LucideIcon } from 'lucide-react';
 import type { ContentType } from '../../types';
 import './OverviewFilterPanel.css';
 import './OverviewSearchBar.css';
@@ -17,7 +17,7 @@ const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'table',   Icon: Table,         label: 'テーブル' },
   { type: 'links',   Icon: Link,          label: 'リンク' },
   { type: 'chat',    Icon: MessageCircle, label: 'チャット' },
-  { type: 'html', Icon: Globe, label: 'HTML' },
+  { type: 'html',    Icon: FileCode,      label: 'HTML' },
   { type: 'nettext', Icon: Globe,         label: 'WebText' },
 ];
 
