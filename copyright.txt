@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.54",
+  "version": "1.4.55",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "401ff2e",
-  "commitDateTime": "2026-09-07-220624",
-  "commitMessage": "feat: HTML Media対応、BundleStatusView、managedChatを追加"
+  "commitId": "8d6b5db",
+  "commitDateTime": "2026-09-08-081154",
+  "commitMessage": "feat: Think一覧・種別フィルタのHTMLアイコンをfile-codeに統一、思考支援運用仕様案を追加"
 }

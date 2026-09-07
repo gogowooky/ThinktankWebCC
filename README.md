@@ -7,6 +7,17 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.55 feat: Think一覧・種別フィルタのHTMLアイコンをfile-codeに統一、思考支援運用仕様案を追加
+- 日付: 2026-09-08
+- コミット番号: 8d6b5db
+
+Thinktank/Overview の Think一覧で、種別フィルタのアイコンと一覧各行の種別アイコンについて、
+`html` を `Globe` から `FileCode`（file-code）に変更し、フィルタと一覧行の表記を統一した。
+`nettext`（WebText）は従来どおり `Globe` のまま。
+あわせて、これまでの議論を統合した運用仕様案
+`docs/Thinktank_AI_ThoughtSupport_Operation.md` を追加（今回は文書化のみで、将来仕様を
+実装済みとは扱わない）。
+
 ### v1.4.54 feat: HTML Media対応、BundleStatusView、managedChatを追加
 - 日付: 2026-09-07
 - コミット番号: 401ff2e
