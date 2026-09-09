@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.55",
+  "version": "1.4.56",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "8d6b5db",
-  "commitDateTime": "2026-09-08-081154",
-  "commitMessage": "feat: Think一覧・種別フィルタのHTMLアイコンをfile-codeに統一、思考支援運用仕様案を追加"
+  "commitId": "677c0ee",
+  "commitDateTime": "2026-09-09-143902",
+  "commitMessage": "feat: AIChat思考支援の基盤実装（ThoughtSupport）と各パネル整理、AIモデル設定を追加"
 }

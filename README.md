@@ -7,6 +7,22 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.56 feat: AIChat思考支援の基盤実装（ThoughtSupport）と各パネル整理、AIモデル設定を追加
+- 日付: 2026-09-09
+- コミット番号: 677c0ee
+
+運用仕様案に沿って、相談ごとにAIが必要な視点を選ぶ思考支援の基盤を追加した。
+`src/components/ThoughtSupport/`（SupportChat）と関連 hooks/services
+（`thoughtSupport` / `thoughtSupportEffects` / `openSupportChat` / `useSupportChats` /
+`useSupportSelection` / `storage/localMetadata`）を新設し、Thinktank・Overview・
+ReThink・Workout の各 Area／SettingArea と ChatMedia の共通ロジックを ThoughtSupport
+側へ寄せて整理（大幅な行数削減）。AIモデル設定を `server/config/aiModels.ts` と
+`src/services/aiModels.ts` に集約し、Gemini 向け `geminiParts` を追加。Electron に
+`vaultSave.cjs` を追加し `main.cjs` を整理。あわせて実装内容・確認方法、簡易ユーザー
+マニュアル各種、推奨ショートカット案、追加UI案、初心者ガイド（`docs/slides/`）を
+追加した。`.gitignore` に MS Office 一時ロックファイル（`~$*`）を追加。
+テスト179件パス、型検査・server ビルド成功。
+
 ### v1.4.55 feat: Think一覧・種別フィルタのHTMLアイコンをfile-codeに統一、思考支援運用仕様案を追加
 - 日付: 2026-09-08
 - コミット番号: 8d6b5db
