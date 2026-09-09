@@ -27,7 +27,7 @@ import { ThoughtsList, applyFilter, ROW_HEIGHT } from './ThoughtsList';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
-import { parseManagedChatTitle } from '../../utils/managedChat';
+import { ChatListFilters, CHAT_KINDS, CHAT_STATES, matchesChatFilters } from './ChatListFilters';
 import type { ContentType } from '../../types';
 import './ThinktankChatMemoPicker.css';
 
@@ -60,7 +60,8 @@ export function ThinktankChatMemoPicker({
   thinks, columns, sort, filterVisibility, selectedId, onSelect, checkedIds, onToggleCheck,
 }: Props) {
   const [isFocused,    setIsFocused]    = useState(false);
-  const [showClosed, setShowClosed] = useState(false);
+  const [kinds, setKinds] = useState<Set<string>>(() => new Set(CHAT_KINDS));
+  const [states, setStates] = useState<Set<string>>(() => new Set(CHAT_STATES.filter(s => s !== '完了' && s !== '中止')));
   const [titleQuery,   setTitleQuery]   = useState('');
   const [createdDate,  setCreatedDate]  = useState('');
   const [createdRange, setCreatedRange] = useState('');
@@ -70,17 +71,17 @@ export function ThinktankChatMemoPicker({
 
   const filtered = useMemo(() => {
     let items = applyFilter(thinks, titleQuery);
-    if (!showClosed) items = items.filter(t => t.ID === selectedId || !['完了', '中止'].includes(parseManagedChatTitle(t.Name)?.state ?? ''));
+    items = items.filter(t => matchesChatFilters(t.Name, kinds, states));
     items = applyDateFilter(items, { show: true, createdDate, createdRange, updatedDate, updatedRange });
     const q = contentQuery.trim().toLowerCase();
     if (q) items = items.filter(t => t.Content.toLowerCase().includes(q));
     return applySort(items, sort);
-  }, [thinks, titleQuery, createdDate, createdRange, updatedDate, updatedRange, contentQuery, sort, showClosed, selectedId]);
+  }, [thinks, titleQuery, createdDate, createdRange, updatedDate, updatedRange, contentQuery, sort, kinds, states]);
 
   // フォーカスが外れていて選択中のアイテムがある場合のみ、その1件だけに絞る（新規チャット行も隠す）。
   // それ以外（フォーカス中、または選択なし）は「新規チャット」行 + 絞り込み結果を表示する
   // （フィルター未設定なら絞り込み結果 = 全対象ファイル）
-  const selectedThink = useMemo(() => thinks.find(t => t.ID === selectedId) ?? null, [thinks, selectedId]);
+  const selectedThink = useMemo(() => filtered.find(t => t.ID === selectedId) ?? null, [filtered, selectedId]);
   const newChatItem   = useMemo(() => makeNewChatItem(), []);
   const displayItems  = (!isFocused && selectedThink) ? [selectedThink] : [newChatItem, ...filtered];
   const gridHeight    = displayItems.length > 0
@@ -141,7 +142,9 @@ export function ThinktankChatMemoPicker({
         showContentFilter={filterVisibility.content}
         showTypeFilter={false}
       />
-      <label><input type="checkbox" checked={showClosed} onChange={e => setShowClosed(e.target.checked)} />完了・中止も表示</label>
+      <ChatListFilters kinds={kinds} states={states} onKindsChange={setKinds} onStatesChange={setStates}
+        showKinds={filterVisibility.chatKind ?? true} showStates={filterVisibility.chatState ?? true}
+        currentTitle={thinks.find(t => t.ID === selectedId)?.Name} />
       {gridHeight > 0 && (
         <div className="tt-chat-picker__grid" style={{ height: gridHeight }}>
           <ThoughtsList

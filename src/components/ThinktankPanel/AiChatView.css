@@ -153,6 +153,9 @@
 /* ── AIモデル選択（入力欄フォーカス時のみ下から現れる）───────── */
 
 .ai-chat-view__model-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
   overflow: hidden;
   max-height: 0;
   opacity: 0;
@@ -171,6 +174,8 @@
 }
 
 .ai-chat-view__model-select {
+  flex: 1;
+  min-width: 0;
   width: 100%;
   font-family: inherit;
   font-size: calc(11px * var(--tt-font-scale, 1));
@@ -186,14 +191,50 @@
 .ai-chat-view__model-select:focus {
   border-color: rgba(57, 73, 171, 0.5);
 }
+.ai-chat-view__explanation {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: calc(11px * var(--tt-font-scale, 1));
+  color: #1a2c5b;
+}
 
 .ai-chat-view__input-prompt {
+  align-self: flex-start;
+  padding-top: 5px;
   color: #2e7d32;
   font-weight: 700;
   flex-shrink: 0;
   padding-bottom: 5px;
   user-select: none;
 }
+.ai-chat-view__input-prompt--waiting {
+  animation: ai-chat-prompt-wait 1.2s ease-in-out infinite;
+}
+@keyframes ai-chat-prompt-wait {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  50% { opacity: 0.3; transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ai-chat-view__input-prompt--waiting { animation: none; color: #a65f00; }
+}
+.ai-chat-view__undo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  padding: 3px;
+  border: 1px solid rgba(57, 73, 171, 0.25);
+  border-radius: 4px;
+  background: transparent;
+  color: #1a2c5b;
+  cursor: pointer;
+}
+.ai-chat-view__undo:disabled { opacity: 0.4; cursor: default; }
+.ai-chat-view__undo:focus-visible { outline: 2px solid #3949ab; outline-offset: 1px; }
 
 .ai-chat-view__input {
   flex: 1;

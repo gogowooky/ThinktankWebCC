@@ -234,19 +234,15 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
 
   return <div className="support-chat">
     <div className="support-chat__context">
-      <strong>{think?.Name || '新しい相談'}</strong>
-      <span>{pane ? '個別の自由対話' : `担当：${info?.panel ?? panelName} · ${info?.state ?? '未整理'}`}</span>
       <span>対象：{record.bundleId ? vault.GetThink(record.bundleId)?.Name ?? record.bundleId : '単独の相談'}</span>
       {!!record.handoff && <span>引き継ぎ：{record.handoff}</span>}
       {isReviewDue(record, clock) && !['完了', '中止'].includes(info?.state ?? '') && <strong>再確認・再提示の時期です。今の状況を教えてください。</strong>}
-      <label>説明の長さ <select value={explanation} onChange={e => { setExplanation(e.target.value); try { localStorage.setItem('thinktank.support.explanation', e.target.value); } catch { /* optional preference */ } }}><option>短く、一つずつ</option><option>標準</option><option>詳しく</option></select></label>
       {(record.resume || record.current || record.next) && <details><summary>前回・現在・次を確認する</summary><p>前回：{record.resume || '未記録'}</p><p>現在：{record.current || '未確認'}</p><p>次：{record.next || '相談して決めましょう'}</p><p>本人の決定：{record.decisions || '未記録'}</p><p>未決定：{record.undecided || '未記録'}</p><p>AIの提案：{record.proposals || '未記録'}</p><p>本人確認：{record.confirmedAt || '未確認'} ／ 要約更新：{record.updatedAt || '未記録'}</p></details>}
       {(record.due || record.scheduled || record.reviewAt || record.redisplayAt || record.repeatRule) && <details><summary>予定・再確認</summary><p>期限：{record.due || '未設定'}</p><p>実施予定：{record.scheduled || '未設定'}</p><p>再確認：{record.reviewAt || '未設定'}</p><p>再提示：{record.redisplayAt || '未設定'}</p><p>繰り返し：{record.repeatRule || 'なし'}</p><p>待機・保留：{record.waiting || 'なし'}</p></details>}
       {!!record.references.length && <details><summary>参照した記録</summary>{record.references.map(id => <button key={id} onClick={() => TTApplication.Instance.OpenThinkInWorkout(id)}>{vault.GetThink(id)?.Name ?? id}</button>)}</details>}
       {(record.startsAt || record.endsAt || record.checklist) && <details><summary>開催日時・手順</summary><p>開始：{record.startsAt || '未設定'} ／ 終了：{record.endsAt || '未設定'}</p><p>{record.checklist}</p></details>}
       {pane && <div><select aria-label="成果の反映先" value={targetId} onChange={e => setTargetId(e.target.value)}><option value="">成果の反映先を選ぶ</option>{vault.GetThinks().filter(t => t.ContentType === 'chat' && t.ID !== selectedId && parseManagedChatTitle(t.Name)).map(t => <option key={t.ID} value={t.ID}>{t.Name}</option>)}</select><button disabled={!targetId || waiting} onClick={() => void reflect()}>結果を相談につなぐ</button></div>}
       {notice && <span role="status">{notice}</span>}
-      {!pane && think && record.history?.length ? <button disabled={waiting || !!retry.current || !!think.Metadata.supportPendingEffects} onClick={() => { showWaiting(true); setError(''); void undoSupportChange(think).then(() => setNotice('直前の管理変更を戻しました。会話と作成済み資料は残しています。')).catch(e => setError(e.message)).finally(() => showWaiting(false)); }}>直前の管理変更を戻す</button> : null}
       {foundChats.length > 0 && <details open><summary>見つかった相談</summary>{foundChats.map(t => <button key={t.id} disabled={waiting} onClick={() => onSelected(t.id)}>{t.title}の続きを開く</button>)}</details>}
       {!selectedId && !pane && (panelName === 'Thinktank' || panelName === 'ReThink') && vault.GetThinks().filter(t => t.ContentType === 'chat' && isReviewDue(supportRecord(t), clock) && !['完了', '中止'].includes(parseManagedChatTitle(t.Name)?.state ?? '') && (panelName === 'Thinktank' || !props.bundleId || supportRecord(t).bundleId === props.bundleId)).slice(0, 5).map(t => <button key={t.ID} onClick={() => openSupportChat(t.ID)}>再確認：{t.Name}</button>)}
       {error && <span role="alert">{error}</span>}
@@ -266,6 +262,16 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
       }
       void send(text);
       return true;
-    }} modelSelector={modelSelector} />
+    }} modelSelector={modelSelector} explanationSelector={{ value: explanation, onChange: value => {
+      setExplanation(value); try { localStorage.setItem('thinktank.support.explanation', value); } catch { /* optional preference */ }
+    } }} undoManagement={pane ? undefined : {
+      disabled: !think || !record.history?.length || waiting || !!retry.current || !!think.Metadata.supportPendingEffects,
+      onClick: () => {
+        if (!think || busy.current || retry.current || think.Metadata.supportPendingEffects) return;
+        showWaiting(true); setError('');
+        void undoSupportChange(think).then(() => setNotice('直前の管理変更を戻しました。会話と作成済み資料は残しています。'))
+          .catch(e => setError(e.message)).finally(() => showWaiting(false));
+      },
+    }} />
   </div>;
 });

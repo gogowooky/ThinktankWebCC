@@ -13,6 +13,8 @@ export interface FilterVisibility {
   updatedDate: boolean;
   content:     boolean;
   type:        boolean;
+  chatKind?: boolean;
+  chatState?: boolean;
 }
 
 export const DEFAULT_FILTER_VISIBILITY: FilterVisibility = {
@@ -25,6 +27,8 @@ export const DEFAULT_FILTER_VISIBILITY: FilterVisibility = {
 
 /** AI相談モードの DataGrid 用フィルター表示のデフォルト（タイトルのみ ON） */
 export const DEFAULT_CHAT_FILTER_VISIBILITY: FilterVisibility = {
+  chatKind: true,
+  chatState: true,
   title:       true,
   createdDate: false,
   updatedDate: false,
@@ -38,6 +42,8 @@ const FILTER_ITEMS: { field: keyof FilterVisibility; label: string }[] = [
   { field: 'updatedDate', label: '更新日' },
   { field: 'content',     label: 'コンテンツ' },
   { field: 'type',        label: '種別' },
+  { field: 'chatKind', label: '種類' },
+  { field: 'chatState', label: '状態' },
 ];
 
 interface Props {
@@ -50,9 +56,10 @@ interface Props {
 
 export function FilterSelectDialog({ visibility, onChange, onClose, hiddenFields = [] }: Props) {
   const toggle = (field: keyof FilterVisibility) => {
-    onChange({ ...visibility, [field]: !visibility[field] });
+    onChange({ ...visibility, [field]: !(visibility[field] ?? true) });
   };
-  const items = FILTER_ITEMS.filter(item => !hiddenFields.includes(item.field));
+  const items = FILTER_ITEMS.filter(item => !hiddenFields.includes(item.field) &&
+    (!['chatKind', 'chatState'].includes(item.field) || hiddenFields.includes('type')));
 
   return (
     <div className="col-sort-dialog__backdrop" onClick={onClose}>
@@ -74,7 +81,8 @@ export function FilterSelectDialog({ visibility, onChange, onClose, hiddenFields
                 <td className="col-sort-dialog__td col-sort-dialog__td--check">
                   <input
                     type="checkbox"
-                    checked={visibility[item.field]}
+                    checked={visibility[item.field] ?? true}
+                    aria-label={item.label}
                     onChange={() => toggle(item.field)}
                   />
                 </td>

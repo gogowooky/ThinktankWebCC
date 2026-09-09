@@ -1,4 +1,26 @@
 /* ThinktankChatMemoPicker.css */
+.tt-chat-filter--current {
+  position: relative;
+}
+.tt-chat-filter--current::before {
+  content: '・';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  color: currentColor;
+  font-size: 16px;
+  line-height: 12px;
+  pointer-events: none;
+}
+
+.tt-chat-picker__filter-label {
+  display: flex;
+  align-items: center;
+  flex: none;
+  font-size: calc(11px * var(--tt-font-scale, 1));
+  color: #666;
+  margin-right: 2px;
+}
 
 .tt-chat-picker {
   display: flex;

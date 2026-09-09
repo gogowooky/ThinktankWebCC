@@ -10,6 +10,7 @@
 
 import { useRef, useEffect, useMemo, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { ChatMessage } from '../../types';
+import { MessageSquareReply } from 'lucide-react';
 import { AI_MODEL_OPTIONS, PROVIDER_LABELS, parseSelectionValue, selectionToValue } from '../../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../../services/aiModels';
 import { useAiProviderAvailability } from '../../hooks/useAiProviderAvailability';
@@ -40,6 +41,8 @@ interface Props {
    * メッセージ入力欄がフォーカスされている間だけ下から現れる。
    */
   modelSelector?: AiModelSelectorProps;
+  explanationSelector?: { value: string; onChange: (value: string) => void };
+  undoManagement?: { disabled: boolean; onClick: () => void };
 }
 
 const PROVIDER_ORDER: AiProvider[] = ['anthropic', 'openai', 'gemini'];
@@ -68,7 +71,7 @@ function topInContainer(el: HTMLElement, container: HTMLElement): number {
 }
 
 export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
-  { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector },
+  { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector, explanationSelector, undoManagement },
   ref,
 ) {
   const providerAvailability = useAiProviderAvailability();
@@ -234,6 +237,9 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
         onBlur={handleInputAreaBlur}
       >
         <div className="ai-chat-view__input-row">
+          <span className={`ai-chat-view__input-prompt${isWaiting ? ' ai-chat-view__input-prompt--waiting' : ''}`}
+            role={isWaiting ? 'status' : undefined} aria-label={isWaiting ? '応答を待っています' : undefined}
+            aria-hidden={isWaiting ? undefined : true}>&gt;</span>
           <textarea
             ref={textareaRef}
             className="ai-chat-view__input"
@@ -267,6 +273,18 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
                 </optgroup>
               ))}
             </select>
+            {explanationSelector && <label className="ai-chat-view__explanation">説明
+              <select className="ai-chat-view__model-select" aria-label="説明の長さ" tabIndex={isInputAreaFocused ? 0 : -1}
+                value={explanationSelector.value} onChange={e => explanationSelector.onChange(e.target.value)}>
+                <option>短く、一つずつ</option><option>標準</option><option>詳しく</option>
+              </select>
+            </label>}
+            {undoManagement && <button type="button" className="ai-chat-view__undo"
+              disabled={isWaiting || undoManagement.disabled} onClick={undoManagement.onClick}
+              tabIndex={isInputAreaFocused ? 0 : -1}
+              aria-label="直前の管理変更を戻す" data-tip="直前の管理変更を戻す" data-tip-side="left">
+              <MessageSquareReply size={16} />
+            </button>}
           </div>
         )}
       </div>
