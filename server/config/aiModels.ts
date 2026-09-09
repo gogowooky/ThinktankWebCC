@@ -20,12 +20,18 @@ const ALLOWED_MODELS: AiModelSelection[] = [
   { provider: 'anthropic', model: 'claude-opus-4-8' },
   { provider: 'anthropic', model: 'claude-haiku-4-5' },
   { provider: 'openai',    model: 'gpt-5.6' },
-  { provider: 'gemini',    model: 'gemini-2.5-flash' },
+  { provider: 'gemini',    model: 'gemini-3.5-flash' },
   { provider: 'gemini',    model: 'gemini-2.5-pro' },
   { provider: 'gemini',    model: 'gemini-2.0-flash' },
 ];
 
 export function isAllowedAiModel(provider: unknown, model: unknown): provider is AiProvider {
   if (typeof provider !== 'string' || typeof model !== 'string') return false;
-  return ALLOWED_MODELS.some(m => m.provider === provider && m.model === model);
+  const resolved = provider === 'gemini' ? resolveGeminiModel(model) : model;
+  return ALLOWED_MODELS.some(m => m.provider === provider && m.model === resolved);
+}
+
+/** 古いクライアントと環境変数の Flash 指定も移行する。未知のIDは変更しない。 */
+export function resolveGeminiModel(model?: string): string {
+  return !model || model === 'gemini-2.5-flash' ? 'gemini-3.5-flash' : model;
 }

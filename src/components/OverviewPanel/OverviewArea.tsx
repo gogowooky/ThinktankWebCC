@@ -1,3 +1,6 @@
+import { useSupportSelection } from '../../hooks/useSupportSelection';
+import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
+import { useSupportChats } from '../../hooks/useSupportChats';
 /**
  * OverviewArea.tsx
  * OverviewPanel の表示エリア。
@@ -24,8 +27,6 @@ import { OverviewSettingsView } from './OverviewSettingsView';
 import type { OverviewSettingsViewRef } from './OverviewSettingsView';
 import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
 import type { GraphMediaRef } from '../WorkoutPanel/media/GraphMedia';
-import { AiChatView } from '../ThinktankPanel/AiChatView';
-import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import { OverviewFilterPanel } from './OverviewFilterPanel';
 import type { OverviewFilterPanelRef } from './OverviewFilterPanel';
 import { OverviewSearchBar } from './OverviewSearchBar';
@@ -38,11 +39,9 @@ import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
-import { streamChat } from '../../services/ChatApiService';
-import { aiSpeakerPrefix } from '../../services/aiModels';
 import {
-  parseBundle, serializeBundle, serializeChat, isTodoChatThink, loadChatFromThink, chatContentTitle,
-  NEW_CHAT_SENTINEL_ID, TODO_CHAT_PREFIX_OVERVIEW,
+  parseBundle, serializeBundle,
+  NEW_CHAT_SENTINEL_ID,
 } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
@@ -116,15 +115,13 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   // ── チャット state ─────────────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
-  const chatAbortRef                    = useRef<AbortController | null>(null);
-  const chatAccumulatedRef              = useRef('');
-  const aiChatViewRef                   = useRef<AiChatViewRef>(null);
+  const aiChatViewRef                   = useRef<SupportChatRef>(null);
   const filterPanelRef                  = useRef<OverviewFilterPanelRef>(null);
   const settingsViewRef                 = useRef<OverviewSettingsViewRef>(null);
   const [analysisView, setAnalysisView] = useState<'status' | 'graph'>('status');
   const statusViewRef = useRef<{ focus: () => void }>(null);
   const graphMediaRef                   = useRef<GraphMediaRef>(null);
-  const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Overview');
 
   // ── Think 一覧（選択 Bundle 内の全 Think → フィルタ適用）──────────────────
   const [thinksInBundle, setThinksInBundle] = useState(() =>
@@ -138,16 +135,13 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     });
   }, [panel.BundleID, vault, refreshKey, vault.IsLoaded, vault.Count]);
 
-  // AI相談 DataGrid 用: タイトルが TODO:Overview で始まる chat Think 一覧（Vault全体）
+  // 担当・Bundleの範囲に合う相談と、継続中の選択を表示する。
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
-  const todoMemoThinks = useMemo(
-    () => allThinks.filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_OVERVIEW)),
-    [allThinks],
-  );
+  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Overview", panel.BundleID, selectedTodoMemoId);
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
+    if (vault.IsLoaded && selectedTodoMemoId && !vault.GetThink(selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
   }, [todoMemoThinks, selectedTodoMemoId]);
@@ -377,82 +371,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     app.OpenThinkInWorkout(id);
   }, [app]);
 
-  const handleChatSend = useCallback(async (text: string) => {
-    const ts = new Date().toISOString();
-    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
-    const aiId = `a-${Date.now() + 1}`;
-    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
-    const aiPrefix = aiSpeakerPrefix({ provider: panel.AIChatProvider, model: panel.AIChatModel });
-    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: aiPrefix, timestamp: new Date().toISOString() };
-
-    setChatMessages(prev => [...prev, userMsg, aiMsg]);
-    setChatWaiting(true);
-    chatAccumulatedRef.current = aiPrefix;
-
-    chatAbortRef.current = new AbortController();
-
-    // 選択中 Bundle のコンテキストをシステムプロンプトに含める
-    const bundleThink = panel.BundleID ? vault.GetThink(panel.BundleID) : null;
-    const contextLines: string[] = [
-      'あなたは Thinktank の AI アシスタントです。ユーザーの Bundle（テーマ集合）について分析・整理・提案を日本語で行ってください。',
-    ];
-    if (bundleThink) {
-      contextLines.push(`\n## 選択中の Bundle\nタイトル: ${bundleThink.Name}`);
-      const thinksInBundleNow = vault.GetThinksForBundle(panel.BundleID);
-      if (thinksInBundleNow.length > 0) {
-        contextLines.push(
-          '含まれる Think:\n' + thinksInBundleNow.map(t => `- ${t.Name}`).join('\n'),
-        );
-      }
-    }
-    const systemPrompt = contextLines.join('\n');
-
-    const history = [...chatMessages, userMsg].map(m => ({
-      role:    m.role as 'user' | 'assistant',
-      content: m.content,
-    }));
-
-    await streamChat(
-      history,
-      systemPrompt,
-      {
-        onDelta: (delta) => {
-          chatAccumulatedRef.current += delta;
-          const accumulated = chatAccumulatedRef.current;
-          setChatMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
-        },
-        onDone:  () => { setChatWaiting(false); },
-        onError: (message) => {
-          setChatMessages(prev => prev.map(m =>
-            m.id === aiId ? { ...m, content: `${aiPrefix}[エラー] ${message}` } : m,
-          ));
-          setChatWaiting(false);
-        },
-      },
-      chatAbortRef.current.signal,
-      { provider: panel.AIChatProvider, model: panel.AIChatModel },
-    );
-  }, [chatMessages, panel, vault]);
-
-  // 選択中のThinkがあればそこへ上書き保存、なければ新規の chat Think として保存する（選択中Bundleへリンク）
-  const handleSaveChat = useCallback(async () => {
-    if (chatMessages.length === 0) return;
-
-    if (selectedTodoMemoId) {
-      const think = vault.GetThink(selectedTodoMemoId);
-      if (!think) return;
-      const firstLine = think.Content.split('\n')[0] ?? '';
-      const body = serializeChat(chatMessages);
-      think.Content = firstLine ? `${firstLine}\n${body}` : body;
-      await think.SaveContent();
-      return;
-    }
-
-    const title = chatContentTitle(TODO_CHAT_PREFIX_OVERVIEW, chatMessages);
-    const body = serializeChat(chatMessages);
-    const think = await vault.CreateChatThink(`${title}\n${body}`, panel.BundleID ?? undefined);
-    setSelectedTodoMemoId(think.ID);
-  }, [chatMessages, vault, panel, selectedTodoMemoId]);
+  const handleSaveChat = useCallback(() => aiChatViewRef.current?.save(), []);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatを${selectedTodoMemoId}に保管します`
@@ -460,18 +379,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
 
   // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
-  // ファイルとして保存されるのは、保存ボタンが押された時（handleSaveChat）だけ
-  const handleSelectTodoMemo = useCallback(async (id: string) => {
-    chatAbortRef.current?.abort();
-    setChatWaiting(false);
-
-    const targetId = id === NEW_CHAT_SENTINEL_ID ? '' : id;
-    setSelectedTodoMemoId(targetId);
-    if (!targetId) { setChatMessages([]); return; }
-    const think = vault.GetThink(targetId);
-    if (think?.IsMetaOnly) await think.LoadContent();
-    setChatMessages(loadChatFromThink(think));
-  }, [vault]);
+  // 入力と応答は共通チャットが自動保存する。
+  const handleSelectTodoMemo = useCallback((id: string) => {
+    aiChatViewRef.current?.abortStreaming();
+    setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
+  }, []);
 
   // ── 算出値 ────────────────────────────────────────────────────────────────
   const think = panel.BundleID ? vault.GetThink(panel.BundleID) ?? null : null;
@@ -603,6 +515,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
           )
         ) : panel.MediaType === 'chat' ? (
           <div className="overview-area__chat-wrap">
+            {supportListError && <p role="alert">{supportListError}</p>}
             <ThinktankChatMemoPicker
               thinks={todoMemoThinks}
               columns={columns}
@@ -614,16 +527,10 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
               onToggleCheck={handleToggleCheck}
             />
             <div className="overview-area__chat-body">
-              <AiChatView
-                ref={aiChatViewRef}
-                messages={chatMessages}
-                isWaiting={chatWaiting}
-                onSend={handleChatSend}
-                modelSelector={{
-                  value:    { provider: panel.AIChatProvider, model: panel.AIChatModel },
-                  onChange: (selection) => panel.SetAIChatModel(selection),
-                }}
-              />
+              <SupportChat ref={aiChatViewRef} vault={vault} panelName="Overview"
+                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={panel.BundleID}
+                onMessages={setChatMessages} onWaiting={setChatWaiting}
+                modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
             </div>
           </div>
         ) : !think ? (

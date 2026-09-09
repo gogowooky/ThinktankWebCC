@@ -523,11 +523,17 @@ export class TTVault extends TTCollection {
   }
 
   /** 指定した Bundle の ID リストに newId を追加して保存する（内部ヘルパー） */
+  public async LinkThinksToBundle(bundleId: string, ids: string[]): Promise<void> {
+    for (const id of ids) await this._linkThinkToBundle(bundleId, id);
+  }
+
   private async _linkThinkToBundle(bundleId: string, newId: string): Promise<void> {
     const bundle = this.GetThink(bundleId);
-    if (!bundle || bundle.ContentType !== 'bundle') return;
+    if (!bundle || bundle.ContentType !== 'bundle') throw new Error('対象Bundleが見つかりません。');
     if (bundle.IsMetaOnly) await bundle.LoadContent();
+    if (bundle.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした。');
     const parsed = parseBundle(bundle.Content);
+    if (parsed.ids.includes(newId)) return;
     const newContent = serializeBundle({
       prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
       title: parsed.title,
@@ -541,8 +547,10 @@ export class TTVault extends TTCollection {
       },
       ids: [...parsed.ids, newId],
     });
+    const previousContent = bundle.Content;
     bundle.Content = newContent;
-    await bundle.SaveContent();
+    try { await bundle.SaveContent(); }
+    catch (error) { bundle.Content = previousContent; throw error; }
   }
 
   /** links データ（URL/path リンク集）を作成して保存する */

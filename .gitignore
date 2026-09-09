@@ -49,3 +49,6 @@ obj/
 coverage/
 
 tmp/
+
+# MS Office temp lock files
+~$*

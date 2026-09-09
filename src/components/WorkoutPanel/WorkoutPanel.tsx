@@ -26,10 +26,9 @@ import { WorkoutSettingArea } from './WorkoutSettingArea';
 import type { WorkoutSettingAreaRef } from './WorkoutSettingArea';
 import { extractLinkDrop, shouldAllowLocalDrop } from './WorkoutMenuRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
-import { serializeChat, chatContentTitle, TODO_CHAT_PREFIX_WORKOUT } from '../../utils/thinkFormat';
 import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './WorkoutTabBar';
-import type { MediaType, ChatMessage } from '../../types';
+import type { MediaType } from '../../types';
 import './WorkoutPanel.css';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
@@ -534,14 +533,6 @@ export function WorkoutPanel({ app }: Props) {
     }
   }, [panel, vault]);
 
-  // chatファイル未選択時の保存: チャット内容から想定されるタイトルで新規の chat Think を作る
-  // （Overviewの選択中Bundleへリンク）。作成した Think を返し、以降はそれを選択中として続けられるようにする
-  const handleSaveChat = useCallback(async (messages: ChatMessage[]): Promise<TTThink | undefined> => {
-    if (messages.length === 0) return undefined;
-    const title = chatContentTitle(TODO_CHAT_PREFIX_WORKOUT, messages);
-    const body = serializeChat(messages);
-    return vault.CreateChatThink(`${title}\n${body}`, app.OverviewPanel.BundleID || undefined);
-  }, [vault, app]);
 
   const handleSettingsRefresh = useCallback(() => {
     app.RefreshAll().catch(e => console.error('[WorkoutPanel] RefreshAll failed:', e));
@@ -908,7 +899,6 @@ export function WorkoutPanel({ app }: Props) {
           onCreateTable={handleCreateTable}
           onReadTable={handleReadTable}
           onSaveTable={handleSaveTable}
-          onSaveChat={handleSaveChat}
           onRefresh={handleSettingsRefresh}
         />
       </PanelArea>

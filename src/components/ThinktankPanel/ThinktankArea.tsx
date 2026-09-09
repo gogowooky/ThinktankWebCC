@@ -1,3 +1,6 @@
+import { useSupportSelection } from '../../hooks/useSupportSelection';
+import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
+import { useSupportChats } from '../../hooks/useSupportChats';
 /**
  * ThinktankArea.tsx
  * ThinktankPanel のコンテンツエリア。
@@ -21,11 +24,7 @@ import type { ThinktankFilterPanelRef } from './ThinktankFilterPanel';
 import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchBar } from './ThinktankSearchBar';
 import { applySort } from '../../utils/sortUtils';
-import { AiChatView } from './AiChatView';
-import type { AiChatViewRef } from './AiChatView';
 import type { ChatMessage, ContentType } from '../../types';
-import { streamChat } from '../../services/ChatApiService';
-import { aiSpeakerPrefix } from '../../services/aiModels';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
@@ -33,10 +32,7 @@ import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from './FilterSelectDialog';
 import type { FilterVisibility } from './FilterSelectDialog';
 import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
-import {
-  serializeChat, isTodoChatThink, loadChatFromThink, chatContentTitle,
-  NEW_CHAT_SENTINEL_ID, TODO_CHAT_PREFIX_THINKTANK,
-} from '../../utils/thinkFormat';
+import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './ThinktankArea.css';
@@ -120,10 +116,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // チャット state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
-  const chatAbortRef                    = useRef<AbortController | null>(null);
-  const chatAccumulatedRef              = useRef('');
-  const aiChatViewRef                   = useRef<AiChatViewRef>(null);
-  const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
+  const aiChatViewRef                   = useRef<SupportChatRef>(null);
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Thinktank');
 
   const filterPanelRef   = useRef<ThinktankFilterPanelRef>(null);
   const settingsViewRef  = useRef<ThinktankSettingsViewRef>(null);
@@ -194,15 +188,12 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // vault.Count が変わったとき（追加・削除）のみ再取得
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // AI相談 DataGrid 用: タイトルが TODO:Thinktank で始まる chat Think 一覧（大文字小文字を区別しない）
-  const todoMemoThinks = useMemo(
-    () => allThinks.filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_THINKTANK)),
-    [allThinks],
-  );
+  // 全Vaultの担当相談と未整理の相談を表示する。
+  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Thinktank", '', selectedTodoMemoId);
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
+    if (vault.IsLoaded && selectedTodoMemoId && !vault.GetThink(selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
   }, [todoMemoThinks, selectedTodoMemoId]);
@@ -321,80 +312,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   }, [panel, vault, searchSearched, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
 
   // チャット送信・保存
-  const handleChatSend = useCallback(async (text: string) => {
-    const ts = new Date().toISOString();
-    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
-    const aiId = `a-${Date.now() + 1}`;
-    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
-    const aiPrefix = aiSpeakerPrefix({ provider: panel.AIChatProvider, model: panel.AIChatModel });
-    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: aiPrefix, timestamp: new Date().toISOString() };
-
-    setChatMessages(prev => [...prev, userMsg, aiMsg]);
-    setChatWaiting(true);
-    chatAccumulatedRef.current = aiPrefix;
-
-    chatAbortRef.current = new AbortController();
-
-    const history = [...chatMessages, userMsg].map(m => ({
-      role:    m.role as 'user' | 'assistant',
-      content: m.content,
-    }));
-
-    await streamChat(
-      history,
-      'あなたは Thinktank の AI アシスタントである Antigravity です。ユーザーの Think（メモ・アイデア）の整理や分析を日本語で手伝ってください。',
-      {
-        onDelta: (delta) => {
-          chatAccumulatedRef.current += delta;
-          const accumulated = chatAccumulatedRef.current;
-          setChatMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
-        },
-        onDone:  (metadata) => {
-          setChatWaiting(false);
-          if (metadata?.createdFileId) {
-            onRefresh();
-            const targetId = metadata.createdFileId;
-            const cat = metadata.category;
-            setTimeout(() => {
-              if (cat === 'bundle') {
-                app.OpenBundle(targetId, 'datagrid');
-              } else {
-                app.OpenThinkInWorkout(targetId);
-              }
-            }, 600);
-          }
-        },
-        onError: (message) => {
-          setChatMessages(prev => prev.map(m =>
-            m.id === aiId ? { ...m, content: `${aiPrefix}[エラー] ${message}` } : m,
-          ));
-          setChatWaiting(false);
-        },
-      },
-      chatAbortRef.current.signal,
-      { provider: panel.AIChatProvider, model: panel.AIChatModel },
-    );
-  }, [chatMessages, panel]);
-
-  // 選択中のThinkがあればそこへ上書き保存、なければ新規の chat Think として保存する
-  const handleSaveChat = useCallback(async () => {
-    if (chatMessages.length === 0) return;
-
-    if (selectedTodoMemoId) {
-      const think = vault.GetThink(selectedTodoMemoId);
-      if (!think) return;
-      const firstLine = think.Content.split('\n')[0] ?? '';
-      const body = serializeChat(chatMessages);
-      think.Content = firstLine ? `${firstLine}\n${body}` : body;
-      await think.SaveContent();
-      return;
-    }
-
-    const title = chatContentTitle(TODO_CHAT_PREFIX_THINKTANK, chatMessages);
-    const body = serializeChat(chatMessages);
-    const think = await vault.CreateChatThink(`${title}\n${body}`);
-    setSelectedTodoMemoId(think.ID);
-  }, [chatMessages, vault, selectedTodoMemoId]);
+  const handleSaveChat = useCallback(() => aiChatViewRef.current?.save(), []);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatを${selectedTodoMemoId}に保管します`
@@ -402,18 +320,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
-  // ファイルとして保存されるのは、保存ボタンが押された時（handleSaveChat）だけ
-  const handleSelectTodoMemo = useCallback(async (id: string) => {
-    chatAbortRef.current?.abort();
-    setChatWaiting(false);
-
-    const targetId = id === NEW_CHAT_SENTINEL_ID ? '' : id;
-    setSelectedTodoMemoId(targetId);
-    if (!targetId) { setChatMessages([]); return; }
-    const think = vault.GetThink(targetId);
-    if (think?.IsMetaOnly) await think.LoadContent();
-    setChatMessages(loadChatFromThink(think));
-  }, [vault]);
+  // 入力と応答は共通チャットが自動保存する。
+  const handleSelectTodoMemo = useCallback((id: string) => {
+    aiChatViewRef.current?.abortStreaming();
+    setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
+  }, []);
 
   // 検索実行
   const handleSearch = useCallback(async () => {
@@ -468,7 +379,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   if (panel.ViewMode === 'chat') {
     content = (
       <div className="thinktank-area__chat-wrap">
-        <ThinktankChatMemoPicker
+        {supportListError && <p role="alert">{supportListError}</p>}
+            <ThinktankChatMemoPicker
           thinks={todoMemoThinks}
           columns={columns}
           sort={sort}
@@ -479,16 +391,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
           onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
         />
         <div className="thinktank-area__chat-body">
-          <AiChatView
-            ref={aiChatViewRef}
-            messages={chatMessages}
-            isWaiting={chatWaiting}
-            onSend={handleChatSend}
-            modelSelector={{
-              value:    { provider: panel.AIChatProvider, model: panel.AIChatModel },
-              onChange: (selection) => panel.SetAIChatModel(selection),
-            }}
-          />
+          <SupportChat ref={aiChatViewRef} vault={vault} panelName="Thinktank"
+                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={''}
+                onMessages={setChatMessages} onWaiting={setChatWaiting}
+                modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
         </div>
       </div>
     );

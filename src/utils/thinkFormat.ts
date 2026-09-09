@@ -4,6 +4,7 @@
  */
 
 import type { ChatMessage } from '../types';
+import { parseManagedChatTitle } from './managedChat';
 
 // ════════════════════════════════════════════════════════════════════════
 // #region chat 形式 (ContentType = 'chat')
@@ -73,7 +74,9 @@ export function isTodoThink(think: { Name: string }, prefix: string): boolean {
 
 /** chat Think が指定プレフィックスで始まる、AI相談の取り扱い対象かどうかを判定する */
 export function isTodoChatThink(think: { ContentType: string; Name: string }, prefix: string): boolean {
-  return think.ContentType === 'chat' && isTodoThink(think, prefix);
+  const info = parseManagedChatTitle(think.Name);
+  const owner = prefix.split(':')[1]?.replace(/[｜|].*$/, '');
+  return think.ContentType === 'chat' && !!info && info.panel.toLowerCase() === owner?.toLowerCase();
 }
 
 /**

@@ -26,7 +26,7 @@ export const AI_MODEL_OPTIONS: AiModelOption[] = [
   { provider: 'anthropic', model: 'claude-opus-4-8',  label: 'Claude Opus 4.8' },
   { provider: 'anthropic', model: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
   { provider: 'openai',    model: 'gpt-5.6',          label: 'GPT-5.6' },
-  { provider: 'gemini',    model: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { provider: 'gemini',    model: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
   { provider: 'gemini',    model: 'gemini-2.5-pro',   label: 'Gemini 2.5 Pro' },
   { provider: 'gemini',    model: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
 ];
@@ -126,6 +126,11 @@ export function loadAiModelSelection(storageKey: string): AiModelSelection {
     const raw = localStorage.getItem(storageKey);
     if (raw) {
       const parsed = JSON.parse(raw);
+      if (parsed?.provider === 'gemini' && parsed.model === 'gemini-2.5-flash') {
+        const migrated: AiModelSelection = { provider: 'gemini', model: 'gemini-3.5-flash' };
+        saveAiModelSelection(storageKey, migrated);
+        return migrated;
+      }
       if (isValidSelection(parsed)) return parsed;
     }
   } catch {

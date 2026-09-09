@@ -5,6 +5,7 @@ const path   = require('path');
 const fs     = require('fs');
 const net    = require('net');
 const crypto = require('crypto');
+const { saveVaultRecord } = require('./vaultSave.cjs');
 const { spawn } = require('child_process');
 
 // パッケージ版（electron-builder）は package.json の "name" からアプリ名・userDataパスを
@@ -38,9 +39,9 @@ function toMeta(record) {
   return meta;
 }
 
-function buildRecord({ id, contentType, title, body, keywords, relatedIds, sizeBytes, isDeleted, createdAt, updatedAt }) {
+function buildRecord({ id, contentType, title, body, keywords, relatedIds, sizeBytes, isDeleted, createdAt, updatedAt, metadata }) {
   return {
-    id, contentType, title,
+    id, contentType, title, metadata: metadata ?? {},
     content:    body,
     keywords:   keywords   || null,
     relatedIds: relatedIds || null,
@@ -86,29 +87,7 @@ ipcMain.handle('storage:getContent', (_event, id) => {
   } catch { return null; }
 });
 
-ipcMain.handle('storage:save', (_event, payload) => {
-  ensureVaultDir();
-  const { id, contentType, fullContent, keywords, relatedIds } = payload;
-  const { title, body } = splitContent(fullContent);
-  const now = new Date().toISOString();
-  const p   = recordPath(id);
-
-  let createdAt = now;
-  if (fs.existsSync(p)) {
-    try { createdAt = JSON.parse(fs.readFileSync(p, 'utf8')).createdAt || now; } catch {}
-  }
-
-  const record = buildRecord({
-    id, contentType, title, body, keywords, relatedIds,
-    sizeBytes: Buffer.byteLength(fullContent, 'utf8'),
-    isDeleted: false,
-    createdAt,
-    updatedAt: now,
-  });
-
-  fs.writeFileSync(p, JSON.stringify(record, null, 2), 'utf8');
-  return toMeta(record);
-});
+ipcMain.handle('storage:save', (_event, payload) => saveVaultRecord(VAULT_DIR, payload));
 
 ipcMain.handle('storage:delete', (_event, id) => {
   const p = recordPath(id);
@@ -206,6 +185,7 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
       isDeleted:   meta.isDeleted || false,
       createdAt:   meta.createdAt,
       updatedAt:   meta.updatedAt,
+      metadata:    meta.metadata,
     });
     fs.writeFileSync(recordPath(meta.id), JSON.stringify(record, null, 2), 'utf8');
     isNew ? added++ : updated++;

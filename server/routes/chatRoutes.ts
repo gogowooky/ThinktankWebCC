@@ -28,11 +28,12 @@ export function createChatRoutes(): Router {
   });
 
   router.post('/messages', async (req, res) => {
-    const { messages, systemPrompt = '', provider, model } = req.body as {
+    const { messages, systemPrompt = '', provider, model, thoughtSupport = false } = req.body as {
       messages: ChatRequestMessage[];
       systemPrompt?: string;
       provider?: unknown;
       model?: unknown;
+      thoughtSupport?: boolean;
     };
 
     if (!Array.isArray(messages) || messages.length === 0) {
@@ -78,11 +79,11 @@ export function createChatRoutes(): Router {
       console.error('[chatRoutes] Failed to read thinktank config:', e);
     }
 
-    const finalSystemPrompt = thinktankConfig
+    const finalSystemPrompt = thinktankConfig && !thoughtSupport
       ? `${thinktankConfig}\n\n【指示】\n上記はあなたのタスク定義と行動ガイドラインです。これらに従って動作してください。現在の追加プロンプト：\n${systemPrompt}`
       : systemPrompt;
 
-    await streamChatResponse(messages, finalSystemPrompt, res, requestedProvider, requestedModel);
+    await streamChatResponse(messages, finalSystemPrompt, res, requestedProvider, requestedModel, thoughtSupport === true);
   });
 
   return router;

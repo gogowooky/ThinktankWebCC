@@ -12,6 +12,8 @@ import type { Response } from 'express';
 import { bigqueryService } from './BigQueryService.js';
 import { assertPublicHttpUrl } from './ssrfGuard.js';
 import { normalizeThinkId, stripBracketedIdsInBundleContent } from './vaultKey.js';
+import { resolveGeminiModel } from '../config/aiModels.js';
+import { collectGeminiParts, geminiFunctionResponse } from './geminiParts.js';
 
 export interface ChatRequestMessage {
   role: 'user' | 'assistant';
@@ -273,6 +275,7 @@ export async function streamChatResponse(
   res: Response,
   provider?: string,
   model?: string,
+  thoughtSupport = false,
 ): Promise<void> {
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache');
@@ -337,12 +340,12 @@ export async function streamChatResponse(
       if (!apiKey) throw new Error('GEMINI_API_KEY is not configured');
 
       const genAI       = new GoogleGenerativeAI(apiKey);
-      const activeModel = model || process.env['GEMINI_MODEL'] || 'gemini-2.5-flash';
+      const activeModel = resolveGeminiModel(model || process.env['GEMINI_MODEL']);
 
       const genModel = genAI.getGenerativeModel({
         model: activeModel,
         ...(systemPrompt ? { systemInstruction: systemPrompt } : {}),
-        tools: [{ functionDeclarations: GEMINI_TOOL_DECLARATIONS }],
+        ...(thoughtSupport ? {} : { tools: [{ functionDeclarations: GEMINI_TOOL_DECLARATIONS }] }),
       });
 
       const nowStr     = new Date().toISOString();
@@ -360,21 +363,17 @@ export async function streamChatResponse(
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const modelParts: any[] = [];
-        const functionCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+        const functionCalls: Array<{ name: string; args: Record<string, unknown>; id?: string }> = [];
 
         for await (const chunk of streamResult.stream) {
-          const text = chunk.text();
+          const { text, modelParts: parts, functionCalls: calls } = collectGeminiParts(
+            chunk.candidates?.[0]?.content?.parts ?? [],
+          );
           if (text) {
             writeSSE({ type: 'delta', text });
-            modelParts.push({ text });
           }
-          const calls = chunk.functionCalls();
-          if (calls && calls.length > 0) {
-            for (const call of calls) {
-              functionCalls.push(call as { name: string; args: Record<string, unknown> });
-              modelParts.push({ functionCall: call });
-            }
-          }
+          modelParts.push(...parts);
+          functionCalls.push(...calls);
         }
 
         if (functionCalls.length === 0) break; // ツール呼び出しがなければ終了
@@ -385,10 +384,10 @@ export async function streamChatResponse(
         for (const call of functionCalls) {
           try {
             const result = await executeGeminiTool(call.name, call.args, writeSSE, nowStr, createdIds);
-            functionResponses.push({ functionResponse: { name: call.name, response: { result } } });
+            functionResponses.push(geminiFunctionResponse(call, { result }));
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            functionResponses.push({ functionResponse: { name: call.name, response: { error: msg } } });
+            functionResponses.push(geminiFunctionResponse(call, { error: msg }));
             writeSSE({ type: 'delta', text: `\n\n*システム: [エラー: ${msg}]*` });
           }
         }

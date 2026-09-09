@@ -26,6 +26,7 @@ export async function streamChat(
   signal?: AbortSignal,
   /** 省略時はサーバー側のデフォルト（環境変数）で動作する */
   aiModel?: AiModelSelection,
+  thoughtSupport = false,
 ): Promise<void> {
   let res: Response;
   try {
@@ -35,6 +36,7 @@ export async function streamChat(
       body:    JSON.stringify({
         messages,
         systemPrompt,
+        thoughtSupport,
         ...(aiModel ? { provider: aiModel.provider, model: aiModel.model } : {}),
       }),
       signal,

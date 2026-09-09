@@ -1,3 +1,7 @@
+import { useSupportSelection } from '../../hooks/useSupportSelection';
+import { TTApplication } from '../../views/TTApplication';
+import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
+import { useSupportChats } from '../../hooks/useSupportChats';
 /**
  * WorkoutSettingArea.tsx
  */
@@ -38,20 +42,13 @@ import { TTActions } from '../../views/TTActions';
 import { TTVoiceInput, isVoiceInputSupported } from '../../views/TTVoiceInput';
 import type { SettingsType } from './WorkoutTabBar';
 import { WORKOUT_SETTINGS } from './WorkoutTabBar';
-import { AiChatView } from '../ThinktankPanel/AiChatView';
-import type { AiChatViewRef } from '../ThinktankPanel/AiChatView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
 import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import type { ChatMessage } from '../../types';
-import { streamChat } from '../../services/ChatApiService';
-import { aiSpeakerPrefix } from '../../services/aiModels';
-import {
-  serializeChat, isTodoChatThink, loadChatFromThink,
-  NEW_CHAT_SENTINEL_ID, TODO_CHAT_PREFIX_WORKOUT,
-} from '../../utils/thinkFormat';
+import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, styleStatusId } from '../../utils/defaultColor';
 import './WorkoutSettingArea.css';
 
@@ -178,7 +175,6 @@ interface Props {
   onReadTable:      () => void;
   onSaveTable:      () => void;
   /** chatファイル未選択時の保存。作成した Think を返す（続けて選択中として扱うため） */
-  onSaveChat:       (messages: ChatMessage[]) => Promise<TTThink | undefined>;
   onRefresh:        () => void;
 }
 
@@ -191,14 +187,14 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   onRemoveFocused, onClearAll, onCloseNotInBundle, hasBundle, onEqualizeWidths, onEqualizeHeights,
   onCreateHtml, onCreateMemo, onReadMemo, onSaveMemo,
   onCreateTable, onReadTable, onSaveTable,
-  onSaveChat, onRefresh,
+  onRefresh,
 }: Props, ref) {
   const panelRef           = useRef<HTMLDivElement>(null);
   const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
   const firstTexteditorRef = useRef<HTMLButtonElement>(null);
   const firstDatagridRef   = useRef<HTMLButtonElement>(null);
   const firstHtmlRef       = useRef<HTMLButtonElement>(null);
-  const aiChatViewRef      = useRef<AiChatViewRef>(null);
+  const aiChatViewRef      = useRef<SupportChatRef>(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -223,86 +219,24 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   // ── AI相談チャット state ───────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
-  const chatAbortRef                    = useRef<AbortController | null>(null);
-  const chatAccumulatedRef              = useRef('');
-  const [selectedTodoMemoId, setSelectedTodoMemoId] = useState('');
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Workout');
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // AI相談 DataGrid 用: タイトルが TODO:Workout で始まる chat Think 一覧（Vault全体）
-  const todoMemoThinks = useMemo(
-    () => vault.GetThinks().filter(t => isTodoChatThink(t, TODO_CHAT_PREFIX_WORKOUT)),
-    [vault, vault.Count], // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  // 担当・Bundleの範囲に合う相談と、継続中の選択を表示する。
+  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Workout", TTApplication.Instance.OverviewPanel.BundleID, selectedTodoMemoId);
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
+    if (vault.IsLoaded && selectedTodoMemoId && !vault.GetThink(selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
   }, [todoMemoThinks, selectedTodoMemoId]);
 
-  const handleChatSend = useCallback(async (text: string) => {
-    const ts = new Date().toISOString();
-    const userMsg: ChatMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: ts };
-    const aiId = `a-${Date.now() + 1}`;
-    // AI発言はどのモデルの回答かが本文に残るよう「(モデル名)」の1行で始める
-    const aiPrefix = aiSpeakerPrefix({ provider: panel.AIChatProvider, model: panel.AIChatModel });
-    const aiMsg: ChatMessage   = { id: aiId, role: 'assistant', content: aiPrefix, timestamp: new Date().toISOString() };
-
-    setChatMessages(prev => [...prev, userMsg, aiMsg]);
-    setChatWaiting(true);
-    chatAccumulatedRef.current = aiPrefix;
-
-    chatAbortRef.current = new AbortController();
-
-    const history = [...chatMessages, userMsg].map(m => ({
-      role:    m.role as 'user' | 'assistant',
-      content: m.content,
-    }));
-
-    await streamChat(
-      history,
-      'あなたは Thinktank の AI アシスタントである Antigravity です。ユーザーの Think（メモ・アイデア）の整理や分析を日本語で手伝ってください。',
-      {
-        onDelta: (delta) => {
-          chatAccumulatedRef.current += delta;
-          const accumulated = chatAccumulatedRef.current;
-          setChatMessages(prev => prev.map(m => m.id === aiId ? { ...m, content: accumulated } : m));
-        },
-        onDone:  () => setChatWaiting(false),
-        onError: (message) => {
-          setChatMessages(prev => prev.map(m =>
-            m.id === aiId ? { ...m, content: `${aiPrefix}[エラー] ${message}` } : m,
-          ));
-          setChatWaiting(false);
-        },
-      },
-      chatAbortRef.current.signal,
-      { provider: panel.AIChatProvider, model: panel.AIChatModel },
-    );
-  }, [chatMessages, panel]);
-
-  // 選択中のchatファイルがあればそこへ上書き保存、なければ新規の chat Think として保存する
-  const handleSaveChat = useCallback(async () => {
-    if (chatMessages.length === 0 || chatWaiting) return;
-
-    if (selectedTodoMemoId) {
-      const think = vault.GetThink(selectedTodoMemoId);
-      if (!think) return;
-      const firstLine = think.Content.split('\n')[0] ?? '';
-      const body = serializeChat(chatMessages);
-      think.Content = firstLine ? `${firstLine}\n${body}` : body;
-      await think.SaveContent();
-      return;
-    }
-
-    const think = await onSaveChat(chatMessages);
-    if (think) setSelectedTodoMemoId(think.ID);
-  }, [chatMessages, chatWaiting, onSaveChat, selectedTodoMemoId, vault]);
+  const handleSaveChat = useCallback(() => aiChatViewRef.current?.save(), []);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatを${selectedTodoMemoId}に保管します`
@@ -310,18 +244,11 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
 
   // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
-  // ファイルとして保存されるのは、保存ボタンが押された時（handleSaveChat）だけ
-  const handleSelectTodoMemo = useCallback(async (id: string) => {
-    chatAbortRef.current?.abort();
-    setChatWaiting(false);
-
-    const targetId = id === NEW_CHAT_SENTINEL_ID ? '' : id;
-    setSelectedTodoMemoId(targetId);
-    if (!targetId) { setChatMessages([]); return; }
-    const think = vault.GetThink(targetId);
-    if (think?.IsMetaOnly) await think.LoadContent();
-    setChatMessages(loadChatFromThink(think));
-  }, [vault]);
+  // 入力と応答は共通チャットが自動保存する。
+  const handleSelectTodoMemo = useCallback((id: string) => {
+    aiChatViewRef.current?.abortStreaming();
+    setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
+  }, []);
 
   const handleToggleColumnDialog = useCallback(() => setShowColumnDialog(v => !v), []);
   const handleToggleFilterSelectDialog = useCallback(() => setShowFilterSelectDialog(v => !v), []);
@@ -418,6 +345,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               />
             )}
 
+            {supportListError && <p role="alert">{supportListError}</p>}
             <ThinktankChatMemoPicker
               thinks={todoMemoThinks}
               columns={columns}
@@ -429,16 +357,10 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
             />
             <div className="workout-setting-area__chat-body">
-              <AiChatView
-                ref={aiChatViewRef}
-                messages={chatMessages}
-                isWaiting={chatWaiting}
-                onSend={handleChatSend}
-                modelSelector={{
-                  value:    { provider: panel.AIChatProvider, model: panel.AIChatModel },
-                  onChange: (selection) => panel.SetAIChatModel(selection),
-                }}
-              />
+              <SupportChat ref={aiChatViewRef} vault={vault} panelName="Workout"
+                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={TTApplication.Instance.OverviewPanel.BundleID}
+                onMessages={setChatMessages} onWaiting={setChatWaiting}
+                modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
             </div>
           </div>
         ) : activeSettings === 'workout' ? (

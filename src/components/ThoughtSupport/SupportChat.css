@@ -1,0 +1,6 @@
+.support-chat { display:flex; flex-direction:column; height:100%; min-height:0; width:100%; }
+.support-chat > .ai-chat-view { flex:1; min-height:0; }
+.support-chat__context { padding:10px 12px; display:flex; flex-direction:column; gap:5px; border-bottom:1px solid var(--border-color, #555); font-size:calc(12px * var(--tt-font-scale, 1)); max-height:38%; overflow:auto; overflow-wrap:anywhere; }
+.support-chat__context p { margin:6px 0; white-space:pre-wrap; }
+.support-chat__context select { max-width:100%; }
+.support-chat__context [role=alert] { color:var(--error-color, #ec9b88); }

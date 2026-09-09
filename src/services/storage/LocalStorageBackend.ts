@@ -7,6 +7,8 @@
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
 import { splitContent } from '../../utils/thinkFormat';
+import { packLocalMetadata, unpackLocalMetadata } from './localMetadata';
+import { StorageConflictError } from './IStorageBackend';
 
 /** C# API が返す camelCase レスポンス */
 interface CsThinkRecord {
@@ -21,6 +23,7 @@ interface CsThinkRecord {
   isDeleted:   boolean;
   createdAt:   string;
   updatedAt:   string;
+  metadata?: Record<string, unknown>;
 }
 
 const VAULT_ID = 'vault';
@@ -36,6 +39,7 @@ function toMeta(r: CsThinkRecord): ThinkMeta {
     isDeleted:   r.isDeleted ?? false,
     createdAt:   r.createdAt,
     updatedAt:   r.updatedAt,
+    metadata: r.metadata ?? (r.content ? unpackLocalMetadata(r.content).metadata : undefined),
   };
 }
 
@@ -52,10 +56,26 @@ export class LocalStorageBackend implements IStorageBackend {
     );
     if (!res.ok) throw new Error(`listMeta failed: ${res.status}`);
     const data = (await res.json()) as CsThinkRecord[];
-    return data.map(toMeta);
+    // The legacy /meta endpoint omits content; fetch only Chat/HTML envelopes in bounded batches.
+    const result: ThinkMeta[] = [];
+    for (let i = 0; i < data.length; i += 6) {
+      result.push(...await Promise.all(data.slice(i, i + 6).map(async record => {
+        if (record.metadata === undefined && ['chat', 'html'].includes(record.contentType)) {
+          const body = await this.getRawContent(record.id);
+          if (body !== null) record.metadata = unpackLocalMetadata(body).metadata;
+        }
+        return toMeta(record);
+      })));
+    }
+    return result;
   }
 
   async getContent(id: string): Promise<string | null> {
+    const raw = await this.getRawContent(id);
+    return raw === null ? null : unpackLocalMetadata(raw).body;
+  }
+
+  private async getRawContent(id: string): Promise<string | null> {
     const res = await fetch(
       `${this.baseUrl}/api/files/${encodeURIComponent(id)}/content?vaultId=${encodeURIComponent(VAULT_ID)}`
     );
@@ -66,6 +86,14 @@ export class LocalStorageBackend implements IStorageBackend {
 
   async save(payload: SavePayload): Promise<ThinkMeta> {
     const { title, body } = splitContent(payload.fullContent);
+    // Best effort preflight. Atomic cross-process CAS requires support in the separate C# server.
+    if (payload.baseUpdatedAt && payload.metadata?.thoughtSupport) {
+      const response = await fetch(`${this.baseUrl}/api/files/meta?vaultId=${encodeURIComponent(VAULT_ID)}`);
+      if (!response.ok) throw new Error('保存前に最新の記録を確認できませんでした。');
+      const records = await response.json() as CsThinkRecord[];
+      const current = records.find(r => r.id === payload.id);
+      if (!current || current.updatedAt !== payload.baseUpdatedAt) throw new StorageConflictError(payload.id, current?.updatedAt || '');
+    }
     const res = await fetch(`${this.baseUrl}/api/files`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -74,9 +102,11 @@ export class LocalStorageBackend implements IStorageBackend {
         vaultId:     VAULT_ID,
         contentType: payload.contentType,
         title,
-        content:     body,
+        content:     packLocalMetadata(body, payload.metadata),
         keywords:    payload.keywords || null,
         relatedIds:  payload.relatedIds || null,
+        metadata: payload.metadata,
+        baseUpdatedAt: payload.baseUpdatedAt,
       }),
     });
     if (!res.ok) throw new Error(`save failed: ${res.status}`);

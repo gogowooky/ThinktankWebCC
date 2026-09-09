@@ -29,7 +29,8 @@ export interface AiModelSelectorProps {
 interface Props {
   messages:  ChatMessage[];
   isWaiting: boolean;
-  onSend:    (text: string) => void;
+  /** false は送信拒否。入力を保持する。既存の void ハンドラーは受理扱い。 */
+  onSend:    (text: string) => void | boolean;
   /** ログの scrollTop 変化を通知する（Pane側での永続化用。省略可）*/
   onScroll?: (scrollTop: number) => void;
   /** 初回マウント時に復元する scrollTop。省略時は末尾へ自動スクロール */
@@ -157,7 +158,7 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
   const handleSend = useCallback(() => {
     const text = input.trim();
     if (!text || isWaiting) return;
-    onSend(text);
+    if (onSend(text) === false) return;
     setInput('');
     const ta = textareaRef.current;
     if (ta) {
