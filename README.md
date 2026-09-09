@@ -7,6 +7,20 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.57 feat: Chat一覧に種類・状態フィルタを追加、AIChat入力欄に説明選択と管理変更取り消しを移設
+- 日付: 2026-09-09
+- コミット番号: c26c861
+
+`src/components/ThinktankPanel/ChatListFilters` を新設し、管理Chatを種類
+（TODO/PROJ/ASK/EVNT/LOOP/未分類）と状態（未着手〜中止/状態未設定）のアイコンで
+絞り込めるようにした。初期表示は全種類・完了/中止のみ非表示で、`ThinktankChatMemoPicker`
+の「完了・中止も表示」チェックを置き換え。`FilterSelectDialog` に「種類」「状態」の
+表示切替（type 非表示時のみ有効）を追加。`AiChatView` は入力欄フォーカス時に
+「説明の長さ」セレクタと「直前の管理変更を戻す」（返信アイコン）を表示し、`SupportChat`
+ヘッダーから移設した。`docs/Thinktank_AI_EntryUser_Manual` を新UIに合わせて更新し、
+開発者向け読解サマリ `docs/Thinktank_AI_ThoughtSupport_CodeSummary` を追加。
+テスト182件パス、型検査成功。
+
 ### v1.4.56 feat: AIChat思考支援の基盤実装（ThoughtSupport）と各パネル整理、AIモデル設定を追加
 - 日付: 2026-09-09
 - コミット番号: 677c0ee

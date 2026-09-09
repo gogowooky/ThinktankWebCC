@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.56",
+  "version": "1.4.57",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "677c0ee",
-  "commitDateTime": "2026-09-09-143902",
-  "commitMessage": "feat: AIChat思考支援の基盤実装（ThoughtSupport）と各パネル整理、AIモデル設定を追加"
+  "commitId": "c26c861",
+  "commitDateTime": "2026-09-09-213329",
+  "commitMessage": "feat: Chat一覧に種類・状態フィルタを追加、AIChat入力欄に説明選択と管理変更取り消しを移設"
 }
