@@ -24,6 +24,7 @@ import type { ThinktankFilterPanelRef } from './ThinktankFilterPanel';
 import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchBar } from './ThinktankSearchBar';
 import { applySort } from '../../utils/sortUtils';
+import { buildBundleNames } from '../../utils/bundleNames';
 import type { ChatMessage, ContentType } from '../../types';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
@@ -206,7 +207,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     () => searchBase.filter(t => visibleTypes.has(t.ContentType)),
     [searchBase, visibleTypes],
   );
-  const sortedBase = useMemo(() => applySort(typeFilteredBase, sort), [typeFilteredBase, sort]);
+  const bundleNames = useMemo(() => buildBundleNames(vault, typeFilteredBase), [vault, typeFilteredBase]);
+  const sortedBase = useMemo(() => applySort(typeFilteredBase, sort, bundleNames), [typeFilteredBase, sort, bundleNames]);
 
   // chat / settings 以外はすべて Think一覧（filter）として扱う（旧モードの残存値対策）
   const isFilterMode = panel.ViewMode !== 'chat' && panel.ViewMode !== 'settings';
@@ -382,6 +384,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         {supportListError && <p role="alert">{supportListError}</p>}
             <ThinktankChatMemoPicker
           thinks={todoMemoThinks}
+          vault={vault}
           columns={columns}
           sort={sort}
           filterVisibility={chatFilterVisibility}
@@ -413,6 +416,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         updatedDate={updatedDate}
         updatedRange={updatedRange}
         columns={columns}
+        bundleNames={bundleNames}
         onOpen={handleOpenItem}
         onToggleCheck={handleToggleCheck}
         onVisibleChange={handleFilterVisibleChange}

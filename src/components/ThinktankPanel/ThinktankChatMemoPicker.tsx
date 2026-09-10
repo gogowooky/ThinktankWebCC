@@ -19,6 +19,8 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { TTThink } from '../../models/TTThink';
+import type { TTVault } from '../../models/TTVault';
+import { buildBundleNames } from '../../utils/bundleNames';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import type { FilterVisibility } from './FilterSelectDialog';
 import { ThinktankFilterPanel } from './ThinktankFilterPanel';
@@ -46,6 +48,8 @@ function makeNewChatItem(): TTThink {
 
 interface Props {
   thinks:           TTThink[];
+  /** 「バンドル」列の対象Bundle名を解決するために使う */
+  vault:             TTVault;
   columns:           ColumnConfig[];
   sort:              SortConfig;
   filterVisibility:  FilterVisibility;
@@ -57,7 +61,7 @@ interface Props {
 }
 
 export function ThinktankChatMemoPicker({
-  thinks, columns, sort, filterVisibility, selectedId, onSelect, checkedIds, onToggleCheck,
+  thinks, vault, columns, sort, filterVisibility, selectedId, onSelect, checkedIds, onToggleCheck,
 }: Props) {
   const [isFocused,    setIsFocused]    = useState(false);
   const [kinds, setKinds] = useState<Set<string>>(() => new Set(CHAT_KINDS));
@@ -69,14 +73,16 @@ export function ThinktankChatMemoPicker({
   const [updatedRange, setUpdatedRange] = useState('');
   const [contentQuery, setContentQuery] = useState('');
 
+  const bundleNames = useMemo(() => buildBundleNames(vault, thinks), [vault, thinks]);
+
   const filtered = useMemo(() => {
     let items = applyFilter(thinks, titleQuery);
     items = items.filter(t => matchesChatFilters(t.Name, kinds, states));
     items = applyDateFilter(items, { show: true, createdDate, createdRange, updatedDate, updatedRange });
     const q = contentQuery.trim().toLowerCase();
     if (q) items = items.filter(t => t.Content.toLowerCase().includes(q));
-    return applySort(items, sort);
-  }, [thinks, titleQuery, createdDate, createdRange, updatedDate, updatedRange, contentQuery, sort, kinds, states]);
+    return applySort(items, sort, bundleNames);
+  }, [thinks, titleQuery, createdDate, createdRange, updatedDate, updatedRange, contentQuery, sort, kinds, states, bundleNames]);
 
   // フォーカスが外れていて選択中のアイテムがある場合のみ、その1件だけに絞る（新規チャット行も隠す）。
   // それ以外（フォーカス中、または選択なし）は「新規チャット」行 + 絞り込み結果を表示する
@@ -154,6 +160,7 @@ export function ThinktankChatMemoPicker({
             checkedIds={checkedIds}
             onToggleCheck={onToggleCheck}
             columns={columns}
+            bundleNames={bundleNames}
             focusedId={selectedId}
             onFocusChange={handleFocusChange}
           />

@@ -1685,14 +1685,17 @@ candidates:     ^(true|false)$
 
 # TextEditor Settings ===============================================================================================
 ## Action：　260907　TextEditor.KeyBinding.Load
-description:    Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定を上書きする（key一致分のみ置換、他は維持）
+description:    Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定をDefaultに戻してから適用する（Memoに無いキーはDefaultの状態になる）
 key:            TextEditor.KeyBinding.Load
 　Workout>TextEditor設定>設定>キー設定のStarアイコンボタンから実行する。
-　Vault内でタイトルが「ThinktankKeyBinding」（大文字小文字不問）のMemoを検索し、見つかればその内容
+　Vault内でタイトルが「ThinktankKeyBinding」（大文字小文字不問）のMemoを検索し、見つかれば
+　`resetToDefault()` で docs/DefaultShortcut.md の状態へ戻したうえで、その内容
 　（docs/DefaultShortcut.md と同じテーブル形式）で TTShortcutManager.mergeContent() を呼び、
-　key が一致する行だけ現在のショートカット設定を置換する（見つからない場合は何もしない）。
-　260905の初期実装は `_loadFromContent()`（全件差し替え）を流用しており、メモに書かれていない
-　ショートカットが消えてしまう不具合があったため、260907に現在の設定へマージする専用メソッドへ修正した。
+　key が一致する行を置換する（見つからない場合は何もしない）。
+　260905の初期実装は `_loadFromContent()`（全件差し替え）で、メモに書かれていないショートカットが
+　消える不具合があったため260907に現在の設定へマージする方式へ変更したが、それでは過去のLoadや
+　手動変更が積み上がるため、260910に「Defaultへリセットしてから適用」へ再変更した。
+　結果は常に「Default + Memo」で、実行回数によらず同じ状態になる。
 　TTShortcutManager はUndo/Redoの対象外のため、この変更もUndo対象外。
 　アプリ再起動時には反映されない（起動時は常に docs/DefaultShortcut.md を読み込む）。
 ## Action：　260905　TextEditor.KeyBinding.Reset
@@ -1701,12 +1704,14 @@ key:            TextEditor.KeyBinding.Reset
 　Workout>TextEditor設定>設定>キー設定のPowerアイコンボタンから実行する。
 　docs/DefaultShortcut.md の内容でショートカット設定を初期状態に戻す（全件差し替え）。
 ## Action：　260905　TextEditor.ColorBinding.Load
-description:    Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定を上書きする（id一致分のみ置換、他は維持）
+description:    Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定をDefaultに戻してから適用する（Memoに無い項目はDefaultの状態になる）
 key:            TextEditor.ColorBinding.Load
 　Workout>TextEditor設定>設定>色設定のStarアイコンボタンから実行する。
-　Vault内でタイトルが「ThinktankColorBinding」（大文字小文字不問）のMemoを検索し、見つかればその内容
-　（docs/DefaultColor.md と同じCSV形式：StatusID, Color, BgColor, Attrs）で色設定を上書きする
-　（見つからない場合は何もしない）。TTUIStateManager.applyProperties() を pushUndo=false で呼ぶため、
+　Vault内でタイトルが「ThinktankColorBinding」（大文字小文字不問）のMemoを検索し、見つかれば
+　まず DEFAULT_COLOR_ENTRIES（docs/DefaultColor.md）を適用して初期状態へ戻し、続いてその内容
+　（docs/DefaultColor.md と同じCSV形式：StatusID, Color, BgColor, Attrs）を適用する
+　（見つからない場合は何もしない）。260910に「現在の設定へ上書き」から本方式へ変更した。
+　結果は常に「Default + Memo」で、実行回数によらず同じ状態になる。TTUIStateManager.applyProperties() を pushUndo=false で呼ぶため、
 　Undoスタックへの記録は行わない。localStorage / __tt_ui_state__ には反映されるため、次回起動後も残る。
 ## Action：　260905　TextEditor.ColorBinding.Reset
 description:    色設定をDefaultの状態に戻す
@@ -1714,7 +1719,7 @@ key:            TextEditor.ColorBinding.Reset
 　Workout>TextEditor設定>設定>色設定のPowerアイコンボタンから実行する。
 　docs/DefaultColor.md の内容で色設定を初期状態に戻す。Load同様、Undoスタックへの記録は行わない。
 ## Action：　260907　TextEditor.SearchTag.Load
-description:    Vault内の「ThinktankSearchTag」という名前のMemoを読み込み、タグ定義を上書きする（id一致分のみ置換、他は維持）
+description:    Vault内の「ThinktankSearchTag」という名前のMemoを読み込み、タグ定義をDefaultに戻してから適用する（Memoに無いidはDefaultの状態になる）
 key:            TextEditor.SearchTag.Load
 　Workout>TextEditor設定>設定>タグ設定のStarアイコンボタンから実行する。
 　docs/DefaultSearchTag.md は他の2つと異なり ?raw バンドルではなく、サーバー
@@ -1723,9 +1728,12 @@ key:            TextEditor.SearchTag.Load
 　2つの消費モジュール（src/utils/tagInsertMenu.ts のタグ挿入メニュー、
 　src/views/actions/textEditorCursorContentActions.ts のURLテンプレート解決）それぞれに
 　「サーバー取得分」と「Vaultメモ由来の上書き分」を分けて持たせ、idキーでマージして返すよう変更した。
-　Vault内でタイトルが「ThinktankSearchTag」（大文字小文字不問）のMemoを検索し、見つかればその内容
+　Vault内でタイトルが「ThinktankSearchTag」（大文字小文字不問）のMemoを検索し、見つかれば
+　reset*Override() で上書き分を一度破棄してサーバー取得分（＝Default）へ戻したうえで、その内容
 　（docs/DefaultSearchTag.md と同じ ID, "Description", URL 形式。新設の
-　src/utils/searchTagFormat.ts でパース）で上書きする（見つからない場合は何もしない）。
+　src/utils/searchTagFormat.ts でパース）を適用する（見つからない場合は何もしない）。
+　上書き分は元々まるごと差し替える実装なので挙動自体は変わらないが、他2つと同じ
+　「Defaultへ戻してから適用」の手順に揃えてある（260910）。
 　この機能はTTUIStateManager/TTShortcutManagerのどちらにも属さない独立モジュールのため、
 　Undo/永続化のいずれの対象にもならない（セッション中のみ有効）。
 ## Action：　260907　TextEditor.SearchTag.Reset

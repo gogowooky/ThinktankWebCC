@@ -26,7 +26,7 @@ function toPropertyEntries(entries: DefaultColorEntry[]): [ConfigKey, string][] 
 export function registerTextEditorColorBindingActions(app: TTApplication): void {
   TTActions.Register({
     ActionID: 'TextEditor.ColorBinding.Load',
-    Description: `Vault内の「${COLOR_BINDING_THINK_NAME}」という名前のMemoを読み込み、色設定を上書きする`,
+    Description: `Vault内の「${COLOR_BINDING_THINK_NAME}」という名前のMemoを読み込み、色設定をDefaultに戻してから適用する（Memoに無い項目はDefaultの状態になる）`,
     Completion: async (item) => {
       const think = app.Models.Vault
         .GetThinks()
@@ -39,8 +39,10 @@ export function registerTextEditorColorBindingActions(app: TTApplication): void 
 
       await think.LoadContent();
       const entries = parseDefaultColor(think.Content);
+      // 前回までの変更を持ち越さないよう、一度Defaultへ戻してから読み込む
+      TTUIStateManager.instance.applyProperties(toPropertyEntries(DEFAULT_COLOR_ENTRIES), false);
       TTUIStateManager.instance.applyProperties(toPropertyEntries(entries), false);
-      item.Result = `色設定を「${COLOR_BINDING_THINK_NAME}」から読み込みました`;
+      item.Result = `色設定をDefaultに戻して「${COLOR_BINDING_THINK_NAME}」を読み込みました`;
     },
   });
 

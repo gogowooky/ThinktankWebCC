@@ -9,10 +9,16 @@ vi.mock('../../services/ChatApiService', () => ({ streamChat: mocks.stream }));
 vi.mock('../../views/TTApplication', () => ({ TTApplication: { Instance: { OverviewPanel: { OpenBundle: mocks.open } } } }));
 vi.mock('../ThinktankPanel/AiChatView', async () => {
   const React = await import('react');
-  return { AiChatView: React.forwardRef((_props: unknown, _ref) => {
-    const props = _props as { onSend: (text: string) => void; isWaiting: boolean; messages: Array<{ content: string }> };
-    return <div><button id="send" disabled={props.isWaiting} onClick={() => props.onSend(mocks.input)}>送信</button><div id="messages">{props.messages.map(m => m.content).join('\n')}</div></div>;
-  }) };
+  return {
+    AiChatView: React.forwardRef((_props: unknown, _ref) => {
+      const props = _props as { onSend: (text: string) => void; isWaiting: boolean; messages: Array<{ content: string }> };
+      return <div><button id="send" disabled={props.isWaiting} onClick={() => props.onSend(mocks.input)}>送信</button><div id="messages">{props.messages.map(m => m.content).join('\n')}</div></div>;
+    }),
+    AiChatLog: (_props: unknown) => {
+      const props = _props as { messages: Array<{ content: string }> };
+      return <div id="resume-log">{props.messages.map(m => m.content).join('\n')}</div>;
+    },
+  };
 });
 import { TTThink } from '../../models/TTThink';
 import { SupportChat } from './SupportChat';
@@ -103,5 +109,19 @@ describe('panel conversation integration', () => {
     await send(); expect(host.textContent).toContain('通信が途中で終了しました'); expect(selected.Content).not.toContain('{"reply"');
     const saved = supportRecord(selected).messages!;
     expect(saved[saved.length - 1].role).toBe('user');
+  });
+  it('dismisses the result and error banner without touching the saved record', async () => {
+    const selected = makeChat('chat-1', 'ASK:Workout｜[進行中]質問');
+    mocks.stream.mockImplementation(async (_history, _prompt, callbacks) => { callbacks.onDelta('{"reply":"途中'); });
+    await act(async () => root.render(<SupportChat vault={vaultFor([selected])} panelName="Workout" selectedId={selected.ID} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />));
+    await send();
+    expect(host.textContent).toContain('通信が途中で終了しました');
+    const before = selected.Content;
+    await act(async () => { host.querySelector<HTMLButtonElement>('.support-chat__dismiss')!.click(); });
+    expect(host.textContent).not.toContain('通信が途中で終了しました');
+    expect(host.querySelector('.support-chat__dismiss')).toBeNull();
+    // 表示を消すだけで、保存済みの会話や記録は変えない
+    expect(selected.Content).toBe(before);
+    expect(supportRecord(selected).messages!.at(-1)!.role).toBe('user');
   });
 });

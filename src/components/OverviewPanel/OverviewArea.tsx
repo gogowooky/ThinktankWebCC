@@ -36,6 +36,7 @@ import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISI
 import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
+import { buildBundleNames } from '../../utils/bundleNames';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ChatMessage, ContentType } from '../../types';
@@ -163,12 +164,14 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     [searchBase, visibleTypes],
   );
 
+  const bundleNames = useMemo(() => buildBundleNames(vault, typeFilteredBase), [vault, typeFilteredBase]);
+
   const visibleThinks = useMemo(() => {
     const base = showCheckedOnly
       ? typeFilteredBase.filter(t => checkedSet.has(t.ID))
       : typeFilteredBase;
-    return applySort(applyDateFilter(applyFilter(base, filter), dateFilter), sort);
-  }, [typeFilteredBase, showCheckedOnly, checkedSet, filter, dateFilter, sort]);
+    return applySort(applyDateFilter(applyFilter(base, filter), dateFilter), sort, bundleNames);
+  }, [typeFilteredBase, showCheckedOnly, checkedSet, filter, dateFilter, sort, bundleNames]);
 
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
 
@@ -507,6 +510,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
               selectedId=""
               checkedIds={panel.CheckedThoughtIDs}
               columns={columns}
+              bundleNames={bundleNames}
               onOpen={handleOpenThinkInWorkout}
               onToggleCheck={handleToggleCheck}
               focusedId={focusedId}
@@ -518,6 +522,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
             {supportListError && <p role="alert">{supportListError}</p>}
             <ThinktankChatMemoPicker
               thinks={todoMemoThinks}
+              vault={vault}
               columns={columns}
               sort={sort}
               filterVisibility={chatFilterVisibility}

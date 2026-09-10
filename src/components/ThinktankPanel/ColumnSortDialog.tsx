@@ -22,6 +22,7 @@ export interface SortConfig {
 }
 
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { field: 'Bundle',      label: 'バンドル',   visible: false },
   { field: 'Name',        label: 'タイトル',   visible: true  },
   { field: 'ID',          label: '作成日(ID)', visible: true  },
   { field: 'UpdatedAt',   label: '更新日',     visible: true  },

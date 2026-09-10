@@ -159,7 +159,7 @@ AIが `operation.panel` でタイトルの担当を書き換えても、会話�
 
 | パネル | 一覧・参照範囲 |
 |---|---|
-| Thinktank | 全Vault の Thinktank 担当管理Chat＋`Metadata.supportOrigin === 'Thinktank'` の未整理Chat。AIカタログは `__` 始まり以外の全Think |
+| Thinktank | 全Vault の Thinktank 担当管理Chat＋Pane 以外で開始された未分類Chat（`Metadata.supportOrigin` が設定済みかつ `'Pane'` 以外）。どのパネルで話し始めても分類前の相談は Thinktank に集まる。AIカタログは `__` 始まり以外の全Think |
 | Overview | 設定 Bundle 内 Chat のみ（`GetThinksForBundleAsync`）。Bundle 未設定なら選択を促し全Vaultへ拡大しない |
 | Workout | Bundle 内 Chat＋`bundleId` を持たない単独管理Chat |
 | ReThink | Bundle ありならその範囲、なければ全 ReThink 担当管理Chat |

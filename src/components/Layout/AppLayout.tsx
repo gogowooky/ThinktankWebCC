@@ -25,10 +25,10 @@ import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
 import { THEME_STATUS_KEYS, applyPanelThemeCss } from '../../utils/panelTheme';
 import './AppLayout.css';
 
-// パネル幅の初期値・最小値
-const THINKTANK_WIDTH = 240;
-const OVERVIEW_WIDTH  = 260;
-const RETHINK_WIDTH   = 260;
+// パネル本文領域の初期幅（タブバー・Splitter を除く）と最小値
+const THINKTANK_WIDTH = 280;
+const OVERVIEW_WIDTH  = 280;
+const RETHINK_WIDTH   = 320;
 const MIN_PANEL_WIDTH = 120;
 
 export type LayoutMode = 'sipoc' | 'simple';

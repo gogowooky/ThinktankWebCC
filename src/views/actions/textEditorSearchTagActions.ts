@@ -14,7 +14,7 @@ const SEARCH_TAG_THINK_NAME = 'ThinktankSearchTag';
 export function registerTextEditorSearchTagActions(app: TTApplication): void {
   TTActions.Register({
     ActionID: 'TextEditor.SearchTag.Load',
-    Description: `Vault内の「${SEARCH_TAG_THINK_NAME}」という名前のMemoを読み込み、タグ定義を上書きする（id一致分のみ置換、他は維持）`,
+    Description: `Vault内の「${SEARCH_TAG_THINK_NAME}」という名前のMemoを読み込み、タグ定義をDefaultに戻してから適用する（Memoに無いidはDefaultの状態になる）`,
     Completion: async (item) => {
       const think = app.Models.Vault
         .GetThinks()
@@ -27,9 +27,12 @@ export function registerTextEditorSearchTagActions(app: TTApplication): void {
 
       await think.LoadContent();
       const rows = parseSearchTagContent(think.Content);
+      // 前回までの変更を持ち越さないよう、一度Defaultへ戻してから読み込む
+      resetSearchTagItemsOverride();
+      resetSearchTagUrlOverride();
       applySearchTagItemsOverride(rows);
       applySearchTagUrlOverride(rows);
-      item.Result = `タグ定義を「${SEARCH_TAG_THINK_NAME}」から読み込みました`;
+      item.Result = `タグ定義をDefaultに戻して「${SEARCH_TAG_THINK_NAME}」を読み込みました`;
     },
   });
 

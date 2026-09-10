@@ -16,7 +16,8 @@ export interface DateFilterState {
   updatedRange: string;
 }
 
-export function getFieldValue(t: TTThink, field: string): string {
+/** bundleNames は buildBundleNames() の結果。'Bundle' 以外のフィールドでは不要。 */
+export function getFieldValue(t: TTThink, field: string, bundleNames?: Map<string, string>): string {
   switch (field) {
     case 'Name':        return t.Name.toLowerCase();
     case 'ID':          return t.ID;
@@ -24,16 +25,18 @@ export function getFieldValue(t: TTThink, field: string): string {
     case 'ContentType': return t.ContentType;
     case 'Keywords':    return t.Keywords.toLowerCase();
     case 'RelatedIDs':  return t.RelatedIDs;
+    // 表示と並び順を一致させるため、IDではなく画面に出るBundle名で比較する
+    case 'Bundle':      return (bundleNames?.get(t.ID) ?? '').toLowerCase();
     default:            return '';
   }
 }
 
-export function applySort(items: TTThink[], sort: SortConfig): TTThink[] {
+export function applySort(items: TTThink[], sort: SortConfig, bundleNames?: Map<string, string>): TTThink[] {
   if (!sort.field || !sort.dir) return items;
   const { field, dir } = sort;
   return [...items].sort((a, b) => {
-    const av = getFieldValue(a, field);
-    const bv = getFieldValue(b, field);
+    const av = getFieldValue(a, field, bundleNames);
+    const bv = getFieldValue(b, field, bundleNames);
     if (av < bv) return dir === 'asc' ? -1 : 1;
     if (av > bv) return dir === 'asc' ? 1 : -1;
     return 0;

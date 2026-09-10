@@ -70,6 +70,62 @@ function topInContainer(el: HTMLElement, container: HTMLElement): number {
   return elRect.top - cRect.top + container.scrollTop;
 }
 
+interface LogProps {
+  messages:  ChatMessage[];
+  isWaiting: boolean;
+  logRef?:   React.Ref<HTMLDivElement>;
+  onScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
+  /** メッセージが無いときの案内。省略すると何も出さない */
+  emptyText?: string;
+}
+
+/** 会話ログの表示部。AiChatView 本体と、SupportChat の「前回・現在・次」で同じ見た目を共有する。 */
+export function AiChatLog({ messages, isWaiting, logRef, onScroll, emptyText }: LogProps) {
+  return (
+    <div className="ai-chat-view__log" ref={logRef} onScroll={onScroll}>
+
+      {messages.length === 0 && !isWaiting && emptyText && (
+        <div className="ai-chat-view__empty">{emptyText}</div>
+      )}
+
+      {messages.map((msg, index) => {
+        const isLastStreaming = isWaiting && index === messages.length - 1 && msg.role === 'assistant';
+        return (
+          <div key={msg.id} className="ai-chat-view__entry">
+            {msg.role === 'user' ? (
+              <div className="ai-chat-view__user-block">
+                <span className="ai-chat-view__prompt">{'>'}</span>
+                <span className="ai-chat-view__user-text">{msg.content}</span>
+                {msg.timestamp && (
+                  <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
+                )}
+              </div>
+            ) : (
+              <div className="ai-chat-view__ai-block">
+                {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめる。
+                    モデル名は本文の先頭行「(モデル名)」として発言自体に含まれるので、
+                    発言者名の別表示は持たない（aiSpeakerPrefix）。 */}
+                <div className="ai-chat-view__ai-line">
+                  <span className="ai-chat-view__ai-text">
+                    {/* 時刻は float。行として並べると本文の全行から幅を奪うため、
+                        1行目だけを避けて流し込ませる */}
+                    {msg.timestamp && (
+                      <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
+                    )}
+                    {msg.content}
+                    {isLastStreaming && <span className="ai-chat-view__cursor">▋</span>}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+    </div>
+  );
+}
+
 export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
   { messages, isWaiting, onSend, onScroll, initialScrollTop, modelSelector, explanationSelector, undoManagement },
   ref,
@@ -186,49 +242,8 @@ export const AiChatView = forwardRef<AiChatViewRef, Props>(function AiChatView(
     <div className="ai-chat-view">
 
       {/* ── 会話ログ ─────────────────────────────────────────────── */}
-      <div className="ai-chat-view__log" ref={logRef} onScroll={handleLogScroll}>
-
-        {messages.length === 0 && !isWaiting && (
-          <div className="ai-chat-view__empty">
-            メッセージを入力して相談を開始してください
-          </div>
-        )}
-
-        {messages.map((msg, index) => {
-          const isLastStreaming = isWaiting && index === messages.length - 1 && msg.role === 'assistant';
-          return (
-            <div key={msg.id} className="ai-chat-view__entry">
-              {msg.role === 'user' ? (
-                <div className="ai-chat-view__user-block">
-                  <span className="ai-chat-view__prompt">{'>'}</span>
-                  <span className="ai-chat-view__user-text">{msg.content}</span>
-                  {msg.timestamp && (
-                    <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
-                  )}
-                </div>
-              ) : (
-                <div className="ai-chat-view__ai-block">
-                  {/* 本文は改行ごとに分けず1つの pre-wrap 要素にまとめる。
-                      モデル名は本文の先頭行「(モデル名)」として発言自体に含まれるので、
-                      発言者名の別表示は持たない（aiSpeakerPrefix）。 */}
-                  <div className="ai-chat-view__ai-line">
-                    <span className="ai-chat-view__ai-text">
-                      {/* 時刻は float。行として並べると本文の全行から幅を奪うため、
-                          1行目だけを避けて流し込ませる */}
-                      {msg.timestamp && (
-                        <span className="ai-chat-view__ts">{formatTime(msg.timestamp)}</span>
-                      )}
-                      {msg.content}
-                      {isLastStreaming && <span className="ai-chat-view__cursor">▋</span>}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-      </div>
+      <AiChatLog messages={messages} isWaiting={isWaiting} logRef={logRef} onScroll={handleLogScroll}
+        emptyText="メッセージを入力して相談を開始してください" />
 
       {/* ── 入力エリア（下部固定）────────────────────────────────── */}
       <div

@@ -1,9 +1,10 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import { X } from 'lucide-react';
 import type { ChatMessage } from '../../types';
 import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { TTApplication } from '../../views/TTApplication';
-import { AiChatView, type AiChatViewRef, type AiModelSelectorProps } from '../ThinktankPanel/AiChatView';
+import { AiChatView, AiChatLog, type AiChatViewRef, type AiModelSelectorProps } from '../ThinktankPanel/AiChatView';
 import { serializeChat } from '../../utils/thinkFormat';
 import { parseManagedChatTitle } from '../../utils/managedChat';
 import { streamChat } from '../../services/ChatApiService';
@@ -24,6 +25,16 @@ interface Props {
   pane?: boolean;
 }
 
+/** 「前回・現在・次」の表示量。0 は閉じた状態で、セパレーターのドラッグ位置をそのまま保持する。 */
+const RESUME_KEY = 'thinktank.support.resumeHeight';
+const RESUME_MAX = 600;
+function readResumeHeight(): number {
+  try {
+    const stored = Number(localStorage.getItem(RESUME_KEY));
+    return Number.isFinite(stored) ? Math.max(0, Math.min(RESUME_MAX, stored)) : 0;
+  } catch { return 0; }
+}
+
 export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportChat(props, ref) {
   const { vault, panelName, selectedId, onSelected, modelSelector, pane = false } = props;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -36,6 +47,9 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
   const [foundChats, setFoundChats] = useState<Array<{ id: string; title: string }>>([]);
   const [clock, setClock] = useState(() => new Date());
   const [explanation, setExplanation] = useState(() => { try { return localStorage.getItem('thinktank.support.explanation') || '短く、一つずつ'; } catch { return '短く、一つずつ'; } });
+  const [resumeHeight, setResumeHeight] = useState(readResumeHeight);
+  const [resumeDragging, setResumeDragging] = useState(false);
+  const resumeDrag = useRef<{ y: number; height: number; moved: boolean } | null>(null);
   const view = useRef<AiChatViewRef>(null);
   const abort = useRef<AbortController | null>(null);
   const busy = useRef(false);
@@ -73,6 +87,42 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
   }, [selectedId, vault, think, vault.IsLoaded, reload]);
   useEffect(() => () => { ++generation.current; abort.current?.abort(); }, []);
   useEffect(() => { const timer = setInterval(() => setClock(new Date()), 60000); return () => clearInterval(timer); }, []);
+
+  // 「前回・現在・次」はセパレーターのドラッグで表示量を決める。押しただけならその場で開閉する。
+  function commitResumeHeight(height: number) {
+    const next = Math.max(0, Math.min(RESUME_MAX, Math.round(height)));
+    setResumeHeight(next);
+    try { localStorage.setItem(RESUME_KEY, String(next)); } catch { /* optional preference */ }
+  }
+  function handleResumePointerDown(e: React.PointerEvent) {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    resumeDrag.current = { y: e.clientY, height: resumeHeight, moved: false };
+    setResumeDragging(true);
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+  }
+  function handleResumePointerMove(e: React.PointerEvent) {
+    const drag = resumeDrag.current;
+    if (!drag) return;
+    const delta = e.clientY - drag.y;
+    if (Math.abs(delta) > 3) drag.moved = true;
+    if (drag.moved) setResumeHeight(Math.max(0, Math.min(RESUME_MAX, drag.height + delta)));
+  }
+  function handleResumePointerUp(e: React.PointerEvent) {
+    const drag = resumeDrag.current;
+    if (!drag) return;
+    resumeDrag.current = null;
+    setResumeDragging(false);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    if (drag.moved) commitResumeHeight(drag.height + (e.clientY - drag.y));
+  }
+  // ドラッグできない環境向けの代替。スプリッターなので開閉トグルは持たない。
+  function handleResumeKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); commitResumeHeight(resumeHeight + 20); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); commitResumeHeight(resumeHeight - 20); }
+  }
 
   async function retrySave() {
     if (busy.current) return;
@@ -232,12 +282,31 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
     finally { showWaiting(false); }
   }
 
-  return <div className="support-chat">
-    <div className="support-chat__context">
-      <span>対象：{record.bundleId ? vault.GetThink(record.bundleId)?.Name ?? record.bundleId : '単独の相談'}</span>
+  const resumeMessages = useMemo<ChatMessage[]>(() => (record.resume || record.current || record.next) ? [{
+    id: 'support-resume', role: 'assistant', timestamp: '',
+    content: [
+      `前回：${record.resume || '未記録'}`,
+      `現在：${record.current || '未確認'}`,
+      `次：${record.next || '相談して決めましょう'}`,
+      `本人の決定：${record.decisions || '未記録'}`,
+      `未決定：${record.undecided || '未記録'}`,
+      `AIの提案：${record.proposals || '未記録'}`,
+      `本人確認：${record.confirmedAt || '未確認'} ／ 要約更新：${record.updatedAt || '未記録'}`,
+    ].join('\n'),
+  }] : [], [record.resume, record.current, record.next, record.decisions, record.undecided, record.proposals, record.confirmedAt, record.updatedAt]);
+
+  // Workout の設定エリアだけ地色がパネル基礎色（暗色）なので、ヘッダーの背景は
+  // 各パネルの地色を明示して、どのパネルでも同じ見え方に揃える。
+  const panelKey = panelName.toLowerCase();
+  return <div className="support-chat" style={{
+    ['--support-panel-color' as string]: `var(--${panelKey}-base)`,
+    ['--support-area-bg' as string]: `var(--${panelKey}-area-bg)`,
+  }}>
+    <div className={`support-chat__context${notice || error ? ' support-chat__context--dismissable' : ''}`}>
+      {(notice || error) && <button className="support-chat__dismiss" aria-label="この表示を消す"
+        title="この表示を消す" onClick={() => { setNotice(''); setError(''); }}><X size={12} /></button>}
       {!!record.handoff && <span>引き継ぎ：{record.handoff}</span>}
       {isReviewDue(record, clock) && !['完了', '中止'].includes(info?.state ?? '') && <strong>再確認・再提示の時期です。今の状況を教えてください。</strong>}
-      {(record.resume || record.current || record.next) && <details><summary>前回・現在・次を確認する</summary><p>前回：{record.resume || '未記録'}</p><p>現在：{record.current || '未確認'}</p><p>次：{record.next || '相談して決めましょう'}</p><p>本人の決定：{record.decisions || '未記録'}</p><p>未決定：{record.undecided || '未記録'}</p><p>AIの提案：{record.proposals || '未記録'}</p><p>本人確認：{record.confirmedAt || '未確認'} ／ 要約更新：{record.updatedAt || '未記録'}</p></details>}
       {(record.due || record.scheduled || record.reviewAt || record.redisplayAt || record.repeatRule) && <details><summary>予定・再確認</summary><p>期限：{record.due || '未設定'}</p><p>実施予定：{record.scheduled || '未設定'}</p><p>再確認：{record.reviewAt || '未設定'}</p><p>再提示：{record.redisplayAt || '未設定'}</p><p>繰り返し：{record.repeatRule || 'なし'}</p><p>待機・保留：{record.waiting || 'なし'}</p></details>}
       {!!record.references.length && <details><summary>参照した記録</summary>{record.references.map(id => <button key={id} onClick={() => TTApplication.Instance.OpenThinkInWorkout(id)}>{vault.GetThink(id)?.Name ?? id}</button>)}</details>}
       {(record.startsAt || record.endsAt || record.checklist) && <details><summary>開催日時・手順</summary><p>開始：{record.startsAt || '未設定'} ／ 終了：{record.endsAt || '未設定'}</p><p>{record.checklist}</p></details>}
@@ -254,6 +323,17 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
         void think.SaveContent().then(() => { retry.current = null; setError(''); setNotice('残りの関連ファイル作成を中断しました。作成済みの資料は残っています。'); }).catch(e => { think.Metadata = before; setError(e.message); }).finally(() => showWaiting(false));
       }}>関連ファイルの作成を中断して相談を続ける</button>}
     </div>
+    {resumeMessages.length > 0 && <>
+      <div className="support-chat__resume" style={{ height: resumeHeight }} aria-hidden={resumeHeight === 0}>
+        <AiChatLog messages={resumeMessages} isWaiting={false} />
+      </div>
+      <div role="separator" aria-orientation="horizontal" tabIndex={0}
+        aria-label="前回・現在・次の表示量を変更" title="前回・現在・次を確認する"
+        className={`support-chat__resume-splitter${resumeDragging ? ' support-chat__resume-splitter--dragging' : ''}`}
+        onPointerDown={handleResumePointerDown} onPointerMove={handleResumePointerMove}
+        onPointerUp={handleResumePointerUp} onPointerCancel={handleResumePointerUp}
+        onKeyDown={handleResumeKeyDown} />
+    </>}
     <AiChatView ref={view} messages={messages} isWaiting={waiting || (!!selectedId && loadedId !== selectedId)} onSend={text => {
       if (busy.current || (selectedId && loadedId !== selectedId)) return false;
       if (retry.current || think?.Metadata.supportPendingEffects) {

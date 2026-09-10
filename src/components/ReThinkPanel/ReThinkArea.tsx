@@ -145,6 +145,7 @@ export function ReThinkArea({ app, viewMode }: Props) {
             {supportListError && <p role="alert">{supportListError}</p>}
             <ThinktankChatMemoPicker
               thinks={todoMemoThinks}
+              vault={vault}
               columns={columns}
               sort={sort}
               filterVisibility={filterVisibility}

@@ -22,7 +22,8 @@ export function useSupportChats(vault: TTVault, panel: SupportPanel, bundleId: s
     if (t.ContentType !== 'chat') return false;
     if (t.ID === selectedId) return true; // Keep the active conversation across an AI handoff.
     const managed = parseManagedChatTitle(t.Name);
-    if (managed?.panel !== panel && !(panel === 'Thinktank' && !managed && t.Metadata.supportOrigin === 'Thinktank')) return false;
+    // Unclassified chats started in any panel land in Thinktank until the AI assigns an owner.
+    if (managed?.panel !== panel && !(panel === 'Thinktank' && !managed && !!t.Metadata.supportOrigin && t.Metadata.supportOrigin !== 'Pane')) return false;
     if (panel === 'Thinktank') return true;
     if (bundleId) return scope.bundle === bundleId && scope.ids.includes(t.ID);
     return panel === 'ReThink' || (panel === 'Workout' && !supportRecord(t).bundleId);

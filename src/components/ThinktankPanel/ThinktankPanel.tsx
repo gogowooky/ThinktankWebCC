@@ -17,7 +17,6 @@ import { ThinktankArea } from './ThinktankArea';
 import type { LayoutMode } from '../Layout/AppLayout';
 import './ThinktankPanel.css';
 
-const DEFAULT_WIDTH = 240;
 const MIN_WIDTH     = 120;
 
 interface Props {

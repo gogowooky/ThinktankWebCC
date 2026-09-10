@@ -77,7 +77,7 @@ function computeEqualHeightRatios(
 }
 
 
-const DEFAULT_SETTINGS_WIDTH = 180;
+const DEFAULT_SETTINGS_WIDTH = 220;
 const MIN_SETTINGS_WIDTH     = 120;
 const MAX_SETTINGS_WIDTH     = 400;
 

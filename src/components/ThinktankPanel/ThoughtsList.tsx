@@ -35,6 +35,8 @@ interface Props {
   /** ダブルクリック時に呼ばれる。省略時はダブルクリックしても何も起きない（例: AI相談のchat選択欄は D&D のみで Workout へ渡す） */
   onOpen?: (id: string) => void;
   onToggleCheck?: (id: string | string[], force?: boolean) => void;
+  /** 「バンドル」列の表示値。buildBundleNames() の結果を渡す（未指定なら空欄） */
+  bundleNames?: Map<string, string>;
   focusedId: string | null;
   onFocusChange: (id: string | null) => void;
 }
@@ -105,7 +107,7 @@ function buildTitleSub(thought: TTThink, visibleCols: ColumnConfig[], showIdSub:
   });
 }
 
-function renderCell(col: ColumnConfig, thought: TTThink, visibleCols: ColumnConfig[], showIdSub: boolean, showUpdatedSub: boolean): ReactNode {
+function renderCell(col: ColumnConfig, thought: TTThink, visibleCols: ColumnConfig[], showIdSub: boolean, showUpdatedSub: boolean, bundleNames?: Map<string, string>): ReactNode {
   // 「新規チャット」仮想行は実在の Think ではないため、ID・更新日等の列は表示しない
   const isNewChatRow = thought.ID === NEW_CHAT_SENTINEL_ID;
   if (isNewChatRow && col.field !== 'Name') return null;
@@ -139,6 +141,10 @@ function renderCell(col: ColumnConfig, thought: TTThink, visibleCols: ColumnConf
       return <span key="Keywords" className="thoughts-list__cell thoughts-list__cell--md" data-tip={thought.Keywords} data-tip-side="left">{thought.Keywords}</span>;
     case 'RelatedIDs':
       return <span key="RelatedIDs" className="thoughts-list__cell thoughts-list__cell--md" data-tip={thought.RelatedIDs} data-tip-side="left">{thought.RelatedIDs}</span>;
+    case 'Bundle': {
+      const name = bundleNames?.get(thought.ID) ?? '';
+      return <span key="Bundle" className="thoughts-list__cell thoughts-list__cell--md" data-tip={name || '対象なし'} data-tip-side="left">{name}</span>;
+    }
     default:
       return null;
   }
@@ -152,6 +158,7 @@ export function ThoughtsList({
   showCheckbox = true,
   onOpen,
   onToggleCheck = () => {},
+  bundleNames,
   focusedId,
   onFocusChange,
 }: Props) {
@@ -294,7 +301,7 @@ export function ThoughtsList({
                   )
               )}
               {getTypeIcon(thought.ContentType)}
-              {visibleCols.map(col => renderCell(col, thought, visibleCols, showIdSub, showUpdatedSub))}
+              {visibleCols.map(col => renderCell(col, thought, visibleCols, showIdSub, showUpdatedSub, bundleNames))}
             </div>
           );
         })}

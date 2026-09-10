@@ -38,7 +38,9 @@ export interface SupportRecord {
   updatedAt: string;
   handoff: string;
   messages?: ChatMessage[];
-  history?: Array<{ operationId: string; at: string; title: string; record: Omit<SupportRecord, 'history' | 'messages'> }>;
+  history?: Array<{ operationId: string; at: string; title: string; record: Omit<SupportRecord, 'history' | 'messages' | 'appliedOps'> }>;
+  /** 冪等判定用の操作ID。巻き戻し用スナップショットより軽いので、history より長く保持する。 */
+  appliedOps?: string[];
 }
 export function supportRecord(think?: TTThink): SupportRecord {
   return { version: 0, bundleId: '', goal: '', completion: '', current: '', next: '', resume: '', decisions: '', undecided: '', proposals: '', waiting: '', remaining: '', references: [], parentId: '', dependencies: [], loopId: '', occurrence: '', repeatRule: '', due: '', scheduled: '', startsAt: '', endsAt: '', checklist: '', reviewAt: '', redisplayAt: '', confirmedAt: '', confirmationQuote: '', updatedAt: '', handoff: '', ...think?.Metadata?.thoughtSupport };
@@ -116,17 +118,24 @@ export function planSupportUpdate(think: TTThink, op: SupportOperation, userText
   return { title: kind && panel ? `${kind}:${panel}｜${state ? `[${state}]` : ''}${title}` : title, record };
 }
 
+/** 取り消しは「直前の管理変更を戻す」1段だけなので、巻き戻し用スナップショットは直近だけ残す。
+ *  実測では1件あたり約3KB積み上がり、34ターンで100KBに達していた。 */
+const MAX_HISTORY = 20;
+/** 冪等判定はIDだけで足りる（1件36文字）。Pane成果の反映のように間隔が空く操作を取りこぼさないよう長めに持つ。 */
+const MAX_APPLIED_OPS = 200;
+
 const locks = new Set<string>();
 export async function saveSupportTurn(think: TTThink, messages: ChatMessage[], op: SupportOperation | undefined, expectedContent: string, expectedVersion: number, operationId: string, userText: string, pendingEffects?: unknown) {
   if (locks.has(think.ID)) throw new Error('同じ相談を別の場所で保存中です。保存後に開き直してください。');
   locks.add(think.ID);
   try {
     const old = supportRecord(think);
-    if (old.history?.some(h => h.operationId === operationId)) return;
+    if (old.history?.some(h => h.operationId === operationId) || old.appliedOps?.includes(operationId)) return;
     if (think.Content !== expectedContent || old.version !== expectedVersion) throw new Error('相談が別の場所で更新されました。今回の応答をコピーしてから開き直してください。');
     const { title, record } = planSupportUpdate(think, op ?? {}, userText, new Date().toISOString());
-    const { history: _history, messages: _messages, ...snapshot } = old;
-    record.history = [...(old.history ?? []), { operationId, at: new Date().toISOString(), title: think.Name, record: snapshot }];
+    const { history: _history, messages: _messages, appliedOps: _appliedOps, ...snapshot } = old;
+    record.history = [...(old.history ?? []), { operationId, at: new Date().toISOString(), title: think.Name, record: snapshot }].slice(-MAX_HISTORY);
+    record.appliedOps = [...(old.appliedOps ?? []), operationId].slice(-MAX_APPLIED_OPS);
     record.messages = messages;
     const previousContent = think.Content;
     const previousMetadata = think.Metadata;
@@ -149,11 +158,11 @@ export async function undoSupportChange(think: TTThink) {
     const current = supportRecord(think);
     const previous = [...(current.history ?? [])].reverse().find(entry => entry.title !== think.Name || textFields.some(key => entry.record[key] !== current[key]));
     if (!previous) throw new Error('取り消せる管理変更はありません。');
-    const { history: _history, messages: _messages, ...snapshot } = current;
+    const { history: _history, messages: _messages, appliedOps: _appliedOps, ...snapshot } = current;
     const now = new Date().toISOString();
     const content = think.Content; const metadata = think.Metadata;
     think.Content = serializeChat(supportMessages(think), previous.title);
-    think.Metadata = { ...metadata, thoughtSupport: { ...previous.record, messages: current.messages, version: current.version + 1, updatedAt: now, history: [...(current.history ?? []), { operationId: `undo-${crypto.randomUUID()}`, at: now, title: content.split('\n')[0], record: snapshot }] } };
+    think.Metadata = { ...metadata, thoughtSupport: { ...previous.record, messages: current.messages, appliedOps: current.appliedOps, version: current.version + 1, updatedAt: now, history: [...(current.history ?? []), { operationId: `undo-${crypto.randomUUID()}`, at: now, title: content.split('\n')[0], record: snapshot }].slice(-MAX_HISTORY) } };
     try { await think.SaveContent(); } catch (e) { think.Content = content; think.Metadata = metadata; throw e; }
   } finally { locks.delete(think.ID); }
 }
@@ -168,6 +177,7 @@ export const SUPPORT_POLICY = `あなたはユーザーの思考支援を行い�
 年齢から能力を決めつけず、繰り返す質問にも穏やかに答えます。過去と違う発言は意向変更かもしれません。
 事実・本人の決定・AIの提案・未確認を分け、記録にない過去の決定を捏造しません。無応答や曖昧な相づちは決定ではありません。
 再開では前回・現在・次を示し、中断では再開メモを残します。未整理や将来候補を勝手にTODOにしません。
+挨拶・相づち・意図確認だけのやりとりではoperationを出さず未分類のままにし、相談の目的（何を決めたい・知りたい・対応したいか）が言語化されてから種類・担当・状態を付けます。
 種類(TODO個別作業/PROJ複数課題/ASK相談/EVNT単発予定/LOOP繰り返し)と担当と状態は独立。分類・担当はあなたが判断し、ユーザーにタグ編集やパネル移動を要求しません。
 4パネルは必須工程ではありません。担当が変わっても同じ会話で継続できます。担当変更では理由と次の問いをhandoffに残します。
 状態は未着手・進行中・待機・保留・完了・中止のみ。旧記録の状態未設定は推測して変更せず、状態の変更が必要なときだけstateを指定します。
@@ -182,6 +192,7 @@ ReThinkでは現実・記録・残課題を照合。外部の実施結果を未�
 以下はアプリ専用JSON応答の契約です。JSONのみを返してください。
 { "reply":"ユーザーへの回答", "readIds":["本文が必要な許可ID"], "search":"一覧から探す検索語", "operation":{"kind":"ASK", "panel":"Thinktank", "state":"進行中", "title":"相談名", "record":{"goal":"目的", "completion":"完了条件", "current":"現在", "next":"次の一手", "resume":"再開メモ", "decisions":"本人の決定と根拠[chat:ID]", "undecided":"未決定", "proposals":"AI案", "waiting":"待機理由", "remaining":"残課題の扱い", "references":["資料ID"], "parentId":"親ID", "dependencies":[], "loopId":"繰り返し元ID", "occurrence":"各回の識別日", "repeatRule":"繰り返し規則", "due":"YYYY-MM-DD", "scheduled":"YYYY-MM-DDまたはオフセット付ISO日時", "reviewAt":"再確認日", "redisplayAt":"再提示日", "handoff":"移動理由と次の問い"}, "evidence":"本人の今回の発言引用"}, "createBundle":"必要な場合のみBundle名", "linkIds":["既存資料ID"], "children":[{"key":"同じ課題には同じ識別文字列", "title":"子課題名", "kind":"TODO", "goal":"目的", "occurrence":"LOOPの各回なら識別日"}], "artifact":{"key":"成果物識別子", "title":"タイトル", "type":"memoまたはtableまたはhtmlまたはlinks", "body":"本文"} }
 すべてreply以外は必要な時だけ指定。recordは変更する項目のみ、空文字は消去を意味します。日時は不明なら省略し、日付の用途を混同しません。
+ただしrecord.currentとrecord.nextは節目だけでなく毎回の応答で最新にしてください。それぞれ1文・80文字以内で、経緯を並べず現時点の状況と次の一手だけを書きます。
 readIds/searchがあれば今回は読み取りだけ。取得後の応答で更新してください。本文を読まず一覧だけで事実を断定しません。
 作成や変更はreply生成後にアプリが保存します。まだ保存済みと断言しません。複数課題への分割は本人と内容の合意後だけ。小さな手順ごとに課題を増やしません。
 HTMLは比較・予定・手順・振り返りを見やすくし、文字の説明を添え、スクリプトや外部通信を含めません。`;

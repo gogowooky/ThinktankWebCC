@@ -1,6 +1,43 @@
 .support-chat { display:flex; flex-direction:column; height:100%; min-height:0; width:100%; }
 .support-chat > .ai-chat-view { flex:1; min-height:0; }
-.support-chat__context { padding:10px 12px; display:flex; flex-direction:column; gap:5px; border-bottom:1px solid var(--border-color, #555); font-size:calc(12px * var(--tt-font-scale, 1)); max-height:38%; overflow:auto; overflow-wrap:anywhere; }
+
+/* 相談のヘッダー。引き継ぎ・処置結果・エラー・再試行操作などを載せる。
+   内側にスクロール枠を作ると右辺にスクロールバーが出るため高さ制限は持たない。 */
+.support-chat__context { padding:10px 12px; display:flex; flex-direction:column; gap:5px; flex:0 0 auto; background:var(--support-area-bg, transparent); border-bottom:1px solid var(--border-color, #555); font-size:calc(12px * var(--tt-font-scale, 1)); overflow-wrap:anywhere; }
+/* 引き継ぎ・通知・エラー等が何も無いときは、余白だけの帯を残さない */
+.support-chat__context:empty { display:none; }
+
+/* 処置結果・エラー表示をすぐ消すボタン。領域の右端に置き、本文と重ならないよう右の余白を広げる。 */
+.support-chat__context--dismissable { padding-right:26px; position:relative; }
+.support-chat__dismiss {
+  position:absolute; top:4px; right:4px; z-index:1;
+  display:flex; align-items:center; justify-content:center;
+  width:18px; height:18px; padding:0;
+  background:transparent; border:none; border-radius:3px;
+  color:var(--text-muted, #565f89); cursor:pointer;
+}
+.support-chat__dismiss:hover { background:var(--border); color:var(--text-primary, #c0caf5); }
+.support-chat__dismiss:focus-visible { outline:1px solid var(--focusing-border); outline-offset:1px; }
 .support-chat__context p { margin:6px 0; white-space:pre-wrap; }
 .support-chat__context select { max-width:100%; }
-.support-chat__context [role=alert] { color:var(--error-color, #ec9b88); }
+/* ヘッダーの地色は各パネルの明るい地色なので、暗い地色向けの明るい赤では読めない
+   （#ec9b88 で 1.7〜1.9 : 1）。4パネル一律で暗くして WCAG AA を満たす。 */
+.support-chat__context [role=alert] { color:color-mix(in srgb, var(--text-error, #f7768e) 60%, #000); }
+
+/* Chatエリアを上下に分割した上側。「前回・現在・次」を会話ログと同じ表示部で描画する。
+   高さはセパレーターのドラッグ位置で決まり、既定の 0 では上パネルが見えない。 */
+.support-chat__resume { flex-shrink:0; min-height:0; overflow:hidden; display:flex; flex-direction:column; }
+.support-chat__resume > .ai-chat-view__log { flex:1; min-height:0; }
+
+/* 上下分割のセパレーター。通常色は所属パネルの色、ホバー・ドラッグ中は
+   他のスプリッターと同じ FocusingBorder.Theme.Color。 */
+.support-chat__resume-splitter {
+  height:3px; flex-shrink:0; background:var(--support-panel-color, var(--border));
+  cursor:row-resize; position:relative; z-index:10;
+  transition:background 150ms ease; touch-action:none;
+}
+/* ヒット領域を上下に広げる */
+.support-chat__resume-splitter::after { content:''; position:absolute; inset:-4px 0; }
+.support-chat__resume-splitter:hover,
+.support-chat__resume-splitter--dragging { background:var(--focusing-border); }
+.support-chat__resume-splitter:focus-visible { outline:1px solid var(--focusing-border); outline-offset:1px; }

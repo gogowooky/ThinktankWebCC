@@ -8,6 +8,12 @@
   overflow: hidden;
 }
 
+/* Thinktank と Overview の境界線は、隣接する Overview パネルの色で示す。
+   ホバー・ドラッグ中は Splitter.css の FocusingBorder 色を保つため、状態擬似クラスを除外する。 */
+.thinktank-panel > .splitter:not(:hover):not(.splitter--dragging) {
+  background: var(--overview-base);
+}
+
 /* Thinktank にフォーカスがある間、タイトルに下線を表示 */
 body[data-focus-column="Thinktank"] .thinktank-area__title-row {
   text-decoration: underline;

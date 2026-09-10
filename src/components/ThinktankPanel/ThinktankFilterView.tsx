@@ -21,6 +21,7 @@ interface Props {
   updatedDate: string;
   updatedRange: string;
   columns?: ColumnConfig[];
+  bundleNames?: Map<string, string>;
   onOpen: (id: string) => void;
   onToggleCheck: (id: string | string[], force?: boolean) => void;
   onVisibleChange?: (items: TTThink[]) => void;
@@ -31,7 +32,7 @@ interface Props {
 export function ThinktankFilterView({
   thinks, selectedId, checkedIds, checkedOnly = false,
   titleQuery, createdDate, createdRange, updatedDate, updatedRange,
-  columns, onOpen, onToggleCheck, onVisibleChange, focusedId, onFocusChange,
+  columns, bundleNames, onOpen, onToggleCheck, onVisibleChange, focusedId, onFocusChange,
 }: Props) {
 
   const filtered = useMemo<TTThink[]>(() => {
@@ -62,6 +63,7 @@ export function ThinktankFilterView({
         selectedId={selectedId}
         checkedIds={checkedIds}
         columns={columns}
+        bundleNames={bundleNames}
         onOpen={onOpen}
         onToggleCheck={onToggleCheck}
         focusedId={focusedId}

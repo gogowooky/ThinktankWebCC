@@ -348,6 +348,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
             {supportListError && <p role="alert">{supportListError}</p>}
             <ThinktankChatMemoPicker
               thinks={todoMemoThinks}
+              vault={vault}
               columns={columns}
               sort={sort}
               filterVisibility={filterVisibility}

@@ -304,7 +304,8 @@
       "Bash(echo \"---exit $?---\")",
       "Bash(git reset *)",
       "Bash(echo \"TSC EXIT: $?\")",
-      "Bash(grep -i '~\\\\$')"
+      "Bash(grep -i '~\\\\$')",
+      "Bash(echo \"TSC:$?\")"
     ]
   }
 }

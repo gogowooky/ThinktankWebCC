@@ -86,6 +86,24 @@ describe('thought support persistence and decisions', () => {
     t.Content = '別のタイトル\n## 手動編集\n回答';
     expect(supportMessages(t)[0].content).toBe('手動編集');
   });
+  it('caps rollback snapshots but still refuses an operation replayed long afterwards', async () => {
+    const t = chat();
+    for (let turn = 0; turn < 30; turn++) {
+      await saveSupportTurn(t, [{ id: `u${turn}`, role: 'user', content: `発言${turn}`, timestamp: now }], { record: { current: `状況${turn}` } }, t.Content, turn, `op-${turn}`, '');
+    }
+    const record = supportRecord(t);
+    expect(record.version).toBe(30);
+    // スナップショットは直近20件で頭打ち。IDはそれより長く残す
+    expect(record.history).toHaveLength(20);
+    expect(record.history!.at(-1)!.operationId).toBe('op-29');
+    expect(record.history!.some(h => h.operationId === 'op-0')).toBe(false);
+    expect(record.appliedOps).toContain('op-0');
+    // 履歴から溢れた古い操作でも、再送は適用しない
+    backend.save.mockClear();
+    await saveSupportTurn(t, [], {}, t.Content, record.version, 'op-0', '');
+    expect(backend.save).not.toHaveBeenCalled();
+    expect(supportRecord(t).version).toBe(30);
+  });
   it('saves a pending multi-file operation in the same write as the answer', async () => {
     const t = chat(); const journal = { operationId: 'op', answer: { reply: '整理します', createBundle: '会場' } };
     await saveSupportTurn(t, [], {}, t.Content, 0, 'op', '', journal);
