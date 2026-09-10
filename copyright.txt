@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.57",
+  "version": "1.4.58",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "c26c861",
-  "commitDateTime": "2026-09-09-213329",
-  "commitMessage": "feat: Chat一覧に種類・状態フィルタを追加、AIChat入力欄に説明選択と管理変更取り消しを移設"
+  "commitId": "de9ebce",
+  "commitDateTime": "2026-09-10-225811",
+  "commitMessage": "feat: バンドル列・再開カードの上下分割・設定Loadのリセット方式化とAIChatの配色調整"
 }

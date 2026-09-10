@@ -7,6 +7,31 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.58 feat: バンドル列・再開カードの上下分割・設定Loadのリセット方式化とAIChatの配色調整
+- 日付: 2026-09-10
+- コミット番号: de9ebce
+
+Think一覧・AIChat一覧に「バンドル」列（対象Bundle名）を追加。`src/utils/bundleNames.ts`
+で thinkID→Bundle名を O(n) で一度だけ構築し、ソートのコンパレータと描画は `Map.get` のみに
+することで、`supportRecord()`（約30項目の生成）が O(n log n) 回走るのを避けた。列順は
+バンドル/タイトル/作成日(ID)/更新日/種別/キーワード/関連ID。
+「前回・現在・次」は `<details>` をやめ、Chatエリアを上下に分割する構成へ変更。会話ログと
+同じ表示部を使うため `AiChatView` から `AiChatLog` を切り出して共有し、区切りは他の
+スプリッターと同じ作り（通常色=パネル色、hover=FocusingBorder）のセパレーターにした
+（既定は高さ0で非表示、ドラッグで表示量を決める）。処置結果・エラー表示に「×」ボタンを
+追加し、表示が空のときはヘッダー帯自体を隠すようにした。ヘッダー背景を `--support-area-bg`
+で明示して Workout だけ暗色だった不整合を解消し、エラー文字色を4パネル一律で暗くして
+コントラストを 1.7〜1.9:1 から 4.9〜5.7:1（WCAG AA）へ改善。
+`SUPPORT_POLICY` に「挨拶や意図確認だけでは operation を出さず未分類のままにする」
+「`record.current`/`next` は毎回1文80文字以内で更新する」を追加。`useSupportChats` は
+Pane以外で開始した未分類Chatを Thinktank 一覧へ集約するようにした。
+`SupportRecord.history` は直近20件で頭打ちにし、冪等判定用の operationId は `appliedOps`
+に200件まで別途保持（実測で34ターン100KBまで肥大化していたため）。
+`TextEditor.{KeyBinding,ColorBinding,SearchTag}.Load` を「Defaultへリセットしてから適用」
+に変更し、実行回数によらず常に Default + Memo になるようにした。
+あわせてパネル初期幅を調整（Thinktank/Overview 280、ReThink 320、Workout設定 220）。
+テスト187件パス、型検査・本番ビルド成功。
+
 ### v1.4.57 feat: Chat一覧に種類・状態フィルタを追加、AIChat入力欄に説明選択と管理変更取り消しを移設
 - 日付: 2026-09-09
 - コミット番号: c26c861
