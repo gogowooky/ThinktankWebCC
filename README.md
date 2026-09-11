@@ -7,6 +7,33 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.4.59 docs: Status-Action-Binding に未記載のAction/Statusを追記し記載の齟齬を解消
+- 日付: 2026-09-11
+- コミット番号: 10ec1bb
+
+TTActions レジストリ（src/views/TTActions.ts）と TTUIStateManager の PROP_SPECS を
+docs/Thinktank_Status-Action-Binding.md と突き合わせ、登録済みで未記載だった Action 13件 /
+Status 3件を、ファイルのフォーマット（## Action：／## Status：＋ description / key /
+current / default / type / candidates）に従って追記した。
+追記した Action は Application.Resource.RollbackFocusedThink・RollbackAll（BigQuery time
+travel の復元APIが未実装でUIの受け皿のみである旨を明記）、Application.Date:Next・:Prev
+（対応する Status が PROP_SPECS に未登録で実行しても値が変化しない旨を明記）、
+Application.Status.ExMode:None、短縮表記の ExMode:ExApp・:ExOpt・:None、
+Application.FocusedArea.Name:next・:prev（小文字登録）。
+追記した Status は WorkoutPanel.Panes.Count（旧 WorkoutPanel.Pane.Count からのリネーム履歴
+だけが残り定義本体が無かった）、TextEditor.Bullet.StyleNum、TextEditor.Comment.StyleNum。
+IsVisible 系6つのトグルは :Toggle / :toggle の両ActionIDが同一ハンドラに解決される旨を
+注記だけにとどめ、重複エントリは作っていない。
+あわせて記載の齟齬を解消した。ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag と
+:AddTitleSearchKeywordFlag はコード上 PROP_SPECS の Status なので見出しを Action から
+Status へ修正。コードに実体が無い FocusedPanel.Filter.ContentType:Action（実体は
+FocusedPanel.Filter.FocusedIcon:Action）と TextEditor.FoldingHeader（色の実体は
+docs/DefaultColor.md の TextEditor.FoldingHeader.*）は削除した。
+色系 Status は DEFAULT_COLOR_ENTRIES から動的生成され docs/DefaultColor.md で一括定義する
+既存方針のため、個別追記の対象外とした。
+本ファイルは TTUIStateManager が ?raw で取り込んで起動時に解釈するため、CRLF を維持している。
+
+
 ### v1.4.58 feat: バンドル列・再開カードの上下分割・設定Loadのリセット方式化とAIChatの配色調整
 - 日付: 2026-09-10
 - コミット番号: de9ebce

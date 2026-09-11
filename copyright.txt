@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.58",
+  "version": "1.4.59",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "de9ebce",
-  "commitDateTime": "2026-09-10-225811",
-  "commitMessage": "feat: バンドル列・再開カードの上下分割・設定Loadのリセット方式化とAIChatの配色調整"
+  "commitPC": "VENENO-02",
+  "commitId": "10ec1bb",
+  "commitDateTime": "2026-09-11-170340",
+  "commitMessage": "docs: Status-Action-Binding に未記載のAction/Statusを追記し記載の齟齬を解消"
 }
