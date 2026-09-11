@@ -101,6 +101,28 @@ key:            Application.Resource.ExportToLocal
 　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別はファイル種別名毎のフォルダに保存する。
 ## Status：　260628　Application.Resource.LocalExporting
 　Application.Resource.ExportToLocalの実行中タスクの進捗率を表示してください。
+## Action：　260911　Application.Resource.RollbackFocusedThink
+description:    直前にフォーカスされたThinkファイル１つをBQで1時間前の状態に戻す
+key:            Application.Resource.RollbackFocusedThink
+　対象は WorkoutPanel.FocusedPane.FileHistory の先頭のThinkファイル1件。
+　BigQuery time travel（FOR SYSTEM_TIME AS OF）を使う復元APIが未実装のため、現状はUIの受け皿のみで、
+　実行してもステータスバーに「巻戻（Think1件）: 未実装です」と表示するだけで復元は行われない。
+## Action：　260911　Application.Resource.RollbackAll
+description:    BQ全体を1時間前の状態に戻す
+key:            Application.Resource.RollbackAll
+　thinktank.vault 全体を1時間前のスナップショットで置換する。
+　RollbackFocusedThink と同じく復元APIが未実装のため、現状は「巻戻（BQ全体）: 未実装です」と
+　表示するだけで復元は行われない。
+
+## Action：　260911　Application.Date:Next
+description:    Application.Dateを次の値に切り替える
+key:            Application.Date:Next
+## Action：　260911　Application.Date:Prev
+description:    Application.Dateを前の値に切り替える
+key:            Application.Date:Prev
+　どちらも Status `Application.Date` を next / prev で変更するアクションとして登録済みだが、
+　対応する Status `Application.Date` が TTUIStateManager の PROP_SPECS に未登録のため、
+　現状は実行しても値は変化しない。Status側の実装が必要。
 
 
 ## Action：　260619　Application.FocusedPanel.Name:Next
@@ -133,6 +155,20 @@ key:            Application.Status.ExMode:ExApp
 ## Action：　260619　Application.Status.ExMode:ExOpt
 description:    拡張モードをExOptに設定する
 key:            Application.Status.ExMode:ExOpt
+## Action：　260911　Application.Status.ExMode:None
+description:    拡張モードをNoneに設定する
+key:            Application.Status.ExMode:None
+## Action：　260911　ExMode:ExApp
+description:    拡張モードをExAppに設定する
+key:            ExMode:ExApp
+## Action：　260911　ExMode:ExOpt
+description:    拡張モードをExOptに設定する
+key:            ExMode:ExOpt
+## Action：　260911　ExMode:None
+description:    拡張モードをNoneに設定する
+key:            ExMode:None
+　ショートカット定義側で `Application.Status.ExMode:{mode}` と `ExMode:{mode}` の2表記が使われるため、
+　両方のActionIDを同じハンドラに解決するよう登録している（ExApp / ExOpt / None の3モード分）。
 ## Status：　260619　Application.Status.ExMode
 description:    拡張モード
 key:            Application.Status.ExMode
@@ -149,6 +185,14 @@ candidates:      ^(None|ExApp|ExOpt)$
 　　- `None` （通常状態）
 　　- `ExApp` （アプリケーション拡張モード）
 　　- `ExOpt` （オプション拡張モード）
+
+## Action：　260911　Application.FocusedArea.Name:next
+description:    フォーカスエリアを次に切り替える
+key:            Application.FocusedArea.Name:next
+## Action：　260911　Application.FocusedArea.Name:prev
+description:    フォーカスエリアを前に切り替える
+key:            Application.FocusedArea.Name:prev
+　ActionIDの接尾辞は小文字（:next / :prev）で登録されている。
 
 ## Status：　260615　Application.FocusedArea.Name
 description:    フォーカスエリア
@@ -340,8 +384,6 @@ key:            FocusedPanel.Mode.Name:Next
 ## Action：　260902　FocusedPanel.Filter.ContentType:Prev
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のContentTypeアイコンのフォーカスを前のアイコンに移動します。
 　アイコンはメインの6アイコンの他、全種別をクリアのアイコンも含めます。
-## Action：　260902　FocusedPanel.Filter.ContentType:Action
-　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のフォーカスされているContentTypeアイコンを押下します。
 ## Action：　260902　FocusedPanel.Filter.Menu:Next
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧のMenuアイコンのフォーカスを次のアイコンに移動します。
 　現在フォーカスされているパネルにThink一覧パネルがある場合、そのパネルのThink一覧の
@@ -683,6 +725,14 @@ candidates:     ^[0-9]+$
 
 ## Status：　260630　WorkoutPanel.Pane.Count
 　IDをWorkoutPanel.Panes.Countに変更
+## Status：　260911　WorkoutPanel.Panes.Count
+description:    表示されているペインの数
+key:            WorkoutPanel.Panes.Count
+current:        0
+default:        0
+type:           string
+candidates:     ^[0-9]+$
+　読み取り専用（isConst）。WorkoutPanel.Areas の数から算出するため直接は書き換えられない。
 ## Status：　260706　WorkoutPanel.Panes.Layout
 description:    Paneレイアウト構造(JSON)
 key:            WorkoutPanel.Panes.Layout
@@ -953,6 +1003,15 @@ current:        ・,-,*,■,●,=,↓,→,[✓]
 default:        ・,-,*,■,●,=,↓,→,[✓]
 type:           string
 candidates:     .*
+## Status：　260911　TextEditor.Bullet.StyleNum
+description:    箇条書きスタイルの登録数（TextEditor.Bullet.Marks のアイテム数）
+key:            TextEditor.Bullet.StyleNum
+current:        9
+default:        9
+type:           integer
+candidates:     ^[0-9]+$
+　読み取り専用。TextEditor.Bullet.Marks のCSVアイテム数そのものなので直接は書き換えられない
+　（登録数を変えるには Marks を編集する）。
 ## Status：　260816　TextEditor.Comment.Marks
 　CSVの各アイテムが docs/DefaultColor.md の TextEditor.Comment.Style(1..6).* に順に対応します
 　（1番目のマーク＝Style1、2番目＝Style2 …）。色・表示属性はそちらで定義します。
@@ -964,6 +1023,15 @@ current:        >,>>,>>>,;,|,//
 default:        >,>>,>>>,;,|,//
 type:           string
 candidates:     .*
+## Status：　260911　TextEditor.Comment.StyleNum
+description:    コメントスタイルの登録数（TextEditor.Comment.Marks のアイテム数）
+key:            TextEditor.Comment.StyleNum
+current:        6
+default:        6
+type:           integer
+candidates:     ^[0-9]+$
+　読み取り専用。TextEditor.Comment.Marks のCSVアイテム数そのものなので直接は書き換えられない
+　（登録数を変えるには Marks を編集する）。
 
 　TextEditor.CurrentEditor.DoOnCursorPos で認識される Url / Filepath / Tag の文字スタイルは
 　docs/DefaultColor.md で定義します（TextEditor.Url.Style.* / .Filepath.Style.* / .Tag.Style.*）。
@@ -979,23 +1047,6 @@ candidates:     .*
 
 　パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色は
 　docs/DefaultColor.md の FocusingBorder.Theme.Color で定義します（BgColor / Attrs は未使用）。
-
-## Status：　260817　TextEditor.FoldingHeader
-　TextEditor で折り畳まれている（閉じている）行のスタイルは
-　docs/DefaultColor.md の TextEditor.FoldingHeader.BgColor で定義します（BgColor のみ。Color / Attrs は使いません）。
-　装飾の対象は閉じている範囲の開始行（`⋯` が出る、画面に見えている行）のみで、行全体に背景色を敷きます。
-　文字は見出し等その行本来のスタイル（TextEditor.Heading.Style(1..6).* 等）のままです。
-
-　TextEditor.Selection（カーソルで選択された部分）の色は混ざりません。Monaco の既定では
-　折り畳み行の色 editor.foldBackground が「選択色の30%」であるため選択色が混ざるので、
-　Monaco 標準の折り畳みハイライト（foldingHighlight）を切って断ち切っています。
-　ミニマップの印も FoldingHeader の背景色から出します。
-
-　ただし描画順は Monaco の既定のままです（選択 → デコレーションの順に描かれる）。
-　折り畳み行の上で選択したとき、その行だけ選択色が背景色に隠れます（文字は本文レイヤなので見えます）。
-　折り畳み行でも選択色を見せたい場合は BgColor をアルファ付き8桁（例 #ffddff80）にしてください。
-　選択の描画に z-index を与えて前面に出す方法は使わないこと。.lines-content が stacking context を
-　作らないため、選択の矩形が本文より前面に来て文字が塗り潰されます。
 
 ## Status：　260817　エディタ基本色のUI（WorkoutSettingPanel>TextEditor設定>文字設定）
 　「文字設定」先頭にあった 背景色 / 文字色 / 選択色 / 一致色 の4項目（旧 TextEditor.Color.*）は廃止し、
@@ -1308,7 +1359,7 @@ key:            TextEditor.CurrentEditor.CursorPos:LastHighlighter
 　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
 　　キー割当（docs\DefaultShortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
-## Action：　260906　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+## Status：　260906　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
 　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
 
 　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
@@ -1336,7 +1387,7 @@ candidates:     ^(true|false)^$
 　　実機検証（Vite+Expressのdevサーバー）で、Think一覧のコンテンツ絞り込みEnter確定時に
 　　ToolBar.HighlighterMode.Text へキーワードが追加されること、フラグをfalseにすると
 　　追加されないことを確認しました。
-## Action：　260906　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+## Status：　260906　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
 　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
 
 　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
@@ -1638,6 +1689,8 @@ key:            TextEditor.UnicodeHighlight.IsVisible:Toggle
 ## Action：　260619　TextEditor.BracketPairColorization.IsVisible:Toggle
 description:    括弧の色分けをトグルする
 key:            TextEditor.BracketPairColorization.IsVisible:Toggle
+　上記6つの IsVisible 系トグルは、ショートカット定義が小文字の `:toggle` 表記を使う箇所があるため、
+　`{Status ID}:Toggle` と `{Status ID}:toggle` の両方のActionIDを同じハンドラに解決するよう登録している。
 
 ## Status：　260613　TextEditor.LineNumbers.IsVisible
 description:    行番号表示
