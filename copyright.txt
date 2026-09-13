@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "VENENO-02",
-  "commitId": "10ec1bb",
-  "commitDateTime": "2026-09-11-170340",
-  "commitMessage": "docs: Status-Action-Binding に未記載のAction/Statusを追記し記載の齟齬を解消"
+  "commitPC": "E15",
+  "commitId": "6edde31",
+  "commitDateTime": "2026-09-13-122543",
+  "commitMessage": "docs: 過去の計画・仕様・メモ類を整理し、docs を現行参照分のみに絞る"
 }

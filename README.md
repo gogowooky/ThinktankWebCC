@@ -7,6 +7,24 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.1 docs: 過去の計画・仕様・メモ類を整理し、docs を現行参照分のみに絞る
+- 日付: 2026-09-13
+- コミット番号: 6edde31
+
+役目を終えた設計資料・レビュー報告・作業メモを76件削除した。残したのはコードから
+実際に参照している4件のみ：`docs/DefaultShortcut.md` と `docs/DefaultColor.md`
+（起動時に `?raw` で読み込む）、`docs/DefaultSearchTag.md`（`server/routes/systemRoutes.ts`
+がリクエストのたびに直接配信する）、`docs/Thinktank_Status-Action-Binding.md`
+（Action/Status の仕様書）。
+削除したのは `PROJECT_REVIEW_REPORT*.md`（2件）、`docs/260507_Implementation Plans/`（6件）、
+`docs/260606_Thinktank仕様書/`（8件）、`docs/260606_memos/`（14件）、
+`docs/260720 Thinktankすること/`（3件）、`docs/reference/`（28件）、および
+`docs/slides/`・`readme.txt`・`ThinktankWeb_*.md`・`Thinktank_AI_*.md`・
+`ThoughtSupport_UI_Plan.md`・`CloudRun_Deploy.md` ほか。
+`src/` `server/` `electron/` `vite.config.ts` が参照する docs パスは上記4件のみで、
+削除対象への参照が無いことを確認した。内容は git 履歴から復元できる。
+型検査・server ビルド・テスト187件パス。
+
 ### v1.4.59 docs: Status-Action-Binding に未記載のAction/Statusを追記し記載の齟齬を解消
 - 日付: 2026-09-11
 - コミット番号: 10ec1bb
