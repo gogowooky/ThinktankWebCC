@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.4.59",
+  "version": "1.5.0",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
