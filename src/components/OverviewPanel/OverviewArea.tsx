@@ -54,7 +54,7 @@ const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'c
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
   filter: 'Think一覧',
   graph:  'Bundle分析',
-  chat:   'AI相談',
+  chat:   '会話履歴',
 };
 
 const noop = () => Promise.resolve();
@@ -82,7 +82,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
-  // フィルター欄の表示/非表示設定（Think一覧用。AI相談モードは種別なし・タイトルのみデフォルトの別state）
+  // フィルター欄の表示/非表示設定（Think一覧用。会話履歴モードは種別なし・タイトルのみデフォルトの別state）
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
   const [chatFilterVisibility, setChatFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
@@ -413,8 +413,8 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
         showCheckedOnly={showCheckedOnly}
         showColumnDialog={showColumnDialog}
         showFilterSelectDialog={showFilterSelectDialog}
-        canSaveChat={chatMessages.length > 0 && !chatWaiting}
-        saveChatTip={saveChatTip}
+        canSaveChat={false}
+        saveChatTip="会話履歴は閲覧専用です"
         visibleCount={visibleThinks.length}
         totalCount={typeFilteredBase.length}
         hasBundle={!!panel.BundleID}

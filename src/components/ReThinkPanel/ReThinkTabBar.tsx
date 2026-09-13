@@ -3,7 +3,7 @@
  * Phase 10: ReThinkPanel の 縦型タブバー（旧Ribbon）。
  *
  * side="right" でパネルの右端に配置。
- * ボタン: AI相談 / 設定 / 会話クリア
+ * ボタン: 会話履歴 / 設定 / 会話クリア
  */
 
 import { MessageCircle, Settings } from 'lucide-react';
@@ -32,7 +32,7 @@ export function ReThinkTabBar({ isOpen, viewMode, onToggle, onSetMode }: Props) 
         id="ReThinkAI"
         className={`rethink-tab-bar__btn${viewMode === 'chat' ? ' rethink-tab-bar__btn--active' : ''}`}
         onClick={() => onSetMode('chat')}
-        data-tip="AI相談"
+        data-tip="会話履歴"
         aria-label="ReThinkAI"
       >
         <MessageCircle size={16} />

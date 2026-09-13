@@ -3,7 +3,7 @@
  * OverviewPanel の縦型タブバー（旧Ribbon）。
  *
  * ボタン構成（上から）:
- *   Sparkles    – AI相談（データ分析チャット）
+ *   Sparkles    – 会話履歴（データ分析チャット）
  *   LayoutList  – Think一覧（選択Bundle内のThinkリスト）
  *   BookUser    – Bundleプロファイル（Markdown表示）
  *   BarChart2   – Bundle分析（グラフ）
@@ -22,7 +22,7 @@ type OverviewContentMode = Exclude<OverviewViewMode, 'settings'>;
 const VIEW_BUTTONS: Array<{ mode: OverviewContentMode; Icon: LucideIcon; title: string; id: string }> = [
   { mode: 'filter',   Icon: Files,         title: 'Think一覧',   id: 'OverviewThinkList' },
   { mode: 'graph',    Icon: Microscope,    title: 'Bundle分析', id: 'OverviewResearch' },
-  { mode: 'chat',     Icon: MessageCircle, title: 'AI相談',      id: 'OverviewAI' },
+  { mode: 'chat',     Icon: MessageCircle, title: '会話履歴',      id: 'OverviewAI' },
 ];
 
 interface Props {

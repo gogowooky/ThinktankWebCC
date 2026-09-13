@@ -304,7 +304,7 @@ export function WorkoutArea({
        panel?.TextEditor.ColorStatus,
        panel?.TextEditor.Bullet.Marks, panel?.TextEditor.Comment.Marks]);
 
-  // AI Chat のモデルは panel 単位で1つ。Pane の Chat と WorkoutSetting の AI相談 が同じ値を見る
+  // AI Chat のモデルは panel 単位で1つ。Pane の Chat と WorkoutSetting の 会話履歴 が同じ値を見る
   const aiChatModel = { provider: panel.AIChatProvider, model: panel.AIChatModel };
   const handleAiChatModelChange = (selection: AiModelSelection) => panel.SetAIChatModel(selection);
 

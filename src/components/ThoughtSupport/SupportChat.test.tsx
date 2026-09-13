@@ -21,7 +21,7 @@ vi.mock('../ThinktankPanel/AiChatView', async () => {
   };
 });
 import { TTThink } from '../../models/TTThink';
-import { SupportChat } from './SupportChat';
+import { SupportChat } from './SupportChat.legacy';
 import { supportRecord } from '../../services/thoughtSupport';
 
 let root: Root;

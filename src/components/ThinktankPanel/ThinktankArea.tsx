@@ -42,7 +42,7 @@ import type { LayoutMode } from '../Layout/AppLayout';
 
 const THINKTANK_MODE_NAMES: Record<string, string> = {
   filter:   'Think一覧',
-  chat:     'AI相談',
+  chat:     '会話履歴',
   settings: '設定',
 };
 
@@ -100,7 +100,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
-  // フィルター欄の表示/非表示設定（Think一覧用。AI相談モードは種別なし・タイトルのみデフォルトの別state）
+  // フィルター欄の表示/非表示設定（Think一覧用。会話履歴モードは種別なし・タイトルのみデフォルトの別state）
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
   const [chatFilterVisibility, setChatFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
@@ -440,8 +440,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         showColumnDialog={showColumnDialog}
         showFilterSelectDialog={showFilterSelectDialog}
         canCreateBundle={canCreateBundle}
-        canSaveChat={chatMessages.length > 0 && !chatWaiting}
-        saveChatTip={saveChatTip}
+        canSaveChat={false}
+        saveChatTip="会話履歴は閲覧専用です"
         visibleCount={filterVisible.length}
         totalCount={allThinks.length}
         onCheckAll={handleCheckAll}

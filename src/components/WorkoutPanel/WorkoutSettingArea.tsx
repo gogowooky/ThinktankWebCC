@@ -216,7 +216,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
     },
   }));
 
-  // ── AI相談チャット state ───────────────────────────────────────────────
+  // ── 会話履歴チャット state ───────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Workout');
@@ -289,8 +289,8 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
               <button
                 className="workout-setting-area__chat-btn"
                 onClick={handleSaveChat}
-                disabled={chatMessages.length === 0 || chatWaiting}
-                data-tip={saveChatTip}
+                disabled={true}
+                data-tip="会話履歴は閲覧専用です"
               >
                 <Save size={14} className="ws-icon" />
               </button>

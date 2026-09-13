@@ -2,7 +2,7 @@
  * ThinktankTabBar.tsx
  * ThinktankPanel の縦タブバー（旧Ribbon）ボタン群。
  *
- * 上部: Think一覧（検索・Bundle一覧を統合）/ AI相談
+ * 上部: Think一覧（検索・Bundle一覧を統合）/ 会話履歴
  * 下部: 設定
  */
 
@@ -33,7 +33,7 @@ const MODE_BUTTONS: {
   id: string;
 }[] = [
   { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧', id: 'ThinktankThinkList' },
-  { mode: 'chat',    icon: <MessageCircle size={16} />, label: 'AI相談', id: 'ThinktankAI' },
+  { mode: 'chat',    icon: <MessageCircle size={16} />, label: '会話履歴', id: 'ThinktankAI' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────

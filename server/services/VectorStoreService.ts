@@ -22,8 +22,8 @@ export class VectorStoreService {
   async initialize(bigquery: BigQuery, projectId: string): Promise<void> {
     this.bigquery  = bigquery;
     this.projectId = projectId;
-    await this.dropTableIfExists();
-    console.log(`[VectorStoreService] Initialized (table: ${DATASET_ID}.${TABLE_ID} cleanup checked)`);
+    // Preserve legacy embeddings: disabling a feature must not delete data.
+    console.log(`[VectorStoreService] Initialized (table: ${DATASET_ID}.${TABLE_ID} preserved; disabled)`);
   }
 
   private async dropTableIfExists(): Promise<void> {
