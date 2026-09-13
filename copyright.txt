@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "6edde31",
-  "commitDateTime": "2026-09-13-122543",
-  "commitMessage": "docs: 過去の計画・仕様・メモ類を整理し、docs を現行参照分のみに絞る"
+  "commitId": "99dfe78",
+  "commitDateTime": "2026-09-13-201008",
+  "commitMessage": "docs: 思考支援の設計文書群（docs/ThinkSupport/）を追加"
 }
