@@ -29,7 +29,7 @@ export function SupportConversation({ vault, suggestedBundleId, draftScope }: { 
       </select>
     </label>
     {suggestedBundleId && bundles.some(t => t.ID === suggestedBundleId) && <button onClick={() => setBundleId(suggestedBundleId)}>表示中・関連するBundleを選ぶ</button>}
-    <p>会話は選んだBundleに保存します。旧会話には追記しません。AIの接続先はサーバー設定で決まります。</p>
+    <p>選んだBundleの資料についてAIに相談できます。質問と回答はそのBundleに保存します。AIの接続先はサーバー設定で決まります。</p>
     {!bundles.length && <p>相談にはBundleが必要です。Bundleを作成し、資料を指定してください。</p>}
     {bundleId && !valid && <p role="status">選択したBundleが一覧にありません。対象を選び直してください。</p>}
     {valid && <BundleConversation vault={vault} bundleId={bundleId} draftScope={draftScope} onOpen={id => void openSource(id)} />}

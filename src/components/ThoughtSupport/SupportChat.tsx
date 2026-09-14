@@ -36,8 +36,8 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
   const suggested = supportRecord(props.vault.GetThink(props.selectedId)).bundleId || props.bundleId;
   const scope = `aichat:${props.panelName}:${props.pane ? props.selectedId : 'panel'}`;
   return <div ref={root} className="support-chat-host">
-    <nav aria-label="AIChatの表示"><button aria-pressed={view === 'conversation'} onClick={() => setChoice({ selectedId: props.selectedId, view: 'conversation' })}>資料に基づく対話</button>
-      <button aria-pressed={view === 'history'} onClick={() => setChoice({ selectedId: props.selectedId, view: 'history' })}>旧会話の履歴</button></nav>
+    <nav aria-label="AIChatの表示"><button aria-pressed={view === 'conversation'} onClick={() => setChoice({ selectedId: props.selectedId, view: 'conversation' })}>AIに相談する</button>
+      <button aria-pressed={view === 'history'} onClick={() => setChoice({ selectedId: props.selectedId, view: 'history' })}>これまでの会話</button></nav>
     {view === 'history' ? <LegacySupportChat ref={legacy} {...props} />
       : <SupportConversation key={scope} vault={props.vault} suggestedBundleId={suggested} draftScope={scope} />}
   </div>;
@@ -90,7 +90,7 @@ const LegacySupportChat = forwardRef<SupportChatRef, Props>(function LegacySuppo
     ['--support-area-bg' as string]: `var(--${panel}-area-bg)`,
   }}>
     <div className="support-chat__context">
-      <span role="status">会話履歴（閲覧専用）— AI実行は停止中です。</span>
+      <span role="status">これまでの会話（閲覧専用）— この画面からの送信には対応していません。</span>
       <span>目的：{record.goal || '未記録'} ／ 段階：未記録 ／ 現在：{record.current || '未記録'}</span>
       <span>暫定結論：未記録 ／ 旧AIの提案：{record.proposals || '未記録'}</span>
       <span>決定事項：{record.decisions || '未記録'} ／ 残る論点：{record.undecided || '未記録'}</span>

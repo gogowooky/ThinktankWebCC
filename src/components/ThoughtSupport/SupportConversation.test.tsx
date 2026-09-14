@@ -32,6 +32,6 @@ it('keeps the chosen Bundle when the surrounding Overview Bundle changes', async
 it('opens legacy selections as read-only and switches explicitly to the new conversation', async () => {
   const old = new TTThink(); old.ID = 'old'; old.ContentType = 'chat'; old.Content = '旧会話\n## 質問\n回答'; vault.AddThink(old);
   await show('old'); expect(host.textContent).toContain('閲覧専用'); expect(host.querySelector('textarea')).toBeNull();
-  await click('資料に基づく対話'); await click('表示中・関連するBundleを選ぶ'); expect(host.querySelector('textarea')).not.toBeNull();
-  await click('旧会話の履歴'); expect(host.textContent).toContain('閲覧専用'); expect(old.Content).toContain('回答');
+  await click('AIに相談する'); await click('表示中・関連するBundleを選ぶ'); expect(host.querySelector('textarea')).not.toBeNull();
+  await click('これまでの会話'); expect(host.textContent).toContain('閲覧専用'); expect(old.Content).toContain('回答');
 });

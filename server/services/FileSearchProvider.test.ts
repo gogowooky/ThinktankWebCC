@@ -3,6 +3,16 @@ import { configuredFileSearchProvider, GeminiFileSearchProvider } from './FileSe
 const env = { THINK_SUPPORT_FILE_SEARCH_ENABLED: 'true', THINK_SUPPORT_FILE_SEARCH_CONNECTION_ID: 'work', THINK_SUPPORT_FILE_SEARCH_API_KEY: 'private-key' };
 const store = { name: 'fileSearchStores/store-123', displayName: '資料', activeDocumentsCount: '12345678901234567890', pendingDocumentsCount: '0' };
 afterEach(() => vi.useRealTimers());
+it('gets one store by immutable resource name and rejects a different response identity', async () => {
+  const request = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify(store))).mockResolvedValueOnce(new Response(JSON.stringify({ ...store, name: 'fileSearchStores/other' })));
+  const provider = new GeminiFileSearchProvider('work', 'key', request);
+  expect((await provider.getStore('work', store.name)).stores[0].name).toBe(store.name);
+  expect(request.mock.calls[0][0]).toBe(`https://generativelanguage.googleapis.com/v1beta/${store.name}`);
+  await expect(provider.getStore('work', store.name)).rejects.toMatchObject({ status: 502 });
+  await expect(provider.getStore('work', '../escape')).rejects.toMatchObject({ status: 400 });
+  await expect(provider.getStore('other', store.name)).rejects.toMatchObject({ status: 409 });
+  expect(request).toHaveBeenCalledTimes(2);
+});
 it('is disabled unless every dedicated setting is valid and never exposes the key in status', async () => {
   const request = vi.fn();
   for (const changes of [{ THINK_SUPPORT_FILE_SEARCH_ENABLED: undefined }, { THINK_SUPPORT_FILE_SEARCH_API_KEY: '' }, { THINK_SUPPORT_FILE_SEARCH_CONNECTION_ID: '../bad' }]) {

@@ -1,14 +1,16 @@
 import { id, object } from './conversationRecord.js';
-import { parseFileSearchPage, validPageToken, type FileSearchPage, type FileSearchStatus } from './fileSearchRecord.js';
+import { parseFileSearchPage, storeName, validPageToken, type FileSearchPage, type FileSearchStatus } from './fileSearchRecord.js';
 
 export class FileSearchError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 export interface FileSearchProvider {
   status(): FileSearchStatus;
   listStores(connectionId: string, pageToken?: string, signal?: AbortSignal): Promise<FileSearchPage>;
+  getStore(connectionId: string, name: string, signal?: AbortSignal): Promise<FileSearchPage>;
 }
 export class DisabledFileSearchProvider implements FileSearchProvider {
   status(): FileSearchStatus { return { provider: 'gemini-file-search', enabled: false, connectionId: null, mode: 'read-only' }; }
   async listStores(): Promise<never> { throw new FileSearchError(503, 'Gemini File Searchは停止中です。'); }
+  async getStore(): Promise<never> { throw new FileSearchError(503, 'Gemini File Searchは停止中です。'); }
 }
 export class GeminiFileSearchProvider implements FileSearchProvider {
   constructor(private readonly connectionId: string, private readonly key: string, private readonly request: typeof fetch = fetch) {}
@@ -18,13 +20,23 @@ export class GeminiFileSearchProvider implements FileSearchProvider {
     if (!validPageToken(pageToken)) throw new FileSearchError(400, 'ページ指定が不正です。');
     const url = new URL('https://generativelanguage.googleapis.com/v1beta/fileSearchStores');
     url.searchParams.set('pageSize', '20'); if (pageToken) url.searchParams.set('pageToken', pageToken);
+    return this.readStores(connectionId, url, pageToken, undefined, signal);
+  }
+  async getStore(connectionId: string, name: string, signal?: AbortSignal): Promise<FileSearchPage> {
+    if (connectionId !== this.connectionId) throw new FileSearchError(409, '接続設定が変わっています。設定を再取得してください。');
+    if (!storeName(name)) throw new FileSearchError(400, 'ストアIDが不正です。');
+    return this.readStores(connectionId, new URL(`https://generativelanguage.googleapis.com/v1beta/${name}`), '', name, signal);
+  }
+  private async readStores(connectionId: string, url: URL, pageToken: string, expectedName?: string, signal?: AbortSignal): Promise<FileSearchPage> {
     const controller = new AbortController(); const abort = () => controller.abort();
     signal?.addEventListener('abort', abort, { once: true }); if (signal?.aborted) controller.abort();
     const timer = setTimeout(abort, 15000);
     try {
       const response = await this.request(url.toString(), { method: 'GET', headers: { 'x-goog-api-key': this.key }, redirect: 'error', signal: controller.signal });
       if (!response.ok) throw new FileSearchError(response.status === 429 ? 429 : 502, response.status === 429 ? 'File Searchの利用制限に達しました。時間を置いて再試行してください。' : 'File Searchに接続できません。サーバー側の認証と権限を確認してください。');
-      const raw: unknown = await response.json();
+      const data: unknown = await response.json();
+      if (expectedName && (!object(data) || data.name !== expectedName || 'error' in data)) throw new Error('Store mismatch');
+      const raw: unknown = expectedName ? { fileSearchStores: [data] } : data;
       if (!object(raw) || 'error' in raw || (raw.fileSearchStores !== undefined && !Array.isArray(raw.fileSearchStores))) throw new Error('Invalid response');
       const stores = (raw.fileSearchStores ?? []) as unknown[];
       const page = parseFileSearchPage({ connectionId, checkedAt: new Date().toISOString(),

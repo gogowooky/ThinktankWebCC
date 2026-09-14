@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { FileSearchClient } from '../../services/FileSearchClient';
 import type { FileSearchPage, FileSearchStatus } from '../../../server/services/fileSearchRecord';
 import './BundleExternal.css';
+import type { TTVault } from '../../models/TTVault';
+import { BundleFileSearchBinding } from './BundleFileSearchBinding';
 const client = new FileSearchClient();
-export function FileSearchConnection() {
+export function FileSearchConnection({ vault, bundleId }: { vault?: TTVault; bundleId?: string }) {
   const [status, setStatus] = useState<FileSearchStatus>(); const [page, setPage] = useState<FileSearchPage>();
   const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
   const pending = useRef<AbortController>();
@@ -28,7 +30,7 @@ export function FileSearchConnection() {
     await run(async signal => {
       const result = await client.listStores(connectionId, next ? page?.nextPageToken ?? '' : '', signal);
       if (signal.aborted) return;
-      setPage(result); setMessage('File Searchからストア情報を取得しました。Bundleとの対応・資料同期は未登録です。');
+      setPage(result); setMessage('File Searchからストア情報を取得しました。登録済みの対応は下の欄で確認できます。資料の同期は行っていません。');
     });
   }
   return <section className="bundle-external" aria-label="Gemini File Search接続確認">
@@ -44,5 +46,6 @@ export function FileSearchConnection() {
       {page.nextPageToken ? <button disabled={busy} onClick={() => void list(true)}>次のストアページを取得</button> : <p>最終ページです。このページの結果だけを表示しています。</p>}
     </div>}
     {message && <p role="status">{message}</p>}
+    {vault && bundleId && <BundleFileSearchBinding vault={vault} bundleId={bundleId} status={status} page={page} />}
   </section>;
 }
