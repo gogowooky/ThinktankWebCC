@@ -13,6 +13,7 @@
 | [05 P1実装記録](05_P1実装記録.md) | 読み取り専用ContextServiceの実装・制約・検証進捗 |
 | [06 P2実装記録](06_P2実装記録.md) | Overviewの手動編集・BQ保存・競合比較と検証進捗 |
 | [07 P0〜P2統合記録](07_P0-P2統合記録.md) | Documents側への実装統合、追加修正、検証と次の段階 |
+| [08 P3実装記録](08_P3実装記録.md) | Provider境界、引用付き対話、履歴保存、既定停止と有効化手順 |
 
 ## 記述の区分
 
@@ -26,7 +27,7 @@
 1. 思考支援の中心は、資料から問いを整理し、本人が判断・行動・検証できるようにすること。
 2. Bundleを正本として扱う。名称・IDのNotebookへの変更は将来の検討事項とし、今回の実装計画には含めない。独立した内部Notebookモデルの導入も未決定である。
 3. 旧AI実行は停止済み。既存の会話とメタデータを保全し、履歴を閲覧できる。
-4. ContextServiceはP1として、手動編集可能なOverviewはP2として追加実装。実環境でのP2受け入れ確認は未完了。ConversationService、AgentService、AIProvider、NotebookLM同期は未実装。
+4. ContextServiceはP1、手動編集可能なOverviewはP2として追加実装。P3のConversationService・AIProvider・引用付き対話も追加し、既定停止。実環境でのP2・P3受け入れ確認は未完了。AgentService、NotebookLM同期は未実装。
 5. BQデータは`C:\Users\gogow\Documents\Thinktank_20260913`へ保存済みとの本人報告があり、MarkdownとJSON各5,491件の配置を確認済み。内容照合・復元確認、実環境での基本操作確認は未完了。
 6. Thinkの保存先は当面BigQueryを維持する。
 

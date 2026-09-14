@@ -1,0 +1,80 @@
+import { THINK_FIELDS, readThinkSupport, type ThinkSupportRecord, type ThinkField } from './thinkSupportRecord.js';
+
+export interface ConversationSource { thinkId: string; title: string; content: string; contentHash: string }
+export interface ConversationContext {
+  schemaVersion: 1; snapshotId: string; vaultId: string; bundleId: string; capturedAt: string;
+  scope: 'bundle-only'; quality: 'complete' | 'partial';
+  sources: ConversationSource[]; issues: string[]; manualState: ThinkSupportRecord | null;
+}
+export interface Citation { thinkId: string; quote: string; contentHash: string; start: number; end: number }
+export interface Proposal { field: ThinkField; before: string; after: string; reason: string }
+export interface ConversationAnswer { reply: string; insufficientEvidence: boolean; citations: Citation[]; proposals: Proposal[] }
+export interface ConversationTurn {
+  schemaVersion: 1; id: string; createdAt: string; question: string; context: ConversationContext;
+  answer: ConversationAnswer; provider: string; model: string;
+}
+export interface ConversationLog { schemaVersion: 1; turns: ConversationTurn[] }
+export const MAX_CONTEXT_CHARS = 120000;
+export const MAX_LOG_BYTES = 2000000;
+// BigQuery JSON columns may reorder keys; equality must not depend on serialization order.
+export function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
+  if (object(value)) return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;
+  return JSON.stringify(value) ?? 'null';
+}
+export function object(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+export function text(value: unknown, max: number, empty = false): value is string {
+  return typeof value === 'string' && value.length <= max && (empty || value.trim().length > 0);
+}
+export function id(value: unknown): value is string { return typeof value === 'string' && /^[A-Za-z0-9_-]{1,200}$/.test(value); }
+function date(value: unknown): value is string { return text(value, 40) && Number.isFinite(Date.parse(value)); }
+export function validateContext(value: unknown): asserts value is ConversationContext {
+  if (!object(value) || value.schemaVersion !== 1 || !id(value.snapshotId) || !id(value.vaultId) || !id(value.bundleId)
+    || !date(value.capturedAt) || value.scope !== 'bundle-only' || !['complete', 'partial'].includes(String(value.quality))
+    || !Array.isArray(value.sources) || value.sources.length > 300 || !Array.isArray(value.issues)
+    || value.issues.length > 1000 || !value.issues.every(i => text(i, 1000))) throw new Error('参照資料の形式が不正です。');
+  let length = 0;
+  const ids = new Set<string>();
+  for (const s of value.sources) {
+    if (!object(s) || !id(s.thinkId) || ids.has(s.thinkId) || !text(s.title, 2000, true)
+      || !text(s.content, MAX_CONTEXT_CHARS, true) || typeof s.contentHash !== 'string' || !/^[a-f0-9]{64}$/.test(s.contentHash)) throw new Error('資料または本文ハッシュが不正です。');
+    ids.add(s.thinkId); length += s.content.length;
+  }
+  if (length > MAX_CONTEXT_CHARS) throw new Error('資料が大きすぎます。Bundleを分けてください。');
+  if (value.manualState !== null) {
+    if (!object(value.manualState)) throw new Error('手動記録の形式が不正です。');
+    readThinkSupport(value.manualState);
+  }
+}
+export function validateTurn(value: unknown): asserts value is ConversationTurn {
+  if (!object(value) || value.schemaVersion !== 1 || !id(value.id) || !date(value.createdAt) || !text(value.question, 4000)
+    || !text(value.provider, 100) || !text(value.model, 200)) throw new Error('会話の形式が不正です。');
+  validateContext(value.context);
+  const a = value.answer;
+  if (!object(a) || !text(a.reply, 20000) || typeof a.insufficientEvidence !== 'boolean' || !Array.isArray(a.citations)
+    || a.citations.length > 30 || !Array.isArray(a.proposals) || a.proposals.length > 7) throw new Error('応答の形式が不正です。');
+  for (const c of a.citations) {
+    if (!object(c)) throw new Error('引用が不正です。');
+    const source = value.context.sources.find(s => s.thinkId === c.thinkId);
+    if (!source || !text(c.quote, 2000) || c.contentHash !== source.contentHash || !Number.isInteger(c.start) || !Number.isInteger(c.end)
+      || (c.start as number) < 0 || c.end !== (c.start as number) + c.quote.length
+      || source.content.slice(c.start as number, c.end as number) !== c.quote) throw new Error('引用が資料本文と一致しません。');
+  }
+  if (!a.insufficientEvidence && !a.citations.length) throw new Error('根拠が示されていません。');
+  const fields = new Set<string>();
+  for (const p of a.proposals) {
+    if (!object(p) || !THINK_FIELDS.includes(p.field as ThinkField) || fields.has(String(p.field))
+      || !text(p.before, 10000, true) || !text(p.after, 10000) || !text(p.reason, 2000)
+      || p.before !== (value.context.manualState?.values[p.field as ThinkField] ?? '')) throw new Error('変更提案の基準が不正です。');
+    fields.add(String(p.field));
+  }
+}
+export function readConversationLog(value: unknown): ConversationLog {
+  if (value == null) return { schemaVersion: 1, turns: [] };
+  if (!object(value) || value.schemaVersion !== 1 || !Array.isArray(value.turns) || value.turns.length > 100) throw new Error('未対応の会話履歴です。既存記録を保持します。');
+  value.turns.forEach(validateTurn);
+  if (new Set(value.turns.map(t => t.id)).size !== value.turns.length) throw new Error('会話IDが重複しています。');
+  return value as unknown as ConversationLog;
+}
