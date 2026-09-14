@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.8 fix: AiChatView・SupportChatのCSS調整（右パディング縮小・コンテキスト欄の最大高さ制限）
+- 日付: 2026-09-14
+- コミット番号: e0bf0c1
+
+AiChatView: 右パディングを12px→8pxに縮小（スクロールバーとの余白過多を解消）。
+SupportChat context欄: flex:0 0 auto → flex:0 1 auto＋max-height:45%＋overflow-y:autoに変更し、
+決定事項が伸びて会話ログを押し出す問題を解消。
+
 ### v1.5.7 feat: P6外部資料連携の基盤実装（externalRecord・FileSearchProvider・BundleExternal）
 - 日付: 2026-09-14
 - コミット番号: 65efc13

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "65efc13",
-  "commitDateTime": "2026-09-14-224724",
-  "commitMessage": "feat: P6外部資料連携の基盤実装（externalRecord・FileSearchProvider・BundleExternal）"
+  "commitId": "e0bf0c1",
+  "commitDateTime": "2026-09-14-225649",
+  "commitMessage": "fix: AiChatView・SupportChatのCSS調整（右パディング縮小・コンテキスト欄の最大高さ制限）"
 }
