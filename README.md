@@ -7,6 +7,18 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.3 feat: AI-neutral基盤への移行とP2 Overview・ThinkSupport記録の整備
+- 日付: 2026-09-14
+- コミット番号: e0ab98f
+
+SupportChat・ChatApiService・ContextServiceをAI-neutral構成へリファクタした。
+BundleThoughtSupport・ContextSnapshotViewを新設し、OverviewにBundleコンテキスト表示を追加。
+chatRoutes・bigqueryRoutes・BigQueryServiceに思考支援記録API（thinkSupportRecord）を追加。
+useAiProviderAvailability・TTVaultの整理と、各パネル（Overview/ReThink/Thinktank/Workout）の
+TabBar・Areaを更新。legacy/archive/testファイルを保存。
+docs/ThinkSupport/に07_P0-P2統合記録と docs/AI_NEUTRAL_MIGRATION.md を追加。
+変更: 46ファイル（1,949行追加 / 583行削除）。
+
 ### v1.5.2 docs: 思考支援の設計文書群（docs/ThinkSupport/）を追加
 - 日付: 2026-09-13
 - コミット番号: 99dfe78
