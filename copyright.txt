@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "e0bf0c1",
-  "commitDateTime": "2026-09-14-225649",
-  "commitMessage": "fix: AiChatView・SupportChatのCSS調整（右パディング縮小・コンテキスト欄の最大高さ制限）"
+  "commitId": "d9b0f29",
+  "commitDateTime": "2026-09-14-230627",
+  "commitMessage": "feat: P3 AIChatへの資料付き対話接続とSupportConversation追加"
 }

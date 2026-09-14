@@ -7,6 +7,16 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.9 feat: P3 AIChatへの資料付き対話接続とSupportConversation追加
+- 日付: 2026-09-14
+- コミット番号: d9b0f29
+
+各パネル（Thinktank/Overview/Workout/ReThink）のAIChatに「資料に基づく対話」「旧会話の履歴」切替を追加。
+SupportConversation.tsxで新対話入口（Bundle選択・送信範囲確認）を実装（SupportConversation.css/test）。
+BundleConversation.tsxを更新し、SupportConversationとの接続を整備。
+SupportChat.tsxに切替ロジックを追加、AiChatView/SupportChat/ChatMediaのCSS微調整。
+docs/ThinkSupport/13_P3_AIChat接続.mdを追加。変更: 12ファイル（+179行）。
+
 ### v1.5.8 fix: AiChatView・SupportChatのCSS調整（右パディング縮小・コンテキスト欄の最大高さ制限）
 - 日付: 2026-09-14
 - コミット番号: e0bf0c1
