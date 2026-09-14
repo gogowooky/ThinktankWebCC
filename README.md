@@ -7,6 +7,18 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.4 feat: P3引用付きテキスト対話の基盤実装（AIProvider・ConversationService・BundleConversation）
+- 日付: 2026-09-14
+- コミット番号: 0c9785f
+
+AIProviderインターフェイスと停止Provider・OpenAIアダプターを追加（server/services/AIProvider.ts）。
+ConversationServiceとconversationRecordで会話・引用・提案の保存を実装。
+会話ルート /api/think-support/conversations を既存認証内側に登録（conversationRoutes.ts）。
+OverviewにBundleConversation UIを追加（BundleConversation.tsx/css）。
+src/services/ConversationService.tsでクライアント側サービスを実装。
+実API送信・AIキー有効化・デプロイは未実施（停止Providerのまま）。
+docs/ThinkSupport/08_P3実装記録.mdを追加。変更: 15ファイル（+788行）。
+
 ### v1.5.3 feat: AI-neutral基盤への移行とP2 Overview・ThinkSupport記録の整備
 - 日付: 2026-09-14
 - コミット番号: e0ab98f

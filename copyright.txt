@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "e0ab98f",
-  "commitDateTime": "2026-09-14-150502",
-  "commitMessage": "feat: AI-neutral基盤への移行とP2 Overview・ThinkSupport記録の整備"
+  "commitId": "0c9785f",
+  "commitDateTime": "2026-09-14-183200",
+  "commitMessage": "feat: P3引用付きテキスト対話の基盤実装（AIProvider・ConversationService・BundleConversation）"
 }
