@@ -1,6 +1,8 @@
 .bundle-conversation { border-top: 1px solid var(--border-color, #888); margin-top: 20px; padding-top: 12px; overflow-wrap: anywhere; }
 .bundle-conversation label { display: block; margin: 10px 0; }
-.bundle-conversation textarea { display: block; width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; color: inherit; background: var(--bg-primary, transparent); border: 1px solid var(--border-color, #888); padding: 8px; }
+/* 地色・文字色は .support-conversation の select と同じ理由で明るいチャット面に合わせる
+   （--bg-primary は暗い地色向けで、文字色の濃いパネルでは黒地に黒文字になる）。 */
+.bundle-conversation textarea { display: block; width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; color: #1a2c5b; background: rgba(57, 73, 171, 0.04); border: 1px solid rgba(57, 73, 171, 0.25); border-radius: 4px; padding: 8px; }
 .bundle-conversation pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
 .bundle-conversation article { margin: 20px 0; padding: 12px; border: 1px solid var(--border-color, #888); border-radius: 8px; }
 .bundle-conversation article p { white-space: pre-wrap; }
