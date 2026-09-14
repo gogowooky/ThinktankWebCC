@@ -7,6 +7,18 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.10 feat: P6 BundleとFile Searchストアの対応管理を追加（FileSearchBindingService）
+- 日付: 2026-09-14
+- コミット番号: 6016010
+
+FileSearchBindingServiceとfileSearchBindingRecordでBundle・Vault・ストアIDの対応を保存・変更・解除。
+BundleFileSearchBinding UIを追加し、BundleStatusViewに統合。
+FileSearchProvider・fileSearchRoutesにストア対応APIを追加。
+FileSearchClientにバインディング操作メソッドを追加。
+FileSearchConnection・BundleExternal・SupportChat/SupportConversationを更新。
+資料アップロード・検索・外部ストア作成削除は未実装。
+docs/ThinkSupport/14_P6ストア対応の保存.mdを追加。変更: 19ファイル（+404行）。
+
 ### v1.5.9 feat: P3 AIChatへの資料付き対話接続とSupportConversation追加
 - 日付: 2026-09-14
 - コミット番号: d9b0f29

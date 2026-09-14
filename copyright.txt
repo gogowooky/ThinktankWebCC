@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.9",
+  "version": "1.5.10",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "d9b0f29",
-  "commitDateTime": "2026-09-14-230627",
-  "commitMessage": "feat: P3 AIChatへの資料付き対話接続とSupportConversation追加"
+  "commitId": "6016010",
+  "commitDateTime": "2026-09-14-232505",
+  "commitMessage": "feat: P6 BundleとFile Searchストアの対応管理を追加（FileSearchBindingService）"
 }
