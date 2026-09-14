@@ -97,6 +97,38 @@ export class BigQueryService {
     return `\`${this.projectId}.${DATASET_ID}.${TABLE_ID}\``;
   }
 
+  /** Insertion and the applied marker commit together, so retries cannot create orphan artifacts. */
+  async applyAgentArtifact(bundleId: string, expectedVersion: string, metadata: object, updatedAt: string,
+    artifact: { thinkId: string; title: string; body: string; metadata: object }): Promise<BqResult<boolean>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    if (!validateVaultKey(bundleId, 'bundle').ok || !validateVaultKey(artifact.thinkId, 'memo').ok || bundleId === artifact.thinkId) return { success: false, error: 'invalid artifact id' };
+    try {
+      const [table] = await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).getMetadata();
+      const type = table.schema?.fields?.find((f: { name?: string }) => f.name === 'metadata')?.type;
+      if (type !== 'STRING' && type !== 'JSON') return { success: false, error: 'unsupported metadata column' };
+      const [rows] = await this.bigquery.query({
+        query: `DECLARE changed INT64;
+          BEGIN TRANSACTION;
+          UPDATE ${this.tbl} SET metadata = ${type === 'JSON' ? 'PARSE_JSON(@metadata)' : '@metadata'}, updated_at = TIMESTAMP(@updatedAt)
+          WHERE file_id = @bundleId AND category = 'bundle' AND COALESCE(is_deleted, FALSE) = FALSE
+            AND updated_at = TIMESTAMP(@expectedVersion)
+            AND (SELECT COUNT(*) FROM ${this.tbl} WHERE file_id = @bundleId) = 1
+            AND NOT EXISTS (SELECT 1 FROM ${this.tbl} WHERE file_id = @artifactId);
+          SET changed = @@row_count;
+          IF changed = 1 THEN
+            INSERT INTO ${this.tbl} (file_id, file_type, category, title, content, keywords, related_ids, size_bytes, is_deleted, created_at, updated_at, metadata)
+            VALUES (@artifactId, 'md', 'memo', @title, @body, '', '', @size, FALSE, TIMESTAMP(@updatedAt), TIMESTAMP(@updatedAt), ${type === 'JSON' ? 'PARSE_JSON(@artifactMetadata)' : '@artifactMetadata'});
+          END IF;
+          COMMIT TRANSACTION;
+          SELECT changed;`,
+        params: { bundleId, expectedVersion, metadata: JSON.stringify(metadata), updatedAt, artifactId: artifact.thinkId,
+          title: `# ${artifact.title}`, body: artifact.body, size: Buffer.byteLength(`# ${artifact.title}\n${artifact.body}`), artifactMetadata: JSON.stringify(artifact.metadata) },
+        types: { bundleId: 'STRING', expectedVersion: 'STRING', metadata: 'STRING', updatedAt: 'STRING', artifactId: 'STRING', title: 'STRING', body: 'STRING', size: 'INT64', artifactMetadata: 'STRING' },
+      });
+      return { success: true, data: Number(rows[0]?.changed) === 1 };
+    } catch (error) { return { success: false, error: String(error) }; }
+  }
+
   private async ensureTableExists(): Promise<void> {
     if (!this.bigquery) return;
     const dataset = this.bigquery.dataset(DATASET_ID);
