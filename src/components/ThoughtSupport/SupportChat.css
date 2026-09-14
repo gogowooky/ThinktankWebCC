@@ -25,9 +25,11 @@
 .support-chat *::-webkit-scrollbar-thumb { background:var(--ai-chat-user-bg); border-radius:3px; }
 
 /* 相談のヘッダー。引き継ぎ・処置結果・エラー・再試行操作などを載せる。
-   内側にスクロール枠を作ると右辺にスクロールバーが出るため高さ制限は持たない。 */
-/* 地色は .support-chat から継ぐ。ここで別指定すると会話ログと色がずれる */
-.support-chat__context { padding:10px 12px; display:flex; flex-direction:column; gap:5px; flex:0 0 auto; background:transparent; border-bottom:1px solid var(--border-color, rgba(57, 73, 171, 0.25)); font-size:calc(12px * var(--tt-font-scale, 1)); overflow-wrap:anywhere; }
+   決定事項などが伸びると会話ログを押し出して読めなくなるので、エリアの45%で頭打ちにし、
+   超えた分は内側でスクロールさせる（スクロールバーの配色は上のエリア共通指定に従う）。
+   地色は .support-chat から継ぐ。ここで別指定すると会話ログと色がずれる。 */
+/* 右の余白だけ詰めているのは、スクロールバーとの間が空きすぎて本文が狭くなるため */
+.support-chat__context { padding:10px 8px 10px 12px; display:flex; flex-direction:column; gap:5px; flex:0 1 auto; max-height:45%; overflow-y:auto; background:transparent; border-bottom:1px solid var(--border-color, rgba(57, 73, 171, 0.25)); font-size:calc(12px * var(--tt-font-scale, 1)); overflow-wrap:anywhere; }
 /* 引き継ぎ・通知・エラー等が何も無いときは、余白だけの帯を残さない */
 .support-chat__context:empty { display:none; }
 
