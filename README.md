@@ -7,6 +7,17 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.5 feat: P4進行・到達状態と再開支援の基盤実装（progressRecord・BundleProgress）
+- 日付: 2026-09-14
+- コミット番号: 29c7eeb
+
+到達状態を検討/意思決定/実行/検証の4項目で記録するprogressRecord.tsを追加。
+ProgressServiceとprogressRoutesで保存・取得APIを実装。
+OverviewにBundleProgress UIを追加（BundleProgress.tsx/css）。
+BundleConversation・BundleStatusViewを更新。
+実データ移行・外部AI送信・デプロイは未実施。
+docs/ThinkSupport/09_P4実装記録.mdを追加。変更: 15ファイル（+475行）。
+
 ### v1.5.4 feat: P3引用付きテキスト対話の基盤実装（AIProvider・ConversationService・BundleConversation）
 - 日付: 2026-09-14
 - コミット番号: 0c9785f

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "0c9785f",
-  "commitDateTime": "2026-09-14-183200",
-  "commitMessage": "feat: P3引用付きテキスト対話の基盤実装（AIProvider・ConversationService・BundleConversation）"
+  "commitId": "29c7eeb",
+  "commitDateTime": "2026-09-14-185917",
+  "commitMessage": "feat: P4進行・到達状態と再開支援の基盤実装（progressRecord・BundleProgress）"
 }
