@@ -7,6 +7,18 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.6 feat: P5 AgentServiceとBundle内資料ジョブ処理の基盤実装（AgentService・BundleAgent）
+- 日付: 2026-09-14
+- コミット番号: 0c56044
+
+BundleメタデータのthinkAgentJobs領域にジョブを保存するagentRecord.tsを追加。
+AgentServiceで要約・比較ジョブの登録・実行・中断・再試行・成果物管理を実装。
+agentRoutesで /api/think-support/agent を既存認証内側に登録。
+OverviewにBundleAgent UIを追加（BundleAgent.tsx/css）。
+BigQueryServiceにAgent向けBQ書込を追加。
+外部検索・NotebookLM同期・音声・実API呼出しは未実施。
+docs/ThinkSupport/10_P5実装記録.mdを追加。変更: 16ファイル（+739行）。
+
 ### v1.5.5 feat: P4進行・到達状態と再開支援の基盤実装（progressRecord・BundleProgress）
 - 日付: 2026-09-14
 - コミット番号: 29c7eeb

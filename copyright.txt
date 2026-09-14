@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "29c7eeb",
-  "commitDateTime": "2026-09-14-185917",
-  "commitMessage": "feat: P4進行・到達状態と再開支援の基盤実装（progressRecord・BundleProgress）"
+  "commitId": "0c56044",
+  "commitDateTime": "2026-09-14-221126",
+  "commitMessage": "feat: P5 AgentServiceとBundle内資料ジョブ処理の基盤実装（AgentService・BundleAgent）"
 }
