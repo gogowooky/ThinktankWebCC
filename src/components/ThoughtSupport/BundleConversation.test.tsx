@@ -34,6 +34,14 @@ it('makes no request on display and cannot generate when disabled', async () => 
   await click('資料・履歴・接続状態を確認'); await input('質問');
   expect(button('質問を送信').disabled).toBe(true); expect(api.generate).not.toHaveBeenCalled(); expect(host.textContent).toContain('停止中');
 });
+it('keeps drafts separate between Overview and AIChat for the same Bundle', async () => {
+  await show(); await input('Overviewの質問');
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" draftScope="aichat:Thinktank:panel" onOpen={vi.fn()} />));
+  expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe(''); await input('AIChatの質問');
+  await show(); expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Overviewの質問');
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" draftScope="aichat:Thinktank:panel" onOpen={vi.fn()} />));
+  expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('AIChatの質問'); expect(api.generate).not.toHaveBeenCalled();
+});
 it('prepares a progress review without sending or overwriting an existing question', async () => {
   await show(); await click('進行を見直す質問を入力');
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toContain('本人の完了状態は確定しない');

@@ -1,0 +1,9 @@
+/* height:100% は、各パネルの chat-body（display:block の flex アイテム）の中でも
+   高さを確定させるために要る。flex:1 は親が flex のときしか効かず、高さが auto のままだと
+   中の .support-chat（height:100%）も auto になり、引き継ぎヘッダーの max-height も
+   会話ログのスクロール枠も成立せず、スクロールバーが消える。 */
+.support-chat-host { display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; overflow: hidden; }
+.support-chat-host > nav { display: flex; gap: 8px; padding: 8px; flex-wrap: wrap; flex-shrink: 0; }
+.support-chat-host > nav button[aria-pressed=true] { font-weight: bold; border-bottom: 2px solid currentColor; }
+.support-conversation { flex: 1; min-height: 0; overflow: auto; padding: 12px; overflow-wrap: anywhere; }
+.support-conversation select { display: block; max-width: 100%; margin: 8px 0; color: inherit; background: var(--bg-primary, transparent); }

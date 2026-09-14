@@ -11,7 +11,7 @@ interface Draft { question: string; pending?: ConversationTurn }
 const drafts = new WeakMap<TTVault, Map<string, Draft>>();
 const vaultKeys = new WeakMap<TTVault, number>();
 let nextVaultKey = 0;
-function getDraft(vault: TTVault, bundleId: string) {
+function getDraft(vault: TTVault, bundleId: string, draftScope: string) {
   let map = drafts.get(vault);
   if (!map) {
     map = new Map(); drafts.set(vault, map);
@@ -20,8 +20,9 @@ function getDraft(vault: TTVault, bundleId: string) {
       if ([...records.values()].some(d => d.question || d.pending)) { event.preventDefault(); event.returnValue = ''; }
     });
   }
-  let draft = map.get(bundleId);
-  if (!draft) { draft = { question: '' }; map.set(bundleId, draft); }
+  const key = JSON.stringify([bundleId, draftScope]);
+  let draft = map.get(key);
+  if (!draft) { draft = { question: '' }; map.set(key, draft); }
   return draft;
 }
 function download(turn: ConversationTurn) {
@@ -29,12 +30,13 @@ function download(turn: ConversationTurn) {
   const link = document.createElement('a'); link.href = url; link.download = `think-conversation-${turn.id}.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-export function BundleConversation(props: { vault: TTVault; bundleId: string; onOpen: (id: string) => void }) {
+interface ConversationProps { vault: TTVault; bundleId: string; onOpen: (id: string) => void; draftScope?: string }
+export function BundleConversation(props: ConversationProps) {
   if (!vaultKeys.has(props.vault)) vaultKeys.set(props.vault, ++nextVaultKey);
-  return <ConversationPanel key={`${vaultKeys.get(props.vault)}:${props.bundleId}`} {...props} />;
+  return <ConversationPanel key={JSON.stringify([vaultKeys.get(props.vault), props.bundleId, props.draftScope])} {...props} />;
 }
-function ConversationPanel({ vault, bundleId, onOpen }: { vault: TTVault; bundleId: string; onOpen: (id: string) => void }) {
-  const draft = getDraft(vault, bundleId);
+function ConversationPanel({ vault, bundleId, onOpen, draftScope = 'overview' }: ConversationProps) {
+  const draft = getDraft(vault, bundleId, draftScope);
   const [question, setQuestion] = useState(draft.question);
   const [pending, setPending] = useState(draft.pending);
   const [context, setContext] = useState<ConversationContext>();
@@ -83,6 +85,7 @@ function ConversationPanel({ vault, bundleId, onOpen }: { vault: TTVault; bundle
   async function persist(turn: ConversationTurn) {
     await client.save(turn);
     // Update only the dialog state: BQ's full-record version remains conservative in the editor.
+    if (draft.pending?.id !== turn.id) return;
     draft.pending = undefined; draft.question = '';
     if (alive.current) {
       setPending(undefined); setQuestion(''); setConfirmed(false); setContext(undefined);
@@ -133,7 +136,7 @@ function ConversationPanel({ vault, bundleId, onOpen }: { vault: TTVault; bundle
       <label><input type="checkbox" checked={confirmed} disabled={!context || !!busy || !status?.enabled || !!pending}
         onChange={e => setConfirmed(e.target.checked)} />表示した範囲をAIへ送信することを確認しました</label>
       <p><button type="button" disabled={!status?.enabled || !context || !loaded || !confirmed || !question.trim() || !!busy || !!pending} onClick={() => void send()}>質問を送信</button>{' '}
-        {busy === '回答を生成しています…' && <button type="button" onClick={() => controller.current?.abort()}>応答を中断</button>}</p>
+        {busy === '回答を生成しています…' && <button type="button" data-conversation-abort onClick={() => controller.current?.abort()}>応答を中断</button>}</p>
       {busy && <p role="status">{busy}</p>}
       {message && <p role="status">{message}</p>}
       {pending && <div role="status"><p>回答は未保存です。保存の再試行はAIを再実行しません。</p>
@@ -152,7 +155,7 @@ function ConversationPanel({ vault, bundleId, onOpen }: { vault: TTVault; bundle
         {turn.answer.proposals.map(p => <section key={p.field} aria-label={`${CONTEXT_LABELS[p.field]}の変更提案`}>
           <h4>AIの変更提案：{CONTEXT_LABELS[p.field]}（未採用）</h4><p>理由：{p.reason}</p>
           <p>参照時点の記録：{p.before || '未記録'}</p><p>提案：{p.after}</p>
-          <p>採用する場合は上の手動入力で内容と出典を確認し、本人の記録として保存してください。</p>
+          <p>採用する場合はOverviewのBundle状況にある手動入力で内容と出典を確認し、本人の記録として保存してください。</p>
         </section>)}
         <details><summary>参照Snapshotと回答を確認</summary><pre>{JSON.stringify(turn, null, 2)}</pre></details>
         <button type="button" onClick={() => download(turn)}>この会話をJSONで書き出す</button>

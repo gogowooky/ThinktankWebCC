@@ -4,6 +4,8 @@ import type { TTVault } from '../../models/TTVault';
 import { AiChatLog, type AiChatViewRef, type AiModelSelectorProps } from '../ThinktankPanel/AiChatView';
 import { supportMessages, supportRecord, type SupportPanel } from '../../services/thoughtSupport';
 import './SupportChat.css';
+import './SupportConversation.css';
+import { SupportConversation } from './SupportConversation';
 
 export interface SupportChatRef extends AiChatViewRef { abortStreaming: () => void; save: () => void }
 interface Props {
@@ -15,8 +17,34 @@ interface Props {
   pane?: boolean;
 }
 
-/** Read-only compatibility view. No AI effects, saves, or transcript migration. */
 export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportChat(props, ref) {
+  const [choice, setChoice] = useState<{ selectedId: string; view: 'history' | 'conversation' }>();
+  const view = choice?.selectedId === props.selectedId ? choice.view : props.selectedId ? 'history' : 'conversation';
+  const legacy = useRef<SupportChatRef>(null);
+  const root = useRef<HTMLDivElement>(null);
+  const callbacks = useRef(props); callbacks.current = props;
+  useEffect(() => {
+    if (view === 'conversation') { callbacks.current.onMessages([]); callbacks.current.onWaiting(false); }
+  }, [view]);
+  useImperativeHandle(ref, () => ({
+    focus: () => view === 'history' ? legacy.current?.focus() : root.current?.querySelector<HTMLElement>('textarea, select')?.focus(),
+    scrollToPrevUser: () => { if (view === 'history') legacy.current?.scrollToPrevUser(); },
+    scrollToNextUser: () => { if (view === 'history') legacy.current?.scrollToNextUser(); },
+    abortStreaming: () => { root.current?.querySelector<HTMLButtonElement>('[data-conversation-abort]')?.click(); },
+    save: () => {},
+  }), [view]);
+  const suggested = supportRecord(props.vault.GetThink(props.selectedId)).bundleId || props.bundleId;
+  const scope = `aichat:${props.panelName}:${props.pane ? props.selectedId : 'panel'}`;
+  return <div ref={root} className="support-chat-host">
+    <nav aria-label="AIChatの表示"><button aria-pressed={view === 'conversation'} onClick={() => setChoice({ selectedId: props.selectedId, view: 'conversation' })}>資料に基づく対話</button>
+      <button aria-pressed={view === 'history'} onClick={() => setChoice({ selectedId: props.selectedId, view: 'history' })}>旧会話の履歴</button></nav>
+    {view === 'history' ? <LegacySupportChat ref={legacy} {...props} />
+      : <SupportConversation key={scope} vault={props.vault} suggestedBundleId={suggested} draftScope={scope} />}
+  </div>;
+});
+
+/** Keep archived transcripts independent of the new Bundle conversation's writes. */
+const LegacySupportChat = forwardRef<SupportChatRef, Props>(function LegacySupportChat(props, ref) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
