@@ -42,8 +42,9 @@
   cursor: not-allowed;
 }
 
-/* AiChatView が残りの領域を占有 */
-.chat-media > .ai-chat-view {
+/* チャット本体が残りの領域を占有（閲覧専用の SupportChat / 旧 AiChatView 共通）*/
+.chat-media > .ai-chat-view,
+.chat-media > .support-chat {
   flex: 1;
   min-height: 0;
 }

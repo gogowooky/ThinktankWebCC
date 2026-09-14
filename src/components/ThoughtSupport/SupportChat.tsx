@@ -70,7 +70,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
       {think?.Metadata.supportPendingEffects && <span>未反映の旧AI処理が保存されています。自動実行は停止しています。</span>}
       {error && <><span role="alert">{error}</span><button onClick={() => setRevision(n => n + 1)}>読み込みを再試行</button></>}
     </div>
-    <div ref={log} tabIndex={0} style={{ flex: 1, minHeight: 0, overflow: 'auto' }} aria-label="会話履歴">
+    <div ref={log} className="support-chat__log" tabIndex={0} style={{ flex: 1, minHeight: 0, overflow: 'auto' }} aria-label="会話履歴">
       <AiChatLog messages={messages} isWaiting={false} emptyText="一覧から過去の会話を選択してください。" />
     </div>
   </div>;

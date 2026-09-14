@@ -1,5 +1,12 @@
 /* AiChatView.css — CLI 風 AI チャット（ライトテーマ） */
 
+/* ユーザー発言ブロックの地色。スクロールバーのつまみと同じ色を使うため、
+   SupportChat.css からも参照できるよう :root に置く。
+   半透明のまま共有することで、下地が変わっても発言ブロックと同じ見え方になる。 */
+:root {
+  --ai-chat-user-bg: rgba(27, 94, 32, 0.07);
+}
+
 .ai-chat-view {
   display: flex;
   flex-direction: column;
@@ -22,14 +29,16 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* 溝はチャットエリアの地色そのもの（transparent で下地を透かす）、
+     つまみはユーザー発言ブロックと同じ色にする */
   scrollbar-width: thin;
-  scrollbar-color: rgba(57, 73, 171, 0.2) transparent;
+  scrollbar-color: var(--ai-chat-user-bg) transparent;
 }
 
 .ai-chat-view__log::-webkit-scrollbar { width: 5px; }
 .ai-chat-view__log::-webkit-scrollbar-track { background: transparent; }
 .ai-chat-view__log::-webkit-scrollbar-thumb {
-  background: rgba(57, 73, 171, 0.2);
+  background: var(--ai-chat-user-bg);
   border-radius: 3px;
 }
 
@@ -56,7 +65,7 @@
   display: flex;
   align-items: baseline;
   gap: 7px;
-  background: rgba(27, 94, 32, 0.07);
+  background: var(--ai-chat-user-bg);
   border-left: 2px solid rgba(27, 94, 32, 0.35);
   padding: 4px 8px 4px 6px;
   border-radius: 0 3px 3px 0;

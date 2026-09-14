@@ -90,10 +90,13 @@
   flex-shrink: 0;
 }
 
-/* AiChatView がツールバー＋メモ選択の残りの高さを占有する */
+/* AiChatView がツールバー＋メモ選択の残りの高さを占有する。
+   このエリアだけ親が濃いリボン色なので、他パネル（.thinktank-area 等が
+   --*-area-bg を敷く）と同じ地色をここで明示し、会話の文字色と合わせる。 */
 .workout-setting-area__chat-body {
   flex: 1;
   min-height: 0;
+  background: var(--workout-area-bg);
 }
 
 /* ── 本体 ──────────────────────────────────────────── */

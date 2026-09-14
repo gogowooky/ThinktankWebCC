@@ -11,6 +11,8 @@ import { ContextService } from '../../services/ContextService';
 import { BundleConversation } from '../ThoughtSupport/BundleConversation';
 import { BundleProgress } from '../ThoughtSupport/BundleProgress';
 import { BundleAgent } from '../ThoughtSupport/BundleAgent';
+import { BundleExternal } from '../ThoughtSupport/BundleExternal';
+import { FileSearchConnection } from '../ThoughtSupport/FileSearchConnection';
 
 interface Props { vault: TTVault; bundleId: string; onOpen: (id: string) => void }
 export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(function BundleStatusView({ vault, bundleId, onOpen }, ref) {
@@ -54,6 +56,8 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
     <BundleProgress vault={vault} bundleId={bundleId} onOpen={onOpen} />
     <BundleConversation vault={vault} bundleId={bundleId} onOpen={onOpen} />
     <BundleAgent vault={vault} bundleId={bundleId} onOpen={onOpen} />
+    <BundleExternal vault={vault} bundleId={bundleId} />
+    <FileSearchConnection />
     {error ? <p role="alert">{error}</p> : loading ? <p role="status">記録を確認しています…</p> : <>
       <p className="bundle-status__summary">管理する相談 {chats.length}件 · その他の記録 {resources.length}件</p>
       {chats.length === 0 && <p>過去の管理対象の会話はありません。課題の概要は上の欄に手動で記録できます。</p>}

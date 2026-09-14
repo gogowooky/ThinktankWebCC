@@ -18,6 +18,8 @@ import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
 import { createConversationRoutes } from './routes/conversationRoutes.js';
 import { createProgressRoutes } from './routes/progressRoutes.js';
+import { createExternalRoutes } from './routes/externalRoutes.js';
+import { createFileSearchRoutes } from './routes/fileSearchRoutes.js';
 import { createAgentRoutes } from './routes/agentRoutes.js';
 import { createSystemRoutes, createPublicSystemRoutes } from './routes/systemRoutes.js';
 import { vectorStoreService }     from './services/VectorStoreService.js';
@@ -71,6 +73,8 @@ app.use('/api/drive', createDriveRoutes());
 app.use('/api/chat', createChatRoutes());
 app.use('/api/think-support/conversations', createConversationRoutes());
 app.use('/api/think-support/progress', createProgressRoutes());
+app.use('/api/think-support/external', createExternalRoutes());
+app.use('/api/think-support/file-search', createFileSearchRoutes());
 app.use('/api/think-support/agents', createAgentRoutes());
 
 // システム関連API (DoOnCursorPos 用ローカルファイル起動)

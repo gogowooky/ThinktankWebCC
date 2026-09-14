@@ -1,9 +1,33 @@
-.support-chat { display:flex; flex-direction:column; height:100%; min-height:0; width:100%; }
+/* 引き継ぎヘッダーと会話ログは1枚の地色に載る。ログ本体（AiChatLog）は
+   .ai-chat-view のライトテーマ配色（濃い文字色）だけを持ち、地色は持たないので、
+   ここで敷かないと親の地色（Workout設定エリアの濃いリボン色など）に
+   濃い文字が載って読めなくなる。文字色も .ai-chat-view と同じものを明示する
+   （body の --text-primary は暗い地色向けの明るい色で、この地色には合わない）。 */
+.support-chat {
+  display:flex; flex-direction:column; height:100%; min-height:0; width:100%;
+  background:var(--support-area-bg, #f5f7fa);
+  color:#2c3e6f;
+}
 .support-chat > .ai-chat-view { flex:1; min-height:0; }
+
+/* 会話履歴エリアのスクロールバー。溝はチャットエリアの地色（transparent で下地を透かす）、
+   つまみはユーザー発言ブロックと同じ色にする。
+   index.css のグローバル指定は暗い地色向け（溝 --bg-secondary／つまみ --border）で、
+   明るいこのエリアでは黒帯に見えるため、引き継ぎヘッダー（.support-chat__context）も
+   会話ログ（.support-chat__log）も取りこぼさないよう子孫までまとめて上書きする。 */
+.support-chat,
+.support-chat * { scrollbar-width:thin; scrollbar-color:var(--ai-chat-user-bg) transparent; }
+.support-chat::-webkit-scrollbar,
+.support-chat *::-webkit-scrollbar { width:5px; height:5px; }
+.support-chat::-webkit-scrollbar-track,
+.support-chat *::-webkit-scrollbar-track { background:transparent; }
+.support-chat::-webkit-scrollbar-thumb,
+.support-chat *::-webkit-scrollbar-thumb { background:var(--ai-chat-user-bg); border-radius:3px; }
 
 /* 相談のヘッダー。引き継ぎ・処置結果・エラー・再試行操作などを載せる。
    内側にスクロール枠を作ると右辺にスクロールバーが出るため高さ制限は持たない。 */
-.support-chat__context { padding:10px 12px; display:flex; flex-direction:column; gap:5px; flex:0 0 auto; background:var(--support-area-bg, transparent); border-bottom:1px solid var(--border-color, #555); font-size:calc(12px * var(--tt-font-scale, 1)); overflow-wrap:anywhere; }
+/* 地色は .support-chat から継ぐ。ここで別指定すると会話ログと色がずれる */
+.support-chat__context { padding:10px 12px; display:flex; flex-direction:column; gap:5px; flex:0 0 auto; background:transparent; border-bottom:1px solid var(--border-color, rgba(57, 73, 171, 0.25)); font-size:calc(12px * var(--tt-font-scale, 1)); overflow-wrap:anywhere; }
 /* 引き継ぎ・通知・エラー等が何も無いときは、余白だけの帯を残さない */
 .support-chat__context:empty { display:none; }
 
