@@ -7,6 +7,20 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.11 fix: Workout>AIChatの文字色が地色に埋もれる問題を修正
+- 日付: 2026-09-15
+- コミット番号: b6a6dcc
+
+Workoutパネルは地色がリボン色（濃色）のため PanelArea.css が明るい文字色を継がせるが、
+AIChat面だけは明るい地色（--workout-area-bg）に切り替わるため文字が読めなくなっていた。
+.support-chat-host に .support-chat と同じ文字色(#2c3e6f)を明示し、タブ（AIに相談する／
+これまでの会話）と相談ビューの双方を4パネル横断で同一配色に統一。
+あわせて SupportConversation の select と BundleConversation の textarea の地色を
+--bg-primary（暗色テーマ用 #1e2030）から AiChatView 入力欄と同じ明色系に変更し、
+文字色が濃いOverview等で黒地に黒文字になっていた逆向きの不具合も解消。
+Overview/Workout/ReThink の3パネルで文字色 rgb(44,62,111) の一致を実機確認（コントラスト比 約9:1）。
+変更: 2ファイル（+12行 -3行）。CSSのみのためサーバービルドは不要。
+
 ### v1.5.10 feat: P6 BundleとFile Searchストアの対応管理を追加（FileSearchBindingService）
 - 日付: 2026-09-14
 - コミット番号: 6016010
