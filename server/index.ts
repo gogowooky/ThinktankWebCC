@@ -17,6 +17,7 @@ import { createDriveRoutes }      from './routes/driveRoutes.js';
 import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
 import { createConversationRoutes } from './routes/conversationRoutes.js';
+import { createProgressRoutes } from './routes/progressRoutes.js';
 import { createSystemRoutes, createPublicSystemRoutes } from './routes/systemRoutes.js';
 import { vectorStoreService }     from './services/VectorStoreService.js';
 import { apiAuth, assertApiAuthConfigured } from './middleware/apiAuth.js';
@@ -68,6 +69,7 @@ app.use('/api/drive', createDriveRoutes());
 // AI チャット（Phase 14）
 app.use('/api/chat', createChatRoutes());
 app.use('/api/think-support/conversations', createConversationRoutes());
+app.use('/api/think-support/progress', createProgressRoutes());
 
 // システム関連API (DoOnCursorPos 用ローカルファイル起動)
 // ローカル専用機能であり、公開ホスティング上では意味を持たない一方で

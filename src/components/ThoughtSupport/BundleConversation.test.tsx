@@ -34,6 +34,12 @@ it('makes no request on display and cannot generate when disabled', async () => 
   await click('資料・履歴・接続状態を確認'); await input('質問');
   expect(button('質問を送信').disabled).toBe(true); expect(api.generate).not.toHaveBeenCalled(); expect(host.textContent).toContain('停止中');
 });
+it('prepares a progress review without sending or overwriting an existing question', async () => {
+  await show(); await click('進行を見直す質問を入力');
+  expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toContain('本人の完了状態は確定しない');
+  expect(api.generate).not.toHaveBeenCalled(); expect(button('進行を見直す質問を入力').disabled).toBe(true);
+  expect(button('質問を送信').disabled).toBe(true);
+});
 it('requires confirmation and persists the answer without adopting its proposals', async () => {
   await show(); await click('資料・履歴・接続状態を確認'); await input('質問');
   expect(button('質問を送信').disabled).toBe(true);

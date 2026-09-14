@@ -9,6 +9,7 @@ import './BundleStatusView.css';
 import { BundleThoughtSupport } from './BundleThoughtSupport';
 import { ContextService } from '../../services/ContextService';
 import { BundleConversation } from '../ThoughtSupport/BundleConversation';
+import { BundleProgress } from '../ThoughtSupport/BundleProgress';
 
 interface Props { vault: TTVault; bundleId: string; onOpen: (id: string) => void }
 export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(function BundleStatusView({ vault, bundleId, onOpen }, ref) {
@@ -49,6 +50,7 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
       <button onClick={() => setRetry(n => n + 1)} disabled={loading}>再読み込み</button>
     </header>
     <BundleThoughtSupport vault={vault} bundleId={bundleId} onOpen={onOpen} />
+    <BundleProgress vault={vault} bundleId={bundleId} onOpen={onOpen} />
     <BundleConversation vault={vault} bundleId={bundleId} onOpen={onOpen} />
     {error ? <p role="alert">{error}</p> : loading ? <p role="status">記録を確認しています…</p> : <>
       <p className="bundle-status__summary">管理する相談 {chats.length}件 · その他の記録 {resources.length}件</p>

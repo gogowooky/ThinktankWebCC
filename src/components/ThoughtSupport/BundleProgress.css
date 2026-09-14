@@ -1,0 +1,8 @@
+.bundle-progress { border-top: 1px solid var(--border-color, #888); padding-top: 12px; margin-top: 20px; overflow-wrap: anywhere; }
+.bundle-progress fieldset { min-width: 0; padding: 12px; }
+.bundle-progress label { display: block; margin: 10px 0; }
+.bundle-progress textarea, .bundle-progress select { display: block; width: 100%; box-sizing: border-box; font: inherit; color: inherit; background: var(--bg-primary, transparent); padding: 8px; }
+.bundle-progress textarea { min-height: 64px; }
+.bundle-progress small { display: block; }
+.bundle-progress p { white-space: pre-wrap; }
+.bundle-progress button:disabled { opacity: .5; cursor: default; }

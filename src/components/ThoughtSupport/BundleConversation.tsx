@@ -126,6 +126,10 @@ function ConversationPanel({ vault, bundleId, onOpen }: { vault: TTVault; bundle
       </div>}
       <label>今回の質問<textarea maxLength={4000} value={question} disabled={!!busy || !!pending}
         onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); setConfirmed(false); }} /></label>
+      <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
+        const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
+        draft.question = reviewQuestion; setQuestion(reviewQuestion); setConfirmed(false);
+      }}>進行を見直す質問を入力</button>
       <label><input type="checkbox" checked={confirmed} disabled={!context || !!busy || !status?.enabled || !!pending}
         onChange={e => setConfirmed(e.target.checked)} />表示した範囲をAIへ送信することを確認しました</label>
       <p><button type="button" disabled={!status?.enabled || !context || !loaded || !confirmed || !question.trim() || !!busy || !!pending} onClick={() => void send()}>質問を送信</button>{' '}
