@@ -7,6 +7,19 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.7 feat: P6外部資料連携の基盤実装（externalRecord・FileSearchProvider・BundleExternal）
+- 日付: 2026-09-14
+- コミット番号: 65efc13
+
+OverviewにBundle「外部資料連携」UIを追加（BundleExternal.tsx/css）。
+外部資料URLとMarkdown書き出しを保存するexternalRecord.ts・externalRoutesを実装。
+Gemini File Search接続確認のためのFileSearchProvider・fileSearchRoutesを追加。
+FileSearchConnection UIで読み取り専用の接続状態を確認できるよう実装。
+ExternalService・externalBackupでクライアント側サービスを整備。
+SupportChat・AiChatView・ChatMedia・WorkoutSettingAreaのCSS更新。
+実API呼出し・自動同期・デプロイは未実施。
+docs/ThinkSupport/11_P6実装記録・12_P6復元とFileSearch接続確認を追加。変更: 29ファイル（+1,015行）。
+
 ### v1.5.6 feat: P5 AgentServiceとBundle内資料ジョブ処理の基盤実装（AgentService・BundleAgent）
 - 日付: 2026-09-14
 - コミット番号: 0c56044
