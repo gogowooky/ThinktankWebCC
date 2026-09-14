@@ -10,6 +10,7 @@ import { bigqueryService } from '../services/BigQueryService.js';
 import type { VaultRecord } from '../services/BigQueryService.js';
 import { isValidCategory, SAFE_FILE_ID_RE } from '../services/vaultKey.js';
 import { isServerNewer } from '../services/vaultVersion.js';
+import { readThinkSupport, validThinkInput } from '../services/thinkSupportRecord.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -55,6 +56,41 @@ const SAFE_ID_RE = SAFE_FILE_ID_RE;
 
 export function createBigQueryRoutes() {
   const router = Router();
+
+  router.get('/files/:id/think-support', async (req: Request, res: Response) => {
+    const id = String(req.params.id);
+    if (!SAFE_ID_RE.test(id)) { res.status(400).json({ error: 'invalid id' }); return; }
+    const result = await bigqueryService.getRecord(id);
+    if (!result.success) { res.status(500).json({ error: result.error }); return; }
+    if (!result.data || result.data.category !== 'bundle') { res.status(404).json({ error: 'bundle not found' }); return; }
+    try { res.json(toMeta(result.data)); }
+    catch { res.status(422).json({ error: 'invalid stored metadata' }); }
+  });
+
+  router.put('/files/:id/think-support', async (req: Request, res: Response) => {
+    const id = String(req.params.id);
+    const { values, sources, confirmed, expectedVersion } = req.body ?? {};
+    if (!SAFE_ID_RE.test(id) || !validThinkInput(values, sources) || confirmed !== true
+      || typeof expectedVersion !== 'string' || !Number.isFinite(Date.parse(expectedVersion))) {
+      res.status(400).json({ error: 'invalid thinking state or confirmation' }); return;
+    }
+    const result = await bigqueryService.getRecord(id);
+    if (!result.success) { res.status(500).json({ error: result.error }); return; }
+    if (!result.data || result.data.category !== 'bundle') { res.status(404).json({ error: 'bundle not found' }); return; }
+    try {
+      const meta = toMeta(result.data);
+      if (meta.updatedAt !== expectedVersion) { res.status(409).json({ error: 'conflict' }); return; }
+      if (meta.metadata != null && (typeof meta.metadata !== 'object' || Array.isArray(meta.metadata))) throw new Error('invalid metadata');
+      const previous = readThinkSupport(meta.metadata?.thinkSupport);
+      const now = new Date(Math.max(Date.now(), Date.parse(expectedVersion) + 1)).toISOString();
+      const record = { schemaVersion: 1, revision: (previous?.revision ?? 0) + 1, values, sources, author: 'human', confirmedAt: now, updatedAt: now };
+      const metadata = { ...meta.metadata, thinkSupport: record };
+      const saved = await bigqueryService.saveThinkSupport(id, expectedVersion, metadata, now);
+      if (!saved.success) { res.status(500).json({ error: saved.error }); return; }
+      if (!saved.data) { res.status(409).json({ error: 'conflict' }); return; }
+      res.json({ ...meta, metadata, updatedAt: now });
+    } catch { res.status(422).json({ error: 'unsupported stored thinking state' }); }
+  });
 
   // GET /api/bq/files/meta  ← メタデータのみ（content なし）
   router.get('/files/meta', async (_req: Request, res: Response) => {
@@ -118,7 +154,12 @@ export function createBigQueryRoutes() {
     // 楽観ロック（PROJECT_REVIEW_REPORT.md D-2）: baseUpdatedAt が渡され、かつサーバー側の
     // 現在レコードがそれより新しければ、無警告上書きせず 409 を返す。
     if (baseUpdatedAt) {
+      if (typeof baseUpdatedAt !== 'string' || !Number.isFinite(Date.parse(baseUpdatedAt))) {
+        res.status(400).json({ error: 'invalid baseUpdatedAt' }); return;
+      }
       const existing = await bigqueryService.getRecord(id);
+      if (!existing.success) { res.status(500).json({ error: existing.error }); return; }
+      if (!existing.data) { res.status(409).json({ error: 'conflict' }); return; }
       if (existing.success && existing.data && isServerNewer(baseUpdatedAt, existing.data.updated_at)) {
         const serverUpdatedAt = typeof existing.data.updated_at === 'object' && existing.data.updated_at !== null
           ? (existing.data.updated_at as { value: string }).value
@@ -142,8 +183,8 @@ export function createBigQueryRoutes() {
       updated_at:  nowStr,
       metadata:    metadata ? JSON.stringify(metadata) : null,
     };
-    const result = await bigqueryService.save(record);
-    if (!result.success) { res.status(500).json({ error: result.error }); return; }
+    const result = await bigqueryService.save(record, 3, baseUpdatedAt);
+    if (!result.success) { res.status(result.error === 'conflict' ? 409 : 500).json({ error: result.error }); return; }
     res.json(toMeta(record));
   });
 

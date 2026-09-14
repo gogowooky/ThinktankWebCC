@@ -12,6 +12,7 @@
 | [04 実装計画書](04_実装計画書.md) | 段階別成果物、依存関係、受け入れ条件、未決事項 |
 | [05 P1実装記録](05_P1実装記録.md) | 読み取り専用ContextServiceの実装・制約・検証進捗 |
 | [06 P2実装記録](06_P2実装記録.md) | Overviewの手動編集・BQ保存・競合比較と検証進捗 |
+| [07 P0〜P2統合記録](07_P0-P2統合記録.md) | Documents側への実装統合、追加修正、検証と次の段階 |
 
 ## 記述の区分
 
@@ -28,6 +29,8 @@
 4. ContextServiceはP1として、手動編集可能なOverviewはP2として追加実装。実環境でのP2受け入れ確認は未完了。ConversationService、AgentService、AIProvider、NotebookLM同期は未実装。
 5. BQデータは`C:\Users\gogow\Documents\Thinktank_20260913`へ保存済みとの本人報告があり、MarkdownとJSON各5,491件の配置を確認済み。内容照合・復元確認、実環境での基本操作確認は未完了。
 6. Thinkの保存先は当面BigQueryを維持する。
+
+2026-09-14更新：別worktreeにあったAI-neutral基盤・P1・P2を、このDocuments側作業フォルダーへ統合した。競合後の再編集とOverviewの資料範囲を修正。実BQの受け入れ確認とP3以降は未完了。最新の検証範囲は[統合記録](07_P0-P2統合記録.md)を参照。
 
 従来の保全記録と検証結果は [AI-neutral移行記録](../../docs/AI_NEUTRAL_MIGRATION.md) を参照する。本書群はその記録を置き換えず、設計を具体化する。
 

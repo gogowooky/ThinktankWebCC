@@ -6,13 +6,15 @@ import { MANAGED_STATES, parseManagedChatTitle } from '../../utils/managedChat';
 import { supportRecord, isReviewDue } from '../../services/thoughtSupport';
 import { openSupportChat } from '../../services/openSupportChat';
 import './BundleStatusView.css';
+import { BundleThoughtSupport } from './BundleThoughtSupport';
+import { ContextService } from '../../services/ContextService';
 
 interface Props { vault: TTVault; bundleId: string; onOpen: (id: string) => void }
 export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(function BundleStatusView({ vault, bundleId, onOpen }, ref) {
   useAppUpdate(vault);
   const root = useRef<HTMLDivElement>(null);
   useImperativeHandle(ref, () => ({ focus: () => root.current?.focus() }), []);
-  const [result, setResult] = useState<{ id: string; items: TTThink[] } | null>(null);
+  const [result, setResult] = useState<{ vault: TTVault; id: string; items: TTThink[] } | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -21,14 +23,19 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
   const revision = JSON.stringify(vault.GetThinks().map(t => [t.ID, t.Name, t.Keywords, t.UpdatedAt, t.ContentType === 'bundle' ? t.Content : '']));
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
     setError(''); setLoading(true);
-    void vault.GetThinksForBundleAsync(bundleId, true).then(items => {
-      if (!cancelled) setResult({ id: bundleId, items });
+    void new ContextService(vault).getBundleContext(bundleId, { signal: controller.signal }).then(snapshot => {
+      const items = snapshot.sources.flatMap(source => {
+        const think = vault.GetThink(source.thinkId);
+        return think ? [think] : [];
+      });
+      if (!cancelled) setResult({ vault, id: bundleId, items });
     }).catch(() => { if (!cancelled) setError('状況を読み込めませんでした。再読み込みしてください。'); })
       .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; controller.abort(); };
   }, [vault, bundleId, revision, retry]);
-  const items = result?.id === bundleId ? result.items : [];
+  const items = result?.vault === vault && result.id === bundleId ? result.items : [];
   const chats = items.flatMap(think => {
     const info = think.ContentType === 'chat' ? parseManagedChatTitle(think.Name) : null;
     return info ? [{ think, ...info }] : [];
@@ -40,9 +47,10 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
       <button onClick={() => onOpen(bundleId)}>Bundleの記録を開く</button>{' '}
       <button onClick={() => setRetry(n => n + 1)} disabled={loading}>再読み込み</button>
     </header>
+    <BundleThoughtSupport vault={vault} bundleId={bundleId} onOpen={onOpen} />
     {error ? <p role="alert">{error}</p> : loading ? <p role="status">記録を確認しています…</p> : <>
       <p className="bundle-status__summary">管理する相談 {chats.length}件 · その他の記録 {resources.length}件</p>
-      {chats.length === 0 && <p>管理する相談はまだありません。AI相談で気になることを話し、このBundleにまとめると、ここで状況を確認できます。</p>}
+      {chats.length === 0 && <p>過去の管理対象の会話はありません。課題の概要は上の欄に手動で記録できます。</p>}
       {[...MANAGED_STATES, '状態未設定'].map(state => {
         const entries = chats.filter(c => c.state === state);
         if (!entries.length) return null;
@@ -60,7 +68,7 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
             {isReviewDue(supportRecord(c.think)) && !['完了', '中止'].includes(c.state) && <span>再確認・再提示の時期です</span>}
             <span>本人確認：{supportRecord(c.think).confirmedAt || '未確認'} ／ 要約更新：{supportRecord(c.think).updatedAt || '未記録'}</span>
             <span className="bundle-status__link">記録を開く →</span>
-          </button><button onClick={() => openSupportChat(c.think.ID)}>この相談を続ける</button></li>)}</ul>
+          </button><button onClick={() => openSupportChat(c.think.ID)}>会話履歴を開く</button></li>)}</ul>
         </section>;
       })}
       <details><summary>資料・その他の記録（{resources.length}件）</summary><ul>{resources.map(t => <li key={t.ID}>

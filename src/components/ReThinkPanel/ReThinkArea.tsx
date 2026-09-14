@@ -23,7 +23,7 @@ import '../../components/Layout/MenuRibbon.css';
 import './ReThinkArea.css';
 
 const RETHINK_MODE_NAMES: Record<ReThinkViewMode, string> = {
-  chat:     'AI相談',
+  chat:     '会話履歴',
   settings: '設定',
 };
 
@@ -102,8 +102,8 @@ export function ReThinkArea({ app, viewMode }: Props) {
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <ReThinkMenuRibbon
         viewMode={viewMode}
-        canSaveChat={panel.ChatMessages.length > 0 && !panel.IsStreaming}
-        saveChatTip={saveChatTip}
+        canSaveChat={false}
+        saveChatTip="会話履歴は閲覧専用です"
         showColumnDialog={showColumnDialog}
         showFilterSelectDialog={showFilterSelectDialog}
         onSaveChat={handleSaveChat}

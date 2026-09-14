@@ -125,7 +125,7 @@ async function start() {
     const bq  = bigqueryService.getBigQuery()!;
     const pid = bigqueryService.getProjectId()!;
     await vectorStoreService.initialize(bq, pid);
-    console.log('[Server] VectorStore (cleanup) initialized');
+    console.log('[Server] VectorStore disabled; legacy data preserved');
   }
 }
 

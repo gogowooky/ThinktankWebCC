@@ -16,6 +16,15 @@ import { TTModels } from './TTModels';
 import { formatDateRangeJapanese, computeDateRange } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
 import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
+import type { ThinkMeta } from '../services/storage/IStorageBackend';
+
+/** Optional diagnostics for isolated, read-only context resolution. Existing UI defaults are preserved. */
+export interface BundleResolutionOptions {
+  allowImplicitAll?: boolean;
+  search?: (query: string) => Promise<ThinkMeta[]>;
+  onBundle?: (bundle: TTThink) => void;
+  onIssue?: (issue: { code: 'cycle' | 'missing_think' | 'implicit_all_blocked' | 'conflicting_conditions'; thinkId: string }) => void;
+}
 
 export class TTVault extends TTCollection {
   /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
@@ -63,13 +72,15 @@ export class TTVault extends TTCollection {
    * - `*` 行: 直接 ID 指定
    * 重複排除して TTThink[] を返す。
    */
-  public async GetThinksForBundleAsync(bundleId: string, strict: boolean = false): Promise<TTThink[]> {
+  public async GetThinksForBundleAsync(bundleId: string, strict: boolean = false, options: BundleResolutionOptions = {}): Promise<TTThink[]> {
     const rootBundle = this.GetThink(bundleId);
     if (!rootBundle || rootBundle.ContentType !== 'bundle') return [];
 
     const allThinks = this.GetThinks().filter(t => t.ContentType !== 'bundle');
     const finalIds = new Set<string>();
     const excludeIds = new Set<string>();
+    const activePath = new Set<string>();
+    const conditions = new Map<string, string>();
 
     // 解析用パラメータ
     let filterKeyword = '';
@@ -82,8 +93,13 @@ export class TTVault extends TTCollection {
 
     // 再帰的にパラメータを収集
     const collectParams = async (tid: string, visited: Set<string>) => {
+      if (activePath.has(tid)) {
+        options.onIssue?.({ code: 'cycle', thinkId: tid });
+        return;
+      }
       if (visited.has(tid)) return;
       visited.add(tid);
+      activePath.add(tid);
 
       const t = this.GetThink(tid);
       if (!t || t.ContentType !== 'bundle') return;
@@ -91,6 +107,7 @@ export class TTVault extends TTCollection {
       if (strict && t.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした');
 
       const parsed = parseBundle(t.Content);
+      options.onBundle?.(t);
 
       for (const id of parsed.ids) {
         const sub = this.GetThink(id);
@@ -103,6 +120,20 @@ export class TTVault extends TTCollection {
 
       if (parsed.excludeIds) {
         parsed.excludeIds.forEach(id => excludeIds.add(id));
+      }
+
+      // The legacy resolver uses the last non-empty value for each condition.
+      // Context consumers must be told when this discards a different condition.
+      for (const [group, entries] of Object.entries({ filter: parsed.filter, search: parsed.search })) {
+        for (const [key, value] of Object.entries(entries)) {
+          if (!value) continue;
+          const name = `${group}.${key}`;
+          const encoded = JSON.stringify(value);
+          if (conditions.has(name) && conditions.get(name) !== encoded) {
+            options.onIssue?.({ code: 'conflicting_conditions', thinkId: tid });
+          }
+          conditions.set(name, encoded);
+        }
       }
 
       if (parsed.search.query) searchQuery = parsed.search.query;
@@ -120,6 +151,7 @@ export class TTVault extends TTCollection {
       if (parsed.filter.updatedRange) {
         filterUpdatedRange = computeDateRange(parsed.filter.updatedRange.dateStr, parsed.filter.updatedRange.rangeStr);
       }
+      activePath.delete(tid);
     };
 
     await collectParams(bundleId, new Set());
@@ -146,7 +178,7 @@ export class TTVault extends TTCollection {
     // 2. 全文検索実行
     if (searchQuery || searchCreatedRange || searchUpdatedRange) {
       try {
-        const metas = await StorageManager.instance.search(searchQuery);
+        const metas = await (options.search ?? (query => StorageManager.instance.search(query)))(searchQuery);
         for (const meta of metas) {
           if (meta.contentType === 'bundle') continue;
           
@@ -171,6 +203,10 @@ export class TTVault extends TTCollection {
 
     // デフォルト: 何も指定がなければ全データ
     if (finalIds.size === 0 && !filterKeyword && !searchQuery && !filterCreatedRange && !filterUpdatedRange && !searchCreatedRange && !searchUpdatedRange) {
+      if (options.allowImplicitAll === false) {
+        options.onIssue?.({ code: 'implicit_all_blocked', thinkId: bundleId });
+        return [];
+      }
       const result = allThinks.filter(t => !excludeIds.has(t.ID));
       this._bundleThinksCache.set(bundleId, result.map(t => t.ID));
       return result;
@@ -181,6 +217,9 @@ export class TTVault extends TTCollection {
     }
 
     const idMap = new Map(allThinks.map(t => [t.ID, t]));
+    for (const id of finalIds) {
+      if (!idMap.has(id)) options.onIssue?.({ code: 'missing_think', thinkId: id });
+    }
     const result = [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
     this._bundleThinksCache.set(bundleId, result.map(t => t.ID));
     return result;

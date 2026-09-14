@@ -4,7 +4,7 @@
  *
  * ボタン構成（上から）:
  *   Workout設定 / TextEditor設定 / Markdown設定 /
- *   DataGrid設定 / Card設定 / Graph設定 / Html設定 / AI相談
+ *   DataGrid設定 / Card設定 / Graph設定 / Html設定 / 会話履歴
  *
  * - 押下で対応する設定パネルを開く
  * - 開いている設定パネルのボタン再押下で閉じる
@@ -34,7 +34,7 @@ export const WORKOUT_SETTINGS: SettingsEntry[] = [
   { type: 'card',       Icon: IdCard,          name: 'Card設定',       id: 'Card' },
   { type: 'graph',      Icon: Share2,          name: 'Graph設定',      id: 'Graph' },
   { type: 'html',       Icon: FileCode,        name: 'Html設定',       id: 'Html' },
-  { type: 'chat',       Icon: MessageCircle,   name: 'AI相談',         id: 'AiChat' },
+  { type: 'chat',       Icon: MessageCircle,   name: '会話履歴',         id: 'AiChat' },
 ];
 
 interface Props {

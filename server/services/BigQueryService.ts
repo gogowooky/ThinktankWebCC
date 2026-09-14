@@ -69,6 +69,30 @@ export class BigQueryService {
   getBigQuery(): BigQuery | null { return this.bigquery; }
   getProjectId(): string | undefined { return this.projectId; }
 
+  /** P2 updates metadata only. The version check and write share one transaction. */
+  async saveThinkSupport(fileId: string, expectedVersion: string, metadata: object, updatedAt: string): Promise<BqResult<boolean>> {
+    if (!this.bigquery) return { success: false, error: 'not initialized' };
+    try {
+      const [table] = await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).getMetadata();
+      const type = table.schema?.fields?.find((f: { name?: string }) => f.name === 'metadata')?.type;
+      if (type !== 'STRING' && type !== 'JSON') return { success: false, error: 'unsupported metadata column' };
+      const [rows] = await this.bigquery.query({
+        query: `DECLARE changed INT64;
+          BEGIN TRANSACTION;
+          UPDATE ${this.tbl} SET metadata = ${type === 'JSON' ? 'PARSE_JSON(@metadata)' : '@metadata'}, updated_at = TIMESTAMP(@updatedAt)
+          WHERE file_id = @fileId AND category = 'bundle' AND COALESCE(is_deleted, FALSE) = FALSE
+            AND updated_at = TIMESTAMP(@expectedVersion)
+            AND (SELECT COUNT(*) FROM ${this.tbl} WHERE file_id = @fileId) = 1;
+          SET changed = @@row_count;
+          COMMIT TRANSACTION;
+          SELECT changed;`,
+        params: { fileId, expectedVersion, metadata: JSON.stringify(metadata), updatedAt },
+        types: { fileId: 'STRING', expectedVersion: 'STRING', metadata: 'STRING', updatedAt: 'STRING' },
+      });
+      return { success: true, data: Number(rows[0]?.changed) === 1 };
+    } catch (error) { return { success: false, error: String(error) }; }
+  }
+
   private get tbl(): string {
     return `\`${this.projectId}.${DATASET_ID}.${TABLE_ID}\``;
   }
@@ -217,7 +241,7 @@ export class BigQueryService {
 
   // ── Upsert（MERGE） ─────────────────────────────────────────────────
 
-  async save(record: VaultRecord, retries = 3): Promise<BqResult<null>> {
+  async save(record: VaultRecord, retries = 3, expectedVersion?: string): Promise<BqResult<null>> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
 
     // 書き込み前の検証（PROJECT_REVIEW_REPORT.md D-5）。HTTP ルートと AI ツールの
@@ -228,7 +252,7 @@ export class BigQueryService {
     if (!keyCheck.ok) return { success: false, error: keyCheck.error };
 
     try {
-      const query = `
+      const query = `${expectedVersion ? 'DECLARE changed INT64; BEGIN TRANSACTION;' : ''}
         MERGE ${this.tbl} AS target
         USING (
           SELECT @file_id AS file_id, @file_type AS file_type,
@@ -240,7 +264,7 @@ export class BigQueryService {
                  @created_at AS created_at, @updated_at AS updated_at,
                  SAFE_CAST(@metadata AS JSON) AS metadata
         ) AS source ON target.file_id = source.file_id
-        WHEN MATCHED THEN UPDATE SET
+        WHEN MATCHED ${expectedVersion ? 'AND target.updated_at = TIMESTAMP(@expectedVersion)' : ''} THEN UPDATE SET
           target.category    = source.category,
           target.title       = source.title,
           target.content     = source.content,
@@ -250,13 +274,14 @@ export class BigQueryService {
           target.is_deleted  = source.is_deleted,
           target.updated_at  = source.updated_at,
           target.metadata    = source.metadata
-        WHEN NOT MATCHED THEN INSERT
+        WHEN NOT MATCHED ${expectedVersion ? 'AND FALSE' : ''} THEN INSERT
           (file_id, file_type, category, title, content,
            keywords, related_ids, size_bytes, is_deleted, created_at, updated_at, metadata)
         VALUES
           (source.file_id, source.file_type, source.category,
            source.title, source.content, source.keywords, source.related_ids,
            source.size_bytes, source.is_deleted, source.created_at, source.updated_at, source.metadata)
+        ${expectedVersion ? ' ; SET changed = @@row_count; ASSERT changed <= 1 AS "duplicate file_id"; COMMIT TRANSACTION; SELECT changed;' : ''}
       `;
       const params = {
         file_id:     record.file_id,
@@ -271,6 +296,7 @@ export class BigQueryService {
         created_at:  parseBqDate(record.created_at),
         updated_at:  parseBqDate(record.updated_at),
         metadata:    record.metadata ?? null,
+        ...(expectedVersion ? { expectedVersion } : {}),
       };
       const types = {
         file_id: 'STRING', file_type: 'STRING', category: 'STRING',
@@ -278,8 +304,10 @@ export class BigQueryService {
         size_bytes: 'INT64', is_deleted: 'BOOL',
         created_at: 'TIMESTAMP', updated_at: 'TIMESTAMP',
         metadata: 'JSON',
+        ...(expectedVersion ? { expectedVersion: 'STRING' } : {}),
       };
-      await this.bigquery.query({ query, params, types });
+      const [rows] = await this.bigquery.query({ query, params, types });
+      if (expectedVersion && Number(rows[0]?.changed) !== 1) return { success: false, error: 'conflict' };
       return { success: true, data: null };
     } catch (error) {
       const err = error as { errors?: Array<{ reason: string }>; message?: string };
@@ -288,7 +316,7 @@ export class BigQueryService {
       if (isConcurrent && retries > 0) {
         const delay = (4 - retries) * 2000;
         await new Promise(r => setTimeout(r, delay));
-        return this.save(record, retries - 1);
+        return this.save(record, retries - 1, expectedVersion);
       }
       return { success: false, error: String(error) };
     }

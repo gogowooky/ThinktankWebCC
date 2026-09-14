@@ -16,3 +16,11 @@
 .bundle-analysis-tabs button { flex:1; padding:8px; background:transparent; color:inherit; border:1px solid #64748b; border-radius:5px; cursor:pointer; }
 .bundle-analysis-tabs button[aria-pressed=true] { background:#334b71; color:#fff; }
 .bundle-analysis-content { flex:1; min-height:0; overflow:hidden; }
+.bundle-thought-support fieldset { min-width: 0; border: 1px solid var(--border-color, #888); padding: 12px; }
+.thinking-field { margin-bottom: 16px; }
+.thinking-field label { display: block; margin-bottom: 6px; }
+.thinking-field textarea, .thinking-field select { display: block; box-sizing: border-box; width: 100%; color: inherit; background: var(--bg-primary, transparent); border: 1px solid var(--border-color, #888); padding: 8px; }
+.thinking-field textarea { min-height: 64px; resize: vertical; font: inherit; }
+.context-snapshot__issues { border-left: 3px solid #b8860b; padding-left: 12px; }
+.bundle-thought-support { border-bottom: 1px solid var(--border-color, #888); padding-bottom: 16px; margin-bottom: 20px; }
+.bundle-thought-support code { overflow-wrap: anywhere; }
