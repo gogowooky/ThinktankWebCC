@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { ContextService } from '../../services/ContextService';
 import { ConversationClient, chatOnlyConversationContext, conversationContext, type ConversationContext, type ConversationTurn } from '../../services/ConversationService';
+import { mergeConversationTranscript, readConversationLog } from '../../../server/services/conversationRecord';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { CONTEXT_LABELS } from '../OverviewPanel/ContextSnapshotView';
 import './BundleConversation.css';
@@ -31,28 +32,36 @@ function download(turn: ConversationTurn) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string }
+function cachedChatHistory(vault: TTVault, chatId?: string): ConversationTurn[] {
+  if (!chatId) return [];
+  try {
+    return readConversationLog(vault.GetThink(chatId)?.Metadata?.thinkConversations).turns
+      .filter(turn => turn.context.vaultId === vault.ID);
+  } catch { return []; }
+}
 export function BundleConversation(props: ConversationProps) {
   if (!vaultKeys.has(props.vault)) vaultKeys.set(props.vault, ++nextVaultKey);
   return <ConversationPanel key={JSON.stringify([vaultKeys.get(props.vault), props.bundleId, props.chatId, props.draftScope])} {...props} />;
 }
 function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'overview' }: ConversationProps) {
   const draft = getDraft(vault, bundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`);
+  const cachedHistory = cachedChatHistory(vault, chatId);
   const [question, setQuestion] = useState(draft.question);
   const [pending, setPending] = useState(draft.pending);
   const [context, setContext] = useState<ConversationContext>();
-  const [history, setHistory] = useState<ConversationTurn[]>([]);
+  const [history, setHistory] = useState<ConversationTurn[]>(cachedHistory);
   const [status, setStatus] = useState<{ enabled: boolean; provider: string; model: string }>();
-  const [confirmed, setConfirmed] = useState(false);
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
   const [loaded, setLoaded] = useState(false);
   const alive = useRef(true);
   const controller = useRef<AbortController>();
   const locked = useRef(false);
+  const prepareVersion = useRef(0);
   const supported = StorageManager.instance.mode === 'pwa';
   useEffect(() => {
     alive.current = true;
-    return () => { alive.current = false; controller.current?.abort(); };
+    return () => { alive.current = false; prepareVersion.current += 1; controller.current?.abort(); };
   }, []);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
@@ -62,8 +71,10 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
     return () => window.removeEventListener('beforeunload', warn);
   }, [draft]);
   async function prepare() {
-    if (locked.current || !supported) return;
-    locked.current = true; setBusy('参照資料と接続状態を確認しています…'); setMessage(''); setConfirmed(false); setContext(undefined); setLoaded(false);
+    if (!supported) return;
+    const version = ++prepareVersion.current;
+    controller.current?.abort();
+    setBusy('参照資料と接続状態を確認しています…'); setMessage(''); setContext(undefined); setLoaded(false);
     const abort = new AbortController(); controller.current = abort;
     try {
       const [availability, turns, snapshot] = await Promise.allSettled([
@@ -71,17 +82,22 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
         bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal })
           : Promise.resolve(chatOnlyConversationContext(vault.ID, chatId!)),
       ]);
-      if (!alive.current || abort.signal.aborted) return;
+      if (!alive.current || abort.signal.aborted || version !== prepareVersion.current) return;
       if (availability.status === 'fulfilled') setStatus(availability.value); else setStatus(undefined);
-      if (turns.status === 'fulfilled') { setHistory(turns.value.filter(t => t.context.vaultId === vault.ID)); setLoaded(true); }
+      if (turns.status === 'fulfilled') {
+        const visible = turns.value.filter(t => t.context.vaultId === vault.ID);
+        setHistory(visible); setLoaded(true);
+        const chat = chatId ? vault.GetThink(chatId) : undefined;
+        if (chat) chat.setContentSilent(mergeConversationTranscript(chat.Content, visible));
+      }
       const failures = [availability, turns, snapshot].flatMap(result => result.status === 'rejected' ? [(result.reason as Error).message] : []);
       if (snapshot.status === 'fulfilled') {
         try { setContext('consistency' in snapshot.value ? conversationContext(snapshot.value) : snapshot.value); } catch (e) { failures.push((e as Error).message); }
       }
       if (availability.status === 'fulfilled' && !availability.value.enabled) failures.push('AI対話は停止中です。履歴と参照資料は確認できます。');
       setMessage(failures.join('\n'));
-    } catch (e) { if (alive.current) setMessage((e as Error).message); }
-    finally { locked.current = false; if (alive.current) setBusy(''); }
+    } catch (e) { if (alive.current && version === prepareVersion.current) setMessage((e as Error).message); }
+    finally { if (alive.current && version === prepareVersion.current) setBusy(''); }
   }
   useEffect(() => { void prepare(); }, [bundleId, chatId]); // eslint-disable-line react-hooks/exhaustive-deps
   async function persist(turn: ConversationTurn) {
@@ -90,13 +106,13 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
     if (draft.pending?.id !== turn.id) return;
     draft.pending = undefined; draft.question = '';
     if (alive.current) {
-      setPending(undefined); setQuestion(''); setConfirmed(false); setContext(undefined);
+      setPending(undefined); setQuestion(''); setContext(undefined);
       setHistory(old => old.some(t => t.id === turn.id) ? old : [...old, turn]);
       setMessage('');
     }
   }
   async function send() {
-    if (locked.current || !status?.enabled || !context || !confirmed || !question.trim() || pending || !loaded) return;
+    if (locked.current || !status?.enabled || !context || !question.trim() || pending || !loaded) return;
     locked.current = true; setBusy('回答を生成しています…'); setMessage('');
     const abort = new AbortController(); controller.current = abort;
     let saved = false;
@@ -145,8 +161,6 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
           <p>参照時点の記録：{p.before || '未記録'}</p><p>提案：{p.after}</p>
           <p>採用する場合はOverviewのBundle状況にある手動入力で内容と出典を確認し、本人の記録として保存してください。</p>
         </section>)}
-        <details><summary>参照Snapshotと回答を確認</summary><pre>{JSON.stringify(turn, null, 2)}</pre></details>
-        <button type="button" onClick={() => download(turn)}>この会話をJSONで書き出す</button>
       </article>)}
       {pending && <div role="status"><p>回答を保存できませんでした。</p>
         <button type="button" disabled={!!busy} onClick={() => void retrySave()}>保存を再試行</button>{' '}
@@ -155,13 +169,11 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
       {message && !pending && <button type="button" disabled={!!busy} onClick={() => void prepare()}>再試行</button>}
       {busy && <p role="status">{busy}</p>}
       <label className="bundle-conversation-composer"><textarea aria-label="メッセージ" placeholder="メッセージを入力" maxLength={4000} value={question} disabled={!!busy || !!pending}
-        onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); setConfirmed(false); }} /></label>
+        onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); }} /></label>
       <div className="bundle-conversation-actions">
-        <button type="button" disabled={!status?.enabled || !context || !loaded || !confirmed || !question.trim() || !!busy || !!pending} onClick={() => void send()}>送信</button>
+        <button type="button" disabled={!status?.enabled || !context || !loaded || !question.trim() || !!busy || !!pending} onClick={() => void send()}>送信</button>
         {busy === '回答を生成しています…' && <button type="button" data-conversation-abort onClick={() => controller.current?.abort()}>中断</button>}
       </div>
-      <label className="bundle-conversation-confirm"><input type="checkbox" checked={confirmed} disabled={!context || !!busy || !status?.enabled || !!pending}
-        onChange={e => setConfirmed(e.target.checked)} />このメッセージをAIに送信する</label>
       <details className="bundle-conversation-options"><summary>参照情報・その他</summary>
         {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
         {context && <div>
@@ -171,9 +183,15 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
             {context.sources.map(s => <div key={s.thinkId}><button type="button" onClick={() => onOpen(s.thinkId)}>{s.title || s.thinkId}</button><pre>{s.content}</pre></div>)}
           </details>}
         </div>}
+        {turns.length > 0 && <details><summary>会話記録の確認・書き出し</summary>
+          {turns.map(turn => <section key={turn.id}>
+            <details><summary>{turn.question}</summary><pre>{JSON.stringify(turn, null, 2)}</pre></details>
+            <button type="button" onClick={() => download(turn)}>この会話をJSONで書き出す</button>
+          </section>)}
+        </details>}
         <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
           const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
-          draft.question = reviewQuestion; setQuestion(reviewQuestion); setConfirmed(false);
+          draft.question = reviewQuestion; setQuestion(reviewQuestion);
         }}>進行を見直す質問を入力</button>
       </details>
     </>}

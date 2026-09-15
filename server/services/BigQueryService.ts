@@ -94,7 +94,7 @@ export class BigQueryService {
   }
 
   /** Append structured AI conversation data to a Chat record with optimistic locking. */
-  async saveChatConversation(fileId: string, expectedVersion: string, metadata: object, updatedAt: string): Promise<BqResult<boolean>> {
+  async saveChatConversation(fileId: string, expectedVersion: string, metadata: object, content: string, updatedAt: string): Promise<BqResult<boolean>> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
     try {
       const [table] = await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).getMetadata();
@@ -103,15 +103,16 @@ export class BigQueryService {
       const [rows] = await this.bigquery.query({
         query: `DECLARE changed INT64;
           BEGIN TRANSACTION;
-          UPDATE ${this.tbl} SET metadata = ${type === 'JSON' ? 'PARSE_JSON(@metadata)' : '@metadata'}, updated_at = TIMESTAMP(@updatedAt)
+          UPDATE ${this.tbl} SET metadata = ${type === 'JSON' ? 'PARSE_JSON(@metadata)' : '@metadata'},
+            content = @content, size_bytes = @size, updated_at = TIMESTAMP(@updatedAt)
           WHERE file_id = @fileId AND category = 'chat' AND COALESCE(is_deleted, FALSE) = FALSE
             AND updated_at = TIMESTAMP(@expectedVersion)
             AND (SELECT COUNT(*) FROM ${this.tbl} WHERE file_id = @fileId) = 1;
           SET changed = @@row_count;
           COMMIT TRANSACTION;
           SELECT changed;`,
-        params: { fileId, expectedVersion, metadata: JSON.stringify(metadata), updatedAt },
-        types: { fileId: 'STRING', expectedVersion: 'STRING', metadata: 'STRING', updatedAt: 'STRING' },
+        params: { fileId, expectedVersion, metadata: JSON.stringify(metadata), content, size: Buffer.byteLength(content, 'utf8'), updatedAt },
+        types: { fileId: 'STRING', expectedVersion: 'STRING', metadata: 'STRING', content: 'STRING', size: 'INT64', updatedAt: 'STRING' },
       });
       return { success: true, data: Number(rows[0]?.changed) === 1 };
     } catch (error) { return { success: false, error: String(error) }; }

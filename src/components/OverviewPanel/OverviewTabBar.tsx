@@ -6,7 +6,7 @@
  *   Sparkles    – 会話履歴（データ分析チャット）
  *   LayoutList  – Think一覧（選択Bundle内のThinkリスト）
  *   BookUser    – Bundleプロファイル（Markdown表示）
- *   BarChart2   – Bundle分析（グラフ）
+ *   Microscope  – 分析（この課題の状況）
  * ─────────────────── (spacer) ───────────────────
  *   Settings    – Overview設定（Bundleプロファイル詳細）下寄せ
  */
@@ -21,7 +21,7 @@ type OverviewContentMode = Exclude<OverviewViewMode, 'settings'>;
 
 const VIEW_BUTTONS: Array<{ mode: OverviewContentMode; Icon: LucideIcon; title: string; id: string }> = [
   { mode: 'filter',   Icon: Files,         title: 'Think一覧',   id: 'OverviewThinkList' },
-  { mode: 'graph',    Icon: Microscope,    title: 'Bundle分析', id: 'OverviewResearch' },
+  { mode: 'graph',    Icon: Microscope,    title: '分析', id: 'OverviewResearch' },
   { mode: 'chat',     Icon: MessageCircle, title: '会話履歴',      id: 'OverviewAI' },
 ];
 

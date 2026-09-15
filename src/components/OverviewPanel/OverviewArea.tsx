@@ -13,7 +13,7 @@ import { useSupportChats } from '../../hooks/useSupportChats';
  *   - settings  → OverviewSettingsView（Bundle プロファイル）
  *   - filter    → 選択 Bundle 内の Think 一覧（datagrid メディアで描画）
  *   - markdown  → MarkdownMedia
- *   - graph     → GraphMedia
+ *   - graph     → BundleStatusView（分析：この課題の状況）
  *   - chat      → ChatMedia
  */
 
@@ -25,8 +25,6 @@ import { StorageManager } from '../../services/storage/StorageManager';
 import { OverviewMenuRibbon } from './OverviewMenuRibbon';
 import { OverviewSettingsView } from './OverviewSettingsView';
 import type { OverviewSettingsViewRef } from './OverviewSettingsView';
-import { GraphMedia } from '../WorkoutPanel/media/GraphMedia';
-import type { GraphMediaRef } from '../WorkoutPanel/media/GraphMedia';
 import { OverviewFilterPanel } from './OverviewFilterPanel';
 import type { OverviewFilterPanelRef } from './OverviewFilterPanel';
 import { OverviewSearchBar } from './OverviewSearchBar';
@@ -53,11 +51,10 @@ const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'c
 
 const OVERVIEW_MODE_NAMES: Record<string, string> = {
   filter: 'Think一覧',
-  graph:  'Bundle分析',
+  graph:  '分析',
   chat:   '会話履歴',
 };
 
-const noop = () => Promise.resolve();
 
 interface Props {
   app:          TTApplication;
@@ -119,9 +116,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
   const aiChatViewRef                   = useRef<SupportChatRef>(null);
   const filterPanelRef                  = useRef<OverviewFilterPanelRef>(null);
   const settingsViewRef                 = useRef<OverviewSettingsViewRef>(null);
-  const [analysisView, setAnalysisView] = useState<'status' | 'graph'>('status');
   const statusViewRef = useRef<{ focus: () => void }>(null);
-  const graphMediaRef                   = useRef<GraphMediaRef>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Overview');
 
   // ── Think 一覧（選択 Bundle 内の全 Think → フィルタ適用）──────────────────
@@ -209,12 +204,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
       } else if (panel.MediaType === 'chat') {
         aiChatViewRef.current?.focus();
       } else if (panel.MediaType === 'graph') {
-        if (analysisView === 'status') statusViewRef.current?.focus();
-        else graphMediaRef.current?.focus();
+        statusViewRef.current?.focus();
       }
     }, 50);
     return () => clearTimeout(timer);
-  }, [showSettings, panel.MediaType, analysisView]);
+  }, [showSettings, panel.MediaType]);
 
   const handleRefresh = useCallback(() => {
     if (!panel.BundleID) return;
@@ -543,13 +537,9 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
           </div>
         ) : panel.MediaType === 'graph' ? (
           <div className="bundle-analysis">
-            <div className="bundle-analysis-tabs" aria-label="Bundle分析の表示">
-              <button aria-pressed={analysisView === 'status'} onClick={() => setAnalysisView('status')}>この課題の状況</button>
-              <button aria-pressed={analysisView === 'graph'} onClick={() => setAnalysisView('graph')}>関係グラフ</button>
+            <div className="bundle-analysis-content">
+              <BundleStatusView ref={statusViewRef} vault={vault} bundleId={panel.BundleID} onOpen={handleOpenThinkInWorkout} />
             </div>
-            <div className="bundle-analysis-content">{analysisView === 'status'
-              ? <BundleStatusView ref={statusViewRef} vault={vault} bundleId={panel.BundleID} onOpen={handleOpenThinkInWorkout} />
-              : <GraphMedia ref={graphMediaRef} think={think} vault={vault} onSave={noop} onDirtyChange={noop} />}</div>
           </div>
         ) : null}
       </div>

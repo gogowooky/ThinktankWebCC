@@ -28,7 +28,7 @@ AIが停止中でもBigQueryモードの質問欄には入力できる。送信�
 
 ## データと切替
 
-- AIChatの保存先は上部で選択したChatファイルの`thinkConversations`。Bundleは資料Snapshotの作成に使い、Bundle側の`thinkConversations`は更新しない。Chat本文と従来の管理メタデータを保全し、旧AI処理も再開しない。
+- AIChatの保存先は上部で選択したChatファイルの`thinkConversations`。Bundleは資料Snapshotの作成に使い、Bundle側の`thinkConversations`は更新しない。構造化履歴から会話テキストをChat本文の管理区画へ同期するため、texteditorでも全会話を読める。既存の手書き本文と従来の管理メタデータを保全し、旧AI処理も再開しない。
 - 保存先は選択したChat IDで決定する。ChatタイトルとBundleタイトルの一致、識別タグを除いたタイトルからのBundle検索は保存条件にしない。同名Chatを作る運用は将来の方針として扱う。
 - ThinktankでBundleが未選択の場合は`chat-only`範囲として、参照資料・Bundle手動記録・引用なしでAIへ質問する。履歴は選択Chatから直近6往復を読み、回答も同じChatへ保存する。OverviewのBundleを選択している場合は、従来どおりそのBundleの資料Snapshotを利用する。
 - AIChatは上部のChat選択に追従する。別Chatを選ぶと履歴の読込先と保存先も切り替わる。未選択、別Vault、一覧から消えたChat、または同名Bundleを特定できない場合は対話を表示しない。

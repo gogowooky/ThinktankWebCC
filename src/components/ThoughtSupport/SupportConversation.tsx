@@ -11,10 +11,11 @@ interface Props {
   bundleId: string;
   chatId: string;
   draftScope: string;
+  pane?: boolean;
   onStartTask?: (chatId: string, title: string) => Promise<void>;
 }
 
-export function SupportConversation({ vault, panelName, bundleId, chatId, draftScope, onStartTask }: Props) {
+export function SupportConversation({ vault, panelName, bundleId, chatId, draftScope, pane, onStartTask }: Props) {
   useAppUpdate(vault);
   const [message, setMessage] = useState('');
   const [taskEditorOpen, setTaskEditorOpen] = useState(false);
@@ -24,7 +25,8 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
   const bundle = vault.GetThink(bundleId);
   const chatValid = chat?.ContentType === 'chat';
   const bundleValid = bundle?.ContentType === 'bundle';
-  const valid = chatValid && (bundleValid || panelName === 'Thinktank');
+  const chatOnly = panelName === 'Thinktank' || !!pane;
+  const valid = chatValid && (bundleValid || chatOnly);
   async function openSource(id: string) {
     try {
       const { TTApplication } = await import('../../views/TTApplication');

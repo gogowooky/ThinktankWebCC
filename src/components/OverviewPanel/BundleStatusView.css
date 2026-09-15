@@ -1,17 +1,35 @@
-.bundle-status { overflow:auto; height:100%; padding:16px; box-sizing:border-box; color:var(--text-primary, #e2e8f0); font-size:calc(14px * var(--tt-font-scale, 1)); line-height:1.6; }
-.bundle-status h2 { font-size:1.3em; margin:4px 0 8px; overflow-wrap:anywhere; }
-.bundle-status h3 { font-size:1.05em; margin:18px 0 8px; }
-.bundle-status p { margin:8px 0; }
-.bundle-status__eyebrow { font-weight:600; }
-.bundle-status button { font:inherit; color:inherit; background:rgba(128,150,180,.13); border:1px solid rgba(160,180,210,.35); border-radius:7px; padding:8px 10px; cursor:pointer; }
-.bundle-status button:hover { background:rgba(128,150,180,.25); }
-.bundle-status button:focus-visible, .bundle-analysis-tabs button:focus-visible { outline:2px solid #60a5fa; outline-offset:2px; }
-.bundle-status ul { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
-.bundle-status li button { display:flex; flex-direction:column; align-items:flex-start; text-align:left; width:100%; overflow-wrap:anywhere; }
-.bundle-status li span { font-size:.88em; }
-.bundle-status__note { font-size:.85em; opacity:.8; }
-.bundle-status summary { cursor:pointer; padding:12px 0; }
-.bundle-analysis { display:flex; flex-direction:column; height:100%; min-height:0; }
+/* BundleStatusView.css — Overview「分析」パネル（この課題の状況）
+ *
+ * このパネルは白いコンテンツ面の上に載る。以前は暗色テーマ用トークン（--text-primary /
+ * --bg-primary）とスレート系・ネイビー系・青のフォーカス色が混在し、淡すぎて読めない文字と
+ * 黒く沈んだ入力欄が同居していた。配色は Overview の基礎色（--overview-base）から作る
+ * 1系統に統一し、強い色は「主操作」と「見出しの標識」だけに使う。
+ * 個々の値をここで直接書かず --field-* に集約するのは、中に置く ThoughtSupport 系の部品
+ * （BundleConversation など）が AIChat 側にも置かれ、宿主ごとに色を受け取る必要があるため。
+ */
+
+.bundle-analysis {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+
+  /* 面 */
+  --field-surface: var(--overview-content-bg);
+  --field-bg:      var(--overview-tint-weak);
+  --field-border:  color-mix(in srgb, var(--overview-base) 32%, transparent);
+
+  /* 文字。本文は地の白に対して十分濃く、補助文はAA（4.5:1）を下回らない範囲で落とす */
+  --field-text:   color-mix(in srgb, var(--overview-base) 30%, #16161f);
+  --field-muted:  color-mix(in srgb, var(--overview-base) 30%, #64646f);
+
+  /* 強い色。主操作・選択中・見出しの標識にだけ使う */
+  --field-accent:    var(--overview-base);
+  --field-accent-fg: var(--overview-content-bg);
+
+  background: var(--field-surface);
+  color: var(--field-text);
+}
 
 /* スクロールバーは溝＝コンテンツ背景色、つまみ＝Overviewの横向きツールバーの地色。
    AIChat（.support-chat-host）と同じ方針。ここは常に Overview パネル内なのでトークンを直接参照する。
@@ -27,15 +45,71 @@
 .bundle-analysis *::-webkit-scrollbar-track { background:var(--overview-content-bg); }
 .bundle-analysis::-webkit-scrollbar-thumb,
 .bundle-analysis *::-webkit-scrollbar-thumb { background:var(--overview-menuribbon-bg); border-radius:3px; }
-.bundle-analysis-tabs { display:flex; gap:6px; padding:8px; border-bottom:1px solid #64748b; }
-.bundle-analysis-tabs button { flex:1; padding:8px; background:transparent; color:inherit; border:1px solid #64748b; border-radius:5px; cursor:pointer; }
-.bundle-analysis-tabs button[aria-pressed=true] { background:#334b71; color:#fff; }
+
 .bundle-analysis-content { flex:1; min-height:0; overflow:hidden; }
-.bundle-thought-support fieldset { min-width: 0; border: 1px solid var(--border-color, #888); padding: 12px; }
-.thinking-field { margin-bottom: 16px; }
-.thinking-field label { display: block; margin-bottom: 6px; }
-.thinking-field textarea, .thinking-field select { display: block; box-sizing: border-box; width: 100%; color: inherit; background: var(--bg-primary, transparent); border: 1px solid var(--border-color, #888); padding: 8px; }
-.thinking-field textarea { min-height: 64px; resize: vertical; font: inherit; }
-.context-snapshot__issues { border-left: 3px solid #b8860b; padding-left: 12px; }
-.bundle-thought-support { border-bottom: 1px solid var(--border-color, #888); padding-bottom: 16px; margin-bottom: 20px; }
-.bundle-thought-support code { overflow-wrap: anywhere; }
+
+/* ── 本体 ────────────────────────────────────────────── */
+
+.bundle-status { overflow:auto; height:100%; padding:16px; box-sizing:border-box; color:inherit; font-size:calc(14px * var(--tt-font-scale, 1)); line-height:1.6; }
+.bundle-status h2 { font-size:1.3em; margin:4px 0 8px; overflow-wrap:anywhere; }
+/* 節の見出しだけ基礎色を帯びさせ、左の罫線で区切りを示す（塗りつぶしは主操作に取っておく） */
+.bundle-status h3 { font-size:1.05em; margin:18px 0 8px; color:var(--field-accent); border-left:3px solid var(--field-accent); padding-left:8px; }
+.bundle-status h3 small { color:var(--field-muted); font-weight:normal; }
+.bundle-status p { margin:8px 0; }
+.bundle-status__eyebrow { font-weight:600; color:var(--field-muted); }
+.bundle-status__summary,
+.bundle-status__note { color:var(--field-muted); }
+.bundle-status__note { font-size:.85em; }
+.bundle-status__interview { margin:16px 0; padding:12px; border:1px solid var(--field-border); border-radius:8px; background:var(--field-bg); }
+.bundle-status__interview h3 { margin-top:0; }
+.bundle-status__advanced { margin-top:20px; border-top:1px solid var(--field-border); }
+.bundle-status__advanced > summary { font-weight:600; }
+.bundle-status__link { color:var(--field-accent); font-weight:600; }
+.bundle-status ul { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
+.bundle-status li span { font-size:.88em; color:var(--field-muted); }
+.bundle-status summary { cursor:pointer; padding:12px 0; color:var(--field-accent); }
+.bundle-analysis [role=alert] { color:color-mix(in srgb, var(--text-error, #f7768e) 60%, #000); }
+
+/* ── 操作 ────────────────────────────────────────────── */
+/* パネル内のボタンは1種類に揃える。地は面に馴染む淡色、輪郭と文字で押せることを示す。 */
+
+.bundle-analysis button {
+  font:inherit; color:var(--field-text);
+  background:var(--field-bg);
+  border:1px solid var(--field-border); border-radius:7px;
+  padding:8px 10px; cursor:pointer;
+}
+.bundle-analysis button:hover:not(:disabled) { background:var(--overview-selected); }
+.bundle-analysis button:disabled { opacity:.5; cursor:default; }
+.bundle-analysis button:focus-visible { outline:2px solid var(--field-accent); outline-offset:2px; }
+.bundle-status li button { display:flex; flex-direction:column; align-items:flex-start; text-align:left; width:100%; overflow-wrap:anywhere; }
+
+/* ── 入力 ────────────────────────────────────────────── */
+
+.bundle-analysis textarea,
+.bundle-analysis select,
+.bundle-analysis input:not([type=checkbox]) {
+  color:var(--field-text); background:var(--field-bg);
+  border:1px solid var(--field-border); border-radius:4px;
+}
+.bundle-analysis textarea:focus,
+.bundle-analysis select:focus,
+.bundle-analysis input:not([type=checkbox]):focus {
+  outline:none; border-color:var(--field-accent); background:var(--field-surface);
+}
+.bundle-analysis input[type=checkbox] { margin-right:8px; accent-color:var(--field-accent); vertical-align:middle; }
+.bundle-analysis fieldset { border:1px solid var(--field-border); border-radius:7px; }
+.bundle-analysis legend { color:var(--field-muted); }
+.bundle-analysis pre { background:var(--field-bg); border-radius:4px; padding:8px; }
+
+/* ── 手動入力（BundleThoughtSupport）────────────────── */
+
+.bundle-thought-support { margin-bottom:0; }
+.bundle-thought-support fieldset { min-width:0; margin:0 0 16px; padding:12px; box-sizing:border-box; width:100%; }
+.bundle-thought-support > button { margin:0 0 12px; }
+.bundle-thought-support code { overflow-wrap:anywhere; }
+.thinking-field { margin-bottom:16px; }
+.thinking-field label { display:block; margin-bottom:6px; color:var(--field-muted); }
+.thinking-field textarea, .thinking-field select { display:block; box-sizing:border-box; width:100%; padding:8px; }
+.thinking-field textarea { min-height:64px; resize:vertical; font:inherit; }
+.context-snapshot__issues { border-left:3px solid var(--field-accent, #b8860b); padding-left:12px; }

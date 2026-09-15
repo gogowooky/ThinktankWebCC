@@ -16,6 +16,29 @@ export interface ConversationTurn {
 export interface ConversationLog { schemaVersion: 1; turns: ConversationTurn[] }
 export const MAX_CONTEXT_CHARS = 120000;
 export const MAX_LOG_BYTES = 2000000;
+const TRANSCRIPT_START = '<!-- thinktank-ai-conversation:start -->';
+const TRANSCRIPT_END = '<!-- thinktank-ai-conversation:end -->';
+
+/** Keep the editable Chat text and the structured conversation log visibly consistent. */
+export function mergeConversationTranscript(content: string, turns: ConversationTurn[]): string {
+  const start = content.indexOf(TRANSCRIPT_START);
+  const end = start >= 0 ? content.indexOf(TRANSCRIPT_END, start + TRANSCRIPT_START.length) : -1;
+  const before = (start >= 0 ? content.slice(0, start) : content).trimEnd();
+  const after = end >= 0 ? content.slice(end + TRANSCRIPT_END.length).trim() : '';
+  if (!turns.length) return [before, after].filter(Boolean).join('\n\n');
+  const transcript = turns.map(turn => {
+    const citations = turn.answer.citations.map(citation => {
+      const title = turn.context.sources.find(source => source.thinkId === citation.thinkId)?.title || citation.thinkId;
+      return `> ${citation.quote.replace(/\n/g, '\n> ')}\n> 出典：${title}`;
+    });
+    const proposals = turn.answer.proposals.map(proposal =>
+      `### AIの変更提案：${proposal.field}\n${proposal.after}\n\n理由：${proposal.reason}`);
+    return [`## ${turn.question.replace(/[\r\n]+/g, ' ').trim()}`, turn.answer.reply,
+      turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...citations, ...proposals]
+      .filter(Boolean).join('\n\n');
+  }).join('\n\n');
+  return [before, `${TRANSCRIPT_START}\n${transcript}\n${TRANSCRIPT_END}`, after].filter(Boolean).join('\n\n');
+}
 // BigQuery JSON columns may reorder keys; equality must not depend on serialization order.
 export function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
@@ -63,7 +86,6 @@ export function validateTurn(value: unknown): asserts value is ConversationTurn 
       || (c.start as number) < 0 || c.end !== (c.start as number) + c.quote.length
       || source.content.slice(c.start as number, c.end as number) !== c.quote) throw new Error('引用が資料本文と一致しません。');
   }
-  if (!a.insufficientEvidence && !a.citations.length) throw new Error('根拠が示されていません。');
   const fields = new Set<string>();
   for (const p of a.proposals) {
     if (!object(p) || !THINK_FIELDS.includes(p.field as ThinkField) || fields.has(String(p.field))

@@ -5,7 +5,16 @@
 /* チャット面は4パネルとも明るい地色（--*-area-bg）に載る。Workout だけ親の
    .panel-area--workout が濃いリボン色向けの明るい文字色を継がせるので、ここで
    明示しないと明るい地に明るい文字が載って読めなくなる。 */
-.support-chat-host { display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; overflow: hidden; color: #2c3e6f; }
+/* 入力・枠・補助文の色。中に置く BundleConversation は「分析」パネルにも置かれるので、
+   部品側に色を持たせず宿主ごとにここで与える（分析側は .bundle-analysis が同じ名前で定義）。 */
+.support-chat-host {
+  display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; overflow: hidden;
+  color: #2c3e6f;
+  --field-bg: rgba(57, 73, 171, 0.04);
+  --field-border: rgba(57, 73, 171, 0.25);
+  --field-muted: #5a6690;
+  --field-accent: var(--support-toolbar-bg);
+}
 .support-conversation { flex: 1; min-height: 0; overflow: auto; padding: 12px; overflow-wrap: anywhere; }
 .support-conversation-title { margin: 0 0 8px; }
 .support-task-start { margin: 0 0 12px; }

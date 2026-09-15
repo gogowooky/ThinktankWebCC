@@ -8,7 +8,6 @@ import { openSupportChat } from '../../services/openSupportChat';
 import './BundleStatusView.css';
 import { BundleThoughtSupport } from './BundleThoughtSupport';
 import { ContextService } from '../../services/ContextService';
-import { BundleConversation } from '../ThoughtSupport/BundleConversation';
 import { BundleProgress } from '../ThoughtSupport/BundleProgress';
 import { BundleAgent } from '../ThoughtSupport/BundleAgent';
 import { BundleExternal } from '../ThoughtSupport/BundleExternal';
@@ -48,19 +47,19 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
   const resources = items.filter(t => !chats.some(c => c.think.ID === t.ID));
   return <div className="bundle-status" tabIndex={-1} ref={root} aria-busy={loading}>
     <header><p className="bundle-status__eyebrow">この課題の状況</p><h2>{bundle?.Name || 'Bundle'}</h2>
-      <p>このBundleに含まれる記録を表示しています。</p>
+      <p>AIとの会話から整理した内容を、ここで確認できます。</p>
       <button onClick={() => onOpen(bundleId)}>Bundleの記録を開く</button>{' '}
       <button onClick={() => setRetry(n => n + 1)} disabled={loading}>再読み込み</button>
     </header>
-    <BundleThoughtSupport vault={vault} bundleId={bundleId} onOpen={onOpen} />
-    <BundleProgress vault={vault} bundleId={bundleId} onOpen={onOpen} />
-    <BundleConversation vault={vault} bundleId={bundleId} onOpen={onOpen} />
-    <BundleAgent vault={vault} bundleId={bundleId} onOpen={onOpen} />
-    <BundleExternal vault={vault} bundleId={bundleId} />
-    <FileSearchConnection vault={vault} bundleId={bundleId} />
     {error ? <p role="alert">{error}</p> : loading ? <p role="status">記録を確認しています…</p> : <>
+      <section className="bundle-status__interview">
+        <h3>AIと整理する</h3>
+        <p>課題について普段の言葉で話してください。AIが内容を読み取り、不明な点だけを順に質問します。</p>
+        {chats.length > 0
+          ? <button type="button" onClick={() => openSupportChat(chats[0].think.ID)}>AIChatで相談する</button>
+          : <p>この課題には相談用のChatがまだありません。ThinktankのAIChatから課題を作成すると、相談を引き継げます。</p>}
+      </section>
       <p className="bundle-status__summary">管理する相談 {chats.length}件 · その他の記録 {resources.length}件</p>
-      {chats.length === 0 && <p>過去の管理対象の会話はありません。課題の概要は上の欄に手動で記録できます。</p>}
       {[...MANAGED_STATES, '状態未設定'].map(state => {
         const entries = chats.filter(c => c.state === state);
         if (!entries.length) return null;
@@ -78,7 +77,7 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
             {isReviewDue(supportRecord(c.think)) && !['完了', '中止'].includes(c.state) && <span>再確認・再提示の時期です</span>}
             <span>本人確認：{supportRecord(c.think).confirmedAt || '未確認'} ／ 要約更新：{supportRecord(c.think).updatedAt || '未記録'}</span>
             <span className="bundle-status__link">記録を開く →</span>
-          </button><button onClick={() => openSupportChat(c.think.ID)}>会話履歴を開く</button></li>)}</ul>
+          </button><button onClick={() => openSupportChat(c.think.ID)}>AIChatで相談する</button></li>)}</ul>
         </section>;
       })}
       <details><summary>資料・その他の記録（{resources.length}件）</summary><ul>{resources.map(t => <li key={t.ID}>
@@ -86,5 +85,13 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
       </li>)}</ul></details>
       <p className="bundle-status__note">状態はChatタイトルの記録です。実施結果や本人の確認を表すものではありません。</p>
     </>}
+    <details className="bundle-status__advanced"><summary>詳細な記録・進捗・連携</summary>
+      <p>AIが整理した内容の修正や、厳密な進捗・外部連携が必要な場合に使用します。</p>
+      <BundleThoughtSupport vault={vault} bundleId={bundleId} onOpen={onOpen} />
+      <BundleProgress vault={vault} bundleId={bundleId} onOpen={onOpen} />
+      <BundleAgent vault={vault} bundleId={bundleId} onOpen={onOpen} />
+      <BundleExternal vault={vault} bundleId={bundleId} />
+      <FileSearchConnection vault={vault} bundleId={bundleId} />
+    </details>
   </div>;
 });

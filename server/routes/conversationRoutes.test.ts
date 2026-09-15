@@ -25,7 +25,7 @@ afterEach(async () => { server.closeAllConnections(); await new Promise<void>(r 
 function generate(changes = {}, prefix = 'active') { return fetch(`${url}/${prefix}/turns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: 'turn', question: '質問', context: source, confirmed: true, historyIds: [], ...changes }) }); }
 function save(value = turn) { return fetch(`${url}/active/bundles/bundle/turns/turn`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) }); }
 function chatRecords() {
-  const chat = { ...record, file_id: 'chat', category: 'chat', title: '# TODO:Overview｜[進行中]別の題名', metadata: JSON.stringify({ keep: 1 }) };
+  const chat = { ...record, file_id: 'chat', category: 'chat', title: '# TODO:Overview｜[進行中]別の題名', content: '既存本文', metadata: JSON.stringify({ keep: 1 }) };
   const bundle = { ...record, title: '# 課題' };
   store.getRecord.mockImplementation(async value => ({ success: true, data: value === 'chat' ? chat : bundle }));
 }
@@ -46,6 +46,9 @@ it('reads and saves AIChat history in the selected Chat record regardless of its
   expect(store.saveThinkSupport).not.toHaveBeenCalled();
   expect(store.saveChatConversation.mock.calls[0][0]).toBe('chat');
   expect(store.saveChatConversation.mock.calls[0][2]).toMatchObject({ keep: 1, thinkConversations: { turns: [turn] } });
+  expect(store.saveChatConversation.mock.calls[0][3]).toContain('既存本文');
+  expect(store.saveChatConversation.mock.calls[0][3]).toContain('## 質問');
+  expect(store.saveChatConversation.mock.calls[0][3]).toContain('回答');
 });
 it('generates and saves a Thinktank Chat-only turn without a Bundle record', async () => {
   const chat = { ...record, file_id: 'chat', category: 'chat', title: '# TODO:Thinktank｜相談', metadata: JSON.stringify({ keep: 1 }) };

@@ -36,4 +36,6 @@ it.each([false, true])('uses the same bounded context for the resource list (exp
   });
   expect(host.textContent?.includes('対象資料のタイトル')).toBe(included);
   expect(host.textContent).toContain(`その他の記録 ${included ? 1 : 0}件`);
+  expect(host.textContent).toContain('普段の言葉で話してください');
+  expect(host.querySelector<HTMLDetailsElement>('.bundle-status__advanced')?.open).toBe(false);
 });
