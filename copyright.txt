@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.14",
+  "version": "1.5.15",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "bc295b0",
-  "commitDateTime": "2026-09-15-210056",
-  "commitMessage": "feat: Thinktank相談の課題化（AIChat選択から課題Bundleを作成してOverviewで開く）"
+  "commitId": "22abd3b",
+  "commitDateTime": "2026-09-16-085508",
+  "commitMessage": "feat: AIインタビュー優先UIとGemini思考支援AI接続（BundleStatusView刷新・GeminiAdapter追加）"
 }

@@ -7,6 +7,20 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.15 feat: AIインタビュー優先UIとGemini思考支援AI接続（BundleStatusView刷新・GeminiAdapter追加）
+- 日付: 2026-09-16
+- コミット番号: 22abd3b
+
+Overview分析の先頭に「AIと整理する」を配置し、課題概要手入力・到達状態・Agent・
+外部連携・File Search設定を「詳細な記録・進捗・連携」へ折りたたんだ。
+AIProvider.tsにGeminiアダプターを追加（既定停止、実APIキー未設定）。
+conversationRecord・ConversationService・conversationRoutesにインタビュー形式の
+問い・候補・採用操作を追加。BigQueryServiceにGemini向けBQ書込を追加。
+BundleConversation.tsx/cssを刷新（インタビューUI・採用操作・送信範囲表示を整理）。
+BundleStatusView.tsx/css/testを大幅更新（折りたたみ構造・AIと整理タブを追加）。
+OverviewArea・OverviewTabBar・SupportConversation・BundleAgent/External/Progress CSSを更新。
+docs/ThinkSupport/17_AIインタビュー優先UI.md・18_Gemini思考支援AI.mdを追加。変更: 26ファイル（+386 / -122行）。
+
 ### v1.5.14 feat: Thinktank相談の課題化（AIChat選択から課題Bundleを作成してOverviewで開く）
 - 日付: 2026-09-15
 - コミット番号: bc295b0
