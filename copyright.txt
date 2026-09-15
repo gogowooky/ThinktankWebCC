@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.12",
+  "version": "1.5.13",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "c071e14",
-  "commitDateTime": "2026-09-15-171922",
-  "commitMessage": "refactor: P3 AIChatのUI整理と会話ルート機能拡充（Bundle選択統合・切替廃止）"
+  "commitId": "15e8f5e",
+  "commitDateTime": "2026-09-15-182941",
+  "commitMessage": "fix: BundleConversation の連続対話修正（回答保存後の自動再取得）"
 }
