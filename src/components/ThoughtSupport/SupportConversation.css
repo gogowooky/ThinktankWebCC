@@ -8,6 +8,10 @@
 .support-chat-host { display: flex; flex-direction: column; flex: 1; height: 100%; min-height: 0; overflow: hidden; color: #2c3e6f; }
 .support-conversation { flex: 1; min-height: 0; overflow: auto; padding: 12px; overflow-wrap: anywhere; }
 .support-conversation-title { margin: 0 0 8px; }
+.support-task-start { margin: 0 0 12px; }
+.support-task-start label { display: flex; align-items: center; gap: 8px; }
+.support-task-start input { flex: 1; min-width: 0; padding: 6px 8px; }
+.support-task-start__actions { display: flex; gap: 8px; margin-top: 8px; }
 
 /* スクロールバーは溝＝コンテンツ背景色、つまみ＝所属パネルの横向きツールバーの地色。
    2色は SupportChat.tsx が panelName から --support-content-bg / --support-toolbar-bg に流し込む。

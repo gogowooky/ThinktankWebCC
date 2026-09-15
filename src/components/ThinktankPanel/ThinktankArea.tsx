@@ -328,6 +328,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
   }, []);
 
+  const handleStartTask = useCallback(async (chatId: string, title: string) => {
+    const bundle = await vault.CreateTaskBundle(title, [chatId]);
+    app.OpenBundle(bundle.ID, 'graph');
+  }, [app, vault]);
+
   // 検索実行
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
@@ -396,6 +401,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         <div className="thinktank-area__chat-body">
           <SupportChat ref={aiChatViewRef} vault={vault} panelName="Thinktank"
                 selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={app.OverviewPanel.BundleID}
+                onStartTask={handleStartTask}
                 onMessages={setChatMessages} onWaiting={setChatWaiting}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
         </div>

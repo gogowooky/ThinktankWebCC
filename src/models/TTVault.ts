@@ -523,6 +523,15 @@ export class TTVault extends TTCollection {
     return this.CreateBundleFromIds(ids, keyword, dates);
   }
 
+  /** 本人が採用した課題名と関連資料から、1課題を表すBundleを作成する。 */
+  public async CreateTaskBundle(title: string, ids: string[]): Promise<TTThink> {
+    const normalizedTitle = title.replace(/[\r\n]+/g, ' ').trim();
+    if (!normalizedTitle) throw new Error('課題名を入力してください。');
+    if (normalizedTitle.length > 200) throw new Error('課題名は200文字以内で入力してください。');
+    const uniqueIds = [...new Set(ids)].filter(id => this.GetThink(id));
+    return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds });
+  }
+
   /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */
   public async CreateBlankThink(contentType: ContentType, initialName: string = '', bundleId?: string): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());

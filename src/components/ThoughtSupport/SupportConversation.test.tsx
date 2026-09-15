@@ -17,8 +17,9 @@ beforeEach(() => {
   }
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
-async function show(bundleId = 'a', selectedId = 'chat-a') {
+async function show(bundleId = 'a', selectedId = 'chat-a', onStartTask?: (chatId: string, title: string) => Promise<void>) {
   await act(async () => root.render(<SupportChat vault={vault} selectedId={selectedId} bundleId={bundleId} panelName="Thinktank"
+    onStartTask={onStartTask}
     onSelected={vi.fn()} onMessages={vi.fn()} onWaiting={vi.fn()} modelSelector={{ value: { provider: 'openai', model: 'unused' }, onChange: vi.fn() }} />));
 }
 it('uses the Chat selected in the upper list and has no second selector or conversation-history panel', async () => {
@@ -37,4 +38,19 @@ it('accepts a selected Chat whose title differs from the Bundle and preserves it
   const chat = new TTThink(); chat.ID = 'chat'; chat.ContentType = 'chat'; chat.Name = 'TODO:Thinktank｜[進行中]別件'; chat.Content = '保存済み会話\n## 質問\n回答'; vault.AddThink(chat); const before = chat.Content;
   await show('a', chat.ID); expect(host.querySelector('textarea')?.getAttribute('data-chat')).toBe(chat.ID);
   expect(host.textContent).not.toContain('同名のBundleが必要'); expect(chat.Content).toBe(before);
+});
+it('starts a task from the selected Thinktank Chat after the user confirms its title', async () => {
+  const onStartTask = vi.fn().mockResolvedValue(undefined);
+  await show('', 'chat-a', onStartTask);
+  await act(async () => { host.querySelector<HTMLButtonElement>('.support-task-start > button')!.click(); });
+  const input = host.querySelector<HTMLInputElement>('input[aria-label="課題名"]')!;
+  expect(input.value).toBe('Bundle a');
+  await act(async () => {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    setter.call(input, '誕生日会を開催する');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await act(async () => { host.querySelector<HTMLButtonElement>('.support-task-start__actions button')!.click(); });
+  expect(onStartTask).toHaveBeenCalledWith('chat-a', '誕生日会を開催する');
+  expect(host.textContent).toContain('Overviewで課題を開きました');
 });

@@ -14,6 +14,7 @@ interface Props {
   onMessages: (messages: ChatMessage[]) => void;
   onWaiting: (waiting: boolean) => void;
   modelSelector: AiModelSelectorProps;
+  onStartTask?: (chatId: string, title: string) => Promise<void>;
   pane?: boolean;
 }
 
@@ -36,6 +37,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
     ['--support-content-bg' as string]: `var(--${panel}-content-bg)`,
     ['--support-toolbar-bg' as string]: `var(--${panel}-menuribbon-bg)`,
   }}>
-    <SupportConversation vault={props.vault} panelName={props.panelName} bundleId={props.bundleId ?? ''} chatId={props.selectedId} draftScope={scope} />
+    <SupportConversation vault={props.vault} panelName={props.panelName} bundleId={props.bundleId ?? ''} chatId={props.selectedId}
+      draftScope={scope} onStartTask={props.onStartTask} />
   </div>;
 });
