@@ -62,7 +62,7 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
     return () => window.removeEventListener('beforeunload', warn);
   }, [draft]);
   async function prepare() {
-    if (locked.current) return;
+    if (locked.current || !supported) return;
     locked.current = true; setBusy('参照資料と接続状態を確認しています…'); setMessage(''); setConfirmed(false); setContext(undefined); setLoaded(false);
     const abort = new AbortController(); controller.current = abort;
     try {
@@ -92,26 +92,41 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
     if (alive.current) {
       setPending(undefined); setQuestion(''); setConfirmed(false); setContext(undefined);
       setHistory(old => old.some(t => t.id === turn.id) ? old : [...old, turn]);
-      setMessage('会話を保存しました。次の質問の前に資料を再取得してください。');
+      setMessage('');
     }
   }
   async function send() {
     if (locked.current || !status?.enabled || !context || !confirmed || !question.trim() || pending || !loaded) return;
     locked.current = true; setBusy('回答を生成しています…'); setMessage('');
     const abort = new AbortController(); controller.current = abort;
+    let saved = false;
     try {
       const turn = await client.generate(context, question, history.slice(-6).map(t => t.id), abort.signal, chatId);
       if (!alive.current || abort.signal.aborted) return;
       draft.pending = turn; setPending(turn); setBusy('会話を保存しています…');
       await persist(turn);
+      saved = true;
     } catch (e) { if (alive.current) setMessage(abort.signal.aborted ? '応答を中断しました。質問は保持しています。' : (e as Error).message); }
-    finally { locked.current = false; if (alive.current) setBusy(''); }
+    finally {
+      locked.current = false;
+      if (alive.current) {
+        setBusy('');
+        if (saved) await prepare();
+      }
+    }
   }
   async function retrySave() {
     if (!pending || locked.current) return;
     locked.current = true; setBusy('保存を再試行しています…');
-    try { await persist(pending); } catch (e) { if (alive.current) setMessage((e as Error).message); }
-    finally { locked.current = false; if (alive.current) setBusy(''); }
+    let saved = false;
+    try { await persist(pending); saved = true; } catch (e) { if (alive.current) setMessage((e as Error).message); }
+    finally {
+      locked.current = false;
+      if (alive.current) {
+        setBusy('');
+        if (saved) await prepare();
+      }
+    }
   }
   const turns = pending && !history.some(t => t.id === pending.id) ? [...history, pending] : history;
   return <section className="bundle-conversation" aria-label="AIとの会話">
@@ -137,6 +152,7 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
         <button type="button" disabled={!!busy} onClick={() => void retrySave()}>保存を再試行</button>{' '}
         <button type="button" onClick={() => download(pending)}>回答を書き出す</button></div>}
       {message && <p role="status">{message}</p>}
+      {message && !pending && <button type="button" disabled={!!busy} onClick={() => void prepare()}>再試行</button>}
       {busy && <p role="status">{busy}</p>}
       <label className="bundle-conversation-composer"><textarea aria-label="メッセージ" placeholder="メッセージを入力" maxLength={4000} value={question} disabled={!!busy || !!pending}
         onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); setConfirmed(false); }} /></label>

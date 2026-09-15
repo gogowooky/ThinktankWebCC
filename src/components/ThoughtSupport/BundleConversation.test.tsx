@@ -59,8 +59,32 @@ it('requires confirmation and persists the answer without adopting its proposals
   expect(button('送信').disabled).toBe(true);
   await act(async () => (host.querySelector('input[type=checkbox]') as HTMLInputElement).click());
   await click('送信');
-  expect(api.save).toHaveBeenCalledWith(turn(), 'chat-a', 'a'); expect(host.textContent).toContain('会話を保存しました');
+  expect(api.save).toHaveBeenCalledWith(turn(), 'chat-a', 'a');
   expect(button('送信').disabled).toBe(true);
+});
+it('continues with a second question using refreshed sources and the saved history', async () => {
+  const first = turn();
+  const refreshed = { ...context(), snapshotId: 'new-snapshot' };
+  api.history.mockResolvedValueOnce([]).mockResolvedValue([first]);
+  api.context.mockResolvedValueOnce(context()).mockResolvedValue(refreshed);
+  await show('a', 'chat-a'); await prepare(); await click('送信');
+  expect(host.textContent).toContain('回答');
+  await input('次の質問');
+  await act(async () => (host.querySelector('input[type=checkbox]') as HTMLInputElement).click());
+  api.generate.mockResolvedValueOnce({ ...first, id: 'second', question: '次の質問', context: refreshed });
+  await click('送信');
+  expect(api.generate.mock.calls[1]).toEqual([refreshed, '次の質問', ['turn'], expect.any(AbortSignal), 'chat-a']);
+  expect(api.save).toHaveBeenCalledTimes(2);
+});
+it('retries preparation after a connection failure without losing the draft or calling AI', async () => {
+  api.history.mockRejectedValueOnce(new Error('接続できません'));
+  await show('a', 'chat-a'); await input('誕生日会を開きたい');
+  expect(button('送信').disabled).toBe(true);
+  await click('再試行');
+  expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('誕生日会を開きたい');
+  await act(async () => (host.querySelector('input[type=checkbox]') as HTMLInputElement).click());
+  expect(button('送信').disabled).toBe(false);
+  expect(api.generate).not.toHaveBeenCalled();
 });
 it('keeps a failed save across Bundle switches and retries saving without repeating AI', async () => {
   api.save.mockRejectedValueOnce(new Error('保存競合')); await show(); await prepare(); await click('送信');
