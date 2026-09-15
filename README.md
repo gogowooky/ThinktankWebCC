@@ -7,6 +7,19 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.14 feat: Thinktank相談の課題化（AIChat選択から課題Bundleを作成してOverviewで開く）
+- 日付: 2026-09-15
+- コミット番号: bc295b0
+
+ThinktankのAIChatで選択したChatを課題Bundleとして登録する操作を追加。
+「この相談を課題として始める」ボタンから課題名を確認・編集し「作成してOverviewで開く」で保存。
+課題Bundleの先頭行に課題名、Bundle本文の*行と関連IDにChatIDを保存。
+会話本文はBundle複製せず選択Chatのまま維持。
+TTVaultにBundle作成とChatID登録メソッドを追加（TTVault.ts）。
+SupportConversation・SupportChat・ThinktankAreaを更新。
+SupportConversation.test/aiNeutralCore.testにテストを追加。
+docs/ThinkSupport/16_Thinktank相談の課題化.mdを追加。変更: 9ファイル（+124行）。
+
 ### v1.5.13 fix: BundleConversation の連続対話修正（回答保存後の自動再取得）
 - 日付: 2026-09-15
 - コミット番号: 15e8f5e

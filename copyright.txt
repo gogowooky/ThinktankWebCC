@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.13",
+  "version": "1.5.14",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "15e8f5e",
-  "commitDateTime": "2026-09-15-182941",
-  "commitMessage": "fix: BundleConversation の連続対話修正（回答保存後の自動再取得）"
+  "commitId": "bc295b0",
+  "commitDateTime": "2026-09-15-210056",
+  "commitMessage": "feat: Thinktank相談の課題化（AIChat選択から課題Bundleを作成してOverviewで開く）"
 }
