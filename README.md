@@ -7,6 +7,19 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.12 refactor: P3 AIChatのUI整理と会話ルート機能拡充（Bundle選択統合・切替廃止）
+- 日付: 2026-09-15
+- コミット番号: c071e14
+
+AIChat内の「AIに相談する」「これまでの会話」切替とBundle選択重複UIを廃止。
+各画面の既存Bundle選択を相談対象として活用し、パネル別のChat表示範囲を整理。
+conversationRoutes・ConversationServiceにBQ向けChatファイル一覧取得・会話保存を追加。
+BigQueryServiceにconversation向けBQ書込を追加、conversationRecordを更新。
+SupportChat・SupportConversation・BundleConversationのUI/ロジックを整理・簡素化。
+Overview/ReThink/Thinktank/Workout各AreaとMenuRibbonを更新。
+useSupportChats・ConversationService・index.css・BundleStatusView.cssを更新。
+変更: 33ファイル（+436 / -273行）。
+
 ### v1.5.11 fix: Workout>AIChatの文字色が地色に埋もれる問題を修正
 - 日付: 2026-09-15
 - コミット番号: b6a6dcc

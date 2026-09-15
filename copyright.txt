@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.11",
+  "version": "1.5.12",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "b6a6dcc",
-  "commitDateTime": "2026-09-15-082446",
-  "commitMessage": "fix: Workout>AIChatの文字色が地色に埋もれる問題を修正"
+  "commitId": "c071e14",
+  "commitDateTime": "2026-09-15-171922",
+  "commitMessage": "refactor: P3 AIChatのUI整理と会話ルート機能拡充（Bundle選択統合・切替廃止）"
 }
