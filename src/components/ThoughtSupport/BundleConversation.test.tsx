@@ -6,6 +6,7 @@ const api = vi.hoisted(() => ({ status: vi.fn(), history: vi.fn(), generate: vi.
 vi.mock('../../services/ConversationService', () => ({
   ConversationClient: class { status = api.status; history = api.history; generate = api.generate; save = api.save; },
   conversationContext: (value: unknown) => value,
+  chatOnlyConversationContext: (vaultId: string, chatId: string) => ({ ...context(chatId), vaultId, bundleId: chatId, snapshotId: chatId, scope: 'chat-only', sources: [], manualState: null }),
 }));
 vi.mock('../../services/ContextService', () => ({ ContextService: class { getBundleContext = api.context; } }));
 vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { instance: { mode: 'pwa' } } }));
@@ -22,17 +23,22 @@ beforeEach(() => {
   api.context.mockImplementation(async id => context(id)); api.generate.mockResolvedValue(turn()); api.save.mockResolvedValue(undefined);
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
-async function show(id = 'a') { await act(async () => root.render(<BundleConversation vault={vault} bundleId={id} onOpen={vi.fn()} />)); }
+async function show(id: string | undefined = 'a', chatId?: string) { await act(async () => root.render(<BundleConversation vault={vault} bundleId={id} chatId={chatId} onOpen={vi.fn()} />)); }
 function button(label: string) { return [...host.querySelectorAll('button')].find(b => b.textContent === label)!; }
 async function click(label: string) { await act(async () => { expect(button(label).disabled).toBe(false); button(label).click(); }); }
 async function input(value: string) { await act(async () => { const area = host.querySelector('textarea')!; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, value); area.dispatchEvent(new Event('input', { bubbles: true })); }); }
-async function prepare() { await click('資料・履歴・接続状態を確認'); await input('質問'); await act(async () => (host.querySelector('input[type=checkbox]') as HTMLInputElement).click()); }
+async function prepare() { await input('質問'); await act(async () => (host.querySelector('input[type=checkbox]') as HTMLInputElement).click()); }
 
-it('makes no request on display and cannot generate when disabled', async () => {
+it('prepares automatically and cannot generate when disabled', async () => {
   api.status.mockResolvedValue({ enabled: false, provider: 'none', model: '' }); await show();
-  expect(api.status).not.toHaveBeenCalled(); expect(api.context).not.toHaveBeenCalled();
-  await click('資料・履歴・接続状態を確認'); await input('質問');
-  expect(button('質問を送信').disabled).toBe(true); expect(api.generate).not.toHaveBeenCalled(); expect(host.textContent).toContain('停止中');
+  expect(api.status).toHaveBeenCalled(); expect(api.context).toHaveBeenCalled(); await input('質問');
+  expect(button('送信').disabled).toBe(true); expect(api.generate).not.toHaveBeenCalled(); expect(host.textContent).toContain('停止中');
+});
+it('allows a Chat-only conversation without loading Bundle context', async () => {
+  await show('', 'chat-a');
+  expect(api.context).not.toHaveBeenCalled();
+  expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a');
+  expect(host.textContent).toContain('参照資料なし');
 });
 it('keeps drafts separate between Overview and AIChat for the same Bundle', async () => {
   await show(); await input('Overviewの質問');
@@ -46,25 +52,25 @@ it('prepares a progress review without sending or overwriting an existing questi
   await show(); await click('進行を見直す質問を入力');
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toContain('本人の完了状態は確定しない');
   expect(api.generate).not.toHaveBeenCalled(); expect(button('進行を見直す質問を入力').disabled).toBe(true);
-  expect(button('質問を送信').disabled).toBe(true);
+  expect(button('送信').disabled).toBe(true);
 });
 it('requires confirmation and persists the answer without adopting its proposals', async () => {
-  await show(); await click('資料・履歴・接続状態を確認'); await input('質問');
-  expect(button('質問を送信').disabled).toBe(true);
+  await show('a', 'chat-a'); await input('質問');
+  expect(button('送信').disabled).toBe(true);
   await act(async () => (host.querySelector('input[type=checkbox]') as HTMLInputElement).click());
-  await click('質問を送信');
-  expect(api.save).toHaveBeenCalledWith(turn()); expect(host.textContent).toContain('会話を保存しました');
-  expect(button('質問を送信').disabled).toBe(true);
+  await click('送信');
+  expect(api.save).toHaveBeenCalledWith(turn(), 'chat-a', 'a'); expect(host.textContent).toContain('会話を保存しました');
+  expect(button('送信').disabled).toBe(true);
 });
 it('keeps a failed save across Bundle switches and retries saving without repeating AI', async () => {
-  api.save.mockRejectedValueOnce(new Error('保存競合')); await show(); await prepare(); await click('質問を送信');
-  expect(host.textContent).toContain('未保存'); await show('b'); expect(host.textContent).not.toContain('保存だけ再試行');
-  await show('a'); expect(host.textContent).toContain('保存だけ再試行'); await click('保存だけ再試行');
+  api.save.mockRejectedValueOnce(new Error('保存競合')); await show(); await prepare(); await click('送信');
+  expect(host.textContent).toContain('保存できません'); await show('b'); expect(host.textContent).not.toContain('保存を再試行');
+  await show('a'); expect(host.textContent).toContain('保存を再試行'); await click('保存を再試行');
   expect(api.generate).toHaveBeenCalledTimes(1); expect(api.save).toHaveBeenCalledTimes(2);
 });
 it('aborts a late answer on Bundle switch and never saves it under either Bundle', async () => {
   let resolve!: (value: ConversationTurn) => void;
-  api.generate.mockImplementation(() => new Promise(r => { resolve = r; })); await show(); await prepare(); await click('質問を送信');
+  api.generate.mockImplementation(() => new Promise(r => { resolve = r; })); await show(); await prepare(); await click('送信');
   const signal = api.generate.mock.calls[0][3] as AbortSignal;
   await show('b'); expect(signal.aborted).toBe(true); await act(async () => resolve(turn()));
   expect(api.save).not.toHaveBeenCalled(); expect(host.textContent).not.toContain('保存済み');
@@ -72,14 +78,14 @@ it('aborts a late answer on Bundle switch and never saves it under either Bundle
 });
 it('reads history even if the current Bundle context cannot be resolved', async () => {
   api.context.mockRejectedValue(new Error('資料が取得できません')); api.history.mockResolvedValue([turn()]);
-  await show(); await click('資料・履歴・接続状態を確認');
+  await show();
   expect(host.textContent).toContain('回答'); expect(host.textContent).toContain('資料が取得できません');
-  expect(button('質問を送信').disabled).toBe(true);
+  expect(button('送信').disabled).toBe(true);
 });
 it('cancels generation without losing the question', async () => {
   let reject!: (error: Error) => void;
   api.generate.mockImplementation(() => new Promise((_resolve, r) => { reject = r; }));
-  await show(); await prepare(); await click('質問を送信'); await click('応答を中断');
+  await show(); await prepare(); await click('送信'); await click('中断');
   await act(async () => reject(new Error('aborted')));
   expect(host.textContent).toContain('応答を中断しました'); expect(api.save).not.toHaveBeenCalled();
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('質問');

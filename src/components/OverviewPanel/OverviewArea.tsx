@@ -136,13 +136,12 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     });
   }, [panel.BundleID, vault, refreshKey, vault.IsLoaded, vault.Count]);
 
-  // 担当・Bundleの範囲に合う相談と、継続中の選択を表示する。
-  const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Overviewで選択中のBundleからタイトル上の担当がOverviewのChatを表示する。
   const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Overview", panel.BundleID, selectedTodoMemoId);
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
-    if (vault.IsLoaded && selectedTodoMemoId && !vault.GetThink(selectedTodoMemoId)) {
+    if (vault.IsLoaded && selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
     }
   }, [todoMemoThinks, selectedTodoMemoId]);
@@ -380,7 +379,7 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     ? `Chatを${selectedTodoMemoId}に保管します`
     : 'Chatを新規のchatとして保管します';
 
-  // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
+  // AIChat一覧の選択状態を更新する（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
   // 入力と応答は共通チャットが自動保存する。
   const handleSelectTodoMemo = useCallback((id: string) => {

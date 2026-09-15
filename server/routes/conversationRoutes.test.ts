@@ -11,11 +11,11 @@ import type { BigQueryService } from '../services/BigQueryService';
 const source: ConversationContext = { schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId: 'bundle', capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only', quality: 'complete',
   sources: [{ thinkId: 'source', title: '資料', content: '本文', contentHash: createHash('sha256').update('本文').digest('hex') }], issues: [], manualState: null };
 const p: AIProvider = { name: 'test', model: 'test-model', generate: vi.fn(async () => ({ reply: '回答', insufficientEvidence: false, citations: [{ thinkId: 'source', quote: '本文' }], proposals: [] })) };
-const store = { getRecord: vi.fn(), saveThinkSupport: vi.fn() };
+const store = { getRecord: vi.fn(), saveThinkSupport: vi.fn(), saveChatConversation: vi.fn() };
 let server: ReturnType<typeof createServer>, url: string, turn: ConversationTurn;
 const record = { file_id: 'bundle', category: 'bundle', updated_at: '2026-09-14T00:00:00Z', metadata: JSON.stringify({ keep: 1, thoughtSupport: { goal: '旧目的' }, thinkSupport: { keep: true } }) };
 beforeEach(async () => {
-  vi.clearAllMocks(); store.getRecord.mockResolvedValue({ success: true, data: record }); store.saveThinkSupport.mockResolvedValue({ success: true, data: true });
+  vi.clearAllMocks(); store.getRecord.mockResolvedValue({ success: true, data: record }); store.saveThinkSupport.mockResolvedValue({ success: true, data: true }); store.saveChatConversation.mockResolvedValue({ success: true, data: true });
   turn = await new ConversationService(p).answer('turn', '質問', source, [], new AbortController().signal); vi.mocked(p.generate).mockClear();
   const app = express(); app.use(express.json()); app.use('/active', createConversationRoutes(p, store as unknown as BigQueryService)); app.use('/disabled', createConversationRoutes(new DisabledAIProvider(), store as unknown as BigQueryService));
   server = createServer(app); await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
@@ -24,6 +24,12 @@ beforeEach(async () => {
 afterEach(async () => { server.closeAllConnections(); await new Promise<void>(r => server.close(() => r())); });
 function generate(changes = {}, prefix = 'active') { return fetch(`${url}/${prefix}/turns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: 'turn', question: '質問', context: source, confirmed: true, historyIds: [], ...changes }) }); }
 function save(value = turn) { return fetch(`${url}/active/bundles/bundle/turns/turn`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) }); }
+function chatRecords() {
+  const chat = { ...record, file_id: 'chat', category: 'chat', title: '# TODO:Overview｜[進行中]別の題名', metadata: JSON.stringify({ keep: 1 }) };
+  const bundle = { ...record, title: '# 課題' };
+  store.getRecord.mockImplementation(async value => ({ success: true, data: value === 'chat' ? chat : bundle }));
+}
+function saveChat(value = turn) { return fetch(`${url}/active/chats/chat/bundles/bundle/turns/turn`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) }); }
 it('disabled requests never read storage or execute AI, while saved histories remain readable', async () => {
   expect((await generate({}, 'disabled')).status).toBe(503); expect(store.getRecord).not.toHaveBeenCalled(); expect(p.generate).not.toHaveBeenCalled();
   expect((await fetch(`${url}/disabled/bundles/bundle`)).status).toBe(200);
@@ -32,6 +38,28 @@ it('generates without changing records, then appends while preserving all unrela
   expect((await generate()).status).toBe(200); expect(store.saveThinkSupport).not.toHaveBeenCalled();
   expect((await save()).status).toBe(200);
   expect(store.saveThinkSupport.mock.calls[0][2]).toMatchObject({ keep: 1, thoughtSupport: { goal: '旧目的' }, thinkSupport: { keep: true }, thinkConversations: { turns: [turn] } });
+});
+it('reads and saves AIChat history in the selected Chat record regardless of its title', async () => {
+  chatRecords();
+  expect((await generate({ chatId: 'chat' })).status).toBe(200);
+  expect((await saveChat()).status).toBe(200);
+  expect(store.saveThinkSupport).not.toHaveBeenCalled();
+  expect(store.saveChatConversation.mock.calls[0][0]).toBe('chat');
+  expect(store.saveChatConversation.mock.calls[0][2]).toMatchObject({ keep: 1, thinkConversations: { turns: [turn] } });
+});
+it('generates and saves a Thinktank Chat-only turn without a Bundle record', async () => {
+  const chat = { ...record, file_id: 'chat', category: 'chat', title: '# TODO:Thinktank｜相談', metadata: JSON.stringify({ keep: 1 }) };
+  store.getRecord.mockResolvedValue({ success: true, data: chat });
+  vi.mocked(p.generate).mockResolvedValueOnce({ reply: '一般回答', insufficientEvidence: true, citations: [], proposals: [] });
+  const chatContext: ConversationContext = { ...source, snapshotId: 'chat', bundleId: 'chat', scope: 'chat-only', sources: [], manualState: null };
+  const response = await generate({ chatId: 'chat', context: chatContext });
+  expect(response.status).toBe(200);
+  const chatTurn = await response.json() as ConversationTurn;
+  const saved = await fetch(`${url}/active/chats/chat/turns/${chatTurn.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(chatTurn) });
+  expect(saved.status).toBe(200);
+  expect(store.getRecord).toHaveBeenCalledWith('chat');
+  expect(store.saveThinkSupport).not.toHaveBeenCalled();
+  expect(store.saveChatConversation.mock.calls[0][0]).toBe('chat');
 });
 it('retries saving idempotently without regenerating an answer', async () => {
   store.getRecord.mockResolvedValue({ success: true, data: { ...record, metadata: JSON.stringify({ thinkConversations: { schemaVersion: 1, turns: [turn] } }) } });

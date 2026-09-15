@@ -1,7 +1,7 @@
 /* ThinktankMenuRibbon.css */
 
 .thinktank-menu-ribbon {
-  background: var(--thinktank-ribbon-soft);
+  background: var(--thinktank-menuribbon-bg);
   color: rgba(255, 255, 255, 0.9);
 }
 

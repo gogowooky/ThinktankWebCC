@@ -63,6 +63,15 @@
   --workout-ribbon-soft:   color-mix(in srgb, var(--workout-base)   80%, var(--workout-content-bg));
   --rethink-ribbon-soft:   color-mix(in srgb, var(--rethink-base)   80%, var(--rethink-content-bg));
 
+  /* 横向きツールバー（各 Area 上部の MenuRibbon）の地色。Workout だけリボン色そのもの、
+     他3パネルは ribbon-soft という既存の使い分けをここに一本化する。
+     スクロールバーのつまみなど「ツールバーと同じ色」を要求する箇所から参照するため、
+     MenuRibbon 側の直接指定ではなくこのトークンを唯一の定義とする。 */
+  --thinktank-menuribbon-bg: var(--thinktank-ribbon-soft);
+  --overview-menuribbon-bg:  var(--overview-ribbon-soft);
+  --workout-menuribbon-bg:   var(--workout-ribbon-bg);
+  --rethink-menuribbon-bg:   var(--rethink-ribbon-soft);
+
   /* 一覧・ボタンの状態色（下地を透かすので transparent 合成） */
   --thinktank-hover:    color-mix(in srgb, var(--thinktank-base)  8%, transparent);
   --thinktank-selected: color-mix(in srgb, var(--thinktank-base) 14%, transparent);

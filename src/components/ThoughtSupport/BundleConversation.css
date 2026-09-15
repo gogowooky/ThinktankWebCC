@@ -1,4 +1,4 @@
-.bundle-conversation { border-top: 1px solid var(--border-color, #888); margin-top: 20px; padding-top: 12px; overflow-wrap: anywhere; }
+.bundle-conversation { overflow-wrap: anywhere; }
 .bundle-conversation label { display: block; margin: 10px 0; }
 /* 地色・文字色は .support-conversation の select と同じ理由で明るいチャット面に合わせる
    （--bg-primary は暗い地色向けで、文字色の濃いパネルでは黒地に黒文字になる）。 */
@@ -9,3 +9,8 @@
 .bundle-conversation blockquote { margin: 12px 0; padding-left: 12px; border-left: 3px solid #60a5fa; }
 .bundle-conversation small { display: block; }
 .bundle-conversation button:disabled { opacity: .5; cursor: default; }
+.bundle-conversation-empty { color: #64748b; text-align: center; margin: 24px 0; }
+.bundle-conversation-composer { margin-top: 14px; }
+.bundle-conversation-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.bundle-conversation-confirm { font-size: .9em; color: #475569; }
+.bundle-conversation-options { margin-top: 12px; color: #64748b; }

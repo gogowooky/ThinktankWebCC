@@ -14,7 +14,7 @@ export class ConversationService {
     if (this.provider.name === 'none') throw new Error('AI対話は停止中です。');
     validateContext(context); verifyContextHashes(context);
     signal.throwIfAborted();
-    const raw = context.sources.length ? await this.provider.generate({ question, context,
+    const raw = context.sources.length || context.scope === 'chat-only' ? await this.provider.generate({ question, context,
       history: history.slice(-6).map(t => ({ question: t.question, reply: t.answer.reply })),
     }, signal) : { reply: '参照できる資料がありません。Bundleに資料を追加して再取得してください。', insufficientEvidence: true, citations: [], proposals: [] };
     signal.throwIfAborted();

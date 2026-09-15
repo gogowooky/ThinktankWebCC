@@ -12,6 +12,21 @@
 .bundle-status__note { font-size:.85em; opacity:.8; }
 .bundle-status summary { cursor:pointer; padding:12px 0; }
 .bundle-analysis { display:flex; flex-direction:column; height:100%; min-height:0; }
+
+/* スクロールバーは溝＝コンテンツ背景色、つまみ＝Overviewの横向きツールバーの地色。
+   AIChat（.support-chat-host）と同じ方針。ここは常に Overview パネル内なのでトークンを直接参照する。
+   index.css のグローバル指定は暗い地色向けで、::-webkit-scrollbar-* は継承しないため子孫まで指定する。 */
+.bundle-analysis,
+.bundle-analysis * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--overview-menuribbon-bg) var(--overview-content-bg);
+}
+.bundle-analysis::-webkit-scrollbar,
+.bundle-analysis *::-webkit-scrollbar { width:6px; height:6px; }
+.bundle-analysis::-webkit-scrollbar-track,
+.bundle-analysis *::-webkit-scrollbar-track { background:var(--overview-content-bg); }
+.bundle-analysis::-webkit-scrollbar-thumb,
+.bundle-analysis *::-webkit-scrollbar-thumb { background:var(--overview-menuribbon-bg); border-radius:3px; }
 .bundle-analysis-tabs { display:flex; gap:6px; padding:8px; border-bottom:1px solid #64748b; }
 .bundle-analysis-tabs button { flex:1; padding:8px; background:transparent; color:inherit; border:1px solid #64748b; border-radius:5px; cursor:pointer; }
 .bundle-analysis-tabs button[aria-pressed=true] { background:#334b71; color:#fff; }

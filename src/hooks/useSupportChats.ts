@@ -1,11 +1,24 @@
 import { useEffect, useState } from 'react';
 import type { TTVault } from '../models/TTVault';
 import type { TTThink } from '../models/TTThink';
+import type { SupportPanel } from '../services/thoughtSupport';
 import { parseManagedChatTitle } from '../utils/managedChat';
-import { supportRecord, type SupportPanel } from '../services/thoughtSupport';
 import { useAppUpdate } from './useAppUpdate';
 
-export function useSupportChats(vault: TTVault, panel: SupportPanel, bundleId: string, selectedId: string) {
+export function filterSupportChats(items: TTThink[], panel: SupportPanel, bundleId: string, scopeIds: readonly string[]): TTThink[] {
+  const ownedChats = items.filter(t => {
+    if (t.ContentType !== 'chat') return false;
+    const managed = parseManagedChatTitle(t.Name);
+    if (managed) return managed.panel === panel;
+    return panel === 'Thinktank' && !!t.Metadata.supportOrigin && t.Metadata.supportOrigin !== 'Pane';
+  });
+  if (panel === 'Thinktank') return ownedChats;
+  if (!bundleId) return [];
+  const included = new Set(scopeIds);
+  return ownedChats.filter(t => included.has(t.ID));
+}
+
+export function useSupportChats(vault: TTVault, panel: SupportPanel, bundleId: string, _selectedId: string) {
   useAppUpdate(vault);
   const [scope, setScope] = useState<{ bundle: string; ids: string[] }>({ bundle: '', ids: [] });
   const [error, setError] = useState('');
@@ -13,20 +26,14 @@ export function useSupportChats(vault: TTVault, panel: SupportPanel, bundleId: s
   useEffect(() => {
     let cancelled = false;
     setError('');
-    if (bundleId) void vault.GetThinksForBundleAsync(bundleId, true).then(items => {
+    if (panel === 'Thinktank' || !bundleId) { setScope({ bundle: bundleId, ids: [] }); return () => { cancelled = true; }; }
+    setScope({ bundle: bundleId, ids: [] });
+    void vault.GetThinksForBundleAsync(bundleId, true).then(items => {
       if (!cancelled) setScope({ bundle: bundleId, ids: items.map(t => t.ID) });
-    }).catch(() => { if (!cancelled) { setScope({ bundle: bundleId, ids: [] }); setError('Bundleの相談一覧を読み込めませんでした。再読み込みしてください。'); } });
+    }).catch(() => { if (!cancelled) { setScope({ bundle: bundleId, ids: [] }); setError('BundleのChat一覧を読み込めませんでした。再読み込みしてください。'); } });
     return () => { cancelled = true; };
-  }, [vault, bundleId, revision]);
-  const chats = vault.GetThinks().filter((t: TTThink) => {
-    if (t.ContentType !== 'chat') return false;
-    if (t.ID === selectedId) return true; // Keep the active conversation across an AI handoff.
-    const managed = parseManagedChatTitle(t.Name);
-    // Unclassified chats started in any panel land in Thinktank until the AI assigns an owner.
-    if (managed?.panel !== panel && !(panel === 'Thinktank' && !managed && !!t.Metadata.supportOrigin && t.Metadata.supportOrigin !== 'Pane')) return false;
-    if (panel === 'Thinktank') return true;
-    if (bundleId) return scope.bundle === bundleId && scope.ids.includes(t.ID);
-    return panel === 'ReThink' || (panel === 'Workout' && !supportRecord(t).bundleId);
-  });
+  }, [vault, panel, bundleId, revision]);
+  const scopeIds = scope.bundle === bundleId ? scope.ids : [];
+  const chats = filterSupportChats(vault.GetThinks(), panel, bundleId, scopeIds);
   return { chats, error };
 }

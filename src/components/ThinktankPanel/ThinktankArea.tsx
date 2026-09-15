@@ -189,10 +189,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // vault.Count が変わったとき（追加・削除）のみ再取得
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 全Vaultの担当相談と未整理の相談を表示する。
+  // Vault全体からタイトル上の担当がThinktankのChatを表示する。
   const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Thinktank", '', selectedTodoMemoId);
 
-  // 選択中の TODO メモが一覧から消えたら選択を空に戻す
+  // Chat自体が削除された場合だけ選択を空に戻す（Thinktankは全Chatが対象）。
   useEffect(() => {
     if (vault.IsLoaded && selectedTodoMemoId && !vault.GetThink(selectedTodoMemoId)) {
       setSelectedTodoMemoId('');
@@ -320,7 +320,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     ? `Chatを${selectedTodoMemoId}に保管します`
     : 'Chatを新規のchatとして保管します';
 
-  // chatファイル選択: 選択されたchatファイルの内容をChatにロードする（空選択でクリア）。
+  // AIChat一覧の選択状態を更新する（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
   // 入力と応答は共通チャットが自動保存する。
   const handleSelectTodoMemo = useCallback((id: string) => {
@@ -395,7 +395,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         />
         <div className="thinktank-area__chat-body">
           <SupportChat ref={aiChatViewRef} vault={vault} panelName="Thinktank"
-                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={''}
+                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={app.OverviewPanel.BundleID}
                 onMessages={setChatMessages} onWaiting={setChatWaiting}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
         </div>

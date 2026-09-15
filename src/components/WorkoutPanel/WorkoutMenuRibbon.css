@@ -5,7 +5,7 @@
   align-items: center;
   height: 30px;
   padding: 0 6px;
-  background: var(--workout-ribbon-bg);
+  background: var(--workout-menuribbon-bg);
   color: rgba(255, 255, 255, 0.85);
   gap: 4px;
   flex-shrink: 0;

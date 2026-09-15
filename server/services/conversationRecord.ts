@@ -3,7 +3,7 @@ import { THINK_FIELDS, readThinkSupport, type ThinkSupportRecord, type ThinkFiel
 export interface ConversationSource { thinkId: string; title: string; content: string; contentHash: string }
 export interface ConversationContext {
   schemaVersion: 1; snapshotId: string; vaultId: string; bundleId: string; capturedAt: string;
-  scope: 'bundle-only'; quality: 'complete' | 'partial';
+  scope: 'bundle-only' | 'chat-only'; quality: 'complete' | 'partial';
   sources: ConversationSource[]; issues: string[]; manualState: ThinkSupportRecord | null;
 }
 export interface Citation { thinkId: string; quote: string; contentHash: string; start: number; end: number }
@@ -32,9 +32,10 @@ export function id(value: unknown): value is string { return typeof value === 's
 function date(value: unknown): value is string { return text(value, 40) && Number.isFinite(Date.parse(value)); }
 export function validateContext(value: unknown): asserts value is ConversationContext {
   if (!object(value) || value.schemaVersion !== 1 || !id(value.snapshotId) || !id(value.vaultId) || !id(value.bundleId)
-    || !date(value.capturedAt) || value.scope !== 'bundle-only' || !['complete', 'partial'].includes(String(value.quality))
+    || !date(value.capturedAt) || !['bundle-only', 'chat-only'].includes(String(value.scope)) || !['complete', 'partial'].includes(String(value.quality))
     || !Array.isArray(value.sources) || value.sources.length > 300 || !Array.isArray(value.issues)
     || value.issues.length > 1000 || !value.issues.every(i => text(i, 1000))) throw new Error('参照資料の形式が不正です。');
+  if (value.scope === 'chat-only' && (value.sources.length || value.manualState !== null || value.bundleId !== value.snapshotId)) throw new Error('Chat単独対話の参照形式が不正です。');
   let length = 0;
   const ids = new Set<string>();
   for (const s of value.sources) {
