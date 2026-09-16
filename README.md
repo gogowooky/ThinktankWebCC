@@ -7,6 +7,19 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.18 feat: AI提案から課題概要反映・目的と完了条件の引継ぎ・サブ課題追加（ProposalReview・SubtaskProposal）
+- 日付: 2026-09-16
+- コミット番号: d2cd004
+
+Bundleを参照したAIChat回答から「課題の概要に反映する内容を確認」を表示し、
+本人確認後にまとめて保存するProposalReview UIとproposalReviewサービスを追加。
+Thinktank相談の課題化時に目的・完了条件をChatから引継ぐSupportConversationフローを追加。
+次の行動一覧からサブ課題を追加するSubtaskProposal・SubtaskList UIを追加。
+TTVaultにBundle課題概要の部分更新・サブ課題追加・Chat-Bundle関連IDの操作を追加。
+BundleStatusView・BundleConversation・SupportChat・ThinktankAreaを更新。
+aiNeutralCore.test・SupportConversation.test・proposalReview.test・taskSeed.testを追加。
+docs/ThinkSupport/20〜22・04_実装計画書・16_Thinktank相談・READMEを更新。変更: 25ファイル（+580行）。
+
 ### v1.5.17 docs: Chat本文とAIChat履歴の統合方針・動作・実データ照合記録を追加
 - 日付: 2026-09-16
 - コミット番号: a0355dc

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.17",
+  "version": "1.5.18",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "a0355dc",
-  "commitDateTime": "2026-09-16-183826",
-  "commitMessage": "docs: Chat本文とAIChat履歴の統合方針・動作・実データ照合記録を追加"
+  "commitId": "d2cd004",
+  "commitDateTime": "2026-09-16-211148",
+  "commitMessage": "feat: AI提案から課題概要反映・目的と完了条件の引継ぎ・サブ課題追加（ProposalReview・SubtaskProposal）"
 }
