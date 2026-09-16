@@ -7,6 +7,16 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.16 feat: 会話インタビューの候補採用と保存フローを整備（conversationRecord・BundleConversation）
+- 日付: 2026-09-16
+- コミット番号: 1e241dc
+
+conversationRecordに候補採用・拒否・修正の操作と採用履歴を追加。
+conversationRoutesに採用操作エンドポイントと採用結果の会話保存を追加。
+BundleConversation.tsxで候補の採用・拒否・修正UIを実装、採用済み項目の確認表示を整備。
+ConversationService.tsのリクエスト形式を更新。
+conversationRoutes.test・BundleConversation.testを更新。変更: 6ファイル（+75 / -16行）。
+
 ### v1.5.15 feat: AIインタビュー優先UIとGemini思考支援AI接続（BundleStatusView刷新・GeminiAdapter追加）
 - 日付: 2026-09-16
 - コミット番号: 22abd3b

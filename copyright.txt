@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.15",
+  "version": "1.5.16",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "22abd3b",
-  "commitDateTime": "2026-09-16-085508",
-  "commitMessage": "feat: AIインタビュー優先UIとGemini思考支援AI接続（BundleStatusView刷新・GeminiAdapter追加）"
+  "commitId": "1e241dc",
+  "commitDateTime": "2026-09-16-152107",
+  "commitMessage": "feat: 会話インタビューの候補採用と保存フローを整備（conversationRecord・BundleConversation）"
 }
