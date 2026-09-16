@@ -15,7 +15,6 @@
 
 # Action
 
-
 # Status
 
 
@@ -31,6 +30,7 @@
 　
 
 # Application ======================================================================================================
+
 ## Status：　260710　Application.CheckedItem.IDs
 　IDをApplication.CheckedItem.IDs に変更します。
 
@@ -57,6 +57,7 @@ current:        PWA
 default:        PWA
 type:           string
 candidates:      ^(PWA|Local|Electron)$
+
 
 ## Action：　260708　Application.PanelDisplay.Mode:Simple
 description:    パネル表示モードをSimpleにする

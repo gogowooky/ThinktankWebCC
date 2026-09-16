@@ -9,6 +9,7 @@ import { useCallback, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
+import { useAiChatPanelWidth } from '../../utils/aiChatFocusWidth';
 import { Splitter } from '../Layout/Splitter';
 import { OverviewTabBar } from './OverviewTabBar';
 import { OverviewArea } from './OverviewArea';
@@ -27,6 +28,10 @@ export function OverviewPanel({ app, width, onResize }: Props) {
   const vault = app.Models.Vault;
   useAppUpdate(panel);
   useAppUpdate(vault);
+
+  // 親パネルにフォーカスがあり AIChat が開いている間だけ広げた幅。
+  // state は触らないので、条件を外れれば元の幅に戻る。
+  const shownWidth = useAiChatPanelWidth('Overview', Math.max(MIN_WIDTH, width), panel.IsAreaOpen && panel.ViewMode === 'chat');
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -150,7 +155,7 @@ export function OverviewPanel({ app, width, onResize }: Props) {
       <PanelArea
         panelId="overview"
         isOpen={panel.IsAreaOpen}
-        width={Math.max(MIN_WIDTH, width)}
+        width={shownWidth}
       >
         <OverviewArea app={app} showSettings={panel.ViewMode === 'settings'} refreshKey={refreshKey} />
       </PanelArea>

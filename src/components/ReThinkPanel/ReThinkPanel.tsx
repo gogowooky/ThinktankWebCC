@@ -11,6 +11,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
+import { useAiChatPanelWidth } from '../../utils/aiChatFocusWidth';
 import { ReThinkTabBar, type ReThinkViewMode } from './ReThinkTabBar';
 import { ReThinkArea } from './ReThinkArea';
 import './ReThinkPanel.css';
@@ -26,6 +27,10 @@ interface Props {
 export function ReThinkPanel({ app, width, onResize }: Props) {
   const panel = app.ReThinkPanel;
   useAppUpdate(panel);
+
+  // 親パネルにフォーカスがあり AIChat が開いている間だけ広げた幅。
+  // state は触らないので、条件を外れれば元の幅に戻る。
+  const shownWidth = useAiChatPanelWidth('ReThink', Math.max(MIN_WIDTH, width), panel.IsAreaOpen && panel.ViewMode === 'chat');
 
   const handleToggle  = useCallback(() => panel.ToggleArea(), [panel]);
   const handleSetMode = useCallback(
@@ -54,7 +59,7 @@ export function ReThinkPanel({ app, width, onResize }: Props) {
       <PanelArea
         panelId="rethink"
         isOpen={panel.IsAreaOpen}
-        width={Math.max(MIN_WIDTH, width)}
+        width={shownWidth}
       >
         <ReThinkArea app={app} viewMode={panel.ViewMode} />
       </PanelArea>

@@ -15,6 +15,7 @@ import { Splitter } from '../Layout/Splitter';
 import { ThinktankTabBar } from './ThinktankTabBar';
 import { ThinktankArea } from './ThinktankArea';
 import type { LayoutMode } from '../Layout/AppLayout';
+import { useAiChatPanelWidth } from '../../utils/aiChatFocusWidth';
 import './ThinktankPanel.css';
 
 const MIN_WIDTH     = 120;
@@ -31,6 +32,10 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
   const panel = app.ThinktankPanel;
   const vault = app.Models.Vault;
   useAppUpdate(panel);
+
+  // 親パネルにフォーカスがあり AIChat が開いている間だけ広げた幅。
+  // state は触らないので、条件を外れれば元の幅に戻る。
+  const shownWidth = useAiChatPanelWidth('Thinktank', Math.max(MIN_WIDTH, width), panel.IsAreaOpen && panel.ViewMode === 'chat');
 
   const handleToggle     = useCallback(() => panel.ToggleArea(), [panel]);
   const handleSetViewMode = useCallback(
@@ -85,7 +90,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
       <PanelArea
         panelId="thinktank"
         isOpen={panel.IsAreaOpen}
-        width={Math.max(MIN_WIDTH, width)}
+        width={shownWidth}
       >
         <ThinktankArea
           app={app}
