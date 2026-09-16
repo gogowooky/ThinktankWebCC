@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.19 fix: textarea の横方向リサイズを無効化しパネル幅に固定（BundleStatusView・SupportConversation）
+- 日付: 2026-09-16
+- コミット番号: 0ff450d
+
+width:100%; min-width:100%; max-width:100%; box-sizing:border-box; resize:vertical; を指定し、
+縦のみリサイズ可能にした。min/maxを両方100%にすることで横ドラッグが残したインライン幅も無効化。
+変更: 2ファイル（CSSのみ、+18行）。
+
 ### v1.5.18 feat: AI提案から課題概要反映・目的と完了条件の引継ぎ・サブ課題追加（ProposalReview・SubtaskProposal）
 - 日付: 2026-09-16
 - コミット番号: d2cd004

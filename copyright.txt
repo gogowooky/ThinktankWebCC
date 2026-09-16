@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.18",
+  "version": "1.5.19",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "d2cd004",
-  "commitDateTime": "2026-09-16-211148",
-  "commitMessage": "feat: AI提案から課題概要反映・目的と完了条件の引継ぎ・サブ課題追加（ProposalReview・SubtaskProposal）"
+  "commitId": "0ff450d",
+  "commitDateTime": "2026-09-16-212555",
+  "commitMessage": "fix: textarea の横方向リサイズを無効化しパネル幅に固定（BundleStatusView・SupportConversation）"
 }
