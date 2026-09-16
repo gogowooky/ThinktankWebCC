@@ -8,23 +8,23 @@
 
 Thinktank・Overview・Workout・ReThinkのAIChat、およびWorkoutのChatペインが共用するSupportChatに、Bundleを根拠とする対話を接続した。
 
-2026-09-15のUI整理で、AIChat内に追加していた「AIに相談する」「これまでの会話」の切替と、重複するBundle選択リストを廃止した。各画面の上部にある既存のBundle選択を相談対象として使う。保存済みChatファイルとデータは残し、AIChatのファイル一覧には次の範囲で表示する。
+2026-09-15のUI整理で、AIChat内に追加していた「AIに相談する」「これまでの会話」の切替と、重複するBundle選択リストを廃止した。各画面の上部にある既存のChat選択を相談対象として使う。保存済みChatファイルとデータは残し、AIChatのファイル一覧には次の範囲で表示する。
 
 - Thinktank：Vault全体を対象に、Chatタイトルの担当がThinktankのファイル、および従来仕様でThinktankへ配置される担当未分類のChatファイル。
 - Overview・Workout・ReThink：Overview上部で選択中のBundleを対象に、Chatタイトルの担当がそれぞれのパネルと一致するChatファイル。
 - OverviewでBundleを選択していない場合、Overview・Workout・ReThinkの一覧は空。Bundleを切り替えた場合、切替先に含まれない選択は解除する。
 
-「これまでの会話」パネルは復元せず、Chatファイル本文をP3の対話履歴として読み込んだり更新したりしない。
+「これまでの会話」パネルは復元しない。旧Chat本文の会話は復元し、新しい対話と同じChat履歴へ統合する。本文と履歴の現在の扱いは[19 Chat本文とAIChat履歴の統合](19_Chat本文とAIChat履歴の統合.md)を参照。
 
 ## 利用手順
 
 1. 各画面の上部にある既存リストでChatファイルを選ぶ。
 2. AIChatを開く。ThinktankではChatを選択すれば、OverviewのBundleが未選択でも質問欄を表示する。Overview・Workout・ReThinkではChatと参照Bundleの両方が必要。両者のタイトル一致は前提にしない。
 3. Chatを選ぶと、履歴・参照資料・接続状態を自動で準備する。通常画面には会話、入力欄、送信操作と必要なエラーだけを表示する。接続先や参照範囲、補助操作は「参照情報・その他」に収める。
-4. 質問を入力し、AIへの送信チェック後に送信する。生成中断、保存の再試行、未保存回答のJSON書き出しは既存P3と共通。
+4. 質問を入力して送信する。送信ボタンが意思確認を兼ねる。生成中断、保存の再試行、未保存回答のJSON書き出しは既存P3と共通。
 5. 引用の出典ボタンでWorkoutに原本を開く。既存ペインがあればそこへ移動し、なければ追加する。
 
-AIが停止中でもBigQueryモードの質問欄には入力できる。送信にはP3のAI設定が必要。Gemini File Searchの接続設定だけでは対話AIは有効にならない。今回、AIの有効化や認証設定の変更、実APIへの質問送信は行っていない。
+AIが停止中でもBigQueryモードの質問欄には入力できる。送信にはP3のAI設定が必要。Gemini File Searchの接続設定だけでは対話AIは有効にならない。その後、思考支援AIChatにはGeminiアダプターを追加して有効化した。詳細は[18 Gemini思考支援AI](18_Gemini思考支援AI.md)を参照。
 
 ## データと切替
 

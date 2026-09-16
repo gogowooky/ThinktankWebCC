@@ -20,6 +20,9 @@
 | [12 P6復元とFile Search接続確認](12_P6復元とFileSearch接続確認.md) | 対応表・履歴の再登録、Gemini File Searchの既定停止アダプターとストア一覧 |
 | [13 P3 AIChat接続](13_P3_AIChat接続.md) | 上部で選択中のBundleによる引用付き対話、パネル別Chat一覧範囲、Chatファイル保全、下書き分離 |
 | [14 P6ストア対応の保存](14_P6ストア対応の保存.md) | BundleとFile SearchストアのID対応、確認後の保存・変更・解除、競合と再試行 |
+| [17 AIインタビュー優先UI](17_AIインタビュー優先UI.md) | 入力負担を下げる会話中心のUI |
+| [18 Gemini思考支援AI](18_Gemini思考支援AI.md) | Geminiアダプターと接続設定 |
+| [19 Chat本文とAIChat履歴の統合](19_Chat本文とAIChat履歴の統合.md) | 旧Chat会話の復元、構造化履歴と本文の同期、同一Chat表示の照合 |
 
 ## 記述の区分
 
