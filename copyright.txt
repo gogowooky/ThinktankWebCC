@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.16",
+  "version": "1.5.17",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "1e241dc",
-  "commitDateTime": "2026-09-16-152107",
-  "commitMessage": "feat: 会話インタビューの候補採用と保存フローを整備（conversationRecord・BundleConversation）"
+  "commitId": "a0355dc",
+  "commitDateTime": "2026-09-16-183826",
+  "commitMessage": "docs: Chat本文とAIChat履歴の統合方針・動作・実データ照合記録を追加"
 }

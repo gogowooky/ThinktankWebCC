@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.17 docs: Chat本文とAIChat履歴の統合方針・動作・実データ照合記録を追加
+- 日付: 2026-09-16
+- コミット番号: a0355dc
+
+Chat本文とAIChatのthinkConversations統合方針、旧形式の復元ルール、
+保存失敗時の再試行挙動を整理したdocs/ThinkSupport/19を追加。
+実データ照合記録（Chat ID 2026-09-09-141300、旧本文12件＋新会話1件）を記載。
+docs/ThinkSupport/02_UI・04_実装計画書・13_P3_AIChat接続・READMEを更新。変更: 5ファイル。
+
 ### v1.5.16 feat: 会話インタビューの候補採用と保存フローを整備（conversationRecord・BundleConversation）
 - 日付: 2026-09-16
 - コミット番号: 1e241dc
