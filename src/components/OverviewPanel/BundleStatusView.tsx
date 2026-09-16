@@ -12,6 +12,7 @@ import { BundleProgress } from '../ThoughtSupport/BundleProgress';
 import { BundleAgent } from '../ThoughtSupport/BundleAgent';
 import { BundleExternal } from '../ThoughtSupport/BundleExternal';
 import { FileSearchConnection } from '../ThoughtSupport/FileSearchConnection';
+import { SubtaskList } from '../ThoughtSupport/SubtaskList';
 
 interface Props { vault: TTVault; bundleId: string; onOpen: (id: string) => void }
 export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(function BundleStatusView({ vault, bundleId, onOpen }, ref) {
@@ -51,6 +52,7 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
       <button onClick={() => onOpen(bundleId)}>Bundleの記録を開く</button>{' '}
       <button onClick={() => setRetry(n => n + 1)} disabled={loading}>再読み込み</button>
     </header>
+    <SubtaskList vault={vault} bundleId={bundleId} />
     {error ? <p role="alert">{error}</p> : loading ? <p role="status">記録を確認しています…</p> : <>
       <section className="bundle-status__interview">
         <h3>AIと整理する</h3>

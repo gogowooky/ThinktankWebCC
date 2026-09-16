@@ -21,6 +21,7 @@
 .support-task-start label { display: flex; align-items: center; gap: 8px; }
 .support-task-start input { flex: 1; min-width: 0; padding: 6px 8px; }
 .support-task-start__actions { display: flex; gap: 8px; margin-top: 8px; }
+.support-task-start__summary { white-space: pre-wrap; margin: 12px 0; }
 
 /* スクロールバーは溝＝コンテンツ背景色、つまみ＝所属パネルの横向きツールバーの地色。
    2色は SupportChat.tsx が panelName から --support-content-bg / --support-toolbar-bg に流し込む。

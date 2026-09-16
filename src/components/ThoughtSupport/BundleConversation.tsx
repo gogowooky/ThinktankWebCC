@@ -4,7 +4,8 @@ import { ContextService } from '../../services/ContextService';
 import { ConversationClient, chatOnlyConversationContext, conversationContext, type ConversationContext, type ConversationTurn } from '../../services/ConversationService';
 import { mergeConversationTranscript, readConversationLog } from '../../../server/services/conversationRecord';
 import { StorageManager } from '../../services/storage/StorageManager';
-import { CONTEXT_LABELS } from '../OverviewPanel/ContextSnapshotView';
+import { ProposalReview } from './ProposalReview';
+import { SubtaskProposal } from './SubtaskProposal';
 import './BundleConversation.css';
 
 const client = new ConversationClient();
@@ -165,11 +166,8 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
           <p>{citation.quote}</p><button type="button" onClick={() => onOpen(citation.thinkId)}>出典 {index + 1}：{turn.context.sources.find(s => s.thinkId === citation.thinkId)?.title || citation.thinkId}</button>
           <small>引用は回答時点の本文です。開いた資料は更新されている場合があります。</small>
         </blockquote>)}
-        {turn.answer.proposals.map(p => <section key={p.field} aria-label={`${CONTEXT_LABELS[p.field]}の変更提案`}>
-          <h4>AIの変更提案：{CONTEXT_LABELS[p.field]}（未採用）</h4><p>理由：{p.reason}</p>
-          <p>参照時点の記録：{p.before || '未記録'}</p><p>提案：{p.after}</p>
-          <p>採用する場合はOverviewのBundle状況にある手動入力で内容と出典を確認し、本人の記録として保存してください。</p>
-        </section>)}
+        <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
+        {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
       </article>)}
       {pending && <div role="status"><p>回答を保存できませんでした。</p>
         <button type="button" disabled={!!busy} onClick={() => void retrySave()}>保存を再試行</button>{' '}

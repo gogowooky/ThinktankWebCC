@@ -6,6 +6,7 @@ import type { SupportPanel } from '../../services/thoughtSupport';
 import './SupportChat.css';
 import './SupportConversation.css';
 import { SupportConversation } from './SupportConversation';
+import type { TaskSeed } from '../../services/taskSeed';
 
 export interface SupportChatRef extends AiChatViewRef { abortStreaming: () => void; save: () => void }
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
   onMessages: (messages: ChatMessage[]) => void;
   onWaiting: (waiting: boolean) => void;
   modelSelector: AiModelSelectorProps;
-  onStartTask?: (chatId: string, title: string) => Promise<void>;
+  onStartTask?: (chatId: string, title: string, seed?: TaskSeed) => Promise<void>;
   pane?: boolean;
 }
 

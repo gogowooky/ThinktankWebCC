@@ -328,8 +328,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
   }, []);
 
-  const handleStartTask = useCallback(async (chatId: string, title: string) => {
-    const bundle = await vault.CreateTaskBundle(title, [chatId]);
+  const handleStartTask = useCallback(async (chatId: string, title: string, seed?: import('../../services/taskSeed').TaskSeed) => {
+    const bundle = await vault.CreateTaskBundle(title, [chatId], seed);
     app.OpenBundle(bundle.ID, 'graph');
   }, [app, vault]);
 

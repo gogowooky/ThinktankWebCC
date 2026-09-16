@@ -17,6 +17,10 @@ import { formatDateRangeJapanese, computeDateRange } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
 import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
 import type { ThinkMeta } from '../services/storage/IStorageBackend';
+import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../server/services/thinkSupportRecord';
+import type { TaskSeed } from '../services/taskSeed';
+import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
+import type { ConversationTurn } from '../services/ConversationService';
 
 /** Optional diagnostics for isolated, read-only context resolution. Existing UI defaults are preserved. */
 export interface BundleResolutionOptions {
@@ -35,6 +39,7 @@ export class TTVault extends TTCollection {
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
   private _bundleThinksCache: Map<string, string[]> = new Map();
+  private _subtaskCreations = new Map<string, Promise<TTThink>>();
 
   public override get ClassName(): string {
     return 'TTVault';
@@ -445,7 +450,9 @@ export class TTVault extends TTCollection {
     searchQuery?: string,
     filterKeyword?: string,
     dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string },
-    ids?: string[]
+    ids?: string[],
+    thinkSupport?: ThinkSupportRecord,
+    taskRelation?: TaskRelation
   }): Promise<TTThink> {
     const { prefix, title, searchQuery, filterKeyword, dates, ids = [] } = options;
     const existingIds = new Set(this._children.keys());
@@ -471,6 +478,11 @@ export class TTVault extends TTCollection {
     think.ContentType = 'bundle';
     think.IsMetaOnly  = false;
     think.setContentSilent(fullContent);
+    const metadata = {
+      ...(options.thinkSupport ? { thinkSupport: options.thinkSupport } : {}),
+      ...(options.taskRelation ? { taskRelation: options.taskRelation } : {}),
+    };
+    if (Object.keys(metadata).length) think.Metadata = metadata;
     think._parent     = this;
     this._children.set(newId, think);
     this.Count = this._children.size;
@@ -483,6 +495,7 @@ export class TTVault extends TTCollection {
         fullContent,
         keywords:    '',
         relatedIds:  ids.join(','),
+        ...(Object.keys(metadata).length ? { metadata } : {}),
       });
     } catch (e) {
       // 保存に失敗した場合、サーバーに存在しない「幻の」Thinkをメモリ上に
@@ -493,6 +506,7 @@ export class TTVault extends TTCollection {
       throw e;
     }
     think.markSaved();
+    if (Object.keys(metadata).length) think.markMetadataSaved();
     this.NotifyUpdated();
     return think;
   }
@@ -524,12 +538,46 @@ export class TTVault extends TTCollection {
   }
 
   /** 本人が採用した課題名と関連資料から、1課題を表すBundleを作成する。 */
-  public async CreateTaskBundle(title: string, ids: string[]): Promise<TTThink> {
+  public async CreateTaskBundle(title: string, ids: string[], seed?: TaskSeed): Promise<TTThink> {
     const normalizedTitle = title.replace(/[\r\n]+/g, ' ').trim();
     if (!normalizedTitle) throw new Error('課題名を入力してください。');
     if (normalizedTitle.length > 200) throw new Error('課題名は200文字以内で入力してください。');
     const uniqueIds = [...new Set(ids)].filter(id => this.GetThink(id));
-    return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds });
+    const now = new Date().toISOString();
+    const thinkSupport: ThinkSupportRecord | undefined = seed ? {
+      schemaVersion: 1, revision: 1, author: 'human', confirmedAt: now, updatedAt: now,
+      values: { ...emptyThinkValues(), goal: seed.goal, completionCriteria: seed.completionCriteria }, sources: {},
+    } : undefined;
+    if (thinkSupport) readThinkSupport(thinkSupport);
+    return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds, thinkSupport });
+  }
+
+  /** Adopt one saved next-action proposal without rewriting the parent Bundle. */
+  public async CreateSubtaskFromConversation(turn: ConversationTurn, chatId: string, title: string): Promise<TTThink> {
+    const parentId = turn.context.bundleId;
+    const proposal = turn.answer.proposals.find(p => p.field === 'nextAction');
+    const normalized = title.replace(/[\r\n]+/g, ' ').trim();
+    const relation: TaskRelation = { schemaVersion: 1, parentId, chatId, turnId: turn.id, panel: 'Workout' };
+    if (turn.context.scope !== 'bundle-only' || turn.context.vaultId !== this.ID
+      || this.GetThink(parentId)?.ContentType !== 'bundle' || this.GetThink(chatId)?.ContentType !== 'chat'
+      || !proposal || !readTaskRelation(relation) || !normalized || normalized.length > 200) {
+      throw new Error('サブ課題の対象・提案・課題名を確認してください。');
+    }
+    const key = JSON.stringify([parentId, chatId, turn.id]);
+    const pending = this._subtaskCreations.get(key);
+    if (pending) return pending;
+    const existing = this.GetBundles().find(b => {
+      const r = readTaskRelation(b.Metadata.taskRelation);
+      return r?.parentId === parentId && r.chatId === chatId && r.turnId === turn.id;
+    });
+    if (existing) return existing;
+    const now = new Date().toISOString();
+    const thinkSupport: ThinkSupportRecord = { schemaVersion: 1, revision: 1, author: 'human', confirmedAt: now,
+      updatedAt: now, values: { ...emptyThinkValues(), goal: proposal.after }, sources: {} };
+    readThinkSupport(thinkSupport);
+    const creation = this._createBundle({ prefix: '', title: normalized, ids: [chatId], thinkSupport, taskRelation: relation });
+    this._subtaskCreations.set(key, creation);
+    try { return await creation; } finally { this._subtaskCreations.delete(key); }
   }
 
   /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */

@@ -3,6 +3,8 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const calls = vi.hoisted(() => ({ render: vi.fn() }));
+const history = vi.hoisted(() => vi.fn());
+vi.mock('../../services/ConversationService', () => ({ ConversationClient: class { history = history; } }));
 vi.mock('./BundleConversation', () => ({ BundleConversation: (props: { bundleId: string; chatId: string; draftScope: string }) => { calls.render(props); return <textarea aria-label="今回の質問" data-bundle={props.bundleId} data-chat={props.chatId} />; } }));
 import { SupportChat } from './SupportChat';
 import { TTVault } from '../../models/TTVault';
@@ -10,11 +12,41 @@ import { TTThink } from '../../models/TTThink';
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;
 beforeEach(() => {
   vi.clearAllMocks(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); host = document.createElement('div'); root = createRoot(host);
+  history.mockResolvedValue([]);
   vault = new TTVault('vault'); vault.IsLoaded = true;
   for (const id of ['a', 'b']) {
     const bundle = new TTThink(); bundle.ID = id; bundle.ContentType = 'bundle'; bundle.Name = `Bundle ${id}`; vault.AddThink(bundle);
     const chat = new TTThink(); chat.ID = `chat-${id}`; chat.ContentType = 'chat'; chat.Name = `TODO:Thinktank｜[進行中]Bundle ${id}`; chat.Content = `${chat.Name}\n`; vault.AddThink(chat);
   }
+});
+it('previews the latest purpose and completion criteria before creating the task', async () => {
+  const seed = { goal: '誕生日を祝う', completionCriteria: '参加者とお祝いを終える' };
+  history.mockResolvedValue([{ context: { vaultId: vault.ID, scope: 'chat-only', bundleId: 'chat-a' }, answer: { proposals: [
+    { field: 'goal', after: seed.goal }, { field: 'completionCriteria', after: seed.completionCriteria },
+  ] } }]);
+  const create = vi.fn().mockResolvedValue(undefined);
+  await show('', 'chat-a', create);
+  await act(async () => host.querySelector<HTMLButtonElement>('.support-task-start > button')!.click());
+  expect(host.textContent).toContain(seed.goal);
+  expect(host.textContent).toContain(seed.completionCriteria);
+  expect(create).not.toHaveBeenCalled();
+  await act(async () => host.querySelector<HTMLButtonElement>('.support-task-start__actions button')!.click());
+  expect(create).toHaveBeenCalledWith('chat-a', 'Bundle a', seed);
+});
+
+it('requires review again if the conversation changes and clears review when switching Chat', async () => {
+  const create = vi.fn();
+  await show('', 'chat-a', create);
+  await act(async () => host.querySelector<HTMLButtonElement>('.support-task-start > button')!.click());
+  history.mockResolvedValue([{ context: { vaultId: vault.ID, scope: 'chat-only', bundleId: 'chat-a' }, answer: { proposals: [
+    { field: 'goal', after: '新しい目的' }, { field: 'completionCriteria', after: '新しい条件' },
+  ] } }]);
+  await act(async () => host.querySelector<HTMLButtonElement>('.support-task-start__actions button')!.click());
+  expect(create).not.toHaveBeenCalled();
+  expect(host.textContent).toContain('もう一度確認');
+  await show('', 'chat-b', create);
+  expect(host.querySelector('input[aria-label="課題名"]')).toBeNull();
+  expect(host.textContent).not.toContain('新しい目的');
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
 async function show(bundleId = 'a', selectedId = 'chat-a', onStartTask?: (chatId: string, title: string) => Promise<void>) {
