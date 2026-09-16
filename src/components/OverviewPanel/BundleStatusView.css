@@ -97,6 +97,11 @@
 .bundle-analysis input:not([type=checkbox]):focus {
   outline:none; border-color:var(--field-accent); background:var(--field-surface);
 }
+/* 幅はパネル幅（.bundle-status の padding を除いた分）に固定し、縦だけ可変にする。
+   textarea の既定は resize:both で、横に広げるとパネル幅を超えて横スクロールが出る。
+   min/max を両方 100% にするのは、横ドラッグが残したインライン width を無効化し、
+   隣の固定幅の枠と必ず同じ幅にするため（詳細は SupportConversation.css の同じ指定）。 */
+.bundle-analysis textarea { width:100%; min-width:100%; max-width:100%; box-sizing:border-box; resize:vertical; }
 .bundle-analysis input[type=checkbox] { margin-right:8px; accent-color:var(--field-accent); vertical-align:middle; }
 .bundle-analysis fieldset { border:1px solid var(--field-border); border-radius:7px; }
 .bundle-analysis legend { color:var(--field-muted); }
