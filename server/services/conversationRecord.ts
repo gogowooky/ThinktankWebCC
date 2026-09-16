@@ -26,7 +26,7 @@ export function mergeConversationTranscript(content: string, turns: Conversation
   const before = (start >= 0 ? content.slice(0, start) : content).trimEnd();
   const after = end >= 0 ? content.slice(end + TRANSCRIPT_END.length).trim() : '';
   if (!turns.length) return [before, after].filter(Boolean).join('\n\n');
-  const transcript = turns.map(turn => {
+  const transcript = turns.filter(turn => turn.provider !== 'legacy-text').map(turn => {
     const citations = turn.answer.citations.map(citation => {
       const title = turn.context.sources.find(source => source.thinkId === citation.thinkId)?.title || citation.thinkId;
       return `> ${citation.quote.replace(/\n/g, '\n> ')}\n> 出典：${title}`;
@@ -37,7 +37,31 @@ export function mergeConversationTranscript(content: string, turns: Conversation
       turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...citations, ...proposals]
       .filter(Boolean).join('\n\n');
   }).join('\n\n');
+  if (!transcript) return [before, after].filter(Boolean).join('\n\n');
   return [before, `${TRANSCRIPT_START}\n${transcript}\n${TRANSCRIPT_END}`, after].filter(Boolean).join('\n\n');
+}
+
+/** Recover conversations created by the former text-only Chat implementation. */
+export function legacyConversationTurns(content: string, vaultId: string, chatId: string, capturedAt: string): ConversationTurn[] {
+  if (!id(vaultId) || !id(chatId)) return [];
+  const managedAt = content.indexOf(TRANSCRIPT_START);
+  const legacy = managedAt >= 0 ? content.slice(0, managedAt) : content;
+  const lines = legacy.split(/\r?\n/);
+  const turns: ConversationTurn[] = [];
+  for (let index = 0; index < lines.length && turns.length < 100; index += 1) {
+    if (!lines[index].startsWith('## ')) continue;
+    const question = lines[index].slice(3).trim();
+    const answer: string[] = [];
+    while (++index < lines.length && !lines[index].startsWith('## ')) answer.push(lines[index]);
+    index -= 1;
+    const reply = answer.join('\n').trim();
+    if (!question || !reply) continue;
+    const ordinal = turns.length;
+    turns.push({ schemaVersion: 1, id: `legacy-${ordinal}`, createdAt: new Date(Date.parse(capturedAt) + ordinal).toISOString(), question,
+      context: { schemaVersion: 1, snapshotId: chatId, vaultId, bundleId: chatId, capturedAt, scope: 'chat-only', quality: 'complete', sources: [], issues: [], manualState: null },
+      answer: { reply, insufficientEvidence: false, citations: [], proposals: [] }, provider: 'legacy-text', model: 'stored-chat-text' });
+  }
+  return turns;
 }
 // BigQuery JSON columns may reorder keys; equality must not depend on serialization order.
 export function canonicalJson(value: unknown): string {

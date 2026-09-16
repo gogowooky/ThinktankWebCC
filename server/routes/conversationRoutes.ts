@@ -3,7 +3,7 @@ import { bigqueryService } from '../services/BigQueryService.js';
 import type { BigQueryService } from '../services/BigQueryService.js';
 import { configuredProvider, type AIProvider } from '../services/AIProvider.js';
 import { ConversationService, verifyContextHashes } from '../services/ConversationService.js';
-import { id, text, object, validateContext, validateTurn, readConversationLog, mergeConversationTranscript, MAX_LOG_BYTES, canonicalJson } from '../services/conversationRecord.js';
+import { id, text, object, validateContext, validateTurn, readConversationLog, legacyConversationTurns, mergeConversationTranscript, MAX_LOG_BYTES, canonicalJson } from '../services/conversationRecord.js';
 
 type Store = Pick<BigQueryService, 'getRecord' | 'saveThinkSupport' | 'saveChatConversation'>;
 class RouteError extends Error { constructor(readonly status: number, message: string) { super(message); } }
@@ -24,7 +24,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     if (!Number.isFinite(Date.parse(version))) throw new RouteError(422, '保存版を確認できません。');
     return { metadata, log, version };
   }
-  async function readChat(chatId: string, bundleId?: string) {
+  async function readChat(chatId: string, bundleId?: string, requestedVaultId?: string, syncText = false) {
     const [chatResult, bundleResult] = await Promise.all([store.getRecord(chatId), bundleId ? store.getRecord(bundleId) : Promise.resolve(undefined)]);
     if (!chatResult.success || (bundleResult && !bundleResult.success)) throw new RouteError(503, '会話の保存先に接続できません。');
     const chat = chatResult.data, bundle = bundleResult?.data;
@@ -32,10 +32,23 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     if (bundleId && (!bundle || bundle.category !== 'bundle' || bundle.is_deleted)) throw new RouteError(404, '相談対象のBundleがありません。');
     const metadata: unknown = typeof chat.metadata === 'string' ? JSON.parse(chat.metadata) : chat.metadata ?? {};
     if (!object(metadata)) throw new RouteError(422, 'Chatファイルの保存形式が不正です。');
-    const log = readConversationLog(metadata.thinkConversations);
-    const version = typeof chat.updated_at === 'object' && chat.updated_at !== null && 'value' in chat.updated_at ? String(chat.updated_at.value) : String(chat.updated_at);
+    const stored = readConversationLog(metadata.thinkConversations);
+    let version = typeof chat.updated_at === 'object' && chat.updated_at !== null && 'value' in chat.updated_at ? String(chat.updated_at.value) : String(chat.updated_at);
     if (!Number.isFinite(Date.parse(version))) throw new RouteError(422, '保存版を確認できません。');
-    return { metadata, log, version, content: chat.content ?? '' };
+    const vaultId = requestedVaultId || stored.turns[0]?.context.vaultId;
+    const recovered = vaultId ? legacyConversationTurns(chat.content ?? '', vaultId, chatId, version) : [];
+    const storedIds = new Set(stored.turns.map(turn => turn.id));
+    const missing = recovered.filter(turn => !storedIds.has(turn.id));
+    const log = { schemaVersion: 1 as const, turns: [...missing, ...stored.turns] };
+    if (log.turns.length > 100) throw new RouteError(409, '履歴の保存上限です。別のChatで続けてください。');
+    let content = chat.content ?? '';
+    const synchronized = mergeConversationTranscript(content, log.turns);
+    if (syncText && (synchronized !== content || missing.length > 0)) {
+      const updatedAt = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
+      const result = await store.saveChatConversation(chatId, version, { ...metadata, thinkConversations: log }, synchronized, updatedAt);
+      if (result.success && result.data) { content = synchronized; version = updatedAt; }
+    }
+    return { metadata, log, version, content };
   }
   router.get('/status', (_req, res) => { res.json({ enabled: provider.name !== 'none', provider: provider.name, model: provider.model }); });
   router.get('/bundles/:id', async (req, res) => {
@@ -49,14 +62,16 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     try {
       const chatId = String(req.params.chatId), bundleId = String(req.params.bundleId);
       if (!id(chatId) || !id(bundleId)) throw new RouteError(400, 'ChatまたはBundle IDが不正です。');
-      const { log } = await readChat(chatId, bundleId); res.json(log);
+      const vaultId = typeof req.query.vaultId === 'string' && id(req.query.vaultId) ? req.query.vaultId : undefined;
+      const { log } = await readChat(chatId, bundleId, vaultId, true); res.json(log);
     } catch (e) { res.status(e instanceof RouteError ? e.status : 422).json({ error: e instanceof Error ? e.message : '履歴を取得できません。' }); }
   });
   router.get('/chats/:chatId', async (req, res) => {
     try {
       const chatId = String(req.params.chatId);
       if (!id(chatId)) throw new RouteError(400, 'Chat IDが不正です。');
-      const { log } = await readChat(chatId); res.json(log);
+      const vaultId = typeof req.query.vaultId === 'string' && id(req.query.vaultId) ? req.query.vaultId : undefined;
+      const { log } = await readChat(chatId, undefined, vaultId, true); res.json(log);
     } catch (e) { res.status(e instanceof RouteError ? e.status : 422).json({ error: e instanceof Error ? e.message : '履歴を取得できません。' }); }
   });
   router.post('/turns', async (req, res) => {
@@ -74,7 +89,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       key = chatId || context.bundleId;
       if (running.has(key)) { key = ''; throw new RouteError(409, 'このBundleは応答を生成中です。'); }
       running.add(key);
-      const { log } = chatId ? await readChat(chatId, context.scope === 'bundle-only' ? context.bundleId : undefined) : await read(context.bundleId);
+      const { log } = chatId ? await readChat(chatId, context.scope === 'bundle-only' ? context.bundleId : undefined, context.vaultId) : await read(context.bundleId);
       if (log.turns.length >= 100 || Buffer.byteLength(JSON.stringify(log)) >= MAX_LOG_BYTES) throw new RouteError(409, '履歴の保存上限です。別のBundleで続けてください。');
       const saved = log.turns.find(t => t.id === requestId);
       if (saved) {
@@ -118,7 +133,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       if (!id(chatId) || !id(bundleId) || !id(turnId)) throw new RouteError(400, '保存対象が不正です。');
       const turn: unknown = req.body; validateTurn(turn); verifyContextHashes(turn.context);
       if (turn.id !== turnId || turn.context.bundleId !== bundleId) throw new RouteError(400, '会話の保存対象が一致しません。');
-      const { metadata, log, version, content } = await readChat(chatId, bundleId);
+      const { metadata, log, version, content } = await readChat(chatId, bundleId, turn.context.vaultId);
       const existing = log.turns.find(t => t.id === turnId);
       if (existing) {
         if (canonicalJson(existing) !== canonicalJson(turn)) throw new RouteError(409, '同じ会話IDの保存内容が異なります。');
@@ -139,7 +154,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       if (!id(chatId) || !id(turnId)) throw new RouteError(400, '保存対象が不正です。');
       const turn: unknown = req.body; validateTurn(turn); verifyContextHashes(turn.context);
       if (turn.id !== turnId || turn.context.scope !== 'chat-only' || turn.context.bundleId !== chatId) throw new RouteError(400, '会話の保存対象が一致しません。');
-      const { metadata, log, version, content } = await readChat(chatId);
+      const { metadata, log, version, content } = await readChat(chatId, undefined, turn.context.vaultId);
       const existing = log.turns.find(t => t.id === turnId);
       if (existing) {
         if (canonicalJson(existing) !== canonicalJson(turn)) throw new RouteError(409, '同じ会話IDの保存内容が異なります。');

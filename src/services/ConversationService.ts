@@ -34,12 +34,13 @@ export class ConversationClient {
       || !('provider' in value) || typeof value.provider !== 'string' || !('model' in value) || typeof value.model !== 'string') throw new Error('接続状態を確認できません。');
     return { enabled: value.enabled, provider: value.provider, model: value.model };
   }
-  async history(bundleId: string | undefined, signal?: AbortSignal, chatId?: string): Promise<ConversationTurn[]> {
+  async history(bundleId: string | undefined, signal?: AbortSignal, chatId?: string, vaultId?: string): Promise<ConversationTurn[]> {
+    const query = vaultId ? `?vaultId=${encodeURIComponent(vaultId)}` : '';
     const path = chatId
       ? bundleId ? `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}/bundles/${encodeURIComponent(bundleId)}`
         : `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}`
       : `/api/think-support/conversations/bundles/${encodeURIComponent(bundleId!)}`;
-    const value = await json(await apiFetch(path, { signal }));
+    const value = await json(await apiFetch(path + query, { signal }));
     const log = readConversationLog(value);
     if (!chatId && log.turns.some(t => t.context.bundleId !== bundleId)) throw new Error('履歴の対象が一致しません。');
     return log.turns;

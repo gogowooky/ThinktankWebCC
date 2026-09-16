@@ -45,7 +45,7 @@ it('finishes preparation after the development StrictMode remount', async () => 
 it('allows a Chat-only conversation without loading Bundle context', async () => {
   await show('', 'chat-a');
   expect(api.context).not.toHaveBeenCalled();
-  expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a');
+  expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault');
   expect(host.textContent).toContain('参照資料なし');
 });
 it('shows cached Chat metadata while the server refresh is still pending', async () => {

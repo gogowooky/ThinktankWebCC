@@ -64,6 +64,16 @@ it('generates and saves a Thinktank Chat-only turn without a Bundle record', asy
   expect(store.saveThinkSupport).not.toHaveBeenCalled();
   expect(store.saveChatConversation.mock.calls[0][0]).toBe('chat');
 });
+it('recovers text-only Chat history for display and continuation', async () => {
+  const chat = { ...record, file_id: 'chat', category: 'chat', content: '# 相談\n## 前の質問\n以前の回答', metadata: JSON.stringify({ keep: 1 }) };
+  store.getRecord.mockResolvedValue({ success: true, data: chat });
+  const response = await fetch(`${url}/active/chats/chat?vaultId=vault`);
+  expect(response.status).toBe(200);
+  const log = await response.json() as { turns: ConversationTurn[] };
+  expect(log.turns).toHaveLength(1);
+  expect(log.turns[0]).toMatchObject({ question: '前の質問', provider: 'legacy-text', answer: { reply: '以前の回答' } });
+  expect(store.saveChatConversation.mock.calls[0][2]).toMatchObject({ thinkConversations: { turns: [expect.objectContaining({ provider: 'legacy-text' })] } });
+});
 it('retries saving idempotently without regenerating an answer', async () => {
   store.getRecord.mockResolvedValue({ success: true, data: { ...record, metadata: JSON.stringify({ thinkConversations: { schemaVersion: 1, turns: [turn] } }) } });
   expect((await save()).status).toBe(200); expect(store.saveThinkSupport).not.toHaveBeenCalled();

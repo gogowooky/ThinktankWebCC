@@ -78,7 +78,7 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
     const abort = new AbortController(); controller.current = abort;
     try {
       const [availability, turns, snapshot] = await Promise.allSettled([
-        client.status(abort.signal), client.history(bundleId, abort.signal, chatId),
+        client.status(abort.signal), client.history(bundleId, abort.signal, chatId, vault.ID),
         bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal })
           : Promise.resolve(chatOnlyConversationContext(vault.ID, chatId!)),
       ]);
@@ -88,7 +88,16 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
         const visible = turns.value.filter(t => t.context.vaultId === vault.ID);
         setHistory(visible); setLoaded(true);
         const chat = chatId ? vault.GetThink(chatId) : undefined;
-        if (chat) chat.setContentSilent(mergeConversationTranscript(chat.Content, visible));
+        if (chat) {
+          const mergedContent = mergeConversationTranscript(chat.Content, visible);
+          const currentIds = readConversationLog(chat.Metadata?.thinkConversations).turns.map(turn => turn.id);
+          const nextIds = visible.map(turn => turn.id);
+          if (mergedContent !== chat.Content || JSON.stringify(currentIds) !== JSON.stringify(nextIds)) {
+            chat.setContentSilent(mergedContent);
+            chat.Metadata = { ...chat.Metadata, thinkConversations: { schemaVersion: 1, turns: visible } };
+            vault.NotifyUpdated(false);
+          }
+        }
       }
       const failures = [availability, turns, snapshot].flatMap(result => result.status === 'rejected' ? [(result.reason as Error).message] : []);
       if (snapshot.status === 'fulfilled') {
