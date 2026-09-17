@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.20 feat: サブ課題の到達状態を俯瞰表示（SubtaskList・subtaskProgress）
+- 日付: 2026-09-17
+- コミット番号: 1ee2aa2
+
+SubtaskList に直接のサブ課題の検討・意思決定・実行・検証の到達状態（到達・再検討・対象外・未記録）を集計および個別表示する機能を追加。
+thinkProgress の検証済み履歴から安全に到達状態を読み出す subtaskProgress サービスを実装（保留・残課題・本人確認根拠の折りたたみ表示対応）。
+親パネル幅の一時拡張（useAiChatPanelWidth）を整理・削除。
+docs/ThinkSupport/23・04_実装計画書・README・Thinktank_Status-Action-Binding を更新。変更: 15ファイル（+182 / -206行）。
+
 ### v1.5.19 fix: textarea の横方向リサイズを無効化しパネル幅に固定（BundleStatusView・SupportConversation）
 - 日付: 2026-09-16
 - コミット番号: 0ff450d
