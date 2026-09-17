@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.21 feat: パネルエリア開閉と幅モード制御（IsOpen:Toggle / :ToggleForEdit / OpenWidth）
+- 日付: 2026-09-17
+- コミット番号: ae6c59f
+
+FocusedPanel.Area.IsOpen:Toggle / :ToggleForEdit（Shift+Q）によるパネル開閉と幅モード（User / ForEdit）切替を実装。
+ToggleForEdit で開く際に他パネルの ForEdit 幅を User 幅へ安全に戻す排他制御を追加。
+foredit 幅の割合調整（iPhone 100% / その他 30%）および Action 経由の変更を Status リスナーへ通知する連携不具合を修正。
+WorkoutSettingPanel.Area.OpenWidth への Status ID 統一、DefaultShortcut・Thinktank_Status-Action-Binding を更新。
+
 ### v1.5.20 feat: サブ課題の到達状態を俯瞰表示（SubtaskList・subtaskProgress）
 - 日付: 2026-09-17
 - コミット番号: 1ee2aa2
