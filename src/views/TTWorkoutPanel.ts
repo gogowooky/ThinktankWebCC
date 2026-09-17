@@ -214,7 +214,7 @@ export class TTWorkoutPanel extends TTUIItem {
   // ── エリア表示 ────────────────────────────────────────────────────────
   public IsAreaOpen: boolean = true;
   /** Area 表示幅のモード（init=起動時の値 / user=ユーザー設定値 / foredit=編集用の幅）。
-   *  Status `WorkoutPanel.Area.Width` の実体。px は panelAreaWidth.ts が導出する。 */
+   *  Status `WorkoutPanel.Area.OpenWidth` の実体。px は panelAreaWidth.ts が導出する。 */
   public AreaWidthMode: AreaWidthMode = 'init';
 
   /** ユーザーが Splitter で設定した幅(px)。AreaWidthMode='user' のときに使う。 */

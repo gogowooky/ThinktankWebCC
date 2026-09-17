@@ -99,11 +99,11 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   /** フォーカス列 → 幅モードを持つ Status キー（Workout は Pane 側の列も設定パネルを指す） */
   const AREA_WIDTH_KEYS: Record<string, ConfigKey> = {
-    Thinktank:      'ThinktankPanel.Area.Width',
-    Overview:       'OverviewPanel.Area.Width',
-    WorkoutSetting: 'WorkoutPanel.Area.Width',
-    Workout:        'WorkoutPanel.Area.Width',
-    ReThink:        'ReThinkPanel.Area.Width',
+    Thinktank:      'ThinktankPanel.Area.OpenWidth',
+    Overview:       'OverviewPanel.Area.OpenWidth',
+    WorkoutSetting: 'WorkoutPanel.Area.OpenWidth',
+    Workout:        'WorkoutPanel.Area.OpenWidth',
+    ReThink:        'ReThinkPanel.Area.OpenWidth',
   };
 
   const setFocusedAreaWidth = (item: TTActionItem, value: string): void => {
@@ -114,19 +114,19 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   };
 
   for (const [suffix, value, label] of [
-    ['Default', 'init',    '初期値'],
+    ['Initial', 'init',    '初期値'],
     ['User',    'user',    'ユーザー設定値'],
     ['ForEdit', 'foredit', '編集時の値'],
   ] as const) {
     TTActions.Register({
-      ActionID: `FocusedPanel.Area.Width:${suffix}`,
+      ActionID: `FocusedPanel.Area.OpenWidth:${suffix}`,
       Description: `フォーカスパネル表示時の幅を${label}にする`,
       Completion: (item) => setFocusedAreaWidth(item, value),
     });
   }
 
   TTActions.Register({
-    ActionID: 'FocusedPanel.Area.Width:Toggle',
+    ActionID: 'FocusedPanel.Area.OpenWidth:Toggle',
     Description: 'フォーカスパネル表示時の幅をUser/ForEditでtoggleする',
     Completion: (item) => {
       const key = AREA_WIDTH_KEYS[app.FocusedColumn];

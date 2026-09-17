@@ -28,7 +28,7 @@ export class TTReThinkPanel extends TTUIItem {
   /** ReThinkAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
   /** Area 表示幅のモード（init=起動時の値 / user=ユーザー設定値 / foredit=編集用の幅）。
-   *  Status `ReThinkPanel.Area.Width` の実体。px は panelAreaWidth.ts が導出する。 */
+   *  Status `ReThinkPanel.Area.OpenWidth` の実体。px は panelAreaWidth.ts が導出する。 */
   public AreaWidthMode: AreaWidthMode = 'init';
 
   /** ユーザーが Splitter で設定した幅(px)。AreaWidthMode='user' のときに使う。 */

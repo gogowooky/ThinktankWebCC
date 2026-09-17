@@ -41,7 +41,7 @@ function loadLayoutMode(): LayoutMode {
 export function AppLayout() {
   const app = TTApplication.Instance;
 
-  // 表示幅は各パネルの Status（<Panel>Panel.Area.Width）のモードで決まる。
+  // 表示幅は各パネルの Status（<Panel>Panel.Area.OpenWidth）のモードで決まる。
   // Splitter で変えた値は AreaUserWidth に持ち、モードを user に倒す。
   useAppUpdate(app.ThinktankPanel);
   useAppUpdate(app.OverviewPanel);
@@ -90,7 +90,7 @@ export function AppLayout() {
   /** Splitter 操作を「ユーザー設定値」として反映する（現在の表示幅を起点に増減する） */
   const resizeArea = useCallback((
     panel: { AreaWidthMode: string; AreaUserWidth: number; NotifyUpdated(): void },
-    shownWidth: number, dx: number, statusKey: 'ThinktankPanel.Area.Width' | 'OverviewPanel.Area.Width' | 'ReThinkPanel.Area.Width',
+    shownWidth: number, dx: number, statusKey: 'ThinktankPanel.Area.OpenWidth' | 'OverviewPanel.Area.OpenWidth' | 'ReThinkPanel.Area.OpenWidth',
   ) => {
     panel.AreaUserWidth = Math.max(MIN_AREA_WIDTH, shownWidth + dx);
     const wasUser = panel.AreaWidthMode === 'user';
@@ -99,9 +99,9 @@ export function AppLayout() {
     if (!wasUser) TTUIStateManager.instance.notifyPropertyChanged(statusKey);
   }, []);
 
-  const onTtSplitter       = useCallback((dx: number) => resizeArea(app.ThinktankPanel, ttWidth,       dx,  'ThinktankPanel.Area.Width'), [resizeArea, app, ttWidth]);
-  const onOverviewSplitter = useCallback((dx: number) => resizeArea(app.OverviewPanel,  overviewWidth, dx,  'OverviewPanel.Area.Width'),  [resizeArea, app, overviewWidth]);
-  const onRethinkSplitter  = useCallback((dx: number) => resizeArea(app.ReThinkPanel,   rethinkWidth, -dx,  'ReThinkPanel.Area.Width'),   [resizeArea, app, rethinkWidth]);
+  const onTtSplitter       = useCallback((dx: number) => resizeArea(app.ThinktankPanel, ttWidth,       dx,  'ThinktankPanel.Area.OpenWidth'), [resizeArea, app, ttWidth]);
+  const onOverviewSplitter = useCallback((dx: number) => resizeArea(app.OverviewPanel,  overviewWidth, dx,  'OverviewPanel.Area.OpenWidth'),  [resizeArea, app, overviewWidth]);
+  const onRethinkSplitter  = useCallback((dx: number) => resizeArea(app.ReThinkPanel,   rethinkWidth, -dx,  'ReThinkPanel.Area.OpenWidth'),   [resizeArea, app, rethinkWidth]);
 
   const showSidePanels = layoutMode === 'sipoc';
 

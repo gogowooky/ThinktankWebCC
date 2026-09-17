@@ -9,6 +9,7 @@ Keyboard Shortcuts
 *           ,ExApp  ,D                  ,Application.FocusedPanel.Name:Next             ,パネル右
 
 *           ,ExApp  ,Q                  ,FocusedPanel.Area.IsOpen:Toggle                ,パネル開閉
+*           ,ExApp  ,Shift+Q            ,FocusedPanel.Area.OpenWidth:Toggle             ,パネル幅の切替
 *           ,ExApp  ,W                  ,FocusedPanel.Mode.Name:Prev                    ,パネルモード上
 *           ,ExApp  ,S                  ,FocusedPanel.Mode.Name:Next                    ,パネルモード下
 

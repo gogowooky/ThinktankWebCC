@@ -44,17 +44,17 @@ import { isAreaWidthMode, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 export type ConfigKey =
   | 'ThinktankPanel.Area.IsOpen'
-  | 'ThinktankPanel.Area.Width'
+  | 'ThinktankPanel.Area.OpenWidth'
   | 'ThinktankPanel.Mode.Name'
   | 'OverviewPanel.Area.IsOpen'
-  | 'OverviewPanel.Area.Width'
+  | 'OverviewPanel.Area.OpenWidth'
   | 'OverviewPanel.Mode.Name'
   | 'OverviewPanel.Bundle.ID'
   | 'WorkoutSettingPanel.Area.IsOpen'
-  | 'WorkoutPanel.Area.Width'
+  | 'WorkoutPanel.Area.OpenWidth'
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
-  | 'ReThinkPanel.Area.Width'
+  | 'ReThinkPanel.Area.OpenWidth'
   | 'ReThinkPanel.Mode.Name'
   | 'Thinktank.Ribbon.BgColor'
   | 'Thinktank.Area.BgColor'
@@ -220,7 +220,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.ThinktankPanel.IsAreaOpen),
     set: (app, v) => { app.ThinktankPanel.IsAreaOpen = parseBool(v, app.ThinktankPanel.IsAreaOpen); },
   },
-  'ThinktankPanel.Area.Width': {
+  'ThinktankPanel.Area.OpenWidth': {
     panel: 'ThinktankPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
     description: 'Thinktankパネル表示時の幅',
@@ -271,7 +271,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.OverviewPanel.IsAreaOpen),
     set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
   },
-  'OverviewPanel.Area.Width': {
+  'OverviewPanel.Area.OpenWidth': {
     panel: 'OverviewPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
     description: 'Overviewパネル表示時の幅',
@@ -390,7 +390,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.IsAreaOpen),
     set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
   },
-  'WorkoutPanel.Area.Width': {
+  'WorkoutPanel.Area.OpenWidth': {
     panel: 'WorkoutPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
     description: 'Workoutパネル表示時の幅',
@@ -610,7 +610,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.ReThinkPanel.IsAreaOpen),
     set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
   },
-  'ReThinkPanel.Area.Width': {
+  'ReThinkPanel.Area.OpenWidth': {
     panel: 'ReThinkPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
     description: 'ReThinkパネル表示時の幅',
