@@ -24,7 +24,7 @@ export const AREA_WIDTH_MODES: readonly AreaWidthMode[] = ['init', 'user', 'fore
 export type AreaWidthKey =
   | 'ThinktankPanel.Area.OpenWidth'
   | 'OverviewPanel.Area.OpenWidth'
-  | 'WorkoutPanel.Area.OpenWidth'
+  | 'WorkoutSettingPanel.Area.OpenWidth'
   | 'ReThinkPanel.Area.OpenWidth';
 
 /**

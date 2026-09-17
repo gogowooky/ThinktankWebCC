@@ -44,10 +44,10 @@ description:    OverviewパネルOpen時の幅
 key:            OverviewPanel.Area.OpenWidth
 type:           string
 candidates:     (init|user|foredit)
-## Status：　260917　WorkoutPanel.Area.OpenWidth
+## Status：　260917　WorkoutSettingPanel.Area.OpenWidth
 key:の意味はThinktankPanel.Area.OpenWidthと同じ
 description:    WorkoutパネルOpen時の幅
-key:            WorkoutPanel.Area.OpenWidth
+key:            WorkoutSettingPanel.Area.OpenWidth
 type:           string
 candidates:     (init|user|foredit)
 ## Status：　260917　ReThinkPanel.Area.OpenWidth

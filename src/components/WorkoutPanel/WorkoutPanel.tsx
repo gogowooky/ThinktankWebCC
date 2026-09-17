@@ -228,8 +228,8 @@ export function WorkoutPanel({ app }: Props) {
   useAppUpdate(vault);
   useAppUpdate(app.OverviewPanel);
 
-  // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status WorkoutPanel.Area.OpenWidth のモードで決まる
-  const settingsPanelWidth = useResolvedAreaWidth('WorkoutPanel.Area.OpenWidth', panel.AreaWidthMode, INIT_AREA_WIDTH.Workout, panel.AreaUserWidth);
+  // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status WorkoutSettingPanel.Area.OpenWidth のモードで決まる
+  const settingsPanelWidth = useResolvedAreaWidth('WorkoutSettingPanel.Area.OpenWidth', panel.AreaWidthMode, INIT_AREA_WIDTH.Workout, panel.AreaUserWidth);
   const settingPanelRef = useRef<WorkoutSettingAreaRef>(null);
 
   // 設定パネルが開いた時・モード切替時に対応要素へフォーカス
@@ -313,7 +313,7 @@ export function WorkoutPanel({ app }: Props) {
     const wasUser = panel.AreaWidthMode === 'user';
     panel.AreaWidthMode = 'user';
     panel.NotifyUpdated();
-    if (!wasUser) TTUIStateManager.instance.notifyPropertyChanged('WorkoutPanel.Area.OpenWidth');
+    if (!wasUser) TTUIStateManager.instance.notifyPropertyChanged('WorkoutSettingPanel.Area.OpenWidth');
   }, [panel, settingsPanelWidth]);
 
   const handleFocus = useCallback((areaId: string) => {

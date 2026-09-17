@@ -101,8 +101,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   const AREA_WIDTH_KEYS: Record<string, ConfigKey> = {
     Thinktank:      'ThinktankPanel.Area.OpenWidth',
     Overview:       'OverviewPanel.Area.OpenWidth',
-    WorkoutSetting: 'WorkoutPanel.Area.OpenWidth',
-    Workout:        'WorkoutPanel.Area.OpenWidth',
+    WorkoutSetting: 'WorkoutSettingPanel.Area.OpenWidth',
+    Workout:        'WorkoutSettingPanel.Area.OpenWidth',
     ReThink:        'ReThinkPanel.Area.OpenWidth',
   };
 

@@ -21,7 +21,7 @@ registerFocusedPanelActions(app);
 const WIDTH_KEYS = {
   Thinktank: 'ThinktankPanel.Area.OpenWidth',
   Overview:  'OverviewPanel.Area.OpenWidth',
-  Workout:   'WorkoutPanel.Area.OpenWidth',
+  Workout:   'WorkoutSettingPanel.Area.OpenWidth',
   ReThink:   'ReThinkPanel.Area.OpenWidth',
 } as const;
 

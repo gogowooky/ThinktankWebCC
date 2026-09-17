@@ -50,7 +50,7 @@ export type ConfigKey =
   | 'OverviewPanel.Mode.Name'
   | 'OverviewPanel.Bundle.ID'
   | 'WorkoutSettingPanel.Area.IsOpen'
-  | 'WorkoutPanel.Area.OpenWidth'
+  | 'WorkoutSettingPanel.Area.OpenWidth'
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
   | 'ReThinkPanel.Area.OpenWidth'
@@ -389,10 +389,10 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.WorkoutPanel.IsAreaOpen),
     set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
   },
-  'WorkoutPanel.Area.OpenWidth': {
+  'WorkoutSettingPanel.Area.OpenWidth': {
     panel: 'WorkoutPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'WorkoutパネルOpen時の幅',
+    description: 'ワークアウトパネルOpen時の幅',
     get: (app) => app.WorkoutPanel.AreaWidthMode,
     set: (app, v) => { app.WorkoutPanel.AreaWidthMode = v as typeof app.WorkoutPanel.AreaWidthMode; },
   },
