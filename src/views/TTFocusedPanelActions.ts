@@ -15,6 +15,7 @@ import { TTActions } from './TTActions';
 import { TTShortcutManager } from './TTShortcutManager';
 import { getFocusName } from '../utils/getFocusName';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
+import type { AreaWidthMode } from '../utils/panelAreaWidth';
 import { ZOOM_DEFAULT, ZOOM_STEP } from '../utils/appZoom';
 import { apiFetch } from '../services/apiClient';
 import { showMonacoMenu } from '../utils/monacoMenu';
@@ -82,17 +83,6 @@ function getPanel(app: TTApplication): PanelLike | null {
 
 export function registerFocusedPanelActions(app: TTApplication): void {
 
-  TTActions.Register({
-    ActionID: 'FocusedPanel.Area.IsOpen:Toggle',
-    Description: 'フォーカスパネルのエリア開閉をトグルする',
-    Completion: (item) => {
-      const panel = getPanel(app);
-      if (!panel) { item.Result = '[対象なし]'; return; }
-      panel.ToggleArea();
-      item.Result = panel.IsAreaOpen ? '開いた' : '閉じた';
-    },
-  });
-
   // ── フォーカスパネルの Area 表示幅 ─────────────────────────────────────────
   // 幅そのものではなくモード（init/user/foredit）を切り替える。px の導出は
   // utils/panelAreaWidth.ts が担い、foredit はアプリ幅から毎回計算する。
@@ -112,6 +102,28 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     TTUIStateManager.instance.applyProperty(key, value);
     item.Result = TTUIStateManager.instance.getProperty(key);
   };
+
+  // ── エリア開閉（開くときの幅を指定する）────────────────────────────────
+  // 閉じるときは幅モードを触らない。次に開いたときの幅は、そのとき押した
+  // アクション（Toggle=user / ToggleForEdit=foredit）が決める。
+
+  const registerAreaToggle = (suffix: string, width: AreaWidthMode, label: string): void => {
+    TTActions.Register({
+      ActionID: `FocusedPanel.Area.IsOpen:${suffix}`,
+      Description: `フォーカスパネルのエリア開閉を${label}位置でトグルする`,
+      Completion: (item) => {
+        const panel = getPanel(app);
+        if (!panel) { item.Result = '[対象なし]'; return; }
+        panel.ToggleArea();
+        if (!panel.IsAreaOpen) { item.Result = '閉じた'; return; }
+        const key = AREA_WIDTH_KEYS[app.FocusedColumn];
+        if (key) TTUIStateManager.instance.applyProperty(key, width);
+        item.Result = `開いた（${label}）`;
+      },
+    });
+  };
+  registerAreaToggle('Toggle',        'user',    'User');
+  registerAreaToggle('ToggleForEdit', 'foredit', 'ForEdit');
 
   for (const [suffix, value, label] of [
     ['Initial', 'init',    '初期値'],

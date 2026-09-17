@@ -14,49 +14,17 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## Action：　260917　FocusedPanel.Area.OpenWidth:Initial
-description:    フォーカスパネルOpen時の幅を初期値にする
-key:            FocusedPanel.Area.OpenWidth:Initial
-## Action：　260917　FocusedPanel.Area.OpenWidth:User
-description:    フォーカスパネルOpen時の幅をユーザー設定値にする
-key:            FocusedPanel.Area.OpenWidth:User
-## Action：　260917　FocusedPanel.Area.OpenWidth:ForEdit
-description:    フォーカスパネルOpen時の幅を編集時の値にする
-key:            FocusedPanel.Area.OpenWidth:ForEdit
-## Action：　260917　FocusedPanel.Area.OpenWidth:Toggle
-description:    フォーカスパネルOpen時の幅をUser/ForEditでtoggleする
-key:            FocusedPanel.Area.OpenWidth:Toggle
+## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
+エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
+description:    フォーカスパネルのエリア開閉をUser位置でトグルする
+key:            FocusedPanel.Area.IsOpen:Toggle
+## Action：　260917　FocusedPanel.Area.IsOpen:ToggleForEdit
+エリアを開くときはFocusedPanel.Area.OpenWidth:ForEditの位置で開く
+description:    フォーカスパネルのエリア開閉をForEdit位置でトグルする
+key:            FocusedPanel.Area.IsOpen:ToggleForEdit
+
 
 # Status
-## Status：　260917　ThinktankPanel.Area.OpenWidth
-key:の意味
-「init」は起動時の値。
-「user」はアプリ使用中にユーザーが設定した値
-「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の50%とする
-
-description:    ThinktankパネルOpen時の幅
-key:            ThinktankPanel.Area.OpenWidth
-type:           string
-candidates:     (init|user|foredit)
-## Status：　260917　OverviewPanel.Area.OpenWidth
-key:の意味はThinktankPanel.Area.OpenWidthと同じ
-description:    OverviewパネルOpen時の幅
-key:            OverviewPanel.Area.OpenWidth
-type:           string
-candidates:     (init|user|foredit)
-## Status：　260917　WorkoutSettingPanel.Area.OpenWidth
-key:の意味はThinktankPanel.Area.OpenWidthと同じ
-description:    WorkoutパネルOpen時の幅
-key:            WorkoutSettingPanel.Area.OpenWidth
-type:           string
-candidates:     (init|user|foredit)
-## Status：　260917　ReThinkPanel.Area.OpenWidth
-key:の意味はThinktankPanel.Area.OpenWidthと同じ
-description:    ReThinkパネルOpen時の幅
-key:            ReThinkPanel.Area.OpenWidth 
-type:           string
-candidates:     (init|user|foredit)
-
 
 # 対応不要： その他：ナビゲーション　ファイル内・ファイル間ジャンプ
 # 対応不要： その他：メニュー
@@ -378,9 +346,18 @@ key:            WorkoutPanel.FocusedPane.PaneNumber:ReFocus
 
 
 # Panel ============================================================================================================
-## Action：　260619　FocusedPanel.Area.IsOpen:Toggle
-description:    フォーカスパネルのエリア開閉をトグルする
-key:            FocusedPanel.Area.IsOpen:Toggle
+## Action：　260917　FocusedPanel.Area.OpenWidth:Initial
+description:    フォーカスパネルOpen時の幅を初期値にする
+key:            FocusedPanel.Area.OpenWidth:Initial
+## Action：　260917　FocusedPanel.Area.OpenWidth:User
+description:    フォーカスパネルOpen時の幅をユーザー設定値にする
+key:            FocusedPanel.Area.OpenWidth:User
+## Action：　260917　FocusedPanel.Area.OpenWidth:ForEdit
+description:    フォーカスパネルOpen時の幅を編集時の値にする
+key:            FocusedPanel.Area.OpenWidth:ForEdit
+## Action：　260917　FocusedPanel.Area.OpenWidth:Toggle
+description:    フォーカスパネルOpen時の幅をUser/ForEditでtoggleする
+key:            FocusedPanel.Area.OpenWidth:Toggle
 ## Action：　260619　FocusedPanel.Mode.Name:Prev
 description:    フォーカスパネルの表示モードを前に切り替える
 key:            FocusedPanel.Mode.Name:Prev
@@ -476,6 +453,7 @@ key:            FocusedPanel.Mode.Name:Next
 
 
 
+
 ## Action：　260714　ThinktankPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
 key:            ThinktankPanel.Filter.Cursor:Action
@@ -508,6 +486,16 @@ key:            ThinktankPanel.Filter.CursorPos:PrevLine
 description:    Think一覧のカーソルを1行後に移動する
 key:            ThinktankPanel.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
+## Status：　260917　ThinktankPanel.Area.OpenWidth
+key:の意味
+「init」は起動時の値。
+「user」はアプリ使用中にユーザーが設定した値
+「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の50%とする
+
+description:    ThinktankパネルOpen時の幅
+key:            ThinktankPanel.Area.OpenWidth
+type:           string
+candidates:     (init|user|foredit)
 ## Status：　260619　ThinktankPanel.Area.IsOpen
 description:    左パネル表示
 key:            ThinktankPanel.Area.IsOpen
@@ -574,6 +562,12 @@ key:            OverviewPanel.Filter.CursorPos:NextLine
 　　値はフィルタ・ソート適用後のThink一覧における行番号で、カーソル未設定時は 0 です。
 　　Action は Ctrl+N / Ctrl+P に割当てました（docs\DefaultShortcut.md）。
 　　行番号0（カーソル未表示）からの移動は、PrevLine/NextLineとも1行目へ移動します。
+## Status：　260917　OverviewPanel.Area.OpenWidth
+key:の意味はThinktankPanel.Area.OpenWidthと同じ
+description:    OverviewパネルOpen時の幅
+key:            OverviewPanel.Area.OpenWidth
+type:           string
+candidates:     (init|user|foredit)
 ## Status：　260619　OverviewPanel.Area.IsOpen
 
 description:    上部パネル表示
@@ -616,6 +610,12 @@ default:        none
 type:           string
 candidates:     .*
 
+## Status：　260917　WorkoutPanel.Area.OpenWidth
+key:の意味はThinktankPanel.Area.OpenWidthと同じ
+description:    WorkoutパネルOpen時の幅
+key:            WorkoutPanel.Area.OpenWidth
+type:           string
+candidates:     (init|user|foredit)
 ## Status：　260619　WorkoutSettingPanel.Area.IsOpen
 
 description:    ワークアウト設定パネル表示
@@ -643,6 +643,12 @@ candidates:     ^(Workout|Texteditor|Markdown|Datagrid|Card|Graph)$
 　　- Card （カードビュー）
 　　- Graph （グラフビュー）
 
+## Status：　260917　ReThinkPanel.Area.OpenWidth
+key:の意味はThinktankPanel.Area.OpenWidthと同じ
+description:    ReThinkパネルOpen時の幅
+key:            ReThinkPanel.Area.OpenWidth 
+type:           string
+candidates:     (init|user|foredit)
 ## Status：　260619　ReThinkPanel.Area.IsOpen
 
 description:    右パネル表示

@@ -102,6 +102,55 @@ describe('Action FocusedPanel.Area.OpenWidth:*', () => {
   });
 });
 
+describe('Action FocusedPanel.Area.IsOpen:Toggle / :ToggleForEdit', () => {
+  // 開くときの幅は、そのとき押したアクションが決める（Toggle=user / ToggleForEdit=foredit）。
+  // 閉じるときは幅モードを触らない。
+  beforeEach(() => { app.FocusedColumn = 'Thinktank'; app.ThinktankPanel.IsAreaOpen = true; });
+
+  it('Toggle は閉じてから開くと User 位置になる', () => {
+    const panel = app.ThinktankPanel;
+    panel.AreaWidthMode = 'foredit';
+    TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');            // 閉じる
+    expect(panel.IsAreaOpen).toBe(false);
+    expect(panel.AreaWidthMode).toBe('foredit');                     // 閉じるときは触らない
+    TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');            // 開く
+    expect(panel.IsAreaOpen).toBe(true);
+    expect(panel.AreaWidthMode).toBe('user');
+  });
+
+  it('ToggleForEdit は閉じてから開くと ForEdit 位置になる', () => {
+    const panel = app.ThinktankPanel;
+    panel.AreaWidthMode = 'user';
+    TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');     // 閉じる
+    expect(panel.IsAreaOpen).toBe(false);
+    expect(panel.AreaWidthMode).toBe('user');
+    TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');     // 開く
+    expect(panel.IsAreaOpen).toBe(true);
+    expect(panel.AreaWidthMode).toBe('foredit');
+  });
+
+  it('開いた幅の変更は Status のリスナーへ届く', () => {
+    const panel = app.ThinktankPanel;
+    panel.AreaWidthMode = 'init';
+    const seen: string[] = [];
+    const listener = (_k: string, v: string) => seen.push(v);
+    TTUIStateManager.instance.addListener('ThinktankPanel.Area.OpenWidth', listener);
+    try {
+      TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 閉じる（通知なし）
+      TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 開く（foredit）
+    } finally {
+      TTUIStateManager.instance.removeListener('ThinktankPanel.Area.OpenWidth', listener);
+    }
+    expect(seen).toEqual(['foredit']);
+  });
+
+  it('幅モードを持たない列でも開閉自体は行う', () => {
+    app.FocusedColumn = 'ToolBar';
+    const item = TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');
+    expect(('Result' in item ? item.Result : '')).toBe('[対象なし]');
+  });
+});
+
 describe('Status 変更の通知', () => {
   // 退行防止: applyProperty は app.NotifyUpdated(false) しか呼ばず、TTNotifyBase の通知は
   // 親方向にしか伝播しない。パネルに登録した購読では発火しないので、幅を描画する側は
