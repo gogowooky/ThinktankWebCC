@@ -33,7 +33,7 @@ function download(turn: ConversationTurn) {
   const link = document.createElement('a'); link.href = url; link.download = `think-conversation-${turn.id}.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string }
+interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; optionalSources?: boolean }
 function cachedChatHistory(vault: TTVault, chatId?: string): ConversationTurn[] {
   if (!chatId) return [];
   try {
@@ -45,8 +45,10 @@ export function BundleConversation(props: ConversationProps) {
   if (!vaultKeys.has(props.vault)) vaultKeys.set(props.vault, ++nextVaultKey);
   return <ConversationPanel key={JSON.stringify([vaultKeys.get(props.vault), props.bundleId, props.chatId, props.draftScope])} {...props} />;
 }
-function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'overview' }: ConversationProps) {
-  const draft = getDraft(vault, bundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`);
+function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'overview', optionalSources = false }: ConversationProps) {
+  const draft = getDraft(vault, selectedBundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`);
+  const [useBundle, setUseBundle] = useState(() => draft.pending ? draft.pending.context.scope === 'bundle-only' : !optionalSources);
+  const bundleId = useBundle ? selectedBundleId : undefined;
   const cachedHistory = cachedChatHistory(vault, chatId);
   const [question, setQuestion] = useState(draft.question);
   const [pending, setPending] = useState(draft.pending);
@@ -87,7 +89,7 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
     try {
       const [availability, turns, snapshot] = await Promise.race([Promise.allSettled([
         client.status(abort.signal), client.history(bundleId, abort.signal, chatId, vault.ID),
-        bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal })
+        bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal, maxSources: 300 })
           : Promise.resolve(chatOnlyConversationContext(vault.ID, chatId!)),
       ]), interrupted]);
       if (!alive.current || abort.signal.aborted || version !== prepareVersion.current) return;
@@ -172,6 +174,10 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
   const turns = pending && !history.some(t => t.id === pending.id) ? [...history, pending] : history;
   return <section className="bundle-conversation" aria-label="AIとの会話">
     {!supported ? <p>AIChatはBigQueryモードで利用できます。</p> : <>
+      {optionalSources && chatId && selectedBundleId && <label><input type="checkbox" checked={useBundle}
+        disabled={(!!busy && busy !== PREPARING) || !!pending} onChange={e => {
+          cancelPreparation(); setContext(undefined); setLoaded(false); setUseBundle(e.target.checked);
+        }} />Overviewの資料「{vault.GetThink(selectedBundleId)?.Name || selectedBundleId}」を使う</label>}
       {loaded && !turns.length && <p className="bundle-conversation-empty">まだ会話はありません。</p>}
       {turns.map(turn => <article key={turn.id}>
         <p><strong>本人：</strong>{turn.question}</p>

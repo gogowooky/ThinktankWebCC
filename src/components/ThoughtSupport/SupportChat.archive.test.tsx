@@ -7,7 +7,15 @@ import { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 
 it.each(['Thinktank', 'Overview', 'Workout', 'ReThink'] as const)('%s omits the legacy history panel without rewriting or executing stored Chat files', async panelName => {
-  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); const fetch = vi.fn(); vi.stubGlobal('fetch', fetch);
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  const fetch = vi.fn().mockImplementation(async (url: string | URL | Request) => {
+    const s = String(url);
+    if (s.includes('/status')) {
+      return new Response(JSON.stringify({ enabled: false, provider: 'gemini', model: 'none' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+    return new Response(JSON.stringify({ schemaVersion: 1, turns: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  });
+  vi.stubGlobal('fetch', fetch);
   const chat = new TTThink(); chat.ID = 'old-chat'; chat.ContentType = 'chat'; chat.Name = `TODO:${panelName}｜[進行中]Bundle`; chat.Content = '保存済み会話\n## 質問\n回答';
   chat.Metadata.supportPendingEffects = { operationId: 'preserve-pending' }; const before = chat.Content; const metadataBefore = JSON.stringify(chat.Metadata);
   const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'bundle'; bundle.Name = 'Bundle'; bundle.Content = '# Bundle';

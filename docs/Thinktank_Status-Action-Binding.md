@@ -14,15 +14,6 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
-エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
-description:    フォーカスパネルのエリア開閉をUser位置でトグルする
-key:            FocusedPanel.Area.IsOpen:Toggle
-## Action：　260917　FocusedPanel.Area.IsOpen:ToggleForEdit
-エリアを開くときはFocusedPanel.Area.OpenWidth:ForEditの位置で開く
-description:    フォーカスパネルのエリア開閉をForEdit位置でトグルする
-key:            FocusedPanel.Area.IsOpen:ToggleForEdit
-
 
 # Status
 
@@ -346,6 +337,14 @@ key:            WorkoutPanel.FocusedPane.PaneNumber:ReFocus
 
 
 # Panel ============================================================================================================
+## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
+エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
+description:    フォーカスパネルのエリア開閉をUser位置でトグルする
+key:            FocusedPanel.Area.IsOpen:Toggle
+## Action：　260917　FocusedPanel.Area.IsOpen:ToggleForEdit
+エリアを開くときはFocusedPanel.Area.OpenWidth:ForEditの位置で開く
+description:    フォーカスパネルのエリア開閉をForEdit位置でトグルする
+key:            FocusedPanel.Area.IsOpen:ToggleForEdit
 ## Action：　260917　FocusedPanel.Area.OpenWidth:Initial
 description:    フォーカスパネルOpen時の幅を初期値にする
 key:            FocusedPanel.Area.OpenWidth:Initial
@@ -490,7 +489,7 @@ key:            ThinktankPanel.Filter.CursorPos:NextLine
 key:の意味
 「init」は起動時の値。
 「user」はアプリ使用中にユーザーが設定した値
-「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の30%とする
+「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の50%とする
 
 description:    ThinktankパネルOpen時の幅
 key:            ThinktankPanel.Area.OpenWidth

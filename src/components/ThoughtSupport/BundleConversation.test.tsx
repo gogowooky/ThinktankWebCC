@@ -48,6 +48,23 @@ it('allows a Chat-only conversation without loading Bundle context', async () =>
   expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault');
   expect(host.textContent).toContain('参照資料なし');
 });
+
+it('starts Thinktank without Overview sources and keeps the draft when source loading is abandoned', async () => {
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" optionalSources onOpen={vi.fn()} />));
+  expect(api.context).not.toHaveBeenCalled();
+  expect(api.history).toHaveBeenLastCalledWith(undefined, expect.any(AbortSignal), 'chat-a', 'vault');
+  await input('こんにちわ'); expect(button('送信').disabled).toBe(false);
+  api.context.mockImplementationOnce(() => new Promise(() => {}));
+  await act(async () => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+  expect(api.context).toHaveBeenCalledWith('a', expect.objectContaining({ maxSources: 300 }));
+  expect(button('送信').disabled).toBe(true);
+  await act(async () => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+  expect(host.querySelector('textarea')!.value).toBe('こんにちわ');
+  expect(button('送信').disabled).toBe(false);
+  await click('送信');
+  expect(api.generate.mock.calls[0][0]).toMatchObject({ scope: 'chat-only', sources: [] });
+  expect(api.save).toHaveBeenCalledWith(expect.anything(), 'chat-a', undefined);
+});
 it('shows cached Chat metadata while the server refresh is still pending', async () => {
   const chat = new TTThink(); chat.ID = 'chat-a'; chat.ContentType = 'chat'; chat.Content = '# Chat';
   chat.Metadata = { thinkConversations: { schemaVersion: 1, turns: [turn()] } }; vault.AddThink(chat);

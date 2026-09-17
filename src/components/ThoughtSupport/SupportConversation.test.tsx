@@ -59,6 +59,7 @@ it('uses the Chat selected in the upper list and has no second selector or conve
   expect(host.textContent).not.toContain('これまでの会話'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('a');
   expect(host.querySelector('textarea')?.getAttribute('data-chat')).toBe('chat-a');
   expect(calls.render.mock.calls.at(-1)?.[0].draftScope).toBe('aichat:Thinktank:panel');
+  expect(calls.render.mock.calls.at(-1)?.[0].optionalSources).toBe(true);
 });
 it('follows the upper Chat selection and allows Thinktank without an Overview Bundle', async () => {
   await show('a'); await show('b', 'chat-b'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('b');

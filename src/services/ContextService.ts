@@ -13,7 +13,7 @@ export interface ContextReader {
 }
 
 export class ContextReadError extends Error {
-  constructor(public readonly code: 'vault_not_loaded' | 'invalid_bundle' | 'bundle_unavailable' | 'context_changed', message: string) {
+  constructor(public readonly code: 'vault_not_loaded' | 'invalid_bundle' | 'bundle_unavailable' | 'context_changed' | 'context_too_large', message: string) {
     super(message); this.name = 'ContextReadError';
   }
 }
@@ -68,7 +68,7 @@ const messages: Record<ContextIssueCode, string> = {
 export class ContextService {
   constructor(private readonly vault: TTVault, private readonly reader: ContextReader = defaultReader) {}
 
-  async getBundleContext(bundleId: string, options: { signal?: AbortSignal } = {}): Promise<ContextSnapshot> {
+  async getBundleContext(bundleId: string, options: { signal?: AbortSignal; maxSources?: number } = {}): Promise<ContextSnapshot> {
     const { signal } = options;
     assertNotAborted(signal);
     if (!this.vault.IsLoaded) throw new ContextReadError('vault_not_loaded', 'Vault一覧の読み込み完了後に再試行してください。');
@@ -136,6 +136,9 @@ export class ContextService {
       // Resolution failed: don't use partial membership or a stale cache.
     }
     if (issues.some(i => i.code === 'cycle' || i.code === 'conflicting_conditions')) members = [];
+    if (options.maxSources !== undefined && members.length > options.maxSources) {
+      throw new ContextReadError('context_too_large', `参照資料が${members.length}件あります。${options.maxSources}件以内のBundleに絞ってください。Thinktankでは資料を使わずに相談することもできます。`);
+    }
 
     const toSource = async (think: TTThink): Promise<ContextSource> => ({
       thinkId: think.ID, title: think.Name, contentType: think.ContentType, content: think.Content,

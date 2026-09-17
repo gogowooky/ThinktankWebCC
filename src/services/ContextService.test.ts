@@ -26,6 +26,13 @@ beforeEach(() => { vi.stubGlobal('crypto', webcrypto); vi.clearAllMocks(); });
 afterEach(() => { expect(storage.save).not.toHaveBeenCalled(); expect(storage.delete).not.toHaveBeenCalled(); vi.unstubAllGlobals(); });
 
 describe('read-only Bundle context', () => {
+  it('rejects oversized conversation scope before downloading member bodies', async () => {
+    const root = item(ROOT, `課題\n* ${A}\n* ${B}`, 'bundle');
+    const a = item(A, '資料A'), b = item(B, '資料B'); a.IsMetaOnly = true; b.IsMetaOnly = true;
+    const source = reader();
+    await expect(new ContextService(vault(root, a, b), source).getBundleContext(ROOT, { maxSources: 1 })).rejects.toThrow('参照資料が2件');
+    expect(source.getContent).not.toHaveBeenCalled();
+  });
   it('keeps confirmed manual state separate from legacy proposals and freezes its provenance', async () => {
     const root = item(ROOT, `課題\n* ${A}`, 'bundle');
     root.Metadata.thinkSupport = { schemaVersion: 1, revision: 1, values: { ...emptyThinkValues(), decisions: '本人の判断' }, sources: {}, author: 'human', confirmedAt: '2026-09-13T00:00:00Z', updatedAt: '2026-09-13T00:00:00Z' };
