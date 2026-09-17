@@ -93,6 +93,50 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  // ── フォーカスパネルの Area 表示幅 ─────────────────────────────────────────
+  // 幅そのものではなくモード（init/user/foredit）を切り替える。px の導出は
+  // utils/panelAreaWidth.ts が担い、foredit はアプリ幅から毎回計算する。
+
+  /** フォーカス列 → 幅モードを持つ Status キー（Workout は Pane 側の列も設定パネルを指す） */
+  const AREA_WIDTH_KEYS: Record<string, ConfigKey> = {
+    Thinktank:      'ThinktankPanel.Area.Width',
+    Overview:       'OverviewPanel.Area.Width',
+    WorkoutSetting: 'WorkoutPanel.Area.Width',
+    Workout:        'WorkoutPanel.Area.Width',
+    ReThink:        'ReThinkPanel.Area.Width',
+  };
+
+  const setFocusedAreaWidth = (item: TTActionItem, value: string): void => {
+    const key = AREA_WIDTH_KEYS[app.FocusedColumn];
+    if (!key) { item.Result = '[対象なし]'; return; }
+    TTUIStateManager.instance.applyProperty(key, value);
+    item.Result = TTUIStateManager.instance.getProperty(key);
+  };
+
+  for (const [suffix, value, label] of [
+    ['Default', 'init',    '初期値'],
+    ['User',    'user',    'ユーザー設定値'],
+    ['ForEdit', 'foredit', '編集時の値'],
+  ] as const) {
+    TTActions.Register({
+      ActionID: `FocusedPanel.Area.Width:${suffix}`,
+      Description: `フォーカスパネル表示時の幅を${label}にする`,
+      Completion: (item) => setFocusedAreaWidth(item, value),
+    });
+  }
+
+  TTActions.Register({
+    ActionID: 'FocusedPanel.Area.Width:Toggle',
+    Description: 'フォーカスパネル表示時の幅をUser/ForEditでtoggleする',
+    Completion: (item) => {
+      const key = AREA_WIDTH_KEYS[app.FocusedColumn];
+      if (!key) { item.Result = '[対象なし]'; return; }
+      // init から押されたときは、まず広げる側（foredit）に倒す
+      const next = TTUIStateManager.instance.getProperty(key) === 'foredit' ? 'user' : 'foredit';
+      setFocusedAreaWidth(item, next);
+    },
+  });
+
   TTActions.Register({
     ActionID: 'FocusedPanel.Mode.Name:Prev',
     Description: 'フォーカスパネルの表示モードを前に切り替える',

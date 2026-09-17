@@ -13,6 +13,7 @@ import {
   DEFAULT_MARKS, createColorStatusDefaults, getDefaultColorStyle, toggleAttr,
 } from '../utils/defaultColor';
 import type { ColorProp, ColorStyle } from '../utils/defaultColor';
+import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 
@@ -212,6 +213,13 @@ export class TTWorkoutPanel extends TTUIItem {
 
   // ── エリア表示 ────────────────────────────────────────────────────────
   public IsAreaOpen: boolean = true;
+  /** Area 表示幅のモード（init=起動時の値 / user=ユーザー設定値 / foredit=編集用の幅）。
+   *  Status `WorkoutPanel.Area.Width` の実体。px は panelAreaWidth.ts が導出する。 */
+  public AreaWidthMode: AreaWidthMode = 'init';
+
+  /** ユーザーが Splitter で設定した幅(px)。AreaWidthMode='user' のときに使う。 */
+  public AreaUserWidth: number = INIT_AREA_WIDTH.Workout;
+
 
   public ToggleArea(): void { this.IsAreaOpen = !this.IsAreaOpen; this.NotifyUpdated(); }
   public OpenArea():   void { if (!this.IsAreaOpen) { this.IsAreaOpen = true;  this.NotifyUpdated(); } }

@@ -29,6 +29,8 @@ import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine }
 import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './WorkoutTabBar';
 import type { MediaType } from '../../types';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
+import { INIT_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
 import './WorkoutPanel.css';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
@@ -77,7 +79,7 @@ function computeEqualHeightRatios(
 }
 
 
-const DEFAULT_SETTINGS_WIDTH = 220;
+// 初期幅は utils/panelAreaWidth.ts（INIT_AREA_WIDTH.Workout）に集約
 const MIN_SETTINGS_WIDTH     = 120;
 const MAX_SETTINGS_WIDTH     = 400;
 
@@ -226,8 +228,8 @@ export function WorkoutPanel({ app }: Props) {
   useAppUpdate(vault);
   useAppUpdate(app.OverviewPanel);
 
-  // 設定パネル: 開閉は panel.IsAreaOpen
-  const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
+  // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status WorkoutPanel.Area.Width のモードで決まる
+  const settingsPanelWidth = useResolvedAreaWidth(panel.AreaWidthMode, INIT_AREA_WIDTH.Workout, panel.AreaUserWidth);
   const settingPanelRef = useRef<WorkoutSettingAreaRef>(null);
 
   // 設定パネルが開いた時・モード切替時に対応要素へフォーカス
@@ -305,11 +307,14 @@ export function WorkoutPanel({ app }: Props) {
     panel.ToggleArea();
   }, [panel]);
 
+  // Splitter 操作は「ユーザー設定値」として反映する（現在の表示幅を起点に増減する）
   const handleSettingsResize = useCallback((delta: number) => {
-    setSettingsPanelWidth(prev =>
-      Math.max(MIN_SETTINGS_WIDTH, Math.min(MAX_SETTINGS_WIDTH, prev + delta))
-    );
-  }, []);
+    panel.AreaUserWidth = Math.max(MIN_SETTINGS_WIDTH, Math.min(MAX_SETTINGS_WIDTH, settingsPanelWidth + delta));
+    const wasUser = panel.AreaWidthMode === 'user';
+    panel.AreaWidthMode = 'user';
+    panel.NotifyUpdated();
+    if (!wasUser) TTUIStateManager.instance.notifyPropertyChanged('WorkoutPanel.Area.Width');
+  }, [panel, settingsPanelWidth]);
 
   const handleFocus = useCallback((areaId: string) => {
     panel.FocusArea(areaId);

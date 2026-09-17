@@ -23,13 +23,11 @@ import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
 import { ReThinkPanel } from '../ReThinkPanel/ReThinkPanel';
 import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
 import { THEME_STATUS_KEYS, applyPanelThemeCss } from '../../utils/panelTheme';
+import { useAppUpdate } from '../../hooks/useAppUpdate';
+import { INIT_AREA_WIDTH, MIN_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
 import './AppLayout.css';
 
-// パネル本文領域の初期幅（タブバー・Splitter を除く）と最小値
-const THINKTANK_WIDTH = 280;
-const OVERVIEW_WIDTH  = 280;
-const RETHINK_WIDTH   = 320;
-const MIN_PANEL_WIDTH = 120;
+// パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Workout 側と共用）
 
 export type LayoutMode = 'sipoc' | 'simple';
 
@@ -43,12 +41,15 @@ function loadLayoutMode(): LayoutMode {
 export function AppLayout() {
   const app = TTApplication.Instance;
 
-  // 各パネルは内部で購読済みのため、AppLayout 側の個別購読は不要
+  // 表示幅は各パネルの Status（<Panel>Panel.Area.Width）のモードで決まる。
+  // Splitter で変えた値は AreaUserWidth に持ち、モードを user に倒す。
+  useAppUpdate(app.ThinktankPanel);
+  useAppUpdate(app.OverviewPanel);
+  useAppUpdate(app.ReThinkPanel);
 
-  // Splitter でサイズ変更可能なパネル幅（ローカル state）
-  const [ttWidth,       setTtWidth]       = useState(THINKTANK_WIDTH);
-  const [overviewWidth, setOverviewWidth] = useState(OVERVIEW_WIDTH);
-  const [rethinkWidth,  setRethinkWidth]  = useState(RETHINK_WIDTH);
+  const ttWidth       = useResolvedAreaWidth(app.ThinktankPanel.AreaWidthMode, INIT_AREA_WIDTH.Thinktank, app.ThinktankPanel.AreaUserWidth);
+  const overviewWidth = useResolvedAreaWidth(app.OverviewPanel.AreaWidthMode,  INIT_AREA_WIDTH.Overview,  app.OverviewPanel.AreaUserWidth);
+  const rethinkWidth  = useResolvedAreaWidth(app.ReThinkPanel.AreaWidthMode,   INIT_AREA_WIDTH.ReThink,   app.ReThinkPanel.AreaUserWidth);
 
   // レイアウトモード（sipoc / simple）
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadLayoutMode);
@@ -86,17 +87,21 @@ export function AppLayout() {
 
   // ── Splitter ハンドラー ──────────────────────────────────────────
 
-  const onTtSplitter = useCallback((dx: number) => {
-    setTtWidth(w => Math.max(MIN_PANEL_WIDTH, w + dx));
+  /** Splitter 操作を「ユーザー設定値」として反映する（現在の表示幅を起点に増減する） */
+  const resizeArea = useCallback((
+    panel: { AreaWidthMode: string; AreaUserWidth: number; NotifyUpdated(): void },
+    shownWidth: number, dx: number, statusKey: 'ThinktankPanel.Area.Width' | 'OverviewPanel.Area.Width' | 'ReThinkPanel.Area.Width',
+  ) => {
+    panel.AreaUserWidth = Math.max(MIN_AREA_WIDTH, shownWidth + dx);
+    const wasUser = panel.AreaWidthMode === 'user';
+    panel.AreaWidthMode = 'user';
+    panel.NotifyUpdated();
+    if (!wasUser) TTUIStateManager.instance.notifyPropertyChanged(statusKey);
   }, []);
 
-  const onOverviewSplitter = useCallback((dx: number) => {
-    setOverviewWidth(w => Math.max(MIN_PANEL_WIDTH, w + dx));
-  }, []);
-
-  const onRethinkSplitter = useCallback((dx: number) => {
-    setRethinkWidth(w => Math.max(MIN_PANEL_WIDTH, w - dx));
-  }, []);
+  const onTtSplitter       = useCallback((dx: number) => resizeArea(app.ThinktankPanel, ttWidth,       dx,  'ThinktankPanel.Area.Width'), [resizeArea, app, ttWidth]);
+  const onOverviewSplitter = useCallback((dx: number) => resizeArea(app.OverviewPanel,  overviewWidth, dx,  'OverviewPanel.Area.Width'),  [resizeArea, app, overviewWidth]);
+  const onRethinkSplitter  = useCallback((dx: number) => resizeArea(app.ReThinkPanel,   rethinkWidth, -dx,  'ReThinkPanel.Area.Width'),   [resizeArea, app, rethinkWidth]);
 
   const showSidePanels = layoutMode === 'sipoc';
 

@@ -12,6 +12,7 @@ import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
+import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-overview';
 
@@ -20,6 +21,13 @@ export type OverviewViewMode = 'filter' | 'graph' | 'chat' | 'settings';
 export class TTOverviewPanel extends TTUIItem {
   /** OverviewAreaの開閉状態（true=開いている）*/
   public IsAreaOpen: boolean = true;
+  /** Area 表示幅のモード（init=起動時の値 / user=ユーザー設定値 / foredit=編集用の幅）。
+   *  Status `OverviewPanel.Area.Width` の実体。px は panelAreaWidth.ts が導出する。 */
+  public AreaWidthMode: AreaWidthMode = 'init';
+
+  /** ユーザーが Splitter で設定した幅(px)。AreaWidthMode='user' のときに使う。 */
+  public AreaUserWidth: number = INIT_AREA_WIDTH.Overview;
+
 
   /** 表示中のBundleID（空 = 未選択）*/
   public BundleID: string = '';

@@ -14,37 +14,41 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 対応不要：　　FocusedPanel.Area.OpenWidth:Initial
-description:    フォーカスパネルのエリア開時の幅を初期値にする
+## Action：　260917　FocusedPanel.Area.OpenWidth:Initial
+description:    フォーカスパネル表示時の幅を初期値にする
 key:            FocusedPanel.Area.Width:Default
-## 対応不要：　　FocusedPanel.Area.OpenWidth:User
-description:    フォーカスパネルのエリア開時の幅をユーザー設定値にする
+## Action：　260917　FocusedPanel.Area.OpenWidth:User
+description:    フォーカスパネル表示時の幅をユーザー設定値にする
 key:            FocusedPanel.Area.Width:User
-## 対応不要：　　FocusedPanel.Area.OpenWidth:ForEdit
-description:    フォーカスパネルのエリア開時の幅を編集時の値にする
+## Action：　260917　FocusedPanel.Area.OpenWidth:ForEdit
+description:    フォーカスパネル表示時の幅を編集時の値にする
 key:            FocusedPanel.Area.Width:ForEdit
-## 対応不要：　　FocusedPanel.Area.OpenWidth:Toggle
-description:    フォーカスパネルのエリア開時の幅をUser/ForEditでtoggleする
+## Action：　260917　FocusedPanel.Area.OpenWidth:Toggle
+description:    フォーカスパネル表示時の幅をUser/ForEditでtoggleする
 key:            FocusedPanel.Area.Width:Toggle
 
 # Status
-## 対応不要：　　ThinktankPanel.Area.OpenWidth
-description:    Thinktankパネルの表示幅
+## Status：　260917　ThinktankPanel.Area.OpenWidth
+「init」は起動時の値。
+「user」はアプリ使用中にユーザーが設定した値
+「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の50%とする
+
+description:    Thinktankパネル表示時の幅
 key:            ThinktankPanel.Area.Width
 type:           string
 candidates:     (init|user|foredit)
-## 対応不要：　　OverviewPanel.Area.OpenWidth
-description:    Overviewパネルの表示幅
+## Status：　260917　OverviewPanel.Area.OpenWidth
+description:    Overviewパネル表示時の幅
 key:            OverviewPanel.Area.Width
 type:           string
 candidates:     (init|user|foredit)
-## 対応不要：　　WorkoutPanel.Area.OpenWidth
-description:    Workoutパネルの表示幅
+## Status：　260917　WorkoutPanel.Area.OpenWidth
+description:    Workoutパネル表示時の幅
 key:            WorkoutPanel.Area.Width
 type:           string
 candidates:     (init|user|foredit)
-## 対応不要：　　ReThinkPanel.Area.OpenWidth
-description:    ReThinkパネルの表示幅
+## Status：　260917　ReThinkPanel.Area.OpenWidth
+description:    ReThinkパネル表示時の幅
 key:            ReThinkPanel.Area.Width
 type:           string
 candidates:     (init|user|foredit)

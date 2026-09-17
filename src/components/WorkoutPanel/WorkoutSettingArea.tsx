@@ -277,8 +277,11 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const handleVoiceMicOff  = useCallback(() => { TTVoiceInput.instance.stop(); }, []);
   const handleVoiceEraser  = useCallback(() => { TTVoiceInput.instance.cancel(); }, []);
 
+  // maxWidth を width に合わせるのは、Status WorkoutPanel.Area.Width が foredit のとき
+  // アプリ幅の割合で決まる幅が CSS の max-width（400px）で頭打ちにならないようにするため。
+  // Splitter 操作側の上限は WorkoutPanel の MAX_SETTINGS_WIDTH が担保する。
   return (
-    <div ref={panelRef} className="workout-setting-area" style={{ width }} tabIndex={-1}>
+    <div ref={panelRef} className="workout-setting-area" style={{ width, maxWidth: width }} tabIndex={-1}>
 
       <div className="workout-setting-area__header">Workout&gt;{panelName}</div>
 

@@ -38,18 +38,23 @@ import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
 import { StorageManager } from '../services/storage/StorageManager';
+import { isAreaWidthMode, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
 export type ConfigKey =
   | 'ThinktankPanel.Area.IsOpen'
+  | 'ThinktankPanel.Area.Width'
   | 'ThinktankPanel.Mode.Name'
   | 'OverviewPanel.Area.IsOpen'
+  | 'OverviewPanel.Area.Width'
   | 'OverviewPanel.Mode.Name'
   | 'OverviewPanel.Bundle.ID'
   | 'WorkoutSettingPanel.Area.IsOpen'
+  | 'WorkoutPanel.Area.Width'
   | 'WorkoutSettingPanel.Mode.Name'
   | 'ReThinkPanel.Area.IsOpen'
+  | 'ReThinkPanel.Area.Width'
   | 'ReThinkPanel.Mode.Name'
   | 'Thinktank.Ribbon.BgColor'
   | 'Thinktank.Area.BgColor'
@@ -215,6 +220,13 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => String(app.ThinktankPanel.IsAreaOpen),
     set: (app, v) => { app.ThinktankPanel.IsAreaOpen = parseBool(v, app.ThinktankPanel.IsAreaOpen); },
   },
+  'ThinktankPanel.Area.Width': {
+    panel: 'ThinktankPanel',
+    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
+    description: 'Thinktankパネル表示時の幅',
+    get: (app) => app.ThinktankPanel.AreaWidthMode,
+    set: (app, v) => { if (isAreaWidthMode(v)) app.ThinktankPanel.AreaWidthMode = v as AreaWidthMode; },
+  },
   'ThinktankPanel.Mode.Name': {
     panel: 'ThinktankPanel',
     default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Settings)$',
@@ -258,6 +270,13 @@ const PROP_SPECS: Record<string, PropSpec> = {
     description: '上部パネル表示',
     get: (app) => String(app.OverviewPanel.IsAreaOpen),
     set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
+  },
+  'OverviewPanel.Area.Width': {
+    panel: 'OverviewPanel',
+    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
+    description: 'Overviewパネル表示時の幅',
+    get: (app) => app.OverviewPanel.AreaWidthMode,
+    set: (app, v) => { if (isAreaWidthMode(v)) app.OverviewPanel.AreaWidthMode = v as AreaWidthMode; },
   },
   'OverviewPanel.Mode.Name': {
     panel: 'OverviewPanel',
@@ -370,6 +389,13 @@ const PROP_SPECS: Record<string, PropSpec> = {
     description: 'ワークアウトパネル表示',
     get: (app) => String(app.WorkoutPanel.IsAreaOpen),
     set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
+  },
+  'WorkoutPanel.Area.Width': {
+    panel: 'WorkoutPanel',
+    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
+    description: 'Workoutパネル表示時の幅',
+    get: (app) => app.WorkoutPanel.AreaWidthMode,
+    set: (app, v) => { if (isAreaWidthMode(v)) app.WorkoutPanel.AreaWidthMode = v as AreaWidthMode; },
   },
   'WorkoutSettingPanel.Mode.Name': {
     panel: 'WorkoutPanel',
@@ -583,6 +609,13 @@ const PROP_SPECS: Record<string, PropSpec> = {
     description: '右パネル表示',
     get: (app) => String(app.ReThinkPanel.IsAreaOpen),
     set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
+  },
+  'ReThinkPanel.Area.Width': {
+    panel: 'ReThinkPanel',
+    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
+    description: 'ReThinkパネル表示時の幅',
+    get: (app) => app.ReThinkPanel.AreaWidthMode,
+    set: (app, v) => { if (isAreaWidthMode(v)) app.ReThinkPanel.AreaWidthMode = v as AreaWidthMode; },
   },
   'ReThinkPanel.Mode.Name': {
     panel: 'ReThinkPanel',
