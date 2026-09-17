@@ -47,9 +47,9 @@ export function AppLayout() {
   useAppUpdate(app.OverviewPanel);
   useAppUpdate(app.ReThinkPanel);
 
-  const ttWidth       = useResolvedAreaWidth(app.ThinktankPanel.AreaWidthMode, INIT_AREA_WIDTH.Thinktank, app.ThinktankPanel.AreaUserWidth);
-  const overviewWidth = useResolvedAreaWidth(app.OverviewPanel.AreaWidthMode,  INIT_AREA_WIDTH.Overview,  app.OverviewPanel.AreaUserWidth);
-  const rethinkWidth  = useResolvedAreaWidth(app.ReThinkPanel.AreaWidthMode,   INIT_AREA_WIDTH.ReThink,   app.ReThinkPanel.AreaUserWidth);
+  const ttWidth       = useResolvedAreaWidth('ThinktankPanel.Area.OpenWidth', app.ThinktankPanel.AreaWidthMode, INIT_AREA_WIDTH.Thinktank, app.ThinktankPanel.AreaUserWidth);
+  const overviewWidth = useResolvedAreaWidth('OverviewPanel.Area.OpenWidth', app.OverviewPanel.AreaWidthMode,  INIT_AREA_WIDTH.Overview,  app.OverviewPanel.AreaUserWidth);
+  const rethinkWidth  = useResolvedAreaWidth('ReThinkPanel.Area.OpenWidth', app.ReThinkPanel.AreaWidthMode,   INIT_AREA_WIDTH.ReThink,   app.ReThinkPanel.AreaUserWidth);
 
   // レイアウトモード（sipoc / simple）
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadLayoutMode);

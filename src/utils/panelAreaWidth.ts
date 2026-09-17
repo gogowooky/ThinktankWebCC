@@ -11,17 +11,21 @@
  * foredit 幅はアプリ幅から計算するのでウィンドウサイズに追従する。
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { isIPhone } from './deviceInfo';
+import { TTUIStateManager } from '../views/TTUIStateManager';
 
 export type AreaWidthMode = 'init' | 'user' | 'foredit';
 
 /** Status の candidates と揃える（next/prev の循環順もこの順） */
 export const AREA_WIDTH_MODES: readonly AreaWidthMode[] = ['init', 'user', 'foredit'];
 
-export function isAreaWidthMode(v: string): v is AreaWidthMode {
-  return (AREA_WIDTH_MODES as readonly string[]).includes(v);
-}
+/** この幅モードを保持する Status のキー */
+export type AreaWidthKey =
+  | 'ThinktankPanel.Area.OpenWidth'
+  | 'OverviewPanel.Area.OpenWidth'
+  | 'WorkoutPanel.Area.OpenWidth'
+  | 'ReThinkPanel.Area.OpenWidth';
 
 /**
  * パネルごとの起動時の幅（init）。
@@ -55,9 +59,22 @@ export function forEditAreaWidth(appWidth: number): number {
 /**
  * モードから実際の表示幅(px)を返す。
  * foredit の間だけウィンドウ幅の変化を購読し、割合を取り直す。
+ *
+ * Status の変更は必ず購読する。Action 経由の変更（applyProperty）は
+ * `app.NotifyUpdated(false)` しか呼ばず、TTNotifyBase の通知は親方向にしか伝播しないため、
+ * パネルに登録した useAppUpdate では発火しない。Status のリスナーが唯一の通知経路になる。
  */
-export function useResolvedAreaWidth(mode: AreaWidthMode, initWidth: number, userWidth: number): number {
+export function useResolvedAreaWidth(
+  statusKey: AreaWidthKey, mode: AreaWidthMode, initWidth: number, userWidth: number,
+): number {
   const [appWidth, setAppWidth] = useState(0);
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
+
+  useEffect(() => {
+    const onStatusChanged = () => rerender();
+    TTUIStateManager.instance.addListener(statusKey, onStatusChanged);
+    return () => TTUIStateManager.instance.removeListener(statusKey, onStatusChanged);
+  }, [statusKey]);
 
   useEffect(() => {
     if (mode !== 'foredit') { setAppWidth(0); return; }

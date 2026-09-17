@@ -229,7 +229,7 @@ export function WorkoutPanel({ app }: Props) {
   useAppUpdate(app.OverviewPanel);
 
   // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status WorkoutPanel.Area.OpenWidth のモードで決まる
-  const settingsPanelWidth = useResolvedAreaWidth(panel.AreaWidthMode, INIT_AREA_WIDTH.Workout, panel.AreaUserWidth);
+  const settingsPanelWidth = useResolvedAreaWidth('WorkoutPanel.Area.OpenWidth', panel.AreaWidthMode, INIT_AREA_WIDTH.Workout, panel.AreaUserWidth);
   const settingPanelRef = useRef<WorkoutSettingAreaRef>(null);
 
   // 設定パネルが開いた時・モード切替時に対応要素へフォーカス

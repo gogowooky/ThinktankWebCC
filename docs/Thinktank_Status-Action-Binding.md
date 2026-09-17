@@ -15,40 +15,44 @@
 
 # Action
 ## Action：　260917　FocusedPanel.Area.OpenWidth:Initial
-description:    フォーカスパネル表示時の幅を初期値にする
+description:    フォーカスパネルOpen時の幅を初期値にする
 key:            FocusedPanel.Area.OpenWidth:Initial
 ## Action：　260917　FocusedPanel.Area.OpenWidth:User
-description:    フォーカスパネル表示時の幅をユーザー設定値にする
+description:    フォーカスパネルOpen時の幅をユーザー設定値にする
 key:            FocusedPanel.Area.OpenWidth:User
 ## Action：　260917　FocusedPanel.Area.OpenWidth:ForEdit
-description:    フォーカスパネル表示時の幅を編集時の値にする
+description:    フォーカスパネルOpen時の幅を編集時の値にする
 key:            FocusedPanel.Area.OpenWidth:ForEdit
 ## Action：　260917　FocusedPanel.Area.OpenWidth:Toggle
-description:    フォーカスパネル表示時の幅をUser/ForEditでtoggleする
+description:    フォーカスパネルOpen時の幅をUser/ForEditでtoggleする
 key:            FocusedPanel.Area.OpenWidth:Toggle
 
 # Status
 ## Status：　260917　ThinktankPanel.Area.OpenWidth
+key:の意味
 「init」は起動時の値。
 「user」はアプリ使用中にユーザーが設定した値
 「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の50%とする
 
-description:    Thinktankパネル表示時の幅
+description:    ThinktankパネルOpen時の幅
 key:            ThinktankPanel.Area.OpenWidth
 type:           string
 candidates:     (init|user|foredit)
 ## Status：　260917　OverviewPanel.Area.OpenWidth
-description:    Overviewパネル表示時の幅
+key:の意味はThinktankPanel.Area.OpenWidthと同じ
+description:    OverviewパネルOpen時の幅
 key:            OverviewPanel.Area.OpenWidth
 type:           string
 candidates:     (init|user|foredit)
 ## Status：　260917　WorkoutPanel.Area.OpenWidth
-description:    Workoutパネル表示時の幅
+key:の意味はThinktankPanel.Area.OpenWidthと同じ
+description:    WorkoutパネルOpen時の幅
 key:            WorkoutPanel.Area.OpenWidth
 type:           string
 candidates:     (init|user|foredit)
 ## Status：　260917　ReThinkPanel.Area.OpenWidth
-description:    ReThinkパネル表示時の幅
+key:の意味はThinktankPanel.Area.OpenWidthと同じ
+description:    ReThinkパネルOpen時の幅
 key:            ReThinkPanel.Area.OpenWidth 
 type:           string
 candidates:     (init|user|foredit)

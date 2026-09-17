@@ -102,6 +102,39 @@ describe('Action FocusedPanel.Area.OpenWidth:*', () => {
   });
 });
 
+describe('Status 変更の通知', () => {
+  // 退行防止: applyProperty は app.NotifyUpdated(false) しか呼ばず、TTNotifyBase の通知は
+  // 親方向にしか伝播しない。パネルに登録した購読では発火しないので、幅を描画する側は
+  // Status のリスナーで再レンダリングする必要がある（useResolvedAreaWidth が購読している）。
+  it('Action 経由の変更が Status のリスナーへ届く', () => {
+    app.FocusedColumn = 'Thinktank';
+    const seen: string[] = [];
+    const listener = (_k: string, v: string) => seen.push(v);
+    TTUIStateManager.instance.addListener('ThinktankPanel.Area.OpenWidth', listener);
+    try {
+      TTActions.Execute('FocusedPanel.Area.OpenWidth:Toggle');
+      TTActions.Execute('FocusedPanel.Area.OpenWidth:Toggle');
+      TTActions.Execute('FocusedPanel.Area.OpenWidth:Initial');
+    } finally {
+      TTUIStateManager.instance.removeListener('ThinktankPanel.Area.OpenWidth', listener);
+    }
+    expect(seen).toEqual(['foredit', 'user', 'init']);
+  });
+
+  it('パネルへの通知だけでは他パネルの Status リスナーを起こさない', () => {
+    const seen: string[] = [];
+    const listener = (_k: string, v: string) => seen.push(v);
+    TTUIStateManager.instance.addListener('OverviewPanel.Area.OpenWidth', listener);
+    try {
+      app.FocusedColumn = 'Thinktank';
+      TTActions.Execute('FocusedPanel.Area.OpenWidth:ForEdit');
+    } finally {
+      TTUIStateManager.instance.removeListener('OverviewPanel.Area.OpenWidth', listener);
+    }
+    expect(seen).toEqual([]);
+  });
+});
+
 describe('foredit の幅', () => {
   // 返すのは Area の幅。縦タブバー・Splitter を足した「パネル全体」が割合どおりになる。
   it('iPhone はパネル全体がアプリ幅の100%', () => {

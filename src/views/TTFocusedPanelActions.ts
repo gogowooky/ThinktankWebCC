@@ -120,14 +120,14 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   ] as const) {
     TTActions.Register({
       ActionID: `FocusedPanel.Area.OpenWidth:${suffix}`,
-      Description: `フォーカスパネル表示時の幅を${label}にする`,
+      Description: `フォーカスパネルOpen時の幅を${label}にする`,
       Completion: (item) => setFocusedAreaWidth(item, value),
     });
   }
 
   TTActions.Register({
     ActionID: 'FocusedPanel.Area.OpenWidth:Toggle',
-    Description: 'フォーカスパネル表示時の幅をUser/ForEditでtoggleする',
+    Description: 'フォーカスパネルOpen時の幅をUser/ForEditでtoggleする',
     Completion: (item) => {
       const key = AREA_WIDTH_KEYS[app.FocusedColumn];
       if (!key) { item.Result = '[対象なし]'; return; }

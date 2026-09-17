@@ -38,7 +38,6 @@ import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
 import { StorageManager } from '../services/storage/StorageManager';
-import { isAreaWidthMode, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
@@ -223,9 +222,9 @@ const PROP_SPECS: Record<string, PropSpec> = {
   'ThinktankPanel.Area.OpenWidth': {
     panel: 'ThinktankPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'Thinktankパネル表示時の幅',
+    description: 'ThinktankパネルOpen時の幅',
     get: (app) => app.ThinktankPanel.AreaWidthMode,
-    set: (app, v) => { if (isAreaWidthMode(v)) app.ThinktankPanel.AreaWidthMode = v as AreaWidthMode; },
+    set: (app, v) => { app.ThinktankPanel.AreaWidthMode = v as typeof app.ThinktankPanel.AreaWidthMode; },
   },
   'ThinktankPanel.Mode.Name': {
     panel: 'ThinktankPanel',
@@ -274,9 +273,9 @@ const PROP_SPECS: Record<string, PropSpec> = {
   'OverviewPanel.Area.OpenWidth': {
     panel: 'OverviewPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'Overviewパネル表示時の幅',
+    description: 'OverviewパネルOpen時の幅',
     get: (app) => app.OverviewPanel.AreaWidthMode,
-    set: (app, v) => { if (isAreaWidthMode(v)) app.OverviewPanel.AreaWidthMode = v as AreaWidthMode; },
+    set: (app, v) => { app.OverviewPanel.AreaWidthMode = v as typeof app.OverviewPanel.AreaWidthMode; },
   },
   'OverviewPanel.Mode.Name': {
     panel: 'OverviewPanel',
@@ -393,9 +392,9 @@ const PROP_SPECS: Record<string, PropSpec> = {
   'WorkoutPanel.Area.OpenWidth': {
     panel: 'WorkoutPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'Workoutパネル表示時の幅',
+    description: 'WorkoutパネルOpen時の幅',
     get: (app) => app.WorkoutPanel.AreaWidthMode,
-    set: (app, v) => { if (isAreaWidthMode(v)) app.WorkoutPanel.AreaWidthMode = v as AreaWidthMode; },
+    set: (app, v) => { app.WorkoutPanel.AreaWidthMode = v as typeof app.WorkoutPanel.AreaWidthMode; },
   },
   'WorkoutSettingPanel.Mode.Name': {
     panel: 'WorkoutPanel',
@@ -613,9 +612,9 @@ const PROP_SPECS: Record<string, PropSpec> = {
   'ReThinkPanel.Area.OpenWidth': {
     panel: 'ReThinkPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'ReThinkパネル表示時の幅',
+    description: 'ReThinkパネルOpen時の幅',
     get: (app) => app.ReThinkPanel.AreaWidthMode,
-    set: (app, v) => { if (isAreaWidthMode(v)) app.ReThinkPanel.AreaWidthMode = v as AreaWidthMode; },
+    set: (app, v) => { app.ReThinkPanel.AreaWidthMode = v as typeof app.ReThinkPanel.AreaWidthMode; },
   },
   'ReThinkPanel.Mode.Name': {
     panel: 'ReThinkPanel',
