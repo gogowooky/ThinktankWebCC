@@ -9,6 +9,7 @@ import { SubtaskProposal } from './SubtaskProposal';
 import './BundleConversation.css';
 
 const client = new ConversationClient();
+const PREPARING = '会話履歴・参照資料・AI設定を読み込んでいます…（入力できます）';
 interface Draft { question: string; pending?: ConversationTurn }
 const drafts = new WeakMap<TTVault, Map<string, Draft>>();
 const vaultKeys = new WeakMap<TTVault, number>();
@@ -75,14 +76,20 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
     if (!supported) return;
     const version = ++prepareVersion.current;
     controller.current?.abort();
-    setBusy('参照資料と接続状態を確認しています…'); setMessage(''); setContext(undefined); setLoaded(false);
+    setBusy(PREPARING); setMessage(''); setContext(undefined); setStatus(undefined); setLoaded(false);
     const abort = new AbortController(); controller.current = abort;
+    const timeout = setTimeout(() => abort.abort(new Error('準備に時間がかかっています。入力は保持しています。再試行してください。')), 30_000);
+    let onAbort: () => void = () => {};
+    const interrupted = new Promise<never>((_, reject) => {
+      onAbort = () => reject(abort.signal.reason);
+      abort.signal.addEventListener('abort', onAbort, { once: true });
+    });
     try {
-      const [availability, turns, snapshot] = await Promise.allSettled([
+      const [availability, turns, snapshot] = await Promise.race([Promise.allSettled([
         client.status(abort.signal), client.history(bundleId, abort.signal, chatId, vault.ID),
         bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal })
           : Promise.resolve(chatOnlyConversationContext(vault.ID, chatId!)),
-      ]);
+      ]), interrupted]);
       if (!alive.current || abort.signal.aborted || version !== prepareVersion.current) return;
       if (availability.status === 'fulfilled') setStatus(availability.value); else setStatus(undefined);
       if (turns.status === 'fulfilled') {
@@ -107,7 +114,15 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
       if (availability.status === 'fulfilled' && !availability.value.enabled) failures.push('AI対話は停止中です。履歴と参照資料は確認できます。');
       setMessage(failures.join('\n'));
     } catch (e) { if (alive.current && version === prepareVersion.current) setMessage((e as Error).message); }
-    finally { if (alive.current && version === prepareVersion.current) setBusy(''); }
+    finally {
+      clearTimeout(timeout); abort.signal.removeEventListener('abort', onAbort);
+      if (alive.current && version === prepareVersion.current) setBusy('');
+    }
+  }
+  function cancelPreparation() {
+    prepareVersion.current += 1;
+    controller.current?.abort();
+    setBusy(''); setMessage('準備を中断しました。入力は保持しています。再試行できます。');
   }
   useEffect(() => { void prepare(); }, [bundleId, chatId]); // eslint-disable-line react-hooks/exhaustive-deps
   async function persist(turn: ConversationTurn) {
@@ -175,11 +190,12 @@ function ConversationPanel({ vault, bundleId, chatId, onOpen, draftScope = 'over
       {message && <p role="status">{message}</p>}
       {message && !pending && <button type="button" disabled={!!busy} onClick={() => void prepare()}>再試行</button>}
       {busy && <p role="status">{busy}</p>}
-      <label className="bundle-conversation-composer"><textarea aria-label="メッセージ" placeholder="メッセージを入力" maxLength={4000} value={question} disabled={!!busy || !!pending}
+      <label className="bundle-conversation-composer"><textarea aria-label="メッセージ" placeholder="メッセージを入力" maxLength={4000} value={question} disabled={(!!busy && busy !== PREPARING) || !!pending}
         onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); }} /></label>
       <div className="bundle-conversation-actions">
         <button type="button" disabled={!status?.enabled || !context || !loaded || !question.trim() || !!busy || !!pending} onClick={() => void send()}>送信</button>
         {busy === '回答を生成しています…' && <button type="button" data-conversation-abort onClick={() => controller.current?.abort()}>中断</button>}
+        {busy === PREPARING && <button type="button" onClick={cancelPreparation}>準備を中断</button>}
       </div>
       <details className="bundle-conversation-options"><summary>参照情報・その他</summary>
         {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}

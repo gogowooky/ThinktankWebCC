@@ -581,7 +581,7 @@ export class TTVault extends TTCollection {
   }
 
   /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */
-  public async CreateBlankThink(contentType: ContentType, initialName: string = '', bundleId?: string): Promise<TTThink> {
+  public async CreateBlankThink(contentType: ContentType, initialName: string = '', bundleId?: string, metadata?: Record<string, unknown>): Promise<TTThink> {
     const existingIds = new Set(this._children.keys());
     const newId = TTVault.generateUniqueId(existingIds);
 
@@ -591,6 +591,7 @@ export class TTVault extends TTCollection {
     think.ContentType = contentType;
     think.IsMetaOnly  = false;
     think.setContentSilent(initialName);
+    if (metadata) think.Metadata = structuredClone(metadata);
     think._parent     = this;
     this._children.set(newId, think);
     this.Count = this._children.size;
@@ -603,6 +604,7 @@ export class TTVault extends TTCollection {
         fullContent: initialName,
         keywords:    '',
         relatedIds:  '',
+        ...(metadata ? { metadata: think.Metadata } : {}),
       });
     } catch (e) {
       this._children.delete(newId);
@@ -611,6 +613,7 @@ export class TTVault extends TTCollection {
       throw e;
     }
     think.markSaved();
+    if (metadata) think.markMetadataSaved();
 
     if (bundleId) await this._linkThinkToBundle(bundleId, newId);
 

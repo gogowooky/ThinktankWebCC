@@ -5,7 +5,7 @@
  * Status が持つのは幅の px ではなく「どの幅を使うか」のモード：
  *   init    … 起動時の値（パネルごとの既定幅）
  *   user    … アプリ使用中にユーザーが Splitter で設定した値
- *   foredit … iPhone はアプリ幅の100%、その他はアプリ幅の50%（縦タブバー・Splitter を含めた幅）
+ *   foredit … iPhone はアプリ幅の100%、その他はアプリ幅の30%（縦タブバー・Splitter を含めた幅）
  *
  * px の実体はモードから毎回導出する。user 幅はパネルモデルが保持し、
  * foredit 幅はアプリ幅から計算するのでウィンドウサイズに追従する。
@@ -47,12 +47,15 @@ export const MIN_AREA_WIDTH = 120;
  */
 export const PANEL_CHROME_WIDTH = 43;
 
+/** foredit がパネル全体で占めるアプリ幅の割合（iPhone 以外）。iPhone は常に全幅。 */
+export const FOR_EDIT_RATIO = 0.3;
+
 /**
  * foredit の幅（Area に指定する px）。
- * タブバー・Splitter を含めたパネル全体が、iPhone はアプリ幅の100%、その他は50%になる。
+ * タブバー・Splitter を含めたパネル全体が、iPhone はアプリ幅の100%、その他は30%になる。
  */
 export function forEditAreaWidth(appWidth: number): number {
-  const panelWidth = Math.round(appWidth * (isIPhone() ? 1 : 0.5));
+  const panelWidth = Math.round(appWidth * (isIPhone() ? 1 : FOR_EDIT_RATIO));
   return Math.max(MIN_AREA_WIDTH, panelWidth - PANEL_CHROME_WIDTH);
 }
 

@@ -224,10 +224,10 @@ describe('foredit の幅', () => {
     vi.spyOn(deviceInfo, 'isIPhone').mockReturnValue(true);
     expect(forEditAreaWidth(1024) + PANEL_CHROME_WIDTH).toBe(1024);
   });
-  it('その他はパネル全体がアプリ幅の50%', () => {
+  it('その他はパネル全体がアプリ幅の30%', () => {
     vi.spyOn(deviceInfo, 'isIPhone').mockReturnValue(false);
-    expect(forEditAreaWidth(1024) + PANEL_CHROME_WIDTH).toBe(512);
-    expect(forEditAreaWidth(1280) + PANEL_CHROME_WIDTH).toBe(640);
+    expect(forEditAreaWidth(1000) + PANEL_CHROME_WIDTH).toBe(300);
+    expect(forEditAreaWidth(1280) + PANEL_CHROME_WIDTH).toBe(384);
   });
   it('狭いウィンドウでも下限を下回らない', () => {
     vi.spyOn(deviceInfo, 'isIPhone').mockReturnValue(false);

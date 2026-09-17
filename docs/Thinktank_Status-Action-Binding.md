@@ -490,7 +490,7 @@ key:            ThinktankPanel.Filter.CursorPos:NextLine
 key:の意味
 「init」は起動時の値。
 「user」はアプリ使用中にユーザーが設定した値
-「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の50%とする
+「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の30%とする
 
 description:    ThinktankパネルOpen時の幅
 key:            ThinktankPanel.Area.OpenWidth

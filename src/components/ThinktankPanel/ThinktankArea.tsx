@@ -1,4 +1,5 @@
 import { useSupportSelection } from '../../hooks/useSupportSelection';
+import { useNewSupportChat } from '../../hooks/useNewSupportChat';
 import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
 import { useSupportChats } from '../../hooks/useSupportChats';
 /**
@@ -33,7 +34,6 @@ import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from './FilterSelectDialog';
 import type { FilterVisibility } from './FilterSelectDialog';
 import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
-import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './ThinktankArea.css';
@@ -119,6 +119,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [chatWaiting,  setChatWaiting]  = useState(false);
   const aiChatViewRef                   = useRef<SupportChatRef>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Thinktank');
+  const newChat = useNewSupportChat(vault, setSelectedTodoMemoId);
 
   const filterPanelRef   = useRef<ThinktankFilterPanelRef>(null);
   const settingsViewRef  = useRef<ThinktankSettingsViewRef>(null);
@@ -320,13 +321,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     ? `Chatを${selectedTodoMemoId}に保管します`
     : 'Chatを新規のchatとして保管します';
 
-  // AIChat一覧の選択状態を更新する（空選択でクリア）。
-  // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
-  // 入力と応答は共通チャットが自動保存する。
-  const handleSelectTodoMemo = useCallback((id: string) => {
+  // 新規Chatは保存成功後に選択する。既存Chatの下書きは共通UIが保持する。
+  const handleSelectTodoMemo = (id: string) => {
     aiChatViewRef.current?.abortStreaming();
-    setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
-  }, []);
+    void newChat.select(id);
+  };
 
   const handleStartTask = useCallback(async (chatId: string, title: string, seed?: import('../../services/taskSeed').TaskSeed) => {
     const bundle = await vault.CreateTaskBundle(title, [chatId], seed);
@@ -387,6 +386,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     content = (
       <div className="thinktank-area__chat-wrap">
         {supportListError && <p role="alert">{supportListError}</p>}
+        {newChat.creating && <p role="status">新しいChatを保存しています…</p>}
+        {newChat.error && <p role="alert">{newChat.error}</p>}
             <ThinktankChatMemoPicker
           thinks={todoMemoThinks}
           vault={vault}

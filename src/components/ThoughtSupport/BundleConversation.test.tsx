@@ -23,7 +23,7 @@ beforeEach(() => {
   api.status.mockResolvedValue({ enabled: true, provider: 'test', model: 'model' }); api.history.mockResolvedValue([]);
   api.context.mockImplementation(async id => context(id)); api.generate.mockResolvedValue(turn()); api.save.mockResolvedValue(undefined);
 });
-afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
 async function show(id: string | undefined = 'a', chatId?: string) { await act(async () => root.render(<BundleConversation vault={vault} bundleId={id} chatId={chatId} onOpen={vi.fn()} />)); }
 async function showStrict(id: string | undefined = 'a', chatId?: string) { await act(async () => root.render(<StrictMode><BundleConversation vault={vault} bundleId={id} chatId={chatId} onOpen={vi.fn()} /></StrictMode>)); }
 function button(label: string) { return [...host.querySelectorAll('button')].find(b => b.textContent === label)!; }
@@ -134,4 +134,34 @@ it('cancels generation without losing the question', async () => {
   await act(async () => reject(new Error('aborted')));
   expect(host.textContent).toContain('応答を中断しました'); expect(api.save).not.toHaveBeenCalled();
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('質問');
+});
+
+it('accepts a draft during preparation, times out even if a dependency ignores abort, and ignores its late result', async () => {
+  vi.useFakeTimers();
+  let finish!: (value: ConversationContext) => void;
+  api.context.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+  await show();
+  expect(host.querySelector('textarea')!.disabled).toBe(false);
+  await input('開催場所を相談したい');
+  expect(button('送信').disabled).toBe(true);
+  await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
+  expect(host.textContent).toContain('準備に時間がかかっています');
+  expect((api.context.mock.calls[0][1] as { signal: AbortSignal }).signal.aborted).toBe(true);
+  await click('再試行');
+  expect(button('送信').disabled).toBe(false);
+  await act(async () => finish(context('wrong')));
+  expect(host.querySelector('textarea')!.value).toBe('開催場所を相談したい');
+  await click('送信');
+  expect(api.generate.mock.calls[0][0].bundleId).toBe('a');
+});
+
+it('can cancel preparation and retry without losing input or generating automatically', async () => {
+  api.history.mockImplementationOnce(() => new Promise(() => {}));
+  await show(); await input('相談の下書き'); await click('準備を中断');
+  expect(host.textContent).toContain('準備を中断しました');
+  expect(host.querySelector('textarea')!.value).toBe('相談の下書き');
+  expect(button('送信').disabled).toBe(true);
+  await click('再試行');
+  expect(button('送信').disabled).toBe(false);
+  expect(api.generate).not.toHaveBeenCalled();
 });
