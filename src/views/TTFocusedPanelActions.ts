@@ -103,6 +103,24 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     item.Result = TTUIStateManager.instance.getProperty(key);
   };
 
+  /** 幅モードを持つ Status キーの一覧（Workout は2列が同じキーを指すので重複を除く） */
+  const ALL_AREA_WIDTH_KEYS = [...new Set(Object.values(AREA_WIDTH_KEYS))];
+
+  /**
+   * except 以外で foredit のパネルを user に戻す。
+   * foredit はアプリ幅の割合を占めるので、同時に複数のパネルが foredit だと画面が破綻する。
+   */
+  const demoteOtherForEditPanels = (except: ConfigKey): string[] => {
+    const demoted: string[] = [];
+    for (const key of ALL_AREA_WIDTH_KEYS) {
+      if (key === except) continue;
+      if (TTUIStateManager.instance.getProperty(key) !== 'foredit') continue;
+      TTUIStateManager.instance.applyProperty(key, 'user');
+      demoted.push(key.split('.')[0]);
+    }
+    return demoted;
+  };
+
   // ── エリア開閉（開くときの幅を指定する）────────────────────────────────
   // 閉じるときは幅モードを触らない。次に開いたときの幅は、そのとき押した
   // アクション（Toggle=user / ToggleForEdit=foredit）が決める。
@@ -118,7 +136,9 @@ export function registerFocusedPanelActions(app: TTApplication): void {
         if (!panel.IsAreaOpen) { item.Result = '閉じた'; return; }
         const key = AREA_WIDTH_KEYS[app.FocusedColumn];
         if (key) TTUIStateManager.instance.applyProperty(key, width);
-        item.Result = `開いた（${label}）`;
+        // foredit で開くときは、他に foredit のパネルが残らないようにする
+        const demoted = key && width === 'foredit' ? demoteOtherForEditPanels(key) : [];
+        item.Result = `開いた（${label}）${demoted.length ? ` ／ ${demoted.join('・')}をUserに戻した` : ''}`;
       },
     });
   };

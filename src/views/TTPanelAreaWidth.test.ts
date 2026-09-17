@@ -144,6 +144,40 @@ describe('Action FocusedPanel.Area.IsOpen:Toggle / :ToggleForEdit', () => {
     expect(seen).toEqual(['foredit']);
   });
 
+  it('ForEditで開くとき、他の ForEdit パネルは User に戻る', () => {
+    // foredit はアプリ幅の割合を占めるので、同時に複数が foredit だと画面が破綻する
+    app.OverviewPanel.AreaWidthMode = 'foredit';
+    app.ReThinkPanel.AreaWidthMode  = 'foredit';
+    app.WorkoutPanel.AreaWidthMode  = 'init';
+    app.FocusedColumn = 'Thinktank';
+    app.ThinktankPanel.IsAreaOpen = true;
+    TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 閉じる
+    TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 開く（foredit）
+    expect(app.ThinktankPanel.AreaWidthMode).toBe('foredit');
+    expect(app.OverviewPanel.AreaWidthMode).toBe('user');
+    expect(app.ReThinkPanel.AreaWidthMode).toBe('user');
+    expect(app.WorkoutPanel.AreaWidthMode).toBe('init');           // foredit 以外は触らない
+  });
+
+  it('User で開くときは他パネルの幅モードを触らない', () => {
+    app.OverviewPanel.AreaWidthMode = 'foredit';
+    app.FocusedColumn = 'Thinktank';
+    app.ThinktankPanel.IsAreaOpen = true;
+    TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');          // 閉じる
+    TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');          // 開く（user）
+    expect(app.ThinktankPanel.AreaWidthMode).toBe('user');
+    expect(app.OverviewPanel.AreaWidthMode).toBe('foredit');
+  });
+
+  it('閉じるときは他パネルの幅モードを触らない', () => {
+    app.OverviewPanel.AreaWidthMode = 'foredit';
+    app.FocusedColumn = 'Thinktank';
+    app.ThinktankPanel.IsAreaOpen = true;
+    TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 閉じるだけ
+    expect(app.ThinktankPanel.IsAreaOpen).toBe(false);
+    expect(app.OverviewPanel.AreaWidthMode).toBe('foredit');
+  });
+
   it('幅モードを持たない列でも開閉自体は行う', () => {
     app.FocusedColumn = 'ToolBar';
     const item = TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');
