@@ -7,6 +7,7 @@ import { TTThink } from '../../models/TTThink';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { SubtaskProposal } from './SubtaskProposal';
 import { SubtaskList } from './SubtaskList';
+import { emptyProgress } from '../../../server/services/progressRecord';
 const history = vi.hoisted(() => vi.fn());
 vi.mock('../../services/ConversationService', () => ({ ConversationClient: class { history = history; } }));
 const turn = { id: 'turn', context: { scope: 'bundle-only', vaultId: 'vault', bundleId: 'parent' },
@@ -37,5 +38,26 @@ it('lists only children of the selected parent and exposes the return to the par
   await act(async () => root.render(<SubtaskList vault={vault} bundleId="child" />));
   expect(host.textContent).toContain('親課題へ戻る');
   await act(async () => root.render(<SubtaskList vault={vault} bundleId="other" />));
+  expect(host.textContent).toBe('');
+});
+
+it('updates the parent summary after a child confirmation without changing the parent record', async () => {
+  const parentBefore = JSON.stringify(vault.GetThink('parent')!.Metadata);
+  const child = new TTThink(); child.ID = 'child'; child.ContentType = 'bundle'; child.Name = '会場予約';
+  child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'chat', turnId: 'turn', panel: 'Workout' } };
+  vault.AddThink(child);
+  await act(async () => root.render(<SubtaskList vault={vault} bundleId="parent" />));
+  expect(host.textContent).toContain('到達状態は未記録');
+  await act(async () => {
+    child.Metadata.thinkProgress = { schemaVersion: 1, events: [{ id: 'event', revision: 1, author: 'human', confirmedAt: '2026-09-17T00:00:00Z',
+      input: { ...emptyProgress(), milestones: { ...emptyProgress().milestones, decision: 'achieved' }, evidence: '会場を選んだ', remaining: '予約する', paused: true, resumeCondition: '返答を待つ' } }] };
+    vault.NotifyUpdated(false);
+  });
+  expect(host.textContent).toContain('意思決定：到達');
+  expect(host.textContent).toContain('実行：未記録');
+  expect(host.textContent).toContain('残課題：予約する');
+  expect(host.textContent).toContain('保留中 · 再開条件：返答を待つ');
+  expect(JSON.stringify(vault.GetThink('parent')!.Metadata)).toBe(parentBefore);
+  await act(async () => root.render(<SubtaskList vault={new TTVault('other')} bundleId="parent" />));
   expect(host.textContent).toBe('');
 });

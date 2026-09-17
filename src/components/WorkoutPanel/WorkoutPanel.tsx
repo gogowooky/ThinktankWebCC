@@ -29,7 +29,6 @@ import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine }
 import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './WorkoutTabBar';
 import type { MediaType } from '../../types';
-import { useAiChatPanelWidth } from '../../utils/aiChatFocusWidth';
 import './WorkoutPanel.css';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
@@ -229,9 +228,6 @@ export function WorkoutPanel({ app }: Props) {
 
   // 設定パネル: 開閉は panel.IsAreaOpen
   const [settingsPanelWidth, setSettingsPanelWidth] = useState(DEFAULT_SETTINGS_WIDTH);
-  // 設定パネルにフォーカスがあり AIChat が開いている間だけ広げた幅。
-  // state は触らないので、条件を外れれば元の幅に戻る。Pane 内の AIChat は別の列なので対象外。
-  const settingsShownWidth = useAiChatPanelWidth('Workout', settingsPanelWidth, panel.IsAreaOpen && panel.ViewMode === 'chat');
   const settingPanelRef = useRef<WorkoutSettingAreaRef>(null);
 
   // 設定パネルが開いた時・モード切替時に対応要素へフォーカス
@@ -874,14 +870,14 @@ export function WorkoutPanel({ app }: Props) {
       <PanelArea
         panelId="workout"
         isOpen={panel.IsAreaOpen}
-        width={settingsShownWidth}
+        width={settingsPanelWidth}
       >
         <WorkoutSettingArea
           ref={settingPanelRef}
           activeSettings={panel.ViewMode}
           panel={panel}
           vault={vault}
-          width={settingsShownWidth}
+          width={settingsPanelWidth}
           onSplitLeft={handleSplitLeft}
           onSplitRight={handleSplitRight}
           onSplitAbove={handleSplitAbove}
