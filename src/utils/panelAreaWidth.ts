@@ -34,7 +34,7 @@ export type AreaWidthKey =
 export const INIT_AREA_WIDTH = {
   Thinktank: 280,
   Overview:  280,
-  Workout:   220,
+  Workout:   280,
   ReThink:   320,
 } as const;
 
