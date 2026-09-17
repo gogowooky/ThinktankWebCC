@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.21",
+  "version": "1.5.22",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "ae6c59f",
-  "commitDateTime": "2026-09-17-191924",
-  "commitMessage": "fix: foredit の幅をアプリ幅の50%→30%に変更（iPhoneは100%のまま）"
+  "commitId": "330e349",
+  "commitDateTime": "2026-09-18-074809",
+  "commitMessage": "feat: Thinktank相談でのOverview資料参照切替と参照上限ガード（BundleConversation・ContextService）"
 }

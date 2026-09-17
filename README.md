@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.22 feat: Thinktank相談でのOverview資料参照切替と参照上限ガード（BundleConversation・ContextService）
+- 日付: 2026-09-18
+- コミット番号: 330e349
+
+ThinktankパネルのAIChatにて、Overview資料の参照有無を切り替えられるチェックボックスを追加（BundleConversation・SupportConversation）。
+ContextService に maxSources 上限ガード（300件超え時の安全停止とエラー案内）を実装。
+SupportChat.archive.test の fetch スタブを安全な形式に修正し、Thinktank_Status-Action-Binding の定義を整理。変更: 8ファイル（+59 / -18行）。
+
 ### v1.5.21 feat: パネルエリア開閉と幅モード制御（IsOpen:Toggle / :ToggleForEdit / OpenWidth）
 - 日付: 2026-09-17
 - コミット番号: ae6c59f
