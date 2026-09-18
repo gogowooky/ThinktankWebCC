@@ -743,19 +743,19 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   // PanelDisplay Mode
   TTActions.Register({
-    ActionID: 'Application.PanelDisplay.Mode:Normal',
-    Description: 'パネル表示モードをNormalにする',
+    ActionID: 'Application.PanelDisplay.Mode:Think',
+    Description: 'パネル表示モードをThinkにする',
     Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Normal');
-      item.Result = 'Normal';
+      TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Think');
+      item.Result = 'Think';
     },
   });
   TTActions.Register({
-    ActionID: 'Application.PanelDisplay.Mode:Simple',
-    Description: 'パネル表示モードをSimpleにする',
+    ActionID: 'Application.PanelDisplay.Mode:Edit',
+    Description: 'パネル表示モードをEditにする',
     Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Simple');
-      item.Result = 'Simple';
+      TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', 'Edit');
+      item.Result = 'Edit';
     },
   });
 

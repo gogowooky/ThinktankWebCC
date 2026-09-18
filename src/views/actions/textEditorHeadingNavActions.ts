@@ -53,8 +53,8 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
         if (!ctx) return;
         const { editor, headings, targetOffset } = ctx;
 
-        // offset < targetOffset を満たす見出しを降順（後ろから）走査し、isHidden === false である最初の行を特定
-        const target = [...headings].reverse().find(h => h.offset < targetOffset && !h.isHidden);
+        // offset > targetOffset を満たす見出しを昇順（前から）走査し、isHidden === false である最初の行を特定
+        const target = headings.find(h => h.offset > targetOffset && !h.isHidden);
 
         if (target) {
           editor.setPosition({ lineNumber: target.line, column: 1 });
@@ -79,8 +79,8 @@ export function registerTextEditorHeadingNavActions(app: TTApplication): void {
         if (!ctx) return;
         const { editor, headings, targetOffset } = ctx;
 
-        // offset > targetOffset を満たす見出しを昇順（前から）走査し、isHidden === false である最初の行を特定
-        const target = headings.find(h => h.offset > targetOffset && !h.isHidden);
+        // offset < targetOffset を満たす見出しを降順（後ろから）走査し、isHidden === false である最初の行を特定
+        const target = [...headings].reverse().find(h => h.offset < targetOffset && !h.isHidden);
 
         if (target) {
           editor.setPosition({ lineNumber: target.line, column: 1 });

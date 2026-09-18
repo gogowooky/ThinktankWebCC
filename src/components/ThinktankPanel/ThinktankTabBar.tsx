@@ -21,7 +21,7 @@ interface Props {
   onRefresh: () => void;
   onSync?: () => void;
   vaultName?: string;
-  isSimpleMode?: boolean;
+  isEditMode?: boolean;
 }
 
 // ── メインボタン定義 ────────────────────────────────────────────────────
@@ -46,9 +46,9 @@ export function ThinktankTabBar({
   onRefresh,
   onSync,
   vaultName,
-  isSimpleMode = false,
+  isEditMode = false,
 }: Props) {
-  const visibleButtons = isSimpleMode ? MODE_BUTTONS.filter(b => b.mode !== 'chat') : MODE_BUTTONS;
+  const visibleButtons = isEditMode ? MODE_BUTTONS.filter(b => b.mode !== 'chat') : MODE_BUTTONS;
 
   return (
     <VerticalTabBar

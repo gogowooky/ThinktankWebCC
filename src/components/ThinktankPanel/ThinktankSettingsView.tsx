@@ -58,7 +58,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
     void TTActions.Execute(actionId);
   }, []);
 
-  const handleMode = useCallback((actionId: 'Application.PanelDisplay.Mode:Simple' | 'Application.PanelDisplay.Mode:Normal') => {
+  const handleMode = useCallback((actionId: 'Application.PanelDisplay.Mode:Edit' | 'Application.PanelDisplay.Mode:Think') => {
     void TTActions.Execute(actionId);
   }, []);
 
@@ -110,17 +110,17 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
               <span className="tt-settings-zoom__label">モード</span>
               <button
                 className="tt-settings-zoom__icon"
-                onClick={() => handleMode('Application.PanelDisplay.Mode:Simple')}
-                data-tip="簡易表示"
-                aria-label="簡易表示"
+                onClick={() => handleMode('Application.PanelDisplay.Mode:Edit')}
+                data-tip="Editモード"
+                aria-label="Editモード"
               >
                 <Columns2 size={16} />
               </button>
               <button
                 className="tt-settings-zoom__icon"
-                onClick={() => handleMode('Application.PanelDisplay.Mode:Normal')}
-                data-tip="全表示"
-                aria-label="全表示"
+                onClick={() => handleMode('Application.PanelDisplay.Mode:Think')}
+                data-tip="Thinkモード"
+                aria-label="Thinkモード"
               >
                 <Columns4 size={16} />
               </button>

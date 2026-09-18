@@ -43,9 +43,12 @@ interface Props {
   thinkTitle:          string;
   onToggle:            () => void;
   onSetActiveSettings: (type: SettingsType | null) => void;
+  isEditMode?:         boolean;
 }
 
-export function WorkoutTabBar({ activeSettings, isOpen, thinkTitle, onToggle, onSetActiveSettings }: Props) {
+export function WorkoutTabBar({ activeSettings, isOpen, thinkTitle, onToggle, onSetActiveSettings, isEditMode = false }: Props) {
+  const visibleSettings = isEditMode ? WORKOUT_SETTINGS.filter(s => s.type !== 'chat') : WORKOUT_SETTINGS;
+
   const handleClick = (type: SettingsType) => {
     onSetActiveSettings(isOpen && activeSettings === type ? null : type);
   };
@@ -58,7 +61,7 @@ export function WorkoutTabBar({ activeSettings, isOpen, thinkTitle, onToggle, on
       onToggle={onToggle}
       bottomLabel={thinkTitle}
     >
-      {WORKOUT_SETTINGS.map(({ type, Icon, name, id }) => (
+      {visibleSettings.map(({ type, Icon, name, id }) => (
         <Fragment key={type}>
           {type === 'chat' && <div className="workout-tab-bar__divider" />}
           <button

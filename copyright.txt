@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.22",
+  "version": "1.5.23",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "330e349",
-  "commitDateTime": "2026-09-18-074809",
-  "commitMessage": "feat: Thinktank相談でのOverview資料参照切替と参照上限ガード（BundleConversation・ContextService）"
+  "commitPC": "VENENO-02",
+  "commitId": "d53ee23",
+  "commitDateTime": "2026-09-18-141035",
+  "commitMessage": "feat: パネル表示モードの命名整理（Think/Edit）とEditモードUI連携・見出し移動ショートカット修正"
 }

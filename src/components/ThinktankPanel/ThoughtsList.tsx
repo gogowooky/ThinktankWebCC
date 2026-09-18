@@ -164,7 +164,7 @@ export function ThoughtsList({
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const { overviewBundleIds, overviewIncludedIds, overviewCheckedIds, workoutIds, workoutFocusedId } = useHighlight();
-  const isSimpleMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Simple';
+  const isEditMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Edit';
   const visibleCols = columns.filter(c => c.visible);
   const hasNameCol = visibleCols.some(c => c.field === 'Name');
   const showIdSub      = hasNameCol && visibleCols.some(c => c.field === 'ID');
@@ -244,9 +244,9 @@ export function ThoughtsList({
           const thought = thoughts[vItem.index];
           const isSelected        = thought.ID === selectedId;
           const isChecked         = checkedIds.includes(thought.ID);
-          const isOverviewBundle   = !isSimpleMode && overviewBundleIds.includes(thought.ID);
-          const isOverviewIncluded = !isSimpleMode && overviewIncludedIds.includes(thought.ID);
-          const isOverviewChecked  = !isSimpleMode && overviewCheckedIds.includes(thought.ID);
+          const isOverviewBundle   = !isEditMode && overviewBundleIds.includes(thought.ID);
+          const isOverviewIncluded = !isEditMode && overviewIncludedIds.includes(thought.ID);
+          const isOverviewChecked  = !isEditMode && overviewCheckedIds.includes(thought.ID);
           const isInWorkout        = workoutIds.includes(thought.ID);
           const isWorkoutFocused   = workoutFocusedId === thought.ID;
           const isFocused          = thought.ID === focusedId;

@@ -57,19 +57,19 @@ type:           string
 candidates:      ^(PWA|Local|Electron)$
 
 
-## Action：　260708　Application.PanelDisplay.Mode:Simple
-description:    パネル表示モードをSimpleにする
-key:            Application.PanelDisplay.Mode:Simple
-## Action：　260708　Application.PanelDisplay.Mode:Normal
-description:    パネル表示モードをNormalにする
-key:            Application.PanelDisplay.Mode:Normal
+## Action：　260708　Application.PanelDisplay.Mode:Edit
+description:    パネル表示モードをEditにする
+key:            Application.PanelDisplay.Mode:Edit
+## Action：　260708　Application.PanelDisplay.Mode:Think
+description:    パネル表示モードをThinkにする
+key:            Application.PanelDisplay.Mode:Think
 ## Status：　260708　Application.PanelDisplay.Mode
 description:    
 key:            Application.PanelDisplay.Mode
-current:        Normal
-default:        Normal
+current:        Think
+default:        Think
 type:           string
-candidates:      ^(Simple|Normal)$
+candidates:      ^(Think|Edit)$
 
 ## Action：　260827　Application.Display.Zoom:ZoomIn
 description:    拡大表示

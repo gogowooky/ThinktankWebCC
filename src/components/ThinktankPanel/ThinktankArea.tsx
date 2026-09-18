@@ -114,6 +114,16 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // 一覧表示する種別（初期はBundleのみON）
   const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(['bundle']));
 
+  // 表示モードの切り替え時に種別フィルターを既定へ戻す（Edit=全種別 / Think=Bundleのみ）。
+  // 切り替えの瞬間だけ効かせ、その後のユーザー操作は上書きしない。
+  const prevLayoutModeRef = useRef(layoutMode);
+  useEffect(() => {
+    const prev = prevLayoutModeRef.current;
+    prevLayoutModeRef.current = layoutMode;
+    if (prev === layoutMode) return;
+    setVisibleTypes(layoutMode === 'simple' ? new Set(ALL_CONTENT_TYPES) : new Set(['bundle']));
+  }, [layoutMode]);
+
   // チャット state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);

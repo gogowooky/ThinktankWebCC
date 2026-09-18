@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.23 feat: パネル表示モードの命名整理（Think/Edit）とEditモードUI連携・見出し移動ショートカット修正
+- 日付: 2026-09-18
+- コミット番号: d53ee23
+
+パネル表示モードの命名を Normal/Simple から Think/Edit へ統一（Application.PanelDisplay.Mode:Think / :Edit、ステータスバー・設定パネル・Status/Action定義）。
+Edit モードへの切替時に Thinktank 種別フィルターを全ONに復帰し、Workout パネルの AiChat タブ非表示に伴う退避処理を実装。
+見出し移動（TextEditor.CurrentFolding.Heading:VisiblePrev / :VisibleNext）の走査順序（昇順・降順）およびキーバインド（Alt+Up / Alt+Down）の整合性を修正。
+変更: 16ファイル（+83 / -58行）。
+
 ### v1.5.22 feat: Thinktank相談でのOverview資料参照切替と参照上限ガード（BundleConversation・ContextService）
 - 日付: 2026-09-18
 - コミット番号: 330e349

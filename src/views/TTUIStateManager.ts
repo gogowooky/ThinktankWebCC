@@ -742,10 +742,10 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'Application.PanelDisplay.Mode': {
     panel: 'Application',
-    default: 'Normal', type: 'string', candidates: '^(Normal|Simple)$',
-    description: 'パネル表示モード（Normal=全表示, Simple=簡易表示）',
-    get: () => localStorage.getItem('tt-layout-mode') === 'simple' ? 'Simple' : 'Normal',
-    set: (_app, v) => { localStorage.setItem('tt-layout-mode', v === 'Simple' ? 'simple' : 'sipoc'); },
+    default: 'Think', type: 'string', candidates: '^(Think|Edit)$',
+    description: 'パネル表示モード（Think=全表示, Edit=簡易表示）',
+    get: () => localStorage.getItem('tt-layout-mode') === 'simple' ? 'Edit' : 'Think',
+    set: (_app, v) => { localStorage.setItem('tt-layout-mode', v === 'Edit' ? 'simple' : 'sipoc'); },
   },
   'Application.Display.Zoom': {
     panel: 'Application',

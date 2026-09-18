@@ -13,7 +13,7 @@
  *   'simple' … OverviewPanel / ReThinkPanel を非表示
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { HighlightProvider } from '../../contexts/HighlightContext';
@@ -56,18 +56,36 @@ export function AppLayout() {
 
   const handleLayoutModeChange = useCallback((mode: LayoutMode) => {
     setLayoutMode(mode);
-    TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', mode === 'simple' ? 'Simple' : 'Normal');
+    TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', mode === 'simple' ? 'Edit' : 'Think');
   }, []);
 
   // TTUIStateManager から Application.PanelDisplay.Mode 変化を受け取って layoutMode を同期
   useEffect(() => {
     const listener = (_key: string, value: string) => {
-      const next: LayoutMode = value === 'Simple' ? 'simple' : 'sipoc';
+      const next: LayoutMode = value === 'Edit' ? 'simple' : 'sipoc';
       setLayoutMode(next);
     };
     TTUIStateManager.instance.addListener('Application.PanelDisplay.Mode', listener);
     return () => TTUIStateManager.instance.removeListener('Application.PanelDisplay.Mode', listener);
   }, []);
+
+  // Edit モードでは OverviewPanel 自体が非表示になるため、選択中の Bundle をいったん解除する。
+  // Think モードへ戻ったときに復元できるよう、解除前の BundleID を保持しておく。
+  const prevLayoutModeRef   = useRef(layoutMode);
+  const savedOverviewBundle = useRef('');
+  useEffect(() => {
+    const prev = prevLayoutModeRef.current;
+    prevLayoutModeRef.current = layoutMode;
+    if (prev === layoutMode) return;
+
+    if (layoutMode === 'simple') {
+      savedOverviewBundle.current = app.OverviewPanel.BundleID;
+      if (savedOverviewBundle.current) app.OverviewPanel.ClearBundle();
+    } else if (savedOverviewBundle.current) {
+      app.OverviewPanel.OpenBundle(savedOverviewBundle.current);
+      savedOverviewBundle.current = '';
+    }
+  }, [layoutMode, app]);
 
   // パネルのテーマ色（<Panel>.Theme.* / FocusingBorder.Theme.*）を CSS 変数へ展開する。
   // 派生色は color-mix() で作るため、基礎色1つの変更が関連色すべてに波及する。
@@ -130,7 +148,7 @@ export function AppLayout() {
 
         {/* ── WorkoutPanel（Phase 7 実装済み）────────────────────── */}
         <div className="app-panel app-panel--workout">
-          <WorkoutPanel app={app} />
+          <WorkoutPanel app={app} layoutMode={layoutMode} />
         </div>
 
         {/* ── ReThinkPanel（Phase 10 実装済み）─────────────────────── */}

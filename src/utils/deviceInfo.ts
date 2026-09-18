@@ -13,7 +13,7 @@ export function isIPhone(): boolean {
 
 /**
  * レンダリング前に呼ぶ。iPhone の場合、初回描画からサイドパネルが出ないよう
- * レイアウトモードの localStorage を簡易表示に先行設定する。
+ * レイアウトモードの localStorage を Edit モードに先行設定する。
  * （保存済み UI 状態による上書きは App 側で再適用してカバーする）
  */
 export function seedMobileDisplayDefaults(): void {

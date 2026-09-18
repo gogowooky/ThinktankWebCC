@@ -29,6 +29,7 @@ import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine }
 import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './WorkoutTabBar';
 import type { MediaType } from '../../types';
+import type { LayoutMode } from '../Layout/AppLayout';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { INIT_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
 import './WorkoutPanel.css';
@@ -219,13 +220,22 @@ function SplitView({ node, shared }: { node: SplitNodeData; shared: SharedProps 
 
 interface Props {
   app: TTApplication;
+  layoutMode: LayoutMode;
 }
 
-export function WorkoutPanel({ app }: Props) {
+export function WorkoutPanel({ app, layoutMode }: Props) {
   const panel = app.WorkoutPanel;
   const vault = app.Models.Vault;
   useAppUpdate(panel);
   useAppUpdate(vault);
+
+  // Edit モードでは AiChat 設定パネルをタブごと隠すため、選択中だった場合は Workout 設定へ退避する
+  const isEditMode = layoutMode === 'simple';
+  useEffect(() => {
+    if (isEditMode && panel.ViewMode === 'chat') {
+      panel.SetViewMode('workout');
+    }
+  }, [isEditMode, panel.ViewMode, panel]);
   useAppUpdate(app.OverviewPanel);
 
   // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status WorkoutSettingPanel.Area.OpenWidth のモードで決まる
@@ -869,6 +879,7 @@ export function WorkoutPanel({ app }: Props) {
         thinkTitle={focusedThinkTitle}
         onToggle={handleToggle}
         onSetActiveSettings={handleSetActiveSettings}
+        isEditMode={isEditMode}
       />
 
       {/* ── 設定パネル + Splitter ────────────────────────────── */}

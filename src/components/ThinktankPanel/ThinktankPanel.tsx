@@ -80,7 +80,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
         onRefresh={handleRefresh}
         onSync={isElectron ? handleSync : undefined}
         vaultName={vault.VaultName}
-        isSimpleMode={layoutMode === 'simple'}
+        isEditMode={layoutMode === 'simple'}
       />
       <PanelArea
         panelId="thinktank"

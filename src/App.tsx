@@ -33,12 +33,12 @@ export default function App() {
       TTUIStateManager.instance.ensureThinkExists(vault),
       TTShortcutManager.instance.ensureThinkExists(vault),
     ]).then(() => {
-      // iPhone 表示時は、保存済み UI 状態に関わらず簡易モード・WordWrap を強制する
+      // iPhone 表示時は、保存済み UI 状態に関わらず Edit モード・WordWrap を強制する
       // （狭幅画面ではサイドパネルが実質使えず、折り返し無しだと横スクロールが多発するため）
       if (isIPhone()) {
         const ui = TTUIStateManager.instance
-        if (ui.getProperty('Application.PanelDisplay.Mode') !== 'Simple') {
-          ui.applyProperty('Application.PanelDisplay.Mode', 'Simple')
+        if (ui.getProperty('Application.PanelDisplay.Mode') !== 'Edit') {
+          ui.applyProperty('Application.PanelDisplay.Mode', 'Edit')
         }
         if (ui.getProperty('TextEditor.WordWrap.IsVisible') !== 'true') {
           ui.applyProperty('TextEditor.WordWrap.IsVisible', 'true')

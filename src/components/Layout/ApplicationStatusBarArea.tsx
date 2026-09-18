@@ -298,11 +298,11 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   const isLocalMode = storageMode === 'electron' || storageMode === 'local';
 
   const panelDisplayMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode');
-  const isSimpleMode = panelDisplayMode === 'Simple';
+  const isEditMode = panelDisplayMode === 'Edit';
 
   const handlePanelDisplayModeToggle = useCallback(() => {
-    TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', isSimpleMode ? 'Normal' : 'Simple');
-  }, [isSimpleMode]);
+    TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', isEditMode ? 'Think' : 'Edit');
+  }, [isEditMode]);
 
   // 左側コンテンツパネルの出し分け
   const renderPanel = () => {
@@ -390,12 +390,12 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       {/* パネル表示モードインジケータ */}
       <button
         className="ApplicationStatusBarArea__panel-display-mode-btn"
-        data-tip={`DisplayMode:${isSimpleMode ? 'Simple' : 'Normal'}`}
+        data-tip={`DisplayMode:${isEditMode ? 'Edit' : 'Think'}`}
         data-tip-side="right"
-        aria-label={isSimpleMode ? '簡易モード' : '標準モード'}
+        aria-label={isEditMode ? 'Editモード' : 'Thinkモード'}
         onClick={handlePanelDisplayModeToggle}
       >
-        {isSimpleMode ? <Columns2 size={14} /> : <Columns4 size={14} />}
+        {isEditMode ? <Columns2 size={14} /> : <Columns4 size={14} />}
       </button>
       <div className="ApplicationStatusBarArea__indicator-divider" />
 
