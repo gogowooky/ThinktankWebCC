@@ -55,7 +55,8 @@ async function show(bundleId = 'a', selectedId = 'chat-a', onStartTask?: (chatId
     onSelected={vi.fn()} onMessages={vi.fn()} onWaiting={vi.fn()} modelSelector={{ value: { provider: 'openai', model: 'unused' }, onChange: vi.fn() }} />));
 }
 it('uses the Chat selected in the upper list and has no second selector or conversation-history panel', async () => {
-  await show(); expect(host.textContent).toContain('TODO:Thinktank｜[進行中]Bundle a'); expect(host.querySelector('select')).toBeNull();
+  // Chat名は上のリストの選択行に出ているので、会話欄では繰り返さない。
+  await show(); expect(host.textContent).not.toContain('TODO:Thinktank｜[進行中]Bundle a'); expect(host.querySelector('select')).toBeNull();
   expect(host.textContent).not.toContain('これまでの会話'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('a');
   expect(host.querySelector('textarea')?.getAttribute('data-chat')).toBe('chat-a');
   expect(calls.render.mock.calls.at(-1)?.[0].draftScope).toBe('aichat:Thinktank:panel');

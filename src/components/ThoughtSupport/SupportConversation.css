@@ -27,7 +27,6 @@
 }
 .support-conversation > :not(.bundle-conversation) { flex: 0 0 auto; }
 .support-conversation > .bundle-conversation { flex: 1 1 auto; min-height: 0; }
-.support-conversation-title { margin: 0 0 8px; }
 .support-task-start { margin: 0 0 12px; }
 .support-task-start > button { color: var(--field-muted, #5a6690); text-decoration: underline; text-underline-offset: 3px; padding: 3px 0; background: transparent; border: 0; cursor: pointer; font: inherit; text-align: left; }
 .support-task-start > button:hover { color: inherit; }

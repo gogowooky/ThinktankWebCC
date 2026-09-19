@@ -14,7 +14,6 @@
   padding-right: max(0px, var(--conversation-gutter, 0px) - var(--conversation-scrollbar, 6px));
 }
 .bundle-conversation label { display: block; margin: 10px 0; }
-.bundle-conversation label.bundle-conversation-sources { margin-top: 0; }
 /* 地色・枠・アクセントは宿主（AIChat＝.support-chat-host／分析＝.bundle-analysis）が
    --field-* で与える。この部品は両方に置かれるので、自前で色を持つと片方で浮く。 */
 .bundle-conversation textarea { display: block; width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; color: inherit; background: var(--field-bg, #fff); border: 1px solid var(--field-border, rgba(0,0,0,.25)); border-radius: 4px; padding: 8px; }
@@ -30,7 +29,6 @@
 .bundle-conversation label.bundle-conversation-composer { margin: 12px 0 6px; }
 .bundle-conversation-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .bundle-conversation-composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
-.bundle-conversation-input-hint { color: var(--field-muted, #64748b); font-size: .8em; }
 .bundle-conversation-actions { margin-left: auto; align-items: center; flex-wrap: wrap; }
 .bundle-conversation-notice { margin: 12px 0; padding: 10px 12px; border-left: 2px solid var(--field-border, #94a3b8); background: var(--field-bg, #f1f5f9); border-radius: 4px; }
 .bundle-conversation-notice p { margin: 0 0 6px; white-space: pre-wrap; }
@@ -48,8 +46,28 @@
 .bundle-conversation button:disabled { cursor: default; }
 .bundle-conversation-options { margin-top: 16px; color: var(--field-muted, #64748b); font-size: .9em; }
 .bundle-conversation-options details { margin: 10px 0; }
-.bundle-conversation-record { list-style: none; margin: 6px 0; padding: 0; }
-.bundle-conversation-record li { margin: 3px 0; }
+
+/* ── 会話の記録ダイアログ ──────────────────────────────────
+   枠は「フィルター選択」（ColumnSortDialog.css）を流用し、位置だけ会話面に合わせる。
+   backdrop の inset:0 が会話面に収まるよう、.bundle-conversation を位置の基準にする。 */
+.bundle-conversation { position: relative; }
+.bundle-conversation-record-open {
+  display: inline-flex; align-items: center; padding: 2px 0; margin-top: 2px;
+  color: var(--field-muted, #64748b); text-decoration: none;
+}
+.bundle-conversation-record-open:hover { color: inherit; }
+.bundle-conversation-record {
+  top: 10px; left: 8px; right: 8px; bottom: 10px;
+  min-width: 0; display: flex; flex-direction: column;
+}
+.bundle-conversation-record__body {
+  flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto;
+  margin: 0; padding: 8px 10px; font-size: .9em;
+}
+.bundle-conversation-record__actions { flex: none; padding: 6px 10px; border-top: 1px solid rgba(0, 0, 0, .08); }
+/* 枠のボタンはリンク表現の対象外。閉じるアイコンに下線や余白が付くと枠と揃わない。 */
+.bundle-conversation .col-sort-dialog__close-in-table { text-decoration: none; padding: 0; color: #aaa; }
+.bundle-conversation .col-sort-dialog__close-in-table:hover { color: #666; }
 .bundle-conversation-busy { display: flex; align-items: center; gap: 8px; }
 .bundle-conversation-spinner { width: 12px; height: 12px; flex-shrink: 0; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: conversation-spin .8s linear infinite; }
 @keyframes conversation-spin { to { transform: rotate(360deg); } }

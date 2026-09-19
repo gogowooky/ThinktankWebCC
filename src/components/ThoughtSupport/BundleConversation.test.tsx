@@ -121,20 +121,43 @@ it('treats the Send button as confirmation and persists without adopting proposa
   expect(api.save).toHaveBeenCalledWith(turn(), 'chat-a', 'a');
   expect(button('送信').disabled).toBe(true);
 });
-it('summarises each stored turn in one line instead of showing its raw record', async () => {
+it('opens each turn record in a dialog from the icon under that turn, and never inline', async () => {
   api.history.mockResolvedValue([turn()]);
   await show('a', 'chat-a');
-  const audit = [...host.querySelectorAll('summary')].find(s => s.textContent === '会話記録の確認')!;
-  expect(audit.closest('.bundle-conversation-options')).not.toBeNull();
-  expect(audit.closest('article')).toBeNull();
-  const line = host.querySelector('.bundle-conversation-record li')!.textContent!;
-  expect(line).toContain('test / model');
-  expect(line).toContain('参照資料なし');
-  expect(line).toContain('根拠不足あり');
-  expect(line).toMatch(/^2026-09-1[34] \d{2}:\d{2} ／/);
+  expect(host.textContent).not.toContain('会話記録の確認');
   expect(host.textContent).not.toContain('schemaVersion');
   expect(host.textContent).not.toContain('この会話をJSONで書き出す');
   expect(host.textContent).not.toContain('自動保存');
+  const open = host.querySelector<HTMLButtonElement>('article .bundle-conversation-record-open')!;
+  expect(open.closest('.bundle-conversation-log')).not.toBeNull();
+  await act(async () => open.click());
+  const dialog = host.querySelector('.bundle-conversation-record')!;
+  expect(dialog.classList.contains('col-sort-dialog')).toBe(true);
+  expect(dialog.querySelector('.bundle-conversation-record__body')!.textContent).toContain('schemaVersion');
+  expect(button('保存する')).toBeDefined();
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="閉じる"]')!.click());
+  expect(host.querySelector('.bundle-conversation-record')).toBeNull();
+});
+it('puts the settings and secondary actions behind the collapsed options block', async () => {
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" optionalSources
+    inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
+  const options = host.querySelector('.bundle-conversation-options')!;
+  expect(options.querySelector('summary')!.textContent).toBe('条件・機能・参照情報・その他');
+  expect(button('課題として始める').closest('.bundle-conversation-options')).not.toBeNull();
+  expect(host.querySelector('input[type="checkbox"]')!.closest('.bundle-conversation-options')).not.toBeNull();
+});
+it('carries the send and newline guidance inside the empty message field only', async () => {
+  await show('a', 'chat-a');
+  expect(host.querySelector('textarea')!.placeholder).toBe('メッセージを入力、Enterで送信 · Shift+Enterで改行');
+  expect(host.querySelector('.bundle-conversation-input-hint')).toBeNull();
+  expect(host.querySelectorAll('.bundle-conversation-composer-footer small').length).toBe(0);
+});
+it('labels the questioner as You', async () => {
+  api.history.mockResolvedValue([turn()]);
+  await show('a', 'chat-a');
+  const first = host.querySelector('article p')!.textContent!;
+  expect(first.startsWith('You：')).toBe(true);
+  expect(host.textContent).not.toContain('本人：');
 });
 it('keeps the composer and its controls out of the scrolling history', async () => {
   api.history.mockResolvedValue([turn()]);
@@ -144,12 +167,6 @@ it('keeps the composer and its controls out of the scrolling history', async () 
   expect(log.querySelector('textarea')).toBeNull();
   expect(host.querySelector('textarea')!.closest('.bundle-conversation-input')).not.toBeNull();
   expect(button('送信').closest('.bundle-conversation-input')).not.toBeNull();
-});
-it('places the host-supplied input header in the fixed input band', async () => {
-  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a"
-    inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
-  expect(button('課題として始める').closest('.bundle-conversation-input')).not.toBeNull();
-  expect(button('課題として始める').closest('.bundle-conversation-log')).toBeNull();
 });
 it('continues with a second question using refreshed sources and the saved history', async () => {
   const first = turn();
