@@ -84,27 +84,28 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
     } catch (error) { if (version === taskVersion.current) setMessage((error as Error).message || '課題を作成できませんでした。'); }
     finally { if (version === taskVersion.current) { taskLock.current = false; setTaskBusy(false); } }
   }
+  // 課題化は会話全体に対する操作なので、履歴と一緒に流れないよう入力帯へ預ける。
+  const taskStart = valid && panelName === 'Thinktank' && onStartTask ? <div className="support-task-start">
+    {!taskEditorOpen ? <button type="button" disabled={taskBusy} onClick={() => void openTaskEditor()}>この相談を課題として始める</button> : <>
+      <label>課題名<input aria-label="課題名" maxLength={200} value={taskTitle} disabled={taskBusy}
+        onChange={event => setTaskTitle(event.target.value)} onKeyDown={event => {
+          if (event.key === 'Enter' && !event.nativeEvent.isComposing) void startTask();
+        }} /></label>
+      <div className="support-task-start__actions">
+        <button type="button" disabled={taskBusy || !taskTitle.trim()} onClick={() => void startTask()}>{taskBusy ? '作成中…' : '作成してOverviewで開く'}</button>
+        <button type="button" disabled={taskBusy} onClick={() => setTaskEditorOpen(false)}>キャンセル</button>
+      </div>
+      {taskSeed ? <div className="support-task-start__summary">
+        <p>会話で整理した次の内容も保存します。修正したいときはキャンセルして、会話で伝えてください。</p>
+        <p><strong>目的</strong><br />{taskSeed.goal}</p>
+        <p><strong>完了条件</strong><br />{taskSeed.completionCriteria}</p>
+      </div> : <p>目的・完了条件は、課題を開いたあともAIと相談して整理できます。</p>}
+    </>}
+  </div> : undefined;
   return <div className="support-conversation">
     {valid ? <p className="support-conversation-title"><strong>{chat.Name}</strong></p>
       : <p role="status">{chatValid ? '資料の参照にはOverviewでBundleを選択してください。' : '上部のリストで相談するChatを選択してください。'}</p>}
-    {valid && panelName === 'Thinktank' && onStartTask && <div className="support-task-start">
-      {!taskEditorOpen ? <button type="button" disabled={taskBusy} onClick={() => void openTaskEditor()}>この相談を課題として始める</button> : <>
-        <label>課題名<input aria-label="課題名" maxLength={200} value={taskTitle} disabled={taskBusy}
-          onChange={event => setTaskTitle(event.target.value)} onKeyDown={event => {
-            if (event.key === 'Enter' && !event.nativeEvent.isComposing) void startTask();
-          }} /></label>
-        <div className="support-task-start__actions">
-          <button type="button" disabled={taskBusy || !taskTitle.trim()} onClick={() => void startTask()}>{taskBusy ? '作成中…' : '作成してOverviewで開く'}</button>
-          <button type="button" disabled={taskBusy} onClick={() => setTaskEditorOpen(false)}>キャンセル</button>
-        </div>
-        {taskSeed ? <div className="support-task-start__summary">
-          <p>会話で整理した次の内容も保存します。修正したいときはキャンセルして、会話で伝えてください。</p>
-          <p><strong>目的</strong><br />{taskSeed.goal}</p>
-          <p><strong>完了条件</strong><br />{taskSeed.completionCriteria}</p>
-        </div> : <p>目的・完了条件は、課題を開いたあともAIと相談して整理できます。</p>}
-      </>}
-    </div>}
-    {valid && <BundleConversation vault={vault} bundleId={bundleValid ? bundle.ID : undefined} chatId={chat.ID} draftScope={draftScope} optionalSources={panelName === 'Thinktank'} onOpen={id => void openSource(id)} />}
+    {valid && <BundleConversation vault={vault} bundleId={bundleValid ? bundle.ID : undefined} chatId={chat.ID} draftScope={draftScope} optionalSources={panelName === 'Thinktank'} onOpen={id => void openSource(id)} inputHeader={taskStart} />}
     {message && <p role="status">{message}</p>}
   </div>;
 }

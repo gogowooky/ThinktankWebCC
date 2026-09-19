@@ -15,9 +15,23 @@
   --field-muted: #5a6690;
   --field-accent: var(--support-toolbar-bg);
 }
-.support-conversation { flex: 1; min-height: 0; overflow: auto; padding: 12px; overflow-wrap: anywhere; }
+/* スクロールは中の会話ログだけに持たせる。ここで面ごとスクロールすると、
+   Chat名・課題化・入力欄まで履歴と一緒に流れ、履歴を見ながら入力できない。
+   中のスクロール枠はこの2変数を見て、バーを右余白へ食い込ませる（BundleConversation.css）。
+   --conversation-scrollbar は実際に使われるバーの幅。Chromium は scrollbar-width が
+   指定されていると ::-webkit-scrollbar の width を無視するので、下の 6px ではなく
+   scrollbar-width:thin の実寸（Windows で 10px）を書く。ずれても本文右端が数px動くだけ。 */
+.support-conversation {
+  flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; overflow-wrap: anywhere;
+  padding: 12px; --conversation-gutter: 12px; --conversation-scrollbar: 10px;
+}
+.support-conversation > :not(.bundle-conversation) { flex: 0 0 auto; }
+.support-conversation > .bundle-conversation { flex: 1 1 auto; min-height: 0; }
 .support-conversation-title { margin: 0 0 8px; }
 .support-task-start { margin: 0 0 12px; }
+.support-task-start > button { color: var(--field-muted, #5a6690); text-decoration: underline; text-underline-offset: 3px; padding: 3px 0; background: transparent; border: 0; cursor: pointer; font: inherit; text-align: left; }
+.support-task-start > button:hover { color: inherit; }
+.support-task-start > button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .support-task-start label { display: flex; align-items: center; gap: 8px; }
 .support-task-start input { flex: 1; min-width: 0; padding: 6px 8px; }
 .support-task-start__actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -36,19 +50,21 @@
   box-sizing: border-box; resize: vertical;
 }
 
-/* スクロールバーは溝＝コンテンツ背景色、つまみ＝所属パネルの横向きツールバーの地色。
-   2色は SupportChat.tsx が panelName から --support-content-bg / --support-toolbar-bg に流し込む。
+/* スクロールバーは溝＝チャットエリアの地色そのもの（transparent で下地を透かす）、
+   つまみ＝所属パネルの横向きツールバーの地色（SupportChat.tsx が panelName から
+   --support-toolbar-bg に流し込む）。溝に色を置くと、エリアの地色は --*-area-bg で
+   コンテンツ地色とは別なので、帯だけ色が違って見える。
    index.css のグローバル指定は暗い地色向け（溝 --bg-secondary／つまみ --border）で、
    明るいこのエリアでは黒帯に見える。::-webkit-scrollbar-* は継承しないので、
    本文・pre・details など内側のスクロール枠も取りこぼさないよう子孫までまとめて指定する。 */
 .support-chat-host,
 .support-chat-host * {
   scrollbar-width: thin;
-  scrollbar-color: var(--support-toolbar-bg) var(--support-content-bg);
+  scrollbar-color: var(--support-toolbar-bg) transparent;
 }
 .support-chat-host::-webkit-scrollbar,
 .support-chat-host *::-webkit-scrollbar { width: 6px; height: 6px; }
 .support-chat-host::-webkit-scrollbar-track,
-.support-chat-host *::-webkit-scrollbar-track { background: var(--support-content-bg); }
+.support-chat-host *::-webkit-scrollbar-track { background: transparent; }
 .support-chat-host::-webkit-scrollbar-thumb,
 .support-chat-host *::-webkit-scrollbar-thumb { background: var(--support-toolbar-bg); border-radius: 3px; }

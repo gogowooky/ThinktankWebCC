@@ -1,15 +1,56 @@
-.bundle-conversation { overflow-wrap: anywhere; }
+/* 会話ログだけをスクロールさせ、入力まわりは下端に残す。宿主が高さを確定できないとき
+   （高さ auto のブロックに置かれたとき）は flex の伸縮が成立せず、従来どおり面全体が伸びる。 */
+.bundle-conversation { overflow-wrap: anywhere; display: flex; flex-direction: column; min-height: 0; }
+.bundle-conversation-log { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* 参照資料の展開などで入力帯が伸びても会話ログを潰さないよう、内側でスクロールさせる */
+.bundle-conversation-input { flex: 0 0 auto; max-height: 55%; overflow-y: auto; margin-top: 8px; }
+/* スクロールバーは宿主の右余白へ食い込ませる。負のマージンで枠を余白ぶん右へ広げ、
+   その内側に padding を戻すぶんを差し引く。scrollbar-gutter:stable でバーの居場所を
+   常に確保するので、バーが出入りしても本文の右端は動かない（＝行の折り返しも変わらない）。 */
+.bundle-conversation-log,
+.bundle-conversation-input {
+  scrollbar-gutter: stable;
+  margin-right: calc(-1 * var(--conversation-gutter, 0px));
+  padding-right: max(0px, var(--conversation-gutter, 0px) - var(--conversation-scrollbar, 6px));
+}
 .bundle-conversation label { display: block; margin: 10px 0; }
+.bundle-conversation label.bundle-conversation-sources { margin-top: 0; }
 /* 地色・枠・アクセントは宿主（AIChat＝.support-chat-host／分析＝.bundle-analysis）が
    --field-* で与える。この部品は両方に置かれるので、自前で色を持つと片方で浮く。 */
 .bundle-conversation textarea { display: block; width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; color: inherit; background: var(--field-bg, #fff); border: 1px solid var(--field-border, rgba(0,0,0,.25)); border-radius: 4px; padding: 8px; }
 .bundle-conversation pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
-.bundle-conversation article { margin: 20px 0; padding: 12px; border: 1px solid var(--field-border, rgba(0,0,0,.25)); border-radius: 8px; }
+/* 一問一答は枠で囲わない。狭いパネルでは枠の分だけ本文が細り、行数も増える。
+   区切りは往復のあいだの余白だけで足りる。 */
+.bundle-conversation article { margin: 0 0 20px; }
 .bundle-conversation article p { white-space: pre-wrap; }
 .bundle-conversation blockquote { margin: 12px 0; padding-left: 12px; border-left: 3px solid var(--field-accent, #60a5fa); }
 .bundle-conversation small { display: block; }
 .bundle-conversation button:disabled { opacity: .5; cursor: default; }
 .bundle-conversation-empty { color: var(--field-muted, #64748b); text-align: center; margin: 24px 0; }
-.bundle-conversation-composer { margin-top: 14px; }
+.bundle-conversation label.bundle-conversation-composer { margin: 12px 0 6px; }
 .bundle-conversation-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.bundle-conversation-options { margin-top: 12px; color: var(--field-muted, #64748b); }
+.bundle-conversation-composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.bundle-conversation-input-hint { color: var(--field-muted, #64748b); font-size: .8em; }
+.bundle-conversation-actions { margin-left: auto; align-items: center; flex-wrap: wrap; }
+.bundle-conversation-notice { margin: 12px 0; padding: 10px 12px; border-left: 2px solid var(--field-border, #94a3b8); background: var(--field-bg, #f1f5f9); border-radius: 4px; }
+.bundle-conversation-notice p { margin: 0 0 6px; white-space: pre-wrap; }
+.bundle-conversation-notice p:last-child { margin-bottom: 0; }
+.bundle-conversation-notice-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+/* 送信も他の操作と同じリンク表現。色だけ本文と同じにして、補助操作より前に出す。 */
+.bundle-conversation button,
+.bundle-conversation summary {
+  color: var(--field-muted, #64748b); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; cursor: pointer;
+}
+.bundle-conversation button { padding: 3px 0; background: transparent; border: 0; font: inherit; text-align: left; }
+.bundle-conversation button.bundle-conversation-send { color: inherit; }
+.bundle-conversation button:not(:disabled):hover, .bundle-conversation summary:hover { color: inherit; }
+.bundle-conversation button:focus-visible, .bundle-conversation summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 3px; }
+.bundle-conversation button:disabled { cursor: default; }
+.bundle-conversation-options { margin-top: 16px; color: var(--field-muted, #64748b); font-size: .9em; }
+.bundle-conversation-options details { margin: 10px 0; }
+.bundle-conversation-record { list-style: none; margin: 6px 0; padding: 0; }
+.bundle-conversation-record li { margin: 3px 0; }
+.bundle-conversation-busy { display: flex; align-items: center; gap: 8px; }
+.bundle-conversation-spinner { width: 12px; height: 12px; flex-shrink: 0; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: conversation-spin .8s linear infinite; }
+@keyframes conversation-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .bundle-conversation-spinner { animation: none; } }

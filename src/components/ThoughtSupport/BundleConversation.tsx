@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { ContextService } from '../../services/ContextService';
 import { ConversationClient, chatOnlyConversationContext, conversationContext, type ConversationContext, type ConversationTurn } from '../../services/ConversationService';
@@ -28,12 +28,19 @@ function getDraft(vault: TTVault, bundleId: string, draftScope: string) {
   if (!draft) { draft = { question: '' }; map.set(key, draft); }
   return draft;
 }
+function turnTime(iso: string): string {
+  const d = new Date(iso);
+  if (!Number.isFinite(d.getTime())) return iso;
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 function download(turn: ConversationTurn) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(turn, null, 2)], { type: 'application/json' }));
   const link = document.createElement('a'); link.href = url; link.download = `think-conversation-${turn.id}.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; optionalSources?: boolean }
+/** inputHeader は宿主が入力帯の先頭に差し込む操作。ログと一緒に流れると押せないので、ここへ預ける。 */
+interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; optionalSources?: boolean; inputHeader?: ReactNode }
 function cachedChatHistory(vault: TTVault, chatId?: string): ConversationTurn[] {
   if (!chatId) return [];
   try {
@@ -45,7 +52,7 @@ export function BundleConversation(props: ConversationProps) {
   if (!vaultKeys.has(props.vault)) vaultKeys.set(props.vault, ++nextVaultKey);
   return <ConversationPanel key={JSON.stringify([vaultKeys.get(props.vault), props.bundleId, props.chatId, props.draftScope])} {...props} />;
 }
-function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'overview', optionalSources = false }: ConversationProps) {
+function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'overview', optionalSources = false, inputHeader }: ConversationProps) {
   const draft = getDraft(vault, selectedBundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`);
   const [useBundle, setUseBundle] = useState(() => draft.pending ? draft.pending.context.scope === 'bundle-only' : !optionalSources);
   const bundleId = useBundle ? selectedBundleId : undefined;
@@ -59,8 +66,10 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   const [message, setMessage] = useState('');
   const [loaded, setLoaded] = useState(false);
   const alive = useRef(true);
+  const logRef = useRef<HTMLDivElement>(null);
   const controller = useRef<AbortController>();
   const locked = useRef(false);
+  const composing = useRef(false);
   const prepareVersion = useRef(0);
   const supported = StorageManager.instance.mode === 'pwa';
   useEffect(() => {
@@ -139,7 +148,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     }
   }
   async function send() {
-    if (locked.current || !status?.enabled || !context || !question.trim() || pending || !loaded) return;
+    if (locked.current || busy || !status?.enabled || !context || !question.trim() || pending || !loaded) return;
     locked.current = true; setBusy('回答を生成しています…'); setMessage('');
     const abort = new AbortController(); controller.current = abort;
     let saved = false;
@@ -172,36 +181,57 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     }
   }
   const turns = pending && !history.some(t => t.id === pending.id) ? [...history, pending] : history;
+  // 入力欄を下端に固定したので、ログは自分で末尾へ寄せないと新しい回答が画面外に積まれる。
+  useEffect(() => {
+    const el = logRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [turns.length, busy]);
   return <section className="bundle-conversation" aria-label="AIとの会話">
     {!supported ? <p>AIChatはBigQueryモードで利用できます。</p> : <>
-      {optionalSources && chatId && selectedBundleId && <label><input type="checkbox" checked={useBundle}
+      <div className="bundle-conversation-log" ref={logRef}>
+        {loaded && !turns.length && <p className="bundle-conversation-empty">まだ会話はありません。</p>}
+        {turns.map(turn => <article key={turn.id}>
+          <p><strong>本人：</strong>{turn.question}</p>
+          <p><strong>AI：</strong>{turn.answer.reply}</p>
+          {turn.answer.citations.map((citation, index) => <blockquote key={index}>
+            <p>{citation.quote}</p><button type="button" onClick={() => onOpen(citation.thinkId)}>出典 {index + 1}：{turn.context.sources.find(s => s.thinkId === citation.thinkId)?.title || citation.thinkId}</button>
+            <small>引用は回答時点の本文です。開いた資料は更新されている場合があります。</small>
+          </blockquote>)}
+          <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
+          {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
+        </article>)}
+      </div>
+      {/* 入力とその状態表示（資料範囲・待機・保存失敗）は、履歴をたどっている間も
+          同じ位置に見えていないと操作できないので、ログのスクロールから切り離す。 */}
+      <div className="bundle-conversation-input">
+      {inputHeader}
+      {optionalSources && chatId && selectedBundleId && <label className="bundle-conversation-sources"><input type="checkbox" checked={useBundle}
         disabled={(!!busy && busy !== PREPARING) || !!pending} onChange={e => {
           cancelPreparation(); setContext(undefined); setLoaded(false); setUseBundle(e.target.checked);
         }} />Overviewの資料「{vault.GetThink(selectedBundleId)?.Name || selectedBundleId}」を使う</label>}
-      {loaded && !turns.length && <p className="bundle-conversation-empty">まだ会話はありません。</p>}
-      {turns.map(turn => <article key={turn.id}>
-        <p><strong>本人：</strong>{turn.question}</p>
-        <p><strong>AI：</strong>{turn.answer.reply}</p>
-        {turn.answer.insufficientEvidence && <p>根拠不足・未確認事項を含みます。</p>}
-        {turn.answer.citations.map((citation, index) => <blockquote key={index}>
-          <p>{citation.quote}</p><button type="button" onClick={() => onOpen(citation.thinkId)}>出典 {index + 1}：{turn.context.sources.find(s => s.thinkId === citation.thinkId)?.title || citation.thinkId}</button>
-          <small>引用は回答時点の本文です。開いた資料は更新されている場合があります。</small>
-        </blockquote>)}
-        <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
-        {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
-      </article>)}
-      {pending && <div role="status"><p>回答を保存できませんでした。</p>
+      {pending && !busy && <div className="bundle-conversation-notice" role="status"><p>回答を保存できませんでした。</p>
+        <div className="bundle-conversation-notice-actions">
         <button type="button" disabled={!!busy} onClick={() => void retrySave()}>保存を再試行</button>{' '}
-        <button type="button" onClick={() => download(pending)}>回答を書き出す</button></div>}
-      {message && <p role="status">{message}</p>}
-      {message && !pending && <button type="button" disabled={!!busy} onClick={() => void prepare()}>再試行</button>}
-      {busy && <p role="status">{busy}</p>}
+        <button type="button" onClick={() => download(pending)}>回答を書き出す</button></div></div>}
+      {message && <div className="bundle-conversation-notice" role="status"><p>{message}</p>
+        {!pending && <button type="button" disabled={!!busy} onClick={() => void prepare()}>再試行</button>}
+      </div>}
+      {busy && <p role="status" className="bundle-conversation-busy"><span className="bundle-conversation-spinner" aria-hidden="true" />{busy}</p>}
       <label className="bundle-conversation-composer"><textarea aria-label="メッセージ" placeholder="メッセージを入力" maxLength={4000} value={question} disabled={(!!busy && busy !== PREPARING) || !!pending}
+        onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
+        onKeyDown={e => {
+          if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey
+            || composing.current || e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
+          e.preventDefault(); e.stopPropagation(); void send();
+        }}
         onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); }} /></label>
+      <div className="bundle-conversation-composer-footer">
+      <small className="bundle-conversation-input-hint">Enterで送信 · Shift+Enterで改行</small>
       <div className="bundle-conversation-actions">
-        <button type="button" disabled={!status?.enabled || !context || !loaded || !question.trim() || !!busy || !!pending} onClick={() => void send()}>送信</button>
         {busy === '回答を生成しています…' && <button type="button" data-conversation-abort onClick={() => controller.current?.abort()}>中断</button>}
         {busy === PREPARING && <button type="button" onClick={cancelPreparation}>準備を中断</button>}
+        <button type="button" className="bundle-conversation-send" disabled={!status?.enabled || !context || !loaded || !question.trim() || !!busy || !!pending} onClick={() => void send()}>送信</button>
+      </div>
       </div>
       <details className="bundle-conversation-options"><summary>参照情報・その他</summary>
         {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
@@ -212,17 +242,21 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
             {context.sources.map(s => <div key={s.thinkId}><button type="button" onClick={() => onOpen(s.thinkId)}>{s.title || s.thinkId}</button><pre>{s.content}</pre></div>)}
           </details>}
         </div>}
-        {turns.length > 0 && <details><summary>会話記録の確認・書き出し</summary>
-          {turns.map(turn => <section key={turn.id}>
-            <details><summary>{turn.question}</summary><pre>{JSON.stringify(turn, null, 2)}</pre></details>
-            <button type="button" onClick={() => download(turn)}>この会話をJSONで書き出す</button>
-          </section>)}
+        {/* 記憶や時間の余裕を補うための道具なので、生の記録を読ませない。
+            どのAIが、資料を見て答えたか、根拠が足りていたかだけを1行で示す。 */}
+        {turns.length > 0 && <details><summary>会話記録の確認</summary>
+          <ul className="bundle-conversation-record">
+            {turns.map(turn => <li key={turn.id}>{turnTime(turn.createdAt)} ／ {turn.provider} / {turn.model}
+              {' '}／ {turn.context.sources.length ? '参照資料あり' : '参照資料なし'}
+              {' '}／ {turn.answer.insufficientEvidence ? '根拠不足あり' : '根拠不足なし'}</li>)}
+          </ul>
         </details>}
         <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
           const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
           draft.question = reviewQuestion; setQuestion(reviewQuestion);
         }}>進行を見直す質問を入力</button>
       </details>
+      </div>
     </>}
   </section>;
 }

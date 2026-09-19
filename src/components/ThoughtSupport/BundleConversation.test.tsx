@@ -31,6 +31,32 @@ async function click(label: string) { await act(async () => { expect(button(labe
 async function input(value: string) { await act(async () => { const area = host.querySelector('textarea')!; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, value); area.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function prepare() { await input('質問'); }
 
+async function enter(options: KeyboardEventInit = {}) {
+  const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', ...options });
+  await act(async () => { host.querySelector('textarea')!.dispatchEvent(event); });
+  return event;
+}
+it('sends with Enter but keeps Shift+Enter and IME confirmation from sending', async () => {
+  await show(); await input('相談');
+  expect((await enter({ shiftKey: true })).defaultPrevented).toBe(false);
+  await enter({ isComposing: true }); await enter({ keyCode: 229 });
+  await act(async () => host.querySelector('textarea')!.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true })));
+  await enter(); expect(api.generate).not.toHaveBeenCalled();
+  await act(async () => host.querySelector('textarea')!.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true })));
+  await enter(); expect(api.generate).toHaveBeenCalledTimes(1);
+});
+it('shows a spinner while awaiting the AI and prevents duplicate keyboard submissions', async () => {
+  api.generate.mockImplementationOnce(() => new Promise(() => {}));
+  await show(); await input('相談'); await enter(); await enter();
+  expect(api.generate).toHaveBeenCalledTimes(1);
+  expect(host.querySelector('.bundle-conversation-busy')?.textContent).toContain('回答を生成しています');
+  expect(host.querySelector('.bundle-conversation-spinner')?.getAttribute('aria-hidden')).toBe('true');
+});
+it('does not submit with Enter during preparation', async () => {
+  api.history.mockImplementationOnce(() => new Promise(() => {}));
+  await show(); await input('相談'); await enter(); expect(api.generate).not.toHaveBeenCalled();
+});
+
 it('prepares automatically and cannot generate when disabled', async () => {
   api.status.mockResolvedValue({ enabled: false, provider: 'none', model: '' }); await show();
   expect(api.status).toHaveBeenCalled(); expect(api.context).toHaveBeenCalled(); await input('質問');
@@ -95,12 +121,35 @@ it('treats the Send button as confirmation and persists without adopting proposa
   expect(api.save).toHaveBeenCalledWith(turn(), 'chat-a', 'a');
   expect(button('送信').disabled).toBe(true);
 });
-it('keeps audit and export controls outside the conversation flow', async () => {
+it('summarises each stored turn in one line instead of showing its raw record', async () => {
   api.history.mockResolvedValue([turn()]);
   await show('a', 'chat-a');
-  const exportButton = button('この会話をJSONで書き出す');
-  expect(exportButton.closest('.bundle-conversation-options')).not.toBeNull();
-  expect(exportButton.closest('article')).toBeNull();
+  const audit = [...host.querySelectorAll('summary')].find(s => s.textContent === '会話記録の確認')!;
+  expect(audit.closest('.bundle-conversation-options')).not.toBeNull();
+  expect(audit.closest('article')).toBeNull();
+  const line = host.querySelector('.bundle-conversation-record li')!.textContent!;
+  expect(line).toContain('test / model');
+  expect(line).toContain('参照資料なし');
+  expect(line).toContain('根拠不足あり');
+  expect(line).toMatch(/^2026-09-1[34] \d{2}:\d{2} ／/);
+  expect(host.textContent).not.toContain('schemaVersion');
+  expect(host.textContent).not.toContain('この会話をJSONで書き出す');
+  expect(host.textContent).not.toContain('自動保存');
+});
+it('keeps the composer and its controls out of the scrolling history', async () => {
+  api.history.mockResolvedValue([turn()]);
+  await show('a', 'chat-a');
+  const log = host.querySelector('.bundle-conversation-log')!;
+  expect(log.querySelector('article')).not.toBeNull();
+  expect(log.querySelector('textarea')).toBeNull();
+  expect(host.querySelector('textarea')!.closest('.bundle-conversation-input')).not.toBeNull();
+  expect(button('送信').closest('.bundle-conversation-input')).not.toBeNull();
+});
+it('places the host-supplied input header in the fixed input band', async () => {
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a"
+    inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
+  expect(button('課題として始める').closest('.bundle-conversation-input')).not.toBeNull();
+  expect(button('課題として始める').closest('.bundle-conversation-log')).toBeNull();
 });
 it('continues with a second question using refreshed sources and the saved history', async () => {
   const first = turn();

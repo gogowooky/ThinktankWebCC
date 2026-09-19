@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { act } from 'react';
+import { act, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const calls = vi.hoisted(() => ({ render: vi.fn() }));
 const history = vi.hoisted(() => vi.fn());
 vi.mock('../../services/ConversationService', () => ({ ConversationClient: class { history = history; } }));
-vi.mock('./BundleConversation', () => ({ BundleConversation: (props: { bundleId: string; chatId: string; draftScope: string }) => { calls.render(props); return <textarea aria-label="今回の質問" data-bundle={props.bundleId} data-chat={props.chatId} />; } }));
+vi.mock('./BundleConversation', () => ({ BundleConversation: (props: { bundleId: string; chatId: string; draftScope: string; inputHeader?: ReactNode }) => { calls.render(props); return <div className="bundle-conversation"><textarea aria-label="今回の質問" data-bundle={props.bundleId} data-chat={props.chatId} /><div className="bundle-conversation-input">{props.inputHeader}</div></div>; } }));
 import { SupportChat } from './SupportChat';
 import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
@@ -86,4 +86,9 @@ it('starts a task from the selected Thinktank Chat after the user confirms its t
   await act(async () => { host.querySelector<HTMLButtonElement>('.support-task-start__actions button')!.click(); });
   expect(onStartTask).toHaveBeenCalledWith('chat-a', '誕生日会を開催する');
   expect(host.textContent).toContain('Overviewで課題を開きました');
+});
+it('hands the task-start control to the conversation input band instead of the scrolling history', async () => {
+  await show('', 'chat-a', vi.fn());
+  expect(host.querySelector('.support-task-start')!.closest('.bundle-conversation-input')).not.toBeNull();
+  expect(calls.render.mock.calls.at(-1)?.[0].inputHeader).toBeTruthy();
 });
