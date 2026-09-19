@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.25",
+  "version": "1.5.26",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "17b9a01",
-  "commitDateTime": "2026-09-19-105509",
-  "commitMessage": "feat: AIChat会話面の整理（記録ダイアログ・設定の折りたたみ集約・案内の統合）"
+  "commitId": "ab8f63a",
+  "commitDateTime": "2026-09-20-001341",
+  "commitMessage": "feat: ストレージ層の本文取得命名整理（getBody）・TTThink構造明確化とAIChat入力表示改善"
 }

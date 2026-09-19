@@ -7,6 +7,16 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.26 feat: ストレージ層の本文取得命名整理（getBody）・TTThink構造明確化とAIChat入力表示改善
+- 日付: 2026-09-20
+- コミット番号: ab8f63a
+
+ストレージ層（IStorageBackend / StorageManager / 各Backend）の本文取得メソッドを getContent から getBody に改名し、TTThink.Content（タイトル行+本文）との用語の混同を解消。
+TTThink に TitleLine（1行目）と Body（本文）のgetterを追加し、BigQueryのtitle列・content列との保存・読込ライフサイクル（LoadContent）を明確化。
+ContextService および各テストモックを getBody に統一。
+BundleConversation の待機表示・エラー通知を composer footer（送信行）へ集約し、設定項目を「条件」「機能」「参照情報」に構造化。
+SupportConversation の外側上下余白を除去して会話ログ・入力の表示領域を拡大。変更: 19ファイル（+240 / -91行）。
+
 ### v1.5.25 feat: AIChat会話面の整理（記録ダイアログ・設定の折りたたみ集約・案内の統合）
 - 日付: 2026-09-19
 - コミット番号: 17b9a01
