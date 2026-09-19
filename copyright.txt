@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.23",
+  "version": "1.5.24",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "VENENO-02",
-  "commitId": "d53ee23",
-  "commitDateTime": "2026-09-18-141035",
-  "commitMessage": "feat: パネル表示モードの命名整理（Think/Edit）とEditモードUI連携・見出し移動ショートカット修正"
+  "commitPC": "E15",
+  "commitId": "a19902a",
+  "commitDateTime": "2026-09-19-104004",
+  "commitMessage": "feat: AIChatの入力操作を履歴のスクロールから分離し表示を簡素化（BundleConversation・SupportConversation）"
 }
