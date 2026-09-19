@@ -49,7 +49,7 @@ it('shows a spinner while awaiting the AI and prevents duplicate keyboard submis
   api.generate.mockImplementationOnce(() => new Promise(() => {}));
   await show(); await input('相談'); await enter(); await enter();
   expect(api.generate).toHaveBeenCalledTimes(1);
-  expect(host.querySelector('.bundle-conversation-busy')?.textContent).toContain('回答を生成しています');
+  expect(host.querySelector('.bundle-conversation-status')?.textContent).toContain('回答を生成しています');
   expect(host.querySelector('.bundle-conversation-spinner')?.getAttribute('aria-hidden')).toBe('true');
 });
 it('does not submit with Enter during preparation', async () => {
@@ -61,6 +61,7 @@ it('prepares automatically and cannot generate when disabled', async () => {
   api.status.mockResolvedValue({ enabled: false, provider: 'none', model: '' }); await show();
   expect(api.status).toHaveBeenCalled(); expect(api.context).toHaveBeenCalled(); await input('質問');
   expect(button('送信').disabled).toBe(true); expect(api.generate).not.toHaveBeenCalled(); expect(host.textContent).toContain('停止中');
+  expect(host.querySelector('.bundle-conversation-status')!.textContent).toContain('AI対話は停止中です');
 });
 it('finishes preparation after the development StrictMode remount', async () => {
   await showStrict('', 'chat-a');
@@ -72,7 +73,7 @@ it('allows a Chat-only conversation without loading Bundle context', async () =>
   await show('', 'chat-a');
   expect(api.context).not.toHaveBeenCalled();
   expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault');
-  expect(host.textContent).toContain('参照資料なし');
+  expect(host.textContent).toContain('参照資料：なし');
 });
 
 it('starts Thinktank without Overview sources and keeps the draft when source loading is abandoned', async () => {
@@ -141,10 +142,20 @@ it('opens each turn record in a dialog from the icon under that turn, and never 
 it('puts the settings and secondary actions behind the collapsed options block', async () => {
   await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" optionalSources
     inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
-  const options = host.querySelector('.bundle-conversation-options')!;
-  expect(options.querySelector('summary')!.textContent).toBe('条件・機能・参照情報・その他');
+  const options = host.querySelector<HTMLDetailsElement>('.bundle-conversation-options')!;
+  expect(options.querySelector('summary')!.textContent).toBe('条件・機能・参照情報');
   expect(button('課題として始める').closest('.bundle-conversation-options')).not.toBeNull();
-  expect(host.querySelector('input[type="checkbox"]')!.closest('.bundle-conversation-options')).not.toBeNull();
+  const check = host.querySelector('input[type="checkbox"]')!;
+  expect(check.closest('.bundle-conversation-options')).not.toBeNull();
+  // チェックボックスと文言がくっつかないよう半角スペースを挟む
+  expect(check.closest('label')!.textContent!.startsWith(' Overviewの資料')).toBe(true);
+  const groups = [...options.querySelectorAll<HTMLDetailsElement>(':scope > details')];
+  expect(groups.map(d => d.querySelector('summary')!.textContent)).toEqual(['条件', '機能', '参照情報']);
+  expect(check.closest('details')!.querySelector('summary')!.textContent).toBe('条件');
+  // 折りたたみを開けたら3区分もまとめて開く
+  expect(groups.every(d => d.open)).toBe(false);
+  await act(async () => { options.open = true; options.dispatchEvent(new Event('toggle')); });
+  expect(groups.every(d => d.open)).toBe(true);
 });
 it('carries the send and newline guidance inside the empty message field only', async () => {
   await show('a', 'chat-a');
@@ -181,14 +192,15 @@ it('continues with a second question using refreshed sources and the saved histo
   expect(api.generate.mock.calls[1]).toEqual([refreshed, '次の質問', ['turn'], expect.any(AbortSignal), 'chat-a']);
   expect(api.save).toHaveBeenCalledTimes(2);
 });
-it('retries preparation after a connection failure without losing the draft or calling AI', async () => {
+it('recovers from a connection failure through the same Send control', async () => {
   api.history.mockRejectedValueOnce(new Error('接続できません'));
   await show('a', 'chat-a'); await input('誕生日会を開きたい');
-  expect(button('送信').disabled).toBe(true);
-  await click('再試行');
-  expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('誕生日会を開きたい');
+  expect(host.textContent).not.toContain('再試行');
+  expect(host.querySelector('.bundle-conversation-status')!.textContent).toContain('接続できません');
   expect(button('送信').disabled).toBe(false);
-  expect(api.generate).not.toHaveBeenCalled();
+  await click('送信');
+  expect(api.generate).toHaveBeenCalledTimes(1);
+  expect(api.generate.mock.calls[0][1]).toBe('誕生日会を開きたい');
 });
 it('keeps a failed save across Bundle switches and retries saving without repeating AI', async () => {
   api.save.mockRejectedValueOnce(new Error('保存競合')); await show(); await prepare(); await click('送信');
@@ -230,21 +242,22 @@ it('accepts a draft during preparation, times out even if a dependency ignores a
   await act(async () => { await vi.advanceTimersByTimeAsync(30_000); });
   expect(host.textContent).toContain('準備に時間がかかっています');
   expect((api.context.mock.calls[0][1] as { signal: AbortSignal }).signal.aborted).toBe(true);
-  await click('再試行');
   expect(button('送信').disabled).toBe(false);
-  await act(async () => finish(context('wrong')));
-  expect(host.querySelector('textarea')!.value).toBe('開催場所を相談したい');
   await click('送信');
+  await act(async () => finish(context('wrong')));
+  // 送信で取り直した資料が使われ、中断済みの取得が後から返した資料は捨てられる
   expect(api.generate.mock.calls[0][0].bundleId).toBe('a');
+  expect(api.generate.mock.calls[0][1]).toBe('開催場所を相談したい');
+  expect(host.querySelector('textarea')!.value).toBe('');
 });
 
-it('can cancel preparation and retry without losing input or generating automatically', async () => {
+it('can cancel preparation without losing input or generating automatically', async () => {
   api.history.mockImplementationOnce(() => new Promise(() => {}));
   await show(); await input('相談の下書き'); await click('準備を中断');
   expect(host.textContent).toContain('準備を中断しました');
   expect(host.querySelector('textarea')!.value).toBe('相談の下書き');
-  expect(button('送信').disabled).toBe(true);
-  await click('再試行');
-  expect(button('送信').disabled).toBe(false);
   expect(api.generate).not.toHaveBeenCalled();
+  expect(button('送信').disabled).toBe(false);
+  await click('送信');
+  expect(api.generate).toHaveBeenCalledTimes(1);
 });

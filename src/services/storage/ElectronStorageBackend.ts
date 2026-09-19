@@ -38,7 +38,8 @@ export class ElectronStorageBackend implements IStorageBackend {
   }
 
   listMeta():                   Promise<ThinkMeta[]>   { return this.api.listMeta(); }
-  getContent(id: string):       Promise<string | null> { return this.api.getContent(id); }
+  // preload の storage:getContent は本文のみを返す。IPC のチャンネル名は互換のため据え置く。
+  getBody(id: string):          Promise<string | null> { return this.api.getContent(id); }
   save(payload: SavePayload):   Promise<ThinkMeta>     { return this.api.save(payload); }
   delete(id: string):           Promise<void>          { return this.api.delete(id); }
   search(query: string):        Promise<ThinkMeta[]>   { return this.api.search(query); }

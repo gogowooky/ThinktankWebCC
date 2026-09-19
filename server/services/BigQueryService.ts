@@ -14,8 +14,8 @@ export interface VaultRecord {
   file_id:     string;
   file_type:   string;        // 固定値 "md"
   category:    string;        // ContentType (memo/bundle/tables/links/chat/nettext)
-  title:       string | null;
-  content:     string | null; // タイトル行以降の本文
+  title:       string | null;  // 全テキストの1行目。クライアントの TTThink.Content はこれと content を連結したもの
+  content:     string | null;  // 本文のみ（タイトル行を含まない）。BigQuery の列名なのでフィールド名は変えない
   keywords:    string | null;
   related_ids: string | null;
   size_bytes:  number | null;
@@ -278,9 +278,9 @@ export class BigQueryService {
     }
   }
 
-  // ── content のみ取得 ────────────────────────────────────────────────
+  // ── 本文のみ取得（タイトル行は title 列にあるので含まれない）──────────
 
-  async getContent(fileId: string): Promise<BqResult<string | null>> {
+  async getBody(fileId: string): Promise<BqResult<string | null>> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
     try {
       const query = `
@@ -385,7 +385,7 @@ export class BigQueryService {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
     try {
       const now = new Date().toISOString();
-      const getResult = await this.getContent(fileId);
+      const getResult = await this.getBody(fileId);
       const row: VaultRecord = {
         file_id: fileId, file_type: 'md',
         category: '', title: null, content: getResult.success ? getResult.data : null,

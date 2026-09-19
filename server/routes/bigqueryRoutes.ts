@@ -110,7 +110,7 @@ export function createBigQueryRoutes() {
   // GET /api/bq/files/:id/content  ← 本文のみ取得
   router.get('/files/:id/content', async (req: Request, res: Response) => {
     const fileId = Array.isArray(req.params['id']) ? req.params['id'][0] : req.params['id'];
-    const result = await bigqueryService.getContent(fileId);
+    const result = await bigqueryService.getBody(fileId);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     if (result.data === null) { res.status(404).json({ error: 'not found' }); return; }
     res.json(result.data);

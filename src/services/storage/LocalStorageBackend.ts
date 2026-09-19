@@ -61,7 +61,7 @@ export class LocalStorageBackend implements IStorageBackend {
     for (let i = 0; i < data.length; i += 6) {
       result.push(...await Promise.all(data.slice(i, i + 6).map(async record => {
         if (record.metadata === undefined && ['chat', 'html'].includes(record.contentType)) {
-          const body = await this.getRawContent(record.id);
+          const body = await this.getRawBody(record.id);
           if (body !== null) record.metadata = unpackLocalMetadata(body).metadata;
         }
         return toMeta(record);
@@ -70,17 +70,17 @@ export class LocalStorageBackend implements IStorageBackend {
     return result;
   }
 
-  async getContent(id: string): Promise<string | null> {
-    const raw = await this.getRawContent(id);
+  async getBody(id: string): Promise<string | null> {
+    const raw = await this.getRawBody(id);
     return raw === null ? null : unpackLocalMetadata(raw).body;
   }
 
-  private async getRawContent(id: string): Promise<string | null> {
+  private async getRawBody(id: string): Promise<string | null> {
     const res = await fetch(
       `${this.baseUrl}/api/files/${encodeURIComponent(id)}/content?vaultId=${encodeURIComponent(VAULT_ID)}`
     );
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`getContent failed: ${res.status}`);
+    if (!res.ok) throw new Error(`getBody failed: ${res.status}`);
     return res.json() as Promise<string>;
   }
 

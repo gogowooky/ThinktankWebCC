@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-const backend = vi.hoisted(() => ({ save: vi.fn(), getContent: vi.fn() }));
+const backend = vi.hoisted(() => ({ save: vi.fn(), getBody: vi.fn() }));
 vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instance: backend } }));
 import { TTThink } from './TTThink';
 
@@ -15,7 +15,7 @@ describe('HTML Think storage contract', () => {
     expect(t.IsDirty).toBe(false);
     const loaded = new TTThink();
     loaded.ID = t.ID; loaded.ContentType = 'html'; loaded.setContentSilent('会場比較'); loaded.IsMetaOnly = true;
-    backend.getContent.mockResolvedValue(html);
+    backend.getBody.mockResolvedValue(html);
     await loaded.LoadContent();
     expect(loaded.Name).toBe('会場比較');
     expect(loaded.Content).toBe(t.Content);

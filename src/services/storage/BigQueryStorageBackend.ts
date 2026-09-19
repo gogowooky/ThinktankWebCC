@@ -18,10 +18,11 @@ export class BigQueryStorageBackend implements IStorageBackend {
     return res.json() as Promise<ThinkMeta[]>;
   }
 
-  async getContent(id: string): Promise<string | null> {
+  // API パス /files/:id/content はサーバーの content 列＝本文のみを返す（タイトル行は title 列）
+  async getBody(id: string): Promise<string | null> {
     const res = await apiFetch(`${this.base}/files/${encodeURIComponent(id)}/content`);
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`BQ getContent failed: ${res.status}`);
+    if (!res.ok) throw new Error(`BQ getBody failed: ${res.status}`);
     return res.json() as Promise<string>;
   }
 

@@ -21,9 +21,11 @@
    --conversation-scrollbar は実際に使われるバーの幅。Chromium は scrollbar-width が
    指定されていると ::-webkit-scrollbar の width を無視するので、下の 6px ではなく
    scrollbar-width:thin の実寸（Windows で 10px）を書く。ずれても本文右端が数px動くだけ。 */
+/* 上下の余白は置かない。会話・入力とも自前のスクロール枠なので、外側に帯を挟むと
+   その分だけ読める行と押せる場所が減る。左右だけは本文が枠に貼り付かないよう残す。 */
 .support-conversation {
   flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; overflow-wrap: anywhere;
-  padding: 12px; --conversation-gutter: 12px; --conversation-scrollbar: 10px;
+  padding: 0 12px; --conversation-gutter: 12px; --conversation-scrollbar: 10px;
 }
 .support-conversation > :not(.bundle-conversation) { flex: 0 0 auto; }
 .support-conversation > .bundle-conversation { flex: 1 1 auto; min-height: 0; }

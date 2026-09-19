@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createHash, webcrypto } from 'node:crypto';
-const storage = vi.hoisted(() => ({ getContent: vi.fn(), search: vi.fn(), save: vi.fn(), delete: vi.fn() }));
+const storage = vi.hoisted(() => ({ getBody: vi.fn(), search: vi.fn(), save: vi.fn(), delete: vi.fn() }));
 vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
 vi.mock('./ChatApiService', () => { throw new Error('Context must not import AI execution'); });
 import { TTVault } from '../models/TTVault';
@@ -15,7 +15,7 @@ function item(id: string, content: string, type = 'memo') {
   t.Content = content; t.UpdatedAt = '2026-09-13T00:00:00Z'; t.markSaved(); return t;
 }
 function vault(...items: TTThink[]) { const v = new TTVault('test'); items.forEach(t => v.AddItem(t)); v.IsLoaded = true; return v; }
-function reader(): ContextReader { return { getContent: vi.fn().mockResolvedValue(null), search: vi.fn().mockResolvedValue({ items: [], complete: true }) }; }
+function reader(): ContextReader { return { getBody: vi.fn().mockResolvedValue(null), search: vi.fn().mockResolvedValue({ items: [], complete: true }) }; }
 function meta(t: TTThink) { return { id: t.ID, title: t.Name, contentType: t.ContentType, keywords: '', relatedIds: '', sizeBytes: 0, isDeleted: false, createdAt: t.UpdatedAt, updatedAt: t.UpdatedAt }; }
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -31,7 +31,7 @@ describe('read-only Bundle context', () => {
     const a = item(A, '資料A'), b = item(B, '資料B'); a.IsMetaOnly = true; b.IsMetaOnly = true;
     const source = reader();
     await expect(new ContextService(vault(root, a, b), source).getBundleContext(ROOT, { maxSources: 1 })).rejects.toThrow('参照資料が2件');
-    expect(source.getContent).not.toHaveBeenCalled();
+    expect(source.getBody).not.toHaveBeenCalled();
   });
   it('keeps confirmed manual state separate from legacy proposals and freezes its provenance', async () => {
     const root = item(ROOT, `課題\n* ${A}`, 'bundle');
@@ -137,7 +137,7 @@ describe('read-only Bundle context', () => {
   it('loads bodies on copies, keeps empty bodies, and reports null/failed reads', async () => {
     const a = item(A, '資料'), b = item(B, '削除済み'), missing = item(MISSING, '通信失敗');
     [a, b, missing].forEach(t => { t.IsMetaOnly = true; });
-    const r = reader(); vi.mocked(r.getContent).mockImplementation(async id => {
+    const r = reader(); vi.mocked(r.getBody).mockImplementation(async id => {
       if (id === MISSING) throw new Error('offline'); return id === A ? '' : null;
     });
     const v = vault(item(ROOT, `課題\n* ${A}\n* ${B}\n* ${MISSING}`, 'bundle'), a, b, missing);
@@ -190,7 +190,7 @@ describe('read-only Bundle context', () => {
   });
 
   it('rejects results if live data changes during loading', async () => {
-    const body = deferred<string | null>(); const r = reader(); vi.mocked(r.getContent).mockReturnValue(body.promise);
+    const body = deferred<string | null>(); const r = reader(); vi.mocked(r.getBody).mockReturnValue(body.promise);
     const a = item(A, '資料'); a.IsMetaOnly = true;
     const v = vault(item(ROOT, `課題\n* ${A}`, 'bundle'), a);
     const pending = new ContextService(v, r).getBundleContext(ROOT);
@@ -199,7 +199,7 @@ describe('read-only Bundle context', () => {
   });
 
   it('allows concurrent requests without scope mixing and rejects superseded UI requests', async () => {
-    const body = deferred<string | null>(); const r = reader(); vi.mocked(r.getContent).mockReturnValue(body.promise);
+    const body = deferred<string | null>(); const r = reader(); vi.mocked(r.getBody).mockReturnValue(body.promise);
     const a = item(A, '遅い資料'); a.IsMetaOnly = true;
     const v = vault(item(ROOT, `課題A\n* ${A}`, 'bundle'), item(NESTED, `課題B\n* ${B}`, 'bundle'), a, item(B, '速い資料'));
     const service = new ContextService(v, r); const latest = new LatestBundleContextReader(service);
@@ -215,6 +215,6 @@ describe('read-only Bundle context', () => {
   it('does not start I/O for an already cancelled request', async () => {
     const r = reader(); const controller = new AbortController(); controller.abort();
     await expect(new ContextService(vault(item(ROOT, '課題', 'bundle')), r).getBundleContext(ROOT, { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
-    expect(r.getContent).not.toHaveBeenCalled(); expect(r.search).not.toHaveBeenCalled();
+    expect(r.getBody).not.toHaveBeenCalled(); expect(r.search).not.toHaveBeenCalled();
   });
 });

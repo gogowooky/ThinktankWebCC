@@ -7,7 +7,7 @@ import { appendLegacyContext, emptyContextState } from './legacyContextAdapter';
 import { readThinkSupport } from '../../server/services/thinkSupportRecord';
 
 export interface ContextReader {
-  getContent(id: string): Promise<string | null>;
+  getBody(id: string): Promise<string | null>;
   /** complete must be explicitly guaranteed by the backend, including pagination. */
   search(query: string): Promise<{ items: ThinkMeta[]; complete: boolean }>;
 }
@@ -19,7 +19,7 @@ export class ContextReadError extends Error {
 }
 
 const defaultReader: ContextReader = {
-  getContent: id => StorageManager.instance.getContent(id),
+  getBody: id => StorageManager.instance.getBody(id),
   // Current storage contract supplies no completeness information; BQ caps at 200.
   search: async query => ({ items: await StorageManager.instance.search(query), complete: false }),
 };
@@ -98,7 +98,7 @@ export class ContextService {
         assertNotAborted(signal);
         if (!item.IsMetaOnly) return;
         let body: string | null;
-        try { body = await this.reader.getContent(item.ID); }
+        try { body = await this.reader.getBody(item.ID); }
         catch (error) { issue('load_failed', item.ID); throw error; }
         assertNotAborted(signal);
         if (body === null) { issue('load_failed', item.ID); throw new Error('Missing content'); }

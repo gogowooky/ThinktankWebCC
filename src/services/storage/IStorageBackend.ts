@@ -20,7 +20,7 @@ export interface ThinkMeta {
 export interface SavePayload {
   id:          string;
   contentType: string;
-  fullContent: string;  // TTThink.Content（タイトル行 + 本文）
+  fullContent: string;  // TTThink.Content（タイトル行 + 本文）。保存側で title と body に分ける
   keywords:    string;
   relatedIds:  string;
   metadata?:   Record<string, any>;
@@ -47,8 +47,11 @@ export interface IStorageBackend {
   /** メタデータ一覧（content なし）を取得する */
   listMeta(): Promise<ThinkMeta[]>;
 
-  /** 本文のみ取得する（タイトル行以降）*/
-  getContent(id: string): Promise<string | null>;
+  /**
+   * 本文のみ取得する（タイトル行を含まない）。
+   * TTThink.Content は「タイトル行 + 本文」なので、戻り値はそれとは別物。
+   */
+  getBody(id: string): Promise<string | null>;
 
   /** 保存（Upsert）する */
   save(payload: SavePayload): Promise<ThinkMeta>;

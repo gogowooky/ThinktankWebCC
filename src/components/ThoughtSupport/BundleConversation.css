@@ -3,7 +3,7 @@
 .bundle-conversation { overflow-wrap: anywhere; display: flex; flex-direction: column; min-height: 0; }
 .bundle-conversation-log { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 /* 参照資料の展開などで入力帯が伸びても会話ログを潰さないよう、内側でスクロールさせる */
-.bundle-conversation-input { flex: 0 0 auto; max-height: 55%; overflow-y: auto; margin-top: 8px; }
+.bundle-conversation-input { flex: 0 0 auto; max-height: 55%; overflow-y: auto; }
 /* スクロールバーは宿主の右余白へ食い込ませる。負のマージンで枠を余白ぶん右へ広げ、
    その内側に padding を戻すぶんを差し引く。scrollbar-gutter:stable でバーの居場所を
    常に確保するので、バーが出入りしても本文の右端は動かない（＝行の折り返しも変わらない）。 */
@@ -16,7 +16,7 @@
 .bundle-conversation label { display: block; margin: 10px 0; }
 /* 地色・枠・アクセントは宿主（AIChat＝.support-chat-host／分析＝.bundle-analysis）が
    --field-* で与える。この部品は両方に置かれるので、自前で色を持つと片方で浮く。 */
-.bundle-conversation textarea { display: block; width: 100%; box-sizing: border-box; min-height: 90px; font: inherit; color: inherit; background: var(--field-bg, #fff); border: 1px solid var(--field-border, rgba(0,0,0,.25)); border-radius: 4px; padding: 8px; }
+.bundle-conversation textarea { display: block; width: 100%; box-sizing: border-box; min-height: 60px; font: inherit; color: inherit; background: var(--field-bg, #fff); border: 1px solid var(--field-border, rgba(0,0,0,.25)); border-radius: 4px; padding: 8px; }
 .bundle-conversation pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
 /* 一問一答は枠で囲わない。狭いパネルでは枠の分だけ本文が細り、行数も増える。
    区切りは往復のあいだの余白だけで足りる。 */
@@ -29,6 +29,13 @@
 .bundle-conversation label.bundle-conversation-composer { margin: 12px 0 6px; }
 .bundle-conversation-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .bundle-conversation-composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+/* 待機・失敗の文言は送信の左。伸びたら折り返して、送信を行外へ押し出さない。 */
+.bundle-conversation-status {
+  flex: 1 1 8em; min-width: 0; margin: 0;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--field-muted, #64748b); font-size: .8em; white-space: pre-wrap;
+}
+.bundle-conversation-status:empty { display: none; }
 .bundle-conversation-actions { margin-left: auto; align-items: center; flex-wrap: wrap; }
 .bundle-conversation-notice { margin: 12px 0; padding: 10px 12px; border-left: 2px solid var(--field-border, #94a3b8); background: var(--field-bg, #f1f5f9); border-radius: 4px; }
 .bundle-conversation-notice p { margin: 0 0 6px; white-space: pre-wrap; }
@@ -44,8 +51,12 @@
 .bundle-conversation button:not(:disabled):hover, .bundle-conversation summary:hover { color: inherit; }
 .bundle-conversation button:focus-visible, .bundle-conversation summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 3px; }
 .bundle-conversation button:disabled { cursor: default; }
-.bundle-conversation-options { margin-top: 16px; color: var(--field-muted, #64748b); font-size: .9em; }
-.bundle-conversation-options details { margin: 10px 0; }
+.bundle-conversation-options { margin: 10px 0 12px; color: var(--field-muted, #64748b); font-size: .9em; }
+.bundle-conversation-options details { margin: 8px 0 0; }
+.bundle-conversation-options p { margin: 3px 0; }
+/* 区分の下は全角1文字ぶん下げる。どの区分の項目かを行頭だけで追えるようにする。 */
+.bundle-conversation-options > details > :not(summary) { margin-left: 1em; }
+.bundle-conversation-options > details > label { margin-top: 0; margin-bottom: 4px; }
 
 /* ── 会話の記録ダイアログ ──────────────────────────────────
    枠は「フィルター選択」（ColumnSortDialog.css）を流用し、位置だけ会話面に合わせる。
@@ -68,7 +79,6 @@
 /* 枠のボタンはリンク表現の対象外。閉じるアイコンに下線や余白が付くと枠と揃わない。 */
 .bundle-conversation .col-sort-dialog__close-in-table { text-decoration: none; padding: 0; color: #aaa; }
 .bundle-conversation .col-sort-dialog__close-in-table:hover { color: #666; }
-.bundle-conversation-busy { display: flex; align-items: center; gap: 8px; }
 .bundle-conversation-spinner { width: 12px; height: 12px; flex-shrink: 0; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: conversation-spin .8s linear infinite; }
 @keyframes conversation-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .bundle-conversation-spinner { animation: none; } }

@@ -13,6 +13,8 @@ import './BundleConversation.css';
 const client = new ConversationClient();
 const PREPARING = '会話履歴・参照資料・AI設定を読み込んでいます…（入力できます）';
 const PLACEHOLDER = 'メッセージを入力、Enterで送信 · Shift+Enterで改行';
+/** 送信に必要な材料。state の反映を待たずに準備結果をそのまま送信へ渡すために使う。 */
+interface Ready { context: ConversationContext; history: ConversationTurn[] }
 interface Draft { question: string; pending?: ConversationTurn }
 const drafts = new WeakMap<TTVault, Map<string, Draft>>();
 const vaultKeys = new WeakMap<TTVault, number>();
@@ -65,6 +67,8 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   const [record, setRecord] = useState<ConversationTurn>();
   const alive = useRef(true);
   const logRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
+  const optionsRef = useRef<HTMLDetailsElement>(null);
   const controller = useRef<AbortController>();
   const locked = useRef(false);
   const composing = useRef(false);
@@ -81,8 +85,10 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [draft]);
-  async function prepare() {
-    if (!supported) return;
+  /** 準備できた資料と接続状態を返す。中断・失敗時は undefined。送信が続けて使うので state 待ちにしない。 */
+  async function prepare(): Promise<Ready | undefined> {
+    if (!supported) return undefined;
+    let ready: Ready | undefined;
     const version = ++prepareVersion.current;
     controller.current?.abort();
     setBusy(PREPARING); setMessage(''); setContext(undefined); setStatus(undefined); setLoaded(false);
@@ -99,10 +105,12 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal, maxSources: 300 })
           : Promise.resolve(chatOnlyConversationContext(vault.ID, chatId!)),
       ]), interrupted]);
-      if (!alive.current || abort.signal.aborted || version !== prepareVersion.current) return;
+      if (!alive.current || abort.signal.aborted || version !== prepareVersion.current) return undefined;
       if (availability.status === 'fulfilled') setStatus(availability.value); else setStatus(undefined);
+      let loadedTurns: ConversationTurn[] | undefined;
       if (turns.status === 'fulfilled') {
         const visible = turns.value.filter(t => t.context.vaultId === vault.ID);
+        loadedTurns = visible;
         setHistory(visible); setLoaded(true);
         const chat = chatId ? vault.GetThink(chatId) : undefined;
         if (chat) {
@@ -117,16 +125,24 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         }
       }
       const failures = [availability, turns, snapshot].flatMap(result => result.status === 'rejected' ? [(result.reason as Error).message] : []);
+      let nextContext: ConversationContext | undefined;
       if (snapshot.status === 'fulfilled') {
-        try { setContext('consistency' in snapshot.value ? conversationContext(snapshot.value) : snapshot.value); } catch (e) { failures.push((e as Error).message); }
+        try {
+          nextContext = 'consistency' in snapshot.value ? conversationContext(snapshot.value) : snapshot.value;
+          setContext(nextContext);
+        } catch (e) { nextContext = undefined; failures.push((e as Error).message); }
       }
       if (availability.status === 'fulfilled' && !availability.value.enabled) failures.push('AI対話は停止中です。履歴と参照資料は確認できます。');
       setMessage(failures.join('\n'));
+      if (nextContext && loadedTurns && availability.status === 'fulfilled' && availability.value.enabled) {
+        ready = { context: nextContext, history: loadedTurns };
+      }
     } catch (e) { if (alive.current && version === prepareVersion.current) setMessage((e as Error).message); }
     finally {
       clearTimeout(timeout); abort.signal.removeEventListener('abort', onAbort);
       if (alive.current && version === prepareVersion.current) setBusy('');
     }
+    return ready;
   }
   function cancelPreparation() {
     prepareVersion.current += 1;
@@ -145,13 +161,24 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
       setMessage('');
     }
   }
-  async function send() {
-    if (locked.current || busy || !status?.enabled || !context || !question.trim() || pending || !loaded) return;
+  /**
+   * 「送信」は1つで、準備が済んでいなければ先に取り直してから送る。
+   * 失敗のたびに「再試行」と「送信」を押し分けさせない（押し分けても結果は同じ）。
+   */
+  async function submit() {
+    if (locked.current || busy || !question.trim() || pending) return;
+    const current: Ready | undefined = status?.enabled && context && loaded ? { context, history } : undefined;
+    const ready = current ?? await prepare();
+    if (!ready || !alive.current) return;
+    await send(ready);
+  }
+  async function send(ready: Ready) {
+    if (locked.current || !question.trim() || pending) return;
     locked.current = true; setBusy('回答を生成しています…'); setMessage('');
     const abort = new AbortController(); controller.current = abort;
     let saved = false;
     try {
-      const turn = await client.generate(context, question, history.slice(-6).map(t => t.id), abort.signal, chatId);
+      const turn = await client.generate(ready.context, question, ready.history.slice(-6).map(t => t.id), abort.signal, chatId);
       if (!alive.current || abort.signal.aborted) return;
       draft.pending = turn; setPending(turn); setBusy('会話を保存しています…');
       await persist(turn);
@@ -177,6 +204,25 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         if (saved) await prepare();
       }
     }
+  }
+  /**
+   * 折りたたみを開いたら、中身が全部見える位置まで入力帯を送る。
+   * 開いた先が枠の下にはみ出したままだと、何が増えたのか分からない。
+   * 枠より背が高くて収まらないときは、代わりに先頭を上端へ寄せる。
+   */
+  function revealOptions(event: React.SyntheticEvent<HTMLDetailsElement>) {
+    // 中の区分を開閉しただけのときに、区分を開き直したりスクロールし直したりしない
+    if (event.target !== event.currentTarget || !event.currentTarget.open) return;
+    const band = inputRef.current, panel = optionsRef.current;
+    if (!band || !panel) return;
+    // 開けたときは3区分も開く。ひとつずつ開かせると、何がどこにあるか覚える負担が増える。
+    panel.querySelectorAll<HTMLDetailsElement>(':scope > details').forEach(group => { group.open = true; });
+    // getBoundingClientRect が同期でレイアウトを確定させるので、開いた直後の寸法で測れる。
+    // requestAnimationFrame は描画されていないウィンドウでは呼ばれず、送りそこねる。
+    const bandRect = band.getBoundingClientRect(), panelRect = panel.getBoundingClientRect();
+    const top = panelRect.top - bandRect.top + band.scrollTop;
+    const target = panelRect.height >= band.clientHeight ? top : top + panelRect.height - band.clientHeight;
+    band.scrollTop = Math.max(0, Math.min(target, band.scrollHeight - band.clientHeight));
   }
   const turns = pending && !history.some(t => t.id === pending.id) ? [...history, pending] : history;
   // 入力欄を下端に固定したので、ログは自分で末尾へ寄せないと新しい回答が画面外に積まれる。
@@ -204,49 +250,59 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
       </div>
       {/* 入力とその状態表示（資料範囲・待機・保存失敗）は、履歴をたどっている間も
           同じ位置に見えていないと操作できないので、ログのスクロールから切り離す。 */}
-      <div className="bundle-conversation-input">
+      <div className="bundle-conversation-input" ref={inputRef}>
       {pending && !busy && <div className="bundle-conversation-notice" role="status"><p>回答を保存できませんでした。</p>
         <div className="bundle-conversation-notice-actions">
         <button type="button" disabled={!!busy} onClick={() => void retrySave()}>保存を再試行</button>{' '}
         <button type="button" onClick={() => download(pending)}>回答を書き出す</button></div></div>}
-      {message && <div className="bundle-conversation-notice" role="status"><p>{message}</p>
-        {!pending && <button type="button" disabled={!!busy} onClick={() => void prepare()}>再試行</button>}
-      </div>}
-      {busy && <p role="status" className="bundle-conversation-busy"><span className="bundle-conversation-spinner" aria-hidden="true" />{busy}</p>}
       <label className="bundle-conversation-composer"><textarea aria-label="メッセージ" placeholder={PLACEHOLDER} maxLength={4000} value={question} disabled={(!!busy && busy !== PREPARING) || !!pending}
         onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
         onKeyDown={e => {
           if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey
             || composing.current || e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
-          e.preventDefault(); e.stopPropagation(); void send();
+          e.preventDefault(); e.stopPropagation(); void submit();
         }}
         onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); }} /></label>
+      {/* 待機表示もエラーも送信行に置く。入力欄の上下に帯が増えるほど、押す場所が遠くなる。 */}
       <div className="bundle-conversation-composer-footer">
+      <p className="bundle-conversation-status" role="status">
+        {busy && <span className="bundle-conversation-spinner" aria-hidden="true" />}
+        {busy || (pending ? '' : message)}
+      </p>
       <div className="bundle-conversation-actions">
         {busy === '回答を生成しています…' && <button type="button" data-conversation-abort onClick={() => controller.current?.abort()}>中断</button>}
         {busy === PREPARING && <button type="button" onClick={cancelPreparation}>準備を中断</button>}
-        <button type="button" className="bundle-conversation-send" disabled={!status?.enabled || !context || !loaded || !question.trim() || !!busy || !!pending} onClick={() => void send()}>送信</button>
+        <button type="button" className="bundle-conversation-send" disabled={!question.trim() || !!busy || !!pending || (!!status && !status.enabled)} onClick={() => void submit()}>送信</button>
       </div>
       </div>
       {/* 会話のたびには触らない設定・操作はここへ畳む。開いている間だけ入力帯が伸びる。 */}
-      <details className="bundle-conversation-options"><summary>条件・機能・参照情報・その他</summary>
-        {inputHeader}
-        {optionalSources && chatId && selectedBundleId && <label className="bundle-conversation-sources"><input type="checkbox" checked={useBundle}
-          disabled={(!!busy && busy !== PREPARING) || !!pending} onChange={e => {
-            cancelPreparation(); setContext(undefined); setLoaded(false); setUseBundle(e.target.checked);
-          }} />Overviewの資料「{vault.GetThink(selectedBundleId)?.Name || selectedBundleId}」を使う</label>}
-        {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
-        {context && <div>
-          <p>{context.scope === 'chat-only' ? '参照資料なし' : `参照資料 ${context.sources.length}件`}</p>
-          {context.issues.length > 0 && <ul>{context.issues.map((issue, index) => <li key={index}>{issue}</li>)}</ul>}
-          {context.sources.length > 0 && <details><summary>参照資料を確認</summary>
-            {context.sources.map(s => <div key={s.thinkId}><button type="button" onClick={() => onOpen(s.thinkId)}>{s.title || s.thinkId}</button><pre>{s.content}</pre></div>)}
-          </details>}
-        </div>}
-        <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
-          const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
-          draft.question = reviewQuestion; setQuestion(reviewQuestion);
-        }}>進行を見直す質問を入力</button>
+      <details className="bundle-conversation-options" ref={optionsRef} onToggle={revealOptions}><summary>条件・機能・参照情報</summary>
+        {optionalSources && chatId && selectedBundleId && <details>
+          <summary>条件</summary>
+          <label className="bundle-conversation-sources"><input type="checkbox" checked={useBundle}
+            disabled={(!!busy && busy !== PREPARING) || !!pending} onChange={e => {
+              cancelPreparation(); setContext(undefined); setLoaded(false); setUseBundle(e.target.checked);
+            }} />{' '}Overviewの資料「{vault.GetThink(selectedBundleId)?.Name || selectedBundleId}」を使う</label>
+        </details>}
+        <details>
+          <summary>機能</summary>
+          {inputHeader}
+          <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
+            const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
+            draft.question = reviewQuestion; setQuestion(reviewQuestion);
+          }}>進行を見直す質問を入力</button>
+        </details>
+        {(status || context) && <details>
+          <summary>参照情報</summary>
+          {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
+          {context && <>
+            <p>参照資料：{context.scope === 'chat-only' ? 'なし' : `${context.sources.length}件`}</p>
+            {context.issues.length > 0 && <ul>{context.issues.map((issue, index) => <li key={index}>{issue}</li>)}</ul>}
+            {context.sources.length > 0 && <details><summary>参照資料を確認</summary>
+              {context.sources.map(s => <div key={s.thinkId}><button type="button" onClick={() => onOpen(s.thinkId)}>{s.title || s.thinkId}</button><pre>{s.content}</pre></div>)}
+            </details>}
+          </>}
+        </details>}
       </details>
       </div>
       {record && <div className="col-sort-dialog__backdrop" onClick={() => setRecord(undefined)}>

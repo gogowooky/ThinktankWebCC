@@ -10,7 +10,7 @@
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
-import { parseBundle } from '../utils/thinkFormat';
+import { parseBundle, splitContent } from '../utils/thinkFormat';
 
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
@@ -61,8 +61,32 @@ export class TTThink extends TTObject {
 
   // ── Content プロパティ ─────────────────────────────────────────────
 
+  /**
+   * タイトル行と本文を連ねた全テキスト（Content = TitleLine + '\n' + Body）。
+   *
+   * 保存先では2列に分かれている（BigQuery の title 列と content 列）。保存時は
+   * splitContent() が1行目を title へ切り出し、読み込み時は LoadContent() が
+   * 再び連結してここへ入れる。つまりストレージ層の「content」はこの Content とは
+   * 別物（本文のみ）で、そちらは getBody() という名前で扱う。
+   *
+   * 一覧に載っただけの段階（IsMetaOnly）ではタイトル行しか入っていない。
+   * 本文まで必要なときは先に LoadContent() を呼ぶこと。
+   */
   public get Content(): string {
     return this._content;
+  }
+
+  /**
+   * Content の1行目。BigQuery の title 列へ保存される生の行で、`#` や `>>` などの
+   * 記号を含む。記号を落とした表示用の題名は Name（_extractTitle が生成）。
+   */
+  public get TitleLine(): string {
+    return splitContent(this._content).title;
+  }
+
+  /** Content からタイトル行を除いた本文。LoadContent() 前（IsMetaOnly）は空文字。 */
+  public get Body(): string {
+    return splitContent(this._content).body;
   }
 
   public set Content(value: string) {
@@ -93,10 +117,11 @@ export class TTThink extends TTObject {
 
   // ── ストレージ連携（Phase 13）──────────────────────────────────────
 
+  /** 保存先から本文（Body）を取り寄せ、手元のタイトル行と連結して Content を揃える。 */
   public async LoadContent(force: boolean = false): Promise<void> {
     if (!this.IsMetaOnly && !force) return;
     try {
-      const body = await StorageManager.instance.getContent(this.ID);
+      const body = await StorageManager.instance.getBody(this.ID);
       if (body !== null) {
         // _content at this point is the raw title line from LoadCache (e.g. "# My Memo")
         // Use it directly instead of this.Name which has the # prefix stripped

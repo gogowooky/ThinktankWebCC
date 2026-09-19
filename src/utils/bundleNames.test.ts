@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instance: { save: vi.fn(), getContent: vi.fn() } } }));
+vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instance: { save: vi.fn(), getBody: vi.fn() } } }));
 import { TTThink } from '../models/TTThink';
 import type { TTVault } from '../models/TTVault';
 import { buildBundleNames } from './bundleNames';

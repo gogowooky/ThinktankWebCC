@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-const backend = vi.hoisted(() => ({ save: vi.fn(), getContent: vi.fn() }));
+const backend = vi.hoisted(() => ({ save: vi.fn(), getBody: vi.fn() }));
 vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: backend } }));
 import { TTThink } from '../models/TTThink';
 import { TTVault } from '../models/TTVault';

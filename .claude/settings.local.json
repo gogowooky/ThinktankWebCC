@@ -310,7 +310,8 @@
       "PowerShell(npx eslint src/components/ThoughtSupport/BundleConversation.tsx)",
       "PowerShell(npx eslint src/components/ThoughtSupport/BundleConversation.tsx src/components/ThoughtSupport/SupportConversation.tsx src/components/ThoughtSupport/BundleConversation.test.tsx src/components/ThoughtSupport/SupportConversation.test.tsx)",
       "PowerShell(npx eslint src/components/ThoughtSupport/BundleConversation.tsx src/components/ThoughtSupport/BundleConversation.test.tsx)",
-      "Bash(node -p \"require\\('./node_modules/lucide-react/package.json'\\).version\")"
+      "Bash(node -p \"require\\('./node_modules/lucide-react/package.json'\\).version\")",
+      "PowerShell(npx vitest run src/components/ThoughtSupport 2>&1)"
     ]
   }
 }

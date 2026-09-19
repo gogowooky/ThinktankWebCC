@@ -49,8 +49,9 @@ export class StorageManager {
     return this.backend.listMeta();
   }
 
-  public getContent(id: string): Promise<string | null> {
-    return this.backend.getContent(id);
+  /** 本文のみ（タイトル行を含まない）。TTThink.Content とは別物。 */
+  public getBody(id: string): Promise<string | null> {
+    return this.backend.getBody(id);
   }
 
   public save(payload: SavePayload): Promise<ThinkMeta> {
