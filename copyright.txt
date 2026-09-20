@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.27",
+  "version": "1.5.28",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "1998816",
-  "commitDateTime": "2026-09-20-121127",
-  "commitMessage": "feat: AIChatからの課題作成サービス化（startTaskFromChat）と入力欄の自動伸縮・スクロールバー統一"
+  "commitId": "8043b09",
+  "commitDateTime": "2026-09-21-000222",
+  "commitMessage": "feat: [THINK:id,行/語]タグジャンプ対応・AIChat引用のインラインリンク化（[Think:id,行]）とEditモード種別フィルター整理"
 }

@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.28 feat: [THINK:id,行/語]タグジャンプ対応・AIChat引用のインラインリンク化（[Think:id,行]）とEditモード種別フィルター整理
+- 日付: 2026-09-21
+- コミット番号: 8043b09
+
+`[THINK:id]` タグの拡張：行番号指定（`[THINK:id,12]`）による該実行へのカーソル移動、および検索語指定（`[THINK:id,検索語]`）によるHighlighter設定と先頭ヒットへのジャンプに対応（`editorJump` / `highlightMatches`）。再マウント・既存ペイン両方で確実にフォーカスと位置を復元。
+AIChatの引用表示をインライン化：従来の回答下リファレンスブロックを廃止し、回答文中の引用箇所を `[Think:id,行番号]` ボタンとしてインライン配置。押下で直接該当の資料を開けるよう改善（`conversationPresentation`）。
+Thinktankパネルの表示モード切替時、Edit（simple）モードの初期表示種別を編集対象（memo, table, links, html, nettext）に絞り込み、Bundle/Chat等のメタ種別を除外。変更: 16ファイル（+412 / -53行）。
+
 ### v1.5.27 feat: AIChatからの課題作成サービス化（startTaskFromChat）と入力欄の自動伸縮・スクロールバー統一
 - 日付: 2026-09-20
 - コミット番号: 1998816
