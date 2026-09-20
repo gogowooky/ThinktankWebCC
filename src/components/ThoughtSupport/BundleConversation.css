@@ -29,7 +29,8 @@
    区切りは往復のあいだの余白だけで足りる。 */
 .bundle-conversation article { margin: 0 0 20px; }
 .bundle-conversation article p { white-space: pre-wrap; }
-.bundle-conversation blockquote { margin: 12px 0; padding-left: 12px; border-left: 3px solid var(--field-accent, #60a5fa); }
+.bundle-conversation-references { margin: 12px 0; }
+.bundle-conversation-references button { text-align: left; overflow-wrap: anywhere; }
 .bundle-conversation small { display: block; }
 .bundle-conversation button:disabled { opacity: .5; cursor: default; }
 .bundle-conversation-empty { color: var(--field-muted, #64748b); text-align: center; margin: 24px 0; }

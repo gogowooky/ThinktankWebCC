@@ -7,7 +7,7 @@ export function conversationContext(snapshot: ContextSnapshot): ConversationCont
   const context: ConversationContext = {
     schemaVersion: 1, snapshotId: snapshot.snapshotId, vaultId: snapshot.vaultId, bundleId: snapshot.bundleId,
     capturedAt: snapshot.capturedAt, scope: 'bundle-only', quality: snapshot.quality,
-    sources: snapshot.sources.map(s => ({ thinkId: s.thinkId, title: s.title, content: s.content, contentHash: s.contentHash })),
+    sources: snapshot.sources.map(s => ({ thinkId: s.thinkId, title: s.title, content: s.content, contentHash: s.contentHash, contentType: s.contentType })),
     issues: snapshot.issues.map(i => `${i.message} (${i.thinkId})`),
     manualState: snapshot.manualState ? structuredClone(snapshot.manualState) : null,
   };

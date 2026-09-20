@@ -15,6 +15,7 @@ import { TTUIStateManager } from '../TTUIStateManager';
 import { showMonacoMenu } from '../../utils/monacoMenu';
 import { showTagInsertMenu } from '../../utils/tagInsertMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
+import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
 import { apiFetch } from '../../services/apiClient';
 import type { SearchTagRow } from '../../utils/searchTagFormat';
 
@@ -32,6 +33,66 @@ const TAG_INSERT_TEXT: Record<string, string> = {
   Jump: '[:>]', // 8.1 [:anchor] で始まる行へのジャンプ
   Reference: '[:]',  // 8.2 anchorテキストのHighlighter設定
 };
+
+/** [THINK:yyyy-MM-dd-hhmmss] と、行番号または検索語を添えた [THINK:yyyy-MM-dd-hhmmss,nnn]。
+    カンマ前後の空白を許すのは、手で書き足した指定を取りこぼさないため。 */
+const THINK_ID_RE = /^(\d{4}-\d{2}-\d{2}-\d{6})(?:\s*,\s*(\S(?:.*\S)?))?\s*$/;
+
+/**
+ * ThinkをWorkoutで開き、指定があればその位置へカーソルを送ってから、エディタへフォーカスする。
+ * 指定は行番号（数字だけ）か検索語で、検索語のときは Highlighter にも設定して
+ * 本文の先頭から最初のヒットへ送る。
+ *
+ * 行き先とフォーカスの与え方が2通りあるのは、開き直しでエディタが作り直されるかどうかが
+ * 変わるため。<Editor> の key は ThinkID なので、フォーカス中のPaneで既に同じThinkが
+ * 開いていれば作り直されない＝マウント処理も走らないので、その場のエディタを直接動かす。
+ * それ以外は作り直されるので、依頼を預けてマウント時の状態復元に適用させる
+ * （ここで当てにいっても、非同期に走る保存済みカーソルの復元に上書きされる）。
+ */
+function openThinkAtTarget(app: TTApplication, thinkId: string, suffix?: string): string {
+  const jump: EditorJump | undefined = suffix === undefined
+    ? undefined
+    : /^\d+$/.test(suffix) ? { kind: 'line', line: Number(suffix) } : { kind: 'search', word: suffix };
+  // 検索語は本文を開く前に Highlighter へ入れる。開いた時点で色が付いていないと、
+  // 送った先が「なぜそこなのか」が読めない。
+  if (jump?.kind === 'search') {
+    TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.Text', jump.word);
+  }
+
+  const panel = app.WorkoutPanel;
+  const focused = panel.Areas.find(a => a.ID === panel.FocusedAreaId);
+  const remounts = focused?.ResourceID !== thinkId;
+  // OpenThinkInWorkout が html だけ別メディアで開く。テキストエディタでなければ行の概念がない。
+  const isTextEditor = app.Models.Vault.GetThink(thinkId)?.ContentType !== 'html';
+
+  if (remounts && isTextEditor) requestEditorOpen(thinkId, jump);
+  const area = app.OpenThinkInWorkout(thinkId);
+
+  const where = jump?.kind === 'search' ? `Highlighter [${jump.word}]` : '';
+  if (!isTextEditor) {
+    return `Think [${thinkId}] を開きました（テキストエディタではありません）${where ? `。${where} を設定しました` : ''}`;
+  }
+  if (!remounts) {
+    // 作り直されない＝マウント処理が走らないので、移動もフォーカスもここで済ませる
+    const editor = area ? TTShortcutManager.instance.getAreaEditor(area.ID) : null;
+    if (!editor) return `Think [${thinkId}] を開きました（エディタが見つからずフォーカスできません）`;
+    const position = jump ? jumpPosition(editor, jump) : null;
+    if (position) {
+      editor.setPosition(position);
+      editor.revealPositionInCenter(position);
+    }
+    editor.focus();
+    if (!jump) return `Think [${thinkId}] を開きました`;
+    if (!position) return `Think [${thinkId}] を開き ${where} を設定しました（ヒットなし）`;
+    return jump.kind === 'line'
+      ? `Think [${thinkId}] のL${position.lineNumber}へ移動しました`
+      : `Think [${thinkId}] で ${where} の先頭（L${position.lineNumber}:C${position.column}）へ移動しました`;
+  }
+  if (!jump) return `Think [${thinkId}] を開きました`;
+  return jump.kind === 'line'
+    ? `Think [${thinkId}] のL${jump.line}へ移動しました`
+    : `Think [${thinkId}] を開き ${where} の先頭へ移動します`;
+}
 
 async function getSearchTags(): Promise<Record<string, string>> {
   if (!_baseSearchTags) {
@@ -369,10 +430,12 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           app.ThinktankPanel.SetViewMode('filter');
           app.ThinktankPanel.SetContentFilter(keywords);
           item.Result = `コンテンツ [${keywords}] で検索しました`;
-        } else if (/^\d{4}-\d{2}-\d{2}-\d{6}$/.test(val)) {
-          // [THINK:id] → ThinkをIDで直接開く
-          app.OpenThinkInWorkout(val);
-          item.Result = `Think [${val}] を開きました`;
+        } else if (THINK_ID_RE.test(val)) {
+          // [THINK:id]         → ThinkをIDで直接開く
+          // [THINK:id,行番号]   → 開いたうえでその行へカーソルを送る
+          // [THINK:id,検索語]   → 開いたうえで検索語をHighlighterに設定し、先頭のヒットへ送る
+          const [, thinkId, suffix] = THINK_ID_RE.exec(val)!;
+          item.Result = openThinkAtTarget(app, thinkId, suffix);
         } else {
           // [THINK:keywords] / [MEMO:keywords] → 全種別を対象にタイトル欄に入力して検索
           app.ThinktankPanel.IsAreaOpen = true;

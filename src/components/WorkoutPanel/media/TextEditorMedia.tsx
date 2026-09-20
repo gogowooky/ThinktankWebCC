@@ -28,6 +28,7 @@ import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '..
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
 import { reportSaveError } from '../../../utils/saveError';
+import { jumpPosition, takeEditorOpen } from '../../../utils/editorJump';
 import './TextEditorMedia.css';
 
 /** Monaco の等倍時 fontSize / lineHeight（表示文字サイズ倍率の基準値）。 */
@@ -442,15 +443,20 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     isRestoringRef.current = true;
     const foldingController = editor.getContribution('editor.contrib.folding') as any;
 
+    // [THINK:id] タグで開かれたときの依頼（行き先とフォーカス）。復元より後に読むと
+    // 保存済みカーソルに上書きされるので、復元処理の中で保存済みカーソルの代わりに使う。
+    // マウント時に一度だけ取り出す（restoreEditorState が複数回呼ばれても行き先は変わらない）。
+    const opened = think ? takeEditorOpen(think.ID) : undefined;
+
     const restoreEditorState = () => {
       const editorState = think?.Metadata?.editor;
-      if (!editorState) {
+      if (!editorState && !opened) {
         isRestoringRef.current = false;
         return;
       }
 
       // 折畳状態の復元
-      if (editorState.closedHeadings) {
+      if (editorState?.closedHeadings) {
         const closedLines = editorState.closedHeadings
           .split(',')
           .map((s: string) => parseInt(s.trim()))
@@ -460,14 +466,23 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         }
       }
 
-      // カーソル・選択範囲の復元
-      if (editorState.caret) {
+      // カーソル・選択範囲の復元。行き先の指定があればそれを優先し、
+      // 検索語がどこにも無いときだけ保存済みの位置へ戻す（動かさない）。
+      const target = opened?.jump ? jumpPosition(editor, opened.jump) : null;
+      if (target) {
+        editor.setPosition(target);
+        editor.revealPositionInCenter(target);
+      } else if (editorState?.caret) {
         editor.setPosition(editorState.caret);
         editor.revealPositionInCenter(editorState.caret);
       }
-      if (editorState.selection) {
+      if (!target && editorState?.selection) {
         editor.setSelection(editorState.selection);
       }
+
+      // タグで開いたときは、そのまま書き始められるようフォーカスまで持ってくる。
+      // カーソルを動かした後に当てるのは、フォーカスが先だと復元中の位置が一瞬見えるため。
+      if (opened) editor.focus();
 
       // 復元完了
       isRestoringRef.current = false;

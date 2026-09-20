@@ -4,6 +4,7 @@ import type { TTVault } from '../../models/TTVault';
 import { ContextService } from '../../services/ContextService';
 import { ConversationClient, chatOnlyConversationContext, conversationContext, type ConversationContext, type ConversationTurn } from '../../services/ConversationService';
 import { mergeConversationTranscript, readConversationLog } from '../../../server/services/conversationRecord';
+import { conversationPresentation } from '../../../server/services/conversationPresentation';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { parseManagedChatTitle } from '../../utils/managedChat';
 import { ProposalReview } from './ProposalReview';
@@ -38,6 +39,13 @@ function download(turn: ConversationTurn) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(turn, null, 2)], { type: 'application/json' }));
   const link = document.createElement('a'); link.href = url; link.download = `think-conversation-${turn.id}.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function Answer({ presentation, onOpen }: { presentation: ReturnType<typeof conversationPresentation>; onOpen: (id: string) => void }) {
+  const { reply, links } = presentation;
+  return <p><strong>AI：</strong>{reply.split(/(\[Think:[A-Za-z0-9_-]+,\d+\])/g).map((part, index) => {
+    const link = links.find(link => link.marker === part);
+    return link ? <button key={index} type="button" onClick={() => onOpen(link.thinkId)}>{part}</button> : part;
+  })}</p>;
 }
 /** 入力欄の高さを中身ちょうどに合わせる。いったん auto に戻さないと、行を減らしても
     scrollHeight が縮まず（今の高さが下限になる）、欄が伸びたきり戻らない。
@@ -251,6 +259,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     band.scrollTop = Math.max(0, Math.min(target, band.scrollHeight - band.clientHeight));
   }
   const turns = pending && !history.some(t => t.id === pending.id) ? [...history, pending] : history;
+  const presentations = turns.map(turn => conversationPresentation(turn));
   // 管理用の接頭辞（ASK:Thinktank｜…）は一覧で読める。会話の見出しには表題だけを出す。
   const chat = chatId ? vault.GetThink(chatId) : undefined;
   const chatTitle = chat ? parseManagedChatTitle(chat.Name)?.title || chat.Name : '';
@@ -265,13 +274,9 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         {/* Chat名はログの1行目として履歴と一緒に流す。専用の帯にすると、その分だけ読める行が減る。 */}
         {chatTitle && <h3 className="bundle-conversation-title">{chatTitle}</h3>}
         {loaded && !turns.length && <p className="bundle-conversation-empty">まだ会話はありません。</p>}
-        {turns.map(turn => <article key={turn.id}>
+        {turns.map((turn, index) => <article key={turn.id}>
           <p><strong>You：</strong>{turn.question}</p>
-          <p><strong>AI：</strong>{turn.answer.reply}</p>
-          {turn.answer.citations.map((citation, index) => <blockquote key={index}>
-            <p>{citation.quote}</p><button type="button" onClick={() => onOpen(citation.thinkId)}>出典 {index + 1}：{turn.context.sources.find(s => s.thinkId === citation.thinkId)?.title || citation.thinkId}</button>
-            <small>引用は回答時点の本文です。開いた資料は更新されている場合があります。</small>
-          </blockquote>)}
+          <Answer presentation={presentations[index]} onOpen={onOpen} />
           <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
           {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
           {/* 記録そのものは普段読むものではないので、会話の直下にアイコンだけ置いて別画面へ送る */}
@@ -319,7 +324,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           <label className="bundle-conversation-sources"><input type="checkbox" checked={useBundle}
             disabled={(!!busy && busy !== PREPARING) || !!pending} onChange={e => {
               cancelPreparation(); setContext(undefined); setLoaded(false); setUseBundle(e.target.checked);
-            }} />{' '}Overviewの資料「{vault.GetThink(selectedBundleId)?.Name || selectedBundleId}」を使う</label>
+            }} />{' '}Bundle内の資料を使う</label>
         </details>}
         <details>
           <summary>機能</summary>

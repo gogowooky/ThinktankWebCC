@@ -1,6 +1,7 @@
 import { THINK_FIELDS, readThinkSupport, type ThinkSupportRecord, type ThinkField } from './thinkSupportRecord.js';
+import { conversationPresentation } from './conversationPresentation.js';
 
-export interface ConversationSource { thinkId: string; title: string; content: string; contentHash: string }
+export interface ConversationSource { thinkId: string; title: string; content: string; contentHash: string; contentType?: string }
 export interface ConversationContext {
   schemaVersion: 1; snapshotId: string; vaultId: string; bundleId: string; capturedAt: string;
   scope: 'bundle-only' | 'chat-only'; quality: 'complete' | 'partial';
@@ -27,14 +28,11 @@ export function mergeConversationTranscript(content: string, turns: Conversation
   const after = end >= 0 ? content.slice(end + TRANSCRIPT_END.length).trim() : '';
   if (!turns.length) return [before, after].filter(Boolean).join('\n\n');
   const transcript = turns.filter(turn => turn.provider !== 'legacy-text').map(turn => {
-    const citations = turn.answer.citations.map(citation => {
-      const title = turn.context.sources.find(source => source.thinkId === citation.thinkId)?.title || citation.thinkId;
-      return `> ${citation.quote.replace(/\n/g, '\n> ')}\n> 出典：${title}`;
-    });
+    const presentation = conversationPresentation(turn);
     const proposals = turn.answer.proposals.map(proposal =>
       `### AIの変更提案：${proposal.field}\n${proposal.after}\n\n理由：${proposal.reason}`);
-    return [`## ${turn.question.replace(/[\r\n]+/g, ' ').trim()}`, turn.answer.reply,
-      turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...citations, ...proposals]
+    return [`## ${turn.question.replace(/[\r\n]+/g, ' ').trim()}`, presentation.reply,
+      turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...proposals]
       .filter(Boolean).join('\n\n');
   }).join('\n\n');
   if (!transcript) return [before, after].filter(Boolean).join('\n\n');
@@ -89,6 +87,7 @@ export function validateContext(value: unknown): asserts value is ConversationCo
     if (!object(s) || !id(s.thinkId) || ids.has(s.thinkId) || !text(s.title, 2000, true)
       || !text(s.content, MAX_CONTEXT_CHARS, true) || typeof s.contentHash !== 'string' || !/^[a-f0-9]{64}$/.test(s.contentHash)) throw new Error('資料または本文ハッシュが不正です。');
     ids.add(s.thinkId); length += s.content.length;
+    if (s.contentType !== undefined && !['memo', 'links', 'chat', 'bundle', 'table', 'html', 'nettext'].includes(String(s.contentType))) throw new Error('資料の種別が不正です。');
   }
   if (length > MAX_CONTEXT_CHARS) throw new Error('資料が大きすぎます。Bundleを分けてください。');
   if (value.manualState !== null) {

@@ -48,6 +48,10 @@ const THINKTANK_MODE_NAMES: Record<string, string> = {
 };
 
 const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext', 'html'];
+// Edit（=simple）で開く種別。編集の対象になる本文だけを出す。Bundleは資料の束、
+// Chatは会話履歴で、どちらもここで書き換えるものではないので既定では出さない。
+const EDIT_CONTENT_TYPES: ContentType[] = ['memo', 'table', 'links', 'html', 'nettext'];
+const defaultVisibleTypes = (mode: LayoutMode) => new Set<ContentType>(mode === 'simple' ? EDIT_CONTENT_TYPES : ['bundle']);
 
 interface Props {
   app: TTApplication;
@@ -112,17 +116,18 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [updatedDate,  setUpdatedDate]  = useState('');
   const [updatedRange, setUpdatedRange] = useState('');
 
-  // 一覧表示する種別（初期はBundleのみON）
-  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(['bundle']));
+  // 一覧表示する種別。起動時もモードの既定で開く（Edit で開き直したとき Bundle のみに
+  // なっていると、切り替えた場合と見え方が変わる）。
+  const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => defaultVisibleTypes(layoutMode));
 
-  // 表示モードの切り替え時に種別フィルターを既定へ戻す（Edit=全種別 / Think=Bundleのみ）。
+  // 表示モードの切り替え時に種別フィルターを既定へ戻す（Edit=編集対象の種別 / Think=Bundleのみ）。
   // 切り替えの瞬間だけ効かせ、その後のユーザー操作は上書きしない。
   const prevLayoutModeRef = useRef(layoutMode);
   useEffect(() => {
     const prev = prevLayoutModeRef.current;
     prevLayoutModeRef.current = layoutMode;
     if (prev === layoutMode) return;
-    setVisibleTypes(layoutMode === 'simple' ? new Set(ALL_CONTENT_TYPES) : new Set(['bundle']));
+    setVisibleTypes(defaultVisibleTypes(layoutMode));
   }, [layoutMode]);
 
   // チャット state

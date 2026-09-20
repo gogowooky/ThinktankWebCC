@@ -12,31 +12,13 @@ import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { TTUIStateManager, type ConfigKey } from '../TTUIStateManager';
 import { getErrorMessage } from '../../utils/errorMessage';
+import { findHighlightRanges } from '../../utils/highlightMatches';
 
 export function registerTextEditorHighlighterToolbarActions(app: TTApplication): void {
   // ── Highlighter 検索移動 ──────────────────────────────────────────────────
-  /**
-   * Highlighter（ToolBar.HighlighterMode.Text）のヒット位置を昇順で返す。
-   * ハイライト表示と同じ規則で、カンマ＝グループ区切り／空白＝単語区切りとして
-   * すべての単語を OR 条件で検索する。
-   */
-  const findHighlighterMatches = (editor: any): any[] => {
-    const model = editor.getModel();
-    if (!model) return [];
-    const words = app.WorkoutPanel.HighlightWord
-      .split(/[,\s]+/)
-      .map(w => w.trim())
-      .filter(w => w.length > 0);
-    if (words.length === 0) return [];
-
-    const pattern = words
-      .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('|');
-    return model.findMatches(pattern, true, true, false, null, false)
-      .map((m: any) => m.range)
-      .sort((a: any, b: any) =>
-        a.startLineNumber - b.startLineNumber || a.startColumn - b.startColumn);
-  };
+  /** Highlighter（ToolBar.HighlighterMode.Text）のヒット位置を昇順で返す。 */
+  const findHighlighterMatches = (editor: any): any[] =>
+    findHighlightRanges(editor, app.WorkoutPanel.HighlightWord);
 
   const moveToHighlighter = (item: TTActionItem, pick: (ranges: any[], editor: any) => any | null): void => {
     try {

@@ -31,6 +31,20 @@ async function click(label: string) { await act(async () => { expect(button(labe
 async function input(value: string) { await act(async () => { const area = host.querySelector('textarea')!; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, value); area.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function prepare() { await input('質問'); }
 
+it('shows inline Think citation tags that open sources without a reference block', async () => {
+  const value = turn(); value.answer.reply = '回答[:>1]。補足[:>2]。';
+  value.context.sources = ['a', 'b'].map(id => ({ thinkId: id, title: `資料${id}`, content: '題名\n引用', contentHash: 'hash' }));
+  value.answer.citations = ['a', 'b'].map(thinkId => ({ thinkId, quote: '引用', contentHash: 'hash', start: 3, end: 5 }));
+  api.history.mockResolvedValue([value]);
+  const onOpen = vi.fn();
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" onOpen={onOpen} />));
+  expect(host.querySelector('[aria-label="リファレンス"]')).toBeNull();
+  expect(host.textContent).not.toContain('引用は回答時点');
+  expect(host.textContent).toContain('AI：回答[Think:a,2]。補足[Think:b,2]。');
+  await act(async () => button('[Think:a,2]').click());
+  expect(onOpen).toHaveBeenCalledWith('a');
+});
+
 async function enter(options: KeyboardEventInit = {}) {
   const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter', ...options });
   await act(async () => { host.querySelector('textarea')!.dispatchEvent(event); });
@@ -148,7 +162,7 @@ it('puts the settings and secondary actions behind the collapsed options block',
   const check = host.querySelector('input[type="checkbox"]')!;
   expect(check.closest('.bundle-conversation-options')).not.toBeNull();
   // チェックボックスと文言がくっつかないよう半角スペースを挟む
-  expect(check.closest('label')!.textContent!.startsWith(' Overviewの資料')).toBe(true);
+  expect(check.closest('label')!.textContent!.trim()).toBe('Bundle内の資料を使う');
   const groups = [...options.querySelectorAll<HTMLDetailsElement>(':scope > details')];
   expect(groups.map(d => d.querySelector('summary')!.textContent)).toEqual(['条件', '機能', '参照情報']);
   expect(check.closest('details')!.querySelector('summary')!.textContent).toBe('条件');

@@ -311,7 +311,8 @@
       "PowerShell(npx eslint src/components/ThoughtSupport/BundleConversation.tsx src/components/ThoughtSupport/SupportConversation.tsx src/components/ThoughtSupport/BundleConversation.test.tsx src/components/ThoughtSupport/SupportConversation.test.tsx)",
       "PowerShell(npx eslint src/components/ThoughtSupport/BundleConversation.tsx src/components/ThoughtSupport/BundleConversation.test.tsx)",
       "Bash(node -p \"require\\('./node_modules/lucide-react/package.json'\\).version\")",
-      "PowerShell(npx vitest run src/components/ThoughtSupport 2>&1)"
+      "PowerShell(npx vitest run src/components/ThoughtSupport 2>&1)",
+      "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\8fc9f4b0-89df-4570-83b3-72dbd2e7d10b\\\\scratchpad\\\\serve.cjs\")"
     ]
   }
 }
