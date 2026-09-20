@@ -7,6 +7,16 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.27 feat: AIChatからの課題作成サービス化（startTaskFromChat）と入力欄の自動伸縮・スクロールバー統一
+- 日付: 2026-09-20
+- コミット番号: 1998816
+
+Chat相談から課題（TaskBundle）を作成する一連の処理を独立サービス `startTaskFromChat` に抽出し、Chatの題名・本文・メタデータを保持しつつ安全にリネーム・保存してBundleを生成（単体テスト完備）。
+`BundleConversation` の入力欄（textarea）を入力行数および幅変更に合わせて自動伸縮（fitToText / ResizeObserver）。
+送信行（composer footer）を入力枠内へ同居させ、送信ボタンを左配置にして待機文言の長さによるボタン位置ズレを解消。
+会話ログの1行目にChat名を見出しとして表示し、記録ダイアログの表示丈を調整。
+`SupportConversation` のスクロールバーの幅・配色を DataGrid（.thoughts-list）と統一（webkit 8px）。変更: 7ファイル（+235 / -37行）。
+
 ### v1.5.26 feat: ストレージ層の本文取得命名整理（getBody）・TTThink構造明確化とAIChat入力表示改善
 - 日付: 2026-09-20
 - コミット番号: ab8f63a
