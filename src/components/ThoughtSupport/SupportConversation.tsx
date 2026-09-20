@@ -102,7 +102,7 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
       </div> : <p>目的・完了条件は、課題を開いたあともAIと相談して整理できます。</p>}
     </>}
   </div> : undefined;
-  // Chat名は上のリストの選択行に出ているので、会話欄では繰り返さない。
+  // Chat名はここでは出さない。会話ログの1行目に見出しとして流す（BundleConversation）。
   return <div className="support-conversation">
     {!valid && <p role="status">{chatValid ? '資料の参照にはOverviewでBundleを選択してください。' : '上部のリストで相談するChatを選択してください。'}</p>}
     {valid && <BundleConversation vault={vault} bundleId={bundleValid ? bundle.ID : undefined} chatId={chat.ID} draftScope={draftScope} optionalSources={panelName === 'Thinktank'} onOpen={id => void openSource(id)} inputHeader={taskStart} />}

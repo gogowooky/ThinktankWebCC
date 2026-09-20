@@ -2,6 +2,7 @@ import { useSupportSelection } from '../../hooks/useSupportSelection';
 import { useNewSupportChat } from '../../hooks/useNewSupportChat';
 import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
 import { useSupportChats } from '../../hooks/useSupportChats';
+import { startTaskFromChat } from '../../services/startTaskFromChat';
 /**
  * ThinktankArea.tsx
  * ThinktankPanel のコンテンツエリア。
@@ -338,7 +339,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   };
 
   const handleStartTask = useCallback(async (chatId: string, title: string, seed?: import('../../services/taskSeed').TaskSeed) => {
-    const bundle = await vault.CreateTaskBundle(title, [chatId], seed);
+    const bundle = await startTaskFromChat(vault, chatId, title, seed);
     app.OpenBundle(bundle.ID, 'graph');
   }, [app, vault]);
 

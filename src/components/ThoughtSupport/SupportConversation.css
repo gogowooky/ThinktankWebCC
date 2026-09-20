@@ -18,14 +18,13 @@
 /* スクロールは中の会話ログだけに持たせる。ここで面ごとスクロールすると、
    Chat名・課題化・入力欄まで履歴と一緒に流れ、履歴を見ながら入力できない。
    中のスクロール枠はこの2変数を見て、バーを右余白へ食い込ませる（BundleConversation.css）。
-   --conversation-scrollbar は実際に使われるバーの幅。Chromium は scrollbar-width が
-   指定されていると ::-webkit-scrollbar の width を無視するので、下の 6px ではなく
-   scrollbar-width:thin の実寸（Windows で 10px）を書く。ずれても本文右端が数px動くだけ。 */
+   --conversation-scrollbar は実際に使われるバーの幅。標準プロパティを外して
+   ::-webkit-scrollbar の width がそのまま効くようにしたので、下の 8px と一致させる。 */
 /* 上下の余白は置かない。会話・入力とも自前のスクロール枠なので、外側に帯を挟むと
    その分だけ読める行と押せる場所が減る。左右だけは本文が枠に貼り付かないよう残す。 */
 .support-conversation {
   flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; overflow-wrap: anywhere;
-  padding: 0 12px; --conversation-gutter: 12px; --conversation-scrollbar: 10px;
+  padding: 0 12px; --conversation-gutter: 12px; --conversation-scrollbar: 8px;
 }
 .support-conversation > :not(.bundle-conversation) { flex: 0 0 auto; }
 .support-conversation > .bundle-conversation { flex: 1 1 auto; min-height: 0; }
@@ -51,21 +50,20 @@
   box-sizing: border-box; resize: vertical;
 }
 
-/* スクロールバーは溝＝チャットエリアの地色そのもの（transparent で下地を透かす）、
-   つまみ＝所属パネルの横向きツールバーの地色（SupportChat.tsx が panelName から
-   --support-toolbar-bg に流し込む）。溝に色を置くと、エリアの地色は --*-area-bg で
-   コンテンツ地色とは別なので、帯だけ色が違って見える。
+/* スクロールバーは Chat アイテムを並べる DataGrid（.thoughts-list）に形も色も合わせる。
+   同じ一覧の続きを読む操作なので、面をまたいでバーの見えが変わる理由がない。
+   溝は透明のまま。エリアの地色は --*-area-bg でコンテンツ地色とは別なので、
+   溝に色を置くと帯だけ色が違って見える。
    index.css のグローバル指定は暗い地色向け（溝 --bg-secondary／つまみ --border）で、
    明るいこのエリアでは黒帯に見える。::-webkit-scrollbar-* は継承しないので、
-   本文・pre・details など内側のスクロール枠も取りこぼさないよう子孫までまとめて指定する。 */
-.support-chat-host,
-.support-chat-host * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--support-toolbar-bg) transparent;
-}
+   本文・pre・details など内側のスクロール枠も取りこぼさないよう子孫までまとめて指定する。
+   Chromium は scrollbar-width / scrollbar-color のどちらかが指定されていると
+   ::-webkit-scrollbar-* を無視するので、標準プロパティは置かず webkit 側だけで決める。 */
 .support-chat-host::-webkit-scrollbar,
-.support-chat-host *::-webkit-scrollbar { width: 6px; height: 6px; }
+.support-chat-host *::-webkit-scrollbar { width: 8px; height: 8px; }
 .support-chat-host::-webkit-scrollbar-track,
 .support-chat-host *::-webkit-scrollbar-track { background: transparent; }
 .support-chat-host::-webkit-scrollbar-thumb,
-.support-chat-host *::-webkit-scrollbar-thumb { background: var(--support-toolbar-bg); border-radius: 3px; }
+.support-chat-host *::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.22); border-radius: 4px; }
+.support-chat-host::-webkit-scrollbar-thumb:hover,
+.support-chat-host *::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.38); }

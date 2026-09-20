@@ -5,6 +5,7 @@ import { ContextService } from '../../services/ContextService';
 import { ConversationClient, chatOnlyConversationContext, conversationContext, type ConversationContext, type ConversationTurn } from '../../services/ConversationService';
 import { mergeConversationTranscript, readConversationLog } from '../../../server/services/conversationRecord';
 import { StorageManager } from '../../services/storage/StorageManager';
+import { parseManagedChatTitle } from '../../utils/managedChat';
 import { ProposalReview } from './ProposalReview';
 import { SubtaskProposal } from './SubtaskProposal';
 import '../ThinktankPanel/ColumnSortDialog.css';
@@ -38,6 +39,14 @@ function download(turn: ConversationTurn) {
   const link = document.createElement('a'); link.href = url; link.download = `think-conversation-${turn.id}.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+/** 入力欄の高さを中身ちょうどに合わせる。いったん auto に戻さないと、行を減らしても
+    scrollHeight が縮まず（今の高さが下限になる）、欄が伸びたきり戻らない。
+    空のときは高さを書かない。Chromium の scrollHeight は placeholder の折り返し行数まで
+    数えるので、それに合わせると未入力の欄が数行ぶんに膨らむ（rows=1 の丈に任せる）。 */
+function fitToText(el: HTMLTextAreaElement) {
+  el.style.height = 'auto';
+  el.style.height = el.value ? `${el.scrollHeight}px` : '';
+}
 /** inputHeader は宿主が入力帯の先頭に差し込む操作。ログと一緒に流れると押せないので、ここへ預ける。 */
 interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; optionalSources?: boolean; inputHeader?: ReactNode }
 function cachedChatHistory(vault: TTVault, chatId?: string): ConversationTurn[] {
@@ -69,6 +78,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDetailsElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
   const controller = useRef<AbortController>();
   const locked = useRef(false);
   const composing = useRef(false);
@@ -85,6 +95,22 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [draft]);
+  useEffect(() => { if (composerRef.current) fitToText(composerRef.current); }, [question]);
+  useEffect(() => {
+    const el = composerRef.current;
+    // jsdom には ResizeObserver が無い。幅が変わらない環境では行数も変わらないので、
+    // 追従しなくても入力欄の高さは正しいまま。
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    // 幅が変われば折り返しの行数も変わる。自分で高さを書き換えたぶんの通知は幅で弾く（無限ループ防止）。
+    let width = el.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth === width) return;
+      width = el.clientWidth;
+      fitToText(el);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   /** 準備できた資料と接続状態を返す。中断・失敗時は undefined。送信が続けて使うので state 待ちにしない。 */
   async function prepare(): Promise<Ready | undefined> {
     if (!supported) return undefined;
@@ -225,6 +251,9 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     band.scrollTop = Math.max(0, Math.min(target, band.scrollHeight - band.clientHeight));
   }
   const turns = pending && !history.some(t => t.id === pending.id) ? [...history, pending] : history;
+  // 管理用の接頭辞（ASK:Thinktank｜…）は一覧で読める。会話の見出しには表題だけを出す。
+  const chat = chatId ? vault.GetThink(chatId) : undefined;
+  const chatTitle = chat ? parseManagedChatTitle(chat.Name)?.title || chat.Name : '';
   // 入力欄を下端に固定したので、ログは自分で末尾へ寄せないと新しい回答が画面外に積まれる。
   useEffect(() => {
     const el = logRef.current;
@@ -233,6 +262,8 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   return <section className="bundle-conversation" aria-label="AIとの会話">
     {!supported ? <p>AIChatはBigQueryモードで利用できます。</p> : <>
       <div className="bundle-conversation-log" ref={logRef}>
+        {/* Chat名はログの1行目として履歴と一緒に流す。専用の帯にすると、その分だけ読める行が減る。 */}
+        {chatTitle && <h3 className="bundle-conversation-title">{chatTitle}</h3>}
         {loaded && !turns.length && <p className="bundle-conversation-empty">まだ会話はありません。</p>}
         {turns.map(turn => <article key={turn.id}>
           <p><strong>You：</strong>{turn.question}</p>
@@ -255,24 +286,30 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         <div className="bundle-conversation-notice-actions">
         <button type="button" disabled={!!busy} onClick={() => void retrySave()}>保存を再試行</button>{' '}
         <button type="button" onClick={() => download(pending)}>回答を書き出す</button></div></div>}
-      <label className="bundle-conversation-composer"><textarea aria-label="メッセージ" placeholder={PLACEHOLDER} maxLength={4000} value={question} disabled={(!!busy && busy !== PREPARING) || !!pending}
+      {/* label ではなく div。中に送信・中断のボタンを置くので、label だと「ラベル対象の
+          コントロール」が曖昧になる（textarea の名前は aria-label が与えている）。 */}
+      <div className="bundle-conversation-composer"><textarea ref={composerRef} rows={1} aria-label="メッセージ" placeholder={PLACEHOLDER} maxLength={4000} value={question} disabled={(!!busy && busy !== PREPARING) || !!pending}
         onCompositionStart={() => { composing.current = true; }} onCompositionEnd={() => { composing.current = false; }}
         onKeyDown={e => {
           if (e.key !== 'Enter' || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey
             || composing.current || e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
           e.preventDefault(); e.stopPropagation(); void submit();
         }}
-        onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); }} /></label>
-      {/* 待機表示もエラーも送信行に置く。入力欄の上下に帯が増えるほど、押す場所が遠くなる。 */}
+        onChange={e => { draft.question = e.target.value; setQuestion(e.target.value); }} />
+      {/* 待機表示もエラーも送信行に置く。入力欄の上下に帯が増えるほど、押す場所が遠くなる。
+          行は入力欄の中（最下行）に置く。外に出すと、その下に畳んである
+          「条件・機能・参照情報」が入力欄から一段離れてしまう。
+          送信を先に置くのは、待機・失敗の文言の長さで押す位置が動かないようにするため。 */}
       <div className="bundle-conversation-composer-footer">
-      <p className="bundle-conversation-status" role="status">
-        {busy && <span className="bundle-conversation-spinner" aria-hidden="true" />}
-        {busy || (pending ? '' : message)}
-      </p>
       <div className="bundle-conversation-actions">
         {busy === '回答を生成しています…' && <button type="button" data-conversation-abort onClick={() => controller.current?.abort()}>中断</button>}
         {busy === PREPARING && <button type="button" onClick={cancelPreparation}>準備を中断</button>}
         <button type="button" className="bundle-conversation-send" disabled={!question.trim() || !!busy || !!pending || (!!status && !status.enabled)} onClick={() => void submit()}>送信</button>
+      </div>
+      <p className="bundle-conversation-status" role="status">
+        {busy && <span className="bundle-conversation-spinner" aria-hidden="true" />}
+        {busy || (pending ? '' : message)}
+      </p>
       </div>
       </div>
       {/* 会話のたびには触らない設定・操作はここへ畳む。開いている間だけ入力帯が伸びる。 */}

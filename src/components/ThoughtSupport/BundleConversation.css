@@ -2,8 +2,15 @@
    （高さ auto のブロックに置かれたとき）は flex の伸縮が成立せず、従来どおり面全体が伸びる。 */
 .bundle-conversation { overflow-wrap: anywhere; display: flex; flex-direction: column; min-height: 0; }
 .bundle-conversation-log { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-/* 参照資料の展開などで入力帯が伸びても会話ログを潰さないよう、内側でスクロールさせる */
-.bundle-conversation-input { flex: 0 0 auto; max-height: 55%; overflow-y: auto; }
+/* 参照資料の展開などで入力帯が伸びても会話ログを潰さないよう、内側でスクロールさせる。
+   overflow-y を指定すると overflow-x も visible ではなくなり、この枠が切り取り線になる。
+   入力欄のフォーカス枠は箱の外側（offset 1px ＋ 太さ 2px）に出るので、左端に余白が無いと
+   そこだけ欠ける。枠のぶんだけ内側に余白を足し、同じ量を負のマージンで戻して位置は変えない
+   （右端でスクロールバーに使っているのと同じ手）。 */
+.bundle-conversation-input {
+  flex: 0 0 auto; max-height: 55%; overflow-y: auto;
+  margin-left: -3px; padding-left: 3px;
+}
 /* スクロールバーは宿主の右余白へ食い込ませる。負のマージンで枠を余白ぶん右へ広げ、
    その内側に padding を戻すぶんを差し引く。scrollbar-gutter:stable でバーの居場所を
    常に確保するので、バーが出入りしても本文の右端は動かない（＝行の折り返しも変わらない）。 */
@@ -26,17 +33,47 @@
 .bundle-conversation small { display: block; }
 .bundle-conversation button:disabled { opacity: .5; cursor: default; }
 .bundle-conversation-empty { color: var(--field-muted, #64748b); text-align: center; margin: 24px 0; }
-.bundle-conversation label.bundle-conversation-composer { margin: 12px 0 6px; }
-.bundle-conversation-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.bundle-conversation-composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
-/* 待機・失敗の文言は送信の左。伸びたら折り返して、送信を行外へ押し出さない。 */
+/* Chat名の見出し。丈は本文のまま太字だけで区別する（h3 既定の大きさだと、狭いパネルでは
+   表題が2〜3行に折り返して会話より目立つ）。上を詰め切らないのは、スクロールで上端に
+   貼り付いたときに枠と文字がくっついて見えるため。 */
+.bundle-conversation-title { margin: 8px 0 16px; font-size: inherit; font-weight: 700; }
+/* 送信行を内側に抱えるので、枠と地色はこの箱が持ち、中の textarea は枠なしにする。
+   枠が textarea 側にあると、送信行だけが欄の外にぶら下がって見える。 */
+.bundle-conversation-composer {
+  margin: 6px 0 3px; display: flex; flex-direction: column;
+  background: var(--field-bg, #fff); border: 1px solid var(--field-border, rgba(0,0,0,.25)); border-radius: 4px;
+}
+/* 高さは入力の行数から決める（BundleConversation.tsx が height を書く）ので、つまみでの
+   手動変更は無くす。初期は1行。伸び続けて送信行を画面外へ押し出さないよう上限で止める。
+   バーは出さない（欄の中に細い帯が増えると、1行のときの見た目が濁る）。上限から先は
+   カーソルに追従して中身がずれるので、書いている行は常に見えている。
+   同じ宿主にいる他の textarea（依頼・進捗）は従来どおり手で伸ばせるので、ここだけに効かせる。 */
+.bundle-conversation .bundle-conversation-composer textarea {
+  background: transparent; border: 0; border-radius: 0;
+  resize: none; min-height: 0; max-height: 9em; overflow-y: hidden;
+  /* 送信行とは間隔を空けない。左右・上は textarea の 8px のまま、下だけ詰める。 */
+  padding-bottom: 0;
+}
+/* フォーカスの輪郭は箱の外周にまとめて出す。textarea だけを囲むと、ひとつの欄の中で
+   入力行と送信行が分断されて見える。:has() で「textarea に入ったとき」に限るのは、
+   送信・中断へ移ったときは箱ではなくボタン自身の輪郭で示すため。 */
+.bundle-conversation .bundle-conversation-composer textarea:focus-visible { outline: none; }
+.bundle-conversation-composer:has(textarea:focus-visible) { outline: 2px solid currentColor; outline-offset: 1px; }
+/* 最下行は左詰め。行頭は textarea の文字の左端に合わせる（textarea の padding と同値）。
+   文字は本文より1px小さく。入力欄の中に同居するので、同じ丈だと入力した文章と紛れる。
+   中の文言（.bundle-conversation-status）とボタン（font: inherit）はここから継ぐ。 */
+.bundle-conversation-composer-footer {
+  display: flex; align-items: center; justify-content: flex-start; gap: 8px 12px; flex-wrap: wrap;
+  padding: 0 8px 3px; font-size: calc(1em - 1px);
+}
+.bundle-conversation-actions { display: flex; gap: 8px; justify-content: flex-start; align-items: center; flex-wrap: wrap; }
+/* 待機・失敗の文言は送信の右。伸びたら折り返して、送信を行外へ押し出さない。 */
 .bundle-conversation-status {
   flex: 1 1 8em; min-width: 0; margin: 0;
   display: flex; align-items: center; gap: 8px;
   color: var(--field-muted, #64748b); font-size: .8em; white-space: pre-wrap;
 }
 .bundle-conversation-status:empty { display: none; }
-.bundle-conversation-actions { margin-left: auto; align-items: center; flex-wrap: wrap; }
 .bundle-conversation-notice { margin: 12px 0; padding: 10px 12px; border-left: 2px solid var(--field-border, #94a3b8); background: var(--field-bg, #f1f5f9); border-radius: 4px; }
 .bundle-conversation-notice p { margin: 0 0 6px; white-space: pre-wrap; }
 .bundle-conversation-notice p:last-child { margin-bottom: 0; }
@@ -67,15 +104,24 @@
   color: var(--field-muted, #64748b); text-decoration: none;
 }
 .bundle-conversation-record-open:hover { color: inherit; }
+/* 記録の量は往復ごとにまちまちで、多くは面の高さに届かない。枠を下端まで伸ばすと
+   短い記録では保存操作の下に空白だけが残るので、丈は中身に合わせ、長いときだけ
+   面の高さで頭打ちにする。 */
 .bundle-conversation-record {
-  top: 10px; left: 8px; right: 8px; bottom: 10px;
+  top: 10px; left: 8px; right: 8px;
+  max-height: calc(100% - 20px);
   min-width: 0; display: flex; flex-direction: column;
 }
-.bundle-conversation-record__body {
-  flex: 1 1 auto; min-height: 0; max-height: none; overflow: auto;
-  margin: 0; padding: 8px 10px; font-size: .9em;
+/* 本文の丈は枠側で決めるので、会話面の pre に効いている max-height を打ち消す。
+   型セレクタを含む `.bundle-conversation pre` より詳細度を上げる必要がある。 */
+.bundle-conversation pre.bundle-conversation-record__body {
+  flex: 0 1 auto; min-height: 0; max-height: none; overflow: auto;
+  margin: 0; padding: 8px 10px; font-size: .8em;
 }
-.bundle-conversation-record__actions { flex: none; padding: 6px 10px; border-top: 1px solid rgba(0, 0, 0, .08); }
+.bundle-conversation-record__actions { flex: none; padding: 4px 10px; border-top: 1px solid rgba(0, 0, 0, .08); }
+/* 保存は枠の操作なので、本文ではなく見出し（.col-sort-dialog__th）に丈を合わせる。
+   会話面の `font: inherit` を上書きするため詳細度を上げる。 */
+.bundle-conversation .bundle-conversation-record__actions button { font-size: calc(10px * var(--tt-font-scale, 1)); }
 /* 枠のボタンはリンク表現の対象外。閉じるアイコンに下線や余白が付くと枠と揃わない。 */
 .bundle-conversation .col-sort-dialog__close-in-table { text-decoration: none; padding: 0; color: #aaa; }
 .bundle-conversation .col-sort-dialog__close-in-table:hover { color: #666; }
