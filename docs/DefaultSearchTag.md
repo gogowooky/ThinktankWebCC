@@ -49,7 +49,7 @@ Jump,           "T)Tag > J)Jump",               NoURL
 ## Tag.Reference　      8.2 anchorテキストをHighlighterとして設定するためのタグ         例：[:anchor]
 Reference,      "T)Tag > R)参照先",             NoURL
 
-## Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用)
+## Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用) 
 ThinkID,        "T)Tag > I)QueryID",            NoURL
 
 ## Tag.ThinkTitle       4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)

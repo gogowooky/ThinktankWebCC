@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { AIProvider } from './AIProvider.js';
-import { object, text, validateContext, validateTurn, type ConversationContext, type ConversationTurn, type Citation, type Proposal } from './conversationRecord.js';
+import { object, text, validateContext, validateTurn, validateProgressProposals, type ConversationContext, type ConversationTurn, type Citation, type Proposal } from './conversationRecord.js';
 import { THINK_FIELDS, type ThinkField } from './thinkSupportRecord.js';
 
 export function verifyContextHashes(context: ConversationContext): void {
@@ -32,8 +32,10 @@ export class ConversationService {
       const field = p.field as ThinkField;
       return { field, before: context.manualState?.values[field] ?? '', after: p.after, reason: p.reason };
     });
+    validateProgressProposals(raw.progressProposals, question, context.scope);
     const turn: ConversationTurn = { schemaVersion: 1, id, createdAt: new Date().toISOString(), question, context,
-      answer: { reply: raw.reply, insufficientEvidence: raw.insufficientEvidence || context.quality === 'partial', citations, proposals },
+      answer: { reply: raw.reply, insufficientEvidence: raw.insufficientEvidence || context.quality === 'partial', citations, proposals,
+        ...(raw.progressProposals !== undefined ? { progressProposals: raw.progressProposals } : {}) },
       provider: this.provider.name, model: this.provider.model };
     validateTurn(turn);
     return turn;

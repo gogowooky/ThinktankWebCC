@@ -95,6 +95,9 @@
 /* 区分の下は全角1文字ぶん下げる。どの区分の項目かを行頭だけで追えるようにする。 */
 .bundle-conversation-options > details > :not(summary) { margin-left: 1em; }
 .bundle-conversation-options > details > label { margin-top: 0; margin-bottom: 4px; }
+/* チェックボックスは既定だと文字のベースラインに乗り、行の中心より上に浮いて見える。
+   position で下げるのは、行の高さを変えずに見た目だけ揃えるため。 */
+.bundle-conversation-sources input[type="checkbox"] { position: relative; top: 2px; }
 
 /* ── 会話の記録ダイアログ ──────────────────────────────────
    枠は「フィルター選択」（ColumnSortDialog.css）を流用し、位置だけ会話面に合わせる。

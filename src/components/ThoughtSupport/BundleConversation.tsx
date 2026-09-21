@@ -8,6 +8,7 @@ import { conversationPresentation } from '../../../server/services/conversationP
 import { StorageManager } from '../../services/storage/StorageManager';
 import { parseManagedChatTitle } from '../../utils/managedChat';
 import { ProposalReview } from './ProposalReview';
+import { ProgressProposal } from './ProgressProposal';
 import { SubtaskProposal } from './SubtaskProposal';
 import '../ThinktankPanel/ColumnSortDialog.css';
 import './BundleConversation.css';
@@ -278,6 +279,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           <p><strong>You：</strong>{turn.question}</p>
           <Answer presentation={presentations[index]} onOpen={onOpen} />
           <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
+          {turn.id === history.at(-1)?.id && <ProgressProposal key={`${vault.ID}:${turn.context.bundleId}:${turn.id}`} vault={vault} turn={turn} disabled={!!busy || !!pending} />}
           {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
           {/* 記録そのものは普段読むものではないので、会話の直下にアイコンだけ置いて別画面へ送る */}
           <button type="button" className="bundle-conversation-record-open" onClick={() => setRecord(turn)}

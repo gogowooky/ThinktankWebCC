@@ -9,7 +9,9 @@ export interface ConversationContext {
 }
 export interface Citation { thinkId: string; quote: string; contentHash: string; start: number; end: number }
 export interface Proposal { field: ThinkField; before: string; after: string; reason: string }
-export interface ConversationAnswer { reply: string; insufficientEvidence: boolean; citations: Citation[]; proposals: Proposal[] }
+export const PROGRESS_MILESTONES = ['consideration', 'decision', 'execution', 'verification'] as const;
+export interface ProgressProposal { milestone: typeof PROGRESS_MILESTONES[number]; reach: 'achieved' | 'reconsider' | 'unnecessary'; userQuote: string; reason: string }
+export interface ConversationAnswer { reply: string; insufficientEvidence: boolean; citations: Citation[]; proposals: Proposal[]; progressProposals?: ProgressProposal[] }
 export interface ConversationTurn {
   schemaVersion: 1; id: string; createdAt: string; question: string; context: ConversationContext;
   answer: ConversationAnswer; provider: string; model: string;
@@ -32,7 +34,8 @@ export function mergeConversationTranscript(content: string, turns: Conversation
     const proposals = turn.answer.proposals.map(proposal =>
       `### AIの変更提案：${proposal.field}\n${proposal.after}\n\n理由：${proposal.reason}`);
     return [`## ${turn.question.replace(/[\r\n]+/g, ' ').trim()}`, presentation.reply,
-      turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...proposals]
+      turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...proposals,
+      ...(turn.answer.progressProposals ?? []).map(p => `### AIの到達状態候補（未確認）：${p.milestone}\n${p.reach}\n本人の発言：${p.userQuote}\n理由：${p.reason}`)]
       .filter(Boolean).join('\n\n');
   }).join('\n\n');
   if (!transcript) return [before, after].filter(Boolean).join('\n\n');
@@ -110,11 +113,23 @@ export function validateTurn(value: unknown): asserts value is ConversationTurn 
       || source.content.slice(c.start as number, c.end as number) !== c.quote) throw new Error('引用が資料本文と一致しません。');
   }
   const fields = new Set<string>();
+  validateProgressProposals(a.progressProposals, value.question, value.context.scope);
   for (const p of a.proposals) {
     if (!object(p) || !THINK_FIELDS.includes(p.field as ThinkField) || fields.has(String(p.field))
       || !text(p.before, 10000, true) || !text(p.after, 10000) || !text(p.reason, 2000)
       || p.before !== (value.context.manualState?.values[p.field as ThinkField] ?? '')) throw new Error('変更提案の基準が不正です。');
     fields.add(String(p.field));
+  }
+}
+export function validateProgressProposals(value: unknown, question: string, scope: ConversationContext['scope']): asserts value is ProgressProposal[] | undefined {
+  if (value === undefined) return; // Existing conversation records remain readable.
+  if (!Array.isArray(value) || value.length > 4 || (scope !== 'bundle-only' && value.length)) throw new Error('到達状態候補の形式が不正です。');
+  const seen = new Set<string>();
+  for (const p of value) {
+    if (!object(p) || !PROGRESS_MILESTONES.includes(p.milestone as ProgressProposal['milestone']) || seen.has(String(p.milestone))
+      || typeof p.reach !== 'string' || !['achieved', 'reconsider', 'unnecessary'].includes(p.reach) || !text(p.reason, 2000)
+      || !text(p.userQuote, 2000) || !question.includes(p.userQuote)) throw new Error('到達状態候補の根拠が本人の発言と一致しません。');
+    seen.add(String(p.milestone));
   }
 }
 export function readConversationLog(value: unknown): ConversationLog {

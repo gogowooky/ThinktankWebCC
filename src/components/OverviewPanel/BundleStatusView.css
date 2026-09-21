@@ -31,20 +31,21 @@
   color: var(--field-text);
 }
 
-/* スクロールバーは溝＝コンテンツ背景色、つまみ＝Overviewの横向きツールバーの地色。
-   AIChat（.support-chat-host）と同じ方針。ここは常に Overview パネル内なのでトークンを直接参照する。
+/* スクロールバーは「Thinktank>会話履歴」（SupportConversation.css）と同じ形・同じつまみ色に
+   揃える。同じ会話部品を載せる面どうしで見えが変わる理由がない。
+   溝だけはこの面の地色（--overview-content-bg）を敷く。ここは常に Overview パネル内なので
+   トークンを直接参照する。
+   Chromium は scrollbar-width / scrollbar-color のどちらかが指定されていると
+   ::-webkit-scrollbar-* を無視するので、標準プロパティは置かず webkit 側だけで決める。
    index.css のグローバル指定は暗い地色向けで、::-webkit-scrollbar-* は継承しないため子孫まで指定する。 */
-.bundle-analysis,
-.bundle-analysis * {
-  scrollbar-width: thin;
-  scrollbar-color: var(--overview-menuribbon-bg) var(--overview-content-bg);
-}
 .bundle-analysis::-webkit-scrollbar,
-.bundle-analysis *::-webkit-scrollbar { width:6px; height:6px; }
+.bundle-analysis *::-webkit-scrollbar { width:8px; height:8px; }
 .bundle-analysis::-webkit-scrollbar-track,
 .bundle-analysis *::-webkit-scrollbar-track { background:var(--overview-content-bg); }
 .bundle-analysis::-webkit-scrollbar-thumb,
-.bundle-analysis *::-webkit-scrollbar-thumb { background:var(--overview-menuribbon-bg); border-radius:3px; }
+.bundle-analysis *::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.22); border-radius:4px; }
+.bundle-analysis::-webkit-scrollbar-thumb:hover,
+.bundle-analysis *::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.38); }
 
 .bundle-analysis-content { flex:1; min-height:0; overflow:hidden; }
 
