@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.28",
+  "version": "1.5.29",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "8043b09",
-  "commitDateTime": "2026-09-21-000222",
-  "commitMessage": "feat: [THINK:id,行/語]タグジャンプ対応・AIChat引用のインラインリンク化（[Think:id,行]）とEditモード種別フィルター整理"
+  "commitId": "3fc5891",
+  "commitDateTime": "2026-09-22-005422",
+  "commitMessage": "feat: 会話から到達状態の記録（ProgressProposal・validateProgressProposals）と表示微調整"
 }

@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.29 feat: 会話から到達状態の記録（ProgressProposal・validateProgressProposals）と表示微調整
+- 日付: 2026-09-22
+- コミット番号: 3fc5891
+
+Bundleを参照する会話（共通AIChat/WorkoutChat）の本人の発言から、検討・意思決定・実行・検証の到達状態候補（progressProposals）を整理し、本人確認を経て既存の到達状態履歴（thinkProgress）へ安全に記録する導線を追加（ProgressProposal・validateProgressProposals）。
+AIProviderの応答スキーマ・プロンプトに到達状態候補を追加し、段階・値・重複・件数・本人の発言の原文引用一致をサーバー・保存読込時に厳格検証（旧履歴との後方互換性を保持）。
+直近の回答に「到達状態の候補を確認」を表示し、最新状態との比較、根拠・残課題の編集、本人確認を経て既存thinkProgressへ記録。
+BundleStatusViewのスクロールバー表示をSupportConversationと統一し、ソース参照チェックボックスの配置位置など表示を微調整。変更: 14ファイル（+255 / -18行）。
+
 ### v1.5.28 feat: [THINK:id,行/語]タグジャンプ対応・AIChat引用のインラインリンク化（[Think:id,行]）とEditモード種別フィルター整理
 - 日付: 2026-09-21
 - コミット番号: 8043b09
