@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.29",
+  "version": "1.5.30",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "3fc5891",
-  "commitDateTime": "2026-09-22-005422",
-  "commitMessage": "feat: 会話から到達状態の記録（ProgressProposal・validateProgressProposals）と表示微調整"
+  "commitId": "9efa6af",
+  "commitDateTime": "2026-09-24-224942",
+  "commitMessage": "feat: 子課題の本人確認済み記録を親AIの見直しへ接続（subtaskContext）"
 }

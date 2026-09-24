@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
 
+### v1.5.30 feat: 子課題の本人確認済み記録を親AIの見直しへ接続（subtaskContext）
+- 日付: 2026-09-24
+- コミット番号: 9efa6af
+
+読み込み済みの直接の子課題の到達状態を会話コンテキストへ渡し、親課題の全体見直しにAIが使えるようにする導線を追加（`server/services/subtaskContext.ts`・`src/services/subtaskContext.ts`）。子課題ごとの到達状態・残課題・保留と再開条件を `SubtaskContextView` で確認できる。
+`SubtaskContext` を `ConversationContext` の任意項目として追加し、bundle-onlyのときだけ許可。件数50件・40000文字の上限、bundleIdの重複や親自身の混入、本人確認情報（author=human・revision・confirmedAt）を保存読込時に厳格検証する。
+`ContextService.getBundleContext` に `includeSubtasks` を追加し、要求時のみ `captureSubtaskContext` で採取（既定は従来どおり採取しない）。recorded / unrecorded / unreadable / unsaved を区別し、未確認の子課題には到達状態を付与せず、itemsが空でも全体完了とは扱わない。
+AIProviderのプロンプトに、子課題は参照データであること・記録の事実と推測を分けること・子課題の到達から親や全体の完了を推定しないことを明記。変更: 15ファイル（+281 / -7行）。
+
 ### v1.5.29 feat: 会話から到達状態の記録（ProgressProposal・validateProgressProposals）と表示微調整
 - 日付: 2026-09-22
 - コミット番号: 3fc5891
