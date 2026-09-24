@@ -1,11 +1,13 @@
 import { THINK_FIELDS, readThinkSupport, type ThinkSupportRecord, type ThinkField } from './thinkSupportRecord.js';
 import { conversationPresentation } from './conversationPresentation.js';
+import { validateSubtaskContext, type SubtaskContext } from './subtaskContext.js';
 
 export interface ConversationSource { thinkId: string; title: string; content: string; contentHash: string; contentType?: string }
 export interface ConversationContext {
   schemaVersion: 1; snapshotId: string; vaultId: string; bundleId: string; capturedAt: string;
   scope: 'bundle-only' | 'chat-only'; quality: 'complete' | 'partial';
   sources: ConversationSource[]; issues: string[]; manualState: ThinkSupportRecord | null;
+  subtasks?: SubtaskContext;
 }
 export interface Citation { thinkId: string; quote: string; contentHash: string; start: number; end: number }
 export interface Proposal { field: ThinkField; before: string; after: string; reason: string }
@@ -84,6 +86,10 @@ export function validateContext(value: unknown): asserts value is ConversationCo
     || !Array.isArray(value.sources) || value.sources.length > 300 || !Array.isArray(value.issues)
     || value.issues.length > 1000 || !value.issues.every(i => text(i, 1000))) throw new Error('参照資料の形式が不正です。');
   if (value.scope === 'chat-only' && (value.sources.length || value.manualState !== null || value.bundleId !== value.snapshotId)) throw new Error('Chat単独対話の参照形式が不正です。');
+  if (value.subtasks !== undefined) {
+    if (value.scope !== 'bundle-only') throw new Error('Chat単独対話には子課題を含められません。');
+    validateSubtaskContext(value.subtasks, value.bundleId);
+  }
   let length = 0;
   const ids = new Set<string>();
   for (const s of value.sources) {

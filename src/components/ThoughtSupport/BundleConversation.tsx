@@ -10,6 +10,8 @@ import { parseManagedChatTitle } from '../../utils/managedChat';
 import { ProposalReview } from './ProposalReview';
 import { ProgressProposal } from './ProgressProposal';
 import { SubtaskProposal } from './SubtaskProposal';
+import { SubtaskContextView } from './SubtaskContextView';
+import { SUBTASK_REVIEW_QUESTION } from '../../../server/services/subtaskContext';
 import '../ThinktankPanel/ColumnSortDialog.css';
 import './BundleConversation.css';
 
@@ -137,7 +139,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     try {
       const [availability, turns, snapshot] = await Promise.race([Promise.allSettled([
         client.status(abort.signal), client.history(bundleId, abort.signal, chatId, vault.ID),
-        bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal, maxSources: 300 })
+        bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal, maxSources: 300, includeSubtasks: true })
           : Promise.resolve(chatOnlyConversationContext(vault.ID, chatId!)),
       ]), interrupted]);
       if (!alive.current || abort.signal.aborted || version !== prepareVersion.current) return undefined;
@@ -202,7 +204,8 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
    */
   async function submit() {
     if (locked.current || busy || !question.trim() || pending) return;
-    const current: Ready | undefined = status?.enabled && context && loaded ? { context, history } : undefined;
+    // Child progress may have changed in Workout since this conversation was opened.
+    const current: Ready | undefined = status?.enabled && context && loaded && !context.subtasks ? { context, history } : undefined;
     const ready = current ?? await prepare();
     if (!ready || !alive.current) return;
     await send(ready);
@@ -335,12 +338,16 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
             const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
             draft.question = reviewQuestion; setQuestion(reviewQuestion);
           }}>進行を見直す質問を入力</button>
+          {bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
+            draft.question = SUBTASK_REVIEW_QUESTION; setQuestion(SUBTASK_REVIEW_QUESTION); setContext(undefined);
+          }}>子課題を含めて次の行動を整理する質問を入力</button>}
         </details>
         {(status || context) && <details>
           <summary>参照情報</summary>
           {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
           {context && <>
             <p>参照資料：{context.scope === 'chat-only' ? 'なし' : `${context.sources.length}件`}</p>
+            {context.subtasks && <SubtaskContextView value={context.subtasks} onOpen={onOpen} />}
             {context.issues.length > 0 && <ul>{context.issues.map((issue, index) => <li key={index}>{issue}</li>)}</ul>}
             {context.sources.length > 0 && <details><summary>参照資料を確認</summary>
               {context.sources.map(s => <div key={s.thinkId}><button type="button" onClick={() => onOpen(s.thinkId)}>{s.title || s.thinkId}</button><pre>{s.content}</pre></div>)}

@@ -14,6 +14,7 @@ import { BundleConversation } from './BundleConversation';
 import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
 import type { ConversationContext, ConversationTurn } from '../../services/ConversationService';
+import { SUBTASK_REVIEW_QUESTION } from '../../../server/services/subtaskContext';
 const context = (bundleId = 'a'): ConversationContext => ({ schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId, capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only', quality: 'complete', sources: [], manualState: null, issues: [] });
 const turn = (): ConversationTurn => ({ schemaVersion: 1, id: 'turn', createdAt: '2026-09-14T00:00:00Z', question: '質問', context: context(), answer: { reply: '回答', insufficientEvidence: true, citations: [], proposals: [] }, provider: 'test', model: 'model' });
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;
@@ -30,6 +31,34 @@ function button(label: string) { return [...host.querySelectorAll('button')].fin
 async function click(label: string) { await act(async () => { expect(button(label).disabled).toBe(false); button(label).click(); }); }
 async function input(value: string) { await act(async () => { const area = host.querySelector('textarea')!; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, value); area.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function prepare() { await input('質問'); }
+
+it('prepares a parent review without sending and refreshes child records when explicitly sent', async () => {
+  const before: ConversationContext = { ...context(), subtasks: { scope: 'loaded-direct-children', items: [{ bundleId: 'child', title: '会場予約', status: 'unrecorded' }] } };
+  api.context.mockResolvedValue(before);
+  await show();
+  expect(host.textContent).toContain('子課題の状況（1件）');
+  await click('子課題を含めて次の行動を整理する質問を入力');
+  expect(host.querySelector('textarea')!.value).toBe(SUBTASK_REVIEW_QUESTION);
+  expect(api.generate).not.toHaveBeenCalled();
+  const after: ConversationContext = { ...before, subtasks: { scope: 'loaded-direct-children', items: [{ bundleId: 'child', title: '会場予約', status: 'unsaved' }] } };
+  api.context.mockResolvedValue(after);
+  await click('送信');
+  expect(api.context).toHaveBeenCalledTimes(3); // Initial preparation, before sending, after saving.
+  expect(api.generate.mock.calls[0]).toContainEqual(after);
+});
+it('refreshes child records on normal sends and stops if refresh fails', async () => {
+  api.context.mockResolvedValue({ ...context(), subtasks: { scope: 'loaded-direct-children', items: [] } });
+  await show(); await input('次は何をしますか');
+  api.context.mockRejectedValueOnce(new Error('子課題の状況が大きすぎます'));
+  await click('送信');
+  expect(api.generate).not.toHaveBeenCalled(); expect(host.querySelector('textarea')!.value).toBe('次は何をしますか');
+  expect(host.textContent).toContain('子課題の状況が大きすぎます');
+});
+it('does not offer parent review in chat-only scope or replace an existing draft', async () => {
+  await show('', 'chat'); expect(button('子課題を含めて次の行動を整理する質問を入力')).toBeUndefined();
+  await show(); await input('自分の下書き');
+  expect(button('子課題を含めて次の行動を整理する質問を入力').disabled).toBe(true);
+});
 
 it('shows inline Think citation tags that open sources without a reference block', async () => {
   const value = turn(); value.answer.reply = '回答[:>1]。補足[:>2]。';

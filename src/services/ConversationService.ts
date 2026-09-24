@@ -10,6 +10,7 @@ export function conversationContext(snapshot: ContextSnapshot): ConversationCont
     sources: snapshot.sources.map(s => ({ thinkId: s.thinkId, title: s.title, content: s.content, contentHash: s.contentHash, contentType: s.contentType })),
     issues: snapshot.issues.map(i => `${i.message} (${i.thinkId})`),
     manualState: snapshot.manualState ? structuredClone(snapshot.manualState) : null,
+    ...(snapshot.subtasks ? { subtasks: structuredClone(snapshot.subtasks) } : {}),
   };
   validateContext(context); return context;
 }

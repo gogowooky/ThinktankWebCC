@@ -5,6 +5,7 @@ import type { ThinkMeta } from './storage/IStorageBackend';
 import type { ContextIssue, ContextIssueCode, ContextSnapshot, ContextSource } from './contextTypes';
 import { appendLegacyContext, emptyContextState } from './legacyContextAdapter';
 import { readThinkSupport } from '../../server/services/thinkSupportRecord';
+import { captureSubtaskContext } from './subtaskContext';
 
 export interface ContextReader {
   getBody(id: string): Promise<string | null>;
@@ -68,7 +69,7 @@ const messages: Record<ContextIssueCode, string> = {
 export class ContextService {
   constructor(private readonly vault: TTVault, private readonly reader: ContextReader = defaultReader) {}
 
-  async getBundleContext(bundleId: string, options: { signal?: AbortSignal; maxSources?: number } = {}): Promise<ContextSnapshot> {
+  async getBundleContext(bundleId: string, options: { signal?: AbortSignal; maxSources?: number; includeSubtasks?: boolean } = {}): Promise<ContextSnapshot> {
     const { signal } = options;
     assertNotAborted(signal);
     if (!this.vault.IsLoaded) throw new ContextReadError('vault_not_loaded', 'Vault一覧の読み込み完了後に再試行してください。');
@@ -77,6 +78,7 @@ export class ContextService {
     }
     const startedAt = new Date().toISOString();
     const initial = signature(this.vault);
+    const subtasks = options.includeSubtasks ? captureSubtaskContext(this.vault, bundleId) : undefined;
     const copy = new TTVault(this.vault.ID); copy.IsLoaded = true;
     const issues: ContextIssue[] = [];
     const issue = (code: ContextIssueCode, thinkId: string) => {
@@ -171,7 +173,7 @@ export class ContextService {
       startedAt, capturedAt: new Date().toISOString(), scope: 'bundle-only', consistency: 'captured-client-state',
       quality: issues.length ? 'partial' : 'complete', bundle: bundleDefinitions[0], bundleDefinitions,
       resolvedThinkIds: [...new Set([...members.map(t => t.ID), ...issues.filter(i => i.code === 'missing_think').map(i => i.thinkId)])],
-      sources, state, manualState, issues,
+      sources, state, manualState, issues, ...(subtasks ? { subtasks } : {}),
     });
   }
 }
