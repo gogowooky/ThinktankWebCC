@@ -82,13 +82,14 @@ function Add-DeployRecord {
   # 改行コードは既存ファイルに合わせる（混在させるとdiffが全行差分になる）
   $text = [IO.File]::ReadAllText($readme)
   $nl = if ($text.Contains("`r`n")) { "`r`n" } else { "`n" }
-  $block = ($entry -join $nl) + $nl
+  # 目印の後ろには既に空行があるので、ここでは末尾に改行を足さない（空行が二重になる）
+  $block = ($entry -join $nl)
 
   if ($text.Contains($ReadmeAnchor)) {
     $text = $text.Replace($ReadmeAnchor, $ReadmeAnchor + $nl + $nl + $block)
   } else {
     # 目印が無ければ末尾へ。位置を推測して既存の記述を壊すより確実
-    $text = $text.TrimEnd() + $nl + $nl + $block
+    $text = $text.TrimEnd() + $nl + $nl + $block + $nl
     Write-Host 'README.md に目印が見つからないため末尾へ追記しました。' -ForegroundColor Yellow
   }
   [IO.File]::WriteAllText($readme, $text, (New-Object Text.UTF8Encoding $false))

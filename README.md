@@ -7,6 +7,12 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### deploy v1.5.30 → Cloud Run（IAP）
+- デプロイ日時: 2026-09-24-230132
+- デプロイPC: E15
+- デプロイ元コミット: 5f7adcc
+- サービス: ttweb / asia-northeast1
+
 ### v1.5.30 feat: 子課題の本人確認済み記録を親AIの見直しへ接続（subtaskContext）
 - 日付: 2026-09-24
 - コミット番号: 9efa6af
