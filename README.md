@@ -5,7 +5,7 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 ## 更新履歴
 
-<!-- git-update スキルがコミットのたびにこの直下へ新しい順で追記する -->
+<!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
 ### v1.5.30 feat: 子課題の本人確認済み記録を親AIの見直しへ接続（subtaskContext）
 - 日付: 2026-09-24
