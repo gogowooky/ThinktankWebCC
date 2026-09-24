@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v1.5.31 feat: 複数サブ課題候補と保留・再開候補をAI応答から扱う（lifecycleProposals）
+- 日付: 2026-09-25
+- コミット番号: e3757cc
+
+会話から課題の分割と保留・再開を進められるようにする導線を追加（`server/services/lifecycleProposals.ts`）。どちらも本人の発言を根拠として提示するだけで、本人確認を経るまで保存しない。
+`subtaskCandidates` / `pauseCandidates` の検証と応答スキーマを追加。サブ課題候補は5件・ID重複不可、保留候補は1件までとし、いずれもbundle-only以外では空を強制する。保留候補の `userQuote` は今回のquestionに含まれることを必須にし、本人が言っていない保留・再開を記録できないようにした。
+`SubtaskProposal` を候補ごとの確認に分割し、複数のサブ課題を1件ずつ確認して追加できるようにした（候補が無い場合は従来の `nextAction` 由来の1件として動作）。
+`ProgressProposal` で保留・再開の変更前後を表示し、保留時は再開条件を必須入力にする。前の保留に紐づく再確認日は引き継がず解除する。`subtaskContext` / `conversationRecord` / `TTVault` を候補の受け渡しに合わせて更新。変更: 24ファイル（+327 / -56行）。
+
 ### deploy v1.5.30 → Cloud Run（IAP）
 - デプロイ日時: 2026-09-24-230132
 - デプロイPC: E15
