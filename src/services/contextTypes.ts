@@ -1,5 +1,5 @@
 import type { ThinkSupportRecord } from '../../server/services/thinkSupportRecord';
-import type { SubtaskContext } from '../../server/services/subtaskContext';
+import type { SubtaskContext, ProgressContext } from '../../server/services/subtaskContext';
 /** Detached, immutable read models; no persistence or provider dependency. */
 export type ContextIssueCode = 'cycle' | 'missing_think' | 'implicit_all_blocked'
   | 'conflicting_conditions' | 'search_incomplete' | 'load_failed'
@@ -58,5 +58,6 @@ export interface ContextSnapshot {
   readonly state: Readonly<Record<ContextField, readonly ContextStatement[]>>;
   readonly manualState: Readonly<ThinkSupportRecord> | null;
   readonly subtasks?: SubtaskContext;
+  readonly bundleProgress?: ProgressContext;
   readonly issues: readonly ContextIssue[];
 }

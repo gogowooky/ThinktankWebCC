@@ -21,6 +21,7 @@ import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../
 import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
 import type { ConversationTurn } from '../services/ConversationService';
+import { validateSubtaskCandidates } from '../../server/services/lifecycleProposals';
 
 /** Optional diagnostics for isolated, read-only context resolution. Existing UI defaults are preserved. */
 export interface BundleResolutionOptions {
@@ -552,28 +553,31 @@ export class TTVault extends TTCollection {
     return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds, thinkSupport });
   }
 
-  /** Adopt one saved next-action proposal without rewriting the parent Bundle. */
-  public async CreateSubtaskFromConversation(turn: ConversationTurn, chatId: string, title: string): Promise<TTThink> {
+  /** Candidate identity keeps retries separate without rewriting the parent Bundle. */
+  public async CreateSubtaskFromConversation(turn: ConversationTurn, chatId: string, title: string, candidateId?: string): Promise<TTThink> {
+    if (candidateId !== undefined) validateSubtaskCandidates(turn.answer.subtaskCandidates, turn.context.scope);
     const parentId = turn.context.bundleId;
-    const proposal = turn.answer.proposals.find(p => p.field === 'nextAction');
+    const candidate = candidateId === undefined ? undefined : turn.answer.subtaskCandidates?.find(p => p.id === candidateId);
+    const proposal = candidateId === undefined ? turn.answer.proposals.find(p => p.field === 'nextAction')
+      : candidate ? { after: candidate.goal } : undefined;
     const normalized = title.replace(/[\r\n]+/g, ' ').trim();
-    const relation: TaskRelation = { schemaVersion: 1, parentId, chatId, turnId: turn.id, panel: 'Workout' };
+    const relation: TaskRelation = { schemaVersion: 1, parentId, chatId, turnId: turn.id, panel: 'Workout', ...(candidateId !== undefined ? { candidateId } : {}) };
     if (turn.context.scope !== 'bundle-only' || turn.context.vaultId !== this.ID
       || this.GetThink(parentId)?.ContentType !== 'bundle' || this.GetThink(chatId)?.ContentType !== 'chat'
       || !proposal || !readTaskRelation(relation) || !normalized || normalized.length > 200) {
       throw new Error('サブ課題の対象・提案・課題名を確認してください。');
     }
-    const key = JSON.stringify([parentId, chatId, turn.id]);
+    const key = JSON.stringify([parentId, chatId, turn.id, candidateId]);
     const pending = this._subtaskCreations.get(key);
     if (pending) return pending;
     const existing = this.GetBundles().find(b => {
       const r = readTaskRelation(b.Metadata.taskRelation);
-      return r?.parentId === parentId && r.chatId === chatId && r.turnId === turn.id;
+      return r?.parentId === parentId && r.chatId === chatId && r.turnId === turn.id && r.candidateId === candidateId;
     });
     if (existing) return existing;
     const now = new Date().toISOString();
     const thinkSupport: ThinkSupportRecord = { schemaVersion: 1, revision: 1, author: 'human', confirmedAt: now,
-      updatedAt: now, values: { ...emptyThinkValues(), goal: proposal.after }, sources: {} };
+      updatedAt: now, values: { ...emptyThinkValues(), goal: proposal.after, completionCriteria: candidate?.completionCriteria ?? '' }, sources: {} };
     readThinkSupport(thinkSupport);
     const creation = this._createBundle({ prefix: '', title: normalized, ids: [chatId], thinkSupport, taskRelation: relation });
     this._subtaskCreations.set(key, creation);

@@ -24,6 +24,27 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
 async function render(disabled = false, selected = turn) { await act(async () => root.render(<ProgressProposal vault={vault} turn={selected} disabled={disabled} />)); }
 async function click(label: string) { await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === label)!.click(); }); }
+const pauseCandidate = { paused: true, userQuote: '保留します', reason: '回答待ち', resumeCondition: '', resumeSummary: '会場の回答を待つ' };
+it('requires a resume condition before explicitly saving a pause and preserves milestone states', async () => {
+  const value = { ...turn, answer: { ...turn.answer, progressProposals: [], pauseCandidates: [pauseCandidate] } };
+  await render(false, value); await click('到達状態・保留・再開の候補を確認');
+  await click('本人の判断として確認して記録'); expect(api.save).not.toHaveBeenCalled();
+  await act(async () => {
+    const field = [...host.querySelectorAll('label')].find(l => l.textContent?.startsWith('再開条件'))!.querySelector('textarea')!;
+    Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(field, '回答が届いたら');
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await click('本人の判断として確認して記録');
+  expect(api.save).toHaveBeenCalledWith('bundle', 'v1', 'turn', expect.objectContaining({ paused: true, resumeCondition: '回答が届いたら', milestones: previous.milestones }));
+});
+it('clears the old pause condition and reminder only after confirmation of a resume', async () => {
+  const value = { ...turn, answer: { ...turn.answer, progressProposals: [], pauseCandidates: [{ ...pauseCandidate, paused: false, userQuote: '再開します' }] } };
+  api.read.mockResolvedValue({ ...state, log: { schemaVersion: 1, events: [{ id: 'old', input: { ...previous, reviewAt: '2026-10-01' } }] } });
+  await render(false, value); await click('到達状態・保留・再開の候補を確認');
+  expect(api.save).not.toHaveBeenCalled(); expect(host.textContent).toContain('保留 → 再開');
+  await click('本人の判断として確認して記録');
+  expect(api.save).toHaveBeenCalledWith('bundle', 'v1', 'turn', expect.objectContaining({ paused: false, resumeCondition: '', reviewAt: '', milestones: previous.milestones, remaining: previous.remaining }));
+});
 it('loads the current record, then requires confirmation and only changes the proposed milestone', async () => {
   await render(); expect(api.read).not.toHaveBeenCalled(); expect(api.save).not.toHaveBeenCalled();
   await click('到達状態の候補を確認'); expect(api.save).not.toHaveBeenCalled();

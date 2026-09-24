@@ -11,6 +11,7 @@ export function conversationContext(snapshot: ContextSnapshot): ConversationCont
     issues: snapshot.issues.map(i => `${i.message} (${i.thinkId})`),
     manualState: snapshot.manualState ? structuredClone(snapshot.manualState) : null,
     ...(snapshot.subtasks ? { subtasks: structuredClone(snapshot.subtasks) } : {}),
+    ...(snapshot.bundleProgress ? { bundleProgress: structuredClone(snapshot.bundleProgress) } : {}),
   };
   validateContext(context); return context;
 }

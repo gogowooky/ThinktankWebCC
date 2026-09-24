@@ -32,6 +32,14 @@ async function click(label: string) { await act(async () => { expect(button(labe
 async function input(value: string) { await act(async () => { const area = host.querySelector('textarea')!; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, value); area.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function prepare() { await input('質問'); }
 
+it.each(['サブ課題への分解を相談する質問を入力', '続きから相談する質問を入力'])('only drafts %s and protects existing input', async label => {
+  await show(); await click(label);
+  const draft = host.querySelector('textarea')!.value;
+  expect(draft.length).toBeGreaterThan(0); expect(api.generate).not.toHaveBeenCalled();
+  expect(button(label).disabled).toBe(true);
+  await show('', 'chat-only'); expect(button(label)).toBeUndefined();
+});
+
 it('prepares a parent review without sending and refreshes child records when explicitly sent', async () => {
   const before: ConversationContext = { ...context(), subtasks: { scope: 'loaded-direct-children', items: [{ bundleId: 'child', title: '会場予約', status: 'unrecorded' }] } };
   api.context.mockResolvedValue(before);

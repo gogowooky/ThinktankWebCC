@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { AIProvider } from './AIProvider.js';
 import { object, text, validateContext, validateTurn, validateProgressProposals, type ConversationContext, type ConversationTurn, type Citation, type Proposal } from './conversationRecord.js';
 import { THINK_FIELDS, type ThinkField } from './thinkSupportRecord.js';
+import { validatePauseCandidates, validateSubtaskCandidates } from './lifecycleProposals.js';
 
 export function verifyContextHashes(context: ConversationContext): void {
   for (const source of context.sources) {
@@ -14,7 +15,7 @@ export class ConversationService {
     if (this.provider.name === 'none') throw new Error('AI対話は停止中です。');
     validateContext(context); verifyContextHashes(context);
     signal.throwIfAborted();
-    const raw = context.sources.length || context.subtasks?.items.length || context.scope === 'chat-only' ? await this.provider.generate({ question, context,
+    const raw = context.sources.length || context.subtasks?.items.length || context.bundleProgress?.status === 'recorded' || context.manualState || context.scope === 'chat-only' ? await this.provider.generate({ question, context,
       history: history.slice(-6).map(t => ({ question: t.question, reply: t.answer.reply })),
     }, signal) : { reply: '参照できる資料がありません。Bundleに資料を追加して再取得してください。', insufficientEvidence: true, citations: [], proposals: [] };
     signal.throwIfAborted();
@@ -33,10 +34,15 @@ export class ConversationService {
       return { field, before: context.manualState?.values[field] ?? '', after: p.after, reason: p.reason };
     });
     validateProgressProposals(raw.progressProposals, question, context.scope);
+    validateSubtaskCandidates(raw.subtaskCandidates, context.scope);
+    validatePauseCandidates(raw.pauseCandidates, question, context.scope);
     const turn: ConversationTurn = { schemaVersion: 1, id, createdAt: new Date().toISOString(), question, context,
       answer: { reply: raw.reply, insufficientEvidence: raw.insufficientEvidence || context.quality === 'partial'
-        || !!context.subtasks?.items.some(item => item.status !== 'recorded'), citations, proposals,
-        ...(raw.progressProposals !== undefined ? { progressProposals: raw.progressProposals } : {}) },
+        || !!context.subtasks?.items.some(item => item.status !== 'recorded')
+        || (context.bundleProgress?.status === 'unreadable' || context.bundleProgress?.status === 'unsaved'), citations, proposals,
+        ...(raw.progressProposals !== undefined ? { progressProposals: raw.progressProposals } : {}),
+        ...(raw.subtaskCandidates !== undefined ? { subtaskCandidates: raw.subtaskCandidates } : {}),
+        ...(raw.pauseCandidates !== undefined ? { pauseCandidates: raw.pauseCandidates } : {}) },
       provider: this.provider.name, model: this.provider.model };
     validateTurn(turn);
     return turn;

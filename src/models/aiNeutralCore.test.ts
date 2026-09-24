@@ -9,6 +9,28 @@ import { parseBundle } from '../utils/thinkFormat';
 import { readThinkSupport } from '../../server/services/thinkSupportRecord';
 import type { ConversationTurn } from '../services/ConversationService';
 
+it('adopts separate candidates once each, preserves successes after partial failure, and reuses them after reload', async () => {
+  const vault = new TTVault('vault');
+  const chat = await vault.CreateBlankThink('chat', '相談');
+  const parent = await vault.CreateTaskBundle('誕生日会', [chat.ID]);
+  const parentBefore = JSON.stringify([parent.Content, parent.Metadata]);
+  const candidates = ['venue', 'guests'].map(id => ({ id, title: id, goal: `${id}の目的`, completionCriteria: `${id}の完了条件`, reason: '分解' }));
+  const turn = { id: 'decompose', context: { scope: 'bundle-only', vaultId: vault.ID, bundleId: parent.ID }, answer: { proposals: [], subtaskCandidates: candidates } } as unknown as ConversationTurn;
+  storage.save.mockClear();
+  const [first, duplicate] = await Promise.all([vault.CreateSubtaskFromConversation(turn, chat.ID, '会場', 'venue'), vault.CreateSubtaskFromConversation(turn, chat.ID, '会場', 'venue')]);
+  expect(duplicate.ID).toBe(first.ID); expect(storage.save).toHaveBeenCalledTimes(1);
+  storage.save.mockRejectedValueOnce(new Error('保存失敗'));
+  await expect(vault.CreateSubtaskFromConversation(turn, chat.ID, '参加者', 'guests')).rejects.toThrow('保存失敗');
+  expect(vault.GetBundles()).toHaveLength(2);
+  const second = await vault.CreateSubtaskFromConversation(turn, chat.ID, '参加者', 'guests');
+  expect(second.ID).not.toBe(first.ID);
+  expect(readThinkSupport(second.Metadata.thinkSupport)?.values.completionCriteria).toBe('guestsの完了条件');
+  const reloaded = new TTVault('vault'); [chat, parent, first, second].forEach(t => reloaded.AddThink(t));
+  expect((await reloaded.CreateSubtaskFromConversation(turn, chat.ID, '別名', 'venue')).ID).toBe(first.ID);
+  expect(JSON.stringify([parent.Content, parent.Metadata])).toBe(parentBefore);
+  await expect(vault.CreateSubtaskFromConversation(turn, chat.ID, '不正', 'missing')).rejects.toThrow('対象');
+});
+
 it('creates and edits Thinks, resolves a Bundle and opens Overview without AI', async () => {
   const vault = new TTVault();
   const think = await vault.CreateBlankThink('memo', '資料');

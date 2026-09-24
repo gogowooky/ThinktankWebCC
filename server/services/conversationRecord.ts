@@ -1,6 +1,7 @@
 import { THINK_FIELDS, readThinkSupport, type ThinkSupportRecord, type ThinkField } from './thinkSupportRecord.js';
 import { conversationPresentation } from './conversationPresentation.js';
-import { validateSubtaskContext, type SubtaskContext } from './subtaskContext.js';
+import { validateSubtaskContext, validateProgressContext, type SubtaskContext, type ProgressContext } from './subtaskContext.js';
+import { validatePauseCandidates, validateSubtaskCandidates, type PauseCandidate, type SubtaskCandidate } from './lifecycleProposals.js';
 
 export interface ConversationSource { thinkId: string; title: string; content: string; contentHash: string; contentType?: string }
 export interface ConversationContext {
@@ -8,12 +9,13 @@ export interface ConversationContext {
   scope: 'bundle-only' | 'chat-only'; quality: 'complete' | 'partial';
   sources: ConversationSource[]; issues: string[]; manualState: ThinkSupportRecord | null;
   subtasks?: SubtaskContext;
+  bundleProgress?: ProgressContext;
 }
 export interface Citation { thinkId: string; quote: string; contentHash: string; start: number; end: number }
 export interface Proposal { field: ThinkField; before: string; after: string; reason: string }
 export const PROGRESS_MILESTONES = ['consideration', 'decision', 'execution', 'verification'] as const;
 export interface ProgressProposal { milestone: typeof PROGRESS_MILESTONES[number]; reach: 'achieved' | 'reconsider' | 'unnecessary'; userQuote: string; reason: string }
-export interface ConversationAnswer { reply: string; insufficientEvidence: boolean; citations: Citation[]; proposals: Proposal[]; progressProposals?: ProgressProposal[] }
+export interface ConversationAnswer { reply: string; insufficientEvidence: boolean; citations: Citation[]; proposals: Proposal[]; progressProposals?: ProgressProposal[]; subtaskCandidates?: SubtaskCandidate[]; pauseCandidates?: PauseCandidate[] }
 export interface ConversationTurn {
   schemaVersion: 1; id: string; createdAt: string; question: string; context: ConversationContext;
   answer: ConversationAnswer; provider: string; model: string;
@@ -37,7 +39,9 @@ export function mergeConversationTranscript(content: string, turns: Conversation
       `### AIの変更提案：${proposal.field}\n${proposal.after}\n\n理由：${proposal.reason}`);
     return [`## ${turn.question.replace(/[\r\n]+/g, ' ').trim()}`, presentation.reply,
       turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...proposals,
-      ...(turn.answer.progressProposals ?? []).map(p => `### AIの到達状態候補（未確認）：${p.milestone}\n${p.reach}\n本人の発言：${p.userQuote}\n理由：${p.reason}`)]
+      ...(turn.answer.progressProposals ?? []).map(p => `### AIの到達状態候補（未確認）：${p.milestone}\n${p.reach}\n本人の発言：${p.userQuote}\n理由：${p.reason}`),
+      ...(turn.answer.subtaskCandidates ?? []).map(p => `### AIのサブ課題候補（未採用）：${p.title}\n目的：${p.goal}\n完了条件：${p.completionCriteria || '未整理'}\n理由：${p.reason}`),
+      ...(turn.answer.pauseCandidates ?? []).map(p => `### AIの${p.paused ? '保留' : '再開'}候補（未確認）\n本人の発言：${p.userQuote}\n理由：${p.reason}\n再開条件：${p.resumeCondition || '未整理'}\n再開メモ：${p.resumeSummary}`)]
       .filter(Boolean).join('\n\n');
   }).join('\n\n');
   if (!transcript) return [before, after].filter(Boolean).join('\n\n');
@@ -90,6 +94,10 @@ export function validateContext(value: unknown): asserts value is ConversationCo
     if (value.scope !== 'bundle-only') throw new Error('Chat単独対話には子課題を含められません。');
     validateSubtaskContext(value.subtasks, value.bundleId);
   }
+  if (value.bundleProgress !== undefined) {
+    if (value.scope !== 'bundle-only') throw new Error('Chat単独対話には到達状態を含められません。');
+    validateProgressContext(value.bundleProgress);
+  }
   let length = 0;
   const ids = new Set<string>();
   for (const s of value.sources) {
@@ -120,6 +128,8 @@ export function validateTurn(value: unknown): asserts value is ConversationTurn 
   }
   const fields = new Set<string>();
   validateProgressProposals(a.progressProposals, value.question, value.context.scope);
+  validateSubtaskCandidates(a.subtaskCandidates, value.context.scope);
+  validatePauseCandidates(a.pauseCandidates, value.question, value.context.scope);
   for (const p of a.proposals) {
     if (!object(p) || !THINK_FIELDS.includes(p.field as ThinkField) || fields.has(String(p.field))
       || !text(p.before, 10000, true) || !text(p.after, 10000) || !text(p.reason, 2000)

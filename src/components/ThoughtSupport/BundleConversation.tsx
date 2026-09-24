@@ -10,7 +10,7 @@ import { parseManagedChatTitle } from '../../utils/managedChat';
 import { ProposalReview } from './ProposalReview';
 import { ProgressProposal } from './ProgressProposal';
 import { SubtaskProposal } from './SubtaskProposal';
-import { SubtaskContextView } from './SubtaskContextView';
+import { SubtaskContextView, ProgressContextDetail } from './SubtaskContextView';
 import { SUBTASK_REVIEW_QUESTION } from '../../../server/services/subtaskContext';
 import '../ThinktankPanel/ColumnSortDialog.css';
 import './BundleConversation.css';
@@ -341,12 +341,26 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           {bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
             draft.question = SUBTASK_REVIEW_QUESTION; setQuestion(SUBTASK_REVIEW_QUESTION); setContext(undefined);
           }}>子課題を含めて次の行動を整理する質問を入力</button>}
+          {bundleId && <>
+            <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
+              const value = 'この課題の目的と完了条件に向けて、個別に進められるサブ課題候補を最大5件に分解してください。各候補の目的・完了条件・分解理由を示し、既存の子課題と重複させないでください。候補の作成や採用はまだ行わないでください。';
+              draft.question = value; setQuestion(value); setContext(undefined);
+            }}>サブ課題への分解を相談する質問を入力</button>
+            <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
+              const value = 'この課題の本人確認済みの到達状態・残課題・保留条件・再開メモを確認して、続きから取り組むための要約と次の一手を示してください。条件が満たされたか不明なら本人に確認してください。この質問だけでは保留の解除や完了を確定しないでください。';
+              draft.question = value; setQuestion(value); setContext(undefined);
+            }}>続きから相談する質問を入力</button>
+          </>}
         </details>
         {(status || context) && <details>
           <summary>参照情報</summary>
           {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
           {context && <>
             <p>参照資料：{context.scope === 'chat-only' ? 'なし' : `${context.sources.length}件`}</p>
+            {context.bundleProgress && <details><summary>この課題の到達状態・再開メモ</summary>
+              <p>読み込み済みの記録です。送信時に取り直しますが、別端末の最新変更は保証しません。</p>
+              <ProgressContextDetail item={context.bundleProgress} />
+            </details>}
             {context.subtasks && <SubtaskContextView value={context.subtasks} onOpen={onOpen} />}
             {context.issues.length > 0 && <ul>{context.issues.map((issue, index) => <li key={index}>{issue}</li>)}</ul>}
             {context.sources.length > 0 && <details><summary>参照資料を確認</summary>

@@ -73,6 +73,20 @@ it('keeps existing snapshots compatible and does not attach child state to other
   expect(() => validateContext(chat)).not.toThrow();
   expect(() => validateContext({ ...chat, subtasks: captureSubtaskContext(vault, 'parent') })).toThrow('Chat単独');
 });
+it('includes the current task pause and resume memo without conflating child status, and preserves old context consumers', async () => {
+  const vault = setup(); const parent = vault.GetThink('parent')!;
+  parent.Metadata.thinkProgress = { schemaVersion: 1, events: [structuredClone(event)] }; parent.markMetadataSaved();
+  const snapshot = await new ContextService(vault).getBundleContext('parent', { includeSubtasks: true });
+  const context = conversationContext(snapshot);
+  expect(context.bundleProgress?.event?.input.paused).toBe(true);
+  expect(context.bundleProgress?.event?.input.resumeCondition).toBe('返事が届いたら');
+  expect(context.subtasks?.items).toEqual([]);
+  expect(conversationContext(await new ContextService(vault).getBundleContext('parent')).bundleProgress).toBeUndefined();
+  parent.Content += '未保存';
+  const unsaved = await new ContextService(vault).getBundleContext('parent', { includeSubtasks: true });
+  expect(unsaved.bundleProgress).toEqual({ status: 'unsaved' });
+  expect(() => validateContext({ ...context, scope: 'chat-only', snapshotId: 'parent', subtasks: undefined })).toThrow('Chat単独');
+});
 it('marks unknown child records as insufficient evidence even when the provider does not', async () => {
   const vault = setup(); const unknown = child('unknown'); unknown.Metadata.thinkProgress = undefined; unknown.markMetadataSaved(); vault.AddThink(unknown);
   const snapshot = await new ContextService(vault).getBundleContext('parent', { includeSubtasks: true });

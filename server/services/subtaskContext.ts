@@ -1,9 +1,21 @@
 import { id, object, text } from './conversationRecord.js';
 import { validateProgress, type ProgressEvent } from './progressRecord.js';
 
+export interface ProgressContext { status: 'recorded' | 'unrecorded' | 'unreadable' | 'unsaved'; event?: ProgressEvent }
 export interface SubtaskContext {
   scope: 'loaded-direct-children';
-  items: Array<{ bundleId: string; title: string; status: 'recorded' | 'unrecorded' | 'unreadable' | 'unsaved'; event?: ProgressEvent }>;
+  items: Array<{ bundleId: string; title: string } & ProgressContext>;
+}
+export function validateProgressContext(value: unknown): asserts value is ProgressContext {
+  if (!object(value) || typeof value.status !== 'string' || !['recorded', 'unrecorded', 'unreadable', 'unsaved'].includes(value.status)) throw new Error('到達状態の参照形式が不正です。');
+  if (value.status !== 'recorded') {
+    if (value.event !== undefined) throw new Error('未確認の課題に到達状態を付与できません。');
+    return;
+  }
+  const event = value.event;
+  if (!object(event) || !id(event.id) || event.author !== 'human' || !Number.isSafeInteger(event.revision) || (event.revision as number) < 1
+    || !text(event.confirmedAt, 40) || !Number.isFinite(Date.parse(event.confirmedAt))) throw new Error('課題の本人確認情報が不正です。');
+  validateProgress(event.input);
 }
 export const MAX_SUBTASKS = 50;
 export const MAX_SUBTASK_CONTEXT_CHARS = 40000;
@@ -15,14 +27,7 @@ export function validateSubtaskContext(value: unknown, parentId: string): assert
     if (!object(item) || !id(item.bundleId) || item.bundleId === parentId || seen.has(item.bundleId) || !text(item.title, 2000, true)
       || typeof item.status !== 'string' || !['recorded', 'unrecorded', 'unreadable', 'unsaved'].includes(item.status)) throw new Error('子課題の状況の形式が不正です。');
     seen.add(item.bundleId);
-    if (item.status !== 'recorded') {
-      if (item.event !== undefined) throw new Error('未確認の子課題に到達状態を付与できません。');
-      continue;
-    }
-    const event = item.event;
-    if (!object(event) || !id(event.id) || event.author !== 'human' || !Number.isInteger(event.revision) || (event.revision as number) < 1
-      || !text(event.confirmedAt, 40) || !Number.isFinite(Date.parse(event.confirmedAt))) throw new Error('子課題の本人確認情報が不正です。');
-    validateProgress(event.input);
+    validateProgressContext(item);
   }
 }
 

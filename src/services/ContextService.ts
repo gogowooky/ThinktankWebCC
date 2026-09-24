@@ -5,7 +5,7 @@ import type { ThinkMeta } from './storage/IStorageBackend';
 import type { ContextIssue, ContextIssueCode, ContextSnapshot, ContextSource } from './contextTypes';
 import { appendLegacyContext, emptyContextState } from './legacyContextAdapter';
 import { readThinkSupport } from '../../server/services/thinkSupportRecord';
-import { captureSubtaskContext } from './subtaskContext';
+import { captureSubtaskContext, captureProgressContext } from './subtaskContext';
 
 export interface ContextReader {
   getBody(id: string): Promise<string | null>;
@@ -79,6 +79,7 @@ export class ContextService {
     const startedAt = new Date().toISOString();
     const initial = signature(this.vault);
     const subtasks = options.includeSubtasks ? captureSubtaskContext(this.vault, bundleId) : undefined;
+    const bundleProgress = options.includeSubtasks ? captureProgressContext(this.vault.GetThink(bundleId)!) : undefined;
     const copy = new TTVault(this.vault.ID); copy.IsLoaded = true;
     const issues: ContextIssue[] = [];
     const issue = (code: ContextIssueCode, thinkId: string) => {
@@ -173,7 +174,7 @@ export class ContextService {
       startedAt, capturedAt: new Date().toISOString(), scope: 'bundle-only', consistency: 'captured-client-state',
       quality: issues.length ? 'partial' : 'complete', bundle: bundleDefinitions[0], bundleDefinitions,
       resolvedThinkIds: [...new Set([...members.map(t => t.ID), ...issues.filter(i => i.code === 'missing_think').map(i => i.thinkId)])],
-      sources, state, manualState, issues, ...(subtasks ? { subtasks } : {}),
+      sources, state, manualState, issues, ...(subtasks ? { subtasks, bundleProgress } : {}),
     });
   }
 }
