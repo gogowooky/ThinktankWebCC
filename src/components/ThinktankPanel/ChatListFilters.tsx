@@ -2,11 +2,11 @@ import { CheckSquare, FolderKanban, CircleHelp, CalendarDays, Repeat, MessageCir
 import { parseManagedChatTitle } from '../../utils/managedChat';
 import './ThinktankSearchBar.css';
 
-export const CHAT_KINDS = ['TODO', 'PROJ', 'ASK', 'EVNT', 'LOOP', '未分類'] as const;
+export const CHAT_KINDS = ['ASK', 'TASK', 'TODO', 'PROJ', 'EVNT', 'LOOP', '未分類'] as const;
 export const CHAT_STATES = ['未着手', '進行中', '待機', '保留', '完了', '中止', '状態未設定'] as const;
-const kindIcons: LucideIcon[] = [CheckSquare, FolderKanban, CircleHelp, CalendarDays, Repeat, MessageCircle];
+const kindIcons: LucideIcon[] = [CircleHelp, CheckSquare, CheckSquare, FolderKanban, CalendarDays, Repeat, MessageCircle];
 const stateIcons: LucideIcon[] = [Circle, Play, Hourglass, Pause, CircleCheck, CircleX, CircleDashed];
-const kindLabels = ['TODO：すること', 'PROJ：プロジェクト', 'ASK：相談・質問', 'EVNT：イベント', 'LOOP：繰り返し', '未分類：種類タグなし'];
+const kindLabels = ['ASK：相談', 'TASK：課題', 'TODO：旧・すること', 'PROJ：旧・プロジェクト', 'EVNT：旧・イベント', 'LOOP：旧・繰り返し', '未分類：種類タグなし'];
 
 export function matchesChatFilters(name: string, kinds: Set<string>, states: Set<string>): boolean {
   const info = parseManagedChatTitle(name);

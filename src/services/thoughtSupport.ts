@@ -6,7 +6,7 @@ import { serializeChat, loadChatFromThink } from '../utils/thinkFormat';
 
 export const PANELS = ['Thinktank', 'Overview', 'Workout', 'ReThink'] as const;
 export type SupportPanel = typeof PANELS[number];
-export const KINDS = ['TODO', 'PROJ', 'ASK', 'EVNT', 'LOOP'] as const;
+export const KINDS = ['ASK', 'TASK', 'TODO', 'PROJ', 'EVNT', 'LOOP'] as const;
 export interface SupportRecord {
   version: number;
   bundleId: string;

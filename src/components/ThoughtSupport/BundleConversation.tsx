@@ -3,7 +3,7 @@ import { FileJson, X } from 'lucide-react';
 import type { TTVault } from '../../models/TTVault';
 import { ContextService } from '../../services/ContextService';
 import { ConversationClient, chatOnlyConversationContext, conversationContext, type ConversationContext, type ConversationTurn } from '../../services/ConversationService';
-import { mergeConversationTranscript, readConversationLog } from '../../../server/services/conversationRecord';
+import { readConversationLog } from '../../../server/services/conversationRecord';
 import { conversationPresentation } from '../../../server/services/conversationPresentation';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { parseManagedChatTitle } from '../../utils/managedChat';
@@ -59,7 +59,7 @@ function fitToText(el: HTMLTextAreaElement) {
   el.style.height = el.value ? `${el.scrollHeight}px` : '';
 }
 /** inputHeader は宿主が入力帯の先頭に差し込む操作。ログと一緒に流れると押せないので、ここへ預ける。 */
-interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; optionalSources?: boolean; inputHeader?: ReactNode }
+interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; inputHeader?: ReactNode; consultation?: boolean }
 function cachedChatHistory(vault: TTVault, chatId?: string): ConversationTurn[] {
   if (!chatId) return [];
   try {
@@ -71,10 +71,9 @@ export function BundleConversation(props: ConversationProps) {
   if (!vaultKeys.has(props.vault)) vaultKeys.set(props.vault, ++nextVaultKey);
   return <ConversationPanel key={JSON.stringify([vaultKeys.get(props.vault), props.bundleId, props.chatId, props.draftScope])} {...props} />;
 }
-function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'overview', optionalSources = false, inputHeader }: ConversationProps) {
+function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'overview', inputHeader, consultation = false }: ConversationProps) {
   const draft = getDraft(vault, selectedBundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`);
-  const [useBundle, setUseBundle] = useState(() => draft.pending ? draft.pending.context.scope === 'bundle-only' : !optionalSources);
-  const bundleId = useBundle ? selectedBundleId : undefined;
+  const bundleId = selectedBundleId;
   const cachedHistory = cachedChatHistory(vault, chatId);
   const [question, setQuestion] = useState(draft.question);
   const [pending, setPending] = useState(draft.pending);
@@ -90,6 +89,8 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   const inputRef = useRef<HTMLDivElement>(null);
   const optionsRef = useRef<HTMLDetailsElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  // 見出しを押した時のShiftの有無。toggle イベントは修飾キーを持たないので、click で拾って預ける。
+  const collapseChildren = useRef(false);
   const controller = useRef<AbortController>();
   const locked = useRef(false);
   const composing = useRef(false);
@@ -137,10 +138,12 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
       abort.signal.addEventListener('abort', onAbort, { once: true });
     });
     try {
+      const historyRequest = client.history(bundleId, abort.signal, chatId, vault.ID, vault);
       const [availability, turns, snapshot] = await Promise.race([Promise.allSettled([
-        client.status(abort.signal), client.history(bundleId, abort.signal, chatId, vault.ID),
-        bundleId ? new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal, maxSources: 300, includeSubtasks: true })
-          : Promise.resolve(chatOnlyConversationContext(vault.ID, chatId!)),
+        client.status(abort.signal), historyRequest,
+        // Saved Chat synchronization must finish before capturing a stable Bundle snapshot.
+        historyRequest.then(async () => bundleId ? await new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal, maxSources: 300, includeSubtasks: true })
+          : chatOnlyConversationContext(vault.ID, chatId!)),
       ]), interrupted]);
       if (!alive.current || abort.signal.aborted || version !== prepareVersion.current) return undefined;
       if (availability.status === 'fulfilled') setStatus(availability.value); else setStatus(undefined);
@@ -149,17 +152,6 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         const visible = turns.value.filter(t => t.context.vaultId === vault.ID);
         loadedTurns = visible;
         setHistory(visible); setLoaded(true);
-        const chat = chatId ? vault.GetThink(chatId) : undefined;
-        if (chat) {
-          const mergedContent = mergeConversationTranscript(chat.Content, visible);
-          const currentIds = readConversationLog(chat.Metadata?.thinkConversations).turns.map(turn => turn.id);
-          const nextIds = visible.map(turn => turn.id);
-          if (mergedContent !== chat.Content || JSON.stringify(currentIds) !== JSON.stringify(nextIds)) {
-            chat.setContentSilent(mergedContent);
-            chat.Metadata = { ...chat.Metadata, thinkConversations: { schemaVersion: 1, turns: visible } };
-            vault.NotifyUpdated(false);
-          }
-        }
       }
       const failures = [availability, turns, snapshot].flatMap(result => result.status === 'rejected' ? [(result.reason as Error).message] : []);
       let nextContext: ConversationContext | undefined;
@@ -188,7 +180,8 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   }
   useEffect(() => { void prepare(); }, [bundleId, chatId]); // eslint-disable-line react-hooks/exhaustive-deps
   async function persist(turn: ConversationTurn) {
-    await client.save(turn, chatId, bundleId);
+    // A pending answer retains its original scope even if the reference policy changes.
+    await client.save(turn, chatId, turn.context.scope === 'chat-only' ? undefined : turn.context.bundleId);
     // Update only the dialog state: BQ's full-record version remains conservative in the editor.
     if (draft.pending?.id !== turn.id) return;
     draft.pending = undefined; draft.question = '';
@@ -250,11 +243,22 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
    */
   function revealOptions(event: React.SyntheticEvent<HTMLDetailsElement>) {
     // 中の区分を開閉しただけのときに、区分を開き直したりスクロールし直したりしない
-    if (event.target !== event.currentTarget || !event.currentTarget.open) return;
-    const band = inputRef.current, panel = optionsRef.current;
-    if (!band || !panel) return;
-    // 開けたときは3区分も開く。ひとつずつ開かせると、何がどこにあるか覚える負担が増える。
-    panel.querySelectorAll<HTMLDetailsElement>(':scope > details').forEach(group => { group.open = true; });
+    if (event.target !== event.currentTarget) return;
+    const panel = optionsRef.current;
+    if (!panel) return;
+    // 見出しを押した時のShiftは、開く・閉じるのどちらでも読み捨てる。持ち越すと
+    // 次の通常の開閉まで畳んでしまう。
+    const collapse = collapseChildren.current;
+    collapseChildren.current = false;
+    const groups = panel.querySelectorAll<HTMLDetailsElement>(':scope > details');
+    // 通常は開けたときに3区分も開く。ひとつずつ開かせると、何がどこにあるか覚える負担が増える。
+    // Shift付きは畳む。どこに何があるかは分かっていて、目的の区分だけを開きたいとき用。
+    // 閉じるときにも畳むので、次に開き直しても畳まれたまま出る。
+    if (collapse) groups.forEach(group => { group.open = false; });
+    else if (event.currentTarget.open) groups.forEach(group => { group.open = true; });
+
+    const band = inputRef.current;
+    if (!band || !event.currentTarget.open) return;
     // getBoundingClientRect が同期でレイアウトを確定させるので、開いた直後の寸法で測れる。
     // requestAnimationFrame は描画されていないウィンドウでは呼ばれず、送りそこねる。
     const bandRect = band.getBoundingClientRect(), panelRect = panel.getBoundingClientRect();
@@ -323,17 +327,20 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
       </div>
       </div>
       {/* 会話のたびには触らない設定・操作はここへ畳む。開いている間だけ入力帯が伸びる。 */}
-      <details className="bundle-conversation-options" ref={optionsRef} onToggle={revealOptions}><summary>条件・機能・参照情報</summary>
-        {optionalSources && chatId && selectedBundleId && <details>
-          <summary>条件</summary>
-          <label className="bundle-conversation-sources"><input type="checkbox" checked={useBundle}
-            disabled={(!!busy && busy !== PREPARING) || !!pending} onChange={e => {
-              cancelPreparation(); setContext(undefined); setLoaded(false); setUseBundle(e.target.checked);
-            }} />{' '}Bundle内の資料を使う</label>
-        </details>}
-        <details>
-          <summary>機能</summary>
+      <details className="bundle-conversation-options" ref={optionsRef} onToggle={revealOptions}>
+        <summary onClick={e => { collapseChildren.current = e.shiftKey; }}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') collapseChildren.current = e.shiftKey; }}>条件・機能・参照情報</summary>
+
+        {(inputHeader || (!consultation && bundleId)) && <details>
+          <summary>{consultation ? '相談のアクション' : '課題を作成する'}</summary>
           {inputHeader}
+          {!consultation && bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
+              const value = 'この課題の目的と完了条件に向けて、個別に進められるサブ課題候補を最大5件に分解してください。各候補の目的・完了条件・分解理由を示し、既存の子課題と重複させないでください。候補の作成や採用はまだ行わないでください。';
+              draft.question = value; setQuestion(value); setContext(undefined);
+            }}>サブ課題への分解を相談する質問を入力</button>}
+        </details>}
+        {!consultation && <details>
+          <summary>進行を見直す</summary>
           <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
             const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
             draft.question = reviewQuestion; setQuestion(reviewQuestion);
@@ -341,21 +348,16 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           {bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
             draft.question = SUBTASK_REVIEW_QUESTION; setQuestion(SUBTASK_REVIEW_QUESTION); setContext(undefined);
           }}>子課題を含めて次の行動を整理する質問を入力</button>}
-          {bundleId && <>
-            <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
-              const value = 'この課題の目的と完了条件に向けて、個別に進められるサブ課題候補を最大5件に分解してください。各候補の目的・完了条件・分解理由を示し、既存の子課題と重複させないでください。候補の作成や採用はまだ行わないでください。';
-              draft.question = value; setQuestion(value); setContext(undefined);
-            }}>サブ課題への分解を相談する質問を入力</button>
-            <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
+          {bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
               const value = 'この課題の本人確認済みの到達状態・残課題・保留条件・再開メモを確認して、続きから取り組むための要約と次の一手を示してください。条件が満たされたか不明なら本人に確認してください。この質問だけでは保留の解除や完了を確定しないでください。';
               draft.question = value; setQuestion(value); setContext(undefined);
-            }}>続きから相談する質問を入力</button>
-          </>}
-        </details>
+            }}>続きから相談する質問を入力</button>}
+        </details>}
         {(status || context) && <details>
           <summary>参照情報</summary>
           {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
           {context && <>
+            <p>相談の対象：{context.scope === 'chat-only' ? '課題化前の相談' : vault.GetThink(context.bundleId)?.Name || context.bundleId}</p>
             <p>参照資料：{context.scope === 'chat-only' ? 'なし' : `${context.sources.length}件`}</p>
             {context.bundleProgress && <details><summary>この課題の到達状態・再開メモ</summary>
               <p>読み込み済みの記録です。送信時に取り直しますが、別端末の最新変更は保証しません。</p>

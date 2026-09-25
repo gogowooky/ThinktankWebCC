@@ -3,9 +3,21 @@ import { StorageManager } from './storage/StorageManager';
 import type { TaskSeed } from './taskSeed';
 import { parseManagedChatTitle } from '../utils/managedChat';
 import { emptyThinkValues, readThinkSupport } from '../../server/services/thinkSupportRecord';
+import { bindChatToTask, resolveChatTask } from './chatTask';
+
+const pending = new WeakMap<TTVault, Map<string, Promise<import('../models/TTThink').TTThink>>>();
 
 /** Rename the source consultation before creating its task, preserving routing and history. */
 export async function startTaskFromChat(vault: TTVault, chatId: string, title: string, seed?: TaskSeed) {
+  let requests = pending.get(vault);
+  if (!requests) { requests = new Map(); pending.set(vault, requests); }
+  const running = requests.get(chatId);
+  if (running) return running;
+  const work = create(vault, chatId, title, seed);
+  requests.set(chatId, work);
+  try { return await work; } finally { requests.delete(chatId); }
+}
+async function create(vault: TTVault, chatId: string, title: string, seed?: TaskSeed) {
   const normalizedTitle = title.replace(/[\r\n]+/g, ' ').trim();
   if (!normalizedTitle) throw new Error('課題名を入力してください。');
   if (normalizedTitle.length > 200) throw new Error('課題名は200文字以内で入力してください。');
@@ -15,6 +27,12 @@ export async function startTaskFromChat(vault: TTVault, chatId: string, title: s
   const chat = vault.GetThink(chatId);
   if (chat?.ContentType !== 'chat') throw new Error('起点のChatが見つかりません。');
   if (chat.IsDirty || chat.IsMetadataDirty) throw new Error('Chatの編集を保存してから課題を作成してください。');
+  const association = resolveChatTask(vault, chat);
+  if (association.error) throw new Error(association.error);
+  if (association.bundle) {
+    await bindChatToTask(vault, chat, association.bundle);
+    return association.bundle;
+  }
   const before = chat.Content;
   const version = chat.UpdatedAt;
   const metadata = structuredClone(chat.Metadata);
@@ -43,10 +61,13 @@ export async function startTaskFromChat(vault: TTVault, chatId: string, title: s
     chat.markSaved();
     vault.NotifyUpdated(false);
   }
+  let bundle;
   try {
-    return await vault.CreateTaskBundle(normalizedTitle, [chatId], seed);
+    bundle = await vault.CreateTaskBundle(normalizedTitle, [chatId], seed, chatId);
   } catch (error) {
-    // The two files are separate writes. Retrying keeps the saved title and creates only the Bundle.
-    throw new Error(`Bundleを作成できませんでした。Chatの題名は「${normalizedTitle}」です。再試行してください。${error instanceof Error ? error.message : ''}`);
+    throw Object.assign(new Error(`Bundleを作成できませんでした。Chatの題名は「${normalizedTitle}」です。再試行してください。${error instanceof Error ? error.message : ''}`), { cause: error });
   }
+  try { await bindChatToTask(vault, chat, bundle); }
+  catch (error) { throw Object.assign(new Error(`課題は作成済みですがChatの関連付けを保存できませんでした。再試行で同じ課題を再利用します。${error instanceof Error ? error.message : ''}`), { cause: error }); }
+  return bundle;
 }

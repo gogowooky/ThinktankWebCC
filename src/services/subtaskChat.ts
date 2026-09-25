@@ -35,7 +35,7 @@ async function prepare(vault: TTVault, bundleId: string): Promise<TTThink> {
   }
   const matches = vault.GetThinks().filter(t => t.ContentType === 'chat' && readSubtaskChat(t.Metadata.subtaskChat)?.bundleId === bundleId);
   if (matches.length > 1) throw new Error('専用Chatが複数あります。関連付けを確認してください。');
-  const chat = matches[0] ?? await vault.CreateBlankThink('chat', `ASK:Workout｜${bundle.Name}`, undefined,
+  const chat = matches[0] ?? await vault.CreateBlankThink('chat', `TASK:Workout｜${bundle.Name}`, undefined,
     { subtaskChat: { schemaVersion: 1, bundleId } });
 
   // Preserve every existing line, including comments and unknown extensions.

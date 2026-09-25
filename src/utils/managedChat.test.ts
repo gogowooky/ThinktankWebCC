@@ -9,7 +9,7 @@ describe('managed chat titles', () => {
     expect(parseManagedChatTitle('普通のChat')).toBeNull();
     expect(parseManagedChatTitle('TODO:Unknown｜[完了]予約')).toBeNull();
   });
-  it.each(['TODO','PROJ','ASK','EVNT','LOOP'])('accepts %s without changing the recorded owner', kind => {
+  it.each(['TASK','TODO','PROJ','ASK','EVNT','LOOP'])('accepts %s without changing the recorded owner', kind => {
     expect(parseManagedChatTitle(`${kind}:ReThink｜[完了]確認`)?.panel).toBe('ReThink');
   });
 });

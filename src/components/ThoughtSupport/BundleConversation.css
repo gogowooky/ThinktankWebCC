@@ -4,12 +4,13 @@
 .bundle-conversation-log { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 /* 参照資料の展開などで入力帯が伸びても会話ログを潰さないよう、内側でスクロールさせる。
    overflow-y を指定すると overflow-x も visible ではなくなり、この枠が切り取り線になる。
-   入力欄のフォーカス枠は箱の外側（offset 1px ＋ 太さ 2px）に出るので、左端に余白が無いと
-   そこだけ欠ける。枠のぶんだけ内側に余白を足し、同じ量を負のマージンで戻して位置は変えない
-   （右端でスクロールバーに使っているのと同じ手）。 */
+   フォーカス枠は対象の外側に出るので、左端に余白が無いとそこだけ欠ける。帯の中で一番
+   外へ出るのは折りたたみの見出し（offset 3px ＋ 太さ 2px。入力欄は offset 1px）なので、
+   その5pxを確保し、同じ量を負のマージンで戻して表示位置は変えない
+   （右端でスクロールバーに使っているのと同じ手。右はバーの溝が余白を兼ねるため不要）。 */
 .bundle-conversation-input {
   flex: 0 0 auto; max-height: 55%; overflow-y: auto;
-  margin-left: -3px; padding-left: 3px;
+  margin-left: -5px; padding-left: 5px;
 }
 /* スクロールバーは宿主の右余白へ食い込ませる。負のマージンで枠を余白ぶん右へ広げ、
    その内側に padding を戻すぶんを差し引く。scrollbar-gutter:stable でバーの居場所を
@@ -95,9 +96,7 @@
 /* 区分の下は全角1文字ぶん下げる。どの区分の項目かを行頭だけで追えるようにする。 */
 .bundle-conversation-options > details > :not(summary) { margin-left: 1em; }
 .bundle-conversation-options > details > label { margin-top: 0; margin-bottom: 4px; }
-/* チェックボックスは既定だと文字のベースラインに乗り、行の中心より上に浮いて見える。
-   position で下げるのは、行の高さを変えずに見た目だけ揃えるため。 */
-.bundle-conversation-sources input[type="checkbox"] { position: relative; top: 2px; }
+
 
 /* ── 会話の記録ダイアログ ──────────────────────────────────
    枠は「フィルター選択」（ColumnSortDialog.css）を流用し、位置だけ会話面に合わせる。

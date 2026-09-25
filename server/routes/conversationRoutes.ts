@@ -30,8 +30,9 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     const chat = chatResult.data, bundle = bundleResult?.data;
     if (!chat || chat.category !== 'chat' || chat.is_deleted) throw new RouteError(404, '保存先のChatファイルがありません。');
     if (bundleId && (!bundle || bundle.category !== 'bundle' || bundle.is_deleted)) throw new RouteError(404, '相談対象のBundleがありません。');
-    const metadata: unknown = typeof chat.metadata === 'string' ? JSON.parse(chat.metadata) : chat.metadata ?? {};
-    if (!object(metadata)) throw new RouteError(422, 'Chatファイルの保存形式が不正です。');
+    const parsedMetadata: unknown = typeof chat.metadata === 'string' ? JSON.parse(chat.metadata) : chat.metadata ?? {};
+    if (!object(parsedMetadata)) throw new RouteError(422, 'Chatファイルの保存形式が不正です。');
+    let metadata = parsedMetadata;
     const stored = readConversationLog(metadata.thinkConversations);
     let version = typeof chat.updated_at === 'object' && chat.updated_at !== null && 'value' in chat.updated_at ? String(chat.updated_at.value) : String(chat.updated_at);
     if (!Number.isFinite(Date.parse(version))) throw new RouteError(422, '保存版を確認できません。');
@@ -46,9 +47,10 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     if (syncText && (synchronized !== content || missing.length > 0)) {
       const updatedAt = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
       const result = await store.saveChatConversation(chatId, version, { ...metadata, thinkConversations: log }, synchronized, updatedAt);
-      if (result.success && result.data) { content = synchronized; version = updatedAt; }
+      if (result.success && result.data) { content = synchronized; version = updatedAt; metadata = { ...metadata, thinkConversations: log }; }
     }
-    return { metadata, log, version, content };
+    return { metadata, log, version, content, savedChat: { id: chatId, title: chat.title ?? '', content, metadata,
+      updatedAt: version, keywords: chat.keywords ?? '', relatedIds: chat.related_ids ?? '' } };
   }
   router.get('/status', (_req, res) => { res.json({ enabled: provider.name !== 'none', provider: provider.name, model: provider.model }); });
   router.get('/bundles/:id', async (req, res) => {
@@ -63,7 +65,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       const chatId = String(req.params.chatId), bundleId = String(req.params.bundleId);
       if (!id(chatId) || !id(bundleId)) throw new RouteError(400, 'ChatまたはBundle IDが不正です。');
       const vaultId = typeof req.query.vaultId === 'string' && id(req.query.vaultId) ? req.query.vaultId : undefined;
-      const { log } = await readChat(chatId, bundleId, vaultId, true); res.json(log);
+      const { log, savedChat } = await readChat(chatId, bundleId, vaultId, true); res.json({ ...log, savedChat });
     } catch (e) { res.status(e instanceof RouteError ? e.status : 422).json({ error: e instanceof Error ? e.message : '履歴を取得できません。' }); }
   });
   router.get('/chats/:chatId', async (req, res) => {
@@ -71,7 +73,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       const chatId = String(req.params.chatId);
       if (!id(chatId)) throw new RouteError(400, 'Chat IDが不正です。');
       const vaultId = typeof req.query.vaultId === 'string' && id(req.query.vaultId) ? req.query.vaultId : undefined;
-      const { log } = await readChat(chatId, undefined, vaultId, true); res.json(log);
+      const { log, savedChat } = await readChat(chatId, undefined, vaultId, true); res.json({ ...log, savedChat });
     } catch (e) { res.status(e instanceof RouteError ? e.status : 422).json({ error: e instanceof Error ? e.message : '履歴を取得できません。' }); }
   });
   router.post('/turns', async (req, res) => {

@@ -80,6 +80,19 @@ it('retries saving idempotently without regenerating an answer', async () => {
   expect((await generate()).status).toBe(200); expect(p.generate).not.toHaveBeenCalled();
   expect((await save({ ...turn, question: '別の質問' })).status).toBe(409);
 });
+it.each([true, false])('returns only the persisted Chat snapshot when text synchronization succeeds=%s', async saved => {
+  const chat = { ...record, file_id: 'chat', category: 'chat', title: '# 相談', content: '手書き本文',
+    metadata: { keep: 1, thinkConversations: { schemaVersion: 1, turns: [turn] } } };
+  store.getRecord.mockResolvedValue({ success: true, data: chat });
+  store.saveChatConversation.mockResolvedValue({ success: true, data: saved });
+  const response = await fetch(`${url}/active/chats/chat?vaultId=vault`);
+  expect(response.status).toBe(200);
+  const value = await response.json();
+  const write = store.saveChatConversation.mock.calls[0];
+  expect(value.savedChat).toEqual({ id: 'chat', title: '# 相談', keywords: '', relatedIds: '',
+    content: saved ? write[3] : chat.content, metadata: saved ? write[2] : chat.metadata,
+    updatedAt: saved ? write[4] : record.updated_at });
+});
 it('does not expand sent history after another editor adds a turn', async () => {
   store.getRecord.mockResolvedValue({ success: true, data: { ...record, metadata: JSON.stringify({ thinkConversations: { schemaVersion: 1, turns: [{ ...turn, id: 'other' }] } }) } });
   expect((await generate()).status).toBe(409); expect(p.generate).not.toHaveBeenCalled();

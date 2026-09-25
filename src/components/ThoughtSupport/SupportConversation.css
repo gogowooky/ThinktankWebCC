@@ -32,9 +32,10 @@
 .support-task-start > button { color: var(--field-muted, #5a6690); text-decoration: underline; text-underline-offset: 3px; padding: 3px 0; background: transparent; border: 0; cursor: pointer; font: inherit; text-align: left; }
 .support-task-start > button:hover { color: inherit; }
 .support-task-start > button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
-.support-task-start label { display: flex; align-items: center; gap: 8px; }
-.support-task-start input { flex: 1; min-width: 0; padding: 6px 8px; }
-.support-task-start__actions { display: flex; gap: 8px; margin-top: 8px; }
+.support-conversation .support-task-start label { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.support-task-start label > span { flex: 0 0 auto; }
+.support-task-start input { flex: 1 1 0; width: 0; min-width: 0; max-width: 100%; box-sizing: border-box; padding: 3px 8px; font-size: 0.9em; }
+.support-task-start__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .support-task-start__summary { white-space: pre-wrap; margin: 12px 0; }
 
 /* 入力欄の幅はパネル幅（.support-conversation の padding を除いた分）に固定し、縦だけ可変にする。

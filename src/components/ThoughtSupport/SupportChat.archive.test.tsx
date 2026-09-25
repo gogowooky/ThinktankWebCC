@@ -20,7 +20,7 @@ it.each(['Thinktank', 'Overview', 'Workout', 'ReThink'] as const)('%s omits the 
   chat.Metadata.supportPendingEffects = { operationId: 'preserve-pending' }; const before = chat.Content; const metadataBefore = JSON.stringify(chat.Metadata);
   const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'bundle'; bundle.Name = 'Bundle'; bundle.Content = '# Bundle';
   const load = vi.spyOn(chat, 'LoadContent'); const save = vi.spyOn(chat, 'SaveContent');
-  const vault = { GetThink: (id: string) => id === chat.ID ? chat : id === bundle.ID ? bundle : undefined, GetThinks: () => [chat, bundle], AddOnUpdate: vi.fn(), RemoveOnUpdate: vi.fn() } as unknown as TTVault;
+  const vault = { GetThink: (id: string) => id === chat.ID ? chat : id === bundle.ID ? bundle : undefined, GetThinks: () => [chat, bundle], GetBundles: () => [bundle], AddOnUpdate: vi.fn(), RemoveOnUpdate: vi.fn() } as unknown as TTVault;
   const host = document.createElement('div'); const root = createRoot(host); const ref = createRef<SupportChatRef>();
   try {
     await act(async () => root.render(<SupportChat ref={ref} vault={vault} selectedId={chat.ID} bundleId={bundle.ID} panelName={panelName}

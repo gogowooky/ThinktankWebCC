@@ -453,7 +453,8 @@ export class TTVault extends TTCollection {
     dates?: { createdDate?: string, createdRange?: string, updatedDate?: string, updatedRange?: string },
     ids?: string[],
     thinkSupport?: ThinkSupportRecord,
-    taskRelation?: TaskRelation
+    taskRelation?: TaskRelation,
+    originChatId?: string
   }): Promise<TTThink> {
     const { prefix, title, searchQuery, filterKeyword, dates, ids = [] } = options;
     const existingIds = new Set(this._children.keys());
@@ -478,9 +479,11 @@ export class TTVault extends TTCollection {
     think.VaultID     = this.ID;
     think.ContentType = 'bundle';
     think.IsMetaOnly  = false;
+    think.RelatedIDs = ids.join(',');
     think.setContentSilent(fullContent);
     const metadata = {
       ...(options.thinkSupport ? { thinkSupport: options.thinkSupport } : {}),
+      ...(options.originChatId ? { taskOrigin: { schemaVersion: 1, chatId: options.originChatId } } : {}),
       ...(options.taskRelation ? { taskRelation: options.taskRelation } : {}),
     };
     if (Object.keys(metadata).length) think.Metadata = metadata;
@@ -539,7 +542,7 @@ export class TTVault extends TTCollection {
   }
 
   /** 本人が採用した課題名と関連資料から、1課題を表すBundleを作成する。 */
-  public async CreateTaskBundle(title: string, ids: string[], seed?: TaskSeed): Promise<TTThink> {
+  public async CreateTaskBundle(title: string, ids: string[], seed?: TaskSeed, originChatId?: string): Promise<TTThink> {
     const normalizedTitle = title.replace(/[\r\n]+/g, ' ').trim();
     if (!normalizedTitle) throw new Error('課題名を入力してください。');
     if (normalizedTitle.length > 200) throw new Error('課題名は200文字以内で入力してください。');
@@ -550,7 +553,7 @@ export class TTVault extends TTCollection {
       values: { ...emptyThinkValues(), goal: seed.goal, completionCriteria: seed.completionCriteria }, sources: {},
     } : undefined;
     if (thinkSupport) readThinkSupport(thinkSupport);
-    return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds, thinkSupport });
+    return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds, thinkSupport, originChatId });
   }
 
   /** Candidate identity keeps retries separate without rewriting the parent Bundle. */

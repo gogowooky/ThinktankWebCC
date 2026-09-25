@@ -25,6 +25,22 @@ beforeEach(() => {
   api.context.mockImplementation(async id => context(id)); api.generate.mockResolvedValue(turn()); api.save.mockResolvedValue(undefined);
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
+it('shows consultation actions without asking users to select a review or decomposition prompt', async () => {
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" consultation
+    inputHeader={<button>相談を課題として開始</button>} onOpen={vi.fn()} />));
+  expect(host.textContent).toContain('相談のアクション');
+  expect(host.textContent).toContain('相談を課題として開始');
+  expect(host.textContent).not.toContain('質問を入力');
+  expect(api.context).toHaveBeenCalledWith('a', expect.anything());
+});
+it('captures Bundle sources after saved Chat synchronization completes', async () => {
+  let resolve!: (turns: ConversationTurn[]) => void;
+  api.history.mockImplementationOnce(() => new Promise<ConversationTurn[]>(r => { resolve = r; }));
+  await show('a', 'chat-a');
+  expect(api.context).not.toHaveBeenCalled();
+  await act(async () => resolve([]));
+  expect(api.context).toHaveBeenCalledWith('a', expect.anything());
+});
 async function show(id: string | undefined = 'a', chatId?: string) { await act(async () => root.render(<BundleConversation vault={vault} bundleId={id} chatId={chatId} onOpen={vi.fn()} />)); }
 async function showStrict(id: string | undefined = 'a', chatId?: string) { await act(async () => root.render(<StrictMode><BundleConversation vault={vault} bundleId={id} chatId={chatId} onOpen={vi.fn()} /></StrictMode>)); }
 function button(label: string) { return [...host.querySelectorAll('button')].find(b => b.textContent === label)!; }
@@ -123,25 +139,18 @@ it('finishes preparation after the development StrictMode remount', async () => 
 it('allows a Chat-only conversation without loading Bundle context', async () => {
   await show('', 'chat-a');
   expect(api.context).not.toHaveBeenCalled();
-  expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault');
+  expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault', vault);
   expect(host.textContent).toContain('参照資料：なし');
 });
 
-it('starts Thinktank without Overview sources and keeps the draft when source loading is abandoned', async () => {
-  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" optionalSources onOpen={vi.fn()} />));
-  expect(api.context).not.toHaveBeenCalled();
-  expect(api.history).toHaveBeenLastCalledWith(undefined, expect.any(AbortSignal), 'chat-a', 'vault');
-  await input('こんにちわ'); expect(button('送信').disabled).toBe(false);
-  api.context.mockImplementationOnce(() => new Promise(() => {}));
-  await act(async () => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
+it('always loads the selected Bundle sources and sends them without an opt-in', async () => {
+  await show('a', 'chat-a');
   expect(api.context).toHaveBeenCalledWith('a', expect.objectContaining({ maxSources: 300 }));
-  expect(button('送信').disabled).toBe(true);
-  await act(async () => host.querySelector<HTMLInputElement>('input[type="checkbox"]')!.click());
-  expect(host.querySelector('textarea')!.value).toBe('こんにちわ');
-  expect(button('送信').disabled).toBe(false);
-  await click('送信');
-  expect(api.generate.mock.calls[0][0]).toMatchObject({ scope: 'chat-only', sources: [] });
-  expect(api.save).toHaveBeenCalledWith(expect.anything(), 'chat-a', undefined);
+  expect(api.history).toHaveBeenLastCalledWith('a', expect.any(AbortSignal), 'chat-a', 'vault', vault);
+  expect(host.textContent).not.toContain('Bundle内の資料を使う');
+  await input('資料について相談する'); await click('送信');
+  expect(api.generate.mock.calls[0][0]).toMatchObject({ scope: 'bundle-only', bundleId: 'a' });
+  expect(api.save).toHaveBeenCalledWith(expect.anything(), 'chat-a', 'a');
 });
 it('shows cached Chat metadata while the server refresh is still pending', async () => {
   const chat = new TTThink(); chat.ID = 'chat-a'; chat.ContentType = 'chat'; chat.Content = '# Chat';
@@ -191,22 +200,40 @@ it('opens each turn record in a dialog from the icon under that turn, and never 
   expect(host.querySelector('.bundle-conversation-record')).toBeNull();
 });
 it('puts the settings and secondary actions behind the collapsed options block', async () => {
-  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" optionalSources
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a"
     inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
   const options = host.querySelector<HTMLDetailsElement>('.bundle-conversation-options')!;
   expect(options.querySelector('summary')!.textContent).toBe('条件・機能・参照情報');
   expect(button('課題として始める').closest('.bundle-conversation-options')).not.toBeNull();
-  const check = host.querySelector('input[type="checkbox"]')!;
-  expect(check.closest('.bundle-conversation-options')).not.toBeNull();
-  // チェックボックスと文言がくっつかないよう半角スペースを挟む
-  expect(check.closest('label')!.textContent!.trim()).toBe('Bundle内の資料を使う');
+  expect(options.textContent).not.toContain('Bundle内の資料を使う');
   const groups = [...options.querySelectorAll<HTMLDetailsElement>(':scope > details')];
-  expect(groups.map(d => d.querySelector('summary')!.textContent)).toEqual(['条件', '機能', '参照情報']);
-  expect(check.closest('details')!.querySelector('summary')!.textContent).toBe('条件');
+  expect(groups.map(d => d.querySelector('summary')!.textContent)).toEqual(['課題を作成する', '進行を見直す', '参照情報']);
   // 折りたたみを開けたら3区分もまとめて開く
   expect(groups.every(d => d.open)).toBe(false);
   await act(async () => { options.open = true; options.dispatchEvent(new Event('toggle')); });
   expect(groups.every(d => d.open)).toBe(true);
+});
+it('keeps the groups collapsed when the summary is opened with shift, without carrying it over', async () => {
+  vi.useFakeTimers();
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a"
+    inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
+  const options = host.querySelector<HTMLDetailsElement>('.bundle-conversation-options')!;
+  const summary = options.querySelector('summary')!;
+  const groups = [...options.querySelectorAll<HTMLDetailsElement>(':scope > details')];
+  // Native toggle is queued; dispatching another toggle would consume Shift twice.
+  const press = async (shiftKey: boolean, open: boolean) => act(async () => {
+    summary.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey }));
+    options.open = open; await vi.runAllTimersAsync();
+  });
+  await press(true, true);
+  expect(groups.some(d => d.open)).toBe(false);
+  // Shiftは読み捨てる。次に普通に開いたときは従来どおりまとめて開く
+  await press(false, false);
+  await press(false, true);
+  expect(groups.every(d => d.open)).toBe(true);
+  // 閉じるときのShiftでも畳む（次に開き直しても畳まれたまま出る）
+  await press(true, false);
+  expect(groups.some(d => d.open)).toBe(false);
 });
 it('carries the send and newline guidance inside the empty message field only', async () => {
   await show('a', 'chat-a');

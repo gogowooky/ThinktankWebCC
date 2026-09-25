@@ -22,7 +22,7 @@ it('creates one dedicated Chat, preserves Bundle text and metadata, and reuses i
   expect(storage.save.mock.calls[0][0]).toMatchObject({ contentType: 'chat', metadata: { subtaskChat: { schemaVersion: 1, bundleId: 'child' } } });
   expect(storage.save.mock.calls[1][0]).toMatchObject({ baseUpdatedAt: '2026-09-16T00:00:00Z', metadata: child.Metadata });
   expect(child.Content).toBe(`${before}* ${chat.ID}\n`);
-  expect(chat.Name).toBe('ASK:Workout｜会場予約'); expect(chat.IsMetadataDirty).toBe(false);
+  expect(chat.Name).toBe('TASK:Workout｜会場予約'); expect(chat.IsMetadataDirty).toBe(false);
   const reloaded = new TTVault('vault'); reloaded.AddThink(child); reloaded.AddThink(chat);
   expect((await ensureSubtaskChat(reloaded, 'child')).ID).toBe(chat.ID);
   expect(storage.save).toHaveBeenCalledTimes(2);

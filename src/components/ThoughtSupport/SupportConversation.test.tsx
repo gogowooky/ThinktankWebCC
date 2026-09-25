@@ -57,13 +57,12 @@ async function show(bundleId = 'a', selectedId = 'chat-a', onStartTask?: (chatId
 it('uses the Chat selected in the upper list and has no second selector or conversation-history panel', async () => {
   // Chat名は上のリストの選択行に出ているので、会話欄では繰り返さない。
   await show(); expect(host.textContent).not.toContain('TODO:Thinktank｜[進行中]Bundle a'); expect(host.querySelector('select')).toBeNull();
-  expect(host.textContent).not.toContain('これまでの会話'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('a');
+  expect(host.textContent).not.toContain('これまでの会話'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBeNull();
   expect(host.querySelector('textarea')?.getAttribute('data-chat')).toBe('chat-a');
   expect(calls.render.mock.calls.at(-1)?.[0].draftScope).toBe('aichat:Thinktank:panel');
-  expect(calls.render.mock.calls.at(-1)?.[0].optionalSources).toBe(true);
 });
 it('follows the upper Chat selection and allows Thinktank without an Overview Bundle', async () => {
-  await show('a'); await show('b', 'chat-b'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('b');
+  await show('a'); await show('b', 'chat-b'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBeNull();
   await show('', 'chat-a'); expect(host.querySelector('textarea')?.getAttribute('data-chat')).toBe('chat-a');
   await show('missing', 'missing'); expect(host.querySelector('textarea')).toBeNull(); expect(host.textContent).toContain('相談するChat');
   await show('', ''); expect(host.querySelector('textarea')).toBeNull();
@@ -92,4 +91,26 @@ it('hands the task-start control to the conversation input band instead of the s
   await show('', 'chat-a', vi.fn());
   expect(host.querySelector('.support-task-start')!.closest('.bundle-conversation-input')).not.toBeNull();
   expect(calls.render.mock.calls.at(-1)?.[0].inputHeader).toBeTruthy();
+});
+it('uses the Chat-owned Bundle independently of the Overview selection', async () => {
+  vault.GetThink('chat-a')!.Metadata.taskContext = { schemaVersion: 1, bundleId: 'a' };
+  await show('b', 'chat-a');
+  expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('a');
+  await show('', 'chat-a');
+  expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('a');
+  await show('a', 'chat-b');
+  expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBeNull();
+});
+it('blocks conversation when the associated task is missing', async () => {
+  vault.GetThink('chat-a')!.Metadata.taskContext = { schemaVersion: 1, bundleId: 'missing' };
+  await show('b', 'chat-a');
+  expect(host.querySelector('textarea')).toBeNull();
+  expect(host.textContent).toContain('対応する課題を読み込めません');
+});
+it('shows creation failures next to the task controls and retains the entered title', async () => {
+  await show('', 'chat-a', vi.fn().mockRejectedValue(new Error('保存に失敗しました')));
+  await act(async () => { host.querySelector<HTMLButtonElement>('.support-task-start > button')!.click(); });
+  await act(async () => { host.querySelector<HTMLButtonElement>('.support-task-start__actions button')!.click(); });
+  expect(host.querySelector('.support-task-start [role="status"]')!.textContent).toBe('保存に失敗しました');
+  expect(host.querySelector<HTMLInputElement>('input[aria-label="課題名"]')!.value).toBe('Bundle a');
 });

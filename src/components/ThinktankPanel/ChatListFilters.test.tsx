@@ -25,18 +25,18 @@ it('toggles icons and selects/clears all independently for each row', async () =
   try {
     await act(async () => root.render(<Harness />));
     expect(button('完了').getAttribute('aria-pressed')).toBe('false');
-    expect(button('ASK：相談・質問').getAttribute('aria-current')).toBe('true');
+    expect(button('ASK：相談').getAttribute('aria-current')).toBe('true');
     expect(button('進行中').classList.contains('tt-chat-filter--current')).toBe(true);
     expect(host.textContent).not.toContain('種類');
-    await act(async () => button('ASK：相談・質問').click());
-    expect(button('ASK：相談・質問').getAttribute('aria-pressed')).toBe('false');
-    expect(button('ASK：相談・質問').getAttribute('aria-current')).toBe('true');
+    await act(async () => button('ASK：相談').click());
+    expect(button('ASK：相談').getAttribute('aria-pressed')).toBe('false');
+    expect(button('ASK：相談').getAttribute('aria-current')).toBe('true');
     await act(async () => button('全状態を選択').click());
     expect(button('完了').getAttribute('aria-pressed')).toBe('true');
-    expect(button('ASK：相談・質問').getAttribute('aria-pressed')).toBe('false');
+    expect(button('ASK：相談').getAttribute('aria-pressed')).toBe('false');
     await act(async () => button('全状態をクリア').click());
     expect(button('進行中').getAttribute('aria-pressed')).toBe('false');
     await act(async () => button('全種類を選択').click());
-    expect(button('ASK：相談・質問').getAttribute('aria-pressed')).toBe('true');
+    expect(button('ASK：相談').getAttribute('aria-pressed')).toBe('true');
   } finally { await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals(); }
 });

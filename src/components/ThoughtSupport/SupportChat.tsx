@@ -19,7 +19,7 @@ interface Props {
   pane?: boolean;
 }
 
-/** AIChat uses the Bundle selected by the existing upper list. Stored Chat files are left untouched. */
+/** Chat-owned context stays stable when another panel changes its selection. */
 export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportChat(props, ref) {
   const root = useRef<HTMLDivElement>(null);
   const callbacks = useRef(props); callbacks.current = props;

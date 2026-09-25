@@ -3,6 +3,8 @@ import type { TTVault } from '../../models/TTVault';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import type { SupportPanel } from '../../services/thoughtSupport';
 import { parseManagedChatTitle } from '../../utils/managedChat';
+import { bindChatToTask, resolveChatTask } from '../../services/chatTask';
+import { SimilarTasks } from './SimilarTasks';
 import { BundleConversation } from './BundleConversation';
 import { ConversationClient } from '../../services/ConversationService';
 import { taskSeedFromConversation, type TaskSeed } from '../../services/taskSeed';
@@ -19,7 +21,7 @@ interface Props {
   onStartTask?: (chatId: string, title: string, seed?: TaskSeed) => Promise<void>;
 }
 
-export function SupportConversation({ vault, panelName, bundleId, chatId, draftScope, pane, onStartTask }: Props) {
+export function SupportConversation({ vault, panelName, chatId, draftScope, pane, onStartTask }: Props) {
   useAppUpdate(vault);
   const [message, setMessage] = useState('');
   const [taskEditorOpen, setTaskEditorOpen] = useState(false);
@@ -34,11 +36,12 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
     return () => { taskVersion.current += 1; };
   }, [vault, chatId]);
   const chat = vault.GetThink(chatId);
-  const bundle = vault.GetThink(bundleId);
+  const association = resolveChatTask(vault, chat);
+  const bundle = association.bundle;
   const chatValid = chat?.ContentType === 'chat';
   const bundleValid = bundle?.ContentType === 'bundle';
   const chatOnly = panelName === 'Thinktank' || !!pane;
-  const valid = chatValid && (bundleValid || chatOnly);
+  const valid = chatValid && !association.error && (bundleValid || chatOnly);
   async function openSource(id: string) {
     try {
       const { TTApplication } = await import('../../views/TTApplication');
@@ -49,6 +52,22 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
       if (!app.WorkoutPanel.FocusExistingResource(id)) app.WorkoutPanel.AddToRight(id, 'texteditor', source.Name);
     } catch { setMessage('出典を開けませんでした。'); }
   }
+  async function openTask(id: string) {
+    const { TTApplication } = await import('../../views/TTApplication');
+    const app = TTApplication.Instance;
+    if (app.Models.Vault !== vault) return;
+    app.OpenBundle(id, 'graph');
+  }
+  async function chooseTask(id: string) {
+    if (!chat || taskLock.current) return;
+    const target = vault.GetThink(id);
+    if (!target || !association.candidates.includes(target)) return;
+    const version = taskVersion.current;
+    taskLock.current = true; setTaskBusy(true);
+    try { await bindChatToTask(vault, chat, target); if (version === taskVersion.current) setMessage('相談の対象を設定しました。'); }
+    catch (e) { if (version === taskVersion.current) setMessage((e as Error).message); }
+    finally { if (version === taskVersion.current) { taskLock.current = false; setTaskBusy(false); } }
+  }
   async function openTaskEditor() {
     if (!chatValid || taskLock.current) return;
     const version = taskVersion.current;
@@ -56,11 +75,17 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
     setTaskTitle(parseManagedChatTitle(chat.Name)?.title || chat.Name);
     setMessage('');
     try {
-      const turns = await taskClient.history(undefined, undefined, chatId, vault.ID);
+      if (association.bundle) {
+        await bindChatToTask(vault, chat, association.bundle);
+        if (version !== taskVersion.current) return;
+        await openTask(association.bundle.ID);
+        return;
+      }
+      const turns = await taskClient.history(undefined, undefined, chatId, vault.ID, vault);
       if (version !== taskVersion.current) return;
       setTaskSeed(taskSeedFromConversation(turns, vault.ID, chatId));
       setTaskEditorOpen(true);
-    } catch { if (version === taskVersion.current) setMessage('会話を確認できませんでした。もう一度お試しください。'); }
+    } catch (error) { if (version === taskVersion.current) setMessage((error as Error).message || '会話を確認できませんでした。もう一度お試しください。'); }
     finally { if (version === taskVersion.current) { taskLock.current = false; setTaskBusy(false); } }
   }
   async function startTask() {
@@ -70,7 +95,7 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
     const version = taskVersion.current;
     taskLock.current = true; setTaskBusy(true); setMessage('');
     try {
-      const turns = await taskClient.history(undefined, undefined, chatId, vault.ID);
+      const turns = await taskClient.history(undefined, undefined, chatId, vault.ID, vault);
       if (version !== taskVersion.current) return;
       const latest = taskSeedFromConversation(turns, vault.ID, chatId);
       if (JSON.stringify(latest) !== JSON.stringify(taskSeed)) {
@@ -85,9 +110,9 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
     finally { if (version === taskVersion.current) { taskLock.current = false; setTaskBusy(false); } }
   }
   // 課題化は会話全体に対する操作なので、履歴と一緒に流れないよう入力帯へ預ける。
-  const taskStart = valid && panelName === 'Thinktank' && onStartTask ? <div className="support-task-start">
-    {!taskEditorOpen ? <button type="button" disabled={taskBusy} onClick={() => void openTaskEditor()}>この相談を課題として始める</button> : <>
-      <label>課題名<input aria-label="課題名" maxLength={200} value={taskTitle} disabled={taskBusy}
+  const taskStart = chatValid && panelName === 'Thinktank' && onStartTask ? <div className="support-task-start">
+    {!taskEditorOpen ? <button type="button" disabled={taskBusy || !!association.error} onClick={() => void openTaskEditor()}>{bundle ? (parseManagedChatTitle(chat.Name)?.kind === 'TASK' ? '課題をOverviewで開く' : '課題との関連付けを完了') : '相談を課題として開始'}</button> : <>
+      <label><span>課題名</span><input aria-label="課題名" maxLength={200} value={taskTitle} disabled={taskBusy}
         onChange={event => setTaskTitle(event.target.value)} onKeyDown={event => {
           if (event.key === 'Enter' && !event.nativeEvent.isComposing) void startTask();
         }} /></label>
@@ -101,11 +126,15 @@ export function SupportConversation({ vault, panelName, bundleId, chatId, draftS
         <p><strong>完了条件</strong><br />{taskSeed.completionCriteria}</p>
       </div> : <p>目的・完了条件は、課題を開いたあともAIと相談して整理できます。</p>}
     </>}
+    <SimilarTasks key={`${vault.ID}:${chatId}`} vault={vault} chatId={chatId} bundleId={bundle?.ID} onOpen={openTask} />
+    {message && <p role="status">{message}</p>}
   </div> : undefined;
   // Chat名はここでは出さない。会話ログの1行目に見出しとして流す（BundleConversation）。
   return <div className="support-conversation">
-    {!valid && <p role="status">{chatValid ? '資料の参照にはOverviewでBundleを選択してください。' : '上部のリストで相談するChatを選択してください。'}</p>}
-    {valid && <BundleConversation vault={vault} bundleId={bundleValid ? bundle.ID : undefined} chatId={chat.ID} draftScope={draftScope} optionalSources={panelName === 'Thinktank'} onOpen={id => void openSource(id)} inputHeader={taskStart} />}
-    {message && <p role="status">{message}</p>}
+    {association.error && <div role="status"><p>{association.error}</p>{association.candidates.map(candidate => <button key={candidate.ID} type="button" disabled={taskBusy} onClick={() => void chooseTask(candidate.ID)}>「{candidate.Name}」を相談の対象にする</button>)}</div>}
+    {!valid && !association.error && <p role="status">{chatValid ? 'このChatに対応する課題が未設定です。関連付けを確認してください。' : '上部のリストで相談するChatを選択してください。'}</p>}
+    {valid && <BundleConversation vault={vault} bundleId={bundleValid ? bundle.ID : undefined} chatId={chat.ID} draftScope={draftScope} consultation={panelName === 'Thinktank'} onOpen={id => void openSource(id)} inputHeader={taskStart} />}
+    {!valid && taskStart}
+    {message && !taskStart && <p role="status">{message}</p>}
   </div>;
 }
