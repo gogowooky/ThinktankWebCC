@@ -7,6 +7,15 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v1.5.32 feat: 相談と課題の関連付けをIDで解決し類似課題を提示（chatTask・similarTasks）
+- 日付: 2026-09-25
+- コミット番号: cc6754a
+
+題名は編集できるラベルなので、相談とその課題の関係を保存済みのIDだけで決めるように変更（`src/services/chatTask.ts`）。`resolveChatTask` / `bindChatToTask` が `taskContext`・`subtaskChat`・`thoughtSupport` の各bundleIdを突き合わせ、食い違う場合はエラーにして黙ってどちらかを選ばない。
+`startTaskFromChat` を「既に関連付けがあれば再利用、無ければ作成して結び付ける」順序に変更し、同じ相談への同時要求はWeakMapで1本にまとめて二重作成を防ぐ。同じ相談から課題を作り直しても別の課題が二重にできない。
+`similarTasks` / `SimilarTasks` で既存の課題から似たものを提示し、新規作成の前に重複へ気づけるようにした。管理題名の種類に `TASK` を追加（`KINDS`・`parseManagedChatTitle`）。
+あわせてAIChatの表示を2点修正。折りたたみ見出しのフォーカス枠が左端で欠けていたのを、帯の中で一番外へ出る枠（offset 3px＋太さ 2px）に合わせて確保量を3px→5pxへ広げて解消（同量の負マージンで表示位置は据え置き）。「条件・機能・参照情報」をShift付きで開閉したときは子の区分を畳むようにし、Shiftは次の通常操作へ持ち越さない。変更: 34ファイル（+678 / -128行）。
+
 ### v1.5.31 feat: 複数サブ課題候補と保留・再開候補をAI応答から扱う（lifecycleProposals）
 - 日付: 2026-09-25
 - コミット番号: e3757cc
