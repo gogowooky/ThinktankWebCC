@@ -7,6 +7,12 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.0.0 chore: copyright.txt を v1.5.32 / commitId cc6754a で更新
+- 日付: 2026-09-25
+- コミット番号: cf14a33
+
+TTWebCC260926BigChangeブランチの発行に合わせ、バージョンを2.0.0に更新（メジャーバージョンアップ、機能変更なし）。copyright.txtの参照コミットをcf14a33（v1.5.32 / commitId cc6754aへの更新コミット）に更新し、この履歴を追記した。変更: 2ファイル（copyright.txt, README.md）。
+
 ### v1.5.32 feat: 相談と課題の関連付けをIDで解決し類似課題を提示（chatTask・similarTasks）
 - 日付: 2026-09-25
 - コミット番号: cc6754a

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "1.5.32",
+  "version": "2.0.0",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "cc6754a",
-  "commitDateTime": "2026-09-25-175951",
-  "commitMessage": "feat: 相談と課題の関連付けをIDで解決し類似課題を提示（chatTask・similarTasks）"
+  "commitId": "cf14a33",
+  "commitDateTime": "2026-09-25-180008",
+  "commitMessage": "chore: copyright.txt を v1.5.32 / commitId cc6754a で更新"
 }
