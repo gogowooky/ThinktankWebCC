@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.0.1 feat: vault_ver2保管庫への切替とYAML frontmatter（タイトル抽出・エディタ折畳）対応
+- 日付: 2026-09-27
+- コミット番号: f104432
+
+保管庫のデータ移行に伴い、BigQueryテーブル（thinktank.vault_ver2）、LocalFSパス（./../ThinktankLocal/vault_ver2）、Electronのユーザーデータ保存先、およびLocalStorage設定の既定値を vault から vault_ver2 へ切り替えた。
+また、YAML frontmatter（先頭行が "---" で始まるメタデータ領域）に対応。splitLines でCRLFとLFを統一処理して末尾 \r による正規表現不一致バグを防ぎ、frontmatter内の title キーからタイトルを優先抽出（extractFrontmatterTitle / extractTitleLine）して TTThink.Name や TextEditor の Pane タイトルにリアルタイム反映できるようにした。
+さらに、Monacoエディタの FoldingRange に frontmatter の折りたたみ範囲を追加し、見出し収集時の frontmatter 内コメントの除外、および HeadingAttribute に isFrontmatter フラグを設けて折りたたみ時に子見出しとして巻き込まれたり後続を隠したりしないよう調整した。変更: 14ファイル（+159 / -38行）。
+
 ### v2.0.0 chore: copyright.txt を v1.5.32 / commitId cc6754a で更新
 - 日付: 2026-09-25
 - コミット番号: cf14a33

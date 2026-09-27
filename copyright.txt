@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,7 +8,7 @@
   },
   "projectName": "ThinktankWebCC",
   "commitPC": "E15",
-  "commitId": "cf14a33",
-  "commitDateTime": "2026-09-25-180008",
-  "commitMessage": "chore: copyright.txt を v1.5.32 / commitId cc6754a で更新"
+  "commitId": "f104432",
+  "commitDateTime": "2026-09-27-195909",
+  "commitMessage": "feat: vault_ver2保管庫への切替とYAML frontmatter（タイトル抽出・エディタ折畳）対応"
 }
