@@ -16,7 +16,7 @@ const { spawn } = require('child_process');
 app.setName('thinktank');
 
 const isDev    = process.env.NODE_ENV === 'development';
-const VAULT_DIR = path.join(app.getPath('userData'), 'thinktank', 'vault');
+const VAULT_DIR = path.join(app.getPath('userData'), 'thinktank', 'vault_ver2');
 
 // ── ヘルパー ──────────────────────────────────────────────────────────────
 

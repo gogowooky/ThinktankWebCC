@@ -5,6 +5,7 @@
 
 import type { ChatMessage } from '../types';
 import { parseManagedChatTitle } from './managedChat';
+import { findFrontmatterRange, extractFrontmatterTitle } from './markdownSections';
 
 // ════════════════════════════════════════════════════════════════════════
 // #region chat 形式 (ContentType = 'chat')
@@ -334,6 +335,25 @@ export function splitContent(fullContent: string): { title: string; body: string
   const nl = fullContent.indexOf('\n');
   if (nl === -1) return { title: fullContent, body: '' };
   return { title: fullContent.slice(0, nl), body: fullContent.slice(nl + 1) };
+}
+
+/**
+ * タイトル行を取得する。
+ * 先頭にYAML frontmatterがあれば、その "title:" キーの値を優先し、無ければ
+ * frontmatter直後の行（content部分の先頭行）を使う。frontmatterが無ければ
+ * 従来通りContent全体の先頭行を使う（TTThink.Name・TextEditorのPaneタイトルの抽出元）。
+ */
+export function extractTitleLine(content: string): string {
+  const frontmatterTitle = extractFrontmatterTitle(content);
+  if (frontmatterTitle !== null) return frontmatterTitle;
+  const frontmatter = findFrontmatterRange(content);
+  if (frontmatter) {
+    // CRLF（"\r\n"）保存時に各行末へ残る "\r" を title に混入させないよう、
+    // "\n" 単独ではなく CRLF/LF 双方を1つの区切りとして分割する。
+    const lines = content.split(/\r\n|\n/);
+    return lines[frontmatter.end] ?? '';
+  }
+  return splitContent(content).title;
 }
 
 // #endregion

@@ -16,8 +16,8 @@ import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../utils/markdownHeadings';
-import { splitContent } from '../../../utils/thinkFormat';
-import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
+import { splitContent, extractTitleLine } from '../../../utils/thinkFormat';
+import { editorValueIncludesTitleLine, toFoldingRanges, extractFrontmatterTitle } from '../../../utils/markdownSections';
 import {
   FOLDING_HEADER_BG_CLASS,
   INLINE_MASK_CHAR, INLINE_STYLE_RULES, colorStyleToCss, foldingHeaderStyleCss,
@@ -186,7 +186,7 @@ function registerHexColorProvider(monaco: any) {
 
 export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, vault, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
   const savedRef    = useRef(think ? getEditorValue(think) : '');
-  const firstLineRef = useRef(think?.Content.split('\n')[0] ?? '');
+  const firstLineRef = useRef(think ? extractTitleLine(think.Content) : '');
   const editorRef   = useRef<any>(null);
   const disposablesRef = useRef<any[]>([]);
   const headingStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -227,7 +227,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   useEffect(() => {
     savedRef.current   = think ? getEditorValue(think) : '';
-    firstLineRef.current = think?.Content.split('\n')[0] ?? '';
+    firstLineRef.current = think ? extractTitleLine(think.Content) : '';
     onDirtyChange(false);
   }, [think?.ID, onDirtyChange]);
 
@@ -971,13 +971,15 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     const isDirty = v !== savedRef.current;
     onDirtyChange(isDirty);
     updateDecorations();
-    // bundle / table / memo は第一行がタイトル → リアルタイム同期
+    // bundle / table / memo は第一行がタイトル、frontmatterがあればその title: 値が
+    // タイトル → いずれもリアルタイム同期（extractTitleLine が両ケースを解決する）
     if (onTitleChange && think &&
-        (think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo')) {
-      const newFirst = v.split('\n')[0] ?? '';
-      if (newFirst !== firstLineRef.current) {
-        firstLineRef.current = newFirst;
-        onTitleChange(newFirst);
+        (extractFrontmatterTitle(v) !== null ||
+         think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo')) {
+      const newTitle = extractTitleLine(v);
+      if (newTitle !== firstLineRef.current) {
+        firstLineRef.current = newTitle;
+        onTitleChange(newTitle);
       }
     }
 

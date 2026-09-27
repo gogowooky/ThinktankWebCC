@@ -20,7 +20,7 @@ const DATALIST_ID    = 'tt-vault-name-list';
 const MAX_HISTORY    = 10;
 
 function loadValue(): string {
-  return localStorage.getItem(LS_KEY_VALUE) ?? 'vault';
+  return localStorage.getItem(LS_KEY_VALUE) ?? 'vault_ver2';
 }
 
 function loadHistory(): string[] {
@@ -63,7 +63,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   }, []);
 
   const handleSave = useCallback(() => {
-    const trimmed = value.trim() || 'vault';
+    const trimmed = value.trim() || 'vault_ver2';
     setValue(trimmed);
     setHistory(saveValue(trimmed));
     setSaved(true);
@@ -74,7 +74,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
     if (e.key === 'Enter') handleSave();
   }, [handleSave]);
 
-  const vaultName = value.trim() || 'vault';
+  const vaultName = value.trim() || 'vault_ver2';
 
   return (
     <div className="tt-settings-view">
@@ -152,7 +152,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
                 type="text"
                 list={DATALIST_ID}
                 value={value}
-                placeholder="vault"
+                placeholder="vault_ver2"
                 onChange={e => { setValue(e.target.value); setSaved(false); }}
                 onKeyDown={handleKeyDown}
                 spellCheck={false}

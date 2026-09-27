@@ -4,8 +4,8 @@
  *
  * データ階層: TTVault > Bundles > Bundle > Think
  *
- * LocalFS パス: ./../ThinktankLocal/vault/{ContentType}/{ID}.md
- * BigQuery テーブル: thinktank.vault
+ * LocalFS パス: ./../ThinktankLocal/vault_ver2/{ContentType}/{ID}.md
+ * BigQuery テーブル: thinktank.vault_ver2
  */
 
 import { TTCollection } from './TTCollection';
@@ -33,10 +33,10 @@ export interface BundleResolutionOptions {
 
 export class TTVault extends TTCollection {
   /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
-  public VaultName: string = 'vault';
+  public VaultName: string = 'vault_ver2';
 
   /** LocalFS ルートフォルダパス（Local モード用）*/
-  public DataFolder: string = './../ThinktankLocal/vault';
+  public DataFolder: string = './../ThinktankLocal/vault_ver2';
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
   private _bundleThinksCache: Map<string, string[]> = new Map();
@@ -46,7 +46,7 @@ export class TTVault extends TTCollection {
     return 'TTVault';
   }
 
-  constructor(vaultName: string = 'vault') {
+  constructor(vaultName: string = 'vault_ver2') {
     super();
     this.ID = vaultName;
     this.VaultName = vaultName;

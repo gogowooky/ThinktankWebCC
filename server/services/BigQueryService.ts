@@ -8,7 +8,7 @@ import { BigQuery } from '@google-cloud/bigquery';
 import { validateVaultKey } from './vaultKey.js';
 
 const DATASET_ID = 'thinktank';
-const TABLE_ID   = 'vault';
+const TABLE_ID   = 'vault_ver2';
 
 export interface VaultRecord {
   file_id:     string;

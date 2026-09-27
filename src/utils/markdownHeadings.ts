@@ -7,6 +7,7 @@
  * 循環依存を生んでいたため、依存を持たない純粋なロジックとして独立させた。
  */
 import type { editor as MonacoEditor } from 'monaco-editor';
+import { findFrontmatterRange } from './markdownSections';
 
 export interface HeadingAttribute {
   line: number;
@@ -14,6 +15,12 @@ export interface HeadingAttribute {
   offset: number;
   headingNumber: string;
   isHidden: boolean;
+  /**
+   * 先頭行の "---" のみの行（YAML frontmatter）に対応するエントリかどうか。
+   * frontmatterは自身の折畳範囲の外側にある見出しを子として持たないため、
+   * headingScopeEnd や hasChildHeading 判定ではこのフラグで常に「子なし」扱いにする。
+   */
+  isFrontmatter?: boolean;
 }
 
 export function getHeadingLevel(lineContent: string): number {
@@ -76,9 +83,10 @@ export function isLineFolded(editor: MonacoEditor.IStandaloneCodeEditor, lineNum
   return false;
 }
 
-/** 見出しのfoldスコープ末尾行（次の同位以上の見出しの直前まで） */
+/** 見出しのfoldスコープ末尾行（次の同位以上の見出しの直前まで）。frontmatterは常に自分自身のみ */
 export function headingScopeEnd(headings: HeadingAttribute[], idx: number, lineCount: number): number {
   const h = headings[idx];
+  if (h.isFrontmatter) return h.line;
   for (let i = idx + 1; i < headings.length; i++) {
     if (headings[i].level <= h.level) return headings[i].line - 1;
   }
@@ -118,6 +126,22 @@ export function getHeadingAttributes(editor: MonacoEditor.IStandaloneCodeEditor)
     if (regions) return foldedLines.has(line);
     return isLineFolded(editor, line); // フォールバック
   };
+
+  // 先頭行が "---" のみのYAML frontmatterなら、見出し相当のエントリとして先頭に追加する。
+  // Level1見出しと同じ並び（headingNumberの末尾セグメント比較）で親子・兄弟判定に自然に
+  // 乗るようlevel:1とするが、headingNumberは実見出しの採番('1','2',...)と衝突しない '0' を
+  // 使い、countersは増やさない（後続のLevel1見出しの採番がずれるのを防ぐ）。
+  const frontmatter = findFrontmatterRange(model.getValue());
+  if (frontmatter) {
+    attributes.push({
+      line:          frontmatter.start,
+      level:         1,
+      offset:        model.getOffsetAt({ lineNumber: frontmatter.start, column: 1 }),
+      headingNumber: '0',
+      isHidden:      false,
+      isFrontmatter: true,
+    });
+  }
 
   // 1パス目: 基本情報を収集
   for (let i = 1; i <= lineCount; i++) {
@@ -163,8 +187,9 @@ export function getHeadingAttributes(editor: MonacoEditor.IStandaloneCodeEditor)
       currentFoldedParentLevel = -1;
     }
 
-    // この見出し自身が折りたたまれている場合、まだ上位の折りたたみが無ければ、これを最上位 of 折りたたみとする
-    if (checkIsFolded(target.line)) {
+    // この見出し自身が折りたたまれている場合、まだ上位の折りたたみが無ければ、これを最上位 of 折りたたみとする。
+    // frontmatterは自身の折畳範囲の外側に子を持たないため、折り畳んでも後続を隠さない。
+    if (checkIsFolded(target.line) && !target.isFrontmatter) {
       if (currentFoldedParentLevel === -1) {
         currentFoldedParentLevel = target.level;
       }

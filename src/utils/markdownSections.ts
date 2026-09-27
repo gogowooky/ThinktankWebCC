@@ -56,19 +56,81 @@ export function editorLineOffset(contentType: ContentType): number {
 
 const FENCE_RE = /^\s{0,3}(`{3,}|~{3,})/;
 const HEADING_RE = /^(#+)\s/;
+const FRONTMATTER_DELIM_RE = /^---\s*$/;
+
+/**
+ * 改行区切りで行配列にする。CRLF（Electronのローカル保存ファイル等で実際に発生する）を
+ * 1つの区切りとして扱い、各行末に "\r" を残さない。"." は "\r" にマッチしないため、
+ * "\r" が残ったまま `(.*)$` 等の正規表現にかけると一致に失敗する（FRONTMATTER_TITLE_RE で実際に
+ * 発生したバグ）。この関数を通した行配列だけを以降の正規表現マッチに使うこと。
+ */
+function splitLines(source: string): string[] {
+  return source.split(/\r\n|\n/);
+}
+
+/**
+ * 先頭行が "---" のみの行であれば、次に現れる "---" のみの行までを
+ * YAML frontmatter の範囲として返す（1始まり行番号、両端を含む）。
+ * 先頭行以外に現れる "---" のみの行（区切り線としての用法等）は対象にしない。
+ */
+export function findFrontmatterRange(source: string): { start: number; end: number } | null {
+  const lines = splitLines(source);
+  if (lines.length === 0 || !FRONTMATTER_DELIM_RE.test(lines[0])) return null;
+  for (let i = 1; i < lines.length; i++) {
+    if (FRONTMATTER_DELIM_RE.test(lines[i])) {
+      return { start: 1, end: i + 1 };
+    }
+  }
+  return null;
+}
+
+const FRONTMATTER_TITLE_RE = /^title:\s*(.*)$/;
+
+/** "value" / 'value' の前後クォートを外す（frontmatterのtitle値用の簡易処理） */
+function unquoteYamlScalar(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length >= 2) {
+    const first = trimmed[0];
+    const last = trimmed[trimmed.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return trimmed.slice(1, -1);
+    }
+  }
+  return trimmed;
+}
+
+/**
+ * frontmatter内の "title:" キーの値を返す。frontmatterが無い、またはtitleキーが
+ * 無ければ null（TextEditorのPaneタイトル・think.Nameの抽出元として使う）。
+ */
+export function extractFrontmatterTitle(source: string): string | null {
+  const range = findFrontmatterRange(source);
+  if (!range) return null;
+  const lines = splitLines(source);
+  for (let i = range.start; i <= range.end - 2; i++) {
+    const match = lines[i]?.match(FRONTMATTER_TITLE_RE);
+    if (match) return unquoteYamlScalar(match[1]);
+  }
+  return null;
+}
 
 /**
  * ATX見出しを収集する。
- * コードフェンス内の `#` は見出しではない。Markdown表示側はこの結果で原文を行単位に
- * 切り分けて描画するため、フェンス内を拾うとコードブロックが分断されてしまう。
+ * コードフェンス内の `#` およびYAML frontmatter内の `#`（YAMLコメント等）は見出しではない。
+ * Markdown表示側はこの結果で原文を行単位に切り分けて描画するため、フェンス内を拾うと
+ * コードブロックが分断されてしまう。
  */
 export function collectHeadings(source: string): MarkdownHeading[] {
-  const lines = source.split('\n');
+  const lines = splitLines(source);
   const headings: MarkdownHeading[] = [];
   let fenceChar: string | null = null;
+  const frontmatter = findFrontmatterRange(source);
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const lineNumber = i + 1;
+
+    if (frontmatter && lineNumber >= frontmatter.start && lineNumber <= frontmatter.end) continue;
 
     const fence = line.match(FENCE_RE);
     if (fence) {
@@ -87,7 +149,7 @@ export function collectHeadings(source: string): MarkdownHeading[] {
 
 /** 見出し階層をセクション木に組み立てる */
 export function buildSectionTree(source: string): MarkdownDocSections {
-  const totalLines = source.split('\n').length;
+  const totalLines = splitLines(source).length;
   const headings = collectHeadings(source);
   let idx = 0;
 
@@ -117,9 +179,16 @@ export function buildSectionTree(source: string): MarkdownDocSections {
   };
 }
 
-/** Monaco の FoldingRange 用。中身を持たない見出しは折り畳めないので除外する */
+/**
+ * Monaco の FoldingRange 用。中身を持たない見出しは折り畳めないので除外する。
+ * 先頭のYAML frontmatterがあれば、その先頭行をヘッダーとする折り畳み範囲も先頭に加える
+ * （findFrontmatterRange参照。先頭行以外の "---" のみの行は対象にしない）。
+ */
 export function toFoldingRanges(source: string): { start: number; end: number }[] {
   const ranges: { start: number; end: number }[] = [];
+  const frontmatter = findFrontmatterRange(source);
+  if (frontmatter) ranges.push(frontmatter);
+
   const visit = (section: MarkdownSection) => {
     if (section.endLine > section.startLine) {
       ranges.push({ start: section.startLine, end: section.endLine });

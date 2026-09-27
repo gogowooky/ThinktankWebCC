@@ -11,7 +11,7 @@ import { TTCollection } from './TTCollection';
 import { TTVault } from './TTVault';
 
 export class TTModels extends TTCollection {
-  /** メインの保管庫（BigQuery: thinktank.vault / LocalFS: ./../ThinktankLocal/vault）*/
+  /** メインの保管庫（BigQuery: thinktank.vault_ver2 / LocalFS: ./../ThinktankLocal/vault_ver2）*/
   public Vault: TTVault;
 
   private static _instance: TTModels | null = null;
@@ -26,7 +26,7 @@ export class TTModels extends TTCollection {
     this.Name = 'Thinktank';
     this.Description = 'Root Model v5';
 
-    this.Vault = new TTVault('vault');
+    this.Vault = new TTVault('vault_ver2');
     this.AddItem(this.Vault);
 
     // 失敗は握り潰され（LoadCache 内で 3 回リトライ + ログ）、通知されない設計。

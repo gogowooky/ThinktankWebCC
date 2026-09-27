@@ -57,7 +57,7 @@ npm run build:server
 ビルドせずに `electron:dev` を起動すると古いコードが動く。
 
 ## データモデル
-- メインテーブル: `thinktank.vault`（Thoughtの保存先）
+- メインテーブル: `thinktank.vault_ver2`（Thoughtの保存先。旧`thinktank.vault`から複製・切替済み。ローカル保存先も`vault_ver2`フォルダ）
 - 埋め込みテーブル: `thinktank.tt_embeddings`（ベクトル検索用、現在削除済み）
 - スキーマ変更は `server/services/BigQueryService.ts` の `initialize()` を確認すること
 

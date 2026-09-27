@@ -313,7 +313,11 @@
       "Bash(node -p \"require\\('./node_modules/lucide-react/package.json'\\).version\")",
       "PowerShell(npx vitest run src/components/ThoughtSupport 2>&1)",
       "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\8fc9f4b0-89df-4570-83b3-72dbd2e7d10b\\\\scratchpad\\\\serve.cjs\")",
-      "PowerShell(npx vitest run src/components/ThoughtSupport/BundleConversation.test.tsx 2>&1)"
+      "PowerShell(npx vitest run src/components/ThoughtSupport/BundleConversation.test.tsx 2>&1)",
+      "Bash(grep -rn \"Content.split\\('\\\\\\\\\\\\\\\\n'\\)\\\\[0\\\\]\\\\|\\\\.split\\('\\\\\\\\\\\\\\\\n'\\)\\\\[0\\\\]\" src --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(curl -s -i \"http://localhost:64132/api/health\")",
+      "Bash(curl -s -i \"http://localhost:64132/api/bq/files/2026-09-17-140931/content\")",
+      "Bash(curl -s -H \"x-thinktank-api-key: 0963184529f0d8f233c8126161cf5d77735969de1948b18e7e57c6bdc07b9525\" \"http://localhost:8080/api/bq/files/meta\" -o \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\e77b4abd-fbef-406b-ad3b-5f137e7a6395\\\\scratchpad\\\\meta.json\")"
     ]
   }
 }

@@ -26,7 +26,7 @@ interface CsThinkRecord {
   metadata?: Record<string, unknown>;
 }
 
-const VAULT_ID = 'vault';
+const VAULT_ID = 'vault_ver2';
 
 function toMeta(r: CsThinkRecord): ThinkMeta {
   return {

@@ -10,7 +10,7 @@
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
-import { parseBundle, splitContent } from '../utils/thinkFormat';
+import { parseBundle, splitContent, extractTitleLine } from '../utils/thinkFormat';
 
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
@@ -183,8 +183,8 @@ export class TTThink extends TTObject {
       this.Name = '新しいメモ';
       return;
     }
-    const firstLine = this._content.split('\n')[0].trim();
-    let title = firstLine.replace(/^#+\s*/, '');
+    const titleLine = extractTitleLine(this._content).trim();
+    let title = titleLine.replace(/^#+\s*/, '');
     if (this.ContentType === 'bundle') {
       title = title.replace(/^>>?\s*/, '');
     }

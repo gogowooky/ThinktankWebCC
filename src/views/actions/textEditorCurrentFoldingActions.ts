@@ -85,7 +85,8 @@ function setFoldStateByLevel(editor: any, headings: HeadingAttribute[], closeFro
     if (!region) continue;
     // headingsは行順に並んでいるため、直後の要素が自分より深いレベルであれば
     // それは自分の子（間に同レベル以下の見出しが挟まっていない）と判定できる。
-    const hasChildHeading = i + 1 < headings.length && headings[i + 1].level > h.level;
+    // frontmatterは自身の折畳範囲の外側にある見出しを子として持たないため常にfalse。
+    const hasChildHeading = !h.isFrontmatter && i + 1 < headings.length && headings[i + 1].level > h.level;
     const desiredCollapsed = h.level >= closeFromLevel || !hasChildHeading;
     if (desiredCollapsed) closeCount++; else openCount++;
     if (region.isCollapsed !== desiredCollapsed) {
