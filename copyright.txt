@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "veneno-02",
-  "commitId": "8e3cf75",
-  "commitDateTime": "2026-09-28-175459",
-  "commitMessage": "feat: BQ/ローカル保管庫の項目名をthinkid/categoryに統一し、metadataをYAML化・Local ExportをYAML frontmatter形式に変更"
+  "commitId": "40456cd",
+  "commitDateTime": "2026-09-28-184451",
+  "commitMessage": "feat: Electronローカル保存をJSONからYAML frontmatter付きmdファイルに変更し、git-updateスキルにbranchName記録を追加"
 }

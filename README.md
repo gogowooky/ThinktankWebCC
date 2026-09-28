@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.0.3 feat: Electronローカル保存をJSONからYAML frontmatter付きmdファイルに変更し、git-updateスキルにbranchName記録を追加
+- 日付: 2026-09-28
+- コミット番号: 40456cd
+
+Electronのローカル保存（%APPDATA%\thinktank\thinktank\vault_ver2）を、Think 1件＝1つの.jsonファイルから、Application.Resource.ExportToLocal（BQ Export）と同じ「YAML frontmatter＋本文」形式の.mdファイルへ変更した。electron/mdFormat.cjs にparse/serialize/metadata抽出処理を共通化し、electron/main.cjs（listMeta/getContent/delete/search/syncFromServer）と electron/vaultSave.cjs（save）の双方から利用する。frontmatterには thinkid/category/title/keywords/related_ids/size_bytes/is_deleted/created_at/updated_at と、Thinkのmetadataをマージして格納する。
+あわせて .claude/skills/git-update/skill.md に branchName（コミットしたブランチ名）の記録を追加し、copyright.txt にも branchName フィールドを追加した。
+このコミットのコード変更とは別に、本番BigQueryの vault_ver2（5,503件）を直接読み取り、ローカルの vault_ver2 フォルダを新しい.md形式で再構成済み（旧 vault フォルダのJSONデータはそのまま残置）。変更: 6ファイル（+132 / -66行）。
+
 ### v2.0.2 feat: BQ/ローカル保管庫の項目名をthinkid/categoryに統一し、metadataをYAML化・Local ExportをYAML frontmatter形式に変更
 - 日付: 2026-09-28
 - コミット番号: 8e3cf75
