@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.0.2 feat: BQ/ローカル保管庫の項目名をthinkid/categoryに統一し、metadataをYAML化・Local ExportをYAML frontmatter形式に変更
+- 日付: 2026-09-28
+- コミット番号: 8e3cf75
+
+BigQuery（file_id/contentType）とローカル保存（Electron JSON vault、C# ThinktankLocalApi連携）の項目名を thinkid / category に統一した。IStorageBackend・BigQueryStorageBackend・LocalStorageBackend・ElectronStorageBackend（electron/main.cjs, vaultSave.cjs）・TTVault.ts の呼び出し箇所まで一貫して変更。
+metadataの永続化形式をJSON文字列からYAML文字列に変更（js-yaml追加）。BigQueryのmetadata列がSTRING/ネイティブJSONいずれの実体型でも安全に往復できるよう動的判定を追加し、ローカルのmetadataエンベロープ、Electronの保存JSON内のmetadataも同様にYAML化した。
+Local Export（/api/bq/files/export）の出力形式を、metadataの有無によらず常にYAML frontmatter（thinkid/category/title/is_deleted/created_at/updated_at + metadata）を先頭に付与し、本文からタイトル行の重複を除去する形に変更した。あわせて本番BigQueryの vault_ver2 テーブルに対し、file_id→thinkid の列リネーム、および旧移行由来でcontent列にtitleが重複していた5,376件のデータクレンジングを直接適用した。変更: 40ファイル（+344 / -746行）。
+
 ### v2.0.1 feat: vault_ver2保管庫への切替とYAML frontmatter（タイトル抽出・エディタ折畳）対応
 - 日付: 2026-09-27
 - コミット番号: f104432

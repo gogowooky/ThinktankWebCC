@@ -1,14 +1,14 @@
 {
   "appName": "Thinktank",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "commitPC": "E15",
-  "commitId": "f104432",
-  "commitDateTime": "2026-09-27-195909",
-  "commitMessage": "feat: vault_ver2保管庫への切替とYAML frontmatter（タイトル抽出・エディタ折畳）対応"
+  "commitPC": "veneno-02",
+  "commitId": "8e3cf75",
+  "commitDateTime": "2026-09-28-175459",
+  "commitMessage": "feat: BQ/ローカル保管庫の項目名をthinkid/categoryに統一し、metadataをYAML化・Local ExportをYAML frontmatter形式に変更"
 }
