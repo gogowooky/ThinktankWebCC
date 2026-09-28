@@ -3,9 +3,9 @@ import { createRequire } from 'node:module';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import yaml from 'js-yaml';
 import { packLocalMetadata, unpackLocalMetadata } from './localMetadata';
 const { saveVaultRecord } = createRequire(import.meta.url)('../../../electron/vaultSave.cjs');
+const { parseFrontmatter, extractMetadata } = createRequire(import.meta.url)('../../../electron/mdFormat.cjs');
 
 describe('durable thought support metadata', () => {
   it('round trips C# compatibility metadata without exposing it in the Chat body', () => {
@@ -20,12 +20,13 @@ describe('durable thought support metadata', () => {
     try {
       const payload = { thinkid: '2026-09-08-100000', category: 'chat', fullContent: 'ASK:Workout｜[進行中]質問\n## 続きを教えて', metadata: { thoughtSupport: { version: 1, resume: '候補を比較中' } } };
       const first = saveVaultRecord(dir, payload);
-      const stored = JSON.parse(readFileSync(join(dir, payload.thinkid + '.json'), 'utf8'));
-      expect(yaml.load(stored.metadata)).toEqual(payload.metadata);
+      const stored = parseFrontmatter(readFileSync(join(dir, payload.thinkid + '.md'), 'utf8')).meta;
+      expect(extractMetadata(stored)).toEqual(payload.metadata);
       const second = saveVaultRecord(dir, { ...payload, baseUpdatedAt: first.updatedAt, metadata: { thoughtSupport: { version: 2 } } });
       expect(second.updatedAt).not.toBe(first.updatedAt);
       expect(() => saveVaultRecord(dir, { ...payload, baseUpdatedAt: first.updatedAt })).toThrow('別の場所');
-      expect(yaml.load(JSON.parse(readFileSync(join(dir, payload.thinkid + '.json'), 'utf8')).metadata).thoughtSupport.version).toBe(2);
+      const stored2 = parseFrontmatter(readFileSync(join(dir, payload.thinkid + '.md'), 'utf8')).meta;
+      expect(extractMetadata(stored2).thoughtSupport.version).toBe(2);
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });

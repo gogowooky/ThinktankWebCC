@@ -7,6 +7,7 @@
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
+  "branchName": "TTWebCC260926BigChange",
   "commitPC": "veneno-02",
   "commitId": "8e3cf75",
   "commitDateTime": "2026-09-28-175459",

@@ -5,8 +5,8 @@ const path   = require('path');
 const fs     = require('fs');
 const net    = require('net');
 const crypto = require('crypto');
-const yaml   = require('js-yaml');
 const { saveVaultRecord } = require('./vaultSave.cjs');
+const { parseFrontmatter, serialize, toThinkMeta } = require('./mdFormat.cjs');
 const { spawn } = require('child_process');
 
 // パッケージ版（electron-builder）は package.json の "name" からアプリ名・userDataパスを
@@ -26,30 +26,22 @@ function ensureVaultDir() {
 }
 
 function recordPath(id) {
-  return path.join(VAULT_DIR, `${id}.json`);
+  return path.join(VAULT_DIR, `${id}.md`);
 }
 
-function splitContent(fullContent) {
-  const nl = fullContent.indexOf('\n');
-  if (nl === -1) return { title: fullContent, body: '' };
-  return { title: fullContent.slice(0, nl), body: fullContent.slice(nl + 1) };
-}
-
-function toMeta(record) {
-  const { content: _content, ...meta } = record;
-  return { ...meta, metadata: typeof meta.metadata === 'string' ? yaml.load(meta.metadata) : meta.metadata };
-}
-
-function buildRecord({ id, contentType, title, body, keywords, relatedIds, sizeBytes, isDeleted, createdAt, updatedAt, metadata }) {
+/** BigQuery同期用: サーバーのメタ＋本文からfrontmatterオブジェクトを組み立てる */
+function buildFrontmatterFromServer({ id, contentType, title, keywords, relatedIds, sizeBytes, isDeleted, createdAt, updatedAt, metadata }) {
   return {
-    thinkid: id, category: contentType, title, metadata: yaml.dump(metadata ?? {}),
-    content:    body,
-    keywords:   keywords   || null,
-    relatedIds: relatedIds || null,
-    sizeBytes,
-    isDeleted,
-    createdAt,
-    updatedAt,
+    ...(metadata && typeof metadata === 'object' ? metadata : {}),
+    thinkid:     id,
+    category:    contentType,
+    title:       title || '',
+    keywords:    keywords   || null,
+    related_ids: relatedIds || null,
+    size_bytes:  sizeBytes ?? 0,
+    is_deleted:  isDeleted ?? false,
+    created_at:  createdAt,
+    updated_at:  updatedAt,
   };
 }
 
@@ -57,15 +49,16 @@ function buildRecord({ id, contentType, title, body, keywords, relatedIds, sizeB
 
 ipcMain.handle('storage:listMeta', () => {
   ensureVaultDir();
-  const files = fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.json'));
+  const files = fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.md'));
 
   // 読み取り失敗を握り潰すと「0件ロード」という結果だけが残り原因を追えなくなる。
-  // 権限エラー(EPERM/EACCES)とJSON破損を区別できるよう、種類ごとに集計して出す。
+  // 権限エラー(EPERM/EACCES)とファイル破損を区別できるよう、種類ごとに集計して出す。
   const errors = new Map();
   const metas  = [];
   for (const f of files) {
     try {
-      metas.push(toMeta(JSON.parse(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8'))));
+      const { meta } = parseFrontmatter(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8'));
+      metas.push(toThinkMeta(meta));
     } catch (e) {
       const key = `${e.code ?? 'parse'}: ${String(e.message).slice(0, 80)}`;
       errors.set(key, (errors.get(key) ?? 0) + 1);
@@ -83,8 +76,8 @@ ipcMain.handle('storage:getContent', (_event, id) => {
   const p = recordPath(id);
   if (!fs.existsSync(p)) return null;
   try {
-    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-    return data.content ?? null;
+    const { body } = parseFrontmatter(fs.readFileSync(p, 'utf8'));
+    return body ?? null;
   } catch { return null; }
 });
 
@@ -94,10 +87,10 @@ ipcMain.handle('storage:delete', (_event, id) => {
   const p = recordPath(id);
   if (!fs.existsSync(p)) return;
   try {
-    const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-    data.isDeleted = true;
-    data.updatedAt = new Date().toISOString();
-    fs.writeFileSync(p, JSON.stringify(data, null, 2), 'utf8');
+    const { meta, body } = parseFrontmatter(fs.readFileSync(p, 'utf8'));
+    meta.is_deleted = true;
+    meta.updated_at = new Date().toISOString();
+    fs.writeFileSync(p, serialize(meta, body), 'utf8');
   } catch {}
 });
 
@@ -105,17 +98,17 @@ ipcMain.handle('storage:search', (_event, query) => {
   ensureVaultDir();
   const q = (query || '').toLowerCase();
   return fs.readdirSync(VAULT_DIR)
-    .filter(f => f.endsWith('.json'))
+    .filter(f => f.endsWith('.md'))
     .map(f => {
-      try { return JSON.parse(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8')); }
+      try { return parseFrontmatter(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8')); }
       catch { return null; }
     })
-    .filter(d => d && !d.isDeleted && (
-      (d.title   || '').toLowerCase().includes(q) ||
-      (d.content || '').toLowerCase().includes(q) ||
-      (d.keywords|| '').toLowerCase().includes(q)
+    .filter(d => d && !d.meta.is_deleted && (
+      (d.meta.title    || '').toLowerCase().includes(q) ||
+      (d.body          || '').toLowerCase().includes(q) ||
+      (d.meta.keywords || '').toLowerCase().includes(q)
     ))
-    .map(toMeta);
+    .map(d => toThinkMeta(d.meta));
 });
 
 // ── BigQuery 同期 ─────────────────────────────────────────────────────────
@@ -157,8 +150,8 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
   const toSync = serverMetas.filter(meta => {
     const p = recordPath(meta.thinkid);
     if (fs.existsSync(p)) {
-      const local = JSON.parse(fs.readFileSync(p, 'utf8'));
-      if (local.updatedAt >= meta.updatedAt) { skipped++; return false; }
+      const local = parseFrontmatter(fs.readFileSync(p, 'utf8')).meta;
+      if (local.updated_at >= meta.updatedAt) { skipped++; return false; }
     }
     return true;
   });
@@ -175,11 +168,10 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
 
   let added = 0, updated = 0;
   for (const { meta, content, isNew } of fetched) {
-    const record = buildRecord({
+    const frontmatterObj = buildFrontmatterFromServer({
       id:          meta.thinkid,
       contentType: meta.category,
       title:       meta.title || '',
-      body:        content || '',
       keywords:    meta.keywords,
       relatedIds:  meta.relatedIds,
       sizeBytes:   meta.sizeBytes || 0,
@@ -188,7 +180,7 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
       updatedAt:   meta.updatedAt,
       metadata:    meta.metadata,
     });
-    fs.writeFileSync(recordPath(meta.thinkid), JSON.stringify(record, null, 2), 'utf8');
+    fs.writeFileSync(recordPath(meta.thinkid), serialize(frontmatterObj, content || ''), 'utf8');
     isNew ? added++ : updated++;
   }
 
@@ -502,7 +494,7 @@ app.whenReady()
     // userData の解決結果が環境によって食い違う事故が起きうるため、
     // 実際に読み書きするディレクトリと件数を起動時に必ず記録する
     console.log(`[Vault] userData=${app.getPath('userData')}`);
-    console.log(`[Vault] dir=${VAULT_DIR} files=${fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.json')).length}`);
+    console.log(`[Vault] dir=${VAULT_DIR} files=${fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.md')).length}`);
     installCsp();
 
     // dev: concurrently が起動済みの vite(5173) を読む。サーバーは二重起動しない
