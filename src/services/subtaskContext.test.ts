@@ -61,7 +61,7 @@ it('connects the captured child status to the parent AI and reviewable next-acti
   expect(generate.mock.calls[0][0].context.subtasks.items[0].event).toEqual(event);
   expect(turn.answer.progressProposals).toEqual([]);
   expect(readConversationLog({ schemaVersion: 1, turns: [turn] }).turns[0].context.subtasks).toEqual(context.subtasks);
-  const reviewed = prepareProposalReview(turn, { id: 'parent', contentType: 'bundle', metadata: {} } as ThinkMeta);
+  const reviewed = prepareProposalReview(turn, { thinkid: 'parent', category: 'bundle', metadata: {} } as ThinkMeta);
   expect(reviewed.values.nextAction).toBe('参加者の返事を確認する');
   expect(JSON.stringify(vault.GetThinks().map(t => t.Metadata))).toBe(original);
 });

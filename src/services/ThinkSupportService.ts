@@ -10,7 +10,7 @@ export class ThinkSupportService {
     const response = await apiFetch(`/api/bq/files/${encodeURIComponent(id)}/think-support`);
     if (!response.ok) throw new Error('保存済みの思考状態を取得できませんでした。');
     const meta: ThinkMeta = await response.json();
-    if (meta.id !== id || meta.contentType !== 'bundle' || !meta.updatedAt) throw new Error('Bundleの保存情報を確認できません。');
+    if (meta.thinkid !== id || meta.category !== 'bundle' || !meta.updatedAt) throw new Error('Bundleの保存情報を確認できません。');
     readThinkSupport(meta.metadata?.thinkSupport);
     return meta;
   }
@@ -22,7 +22,7 @@ export class ThinkSupportService {
     if (response.status === 409) throw new StorageConflictError(id, '');
     if (!response.ok) throw new Error('保存を確認できませんでした。入力は保持しています。最新の保存内容を確認してください。');
     const meta: ThinkMeta = await response.json();
-    if (meta.id !== id) throw new Error('保存結果の対象が一致しません。');
+    if (meta.thinkid !== id) throw new Error('保存結果の対象が一致しません。');
     readThinkSupport(meta.metadata?.thinkSupport);
     return meta;
   }

@@ -6,6 +6,7 @@
 
 import { Router } from 'express';
 import type { Request, Response } from 'express';
+import yaml from 'js-yaml';
 import { bigqueryService } from '../services/BigQueryService.js';
 import type { VaultRecord } from '../services/BigQueryService.js';
 import { isValidCategory, SAFE_FILE_ID_RE } from '../services/vaultKey.js';
@@ -16,8 +17,8 @@ import path from 'path';
 
 function toMeta(r: VaultRecord) {
   return {
-    id:          r.file_id,
-    contentType: r.category,
+    thinkid:     r.thinkid,
+    category:    r.category,
     title:       r.title ?? '',
     keywords:    r.keywords ?? '',
     relatedIds:  r.related_ids ?? '',
@@ -31,7 +32,7 @@ function toMeta(r: VaultRecord) {
                    typeof r.updated_at === 'object'
                      ? (r.updated_at as unknown as { value: string }).value
                      : String(r.updated_at),
-    metadata:    r.metadata ? (typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata) : undefined,
+    metadata:    r.metadata ? (typeof r.metadata === 'string' ? yaml.load(r.metadata) : r.metadata) : undefined,
   };
 }
 
@@ -58,9 +59,9 @@ export function createBigQueryRoutes() {
   const router = Router();
 
   router.get('/files/:id/think-support', async (req: Request, res: Response) => {
-    const id = String(req.params.id);
-    if (!SAFE_ID_RE.test(id)) { res.status(400).json({ error: 'invalid id' }); return; }
-    const result = await bigqueryService.getRecord(id);
+    const thinkId = String(req.params.id);
+    if (!SAFE_ID_RE.test(thinkId)) { res.status(400).json({ error: 'invalid id' }); return; }
+    const result = await bigqueryService.getRecord(thinkId);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     if (!result.data || result.data.category !== 'bundle') { res.status(404).json({ error: 'bundle not found' }); return; }
     try { res.json(toMeta(result.data)); }
@@ -68,24 +69,25 @@ export function createBigQueryRoutes() {
   });
 
   router.put('/files/:id/think-support', async (req: Request, res: Response) => {
-    const id = String(req.params.id);
+    const thinkId = String(req.params.id);
     const { values, sources, confirmed, expectedVersion } = req.body ?? {};
-    if (!SAFE_ID_RE.test(id) || !validThinkInput(values, sources) || confirmed !== true
+    if (!SAFE_ID_RE.test(thinkId) || !validThinkInput(values, sources) || confirmed !== true
       || typeof expectedVersion !== 'string' || !Number.isFinite(Date.parse(expectedVersion))) {
       res.status(400).json({ error: 'invalid thinking state or confirmation' }); return;
     }
-    const result = await bigqueryService.getRecord(id);
+    const result = await bigqueryService.getRecord(thinkId);
     if (!result.success) { res.status(500).json({ error: result.error }); return; }
     if (!result.data || result.data.category !== 'bundle') { res.status(404).json({ error: 'bundle not found' }); return; }
     try {
       const meta = toMeta(result.data);
       if (meta.updatedAt !== expectedVersion) { res.status(409).json({ error: 'conflict' }); return; }
       if (meta.metadata != null && (typeof meta.metadata !== 'object' || Array.isArray(meta.metadata))) throw new Error('invalid metadata');
-      const previous = readThinkSupport(meta.metadata?.thinkSupport);
+      const previousMetadata = meta.metadata as Record<string, unknown> | undefined;
+      const previous = readThinkSupport(previousMetadata?.thinkSupport);
       const now = new Date(Math.max(Date.now(), Date.parse(expectedVersion) + 1)).toISOString();
       const record = { schemaVersion: 1, revision: (previous?.revision ?? 0) + 1, values, sources, author: 'human', confirmedAt: now, updatedAt: now };
-      const metadata = { ...meta.metadata, thinkSupport: record };
-      const saved = await bigqueryService.saveThinkSupport(id, expectedVersion, metadata, now);
+      const metadata = { ...previousMetadata, thinkSupport: record };
+      const saved = await bigqueryService.saveThinkSupport(thinkId, expectedVersion, metadata, now);
       if (!saved.success) { res.status(500).json({ error: saved.error }); return; }
       if (!saved.data) { res.status(409).json({ error: 'conflict' }); return; }
       res.json({ ...meta, metadata, updatedAt: now });
@@ -125,25 +127,25 @@ export function createBigQueryRoutes() {
 
   // POST /api/bq/files  ← 保存（Upsert）
   router.post('/files', async (req: Request, res: Response) => {
-    const { id, contentType, title, content, keywords, relatedIds, metadata, baseUpdatedAt } = req.body as {
-      id: string; contentType: string;
+    const { thinkid, category, title, content, keywords, relatedIds, metadata, baseUpdatedAt } = req.body as {
+      thinkid: string; category: string;
       title: string; content: string;
       keywords?: string; relatedIds?: string;
       metadata?: any;
       baseUpdatedAt?: string;
     };
-    if (!id || !contentType) {
-      res.status(400).json({ error: 'id, contentType are required' }); return;
+    if (!thinkid || !category) {
+      res.status(400).json({ error: 'thinkid, category are required' }); return;
     }
-    if (!SAFE_ID_RE.test(id)) {
-      res.status(400).json({ error: 'id contains invalid characters' }); return;
+    if (!SAFE_ID_RE.test(thinkid)) {
+      res.status(400).json({ error: 'thinkid contains invalid characters' }); return;
     }
-    if (!isValidCategory(contentType)) {
-      res.status(400).json({ error: `unsupported contentType: ${contentType}` }); return;
+    if (!isValidCategory(category)) {
+      res.status(400).json({ error: `unsupported category: ${category}` }); return;
     }
     let fileDate = new Date();
     // 日付 ID（サフィックス -memo, -a3f9 等を含む場合も先頭の日時部分を採用）
-    const dateMatch = id.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})(?:-\w+)?$/);
+    const dateMatch = thinkid.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})(?:-\w+)?$/);
     if (dateMatch) {
       const [_, yyyy, MM, dd, HH, mm, ss] = dateMatch;
       fileDate = new Date(`${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}+09:00`);
@@ -157,7 +159,7 @@ export function createBigQueryRoutes() {
       if (typeof baseUpdatedAt !== 'string' || !Number.isFinite(Date.parse(baseUpdatedAt))) {
         res.status(400).json({ error: 'invalid baseUpdatedAt' }); return;
       }
-      const existing = await bigqueryService.getRecord(id);
+      const existing = await bigqueryService.getRecord(thinkid);
       if (!existing.success) { res.status(500).json({ error: existing.error }); return; }
       if (!existing.data) { res.status(409).json({ error: 'conflict' }); return; }
       if (existing.success && existing.data && isServerNewer(baseUpdatedAt, existing.data.updated_at)) {
@@ -170,9 +172,9 @@ export function createBigQueryRoutes() {
     }
 
     const record: VaultRecord = {
-      file_id:     id,
+      thinkid,
       file_type:   'md',
-      category:    contentType,
+      category,
       title:       title ?? null,
       content:     content ?? null,
       keywords:    keywords ?? null,
@@ -181,7 +183,7 @@ export function createBigQueryRoutes() {
       is_deleted:  false,
       created_at:  fileTimeStr,
       updated_at:  nowStr,
-      metadata:    metadata ? JSON.stringify(metadata) : null,
+      metadata:    metadata ? yaml.dump(metadata) : null,
     };
     const result = await bigqueryService.save(record, 3, baseUpdatedAt);
     if (!result.success) { res.status(result.error === 'conflict' ? 409 : 500).json({ error: result.error }); return; }
@@ -213,14 +215,10 @@ export function createBigQueryRoutes() {
       
       // 保存先フォルダのパス: {root}/../Thinktank_{yyyyMMdd}/
       const exportDir = path.resolve(process.cwd(), '../', `Thinktank_${yyyyMMdd}`);
-      const metaDir = path.join(exportDir, 'meta');
 
       // 保存先ディレクトリを作成
       if (!fs.existsSync(exportDir)) {
         fs.mkdirSync(exportDir, { recursive: true });
-      }
-      if (!fs.existsSync(metaDir)) {
-        fs.mkdirSync(metaDir, { recursive: true });
       }
 
       exportStatus = {
@@ -233,42 +231,52 @@ export function createBigQueryRoutes() {
       const exportDirResolved = path.resolve(exportDir) + path.sep;
 
       for (const r of records) {
-        const fullContent = r.content ? `${r.title}\n${r.content}` : (r.title || '');
-        const fileId = r.file_id;
+        // title は YAML frontmatter 側に持つため、本文には含めない（重複を避ける）。
+        const body = r.content ?? '';
+        const thinkId = r.thinkid;
         const category = r.category || 'unknown';
 
-        // 既存レコードに旧バージョン由来の不正な id/category が混入している
+        // 既存レコードに旧バージョン由来の不正な thinkid/category が混入している
         // 可能性を考慮し、書き込み先が exportDir 配下から外れないことを検証する。
-        if (!SAFE_ID_RE.test(fileId) || !SAFE_ID_RE.test(category)) {
-          console.warn(`[bigqueryRoutes] export: skip unsafe id/category (${fileId} / ${category})`);
+        if (!SAFE_ID_RE.test(thinkId) || !SAFE_ID_RE.test(category)) {
+          console.warn(`[bigqueryRoutes] export: skip unsafe thinkid/category (${thinkId} / ${category})`);
           exportStatus.current++;
           continue;
         }
 
         let targetPath = '';
         if (category === 'memo') {
-          targetPath = path.join(exportDir, `${fileId}.md`);
+          targetPath = path.join(exportDir, `${thinkId}.md`);
         } else {
           const categoryDir = path.join(exportDir, category);
           if (!fs.existsSync(categoryDir)) {
             fs.mkdirSync(categoryDir, { recursive: true });
           }
-          targetPath = path.join(categoryDir, `${fileId}.md`);
+          targetPath = path.join(categoryDir, `${thinkId}.md`);
         }
-        const metaPath = path.join(metaDir, `${fileId}.json`);
 
-        if (!path.resolve(targetPath).startsWith(exportDirResolved) ||
-            !path.resolve(metaPath).startsWith(exportDirResolved)) {
-          console.warn(`[bigqueryRoutes] export: blocked path traversal attempt (${fileId})`);
+        if (!path.resolve(targetPath).startsWith(exportDirResolved)) {
+          console.warn(`[bigqueryRoutes] export: blocked path traversal attempt (${thinkId})`);
           exportStatus.current++;
           continue;
         }
 
-        await fs.promises.writeFile(targetPath, fullContent, 'utf8');
-
-        // メタデータの個別エクスポート
-        const metaObj = r.metadata ? (typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata) : {};
-        await fs.promises.writeFile(metaPath, JSON.stringify(metaObj, null, 2), 'utf8');
+        // metadata の有無によらず、レコードの識別情報を常に YAML frontmatter として
+        // 本文の先頭に配置する（metadata が空のレコードだけ frontmatter が無くなる問題を防ぐ）。
+        const storedMetadata = r.metadata ? (typeof r.metadata === 'string' ? yaml.load(r.metadata) : r.metadata) : null;
+        const bqDateToIso = (v: typeof r.created_at) =>
+          v == null ? '' : typeof v === 'object' ? (v as unknown as { value: string }).value : String(v);
+        const frontmatterObj = {
+          ...(storedMetadata && typeof storedMetadata === 'object' ? storedMetadata : {}),
+          thinkid:    thinkId,
+          category,
+          title:      r.title ?? '',
+          is_deleted: r.is_deleted ?? false,
+          created_at: bqDateToIso(r.created_at),
+          updated_at: bqDateToIso(r.updated_at),
+        };
+        const frontmatter = `---\n${yaml.dump(frontmatterObj)}---\n`;
+        await fs.promises.writeFile(targetPath, frontmatter + body, 'utf8');
 
         exportStatus.current++;
       }

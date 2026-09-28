@@ -11,7 +11,7 @@ describe('HTML Think storage contract', () => {
     t.Content = '会場比較\n' + html;
     backend.save.mockResolvedValue({ updatedAt: '2026-09-07T12:00:00Z' });
     await t.SaveContent();
-    expect(backend.save).toHaveBeenCalledWith(expect.objectContaining({ contentType: 'html', fullContent: '会場比較\n' + html }));
+    expect(backend.save).toHaveBeenCalledWith(expect.objectContaining({ category: 'html', fullContent: '会場比較\n' + html }));
     expect(t.IsDirty).toBe(false);
     const loaded = new TTThink();
     loaded.ID = t.ID; loaded.ContentType = 'html'; loaded.setContentSilent('会場比較'); loaded.IsMetaOnly = true;

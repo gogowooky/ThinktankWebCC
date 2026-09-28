@@ -51,7 +51,7 @@ async function create(vault: TTVault, chatId: string, title: string, seed?: Task
   const renamed = content.replace(/^[^\r\n]*/, () => `${heading}${prefix}${normalizedTitle}`);
   if (renamed !== content) {
     const saved = await StorageManager.instance.save({
-      id: chatId, contentType: 'chat', fullContent: renamed, keywords: chat.Keywords,
+      thinkid: chatId, category: 'chat', fullContent: renamed, keywords: chat.Keywords,
       relatedIds: chat.RelatedIDs, metadata, baseUpdatedAt: version || undefined,
     });
     if (!isCurrent()) throw new Error('Chatの題名は保存されましたが、編集中の変更があります。再読み込みしてから課題を作成してください。');

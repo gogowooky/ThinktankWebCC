@@ -16,7 +16,7 @@ function item(id: string, content: string, type = 'memo') {
 }
 function vault(...items: TTThink[]) { const v = new TTVault('test'); items.forEach(t => v.AddItem(t)); v.IsLoaded = true; return v; }
 function reader(): ContextReader { return { getBody: vi.fn().mockResolvedValue(null), search: vi.fn().mockResolvedValue({ items: [], complete: true }) }; }
-function meta(t: TTThink) { return { id: t.ID, title: t.Name, contentType: t.ContentType, keywords: '', relatedIds: '', sizeBytes: 0, isDeleted: false, createdAt: t.UpdatedAt, updatedAt: t.UpdatedAt }; }
+function meta(t: TTThink) { return { thinkid: t.ID, title: t.Name, category: t.ContentType, keywords: '', relatedIds: '', sizeBytes: 0, isDeleted: false, createdAt: t.UpdatedAt, updatedAt: t.UpdatedAt }; }
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>(r => { resolve = r; });

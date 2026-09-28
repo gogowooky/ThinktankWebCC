@@ -20,8 +20,8 @@ beforeEach(() => {
   vi.clearAllMocks(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   host = document.createElement('div'); root = createRoot(host); vault = new TTVault('vault');
   const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'bundle'; vault.AddThink(bundle);
-  api.read.mockResolvedValue({ id: 'bundle', contentType: 'bundle', updatedAt: 'version-1', metadata: {} });
-  api.save.mockResolvedValue({ id: 'bundle', updatedAt: 'version-2', metadata: {} });
+  api.read.mockResolvedValue({ thinkid: 'bundle', category: 'bundle', updatedAt: 'version-1', metadata: {} });
+  api.save.mockResolvedValue({ thinkid: 'bundle', updatedAt: 'version-2', metadata: {} });
 });
 afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
 async function click(label: string) {

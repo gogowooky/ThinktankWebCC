@@ -2,12 +2,13 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const yaml = require('js-yaml');
 
 // The lock file also serializes writes from a second app instance.
 function saveVaultRecord(directory, payload) {
-  if (!/^[A-Za-z0-9_-]{1,200}$/.test(payload.id)) throw new Error('不正なThink IDです。');
+  if (!/^[A-Za-z0-9_-]{1,200}$/.test(payload.thinkid)) throw new Error('不正なThink IDです。');
   fs.mkdirSync(directory, { recursive: true });
-  const file = path.join(directory, `${payload.id}.json`);
+  const file = path.join(directory, `${payload.thinkid}.json`);
   const lock = `${file}.lock`;
   let handle;
   try { handle = fs.openSync(lock, 'wx'); }
@@ -18,19 +19,20 @@ function saveVaultRecord(directory, payload) {
     if (payload.baseUpdatedAt && previous?.updatedAt !== payload.baseUpdatedAt) throw new Error('記録が別の場所で更新されました。開き直してから変更してください。');
     const now = new Date(Math.max(Date.now(), (Date.parse(previous?.updatedAt) || 0) + 1)).toISOString();
     const nl = payload.fullContent.indexOf('\n');
+    const metadataObj = payload.metadata ?? (typeof previous?.metadata === 'string' ? yaml.load(previous.metadata) : previous?.metadata) ?? {};
     const record = {
-      id: payload.id, contentType: payload.contentType,
+      thinkid: payload.thinkid, category: payload.category,
       title: nl < 0 ? payload.fullContent : payload.fullContent.slice(0, nl),
       content: nl < 0 ? '' : payload.fullContent.slice(nl + 1),
       keywords: payload.keywords || null, relatedIds: payload.relatedIds || null,
-      metadata: payload.metadata ?? previous?.metadata ?? {},
+      metadata: yaml.dump(metadataObj),
       sizeBytes: Buffer.byteLength(payload.fullContent, 'utf8'), isDeleted: false,
       createdAt: previous?.createdAt || now, updatedAt: now,
     };
     fs.writeFileSync(temporary, JSON.stringify(record, null, 2), 'utf8');
     fs.renameSync(temporary, file);
     const { content, ...meta } = record;
-    return meta;
+    return { ...meta, metadata: metadataObj };
   } finally {
     if (fs.existsSync(temporary)) fs.unlinkSync(temporary);
     fs.closeSync(handle); fs.unlinkSync(lock);

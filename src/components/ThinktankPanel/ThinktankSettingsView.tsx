@@ -175,7 +175,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
               <dl className="tt-settings-paths">
                 <dt className="tt-settings-paths__label">Local</dt>
                 <dd className="tt-settings-paths__value">
-                  <code>ThinktankLocal/<strong>{vaultName}</strong>/&#123;contentType&#125;/&#123;id&#125;.md</code>
+                  <code>ThinktankLocal/<strong>{vaultName}</strong>/&#123;category&#125;/&#123;thinkid&#125;.md</code>
                 </dd>
                 <dt className="tt-settings-paths__label">BigQuery</dt>
                 <dd className="tt-settings-paths__value">

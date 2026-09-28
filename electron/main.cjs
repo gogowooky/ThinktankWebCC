@@ -5,6 +5,7 @@ const path   = require('path');
 const fs     = require('fs');
 const net    = require('net');
 const crypto = require('crypto');
+const yaml   = require('js-yaml');
 const { saveVaultRecord } = require('./vaultSave.cjs');
 const { spawn } = require('child_process');
 
@@ -36,12 +37,12 @@ function splitContent(fullContent) {
 
 function toMeta(record) {
   const { content: _content, ...meta } = record;
-  return meta;
+  return { ...meta, metadata: typeof meta.metadata === 'string' ? yaml.load(meta.metadata) : meta.metadata };
 }
 
 function buildRecord({ id, contentType, title, body, keywords, relatedIds, sizeBytes, isDeleted, createdAt, updatedAt, metadata }) {
   return {
-    id, contentType, title, metadata: metadata ?? {},
+    thinkid: id, category: contentType, title, metadata: yaml.dump(metadata ?? {}),
     content:    body,
     keywords:   keywords   || null,
     relatedIds: relatedIds || null,
@@ -154,7 +155,7 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
   // ローカルより新しいものだけを対象に絞る
   let skipped = 0;
   const toSync = serverMetas.filter(meta => {
-    const p = recordPath(meta.id);
+    const p = recordPath(meta.thinkid);
     if (fs.existsSync(p)) {
       const local = JSON.parse(fs.readFileSync(p, 'utf8'));
       if (local.updatedAt >= meta.updatedAt) { skipped++; return false; }
@@ -164,10 +165,10 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
 
   // 2. コンテンツを並行取得（対象が多くても順次待ちにしない）
   const fetched = await Promise.all(toSync.map(async (meta) => {
-    const p = recordPath(meta.id);
+    const p = recordPath(meta.thinkid);
     const isNew = !fs.existsSync(p);
-    const res = await fetch(`${base}/api/bq/files/${encodeURIComponent(meta.id)}/content`, { headers: authHeaders });
-    if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}: content ${meta.id}`);
+    const res = await fetch(`${base}/api/bq/files/${encodeURIComponent(meta.thinkid)}/content`, { headers: authHeaders });
+    if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}: content ${meta.thinkid}`);
     const content = res.status === 404 ? '' : await res.json();
     return { meta, content, isNew };
   }));
@@ -175,8 +176,8 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
   let added = 0, updated = 0;
   for (const { meta, content, isNew } of fetched) {
     const record = buildRecord({
-      id:          meta.id,
-      contentType: meta.contentType,
+      id:          meta.thinkid,
+      contentType: meta.category,
       title:       meta.title || '',
       body:        content || '',
       keywords:    meta.keywords,
@@ -187,7 +188,7 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
       updatedAt:   meta.updatedAt,
       metadata:    meta.metadata,
     });
-    fs.writeFileSync(recordPath(meta.id), JSON.stringify(record, null, 2), 'utf8');
+    fs.writeFileSync(recordPath(meta.thinkid), JSON.stringify(record, null, 2), 'utf8');
     isNew ? added++ : updated++;
   }
 
@@ -465,7 +466,7 @@ function createWindow(startUrl) {
           const metas = await api.storage.listMeta();
           ipcMetaCount = Array.isArray(metas) ? metas.length : typeof metas;
           if (Array.isArray(metas) && metas.length) {
-            const c = await api.storage.getContent(metas[0].id);
+            const c = await api.storage.getContent(metas[0].thinkid);
             contentLen = c === null ? null : c.length;
           }
         } catch (e) { ipcError = String(e && e.message || e); }

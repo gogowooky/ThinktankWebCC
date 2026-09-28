@@ -357,12 +357,12 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     try {
       const metas = await StorageManager.instance.search(q);
       const thinks = metas.map(meta => {
-        const existing = vault.GetThink(meta.id);
+        const existing = vault.GetThink(meta.thinkid);
         if (existing) return existing;
         const t = new TTThink();
-        t.ID          = meta.id;
+        t.ID          = meta.thinkid;
         t.VaultID     = vault.ID;
-        t.ContentType = meta.contentType as TTThink['ContentType'];
+        t.ContentType = meta.category as TTThink['ContentType'];
         t.Keywords    = meta.keywords  ?? '';
         t.RelatedIDs  = meta.relatedIds ?? '';
         t.IsMetaOnly  = true;

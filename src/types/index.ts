@@ -52,7 +52,7 @@ export type MediaType =
 // ════════════════════════════════════════════════════════════════════════
 
 export interface ItemMeta {
-  file_id: string;
+  thinkid: string;
   title: string;
   updated_at: string;
   created_at: string;

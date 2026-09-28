@@ -3,7 +3,7 @@ import { emptyThinkValues, readThinkSupport } from '../../server/services/thinkS
 import type { ThinkMeta } from './storage/IStorageBackend';
 
 export function prepareProposalReview(turn: ConversationTurn, meta: ThinkMeta) {
-  if (turn.context.scope !== 'bundle-only' || meta.id !== turn.context.bundleId || meta.contentType !== 'bundle') {
+  if (turn.context.scope !== 'bundle-only' || meta.thinkid !== turn.context.bundleId || meta.category !== 'bundle') {
     throw new Error('提案先の課題が一致しません。');
   }
   const record = readThinkSupport(meta.metadata?.thinkSupport);

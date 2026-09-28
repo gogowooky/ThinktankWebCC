@@ -29,9 +29,9 @@ it('renames the consultation while preserving its panel, state, transcript and m
   expect(bundle.Metadata.taskOrigin.chatId).toBe(chat.ID);
   expect(chat.IsMetadataDirty).toBe(false);
   expect(storage.save).toHaveBeenNthCalledWith(1, expect.objectContaining({
-    id: chat.ID, fullContent: chat.Content.replace('TASK:', 'ASK:'), metadata: expect.objectContaining({ thinkConversations: chat.Metadata.thinkConversations }), baseUpdatedAt: '2026-09-20T01:00:00Z',
+    thinkid: chat.ID, fullContent: chat.Content.replace('TASK:', 'ASK:'), metadata: expect.objectContaining({ thinkConversations: chat.Metadata.thinkConversations }), baseUpdatedAt: '2026-09-20T01:00:00Z',
   }));
-  expect(storage.save).toHaveBeenNthCalledWith(2, expect.objectContaining({ id: bundle.ID }));
+  expect(storage.save).toHaveBeenNthCalledWith(2, expect.objectContaining({ thinkid: bundle.ID }));
 });
 
 it('loads a metadata-only Chat without losing the saved conversation', async () => {
@@ -56,7 +56,7 @@ it('preserves the renamed Chat on Bundle failure and permits retry', async () =>
   expect(vault.GetBundles()).toHaveLength(0);
   const bundle = await startTaskFromChat(vault, chat.ID, '課題');
   expect(vault.GetBundles()).toEqual([bundle]);
-  expect(storage.save.mock.calls.filter(([payload]) => payload.contentType === 'chat')).toHaveLength(2);
+  expect(storage.save.mock.calls.filter(([payload]) => payload.category === 'chat')).toHaveLength(2);
 });
 
 it('refuses missing bodies and invalid task titles before writing', async () => {
@@ -74,9 +74,9 @@ it('reuses the saved Bundle after final Chat binding fails, including after loca
   const reloaded = new TTVault('vault'); reloaded.AddThink(chat); reloaded.AddThink(bundle);
   const result = await startTaskFromChat(reloaded, chat.ID, '課題');
   expect(result.ID).toBe(bundle.ID); expect(chat.Name).toContain('TASK:');
-  expect(storage.save.mock.calls.filter(([p]) => p.contentType === 'bundle')).toHaveLength(1);
+  expect(storage.save.mock.calls.filter(([p]) => p.category === 'bundle')).toHaveLength(1);
   await startTaskFromChat(reloaded, chat.ID, 'もう一度');
-  expect(storage.save.mock.calls.filter(([p]) => p.contentType === 'bundle')).toHaveLength(1);
+  expect(storage.save.mock.calls.filter(([p]) => p.category === 'bundle')).toHaveLength(1);
 });
 it('coalesces simultaneous task creation requests', async () => {
   const [a, b] = await Promise.all([startTaskFromChat(vault, chat.ID, '課題'), startTaskFromChat(vault, chat.ID, '課題')]);

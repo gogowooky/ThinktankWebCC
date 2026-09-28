@@ -12,9 +12,9 @@ import { StorageConflictError } from './IStorageBackend';
 
 /** C# API が返す camelCase レスポンス */
 interface CsThinkRecord {
-  id:          string;
+  thinkid:     string;
   vaultId:     string;
-  contentType: string;
+  category:    string;
   title:       string;
   content:     string | null;
   keywords:    string | null;
@@ -30,8 +30,8 @@ const VAULT_ID = 'vault_ver2';
 
 function toMeta(r: CsThinkRecord): ThinkMeta {
   return {
-    id:          r.id,
-    contentType: r.contentType,
+    thinkid:     r.thinkid,
+    category:    r.category,
     title:       r.title ?? '',
     keywords:    r.keywords ?? '',
     relatedIds:  r.relatedIds ?? '',
@@ -60,8 +60,8 @@ export class LocalStorageBackend implements IStorageBackend {
     const result: ThinkMeta[] = [];
     for (let i = 0; i < data.length; i += 6) {
       result.push(...await Promise.all(data.slice(i, i + 6).map(async record => {
-        if (record.metadata === undefined && ['chat', 'html'].includes(record.contentType)) {
-          const body = await this.getRawBody(record.id);
+        if (record.metadata === undefined && ['chat', 'html'].includes(record.category)) {
+          const body = await this.getRawBody(record.thinkid);
           if (body !== null) record.metadata = unpackLocalMetadata(body).metadata;
         }
         return toMeta(record);
@@ -91,16 +91,16 @@ export class LocalStorageBackend implements IStorageBackend {
       const response = await fetch(`${this.baseUrl}/api/files/meta?vaultId=${encodeURIComponent(VAULT_ID)}`);
       if (!response.ok) throw new Error('保存前に最新の記録を確認できませんでした。');
       const records = await response.json() as CsThinkRecord[];
-      const current = records.find(r => r.id === payload.id);
-      if (!current || current.updatedAt !== payload.baseUpdatedAt) throw new StorageConflictError(payload.id, current?.updatedAt || '');
+      const current = records.find(r => r.thinkid === payload.thinkid);
+      if (!current || current.updatedAt !== payload.baseUpdatedAt) throw new StorageConflictError(payload.thinkid, current?.updatedAt || '');
     }
     const res = await fetch(`${this.baseUrl}/api/files`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        id:          payload.id,
+        thinkid:     payload.thinkid,
         vaultId:     VAULT_ID,
-        contentType: payload.contentType,
+        category:    payload.category,
         title,
         content:     packLocalMetadata(body, payload.metadata),
         keywords:    payload.keywords || null,

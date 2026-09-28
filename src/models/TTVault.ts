@@ -186,20 +186,20 @@ export class TTVault extends TTCollection {
       try {
         const metas = await (options.search ?? (query => StorageManager.instance.search(query)))(searchQuery);
         for (const meta of metas) {
-          if (meta.contentType === 'bundle') continue;
-          
+          if (meta.category === 'bundle') continue;
+
           // 日付条件チェック
           if (searchCreatedRange) {
             const range = searchCreatedRange as { from: string; to: string };
-            const d = meta.id.slice(0, 10);
+            const d = meta.thinkid.slice(0, 10);
             if (d < range.from || d > range.to) continue;
           }
           if (searchUpdatedRange) {
             const range = searchUpdatedRange as { from: string; to: string };
-            const d = (meta.updatedAt || meta.id).slice(0, 10);
+            const d = (meta.updatedAt || meta.thinkid).slice(0, 10);
             if (d < range.from || d > range.to) continue;
           }
-          finalIds.add(meta.id);
+          finalIds.add(meta.thinkid);
         }
       } catch (e) {
         if (strict) throw e;
@@ -361,9 +361,9 @@ export class TTVault extends TTCollection {
         const metas = await StorageManager.instance.listMeta();
         for (const meta of metas) {
           const think = new TTThink();
-          think.ID          = meta.id;
+          think.ID          = meta.thinkid;
           think.VaultID     = this.ID;
-          think.ContentType = meta.contentType as ContentType;
+          think.ContentType = meta.category as ContentType;
           think.Keywords    = meta.keywords  ?? '';
           think.RelatedIDs  = meta.relatedIds ?? '';
           think.Metadata    = meta.metadata  ?? {};
@@ -494,8 +494,8 @@ export class TTVault extends TTCollection {
 
     try {
       await StorageManager.instance.save({
-        id:          newId,
-        contentType: 'bundle',
+        thinkid:     newId,
+        category:    'bundle',
         fullContent,
         keywords:    '',
         relatedIds:  ids.join(','),
@@ -606,8 +606,8 @@ export class TTVault extends TTCollection {
 
     try {
       await StorageManager.instance.save({
-        id:          newId,
-        contentType: contentType,
+        thinkid:     newId,
+        category:    contentType,
         fullContent: initialName,
         keywords:    '',
         relatedIds:  '',
@@ -678,8 +678,8 @@ export class TTVault extends TTCollection {
 
     try {
       await StorageManager.instance.save({
-        id:          newId,
-        contentType: 'links',
+        thinkid:     newId,
+        category:    'links',
         fullContent,
         keywords:    '',
         relatedIds:  '',
@@ -714,8 +714,8 @@ export class TTVault extends TTCollection {
 
     try {
       await StorageManager.instance.save({
-        id:          newId,
-        contentType: 'chat',
+        thinkid:     newId,
+        category:    'chat',
         fullContent: content,
         keywords:    '',
         relatedIds:  '',
@@ -757,7 +757,7 @@ export class TTVault extends TTCollection {
     this.Count = this._children.size;
     this.InvalidateItemsCache();
     try {
-      await StorageManager.instance.save({ id, contentType, fullContent, keywords, relatedIds: '' });
+      await StorageManager.instance.save({ thinkid: id, category: contentType, fullContent, keywords, relatedIds: '' });
     } catch (e) {
       this._children.delete(id);
       this.Count = this._children.size;

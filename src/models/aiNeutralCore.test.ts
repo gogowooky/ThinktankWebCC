@@ -44,7 +44,7 @@ it('creates and edits Thinks, resolves a Bundle and opens Overview without AI', 
   overview.OpenBundle(bundle.ID);
   expect(overview.BundleID).toBe(bundle.ID);
   expect(overview.MediaType).toBe('datagrid');
-  expect(storage.save).toHaveBeenCalledWith(expect.objectContaining({ id: think.ID, fullContent: think.Content }));
+  expect(storage.save).toHaveBeenCalledWith(expect.objectContaining({ thinkid: think.ID, fullContent: think.Content }));
 });
 
 it('saves confirmed task details together with the Bundle and preserves the Chat', async () => {
@@ -101,8 +101,8 @@ it('creates one task Bundle with the confirmed title and links the consultation 
   expect(parseBundle(bundle.Content).ids).toEqual([chat.ID]);
   expect((await vault.GetThinksForBundleAsync(bundle.ID, true)).map(t => t.ID)).toEqual([chat.ID]);
   expect(storage.save).toHaveBeenLastCalledWith(expect.objectContaining({
-    id: bundle.ID,
-    contentType: 'bundle',
+    thinkid: bundle.ID,
+    category: 'bundle',
     relatedIds: chat.ID,
   }));
 });

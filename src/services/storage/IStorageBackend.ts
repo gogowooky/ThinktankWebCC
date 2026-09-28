@@ -5,8 +5,8 @@
  */
 
 export interface ThinkMeta {
-  id:          string;
-  contentType: string;
+  thinkid:     string;
+  category:    string;
   title:       string;
   keywords:    string;
   relatedIds:  string;
@@ -18,8 +18,8 @@ export interface ThinkMeta {
 }
 
 export interface SavePayload {
-  id:          string;
-  contentType: string;
+  thinkid:     string;
+  category:    string;
   fullContent: string;  // TTThink.Content（タイトル行 + 本文）。保存側で title と body に分ける
   keywords:    string;
   relatedIds:  string;

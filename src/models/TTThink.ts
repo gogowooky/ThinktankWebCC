@@ -142,8 +142,8 @@ export class TTThink extends TTObject {
     if (!this.IsDirty && !this.IsMetadataDirty && !force) return;
     try {
       const meta = await StorageManager.instance.save({
-        id:          this.ID,
-        contentType: this.ContentType,
+        thinkid:     this.ID,
+        category:    this.ContentType,
         fullContent: this.Content,
         keywords:    this.Keywords,
         relatedIds:  this.RelatedIDs,

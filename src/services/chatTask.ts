@@ -51,7 +51,7 @@ export async function bindChatToTask(vault: TTVault, chat: TTThink, bundle: TTTh
   const metadata = { ...chat.Metadata, taskContext: { schemaVersion: 1, bundleId: bundle.ID,
     ...(previousKind ? { previousKind } : {}) } };
   if (fullContent === before && JSON.stringify(metadata) === metadataBefore) return;
-  const saved = await StorageManager.instance.save({ id: chat.ID, contentType: 'chat', fullContent, metadata,
+  const saved = await StorageManager.instance.save({ thinkid: chat.ID, category: 'chat', fullContent, metadata,
     keywords: chat.Keywords, relatedIds: chat.RelatedIDs, baseUpdatedAt: version || undefined });
   if (!current()) throw new Error('関連付けは保存されました。編集中の内容を確認してから再読み込みしてください。');
   chat.setContentSilent(fullContent); chat.Metadata = metadata; chat.IsMetaOnly = false;

@@ -208,7 +208,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
           if (typeof answer.search !== 'string') throw new Error('検索語が不正です。');
           const query = answer.search.toLowerCase();
           const fullText = await StorageManager.instance.search(answer.search);
-          const matchedIds = new Set(fullText.map(t => t.id));
+          const matchedIds = new Set(fullText.map(t => t.thinkid));
           const matches = [...allowed.values()].filter(t => matchedIds.has(t.ID) || `${t.Name} ${t.Keywords}`.toLowerCase().includes(query)).slice(0, 30);
           searchResults = matches.map(t => ({ id: t.ID, title: t.Name, type: t.ContentType }));
           setFoundChats(matches.filter(t => t.ContentType === 'chat' && t.ID !== item!.ID).map(t => ({ id: t.ID, title: t.Name })));

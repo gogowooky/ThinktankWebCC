@@ -9,7 +9,7 @@ const turn = { context: { scope: 'bundle-only', bundleId: 'bundle' }, answer: { 
   { field: 'completionCriteria', before: '', after: '参加者が楽しめたことを確認', reason: '会話から' },
 ] } } as ConversationTurn;
 function meta(): ThinkMeta {
-  return { id: 'bundle', contentType: 'bundle', title: '誕生日会', keywords: '', relatedIds: '', sizeBytes: 0,
+  return { thinkid: 'bundle', category: 'bundle', title: '誕生日会', keywords: '', relatedIds: '', sizeBytes: 0,
     isDeleted: false, createdAt: '2026-09-16T00:00:00Z', updatedAt: '2026-09-16T00:00:00Z', metadata: { thinkSupport: {
     schemaVersion: 1, revision: 1, author: 'human', updatedAt: '2026-09-16T00:00:00Z', confirmedAt: '2026-09-16T00:00:00Z',
     values: { ...emptyThinkValues(), goal: '旧目的', decisions: '既存の決定' },
@@ -28,7 +28,7 @@ it('adopts proposed fields while preserving unrelated decisions and removing obs
 it('refuses an outdated proposal or a different target', () => {
   const changed = meta(); changed.metadata!.thinkSupport.values.goal = '別の目的';
   expect(() => prepareProposalReview(turn, changed)).toThrow('更新されています');
-  expect(() => prepareProposalReview(turn, { ...meta(), id: 'other' })).toThrow('一致しません');
+  expect(() => prepareProposalReview(turn, { ...meta(), thinkid: 'other' })).toThrow('一致しません');
 });
 it('recognizes an already applied proposal without requiring another write', () => {
   const applied = meta();

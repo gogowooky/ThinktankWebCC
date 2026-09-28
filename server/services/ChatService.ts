@@ -174,7 +174,7 @@ async function executeGeminiTool(
       const title    = String(args['title']    ?? '無題');
       const content  = String(args['content']  ?? '');
       const res = await bigqueryService.save({
-        file_id: id, file_type: 'md', category, title, content,
+        thinkid: id, file_type: 'md', category, title, content,
         keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
         is_deleted: false, created_at: nowStr, updated_at: nowStr, metadata: null,
       });
@@ -191,7 +191,7 @@ async function executeGeminiTool(
       // AI が `* [<id>]` と角括弧付きで書きがちなので外す（parseBundle は素の ID を期待）
       const content = stripBracketedIdsInBundleContent(String(args['content'] ?? ''));
       const res = await bigqueryService.save({
-        file_id: id, file_type: 'md', category: 'bundle', title, content,
+        thinkid: id, file_type: 'md', category: 'bundle', title, content,
         keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
         is_deleted: false, created_at: nowStr, updated_at: nowStr, metadata: null,
       });
@@ -206,7 +206,7 @@ async function executeGeminiTool(
       const title   = String(args['title']   ?? '無題のTable');
       const content = String(args['content'] ?? '');
       const res = await bigqueryService.save({
-        file_id: id, file_type: 'md', category: 'table', title, content,
+        thinkid: id, file_type: 'md', category: 'table', title, content,
         keywords: null, related_ids: null, size_bytes: Buffer.byteLength(content, 'utf8'),
         is_deleted: false, created_at: nowStr, updated_at: nowStr, metadata: null,
       });
@@ -243,7 +243,7 @@ async function executeGeminiTool(
       const result   = await bigqueryService.search(keyword);
       if (!result.success) throw new Error(result.error);
       const rows    = category ? result.data.filter(r => r.category === category) : result.data;
-      const summary = rows.slice(0, 20).map(r => ({ id: r.file_id, category: r.category, title: r.title ?? '' }));
+      const summary = rows.slice(0, 20).map(r => ({ id: r.thinkid, category: r.category, title: r.title ?? '' }));
       return `検索結果 ${rows.length}件（先頭20件表示）:\n${JSON.stringify(summary, null, 2)}`;
     }
 
@@ -253,7 +253,7 @@ async function executeGeminiTool(
       if (!result.success) throw new Error(result.error);
       if (!result.data)    return `ID [${id}] は見つかりませんでした`;
       const r = result.data;
-      return JSON.stringify({ id: r.file_id, category: r.category, title: r.title, content: r.content });
+      return JSON.stringify({ id: r.thinkid, category: r.category, title: r.title, content: r.content });
     }
 
     case 'fetchUrlContent': {

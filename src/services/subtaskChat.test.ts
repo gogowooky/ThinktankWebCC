@@ -19,7 +19,7 @@ it('creates one dedicated Chat, preserves Bundle text and metadata, and reuses i
   const before = child.Content;
   const [chat, again] = await Promise.all([ensureSubtaskChat(vault, child.ID), ensureSubtaskChat(vault, child.ID)]);
   expect(again.ID).toBe(chat.ID); expect(storage.save).toHaveBeenCalledTimes(2);
-  expect(storage.save.mock.calls[0][0]).toMatchObject({ contentType: 'chat', metadata: { subtaskChat: { schemaVersion: 1, bundleId: 'child' } } });
+  expect(storage.save.mock.calls[0][0]).toMatchObject({ category: 'chat', metadata: { subtaskChat: { schemaVersion: 1, bundleId: 'child' } } });
   expect(storage.save.mock.calls[1][0]).toMatchObject({ baseUpdatedAt: '2026-09-16T00:00:00Z', metadata: child.Metadata });
   expect(child.Content).toBe(`${before}* ${chat.ID}\n`);
   expect(chat.Name).toBe('TASK:Workout｜会場予約'); expect(chat.IsMetadataDirty).toBe(false);
@@ -36,7 +36,7 @@ it('retries only the Bundle link after partial failure, preserving the saved Cha
   const savedChat = vault.GetThinks().find(t => t.ContentType === 'chat')!;
   const chat = await ensureSubtaskChat(vault, child.ID);
   expect(chat.ID).toBe(savedChat.ID);
-  expect(storage.save.mock.calls.filter(([r]) => r.contentType === 'chat')).toHaveLength(1);
+  expect(storage.save.mock.calls.filter(([r]) => r.category === 'chat')).toHaveLength(1);
   expect(parseBundle(child.Content).ids).toEqual(['2026-09-16-120000', chat.ID]);
 });
 

@@ -23,8 +23,8 @@ export function ProposalReview({ vault, turn, disabled }: { vault: TTVault; turn
       const next = prepareProposalReview(turn, meta);
       if (next.alreadyApplied) { setSaved(true); setReview(undefined); setMessage('この内容は課題の概要に反映されています。'); return; }
       if (!save) { setReview(meta); return; }
-      const result = await service.save(meta.id, meta.updatedAt, next.values, next.sources);
-      const live = vault.GetThink(meta.id);
+      const result = await service.save(meta.thinkid, meta.updatedAt, next.values, next.sources);
+      const live = vault.GetThink(meta.thinkid);
       if (live) {
         const dirty = live.IsMetadataDirty;
         live.Metadata = { ...live.Metadata, thinkSupport: result.metadata?.thinkSupport };

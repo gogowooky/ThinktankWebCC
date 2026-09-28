@@ -1,4 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
+import yaml from 'js-yaml';
 import type { BigQueryService } from './BigQueryService.js';
 import type { AIProvider } from './AIProvider.js';
 import { ConversationService, verifyContextHashes } from './ConversationService.js';
@@ -17,7 +18,7 @@ export class AgentService {
     if (!result.success) throw new AgentError(503, 'ジョブ保存先に接続できません。');
     const record = result.data;
     if (!record || record.category !== 'bundle' || record.is_deleted) throw new AgentError(404, '保存済みBundleがありません。');
-    const metadata: unknown = typeof record.metadata === 'string' ? JSON.parse(record.metadata) : structuredClone(record.metadata ?? {});
+    const metadata: unknown = typeof record.metadata === 'string' ? yaml.load(record.metadata) : structuredClone(record.metadata ?? {});
     if (!object(metadata)) throw new AgentError(422, 'Bundleの保存形式が不正です。');
     const version = object(record.updated_at) && 'value' in record.updated_at ? String(record.updated_at.value) : String(record.updated_at);
     if (!Number.isFinite(Date.parse(version))) throw new AgentError(422, '保存版を確認できません。');
@@ -142,7 +143,7 @@ export class AgentService {
     if (!found.success) throw new AgentError(503, '成果物を取得できません。');
     const r = found.data;
     if (!r || r.is_deleted || r.category !== 'memo') throw new AgentError(404, '適用先Thinkがありません。自動再作成は行いません。');
-    const metadata: unknown = typeof r.metadata === 'string' ? JSON.parse(r.metadata) : r.metadata ?? {};
+    const metadata: unknown = typeof r.metadata === 'string' ? yaml.load(r.metadata) : r.metadata ?? {};
     if (!object(metadata) || !object(metadata.thinkAgentArtifact) || metadata.thinkAgentArtifact.jobId !== jobId || metadata.thinkAgentArtifact.bundleId !== bundleId) throw new AgentError(409, '適用先の対応を確認できません。');
     const updatedAt = object(r.updated_at) && 'value' in r.updated_at ? String(r.updated_at.value) : String(r.updated_at);
     return { id: job.applied.thinkId, fullContent: `${r.title ?? ''}\n${r.content ?? ''}`, updatedAt, metadata };

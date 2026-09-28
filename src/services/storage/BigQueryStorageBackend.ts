@@ -32,8 +32,8 @@ export class BigQueryStorageBackend implements IStorageBackend {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({
-        id:          payload.id,
-        contentType: payload.contentType,
+        thinkid:     payload.thinkid,
+        category:    payload.category,
         title,
         content:     body,
         keywords:    payload.keywords || null,
@@ -44,7 +44,7 @@ export class BigQueryStorageBackend implements IStorageBackend {
     });
     if (res.status === 409) {
       const j = await res.json().catch(() => ({})) as { serverUpdatedAt?: string };
-      throw new StorageConflictError(payload.id, j.serverUpdatedAt ?? '');
+      throw new StorageConflictError(payload.thinkid, j.serverUpdatedAt ?? '');
     }
     if (!res.ok) throw new Error(`BQ save failed: ${res.status}`);
     return res.json() as Promise<ThinkMeta>;

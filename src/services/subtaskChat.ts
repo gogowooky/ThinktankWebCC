@@ -48,7 +48,7 @@ async function prepare(vault: TTVault, bundleId: string): Promise<TTThink> {
   const metadata = structuredClone(bundle.Metadata);
   const content = `${before}${before.endsWith('\n') ? '' : '\n'}* ${chat.ID}\n`;
   const result = await StorageManager.instance.save({
-    id: bundleId, contentType: 'bundle', fullContent: content, keywords: bundle.Keywords,
+    thinkid: bundleId, category: 'bundle', fullContent: content, keywords: bundle.Keywords,
     relatedIds: [...ids, chat.ID].join(','), metadata, baseUpdatedAt: bundle.UpdatedAt || undefined,
   });
   if (vault.GetThink(bundleId) !== bundle || bundle.Content !== before || bundle.IsMetadataDirty) {

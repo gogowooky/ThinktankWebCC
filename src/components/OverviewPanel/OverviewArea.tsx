@@ -317,11 +317,11 @@ export function OverviewArea({ app, showSettings, refreshKey }: Props) {
     try {
       const metas = await StorageManager.instance.search(q);
       setSearchResults(metas.map(meta => {
-        const existing = vault.GetThink(meta.id);
+        const existing = vault.GetThink(meta.thinkid);
         if (existing) return existing;
         const t = new TTThink();
-        t.ID = meta.id; t.VaultID = vault.ID;
-        t.ContentType = meta.contentType as TTThink['ContentType'];
+        t.ID = meta.thinkid; t.VaultID = vault.ID;
+        t.ContentType = meta.category as TTThink['ContentType'];
         t.Keywords = meta.keywords ?? ''; t.RelatedIDs = meta.relatedIds ?? '';
         t.IsMetaOnly = true; t.setContentSilent(meta.title);
         return t;
