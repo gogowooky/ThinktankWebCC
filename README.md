@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.0.4 fix: BigQueryのmetadata列(JSON型)がYAML二重エンコードされるバグを修正し、非オブジェクトmetadataへの防御ガードを追加
+- 日付: 2026-09-29
+- コミット番号: 5fdd2f9
+
+BigQueryのvault_ver2.metadata列はネイティブJSON型であり、そこにYAMLテキストをJSON文字列スカラーとして保存する方式（SAFE_CAST(@metadata AS JSON)）自体は正しいが、@google-cloud/bigqueryクライアントは読み込み時にJSON文字列スカラーをJSON表現のまま（ダブルクォート込み）で返すため、yaml.loadを1回かけるだけでは中身が展開されず文字列のままになる欠陥があった。既存データの大半は旧コード（JSON.stringifyで書き込み）由来のJSONオブジェクトのテキスト表現（JSONはYAMLのサブセット）だったため偶然動いていたが、新コードで実際に保存された記録は二重エンコードのまま読めなくなっていた。
+server/services/metadataCodec.ts に decodeMetadata() を新設し、ダブルクォートで始まる場合は先に JSON.parse で一段アンラップしてから yaml.load する共通処理に統一した（bigqueryRoutes.ts・AgentService.ts・FileSearchBindingService.ts・conversationRoutes.ts・progressRoutes.ts・externalRoutes.ts の計6箇所）。
+あわせて、think.Metadata がオブジェクト以外で届いた場合にクラッシュせず {} にリセットする防御的ガードを、TTVault.LoadCache と各Mediaコンポーネント（WorkoutArea, DataGridMedia, MarkdownMedia, TextEditorMedia）の計6箇所に追加した。このコミットのコード変更とは別に、実際に影響を受けていたBigQuery上の2件のレコードのmetadataも正しい単一エンコードに修正済み。変更: 12ファイル（+75 / -42行）。
+
 ### v2.0.3 feat: Electronローカル保存をJSONからYAML frontmatter付きmdファイルに変更し、git-updateスキルにbranchName記録を追加
 - 日付: 2026-09-28
 - コミット番号: 40456cd

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "veneno-02",
-  "commitId": "40456cd",
-  "commitDateTime": "2026-09-28-184451",
-  "commitMessage": "feat: Electronローカル保存をJSONからYAML frontmatter付きmdファイルに変更し、git-updateスキルにbranchName記録を追加"
+  "commitId": "5fdd2f9",
+  "commitDateTime": "2026-09-29-175340",
+  "commitMessage": "fix: BigQueryのmetadata列(JSON型)がYAML二重エンコードされるバグを修正し、非オブジェクトmetadataへの防御ガードを追加"
 }
