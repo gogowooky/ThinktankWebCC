@@ -379,7 +379,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
               endColumn: sel.endColumn,
             };
           }
-          if (!think.Metadata) think.Metadata = {};
+          if (!think.Metadata || typeof think.Metadata !== 'object') think.Metadata = {};
           think.Metadata.editor = {
             caret: { lineNumber: pos.lineNumber, column: pos.column },
             selection: selectionData,

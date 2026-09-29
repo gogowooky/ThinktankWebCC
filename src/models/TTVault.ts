@@ -366,7 +366,13 @@ export class TTVault extends TTCollection {
           think.ContentType = meta.category as ContentType;
           think.Keywords    = meta.keywords  ?? '';
           think.RelatedIDs  = meta.relatedIds ?? '';
-          think.Metadata    = meta.metadata  ?? {};
+          // metadata が万一オブジェクト以外（文字列化されたYAML等）で届いた場合、
+          // そのまま代入すると think.Metadata.xxx = ... の代入時に
+          // "Cannot create property on string" で描画がクラッシュする。
+          if (meta.metadata != null && typeof meta.metadata !== 'object') {
+            console.error(`[TTVault] LoadCache: metadata is not an object for ${meta.thinkid}, resetting to {}`, meta.metadata);
+          }
+          think.Metadata    = (meta.metadata && typeof meta.metadata === 'object') ? meta.metadata : {};
           think.markMetadataSaved();
           think.IsMetaOnly  = true;
           think.UpdatedAt   = meta.updatedAt ?? '';

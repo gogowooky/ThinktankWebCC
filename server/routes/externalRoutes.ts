@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import yaml from 'js-yaml';
+import { decodeMetadata } from '../services/metadataCodec.js';
 import { bigqueryService, type BigQueryService } from '../services/BigQueryService.js';
 import { canonicalJson, id, object } from '../services/conversationRecord.js';
 import { readExternalLog, validateExternalInput, type ExternalLog } from '../services/externalRecord.js';
@@ -13,7 +13,7 @@ export function createExternalRoutes(store: Pick<BigQueryService, 'getRecord' | 
     if (!result.success) throw new ExternalError(503, '保存先に接続できません。');
     const record = result.data;
     if (!record || record.category !== 'bundle' || record.is_deleted) throw new ExternalError(404, '保存済みBundleがありません。');
-    const metadata: unknown = typeof record.metadata === 'string' ? yaml.load(record.metadata) : record.metadata ?? {};
+    const metadata: unknown = decodeMetadata(record.metadata) ?? {};
     if (!object(metadata)) throw new ExternalError(422, 'メタデータが不正です。');
     const version = object(record.updated_at) ? String(record.updated_at.value) : String(record.updated_at);
     if (!Number.isFinite(Date.parse(version))) throw new ExternalError(422, '保存版を確認できません。');

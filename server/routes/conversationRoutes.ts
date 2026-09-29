@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import yaml from 'js-yaml';
+import { decodeMetadata } from '../services/metadataCodec.js';
 import { bigqueryService } from '../services/BigQueryService.js';
 import type { BigQueryService } from '../services/BigQueryService.js';
 import { configuredProvider, type AIProvider } from '../services/AIProvider.js';
@@ -17,7 +17,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     if (!result.success) throw new RouteError(503, '会話の保存先に接続できません。');
     const r = result.data;
     if (!r || r.category !== 'bundle' || r.is_deleted) throw new RouteError(404, '保存済みのBundleがありません。');
-    const metadata: unknown = typeof r.metadata === 'string' ? yaml.load(r.metadata) : r.metadata ?? {};
+    const metadata: unknown = decodeMetadata(r.metadata) ?? {};
     if (!object(metadata)) throw new RouteError(422, 'Bundleの保存形式が不正です。');
     const log = readConversationLog(metadata.thinkConversations);
     if (log.turns.some(t => t.context.bundleId !== bundleId)) throw new RouteError(422, '履歴の対象Bundleが一致しません。');
@@ -31,7 +31,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     const chat = chatResult.data, bundle = bundleResult?.data;
     if (!chat || chat.category !== 'chat' || chat.is_deleted) throw new RouteError(404, '保存先のChatファイルがありません。');
     if (bundleId && (!bundle || bundle.category !== 'bundle' || bundle.is_deleted)) throw new RouteError(404, '相談対象のBundleがありません。');
-    const parsedMetadata: unknown = typeof chat.metadata === 'string' ? yaml.load(chat.metadata) : chat.metadata ?? {};
+    const parsedMetadata: unknown = decodeMetadata(chat.metadata) ?? {};
     if (!object(parsedMetadata)) throw new RouteError(422, 'Chatファイルの保存形式が不正です。');
     let metadata = parsedMetadata;
     const stored = readConversationLog(metadata.thinkConversations);

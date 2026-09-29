@@ -120,7 +120,7 @@ export function WorkoutArea({
     if (isFocused && area.ResourceID) {
       const t = vault.GetThink(area.ResourceID);
       if (t) {
-        if (!t.Metadata) t.Metadata = {};
+        if (!t.Metadata || typeof t.Metadata !== 'object') t.Metadata = {};
         if (t.Metadata.highlightWord !== panel.HighlightWord) {
           t.Metadata.highlightWord = panel.HighlightWord;
         }

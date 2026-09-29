@@ -12,6 +12,7 @@ import type { VaultRecord } from '../services/BigQueryService.js';
 import { isValidCategory, SAFE_FILE_ID_RE } from '../services/vaultKey.js';
 import { isServerNewer } from '../services/vaultVersion.js';
 import { readThinkSupport, validThinkInput } from '../services/thinkSupportRecord.js';
+import { decodeMetadata } from '../services/metadataCodec.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -32,7 +33,7 @@ function toMeta(r: VaultRecord) {
                    typeof r.updated_at === 'object'
                      ? (r.updated_at as unknown as { value: string }).value
                      : String(r.updated_at),
-    metadata:    r.metadata ? (typeof r.metadata === 'string' ? yaml.load(r.metadata) : r.metadata) : undefined,
+    metadata:    decodeMetadata(r.metadata),
   };
 }
 
@@ -213,12 +214,15 @@ export function createBigQueryRoutes() {
       const pad = (n: number) => String(n).padStart(2, '0');
       const yyyyMMdd = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
       
-      // 保存先フォルダのパス: {root}/../Thinktank_{yyyyMMdd}/
+      // 保存先フォルダのパス: {root}/../Thinktank_{yyyyMMdd}/vault_ver2/
+      // vault_ver2 サブフォルダにするのは、local版アプリ（Electron）の保存先フォルダ名
+      // （%APPDATA%\thinktank\thinktank\vault_ver2）とBQテーブル名を揃えるため。
       const exportDir = path.resolve(process.cwd(), '../', `Thinktank_${yyyyMMdd}`);
+      const vaultDir  = path.join(exportDir, 'vault_ver2');
 
       // 保存先ディレクトリを作成
-      if (!fs.existsSync(exportDir)) {
-        fs.mkdirSync(exportDir, { recursive: true });
+      if (!fs.existsSync(vaultDir)) {
+        fs.mkdirSync(vaultDir, { recursive: true });
       }
 
       exportStatus = {
@@ -228,7 +232,7 @@ export function createBigQueryRoutes() {
         path: exportDir
       };
 
-      const exportDirResolved = path.resolve(exportDir) + path.sep;
+      const vaultDirResolved = path.resolve(vaultDir) + path.sep;
 
       for (const r of records) {
         // title は YAML frontmatter 側に持つため、本文には含めない（重複を避ける）。
@@ -244,18 +248,10 @@ export function createBigQueryRoutes() {
           continue;
         }
 
-        let targetPath = '';
-        if (category === 'memo') {
-          targetPath = path.join(exportDir, `${thinkId}.md`);
-        } else {
-          const categoryDir = path.join(exportDir, category);
-          if (!fs.existsSync(categoryDir)) {
-            fs.mkdirSync(categoryDir, { recursive: true });
-          }
-          targetPath = path.join(categoryDir, `${thinkId}.md`);
-        }
+        // local版アプリ（Electron vault_ver2）と同じフラット構成にする（category別サブフォルダは作らない）。
+        const targetPath = path.join(vaultDir, `${thinkId}.md`);
 
-        if (!path.resolve(targetPath).startsWith(exportDirResolved)) {
+        if (!path.resolve(targetPath).startsWith(vaultDirResolved)) {
           console.warn(`[bigqueryRoutes] export: blocked path traversal attempt (${thinkId})`);
           exportStatus.current++;
           continue;
@@ -263,17 +259,20 @@ export function createBigQueryRoutes() {
 
         // metadata の有無によらず、レコードの識別情報を常に YAML frontmatter として
         // 本文の先頭に配置する（metadata が空のレコードだけ frontmatter が無くなる問題を防ぐ）。
-        const storedMetadata = r.metadata ? (typeof r.metadata === 'string' ? yaml.load(r.metadata) : r.metadata) : null;
+        const storedMetadata = decodeMetadata(r.metadata);
         const bqDateToIso = (v: typeof r.created_at) =>
           v == null ? '' : typeof v === 'object' ? (v as unknown as { value: string }).value : String(v);
         const frontmatterObj = {
-          ...(storedMetadata && typeof storedMetadata === 'object' ? storedMetadata : {}),
-          thinkid:    thinkId,
+          ...(storedMetadata ?? {}),
+          thinkid:     thinkId,
           category,
-          title:      r.title ?? '',
-          is_deleted: r.is_deleted ?? false,
-          created_at: bqDateToIso(r.created_at),
-          updated_at: bqDateToIso(r.updated_at),
+          title:       r.title ?? '',
+          keywords:    r.keywords || null,
+          related_ids: r.related_ids || null,
+          size_bytes:  r.size_bytes ?? 0,
+          is_deleted:  r.is_deleted ?? false,
+          created_at:  bqDateToIso(r.created_at),
+          updated_at:  bqDateToIso(r.updated_at),
         };
         const frontmatter = `---\n${yaml.dump(frontmatterObj)}---\n`;
         await fs.promises.writeFile(targetPath, frontmatter + body, 'utf8');

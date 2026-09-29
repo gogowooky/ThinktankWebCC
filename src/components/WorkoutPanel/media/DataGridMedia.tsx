@@ -371,7 +371,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   // 状態が変わったら think.Metadata に同期する
   useEffect(() => {
     if (think) {
-      if (!think.Metadata) think.Metadata = {};
+      if (!think.Metadata || typeof think.Metadata !== 'object') think.Metadata = {};
       const prevDg = think.Metadata.datagrid || {};
       think.Metadata.datagrid = {
         ...prevDg,
@@ -383,7 +383,7 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     if (think) {
-      if (!think.Metadata) think.Metadata = {};
+      if (!think.Metadata || typeof think.Metadata !== 'object') think.Metadata = {};
       if (!think.Metadata.datagrid) think.Metadata.datagrid = {};
       think.Metadata.datagrid.scrollTop = e.currentTarget.scrollTop;
       think.Metadata.datagrid.scrollLeft = e.currentTarget.scrollLeft;

@@ -89,7 +89,7 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
         if (!known.has(line)) closed.add(line);
       }
 
-      if (!think.Metadata) think.Metadata = {};
+      if (!think.Metadata || typeof think.Metadata !== 'object') think.Metadata = {};
       think.Metadata.editor = {
         ...(think.Metadata.editor ?? {}),
         closedHeadings: serializeClosedHeadings(closed),
@@ -112,7 +112,7 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (think) {
-      if (!think.Metadata) think.Metadata = {};
+      if (!think.Metadata || typeof think.Metadata !== 'object') think.Metadata = {};
       if (think.ContentType === 'nettext') {
         think.Metadata.webtextScrollTop = e.currentTarget.scrollTop;
       } else {
