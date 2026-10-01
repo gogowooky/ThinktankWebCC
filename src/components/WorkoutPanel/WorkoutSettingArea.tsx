@@ -190,7 +190,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   onRefresh,
 }: Props, ref) {
   const panelRef           = useRef<HTMLDivElement>(null);
-  const firstWorkoutRef    = useRef<HTMLButtonElement>(null);
+  const firstPanesRef    = useRef<HTMLButtonElement>(null);
   const firstTexteditorRef = useRef<HTMLButtonElement>(null);
   const firstDatagridRef   = useRef<HTMLButtonElement>(null);
   const firstHtmlRef       = useRef<HTMLButtonElement>(null);
@@ -199,10 +199,10 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   useImperativeHandle(ref, () => ({
     focus: () => {
       switch (activeSettings) {
-        case 'workout':
+        case 'panes':
           // disabled の可能性があるためフォーカスできなければパネル自体へ
-          if (firstWorkoutRef.current && !firstWorkoutRef.current.disabled) {
-            firstWorkoutRef.current.focus();
+          if (firstPanesRef.current && !firstPanesRef.current.disabled) {
+            firstPanesRef.current.focus();
           } else {
             panelRef.current?.focus();
           }
@@ -257,7 +257,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
   const entry     = WORKOUT_SETTINGS.find(s => s.type === activeSettings);
   const panelName = entry?.name ?? '';
 
-  const [isAreaSettingsOpen,      setIsAreaSettingsOpen]      = useState(true);
+  const [isActionSettingsOpen,      setIsActionSettingsOpen]      = useState(true);
   const [isDisplaySettingsOpen,   setIsDisplaySettingsOpen]   = useState(true);
   const [isColorSettingsOpen,     setIsColorSettingsOpen]     = useState(true);
   const [isTagColorOpen,          setIsTagColorOpen]          = useState(true);
@@ -367,19 +367,19 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
             </div>
           </div>
-        ) : activeSettings === 'workout' ? (
+        ) : activeSettings === 'panes' ? (
           <>
-            {/* エリア管理 */}
+            {/* アクション管理 */}
             <div className="workout-setting-area__section">
               <div 
                 className="workout-setting-area__section-header"
-                onClick={() => setIsAreaSettingsOpen(!isAreaSettingsOpen)}
+                onClick={() => setIsActionSettingsOpen(!isActionSettingsOpen)}
               >
-                {isAreaSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>エリア</span>
+                {isActionSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="workout-setting-area__section-label" style={{ marginBottom: 0 }}>アクション</span>
               </div>
               
-              {isAreaSettingsOpen && (
+              {isActionSettingsOpen && (
                 <div className="workout-setting-area__section-content">
                   {/* 分割 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
@@ -387,7 +387,7 @@ export const WorkoutSettingArea = forwardRef<WorkoutSettingAreaRef, Props>(funct
                     <div className="workout-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="左に分割して新Pane追加">
                         <button
-                          ref={firstWorkoutRef}
+                          ref={firstPanesRef}
                           className="workout-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitLeft : undefined}
                           disabled={!hasFocus}

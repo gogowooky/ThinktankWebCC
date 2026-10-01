@@ -17,7 +17,7 @@ import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 const AI_MODEL_STORAGE_KEY = 'tt-ai-model-workout';
 
-export type WorkoutViewMode = 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
+export type WorkoutViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
 
@@ -198,7 +198,7 @@ export class TTWorkoutPanel extends TTUIItem {
 
   // ── 表示モード ────────────────────────────────────────────────────────
   /** 設定パネルの表示モード */
-  public ViewMode: WorkoutViewMode = 'workout';
+  public ViewMode: WorkoutViewMode = 'panes';
 
   /** ToolBar の表示モード */
   public ToolBarMode: string = 'Copyright';

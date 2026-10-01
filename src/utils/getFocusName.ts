@@ -21,14 +21,14 @@ export function getFocusName(el: Element | null): string {
     const btn = el.closest('button');
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
-      if (id === 'Workout') return 'WorkoutSetting.Workout';
+      if (id === 'Panes') return 'WorkoutSetting.Panes';
       if (id === 'TextEditor') return 'WorkoutSetting.Texteditor';
       if (id === 'Markdown') return 'WorkoutSetting.Markdown';
       if (id === 'DataGrid') return 'WorkoutSetting.Datagrid';
       if (id === 'Card') return 'WorkoutSetting.Card';
       if (id === 'Graph') return 'WorkoutSetting.Graph';
     }
-    const mode = app?.WorkoutPanel?.ViewMode ?? 'workout';
+    const mode = app?.WorkoutPanel?.ViewMode ?? 'panes';
     return `WorkoutSetting.${capitalize(mode)}`;
   }
 
@@ -53,7 +53,7 @@ export function getFocusName(el: Element | null): string {
   // 4. WorkoutSettingArea (WorkoutSetting.{ModeName})
   const ws = el.closest('.workout-setting-area');
   if (ws) {
-    const mode = app?.WorkoutPanel?.ViewMode ?? 'workout';
+    const mode = app?.WorkoutPanel?.ViewMode ?? 'panes';
     return `WorkoutSetting.${capitalize(mode)}`;
   }
 

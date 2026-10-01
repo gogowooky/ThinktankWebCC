@@ -182,11 +182,11 @@ interface PropSpec {
 function getFocusedPaneAllowedModes(app: TTApplication): string[] {
   const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
   if (!area || !area.ResourceID) {
-    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
+    return ['Panes', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
   }
   const think = app.Models.Vault.GetThink(area.ResourceID);
   if (!think) {
-    return ['Workout', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
+    return ['Panes', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
   }
   const mapping: Record<ContentType, MediaType[]> = {
     memo: ['texteditor', 'markdown'],
@@ -398,10 +398,10 @@ const PROP_SPECS: Record<string, PropSpec> = {
   },
   'WorkoutSettingPanel.Mode.Name': {
     panel: 'WorkoutPanel',
-    default: 'Workout', type: 'string', candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
+    default: 'Panes', type: 'string', candidates: '^(Panes|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
     description: 'ワークアウト設定パネルモード',
     get: (app) => capitalize(app.WorkoutPanel.ViewMode),
-    set: (app, v) => { app.WorkoutPanel.SetViewMode(v.toLowerCase() as WorkoutViewMode); },
+    set: (app, v) => { app.WorkoutPanel.SetViewMode((v.toLowerCase() === 'workout' ? 'panes' : v.toLowerCase()) as WorkoutViewMode); },
   },
 
   // ── TextEditor 検索・置換オプション ────────────────────────────────────────

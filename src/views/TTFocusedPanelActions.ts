@@ -38,8 +38,8 @@ import { registerTextEditorPasteActions } from './actions/textEditorPasteActions
 const PANEL_VIEW_MODES: Record<string, string[]> = {
   Thinktank:      ['filter', 'chat', 'settings'],
   Overview:       ['filter', 'graph', 'chat', 'settings'],
-  WorkoutSetting: ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph', 'chat'],
-  Workout:        ['workout', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  WorkoutSetting: ['panes', 'texteditor', 'markdown', 'datagrid', 'card', 'graph', 'chat'],
+  Workout:        ['panes', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
   ReThink:        ['chat', 'settings'],
 };
 

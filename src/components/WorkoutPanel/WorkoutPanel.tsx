@@ -229,11 +229,11 @@ export function WorkoutPanel({ app, layoutMode }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // Edit モードでは AiChat 設定パネルをタブごと隠すため、選択中だった場合は Workout 設定へ退避する
+  // Edit モードでは AiChat 設定パネルをタブごと隠すため、選択中だった場合は Pane 設定へ退避する
   const isEditMode = layoutMode === 'simple';
   useEffect(() => {
     if (isEditMode && panel.ViewMode === 'chat') {
-      panel.SetViewMode('workout');
+      panel.SetViewMode('panes');
     }
   }, [isEditMode, panel.ViewMode, panel]);
   useAppUpdate(app.OverviewPanel);

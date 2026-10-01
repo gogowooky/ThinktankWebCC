@@ -313,7 +313,7 @@ export function WorkoutArea({
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
     switch (area.MediaType) {
-      case 'workout':    return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
+      case 'panes':      return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
       case 'texteditor': return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
       case 'html': return <HtmlMedia ref={mediaRef as React.Ref<HtmlMediaRef>} {...mediaProps} />;
       case 'markdown':   return <MarkdownMedia   ref={mediaRef as React.Ref<MarkdownMediaRef>}   {...mediaProps} />;
@@ -327,7 +327,7 @@ export function WorkoutArea({
   const handleDragStart    = useCallback((e: React.MouseEvent) => onDragStart(e, area.ID),      [onDragStart, area.ID]);
   const handleMediaChange  = useCallback((type: MediaType) => {
     // TextEditor から離れるとき、未保存の内容を自動保存する（isDirty 不問、内部で差分チェック）
-    if (area.MediaType === 'texteditor' || area.MediaType === 'workout') {
+    if (area.MediaType === 'texteditor' || area.MediaType === 'panes') {
       void autoSaveRef.current?.();
     }
     onMediaTypeChange(area.ID, type);

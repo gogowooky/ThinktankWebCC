@@ -3,8 +3,8 @@
  * WorkoutPanel 左縦タブバー（旧リボン）。
  *
  * ボタン構成（上から）:
- *   Workout設定 / TextEditor設定 / Markdown設定 /
- *   DataGrid設定 / Card設定 / Graph設定 / Html設定 / 会話履歴
+ *   Pane設定 / 会話履歴 / ─区切り線─ / TextEditor設定 / Markdown設定 /
+ *   DataGrid設定 / Card設定 / Graph設定 / Html設定
  *
  * - 押下で対応する設定パネルを開く
  * - 開いている設定パネルのボタン再押下で閉じる
@@ -17,7 +17,7 @@ import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
 import './WorkoutTabBar.css';
 
-export type SettingsType = Extract<MediaType, 'workout' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'>;
+export type SettingsType = Extract<MediaType, 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'>;
 
 interface SettingsEntry {
   type: SettingsType;
@@ -27,14 +27,14 @@ interface SettingsEntry {
 }
 
 export const WORKOUT_SETTINGS: SettingsEntry[] = [
-  { type: 'workout',    Icon: PanelLeftDashed, name: 'Workout設定',    id: 'Workout' },
+  { type: 'panes',      Icon: PanelLeftDashed, name: 'Pane設定',       id: 'Panes' },
+  { type: 'chat',       Icon: MessageCircle,   name: '会話履歴',         id: 'AiChat' },
   { type: 'texteditor', Icon: NotebookPen,     name: 'TextEditor設定', id: 'TextEditor' },
   { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定',   id: 'Markdown' },
   { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定',   id: 'DataGrid' },
   { type: 'card',       Icon: IdCard,          name: 'Card設定',       id: 'Card' },
   { type: 'graph',      Icon: Share2,          name: 'Graph設定',      id: 'Graph' },
   { type: 'html',       Icon: FileCode,        name: 'Html設定',       id: 'Html' },
-  { type: 'chat',       Icon: MessageCircle,   name: '会話履歴',         id: 'AiChat' },
 ];
 
 interface Props {
@@ -63,7 +63,7 @@ export function WorkoutTabBar({ activeSettings, isOpen, thinkTitle, onToggle, on
     >
       {visibleSettings.map(({ type, Icon, name, id }) => (
         <Fragment key={type}>
-          {type === 'chat' && <div className="workout-tab-bar__divider" />}
+          {type === 'texteditor' && <div className="workout-tab-bar__divider" />}
           <button
             id={id}
             className={[
