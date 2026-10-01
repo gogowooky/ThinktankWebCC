@@ -7,6 +7,14 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.0.5 refactor: WorkoutSettingの'workout'値を'panes'に、Workout設定をPane設定に改名しメニュー順を変更
+- 日付: 2026-10-01
+- コミット番号: da5e254
+
+WorkoutSettingパネルの値 'workout'（MediaType / WorkoutViewMode / SettingsType）を 'panes' に変更し、タブ名を「Workout設定」から「Pane設定」（id: Panes、フォーカス名は WorkoutSetting.Panes）、設定内セクション「エリア」を「アクション」に改名した。UI状態 WorkoutSettingPanel.Mode.Name は既定値・候補を Panes にし、保存済みの旧値 Workout は panes に読み替える。
+縦メニューの並びを「Pane設定」「会話履歴」「区切り線」「TextEditor設定」以下に変更した（区切り線は TextEditor設定の直前）。Overview→Seeds / Workout→Develop / ReThink→Harvest 全面改名の第一段。変更: 11ファイル（+36 / -36行）。
+
+
 ### v2.0.4 fix: BigQueryのmetadata列(JSON型)がYAML二重エンコードされるバグを修正し、非オブジェクトmetadataへの防御ガードを追加
 - 日付: 2026-09-29
 - コミット番号: 5fdd2f9

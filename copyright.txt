@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -8,8 +8,8 @@
   },
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
-  "commitPC": "veneno-02",
-  "commitId": "5fdd2f9",
-  "commitDateTime": "2026-09-29-175340",
-  "commitMessage": "fix: BigQueryのmetadata列(JSON型)がYAML二重エンコードされるバグを修正し、非オブジェクトmetadataへの防御ガードを追加"
+  "commitPC": "VENENO-02",
+  "commitId": "da5e254",
+  "commitDateTime": "2026-10-01-092643",
+  "commitMessage": "refactor: WorkoutSettingの'workout'値を'panes'に、Workout設定をPane設定に改名しメニュー順を変更"
 }
