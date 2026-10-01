@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "VENENO-02",
-  "commitId": "da5e254",
-  "commitDateTime": "2026-10-01-092643",
-  "commitMessage": "refactor: WorkoutSettingの'workout'値を'panes'に、Workout設定をPane設定に改名しメニュー順を変更"
+  "commitId": "ee9a996",
+  "commitDateTime": "2026-10-01-102551",
+  "commitMessage": "docs: パネル名称変更（Seeds/Develop/Harvest）の引き継ぎメモを追加"
 }

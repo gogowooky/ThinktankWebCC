@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.0.6 docs: パネル名称変更（Seeds/Develop/Harvest）の引き継ぎメモを追加
+- 日付: 2026-10-01
+- コミット番号: ee9a996
+
+Overview→Seeds / Workout→Develop / ReThink→Harvest の全面改名について、別PCで作業を継続するための引き継ぎメモ docs/261001/引き継ぎ_パネル名称変更.md を追加した。調査結果（出現数、Seed単数が別概念であること）、名前が入り込んでいる6層と危険度、推奨する作業順（手順0〜6）、実施済み内容（v2.0.5のWorkoutSetting整理）、未決事項8件、再開時の最初の一手を記載。コード変更なし。変更: 1ファイル（+104行）。
+
+
 ### v2.0.5 refactor: WorkoutSettingの'workout'値を'panes'に、Workout設定をPane設定に改名しメニュー順を変更
 - 日付: 2026-10-01
 - コミット番号: da5e254
