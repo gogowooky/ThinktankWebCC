@@ -6,7 +6,7 @@
  * フォーカス・ExMode・キー/マウスが一致したときにアクションを起動する。
  *
  * ── テーブル列 ────────────────────────────────────────────────────────────
- *   focus       フォーカス名パターン（*=すべて、Workout*=Workout内すべて）
+ *   focus       フォーカス名パターン（*=すべて、Develop*=Develop内すべて）
  *   exmode      ExMode 名（空文字 = ExMode なし）
  *   key         キー/マウス指定（例: ctrl+shift+z, left1, ctrl+wheelup）
  *   action      ActionID または {状態変数}:{設定値} または ExMode:{name}
@@ -34,10 +34,10 @@
  *                 （Completion側は consumePendingThinkDrop() で読み取る）。
  *                 LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
  *                 （OSファイルシステムからのFile/Dirドロップ、docs/DefaultShortcut.md参照）は、
- *                 対応する4箇所の呼び出し元（WorkoutMenuRibbon/WorkoutArea/WorkoutPanel/
+ *                 対応する4箇所の呼び出し元（DevelopMenuRibbon/DevelopArea/DevelopPanel/
  *                 TextEditorMedia）が既に同期的にLoad/Insert相当の処理を持っているため
  *                 TTActions.Execute() は経由せず、resolveDragAction() の戻り値を
- *                 shouldAllowLocalDrop() / shouldInsertLocalDrop()（WorkoutMenuRibbon.tsx）
+ *                 shouldAllowLocalDrop() / shouldInsertLocalDrop()（DevelopMenuRibbon.tsx）
  *                 でActionID文字列の一致判定
  *                 のみに使う。Shortcutテーブルの行を書き換える／削除するとDropを抑止できる。
  *   複数指定:   | 区切りで複数キーを同一アクションに割り当て可能
@@ -51,6 +51,7 @@ import { TTUIStateManager } from './TTUIStateManager';
 import { TTActions } from './TTActions';
 import { getFocusName } from '../utils/getFocusName';
 import localShortcutContent from '../../docs/DefaultShortcut.md?raw';
+import { canonicalPanelPrefix } from '../utils/panelNames';
 import {
   parseMultiKey,
   keyEventToStr,
@@ -74,15 +75,15 @@ const NO_CANDIDATES: readonly ShortcutEntry[] = [];
 
 /**
  * ThinkFileDrag（D&D）用のペイロード。resolveDragAction() でActionIDを解決した
- * 呼び出し側が setPendingThinkDrop() でセットし、WorkoutPanel.DroppedFile.ID:Load /
- * WorkoutPanel.DroppedFile.ID:Insert の Completion が consumePendingThinkDrop() で読み取る。
+ * 呼び出し側が setPendingThinkDrop() でセットし、DevelopPanel.DroppedFile.ID:Load /
+ * DevelopPanel.DroppedFile.ID:Insert の Completion が consumePendingThinkDrop() で読み取る。
  *
- *   'insert'      : WorkoutPanel.DroppedFile.ID:Insert 用。thinkIdのみ必要
+ *   'insert'      : DevelopPanel.DroppedFile.ID:Insert 用。thinkIdのみ必要
  *                   （挿入先エディタは事前に setActiveEditor() で指定しておく）。
- *   'load-replace': WorkoutPanel.DroppedFile.ID:Load 用。指定Areaを丸ごとドロップされた
+ *   'load-replace': DevelopPanel.DroppedFile.ID:Load 用。指定Areaを丸ごとドロップされた
  *                   Thinkに差し替える（タイトルバードロップ）。
- *   'load-place'  : WorkoutPanel.DroppedFile.ID:Load 用。ドロップ位置に応じて新規Paneを
- *                   追加する（コンテンツ領域の余白/端へのドロップ。WorkoutPanel側で
+ *   'load-place'  : DevelopPanel.DroppedFile.ID:Load 用。ドロップ位置に応じて新規Paneを
+ *                   追加する（コンテンツ領域の余白/端へのドロップ。DevelopPanel側で
  *                   計算済みのオーバーレイ情報をそのまま渡す）。
  */
 export type ThinkDropContext =
@@ -128,7 +129,7 @@ export class TTShortcutManager {
   private _shortcuts:  ShortcutEntry[]      = [...DEFAULT_SHORTCUTS];
   private _activeEditor: any = null;
   private _pendingThinkDrop: ThinkDropContext | null = null;
-  /** WorkoutArea.ID → 生Monacoエディタインスタンス。D&D時にペイン単位でエディタを引くために使う */
+  /** DevelopArea.ID → 生Monacoエディタインスタンス。D&D時にペイン単位でエディタを引くために使う */
   private _areaEditors: Map<string, any> = new Map();
 
   get activeEditor(): any { return this._activeEditor; }
@@ -136,7 +137,7 @@ export class TTShortcutManager {
     this._activeEditor = editor;
   }
 
-  /** WorkoutPanel.DroppedFile.ID:Insert用: 特定Paneのエディタインスタンスをマウント時に登録する */
+  /** DevelopPanel.DroppedFile.ID:Insert用: 特定Paneのエディタインスタンスをマウント時に登録する */
   registerAreaEditor(areaId: string, editor: any): void {
     this._areaEditors.set(areaId, editor);
   }
@@ -150,7 +151,7 @@ export class TTShortcutManager {
   }
 
   /**
-   * D&D用: WorkoutPanel.DroppedFile.ID:Load / WorkoutPanel.DroppedFile.ID:Insert の
+   * D&D用: DevelopPanel.DroppedFile.ID:Load / DevelopPanel.DroppedFile.ID:Insert の
    * Completion が参照するペイロード（ThinkID・配置先情報）をセットする。
    * Drop ハンドラーが resolveDragAction() で ActionID を解決した直後、
    * TTActions.Execute() を呼ぶ前に必ずセットすること。
@@ -461,9 +462,9 @@ export class TTShortcutManager {
     if (keyIdx < 0 || actIdx < 0) return [];
 
     return section.rows.flatMap(row => {
-      const focus       = focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*';
+      const focus       = canonicalPanelPrefix(focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*');
       const exmode      = emIdx  >= 0 ? (row[emIdx]?.trim().toLowerCase() ?? '') : '';
-      const action      = row[actIdx]?.trim() ?? '';
+      const action      = canonicalPanelPrefix(row[actIdx]?.trim() ?? '');
       const description = dscIdx >= 0 ? (row[dscIdx]?.trim() ?? '') : '';
       const keys        = parseMultiKey(row[keyIdx]?.trim() ?? '');
       return keys

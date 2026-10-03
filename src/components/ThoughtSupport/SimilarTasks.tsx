@@ -30,7 +30,7 @@ export function SimilarTasks({ vault, chatId, bundleId, onOpen }: {
       {result.results.map(task => <article key={task.id}>
         <strong>{task.title}</strong><p>共通する語：{task.matches.join('、')}</p>
         <p>目的：{task.goal || '未記録'}</p><p>完了条件：{task.completion || '未記録'}</p>
-        <button type="button" onClick={() => void onOpen(task.id).catch(e => setError((e as Error).message))}>この課題をOverviewで開く</button>
+        <button type="button" onClick={() => void onOpen(task.id).catch(e => setError((e as Error).message))}>この課題をSeedsで開く</button>
       </article>)}
       <p>候補を開いても、相談の関連付け・参照範囲は変わりません。</p>
     </div>}

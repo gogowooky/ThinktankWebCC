@@ -4,7 +4,7 @@ import type { ConversationTurn } from '../../services/ConversationService';
 import { ThinkSupportService } from '../../services/ThinkSupportService';
 import { prepareProposalReview } from '../../services/proposalReview';
 import type { ThinkMeta } from '../../services/storage/IStorageBackend';
-import { CONTEXT_LABELS } from '../OverviewPanel/ContextSnapshotView';
+import { CONTEXT_LABELS } from '../SeedsPanel/ContextSnapshotView';
 
 const service = new ThinkSupportService();
 export function ProposalReview({ vault, turn, disabled }: { vault: TTVault; turn: ConversationTurn; disabled: boolean }) {

@@ -32,7 +32,7 @@ interface Props {
   columns?: ColumnConfig[];
   /** チェックボックス列を表示するか（既定 true）。false の場合 onToggleCheck は不要 */
   showCheckbox?: boolean;
-  /** ダブルクリック時に呼ばれる。省略時はダブルクリックしても何も起きない（例: AI相談のchat選択欄は D&D のみで Workout へ渡す） */
+  /** ダブルクリック時に呼ばれる。省略時はダブルクリックしても何も起きない（例: AI相談のchat選択欄は D&D のみで Develop へ渡す） */
   onOpen?: (id: string) => void;
   onToggleCheck?: (id: string | string[], force?: boolean) => void;
   /** 「バンドル」列の表示値。buildBundleNames() の結果を渡す（未指定なら空欄） */
@@ -163,7 +163,7 @@ export function ThoughtsList({
   onFocusChange,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const { overviewBundleIds, overviewIncludedIds, overviewCheckedIds, workoutIds, workoutFocusedId } = useHighlight();
+  const { seedsBundleIds, seedsIncludedIds, seedsCheckedIds, developIds, developFocusedId } = useHighlight();
   const isEditMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Edit';
   const visibleCols = columns.filter(c => c.visible);
   const hasNameCol = visibleCols.some(c => c.field === 'Name');
@@ -244,11 +244,11 @@ export function ThoughtsList({
           const thought = thoughts[vItem.index];
           const isSelected        = thought.ID === selectedId;
           const isChecked         = checkedIds.includes(thought.ID);
-          const isOverviewBundle   = !isEditMode && overviewBundleIds.includes(thought.ID);
-          const isOverviewIncluded = !isEditMode && overviewIncludedIds.includes(thought.ID);
-          const isOverviewChecked  = !isEditMode && overviewCheckedIds.includes(thought.ID);
-          const isInWorkout        = workoutIds.includes(thought.ID);
-          const isWorkoutFocused   = workoutFocusedId === thought.ID;
+          const isSeedsBundle   = !isEditMode && seedsBundleIds.includes(thought.ID);
+          const isSeedsIncluded = !isEditMode && seedsIncludedIds.includes(thought.ID);
+          const isSeedsChecked  = !isEditMode && seedsCheckedIds.includes(thought.ID);
+          const isInDevelop        = developIds.includes(thought.ID);
+          const isDevelopFocused   = developFocusedId === thought.ID;
           const isFocused          = thought.ID === focusedId;
           const isNewChatRow       = thought.ID === NEW_CHAT_SENTINEL_ID;
 
@@ -266,11 +266,11 @@ export function ThoughtsList({
                 'thoughts-list__row',
                 isSelected         ? 'thoughts-list__row--selected'         : '',
                 isChecked          ? 'thoughts-list__row--checked'          : '',
-                isOverviewBundle   ? 'thoughts-list__row--overview-bundle'  : '',
-                isOverviewIncluded ? 'thoughts-list__row--overview-included' : '',
-                isOverviewChecked  ? 'thoughts-list__row--overview-checked' : '',
-                isInWorkout        ? 'thoughts-list__row--workout'          : '',
-                isWorkoutFocused   ? 'thoughts-list__row--workout-focused'  : '',
+                isSeedsBundle   ? 'thoughts-list__row--seeds-bundle'  : '',
+                isSeedsIncluded ? 'thoughts-list__row--seeds-included' : '',
+                isSeedsChecked  ? 'thoughts-list__row--seeds-checked' : '',
+                isInDevelop        ? 'thoughts-list__row--develop'          : '',
+                isDevelopFocused   ? 'thoughts-list__row--develop-focused'  : '',
                 isFocused          ? 'thoughts-list__row--focused'          : '',
                 isNewChatRow       ? 'thoughts-list__row--new-chat'         : '',
               ].join(' ')}

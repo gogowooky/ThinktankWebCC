@@ -1,0 +1,33 @@
+/* HarvestArea.css */
+
+.harvest-area__title-row {
+  background: var(--harvest-ribbon-bg);
+}
+
+.harvest-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--harvest-area-bg);
+  /* ColumnSortDialog/FilterSelectDialog(position:absolute)がこのエリア基準で
+     配置されるよう、他パネル(Thinktank/Seeds/DevelopSetting)と同様に
+     position:relative を明示する */
+  position: relative;
+}
+
+/* ── チャット ─────────────────────────────────────── */
+
+.harvest-area__chat {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* HarvestChat がメモ選択(DataGrid)の残りの高さを占有する */
+.harvest-area__chat-body {
+  flex: 1;
+  min-height: 0;
+}

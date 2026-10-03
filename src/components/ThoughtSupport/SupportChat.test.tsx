@@ -6,7 +6,7 @@ import type { TTVault } from '../../models/TTVault';
 const mocks = vi.hoisted(() => ({ save: vi.fn(), stream: vi.fn(), input: '相談を続けたい', open: vi.fn() }));
 vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { instance: { save: mocks.save, search: vi.fn().mockResolvedValue([]) } } }));
 vi.mock('../../services/ChatApiService', () => ({ streamChat: mocks.stream }));
-vi.mock('../../views/TTApplication', () => ({ TTApplication: { Instance: { OverviewPanel: { OpenBundle: mocks.open } } } }));
+vi.mock('../../views/TTApplication', () => ({ TTApplication: { Instance: { SeedsPanel: { OpenBundle: mocks.open } } } }));
 vi.mock('../ThinktankPanel/AiChatView', async () => {
   const React = await import('react');
   return {
@@ -71,23 +71,23 @@ describe('panel conversation integration', () => {
       return <SupportChat vault={vault} panelName="Thinktank" selectedId={id} onSelected={select} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />;
     }
     mocks.stream.mockImplementation(async (_history, _prompt, callbacks) => {
-      callbacks.onDelta(JSON.stringify({ reply: '全体を整理しましょう。', operation: { panel: 'Overview', record: { handoff: '全体の準備と次の一手を整理する' } } })); callbacks.onDone();
+      callbacks.onDelta(JSON.stringify({ reply: '全体を整理しましょう。', operation: { panel: 'Seeds', record: { handoff: '全体の準備と次の一手を整理する' } } })); callbacks.onDone();
     });
     await act(async () => root.render(<Harness />)); await send();
-    expect(item.Name).toContain('PROJ:Overview');
+    expect(item.Name).toContain('PROJ:Seeds');
     expect(host.textContent).toContain('このまま相談を続けられます');
     mocks.stream.mockImplementation(async (history, prompt, callbacks, _signal, _model, support) => {
-      expect(prompt).toContain('現在の担当 Overview'); expect(support).toBe(true);
+      expect(prompt).toContain('現在の担当 Seeds'); expect(support).toBe(true);
       expect(history.filter((m: { content: string }) => m.content === mocks.input)).toHaveLength(2);
       callbacks.onDelta(JSON.stringify({ reply: '次の準備を考えましょう。' })); callbacks.onDone();
     });
     await send(); expect(supportRecord(item).messages).toHaveLength(6);
   });
   it('pins the selected task Bundle when the visible Bundle changes', async () => {
-    const selected = makeChat('chat-1', 'TODO:Workout｜[待機]返事を待つ', 'bundle-a');
-    const other = makeChat('chat-2', 'TODO:Workout｜[未着手]別の個人情報', 'bundle-b');
+    const selected = makeChat('chat-1', 'TODO:Develop｜[待機]返事を待つ', 'bundle-a');
+    const other = makeChat('chat-2', 'TODO:Develop｜[未着手]別の個人情報', 'bundle-b');
     const vault = vaultFor([selected, other]);
-    const element = (bundle: string) => <SupportChat vault={vault} panelName="Workout" selectedId={selected.ID} bundleId={bundle} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />;
+    const element = (bundle: string) => <SupportChat vault={vault} panelName="Develop" selectedId={selected.ID} bundleId={bundle} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />;
     await act(async () => root.render(element('bundle-a')));
     await act(async () => root.render(element('bundle-b')));
     mocks.stream.mockImplementation(async (_history, prompt, callbacks) => {
@@ -97,23 +97,23 @@ describe('panel conversation integration', () => {
     await send(); expect(supportRecord(selected).bundleId).toBe('bundle-a'); expect(selected.Name).toContain('[待機]');
   });
   it('blocks management changes from the free conversation Pane', async () => {
-    const selected = makeChat('chat-1', 'TODO:Workout｜[待機]予約');
+    const selected = makeChat('chat-1', 'TODO:Develop｜[待機]予約');
     mocks.stream.mockImplementation(async (_history, _prompt, callbacks) => { callbacks.onDelta(JSON.stringify({ reply: '終わりです', operation: { state: '完了', evidence: mocks.input, record: { remaining: 'なし' } } })); callbacks.onDone(); });
-    await act(async () => root.render(<SupportChat pane vault={vaultFor([selected])} panelName="Workout" selectedId={selected.ID} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />));
+    await act(async () => root.render(<SupportChat pane vault={vaultFor([selected])} panelName="Develop" selectedId={selected.ID} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />));
     await send(); expect(selected.Name).toContain('[待機]'); expect(host.textContent).toContain('自由対話からの管理変更は適用していません');
   });
   it('does not save a truncated model response as an answer', async () => {
-    const selected = makeChat('chat-1', 'ASK:Workout｜[進行中]質問');
+    const selected = makeChat('chat-1', 'ASK:Develop｜[進行中]質問');
     mocks.stream.mockImplementation(async (_history, _prompt, callbacks) => { callbacks.onDelta('{"reply":"途中'); });
-    await act(async () => root.render(<SupportChat vault={vaultFor([selected])} panelName="Workout" selectedId={selected.ID} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />));
+    await act(async () => root.render(<SupportChat vault={vaultFor([selected])} panelName="Develop" selectedId={selected.ID} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />));
     await send(); expect(host.textContent).toContain('通信が途中で終了しました'); expect(selected.Content).not.toContain('{"reply"');
     const saved = supportRecord(selected).messages!;
     expect(saved[saved.length - 1].role).toBe('user');
   });
   it('dismisses the result and error banner without touching the saved record', async () => {
-    const selected = makeChat('chat-1', 'ASK:Workout｜[進行中]質問');
+    const selected = makeChat('chat-1', 'ASK:Develop｜[進行中]質問');
     mocks.stream.mockImplementation(async (_history, _prompt, callbacks) => { callbacks.onDelta('{"reply":"途中'); });
-    await act(async () => root.render(<SupportChat vault={vaultFor([selected])} panelName="Workout" selectedId={selected.ID} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />));
+    await act(async () => root.render(<SupportChat vault={vaultFor([selected])} panelName="Develop" selectedId={selected.ID} onSelected={() => {}} onMessages={() => {}} onWaiting={() => {}} modelSelector={modelSelector} />));
     await send();
     expect(host.textContent).toContain('通信が途中で終了しました');
     const before = selected.Content;

@@ -4,7 +4,7 @@ const storage = vi.hoisted(() => ({ save: vi.fn().mockResolvedValue({ updatedAt:
 vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
 vi.mock('../services/ChatApiService', () => { throw new Error('Core operations must not import AI execution'); });
 import { TTVault } from './TTVault';
-import { TTOverviewPanel } from '../views/TTOverviewPanel';
+import { TTSeedsPanel } from '../views/TTSeedsPanel';
 import { parseBundle } from '../utils/thinkFormat';
 import { readThinkSupport } from '../../server/services/thinkSupportRecord';
 import type { ConversationTurn } from '../services/ConversationService';
@@ -31,7 +31,7 @@ it('adopts separate candidates once each, preserves successes after partial fail
   await expect(vault.CreateSubtaskFromConversation(turn, chat.ID, '不正', 'missing')).rejects.toThrow('対象');
 });
 
-it('creates and edits Thinks, resolves a Bundle and opens Overview without AI', async () => {
+it('creates and edits Thinks, resolves a Bundle and opens Seeds without AI', async () => {
   const vault = new TTVault();
   const think = await vault.CreateBlankThink('memo', '資料');
   think.Content = '資料\nAIなしで編集した本文';
@@ -40,10 +40,10 @@ it('creates and edits Thinks, resolves a Bundle and opens Overview without AI', 
   const bundle = await vault.CreateBundleFromIds([think.ID]);
   expect(vault.GetBundles()).toContain(bundle);
   expect((await vault.GetThinksForBundleAsync(bundle.ID, true)).map(t => t.ID)).toEqual([think.ID]);
-  const overview = new TTOverviewPanel();
-  overview.OpenBundle(bundle.ID);
-  expect(overview.BundleID).toBe(bundle.ID);
-  expect(overview.MediaType).toBe('datagrid');
+  const seeds = new TTSeedsPanel();
+  seeds.OpenBundle(bundle.ID);
+  expect(seeds.BundleID).toBe(bundle.ID);
+  expect(seeds.MediaType).toBe('datagrid');
   expect(storage.save).toHaveBeenCalledWith(expect.objectContaining({ thinkid: think.ID, fullContent: think.Content }));
 });
 
@@ -82,7 +82,7 @@ it('creates a related subtask once for simultaneous adoption and after reloading
   ]);
   expect(first.ID).toBe(second.ID);
   expect(storage.save).toHaveBeenCalledTimes(1);
-  expect(first.Metadata.taskRelation).toEqual({ schemaVersion: 1, parentId: parent.ID, chatId: chat.ID, turnId: turn.id, panel: 'Workout' });
+  expect(first.Metadata.taskRelation).toEqual({ schemaVersion: 1, parentId: parent.ID, chatId: chat.ID, turnId: turn.id, panel: 'Develop' });
   expect(readThinkSupport(first.Metadata.thinkSupport)?.values.goal).toBe('会場を予約する');
   expect(parseBundle(first.Content).ids).toEqual([chat.ID]);
   const reloaded = new TTVault('vault');

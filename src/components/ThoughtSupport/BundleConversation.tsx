@@ -71,7 +71,7 @@ export function BundleConversation(props: ConversationProps) {
   if (!vaultKeys.has(props.vault)) vaultKeys.set(props.vault, ++nextVaultKey);
   return <ConversationPanel key={JSON.stringify([vaultKeys.get(props.vault), props.bundleId, props.chatId, props.draftScope])} {...props} />;
 }
-function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'overview', inputHeader, consultation = false }: ConversationProps) {
+function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'seeds', inputHeader, consultation = false }: ConversationProps) {
   const draft = getDraft(vault, selectedBundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`);
   const bundleId = selectedBundleId;
   const cachedHistory = cachedChatHistory(vault, chatId);
@@ -197,7 +197,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
    */
   async function submit() {
     if (locked.current || busy || !question.trim() || pending) return;
-    // Child progress may have changed in Workout since this conversation was opened.
+    // Child progress may have changed in Develop since this conversation was opened.
     const current: Ready | undefined = status?.enabled && context && loaded && !context.subtasks ? { context, history } : undefined;
     const ready = current ?? await prepare();
     if (!ready || !alive.current) return;

@@ -21,15 +21,15 @@ describe('thought support persistence and decisions', () => {
     expect(() => planSupportUpdate(chat(), { ...op, evidence: ' ' }, ' ', now)).toThrow('本人');
   });
   it('preserves legacy unspecified state on owner change', () => {
-    const result = planSupportUpdate(chat('TODO:Thinktank｜会場予約'), { panel: 'Overview', record: { handoff: '全体の予定を確認する' } }, '', now);
-    expect(result.title).toBe('TODO:Overview｜会場予約');
+    const result = planSupportUpdate(chat('TODO:Thinktank｜会場予約'), { panel: 'Seeds', record: { handoff: '全体の予定を確認する' } }, '', now);
+    expect(result.title).toBe('TODO:Seeds｜会場予約');
   });
   it.each(['TODO', 'PROJ', 'ASK', 'EVNT', 'LOOP'])('routes %s through the common parser', kind => {
-    expect(isTodoChatThink({ ContentType: 'chat', Name: `${kind}:Workout｜[待機]予約` }, 'TODO:Workout｜')).toBe(true);
+    expect(isTodoChatThink({ ContentType: 'chat', Name: `${kind}:Develop｜[待機]予約` }, 'TODO:Develop｜')).toBe(true);
   });
   it('changes kind and owner independently of waiting state', () => {
-    const result = planSupportUpdate(chat('TODO:Workout｜[待機]会場予約'), { kind: 'PROJ', panel: 'Overview', record: { handoff: '準備全体を整理する', next: '案内の予定を決める' } }, '', now);
-    expect(result.title).toBe('PROJ:Overview｜[待機]会場予約');
+    const result = planSupportUpdate(chat('TODO:Develop｜[待機]会場予約'), { kind: 'PROJ', panel: 'Seeds', record: { handoff: '準備全体を整理する', next: '案内の予定を決める' } }, '', now);
+    expect(result.title).toBe('PROJ:Seeds｜[待機]会場予約');
     expect(result.record.confirmedAt).toBe('');
   });
   it('does not accept an AI proposal as a user decision', () => {
@@ -132,7 +132,7 @@ describe('recoverable bundle and occurrence creation', () => {
   });
   it('retries a partial link failure without creating duplicate children or artifacts', async () => {
     const vault = new TTVault();
-    const source = await vault.AddThinkWithContent('2026-09-08-110000', '毎月の会', 'chat', '', 'LOOP:Overview｜[進行中]毎月の会\n');
+    const source = await vault.AddThinkWithContent('2026-09-08-110000', '毎月の会', 'chat', '', 'LOOP:Seeds｜[進行中]毎月の会\n');
     source.Metadata.supportPendingEffects = { operationId: 'event-1', sources: [], answer: { reply: '', createBundle: '交流会', children: [{ key: 'october', title: '10月の交流会', goal: '交流する', kind: 'EVNT', occurrence: '2026-10-01' }], artifact: { key: 'plan', title: '予定', type: 'html', body: '<p>予定</p>' } } };
     const link = vi.spyOn(vault, 'LinkThinksToBundle').mockRejectedValueOnce(new Error('通信失敗'));
     await expect(applySupportEffects(vault, source)).rejects.toThrow('通信失敗');

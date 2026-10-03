@@ -26,17 +26,17 @@
   color: #1a1a2e;
 }
 
-.panel-area--overview > .panel-area__inner {
-  background: var(--overview-area-bg);
+.panel-area--seeds > .panel-area__inner {
+  background: var(--seeds-area-bg);
   color: #1a1a2e;
 }
 
-.panel-area--rethink > .panel-area__inner {
-  background: var(--rethink-area-bg);
+.panel-area--harvest > .panel-area__inner {
+  background: var(--harvest-area-bg);
   color: #1a1a2e;
 }
 
-.panel-area--workout > .panel-area__inner {
-  background: var(--workout-ribbon-bg, #2a2a2a);
+.panel-area--develop > .panel-area__inner {
+  background: var(--develop-ribbon-bg, #2a2a2a);
   color: rgba(255, 255, 255, 0.75);
 }

@@ -61,7 +61,7 @@ it('uses the Chat selected in the upper list and has no second selector or conve
   expect(host.querySelector('textarea')?.getAttribute('data-chat')).toBe('chat-a');
   expect(calls.render.mock.calls.at(-1)?.[0].draftScope).toBe('aichat:Thinktank:panel');
 });
-it('follows the upper Chat selection and allows Thinktank without an Overview Bundle', async () => {
+it('follows the upper Chat selection and allows Thinktank without an Seeds Bundle', async () => {
   await show('a'); await show('b', 'chat-b'); expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBeNull();
   await show('', 'chat-a'); expect(host.querySelector('textarea')?.getAttribute('data-chat')).toBe('chat-a');
   await show('missing', 'missing'); expect(host.querySelector('textarea')).toBeNull(); expect(host.textContent).toContain('相談するChat');
@@ -85,14 +85,14 @@ it('starts a task from the selected Thinktank Chat after the user confirms its t
   });
   await act(async () => { host.querySelector<HTMLButtonElement>('.support-task-start__actions button')!.click(); });
   expect(onStartTask).toHaveBeenCalledWith('chat-a', '誕生日会を開催する');
-  expect(host.textContent).toContain('Overviewで課題を開きました');
+  expect(host.textContent).toContain('Seedsで課題を開きました');
 });
 it('hands the task-start control to the conversation input band instead of the scrolling history', async () => {
   await show('', 'chat-a', vi.fn());
   expect(host.querySelector('.support-task-start')!.closest('.bundle-conversation-input')).not.toBeNull();
   expect(calls.render.mock.calls.at(-1)?.[0].inputHeader).toBeTruthy();
 });
-it('uses the Chat-owned Bundle independently of the Overview selection', async () => {
+it('uses the Chat-owned Bundle independently of the Seeds selection', async () => {
   vault.GetThink('chat-a')!.Metadata.taskContext = { schemaVersion: 1, bundleId: 'a' };
   await show('b', 'chat-a');
   expect(host.querySelector('textarea')?.getAttribute('data-bundle')).toBe('a');

@@ -1,16 +1,16 @@
 /**
  * AppLayout.tsx
- * Phase 10: ReThinkPanel を実装コンポーネントに差し替え。
+ * Phase 10: HarvestPanel を実装コンポーネントに差し替え。
  *
  * 左から順に:
  *   ThinktankPanel（Ribbon + Area） |
- *   OverviewPanel（Ribbon + Area）  |
- *   WorkoutPanel（中央、flex:1）    |
- *   ReThinkPanel（Area + Ribbon）
+ *   SeedsPanel（Ribbon + Area）  |
+ *   DevelopPanel（中央、flex:1）    |
+ *   HarvestPanel（Area + Ribbon）
  *
  * レイアウトモード:
  *   'sipoc'  … 全パネル表示（デフォルト）
- *   'simple' … OverviewPanel / ReThinkPanel を非表示
+ *   'simple' … SeedsPanel / HarvestPanel を非表示
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -18,16 +18,16 @@ import { TTApplication } from '../../views/TTApplication';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { HighlightProvider } from '../../contexts/HighlightContext';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
-import { OverviewPanel } from '../OverviewPanel/OverviewPanel';
-import { WorkoutPanel } from '../WorkoutPanel/WorkoutPanel';
-import { ReThinkPanel } from '../ReThinkPanel/ReThinkPanel';
+import { SeedsPanel } from '../SeedsPanel/SeedsPanel';
+import { DevelopPanel } from '../DevelopPanel/DevelopPanel';
+import { HarvestPanel } from '../HarvestPanel/HarvestPanel';
 import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
 import { THEME_STATUS_KEYS, applyPanelThemeCss } from '../../utils/panelTheme';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { INIT_AREA_WIDTH, MIN_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
 import './AppLayout.css';
 
-// パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Workout 側と共用）
+// パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Develop 側と共用）
 
 export type LayoutMode = 'sipoc' | 'simple';
 
@@ -44,12 +44,12 @@ export function AppLayout() {
   // 表示幅は各パネルの Status（<Panel>Panel.Area.OpenWidth）のモードで決まる。
   // Splitter で変えた値は AreaUserWidth に持ち、モードを user に倒す。
   useAppUpdate(app.ThinktankPanel);
-  useAppUpdate(app.OverviewPanel);
-  useAppUpdate(app.ReThinkPanel);
+  useAppUpdate(app.SeedsPanel);
+  useAppUpdate(app.HarvestPanel);
 
   const ttWidth       = useResolvedAreaWidth('ThinktankPanel.Area.OpenWidth', app.ThinktankPanel.AreaWidthMode, INIT_AREA_WIDTH.Thinktank, app.ThinktankPanel.AreaUserWidth);
-  const overviewWidth = useResolvedAreaWidth('OverviewPanel.Area.OpenWidth', app.OverviewPanel.AreaWidthMode,  INIT_AREA_WIDTH.Overview,  app.OverviewPanel.AreaUserWidth);
-  const rethinkWidth  = useResolvedAreaWidth('ReThinkPanel.Area.OpenWidth', app.ReThinkPanel.AreaWidthMode,   INIT_AREA_WIDTH.ReThink,   app.ReThinkPanel.AreaUserWidth);
+  const seedsWidth = useResolvedAreaWidth('SeedsPanel.Area.OpenWidth', app.SeedsPanel.AreaWidthMode,  INIT_AREA_WIDTH.Seeds,  app.SeedsPanel.AreaUserWidth);
+  const harvestWidth  = useResolvedAreaWidth('HarvestPanel.Area.OpenWidth', app.HarvestPanel.AreaWidthMode,   INIT_AREA_WIDTH.Harvest,   app.HarvestPanel.AreaUserWidth);
 
   // レイアウトモード（sipoc / simple）
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadLayoutMode);
@@ -69,28 +69,28 @@ export function AppLayout() {
     return () => TTUIStateManager.instance.removeListener('Application.PanelDisplay.Mode', listener);
   }, []);
 
-  // Edit モードでは OverviewPanel 自体が非表示になるため、選択中の Bundle をいったん解除する。
+  // Edit モードでは SeedsPanel 自体が非表示になるため、選択中の Bundle をいったん解除する。
   // Think モードへ戻ったときに復元できるよう、解除前の BundleID を保持しておく。
   const prevLayoutModeRef   = useRef(layoutMode);
-  const savedOverviewBundle = useRef('');
+  const savedSeedsBundle = useRef('');
   useEffect(() => {
     const prev = prevLayoutModeRef.current;
     prevLayoutModeRef.current = layoutMode;
     if (prev === layoutMode) return;
 
     if (layoutMode === 'simple') {
-      savedOverviewBundle.current = app.OverviewPanel.BundleID;
-      if (savedOverviewBundle.current) app.OverviewPanel.ClearBundle();
-    } else if (savedOverviewBundle.current) {
-      app.OverviewPanel.OpenBundle(savedOverviewBundle.current);
-      savedOverviewBundle.current = '';
+      savedSeedsBundle.current = app.SeedsPanel.BundleID;
+      if (savedSeedsBundle.current) app.SeedsPanel.ClearBundle();
+    } else if (savedSeedsBundle.current) {
+      app.SeedsPanel.OpenBundle(savedSeedsBundle.current);
+      savedSeedsBundle.current = '';
     }
   }, [layoutMode, app]);
 
   // パネルのテーマ色（<Panel>.Theme.* / FocusingBorder.Theme.*）を CSS 変数へ展開する。
   // 派生色は color-mix() で作るため、基礎色1つの変更が関連色すべてに波及する。
   useEffect(() => {
-    const apply = () => applyPanelThemeCss(app.WorkoutPanel.TextEditor.ColorStatus);
+    const apply = () => applyPanelThemeCss(app.DevelopPanel.TextEditor.ColorStatus);
     apply();
     const listener = () => apply();
     for (const key of THEME_STATUS_KEYS) {
@@ -108,7 +108,7 @@ export function AppLayout() {
   /** Splitter 操作を「ユーザー設定値」として反映する（現在の表示幅を起点に増減する） */
   const resizeArea = useCallback((
     panel: { AreaWidthMode: string; AreaUserWidth: number; NotifyUpdated(): void },
-    shownWidth: number, dx: number, statusKey: 'ThinktankPanel.Area.OpenWidth' | 'OverviewPanel.Area.OpenWidth' | 'ReThinkPanel.Area.OpenWidth',
+    shownWidth: number, dx: number, statusKey: 'ThinktankPanel.Area.OpenWidth' | 'SeedsPanel.Area.OpenWidth' | 'HarvestPanel.Area.OpenWidth',
   ) => {
     panel.AreaUserWidth = Math.max(MIN_AREA_WIDTH, shownWidth + dx);
     const wasUser = panel.AreaWidthMode === 'user';
@@ -118,8 +118,8 @@ export function AppLayout() {
   }, []);
 
   const onTtSplitter       = useCallback((dx: number) => resizeArea(app.ThinktankPanel, ttWidth,       dx,  'ThinktankPanel.Area.OpenWidth'), [resizeArea, app, ttWidth]);
-  const onOverviewSplitter = useCallback((dx: number) => resizeArea(app.OverviewPanel,  overviewWidth, dx,  'OverviewPanel.Area.OpenWidth'),  [resizeArea, app, overviewWidth]);
-  const onRethinkSplitter  = useCallback((dx: number) => resizeArea(app.ReThinkPanel,   rethinkWidth, -dx,  'ReThinkPanel.Area.OpenWidth'),   [resizeArea, app, rethinkWidth]);
+  const onSeedsSplitter = useCallback((dx: number) => resizeArea(app.SeedsPanel,  seedsWidth, dx,  'SeedsPanel.Area.OpenWidth'),  [resizeArea, app, seedsWidth]);
+  const onRethinkSplitter  = useCallback((dx: number) => resizeArea(app.HarvestPanel,   harvestWidth, -dx,  'HarvestPanel.Area.OpenWidth'),   [resizeArea, app, harvestWidth]);
 
   const showSidePanels = layoutMode === 'sipoc';
 
@@ -137,31 +137,31 @@ export function AppLayout() {
           onLayoutModeChange={handleLayoutModeChange}
         />
 
-        {/* ── OverviewPanel（Phase 9 実装済み）──────────────────── */}
-        <div className="app-panel app-panel--overview" style={showSidePanels ? undefined : { display: 'none' }}>
-          <OverviewPanel
+        {/* ── SeedsPanel（Phase 9 実装済み）──────────────────── */}
+        <div className="app-panel app-panel--seeds" style={showSidePanels ? undefined : { display: 'none' }}>
+          <SeedsPanel
             app={app}
-            width={overviewWidth}
-            onResize={onOverviewSplitter}
+            width={seedsWidth}
+            onResize={onSeedsSplitter}
           />
         </div>
 
-        {/* ── WorkoutPanel（Phase 7 実装済み）────────────────────── */}
-        <div className="app-panel app-panel--workout">
-          <WorkoutPanel app={app} layoutMode={layoutMode} />
+        {/* ── DevelopPanel（Phase 7 実装済み）────────────────────── */}
+        <div className="app-panel app-panel--develop">
+          <DevelopPanel app={app} layoutMode={layoutMode} />
         </div>
 
-        {/* ── ReThinkPanel（Phase 10 実装済み）─────────────────────── */}
-        <div className="app-panel app-panel--rethink" style={showSidePanels ? undefined : { display: 'none' }}>
-          <ReThinkPanel
+        {/* ── HarvestPanel（Phase 10 実装済み）─────────────────────── */}
+        <div className="app-panel app-panel--harvest" style={showSidePanels ? undefined : { display: 'none' }}>
+          <HarvestPanel
             app={app}
-            width={rethinkWidth}
+            width={harvestWidth}
             onResize={onRethinkSplitter}
           />
         </div>
 
       </div>
-      <ApplicationStatusBarArea panel={app.WorkoutPanel} />
+      <ApplicationStatusBarArea panel={app.DevelopPanel} />
     </div>
     </HighlightProvider>
   );

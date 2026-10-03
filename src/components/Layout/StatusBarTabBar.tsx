@@ -16,7 +16,7 @@ export interface ModeEntry {
 
 export const MODES: ModeEntry[] = [
   { id: 'status',    icon: <Info        size={14} />, label: 'Status',      placeholder: 'Status...' },
-  { id: 'highlight', icon: <Highlighter size={14} />, label: 'Highlighter', placeholder: '例: rethink fixme, error warn, info' },
+  { id: 'highlight', icon: <Highlighter size={14} />, label: 'Highlighter', placeholder: '例: harvest fixme, error warn, info' },
   { id: 'keyaction', icon: <Keyboard    size={14} />, label: 'KeyAction',   placeholder: 'KeyAction...' },
   { id: 'command',   icon: <Terminal    size={14} />, label: 'Command',     placeholder: 'Command...' },
   { id: 'translate', icon: <BookA       size={14} />, label: 'Translate',   placeholder: 'Translate...' },

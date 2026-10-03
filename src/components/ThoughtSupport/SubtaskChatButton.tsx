@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { ensureSubtaskChat } from '../../services/subtaskChat';
 
-export function SubtaskChatButton({ vault, bundleId, overviewId }: { vault: TTVault; bundleId: string; overviewId: string }) {
+export function SubtaskChatButton({ vault, bundleId, seedsId }: { vault: TTVault; bundleId: string; seedsId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const locked = useRef(false);
@@ -11,7 +11,7 @@ export function SubtaskChatButton({ vault, bundleId, overviewId }: { vault: TTVa
   useEffect(() => {
     version.current++; active.current = true; locked.current = false; setBusy(false); setError('');
     return () => { active.current = false; };
-  }, [vault, bundleId, overviewId]);
+  }, [vault, bundleId, seedsId]);
   async function open() {
     if (locked.current) return;
     locked.current = true; setBusy(true); setError('');
@@ -22,12 +22,12 @@ export function SubtaskChatButton({ vault, bundleId, overviewId }: { vault: TTVa
       if (!active.current || request !== version.current || app.Models.Vault !== vault) return;
       const chat = await ensureSubtaskChat(vault, bundleId);
       const { openSupportChat } = await import('../../services/openSupportChat');
-      if (active.current && request === version.current && app.Models.Vault === vault && app.OverviewPanel.BundleID === overviewId) openSupportChat(chat.ID);
+      if (active.current && request === version.current && app.Models.Vault === vault && app.SeedsPanel.BundleID === seedsId) openSupportChat(chat.ID);
     } catch (e) { if (active.current && request === version.current) setError((e as Error).message); }
     finally { if (active.current && request === version.current) { locked.current = false; setBusy(false); } }
   }
   return <div>
-    <button type="button" disabled={busy} onClick={() => void open()}>{busy ? '相談用Chatを準備しています…' : 'Workoutで相談する'}</button>
+    <button type="button" disabled={busy} onClick={() => void open()}>{busy ? '相談用Chatを準備しています…' : 'Developで相談する'}</button>
     {error && <p role="alert">{error} 同じボタンから再試行できます。</p>}
   </div>;
 }

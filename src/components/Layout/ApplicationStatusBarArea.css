@@ -5,7 +5,7 @@
   align-items: center;
   height: 28px;
   flex-shrink: 0;
-  background: var(--toolbar-bg, var(--workout-ribbon-bg, #2d2d2d));
+  background: var(--toolbar-bg, var(--develop-ribbon-bg, #2d2d2d));
   color: var(--toolbar-color, rgba(255, 255, 255, 0.85));
   border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding: 0 4px;

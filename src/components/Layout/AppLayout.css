@@ -30,11 +30,11 @@
   overflow: hidden;
 }
 
-/* WorkoutPanel だけ残余スペースを占有する */
-.app-panel--workout {
+/* DevelopPanel だけ残余スペースを占有する */
+.app-panel--develop {
   flex: 1;
   flex-shrink: 1;
-  background: var(--workout-area-bg);
+  background: var(--develop-area-bg);
   overflow: hidden;
 }
 
@@ -62,13 +62,13 @@
   color: #444;
 }
 
-/* WorkoutPanel のプレースホルダーは別カラー（背景が明るい灰色）*/
-.panel-placeholder--workout {
+/* DevelopPanel のプレースホルダーは別カラー（背景が明るい灰色）*/
+.panel-placeholder--develop {
   width: 100%;
   opacity: 0.4;
 }
 
-.panel-placeholder--workout .panel-placeholder__title,
-.panel-placeholder--workout .panel-placeholder__desc {
+.panel-placeholder--develop .panel-placeholder__title,
+.panel-placeholder--develop .panel-placeholder__desc {
   color: #222;
 }

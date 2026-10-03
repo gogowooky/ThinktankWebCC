@@ -14,7 +14,7 @@ import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTActions } from '../../views/TTActions';
 import { getFocusName } from '../../utils/getFocusName';
-import type { TTWorkoutPanel } from '../../views/TTWorkoutPanel';
+import type { TTDevelopPanel } from '../../views/TTDevelopPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
 import { CommandIncrementalSearch, type CommandCandidate } from './CommandIncrementalSearch';
 
@@ -45,7 +45,7 @@ type AuthorState = 'off' | 'banner' | 'static';
 const KA_INIT: KAState = { modifiers: '-', key: '-', mouse: '-', touch: '-', focus: '-' };
 
 interface Props {
-  panel: TTWorkoutPanel;
+  panel: TTDevelopPanel;
 }
 
 export function ApplicationStatusBarArea({ panel }: Props) {

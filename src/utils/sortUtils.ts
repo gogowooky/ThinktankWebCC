@@ -1,7 +1,7 @@
 /**
  * sortUtils.ts
  * TTThink 一覧の共通ソート・日付フィルター処理。
- * ThinktankArea / OverviewArea の重複を排除する。
+ * ThinktankArea / SeedsArea の重複を排除する。
  */
 
 import type { TTThink } from '../models/TTThink';

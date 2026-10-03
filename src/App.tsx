@@ -85,7 +85,7 @@ export default function App() {
     //   - 開いているペインに未保存の変更（area.IsDirty）があればウィンドウ終了を確認で止める
     //   - タブ非表示・終了直前には保留中の自動保存（3秒デバウンス待ち）を先行実行する
     //   - Electron のパッケージ版は electron/main.cjs の close ハンドラーが下の window 関数を使う
-    const hasUnsavedChanges = () => app.WorkoutPanel.Areas.some(a => a.IsDirty)
+    const hasUnsavedChanges = () => app.DevelopPanel.Areas.some(a => a.IsDirty)
     window.__ttHasUnsavedChanges = hasUnsavedChanges
     window.__ttFlushAllSaves = () => flushAllPanes()
 
@@ -121,8 +121,8 @@ export default function App() {
 
         const isSimple = localStorage.getItem('tt-layout-mode') === 'simple'
         const validColumns = isSimple
-          ? ['Thinktank', 'WorkoutSetting', 'Workout']
-          : ['Thinktank', 'Overview', 'WorkoutSetting', 'Workout', 'ReThink']
+          ? ['Thinktank', 'DevelopSetting', 'Develop']
+          : ['Thinktank', 'Seeds', 'DevelopSetting', 'Develop', 'Harvest']
 
         if (validColumns.includes(colName)) {
           if (app.FocusedColumn !== colName) {

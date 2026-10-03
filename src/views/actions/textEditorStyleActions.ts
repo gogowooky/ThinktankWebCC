@@ -125,7 +125,7 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
     shortLabel: 'バレット',
     descLabel: '箇条書き文字',
     respectIndent: true,
-    getMarks: (a) => parseMarks(a.WorkoutPanel.TextEditor.Bullet.Marks),
+    getMarks: (a) => parseMarks(a.DevelopPanel.TextEditor.Bullet.Marks),
   });
 }
 
@@ -135,6 +135,6 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
     shortLabel: 'コメント',
     descLabel: 'コメント記号',
     respectIndent: false,
-    getMarks: (a) => parseMarks(a.WorkoutPanel.TextEditor.Comment.Marks),
+    getMarks: (a) => parseMarks(a.DevelopPanel.TextEditor.Comment.Marks),
   });
 }

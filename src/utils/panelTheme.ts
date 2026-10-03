@@ -17,18 +17,18 @@
 import { getDefaultColorStyle, isUnset } from './defaultColor';
 import type { ColorStyle } from './defaultColor';
 
-export type PanelThemeKind = 'Thinktank' | 'Overview' | 'Workout' | 'ReThink' | 'ToolBar';
+export type PanelThemeKind = 'Thinktank' | 'Seeds' | 'Develop' | 'Harvest' | 'ToolBar';
 
 export const PANEL_THEME_KINDS: PanelThemeKind[] = [
-  'Thinktank', 'Overview', 'Workout', 'ReThink', 'ToolBar',
+  'Thinktank', 'Seeds', 'Develop', 'Harvest', 'ToolBar',
 ];
 
 /** CSS変数の接頭辞 */
 const CSS_PREFIX: Record<PanelThemeKind, string> = {
   Thinktank: 'thinktank',
-  Overview:  'overview',
-  Workout:   'workout',
-  ReThink:   'rethink',
+  Seeds:  'seeds',
+  Develop:   'develop',
+  Harvest:   'harvest',
   ToolBar:   'toolbar',
 };
 

@@ -2,8 +2,8 @@
  * HighlightContext.tsx
  * 全グリッドで共有するハイライトID群を提供する Context。
  *
- * overviewBundleIds  : OverviewPanelで選択中BundleのThink ID一覧
- * workoutIds         : WorkoutPanelで現在開いているThink ID一覧
+ * seedsBundleIds  : SeedsPanelで選択中BundleのThink ID一覧
+ * developIds         : DevelopPanelで現在開いているThink ID一覧
  */
 
 import { createContext, useContext } from 'react';
@@ -11,19 +11,19 @@ import { useAppUpdate } from '../hooks/useAppUpdate';
 import { TTApplication } from '../views/TTApplication';
 
 interface HighlightState {
-  overviewBundleIds: string[];
-  overviewIncludedIds: string[];
-  overviewCheckedIds: string[];
-  workoutIds: string[];
-  workoutFocusedId: string | null;
+  seedsBundleIds: string[];
+  seedsIncludedIds: string[];
+  seedsCheckedIds: string[];
+  developIds: string[];
+  developFocusedId: string | null;
 }
 
 const HighlightContext = createContext<HighlightState>({
-  overviewBundleIds: [],
-  overviewIncludedIds: [],
-  overviewCheckedIds: [],
-  workoutIds: [],
-  workoutFocusedId: null,
+  seedsBundleIds: [],
+  seedsIncludedIds: [],
+  seedsCheckedIds: [],
+  developIds: [],
+  developFocusedId: null,
 });
 
 export function useHighlight(): HighlightState {
@@ -32,36 +32,36 @@ export function useHighlight(): HighlightState {
 
 export function HighlightProvider({ children }: { children: React.ReactNode }) {
   const app      = TTApplication.Instance;
-  const overview = app.OverviewPanel;
-  const workout  = app.WorkoutPanel;
+  const seeds = app.SeedsPanel;
+  const develop  = app.DevelopPanel;
   const vault    = app.Models.Vault;
 
-  useAppUpdate(overview);
-  useAppUpdate(workout);
+  useAppUpdate(seeds);
+  useAppUpdate(develop);
   useAppUpdate(vault);
 
-  const overviewBundleId = overview.BundleID;
-  const overviewBundleIds = overviewBundleId ? [overviewBundleId] : [];
+  const seedsBundleId = seeds.BundleID;
+  const seedsBundleIds = seedsBundleId ? [seedsBundleId] : [];
 
-  const overviewIncludedIds = overviewBundleId
-    ? vault.GetThinksForBundle(overviewBundleId).map(t => t.ID)
+  const seedsIncludedIds = seedsBundleId
+    ? vault.GetThinksForBundle(seedsBundleId).map(t => t.ID)
     : [];
 
-  const overviewCheckedIds = overview.CheckedThoughtIDs;
+  const seedsCheckedIds = seeds.CheckedThoughtIDs;
 
-  const workoutIds = workout.Areas.map(a => a.ResourceID).filter(Boolean);
+  const developIds = develop.Areas.map(a => a.ResourceID).filter(Boolean);
 
-  const focusedArea = workout.Areas.find(a => a.ID === workout.FocusedAreaId);
-  const workoutFocusedId = focusedArea ? focusedArea.ResourceID : null;
+  const focusedArea = develop.Areas.find(a => a.ID === develop.FocusedAreaId);
+  const developFocusedId = focusedArea ? focusedArea.ResourceID : null;
 
   return (
     <HighlightContext.Provider
       value={{
-        overviewBundleIds,
-        overviewIncludedIds,
-        overviewCheckedIds,
-        workoutIds,
-        workoutFocusedId,
+        seedsBundleIds,
+        seedsIncludedIds,
+        seedsCheckedIds,
+        developIds,
+        developFocusedId,
       }}
     >
       {children}

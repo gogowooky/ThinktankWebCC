@@ -4,7 +4,13 @@ import type { SupportPanel } from '../services/thoughtSupport';
 
 export function useSupportSelection(vault: TTVault, panel: SupportPanel) {
   const key = `thinktank.support.selection:${vault.VaultName}:${panel}`;
-  const [id, setId] = useState(() => { try { return localStorage.getItem(key) || ''; } catch { return ''; } });
+  const legacyOwners: Partial<Record<SupportPanel, string>> = { Seeds: 'Overview', Develop: 'Workout', Harvest: 'ReThink' };
+  const legacyPanel = legacyOwners[panel] ?? panel;
+  const legacyKey = `thinktank.support.selection:${vault.VaultName}:${legacyPanel}`;
+  const [id, setId] = useState(() => {
+    try { return localStorage.getItem(key) ?? localStorage.getItem(legacyKey) ?? ''; }
+    catch { return ''; }
+  });
   useEffect(() => { try { localStorage.setItem(key, id); } catch { /* unavailable browser storage must not block conversation */ } }, [key, id]);
   useEffect(() => {
     const listener = (event: Event) => {

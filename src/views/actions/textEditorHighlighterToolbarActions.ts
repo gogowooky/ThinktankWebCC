@@ -18,7 +18,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
   // ── Highlighter 検索移動 ──────────────────────────────────────────────────
   /** Highlighter（ToolBar.HighlighterMode.Text）のヒット位置を昇順で返す。 */
   const findHighlighterMatches = (editor: any): any[] =>
-    findHighlightRanges(editor, app.WorkoutPanel.HighlightWord);
+    findHighlightRanges(editor, app.DevelopPanel.HighlightWord);
 
   const moveToHighlighter = (item: TTActionItem, pick: (ranges: any[], editor: any) => any | null): void => {
     try {
@@ -27,7 +27,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
         item.Result = '[エディタ未選択]';
         return;
       }
-      if (!app.WorkoutPanel.HighlightWord.trim()) {
+      if (!app.DevelopPanel.HighlightWord.trim()) {
         item.Result = '[Highlighter未設定]';
         return;
       }
@@ -121,7 +121,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
         return;
       }
 
-      const current = app.WorkoutPanel.HighlightWord;
+      const current = app.DevelopPanel.HighlightWord;
       const groups = current.split(',').map(g => g.trim()).filter(g => g.length > 0);
       if (groups.includes(selected)) {
         item.Result = `登録済み: ${selected}`;
@@ -154,7 +154,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
       }
 
       // ToolBar が Highlighter モードでなければ切り替える（入力欄はこの後に描画される）
-      if (app.WorkoutPanel.ToolBarMode !== 'Highlighter') {
+      if (app.DevelopPanel.ToolBarMode !== 'Highlighter') {
         TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'Highlighter');
       }
       // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
@@ -210,7 +210,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
       }
 
       // ToolBar が Command モードでなければ切り替える（入力欄はこの後に描画される）
-      if (app.WorkoutPanel.ToolBarMode !== 'Command') {
+      if (app.DevelopPanel.ToolBarMode !== 'Command') {
         TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'Command');
       }
       // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
@@ -250,10 +250,10 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Clear',
     Description: 'ToolBarの現在のモードの入力欄のテキストを消去する',
     Completion: (item) => {
-      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkoutPanel.ToolBarMode];
+      const key = TOOLBAR_MODE_TEXT_KEY[app.DevelopPanel.ToolBarMode];
       if (!key) { item.Result = '[対象モードなし]'; return; }
       TTUIStateManager.instance.applyProperty(key, '');
-      item.Result = `${app.WorkoutPanel.ToolBarMode}をクリアしました`;
+      item.Result = `${app.DevelopPanel.ToolBarMode}をクリアしました`;
     },
   });
 
@@ -261,7 +261,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Focus',
     Description: 'ToolBarの現在のモードの入力欄にフォーカスする',
     Completion: (item) => {
-      const mode = app.WorkoutPanel.ToolBarMode;
+      const mode = app.DevelopPanel.ToolBarMode;
       if (!TOOLBAR_MODE_TEXT_KEY[mode]) { item.Result = '[対象モードなし]'; return; }
 
       // Statusモードは StatusBarStatusPanel を使用しており、他モード共通の
@@ -289,7 +289,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Copy',
     Description: 'ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする',
     Completion: async (item) => {
-      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkoutPanel.ToolBarMode];
+      const key = TOOLBAR_MODE_TEXT_KEY[app.DevelopPanel.ToolBarMode];
       if (!key) { item.Result = '[対象モードなし]'; return; }
       const value = TTUIStateManager.instance.getProperty(key);
       try {
@@ -305,7 +305,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Paste',
     Description: 'ToolBarの現在のモードの入力欄にクリップボードのテキストをペーストする',
     Completion: async (item) => {
-      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkoutPanel.ToolBarMode];
+      const key = TOOLBAR_MODE_TEXT_KEY[app.DevelopPanel.ToolBarMode];
       if (!key) { item.Result = '[対象モードなし]'; return; }
       try {
         const clip = await navigator.clipboard.readText();

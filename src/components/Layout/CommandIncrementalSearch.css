@@ -10,7 +10,7 @@
   max-width: 640px;
   max-height: 220px;
   overflow-y: auto;
-  background: var(--toolbar-bg, var(--workout-ribbon-bg, #2d2d2d));
+  background: var(--toolbar-bg, var(--develop-ribbon-bg, #2d2d2d));
   border: 1px solid color-mix(in srgb, var(--toolbar-color, #fff) 20%, transparent);
   border-radius: 4px;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.35);

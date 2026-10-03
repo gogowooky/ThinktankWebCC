@@ -241,15 +241,15 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // ── ハンドラ ─────────────────────────────────────────────────────────────
 
   const handleSelect = useCallback((id: string) => {
-    const bundleId = app.OverviewPanel.BundleID;
+    const bundleId = app.SeedsPanel.BundleID;
     if (bundleId) {
       const thinks = vault.GetThinksForBundle(bundleId);
       if (!thinks.some(t => t.ID === id)) return;
     }
-    app.OpenThinkInWorkout(id);
+    app.OpenThinkInDevelop(id);
   }, [app, vault]);
 
-  // Bundle 種別はその場で Overview へ、それ以外は Workout へ
+  // Bundle 種別はその場で Seeds へ、それ以外は Develop へ
   const handleOpenItem = useCallback((id: string) => {
     const t = vault.GetThink(id);
     if (t?.ContentType === 'bundle') {
@@ -283,7 +283,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleDeleteChecked = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
     if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
-    app.RemoveThinksFromWorkout(panel.CheckedThoughtIDs);
+    app.RemoveThinksFromDevelop(panel.CheckedThoughtIDs);
     await vault.DeleteThinks(panel.CheckedThoughtIDs);
     panel.ClearChecks();
   }, [app, panel, vault]);
@@ -417,7 +417,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         />
         <div className="thinktank-area__chat-body">
           <SupportChat ref={aiChatViewRef} vault={vault} panelName="Thinktank"
-                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={app.OverviewPanel.BundleID}
+                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
                 onStartTask={handleStartTask}
                 onMessages={setChatMessages} onWaiting={setChatWaiting}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />

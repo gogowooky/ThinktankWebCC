@@ -25,11 +25,11 @@ import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { parseTableContent, tableSectionToContent, TableSection } from '../utils/tableFormat';
 import type { ThinktankViewMode } from './TTThinktankPanel';
-import type { OverviewViewMode } from './TTOverviewPanel';
-import type { WorkoutViewMode } from './TTWorkoutPanel';
-import { collectAreaIds } from './TTWorkoutPanel';
-import { TTWorkoutArea } from './TTWorkoutArea';
-import type { ReThinkViewMode } from './TTReThinkPanel';
+import type { SeedsViewMode } from './TTSeedsPanel';
+import type { DevelopViewMode } from './TTDevelopPanel';
+import { collectAreaIds } from './TTDevelopPanel';
+import { TTDevelopArea } from './TTDevelopArea';
+import type { HarvestViewMode } from './TTHarvestPanel';
 import type { MediaType, ContentType } from '../types';
 import { getFocusName } from '../utils/getFocusName';
 import { COLOR_PROPS, DEFAULT_COLOR_ENTRIES, DEFAULT_MARKS, isUnset, parseMarks } from '../utils/defaultColor';
@@ -38,6 +38,18 @@ import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
 import { StorageManager } from '../services/storage/StorageManager';
+import { canonicalPanelName, canonicalPanelStatusKey, canonicalPanelStatusList } from '../utils/panelNames';
+
+function canonicalStateKey(key: string): ConfigKey {
+  return canonicalPanelStatusKey(key) as ConfigKey;
+}
+
+function canonicalStateValue(key: ConfigKey, value: string): string {
+  if (key === 'Application.FocusedPanel.Name') return canonicalPanelName(value);
+  if (key === 'ToolBar.StatusMode.Text') return canonicalPanelStatusList(value);
+  if (key === 'DevelopSettingPanel.Mode.Name' && value.toLowerCase() === 'workout') return 'Panes';
+  return value;
+}
 
 // ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
 
@@ -45,24 +57,24 @@ export type ConfigKey =
   | 'ThinktankPanel.Area.IsOpen'
   | 'ThinktankPanel.Area.OpenWidth'
   | 'ThinktankPanel.Mode.Name'
-  | 'OverviewPanel.Area.IsOpen'
-  | 'OverviewPanel.Area.OpenWidth'
-  | 'OverviewPanel.Mode.Name'
-  | 'OverviewPanel.Bundle.ID'
-  | 'WorkoutSettingPanel.Area.IsOpen'
-  | 'WorkoutSettingPanel.Area.OpenWidth'
-  | 'WorkoutSettingPanel.Mode.Name'
-  | 'ReThinkPanel.Area.IsOpen'
-  | 'ReThinkPanel.Area.OpenWidth'
-  | 'ReThinkPanel.Mode.Name'
+  | 'SeedsPanel.Area.IsOpen'
+  | 'SeedsPanel.Area.OpenWidth'
+  | 'SeedsPanel.Mode.Name'
+  | 'SeedsPanel.Bundle.ID'
+  | 'DevelopSettingPanel.Area.IsOpen'
+  | 'DevelopSettingPanel.Area.OpenWidth'
+  | 'DevelopSettingPanel.Mode.Name'
+  | 'HarvestPanel.Area.IsOpen'
+  | 'HarvestPanel.Area.OpenWidth'
+  | 'HarvestPanel.Mode.Name'
   | 'Thinktank.Ribbon.BgColor'
   | 'Thinktank.Area.BgColor'
-  | 'Overview.Ribbon.BgColor'
-  | 'Overview.Area.BgColor'
-  | 'Workout.Ribbon.BgColor'
-  | 'Workout.Area.BgColor'
-  | 'ReThink.Ribbon.BgColor'
-  | 'ReThink.Area.BgColor'
+  | 'Seeds.Ribbon.BgColor'
+  | 'Seeds.Area.BgColor'
+  | 'Develop.Ribbon.BgColor'
+  | 'Develop.Area.BgColor'
+  | 'Harvest.Ribbon.BgColor'
+  | 'Harvest.Area.BgColor'
   | 'ToolBar.BgColor'
   | 'ToolBar.Color'
   | 'TextEditor.LineNumbers.IsVisible'
@@ -102,16 +114,16 @@ export type ConfigKey =
   | 'Application.Resource.LocalExporting'
   | 'TextEditor.CurrentEditor.CursorPos'
   | 'TextEditor.CurrentEditor.TextOnCursorPos'
-  | 'WorkoutPanel.Panes.Count'
-  | 'WorkoutPanel.FocusedPane.ID'
-  | 'WorkoutPanel.FocusedPane.PaneNumber'
-  | 'WorkoutPanel.FocusedPane.Mode'
-  | 'WorkoutPanel.FocusedPane.FileHistory'
-  | 'WorkoutPanel.FocusedPane.FileHistoryPos'
-  | 'WorkoutPanel.FocusedPane.FileHistoryMax'
-  | 'WorkoutPanel.DroppedFile.ID'
-  | 'WorkoutPanel.Panes.Layout'
-  | 'WorkoutPanel.Panes.Display'
+  | 'DevelopPanel.Panes.Count'
+  | 'DevelopPanel.FocusedPane.ID'
+  | 'DevelopPanel.FocusedPane.PaneNumber'
+  | 'DevelopPanel.FocusedPane.Mode'
+  | 'DevelopPanel.FocusedPane.FileHistory'
+  | 'DevelopPanel.FocusedPane.FileHistoryPos'
+  | 'DevelopPanel.FocusedPane.FileHistoryMax'
+  | 'DevelopPanel.DroppedFile.ID'
+  | 'DevelopPanel.Panes.Layout'
+  | 'DevelopPanel.Panes.Display'
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | 'Application.PanelDisplay.Mode'
@@ -121,8 +133,8 @@ export type ConfigKey =
   | 'Application.CheckedItem.IDs'
   | 'ThinktankPanel.Filter.CursorPos'
   | 'ThinktankPanel.Filter.CursorPosID'
-  | 'OverviewPanel.Filter.CursorPos'
-  | 'OverviewPanel.Filter.CursorPosID'
+  | 'SeedsPanel.Filter.CursorPos'
+  | 'SeedsPanel.Filter.CursorPosID'
   // `| string` だと上記リテラルが string に潰れて補完が一切効かなくなる。
   // `(string & {})` なら「既知キーの補完を出しつつ任意の文字列も受ける」
   // （色設定・プリセット等の動的キーのため任意文字列は引き続き許容）。
@@ -157,7 +169,7 @@ interface PropDef {
 // 特別な値: toggle (boolean のみ), next (列挙型), prev (列挙型)
 // ※ set() 内で NotifyUpdated() は呼ばない。_applyContent() がまとめて呼ぶ。
 
-type PanelKey = 'ThinktankPanel' | 'OverviewPanel' | 'WorkoutPanel' | 'ReThinkPanel' | 'Application';
+type PanelKey = 'ThinktankPanel' | 'SeedsPanel' | 'DevelopPanel' | 'HarvestPanel' | 'Application';
 
 interface PropSpec {
   panel:       PanelKey;
@@ -180,7 +192,7 @@ interface PropSpec {
  * _getProps() / _applyProp() はこの定義を参照するため個別修正不要。
  */
 function getFocusedPaneAllowedModes(app: TTApplication): string[] {
-  const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
+  const area = app.DevelopPanel.FocusedAreaId ? app.DevelopPanel.GetArea(app.DevelopPanel.FocusedAreaId) : null;
   if (!area || !area.ResourceID) {
     return ['Panes', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
   }
@@ -201,10 +213,10 @@ function getFocusedPaneAllowedModes(app: TTApplication): string[] {
   return allowed.map(m => capitalize(m));
 }
 
-/** フォーカスされているPane（WorkoutArea）を返す */
-function getFocusedArea(app: TTApplication): TTWorkoutArea | null {
-  const id = app.WorkoutPanel.FocusedAreaId;
-  return id ? (app.WorkoutPanel.GetArea(id) ?? null) : null;
+/** フォーカスされているPane（DevelopArea）を返す */
+function getFocusedArea(app: TTApplication): TTDevelopArea | null {
+  const id = app.DevelopPanel.FocusedAreaId;
+  return id ? (app.DevelopPanel.GetArea(id) ?? null) : null;
 }
 
 // 静的な文字列インデックス（色設定・プリセット等の動的キーを許容するため）。
@@ -250,50 +262,50 @@ const PROP_SPECS: Record<string, PropSpec> = {
       const cur = app.ThinktankPanel.CheckedThoughtIDs;
       if (cur.length !== ids.length || !cur.every((id, idx) => id === ids[idx])) {
         app.ThinktankPanel.CheckedThoughtIDs = ids;
-        app.OverviewPanel.CheckedThoughtIDs = ids;
+        app.SeedsPanel.CheckedThoughtIDs = ids;
       }
     },
   },
 
-  // ── OverviewPanel ────────────────────────────────────────────────────────────────
-  'OverviewPanel.CurrentItem.ID': {
-    panel: 'OverviewPanel',
+  // ── SeedsPanel ────────────────────────────────────────────────────────────────
+  'SeedsPanel.CurrentItem.ID': {
+    panel: 'SeedsPanel',
     default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6})?$',
     description: '上部パネル現在フォーカス項目ID',
-    get: (app) => app.OverviewPanel.CurrentItemID || '',
-    set: (app, v) => { app.OverviewPanel.CurrentItemID = v; },
+    get: (app) => app.SeedsPanel.CurrentItemID || '',
+    set: (app, v) => { app.SeedsPanel.CurrentItemID = v; },
   },
-  'OverviewPanel.Area.IsOpen': {
-    panel: 'OverviewPanel',
+  'SeedsPanel.Area.IsOpen': {
+    panel: 'SeedsPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '上部パネル表示',
-    get: (app) => String(app.OverviewPanel.IsAreaOpen),
-    set: (app, v) => { app.OverviewPanel.IsAreaOpen = parseBool(v, app.OverviewPanel.IsAreaOpen); },
+    get: (app) => String(app.SeedsPanel.IsAreaOpen),
+    set: (app, v) => { app.SeedsPanel.IsAreaOpen = parseBool(v, app.SeedsPanel.IsAreaOpen); },
   },
-  'OverviewPanel.Area.OpenWidth': {
-    panel: 'OverviewPanel',
+  'SeedsPanel.Area.OpenWidth': {
+    panel: 'SeedsPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'OverviewパネルOpen時の幅',
-    get: (app) => app.OverviewPanel.AreaWidthMode,
-    set: (app, v) => { app.OverviewPanel.AreaWidthMode = v as typeof app.OverviewPanel.AreaWidthMode; },
+    description: 'SeedsパネルOpen時の幅',
+    get: (app) => app.SeedsPanel.AreaWidthMode,
+    set: (app, v) => { app.SeedsPanel.AreaWidthMode = v as typeof app.SeedsPanel.AreaWidthMode; },
   },
-  'OverviewPanel.Mode.Name': {
-    panel: 'OverviewPanel',
+  'SeedsPanel.Mode.Name': {
+    panel: 'SeedsPanel',
     default: 'Filter', type: 'string', candidates: '^(Filter|Graph|Chat|Settings)$',
     description: '上部パネル表示モード',
-    get: (app) => capitalize(app.OverviewPanel.ViewMode),
-    set: (app, v) => { app.OverviewPanel.SetViewMode(v.toLowerCase() as OverviewViewMode); },
+    get: (app) => capitalize(app.SeedsPanel.ViewMode),
+    set: (app, v) => { app.SeedsPanel.SetViewMode(v.toLowerCase() as SeedsViewMode); },
   },
-  'OverviewPanel.Bundle.ID': {
-    panel: 'OverviewPanel',
+  'SeedsPanel.Bundle.ID': {
+    panel: 'SeedsPanel',
     default: 'none', type: 'string', candidates: '.*',
-    description: 'OverviewパネルのbundleファイルID',
-    get: (app) => app.OverviewPanel.BundleID || 'none',
+    description: 'SeedsパネルのbundleファイルID',
+    get: (app) => app.SeedsPanel.BundleID || 'none',
     set: (app, v) => {
       if (v === 'none') {
-        app.OverviewPanel.ClearBundle();
+        app.SeedsPanel.ClearBundle();
       } else {
-        app.OverviewPanel.OpenBundle(v);
+        app.SeedsPanel.OpenBundle(v);
       }
     },
   },
@@ -324,14 +336,14 @@ const PROP_SPECS: Record<string, PropSpec> = {
       }
     },
   },
-  'OverviewPanel.Filter.CursorPos': {
-    panel: 'OverviewPanel',
+  'SeedsPanel.Filter.CursorPos': {
+    panel: 'SeedsPanel',
     default: '0', type: 'string', candidates: '.*',
-    description: 'Overview>Think一覧のカーソル位置',
+    description: 'Seeds>Think一覧のカーソル位置',
     isConst: true,
     get: (app) => {
-      const list = app.OverviewPanel.FilteredThoughts;
-      const curId = app.OverviewPanel.CurrentItemID;
+      const list = app.SeedsPanel.FilteredThoughts;
+      const curId = app.SeedsPanel.CurrentItemID;
       if (!curId || list.length === 0) return '0';
       const idx = list.findIndex(t => t.ID === curId);
       return idx >= 0 ? String(idx + 1) : '0';
@@ -339,13 +351,13 @@ const PROP_SPECS: Record<string, PropSpec> = {
     set: (app, v) => {
       const pos = parseInt(v, 10);
       if (isNaN(pos) || pos <= 0) {
-        app.OverviewPanel.CurrentItemID = '';
+        app.SeedsPanel.CurrentItemID = '';
         return;
       }
-      const list = app.OverviewPanel.FilteredThoughts;
+      const list = app.SeedsPanel.FilteredThoughts;
       const idx = pos - 1;
       if (idx < list.length) {
-        app.OverviewPanel.CurrentItemID = list[idx].ID;
+        app.SeedsPanel.CurrentItemID = list[idx].ID;
       }
     },
   },
@@ -365,235 +377,235 @@ const PROP_SPECS: Record<string, PropSpec> = {
       }
     },
   },
-  'OverviewPanel.Filter.CursorPosID': {
-    panel: 'OverviewPanel',
+  'SeedsPanel.Filter.CursorPosID': {
+    panel: 'SeedsPanel',
     default: '', type: 'string', candidates: '.*',
-    description: 'Overview>Think一覧のカーソル位置のID',
+    description: 'Seeds>Think一覧のカーソル位置のID',
     isConst: true,
     get: (app) => {
-      const curId = app.OverviewPanel.CurrentItemID;
-      return app.OverviewPanel.FilteredThoughts.some(t => t.ID === curId) ? curId : '';
+      const curId = app.SeedsPanel.CurrentItemID;
+      return app.SeedsPanel.FilteredThoughts.some(t => t.ID === curId) ? curId : '';
     },
     set: (app, v) => {
-      if (!v || app.OverviewPanel.FilteredThoughts.some(t => t.ID === v)) {
-        app.OverviewPanel.CurrentItemID = v;
+      if (!v || app.SeedsPanel.FilteredThoughts.some(t => t.ID === v)) {
+        app.SeedsPanel.CurrentItemID = v;
       }
     },
   },
 
-  // ── WorkoutPanel ───────────────────────────────────────────────────────────────
-  'WorkoutSettingPanel.Area.IsOpen': {
-    panel: 'WorkoutPanel',
+  // ── DevelopPanel ───────────────────────────────────────────────────────────────
+  'DevelopSettingPanel.Area.IsOpen': {
+    panel: 'DevelopPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'ワークアウトパネル表示',
-    get: (app) => String(app.WorkoutPanel.IsAreaOpen),
-    set: (app, v) => { app.WorkoutPanel.IsAreaOpen = parseBool(v, app.WorkoutPanel.IsAreaOpen); },
+    get: (app) => String(app.DevelopPanel.IsAreaOpen),
+    set: (app, v) => { app.DevelopPanel.IsAreaOpen = parseBool(v, app.DevelopPanel.IsAreaOpen); },
   },
-  'WorkoutSettingPanel.Area.OpenWidth': {
-    panel: 'WorkoutPanel',
+  'DevelopSettingPanel.Area.OpenWidth': {
+    panel: 'DevelopPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
     description: 'ワークアウトパネルOpen時の幅',
-    get: (app) => app.WorkoutPanel.AreaWidthMode,
-    set: (app, v) => { app.WorkoutPanel.AreaWidthMode = v as typeof app.WorkoutPanel.AreaWidthMode; },
+    get: (app) => app.DevelopPanel.AreaWidthMode,
+    set: (app, v) => { app.DevelopPanel.AreaWidthMode = v as typeof app.DevelopPanel.AreaWidthMode; },
   },
-  'WorkoutSettingPanel.Mode.Name': {
-    panel: 'WorkoutPanel',
+  'DevelopSettingPanel.Mode.Name': {
+    panel: 'DevelopPanel',
     default: 'Panes', type: 'string', candidates: '^(Panes|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
     description: 'ワークアウト設定パネルモード',
-    get: (app) => capitalize(app.WorkoutPanel.ViewMode),
-    set: (app, v) => { app.WorkoutPanel.SetViewMode((v.toLowerCase() === 'workout' ? 'panes' : v.toLowerCase()) as WorkoutViewMode); },
+    get: (app) => capitalize(app.DevelopPanel.ViewMode),
+    set: (app, v) => { app.DevelopPanel.SetViewMode((v.toLowerCase() === 'develop' ? 'panes' : v.toLowerCase()) as DevelopViewMode); },
   },
 
   // ── TextEditor 検索・置換オプション ────────────────────────────────────────
   'TextEditor.FindOption.MatchCase': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '検索オプション：大文字小文字を区別',
-    get: (app) => String(app.WorkoutPanel.TextEditor.FindOption.MatchCase),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.FindOption.MatchCase = parseBool(v, app.WorkoutPanel.TextEditor.FindOption.MatchCase); },
+    get: (app) => String(app.DevelopPanel.TextEditor.FindOption.MatchCase),
+    set: (app, v) => { app.DevelopPanel.TextEditor.FindOption.MatchCase = parseBool(v, app.DevelopPanel.TextEditor.FindOption.MatchCase); },
   },
   'TextEditor.FindOption.MatchWholeWord': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '検索オプション：単語単位で検索',
-    get: (app) => String(app.WorkoutPanel.TextEditor.FindOption.MatchWholeWord),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.FindOption.MatchWholeWord = parseBool(v, app.WorkoutPanel.TextEditor.FindOption.MatchWholeWord); },
+    get: (app) => String(app.DevelopPanel.TextEditor.FindOption.MatchWholeWord),
+    set: (app, v) => { app.DevelopPanel.TextEditor.FindOption.MatchWholeWord = parseBool(v, app.DevelopPanel.TextEditor.FindOption.MatchWholeWord); },
   },
   'TextEditor.FindOption.UseRexp': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '検索オプション：正規表現を使用',
-    get: (app) => String(app.WorkoutPanel.TextEditor.FindOption.UseRexp),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.FindOption.UseRexp = parseBool(v, app.WorkoutPanel.TextEditor.FindOption.UseRexp); },
+    get: (app) => String(app.DevelopPanel.TextEditor.FindOption.UseRexp),
+    set: (app, v) => { app.DevelopPanel.TextEditor.FindOption.UseRexp = parseBool(v, app.DevelopPanel.TextEditor.FindOption.UseRexp); },
   },
   'TextEditor.ReplaceOption.PreserveCase': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '置換オプション：大文字小文字を保持',
-    get: (app) => String(app.WorkoutPanel.TextEditor.ReplaceOption.PreserveCase),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.ReplaceOption.PreserveCase = parseBool(v, app.WorkoutPanel.TextEditor.ReplaceOption.PreserveCase); },
+    get: (app) => String(app.DevelopPanel.TextEditor.ReplaceOption.PreserveCase),
+    set: (app, v) => { app.DevelopPanel.TextEditor.ReplaceOption.PreserveCase = parseBool(v, app.DevelopPanel.TextEditor.ReplaceOption.PreserveCase); },
   },
 
   // ── TextEditor（テキストエディタ設定）──────────────────────────────────────
   'TextEditor.LineNumbers.IsVisible': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '行番号表示',
-    get: (app) => String(app.WorkoutPanel.TextEditor.LineNumbers.IsVisible),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.LineNumbers.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.LineNumbers.IsVisible); },
+    get: (app) => String(app.DevelopPanel.TextEditor.LineNumbers.IsVisible),
+    set: (app, v) => { app.DevelopPanel.TextEditor.LineNumbers.IsVisible = parseBool(v, app.DevelopPanel.TextEditor.LineNumbers.IsVisible); },
   },
   'TextEditor.Bullet.Marks': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: DEFAULT_MARKS.Bullet, type: 'string', candidates: '.*',
     description: '箇条書きの行頭記号（CSV。n番目が TextEditor.Bullet.StyleN に対応）',
-    get: (app) => app.WorkoutPanel.TextEditor.Bullet.Marks,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Bullet.Marks = v; },
+    get: (app) => app.DevelopPanel.TextEditor.Bullet.Marks,
+    set: (app, v) => { app.DevelopPanel.TextEditor.Bullet.Marks = v; },
   },
   'TextEditor.Bullet.StyleNum': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: String(parseMarks(DEFAULT_MARKS.Bullet).length),
     type: 'integer', candidates: '^[0-9]+$',
     // Marks のアイテム数そのものなので直接は書き換えられない（登録数を変えるには Marks を編集する）
     description: '箇条書きスタイルの登録数（TextEditor.Bullet.Marks のアイテム数）',
-    get: (app) => String(parseMarks(app.WorkoutPanel.TextEditor.Bullet.Marks).length),
+    get: (app) => String(parseMarks(app.DevelopPanel.TextEditor.Bullet.Marks).length),
     set: () => {},
   },
   'TextEditor.Comment.Marks': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: DEFAULT_MARKS.Comment, type: 'string', candidates: '.*',
     description: 'コメントの行頭記号（CSV。n番目が TextEditor.Comment.StyleN に対応）',
-    get: (app) => app.WorkoutPanel.TextEditor.Comment.Marks,
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Comment.Marks = v; },
+    get: (app) => app.DevelopPanel.TextEditor.Comment.Marks,
+    set: (app, v) => { app.DevelopPanel.TextEditor.Comment.Marks = v; },
   },
   'TextEditor.Comment.StyleNum': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: String(parseMarks(DEFAULT_MARKS.Comment).length),
     type: 'integer', candidates: '^[0-9]+$',
     // Bullet.StyleNum と同じく Marks のアイテム数そのもの（直接は書き換えられない）
     description: 'コメントスタイルの登録数（TextEditor.Comment.Marks のアイテム数）',
-    get: (app) => String(parseMarks(app.WorkoutPanel.TextEditor.Comment.Marks).length),
+    get: (app) => String(parseMarks(app.DevelopPanel.TextEditor.Comment.Marks).length),
     set: () => {},
   },
   'TextEditor.WordWrap.IsVisible': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '折り返し',
-    get: (app) => String(app.WorkoutPanel.TextEditor.WordWrap.IsVisible),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.WordWrap.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.WordWrap.IsVisible); },
+    get: (app) => String(app.DevelopPanel.TextEditor.WordWrap.IsVisible),
+    set: (app, v) => { app.DevelopPanel.TextEditor.WordWrap.IsVisible = parseBool(v, app.DevelopPanel.TextEditor.WordWrap.IsVisible); },
   },
   'TextEditor.Minimap.IsVisible': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: 'ミニマップ',
-    get: (app) => String(app.WorkoutPanel.TextEditor.Minimap.IsVisible),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.Minimap.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.Minimap.IsVisible); },
+    get: (app) => String(app.DevelopPanel.TextEditor.Minimap.IsVisible),
+    set: (app, v) => { app.DevelopPanel.TextEditor.Minimap.IsVisible = parseBool(v, app.DevelopPanel.TextEditor.Minimap.IsVisible); },
   },
   'TextEditor.FullWidthSpace.IsVisible': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: '全角スペース表示',
-    get: (app) => String(app.WorkoutPanel.TextEditor.FullWidthSpace.IsVisible),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.FullWidthSpace.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.FullWidthSpace.IsVisible); },
+    get: (app) => String(app.DevelopPanel.TextEditor.FullWidthSpace.IsVisible),
+    set: (app, v) => { app.DevelopPanel.TextEditor.FullWidthSpace.IsVisible = parseBool(v, app.DevelopPanel.TextEditor.FullWidthSpace.IsVisible); },
   },
   'TextEditor.UnicodeHighlight.IsVisible': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'false', type: 'boolean', candidates: '^(true|false)$',
     description: 'Unicode強調',
-    get: (app) => String(app.WorkoutPanel.TextEditor.UnicodeHighlight.IsVisible),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.UnicodeHighlight.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.UnicodeHighlight.IsVisible); },
+    get: (app) => String(app.DevelopPanel.TextEditor.UnicodeHighlight.IsVisible),
+    set: (app, v) => { app.DevelopPanel.TextEditor.UnicodeHighlight.IsVisible = parseBool(v, app.DevelopPanel.TextEditor.UnicodeHighlight.IsVisible); },
   },
   'TextEditor.BracketPairColorization.IsVisible': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '括弧ペア色分け',
-    get: (app) => String(app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible),
-    set: (app, v) => { app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.WorkoutPanel.TextEditor.BracketPairColorization.IsVisible); },
+    get: (app) => String(app.DevelopPanel.TextEditor.BracketPairColorization.IsVisible),
+    set: (app, v) => { app.DevelopPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.DevelopPanel.TextEditor.BracketPairColorization.IsVisible); },
   },
   // TextEditor.Text / .Selection / .Occurrence / .FoldingHeader の色は専用の定義を持たず、
   // 下の DEFAULT_COLOR_ENTRIES ループが docs/DefaultColor.md から登録する（実体は ColorStatus）。
 
   // ── ToolBar 表示モード ────────────────────────────────────────────────
   'ToolBar.Mode.Name': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'Copyright', type: 'string',
     candidates: '^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$',
     description: 'Toolバー表示モード',
-    get: (app) => app.WorkoutPanel.ToolBarMode,
-    set: (app, v) => { app.WorkoutPanel.ToolBarMode = v; },
+    get: (app) => app.DevelopPanel.ToolBarMode,
+    set: (app, v) => { app.DevelopPanel.ToolBarMode = v; },
   },
   'ToolBar.StatusMode.Text': {
-    panel: 'WorkoutPanel',
-    default: 'ThinktankPanel.Mode.Name,OverviewPanel.Mode.Name,WorkoutSettingPanel.Mode.Name',
+    panel: 'DevelopPanel',
+    default: 'ThinktankPanel.Mode.Name,SeedsPanel.Mode.Name,DevelopSettingPanel.Mode.Name',
     type: 'string',
     candidates: '.*',
     description: 'ステータスバー表示項目 (CSV)',
-    get: (app) => app.WorkoutPanel.StatusModeText,
-    set: (app, v) => { app.WorkoutPanel.StatusModeText = v; },
+    get: (app) => app.DevelopPanel.StatusModeText,
+    set: (app, v) => { app.DevelopPanel.StatusModeText = v; },
   },
   'ToolBar.HighlighterMode.Text': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'ハイライターの入力テキスト',
-    get: (app) => app.WorkoutPanel.HighlightWord || '',
-    set: (app, v) => { app.WorkoutPanel.HighlightWord = v; },
+    get: (app) => app.DevelopPanel.HighlightWord || '',
+    set: (app, v) => { app.DevelopPanel.HighlightWord = v; },
   },
   'ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'コンテンツで絞込みのキーワードをハイライトする',
-    get: (app) => String(app.WorkoutPanel.AddContentSearchKeywordFlag),
-    set: (app, v) => { app.WorkoutPanel.AddContentSearchKeywordFlag = parseBool(v, app.WorkoutPanel.AddContentSearchKeywordFlag); },
+    get: (app) => String(app.DevelopPanel.AddContentSearchKeywordFlag),
+    set: (app, v) => { app.DevelopPanel.AddContentSearchKeywordFlag = parseBool(v, app.DevelopPanel.AddContentSearchKeywordFlag); },
   },
   'ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: 'タイトルで絞込みのキーワードをハイライトする',
-    get: (app) => String(app.WorkoutPanel.AddTitleSearchKeywordFlag),
-    set: (app, v) => { app.WorkoutPanel.AddTitleSearchKeywordFlag = parseBool(v, app.WorkoutPanel.AddTitleSearchKeywordFlag); },
+    get: (app) => String(app.DevelopPanel.AddTitleSearchKeywordFlag),
+    set: (app, v) => { app.DevelopPanel.AddTitleSearchKeywordFlag = parseBool(v, app.DevelopPanel.AddTitleSearchKeywordFlag); },
   },
   'ToolBar.CommandMode.Text': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'コマンドラインの入力テキスト',
-    get: (app) => app.WorkoutPanel.CommandText || '',
-    set: (app, v) => { app.WorkoutPanel.CommandText = v; },
+    get: (app) => app.DevelopPanel.CommandText || '',
+    set: (app, v) => { app.DevelopPanel.CommandText = v; },
   },
   'ToolBar.TranslateMode.Text': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: '', type: 'string', candidates: '.*',
     description: '翻訳の入力テキスト',
-    get: (app) => app.WorkoutPanel.TranslateText || '',
-    set: (app, v) => { app.WorkoutPanel.TranslateText = v; },
+    get: (app) => app.DevelopPanel.TranslateText || '',
+    set: (app, v) => { app.DevelopPanel.TranslateText = v; },
   },
   'ToolBar.ReminderMode.Text': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'リマインダーの入力テキスト',
-    get: (app) => app.WorkoutPanel.ReminderText || '',
-    set: (app, v) => { app.WorkoutPanel.ReminderText = v; },
+    get: (app) => app.DevelopPanel.ReminderText || '',
+    set: (app, v) => { app.DevelopPanel.ReminderText = v; },
   },
 
   // ── Application ──────────────────────────────────────────────────────────
   'Application.FocusedPanel.Name': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
-    candidates: '^(Thinktank|Overview|WorkoutSetting|Workout|ReThink)$',
+    candidates: '^(Thinktank|Seeds|DevelopSetting|Develop|Harvest)$',
     description: 'フォーカスカラム',
     getValues: (_app) => localStorage.getItem('tt-layout-mode') === 'simple'
-      ? ['Thinktank', 'WorkoutSetting', 'Workout']
-      : ['Thinktank', 'Overview', 'WorkoutSetting', 'Workout', 'ReThink'],
+      ? ['Thinktank', 'DevelopSetting', 'Develop']
+      : ['Thinktank', 'Seeds', 'DevelopSetting', 'Develop', 'Harvest'],
     get: (app) => app.FocusedColumn,
     set: (app, v) => {
       app.FocusedColumn = v;
       const SELECTORS: Record<string, string> = {
         'Thinktank':      '.thinktank-panel, .thinktank-area',
-        'Overview':       '.overview-panel, .overview-area',
-        'WorkoutSetting': '.workout-setting-area',
-        'Workout':        '.workout-area',
-        'ReThink':        '.rethink-panel, .rethink-area',
+        'Seeds':       '.seeds-panel, .seeds-area',
+        'DevelopSetting': '.develop-setting-area',
+        'Develop':        '.develop-area',
+        'Harvest':        '.harvest-panel, .harvest-area',
       };
-      const effectiveSel = (v === 'WorkoutSetting' && !app.WorkoutPanel.IsAreaOpen)
-        ? '.vertical-tab-bar--workout .vertical-tab-bar__toggle'
+      const effectiveSel = (v === 'DevelopSetting' && !app.DevelopPanel.IsAreaOpen)
+        ? '.vertical-tab-bar--develop .vertical-tab-bar__toggle'
         : SELECTORS[v];
       if (effectiveSel) {
         focusSelector(effectiveSel);
@@ -601,27 +613,27 @@ const PROP_SPECS: Record<string, PropSpec> = {
     },
   },
 
-  // ── ReThinkPanel ─────────────────────────────────────────────────────────
-  'ReThinkPanel.Area.IsOpen': {
-    panel: 'ReThinkPanel',
+  // ── HarvestPanel ─────────────────────────────────────────────────────────
+  'HarvestPanel.Area.IsOpen': {
+    panel: 'HarvestPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',
     description: '右パネル表示',
-    get: (app) => String(app.ReThinkPanel.IsAreaOpen),
-    set: (app, v) => { app.ReThinkPanel.IsAreaOpen = parseBool(v, app.ReThinkPanel.IsAreaOpen); },
+    get: (app) => String(app.HarvestPanel.IsAreaOpen),
+    set: (app, v) => { app.HarvestPanel.IsAreaOpen = parseBool(v, app.HarvestPanel.IsAreaOpen); },
   },
-  'ReThinkPanel.Area.OpenWidth': {
-    panel: 'ReThinkPanel',
+  'HarvestPanel.Area.OpenWidth': {
+    panel: 'HarvestPanel',
     default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'ReThinkパネルOpen時の幅',
-    get: (app) => app.ReThinkPanel.AreaWidthMode,
-    set: (app, v) => { app.ReThinkPanel.AreaWidthMode = v as typeof app.ReThinkPanel.AreaWidthMode; },
+    description: 'HarvestパネルOpen時の幅',
+    get: (app) => app.HarvestPanel.AreaWidthMode,
+    set: (app, v) => { app.HarvestPanel.AreaWidthMode = v as typeof app.HarvestPanel.AreaWidthMode; },
   },
-  'ReThinkPanel.Mode.Name': {
-    panel: 'ReThinkPanel',
+  'HarvestPanel.Mode.Name': {
+    panel: 'HarvestPanel',
     default: 'Chat', type: 'string', candidates: '^(Chat|Settings)$',
     description: '右パネル表示モード',
-    get: (app) => capitalize(app.ReThinkPanel.ViewMode),
-    set: (app, v) => { app.ReThinkPanel.SetViewMode(v.toLowerCase() as ReThinkViewMode); },
+    get: (app) => capitalize(app.HarvestPanel.ViewMode),
+    set: (app, v) => { app.HarvestPanel.SetViewMode(v.toLowerCase() as HarvestViewMode); },
   },
 
   // パネル・ツールバーのテーマ色は docs/DefaultColor.md の <Panel>.Theme.* が定義元。
@@ -641,21 +653,21 @@ const PROP_SPECS: Record<string, PropSpec> = {
       if (app.ThinktankPanel.IsAreaOpen) {
         list.push(`Thinktank.${capitalize(app.ThinktankPanel.ViewMode)}`);
       }
-      if (!isSimple && app.OverviewPanel.IsAreaOpen) {
-        list.push(`Overview.${capitalize(app.OverviewPanel.ViewMode)}`);
+      if (!isSimple && app.SeedsPanel.IsAreaOpen) {
+        list.push(`Seeds.${capitalize(app.SeedsPanel.ViewMode)}`);
       }
-      if (app.WorkoutPanel.IsAreaOpen) {
-        list.push(`WorkoutSetting.${capitalize(app.WorkoutPanel.ViewMode)}`);
+      if (app.DevelopPanel.IsAreaOpen) {
+        list.push(`DevelopSetting.${capitalize(app.DevelopPanel.ViewMode)}`);
       }
-      if (app.WorkoutPanel.Areas.length > 0) {
-        for (const area of app.WorkoutPanel.Areas) {
-          list.push(`Workout.${capitalize(area.MediaType)}`);
+      if (app.DevelopPanel.Areas.length > 0) {
+        for (const area of app.DevelopPanel.Areas) {
+          list.push(`Develop.${capitalize(area.MediaType)}`);
         }
       }
-      if (!isSimple && app.ReThinkPanel.IsAreaOpen) {
-        list.push(`ReThink.${capitalize(app.ReThinkPanel.ViewMode)}`);
+      if (!isSimple && app.HarvestPanel.IsAreaOpen) {
+        list.push(`Harvest.${capitalize(app.HarvestPanel.ViewMode)}`);
       }
-      list.push(`ToolBar.${capitalize(app.WorkoutPanel.ToolBarMode)}`);
+      list.push(`ToolBar.${capitalize(app.DevelopPanel.ToolBarMode)}`);
 
       return Array.from(new Set(list));
     },
@@ -685,40 +697,40 @@ const PROP_SPECS: Record<string, PropSpec> = {
           app.ThinktankPanel.ViewMode = subName.toLowerCase() as any;
         }
         focusSelector('.thinktank-panel, .thinktank-area');
-      } else if (panelName === 'Overview') {
-        app.OverviewPanel.IsAreaOpen = true;
+      } else if (panelName === 'Seeds') {
+        app.SeedsPanel.IsAreaOpen = true;
         if (subName) {
-          app.OverviewPanel.SetViewMode(subName.toLowerCase() as any);
+          app.SeedsPanel.SetViewMode(subName.toLowerCase() as any);
         }
-        focusSelector('.overview-panel, .overview-area');
-      } else if (panelName === 'WorkoutSetting') {
-        app.WorkoutPanel.IsAreaOpen = true;
+        focusSelector('.seeds-panel, .seeds-area');
+      } else if (panelName === 'DevelopSetting') {
+        app.DevelopPanel.IsAreaOpen = true;
         if (subName) {
-          app.WorkoutPanel.SetViewMode(subName.toLowerCase() as any);
+          app.DevelopPanel.SetViewMode(subName.toLowerCase() as any);
         }
-        focusSelector('.workout-setting-area');
-      } else if (panelName === 'ReThink') {
-        app.ReThinkPanel.IsAreaOpen = true;
+        focusSelector('.develop-setting-area');
+      } else if (panelName === 'Harvest') {
+        app.HarvestPanel.IsAreaOpen = true;
         if (subName) {
-          app.ReThinkPanel.SetViewMode(subName.toLowerCase() as any);
+          app.HarvestPanel.SetViewMode(subName.toLowerCase() as any);
         }
-        focusSelector('.rethink-panel, .rethink-area');
+        focusSelector('.harvest-panel, .harvest-area');
       } else if (panelName === 'ToolBar') {
         if (subName) {
           const modeMap: Record<string, string> = {
             'keyaction': 'KeyAction',
           };
           const toolbarMode = modeMap[subName.toLowerCase()] || subNameCap;
-          app.WorkoutPanel.ToolBarMode = toolbarMode;
+          app.DevelopPanel.ToolBarMode = toolbarMode;
         }
-        focusSelector('.workout-toolbar');
-      } else if (panelName === 'Workout') {
+        focusSelector('.develop-toolbar');
+      } else if (panelName === 'Develop') {
         if (subName && subName.toLowerCase() !== 'none') {
           const typeLower = subName.toLowerCase();
           setTimeout(() => {
-            const areas = Array.from(document.querySelectorAll<HTMLElement>('.workout-area'));
+            const areas = Array.from(document.querySelectorAll<HTMLElement>('.develop-area'));
             const targetArea = areas.find(area => {
-              const content = area.querySelector<HTMLElement>('.workout-area__content');
+              const content = area.querySelector<HTMLElement>('.develop-area__content');
               return content?.dataset.mediaType?.toLowerCase() === typeLower;
             }) || areas[0];
             
@@ -735,7 +747,7 @@ const PROP_SPECS: Record<string, PropSpec> = {
             }
           }, 50);
         } else {
-          focusSelector('.workout-area');
+          focusSelector('.develop-area');
         }
       }
     },
@@ -791,111 +803,111 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => app.Status.LocalExporting || '0%',
     set: () => {},
   },
-  'WorkoutPanel.Panes.Count': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.Panes.Count': {
+    panel: 'DevelopPanel',
     default: '0', type: 'string', candidates: '^[0-9]+$',
     description: '表示されているペインの数',
     isConst: true,
-    get: (app) => String(app.WorkoutPanel.Areas.length),
+    get: (app) => String(app.DevelopPanel.Areas.length),
     set: () => {},
   },
-  'WorkoutPanel.FocusedPane.ID': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.FocusedPane.ID': {
+    panel: 'DevelopPanel',
     default: 'None', type: 'string', candidates: '.*',
     description: 'フォーカスがあるペインのID',
     isConst: true,
-    get: (app) => app.WorkoutPanel.FocusedAreaId ?? 'None',
+    get: (app) => app.DevelopPanel.FocusedAreaId ?? 'None',
     set: () => {},
   },
-  'WorkoutPanel.FocusedPane.PaneNumber': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.FocusedPane.PaneNumber': {
+    panel: 'DevelopPanel',
     default: '0', type: 'string', candidates: '^[0-9]+$',
     description: 'フォーカスがあるペインの番号（1始まり）',
     isConst: true,
     get: (app) => {
-      const layout = app.WorkoutPanel.Layout;
-      if (!layout || !app.WorkoutPanel.FocusedAreaId) return '0';
+      const layout = app.DevelopPanel.Layout;
+      if (!layout || !app.DevelopPanel.FocusedAreaId) return '0';
       const order = collectAreaIds(layout);
-      const idx = order.indexOf(app.WorkoutPanel.FocusedAreaId);
+      const idx = order.indexOf(app.DevelopPanel.FocusedAreaId);
       return idx >= 0 ? String(idx + 1) : '0';
     },
     set: () => {},
   },
-  'WorkoutPanel.FocusedPane.Mode': {
-    panel: 'WorkoutPanel',
-    default: 'Workout', type: 'string',
-    candidates: '^(Workout|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
+  'DevelopPanel.FocusedPane.Mode': {
+    panel: 'DevelopPanel',
+    default: 'Develop', type: 'string',
+    candidates: '^(Develop|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
     description: 'フォーカスがあるペインの表示モード',
     getValues: (app) => getFocusedPaneAllowedModes(app),
     get: (app) => {
-      const area = app.WorkoutPanel.FocusedAreaId ? app.WorkoutPanel.GetArea(app.WorkoutPanel.FocusedAreaId) : null;
+      const area = app.DevelopPanel.FocusedAreaId ? app.DevelopPanel.GetArea(app.DevelopPanel.FocusedAreaId) : null;
       return capitalize(area?.MediaType ?? 'None');
     },
     set: (app, v) => {
-      if (app.WorkoutPanel.FocusedAreaId) {
+      if (app.DevelopPanel.FocusedAreaId) {
         const allowed = getFocusedPaneAllowedModes(app).map(x => x.toLowerCase());
         if (allowed.includes(v.toLowerCase())) {
-          app.WorkoutPanel.SetMediaType(app.WorkoutPanel.FocusedAreaId, v.toLowerCase() as MediaType);
+          app.DevelopPanel.SetMediaType(app.DevelopPanel.FocusedAreaId, v.toLowerCase() as MediaType);
         }
       }
     },
   },
-  'WorkoutPanel.FocusedPane.FileHistory': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.FocusedPane.FileHistory': {
+    panel: 'DevelopPanel',
     default: '', type: 'string', candidates: '.*',
     description: 'フォーカスがあるペインのLoadファイル履歴（古い順・最大30件のCSV）',
     isConst: true,
     get: (app) => getFocusedArea(app)?.FileHistory.map(h => h.id).join(',') ?? '',
     set: () => {},
   },
-  'WorkoutPanel.FocusedPane.FileHistoryPos': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.FocusedPane.FileHistoryPos': {
+    panel: 'DevelopPanel',
     default: '0', type: 'string', candidates: '^[0-9]+$',
     description: 'フォーカスがあるペインのファイル履歴の現在位置（1始まり。0=履歴なし）',
     isConst: true,
     get: (app) => String(getFocusedArea(app)?.HistoryPos ?? 0),
     set: () => {},
   },
-  'WorkoutPanel.FocusedPane.FileHistoryMax': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.FocusedPane.FileHistoryMax': {
+    panel: 'DevelopPanel',
     default: '0', type: 'string', candidates: '^[0-9]+$',
     description: 'フォーカスがあるペインのファイル履歴の件数（最大30）',
     isConst: true,
     get: (app) => String(getFocusedArea(app)?.HistoryMax ?? 0),
     set: () => {},
   },
-  'WorkoutPanel.DroppedFile.ID': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.DroppedFile.ID': {
+    panel: 'DevelopPanel',
     default: '', type: 'string', candidates: '.*',
-    description: '各パネルのThink一覧のThinkファイルがWorkoutパネル内にDropされた際に設定されるファイルID',
+    description: '各パネルのThink一覧のThinkファイルがDevelopパネル内にDropされた際に設定されるファイルID',
     isConst: true,
-    get: (app) => app.WorkoutPanel.DroppedFileID || '',
+    get: (app) => app.DevelopPanel.DroppedFileID || '',
     set: () => {},
   },
   'TextEditor.CurrentFolding.HeadingOffset': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: '0', type: 'string', candidates: '.*',
     description: 'カーソル位置が属する見出し行の開始位置（先頭文字位置）',
     isConst: true,
-    get: (app) => app.WorkoutPanel.TextEditor.CurrentFoldingHeadingOffset ?? '0',
-    set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentFoldingHeadingOffset = v; },
+    get: (app) => app.DevelopPanel.TextEditor.CurrentFoldingHeadingOffset ?? '0',
+    set: (app, v) => { app.DevelopPanel.TextEditor.CurrentFoldingHeadingOffset = v; },
   },
   'TextEditor.CurrentFolding.HeadingNumber': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: 'None', type: 'string', candidates: '.*',
     description: 'カーソル位置が属する見出し行の番号(例: 1.3.4)',
     isConst: true,
-    get: (app) => app.WorkoutPanel.TextEditor.CurrentFoldingHeadingNumber ?? 'None',
-    set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentFoldingHeadingNumber = v; },
+    get: (app) => app.DevelopPanel.TextEditor.CurrentFoldingHeadingNumber ?? 'None',
+    set: (app, v) => { app.DevelopPanel.TextEditor.CurrentFoldingHeadingNumber = v; },
   },
   'TextEditor.CurrentEditor.CursorPos': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: '0', type: 'string', candidates: '.*',
     description: '現在のエディタのカーソル位置',
     isConst: true,
-    get: (app) => app.WorkoutPanel.TextEditor.CurrentEditorCursorPos ?? '0',
+    get: (app) => app.DevelopPanel.TextEditor.CurrentEditorCursorPos ?? '0',
     set: (app, v) => {
-      app.WorkoutPanel.TextEditor.CurrentEditorCursorPos = v;
+      app.DevelopPanel.TextEditor.CurrentEditorCursorPos = v;
       const offset = parseInt(v, 10);
       if (!isNaN(offset)) {
         const editor = TTShortcutManager.instance.activeEditor;
@@ -914,32 +926,32 @@ const PROP_SPECS: Record<string, PropSpec> = {
     },
   },
   'TextEditor.CurrentEditor.TextOnCursorPos': {
-    panel: 'WorkoutPanel',
+    panel: 'DevelopPanel',
     default: '', type: 'string', candidates: '.*',
     description: '現在のエディタのカーソル位置のテキスト',
     isConst: true,
-    get: (app) => app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos ?? '',
-    set: (app, v) => { app.WorkoutPanel.TextEditor.CurrentEditorTextOnCursorPos = v; },
+    get: (app) => app.DevelopPanel.TextEditor.CurrentEditorTextOnCursorPos ?? '',
+    set: (app, v) => { app.DevelopPanel.TextEditor.CurrentEditorTextOnCursorPos = v; },
   },
-  'WorkoutPanel.Panes.Layout': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.Panes.Layout': {
+    panel: 'DevelopPanel',
     default: 'null', type: 'string', candidates: '.*',
     description: 'Paneレイアウト構造(JSON)',
-    get: (app) => app.WorkoutPanel.Layout ? JSON.stringify(app.WorkoutPanel.Layout) : 'null',
+    get: (app) => app.DevelopPanel.Layout ? JSON.stringify(app.DevelopPanel.Layout) : 'null',
     set: (app, v) => {
       try {
-        app.WorkoutPanel.Layout = (v && v !== 'null') ? JSON.parse(v) : null;
+        app.DevelopPanel.Layout = (v && v !== 'null') ? JSON.parse(v) : null;
       } catch (e) {
-        console.error('Failed to parse WorkoutPanel.Panes.Layout', e);
+        console.error('Failed to parse DevelopPanel.Panes.Layout', e);
       }
     },
   },
-  'WorkoutPanel.Panes.Display': {
-    panel: 'WorkoutPanel',
+  'DevelopPanel.Panes.Display': {
+    panel: 'DevelopPanel',
     default: '[]', type: 'string', candidates: '.*',
     description: '各Paneのロード状態(JSON)',
     get: (app) => {
-      const list = app.WorkoutPanel.Areas.map(a => ({
+      const list = app.DevelopPanel.Areas.map(a => ({
         id: a.ID,
         resourceId: a.ResourceID,
         mediaType: a.MediaType,
@@ -953,16 +965,16 @@ const PROP_SPECS: Record<string, PropSpec> = {
         if (!Array.isArray(list)) return;
         
         // 既存の Areas を一度クリアし、ID情報を保持したまま再構築
-        app.WorkoutPanel.Areas = [];
+        app.DevelopPanel.Areas = [];
         for (const item of list) {
-          const area = new TTWorkoutArea();
+          const area = new TTDevelopArea();
           area.ID = item.id;
-          area._parent = app.WorkoutPanel;
+          area._parent = app.DevelopPanel;
           area.OpenThink(item.resourceId, item.mediaType, item.title);
-          app.WorkoutPanel.Areas = [...app.WorkoutPanel.Areas, area];
+          app.DevelopPanel.Areas = [...app.DevelopPanel.Areas, area];
         }
       } catch (e) {
-        console.error('Failed to parse WorkoutPanel.Panes.Display', e);
+        console.error('Failed to parse DevelopPanel.Panes.Display', e);
       }
     },
   },
@@ -1005,11 +1017,11 @@ const COLOR_PROP_LABEL: Record<ColorProp, string> = {
 function colorStatusPanel(statusId: string): PanelKey {
   const prefix = statusId.split('.')[0];
   if (prefix === 'Thinktank') return 'ThinktankPanel';
-  if (prefix === 'Overview')  return 'OverviewPanel';
-  if (prefix === 'ReThink')   return 'ReThinkPanel';
+  if (prefix === 'Seeds')  return 'SeedsPanel';
+  if (prefix === 'Harvest')   return 'HarvestPanel';
   if (prefix === 'Application')    return 'Application';
   if (prefix === 'FocusingBorder') return 'Application';
-  return 'WorkoutPanel';
+  return 'DevelopPanel';
 }
 
 for (const entry of DEFAULT_COLOR_ENTRIES) {
@@ -1029,8 +1041,8 @@ for (const entry of DEFAULT_COLOR_ENTRIES) {
       type: COLOR_PROP_TYPE[prop],
       candidates: COLOR_PROP_CANDIDATES[prop],
       description: `${entry.statusId} の${COLOR_PROP_LABEL[prop]}`,
-      get: (app: TTApplication) => app.WorkoutPanel.GetColorStatus(entry.statusId)[prop],
-      set: (app: TTApplication, v: string) => { app.WorkoutPanel.SetColorStatus(entry.statusId, prop, v, false); },
+      get: (app: TTApplication) => app.DevelopPanel.GetColorStatus(entry.statusId)[prop],
+      set: (app: TTApplication, v: string) => { app.DevelopPanel.SetColorStatus(entry.statusId, prop, v, false); },
     };
   }
 }
@@ -1082,7 +1094,7 @@ export class TTUIStateManager {
     }
   }
 
-  /** DataGrid/Card が UIState Think を保存したときのフック（WorkoutArea から呼ぶ）*/
+  /** DataGrid/Card が UIState Think を保存したときのフック（DevelopArea から呼ぶ）*/
   onThinkSaved(thinkId: string, content: string): void {
     if (thinkId !== TTUIStateManager.THINK_ID) return;
     this._pushUndo();
@@ -1093,6 +1105,8 @@ export class TTUIStateManager {
   /** ショートカット等からの単一プロパティ変更 */
   applyProperty(key: ConfigKey, value: string): void {
     if (!this._app) return;
+    key = canonicalStateKey(key);
+    value = canonicalStateValue(key, value);
     this._pushUndo();
     this._applying = true;
     try {
@@ -1121,8 +1135,9 @@ export class TTUIStateManager {
     const updatedKeys = new Set<ConfigKey>();
     try {
       for (const [key, value] of entries) {
-        this._applyProp(key, value);
-        updatedKeys.add(key);
+        const currentKey = canonicalStateKey(key);
+        this._applyProp(currentKey, canonicalStateValue(currentKey, value));
+        updatedKeys.add(currentKey);
       }
       // Thinktank.Theme.* 等のパネル配色は、AppLayout.tsx がキー別リスナー経由でのみ
       // CSS変数を再適用するため、変更したキーそれぞれで _emit() を呼ぶ必要がある。
@@ -1140,6 +1155,7 @@ export class TTUIStateManager {
   /** 指定したキーの現在値を文字列で取得する */
   getProperty(key: ConfigKey): string {
     if (!this._app) return '';
+    key = canonicalStateKey(key);
     const spec = PROP_SPECS[key];
     if (!spec) return '';
     return spec.get(this._app);
@@ -1270,12 +1286,12 @@ export class TTUIStateManager {
         .replace(/\bApplication\.FocusedColumn\b/g, 'Application.FocusedPanel.Name')
         .replace(/\bThinktankPanel\.Mode\.IsOpen\b/g, 'ThinktankPanel.Area.IsOpen')
         .replace(/\bThinktankPanel\.IsAreaOpen\b/g, 'ThinktankPanel.Area.IsOpen')
-        .replace(/\bOverviewPanel\.Mode\.IsOpen\b/g, 'OverviewPanel.Area.IsOpen')
-        .replace(/\bOverviewPanel\.IsAreaOpen\b/g, 'OverviewPanel.Area.IsOpen')
-        .replace(/\bWorkoutSettingPanel\.Mode\.IsOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
-        .replace(/\bWorkoutPanel\.IsAreaOpen\b/g, 'WorkoutSettingPanel.Area.IsOpen')
-        .replace(/\bReThinkPanel\.Mode\.IsOpen\b/g, 'ReThinkPanel.Area.IsOpen')
-        .replace(/\bReThinkPanel\.IsAreaOpen\b/g, 'ReThinkPanel.Area.IsOpen')
+        .replace(/\bSeedsPanel\.Mode\.IsOpen\b/g, 'SeedsPanel.Area.IsOpen')
+        .replace(/\bSeedsPanel\.IsAreaOpen\b/g, 'SeedsPanel.Area.IsOpen')
+        .replace(/\bDevelopSettingPanel\.Mode\.IsOpen\b/g, 'DevelopSettingPanel.Area.IsOpen')
+        .replace(/\bDevelopPanel\.IsAreaOpen\b/g, 'DevelopSettingPanel.Area.IsOpen')
+        .replace(/\bHarvestPanel\.Mode\.IsOpen\b/g, 'HarvestPanel.Area.IsOpen')
+        .replace(/\bHarvestPanel\.IsAreaOpen\b/g, 'HarvestPanel.Area.IsOpen')
         .replace(/\bTextEditor\.Color\.Background\b/g, 'TextEditor.Text.BgColor')
         .replace(/\bTextEditor\.Color\.Text\b/g, 'TextEditor.Text.Color')
         .replace(/\bTextEditor\.Color\.Selection\b/g, 'TextEditor.Selection.BgColor')
@@ -1286,17 +1302,17 @@ export class TTUIStateManager {
         .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
         .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
         .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
-        .replace(/\bWorkoutPanel\.Pane\.Count\b/g, 'WorkoutPanel.Panes.Count')
-        .replace(/\bWorkoutPanel\.Pane\.Layout\b/g, 'WorkoutPanel.Panes.Layout')
-        .replace(/\bWorkoutPanel\.Pane\.Display\b/g, 'WorkoutPanel.Panes.Display')
+        .replace(/\bDevelopPanel\.Pane\.Count\b/g, 'DevelopPanel.Panes.Count')
+        .replace(/\bDevelopPanel\.Pane\.Layout\b/g, 'DevelopPanel.Panes.Layout')
+        .replace(/\bDevelopPanel\.Pane\.Display\b/g, 'DevelopPanel.Panes.Display')
         // パネル色は <Panel>.Theme.Color（基礎色）へ集約。旧 Area.BgColor は基礎色からの
         // 派生になったので引き継がない（旧キーは spec が無いため読み飛ばされる）。
         .replace(/\bThinktank\.Ribbon\.BgColor\b/g, 'Thinktank.Theme.Color')
-        .replace(/\bOverview\.Ribbon\.BgColor\b/g,  'Overview.Theme.Color')
-        .replace(/\bOverview\.Bundle\.Name\b/g,     'OverviewPanel.Bundle.ID')
-        .replace(/\bOverviewPanel\.Bundle\.Name\b/g, 'OverviewPanel.Bundle.ID')
-        .replace(/\bWorkout\.Ribbon\.BgColor\b/g,   'Workout.Theme.Color')
-        .replace(/\bReThink\.Ribbon\.BgColor\b/g,   'ReThink.Theme.Color')
+        .replace(/\bSeeds\.Ribbon\.BgColor\b/g,  'Seeds.Theme.Color')
+        .replace(/\bSeeds\.Bundle\.Name\b/g,     'SeedsPanel.Bundle.ID')
+        .replace(/\bSeedsPanel\.Bundle\.Name\b/g, 'SeedsPanel.Bundle.ID')
+        .replace(/\bDevelop\.Ribbon\.BgColor\b/g,   'Develop.Theme.Color')
+        .replace(/\bHarvest\.Ribbon\.BgColor\b/g,   'Harvest.Theme.Color')
         .replace(/\bToolBar\.BgColor\b/g,           'ToolBar.Theme.Color')
         .replace(/\bToolBar\.Color\b/g,             'ToolBar.Theme.BgColor');
       let sections = parseTableContent(content);
@@ -1320,11 +1336,11 @@ export class TTUIStateManager {
 
       // 1st pass: const エントリ → default 列の値を適用（ファイルで編集可能なプリセットデータを読み込む）
       for (const row of section.rows) {
-        const key  = row[keyIdx]?.trim() ?? '';
+        const key  = canonicalStateKey(row[keyIdx]?.trim() ?? '');
         const spec = PROP_SPECS[key];
         if (!spec?.isConst) continue;
         const defaultVal = defIdx >= 0 ? (row[defIdx] ?? spec.default) : spec.default;
-        this._applyProp(key, defaultVal);
+        this._applyProp(key, canonicalStateValue(key, defaultVal));
         updatedKeys.add(key);
       }
 
@@ -1334,8 +1350,8 @@ export class TTUIStateManager {
 
       // 2nd pass: 通常エントリ → current 列の値を適用
       for (const row of section.rows) {
-        const key = row[keyIdx]?.trim() ?? '';
-        const val = row[applyIdx] ?? '';
+        const key = canonicalStateKey(row[keyIdx]?.trim() ?? '');
+        const val = canonicalStateValue(key, row[applyIdx] ?? '');
         if (!key) continue;
 
         // Highlighter 古いキーの検出とバッファリング

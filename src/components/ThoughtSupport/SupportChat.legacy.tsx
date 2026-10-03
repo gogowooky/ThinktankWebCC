@@ -183,7 +183,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
       }
       const context = {
         now: new Date().toISOString(), localDate: new Date().toLocaleDateString('sv-SE'), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        area: pane ? 'Workout Pane・自由対話' : `${panelName}パネル（現在の担当 ${owner}）`, chatId: item.ID, title: item.Name,
+        area: pane ? 'Develop Pane・自由対話' : `${panelName}パネル（現在の担当 ${owner}）`, chatId: item.ID, title: item.Name,
         bundleId, bundleTitle: vault.GetThink(bundleId)?.Name, record: { ...supportRecord(item), messages: undefined, history: undefined },
         catalog: [...allowed.values()].slice(0, 120).map(t => ({ id: t.ID, title: t.Name, type: t.ContentType, updatedAt: t.UpdatedAt })),
         totalAvailable: allowed.size,
@@ -259,8 +259,8 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
       const nextOwner = parseManagedChatTitle(fixed.Name)?.panel;
       setNotice(managementWarning || (nextOwner && nextOwner !== owner ? `担当を${nextOwner}に引き継ぎました。このまま相談を続けられます。` : '相談を保存しました。'));
       if (supportRecord(fixed).bundleId && !props.bundleId && !pane) {
-        const overview = TTApplication.Instance.OverviewPanel;
-        overview.OpenBundle(supportRecord(fixed).bundleId, overview.MediaType);
+        const seeds = TTApplication.Instance.SeedsPanel;
+        seeds.OpenBundle(supportRecord(fixed).bundleId, seeds.MediaType);
       }
     } catch (e) { if (token === generation.current) setError((e as Error).message); }
     finally { if (token === generation.current) showWaiting(false); }
@@ -295,7 +295,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
     ].join('\n'),
   }] : [], [record.resume, record.current, record.next, record.decisions, record.undecided, record.proposals, record.confirmedAt, record.updatedAt]);
 
-  // Workout の設定エリアだけ地色がパネル基礎色（暗色）なので、ヘッダーの背景は
+  // Develop の設定エリアだけ地色がパネル基礎色（暗色）なので、ヘッダーの背景は
   // 各パネルの地色を明示して、どのパネルでも同じ見え方に揃える。
   const panelKey = panelName.toLowerCase();
   return <div className="support-chat" style={{
@@ -308,12 +308,12 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
       {!!record.handoff && <span>引き継ぎ：{record.handoff}</span>}
       {isReviewDue(record, clock) && !['完了', '中止'].includes(info?.state ?? '') && <strong>再確認・再提示の時期です。今の状況を教えてください。</strong>}
       {(record.due || record.scheduled || record.reviewAt || record.redisplayAt || record.repeatRule) && <details><summary>予定・再確認</summary><p>期限：{record.due || '未設定'}</p><p>実施予定：{record.scheduled || '未設定'}</p><p>再確認：{record.reviewAt || '未設定'}</p><p>再提示：{record.redisplayAt || '未設定'}</p><p>繰り返し：{record.repeatRule || 'なし'}</p><p>待機・保留：{record.waiting || 'なし'}</p></details>}
-      {!!record.references.length && <details><summary>参照した記録</summary>{record.references.map(id => <button key={id} onClick={() => TTApplication.Instance.OpenThinkInWorkout(id)}>{vault.GetThink(id)?.Name ?? id}</button>)}</details>}
+      {!!record.references.length && <details><summary>参照した記録</summary>{record.references.map(id => <button key={id} onClick={() => TTApplication.Instance.OpenThinkInDevelop(id)}>{vault.GetThink(id)?.Name ?? id}</button>)}</details>}
       {(record.startsAt || record.endsAt || record.checklist) && <details><summary>開催日時・手順</summary><p>開始：{record.startsAt || '未設定'} ／ 終了：{record.endsAt || '未設定'}</p><p>{record.checklist}</p></details>}
       {pane && <div><select aria-label="成果の反映先" value={targetId} onChange={e => setTargetId(e.target.value)}><option value="">成果の反映先を選ぶ</option>{vault.GetThinks().filter(t => t.ContentType === 'chat' && t.ID !== selectedId && parseManagedChatTitle(t.Name)).map(t => <option key={t.ID} value={t.ID}>{t.Name}</option>)}</select><button disabled={!targetId || waiting} onClick={() => void reflect()}>結果を相談につなぐ</button></div>}
       {notice && <span role="status">{notice}</span>}
       {foundChats.length > 0 && <details open><summary>見つかった相談</summary>{foundChats.map(t => <button key={t.id} disabled={waiting} onClick={() => onSelected(t.id)}>{t.title}の続きを開く</button>)}</details>}
-      {!selectedId && !pane && (panelName === 'Thinktank' || panelName === 'ReThink') && vault.GetThinks().filter(t => t.ContentType === 'chat' && isReviewDue(supportRecord(t), clock) && !['完了', '中止'].includes(parseManagedChatTitle(t.Name)?.state ?? '') && (panelName === 'Thinktank' || !props.bundleId || supportRecord(t).bundleId === props.bundleId)).slice(0, 5).map(t => <button key={t.ID} onClick={() => openSupportChat(t.ID)}>再確認：{t.Name}</button>)}
+      {!selectedId && !pane && (panelName === 'Thinktank' || panelName === 'Harvest') && vault.GetThinks().filter(t => t.ContentType === 'chat' && isReviewDue(supportRecord(t), clock) && !['完了', '中止'].includes(parseManagedChatTitle(t.Name)?.state ?? '') && (panelName === 'Thinktank' || !props.bundleId || supportRecord(t).bundleId === props.bundleId)).slice(0, 5).map(t => <button key={t.ID} onClick={() => openSupportChat(t.ID)}>再確認：{t.Name}</button>)}
       {error && <span role="alert">{error}</span>}
       {(retry.current || think?.Metadata.supportPendingEffects || (!!error && !!selectedId && loadedId !== selectedId)) && <button disabled={waiting} onClick={() => void retrySave()}>{selectedId && loadedId !== selectedId ? '読み込みを再試行' : '保存を再試行'}</button>}
       {think?.Metadata.supportPendingEffects && <button disabled={waiting} onClick={() => {

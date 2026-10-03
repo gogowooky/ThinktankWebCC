@@ -2,7 +2,7 @@
  * getFocusName.ts
  * フォーカス中の要素からコンポーネント名を返す共有ユーティリティ。
  *
- * WorkoutToolBar の KeyAction 表示および TTShortcutManager の
+ * DevelopToolBar の KeyAction 表示および TTShortcutManager の
  * フォーカスパターンマッチングで共用する。
  */
 
@@ -15,46 +15,46 @@ export function getFocusName(el: Element | null): string {
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  // 1. WorkoutTabBar (WorkoutSetting.{ModeName})
-  const vtbWorkout = el.closest('.vertical-tab-bar--workout');
-  if (vtbWorkout) {
+  // 1. DevelopTabBar (DevelopSetting.{ModeName})
+  const vtbDevelop = el.closest('.vertical-tab-bar--develop');
+  if (vtbDevelop) {
     const btn = el.closest('button');
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
-      if (id === 'Panes') return 'WorkoutSetting.Panes';
-      if (id === 'TextEditor') return 'WorkoutSetting.Texteditor';
-      if (id === 'Markdown') return 'WorkoutSetting.Markdown';
-      if (id === 'DataGrid') return 'WorkoutSetting.Datagrid';
-      if (id === 'Card') return 'WorkoutSetting.Card';
-      if (id === 'Graph') return 'WorkoutSetting.Graph';
+      if (id === 'Panes') return 'DevelopSetting.Panes';
+      if (id === 'TextEditor') return 'DevelopSetting.Texteditor';
+      if (id === 'Markdown') return 'DevelopSetting.Markdown';
+      if (id === 'DataGrid') return 'DevelopSetting.Datagrid';
+      if (id === 'Card') return 'DevelopSetting.Card';
+      if (id === 'Graph') return 'DevelopSetting.Graph';
     }
-    const mode = app?.WorkoutPanel?.ViewMode ?? 'panes';
-    return `WorkoutSetting.${capitalize(mode)}`;
+    const mode = app?.DevelopPanel?.ViewMode ?? 'panes';
+    return `DevelopSetting.${capitalize(mode)}`;
   }
 
   // 2. ToolBar.{ModeName}
   // 実際のツールバー（Highlighter/Command/...入力欄を含む）は .ApplicationStatusBarArea
-  // として描画される。.workout-toolbar は該当するDOM要素が存在しない廃止済みクラス名。
+  // として描画される。.develop-toolbar は該当するDOM要素が存在しない廃止済みクラス名。
   if (el.closest('.ApplicationStatusBarArea')) {
-    const mode = app?.WorkoutPanel?.ToolBarMode ?? 'Copyright';
+    const mode = app?.DevelopPanel?.ToolBarMode ?? 'Copyright';
     return `ToolBar.${capitalize(mode)}`;
   }
 
-  // 3. WorkoutArea (Workout.{MediaType})
-  const wa = el.closest('.workout-area');
+  // 3. DevelopArea (Develop.{MediaType})
+  const wa = el.closest('.develop-area');
   if (wa) {
-    const areasCount = app?.WorkoutPanel?.Areas?.length ?? 0;
-    if (areasCount === 0) return 'Workout.None';
+    const areasCount = app?.DevelopPanel?.Areas?.length ?? 0;
+    if (areasCount === 0) return 'Develop.None';
 
-    const mt = (wa.querySelector('.workout-area__content') as HTMLElement | null)?.dataset.mediaType ?? 'texteditor';
-    return `Workout.${capitalize(mt)}`;
+    const mt = (wa.querySelector('.develop-area__content') as HTMLElement | null)?.dataset.mediaType ?? 'texteditor';
+    return `Develop.${capitalize(mt)}`;
   }
 
-  // 4. WorkoutSettingArea (WorkoutSetting.{ModeName})
-  const ws = el.closest('.workout-setting-area');
+  // 4. DevelopSettingArea (DevelopSetting.{ModeName})
+  const ws = el.closest('.develop-setting-area');
   if (ws) {
-    const mode = app?.WorkoutPanel?.ViewMode ?? 'panes';
-    return `WorkoutSetting.${capitalize(mode)}`;
+    const mode = app?.DevelopPanel?.ViewMode ?? 'panes';
+    return `DevelopSetting.${capitalize(mode)}`;
   }
 
   // 5. ThinktankPanel (Thinktank.{ModeName})
@@ -78,46 +78,46 @@ export function getFocusName(el: Element | null): string {
     return `Thinktank.${capitalize(mode)}`;
   }
 
-  // 6. OverviewPanel (Overview.{ModeName})
-  const ov = el.closest('.overview-panel, .overview-area');
+  // 6. SeedsPanel (Seeds.{ModeName})
+  const ov = el.closest('.seeds-panel, .seeds-area');
   if (ov) {
-    const mode = app?.OverviewPanel?.ViewMode ?? 'filter';
-    return `Overview.${capitalize(mode)}`;
+    const mode = app?.SeedsPanel?.ViewMode ?? 'filter';
+    return `Seeds.${capitalize(mode)}`;
   }
 
-  // OverviewTabBar (パネル非表示中対応)
-  const vtbOverview = el.closest('.vertical-tab-bar--overview');
-  if (vtbOverview) {
+  // SeedsTabBar (パネル非表示中対応)
+  const vtbSeeds = el.closest('.vertical-tab-bar--seeds');
+  if (vtbSeeds) {
     const btn = el.closest('button');
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
-      if (id.includes('ThinkList')) return 'Overview.Filter';
-      if (id.includes('Research') || id.includes('Graph')) return 'Overview.Graph';
-      if (id.includes('AI') || id.includes('Chat')) return 'Overview.Chat';
-      if (id.includes('Setting')) return 'Overview.Settings';
+      if (id.includes('ThinkList')) return 'Seeds.Filter';
+      if (id.includes('Research') || id.includes('Graph')) return 'Seeds.Graph';
+      if (id.includes('AI') || id.includes('Chat')) return 'Seeds.Chat';
+      if (id.includes('Setting')) return 'Seeds.Settings';
     }
-    const mode = app?.OverviewPanel?.ViewMode ?? 'filter';
-    return `Overview.${capitalize(mode)}`;
+    const mode = app?.SeedsPanel?.ViewMode ?? 'filter';
+    return `Seeds.${capitalize(mode)}`;
   }
 
-  // 7. ReThinkPanel (ReThink.{ModeName})
-  const rt = el.closest('.rethink-panel, .rethink-area');
+  // 7. HarvestPanel (Harvest.{ModeName})
+  const rt = el.closest('.harvest-panel, .harvest-area');
   if (rt) {
-    const mode = app?.ReThinkPanel?.ViewMode ?? 'chat';
-    return `ReThink.${capitalize(mode)}`;
+    const mode = app?.HarvestPanel?.ViewMode ?? 'chat';
+    return `Harvest.${capitalize(mode)}`;
   }
 
-  // ReThinkTabBar (パネル非表示中対応)
-  const vtbReThink = el.closest('.vertical-tab-bar--rethink');
-  if (vtbReThink) {
+  // HarvestTabBar (パネル非表示中対応)
+  const vtbHarvest = el.closest('.vertical-tab-bar--harvest');
+  if (vtbHarvest) {
     const btn = el.closest('button');
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
-      if (id.includes('AI') || id.includes('Chat')) return 'ReThink.Chat';
-      if (id.includes('Setting')) return 'ReThink.Settings';
+      if (id.includes('AI') || id.includes('Chat')) return 'Harvest.Chat';
+      if (id.includes('Setting')) return 'Harvest.Settings';
     }
-    const mode = app?.ReThinkPanel?.ViewMode ?? 'chat';
-    return `ReThink.${capitalize(mode)}`;
+    const mode = app?.HarvestPanel?.ViewMode ?? 'chat';
+    return `Harvest.${capitalize(mode)}`;
   }
 
   return 'None';

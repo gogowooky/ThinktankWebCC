@@ -570,7 +570,7 @@ export class TTVault extends TTCollection {
     const proposal = candidateId === undefined ? turn.answer.proposals.find(p => p.field === 'nextAction')
       : candidate ? { after: candidate.goal } : undefined;
     const normalized = title.replace(/[\r\n]+/g, ' ').trim();
-    const relation: TaskRelation = { schemaVersion: 1, parentId, chatId, turnId: turn.id, panel: 'Workout', ...(candidateId !== undefined ? { candidateId } : {}) };
+    const relation: TaskRelation = { schemaVersion: 1, parentId, chatId, turnId: turn.id, panel: 'Develop', ...(candidateId !== undefined ? { candidateId } : {}) };
     if (turn.context.scope !== 'bundle-only' || turn.context.vaultId !== this.ID
       || this.GetThink(parentId)?.ContentType !== 'bundle' || this.GetThink(chatId)?.ContentType !== 'chat'
       || !proposal || !readTaskRelation(relation) || !normalized || normalized.length > 200) {

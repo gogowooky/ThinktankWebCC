@@ -25,7 +25,7 @@ afterEach(async () => { server.closeAllConnections(); await new Promise<void>(r 
 function generate(changes = {}, prefix = 'active') { return fetch(`${url}/${prefix}/turns`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: 'turn', question: '質問', context: source, confirmed: true, historyIds: [], ...changes }) }); }
 function save(value = turn) { return fetch(`${url}/active/bundles/bundle/turns/turn`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) }); }
 function chatRecords() {
-  const chat = { ...record, file_id: 'chat', category: 'chat', title: '# TODO:Overview｜[進行中]別の題名', content: '既存本文', metadata: JSON.stringify({ keep: 1 }) };
+  const chat = { ...record, file_id: 'chat', category: 'chat', title: '# TODO:Seeds｜[進行中]別の題名', content: '既存本文', metadata: JSON.stringify({ keep: 1 }) };
   const bundle = { ...record, title: '# 課題' };
   store.getRecord.mockImplementation(async value => ({ success: true, data: value === 'chat' ? chat : bundle }));
 }

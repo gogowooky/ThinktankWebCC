@@ -26,16 +26,16 @@
   background: var(--thinktank-ribbon-bg);
 }
 
-.vertical-tab-bar--overview {
-  background: var(--overview-ribbon-bg);
+.vertical-tab-bar--seeds {
+  background: var(--seeds-ribbon-bg);
 }
 
-.vertical-tab-bar--workout {
-  background: var(--workout-ribbon-bg);
+.vertical-tab-bar--develop {
+  background: var(--develop-ribbon-bg);
 }
 
-.vertical-tab-bar--rethink {
-  background: var(--rethink-ribbon-bg);
+.vertical-tab-bar--harvest {
+  background: var(--harvest-ribbon-bg);
 }
 
 /* D&D ドロップ受け入れ中 */
@@ -100,13 +100,13 @@
 }
 
 body[data-focus-column="Thinktank"] .vertical-tab-bar--thinktank .vertical-tab-bar__toggle,
-body[data-focus-column="Overview"] .vertical-tab-bar--overview .vertical-tab-bar__toggle,
-body[data-focus-column="ReThink"] .vertical-tab-bar--rethink .vertical-tab-bar__toggle {
+body[data-focus-column="Seeds"] .vertical-tab-bar--seeds .vertical-tab-bar__toggle,
+body[data-focus-column="Harvest"] .vertical-tab-bar--harvest .vertical-tab-bar__toggle {
   box-shadow: 0 0 0 2px #ffffff;
 }
 
-/* Workoutパネルのフォーカス用 */
-body[data-focus-column="WorkoutSetting"] .vertical-tab-bar--workout .vertical-tab-bar__toggle {
+/* Developパネルのフォーカス用 */
+body[data-focus-column="DevelopSetting"] .vertical-tab-bar--develop .vertical-tab-bar__toggle {
   box-shadow: 0 0 0 2px #ffffff;
 }
 
@@ -147,17 +147,17 @@ body[data-focus-column="WorkoutSetting"] .vertical-tab-bar--workout .vertical-ta
   user-select: none;
 }
 
-/* Workout タブバーはやや暗めなのでホバー色を調整 */
-.vertical-tab-bar--workout .vertical-tab-bar__toggle {
+/* Develop タブバーはやや暗めなのでホバー色を調整 */
+.vertical-tab-bar--develop .vertical-tab-bar__toggle {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.vertical-tab-bar--workout .vertical-tab-bar__toggle:hover {
+.vertical-tab-bar--develop .vertical-tab-bar__toggle:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-/* Workout タブバーの下部ラベルはフォントサイズをやや小さく（以前のWorkout仕様に合わせる） */
-.vertical-tab-bar--workout .vertical-tab-bar__label {
+/* Develop タブバーの下部ラベルはフォントサイズをやや小さく（以前のDevelop仕様に合わせる） */
+.vertical-tab-bar--develop .vertical-tab-bar__label {
   font-size: calc(13px * var(--tt-font-scale, 1));
 }

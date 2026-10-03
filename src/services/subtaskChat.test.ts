@@ -11,7 +11,7 @@ beforeEach(() => {
   storage.save.mockReset().mockResolvedValue({ updatedAt: '2026-09-17T00:00:00Z' });
   vault = new TTVault('vault'); child = new TTThink(); child.ID = 'child'; child.ContentType = 'bundle';
   child.Content = '会場予約\n* 2026-09-16-120000\n// このコメントを保持する\n';
-  child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'source-chat', turnId: 'turn', panel: 'Workout' }, custom: { keep: true } };
+  child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'source-chat', turnId: 'turn', panel: 'Develop' }, custom: { keep: true } };
   child.markSaved(); child.markMetadataSaved(); child.UpdatedAt = '2026-09-16T00:00:00Z'; vault.AddThink(child);
 });
 
@@ -22,7 +22,7 @@ it('creates one dedicated Chat, preserves Bundle text and metadata, and reuses i
   expect(storage.save.mock.calls[0][0]).toMatchObject({ category: 'chat', metadata: { subtaskChat: { schemaVersion: 1, bundleId: 'child' } } });
   expect(storage.save.mock.calls[1][0]).toMatchObject({ baseUpdatedAt: '2026-09-16T00:00:00Z', metadata: child.Metadata });
   expect(child.Content).toBe(`${before}* ${chat.ID}\n`);
-  expect(chat.Name).toBe('TASK:Workout｜会場予約'); expect(chat.IsMetadataDirty).toBe(false);
+  expect(chat.Name).toBe('TASK:Develop｜会場予約'); expect(chat.IsMetadataDirty).toBe(false);
   const reloaded = new TTVault('vault'); reloaded.AddThink(child); reloaded.AddThink(chat);
   expect((await ensureSubtaskChat(reloaded, 'child')).ID).toBe(chat.ID);
   expect(storage.save).toHaveBeenCalledTimes(2);

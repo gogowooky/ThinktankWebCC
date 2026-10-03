@@ -18,7 +18,7 @@ describe('durable thought support metadata', () => {
   it('persists Electron metadata and rejects an outdated save after reopening', () => {
     const dir = mkdtempSync(join(tmpdir(), 'thinktank-support-test-'));
     try {
-      const payload = { thinkid: '2026-09-08-100000', category: 'chat', fullContent: 'ASK:Workout｜[進行中]質問\n## 続きを教えて', metadata: { thoughtSupport: { version: 1, resume: '候補を比較中' } } };
+      const payload = { thinkid: '2026-09-08-100000', category: 'chat', fullContent: 'ASK:Develop｜[進行中]質問\n## 続きを教えて', metadata: { thoughtSupport: { version: 1, resume: '候補を比較中' } } };
       const first = saveVaultRecord(dir, payload);
       const stored = parseFrontmatter(readFileSync(join(dir, payload.thinkid + '.md'), 'utf8')).meta;
       expect(extractMetadata(stored)).toEqual(payload.metadata);

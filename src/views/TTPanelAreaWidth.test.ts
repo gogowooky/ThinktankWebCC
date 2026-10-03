@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // jsdom を使う理由: TTUIStateManager / TTApplication が services/storage/apiClient を読み込み、
-// apiClient がモジュール評価時に `window` を参照するため（TTWorkoutPanel.test.ts と同じ事情）。
+// apiClient がモジュール評価時に `window` を参照するため（TTDevelopPanel.test.ts と同じ事情）。
 //
 // docs/Thinktank_Status-Action-Binding.md の
 //   Status: <Panel>Panel.Area.OpenWidth （init|user|foredit）
@@ -20,16 +20,16 @@ registerFocusedPanelActions(app);
 
 const WIDTH_KEYS = {
   Thinktank: 'ThinktankPanel.Area.OpenWidth',
-  Overview:  'OverviewPanel.Area.OpenWidth',
-  Workout:   'WorkoutSettingPanel.Area.OpenWidth',
-  ReThink:   'ReThinkPanel.Area.OpenWidth',
+  Seeds:  'SeedsPanel.Area.OpenWidth',
+  Develop:   'DevelopSettingPanel.Area.OpenWidth',
+  Harvest:   'HarvestPanel.Area.OpenWidth',
 } as const;
 
 const panelOf = {
   Thinktank: () => app.ThinktankPanel,
-  Overview:  () => app.OverviewPanel,
-  Workout:   () => app.WorkoutPanel,
-  ReThink:   () => app.ReThinkPanel,
+  Seeds:  () => app.SeedsPanel,
+  Develop:   () => app.DevelopPanel,
+  Harvest:   () => app.HarvestPanel,
 };
 
 beforeEach(() => {
@@ -58,19 +58,19 @@ describe('Status <Panel>Panel.Area.OpenWidth', () => {
 
   it('起動時のユーザー幅は各パネルの init 幅', () => {
     expect(app.ThinktankPanel.AreaUserWidth).toBe(INIT_AREA_WIDTH.Thinktank);
-    expect(app.OverviewPanel.AreaUserWidth).toBe(INIT_AREA_WIDTH.Overview);
-    expect(app.WorkoutPanel.AreaUserWidth).toBe(INIT_AREA_WIDTH.Workout);
-    expect(app.ReThinkPanel.AreaUserWidth).toBe(INIT_AREA_WIDTH.ReThink);
+    expect(app.SeedsPanel.AreaUserWidth).toBe(INIT_AREA_WIDTH.Seeds);
+    expect(app.DevelopPanel.AreaUserWidth).toBe(INIT_AREA_WIDTH.Develop);
+    expect(app.HarvestPanel.AreaUserWidth).toBe(INIT_AREA_WIDTH.Harvest);
   });
 });
 
 describe('Action FocusedPanel.Area.OpenWidth:*', () => {
   it.each([
     ['Thinktank', 'Thinktank'],
-    ['Overview', 'Overview'],
-    ['WorkoutSetting', 'Workout'],
-    ['Workout', 'Workout'],
-    ['ReThink', 'ReThink'],
+    ['Seeds', 'Seeds'],
+    ['DevelopSetting', 'Develop'],
+    ['Develop', 'Develop'],
+    ['Harvest', 'Harvest'],
   ])('フォーカス列 %s では %s パネルの幅モードを変える', (column, target) => {
     app.FocusedColumn = column;
     const panel = panelOf[target as keyof typeof panelOf]();
@@ -146,36 +146,36 @@ describe('Action FocusedPanel.Area.IsOpen:Toggle / :ToggleForEdit', () => {
 
   it('ForEditで開くとき、他の ForEdit パネルは User に戻る', () => {
     // foredit はアプリ幅の割合を占めるので、同時に複数が foredit だと画面が破綻する
-    app.OverviewPanel.AreaWidthMode = 'foredit';
-    app.ReThinkPanel.AreaWidthMode  = 'foredit';
-    app.WorkoutPanel.AreaWidthMode  = 'init';
+    app.SeedsPanel.AreaWidthMode = 'foredit';
+    app.HarvestPanel.AreaWidthMode  = 'foredit';
+    app.DevelopPanel.AreaWidthMode  = 'init';
     app.FocusedColumn = 'Thinktank';
     app.ThinktankPanel.IsAreaOpen = true;
     TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 閉じる
     TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 開く（foredit）
     expect(app.ThinktankPanel.AreaWidthMode).toBe('foredit');
-    expect(app.OverviewPanel.AreaWidthMode).toBe('user');
-    expect(app.ReThinkPanel.AreaWidthMode).toBe('user');
-    expect(app.WorkoutPanel.AreaWidthMode).toBe('init');           // foredit 以外は触らない
+    expect(app.SeedsPanel.AreaWidthMode).toBe('user');
+    expect(app.HarvestPanel.AreaWidthMode).toBe('user');
+    expect(app.DevelopPanel.AreaWidthMode).toBe('init');           // foredit 以外は触らない
   });
 
   it('User で開くときは他パネルの幅モードを触らない', () => {
-    app.OverviewPanel.AreaWidthMode = 'foredit';
+    app.SeedsPanel.AreaWidthMode = 'foredit';
     app.FocusedColumn = 'Thinktank';
     app.ThinktankPanel.IsAreaOpen = true;
     TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');          // 閉じる
     TTActions.Execute('FocusedPanel.Area.IsOpen:Toggle');          // 開く（user）
     expect(app.ThinktankPanel.AreaWidthMode).toBe('user');
-    expect(app.OverviewPanel.AreaWidthMode).toBe('foredit');
+    expect(app.SeedsPanel.AreaWidthMode).toBe('foredit');
   });
 
   it('閉じるときは他パネルの幅モードを触らない', () => {
-    app.OverviewPanel.AreaWidthMode = 'foredit';
+    app.SeedsPanel.AreaWidthMode = 'foredit';
     app.FocusedColumn = 'Thinktank';
     app.ThinktankPanel.IsAreaOpen = true;
     TTActions.Execute('FocusedPanel.Area.IsOpen:ToggleForEdit');   // 閉じるだけ
     expect(app.ThinktankPanel.IsAreaOpen).toBe(false);
-    expect(app.OverviewPanel.AreaWidthMode).toBe('foredit');
+    expect(app.SeedsPanel.AreaWidthMode).toBe('foredit');
   });
 
   it('幅モードを持たない列でも開閉自体は行う', () => {
@@ -207,12 +207,12 @@ describe('Status 変更の通知', () => {
   it('パネルへの通知だけでは他パネルの Status リスナーを起こさない', () => {
     const seen: string[] = [];
     const listener = (_k: string, v: string) => seen.push(v);
-    TTUIStateManager.instance.addListener('OverviewPanel.Area.OpenWidth', listener);
+    TTUIStateManager.instance.addListener('SeedsPanel.Area.OpenWidth', listener);
     try {
       app.FocusedColumn = 'Thinktank';
       TTActions.Execute('FocusedPanel.Area.OpenWidth:ForEdit');
     } finally {
-      TTUIStateManager.instance.removeListener('OverviewPanel.Area.OpenWidth', listener);
+      TTUIStateManager.instance.removeListener('SeedsPanel.Area.OpenWidth', listener);
     }
     expect(seen).toEqual([]);
   });

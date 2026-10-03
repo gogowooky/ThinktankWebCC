@@ -1,0 +1,39 @@
+/* DevelopTabBar.css */
+
+/* ── ボタン群 ─────────────────────────────────────── */
+
+.develop-tab-bar__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  transition: background 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.develop-tab-bar__btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.develop-tab-bar__btn--active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.develop-tab-bar__btn:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}
+
+/* ── 区切り線（Graph設定 と AI相談 の間）──────────────── */
+.develop-tab-bar__divider {
+  width: 20px;
+  height: 1px;
+  margin: 4px auto;
+  background: rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
+}

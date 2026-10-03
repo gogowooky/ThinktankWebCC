@@ -19,7 +19,7 @@ const event = { id: 'confirmed', revision: 1, author: 'human' as const, confirme
   input: { ...emptyProgress(), milestones: { ...emptyProgress().milestones, execution: 'achieved' as const }, evidence: '予約済みを確認', remaining: '参加者数の確認', paused: true, resumeCondition: '返事が届いたら' } };
 function child(id: string, parentId = 'parent') {
   const think = new TTThink(); think.ID = id; think.ContentType = 'bundle'; think.Content = `# ${id}\n秘密の本文`;
-  think.Metadata = { taskRelation: { schemaVersion: 1, parentId, chatId: 'chat', turnId: 'turn', panel: 'Workout' }, thinkProgress: { schemaVersion: 1, events: [structuredClone(event)] } };
+  think.Metadata = { taskRelation: { schemaVersion: 1, parentId, chatId: 'chat', turnId: 'turn', panel: 'Develop' }, thinkProgress: { schemaVersion: 1, events: [structuredClone(event)] } };
   think.markSaved(); think.markMetadataSaved(); return think;
 }
 function setup() {

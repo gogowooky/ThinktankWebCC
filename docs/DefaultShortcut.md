@@ -25,10 +25,10 @@ Keyboard Shortcuts
 *Chat       ,ExApp  ,P                  ,FocusedPanel.AIChat.CursorPos:PrevLine         ,AI相談のカーソル下
 *Chat       ,ExApp  ,Enter              ,FocusedPanel.AIChat.Cursor:Action              ,AI相談のカーソル開く
 
-Workout*    ,ExApp  ,N                  ,WorkoutPanel.FocusedPane.PaneNumber:Next       ,ペイン次
-Workout*    ,ExApp  ,P                  ,WorkoutPanel.FocusedPane.PaneNumber:Prev       ,ペイン前
-Workout*    ,ExApp  ,M                  ,WorkoutPanel.FocusedPane.Mode:Prev             ,ペインモード左
-Workout*    ,ExApp  ,Shift+M            ,WorkoutPanel.FocusedPane.Mode:Next             ,ペインモード右
+Develop*    ,ExApp  ,N                  ,DevelopPanel.FocusedPane.PaneNumber:Next       ,ペイン次
+Develop*    ,ExApp  ,P                  ,DevelopPanel.FocusedPane.PaneNumber:Prev       ,ペイン前
+Develop*    ,ExApp  ,M                  ,DevelopPanel.FocusedPane.Mode:Prev             ,ペインモード左
+Develop*    ,ExApp  ,Shift+M            ,DevelopPanel.FocusedPane.Mode:Next             ,ペインモード右
 
 *           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,ツールバー左
 *           ,ExApp  ,Shift+Z            ,ToolBar.Mode.Name:Next                         ,ツールバー右
@@ -43,12 +43,12 @@ Thinktank.Filter,   ,Alt+ArrowDown          ,ThinktankPanel.Filter.CursorPos:Nex
 Thinktank.Filter,   ,Alt+Enter              ,ThinktankPanel.Filter.Cursor:Action             ,Thinktank>Think一覧のカーソル位置を開く
 Thinktank.Filter,   ,Alt+K                  ,ThinktankPanel.Filter.Cursor:ToggleCheck        ,Thinktank>Think一覧のカーソル位置をチェック
 
-Overview.Filter,    ,Alt+P                  ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
-Overview.Filter,    ,Alt+N                  ,OverviewPanel.Filter.CursorPos:NextLine         ,Overview>Think一覧のカーソルを下に移動する
-Overview.Filter,    ,Alt+ArrowUp            ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
-Overview.Filter,    ,Alt+ArrowDown          ,OverviewPanel.Filter.CursorPos:NextLine         ,Overview>Think一覧のカーソルを下に移動する
-Overview.Filter,    ,Alt+Enter              ,OverviewPanel.Filter.Cursor:Action              ,Overview>Think一覧のカーソル位置を開く
-Overview.Filter,    ,Alt+K                  ,OverviewPanel.Filter.Cursor:ToggleCheck         ,Overview>Think一覧のカーソル位置をチェック
+Seeds.Filter,    ,Alt+P                  ,SeedsPanel.Filter.CursorPos:PrevLine         ,Seeds>Think一覧のカーソルを上に移動する
+Seeds.Filter,    ,Alt+N                  ,SeedsPanel.Filter.CursorPos:NextLine         ,Seeds>Think一覧のカーソルを下に移動する
+Seeds.Filter,    ,Alt+ArrowUp            ,SeedsPanel.Filter.CursorPos:PrevLine         ,Seeds>Think一覧のカーソルを上に移動する
+Seeds.Filter,    ,Alt+ArrowDown          ,SeedsPanel.Filter.CursorPos:NextLine         ,Seeds>Think一覧のカーソルを下に移動する
+Seeds.Filter,    ,Alt+Enter              ,SeedsPanel.Filter.Cursor:Action              ,Seeds>Think一覧のカーソル位置を開く
+Seeds.Filter,    ,Alt+K                  ,SeedsPanel.Filter.Cursor:ToggleCheck         ,Seeds>Think一覧のカーソル位置をチェック
 
 Thinktank.Filter    ,ExApp  ,Alt+P          ,ThinktankPanel.Filter.CursorPos:PrevLine        ,Thinktank>Think一覧のカーソルを上に移動する
 Thinktank.Filter    ,ExApp  ,Alt+P          ,ThinktankPanel.Filter.CursorPos:PrevLine        ,Thinktank>Think一覧のカーソルを上に移動する
@@ -58,21 +58,21 @@ Thinktank.Filter    ,ExApp  ,Alt+ArrowDown  ,ThinktankPanel.Filter.CursorPos:Nex
 Thinktank.Filter    ,ExApp  ,Alt+Enter      ,ThinktankPanel.Filter.Cursor:Action             ,Thinktank>Think一覧のカーソル位置を開く
 Thinktank.Filter    ,ExApp  ,Alt+K          ,ThinktankPanel.Filter.Cursor:ToggleCheck        ,Thinktank>Think一覧のカーソル位置をチェック
 
-Overview.Filter     ,ExApp  ,Alt+P          ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
-Overview.Filter     ,ExApp  ,Alt+N          ,OverviewPanel.Filter.CursorPos:NextLine         ,Overview>Think一覧のカーソルを下に移動する
-Overview.Filter     ,ExApp  ,Alt+ArrowUP    ,OverviewPanel.Filter.CursorPos:PrevLine         ,Overview>Think一覧のカーソルを上に移動する
-Overview.Filter     ,ExApp  ,Alt+ArrowDown  ,OverviewPanel.Filter.CursorPos:NextLine         ,Overview>Think一覧のカーソルを下に移動する
-Overview.Filter     ,ExApp  ,Alt+Enter      ,OverviewPanel.Filter.Cursor:Action              ,Overview>Think一覧のカーソル位置を開く
-Overview.Filter     ,ExApp  ,Alt+K          ,OverviewPanel.Filter.Cursor:ToggleCheck         ,Overview>Think一覧のカーソル位置をチェック
+Seeds.Filter     ,ExApp  ,Alt+P          ,SeedsPanel.Filter.CursorPos:PrevLine         ,Seeds>Think一覧のカーソルを上に移動する
+Seeds.Filter     ,ExApp  ,Alt+N          ,SeedsPanel.Filter.CursorPos:NextLine         ,Seeds>Think一覧のカーソルを下に移動する
+Seeds.Filter     ,ExApp  ,Alt+ArrowUP    ,SeedsPanel.Filter.CursorPos:PrevLine         ,Seeds>Think一覧のカーソルを上に移動する
+Seeds.Filter     ,ExApp  ,Alt+ArrowDown  ,SeedsPanel.Filter.CursorPos:NextLine         ,Seeds>Think一覧のカーソルを下に移動する
+Seeds.Filter     ,ExApp  ,Alt+Enter      ,SeedsPanel.Filter.Cursor:Action              ,Seeds>Think一覧のカーソル位置を開く
+Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck         ,Seeds>Think一覧のカーソル位置をチェック
 
 # Editor D&D Thinkファイル,ローカルファイル
-*,   ,ThinkFileDrag       ,WorkoutPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
-*,   ,Alt+ThinkFileDrag   ,WorkoutPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
+*,   ,ThinkFileDrag       ,DevelopPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
+*,   ,Alt+ThinkFileDrag   ,DevelopPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
 
-*,   ,LocalFileDrag       ,WorkoutPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う
-*,   ,LocalDirDrag        ,WorkoutPanel.Load.DroppedLink   ,ローカルディレクトリDropで既定動作（Links Think作成）を行う
-*,   ,Alt+LocalFileDrag   ,WorkoutPanel.Insert.DroppedLink ,ローカルファイルDropをコンテンツ内カーソル位置に挿入する
-*,   ,Alt+LocalDirDrag    ,WorkoutPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
+*,   ,LocalFileDrag       ,DevelopPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う
+*,   ,LocalDirDrag        ,DevelopPanel.Load.DroppedLink   ,ローカルディレクトリDropで既定動作（Links Think作成）を行う
+*,   ,Alt+LocalFileDrag   ,DevelopPanel.Insert.DroppedLink ,ローカルファイルDropをコンテンツ内カーソル位置に挿入する
+*,   ,Alt+LocalDirDrag    ,DevelopPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
 
 
 # Editor Editor 検索
@@ -89,7 +89,7 @@ Overview.Filter     ,ExApp  ,Alt+K          ,OverviewPanel.Filter.Cursor:ToggleC
 *TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.CurrentMode.Text:Focus                         ,Highlighter入力欄にフォーカスする
 ToolBar*    ,       ,Alt+Q                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
-ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
+ToolBar*    ,       ,Alt+X                  ,DevelopPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
 
 # Editor カーソル
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine            ,カーソルを一つ上の行に移動する（ArrowUp相当）
@@ -104,9 +104,9 @@ ToolBar*    ,       ,Alt+X                  ,WorkoutPanel.FocusedPane.PaneNumber
 
 
 # Editor カーソル アクション文字
-*TextEditor ,       ,Shift+Alt+Backspace    ,WorkoutPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
-*TextEditor ,       ,Alt+Backspace          ,WorkoutPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を1つ前に戻る
-*TextEditor ,       ,Ctrl+Alt+Backspace     ,WorkoutPanel.FocusedPane.FileHistory:Menu          ,ファイル履歴をメニューで表示
+*TextEditor ,       ,Shift+Alt+Backspace    ,DevelopPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
+*TextEditor ,       ,Alt+Backspace          ,DevelopPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を1つ前に戻る
+*TextEditor ,       ,Ctrl+Alt+Backspace     ,DevelopPanel.FocusedPane.FileHistory:Menu          ,ファイル履歴をメニューで表示
 
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
 *TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示

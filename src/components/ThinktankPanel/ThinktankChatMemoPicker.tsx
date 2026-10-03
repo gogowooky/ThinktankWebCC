@@ -10,9 +10,9 @@
  * - フォーカスが外れていても未選択の場合は、絞り込み結果（フィルター未設定なら全対象ファイル）を表示する
  * - 先頭に「新規チャット」の仮想行（NEW_CHAT_SENTINEL_ID）を常時表示する（1件だけに絞られた表示時を除く）。
  *   これはフィルター・ソートの対象外で、選択されると呼び出し側が新規 chat Think を作る
- * - Workout の Pane で開けるのは D&D（行の draggable）のみ。ダブルクリックでは開かない
+ * - Develop の Pane で開けるのは D&D（行の draggable）のみ。ダブルクリックでは開かない
  *   （chatファイルは下のエリアで直接続きの対話ができるため、二重の入口を持たせない）
- * - チェックボックスも表示する。チェック状態は Think一覧（Thinktank/Overview/Workout/ReThink）と
+ * - チェックボックスも表示する。チェック状態は Think一覧（Thinktank/Seeds/Develop/Harvest）と
  *   共通の SharedState（TTApplication がパネル間で共有）なので、ここでチェックしたchatファイルも
  *   Thinktank>Think一覧の削除ボタンから削除できる。「新規チャット」の仮想行はチェック対象外
  */

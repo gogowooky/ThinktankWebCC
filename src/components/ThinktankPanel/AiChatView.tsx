@@ -1,6 +1,6 @@
 /**
  * AiChatView.tsx
- * ThinktankPanel / OverviewPanel 共通 AI チャットビュー。
+ * ThinktankPanel / SeedsPanel 共通 AI チャットビュー。
  *
  * - 下部に固定の入力エリア（Claude Code スタイル）
  * - 上部にスクロール可能な会話ログ（CLI 風）

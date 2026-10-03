@@ -24,7 +24,7 @@ export function SubtaskList({ vault, bundleId }: { vault: TTVault; bundleId: str
   if (!children.length && !relation) return null;
   return <section aria-label="関連する課題">
     {relation && <><button type="button" onClick={() => void open(relation.parentId)}>親課題へ戻る</button>
-      <SubtaskChatButton key={bundleId} vault={vault} bundleId={bundleId} overviewId={bundleId} /></>}
+      <SubtaskChatButton key={bundleId} vault={vault} bundleId={bundleId} seedsId={bundleId} /></>}
     {children.length > 0 && <><h3>サブ課題（{summary.total}件）</h3>
       <p>読み込み済みの直接のサブ課題について、本人が確認した到達状態を表示しています。親課題の完了は別に確認します。</p>
       <ul aria-label="サブ課題の到達状態の集計">{MILESTONES.map(key => <li key={key}>
@@ -33,8 +33,8 @@ export function SubtaskList({ vault, bundleId }: { vault: TTVault; bundleId: str
       </li>)}</ul>
       <p>保留 {summary.paused}件{summary.unreadable > 0 && ` ／ 記録を読み取れない課題 ${summary.unreadable}件（到達状態の集計対象外）`}</p>
       <ul>{children.map((child, index) => <li key={child.ID}>
-      <button type="button" onClick={() => void open(child.ID)}>{child.Name}</button> · 担当：Workout
-      <SubtaskChatButton vault={vault} bundleId={child.ID} overviewId={bundleId} />
+      <button type="button" onClick={() => void open(child.ID)}>{child.Name}</button> · 担当：Develop
+      <SubtaskChatButton vault={vault} bundleId={child.ID} seedsId={bundleId} />
       <SubtaskProgressDetail progress={progress[index]} />
     </li>)}</ul></>}
     {message && <p role="status">{message}</p>}

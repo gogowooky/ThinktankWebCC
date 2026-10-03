@@ -160,11 +160,11 @@ it('shows cached Chat metadata while the server refresh is still pending', async
   await show('', 'chat-a');
   expect(host.textContent).toContain('回答');
 });
-it('keeps drafts separate between Overview and AIChat for the same Bundle', async () => {
-  await show(); await input('Overviewの質問');
+it('keeps drafts separate between Seeds and AIChat for the same Bundle', async () => {
+  await show(); await input('Seedsの質問');
   await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" draftScope="aichat:Thinktank:panel" onOpen={vi.fn()} />));
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe(''); await input('AIChatの質問');
-  await show(); expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Overviewの質問');
+  await show(); expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('Seedsの質問');
   await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" draftScope="aichat:Thinktank:panel" onOpen={vi.fn()} />));
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('AIChatの質問'); expect(api.generate).not.toHaveBeenCalled();
 });

@@ -49,7 +49,7 @@ export function SupportConversation({ vault, panelName, chatId, draftScope, pane
       if (app.Models.Vault !== vault) return;
       const source = vault.GetThink(id);
       if (!source) { setMessage('出典がVault一覧にありません。'); return; }
-      if (!app.WorkoutPanel.FocusExistingResource(id)) app.WorkoutPanel.AddToRight(id, 'texteditor', source.Name);
+      if (!app.DevelopPanel.FocusExistingResource(id)) app.DevelopPanel.AddToRight(id, 'texteditor', source.Name);
     } catch { setMessage('出典を開けませんでした。'); }
   }
   async function openTask(id: string) {
@@ -105,19 +105,19 @@ export function SupportConversation({ vault, panelName, chatId, draftScope, pane
       else await onStartTask(chat.ID, title);
       if (version !== taskVersion.current) return;
       setTaskEditorOpen(false);
-      setMessage('Overviewで課題を開きました。');
+      setMessage('Seedsで課題を開きました。');
     } catch (error) { if (version === taskVersion.current) setMessage((error as Error).message || '課題を作成できませんでした。'); }
     finally { if (version === taskVersion.current) { taskLock.current = false; setTaskBusy(false); } }
   }
   // 課題化は会話全体に対する操作なので、履歴と一緒に流れないよう入力帯へ預ける。
   const taskStart = chatValid && panelName === 'Thinktank' && onStartTask ? <div className="support-task-start">
-    {!taskEditorOpen ? <button type="button" disabled={taskBusy || !!association.error} onClick={() => void openTaskEditor()}>{bundle ? (parseManagedChatTitle(chat.Name)?.kind === 'TASK' ? '課題をOverviewで開く' : '課題との関連付けを完了') : '相談を課題として開始'}</button> : <>
+    {!taskEditorOpen ? <button type="button" disabled={taskBusy || !!association.error} onClick={() => void openTaskEditor()}>{bundle ? (parseManagedChatTitle(chat.Name)?.kind === 'TASK' ? '課題をSeedsで開く' : '課題との関連付けを完了') : '相談を課題として開始'}</button> : <>
       <label><span>課題名</span><input aria-label="課題名" maxLength={200} value={taskTitle} disabled={taskBusy}
         onChange={event => setTaskTitle(event.target.value)} onKeyDown={event => {
           if (event.key === 'Enter' && !event.nativeEvent.isComposing) void startTask();
         }} /></label>
       <div className="support-task-start__actions">
-        <button type="button" disabled={taskBusy || !taskTitle.trim()} onClick={() => void startTask()}>{taskBusy ? '作成中…' : '作成してOverviewで開く'}</button>
+        <button type="button" disabled={taskBusy || !taskTitle.trim()} onClick={() => void startTask()}>{taskBusy ? '作成中…' : '作成してSeedsで開く'}</button>
         <button type="button" disabled={taskBusy} onClick={() => setTaskEditorOpen(false)}>キャンセル</button>
       </div>
       {taskSeed ? <div className="support-task-start__summary">

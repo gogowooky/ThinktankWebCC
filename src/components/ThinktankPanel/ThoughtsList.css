@@ -1,7 +1,7 @@
 /* ThoughtsList.css */
 
-/* このリストは Thinktank / Overview の両パネルで使うため、既定は Thinktank の
-   コンテンツ色にし、Overview 配下ではそちらのコンテンツ色で上書きする */
+/* このリストは Thinktank / Seeds の両パネルで使うため、既定は Thinktank の
+   コンテンツ色にし、Seeds 配下ではそちらのコンテンツ色で上書きする */
 .thoughts-list {
   flex: 1;
   min-height: 0;
@@ -11,9 +11,9 @@
   background-color: var(--thinktank-content-bg);
 }
 
-.overview-area .thoughts-list,
-.overview-area .thoughts-list__row {
-  background-color: var(--overview-content-bg);
+.seeds-area .thoughts-list,
+.seeds-area .thoughts-list__row {
+  background-color: var(--seeds-content-bg);
 }
 
 .thoughts-list--empty {
@@ -45,8 +45,8 @@
   background: var(--thinktank-hover);
 }
 
-.overview-area .thoughts-list__row:hover {
-  background: var(--overview-hover);
+.seeds-area .thoughts-list__row:hover {
+  background: var(--seeds-hover);
 }
 
 /* 選択中（開いている）行の背景色（薄青）は仕様外のため廃止 */
@@ -71,32 +71,32 @@
   color: inherit;
 }
 
-/* ① Overviewに含まれる/表示されているThinkファイル（最も淡い。ThinktankPanel側のみ適用） */
-.thinktank-area .thoughts-list__row--overview-included {
-  background: var(--overview-tint-weak);
+/* ① Seedsに含まれる/表示されているThinkファイル（最も淡い。ThinktankPanel側のみ適用） */
+.thinktank-area .thoughts-list__row--seeds-included {
+  background: var(--seeds-tint-weak);
 }
 
-/* ② Overviewに設定されているBundleファイル本体（中間） */
-.thoughts-list__row--overview-bundle {
-  background: var(--overview-tint) !important;
+/* ② Seedsに設定されているBundleファイル本体（中間） */
+.thoughts-list__row--seeds-bundle {
+  background: var(--seeds-tint) !important;
 }
 
-/* ③ Overviewでチェックされているファイル（背景色変更なし） */
-.thoughts-list__row--overview-checked {
+/* ③ Seedsでチェックされているファイル（背景色変更なし） */
+.thoughts-list__row--seeds-checked {
 }
 
-/* WorkoutPanelで表示されているThinkデータ（ThinktankPanel側：ベース色 6%） */
-.thinktank-area .thoughts-list__row--workout {
+/* DevelopPanelで表示されているThinkデータ（ThinktankPanel側：ベース色 6%） */
+.thinktank-area .thoughts-list__row--develop {
   background: var(--thinktank-tint-weak);
 }
 
-/* WorkoutPanelで表示されているThinkデータ（OverviewPanel側：ベース色 6%） */
-.overview-area .thoughts-list__row--workout {
-  background: var(--overview-tint-weak);
+/* DevelopPanelで表示されているThinkデータ（SeedsPanel側：ベース色 6%） */
+.seeds-area .thoughts-list__row--develop {
+  background: var(--seeds-tint-weak);
 }
 
-/* WorkoutPanelでフォーカスされているThinkデータは下線 */
-.thoughts-list__row--workout-focused .thoughts-list__title {
+/* DevelopPanelでフォーカスされているThinkデータは下線 */
+.thoughts-list__row--develop-focused .thoughts-list__title {
   text-decoration: underline;
 }
 

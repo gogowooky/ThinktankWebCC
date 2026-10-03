@@ -1,0 +1,20 @@
+/* HarvestPanel.css */
+
+.harvest-panel {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Harvest にフォーカスがある間、タイトルに下線を表示 */
+body[data-focus-column="Harvest"] .harvest-area__title-row {
+  text-decoration: underline;
+}
+
+/* Harvest にフォーカスがある間、開閉ボタンを枠でくくる */
+body[data-focus-column="Harvest"] .harvest-panel .panel-ribbon__toggle {
+  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 1px;
+}

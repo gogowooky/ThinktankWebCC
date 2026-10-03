@@ -6,7 +6,7 @@ import { SupportChat, type SupportChatRef } from './SupportChat';
 import { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 
-it.each(['Thinktank', 'Overview', 'Workout', 'ReThink'] as const)('%s omits the legacy history panel without rewriting or executing stored Chat files', async panelName => {
+it.each(['Thinktank', 'Seeds', 'Develop', 'Harvest'] as const)('%s omits the legacy history panel without rewriting or executing stored Chat files', async panelName => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   const fetch = vi.fn().mockImplementation(async (url: string | URL | Request) => {
     const s = String(url);
