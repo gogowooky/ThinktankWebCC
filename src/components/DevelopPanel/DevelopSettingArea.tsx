@@ -2,6 +2,7 @@ import { useSupportSelection } from '../../hooks/useSupportSelection';
 import { TTApplication } from '../../views/TTApplication';
 import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
 import { useSupportChats } from '../../hooks/useSupportChats';
+import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 /**
  * DevelopSettingArea.tsx
  */
@@ -266,6 +267,11 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
   const [isEditSettingsOpen,      setIsEditSettingsOpen]      = useState(true);
   const [isKeySettingsOpen,       setIsKeySettingsOpen]       = useState(true);
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
+  usePanelSectionsSetAll('develop', [
+    setIsActionSettingsOpen, setIsDisplaySettingsOpen, setIsColorSettingsOpen,
+    setIsTagColorOpen, setIsHighlightColorOpen, setIsMemoSettingsOpen,
+    setIsEditSettingsOpen, setIsKeySettingsOpen, setIsTableSettingsOpen,
+  ]);
 
   // ── 音声入力 ───────────────────────────────────────────────────────────
   const voiceSupported = useMemo(() => isVoiceInputSupported(), []);

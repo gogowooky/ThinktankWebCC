@@ -6,6 +6,7 @@
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Save, ChevronDown, ChevronRight, AArrowUp, AArrowDown, Columns2, Columns4 } from 'lucide-react';
 import { TTActions } from '../../views/TTActions';
+import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 import './ThinktankSettingsView.css';
 
 export interface ThinktankSettingsViewRef {
@@ -53,6 +54,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   const [saved,          setSaved]          = useState(false);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
   const [isZoomOpen,     setIsZoomOpen]     = useState(true);
+  usePanelSectionsSetAll('thinktank', [setIsVaultOpen, setIsZoomOpen]);
 
   const handleZoom = useCallback((actionId: 'Application.Display.Zoom:ZoomIn' | 'Application.Display.Zoom:ZoomOut') => {
     void TTActions.Execute(actionId);

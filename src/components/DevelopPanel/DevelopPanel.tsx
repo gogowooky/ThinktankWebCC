@@ -597,10 +597,10 @@ export function DevelopPanel({ app, layoutMode }: Props) {
     const bodyEl = bodyRef.current;
     if (!bodyEl) return null;
 
-    // タイトルバー（DevelopAreaRibbon）上にいる場合はオーバーレイを表示しない
+    // タイトルバー（DevelopMenuRibbon）上にいる場合はオーバーレイを表示しない
     if (!opts.skipRibbonCheck) {
       const elemsUnderCursor = document.elementsFromPoint(e.clientX, e.clientY);
-      if (elemsUnderCursor.some(el => el.classList.contains('develop-area-ribbon'))) {
+      if (elemsUnderCursor.some(el => el.classList.contains('develop-menu-ribbon'))) {
         return null;
       }
     }
@@ -725,6 +725,15 @@ export function DevelopPanel({ app, layoutMode }: Props) {
       setDropOverlay(computeDropOverlay(e));
     }
   }, [computeDropOverlay]);
+
+  // タイトルバー（DevelopMenuRibbon）はdragoverをstopPropagationするため、
+  // handleBodyDragOverが呼ばれず直前のオーバーレイが残ってしまう。キャプチャ段階で消す。
+  const handleBodyDragOverCapture = useCallback((e: React.DragEvent) => {
+    if ((e.target as Element).closest?.('.develop-menu-ribbon')) {
+      setDropOverlay(null);
+      setInsertCaret(null);
+    }
+  }, []);
 
   const handleBodyDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -926,6 +935,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
       <div
         ref={bodyRef}
         className="ContentsArea"
+        onDragOverCapture={handleBodyDragOverCapture}
         onDragOver={handleBodyDragOver}
         onDragLeave={handleBodyDragLeave}
         onDrop={handleBodyDrop}

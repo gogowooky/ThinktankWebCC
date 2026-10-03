@@ -37,10 +37,10 @@ body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ri
   text-decoration-color: rgba(255, 255, 255, 0.6);
 }
 
-/* アイテムD&Dドロップ受け入れ中 */
+/* アイテムD&Dドロップ受け入れ中。境界線マウスオーバー色（FocusingBorder.Theme.Color）を
+   半透明で重ね、元の背景色を残したままシャドーとして見せる */
 .develop-menu-ribbon--drop-target {
-  background: color-mix(in srgb, var(--develop-ribbon-bg) 60%, #4ec9b0 40%);
-  border-left-color: #4ec9b0;
+  box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--focusing-border) 40%, transparent);
 }
 
 /* ドラッグハンドル */

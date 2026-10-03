@@ -11,6 +11,7 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { broadcastPanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 import './VerticalTabBar.css';
 
 export type PanelSide = 'left' | 'right';
@@ -56,6 +57,18 @@ export function VerticalTabBar({
   const showChevronRight =
     (side === 'left' && !isOpen) || (side === 'right' && isOpen);
 
+  // Shift+クリック: 閉ボタンならパネル内の開閉セクションをすべて閉じる（エリア自体は開いたまま）、
+  // 開ボタンならすべて開いたうえでエリアを開く
+  const handleToggleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!e.shiftKey) { onToggle(); return; }
+    const open = !isOpen;
+    broadcastPanelSectionsSetAll(panelId, open);
+    e.currentTarget.closest('.vertical-tab-bar')?.parentElement
+      ?.querySelectorAll('details')
+      .forEach(d => { d.open = open; });
+    if (open) onToggle();
+  };
+
   return (
     <div
       className={`vertical-tab-bar vertical-tab-bar--${panelId}${isDragOver ? ' vertical-tab-bar--drag-over' : ''}`}
@@ -68,8 +81,10 @@ export function VerticalTabBar({
       {/* 開閉トグルボタン（先頭）*/}
       <button
         className="vertical-tab-bar__toggle"
-        onClick={onToggle}
-        data-tip={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
+        onClick={handleToggleClick}
+        data-tip={isOpen
+          ? 'エリアを閉じる（Shift+クリック: パネル内をすべて折りたたむ）'
+          : 'エリアを開く（Shift+クリック: パネル内をすべて展開して開く）'}
         aria-label={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
       >
         {showChevronRight

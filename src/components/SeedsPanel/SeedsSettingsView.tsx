@@ -8,6 +8,7 @@ import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardR
 import { Save, Library, X, ChevronDown, ChevronRight } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
+import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 import './SeedsSettingsView.css';
 
 export interface SeedsSettingsViewRef {
@@ -31,6 +32,7 @@ export const SeedsSettingsView = forwardRef<SeedsSettingsViewRef, Props>(functio
   const [contentLoaded,  setContentLoaded]  = useState(false);
   const [isBasicOpen,    setIsBasicOpen]    = useState(true);
   const [isReferenceOpen,setIsReferenceOpen]= useState(true);
+  usePanelSectionsSetAll('seeds', [setIsBasicOpen, setIsReferenceOpen]);
 
   // think が切り替わったら入力値リセット & コンテンツをロード
   useEffect(() => {
