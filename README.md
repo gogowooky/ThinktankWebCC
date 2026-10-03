@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.2 feat: Pane title D&D shadow fix and Shift+click to collapse/expand all panel sections
+
+- 日付: 2026-10-03
+- コミット番号: 4c86df2
+
+ThinkファイルをDevelopの既存Paneタイトル部へD&Dするとき、タイトル以外に残っていた分割/追加プレビューのシャドーを消すようにした（タイトルリボンがdragoverを止めるため、キャプチャ段階でオーバーレイを解除）。タイトル部のD&Dシャドーは境界線マウスオーバー色（--focusing-border）を半透明で重ねる表示にした。各パネルのエリア開閉ボタンをShift+クリックすると、閉ボタンではパネル内の開閉セクション（設定ビューのセクションと`<details>`）をすべて閉じ、開ボタンではすべて開いてエリアを表示する。型検査とDevelopパネルでのブラウザ動作を確認した。変更: 7ファイル（+82 / -7行）。
+
 ### v2.1.1 refactor: rename panels to Seeds, Develop and Harvest
 
 - 日付: 2026-10-03

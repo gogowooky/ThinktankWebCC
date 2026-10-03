@@ -1,15 +1,15 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "branchName": "codex/panel-rename-seeds-develop-harvest",
+  "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "b781d06",
-  "commitDateTime": "2026-10-03-190314",
-  "commitMessage": "refactor: rename panels to Seeds, Develop and Harvest"
+  "commitId": "4c86df2",
+  "commitDateTime": "2026-10-03-234212",
+  "commitMessage": "feat: Pane title D&D shadow fix and Shift+click to collapse/expand all panel sections"
 }
