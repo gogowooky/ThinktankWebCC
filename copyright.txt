@@ -1,15 +1,15 @@
 {
   "appName": "Thinktank",
-  "version": "2.0.6",
+  "version": "2.1.1",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "branchName": "TTWebCC260926BigChange",
-  "commitPC": "VENENO-02",
-  "commitId": "ee9a996",
-  "commitDateTime": "2026-10-01-102551",
-  "commitMessage": "docs: パネル名称変更（Seeds/Develop/Harvest）の引き継ぎメモを追加"
+  "branchName": "codex/panel-rename-seeds-develop-harvest",
+  "commitPC": "E15",
+  "commitId": "b781d06",
+  "commitDateTime": "2026-10-03-190314",
+  "commitMessage": "refactor: rename panels to Seeds, Develop and Harvest"
 }

@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.1 refactor: rename panels to Seeds, Develop and Harvest
+
+- 日付: 2026-10-03
+- コミット番号: b781d06
+
+OverviewをSeeds、WorkoutをDevelop、ReThinkをHarvestへ全面改名した。WorkoutSettingの内部名はDevelopSettingとし、画面表示は「Pane設定」を維持する。既存Chat・サブ課題・UI状態・色・ショートカット・選択履歴は旧名でも読み込める。型検査、542件のテスト、フロントとサーバーのビルドを確認した。
+
 ### v2.0.6 docs: パネル名称変更（Seeds/Develop/Harvest）の引き継ぎメモを追加
 - 日付: 2026-10-01
 - コミット番号: ee9a996
