@@ -126,10 +126,14 @@ export class BigQueryService {
    * JSON 文字列スカラーとして包んでから渡す必要がある。
    */
   private async metadataColumnType(): Promise<'STRING' | 'JSON'> {
-    if (!this.bigquery) return 'STRING';
-    const [table] = await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).getMetadata();
-    const type = table.schema?.fields?.find((f: { name?: string }) => f.name === 'metadata')?.type;
-    return type === 'JSON' ? 'JSON' : 'STRING';
+    if (!this.bigquery || typeof this.bigquery.dataset !== 'function') return 'STRING';
+    try {
+      const [table] = await this.bigquery.dataset(DATASET_ID).table(TABLE_ID).getMetadata();
+      const type = table.schema?.fields?.find((f: { name?: string }) => f.name === 'metadata')?.type;
+      return type === 'JSON' ? 'JSON' : 'STRING';
+    } catch {
+      return 'STRING';
+    }
   }
 
   /** metadata オブジェクトを YAML化し、列の実体型に応じたクエリパラメータ文字列に変換する。 */
@@ -334,7 +338,9 @@ export class BigQueryService {
     if (!keyCheck.ok) return { success: false, error: keyCheck.error };
 
     try {
-      const colType = record.metadata == null ? 'STRING' : await this.metadataColumnType();
+      // metadata が null でも列が JSON 型なら JSON として渡す。STRING 型の NULL は
+      // JSON 列へ代入できず MERGE 全体が失敗する（metadata なしの新規作成が保存できなくなる）。
+      const colType = await this.metadataColumnType();
       const metadataParam = record.metadata == null
         ? null
         : (colType === 'JSON' ? JSON.stringify(record.metadata) : record.metadata);
