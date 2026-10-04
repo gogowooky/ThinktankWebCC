@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.3 fix: BigQueryのJSON型metadata列でnull時にMERGEが失敗する不具合を修正
+
+- 日付: 2026-10-04
+- コミット番号: 7489007
+
+BigQueryのmetadata列がJSON型の場合に、record.metadataがnullまたは未指定のときSTRING型のNULLが渡されてJSON列への代入型不整合によりMERGE全体が失敗する問題を修正した。metadataがnullであっても列がJSON型であればJSONとして扱い、metadataを持たない新規作成・保存を正常に完了できるようにした。あわせてmetadataColumnTypeにdatasetメソッドの存在確認と例外保護を追加し、テストモック環境等でも安全にフォールバックするようにした。変更: 2ファイル（+14 / -6行）。
+
 ### v2.1.2 feat: Pane title D&D shadow fix and Shift+click to collapse/expand all panel sections
 
 - 日付: 2026-10-03
