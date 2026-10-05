@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "a5b897b",
-  "commitDateTime": "2026-10-05-205556",
-  "commitMessage": "docs: 思考支援の全体像と今後の方針を追加し、旧パネル名の残る変数を改名"
+  "commitId": "45dde00",
+  "commitDateTime": "2026-10-05-224255",
+  "commitMessage": "docs: AI再構成前の現状整理・固定UI一覧・名称対応表・役割テキスト化検討を追加"
 }
