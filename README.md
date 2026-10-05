@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.4 docs: 思考支援の全体像と今後の方針を追加し、旧パネル名の残る変数を改名
+
+- 日付: 2026-10-05
+- コミット番号: a5b897b
+
+思考支援機能の再開に向けて、docs/261001/思考支援_全体像と今後の方針.md を追加した。実装の経緯（P0〜P6と課題ライフサイクル）、層と責務、思考支援データを置くmetadataキー、AIの動作を決めている箇所（AIProvider.tsのCONVERSATION_POLICYと出力スキーマ、サーバー検証、UI。.thinktank/thinktank.mdは停止中の旧ルート専用）、ローカルとCloud RunでのAI有効化状態の違い、docs/ThinkSupportとソースの差分8点、未完了作業、主軸の選択肢を含む今後の方針案をまとめた。あわせてパネル改名で残っていた変数名 reThinkChatRef と onRethinkSplitter を harvestChatRef と onHarvestSplitter に改名し、v2.1.3のCloud Runデプロイ記録をREADMEに含めた。変更: 4ファイル（+153 / -7行）。
+
 ### deploy v2.1.3 → Cloud Run（IAP）
 - デプロイ日時: 2026-10-05-091523
 - デプロイPC: E15
