@@ -41,7 +41,7 @@ export function HarvestArea({ app, viewMode }: Props) {
   useAppUpdate(vault);
 
   // コンテキスト付きシステムプロンプトを生成
-  const reThinkChatRef     = useRef<SupportChatRef>(null);
+  const harvestChatRef     = useRef<SupportChatRef>(null);
   const settingsCheckRef   = useRef<HTMLInputElement>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Harvest');
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
@@ -68,14 +68,14 @@ export function HarvestArea({ app, viewMode }: Props) {
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (viewMode === 'chat')     reThinkChatRef.current?.focus();
+      if (viewMode === 'chat')     harvestChatRef.current?.focus();
       if (viewMode === 'settings') settingsCheckRef.current?.focus();
     }, 50);
     return () => clearTimeout(timer);
   }, [viewMode]);
 
   // 選択中のThinkがあればそこへ上書き保存、なければ新規の chat Think として保存する（Seedsの選択中Bundleへリンク）
-  const handleSaveChat = useCallback(() => reThinkChatRef.current?.save(), []);
+  const handleSaveChat = useCallback(() => harvestChatRef.current?.save(), []);
 
   const saveChatTip = selectedTodoMemoId
     ? `Chatを${selectedTodoMemoId}に保管します`
@@ -85,7 +85,7 @@ export function HarvestArea({ app, viewMode }: Props) {
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
   // 入力と応答は共通チャットが自動保存する。
   const handleSelectTodoMemo = useCallback((id: string) => {
-    reThinkChatRef.current?.abortStreaming();
+    harvestChatRef.current?.abortStreaming();
     setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
   }, []);
 
@@ -154,7 +154,7 @@ export function HarvestArea({ app, viewMode }: Props) {
               onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
             />
             <div className="harvest-area__chat-body">
-              <SupportChat ref={reThinkChatRef} vault={vault} panelName="Harvest"
+              <SupportChat ref={harvestChatRef} vault={vault} panelName="Harvest"
                 selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
                 onMessages={msgs => panel.LoadChat(msgs)} onWaiting={value => panel.SetStreaming(value)}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />

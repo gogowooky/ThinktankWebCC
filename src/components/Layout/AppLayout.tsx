@@ -119,7 +119,7 @@ export function AppLayout() {
 
   const onTtSplitter       = useCallback((dx: number) => resizeArea(app.ThinktankPanel, ttWidth,       dx,  'ThinktankPanel.Area.OpenWidth'), [resizeArea, app, ttWidth]);
   const onSeedsSplitter = useCallback((dx: number) => resizeArea(app.SeedsPanel,  seedsWidth, dx,  'SeedsPanel.Area.OpenWidth'),  [resizeArea, app, seedsWidth]);
-  const onRethinkSplitter  = useCallback((dx: number) => resizeArea(app.HarvestPanel,   harvestWidth, -dx,  'HarvestPanel.Area.OpenWidth'),   [resizeArea, app, harvestWidth]);
+  const onHarvestSplitter  = useCallback((dx: number) => resizeArea(app.HarvestPanel,   harvestWidth, -dx,  'HarvestPanel.Area.OpenWidth'),   [resizeArea, app, harvestWidth]);
 
   const showSidePanels = layoutMode === 'sipoc';
 
@@ -156,7 +156,7 @@ export function AppLayout() {
           <HarvestPanel
             app={app}
             width={harvestWidth}
-            onResize={onRethinkSplitter}
+            onResize={onHarvestSplitter}
           />
         </div>
 

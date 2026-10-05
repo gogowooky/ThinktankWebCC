@@ -7,6 +7,12 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### deploy v2.1.3 → Cloud Run（IAP）
+- デプロイ日時: 2026-10-05-091523
+- デプロイPC: E15
+- デプロイ元コミット: a80cd91
+- サービス: ttweb / asia-northeast1
+
 ### v2.1.3 fix: BigQueryのJSON型metadata列でnull時にMERGEが失敗する不具合を修正
 
 - 日付: 2026-10-04
