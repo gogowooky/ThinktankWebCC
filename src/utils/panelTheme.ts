@@ -17,17 +17,17 @@
 import { getDefaultColorStyle, isUnset } from './defaultColor';
 import type { ColorStyle } from './defaultColor';
 
-export type PanelThemeKind = 'Thinktank' | 'Seeds' | 'Develop' | 'Harvest' | 'ToolBar';
+export type PanelThemeKind = 'Thinktank' | 'Seeds' | 'Discuss' | 'Harvest' | 'ToolBar';
 
 export const PANEL_THEME_KINDS: PanelThemeKind[] = [
-  'Thinktank', 'Seeds', 'Develop', 'Harvest', 'ToolBar',
+  'Thinktank', 'Seeds', 'Discuss', 'Harvest', 'ToolBar',
 ];
 
 /** CSS変数の接頭辞 */
 const CSS_PREFIX: Record<PanelThemeKind, string> = {
   Thinktank: 'thinktank',
   Seeds:  'seeds',
-  Develop:   'develop',
+  Discuss:   'discuss',
   Harvest:   'harvest',
   ToolBar:   'toolbar',
 };

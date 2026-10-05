@@ -52,14 +52,14 @@ export class TTHarvestPanel extends TTUIItem {
 
   // ── チェックボックス選択（Think一覧/chat選択欄で共通。TTApplication が4パネル分をまとめて共有）───
 
-  /** チェックされているThink IDリスト（Thinktank/Seeds/Develop/Harvest で共通） */
+  /** チェックされているThink IDリスト（Thinktank/Seeds/Discuss/Harvest で共通） */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {
     this.SharedState.checkedIds = val;
     if (this._parent) {
       const app = this._parent as any;
-      for (const key of ['ThinktankPanel', 'SeedsPanel', 'DevelopPanel']) {
+      for (const key of ['ThinktankPanel', 'SeedsPanel', 'DiscussPanel']) {
         app[key]?.NotifyUpdated();
       }
     }

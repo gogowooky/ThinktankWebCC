@@ -85,18 +85,18 @@
 .thoughts-list__row--seeds-checked {
 }
 
-/* DevelopPanelで表示されているThinkデータ（ThinktankPanel側：ベース色 6%） */
-.thinktank-area .thoughts-list__row--develop {
+/* DiscussPanelで表示されているThinkデータ（ThinktankPanel側：ベース色 6%） */
+.thinktank-area .thoughts-list__row--discuss {
   background: var(--thinktank-tint-weak);
 }
 
-/* DevelopPanelで表示されているThinkデータ（SeedsPanel側：ベース色 6%） */
-.seeds-area .thoughts-list__row--develop {
+/* DiscussPanelで表示されているThinkデータ（SeedsPanel側：ベース色 6%） */
+.seeds-area .thoughts-list__row--discuss {
   background: var(--seeds-tint-weak);
 }
 
-/* DevelopPanelでフォーカスされているThinkデータは下線 */
-.thoughts-list__row--develop-focused .thoughts-list__title {
+/* DiscussPanelでフォーカスされているThinkデータは下線 */
+.thoughts-list__row--discuss-focused .thoughts-list__title {
   text-decoration: underline;
 }
 

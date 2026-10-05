@@ -197,7 +197,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
    */
   async function submit() {
     if (locked.current || busy || !question.trim() || pending) return;
-    // Child progress may have changed in Develop since this conversation was opened.
+    // Child progress may have changed in Discuss since this conversation was opened.
     const current: Ready | undefined = status?.enabled && context && loaded && !context.subtasks ? { context, history } : undefined;
     const ready = current ?? await prepare();
     if (!ready || !alive.current) return;

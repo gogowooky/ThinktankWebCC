@@ -27,7 +27,7 @@ export function SubtaskChatButton({ vault, bundleId, seedsId }: { vault: TTVault
     finally { if (active.current && request === version.current) { locked.current = false; setBusy(false); } }
   }
   return <div>
-    <button type="button" disabled={busy} onClick={() => void open()}>{busy ? '相談用Chatを準備しています…' : 'Developで相談する'}</button>
+    <button type="button" disabled={busy} onClick={() => void open()}>{busy ? '相談用Chatを準備しています…' : 'Discussで相談する'}</button>
     {error && <p role="alert">{error} 同じボタンから再試行できます。</p>}
   </div>;
 }

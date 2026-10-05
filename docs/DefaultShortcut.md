@@ -25,10 +25,10 @@ Keyboard Shortcuts
 *Chat       ,ExApp  ,P                  ,FocusedPanel.AIChat.CursorPos:PrevLine         ,AI相談のカーソル下
 *Chat       ,ExApp  ,Enter              ,FocusedPanel.AIChat.Cursor:Action              ,AI相談のカーソル開く
 
-Develop*    ,ExApp  ,N                  ,DevelopPanel.FocusedPane.PaneNumber:Next       ,ペイン次
-Develop*    ,ExApp  ,P                  ,DevelopPanel.FocusedPane.PaneNumber:Prev       ,ペイン前
-Develop*    ,ExApp  ,M                  ,DevelopPanel.FocusedPane.Mode:Prev             ,ペインモード左
-Develop*    ,ExApp  ,Shift+M            ,DevelopPanel.FocusedPane.Mode:Next             ,ペインモード右
+Discuss*    ,ExApp  ,N                  ,DiscussPanel.FocusedPane.PaneNumber:Next       ,ペイン次
+Discuss*    ,ExApp  ,P                  ,DiscussPanel.FocusedPane.PaneNumber:Prev       ,ペイン前
+Discuss*    ,ExApp  ,M                  ,DiscussPanel.FocusedPane.Mode:Prev             ,ペインモード左
+Discuss*    ,ExApp  ,Shift+M            ,DiscussPanel.FocusedPane.Mode:Next             ,ペインモード右
 
 *           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,ツールバー左
 *           ,ExApp  ,Shift+Z            ,ToolBar.Mode.Name:Next                         ,ツールバー右
@@ -66,13 +66,13 @@ Seeds.Filter     ,ExApp  ,Alt+Enter      ,SeedsPanel.Filter.Cursor:Action       
 Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck         ,Seeds>Think一覧のカーソル位置をチェック
 
 # Editor D&D Thinkファイル,ローカルファイル
-*,   ,ThinkFileDrag       ,DevelopPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
-*,   ,Alt+ThinkFileDrag   ,DevelopPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
+*,   ,ThinkFileDrag       ,DiscussPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
+*,   ,Alt+ThinkFileDrag   ,DiscussPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
 
-*,   ,LocalFileDrag       ,DevelopPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う
-*,   ,LocalDirDrag        ,DevelopPanel.Load.DroppedLink   ,ローカルディレクトリDropで既定動作（Links Think作成）を行う
-*,   ,Alt+LocalFileDrag   ,DevelopPanel.Insert.DroppedLink ,ローカルファイルDropをコンテンツ内カーソル位置に挿入する
-*,   ,Alt+LocalDirDrag    ,DevelopPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
+*,   ,LocalFileDrag       ,DiscussPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う
+*,   ,LocalDirDrag        ,DiscussPanel.Load.DroppedLink   ,ローカルディレクトリDropで既定動作（Links Think作成）を行う
+*,   ,Alt+LocalFileDrag   ,DiscussPanel.Insert.DroppedLink ,ローカルファイルDropをコンテンツ内カーソル位置に挿入する
+*,   ,Alt+LocalDirDrag    ,DiscussPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
 
 
 # Editor Editor 検索
@@ -89,7 +89,7 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 *TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.CurrentMode.Text:Focus                         ,Highlighter入力欄にフォーカスする
 ToolBar*    ,       ,Alt+Q                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
-ToolBar*    ,       ,Alt+X                  ,DevelopPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
+ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
 
 # Editor カーソル
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine            ,カーソルを一つ上の行に移動する（ArrowUp相当）
@@ -104,9 +104,9 @@ ToolBar*    ,       ,Alt+X                  ,DevelopPanel.FocusedPane.PaneNumber
 
 
 # Editor カーソル アクション文字
-*TextEditor ,       ,Shift+Alt+Backspace    ,DevelopPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
-*TextEditor ,       ,Alt+Backspace          ,DevelopPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を1つ前に戻る
-*TextEditor ,       ,Ctrl+Alt+Backspace     ,DevelopPanel.FocusedPane.FileHistory:Menu          ,ファイル履歴をメニューで表示
+*TextEditor ,       ,Shift+Alt+Backspace    ,DiscussPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
+*TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を1つ前に戻る
+*TextEditor ,       ,Ctrl+Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu          ,ファイル履歴をメニューで表示
 
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
 *TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示

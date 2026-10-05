@@ -1,6 +1,6 @@
 /**
- * DevelopPanelRibbon.tsx
- * DevelopPanel 上部のリボンバー。
+ * DiscussPanelRibbon.tsx
+ * DiscussPanel 上部のリボンバー。
  *
  * 機能:
  *   - 右にエリア追加（フォーカスペインを縦分割）
@@ -8,8 +8,8 @@
  */
 
 import { LogOut } from 'lucide-react';
-import type { TTDevelopPanel } from '../../views/TTDevelopPanel';
-import './DevelopPanelRibbon.css';
+import type { TTDiscussPanel } from '../../views/TTDiscussPanel';
+import './DiscussPanelRibbon.css';
 
 // ── 縦分割アイコン（右に追加） ────────────────────────────────────────
 function SplitRightIcon() {
@@ -22,20 +22,20 @@ function SplitBelowIcon() {
 }
 
 interface Props {
-  panel:       TTDevelopPanel;
+  panel:       TTDiscussPanel;
   onAddRight:  () => void;
   onAddBelow:  () => void;
 }
 
-export function DevelopPanelRibbon({ panel, onAddRight, onAddBelow }: Props) {
+export function DiscussPanelRibbon({ panel, onAddRight, onAddBelow }: Props) {
   const hasFocus = panel.Layout !== null;
 
   return (
-    <div className="develop-panel-ribbon">
+    <div className="discuss-panel-ribbon">
 
       {/* ── 右に追加 ──────────────────────────────────────── */}
       <button
-        className="develop-panel-ribbon__add-btn"
+        className="discuss-panel-ribbon__add-btn"
         onClick={onAddRight}
         data-tip="右にエリア追加（縦分割）"
         data-tip-side="bottom"
@@ -48,8 +48,8 @@ export function DevelopPanelRibbon({ panel, onAddRight, onAddBelow }: Props) {
       {/* ── 下に追加 ──────────────────────────────────────── */}
       <button
         className={[
-          'develop-panel-ribbon__add-btn',
-          !hasFocus ? 'develop-panel-ribbon__add-btn--disabled' : '',
+          'discuss-panel-ribbon__add-btn',
+          !hasFocus ? 'discuss-panel-ribbon__add-btn--disabled' : '',
         ].join(' ')}
         onClick={hasFocus ? onAddBelow : undefined}
         data-tip="下にエリア追加（横分割）"
@@ -61,11 +61,11 @@ export function DevelopPanelRibbon({ panel, onAddRight, onAddBelow }: Props) {
       </button>
 
       {/* ── スペーサー ─────────────────────────────────────── */}
-      <div className="develop-panel-ribbon__spacer" />
+      <div className="discuss-panel-ribbon__spacer" />
 
       {/* ── フォーカス表示 ─────────────────────────────────── */}
       {panel.FocusedAreaId && (
-        <span className="develop-panel-ribbon__focus-label">
+        <span className="discuss-panel-ribbon__focus-label">
           {panel.GetArea(panel.FocusedAreaId)?.Title ?? ''}
         </span>
       )}

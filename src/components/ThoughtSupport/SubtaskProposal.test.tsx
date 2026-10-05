@@ -44,7 +44,7 @@ it('creates only after confirmation and rejects an outdated proposal', async () 
 });
 it('lists only children of the selected parent and exposes the return to the parent', async () => {
   const child = new TTThink(); child.ID = 'child'; child.ContentType = 'bundle'; child.Name = '会場予約';
-  child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'chat', turnId: 'turn', panel: 'Develop' } };
+  child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'chat', turnId: 'turn', panel: 'Discuss' } };
   vault.AddThink(child);
   await act(async () => root.render(<SubtaskList vault={vault} bundleId="parent" />));
   expect(host.textContent).toContain('会場予約');
@@ -57,7 +57,7 @@ it('lists only children of the selected parent and exposes the return to the par
 it('updates the parent summary after a child confirmation without changing the parent record', async () => {
   const parentBefore = JSON.stringify(vault.GetThink('parent')!.Metadata);
   const child = new TTThink(); child.ID = 'child'; child.ContentType = 'bundle'; child.Name = '会場予約';
-  child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'chat', turnId: 'turn', panel: 'Develop' } };
+  child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'chat', turnId: 'turn', panel: 'Discuss' } };
   vault.AddThink(child);
   await act(async () => root.render(<SubtaskList vault={vault} bundleId="parent" />));
   expect(host.textContent).toContain('到達状態は未記録');

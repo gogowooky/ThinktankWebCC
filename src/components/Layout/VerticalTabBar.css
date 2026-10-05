@@ -30,8 +30,8 @@
   background: var(--seeds-ribbon-bg);
 }
 
-.vertical-tab-bar--develop {
-  background: var(--develop-ribbon-bg);
+.vertical-tab-bar--discuss {
+  background: var(--discuss-ribbon-bg);
 }
 
 .vertical-tab-bar--harvest {
@@ -105,8 +105,8 @@ body[data-focus-column="Harvest"] .vertical-tab-bar--harvest .vertical-tab-bar__
   box-shadow: 0 0 0 2px #ffffff;
 }
 
-/* Developパネルのフォーカス用 */
-body[data-focus-column="DevelopSetting"] .vertical-tab-bar--develop .vertical-tab-bar__toggle {
+/* Discussパネルのフォーカス用 */
+body[data-focus-column="DiscussSetting"] .vertical-tab-bar--discuss .vertical-tab-bar__toggle {
   box-shadow: 0 0 0 2px #ffffff;
 }
 
@@ -147,17 +147,17 @@ body[data-focus-column="DevelopSetting"] .vertical-tab-bar--develop .vertical-ta
   user-select: none;
 }
 
-/* Develop タブバーはやや暗めなのでホバー色を調整 */
-.vertical-tab-bar--develop .vertical-tab-bar__toggle {
+/* Discuss タブバーはやや暗めなのでホバー色を調整 */
+.vertical-tab-bar--discuss .vertical-tab-bar__toggle {
   color: rgba(255, 255, 255, 0.6);
 }
 
-.vertical-tab-bar--develop .vertical-tab-bar__toggle:hover {
+.vertical-tab-bar--discuss .vertical-tab-bar__toggle:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-/* Develop タブバーの下部ラベルはフォントサイズをやや小さく（以前のDevelop仕様に合わせる） */
-.vertical-tab-bar--develop .vertical-tab-bar__label {
+/* Discuss タブバーの下部ラベルはフォントサイズをやや小さく（以前のDiscuss仕様に合わせる） */
+.vertical-tab-bar--discuss .vertical-tab-bar__label {
   font-size: calc(13px * var(--tt-font-scale, 1));
 }

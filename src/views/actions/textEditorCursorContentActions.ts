@@ -1,7 +1,7 @@
 /**
  * textEditorCursorContentActions.ts
  * TextEditor.CurrentEditor.DoOnCursorPos:* アクション（カーソル位置のURL/パス/タグを
- * 判別して対応する外部連携を実行する）と、DevelopPanel.DroppedFile:* アクション
+ * 判別して対応する外部連携を実行する）と、DiscussPanel.DroppedFile:* アクション
  * （Think のドラッグ&ドロップ処理）の登録。
  *
  * 元は views/TTFocusedPanelActions.ts の registerTextEditorCursorPosActions に同居していたが、
@@ -39,7 +39,7 @@ const TAG_INSERT_TEXT: Record<string, string> = {
 const THINK_ID_RE = /^(\d{4}-\d{2}-\d{2}-\d{6})(?:\s*,\s*(\S(?:.*\S)?))?\s*$/;
 
 /**
- * ThinkをDevelopで開き、指定があればその位置へカーソルを送ってから、エディタへフォーカスする。
+ * ThinkをDiscussで開き、指定があればその位置へカーソルを送ってから、エディタへフォーカスする。
  * 指定は行番号（数字だけ）か検索語で、検索語のときは Highlighter にも設定して
  * 本文の先頭から最初のヒットへ送る。
  *
@@ -59,14 +59,14 @@ function openThinkAtTarget(app: TTApplication, thinkId: string, suffix?: string)
     TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.Text', jump.word);
   }
 
-  const panel = app.DevelopPanel;
+  const panel = app.DiscussPanel;
   const focused = panel.Areas.find(a => a.ID === panel.FocusedAreaId);
   const remounts = focused?.ResourceID !== thinkId;
-  // OpenThinkInDevelop が html だけ別メディアで開く。テキストエディタでなければ行の概念がない。
+  // OpenThinkInDiscuss が html だけ別メディアで開く。テキストエディタでなければ行の概念がない。
   const isTextEditor = app.Models.Vault.GetThink(thinkId)?.ContentType !== 'html';
 
   if (remounts && isTextEditor) requestEditorOpen(thinkId, jump);
-  const area = app.OpenThinkInDevelop(thinkId);
+  const area = app.OpenThinkInDiscuss(thinkId);
 
   const where = jump?.kind === 'search' ? `Highlighter [${jump.word}]` : '';
   if (!isTextEditor) {
@@ -737,7 +737,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   };
 
   TTActions.Register({
-    ActionID: 'DevelopPanel.DroppedFile.ID:Load',
+    ActionID: 'DiscussPanel.DroppedFile.ID:Load',
     Description: 'ドロップされたThinkファイルをPaneにLoadする',
     Completion: (item) => {
       const ctx = TTShortcutManager.instance.consumePendingThinkDrop();
@@ -745,13 +745,13 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         item.Result = '[ドロップ情報なし]';
         return;
       }
-      app.DevelopPanel.DroppedFileID = ctx.thinkId;
+      app.DiscussPanel.DroppedFileID = ctx.thinkId;
       const think = app.Models.Vault.GetThink(ctx.thinkId);
       const mediaType = think ? contentTypeToMediaType(think.ContentType) : 'texteditor';
       const title = think?.Name ?? ctx.thinkId;
 
       if (ctx.kind === 'load-replace') {
-        const area = app.DevelopPanel.GetArea(ctx.areaId);
+        const area = app.DiscussPanel.GetArea(ctx.areaId);
         if (!area) { item.Result = `[Pane未検出] ${ctx.areaId}`; return; }
         area.OpenThink(ctx.thinkId, mediaType, title);
         item.Result = `Load（差し替え）: ${title}`;
@@ -763,29 +763,29 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       }
 
       if (ctx.overlayType === 'add') {
-        if (ctx.dir === 'left') app.DevelopPanel.AddToLeft(ctx.thinkId, mediaType, title);
-        else if (ctx.dir === 'right') app.DevelopPanel.AddToRight(ctx.thinkId, mediaType, title);
-        else if (ctx.dir === 'up') app.DevelopPanel.AddToTop(ctx.thinkId, mediaType, title);
-        else app.DevelopPanel.AddToBottom(ctx.thinkId, mediaType, title);
+        if (ctx.dir === 'left') app.DiscussPanel.AddToLeft(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'right') app.DiscussPanel.AddToRight(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'up') app.DiscussPanel.AddToTop(ctx.thinkId, mediaType, title);
+        else app.DiscussPanel.AddToBottom(ctx.thinkId, mediaType, title);
       } else {
-        if (ctx.areaId) app.DevelopPanel.FocusArea(ctx.areaId);
-        if (ctx.dir === 'left') app.DevelopPanel.AddLeft(ctx.thinkId, mediaType, title);
-        else if (ctx.dir === 'right') app.DevelopPanel.AddRight(ctx.thinkId, mediaType, title);
-        else if (ctx.dir === 'up') app.DevelopPanel.AddAbove(ctx.thinkId, mediaType, title);
-        else app.DevelopPanel.AddBelow(ctx.thinkId, mediaType, title);
+        if (ctx.areaId) app.DiscussPanel.FocusArea(ctx.areaId);
+        if (ctx.dir === 'left') app.DiscussPanel.AddLeft(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'right') app.DiscussPanel.AddRight(ctx.thinkId, mediaType, title);
+        else if (ctx.dir === 'up') app.DiscussPanel.AddAbove(ctx.thinkId, mediaType, title);
+        else app.DiscussPanel.AddBelow(ctx.thinkId, mediaType, title);
       }
       item.Result = `Load（新規Pane・${ctx.dir}）: ${title}`;
     },
   });
 
   TTActions.Register({
-    ActionID: 'DevelopPanel.DroppedFile.ID:Insert',
+    ActionID: 'DiscussPanel.DroppedFile.ID:Insert',
     Description: 'ドロップされたThinkファイルを [memo:{ID}] タグとしてコンテンツ内に挿入する',
     Completion: (item) => {
       const ctx = TTShortcutManager.instance.consumePendingThinkDrop();
       const editor = TTShortcutManager.instance.activeEditor;
       if (!ctx) { item.Result = '[ドロップ情報なし]'; return; }
-      app.DevelopPanel.DroppedFileID = ctx.thinkId;
+      app.DiscussPanel.DroppedFileID = ctx.thinkId;
       if (!editor) { item.Result = '[エディタ未選択]'; return; }
       const sel = editor.getSelection();
       const text = `[memo:${ctx.thinkId}]`;

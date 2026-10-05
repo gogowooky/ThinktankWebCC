@@ -1,11 +1,15 @@
 const LEGACY_PANEL_NAMES: Record<string, string> = {
+  DevelopSettingPanel: 'DiscussSettingPanel',
+  DevelopPanel: 'DiscussPanel',
+  DevelopSetting: 'DiscussSetting',
+  Develop: 'Discuss',
   OverviewPanel: 'SeedsPanel',
-  WorkoutSettingPanel: 'DevelopSettingPanel',
-  WorkoutPanel: 'DevelopPanel',
+  WorkoutSettingPanel: 'DiscussSettingPanel',
+  WorkoutPanel: 'DiscussPanel',
   ReThinkPanel: 'HarvestPanel',
   Overview: 'Seeds',
-  WorkoutSetting: 'DevelopSetting',
-  Workout: 'Develop',
+  WorkoutSetting: 'DiscussSetting',
+  Workout: 'Discuss',
   ReThink: 'Harvest',
 };
 
@@ -15,7 +19,7 @@ export function canonicalPanelName(name: string): string {
 }
 
 export function canonicalPanelPrefix(value: string): string {
-  const match = /^(OverviewPanel|WorkoutSettingPanel|WorkoutPanel|ReThinkPanel|Overview|WorkoutSetting|Workout|ReThink)(?=\.|\*|$)/i.exec(value);
+  const match = /^(DevelopSettingPanel|DevelopPanel|OverviewPanel|WorkoutSettingPanel|WorkoutPanel|ReThinkPanel|DevelopSetting|Develop|Overview|WorkoutSetting|Workout|ReThink)(?=\.|\*|$)/i.exec(value);
   if (!match) return value;
   const oldName = Object.keys(LEGACY_PANEL_NAMES).find(name => name.toLowerCase() === match[1].toLowerCase());
   return oldName ? LEGACY_PANEL_NAMES[oldName] + value.slice(match[1].length) : value;
@@ -28,17 +32,17 @@ export function canonicalPanelStatusList(value: string): string {
 const LEGACY_STATUS_KEYS: Record<string, string> = {
   'SeedsPanel.Mode.IsOpen': 'SeedsPanel.Area.IsOpen',
   'SeedsPanel.IsAreaOpen': 'SeedsPanel.Area.IsOpen',
-  'DevelopSettingPanel.Mode.IsOpen': 'DevelopSettingPanel.Area.IsOpen',
-  'DevelopPanel.IsAreaOpen': 'DevelopSettingPanel.Area.IsOpen',
+  'DiscussSettingPanel.Mode.IsOpen': 'DiscussSettingPanel.Area.IsOpen',
+  'DiscussPanel.IsAreaOpen': 'DiscussSettingPanel.Area.IsOpen',
   'HarvestPanel.Mode.IsOpen': 'HarvestPanel.Area.IsOpen',
   'HarvestPanel.IsAreaOpen': 'HarvestPanel.Area.IsOpen',
-  'DevelopPanel.Pane.Count': 'DevelopPanel.Panes.Count',
-  'DevelopPanel.Pane.Layout': 'DevelopPanel.Panes.Layout',
-  'DevelopPanel.Pane.Display': 'DevelopPanel.Panes.Display',
+  'DiscussPanel.Pane.Count': 'DiscussPanel.Panes.Count',
+  'DiscussPanel.Pane.Layout': 'DiscussPanel.Panes.Layout',
+  'DiscussPanel.Pane.Display': 'DiscussPanel.Panes.Display',
   'Seeds.Bundle.Name': 'SeedsPanel.Bundle.ID',
   'SeedsPanel.Bundle.Name': 'SeedsPanel.Bundle.ID',
   'Seeds.Ribbon.BgColor': 'Seeds.Theme.Color',
-  'Develop.Ribbon.BgColor': 'Develop.Theme.Color',
+  'Discuss.Ribbon.BgColor': 'Discuss.Theme.Color',
   'Harvest.Ribbon.BgColor': 'Harvest.Theme.Color',
 };
 

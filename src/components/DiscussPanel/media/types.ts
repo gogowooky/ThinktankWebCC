@@ -11,7 +11,7 @@ import type { ColorStyle, InlineStyles, LinkStyles, MarkStyle } from '../../../u
 
 export interface MediaProps {
   /**
-   * このメディアが属するDevelopAreaのID。DevelopPanel.DroppedFile.ID:Insert がドロップ位置の
+   * このメディアが属するDiscussAreaのID。DiscussPanel.DroppedFile.ID:Insert がドロップ位置の
    * Paneからエディタインスタンスを引くための TTShortcutManager.registerAreaEditor() 登録キー
    * として使う（テキストエディタ系メディアのみ）。
    */
@@ -39,13 +39,13 @@ export interface MediaProps {
    */
   autoSaveRef?: React.MutableRefObject<(() => void | Promise<unknown>) | null>;
   /**
-   * AI Chat（ChatMedia）が使うホストモデル。DevelopSettingArea の選択（panel単位）を
+   * AI Chat（ChatMedia）が使うホストモデル。DiscussSettingArea の選択（panel単位）を
    * そのまま渡す。
    */
   aiChatModel?: AiModelSelection;
   /**
    * ChatMedia のモデル選択ドロップダウンで選び直したときに呼ばれる。
-   * 選択は panel 単位で1つなので、DevelopSettingArea の AI相談 と同じ値が変わる。
+   * 選択は panel 単位で1つなので、DiscussSettingArea の AI相談 と同じ値が変わる。
    */
   onAiChatModelChange?: (selection: AiModelSelection) => void;
   /** TextEditor 用の設定 */

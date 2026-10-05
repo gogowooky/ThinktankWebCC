@@ -10,9 +10,19 @@ import {
   swapLeafs,
   type LayoutNode,
   type LeafNode,
-} from './TTDevelopPanel';
+  TTDiscussPanel,
+} from './TTDiscussPanel';
 
 const leaf = (areaId: string): LeafNode => ({ id: `n-${areaId}`, type: 'leaf', areaId });
+
+it('preserves the model selected under the Develop panel name', () => {
+  localStorage.clear();
+  localStorage.setItem('tt-ai-model-develop', JSON.stringify({ provider: 'gemini', model: 'gemini-2.5-pro' }));
+  const panel = new TTDiscussPanel();
+  expect(panel.AIChatProvider).toBe('gemini');
+  expect(panel.AIChatModel).toBe('gemini-2.5-pro');
+  expect(JSON.parse(localStorage.getItem('tt-ai-model-discuss')!)).toEqual({ provider: 'gemini', model: 'gemini-2.5-pro' });
+});
 
 describe('collectAreaIds', () => {
   it('ツリーを深さ優先で列挙する', () => {

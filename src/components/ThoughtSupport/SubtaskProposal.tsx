@@ -46,8 +46,8 @@ function SingleSubtaskProposal({ vault, turn, chatId, disabled, candidateId }: {
       <p style={{ whiteSpace: 'pre-wrap' }}>{proposal.after}</p>
       <label>課題名<input aria-label="サブ課題名" maxLength={200} value={title} disabled={busy}
         onChange={e => setTitle(e.target.value)} /></label>
-      {candidate ? <><p>完了条件：{candidate.completionCriteria || '未整理（追加後に相談できます）'}</p><p>分解理由：{candidate.reason}</p><p>担当：Develop</p></>
-        : <p>担当：Develop。完了条件は、この課題について相談しながら整理します。</p>}
+      {candidate ? <><p>完了条件：{candidate.completionCriteria || '未整理（追加後に相談できます）'}</p><p>分解理由：{candidate.reason}</p><p>担当：Discuss</p></>
+        : <p>担当：Discuss。完了条件は、この課題について相談しながら整理します。</p>}
       <button type="button" disabled={disabled || busy || !title.trim()} onClick={() => void save()}>このサブ課題を追加</button>{' '}
       <button type="button" disabled={busy} onClick={() => setOpen(false)}>キャンセル</button>
     </div>}

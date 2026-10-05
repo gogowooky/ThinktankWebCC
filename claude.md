@@ -32,12 +32,12 @@ NODE_ENV=development npx electron electron/main.cjs
 - GPU キャッシュエラー（Windows）は無視してよい
 
 ## 変更を加える前に
-- `src/components/DevelopPanel/` など既存コンポーネントの構造を Read で確認する
+- `src/components/DiscussPanel/` など既存コンポーネントの構造を Read で確認する
 - サーバー側変更後は `npm run build:server` でビルドし直す
 
 ## パネル構成
 - **ThinktankPanel** — Vaultの閲覧・検索・フィルタ（一覧表示）
-- **DevelopPanel** — 選択したThoughtの編集・AI対話・メディア表示
+- **DiscussPanel** — 選択したThoughtの編集・AI対話・メディア表示
 - **HarvestPanel** — AI主導の再思考・チャット
 - **SeedsPanel** — 設定・統計・全体ビュー
 

@@ -4,7 +4,7 @@ import type { TTVault } from '../models/TTVault';
 import { parseManagedChatTitle, MANAGED_STATES } from '../utils/managedChat';
 import { serializeChat, loadChatFromThink } from '../utils/thinkFormat';
 
-export const PANELS = ['Thinktank', 'Seeds', 'Develop', 'Harvest'] as const;
+export const PANELS = ['Thinktank', 'Seeds', 'Discuss', 'Harvest'] as const;
 export type SupportPanel = typeof PANELS[number];
 export const KINDS = ['ASK', 'TASK', 'TODO', 'PROJ', 'EVNT', 'LOOP'] as const;
 export interface SupportRecord {
@@ -200,6 +200,6 @@ HTMLは比較・予定・手順・振り返りを見やすくし、文字の説�
 export const ROLE_POLICY: Record<SupportPanel, string> = {
   Thinktank: '全Vaultから必要な記録を探し、未整理を受け止め、相談の目的と対象を定める。',
   Seeds: '指定Bundle全体の目的・論点・優先順位・依存関係・待機を整理する。Bundle未設定なら対象選択を案内し、全Vaultに拡大しない。',
-  Develop: '対象課題の次の行動を具体化し、個別の検討結果を目的に結びつける。',
+  Discuss: '対象課題の次の行動を具体化し、個別の検討結果を目的に結びつける。',
   Harvest: '個別レビューとBundle全体レビューを区別し、記録と現実を確認して完了・継続・再検討を整理する。',
 };

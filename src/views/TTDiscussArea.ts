@@ -1,6 +1,6 @@
 /**
- * TTDevelopArea.ts
- * DevelopPanel の 1エリア管理ビューモデル。
+ * TTDiscussArea.ts
+ * DiscussPanel の 1エリア管理ビューモデル。
  *
  * 位置情報は BSP ツリーが管理するため、このクラスは持たない。
  */
@@ -18,7 +18,7 @@ export interface FileHistoryEntry {
 /** Pane毎に保持するLoadファイル履歴の最大件数 */
 export const FILE_HISTORY_MAX = 30;
 
-export class TTDevelopArea extends TTUIItem {
+export class TTDiscussArea extends TTUIItem {
   private static _areaCounter = 0;
 
   /** 表示形式 */
@@ -30,7 +30,7 @@ export class TTDevelopArea extends TTUIItem {
   /** コンテンツロード中フラグ */
   public IsLoading: boolean = false;
 
-  /** エディタに未保存変更があるフラグ（DevelopArea.tsx が同期する）*/
+  /** エディタに未保存変更があるフラグ（DiscussArea.tsx が同期する）*/
   public IsDirty: boolean = false;
 
   /** Area 表示タイトル */
@@ -46,13 +46,13 @@ export class TTDevelopArea extends TTUIItem {
   public get HistoryMax(): number { return this.FileHistory.length; }
 
   public override get ClassName(): string {
-    return 'TTDevelopArea';
+    return 'TTDiscussArea';
   }
 
   constructor() {
     super();
-    this.ID    = `${this.getNowString()}-${++TTDevelopArea._areaCounter}`;
-    this.Name  = 'DevelopArea';
+    this.ID    = `${this.getNowString()}-${++TTDiscussArea._areaCounter}`;
+    this.Name  = 'DiscussArea';
     this.Title = '';
   }
 

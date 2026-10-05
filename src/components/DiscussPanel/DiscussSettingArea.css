@@ -1,16 +1,16 @@
-/* DevelopSettingArea.css */
+/* DiscussSettingArea.css */
 
 /* パネル内にフォーカスがある間、ヘッダーに下線を表示 */
-.develop-setting-area:focus-within .develop-setting-area__header {
+.discuss-setting-area:focus-within .discuss-setting-area__header {
   text-decoration: underline;
 }
 
-.develop-setting-area {
+.discuss-setting-area {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  background: var(--develop-ribbon-bg, #2a2a2a);
+  background: var(--discuss-ribbon-bg, #2a2a2a);
   overflow: visible;
   min-width: 120px;
   max-width: 400px;
@@ -19,7 +19,7 @@
 }
 
 /* ── ヘッダー ────────────────────────────────────────── */
-.develop-setting-area__header {
+.discuss-setting-area__header {
   flex-shrink: 0;
   height: 30px;
   display: flex;
@@ -35,7 +35,7 @@
 }
 
 /* ── AI相談チャット ─────────────────────────────────── */
-.develop-setting-area__chat {
+.discuss-setting-area__chat {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -43,18 +43,18 @@
 }
 
 /* チャット白領域の最上部ツールバー（パネル色より少し薄い色）*/
-.develop-setting-area__chat-toolbar {
+.discuss-setting-area__chat-toolbar {
   display: flex;
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
   height: 28px;
   padding: 0 6px;
-  background: var(--develop-ribbon-soft);
+  background: var(--discuss-ribbon-soft);
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-.develop-setting-area__chat-btn {
+.discuss-setting-area__chat-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -67,22 +67,22 @@
   flex-shrink: 0;
 }
 
-.develop-setting-area__chat-btn:hover:not(:disabled) {
+.discuss-setting-area__chat-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-.develop-setting-area__chat-btn:disabled {
+.discuss-setting-area__chat-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.develop-setting-area__chat-btn--active {
+.discuss-setting-area__chat-btn--active {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
-.develop-setting-area__chat-sep {
+.discuss-setting-area__chat-sep {
   width: 1px;
   height: 16px;
   background: rgba(255, 255, 255, 0.2);
@@ -93,14 +93,14 @@
 /* AiChatView がツールバー＋メモ選択の残りの高さを占有する。
    このエリアだけ親が濃いリボン色なので、他パネル（.thinktank-area 等が
    --*-area-bg を敷く）と同じ地色をここで明示し、会話の文字色と合わせる。 */
-.develop-setting-area__chat-body {
+.discuss-setting-area__chat-body {
   flex: 1;
   min-height: 0;
-  background: var(--develop-area-bg);
+  background: var(--discuss-area-bg);
 }
 
 /* ── 本体 ──────────────────────────────────────────── */
-.develop-setting-area__body {
+.discuss-setting-area__body {
   flex: 1;
   overflow-y: auto;
   overflow-x: visible;
@@ -108,14 +108,14 @@
 }
 
 /* AI相談チャットは本体全体を占有する（余白・スクロールは AiChatView 側で制御） */
-.develop-setting-area__body--chat {
+.discuss-setting-area__body--chat {
   padding: 0;
   overflow: hidden;
   min-height: 0;
 }
 
 /* ── セクション ─────────────────────────────────────── */
-.develop-setting-area__section {
+.discuss-setting-area__section {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -123,11 +123,11 @@
   position: relative;
 }
 
-.develop-setting-area__section:hover {
+.discuss-setting-area__section:hover {
   z-index: 100;
 }
 
-.develop-setting-area__section-label {
+.discuss-setting-area__section-label {
   font-size: calc(9px * var(--tt-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -137,7 +137,7 @@
   flex-shrink: 0;
 }
 
-.develop-setting-area__section-header {
+.discuss-setting-area__section-header {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -149,18 +149,18 @@
   user-select: none;
 }
 
-.develop-setting-area__section-header:hover {
+.discuss-setting-area__section-header:hover {
   color: rgba(255, 255, 255, 0.8);
 }
 
-.develop-setting-area__section-header .develop-setting-area__section-label {
+.discuss-setting-area__section-header .discuss-setting-area__section-label {
   margin-bottom: 0;
   padding: 0;
   color: inherit;
   font-size: calc(10px * var(--tt-font-scale, 1));
 }
 
-.develop-setting-area__section-content {
+.discuss-setting-area__section-content {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -172,7 +172,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-.develop-setting-area__btn {
+.discuss-setting-area__btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -189,18 +189,18 @@
   text-align: left;
 }
 
-.develop-setting-area__btn .lucide {
+.discuss-setting-area__btn .lucide {
   flex-shrink: 0;
   width: 14px;
 }
 
-.develop-setting-area__btn:hover:not(:disabled) {
+.discuss-setting-area__btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-.develop-setting-area__btn:disabled,
-.develop-setting-area__btn--disabled {
+.discuss-setting-area__btn:disabled,
+.discuss-setting-area__btn--disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
@@ -217,7 +217,7 @@
 
 /* ── アイコンボタン行（4×1）──────────────────────── */
 /* アイコンは行幅いっぱいに等分せず、正方形のまま左に詰める */
-.develop-setting-area__icon-row {
+.discuss-setting-area__icon-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -225,15 +225,15 @@
 }
 
 /* 直接の子（ボタン、またはツールチップ用ラッパ）を28px角に固定する */
-.develop-setting-area__icon-row > * {
+.discuss-setting-area__icon-row > * {
   flex: 0 0 28px;
 }
 
-.develop-setting-area__icon-row .develop-setting-area__icon-btn {
+.discuss-setting-area__icon-row .discuss-setting-area__icon-btn {
   width: 100%;
 }
 
-.develop-setting-area__icon-btn {
+.discuss-setting-area__icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -244,28 +244,28 @@
   cursor: pointer;
 }
 
-.develop-setting-area__icon-btn:hover:not(:disabled) {
+.discuss-setting-area__icon-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
 
-.develop-setting-area__icon-btn:disabled {
+.discuss-setting-area__icon-btn:disabled {
   opacity: 0.3;
   cursor: not-allowed;
 }
 
-.develop-setting-area__icon-btn--active {
+.discuss-setting-area__icon-btn--active {
   background: rgba(247, 118, 142, 0.25);
   color: #f7768e;
 }
 
-.develop-setting-area__icon-btn--active:hover:not(:disabled) {
+.discuss-setting-area__icon-btn--active:hover:not(:disabled) {
   background: rgba(247, 118, 142, 0.35);
   color: #f7768e;
 }
 
 /* ── セクション区切り ──────────────────────────────── */
-.develop-setting-area__divider {
+.discuss-setting-area__divider {
   height: 1px;
   margin: 6px 8px;
   background: rgba(255, 255, 255, 0.08);
@@ -273,7 +273,7 @@
 }
 
 /* ── プレースホルダー ──────────────────────────────── */
-.develop-setting-area__placeholder {
+.discuss-setting-area__placeholder {
   padding: 12px;
   font-size: calc(11px * var(--tt-font-scale, 1));
   color: rgba(255, 255, 255, 0.3);
@@ -281,7 +281,7 @@
 }
 
 /* ── チェックボックス ──────────────────────────────── */
-.develop-setting-area__checkbox-label {
+.discuss-setting-area__checkbox-label {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -289,12 +289,12 @@
   cursor: pointer;
 }
 
-.develop-setting-area__checkbox-label input[type="checkbox"] {
+.discuss-setting-area__checkbox-label input[type="checkbox"] {
   margin: 0;
   cursor: pointer;
 }
 
-.develop-setting-area__checkbox-text {
+.discuss-setting-area__checkbox-text {
   font-size: calc(10px * var(--tt-font-scale, 1));
   color: rgba(255, 255, 255, 0.75);
   user-select: none;
@@ -306,26 +306,26 @@
  * パネル幅に合わせて縮めたり折り返したりせず、常に同じ位置を保つ。
  * 幅が足りなくなった分は行からはみ出して隠れる（overflow: hidden）。
  */
-.develop-setting-area__color-row,
-.develop-setting-area__heading-style-row {
+.discuss-setting-area__color-row,
+.discuss-setting-area__heading-style-row {
   flex-wrap: nowrap;
   overflow: hidden;
 }
 
-.develop-setting-area__color-row > *,
-.develop-setting-area__heading-style-row > *,
-.develop-setting-area__color-cell > * {
+.discuss-setting-area__color-row > *,
+.discuss-setting-area__heading-style-row > *,
+.discuss-setting-area__color-cell > * {
   flex-shrink: 0;
 }
 
 /* ラベルも折り返さない（「基本」が2行になると行の高さが変わってしまう）*/
-.develop-setting-area__color-label,
-.develop-setting-area__heading-style-label,
-.develop-setting-area__small-checkbox {
+.discuss-setting-area__color-label,
+.discuss-setting-area__heading-style-label,
+.discuss-setting-area__small-checkbox {
   white-space: nowrap;
 }
 
-.develop-setting-area__color-row {
+.discuss-setting-area__color-row {
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -335,7 +335,7 @@
 
 /* 1行に2項目（基本｜選択 / 出現｜折畳）を並べるためのセル。
    行幅を等分せず、内容の幅のまま左に詰める */
-.develop-setting-area__color-cell {
+.discuss-setting-area__color-cell {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -343,12 +343,12 @@
   min-width: 0;
 }
 
-.develop-setting-area__color-label {
+.discuss-setting-area__color-label {
   font-size: calc(10px * var(--tt-font-scale, 1));
   color: rgba(255, 255, 255, 0.75);
 }
 
-.develop-setting-area__color-picker {
+.discuss-setting-area__color-picker {
   -webkit-appearance: none;
   border: 1px solid rgba(255, 255, 255, 0.2);
   width: 21px;
@@ -359,28 +359,28 @@
   background: none;
 }
 
-.develop-setting-area__color-picker::-webkit-color-swatch-wrapper {
+.discuss-setting-area__color-picker::-webkit-color-swatch-wrapper {
   padding: 0;
 }
 
-.develop-setting-area__color-picker::-webkit-color-swatch {
+.discuss-setting-area__color-picker::-webkit-color-swatch {
   border: none;
   border-radius: 3px;
 }
 
-.develop-setting-area__heading-style-row {
+.discuss-setting-area__heading-style-row {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
 }
 
-.develop-setting-area__heading-style-label {
+.discuss-setting-area__heading-style-label {
   font-size: calc(10px * var(--tt-font-scale, 1));
   color: rgba(255, 255, 255, 0.75);
 }
 
-.develop-setting-area__small-checkbox {
+.discuss-setting-area__small-checkbox {
   display: flex;
   align-items: center;
   gap: 3px;
@@ -390,20 +390,20 @@
   cursor: pointer;
 }
 
-.develop-setting-area__small-checkbox input {
+.discuss-setting-area__small-checkbox input {
   margin: 0;
   cursor: pointer;
 }
 
 /* ── ハイライト設定 ──────────────────────────────────── */
-.develop-setting-area__input-with-clear {
+.discuss-setting-area__input-with-clear {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
 }
 
-.develop-setting-area__text-input {
+.discuss-setting-area__text-input {
   width: 100%;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -415,11 +415,11 @@
   transition: border-color 0.2s ease;
 }
 
-.develop-setting-area__text-input:focus {
+.discuss-setting-area__text-input:focus {
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-.develop-setting-area__clear-btn {
+.discuss-setting-area__clear-btn {
   position: absolute;
   right: 6px;
   background: none;
@@ -434,13 +434,13 @@
   transition: color 0.1s ease, background 0.1s ease;
 }
 
-.develop-setting-area__clear-btn:hover {
+.discuss-setting-area__clear-btn:hover {
   color: rgba(255, 255, 255, 0.8);
   background: rgba(255, 255, 255, 0.1);
 }
 
 /* ── 入れ替えボタン ────────────────────────────────── */
-.develop-setting-area__swap-btn {
+.discuss-setting-area__swap-btn {
   width: 100%;
   padding: 5px 8px;
   font-size: calc(11px * var(--tt-font-scale, 1));
@@ -453,14 +453,14 @@
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
-.develop-setting-area__swap-btn:hover {
+.discuss-setting-area__swap-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
   border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* ── アイコンボタン（danger） ──────────────────────── */
-.develop-setting-area__icon-btn--danger:hover:not(:disabled) {
+.discuss-setting-area__icon-btn--danger:hover:not(:disabled) {
   background: rgba(239, 83, 80, 0.2);
   color: #ef5350;
 }

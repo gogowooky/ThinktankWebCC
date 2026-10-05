@@ -33,7 +33,7 @@ export async function applySupportEffects(vault: TTVault, source: TTThink) {
     const id = await effectId(source.ID, `child:${child.occurrence || child.key}`);
     let target = vault.GetThink(id);
     if (!target) {
-      const title = `${child.kind}:Develop｜[未着手]${child.title}`;
+      const title = `${child.kind}:Discuss｜[未着手]${child.title}`;
       target = await vault.AddThinkWithContent(id, title, 'chat', '', `${title}\n`);
     }
     await target.LoadContent();

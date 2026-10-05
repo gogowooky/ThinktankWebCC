@@ -5,7 +5,7 @@
  * 左から順に:
  *   ThinktankPanel（Ribbon + Area） |
  *   SeedsPanel（Ribbon + Area）  |
- *   DevelopPanel（中央、flex:1）    |
+ *   DiscussPanel（中央、flex:1）    |
  *   HarvestPanel（Area + Ribbon）
  *
  * レイアウトモード:
@@ -19,7 +19,7 @@ import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { HighlightProvider } from '../../contexts/HighlightContext';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import { SeedsPanel } from '../SeedsPanel/SeedsPanel';
-import { DevelopPanel } from '../DevelopPanel/DevelopPanel';
+import { DiscussPanel } from '../DiscussPanel/DiscussPanel';
 import { HarvestPanel } from '../HarvestPanel/HarvestPanel';
 import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
 import { THEME_STATUS_KEYS, applyPanelThemeCss } from '../../utils/panelTheme';
@@ -27,7 +27,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { INIT_AREA_WIDTH, MIN_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
 import './AppLayout.css';
 
-// パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Develop 側と共用）
+// パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Discuss 側と共用）
 
 export type LayoutMode = 'sipoc' | 'simple';
 
@@ -90,7 +90,7 @@ export function AppLayout() {
   // パネルのテーマ色（<Panel>.Theme.* / FocusingBorder.Theme.*）を CSS 変数へ展開する。
   // 派生色は color-mix() で作るため、基礎色1つの変更が関連色すべてに波及する。
   useEffect(() => {
-    const apply = () => applyPanelThemeCss(app.DevelopPanel.TextEditor.ColorStatus);
+    const apply = () => applyPanelThemeCss(app.DiscussPanel.TextEditor.ColorStatus);
     apply();
     const listener = () => apply();
     for (const key of THEME_STATUS_KEYS) {
@@ -146,9 +146,9 @@ export function AppLayout() {
           />
         </div>
 
-        {/* ── DevelopPanel（Phase 7 実装済み）────────────────────── */}
-        <div className="app-panel app-panel--develop">
-          <DevelopPanel app={app} layoutMode={layoutMode} />
+        {/* ── DiscussPanel（Phase 7 実装済み）────────────────────── */}
+        <div className="app-panel app-panel--discuss">
+          <DiscussPanel app={app} layoutMode={layoutMode} />
         </div>
 
         {/* ── HarvestPanel（Phase 10 実装済み）─────────────────────── */}
@@ -161,7 +161,7 @@ export function AppLayout() {
         </div>
 
       </div>
-      <ApplicationStatusBarArea panel={app.DevelopPanel} />
+      <ApplicationStatusBarArea panel={app.DiscussPanel} />
     </div>
     </HighlightProvider>
   );

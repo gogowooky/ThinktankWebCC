@@ -32,8 +32,8 @@
   --thinktank-content-bg: #ffffff;
   --seeds-base:        #873960;
   --seeds-content-bg:  #ffffff;
-  --develop-base:         #382830;
-  --develop-content-bg:   #ffffff;
+  --discuss-base:         #382830;
+  --discuss-content-bg:   #ffffff;
   --harvest-base:         #324f46;
   --harvest-content-bg:   #ffffff;
   --toolbar-base:         #2d2d2d;
@@ -46,30 +46,30 @@
   /* リボン＝基礎色そのもの */
   --thinktank-ribbon-bg: var(--thinktank-base);
   --seeds-ribbon-bg:  var(--seeds-base);
-  --develop-ribbon-bg:   var(--develop-base);
+  --discuss-ribbon-bg:   var(--discuss-base);
   --harvest-ribbon-bg:   var(--harvest-base);
 
   /* パネルの地色＝コンテンツ色に基礎色をごく薄く重ねたもの。
-     Develop だけ濃いのは、地色がコンテンツの「まわり」ではなく Pane の「背後」にあり、
+     Discuss だけ濃いのは、地色がコンテンツの「まわり」ではなく Pane の「背後」にあり、
      白い Pane との境目が見える必要があるため。 */
   --thinktank-area-bg: color-mix(in srgb, var(--thinktank-base)  8%, var(--thinktank-content-bg));
   --seeds-area-bg:  color-mix(in srgb, var(--seeds-base)   8%, var(--seeds-content-bg));
   --harvest-area-bg:   color-mix(in srgb, var(--harvest-base)    8%, var(--harvest-content-bg));
-  --develop-area-bg:   color-mix(in srgb, var(--develop-base)   14%, var(--develop-content-bg));
+  --discuss-area-bg:   color-mix(in srgb, var(--discuss-base)   14%, var(--discuss-content-bg));
 
   /* リボン内の濃淡（メニューリボン等） */
   --thinktank-ribbon-soft: color-mix(in srgb, var(--thinktank-base) 80%, var(--thinktank-content-bg));
   --seeds-ribbon-soft:  color-mix(in srgb, var(--seeds-base)  80%, var(--seeds-content-bg));
-  --develop-ribbon-soft:   color-mix(in srgb, var(--develop-base)   80%, var(--develop-content-bg));
+  --discuss-ribbon-soft:   color-mix(in srgb, var(--discuss-base)   80%, var(--discuss-content-bg));
   --harvest-ribbon-soft:   color-mix(in srgb, var(--harvest-base)   80%, var(--harvest-content-bg));
 
-  /* 横向きツールバー（各 Area 上部の MenuRibbon）の地色。Develop だけリボン色そのもの、
+  /* 横向きツールバー（各 Area 上部の MenuRibbon）の地色。Discuss だけリボン色そのもの、
      他3パネルは ribbon-soft という既存の使い分けをここに一本化する。
      スクロールバーのつまみなど「ツールバーと同じ色」を要求する箇所から参照するため、
      MenuRibbon 側の直接指定ではなくこのトークンを唯一の定義とする。 */
   --thinktank-menuribbon-bg: var(--thinktank-ribbon-soft);
   --seeds-menuribbon-bg:  var(--seeds-ribbon-soft);
-  --develop-menuribbon-bg:   var(--develop-ribbon-bg);
+  --discuss-menuribbon-bg:   var(--discuss-ribbon-bg);
   --harvest-menuribbon-bg:   var(--harvest-ribbon-soft);
 
   /* 一覧・ボタンの状態色（下地を透かすので transparent 合成） */
@@ -79,9 +79,9 @@
   --seeds-hover:     color-mix(in srgb, var(--seeds-base)   8%, transparent);
   --seeds-selected:  color-mix(in srgb, var(--seeds-base)  14%, transparent);
   --seeds-border:    color-mix(in srgb, var(--seeds-base)  25%, transparent);
-  --develop-hover:      color-mix(in srgb, var(--develop-base)    8%, transparent);
-  --develop-selected:   color-mix(in srgb, var(--develop-base)   14%, transparent);
-  --develop-border:     color-mix(in srgb, var(--develop-base)   25%, transparent);
+  --discuss-hover:      color-mix(in srgb, var(--discuss-base)    8%, transparent);
+  --discuss-selected:   color-mix(in srgb, var(--discuss-base)   14%, transparent);
+  --discuss-border:     color-mix(in srgb, var(--discuss-base)   25%, transparent);
   --harvest-hover:      color-mix(in srgb, var(--harvest-base)    8%, transparent);
   --harvest-selected:   color-mix(in srgb, var(--harvest-base)   14%, transparent);
   --harvest-border:     color-mix(in srgb, var(--harvest-base)   25%, transparent);
@@ -250,11 +250,11 @@ a {
 }
 
 /* SettingPanel内など、100%幅が必要な場所用 */
-.develop-setting-panel__section-content .tooltip-wrapper {
+.discuss-setting-panel__section-content .tooltip-wrapper {
   display: flex;
   width: 100%;
 }
-.develop-setting-panel__section-content .tooltip-wrapper > button {
+.discuss-setting-panel__section-content .tooltip-wrapper > button {
   width: 100%;
 }
 

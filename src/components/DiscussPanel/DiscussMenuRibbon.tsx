@@ -1,6 +1,6 @@
 /**
- * DevelopMenuRibbon.tsx
- * DevelopArea のリボンバー。
+ * DiscussMenuRibbon.tsx
+ * DiscussArea のリボンバー。
  *
  * 左から: [ドラッグハンドル] [タイトル] [MediaTypeボタン群] [閉じるボタン]
  * isFocused=true のとき青みがかった背景で強調表示。
@@ -18,11 +18,11 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   html: Globe,
   nettext: Globe,
 };
-import type { TTDevelopArea } from '../../views/TTDevelopArea';
+import type { TTDiscussArea } from '../../views/TTDiscussArea';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { detectLocalDragKind } from '../../utils/keyboardUtils';
 import type { MediaType } from '../../types';
-import './DevelopMenuRibbon.css';
+import './DiscussMenuRibbon.css';
 
 const MEMO_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
   { type: 'texteditor', Icon: NotebookPen,  title: 'テキストエディタ' },
@@ -92,12 +92,12 @@ function fileUriToPath(uri: string): string {
  * （カーソル位置へのファイル参照挿入。TextEditorMedia.tsx側の既存アップロード/
  * 挿入ロジック）に対応する。現状はどちらも既定動作のままだが、Shortcutテーブルで
  * 別Actionへ振り替える／フォーカス限定するといった拡張の受け口として、呼び出し元
- * （DevelopMenuRibbon/DevelopArea/DevelopPanel/TextEditorMedia）は直接
+ * （DiscussMenuRibbon/DiscussArea/DiscussPanel/TextEditorMedia）は直接
  * extractLinkDrop() の結果を使わず shouldAllowLocalDrop() / shouldInsertLocalDrop()
  * を必ず経由する。
  */
-const LOCAL_DROP_DEFAULT_ACTION = 'DevelopPanel.Load.DroppedLink';
-const LOCAL_DROP_INSERT_ACTION  = 'DevelopPanel.Insert.DroppedLink';
+const LOCAL_DROP_DEFAULT_ACTION = 'DiscussPanel.Load.DroppedLink';
+const LOCAL_DROP_INSERT_ACTION  = 'DiscussPanel.Insert.DroppedLink';
 
 /**
  * OSファイルシステムからのFile/Dirドロップかどうかを判定し、疑似キー
@@ -185,7 +185,7 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
 // ── コンポーネント ───────────────────────────────────────────────────────
 
 interface Props {
-  area:              TTDevelopArea;
+  area:              TTDiscussArea;
   contentType?:      string;
   isFocused:         boolean;
   isDirty?:          boolean;
@@ -197,7 +197,7 @@ interface Props {
   onUrlDrop?:        (url: string, title: string) => void;
 }
 
-export function DevelopMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
+export function DiscussMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
     : contentType === 'bundle' ? BUNDLE_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
@@ -236,10 +236,10 @@ export function DevelopMenuRibbon({ area, contentType, isFocused, isDirty = fals
   return (
     <div
       className={[
-        'develop-menu-ribbon',
-        isFocused       ? 'develop-menu-ribbon--focused'        : '',
-        isOutsideBundle ? 'develop-menu-ribbon--outside-bundle' : '',
-        isDropTarget    ? 'develop-menu-ribbon--drop-target'    : '',
+        'discuss-menu-ribbon',
+        isFocused       ? 'discuss-menu-ribbon--focused'        : '',
+        isOutsideBundle ? 'discuss-menu-ribbon--outside-bundle' : '',
+        isDropTarget    ? 'discuss-menu-ribbon--drop-target'    : '',
       ].join(' ')}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -248,7 +248,7 @@ export function DevelopMenuRibbon({ area, contentType, isFocused, isDirty = fals
 
       {/* 種別アイコン（ドラッグハンドル兼用）*/}
       <div
-        className="develop-menu-ribbon__drag"
+        className="discuss-menu-ribbon__drag"
         onMouseDown={onDragStart}
         data-tip="ドラッグして移動"
         data-tip-side="bottom"
@@ -257,17 +257,17 @@ export function DevelopMenuRibbon({ area, contentType, isFocused, isDirty = fals
       </div>
 
       {/* タイトル（未保存変更があれば ● を表示）*/}
-      <span className="develop-menu-ribbon__title" data-tip={area.Title} data-tip-side="bottom">
-        {isDirty && <span className="develop-menu-ribbon__dirty">●</span>}
+      <span className="discuss-menu-ribbon__title" data-tip={area.Title} data-tip-side="bottom">
+        {isDirty && <span className="discuss-menu-ribbon__dirty">●</span>}
         {area.Title || '（無題）'}
       </span>
 
       {/* MediaType ボタン群 */}
-      <div className="develop-menu-ribbon__media">
+      <div className="discuss-menu-ribbon__media">
         {mediaButtons.map(({ type, Icon, title }) => (
           <button
             key={type}
-            className={`develop-menu-ribbon__media-btn${area.MediaType === type ? ' develop-menu-ribbon__media-btn--active' : ''}`}
+            className={`discuss-menu-ribbon__media-btn${area.MediaType === type ? ' discuss-menu-ribbon__media-btn--active' : ''}`}
             onClick={() => onMediaTypeChange(type)}
             data-tip={title}
             data-tip-side="left"
@@ -279,7 +279,7 @@ export function DevelopMenuRibbon({ area, contentType, isFocused, isDirty = fals
 
       {/* 閉じるボタン */}
       <button
-        className="develop-menu-ribbon__close"
+        className="discuss-menu-ribbon__close"
         onClick={onClose}
         data-tip="閉じる"
         data-tip-side="bottom"

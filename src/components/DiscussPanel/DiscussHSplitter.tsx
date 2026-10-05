@@ -1,18 +1,18 @@
 /**
- * DevelopHSplitter.tsx
- * Phase 7: DevelopPanel の行間水平スプリッター（row-resize）。
+ * DiscussHSplitter.tsx
+ * Phase 7: DiscussPanel の行間水平スプリッター（row-resize）。
  * pointer capture を使用してパネル外へのカーソル移動でもドラッグが途切れない。
  */
 
 import React, { useCallback, useRef, useState } from 'react';
-import './DevelopHSplitter.css';
+import './DiscussHSplitter.css';
 
 interface Props {
   onResize: (deltaY: number) => void;
   onResizeEnd?: () => void;
 }
 
-export function DevelopHSplitter({ onResize, onResizeEnd }: Props) {
+export function DiscussHSplitter({ onResize, onResizeEnd }: Props) {
   const dragging = useRef(false);
   const lastY    = useRef(0);
   // ドラッグ中の色付け用。ref と別に持つのは再描画を起こす必要があるため
@@ -46,7 +46,7 @@ export function DevelopHSplitter({ onResize, onResizeEnd }: Props) {
 
   return (
     <div
-      className={`develop-h-splitter${isDragging ? ' develop-h-splitter--dragging' : ''}`}
+      className={`discuss-h-splitter${isDragging ? ' discuss-h-splitter--dragging' : ''}`}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

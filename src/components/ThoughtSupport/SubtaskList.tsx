@@ -33,7 +33,7 @@ export function SubtaskList({ vault, bundleId }: { vault: TTVault; bundleId: str
       </li>)}</ul>
       <p>保留 {summary.paused}件{summary.unreadable > 0 && ` ／ 記録を読み取れない課題 ${summary.unreadable}件（到達状態の集計対象外）`}</p>
       <ul>{children.map((child, index) => <li key={child.ID}>
-      <button type="button" onClick={() => void open(child.ID)}>{child.Name}</button> · 担当：Develop
+      <button type="button" onClick={() => void open(child.ID)}>{child.Name}</button> · 担当：Discuss
       <SubtaskChatButton vault={vault} bundleId={child.ID} seedsId={bundleId} />
       <SubtaskProgressDetail progress={progress[index]} />
     </li>)}</ul></>}

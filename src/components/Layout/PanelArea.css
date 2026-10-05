@@ -36,7 +36,7 @@
   color: #1a1a2e;
 }
 
-.panel-area--develop > .panel-area__inner {
-  background: var(--develop-ribbon-bg, #2a2a2a);
+.panel-area--discuss > .panel-area__inner {
+  background: var(--discuss-ribbon-bg, #2a2a2a);
   color: rgba(255, 255, 255, 0.75);
 }

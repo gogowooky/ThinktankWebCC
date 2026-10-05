@@ -859,7 +859,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
   const [selected,  setSelected] = useState<Set<string>>(new Set());
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const scrollRef                = useRef<HTMLDivElement>(null);
-  const { seedsBundleIds, developIds } = useHighlight();
+  const { seedsBundleIds, discussIds } = useHighlight();
 
   const [allItems, setAllItems] = useState<TTThink[]>(() => {
     if (think?.ContentType === 'bundle') return vault.GetThinksForBundle(think.ID);
@@ -942,7 +942,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
             const isSelected        = selected.has(item.ID);
             const isFocus           = think?.ID === item.ID;
             const isSeedsBundle  = seedsBundleIds.includes(item.ID);
-            const isInDevelop       = developIds.includes(item.ID);
+            const isInDiscuss       = discussIds.includes(item.ID);
             const isFocused         = item.ID === focusedId;
 
             return (
@@ -953,7 +953,7 @@ function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
                   isSelected        ? 'datagrid-media__row--selected'        : '',
                   isFocus           ? 'datagrid-media__row--focus'           : '',
                   isSeedsBundle  ? 'datagrid-media__row--seeds-bundle'  : '',
-                  isInDevelop       ? 'datagrid-media__row--develop'         : '',
+                  isInDiscuss       ? 'datagrid-media__row--discuss'         : '',
                   isFocused         ? 'datagrid-media__row--focused'         : '',
                 ].join(' ')}
                 onMouseEnter={() => setFocusedId(item.ID)}

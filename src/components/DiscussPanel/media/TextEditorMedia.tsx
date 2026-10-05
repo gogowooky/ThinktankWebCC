@@ -24,7 +24,7 @@ import {
   injectInlineStyleCss, inlineStyleClass, isUnset, linkStyleClass, linkStyleCss, styleClass,
 } from '../../../utils/defaultColor';
 import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColor';
-import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../DevelopMenuRibbon';
+import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../DiscussMenuRibbon';
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
 import { reportSaveError } from '../../../utils/saveError';
@@ -38,9 +38,9 @@ const EDITOR_BASE_LINE_HEIGHT = 20;
 export interface TextEditorMediaRef {
   focus: () => void;
   /**
-   * DevelopPanel.DroppedFile.ID:Insert 用: 生のMonacoエディタインスタンスを取得する。
+   * DiscussPanel.DroppedFile.ID:Insert 用: 生のMonacoエディタインスタンスを取得する。
    * 呼び出し側は TTShortcutManager.setActiveEditor() でこれを対象に設定してから
-   * 'DevelopPanel.DroppedFile.ID:Insert' Action を実行すること。
+   * 'DiscussPanel.DroppedFile.ID:Insert' Action を実行すること。
    */
   getEditor: () => any;
 }
@@ -262,7 +262,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
     editorRef.current = editor;
-    // DevelopPanel.DroppedFile.ID:Insert がドロップ位置のPaneからエディタを引けるよう登録する
+    // DiscussPanel.DroppedFile.ID:Insert がドロップ位置のPaneからエディタを引けるよう登録する
     if (areaId) TTShortcutManager.instance.registerAreaEditor(areaId, editor);
     registerMarkdownFolding(monaco);
     registerHexColorProvider(monaco);
@@ -340,22 +340,22 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           }
         }
 
-        const developPanel = TTApplication.Instance.DevelopPanel;
+        const discussPanel = TTApplication.Instance.DiscussPanel;
         let isChanged = false;
-        if (developPanel.TextEditor.CurrentFoldingHeadingOffset !== offsetVal) {
-          developPanel.TextEditor.CurrentFoldingHeadingOffset = offsetVal;
+        if (discussPanel.TextEditor.CurrentFoldingHeadingOffset !== offsetVal) {
+          discussPanel.TextEditor.CurrentFoldingHeadingOffset = offsetVal;
           isChanged = true;
         }
-        if (developPanel.TextEditor.CurrentFoldingHeadingNumber !== numberVal) {
-          developPanel.TextEditor.CurrentFoldingHeadingNumber = numberVal;
+        if (discussPanel.TextEditor.CurrentFoldingHeadingNumber !== numberVal) {
+          discussPanel.TextEditor.CurrentFoldingHeadingNumber = numberVal;
           isChanged = true;
         }
-        if (developPanel.TextEditor.CurrentEditorCursorPos !== cursorOffsetStr) {
-          developPanel.TextEditor.CurrentEditorCursorPos = cursorOffsetStr;
+        if (discussPanel.TextEditor.CurrentEditorCursorPos !== cursorOffsetStr) {
+          discussPanel.TextEditor.CurrentEditorCursorPos = cursorOffsetStr;
           isChanged = true;
         }
-        if (developPanel.TextEditor.CurrentEditorTextOnCursorPos !== textOnCursor) {
-          developPanel.TextEditor.CurrentEditorTextOnCursorPos = textOnCursor;
+        if (discussPanel.TextEditor.CurrentEditorTextOnCursorPos !== textOnCursor) {
+          discussPanel.TextEditor.CurrentEditorTextOnCursorPos = textOnCursor;
           isChanged = true;
         }
 
@@ -1006,7 +1006,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     // Thinkドロップ（application/x-thought-id）はここで preventDefault/stopPropagation せず
-    // DevelopPanel の body-level ハンドラーへバブリングさせる。そちらで Load先Paneのゴースト
+    // DiscussPanel の body-level ハンドラーへバブリングさせる。そちらで Load先Paneのゴースト
     // オーバーレイ（dropOverlay）を計算・表示しており、ここで止めると出なくなる。
     // ドロップ自体は下の handleDrop 側でこのイベントを直接検出して処理するため、ゴースト表示
     // を優先してここでは Files ドラッグのみを処理する。
@@ -1025,8 +1025,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     setIsDragOver(false);
 
     // Thinkファイルのドロップは、Load/Insertどちらの場合もここでは消費せず
-    // DevelopPanel の body-level ハンドラーへバブリングさせる。ドロップ位置（カーソル直下の
-    // Pane）の判定とAlt判定を1箇所（DevelopPanel.handleBodyDrop）に一本化することで、
+    // DiscussPanel の body-level ハンドラーへバブリングさせる。ドロップ位置（カーソル直下の
+    // Pane）の判定とAlt判定を1箇所（DiscussPanel.handleBodyDrop）に一本化することで、
     // このコンポーネント側とのタイミング・判定不一致を避けている。
     if (e.dataTransfer.types.includes('application/x-thought-id')) return;
 
@@ -1036,7 +1036,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     e.stopPropagation();
 
     // 通常ドロップ（Alt未使用）: 疑似キー LocalFileDrag/LocalDirDrag（docs/DefaultShortcut.md）経由で
-    // Links Think を作成し、このPaneを差し替える（DevelopArea.handleUrlDropと同じLoad系挙動）。
+    // Links Think を作成し、このPaneを差し替える（DiscussArea.handleUrlDropと同じLoad系挙動）。
     // Alt+ドロップは従来通りカーソル位置へファイル参照を挿入する（下のロジック）。
     const altHeld = TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);
     if (altHeld) {
@@ -1046,7 +1046,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const link = extractLinkDrop(e);
       if (!link || !areaId) return;
       const newThink = await vault.CreateLinksThink(link.title, link.url);
-      const area = TTApplication.Instance.DevelopPanel.GetArea(areaId);
+      const area = TTApplication.Instance.DiscussPanel.GetArea(areaId);
       area?.OpenThink(newThink.ID, 'texteditor', newThink.Name);
       return;
     }

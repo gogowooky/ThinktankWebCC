@@ -25,10 +25,10 @@ describe('thought support persistence and decisions', () => {
     expect(result.title).toBe('TODO:Seeds｜会場予約');
   });
   it.each(['TODO', 'PROJ', 'ASK', 'EVNT', 'LOOP'])('routes %s through the common parser', kind => {
-    expect(isTodoChatThink({ ContentType: 'chat', Name: `${kind}:Develop｜[待機]予約` }, 'TODO:Develop｜')).toBe(true);
+    expect(isTodoChatThink({ ContentType: 'chat', Name: `${kind}:Discuss｜[待機]予約` }, 'TODO:Discuss｜')).toBe(true);
   });
   it('changes kind and owner independently of waiting state', () => {
-    const result = planSupportUpdate(chat('TODO:Develop｜[待機]会場予約'), { kind: 'PROJ', panel: 'Seeds', record: { handoff: '準備全体を整理する', next: '案内の予定を決める' } }, '', now);
+    const result = planSupportUpdate(chat('TODO:Discuss｜[待機]会場予約'), { kind: 'PROJ', panel: 'Seeds', record: { handoff: '準備全体を整理する', next: '案内の予定を決める' } }, '', now);
     expect(result.title).toBe('PROJ:Seeds｜[待機]会場予約');
     expect(result.record.confirmedAt).toBe('');
   });

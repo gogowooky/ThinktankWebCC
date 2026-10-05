@@ -1,11 +1,11 @@
-/* DevelopMenuRibbon.css */
+/* DiscussMenuRibbon.css */
 
-.develop-menu-ribbon {
+.discuss-menu-ribbon {
   display: flex;
   align-items: center;
   height: 30px;
   padding: 0 6px;
-  background: var(--develop-menuribbon-bg);
+  background: var(--discuss-menuribbon-bg);
   color: rgba(255, 255, 255, 0.85);
   gap: 4px;
   flex-shrink: 0;
@@ -14,24 +14,24 @@
 }
 
 /* フォーカス中リボン: タイトル下線のみ（背景色変更なし）*/
-.develop-menu-ribbon--focused {
+.discuss-menu-ribbon--focused {
 }
 
 /* SeedsPanel.Bundle.ID で選択中のBundleに記載されていないThinkを表示中のリボン。
-   DevelopSettingパネルの縦型ToolBar選択アイコン（.develop-tab-bar__btn--active）は
-   Develop基本色の地の上に rgba(255,255,255,0.18) を重ねて「薄くした基本色」に見せているが、
-   このリボンの背後はDevelop基本色ではないため、同じ計算結果になる不透明色を直接指定する
-   （= Develop基本色(--develop-base)に18%の白を混ぜた色）。*/
-.develop-menu-ribbon--outside-bundle {
-  background: color-mix(in srgb, white 18%, var(--develop-base));
+   DiscussSettingパネルの縦型ToolBar選択アイコン（.discuss-tab-bar__btn--active）は
+   Discuss基本色の地の上に rgba(255,255,255,0.18) を重ねて「薄くした基本色」に見せているが、
+   このリボンの背後はDiscuss基本色ではないため、同じ計算結果になる不透明色を直接指定する
+   （= Discuss基本色(--discuss-base)に18%の白を混ぜた色）。*/
+.discuss-menu-ribbon--outside-bundle {
+  background: color-mix(in srgb, white 18%, var(--discuss-base));
 }
 
-.develop-menu-ribbon--outside-bundle .develop-menu-ribbon__title {
+.discuss-menu-ribbon--outside-bundle .discuss-menu-ribbon__title {
   font-weight: normal;
   color: rgba(255, 255, 255, 0.80);
 }
 
-body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ribbon__title {
+body[data-focus-column="Discuss"] .discuss-menu-ribbon--focused .discuss-menu-ribbon__title {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-color: rgba(255, 255, 255, 0.6);
@@ -39,12 +39,12 @@ body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ri
 
 /* アイテムD&Dドロップ受け入れ中。境界線マウスオーバー色（FocusingBorder.Theme.Color）を
    半透明で重ね、元の背景色を残したままシャドーとして見せる */
-.develop-menu-ribbon--drop-target {
+.discuss-menu-ribbon--drop-target {
   box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--focusing-border) 40%, transparent);
 }
 
 /* ドラッグハンドル */
-.develop-menu-ribbon__drag {
+.discuss-menu-ribbon__drag {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,17 +56,17 @@ body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ri
   flex-shrink: 0;
 }
 
-.develop-menu-ribbon__drag:active {
+.discuss-menu-ribbon__drag:active {
   cursor: grabbing;
 }
 
-.develop-menu-ribbon__drag:hover {
+.discuss-menu-ribbon__drag:hover {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.1);
 }
 
 /* タイトル */
-.develop-menu-ribbon__title {
+.discuss-menu-ribbon__title {
   flex: 1;
   font-size: calc(12px * var(--tt-font-scale, 1));
   font-weight: 500;
@@ -80,7 +80,7 @@ body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ri
 }
 
 /* 未保存マーカー */
-.develop-menu-ribbon__dirty {
+.discuss-menu-ribbon__dirty {
   color: #e07b3a;
   font-size: calc(9px * var(--tt-font-scale, 1));
   flex-shrink: 0;
@@ -88,14 +88,14 @@ body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ri
 }
 
 /* MediaType ボタン群 */
-.develop-menu-ribbon__media {
+.discuss-menu-ribbon__media {
   display: flex;
   align-items: center;
   gap: 1px;
   flex-shrink: 0;
 }
 
-.develop-menu-ribbon__media-btn {
+.discuss-menu-ribbon__media-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,18 +106,18 @@ body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ri
   transition: background 100ms ease, color 100ms ease;
 }
 
-.develop-menu-ribbon__media-btn:hover {
+.discuss-menu-ribbon__media-btn:hover {
   background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.9);
 }
 
-.develop-menu-ribbon__media-btn--active {
+.discuss-menu-ribbon__media-btn--active {
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
 /* 閉じるボタン */
-.develop-menu-ribbon__close {
+.discuss-menu-ribbon__close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -129,7 +129,7 @@ body[data-focus-column="Develop"] .develop-menu-ribbon--focused .develop-menu-ri
   transition: background 100ms ease, color 100ms ease;
 }
 
-.develop-menu-ribbon__close:hover {
+.discuss-menu-ribbon__close:hover {
   background: rgba(220, 60, 60, 0.5);
   color: #fff;
 }

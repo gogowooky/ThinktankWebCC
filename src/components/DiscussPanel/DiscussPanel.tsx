@@ -1,9 +1,9 @@
 /**
- * DevelopPanel.tsx
- * BSP ツリー型レイアウトで DevelopArea を再帰的にレンダリングする。
+ * DiscussPanel.tsx
+ * BSP ツリー型レイアウトで DiscussArea を再帰的にレンダリングする。
  *
  * レイアウト構造（左→右）:
- *   [DevelopTabBar 40px] [DevelopSettingArea? + Splitter] [コンテンツ flex:1]
+ *   [DiscussTabBar 40px] [DiscussSettingArea? + Splitter] [コンテンツ flex:1]
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,48 +11,48 @@ import { GripVertical } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTActions } from '../../views/TTActions';
-import type { TTDevelopArea } from '../../views/TTDevelopArea';
+import type { TTDiscussArea } from '../../views/TTDiscussArea';
 import type { TTVault } from '../../models/TTVault';
-import type { LayoutNode, SplitNodeData, DevelopViewMode } from '../../views/TTDevelopPanel';
+import type { LayoutNode, SplitNodeData, DiscussViewMode } from '../../views/TTDiscussPanel';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { Splitter } from '../Layout/Splitter';
 import { PanelArea } from '../Layout/PanelArea';
-import { DevelopHSplitter } from './DevelopHSplitter';
-import { DevelopArea } from './DevelopArea';
-import { DevelopAreaEmpty } from './DevelopAreaEmpty';
-import { DevelopTabBar } from './DevelopTabBar';
+import { DiscussHSplitter } from './DiscussHSplitter';
+import { DiscussArea } from './DiscussArea';
+import { DiscussAreaEmpty } from './DiscussAreaEmpty';
+import { DiscussTabBar } from './DiscussTabBar';
 import { NEW_HTML_CONTENT } from '../../utils/htmlPreview';
-import { DevelopSettingArea } from './DevelopSettingArea';
-import type { DevelopSettingAreaRef } from './DevelopSettingArea';
-import { extractLinkDrop, shouldAllowLocalDrop } from './DevelopMenuRibbon';
+import { DiscussSettingArea } from './DiscussSettingArea';
+import type { DiscussSettingAreaRef } from './DiscussSettingArea';
+import { extractLinkDrop, shouldAllowLocalDrop } from './DiscussMenuRibbon';
 import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
 import type { TTThink } from '../../models/TTThink';
-import type { SettingsType } from './DevelopTabBar';
+import type { SettingsType } from './DiscussTabBar';
 import type { MediaType } from '../../types';
 import type { LayoutMode } from '../Layout/AppLayout';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { INIT_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
-import './DevelopPanel.css';
+import './DiscussPanel.css';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
 
 // 幅均等化: v-split ノードに対して、両サブツリーの「幅スロット数」の比率を計算してセット
 // 幅スロット数: v-split は加算、h-split は両側同幅なので max
-function countWidthSlots(node: import('../../views/TTDevelopPanel').LayoutNode): number {
+function countWidthSlots(node: import('../../views/TTDiscussPanel').LayoutNode): number {
   if (node.type === 'leaf') return 1;
   if (node.direction === 'v') return countWidthSlots(node.first) + countWidthSlots(node.second);
   return Math.max(countWidthSlots(node.first), countWidthSlots(node.second));
 }
 
 // 高さ均等化: h-split ノードに対して、両サブツリーの「高さスロット数」の比率を計算してセット
-function countHeightSlots(node: import('../../views/TTDevelopPanel').LayoutNode): number {
+function countHeightSlots(node: import('../../views/TTDiscussPanel').LayoutNode): number {
   if (node.type === 'leaf') return 1;
   if (node.direction === 'h') return countHeightSlots(node.first) + countHeightSlots(node.second);
   return Math.max(countHeightSlots(node.first), countHeightSlots(node.second));
 }
 
 function computeEqualWidthRatios(
-  node: import('../../views/TTDevelopPanel').LayoutNode,
+  node: import('../../views/TTDiscussPanel').LayoutNode,
   out: Record<string, number>,
 ): void {
   if (node.type === 'leaf') return;
@@ -66,7 +66,7 @@ function computeEqualWidthRatios(
 }
 
 function computeEqualHeightRatios(
-  node: import('../../views/TTDevelopPanel').LayoutNode,
+  node: import('../../views/TTDiscussPanel').LayoutNode,
   out: Record<string, number>,
 ): void {
   if (node.type === 'leaf') return;
@@ -80,7 +80,7 @@ function computeEqualHeightRatios(
 }
 
 
-// 初期幅は utils/panelAreaWidth.ts（INIT_AREA_WIDTH.Develop）に集約
+// 初期幅は utils/panelAreaWidth.ts（INIT_AREA_WIDTH.Discuss）に集約
 const MIN_SETTINGS_WIDTH     = 120;
 const MAX_SETTINGS_WIDTH     = 400;
 
@@ -117,16 +117,16 @@ function clientPointToPosition(editor: any, clientX: number, clientY: number): {
 }
 
 /**
- * 画面座標(clientX/clientY)の直下にある DevelopArea の ID を返す（無ければ null）。
+ * 画面座標(clientX/clientY)の直下にある DiscussArea の ID を返す（無ければ null）。
  * computeDropOverlay() の isOuter（パネル外縁判定）とは独立したヒットテスト。
  * Alt+ThinkFileDrag（Insert）の対象判定は、パネル端に近いPane（よくあるレイアウト）でも
  * 常にそのPaneをInsert対象にできるよう、isOuterによる新規Pane追加ゾーン判定より
  * 優先してこちらを使う必要がある。
  */
-function findDevelopAreaIdAtPoint(clientX: number, clientY: number, excludeAreaId?: string): string | null {
+function findDiscussAreaIdAtPoint(clientX: number, clientY: number, excludeAreaId?: string): string | null {
   const els = document.elementsFromPoint(clientX, clientY);
   const areaEl = els.find(el =>
-    el.classList.contains('develop-area') &&
+    el.classList.contains('discuss-area') &&
     el.getAttribute('data-area-id') !== excludeAreaId,
   ) as HTMLElement | undefined;
   return areaEl?.getAttribute('data-area-id') ?? null;
@@ -135,7 +135,7 @@ function findDevelopAreaIdAtPoint(clientX: number, clientY: number, excludeAreaI
 // ── shared props（再帰コンポーネントに引き回す）───────────────────────
 
 interface SharedProps {
-  areas:            Map<string, TTDevelopArea>;
+  areas:            Map<string, TTDiscussArea>;
   vault:            TTVault;
   focusedAreaId:    string | null;
   dragId:           string | null;
@@ -158,8 +158,8 @@ function LayoutView({ node, shared }: { node: LayoutNode; shared: SharedProps })
     const area = shared.areas.get(node.areaId);
     if (!area) return null;
     return (
-      <div className="develop-panel__leaf">
-        <DevelopArea
+      <div className="discuss-panel__leaf">
+        <DiscussArea
           area={area}
           vault={shared.vault}
           isFocused={shared.focusedAreaId === area.ID}
@@ -198,33 +198,33 @@ function SplitView({ node, shared }: { node: SplitNodeData; shared: SharedProps 
   return (
     <div
       ref={containerRef}
-      className={`develop-panel__split develop-panel__split--${node.direction}`}
+      className={`discuss-panel__split discuss-panel__split--${node.direction}`}
     >
-      <div className="develop-panel__split-pane" style={{ flex: ratio }}>
+      <div className="discuss-panel__split-pane" style={{ flex: ratio }}>
         <LayoutView node={node.first} shared={shared} />
       </div>
 
       {isVertical
         ? <Splitter onResize={handleResize} />
-        : <DevelopHSplitter onResize={handleResize} />
+        : <DiscussHSplitter onResize={handleResize} />
       }
 
-      <div className="develop-panel__split-pane" style={{ flex: 1 - ratio }}>
+      <div className="discuss-panel__split-pane" style={{ flex: 1 - ratio }}>
         <LayoutView node={node.second} shared={shared} />
       </div>
     </div>
   );
 }
 
-// ── DevelopPanel ──────────────────────────────────────────────────────
+// ── DiscussPanel ──────────────────────────────────────────────────────
 
 interface Props {
   app: TTApplication;
   layoutMode: LayoutMode;
 }
 
-export function DevelopPanel({ app, layoutMode }: Props) {
-  const panel = app.DevelopPanel;
+export function DiscussPanel({ app, layoutMode }: Props) {
+  const panel = app.DiscussPanel;
   const vault = app.Models.Vault;
   useAppUpdate(panel);
   useAppUpdate(vault);
@@ -238,9 +238,9 @@ export function DevelopPanel({ app, layoutMode }: Props) {
   }, [isEditMode, panel.ViewMode, panel]);
   useAppUpdate(app.SeedsPanel);
 
-  // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status DevelopSettingPanel.Area.OpenWidth のモードで決まる
-  const settingsPanelWidth = useResolvedAreaWidth('DevelopSettingPanel.Area.OpenWidth', panel.AreaWidthMode, INIT_AREA_WIDTH.Develop, panel.AreaUserWidth);
-  const settingPanelRef = useRef<DevelopSettingAreaRef>(null);
+  // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status DiscussSettingPanel.Area.OpenWidth のモードで決まる
+  const settingsPanelWidth = useResolvedAreaWidth('DiscussSettingPanel.Area.OpenWidth', panel.AreaWidthMode, INIT_AREA_WIDTH.Discuss, panel.AreaUserWidth);
+  const settingPanelRef = useRef<DiscussSettingAreaRef>(null);
 
   // 設定パネルが開いた時・モード切替時に対応要素へフォーカス
   useEffect(() => {
@@ -306,7 +306,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
 
   const handleSetActiveSettings = useCallback((type: SettingsType | null) => {
     if (type !== null) {
-      panel.SetViewMode(type as DevelopViewMode);
+      panel.SetViewMode(type as DiscussViewMode);
       panel.OpenArea();
     } else {
       panel.CloseArea();
@@ -323,7 +323,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
     const wasUser = panel.AreaWidthMode === 'user';
     panel.AreaWidthMode = 'user';
     panel.NotifyUpdated();
-    if (!wasUser) TTUIStateManager.instance.notifyPropertyChanged('DevelopSettingPanel.Area.OpenWidth');
+    if (!wasUser) TTUIStateManager.instance.notifyPropertyChanged('DiscussSettingPanel.Area.OpenWidth');
   }, [panel, settingsPanelWidth]);
 
   const handleFocus = useCallback((areaId: string) => {
@@ -427,7 +427,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
       const t = await vault.CreateBlankThink('html', NEW_HTML_CONTENT);
       panel.AddToRight(t.ID, 'html', t.Name);
     } catch (error) {
-      console.error('[DevelopPanel] HTML creation failed', error);
+      console.error('[DiscussPanel] HTML creation failed', error);
       window.alert('HTML資料を保存できませんでした。接続を確認して再度お試しください。');
     }
   }, [vault, panel]);
@@ -452,7 +452,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
         const t = await vault.CreateBlankThink(isHtml ? 'html' : 'memo', content);
         panel.AddToRight(t.ID, isHtml ? 'html' : 'markdown', t.Name);
       } catch (error) {
-        console.error('[DevelopPanel] import failed', error);
+        console.error('[DiscussPanel] import failed', error);
         window.alert('ファイルを保存できませんでした。接続を確認して再度お試しください。');
       }
     };
@@ -550,7 +550,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
 
 
   const handleSettingsRefresh = useCallback(() => {
-    app.RefreshAll().catch(e => console.error('[DevelopPanel] RefreshAll failed:', e));
+    app.RefreshAll().catch(e => console.error('[DiscussPanel] RefreshAll failed:', e));
   }, [app]);
 
   const handleClearAll = useCallback(() => {
@@ -597,10 +597,10 @@ export function DevelopPanel({ app, layoutMode }: Props) {
     const bodyEl = bodyRef.current;
     if (!bodyEl) return null;
 
-    // タイトルバー（DevelopMenuRibbon）上にいる場合はオーバーレイを表示しない
+    // タイトルバー（DiscussMenuRibbon）上にいる場合はオーバーレイを表示しない
     if (!opts.skipRibbonCheck) {
       const elemsUnderCursor = document.elementsFromPoint(e.clientX, e.clientY);
-      if (elemsUnderCursor.some(el => el.classList.contains('develop-menu-ribbon'))) {
+      if (elemsUnderCursor.some(el => el.classList.contains('discuss-menu-ribbon'))) {
         return null;
       }
     }
@@ -641,7 +641,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
     // 内側 → 各ペインで分割
     const els    = document.elementsFromPoint(e.clientX, e.clientY);
     const areaEl = els.find(el =>
-      el.classList.contains('develop-area') &&
+      el.classList.contains('discuss-area') &&
       el.getAttribute('data-area-id') !== opts.excludeAreaId,
     ) as HTMLElement | undefined;
     if (!areaEl) return null;
@@ -684,7 +684,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
     // （よくあるレイアウト）の上にいても isOuter=true になり areaId が付かず、Insertが
     // 一切成立しない不具合があった。Alt押下時は「マウス直下にPaneがあるか」だけで判定する。
     const altHeld = hasThink && TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);
-    const hoveredAreaId = altHeld ? findDevelopAreaIdAtPoint(e.clientX, e.clientY) : null;
+    const hoveredAreaId = altHeld ? findDiscussAreaIdAtPoint(e.clientX, e.clientY) : null;
     const targetEditor = hoveredAreaId ? TTShortcutManager.instance.getAreaEditor(hoveredAreaId) : null;
     const canInsert = !!targetEditor;
     e.dataTransfer.dropEffect = canInsert ? 'link' : 'copy';
@@ -726,10 +726,10 @@ export function DevelopPanel({ app, layoutMode }: Props) {
     }
   }, [computeDropOverlay]);
 
-  // タイトルバー（DevelopMenuRibbon）はdragoverをstopPropagationするため、
+  // タイトルバー（DiscussMenuRibbon）はdragoverをstopPropagationするため、
   // handleBodyDragOverが呼ばれず直前のオーバーレイが残ってしまう。キャプチャ段階で消す。
   const handleBodyDragOverCapture = useCallback((e: React.DragEvent) => {
-    if ((e.target as Element).closest?.('.develop-menu-ribbon')) {
+    if ((e.target as Element).closest?.('.discuss-menu-ribbon')) {
       setDropOverlay(null);
       setInsertCaret(null);
     }
@@ -751,7 +751,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
     if (!overlay) return;
     e.preventDefault();
 
-    // Think D&D（DevelopPanel.DroppedFile.ID:Load / DevelopPanel.DroppedFile.ID:Insert、
+    // Think D&D（DiscussPanel.DroppedFile.ID:Load / DiscussPanel.DroppedFile.ID:Insert、
     // docs/DefaultShortcut.md参照）。コンテンツ領域へのThinkドロップはLoad/Insertいずれも
     // ここで一元的に判定する（各Paneのコンポーネント側では消費しない）。個別コンポーネントの
     // dragover/dropハンドラーとタイミング・判定がずれてAlt判定を取りこぼす問題を避けるため。
@@ -761,14 +761,14 @@ export function DevelopPanel({ app, layoutMode }: Props) {
       // 優先してカーソル直下の既存Paneを直接ヒットテストする（handleBodyDragOverと同じ理由。
       // isOuter判定に引きずられるとパネル端に近い既存Pane上でもLoadにフォールバックしてしまう）。
       const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
-      const hoveredAreaId = actionId === 'DevelopPanel.DroppedFile.ID:Insert'
-        ? findDevelopAreaIdAtPoint(e.clientX, e.clientY)
+      const hoveredAreaId = actionId === 'DiscussPanel.DroppedFile.ID:Insert'
+        ? findDiscussAreaIdAtPoint(e.clientX, e.clientY)
         : null;
       const editor = hoveredAreaId ? TTShortcutManager.instance.getAreaEditor(hoveredAreaId) : null;
       if (editor) {
         TTShortcutManager.instance.setActiveEditor(editor);
         TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-        void TTActions.Execute('DevelopPanel.DroppedFile.ID:Insert');
+        void TTActions.Execute('DiscussPanel.DroppedFile.ID:Insert');
         return;
       }
       // ドロップ位置に応じたPane配置（overlay）は、ゴースト表示のためにここで既に計算済みの
@@ -778,7 +778,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
           ? { thinkId, kind: 'load-place', overlayType: 'add', dir: overlay.dir }
           : { thinkId, kind: 'load-place', overlayType: 'split', dir: overlay.dir, areaId: overlay.areaId }
       );
-      void TTActions.Execute('DevelopPanel.DroppedFile.ID:Load');
+      void TTActions.Execute('DiscussPanel.DroppedFile.ID:Load');
       return;
     }
 
@@ -857,7 +857,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
 
   // ── エリアマップ構築 ──────────────────────────────────────────────
 
-  const areaMap = new Map<string, TTDevelopArea>(panel.Areas.map(a => [a.ID, a]));
+  const areaMap = new Map<string, TTDiscussArea>(panel.Areas.map(a => [a.ID, a]));
 
   const shared: SharedProps = {
     areas:           areaMap,
@@ -879,10 +879,10 @@ export function DevelopPanel({ app, layoutMode }: Props) {
   // ── レンダリング ──────────────────────────────────────────────────
 
   return (
-    <div className="develop-panel">
+    <div className="discuss-panel">
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
-      <DevelopTabBar
+      <DiscussTabBar
         activeSettings={panel.ViewMode}
         isOpen={panel.IsAreaOpen}
         thinkTitle={focusedThinkTitle}
@@ -893,11 +893,11 @@ export function DevelopPanel({ app, layoutMode }: Props) {
 
       {/* ── 設定パネル + Splitter ────────────────────────────── */}
       <PanelArea
-        panelId="develop"
+        panelId="discuss"
         isOpen={panel.IsAreaOpen}
         width={settingsPanelWidth}
       >
-        <DevelopSettingArea
+        <DiscussSettingArea
           ref={settingPanelRef}
           activeSettings={panel.ViewMode}
           panel={panel}
@@ -941,9 +941,9 @@ export function DevelopPanel({ app, layoutMode }: Props) {
         onDrop={handleBodyDrop}
       >
         {panel.Layout === null ? (
-          <DevelopAreaEmpty isFullPanel onAdd={handleAddRight} />
+          <DiscussAreaEmpty isFullPanel onAdd={handleAddRight} />
         ) : (
-          <div className="develop-panel__tree">
+          <div className="discuss-panel__tree">
             <LayoutView node={panel.Layout} shared={shared} />
           </div>
         )}
@@ -951,7 +951,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
         {/* D&D ドロップ位置プレビューオーバーレイ */}
         {dropOverlay && (
           <div
-            className={`develop-panel__drop-overlay develop-panel__drop-overlay--${dropOverlay.type}`}
+            className={`discuss-panel__drop-overlay discuss-panel__drop-overlay--${dropOverlay.type}`}
             style={{ position: 'absolute', pointerEvents: 'none', ...dropOverlay.style }}
           />
         )}
@@ -959,7 +959,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
         {/* Alt+ThinkFileDrag（Insert）挿入位置プレビューCaret */}
         {insertCaret && (
           <div
-            className="develop-panel__insert-caret"
+            className="discuss-panel__insert-caret"
             style={{
               position: 'absolute',
               pointerEvents: 'none',
@@ -975,7 +975,7 @@ export function DevelopPanel({ app, layoutMode }: Props) {
       {/* ── ドラッグ Ghost ────────────────────────────────────── */}
       {dragId && dragTitle && dragPos && (
         <div
-          className="develop-drag-ghost"
+          className="discuss-drag-ghost"
           style={{ left: dragPos.x + 14, top: dragPos.y - 10 }}
         >
           <GripVertical size={12} />

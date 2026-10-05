@@ -11,7 +11,7 @@ export const ChatMedia = forwardRef<ChatMediaRef, MediaProps>(function ChatMedia
   useImperativeHandle(ref, () => ({ focus: () => chat.current?.focus() }));
   if (!think) return null;
   return <div className="chat-media"><SupportChat ref={chat} pane vault={TTApplication.Instance.Models.Vault}
-    panelName="Develop" selectedId={think.ID} onSelected={() => {}} bundleId={TTApplication.Instance.SeedsPanel.BundleID}
+    panelName="Discuss" selectedId={think.ID} onSelected={() => {}} bundleId={TTApplication.Instance.SeedsPanel.BundleID}
     onMessages={() => {}} onWaiting={() => onDirtyChange(false)}
     modelSelector={{ value: aiChatModel ?? DEFAULT_AI_MODEL_SELECTION, onChange: selection => onAiChatModelChange?.(selection) }} />
   </div>;

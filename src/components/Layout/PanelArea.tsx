@@ -16,7 +16,7 @@ interface Props {
   /** 開いているときの幅（px）。デフォルト 240 */
   width?: number;
   /** パネル識別子（テーマ色 CSS クラス用）*/
-  panelId: 'thinktank' | 'seeds' | 'develop' | 'harvest';
+  panelId: 'thinktank' | 'seeds' | 'discuss' | 'harvest';
   children?: ReactNode;
 }
 

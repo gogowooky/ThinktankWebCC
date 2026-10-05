@@ -5,7 +5,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   font-size: calc(12px * var(--tt-font-scale, 1));
 }
 
@@ -27,7 +27,7 @@
   border-radius: 4px;
   padding: 0 8px;
   font-size: calc(11px * var(--tt-font-scale, 1));
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   outline: none;
   min-width: 0;
 }
@@ -97,7 +97,7 @@
   background: rgba(220, 53, 69, 0.10);
 }
 
-.datagrid-media__row--develop {
+.datagrid-media__row--discuss {
   background: rgba(220, 53, 69, 0.05);
 }
 
@@ -164,7 +164,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   font-size: calc(12px * var(--tt-font-scale, 1));
 }
 
@@ -198,7 +198,7 @@
 }
 
 .table-grid__tab--active {
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   color: rgba(0,0,0,0.85);
   border-color: rgba(0,0,0,0.12);
   font-weight: 600;
@@ -222,7 +222,7 @@
   border-radius: 4px;
   padding: 0 8px;
   font-size: calc(11px * var(--tt-font-scale, 1));
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   outline: none;
   min-width: 0;
 }
@@ -416,7 +416,7 @@
   font-size: calc(10px * var(--tt-font-scale, 1));
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 3px;
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   color: rgba(0, 0, 0, 0.6);
   cursor: pointer;
   white-space: nowrap;
@@ -503,7 +503,7 @@
   position: fixed;
   width: 220px;
   padding: 10px;
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 8px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
@@ -568,7 +568,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   border: 2px solid rgba(0, 0, 0, 0.3);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
   transform: translate(-50%, -50%);

@@ -1,6 +1,6 @@
-/* DevelopAreaEmpty.css */
+/* DiscussAreaEmpty.css */
 
-.develop-area-empty {
+.discuss-area-empty {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -12,18 +12,18 @@
   transition: border-color 150ms ease, background 150ms ease;
 }
 
-.develop-area-empty--full {
+.discuss-area-empty--full {
   border: none;
   background: transparent;
   opacity: 0.5;
 }
 
-.develop-area-empty--target {
+.discuss-area-empty--target {
   border-color: var(--text-accent);
   background: rgba(122, 162, 247, 0.08);
 }
 
-.develop-area-empty__add {
+.discuss-area-empty__add {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,7 +35,7 @@
   transition: background 150ms ease, color 150ms ease;
 }
 
-.develop-area-empty__add:hover {
+.discuss-area-empty__add:hover {
   background: rgba(0, 0, 0, 0.06);
   color: #222;
 }

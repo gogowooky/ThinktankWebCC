@@ -4,7 +4,7 @@ import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat'
 import { useSupportChats } from '../../hooks/useSupportChats';
 import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 /**
- * DevelopSettingArea.tsx
+ * DiscussSettingArea.tsx
  */
 
 import { useState, useRef, useImperativeHandle, forwardRef, useCallback, useMemo, useEffect } from 'react';
@@ -36,13 +36,13 @@ import {
   Star,
   Power,
 } from 'lucide-react';
-import type { TTDevelopPanel } from '../../views/TTDevelopPanel';
+import type { TTDiscussPanel } from '../../views/TTDiscussPanel';
 import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { TTActions } from '../../views/TTActions';
 import { TTVoiceInput, isVoiceInputSupported } from '../../views/TTVoiceInput';
-import type { SettingsType } from './DevelopTabBar';
-import { DEVELOP_SETTINGS } from './DevelopTabBar';
+import type { SettingsType } from './DiscussTabBar';
+import { DEVELOP_SETTINGS } from './DiscussTabBar';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
@@ -51,7 +51,7 @@ import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPick
 import type { ChatMessage } from '../../types';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, styleStatusId } from '../../utils/defaultColor';
-import './DevelopSettingArea.css';
+import './DiscussSettingArea.css';
 
 /**
  * 「文字設定」の先頭に並べるエディタの基本色。値の実体は docs/DefaultColor.md の
@@ -145,13 +145,13 @@ function DatabaseArrowDown({ size = 16, className }: { size?: number; className?
 
 // ── Ref ─────────────────────────────────────────────────────────────────
 
-export interface DevelopSettingAreaRef { focus: () => void; }
+export interface DiscussSettingAreaRef { focus: () => void; }
 
 // ── Props ────────────────────────────────────────────────────────────────
 
 interface Props {
   activeSettings:   SettingsType;
-  panel:            TTDevelopPanel;
+  panel:            TTDiscussPanel;
   vault:            TTVault;
   width:            number;
   onSplitLeft:      () => void;
@@ -181,7 +181,7 @@ interface Props {
 
 // ── Component ────────────────────────────────────────────────────────────
 
-export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(function DevelopSettingArea({
+export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(function DiscussSettingArea({
   activeSettings, panel, vault, width,
   onSplitLeft, onSplitRight, onSplitAbove, onSplitBelow,
   onAddLeft, onAddRight, onAddTop, onAddBottom,
@@ -220,15 +220,15 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
   // ── 会話履歴チャット state ───────────────────────────────────────────────
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatWaiting,  setChatWaiting]  = useState(false);
-  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Develop');
+  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Discuss');
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // Seedsで選択中のBundleからタイトル上の担当がDevelopのChatを表示する。
-  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Develop", TTApplication.Instance.SeedsPanel.BundleID, selectedTodoMemoId);
+  // Seedsで選択中のBundleからタイトル上の担当がDiscussのChatを表示する。
+  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Discuss", TTApplication.Instance.SeedsPanel.BundleID, selectedTodoMemoId);
 
   // 選択中の TODO メモが一覧から消えたら選択を空に戻す
   useEffect(() => {
@@ -267,7 +267,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
   const [isEditSettingsOpen,      setIsEditSettingsOpen]      = useState(true);
   const [isKeySettingsOpen,       setIsKeySettingsOpen]       = useState(true);
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
-  usePanelSectionsSetAll('develop', [
+  usePanelSectionsSetAll('discuss', [
     setIsActionSettingsOpen, setIsDisplaySettingsOpen, setIsColorSettingsOpen,
     setIsTagColorOpen, setIsHighlightColorOpen, setIsMemoSettingsOpen,
     setIsEditSettingsOpen, setIsKeySettingsOpen, setIsTableSettingsOpen,
@@ -283,20 +283,20 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
   const handleVoiceMicOff  = useCallback(() => { TTVoiceInput.instance.stop(); }, []);
   const handleVoiceEraser  = useCallback(() => { TTVoiceInput.instance.cancel(); }, []);
 
-  // maxWidth を width に合わせるのは、Status DevelopSettingPanel.Area.OpenWidth が foredit のとき
+  // maxWidth を width に合わせるのは、Status DiscussSettingPanel.Area.OpenWidth が foredit のとき
   // アプリ幅の割合で決まる幅が CSS の max-width（400px）で頭打ちにならないようにするため。
-  // Splitter 操作側の上限は DevelopPanel の MAX_SETTINGS_WIDTH が担保する。
+  // Splitter 操作側の上限は DiscussPanel の MAX_SETTINGS_WIDTH が担保する。
   return (
-    <div ref={panelRef} className="develop-setting-area" style={{ width, maxWidth: width }} tabIndex={-1}>
+    <div ref={panelRef} className="discuss-setting-area" style={{ width, maxWidth: width }} tabIndex={-1}>
 
-      <div className="develop-setting-area__header">Develop&gt;{panelName}</div>
+      <div className="discuss-setting-area__header">Discuss&gt;{panelName}</div>
 
-      <div className={`develop-setting-area__body${activeSettings === 'chat' ? ' develop-setting-area__body--chat' : ''}`}>
+      <div className={`discuss-setting-area__body${activeSettings === 'chat' ? ' discuss-setting-area__body--chat' : ''}`}>
         {activeSettings === 'chat' ? (
-          <div className="develop-setting-area__chat">
-            <div className="develop-setting-area__chat-toolbar">
+          <div className="discuss-setting-area__chat">
+            <div className="discuss-setting-area__chat-toolbar">
               <button
-                className="develop-setting-area__chat-btn"
+                className="discuss-setting-area__chat-btn"
                 onClick={handleSaveChat}
                 disabled={true}
                 data-tip="会話履歴は閲覧専用です"
@@ -304,31 +304,31 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                 <Save size={14} className="ws-icon" />
               </button>
 
-              <div className="develop-setting-area__chat-sep" />
+              <div className="discuss-setting-area__chat-sep" />
 
               <button
-                className="develop-setting-area__chat-btn"
+                className="discuss-setting-area__chat-btn"
                 onClick={onRefresh}
                 data-tip="表示更新"
               >
                 <ListRestart size={14} className="ws-icon" />
               </button>
               <button
-                className={`develop-setting-area__chat-btn${showColumnDialog ? ' develop-setting-area__chat-btn--active' : ''}`}
+                className={`discuss-setting-area__chat-btn${showColumnDialog ? ' discuss-setting-area__chat-btn--active' : ''}`}
                 onClick={handleToggleColumnDialog}
                 data-tip="表示項目とソート"
               >
                 <ArrowDownAZ size={14} className="ws-icon" />
               </button>
               <button
-                className={`develop-setting-area__chat-btn${showFilterSelectDialog ? ' develop-setting-area__chat-btn--active' : ''}`}
+                className={`discuss-setting-area__chat-btn${showFilterSelectDialog ? ' discuss-setting-area__chat-btn--active' : ''}`}
                 onClick={handleToggleFilterSelectDialog}
                 data-tip="フィルター選択"
               >
                 <LayoutList size={14} className="ws-icon" />
               </button>
               <button
-                className="develop-setting-area__chat-btn"
+                className="discuss-setting-area__chat-btn"
                 onClick={() => handleSelectTodoMemo('')}
                 data-tip="アイテム選択をクリア"
               >
@@ -366,8 +366,8 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
               checkedIds={panel.CheckedThoughtIDs}
               onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
             />
-            <div className="develop-setting-area__chat-body">
-              <SupportChat ref={aiChatViewRef} vault={vault} panelName="Develop"
+            <div className="discuss-setting-area__chat-body">
+              <SupportChat ref={aiChatViewRef} vault={vault} panelName="Discuss"
                 selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={TTApplication.Instance.SeedsPanel.BundleID}
                 onMessages={setChatMessages} onWaiting={setChatWaiting}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
@@ -376,25 +376,25 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
         ) : activeSettings === 'panes' ? (
           <>
             {/* アクション管理 */}
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div 
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsActionSettingsOpen(!isActionSettingsOpen)}
               >
                 {isActionSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>アクション</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>アクション</span>
               </div>
               
               {isActionSettingsOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   {/* 分割 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>分割</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="左に分割して新Pane追加">
                         <button
                           ref={firstPanesRef}
-                          className="develop-setting-area__icon-btn"
+                          className="discuss-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitLeft : undefined}
                           disabled={!hasFocus}
                         >
@@ -403,7 +403,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                       </div>
                       <div className="tooltip-wrapper" data-tip="右に分割して新Pane追加">
                         <button
-                          className="develop-setting-area__icon-btn"
+                          className="discuss-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitRight : undefined}
                           disabled={!hasFocus}
                         >
@@ -412,7 +412,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                       </div>
                       <div className="tooltip-wrapper" data-tip="上に分割して新Pane追加">
                         <button
-                          className="develop-setting-area__icon-btn"
+                          className="discuss-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitAbove : undefined}
                           disabled={!hasFocus}
                         >
@@ -421,7 +421,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                       </div>
                       <div className="tooltip-wrapper" data-tip="下に分割して新Pane追加">
                         <button
-                          className="develop-setting-area__icon-btn"
+                          className="discuss-setting-area__icon-btn"
                           onClick={hasFocus ? onSplitBelow : undefined}
                           disabled={!hasFocus}
                         >
@@ -434,30 +434,30 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   {/* 追加 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>追加</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={onAddLeft}
                         data-tip="左端に追加"
                       >
                         <AddIcon dir="left" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={onAddRight}
                         data-tip="右端に追加"
                       >
                         <AddIcon dir="right" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={onAddTop}
                         data-tip="上端に追加"
                       >
                         <AddIcon dir="up" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={onAddBottom}
                         data-tip="下端に追加"
                       >
@@ -469,10 +469,10 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   {/* 消去 */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>消去</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="フォーカスペインを消去">
                         <button
-                          className="develop-setting-area__icon-btn develop-setting-area__icon-btn--danger"
+                          className="discuss-setting-area__icon-btn discuss-setting-area__icon-btn--danger"
                           onClick={hasFocus ? onRemoveFocused : undefined}
                           disabled={!hasFocus}
                         >
@@ -480,7 +480,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         </button>
                       </div>
                       <button
-                        className="develop-setting-area__icon-btn develop-setting-area__icon-btn--danger"
+                        className="discuss-setting-area__icon-btn discuss-setting-area__icon-btn--danger"
                         onClick={onClearAll}
                         data-tip="すべてのペインを全消去"
                       >
@@ -488,7 +488,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                       </button>
                       <div className="tooltip-wrapper" data-tip="選択中BundleにないPaneをすべて消去">
                         <button
-                          className="develop-setting-area__icon-btn develop-setting-area__icon-btn--danger"
+                          className="discuss-setting-area__icon-btn discuss-setting-area__icon-btn--danger"
                           onClick={hasBundle ? onCloseNotInBundle : undefined}
                           disabled={!hasBundle}
                         >
@@ -501,10 +501,10 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   {/* 均等 */}
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>均等</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <div className="tooltip-wrapper" data-tip="幅を均等化">
                         <button
-                          className="develop-setting-area__icon-btn"
+                          className="discuss-setting-area__icon-btn"
                           onClick={hasFocus ? onEqualizeWidths : undefined}
                           disabled={!hasFocus}
                         >
@@ -513,7 +513,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                       </div>
                       <div className="tooltip-wrapper" data-tip="高さを均等化">
                         <button
-                          className="develop-setting-area__icon-btn"
+                          className="discuss-setting-area__icon-btn"
                           onClick={hasFocus ? onEqualizeHeights : undefined}
                           disabled={!hasFocus}
                         >
@@ -529,30 +529,30 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
         ) : activeSettings === 'texteditor' ? (
           <>
             {/* メモ操作 */}
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsMemoSettingsOpen(!isMemoSettingsOpen)}
               >
                 {isMemoSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>メモ</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>メモ</span>
               </div>
 
               {isMemoSettingsOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
                         ref={firstTexteditorRef}
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={onCreateMemo}
                         data-tip="新規メモファイルを作成"
                         data-tip-side="top-start"
                       >
                         <File size={16} className="ws-icon" />
                       </button>
-                      <button className="develop-setting-area__icon-btn"
+                      <button className="discuss-setting-area__icon-btn"
                         onClick={onReadMemo}
                         data-tip="テキスト・HTMLファイルを読み込む"
                         aria-label="テキスト・HTMLファイルを読み込む"
@@ -564,9 +564,9 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={onSaveMemo}
                         data-tip="表示中のメモ・HTML資料をファイルで保存"
                         data-tip-side="top-start"
@@ -574,7 +574,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         <Save size={16} className="ws-icon" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('Application.Resource.ExportToLocal')}
                         data-tip="BQ保存済みThinkファイルをローカルにエクスポート"
                         data-tip-side="top-start"
@@ -585,9 +585,9 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>巻戻</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('Application.Resource.RollbackFocusedThink')}
                         data-tip="直前にフォーカスされたThinkファイル1つをBQで1時間前の状態に戻す"
                         data-tip-side="top-start"
@@ -595,7 +595,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         <FileClock size={16} className="ws-icon" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('Application.Resource.RollbackAll')}
                         data-tip="BQ全体を1時間前の状態に戻す"
                         data-tip-side="top-start"
@@ -607,25 +607,25 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                 </div>
               )}
             </div>
-            <div className="develop-setting-area__divider" />
+            <div className="discuss-setting-area__divider" />
 
             {/* 編集 */}
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsEditSettingsOpen(!isEditSettingsOpen)}
               >
                 {isEditSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>編集</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>編集</span>
               </div>
 
               {isEditSettingsOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>音声入力</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className={`develop-setting-area__icon-btn${isVoiceListening ? ' develop-setting-area__icon-btn--active' : ''}`}
+                        className={`discuss-setting-area__icon-btn${isVoiceListening ? ' discuss-setting-area__icon-btn--active' : ''}`}
                         onClick={handleVoiceMicOn}
                         disabled={!voiceSupported}
                         data-tip={voiceSupported ? '音声入力をONにする' : 'このブラウザは音声入力に対応していません'}
@@ -634,7 +634,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         <Mic size={16} className="ws-icon" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={handleVoiceMicOff}
                         disabled={!voiceSupported}
                         data-tip="音声入力をOFFにする"
@@ -643,7 +643,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         <MicOff size={16} className="ws-icon" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={handleVoiceEraser}
                         disabled={!voiceSupported}
                         data-tip="音声入力したテキストを取り消す"
@@ -666,25 +666,25 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                 </div>
               )}
             </div>
-            <div className="develop-setting-area__divider" />
+            <div className="discuss-setting-area__divider" />
 
             {/* 設定 */}
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsKeySettingsOpen(!isKeySettingsOpen)}
               >
                 {isKeySettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>設定</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>設定</span>
               </div>
 
               {isKeySettingsOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>キー設定</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.KeyBinding.Load')}
                         data-tip="Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定を上書きする（key一致分のみ置換、他は維持）"
                         data-tip-side="top-start"
@@ -692,7 +692,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         <Star size={16} className="ws-icon" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.KeyBinding.Reset')}
                         data-tip="キー設定をDefaultの状態に戻す"
                         data-tip-side="top-start"
@@ -703,9 +703,9 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>色設定</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.ColorBinding.Load')}
                         data-tip="Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定を上書きする（id一致分のみ置換、他は維持）"
                         data-tip-side="top-start"
@@ -713,7 +713,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         <Star size={16} className="ws-icon" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.ColorBinding.Reset')}
                         data-tip="色設定をDefaultの状態に戻す"
                         data-tip-side="top-start"
@@ -724,9 +724,9 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>タグ設定</span>
-                    <div className="develop-setting-area__icon-row" style={{ flex: 1 }}>
+                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.SearchTag.Load')}
                         data-tip="Vault内の「ThinktankSearchTag」という名前のMemoを読み込み、タグ定義を上書きする（id一致分のみ置換、他は維持）"
                         data-tip-side="top-start"
@@ -734,7 +734,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         <Star size={16} className="ws-icon" />
                       </button>
                       <button
-                        className="develop-setting-area__icon-btn"
+                        className="discuss-setting-area__icon-btn"
                         onClick={() => TTActions.Execute('TextEditor.SearchTag.Reset')}
                         data-tip="タグ定義をDefaultの状態に戻す"
                         data-tip-side="top-start"
@@ -746,100 +746,100 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                 </div>
               )}
             </div>
-            <div className="develop-setting-area__divider" />
+            <div className="discuss-setting-area__divider" />
 
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsDisplaySettingsOpen(!isDisplaySettingsOpen)}
               >
                 {isDisplaySettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>表示設定</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>表示設定</span>
               </div>
 
               {isDisplaySettingsOpen && (
-                <div className="develop-setting-area__section-content">
-                  <label className="develop-setting-area__checkbox-label">
+                <div className="discuss-setting-area__section-content">
+                  <label className="discuss-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.LineNumbers.IsVisible}
                       onChange={e => panel.SetTextEditorLineNumbersVisible(e.target.checked)}
                     />
-                    <span className="develop-setting-area__checkbox-text">行番号</span>
+                    <span className="discuss-setting-area__checkbox-text">行番号</span>
                   </label>
 
-                  <label className="develop-setting-area__checkbox-label">
+                  <label className="discuss-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.WordWrap.IsVisible}
                       onChange={e => panel.SetTextEditorWordWrapVisible(e.target.checked)}
                     />
-                    <span className="develop-setting-area__checkbox-text">Wordwrap</span>
+                    <span className="discuss-setting-area__checkbox-text">Wordwrap</span>
                   </label>
 
-                  <label className="develop-setting-area__checkbox-label">
+                  <label className="discuss-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.Minimap.IsVisible}
                       onChange={e => panel.SetTextEditorMinimapVisible(e.target.checked)}
                     />
-                    <span className="develop-setting-area__checkbox-text">ミニマップ</span>
+                    <span className="discuss-setting-area__checkbox-text">ミニマップ</span>
                   </label>
 
-                  <label className="develop-setting-area__checkbox-label">
+                  <label className="discuss-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.FullWidthSpace.IsVisible}
                       onChange={e => panel.SetTextEditorFullWidthSpaceVisible(e.target.checked)}
                     />
-                    <span className="develop-setting-area__checkbox-text">全角スペース</span>
+                    <span className="discuss-setting-area__checkbox-text">全角スペース</span>
                   </label>
 
-                  <label className="develop-setting-area__checkbox-label">
+                  <label className="discuss-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.UnicodeHighlight.IsVisible}
                       onChange={e => panel.SetTextEditorUnicodeHighlightVisible(e.target.checked)}
                     />
-                    <span className="develop-setting-area__checkbox-text">特殊文字警告</span>
+                    <span className="discuss-setting-area__checkbox-text">特殊文字警告</span>
                   </label>
 
-                  <label className="develop-setting-area__checkbox-label">
+                  <label className="discuss-setting-area__checkbox-label">
                     <input
                       type="checkbox"
                       checked={panel.TextEditor.BracketPairColorization.IsVisible}
                       onChange={e => panel.SetTextEditorBracketPairColorizationVisible(e.target.checked)}
                     />
-                    <span className="develop-setting-area__checkbox-text">括弧対応</span>
+                    <span className="discuss-setting-area__checkbox-text">括弧対応</span>
                   </label>
                 </div>
               )}
             </div>
-            <div className="develop-setting-area__divider" />
+            <div className="discuss-setting-area__divider" />
 
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div 
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsColorSettingsOpen(!isColorSettingsOpen)}
               >
                 {isColorSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>文字設定</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>文字設定</span>
               </div>
 
               {isColorSettingsOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   {/* エディタの基本色。docs/DefaultColor.md の各StatusIDを直接編集する（Attrs は扱わない）*/}
                   {TEXT_EDITOR_BASE_COLORS.map((row, rowIndex) => (
-                    <div key={rowIndex} className="develop-setting-area__color-row">
+                    <div key={rowIndex} className="discuss-setting-area__color-row">
                       {row.map(({ statusId, label, hasColor }) => {
                         const style = panel.GetColorStatus(statusId);
                         return (
-                          <div key={statusId} className="develop-setting-area__color-cell">
-                            <span className="develop-setting-area__color-label">{label}</span>
+                          <div key={statusId} className="discuss-setting-area__color-cell">
+                            <span className="discuss-setting-area__color-label">{label}</span>
                             {hasColor && (
                               <input
                                 type="color"
-                                className="develop-setting-area__color-picker"
+                                className="discuss-setting-area__color-picker"
                                 value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
                                 onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
                                 data-tip={`${label}の文字色`}
@@ -847,7 +847,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                             )}
                             <input
                               type="color"
-                              className="develop-setting-area__color-picker"
+                              className="discuss-setting-area__color-picker"
                               value={isUnset(style.BgColor) ? '#ffffff' : style.BgColor.slice(0, 7)}
                               onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
                               data-tip={`${label}の背景色`}
@@ -865,16 +865,16 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                     const attrs = parseAttrs(style.Attrs);
                     const hasBg = !isUnset(style.BgColor);
                     return (
-                      <div key={level} className="develop-setting-area__heading-style-row">
-                        <span className="develop-setting-area__heading-style-label">セクション{fw}</span>
+                      <div key={level} className="discuss-setting-area__heading-style-row">
+                        <span className="discuss-setting-area__heading-style-label">セクション{fw}</span>
                         <input
                           type="color"
-                          className="develop-setting-area__color-picker"
+                          className="discuss-setting-area__color-picker"
                           value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
                           onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
                           data-tip={`セクション${fw}の文字色`}
                         />
-                        <label className="develop-setting-area__small-checkbox">
+                        <label className="discuss-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={attrs.has('bold')}
@@ -882,7 +882,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                           />
                           B
                         </label>
-                        <label className="develop-setting-area__small-checkbox">
+                        <label className="discuss-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={attrs.has('underline')}
@@ -890,7 +890,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                           />
                           U
                         </label>
-                        <label className="develop-setting-area__small-checkbox">
+                        <label className="discuss-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={hasBg}
@@ -901,7 +901,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         {hasBg && (
                           <input
                             type="color"
-                            className="develop-setting-area__color-picker"
+                            className="discuss-setting-area__color-picker"
                             value={style.BgColor.slice(0, 7)}
                             onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
                             data-tip={`セクション${fw}の背景色`}
@@ -913,35 +913,35 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                 </div>
               )}
             </div>
-            <div className="develop-setting-area__divider" />
+            <div className="discuss-setting-area__divider" />
 
             {/* タグ色設定（Url / Filepath / Tag）*/}
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsTagColorOpen(!isTagColorOpen)}
               >
                 {isTagColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>タグ色</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>タグ色</span>
               </div>
 
               {isTagColorOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   {TEXT_EDITOR_TAG_COLORS.map(({ statusId, label }) => {
                     const style = panel.GetColorStatus(statusId);
                     const attrs = parseAttrs(style.Attrs);
                     const hasBg = !isUnset(style.BgColor);
                     return (
-                      <div key={statusId} className="develop-setting-area__heading-style-row">
-                        <span className="develop-setting-area__heading-style-label">{label}</span>
+                      <div key={statusId} className="discuss-setting-area__heading-style-row">
+                        <span className="discuss-setting-area__heading-style-label">{label}</span>
                         <input
                           type="color"
-                          className="develop-setting-area__color-picker"
+                          className="discuss-setting-area__color-picker"
                           value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
                           onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
                           data-tip={`${label}の文字色`}
                         />
-                        <label className="develop-setting-area__small-checkbox">
+                        <label className="discuss-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={attrs.has('bold')}
@@ -949,7 +949,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                           />
                           B
                         </label>
-                        <label className="develop-setting-area__small-checkbox">
+                        <label className="discuss-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={attrs.has('underline')}
@@ -957,7 +957,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                           />
                           U
                         </label>
-                        <label className="develop-setting-area__small-checkbox">
+                        <label className="discuss-setting-area__small-checkbox">
                           <input
                             type="checkbox"
                             checked={hasBg}
@@ -968,7 +968,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                         {hasBg && (
                           <input
                             type="color"
-                            className="develop-setting-area__color-picker"
+                            className="discuss-setting-area__color-picker"
                             value={style.BgColor.slice(0, 7)}
                             onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
                             data-tip={`${label}の背景色`}
@@ -980,20 +980,20 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                 </div>
               )}
             </div>
-            <div className="develop-setting-area__divider" />
+            <div className="discuss-setting-area__divider" />
 
             {/* ハイライトグループ色設定 */}
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsHighlightColorOpen(!isHighlightColorOpen)}
               >
                 {isHighlightColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>ハイライト色</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>ハイライト色</span>
               </div>
 
               {isHighlightColorOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   {[1, 2, 3, 4, 5, 6].map(group => {
                     const statusId = styleStatusId('Highlighter', group);
                     const style = panel.GetColorStatus(statusId);
@@ -1002,10 +1002,10 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                     const hasBg = !isUnset(style.BgColor);
                     const hasFg = !isUnset(style.Color);
                     return (
-                      <div key={group} className="develop-setting-area__color-row" style={{ gap: '4px' }}>
-                        <span className="develop-setting-area__color-label" style={{ minWidth: '50px' }}>グループ{fw}</span>
+                      <div key={group} className="discuss-setting-area__color-row" style={{ gap: '4px' }}>
+                        <span className="discuss-setting-area__color-label" style={{ minWidth: '50px' }}>グループ{fw}</span>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
-                          <label className="develop-setting-area__small-checkbox">
+                          <label className="discuss-setting-area__small-checkbox">
                             <input
                               type="checkbox"
                               checked={hasBg}
@@ -1016,14 +1016,14 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                           {hasBg && (
                             <input
                               type="color"
-                              className="develop-setting-area__color-picker"
+                              className="discuss-setting-area__color-picker"
                               value={style.BgColor.slice(0, 7)}
                               onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
                               data-tip={`グループ${fw}の背景色`}
                             />
                           )}
 
-                          <label className="develop-setting-area__small-checkbox">
+                          <label className="discuss-setting-area__small-checkbox">
                             <input
                               type="checkbox"
                               checked={hasFg}
@@ -1034,14 +1034,14 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                           {hasFg && (
                             <input
                               type="color"
-                              className="develop-setting-area__color-picker"
+                              className="discuss-setting-area__color-picker"
                               value={style.Color.slice(0, 7)}
                               onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
                               data-tip={`グループ${fw}の文字色`}
                             />
                           )}
 
-                          <label className="develop-setting-area__small-checkbox">
+                          <label className="discuss-setting-area__small-checkbox">
                             <input
                               type="checkbox"
                               checked={attrs.has('bold')}
@@ -1049,7 +1049,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                             />
                             B
                           </label>
-                          <label className="develop-setting-area__small-checkbox">
+                          <label className="discuss-setting-area__small-checkbox">
                             <input
                               type="checkbox"
                               checked={attrs.has('underline')}
@@ -1066,16 +1066,16 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
             </div>
           </>
         ) : activeSettings === 'html' ? (
-          <div className="develop-setting-area__section">
-            <div className="develop-setting-area__section-header">
-              <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>Html</span>
+          <div className="discuss-setting-area__section">
+            <div className="discuss-setting-area__section-header">
+              <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>Html</span>
             </div>
-            <div className="develop-setting-area__section-content">
+            <div className="discuss-setting-area__section-content">
               <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                 <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
                 <button
                   ref={firstHtmlRef}
-                  className="develop-setting-area__icon-btn"
+                  className="discuss-setting-area__icon-btn"
                   onClick={onCreateHtml}
                   aria-label="Htmlファイルを新規作成"
                   data-tip="Htmlファイルを新規作成"
@@ -1087,22 +1087,22 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
           </div>
         ) : activeSettings === 'datagrid' ? (
           <>
-            <div className="develop-setting-area__section">
+            <div className="discuss-setting-area__section">
               <div
-                className="develop-setting-area__section-header"
+                className="discuss-setting-area__section-header"
                 onClick={() => setIsTableSettingsOpen(!isTableSettingsOpen)}
               >
                 {isTableSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="develop-setting-area__section-label" style={{ marginBottom: 0 }}>テーブル</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>テーブル</span>
               </div>
 
               {isTableSettingsOpen && (
-                <div className="develop-setting-area__section-content">
+                <div className="discuss-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
                     <button
                       ref={firstDatagridRef}
-                      className="develop-setting-area__icon-btn"
+                      className="discuss-setting-area__icon-btn"
                       onClick={onCreateTable}
                       data-tip="新規テーブルファイルを作成"
                     >
@@ -1112,7 +1112,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>読取</span>
                     <button
-                      className="develop-setting-area__icon-btn"
+                      className="discuss-setting-area__icon-btn"
                       onClick={onReadTable}
                       data-tip="CSV / XLSX を読み取って新規テーブルを作成"
                     >
@@ -1122,7 +1122,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
                     <button
-                      className="develop-setting-area__icon-btn"
+                      className="discuss-setting-area__icon-btn"
                       onClick={onSaveTable}
                       data-tip="表示中のテーブルデータを CSV で保存"
                     >
@@ -1134,7 +1134,7 @@ export const DevelopSettingArea = forwardRef<DevelopSettingAreaRef, Props>(funct
             </div>
           </>
         ) : (
-          <div className="develop-setting-area__placeholder">
+          <div className="discuss-setting-area__placeholder">
             {panelName} の設定は今後追加予定です。
           </div>
         )}

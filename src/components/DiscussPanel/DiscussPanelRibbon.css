@@ -1,18 +1,18 @@
-/* DevelopPanelRibbon.css */
+/* DiscussPanelRibbon.css */
 
-.develop-panel-ribbon {
+.discuss-panel-ribbon {
   height: 30px;
   display: flex;
   align-items: center;
   padding: 0 10px;
   gap: 6px;
-  background: var(--develop-ribbon-bg, #2a2a2a);
+  background: var(--discuss-ribbon-bg, #2a2a2a);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
 }
 
 /* ── 追加ボタン（右に/下に）────────────────────────────────── */
-.develop-panel-ribbon__add-btn {
+.discuss-panel-ribbon__add-btn {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -27,24 +27,24 @@
   cursor: pointer;
 }
 
-.develop-panel-ribbon__add-btn:hover:not(:disabled) {
+.discuss-panel-ribbon__add-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
 
-.develop-panel-ribbon__add-btn:disabled,
-.develop-panel-ribbon__add-btn--disabled {
+.discuss-panel-ribbon__add-btn:disabled,
+.discuss-panel-ribbon__add-btn--disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
 /* ── スペーサー ──────────────────────────────────────────────── */
-.develop-panel-ribbon__spacer {
+.discuss-panel-ribbon__spacer {
   flex: 1;
 }
 
 /* ── フォーカス中エリア名 ──────────────────────────────────── */
-.develop-panel-ribbon__focus-label {
+.discuss-panel-ribbon__focus-label {
   font-size: calc(10px * var(--tt-font-scale, 1));
   color: rgba(255, 255, 255, 0.35);
   overflow: hidden;

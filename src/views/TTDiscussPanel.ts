@@ -1,10 +1,10 @@
 /**
- * TTDevelopPanel.ts
- * DevelopArea 群を BSP ツリーで管理するビューモデル。
+ * TTDiscussPanel.ts
+ * DiscussArea 群を BSP ツリーで管理するビューモデル。
  */
 
 import { TTUIItem } from '../models/TTUIItem';
-import { TTDevelopArea } from './TTDevelopArea';
+import { TTDiscussArea } from './TTDiscussArea';
 import { TTUIStateManager } from './TTUIStateManager';
 import type { MediaType } from '../types';
 import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
@@ -15,9 +15,23 @@ import {
 import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
-const AI_MODEL_STORAGE_KEY = 'tt-ai-model-develop';
+const AI_MODEL_STORAGE_KEY = 'tt-ai-model-discuss';
 
-export type DevelopViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
+function loadDiscussAiModelSelection(): AiModelSelection {
+  try {
+    if (localStorage.getItem(AI_MODEL_STORAGE_KEY) === null) {
+      for (const legacyKey of ['tt-ai-model-develop', 'tt-ai-model-workout']) {
+        if (localStorage.getItem(legacyKey) !== null) {
+          saveAiModelSelection(AI_MODEL_STORAGE_KEY, loadAiModelSelection(legacyKey));
+          break;
+        }
+      }
+    }
+  } catch { /* storage may be unavailable */ }
+  return loadAiModelSelection(AI_MODEL_STORAGE_KEY);
+}
+
+export type DiscussViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
 
 // ── TextEditorSettings ────────────────────────────────────────────────────
 
@@ -149,19 +163,19 @@ export function swapLeafs(
   return { ...node, first: newFirst, second: newSecond };
 }
 
-// ── TTDevelopPanel ────────────────────────────────────────────────────
+// ── TTDiscussPanel ────────────────────────────────────────────────────
 
-export class TTDevelopPanel extends TTUIItem {
-  public Areas: TTDevelopArea[] = [];
+export class TTDiscussPanel extends TTUIItem {
+  public Areas: TTDiscussArea[] = [];
   public Layout: LayoutNode | null = null;
   public FocusedAreaId: string | null = null;
 
-  /** DevelopPanel内にThinkファイルがDropされた際に設定されるファイルID（DevelopPanel.DroppedFile.ID） */
+  /** DiscussPanel内にThinkファイルがDropされた際に設定されるファイルID（DiscussPanel.DroppedFile.ID） */
   public DroppedFileID: string = '';
 
   // ── チェックボックス選択（Think一覧/chat選択欄で共通。TTApplication が4パネル分をまとめて共有）───
 
-  /** チェックされているThink IDリスト（Thinktank/Seeds/Develop/Harvest で共通） */
+  /** チェックされているThink IDリスト（Thinktank/Seeds/Discuss/Harvest で共通） */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {
@@ -188,25 +202,25 @@ export class TTDevelopPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
-  public override get ClassName(): string { return 'TTDevelopPanel'; }
+  public override get ClassName(): string { return 'TTDiscussPanel'; }
 
   constructor() {
     super();
-    this.ID   = 'DevelopPanel';
-    this.Name = 'DevelopPanel';
+    this.ID   = 'DiscussPanel';
+    this.Name = 'DiscussPanel';
   }
 
   // ── 表示モード ────────────────────────────────────────────────────────
   /** 設定パネルの表示モード */
-  public ViewMode: DevelopViewMode = 'panes';
+  public ViewMode: DiscussViewMode = 'panes';
 
   /** ToolBar の表示モード */
   public ToolBarMode: string = 'Copyright';
 
   /** ToolBar StatusMode用テキスト (CSV形式) */
-  public StatusModeText: string = 'ThinktankPanel.Mode.Name,SeedsPanel.Mode.Name,DevelopSettingPanel.Mode.Name';
+  public StatusModeText: string = 'ThinktankPanel.Mode.Name,SeedsPanel.Mode.Name,DiscussSettingPanel.Mode.Name';
 
-  public SetViewMode(mode: DevelopViewMode): void {
+  public SetViewMode(mode: DiscussViewMode): void {
     this.ViewMode = mode;
     this.NotifyUpdated();
   }
@@ -214,11 +228,11 @@ export class TTDevelopPanel extends TTUIItem {
   // ── エリア表示 ────────────────────────────────────────────────────────
   public IsAreaOpen: boolean = true;
   /** Area 表示幅のモード（init=起動時の値 / user=ユーザー設定値 / foredit=編集用の幅）。
-   *  Status `DevelopSettingPanel.Area.OpenWidth` の実体。px は panelAreaWidth.ts が導出する。 */
+   *  Status `DiscussSettingPanel.Area.OpenWidth` の実体。px は panelAreaWidth.ts が導出する。 */
   public AreaWidthMode: AreaWidthMode = 'init';
 
   /** ユーザーが Splitter で設定した幅(px)。AreaWidthMode='user' のときに使う。 */
-  public AreaUserWidth: number = INIT_AREA_WIDTH.Develop;
+  public AreaUserWidth: number = INIT_AREA_WIDTH.Discuss;
 
 
   public ToggleArea(): void { this.IsAreaOpen = !this.IsAreaOpen; this.NotifyUpdated(); }
@@ -285,14 +299,14 @@ export class TTDevelopPanel extends TTUIItem {
   }
 
   // ── AI Chat モデル選択 ────────────────────────────────────────────────
-  // DevelopSettingArea（設定パネルのChatタブ）と、各Pane内のChatMedia
-  // （DevelopPanel.DoOnCursorPos:Chat 等で開くAI Chat Pane）が共通で使う。
+  // DiscussSettingArea（設定パネルのChatタブ）と、各Pane内のChatMedia
+  // （DiscussPanel.DoOnCursorPos:Chat 等で開くAI Chat Pane）が共通で使う。
   // パネル単位で1つだけ選択を持ち、両者は常に同じモデルを参照する。
 
   /** AI Chat のホストプロバイダ（ブラウザ再起動後も localStorage から復元） */
-  public AIChatProvider: AiProvider = loadAiModelSelection(AI_MODEL_STORAGE_KEY).provider;
+  public AIChatProvider: AiProvider = loadDiscussAiModelSelection().provider;
   /** AI Chat のホストモデルID */
-  public AIChatModel: string = loadAiModelSelection(AI_MODEL_STORAGE_KEY).model;
+  public AIChatModel: string = loadDiscussAiModelSelection().model;
 
   public SetAIChatModel(selection: AiModelSelection): void {
     this.AIChatProvider = selection.provider;
@@ -303,7 +317,7 @@ export class TTDevelopPanel extends TTUIItem {
 
   // ── Area CRUD ──────────────────────────────────────────────────────────
 
-  public AddFirst(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea {
+  public AddFirst(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
     const area = this._createArea(resourceId, mediaType, title);
     if (this.Layout === null) {
       this.Layout = { id: newNodeId(), type: 'leaf', areaId: area.ID };
@@ -316,7 +330,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddRight(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea | null {
+  public AddRight(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
     const area = this._createArea(resourceId, mediaType, title);
@@ -326,7 +340,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddBelow(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea | null {
+  public AddBelow(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
     const area = this._createArea(resourceId, mediaType, title);
@@ -336,7 +350,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea | null {
+  public AddLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
     const area = this._createArea(resourceId, mediaType, title);
@@ -346,7 +360,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddAbove(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea | null {
+  public AddAbove(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     if (!focusId || !this.Layout) return null;
     const area = this._createArea(resourceId, mediaType, title);
@@ -356,7 +370,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddToLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea {
+  public AddToLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
     if (this.Layout === null) {
@@ -369,7 +383,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddToRight(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea {
+  public AddToRight(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
     if (this.Layout === null) {
@@ -382,7 +396,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddToTop(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea {
+  public AddToTop(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
     if (this.Layout === null) {
@@ -395,7 +409,7 @@ export class TTDevelopPanel extends TTUIItem {
     return area;
   }
 
-  public AddToBottom(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea {
+  public AddToBottom(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
     const area = this._createArea(resourceId, mediaType, title);
     const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
     if (this.Layout === null) {
@@ -419,7 +433,7 @@ export class TTDevelopPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
-  public GetArea(areaId: string): TTDevelopArea | undefined {
+  public GetArea(areaId: string): TTDiscussArea | undefined {
     return this.Areas.find(a => a.ID === areaId);
   }
 
@@ -438,7 +452,7 @@ export class TTDevelopPanel extends TTUIItem {
     return true;
   }
 
-  public ReplaceFocused(resourceId: string, mediaType: MediaType, title: string = ''): TTDevelopArea | null {
+  public ReplaceFocused(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
     const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
     const area = focusId ? this.Areas.find(a => a.ID === focusId) : null;
     if (!area) return null;
@@ -493,8 +507,8 @@ export class TTDevelopPanel extends TTUIItem {
   }
 
   // ── 内部ヘルパー ──────────────────────────────────────────────────────
-  private _createArea(resourceId: string, mediaType: MediaType, title: string): TTDevelopArea {
-    const area   = new TTDevelopArea();
+  private _createArea(resourceId: string, mediaType: MediaType, title: string): TTDiscussArea {
+    const area   = new TTDiscussArea();
     area._parent = this;
     area.OpenThink(resourceId, mediaType, title);
     // 配列の更新もイミュータブルに行う

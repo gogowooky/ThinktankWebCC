@@ -7,7 +7,7 @@
 
 import { useEffect, useRef } from 'react';
 
-export type SectionsPanelId = 'thinktank' | 'seeds' | 'develop' | 'harvest';
+export type SectionsPanelId = 'thinktank' | 'seeds' | 'discuss' | 'harvest';
 
 const EVENT_NAME = 'tt-panel-sections-set-all';
 

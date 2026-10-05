@@ -1,6 +1,6 @@
-/* DevelopArea.css */
+/* DiscussArea.css */
 
-.develop-area {
+.discuss-area {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -8,27 +8,27 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
   transition: opacity 150ms ease;
   position: relative;
   cursor: default;
 }
 
-.develop-area:focus {
+.discuss-area:focus {
   outline: none;
 }
 
 /* フォーカス中: 枠線なし（リボンタイトルの下線で識別） */
-.develop-area--focused {
+.discuss-area--focused {
 }
 
 /* ドラッグ中（薄く表示） */
-.develop-area--dragging {
+.discuss-area--dragging {
   opacity: 0.4;
 }
 
 /* Drop target: 太枠 + 青みがかった内側オーバーレイ */
-.develop-area--drop-target {
+.discuss-area--drop-target {
   border: 3px solid #7aa2f7;
   box-shadow:
     0 0 0 4px rgba(122, 162, 247, 0.4),
@@ -36,14 +36,14 @@
 }
 
 /* コンテンツエリア（overflow は各メディアが管理する）*/
-.develop-area__content {
+.discuss-area__content {
   flex: 1;
   overflow: hidden;
   position: relative;
   min-height: 0;
 }
 
-.develop-area__loading {
+.discuss-area__loading {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,7 +53,7 @@
 }
 
 /* Phase 8 前のプレースホルダー */
-.develop-area__placeholder {
+.discuss-area__placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -65,13 +65,13 @@
   padding: 12px;
 }
 
-.develop-area__placeholder-media {
+.discuss-area__placeholder-media {
   font-size: calc(12px * var(--tt-font-scale, 1));
   font-weight: 500;
   color: #333;
 }
 
-.develop-area__placeholder-id {
+.discuss-area__placeholder-id {
   font-size: calc(10px * var(--tt-font-scale, 1));
   color: #666;
   font-family: monospace;

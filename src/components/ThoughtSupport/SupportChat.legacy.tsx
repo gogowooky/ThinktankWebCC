@@ -183,7 +183,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
       }
       const context = {
         now: new Date().toISOString(), localDate: new Date().toLocaleDateString('sv-SE'), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        area: pane ? 'Develop Pane・自由対話' : `${panelName}パネル（現在の担当 ${owner}）`, chatId: item.ID, title: item.Name,
+        area: pane ? 'Discuss Pane・自由対話' : `${panelName}パネル（現在の担当 ${owner}）`, chatId: item.ID, title: item.Name,
         bundleId, bundleTitle: vault.GetThink(bundleId)?.Name, record: { ...supportRecord(item), messages: undefined, history: undefined },
         catalog: [...allowed.values()].slice(0, 120).map(t => ({ id: t.ID, title: t.Name, type: t.ContentType, updatedAt: t.UpdatedAt })),
         totalAvailable: allowed.size,
@@ -295,7 +295,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
     ].join('\n'),
   }] : [], [record.resume, record.current, record.next, record.decisions, record.undecided, record.proposals, record.confirmedAt, record.updatedAt]);
 
-  // Develop の設定エリアだけ地色がパネル基礎色（暗色）なので、ヘッダーの背景は
+  // Discuss の設定エリアだけ地色がパネル基礎色（暗色）なので、ヘッダーの背景は
   // 各パネルの地色を明示して、どのパネルでも同じ見え方に揃える。
   const panelKey = panelName.toLowerCase();
   return <div className="support-chat" style={{
@@ -308,7 +308,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
       {!!record.handoff && <span>引き継ぎ：{record.handoff}</span>}
       {isReviewDue(record, clock) && !['完了', '中止'].includes(info?.state ?? '') && <strong>再確認・再提示の時期です。今の状況を教えてください。</strong>}
       {(record.due || record.scheduled || record.reviewAt || record.redisplayAt || record.repeatRule) && <details><summary>予定・再確認</summary><p>期限：{record.due || '未設定'}</p><p>実施予定：{record.scheduled || '未設定'}</p><p>再確認：{record.reviewAt || '未設定'}</p><p>再提示：{record.redisplayAt || '未設定'}</p><p>繰り返し：{record.repeatRule || 'なし'}</p><p>待機・保留：{record.waiting || 'なし'}</p></details>}
-      {!!record.references.length && <details><summary>参照した記録</summary>{record.references.map(id => <button key={id} onClick={() => TTApplication.Instance.OpenThinkInDevelop(id)}>{vault.GetThink(id)?.Name ?? id}</button>)}</details>}
+      {!!record.references.length && <details><summary>参照した記録</summary>{record.references.map(id => <button key={id} onClick={() => TTApplication.Instance.OpenThinkInDiscuss(id)}>{vault.GetThink(id)?.Name ?? id}</button>)}</details>}
       {(record.startsAt || record.endsAt || record.checklist) && <details><summary>開催日時・手順</summary><p>開始：{record.startsAt || '未設定'} ／ 終了：{record.endsAt || '未設定'}</p><p>{record.checklist}</p></details>}
       {pane && <div><select aria-label="成果の反映先" value={targetId} onChange={e => setTargetId(e.target.value)}><option value="">成果の反映先を選ぶ</option>{vault.GetThinks().filter(t => t.ContentType === 'chat' && t.ID !== selectedId && parseManagedChatTitle(t.Name)).map(t => <option key={t.ID} value={t.ID}>{t.Name}</option>)}</select><button disabled={!targetId || waiting} onClick={() => void reflect()}>結果を相談につなぐ</button></div>}
       {notice && <span role="status">{notice}</span>}

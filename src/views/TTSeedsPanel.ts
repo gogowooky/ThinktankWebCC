@@ -32,14 +32,14 @@ export class TTSeedsPanel extends TTUIItem {
   /** 表示中のBundleID（空 = 未選択）*/
   public BundleID: string = '';
 
-  /** チェックされているThink IDリスト（Thinktank/Seeds/Develop/Harvest で共通） */
+  /** チェックされているThink IDリスト（Thinktank/Seeds/Discuss/Harvest で共通） */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {
     this.SharedState.checkedIds = val;
     if (this._parent) {
       const app = this._parent as any;
-      for (const key of ['ThinktankPanel', 'DevelopPanel', 'HarvestPanel']) {
+      for (const key of ['ThinktankPanel', 'DiscussPanel', 'HarvestPanel']) {
         app[key]?.NotifyUpdated();
       }
     }

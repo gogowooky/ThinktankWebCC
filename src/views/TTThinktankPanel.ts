@@ -43,7 +43,7 @@ export class TTThinktankPanel extends TTUIItem {
     this.SharedState.checkedIds = val;
     if (this._parent) {
       const app = this._parent as any;
-      for (const key of ['SeedsPanel', 'DevelopPanel', 'HarvestPanel']) {
+      for (const key of ['SeedsPanel', 'DiscussPanel', 'HarvestPanel']) {
         app[key]?.NotifyUpdated();
       }
     }

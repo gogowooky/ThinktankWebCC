@@ -1,6 +1,6 @@
-/* DevelopHSplitter.css */
+/* DiscussHSplitter.css */
 
-.develop-h-splitter {
+.discuss-h-splitter {
   height: 3px;
   background: var(--border);
   cursor: row-resize;
@@ -11,7 +11,7 @@
   z-index: 10;
 }
 
-.develop-h-splitter::after {
+.discuss-h-splitter::after {
   content: '';
   position: absolute;
   inset: -4px 0;
@@ -19,7 +19,7 @@
 
 /* マウスオーバー・ドラッグ中の色は FocusingBorder.Theme.Color（docs/DefaultColor.md）。
    ドラッグ中はカーソルがボーダーから外れても色を保つ必要があるためクラスで持つ。 */
-.develop-h-splitter:hover,
-.develop-h-splitter--dragging {
+.discuss-h-splitter:hover,
+.discuss-h-splitter--dragging {
   background: var(--focusing-border);
 }

@@ -32,7 +32,7 @@ interface Props {
   columns?: ColumnConfig[];
   /** チェックボックス列を表示するか（既定 true）。false の場合 onToggleCheck は不要 */
   showCheckbox?: boolean;
-  /** ダブルクリック時に呼ばれる。省略時はダブルクリックしても何も起きない（例: AI相談のchat選択欄は D&D のみで Develop へ渡す） */
+  /** ダブルクリック時に呼ばれる。省略時はダブルクリックしても何も起きない（例: AI相談のchat選択欄は D&D のみで Discuss へ渡す） */
   onOpen?: (id: string) => void;
   onToggleCheck?: (id: string | string[], force?: boolean) => void;
   /** 「バンドル」列の表示値。buildBundleNames() の結果を渡す（未指定なら空欄） */
@@ -163,7 +163,7 @@ export function ThoughtsList({
   onFocusChange,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const { seedsBundleIds, seedsIncludedIds, seedsCheckedIds, developIds, developFocusedId } = useHighlight();
+  const { seedsBundleIds, seedsIncludedIds, seedsCheckedIds, discussIds, discussFocusedId } = useHighlight();
   const isEditMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode') === 'Edit';
   const visibleCols = columns.filter(c => c.visible);
   const hasNameCol = visibleCols.some(c => c.field === 'Name');
@@ -247,8 +247,8 @@ export function ThoughtsList({
           const isSeedsBundle   = !isEditMode && seedsBundleIds.includes(thought.ID);
           const isSeedsIncluded = !isEditMode && seedsIncludedIds.includes(thought.ID);
           const isSeedsChecked  = !isEditMode && seedsCheckedIds.includes(thought.ID);
-          const isInDevelop        = developIds.includes(thought.ID);
-          const isDevelopFocused   = developFocusedId === thought.ID;
+          const isInDiscuss        = discussIds.includes(thought.ID);
+          const isDiscussFocused   = discussFocusedId === thought.ID;
           const isFocused          = thought.ID === focusedId;
           const isNewChatRow       = thought.ID === NEW_CHAT_SENTINEL_ID;
 
@@ -269,8 +269,8 @@ export function ThoughtsList({
                 isSeedsBundle   ? 'thoughts-list__row--seeds-bundle'  : '',
                 isSeedsIncluded ? 'thoughts-list__row--seeds-included' : '',
                 isSeedsChecked  ? 'thoughts-list__row--seeds-checked' : '',
-                isInDevelop        ? 'thoughts-list__row--develop'          : '',
-                isDevelopFocused   ? 'thoughts-list__row--develop-focused'  : '',
+                isInDiscuss        ? 'thoughts-list__row--discuss'          : '',
+                isDiscussFocused   ? 'thoughts-list__row--discuss-focused'  : '',
                 isFocused          ? 'thoughts-list__row--focused'          : '',
                 isNewChatRow       ? 'thoughts-list__row--new-chat'         : '',
               ].join(' ')}

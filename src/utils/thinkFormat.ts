@@ -65,7 +65,7 @@ export function serializeChat(messages: ChatMessage[], title?: string): string {
 /** 各パネルのAI相談で扱う chat Think の識別プレフィックス（パネルごと・大文字小文字を区別しない） */
 export const TODO_CHAT_PREFIX_THINKTANK = 'TODO:Thinktank｜';
 export const TODO_CHAT_PREFIX_SEEDS  = 'TODO:Seeds｜';
-export const TODO_CHAT_PREFIX_DEVELOP   = 'TODO:Develop｜';
+export const TODO_CHAT_PREFIX_DEVELOP   = 'TODO:Discuss｜';
 export const TODO_CHAT_PREFIX_HARVEST   = 'TODO:Harvest｜';
 
 /** タイトルが指定プレフィックスで始まる Think かどうかを判定する（ContentType不問、大文字小文字を区別しない） */

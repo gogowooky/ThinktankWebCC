@@ -1,20 +1,20 @@
 /**
- * DevelopArea.tsx
- * 個別 DevelopArea コンポーネント（Ribbon + メディアコンテンツ）。
+ * DiscussArea.tsx
+ * 個別 DiscussArea コンポーネント（Ribbon + メディアコンテンツ）。
  *
  * - vault.GetThink(area.ResourceID) で対象 Think を取得
  * - area.MediaType に応じて適切なメディアコンポーネントを描画
- * - TextEditorMedia の dirty 状態を DevelopMenuRibbon の ● 表示に連携
+ * - TextEditorMedia の dirty 状態を DiscussMenuRibbon の ● 表示に連携
  */
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { TTDevelopArea } from '../../views/TTDevelopArea';
+import type { TTDiscussArea } from '../../views/TTDiscussArea';
 import type { TTVault } from '../../models/TTVault';
 import type { MediaType } from '../../types';
 import type { AiModelSelection } from '../../services/aiModels';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { useHighlight } from '../../contexts/HighlightContext';
-import { DevelopMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './DevelopMenuRibbon';
+import { DiscussMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './DiscussMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
 import { reportSaveError } from '../../utils/saveError';
@@ -37,10 +37,10 @@ type AnyMediaRef = HtmlMediaRef | TextEditorMediaRef | MarkdownMediaRef | DataGr
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTActions } from '../../views/TTActions';
-import './DevelopArea.css';
+import './DiscussArea.css';
 
 interface Props {
-  area:              TTDevelopArea;
+  area:              TTDiscussArea;
   vault:             TTVault;
   isFocused:         boolean;
   isDragging:        boolean;
@@ -54,7 +54,7 @@ interface Props {
   onClose:           (areaId: string) => void;
 }
 
-export function DevelopArea({
+export function DiscussArea({
   area, vault, isFocused, isDragging, isDropTarget, isExternalDrag,
   onFocus, onDragStart, onDragEnter, onDragLeave, onMediaTypeChange, onClose,
 }: Props) {
@@ -64,7 +64,7 @@ export function DevelopArea({
   const mediaRef = useRef<AnyMediaRef | null>(null);
   const contentReady = loadedResourceId === area.ResourceID;
 
-  const panel = area._parent as import('../../views/TTDevelopPanel').TTDevelopPanel;
+  const panel = area._parent as import('../../views/TTDiscussPanel').TTDiscussPanel;
 
   useEffect(() => {
     area.IsDirty = isDirty;
@@ -82,7 +82,7 @@ export function DevelopArea({
       const t = vault.GetThink(targetId);
       if (!t) {
         if (!vault.IsLoaded) {
-          const updateKey = `DevelopArea-load-${area.ID}`;
+          const updateKey = `DiscussArea-load-${area.ID}`;
           vault.AddOnUpdate(updateKey, () => {
             if (vault.IsLoaded) {
               vault.RemoveOnUpdate(updateKey);
@@ -111,7 +111,7 @@ export function DevelopArea({
 
     return () => {
       cancelled = true;
-      vault.RemoveOnUpdate(`DevelopArea-load-${area.ID}`);
+      vault.RemoveOnUpdate(`DiscussArea-load-${area.ID}`);
     };
   }, [area.ResourceID, vault, panel]);
 
@@ -128,7 +128,7 @@ export function DevelopArea({
     }
   }, [panel.HighlightWord, isFocused, area.ResourceID, vault]);
 
-  // Ctrl+S での強制保存を DevelopArea 全体でハンドリング
+  // Ctrl+S での強制保存を DiscussArea 全体でハンドリング
   useEffect(() => {
     const handleGlobalSave = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -139,7 +139,7 @@ export function DevelopArea({
           currentThink.SaveContent().then(() => {
             setIsDirty(false);
           }).catch(err => {
-            reportSaveError('[DevelopArea] Global Ctrl+S save failed:', err);
+            reportSaveError('[DiscussArea] Global Ctrl+S save failed:', err);
           });
         }
       }
@@ -189,23 +189,23 @@ export function DevelopArea({
 
   // タイトルへのThinkドロップ: Alt修飾の有無で Load（Pane差し替え）/ Insert（タグ挿入）を
   // 振り分ける。疑似キー ThinkFileDrag の解決・実行は TTShortcutManager + TTActions
-  // （DevelopPanel.DroppedFile.ID:Load / DevelopPanel.DroppedFile.ID:Insert、docs/DefaultShortcut.md参照）
+  // （DiscussPanel.DroppedFile.ID:Load / DiscussPanel.DroppedFile.ID:Insert、docs/DefaultShortcut.md参照）
   // に委ねる。Insert時はこのペインのエディタを対象にするため、実行前に activeEditor を
   // このペインのエディタへ同期する（editorがないメディア種別ではInsertは無効）。
   const handleThinkFileDrop = useCallback((thinkId: string, e: React.DragEvent) => {
     const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
     if (!actionId) return;
-    if (actionId === 'DevelopPanel.DroppedFile.ID:Insert') {
+    if (actionId === 'DiscussPanel.DroppedFile.ID:Insert') {
       const ref = mediaRef.current;
       const editor = ref && 'getEditor' in ref ? ref.getEditor() : null;
       if (!editor) return;
       TTShortcutManager.instance.setActiveEditor(editor);
       TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'insert' });
-      void TTActions.Execute('DevelopPanel.DroppedFile.ID:Insert');
+      void TTActions.Execute('DiscussPanel.DroppedFile.ID:Insert');
       return;
     }
     TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'load-replace', areaId: area.ID });
-    void TTActions.Execute('DevelopPanel.DroppedFile.ID:Load');
+    void TTActions.Execute('DiscussPanel.DroppedFile.ID:Load');
   }, [area.ID]);
 
   // 保存ハンドラー（TextEditorMedia から Ctrl+S・自動保存で呼ばれる）
@@ -229,7 +229,7 @@ export function DevelopArea({
       TTUIStateManager.instance.onThinkSaved(think.ID, content);
       TTShortcutManager.instance.onThinkSaved(think.ID, content);
     }).catch(e => {
-      console.error('[DevelopArea] SaveContent failed:', e);
+      console.error('[DiscussArea] SaveContent failed:', e);
       throw e;
     });
   }, [vault, area.ResourceID, area, panel]);
@@ -304,7 +304,7 @@ export function DevelopArea({
        panel?.TextEditor.ColorStatus,
        panel?.TextEditor.Bullet.Marks, panel?.TextEditor.Comment.Marks]);
 
-  // AI Chat のモデルは panel 単位で1つ。Pane の Chat と DevelopSetting の 会話履歴 が同じ値を見る
+  // AI Chat のモデルは panel 単位で1つ。Pane の Chat と DiscussSetting の 会話履歴 が同じ値を見る
   const aiChatModel = { provider: panel.AIChatProvider, model: panel.AIChatModel };
   const handleAiChatModelChange = (selection: AiModelSelection) => panel.SetAIChatModel(selection);
 
@@ -336,10 +336,10 @@ export function DevelopArea({
   const handleDragEnter    = useCallback(()                     => onDragEnter(area.ID),           [onDragEnter, area.ID]);
 
   const className = [
-    'develop-area',
-    isFocused    && 'develop-area--focused',
-    isDragging   && 'develop-area--dragging',
-    isDropTarget && 'develop-area--drop-target',
+    'discuss-area',
+    isFocused    && 'discuss-area--focused',
+    isDragging   && 'discuss-area--dragging',
+    isDropTarget && 'discuss-area--drop-target',
   ].filter(Boolean).join(' ');
 
   return (
@@ -351,7 +351,7 @@ export function DevelopArea({
       onMouseEnter={handleDragEnter}
       onMouseLeave={onDragLeave}
     >
-      <DevelopMenuRibbon
+      <DiscussMenuRibbon
         area={area}
         contentType={think?.ContentType}
         isFocused={isFocused}
@@ -366,7 +366,7 @@ export function DevelopArea({
 
       {/* メディアコンテンツ */}
       <div
-        className="develop-area__content"
+        className="discuss-area__content"
         data-media-type={area.MediaType}
         onDragOverCapture={handleContentDragOver}
         onDragLeaveCapture={handleContentDragLeave}
@@ -374,7 +374,7 @@ export function DevelopArea({
       >
         {contentReady
           ? renderMedia()
-          : <div className="develop-area__loading">読み込み中…</div>
+          : <div className="discuss-area__loading">読み込み中…</div>
         }
         {/* Monaco の dragover 横取りを防ぐシールド */}
         {isExternalDrag && (

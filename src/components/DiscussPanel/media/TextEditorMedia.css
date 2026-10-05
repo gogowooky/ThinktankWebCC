@@ -6,7 +6,7 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
 }
 
 /* Monaco はネイティブで height:100% を要求する */
@@ -23,7 +23,7 @@
   height: 100%;
   font-size: calc(12px * var(--tt-font-scale, 1));
   color: rgba(0, 0, 0, 0.35);
-  background: var(--develop-content-bg);
+  background: var(--discuss-content-bg);
 }
 
 /* ── ファイルドロップオーバーレイ ───────────────────────────────────────── */

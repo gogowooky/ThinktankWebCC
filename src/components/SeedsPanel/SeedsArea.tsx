@@ -287,7 +287,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const handleDeleteChecked = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
     if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
-    app.RemoveThinksFromDevelop(panel.CheckedThoughtIDs);
+    app.RemoveThinksFromDiscuss(panel.CheckedThoughtIDs);
     await vault.DeleteThinks(panel.CheckedThoughtIDs);
     panel.SetCheckedThoughtIDs([]);
   }, [app, vault, panel]);
@@ -363,8 +363,8 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     panel.SetCheckedThoughtIDs(Array.from(nextSet));
   }, [panel]);
 
-  const handleOpenThinkInDevelop = useCallback((id: string) => {
-    app.OpenThinkInDevelop(id);
+  const handleOpenThinkInDiscuss = useCallback((id: string) => {
+    app.OpenThinkInDiscuss(id);
   }, [app]);
 
   const handleSaveChat = useCallback(() => aiChatViewRef.current?.save(), []);
@@ -504,7 +504,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
               checkedIds={panel.CheckedThoughtIDs}
               columns={columns}
               bundleNames={bundleNames}
-              onOpen={handleOpenThinkInDevelop}
+              onOpen={handleOpenThinkInDiscuss}
               onToggleCheck={handleToggleCheck}
               focusedId={focusedId}
               onFocusChange={handleFocusChange}
@@ -538,7 +538,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         ) : panel.MediaType === 'graph' ? (
           <div className="bundle-analysis">
             <div className="bundle-analysis-content">
-              <BundleStatusView ref={statusViewRef} vault={vault} bundleId={panel.BundleID} onOpen={handleOpenThinkInDevelop} />
+              <BundleStatusView ref={statusViewRef} vault={vault} bundleId={panel.BundleID} onOpen={handleOpenThinkInDiscuss} />
             </div>
           </div>
         ) : null}

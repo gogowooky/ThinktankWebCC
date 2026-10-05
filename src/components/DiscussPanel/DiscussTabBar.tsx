@@ -1,6 +1,6 @@
 /**
- * DevelopTabBar.tsx
- * DevelopPanel 左縦タブバー（旧リボン）。
+ * DiscussTabBar.tsx
+ * DiscussPanel 左縦タブバー（旧リボン）。
  *
  * ボタン構成（上から）:
  *   Pane設定 / 会話履歴 / ─区切り線─ / TextEditor設定 / Markdown設定 /
@@ -15,7 +15,7 @@ import { Fragment } from 'react';
 import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, FileCode, MessageCircle, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
-import './DevelopTabBar.css';
+import './DiscussTabBar.css';
 
 export type SettingsType = Extract<MediaType, 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'>;
 
@@ -46,7 +46,7 @@ interface Props {
   isEditMode?:         boolean;
 }
 
-export function DevelopTabBar({ activeSettings, isOpen, thinkTitle, onToggle, onSetActiveSettings, isEditMode = false }: Props) {
+export function DiscussTabBar({ activeSettings, isOpen, thinkTitle, onToggle, onSetActiveSettings, isEditMode = false }: Props) {
   const visibleSettings = isEditMode ? DEVELOP_SETTINGS.filter(s => s.type !== 'chat') : DEVELOP_SETTINGS;
 
   const handleClick = (type: SettingsType) => {
@@ -55,7 +55,7 @@ export function DevelopTabBar({ activeSettings, isOpen, thinkTitle, onToggle, on
 
   return (
     <VerticalTabBar
-      panelId="develop"
+      panelId="discuss"
       side="left"
       isOpen={isOpen}
       onToggle={onToggle}
@@ -63,12 +63,12 @@ export function DevelopTabBar({ activeSettings, isOpen, thinkTitle, onToggle, on
     >
       {visibleSettings.map(({ type, Icon, name, id }) => (
         <Fragment key={type}>
-          {type === 'texteditor' && <div className="develop-tab-bar__divider" />}
+          {type === 'texteditor' && <div className="discuss-tab-bar__divider" />}
           <button
             id={id}
             className={[
-              'develop-tab-bar__btn',
-              activeSettings === type ? 'develop-tab-bar__btn--active' : '',
+              'discuss-tab-bar__btn',
+              activeSettings === type ? 'discuss-tab-bar__btn--active' : '',
             ].join(' ')}
             onClick={() => handleClick(type)}
             data-tip={name}
