@@ -319,7 +319,8 @@
       "Bash(curl -s -i \"http://localhost:64132/api/bq/files/2026-09-17-140931/content\")",
       "Bash(curl -s -H \"x-thinktank-api-key: 0963184529f0d8f233c8126161cf5d77735969de1948b18e7e57c6bdc07b9525\" \"http://localhost:8080/api/bq/files/meta\" -o \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\e77b4abd-fbef-406b-ad3b-5f137e7a6395\\\\scratchpad\\\\meta.json\")",
       "Bash(nohup env NODE_ENV=development npx electron electron/main.cjs)",
-      "PowerShell(npx tsc --noEmit -p . 2>&1)"
+      "PowerShell(npx tsc --noEmit -p . 2>&1)",
+      "PowerShell(.\\\\deploy.ps1 -AccessModel IAP)"
     ]
   }
 }
