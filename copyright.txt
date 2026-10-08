@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "45dde00",
-  "commitDateTime": "2026-10-05-224255",
-  "commitMessage": "docs: AI再構成前の現状整理・固定UI一覧・名称対応表・役割テキスト化検討を追加"
+  "commitId": "7c68088",
+  "commitDateTime": "2026-10-08-172821",
+  "commitMessage": "fix: 保存の直列化で自己衝突ダイアログを解消し、tableの列ヘッダーをmetadataへ移行"
 }
