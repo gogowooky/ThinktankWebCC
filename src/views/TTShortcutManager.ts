@@ -21,6 +21,7 @@
  *   Panel.Property:value        → TTUIStateManager.applyProperty()
  *   TextEditor.EditText.Undo / Redo  → UI状態 Undo/Redo
  *   ExMode:{name}               → Application.Status.SetExMode()
+ *   TextEditor.CurrentEditor.DefaultAction → 何もせずキーをエディタへ素通し（以降の行も評価しない）
  *
  * ── key 書式 ─────────────────────────────────────────────────────────────
  *   キーボード: {ctrl|alt|shift|meta}+{key}  ※ 順不同・小文字
@@ -69,6 +70,9 @@ interface ShortcutEntry {
   action:      string;
   description: string;
 }
+
+/** preventDefault/stopPropagation せずにキーイベントを素通しする特別アクション */
+export const DEFAULT_ACTION = 'TextEditor.CurrentEditor.DefaultAction';
 
 /** 未マッチ時に使い回す空配列（毎キーストロークでの `?? []` 割り当てを避ける） */
 const NO_CANDIDATES: readonly ShortcutEntry[] = [];
@@ -362,6 +366,13 @@ export class TTShortcutManager {
    */
   private _processEvent(keyStr: string, e: Event, mods: string): void {
     const candidates = this._activeTable.get(keyStr) ?? NO_CANDIDATES;
+
+    // テキストエディタ既定動作: 同じキーのグローバル割当を現在のフォーカスでだけ打ち消し、
+    // キーを Monaco にそのまま渡す。行の並び順に関係なく他の行より優先する。
+    if (candidates.some(s => s.action === DEFAULT_ACTION)) {
+      this._app?.Status.SetLastActionDisplay(`${DEFAULT_ACTION}: 既定動作`);
+      return;
+    }
 
     // マッチしたショートカットを実行する。preventDefault/stopPropagation の発火と
     // Allow による継続判定は3フェーズ共通のため、フェーズごとの絞り込み述語だけを渡す。

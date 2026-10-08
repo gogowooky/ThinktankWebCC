@@ -12,7 +12,7 @@ import type { TTApplication } from './TTApplication';
 import type { ActionID, TTActionItem } from './TTAction';
 import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
-import { TTShortcutManager } from './TTShortcutManager';
+import { TTShortcutManager, DEFAULT_ACTION } from './TTShortcutManager';
 import { getFocusName } from '../utils/getFocusName';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import type { AreaWidthMode } from '../utils/panelAreaWidth';
@@ -820,6 +820,17 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       preserveCase: replaceOpt.PreserveCase,
     }, false);
   };
+
+  // 実体はキーイベントを素通しすること（TTShortcutManager._processEvent が特別扱いする）。
+  // コマンド等から直接実行された場合は渡すべきキーが無いので何もしない。
+  TTActions.Register({
+    ActionID: DEFAULT_ACTION,
+    Description: 'テキストエディタのdefaultアクション',
+    Completion: (item) => {
+      item.Result = '既定動作';
+      item.Allow = true;
+    },
+  });
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.ShowFind',

@@ -14,6 +14,23 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
+## 完了：　261008　TextEditor.CurrentEditor.DefaultAction
+texteditorのdefaultのアクションを実施する。（＝action bubleを停止させずにそのままthroughする）
+
+description:    テキストエディタのdefaultアクション
+key:            TextEditor.CurrentEditor.DefaultAction
+
+　A（261008実装）：src\views\TTShortcutManager.ts の _processEvent で特別扱いするようにしました。
+　　押されたキーに一致する行（現在の focus / exmode で絞り込み済み）の中にこのアクションがあれば、
+　　preventDefault / stopPropagation を行わず、同じキーの他の行も一切実行せずに終了します。
+　　キーイベントはそのまま Monaco に届き、エディタ既定の動作（例: Ctrl+B 等の既定編集操作）になります。
+　　行の並び順に関係なく他の行より優先されます。
+　　用途は「グローバル（focus=*）に割り当てたキーを、エディタ内でだけ既定動作に戻す」ことで、
+　　docs\DefaultShortcut.md に例えば次のような行を足して使います。
+　　　*TextEditor ,       ,Ctrl+B ,TextEditor.CurrentEditor.DefaultAction ,エディタ既定動作
+　　ステータスバーの KeyAction には「TextEditor.CurrentEditor.DefaultAction: 既定動作」と表示します。
+　　TTActions にも登録済み（src\views\TTFocusedPanelActions.ts）ですが、コマンド等から直接実行した
+　　場合は素通しするキーが無いため何もしません。キー割当は DefaultShortcut.md には追加していません。
 
 # Status
 
