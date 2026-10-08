@@ -5,9 +5,12 @@
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
-import { StorageConflictError } from './IStorageBackend';
+import { StorageConflictError, StorageTimeoutError } from './IStorageBackend';
 import { splitContent } from '../../utils/thinkFormat';
 import { apiFetch } from '../apiClient';
+
+// 応答のない保存が残ると、TTThink が直列化している同じ Think の後続保存が永久に待たされる
+export const SAVE_TIMEOUT_MS = 30_000;
 
 export class BigQueryStorageBackend implements IStorageBackend {
   private readonly base = '/api/bq';
@@ -28,26 +31,36 @@ export class BigQueryStorageBackend implements IStorageBackend {
 
   async save(payload: SavePayload): Promise<ThinkMeta> {
     const { title, body } = splitContent(payload.fullContent);
-    const res = await apiFetch(`${this.base}/files`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        thinkid:     payload.thinkid,
-        category:    payload.category,
-        title,
-        content:     body,
-        keywords:    payload.keywords || null,
-        relatedIds:  payload.relatedIds || null,
-        metadata:    payload.metadata || null,
-        baseUpdatedAt: payload.baseUpdatedAt || undefined,
-      }),
-    });
-    if (res.status === 409) {
-      const j = await res.json().catch(() => ({})) as { serverUpdatedAt?: string };
-      throw new StorageConflictError(payload.thinkid, j.serverUpdatedAt ?? '');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SAVE_TIMEOUT_MS);
+    try {
+      const res = await apiFetch(`${this.base}/files`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          thinkid:     payload.thinkid,
+          category:    payload.category,
+          title,
+          content:     body,
+          keywords:    payload.keywords || null,
+          relatedIds:  payload.relatedIds || null,
+          metadata:    payload.metadata || null,
+          baseUpdatedAt: payload.baseUpdatedAt || undefined,
+        }),
+        signal: controller.signal,
+      });
+      if (res.status === 409) {
+        const j = await res.json().catch(() => ({})) as { serverUpdatedAt?: string };
+        throw new StorageConflictError(payload.thinkid, j.serverUpdatedAt ?? '');
+      }
+      if (!res.ok) throw new Error(`BQ save failed: ${res.status}`);
+      return await res.json() as ThinkMeta;
+    } catch (e) {
+      if (controller.signal.aborted) throw new StorageTimeoutError(payload.thinkid);
+      throw e;
+    } finally {
+      clearTimeout(timer);
     }
-    if (!res.ok) throw new Error(`BQ save failed: ${res.status}`);
-    return res.json() as Promise<ThinkMeta>;
   }
 
   async delete(id: string): Promise<void> {

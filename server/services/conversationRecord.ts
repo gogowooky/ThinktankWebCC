@@ -26,6 +26,18 @@ export const MAX_LOG_BYTES = 2000000;
 const TRANSCRIPT_START = '<!-- thinktank-ai-conversation:start -->';
 const TRANSCRIPT_END = '<!-- thinktank-ai-conversation:end -->';
 
+/**
+ * AI返答の先頭行 "(モデル名) yyyy-MM-dd HH:mm"。
+ * 時刻は日本時間に固定する。Cloud Run（UTC）とローカル（JST）で同じ会話の本文が
+ * 食い違うと、本文同期のたびに差分が出て保存が繰り返されるため。
+ */
+export function aiReplyHeader(model: string, createdAt: string): string {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(new Date(createdAt)).map(p => [p.type, p.value]));
+  return `(${model}) ${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+}
+
 /** Keep the editable Chat text and the structured conversation log visibly consistent. */
 export function mergeConversationTranscript(content: string, turns: ConversationTurn[]): string {
   const start = content.indexOf(TRANSCRIPT_START);
@@ -37,7 +49,7 @@ export function mergeConversationTranscript(content: string, turns: Conversation
     const presentation = conversationPresentation(turn);
     const proposals = turn.answer.proposals.map(proposal =>
       `### AIの変更提案：${proposal.field}\n${proposal.after}\n\n理由：${proposal.reason}`);
-    return [`## ${turn.question.replace(/[\r\n]+/g, ' ').trim()}`, presentation.reply,
+    return [`## ${turn.question.replace(/[\r\n]+/g, ' ').trim()}`, `${aiReplyHeader(turn.model, turn.createdAt)}\n${presentation.reply}`,
       turn.answer.insufficientEvidence ? '根拠不足・未確認事項を含みます。' : '', ...proposals,
       ...(turn.answer.progressProposals ?? []).map(p => `### AIの到達状態候補（未確認）：${p.milestone}\n${p.reach}\n本人の発言：${p.userQuote}\n理由：${p.reason}`),
       ...(turn.answer.subtaskCandidates ?? []).map(p => `### AIのサブ課題候補（未採用）：${p.title}\n目的：${p.goal}\n完了条件：${p.completionCriteria || '未整理'}\n理由：${p.reason}`),

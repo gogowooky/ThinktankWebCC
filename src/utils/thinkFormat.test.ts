@@ -93,9 +93,9 @@ describe('bundle 形式の往復', () => {
     expect(parsed.ids).toEqual(['2026-07-01-232001-memo']);
   });
 
-  it('数字を含まない `* 行` は引き続きキーワード扱い', () => {
-    const parsed = parseBundle('束\n* 設計メモ');
-    expect(parsed.ids).toEqual([]);
-    expect(parsed.filter.keyword).toBe('設計メモ');
+  it('ID形式でない `* 行` は無視し、フィルタ語にも流用しない', () => {
+    const parsed = parseBundle('束\n* 設計メモ\n* thinktank\n* __tt_ui_state__\n* 2026-07-01-232001\n* 2015-03-09-133514-LAPTOP-5FOVA1SU');
+    expect(parsed.ids).toEqual(['2026-07-01-232001', '2015-03-09-133514-LAPTOP-5FOVA1SU']);
+    expect(parsed.filter.keyword).toBeUndefined();
   });
 });

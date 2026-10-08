@@ -199,9 +199,9 @@ export interface BundleContent {
 
 /**
  * Think ID とみなす形式。yyyy-MM-dd-HHmmss、および末尾サフィックス（AI 生成の -memo /
- * 衝突回避の -a3f9 等）を許容する。PROJECT_REVIEW_REPORT.md D-5。
+ * 衝突回避の -a3f9 / 旧PC名付きの -LAPTOP-5FOVA1SU 等）を許容する。PROJECT_REVIEW_REPORT.md D-5。
  */
-export const THINK_ID_RE = /^\d{4}-\d{2}-\d{2}-\d{6}(?:-[A-Za-z0-9]+)?$/;
+export const THINK_ID_RE = /^\d{4}-\d{2}-\d{2}-\d{6}(?:-[A-Za-z0-9]+)*$/;
 
 /**
  * bundle 本文を解析して構造化した BundleContent を返す
@@ -225,15 +225,11 @@ export function parseBundle(content: string): BundleContent {
   for (const line of bodyLines) {
     const s = line.trim();
     if (s.startsWith('* ')) {
-      // 角括弧付き（AI が付けがち）も許容し、日付 ID + 任意サフィックス（-memo / -a3f9 等）を ID とみなす
+      // 角括弧付き（AI が付けがち）も許容し、日付 ID + 任意サフィックス（-memo / -a3f9 等）を ID とみなす。
+      // ID形式でない値は無視する。かつてはフィルタ語に流用していたため、一覧書き出しで混入した
+      // システムThinkのID（thinktank / __tt_ui_state__ 等）がBundleの範囲を意図せず絞り込んでいた。
       const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
-      if (id) {
-        if (THINK_ID_RE.test(id)) {
-          ids.push(id);
-        } else {
-          result.filter.keyword = result.filter.keyword ? `${result.filter.keyword} ${id}` : id;
-        }
-      }
+      if (THINK_ID_RE.test(id)) ids.push(id);
     } else if (s.startsWith('- ')) {
       const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
       if (id) {

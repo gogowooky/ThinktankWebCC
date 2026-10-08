@@ -320,7 +320,15 @@
       "Bash(curl -s -H \"x-thinktank-api-key: 0963184529f0d8f233c8126161cf5d77735969de1948b18e7e57c6bdc07b9525\" \"http://localhost:8080/api/bq/files/meta\" -o \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-gogow-Documents-ThinktankWebCC\\\\e77b4abd-fbef-406b-ad3b-5f137e7a6395\\\\scratchpad\\\\meta.json\")",
       "Bash(nohup env NODE_ENV=development npx electron electron/main.cjs)",
       "PowerShell(npx tsc --noEmit -p . 2>&1)",
-      "PowerShell(.\\\\deploy.ps1 -AccessModel IAP)"
+      "PowerShell(.\\\\deploy.ps1 -AccessModel IAP)",
+      "Bash(bq query --use_legacy_sql=false --format=pretty ' *)",
+      "PowerShell(bq query --use_legacy_sql=false --format=pretty $q)",
+      "PowerShell(bq query --use_legacy_sql=false --format=csv --max_rows=60 $q)",
+      "PowerShell(bq query --use_legacy_sql=false --format=csv --max_rows=25 $q)",
+      "PowerShell(bq query --use_legacy_sql=false --format=csv $q2)",
+      "PowerShell($d = \"$env:APPDATA\\\\thinktank\\\\thinktank\\\\vault_ver2\"; Test-Path $d; if \\(Test-Path $d\\) { \\(Get-ChildItem $d -File\\).Count; foreach \\($id in '2026-09-25-154744','2026-09-20-103305','2026-09-25-085714','2026-09-17-145353'\\) { $f = Join-Path $d \"$id.md\"; if \\(Test-Path $f\\) { \"=== $id\"; Get-Content $f -Encoding UTF8 -TotalCount 22 } } })",
+      "PowerShell(bq query --use_legacy_sql=false --format=csv --max_rows=50 $q)",
+      "PowerShell(npx vitest run src/utils/tableFormat.test.ts src/utils/thinkFormat.test.ts src/services/thoughtSupport.test.ts server/services/conversationPresentation.test.ts 2>&1)"
     ]
   }
 }

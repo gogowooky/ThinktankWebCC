@@ -20,7 +20,7 @@ import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
 import type { TableSection, RawLine } from '../../../utils/tableFormat';
 import { useHighlight } from '../../../contexts/HighlightContext';
-import { parseTableContent, tableSectionToContent } from '../../../utils/tableFormat';
+import { parseTableContent, readColHeader, tableSectionToMetadataForm } from '../../../utils/tableFormat';
 import { colorStyleToInlineStyle, styleClass } from '../../../utils/defaultColor';
 import { applyFilter } from '../../ThinktankPanel/ThoughtsList';
 import './DataGridMedia.css';
@@ -299,7 +299,7 @@ function HighlightedText({ text, editorSettings }: { text: string; editorSetting
 }
 
 function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGridViewProps) {
-  const [sections,   setSections]   = useState<TableSection[]>(() => parseTableContent(think.Content));
+  const [sections,   setSections]   = useState<TableSection[]>(() => parseTableContent(think.Content, readColHeader(think.Metadata)));
   const [activeIdx,  setActiveIdx]  = useState(0);
   const [filter,     setFilter]     = useState('');
   const [sortState,  setSortState]  = useState<SortState | null>(null);
@@ -328,9 +328,9 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
 
   // think 切り替え時、および section のカラム数変更時にリセット
   useEffect(() => {
-    const nextSections = parseTableContent(think.Content);
+    const nextSections = parseTableContent(think.Content, readColHeader(think.Metadata));
     setSections(nextSections);
-    
+
     // metadata から復元
     const dg = think.Metadata?.datagrid;
     const initialActiveIdx = (dg && typeof dg.activeIdx === 'number' && dg.activeIdx < nextSections.length) ? dg.activeIdx : 0;
@@ -364,9 +364,9 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   // think.Content が外部からリアルタイム更新された場合の処理
   useEffect(() => {
     if (isDirty) return;
-    const nextSections = parseTableContent(think.Content);
+    const nextSections = parseTableContent(think.Content, readColHeader(think.Metadata));
     setSections(nextSections);
-  }, [think.Content, isDirty]);
+  }, [think.Content, think.Metadata, isDirty]);
 
   // 状態が変わったら think.Metadata に同期する
   useEffect(() => {
@@ -438,9 +438,11 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
   const handleRefresh = useCallback(() => {
     const content = TTUIStateManager.instance.getLatestContent();
     if (!content) return;
+    // 生成内容は本文の > 行に列ヘッダーを持つので、古い colheader を残すとそちらが優先されてしまう
+    if (think.Metadata) delete think.Metadata.colheader;
     setSections(parseTableContent(content));
     onSave?.(content, think.ID);
-  }, [onSave, think.ID]);
+  }, [onSave, think]);
 
   const handleSave = useCallback((overrideSection?: TableSection | React.MouseEvent) => {
     if (!onSave) return;
@@ -455,11 +457,15 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
       rawLines: activeSection.rawLines,
     };
 
+    // 旧形式（本文の > 行）もここで colheader へ移す。
     // section.title を使う（think.Name は _extractTitle で # が剥ぎ取られる場合があるため）
-    onSave(tableSectionToContent(activeSection.title, reorderedSection), think.ID);
+    const { content, colheader } = tableSectionToMetadataForm(activeSection.title, reorderedSection);
+    if (!think.Metadata || typeof think.Metadata !== 'object') think.Metadata = {};
+    think.Metadata.colheader = colheader;
+    onSave(content, think.ID);
 
     // state を並び替え後の section で更新し、columnOrder をリセット
-    setSections([reorderedSection]);
+    setSections(parseTableContent(content, colheader));
     setColumnOrder(Array.from({ length: reorderedSection.columns.length }, (_, i) => i));
     setIsDirty(false);
   }, [onSave, section, columnOrder, think.ID]);
@@ -608,9 +614,9 @@ function TableGridView({ think, onSave, onDirtyChange, editorSettings }: TableGr
     return (
       <div className="table-grid__empty-full">
         テーブルデータがありません。TextEditor で以下の形式で入力してください：<br />
-        <code>&gt; 列名1,列名2,列名3</code><br />
+        <code>&gt; 列名1,列名2,列名3</code>（DataGridで保存すると列ヘッダーとして colheader へ移ります）<br />
         <code>値1,値2,値3</code><br />
-        <code># コメント行（# または ; で始まる行は保存時も保持）</code>
+        <code># コメント行（# ; &gt; | で始まる行は保存時も保持）</code>
       </div>
     );
   }

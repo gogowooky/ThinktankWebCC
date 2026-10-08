@@ -25,7 +25,7 @@ import { NEW_HTML_CONTENT } from '../../utils/htmlPreview';
 import { DiscussSettingArea } from './DiscussSettingArea';
 import type { DiscussSettingAreaRef } from './DiscussSettingArea';
 import { extractLinkDrop, shouldAllowLocalDrop } from './DiscussMenuRibbon';
-import { parseTableContent, sectionToCsv, sectionsToTableContent, parseCsvLine } from '../../utils/tableFormat';
+import { parseTableContent, sectionToCsv, tableSectionToMetadataForm, readColHeader, parseCsvLine } from '../../utils/tableFormat';
 import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './DiscussTabBar';
 import type { MediaType } from '../../types';
@@ -516,9 +516,10 @@ export function DiscussPanel({ app, layoutMode }: Props) {
       }
 
       if (sections.length === 0) return;
-      const fullContent = sectionsToTableContent(title, sections);
+      const { content, colheader } = tableSectionToMetadataForm(title, sections[0]);
       const t = await vault.CreateBlankThink('table', title);
-      t.Content = fullContent;
+      t.Metadata = { ...t.Metadata, colheader };
+      t.Content = content;
       await t.SaveContent();
       panel.AddToRight(t.ID, 'datagrid', t.Name);
     };
@@ -531,7 +532,7 @@ export function DiscussPanel({ app, layoutMode }: Props) {
     const think = vault.GetThink(focusedArea.ResourceID);
     if (!think || think.ContentType !== 'table') return;
 
-    const sections = parseTableContent(think.Content);
+    const sections = parseTableContent(think.Content, readColHeader(think.Metadata));
     if (sections.length === 0) return;
 
     for (const section of sections) {

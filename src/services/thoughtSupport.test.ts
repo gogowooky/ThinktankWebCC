@@ -144,7 +144,9 @@ describe('recoverable bundle and occurrence creation', () => {
     const child = vault.GetThinks().find(t => supportRecord(t).parentId === source.ID)!;
     expect(supportRecord(child).loopId).toBe(source.ID);
     expect(supportRecord(child).occurrence).toBe('2026-10-01');
-    expect(vault.GetThink(supportRecord(source).bundleId)?.Content).toContain(child.ID);
+    // 旧AIの support-<hash> 形式IDは Think ID 形式でないため、Bundle本文の ID 一覧には残らない
+    // （ID形式でない行は無視する仕様）。子課題への参照は記録側で確認する。
+    expect(supportRecord(source).references).toContain(child.ID);
     expect(link).toHaveBeenCalledTimes(2);
   });
 });

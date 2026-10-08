@@ -43,6 +43,17 @@ export class StorageConflictError extends Error {
   }
 }
 
+/**
+ * 保存の応答待ちを打ち切った。サーバー側では保存が完了している可能性があるため、
+ * 「保存されなかった」とは断定できない。
+ */
+export class StorageTimeoutError extends Error {
+  constructor(public readonly thinkId: string) {
+    super(`「${thinkId}」の保存が時間内に完了しませんでした`);
+    this.name = 'StorageTimeoutError';
+  }
+}
+
 export interface IStorageBackend {
   /** メタデータ一覧（content なし）を取得する */
   listMeta(): Promise<ThinkMeta[]>;

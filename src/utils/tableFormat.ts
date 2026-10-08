@@ -3,11 +3,13 @@
  * table ContentType のテキスト形式パース・エクスポートユーティリティ
  *
  * フォーマット仕様:
- *   1行目: タイトル
- *   > 列名csv（行頭が > の行、最初の1行のみ列定義として有効）
+ *   1行目: タイトル（保存先では frontmatter / BQ の title）
+ *   列ヘッダー: metadata の colheader（CSV文字列）。本文には書かない
  *   値csv行...（通常のCSV行はデータ行）
- *   # で始まる行はコメント行（保存時も保持、データとして扱わない）
- *   ; で始まる行はコメント行（保存時も保持、データとして扱わない）
+ *   # ; > | で始まる行はコメント行（保存時も保持、データとして扱わない）
+ *
+ * 旧形式: colheader が無い table は、本文の最初の > 行を列ヘッダーとして読む。
+ * DataGrid から保存すると colheader へ移し、本文の > 行を消す。
  *
  * 保存ルール:
  *   - filter/sort による表示順変更はファイルのデータ行位置を変更しない
@@ -28,6 +30,23 @@ export interface TableSection {
   columns:  string[];
   rows:     string[][];
   rawLines: RawLine[];  // タイトル行以外の全行（コメント・空行を含む）
+  /** 列ヘッダーの出所。'metadata' なら本文に列定義行を書き出さない */
+  headerSource?: 'metadata' | 'body';
+  /** 列ヘッダーの原文（> を除く）。データ行の桁揃え幅をここから求める */
+  headerText?: string;
+}
+
+const COMMENT_PREFIXES = ['#', ';', '>', '|'];
+
+function isCommentLine(line: string): boolean {
+  return COMMENT_PREFIXES.some(p => line.startsWith(p));
+}
+
+/** think.Metadata.colheader を列ヘッダー文字列として取り出す（無効値は undefined） */
+export function readColHeader(metadata: unknown): string | undefined {
+  if (!metadata || typeof metadata !== 'object') return undefined;
+  const value = (metadata as Record<string, unknown>).colheader;
+  return typeof value === 'string' && value.trim() ? value : undefined;
 }
 
 /** RFC 4180 準拠の CSV 行パーサー */
@@ -62,28 +81,27 @@ function escapeCsv(cell: string): string {
 
 /**
  * table Content 文字列を TableSection 配列にパース。
- * 新フォーマット: > で列定義（最初のみ有効）、# と ; はコメント行。
+ * colheader（think.Metadata.colheader）があればそれを列ヘッダーとし、> 行はすべてコメント。
+ * 無ければ旧形式として最初の > 行を列ヘッダーとして読む。
  * 戻り値は 0 または 1 要素の配列。
  */
-export function parseTableContent(content: string): TableSection[] {
+export function parseTableContent(content: string, colheader?: string): TableSection[] {
   const allLines = content.split('\n');
   const title    = allLines[0] ?? '';
   const lines    = allLines.slice(1);
 
-  const columns:  string[]   = [];
+  const fromMetadata = !!colheader?.trim();
+  const columns:  string[]   = fromMetadata ? parseCsvLine(colheader!.trim()) : [];
   const rows:     string[][] = [];
   const rawLines: RawLine[]  = [];
+  let headerText = fromMetadata ? colheader! : undefined;
 
   for (const line of lines) {
-    if (line.startsWith('>') && columns.length === 0) {
-      // 最初の > 行を列定義として採用
-      const cols = parseCsvLine(line.slice(1).trim());
-      columns.push(...cols);
+    if (!fromMetadata && line.startsWith('>') && headerText === undefined) {
+      columns.push(...parseCsvLine(line.slice(1).trim()));
+      headerText = line.slice(1);
       rawLines.push({ type: 'columns', text: line });
-    } else if (line.startsWith('>')) {
-      // 2番目以降の > 行はコメント扱いで保持
-      rawLines.push({ type: 'comment', text: line });
-    } else if (line.startsWith('#') || line.startsWith(';')) {
+    } else if (isCommentLine(line)) {
       rawLines.push({ type: 'comment', text: line });
     } else if (!line.trim()) {
       rawLines.push({ type: 'empty', text: line });
@@ -95,7 +113,39 @@ export function parseTableContent(content: string): TableSection[] {
   }
 
   if (columns.length === 0 && rows.length === 0) return [];
-  return [{ title, columns, rows, rawLines }];
+  return [{ title, columns, rows, rawLines, headerSource: fromMetadata ? 'metadata' : 'body', headerText }];
+}
+
+/**
+ * 列ヘッダーを colheader へ移した section を返す（本文の列定義行を取り除く）。
+ * 戻り値の colheader を think.Metadata.colheader に、content を本文として保存する。
+ */
+export function tableSectionToMetadataForm(
+  title:        string,
+  section:      TableSection,
+  columnOrder?: number[],
+): { content: string; colheader: string } {
+  const migrated: TableSection = {
+    ...section,
+    rawLines: section.rawLines.filter(r => r.type !== 'columns'),
+    headerSource: 'metadata',
+  };
+  return {
+    content:   tableSectionToContent(title, migrated, columnOrder),
+    colheader: tableHeaderText(section, columnOrder),
+  };
+}
+
+/**
+ * colheader を本文の > 行に戻した旧形式の文字列を返す。
+ * 本文だけを受け取って解釈する処理（UI設定・ショートカットの読み込み）へ渡すため。
+ */
+export function tableContentWithBodyHeader(content: string, colheader?: string): string {
+  if (!colheader?.trim()) return content;
+  const nl = content.indexOf('\n');
+  const title = nl === -1 ? content : content.slice(0, nl);
+  const body  = nl === -1 ? '' : content.slice(nl + 1);
+  return `${title}\n> ${colheader.trim()}${body ? `\n${body}` : ''}`;
 }
 
 /**
@@ -109,28 +159,13 @@ export function tableSectionToContent(
   columnOrder?: number[],
 ): string {
   const order = columnOrder ?? section.columns.map((_, i) => i);
-
-  // 元のヘッダー行から各列の表示幅（パディング）を解析する
-  const colWidths: number[] = [];
-  const columnsLine = section.rawLines?.find(r => r.type === 'columns');
-  if (columnsLine) {
-    // 先頭の '>' を除いてパース（スペース維持）
-    const headerTokens = parseCsvLine(columnsLine.text.slice(1));
-    for (let i = 0; i < section.columns.length; i++) {
-      const token = headerTokens[i] ?? '';
-      if (i === 0) {
-        // 1列目は先頭のスペース（>との間のスペース）を除いた幅を有効幅とする
-        colWidths[i] = token.trimStart().length;
-      } else {
-        colWidths[i] = token.length;
-      }
-    }
-  }
+  const colWidths = headerColumnWidths(section);
+  const headerInBody = section.headerSource !== 'metadata';
 
   // rawLines がない（XLSX インポート等）場合はシンプルに生成
   if (!section.rawLines || section.rawLines.length === 0) {
     let out = title + '\n';
-    if (section.columns.length > 0)
+    if (headerInBody && section.columns.length > 0)
       out += '> ' + section.columns.map(escapeCsv).join(',') + '\n';
     for (const row of section.rows)
       out += row.map(escapeCsv).join(',') + '\n';
@@ -143,47 +178,53 @@ export function tableSectionToContent(
   let result = title + '\n';
 
   // columns エントリが rawLines に無い場合はファイル先頭に出力する
-  if (!hasColumnsEntry && section.columns.length > 0) {
+  if (headerInBody && !hasColumnsEntry && section.columns.length > 0) {
     result += '> ' + order.map(i => escapeCsv(section.columns[i] ?? '')).join(',') + '\n';
   }
 
   for (const raw of section.rawLines) {
     switch (raw.type) {
-      case 'columns': {
-        const lineParts = order.map((origIdx, orderIdx) => {
-          const val = escapeCsv(section.columns[origIdx] ?? '');
-          if (orderIdx < order.length - 1) {
-            const targetWidth = colWidths[origIdx] ?? 0;
-            if (val.length < targetWidth) {
-              return val.padEnd(targetWidth);
-            }
-          }
-          return val;
-        });
-        result += '> ' + lineParts.join(',') + '\n';
+      case 'columns':
+        result += '> ' + paddedCells(section.columns, order, colWidths) + '\n';
         break;
-      }
-      case 'data': {
-        const row = section.rows[raw.rowIdx!] ?? [];
-        const lineParts = order.map((origIdx, orderIdx) => {
-          const val = escapeCsv(row[origIdx] ?? '');
-          if (orderIdx < order.length - 1) {
-            const targetWidth = colWidths[origIdx] ?? 0;
-            if (val.length < targetWidth) {
-              return val.padEnd(targetWidth);
-            }
-          }
-          return val;
-        });
-        result += lineParts.join(',') + '\n';
+      case 'data':
+        result += paddedCells(section.rows[raw.rowIdx!] ?? [], order, colWidths) + '\n';
         break;
-      }
       default:
         result += raw.text + '\n';
     }
   }
 
   return result.trimEnd();
+}
+
+/** 列ヘッダーの原文から各列の表示幅（パディング）を求める */
+function headerColumnWidths(section: TableSection): number[] {
+  const colWidths: number[] = [];
+  const headerText = section.headerText
+    ?? section.rawLines?.find(r => r.type === 'columns')?.text.slice(1);
+  if (headerText === undefined) return colWidths;
+  const headerTokens = parseCsvLine(headerText);
+  for (let i = 0; i < section.columns.length; i++) {
+    const token = headerTokens[i] ?? '';
+    // 1列目は先頭のスペース（>との間のスペース）を除いた幅を有効幅とする
+    colWidths[i] = i === 0 ? token.trimStart().length : token.length;
+  }
+  return colWidths;
+}
+
+function paddedCells(cells: string[], order: number[], colWidths: number[]): string {
+  return order.map((origIdx, orderIdx) => {
+    const val = escapeCsv(cells[origIdx] ?? '');
+    const targetWidth = colWidths[origIdx] ?? 0;
+    return orderIdx < order.length - 1 && val.length < targetWidth ? val.padEnd(targetWidth) : val;
+  }).join(',');
+}
+
+/** colheader に保存する列ヘッダー文字列（本文の > 行と同じ桁揃え） */
+export function tableHeaderText(section: TableSection, columnOrder?: number[]): string {
+  const order = columnOrder ?? section.columns.map((_, i) => i);
+  return paddedCells(section.columns, order, headerColumnWidths(section));
 }
 
 /**

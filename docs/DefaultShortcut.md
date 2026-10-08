@@ -142,7 +142,7 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Ctrl+Y             ,TextEditor.EditText.Redo                       ,編集をやり直す
 *TextEditor ,       ,Delete             ,TextEditor.EditText.Delete                     ,カーソル右の文字を削除
 *TextEditor ,       ,Backspace          ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
-*TextEditor ,       ,Ctrl+D             ,TextEditor.EditText.Delete                     ,カーソル右の文字を削除
+*TextEditor ,       ,Ctrl+D             ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
 *TextEditor ,       ,Ctrl+H             ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
 
 *TextEditor ,       ,Ctrl+I             ,TextEditor.FoldingHeading.IncLevel             ,折り畳みレベルを上げる

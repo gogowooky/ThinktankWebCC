@@ -10,6 +10,9 @@
 import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
+import { StorageConflictError, StorageTimeoutError } from '../services/storage/IStorageBackend';
+import type { SavePayload, ThinkMeta } from '../services/storage/IStorageBackend';
+import { reportSaveResult } from '../services/storage/saveStatus';
 import { parseBundle, splitContent, extractTitleLine } from '../utils/thinkFormat';
 
 export class TTThink extends TTObject {
@@ -138,25 +141,40 @@ export class TTThink extends TTObject {
     }
   }
 
-  public async SaveContent(force: boolean = false): Promise<void> {
+  /**
+   * 同じ Think の保存は1本ずつ送る。保存中に次の保存を送ると、まだ古い UpdatedAt を
+   * baseUpdatedAt にしてしまい、自分の直前の保存と楽観ロックで衝突する。
+   * 待っている間に溜まった保存は、順番が来た時点の最新内容でまとめて1回になる
+   * （先行の保存で dirty が解消されていれば何も送らない）。
+   */
+  public SaveContent(force: boolean = false): Promise<void> {
+    const run = this._saveQueue.then(() => this._saveNow(force));
+    this._saveQueue = run.catch(() => undefined);
+    return run;
+  }
+
+  private _saveQueue: Promise<void> = Promise.resolve();
+  private _retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private _retryCount = 0;
+  /** 応答待ちを打ち切った保存の本文。サーバーに届いていたかを後で照合する */
+  private _unconfirmedContent: string | null = null;
+
+  private async _saveNow(force: boolean): Promise<void> {
     if (!this.IsDirty && !this.IsMetadataDirty && !force) return;
+    this._cancelRetry();
+    // 応答待ちの間も入力は続くため、送った時点の内容だけを保存済みとして記録する
+    const content = this._content;
+    const metadataJson = JSON.stringify(this.Metadata);
     try {
-      const meta = await StorageManager.instance.save({
-        thinkid:     this.ID,
-        category:    this.ContentType,
-        fullContent: this.Content,
-        keywords:    this.Keywords,
-        relatedIds:  this.RelatedIDs,
-        metadata:    this.Metadata,
-        // 楽観ロック（D-2）。force 時は照合をスキップして自分の変更で上書きする。
-        baseUpdatedAt: force ? undefined : (this.UpdatedAt || undefined),
-      });
-      // 保存成功後: サーバーが返した updatedAt を反映
+      const meta = await this._send(content, force);
       if (meta.updatedAt) {
         this.UpdatedAt = meta.updatedAt;
       }
-      this.markSaved();
-      this.markMetadataSaved();
+      this._savedContent = content;
+      this._metadataSaved = metadataJson;
+      this._unconfirmedContent = null;
+      this._retryCount = 0;
+      reportSaveResult(this.ID, false);
       // 親 Vault に通知してDataGridを再描画させる（UpdateDateは自分自身では更新しない）
       if (this._parent) {
         this._parent.NotifyUpdated(false);
@@ -165,9 +183,60 @@ export class TTThink extends TTObject {
       // 呼び出し元が保存失敗を検知できるよう、ログのみで握りつぶさず再送出する。
       // ここで飲み込むと「保存済みのはずが実は保存されていない」というデータ消失に繋がる。
       console.error(`[TTThink] SaveContent failed (${this.ID}):`, e);
+      if (e instanceof StorageTimeoutError) this._unconfirmedContent = content;
+      if (!(e instanceof StorageConflictError)) {
+        reportSaveResult(this.ID, true);
+        this._scheduleRetry();
+      }
       throw e;
     }
   }
+
+  private async _send(content: string, force: boolean): Promise<ThinkMeta> {
+    const payload: SavePayload = {
+      thinkid:     this.ID,
+      category:    this.ContentType,
+      fullContent: content,
+      keywords:    this.Keywords,
+      relatedIds:  this.RelatedIDs,
+      metadata:    this.Metadata,
+      // 楽観ロック（D-2）。force 時は照合をスキップして自分の変更で上書きする。
+      baseUpdatedAt: force ? undefined : (this.UpdatedAt || undefined),
+    };
+    try {
+      return await StorageManager.instance.save(payload);
+    } catch (e) {
+      const unconfirmed = this._unconfirmedContent;
+      if (!(e instanceof StorageConflictError) || unconfirmed === null || !e.serverUpdatedAt) throw e;
+      // 打ち切った保存が実はサーバーに届いていた場合、衝突相手は自分自身。
+      // サーバーの本文がそのとき送った本文と一致すれば、その版を基準に送り直す。
+      const serverBody = await StorageManager.instance.getBody(this.ID);
+      if (serverBody === null
+        || TTThink.normalize(serverBody) !== TTThink.normalize(splitContent(unconfirmed).body)) throw e;
+      return StorageManager.instance.save({ ...payload, baseUpdatedAt: e.serverUpdatedAt });
+    }
+  }
+
+  /** 自動保存は入力をきっかけに走るため、入力が止まった後の失敗はここで拾い直す */
+  private _scheduleRetry(): void {
+    if (this._retryTimer || this._retryCount >= TTThink.RETRY_DELAYS_MS.length) return;
+    const delay = TTThink.RETRY_DELAYS_MS[this._retryCount++];
+    this._retryTimer = setTimeout(() => {
+      this._retryTimer = null;
+      this.SaveContent().catch(e => {
+        // 衝突は App.tsx の unhandledrejection → 確認ダイアログへ渡す
+        if (e instanceof StorageConflictError) throw e;
+      });
+    }, delay);
+  }
+
+  private _cancelRetry(): void {
+    if (!this._retryTimer) return;
+    clearTimeout(this._retryTimer);
+    this._retryTimer = null;
+  }
+
+  private static readonly RETRY_DELAYS_MS = [5_000, 15_000, 30_000, 60_000, 120_000];
 
 
   // ── ヘルパー ───────────────────────────────────────────────────────

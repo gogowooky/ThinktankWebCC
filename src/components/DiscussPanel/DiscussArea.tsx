@@ -17,6 +17,7 @@ import { useHighlight } from '../../contexts/HighlightContext';
 import { DiscussMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './DiscussMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
 import { appendLinkToContent } from '../../utils/thinkFormat';
+import { readColHeader, tableContentWithBodyHeader } from '../../utils/tableFormat';
 import { reportSaveError } from '../../utils/saveError';
 import { FOLDING_HEADER_STATUS_ID, isUnset, pickColorStyle, pickIndexedStyles, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
@@ -225,9 +226,10 @@ export function DiscussArea({
     }
     return think.SaveContent().then(() => {
       if (isCurrentResource) setIsDirty(false);
-      // システム Think の保存を各マネージャーに通知
-      TTUIStateManager.instance.onThinkSaved(think.ID, content);
-      TTShortcutManager.instance.onThinkSaved(think.ID, content);
+      // システム Think の保存を各マネージャーに通知（マネージャーは列ヘッダーを本文の > 行から読む）
+      const managerContent = tableContentWithBodyHeader(content, readColHeader(think.Metadata));
+      TTUIStateManager.instance.onThinkSaved(think.ID, managerContent);
+      TTShortcutManager.instance.onThinkSaved(think.ID, managerContent);
     }).catch(e => {
       console.error('[DiscussArea] SaveContent failed:', e);
       throw e;

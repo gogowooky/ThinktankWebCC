@@ -16,7 +16,7 @@ import {
 import type { TTThink } from '../../../models/TTThink';
 import type { ContentType } from '../../../types';
 import type { MediaProps } from './types';
-import { parseTableContent } from '../../../utils/tableFormat';
+import { parseTableContent, readColHeader } from '../../../utils/tableFormat';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { applyFilter } from '../../ThinktankPanel/ThoughtsList';
 import './CardMedia.css';
@@ -138,15 +138,17 @@ function TableCardView({ think, onSave }: TableCardViewProps) {
   const [filter, setFilter] = useState('');
   const isUISettings = think.ID === TTUIStateManager.THINK_ID;
 
-  const [sections, setSections] = useState(() => parseTableContent(think.Content));
+  const [sections, setSections] = useState(() => parseTableContent(think.Content, readColHeader(think.Metadata)));
   const section = sections[0] ?? null;
 
   const handleRefresh = useCallback(() => {
     const content = TTUIStateManager.instance.getLatestContent();
     if (!content) return;
+    // 生成内容は本文の > 行に列ヘッダーを持つので、古い colheader を残すとそちらが優先されてしまう
+    if (think.Metadata) delete think.Metadata.colheader;
     setSections(parseTableContent(content));
     onSave?.(content, think.ID);
-  }, [onSave, think.ID]);
+  }, [onSave, think]);
 
   const filteredRows = useMemo<string[][]>(() => {
     if (!section) return [];

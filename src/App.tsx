@@ -16,6 +16,7 @@ import { getFocusName } from './utils/getFocusName'
 import { isIPhone } from './utils/deviceInfo'
 import { flushAllPanes } from './utils/unsavedGuard'
 import { StorageConflictError } from './services/storage/IStorageBackend'
+import { onSaveStatusChange } from './services/storage/saveStatus'
 
 export default function App() {
   useEffect(() => {
@@ -80,6 +81,13 @@ export default function App() {
       app.Status.SetSyncState('error')
     }
     window.addEventListener('unhandledrejection', handleUnhandledRejection)
+
+    // 自動保存の失敗（タイムアウト含む）は呼び出し元でログに出るだけなので、ここで表示する。
+    // TTThink の自動再保存で全件回復したら表示を戻す。
+    const disposeSaveStatus = onSaveStatusChange(failingCount => {
+      if (failingCount > 0) app.Status.SetSyncState('error')
+      else if (app.Status.SyncState === 'error') app.Status.SetSyncState('synced')
+    })
 
     // ②' 未保存データ損失の防止（PROJECT_REVIEW_REPORT.md D-1）
     //   - 開いているペインに未保存の変更（area.IsDirty）があればウィンドウ終了を確認で止める
@@ -165,6 +173,7 @@ export default function App() {
       document.removeEventListener('focusin',     handleFocusIn)
       window.removeEventListener('blur',          handleWindowBlur)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+      disposeSaveStatus()
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('pagehide', handlePageHide)
       document.removeEventListener('visibilitychange', handleFlushOnHide)

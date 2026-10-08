@@ -17,7 +17,7 @@ import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { splitContent, extractTitleLine } from '../../../utils/thinkFormat';
-import { editorValueIncludesTitleLine, toFoldingRanges, extractFrontmatterTitle } from '../../../utils/markdownSections';
+import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
 import {
   FOLDING_HEADER_BG_CLASS,
   INLINE_MASK_CHAR, INLINE_STYLE_RULES, colorStyleToCss, foldingHeaderStyleCss,
@@ -971,11 +971,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     const isDirty = v !== savedRef.current;
     onDirtyChange(isDirty);
     updateDecorations();
-    // bundle / table / memo は第一行がタイトル、frontmatterがあればその title: 値が
-    // タイトル → いずれもリアルタイム同期（extractTitleLine が両ケースを解決する）
-    if (onTitleChange && think &&
-        (extractFrontmatterTitle(v) !== null ||
-         think.ContentType === 'bundle' || think.ContentType === 'table' || think.ContentType === 'memo')) {
+    // どの種別も第一行（frontmatterがあればその title: 値）がタイトルなので、memoと同じくリアルタイム同期する
+    if (onTitleChange && think) {
       const newTitle = extractTitleLine(v);
       if (newTitle !== firstLineRef.current) {
         firstLineRef.current = newTitle;

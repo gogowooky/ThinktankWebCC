@@ -23,6 +23,8 @@ it('formats verified Think citations without references or notices and preserves
   expect(JSON.stringify(value)).toBe(before);
   const transcript = mergeConversationTranscript('Chat\n手書きのメモ', [value]);
   expect(transcript).toContain(formatted.reply);
+  // createdAt 16:00Z は日本時間で翌日 01:00
+  expect(transcript).toContain(`## 質問\n\n(test) 2026-09-21 01:00\n${formatted.reply}`);
   expect(transcript).not.toContain('引用は回答時点');
   expect(transcript).not.toContain('[:');
   expect(mergeConversationTranscript(transcript, [value])).toBe(transcript);
