@@ -2,6 +2,7 @@
 
 .thinktank-area__title-row {
   background: var(--thinktank-ribbon-bg);
+  --on-ribbon-rgb: var(--thinktank-on-ribbon-rgb);
 }
 
 .thinktank-area {

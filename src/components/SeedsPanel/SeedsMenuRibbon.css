@@ -2,21 +2,22 @@
 
 .seeds-menu-ribbon {
   background: var(--seeds-menuribbon-bg);
-  color: rgba(255, 255, 255, 0.9);
+  --on-ribbon-rgb: var(--seeds-on-menuribbon-rgb);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
 }
 
 .seeds-ribbon__btn--danger:not(:disabled) {
-  color: rgba(255, 180, 180, 0.9);
+  color: color-mix(in srgb, #e05050 60%, rgb(var(--on-ribbon-rgb, 255 255 255)));
 }
 
 .seeds-ribbon__btn--danger:not(:disabled):hover {
   background: rgba(200, 50, 50, 0.25);
-  color: rgba(255, 200, 200, 1);
+  color: color-mix(in srgb, #e05050 45%, rgb(var(--on-ribbon-rgb, 255 255 255)));
 }
 
 .seeds-ribbon__check-count {
   font-size: calc(10px * var(--tt-font-scale, 1));
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
   white-space: nowrap;
   padding: 0 4px;
 }

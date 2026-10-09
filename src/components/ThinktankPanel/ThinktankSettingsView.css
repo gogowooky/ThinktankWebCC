@@ -107,7 +107,7 @@
   padding: 4px 8px;
   border-radius: 4px;
   background: var(--thinktank-ribbon-bg);
-  color: rgba(255, 255, 255, 0.85);
+  color: rgb(var(--thinktank-on-ribbon-rgb, 255 255 255) / 0.85);
   font-size: calc(11px * var(--tt-font-scale, 1));
   white-space: nowrap;
   flex-shrink: 0;

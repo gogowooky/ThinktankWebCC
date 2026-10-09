@@ -50,11 +50,13 @@ import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import type { ChatMessage } from '../../types';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
-import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, styleStatusId } from '../../utils/defaultColor';
+import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, parseMarks, styleStatusId, type MarkKind } from '../../utils/defaultColor';
+import { PANEL_THEME_KINDS, panelThemeStatusId, type PanelThemeKind } from '../../utils/panelTheme';
+import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './DiscussSettingArea.css';
 
 /**
- * 「文字設定」の先頭に並べるエディタの基本色。値の実体は docs/DefaultColor.md の
+ * 「文字色」に並べるエディタの基本色。値の実体は docs/DefaultColor.md の
  * 各StatusID（TextEditor.Text / .Selection / .Occurrence / .FoldingHeader）で、
  * ここでは Color / BgColor だけを扱う（Attrs のUIは持たない）。
  *
@@ -80,15 +82,88 @@ const TEXT_EDITOR_BASE_COLORS: {
 ];
 
 /**
- * 「タグ色」に並べる Url / Filepath / Tag のスタイル。
+ * 「文字色」の末尾に並べる Url / Filepath / Tag のスタイル。
  * 値の実体は docs/DefaultColor.md の TextEditor.<種別>.Style.* で、
  * TextEditor.CurrentEditor.DoOnCursorPos が認識する要素と同じもの。
  */
 const TEXT_EDITOR_TAG_COLORS: { statusId: string; label: string }[] = [
-  { statusId: LINK_STYLE_STATUS_IDS.url,      label: 'URL' },
-  { statusId: LINK_STYLE_STATUS_IDS.filepath, label: 'パス' },
-  { statusId: LINK_STYLE_STATUS_IDS.tag,      label: 'タグ' },
+  { statusId: LINK_STYLE_STATUS_IDS.url,      label: 'Url' },
+  { statusId: LINK_STYLE_STATUS_IDS.filepath, label: 'File' },
+  { statusId: LINK_STYLE_STATUS_IDS.tag,      label: 'Tag' },
 ];
+
+/** 「パネル色」に並べる各パネルの基礎色（<Panel>.Theme.Color）。派生色・文字色は panelTheme.ts が導く */
+const PANEL_THEME_LABELS: Record<PanelThemeKind, string> = {
+  Thinktank: 'Thinktank',
+  Seeds:     'Seeds',
+  Discuss:   'Discuss',
+  Harvest:   'Harvest',
+  ToolBar:   'ToolBar',
+};
+
+/** 文字色・B・U・背景色（BG）を1行で編集する。コメント / 行頭文字 / Url・File・Tag で共通 */
+function ColorStyleRow({ panel, statusId, label }: { panel: TTDiscussPanel; statusId: string; label: string }) {
+  const style = panel.GetColorStatus(statusId);
+  const attrs = parseAttrs(style.Attrs);
+  const hasBg = !isUnset(style.BgColor);
+  return (
+    <div className="discuss-setting-area__heading-style-row">
+      <span className="discuss-setting-area__heading-style-label discuss-setting-area__swatch-label">{label}</span>
+      <input
+        type="color"
+        className="discuss-setting-area__color-picker"
+        value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
+        onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
+        data-tip={`${label}の文字色`}
+      />
+      <label className="discuss-setting-area__small-checkbox">
+        <input
+          type="checkbox"
+          checked={attrs.has('bold')}
+          onChange={e => panel.ToggleColorStatusAttr(statusId, 'bold', e.target.checked)}
+        />
+        B
+      </label>
+      <label className="discuss-setting-area__small-checkbox">
+        <input
+          type="checkbox"
+          checked={attrs.has('underline')}
+          onChange={e => panel.ToggleColorStatusAttr(statusId, 'underline', e.target.checked)}
+        />
+        U
+      </label>
+      <label className="discuss-setting-area__small-checkbox">
+        <input
+          type="checkbox"
+          checked={hasBg}
+          onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.checked ? '#ffffff' : 'undefined')}
+        />
+        BG
+      </label>
+      {hasBg && (
+        <input
+          type="color"
+          className="discuss-setting-area__color-picker"
+          value={style.BgColor.slice(0, 7)}
+          onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
+          data-tip={`${label}の背景色`}
+        />
+      )}
+    </div>
+  );
+}
+
+/** 行頭記号（Marks の n 番目）ごとに StyleN の行を並べる */
+function MarkStyleRows({ panel, kind }: { panel: TTDiscussPanel; kind: MarkKind }) {
+  const marks = parseMarks(panel.TextEditor[kind].Marks);
+  return (
+    <>
+      {marks.map((mark, i) => (
+        <ColorStyleRow key={i} panel={panel} statusId={styleStatusId(kind, i + 1)} label={mark} />
+      ))}
+    </>
+  );
+}
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
 
@@ -261,15 +336,19 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
   const [isActionSettingsOpen,      setIsActionSettingsOpen]      = useState(true);
   const [isDisplaySettingsOpen,   setIsDisplaySettingsOpen]   = useState(true);
   const [isColorSettingsOpen,     setIsColorSettingsOpen]     = useState(true);
-  const [isTagColorOpen,          setIsTagColorOpen]          = useState(true);
+  const [isCommentColorOpen,      setIsCommentColorOpen]      = useState(true);
+  const [isBulletColorOpen,       setIsBulletColorOpen]       = useState(true);
+  const [isSectionColorOpen,      setIsSectionColorOpen]      = useState(true);
   const [isHighlightColorOpen,    setIsHighlightColorOpen]    = useState(true);
+  const [isPanelColorOpen,        setIsPanelColorOpen]        = useState(true);
   const [isMemoSettingsOpen,      setIsMemoSettingsOpen]      = useState(true);
   const [isEditSettingsOpen,      setIsEditSettingsOpen]      = useState(true);
   const [isKeySettingsOpen,       setIsKeySettingsOpen]       = useState(true);
   const [isTableSettingsOpen,     setIsTableSettingsOpen]     = useState(true);
   usePanelSectionsSetAll('discuss', [
     setIsActionSettingsOpen, setIsDisplaySettingsOpen, setIsColorSettingsOpen,
-    setIsTagColorOpen, setIsHighlightColorOpen, setIsMemoSettingsOpen,
+    setIsCommentColorOpen, setIsBulletColorOpen, setIsSectionColorOpen,
+    setIsHighlightColorOpen, setIsPanelColorOpen, setIsMemoSettingsOpen,
     setIsEditSettingsOpen, setIsKeySettingsOpen, setIsTableSettingsOpen,
   ]);
 
@@ -823,7 +902,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                 onClick={() => setIsColorSettingsOpen(!isColorSettingsOpen)}
               >
                 {isColorSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>文字設定</span>
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>文字色</span>
               </div>
 
               {isColorSettingsOpen && (
@@ -831,11 +910,11 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                   {/* エディタの基本色。docs/DefaultColor.md の各StatusIDを直接編集する（Attrs は扱わない）*/}
                   {TEXT_EDITOR_BASE_COLORS.map((row, rowIndex) => (
                     <div key={rowIndex} className="discuss-setting-area__color-row">
-                      {row.map(({ statusId, label, hasColor }) => {
+                      {row.map(({ statusId, label, hasColor }, cellIndex) => {
                         const style = panel.GetColorStatus(statusId);
                         return (
                           <div key={statusId} className="discuss-setting-area__color-cell">
-                            <span className="discuss-setting-area__color-label">{label}</span>
+                            <span className={`discuss-setting-area__color-label${cellIndex === 0 ? ' discuss-setting-area__swatch-label' : ''}`}>{label}</span>
                             {hasColor && (
                               <input
                                 type="color"
@@ -858,6 +937,61 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                     </div>
                   ))}
 
+                  {/* TextEditor.CurrentEditor.DoOnCursorPos が認識する Url / File / Tag */}
+                  {TEXT_EDITOR_TAG_COLORS.map(({ statusId, label }) => (
+                    <ColorStyleRow key={statusId} panel={panel} statusId={statusId} label={label} />
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="discuss-setting-area__divider" />
+
+            {/* コメント色（TextEditor.Comment.Marks の各記号 → Comment.StyleN）*/}
+            <div className="discuss-setting-area__section">
+              <div
+                className="discuss-setting-area__section-header"
+                onClick={() => setIsCommentColorOpen(!isCommentColorOpen)}
+              >
+                {isCommentColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>コメント色</span>
+              </div>
+              {isCommentColorOpen && (
+                <div className="discuss-setting-area__section-content">
+                  <MarkStyleRows panel={panel} kind="Comment" />
+                </div>
+              )}
+            </div>
+            <div className="discuss-setting-area__divider" />
+
+            {/* 項目色（TextEditor.Bullet.Marks の各記号 → Bullet.StyleN）*/}
+            <div className="discuss-setting-area__section">
+              <div
+                className="discuss-setting-area__section-header"
+                onClick={() => setIsBulletColorOpen(!isBulletColorOpen)}
+              >
+                {isBulletColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>項目色</span>
+              </div>
+              {isBulletColorOpen && (
+                <div className="discuss-setting-area__section-content">
+                  <MarkStyleRows panel={panel} kind="Bullet" />
+                </div>
+              )}
+            </div>
+            <div className="discuss-setting-area__divider" />
+
+            {/* セクション（見出し）色設定 */}
+            <div className="discuss-setting-area__section">
+              <div
+                className="discuss-setting-area__section-header"
+                onClick={() => setIsSectionColorOpen(!isSectionColorOpen)}
+              >
+                {isSectionColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>セクション色</span>
+              </div>
+
+              {isSectionColorOpen && (
+                <div className="discuss-setting-area__section-content">
                   {[1, 2, 3, 4, 5, 6].map(level => {
                     const statusId = styleStatusId('Heading', level);
                     const style = panel.GetColorStatus(statusId);
@@ -905,73 +1039,6 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                             value={style.BgColor.slice(0, 7)}
                             onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
                             data-tip={`セクション${fw}の背景色`}
-                          />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div className="discuss-setting-area__divider" />
-
-            {/* タグ色設定（Url / Filepath / Tag）*/}
-            <div className="discuss-setting-area__section">
-              <div
-                className="discuss-setting-area__section-header"
-                onClick={() => setIsTagColorOpen(!isTagColorOpen)}
-              >
-                {isTagColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>タグ色</span>
-              </div>
-
-              {isTagColorOpen && (
-                <div className="discuss-setting-area__section-content">
-                  {TEXT_EDITOR_TAG_COLORS.map(({ statusId, label }) => {
-                    const style = panel.GetColorStatus(statusId);
-                    const attrs = parseAttrs(style.Attrs);
-                    const hasBg = !isUnset(style.BgColor);
-                    return (
-                      <div key={statusId} className="discuss-setting-area__heading-style-row">
-                        <span className="discuss-setting-area__heading-style-label">{label}</span>
-                        <input
-                          type="color"
-                          className="discuss-setting-area__color-picker"
-                          value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
-                          onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
-                          data-tip={`${label}の文字色`}
-                        />
-                        <label className="discuss-setting-area__small-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={attrs.has('bold')}
-                            onChange={e => panel.ToggleColorStatusAttr(statusId, 'bold', e.target.checked)}
-                          />
-                          B
-                        </label>
-                        <label className="discuss-setting-area__small-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={attrs.has('underline')}
-                            onChange={e => panel.ToggleColorStatusAttr(statusId, 'underline', e.target.checked)}
-                          />
-                          U
-                        </label>
-                        <label className="discuss-setting-area__small-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={hasBg}
-                            onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.checked ? '#ffffff' : 'undefined')}
-                          />
-                          BG
-                        </label>
-                        {hasBg && (
-                          <input
-                            type="color"
-                            className="discuss-setting-area__color-picker"
-                            value={style.BgColor.slice(0, 7)}
-                            onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
-                            data-tip={`${label}の背景色`}
                           />
                         )}
                       </div>
@@ -1058,6 +1125,44 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                             U
                           </label>
                         </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="discuss-setting-area__divider" />
+
+            {/* パネル色（各パネルの基礎色。リボン・淡色・ホバー・文字色はここから自動で導かれる）*/}
+            <div className="discuss-setting-area__section">
+              <div
+                className="discuss-setting-area__section-header"
+                onClick={() => setIsPanelColorOpen(!isPanelColorOpen)}
+              >
+                {isPanelColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>パネル色</span>
+              </div>
+
+              {isPanelColorOpen && (
+                <div className="discuss-setting-area__section-content">
+                  {PANEL_THEME_KINDS.map(kind => {
+                    const statusId = panelThemeStatusId(kind);
+                    const style = panel.GetColorStatus(statusId);
+                    const label = PANEL_THEME_LABELS[kind];
+                    return (
+                      <div key={kind} className="discuss-setting-area__heading-style-row">
+                        <span className="discuss-setting-area__heading-style-label discuss-setting-area__swatch-label">{label}</span>
+                        <input
+                          type="color"
+                          className="discuss-setting-area__color-picker"
+                          value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
+                          onChange={e => {
+                            panel.SetColorStatus(statusId, 'Color', e.target.value);
+                            // CSS変数への展開は AppLayout がこのキーの変更通知で行う
+                            TTUIStateManager.instance.notifyPropertyChanged(`${statusId}.Color`);
+                          }}
+                          data-tip={`${label}パネルの基礎色`}
+                        />
                       </div>
                     );
                   })}

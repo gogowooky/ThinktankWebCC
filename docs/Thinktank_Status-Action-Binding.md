@@ -14,23 +14,6 @@
 (行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
 
 # Action
-## 完了：　261008　TextEditor.CurrentEditor.DefaultAction
-texteditorのdefaultのアクションを実施する。（＝action bubleを停止させずにそのままthroughする）
-
-description:    テキストエディタのdefaultアクション
-key:            TextEditor.CurrentEditor.DefaultAction
-
-　A（261008実装）：src\views\TTShortcutManager.ts の _processEvent で特別扱いするようにしました。
-　　押されたキーに一致する行（現在の focus / exmode で絞り込み済み）の中にこのアクションがあれば、
-　　preventDefault / stopPropagation を行わず、同じキーの他の行も一切実行せずに終了します。
-　　キーイベントはそのまま Monaco に届き、エディタ既定の動作（例: Ctrl+B 等の既定編集操作）になります。
-　　行の並び順に関係なく他の行より優先されます。
-　　用途は「グローバル（focus=*）に割り当てたキーを、エディタ内でだけ既定動作に戻す」ことで、
-　　docs\DefaultShortcut.md に例えば次のような行を足して使います。
-　　　*TextEditor ,       ,Ctrl+B ,TextEditor.CurrentEditor.DefaultAction ,エディタ既定動作
-　　ステータスバーの KeyAction には「TextEditor.CurrentEditor.DefaultAction: 既定動作」と表示します。
-　　TTActions にも登録済み（src\views\TTFocusedPanelActions.ts）ですが、コマンド等から直接実行した
-　　場合は素通しするキーが無いため何もしません。キー割当は DefaultShortcut.md には追加していません。
 
 # Status
 
@@ -502,11 +485,12 @@ key:            ThinktankPanel.Filter.CursorPos:PrevLine
 description:    Think一覧のカーソルを1行後に移動する
 key:            ThinktankPanel.Filter.CursorPos:NextLine
 　↓ カーソルを１行後に移動する　→　終了
-## Status：　260917　ThinktankPanel.Area.OpenWidth
+## Status：　261009　ThinktankPanel.Area.OpenWidth
 key:の意味
 「init」は起動時の値。
 「user」はアプリ使用中にユーザーが設定した値
-「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の50%とする
+「foredit」は、iphoneの時はアプリ幅の100%、その他の時はアプリ幅の30%とする
+　（縦タブバー・Splitter を含めたパネル全体の幅。割合は src\utils\panelAreaWidth.ts の FOR_EDIT_RATIO）
 
 description:    ThinktankパネルOpen時の幅
 key:            ThinktankPanel.Area.OpenWidth
@@ -626,12 +610,21 @@ default:        none
 type:           string
 candidates:     .*
 
-## Status：　260917　DiscussPanel.Area.OpenWidth
+## Status：　261009　DiscussSettingPanel.Area.OpenWidth
 key:の意味はThinktankPanel.Area.OpenWidthと同じ
-description:    DiscussパネルOpen時の幅
-key:            DiscussPanel.Area.OpenWidth
+　（旧記載の DiscussPanel.Area.OpenWidth は未登録のIDだったため、実装上の StatusID であるこちらに統合しました）
+　ワークアウト設定パネル（DiscussSetting：垂直タブバー＋設定トレイ）を開いたときの幅のモードです。
+　実体は TTDiscussPanel.AreaWidthMode で、px は panelAreaWidth.ts が導出します。
+　FocusedPanel.Area.OpenWidth:* / FocusedPanel.Area.IsOpen:Toggle* は、フォーカスが
+　DiscussSetting と Discuss のどちらにある場合もこの Status を対象にします。
+　Splitter で幅を変更すると user に切り替わります。
+
+description:    ワークアウトパネルOpen時の幅
+key:            DiscussSettingPanel.Area.OpenWidth
+current:        init
+default:        init
 type:           string
-candidates:     (init|user|foredit)
+candidates:     ^(init|user|foredit)$
 ## Status：　260619　DiscussSettingPanel.Area.IsOpen
 
 description:    ワークアウト設定パネル表示
@@ -1101,16 +1094,28 @@ candidates:     ^[0-9]+$
 将来的にタグごとに分ける可能性あり、
 
 　TextEditor.Highlighter.Style(1..6).* / TextEditor.Heading.Style(1..6).* は docs/DefaultColor.md で定義します。
-　（DiscussSettingPanel>TextEditor設定 の ハイライト色 / 文字設定 での変更もそちらの値を書き換えます）
+　（DiscussSettingPanel>TextEditor設定 の セクション色 / ハイライト色 での変更もそちらの値を書き換えます）
 
 　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Seeds|Discuss|Harvest|ToolBar).Theme.* で定義します。
 　　Color   … パネルの基礎色（リボン等）。他のパネル色はこの色から生成します。
 　　BgColor … コンテンツ表示部（一覧・チャット等の白地）の背景色。
+　　（261009追記）リボン・メニューリボン・縦タブバー・設定トレイ上の文字/アイコン色は、地の明るさから
+　　白か黒を自動で選びます（src\utils\panelTheme.ts。白で読める限り白を優先）。明るい基礎色でも
+　　Color を変えるだけで読めます。ToolBar だけは従来どおり BgColor が文字色です。
 
 　パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色は
 　docs/DefaultColor.md の FocusingBorder.Theme.Color で定義します（BgColor / Attrs は未使用）。
 
-## Status：　260817　エディタ基本色のUI（DiscussSettingPanel>TextEditor設定>文字設定）
+## Status：　261009　エディタ基本色のUI（DiscussSettingPanel>TextEditor設定>文字色）
+　（261009）旧「文字設定」を上下2つに分けました。上側の基本色（下記）を「文字色」、
+　下側のセクション１〜６（TextEditor.Heading.Style(1..6).*）を「セクション色」として別セクションにしています。
+　TextEditor設定の色関係のセクションは、上から次の順です（各行は 文字色・B・U・BG で編集）。
+　　文字色     … 基本/選択/出現/折畳 ＋ Url/File/Tag（TextEditor.(Url|Filepath|Tag).Style.*。旧「タグ色」を統合）
+　　コメント色 … TextEditor.Comment.Marks の各記号 → TextEditor.Comment.Style(n).*
+　　項目色 … TextEditor.Bullet.Marks の各記号 → TextEditor.Bullet.Style(n).*
+　　セクション色 … TextEditor.Heading.Style(1..6).*
+　　ハイライト色 … TextEditor.Highlighter.Style(1..6).*
+　　パネル色   … (Thinktank|Seeds|Discuss|Harvest|ToolBar).Theme.Color（基礎色のみ）
 　「文字設定」先頭にあった 背景色 / 文字色 / 選択色 / 一致色 の4項目（旧 TextEditor.Color.*）は廃止し、
 　同じ位置で以下のStatusIDを直接編集するUIに置き換えました。Color と BgColor のみを扱い、Attrs のUIは持ちません。
 　　基本 … TextEditor.Text.(Color,BgColor)
@@ -1128,6 +1133,24 @@ candidates:     ^[0-9]+$
 
 
 # TextEditor Action ================================================================================================
+## Action：　261008　TextEditor.CurrentEditor.DefaultAction
+texteditorのdefaultのアクションを実施する。（＝action bubleを停止させずにそのままthroughする）
+
+description:    テキストエディタのdefaultアクション
+key:            TextEditor.CurrentEditor.DefaultAction
+
+　A（261008実装）：src\views\TTShortcutManager.ts の _processEvent で特別扱いするようにしました。
+　　押されたキーに一致する行（現在の focus / exmode で絞り込み済み）の中にこのアクションがあれば、
+　　preventDefault / stopPropagation を行わず、同じキーの他の行も一切実行せずに終了します。
+　　キーイベントはそのまま Monaco に届き、エディタ既定の動作（例: Ctrl+B 等の既定編集操作）になります。
+　　行の並び順に関係なく他の行より優先されます。
+　　用途は「グローバル（focus=*）に割り当てたキーを、エディタ内でだけ既定動作に戻す」ことで、
+　　docs\DefaultShortcut.md に例えば次のような行を足して使います。
+　　　*TextEditor ,       ,Ctrl+B ,TextEditor.CurrentEditor.DefaultAction ,エディタ既定動作
+　　ステータスバーの KeyAction には「TextEditor.CurrentEditor.DefaultAction: 既定動作」と表示します。
+　　TTActions にも登録済み（src\views\TTFocusedPanelActions.ts）ですが、コマンド等から直接実行した
+　　場合は素通しするキーが無いため何もしません。キー割当は DefaultShortcut.md には追加していません。
+
 ## Action：　260814　DiscussPanel.FocusedPane.FileHistory:Next
 　Discussパネルに表示されているPane毎に、最大30個までのLoadファイルの履歴リストを設定し、以下ルールで運用してください。
 　1. 最初のファイルがLoadされると、ファイル履歴にIDを記録し、HistoryPosとHistoryMaxを1にします。

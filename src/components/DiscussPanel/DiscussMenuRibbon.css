@@ -6,7 +6,8 @@
   height: 30px;
   padding: 0 6px;
   background: var(--discuss-menuribbon-bg);
-  color: rgba(255, 255, 255, 0.85);
+  --on-ribbon-rgb: var(--discuss-on-menuribbon-rgb);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.85);
   gap: 4px;
   flex-shrink: 0;
   user-select: none;
@@ -28,13 +29,13 @@
 
 .discuss-menu-ribbon--outside-bundle .discuss-menu-ribbon__title {
   font-weight: normal;
-  color: rgba(255, 255, 255, 0.80);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.80);
 }
 
 body[data-focus-column="Discuss"] .discuss-menu-ribbon--focused .discuss-menu-ribbon__title {
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: rgba(255, 255, 255, 0.6);
+  text-decoration-color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
 }
 
 /* アイテムD&Dドロップ受け入れ中。境界線マウスオーバー色（FocusingBorder.Theme.Color）を
@@ -51,7 +52,7 @@ body[data-focus-column="Discuss"] .discuss-menu-ribbon--focused .discuss-menu-ri
   width: 20px;
   height: 24px;
   cursor: grab;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
   border-radius: 3px;
   flex-shrink: 0;
 }
@@ -61,8 +62,8 @@ body[data-focus-column="Discuss"] .discuss-menu-ribbon--focused .discuss-menu-ri
 }
 
 .discuss-menu-ribbon__drag:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.1);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.1);
 }
 
 /* タイトル */
@@ -102,18 +103,18 @@ body[data-focus-column="Discuss"] .discuss-menu-ribbon--focused .discuss-menu-ri
   width: 22px;
   height: 22px;
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
   transition: background 100ms ease, color 100ms ease;
 }
 
 .discuss-menu-ribbon__media-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
 }
 
 .discuss-menu-ribbon__media-btn--active {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.2);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 /* 閉じるボタン */
@@ -124,12 +125,12 @@ body[data-focus-column="Discuss"] .discuss-menu-ribbon--focused .discuss-menu-ri
   width: 22px;
   height: 22px;
   border-radius: 3px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
   flex-shrink: 0;
   transition: background 100ms ease, color 100ms ease;
 }
 
 .discuss-menu-ribbon__close:hover {
   background: rgba(220, 60, 60, 0.5);
-  color: #fff;
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }

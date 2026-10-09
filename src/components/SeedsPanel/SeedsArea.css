@@ -2,6 +2,7 @@
 
 .seeds-area__title-row {
   background: var(--seeds-ribbon-bg);
+  --on-ribbon-rgb: var(--seeds-on-ribbon-rgb);
 }
 
 .seeds-area {

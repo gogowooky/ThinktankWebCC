@@ -9,23 +9,23 @@
   width: 28px;
   height: 28px;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.55);
   transition: background 150ms ease, color 150ms ease;
   flex-shrink: 0;
 }
 
 .discuss-tab-bar__btn:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.15);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
 }
 
 .discuss-tab-bar__btn--active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.18);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 .discuss-tab-bar__btn:focus-visible {
-  outline: 1px solid rgba(255, 255, 255, 0.7);
+  outline: 1px solid rgb(var(--on-ribbon-rgb, 255 255 255) / 0.7);
   outline-offset: 1px;
 }
 
@@ -34,6 +34,6 @@
   width: 20px;
   height: 1px;
   margin: 4px auto;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.2);
   flex-shrink: 0;
 }

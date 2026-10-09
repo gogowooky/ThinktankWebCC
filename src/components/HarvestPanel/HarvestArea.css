@@ -2,6 +2,7 @@
 
 .harvest-area__title-row {
   background: var(--harvest-ribbon-bg);
+  --on-ribbon-rgb: var(--harvest-on-ribbon-rgb);
 }
 
 .harvest-area {

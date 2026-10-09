@@ -49,8 +49,9 @@ TextEditor.Heading.Style6,          #569cd6,        undefined,        bold|under
 
 
 # Color=パネルの基礎色（リボン等）／BgColor=コンテンツ表示部の背景。他の色はこの2色から生成する
+# リボン上の文字色は地の明るさから白/黒を自動で選ぶ（ToolBar は BgColor が文字色）
 Thinktank.Theme,                    #1d618f,        #ffffff,          undefined
-Seeds.Theme,                     #873960,        #ffffff,          undefined
+Seeds.Theme,                        #873960,        #ffffff,          undefined
 Discuss.Theme,                      #382830,        #ffffff,          undefined
 Harvest.Theme,                      #324f46,        #ffffff,          undefined
 ToolBar.Theme,                      #2d2d2d,        #ffffff,          undefined

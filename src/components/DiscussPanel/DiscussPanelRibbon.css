@@ -7,7 +7,8 @@
   padding: 0 10px;
   gap: 6px;
   background: var(--discuss-ribbon-bg, #2a2a2a);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  --on-ribbon-rgb: var(--discuss-on-ribbon-rgb);
+  border-bottom: 1px solid rgb(var(--on-ribbon-rgb, 255 255 255) / 0.1);
   flex-shrink: 0;
 }
 
@@ -20,16 +21,16 @@
   height: 22px;
   font-size: calc(11px * var(--tt-font-scale, 1));
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.08);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.65);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.08);
   border-radius: 3px;
   transition: background 100ms ease, color 100ms ease, opacity 100ms ease;
   cursor: pointer;
 }
 
 .discuss-panel-ribbon__add-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.15);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 .discuss-panel-ribbon__add-btn:disabled,
@@ -46,7 +47,7 @@
 /* ── フォーカス中エリア名 ──────────────────────────────────── */
 .discuss-panel-ribbon__focus-label {
   font-size: calc(10px * var(--tt-font-scale, 1));
-  color: rgba(255, 255, 255, 0.35);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.35);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

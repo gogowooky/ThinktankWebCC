@@ -96,6 +96,24 @@
   --toolbar-bg:    var(--toolbar-base);
   --toolbar-color: var(--toolbar-content-bg);
 
+  /* リボン上の文字色（"R G B"）。地の明るさで白/黒を panelTheme.ts が判定して上書きする。
+     ここは基礎色が無設定のときの既定（既定テーマはどれも濃色なので白）。
+     使う側は rgb(var(--on-ribbon-rgb, 255 255 255) / 透明度) と書き、--on-ribbon-rgb は
+     リボン・タブバー等の地を持つ要素で下の変数から選ぶ。 */
+  --thinktank-on-ribbon-rgb:      255 255 255;
+  --thinktank-on-ribbon-soft-rgb: 255 255 255;
+  --seeds-on-ribbon-rgb:          255 255 255;
+  --seeds-on-ribbon-soft-rgb:     255 255 255;
+  --discuss-on-ribbon-rgb:        255 255 255;
+  --discuss-on-ribbon-soft-rgb:   255 255 255;
+  --harvest-on-ribbon-rgb:        255 255 255;
+  --harvest-on-ribbon-soft-rgb:   255 255 255;
+  /* メニューリボンの地に合わせた対応（Discuss だけはメニューリボン＝リボン色） */
+  --thinktank-on-menuribbon-rgb: var(--thinktank-on-ribbon-soft-rgb);
+  --seeds-on-menuribbon-rgb:     var(--seeds-on-ribbon-soft-rgb);
+  --discuss-on-menuribbon-rgb:   var(--discuss-on-ribbon-rgb);
+  --harvest-on-menuribbon-rgb:   var(--harvest-on-ribbon-soft-rgb);
+
   /* 同期インジケーター */
   --sync-synced:  var(--text-muted);
   --sync-syncing: var(--text-accent);

@@ -24,24 +24,28 @@
 
 .vertical-tab-bar--thinktank {
   background: var(--thinktank-ribbon-bg);
+  --on-ribbon-rgb: var(--thinktank-on-ribbon-rgb);
 }
 
 .vertical-tab-bar--seeds {
   background: var(--seeds-ribbon-bg);
+  --on-ribbon-rgb: var(--seeds-on-ribbon-rgb);
 }
 
 .vertical-tab-bar--discuss {
   background: var(--discuss-ribbon-bg);
+  --on-ribbon-rgb: var(--discuss-on-ribbon-rgb);
 }
 
 .vertical-tab-bar--harvest {
   background: var(--harvest-ribbon-bg);
+  --on-ribbon-rgb: var(--harvest-on-ribbon-rgb);
 }
 
 /* D&D ドロップ受け入れ中 */
 .vertical-tab-bar--drag-over {
-  background: rgba(255, 255, 255, 0.18) !important;
-  outline: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.18) !important;
+  outline: 2px solid rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
   outline-offset: -2px;
 }
 
@@ -84,7 +88,7 @@
   width: 28px;
   height: 28px;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.7);
   transition: background 150ms ease, color 150ms ease;
   flex-shrink: 0;
   outline: none;
@@ -95,19 +99,19 @@
 }
 
 .vertical-tab-bar__toggle:hover {
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.15);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 body[data-focus-column="Thinktank"] .vertical-tab-bar--thinktank .vertical-tab-bar__toggle,
 body[data-focus-column="Seeds"] .vertical-tab-bar--seeds .vertical-tab-bar__toggle,
 body[data-focus-column="Harvest"] .vertical-tab-bar--harvest .vertical-tab-bar__toggle {
-  box-shadow: 0 0 0 2px #ffffff;
+  box-shadow: 0 0 0 2px rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 /* Discussパネルのフォーカス用 */
 body[data-focus-column="DiscussSetting"] .vertical-tab-bar--discuss .vertical-tab-bar__toggle {
-  box-shadow: 0 0 0 2px #ffffff;
+  box-shadow: 0 0 0 2px rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 /* 下部固定エリア */
@@ -143,18 +147,18 @@ body[data-focus-column="DiscussSetting"] .vertical-tab-bar--discuss .vertical-ta
   font-size: calc(16px * var(--tt-font-scale, 1));
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
   user-select: none;
 }
 
 /* Discuss タブバーはやや暗めなのでホバー色を調整 */
 .vertical-tab-bar--discuss .vertical-tab-bar__toggle {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
 }
 
 .vertical-tab-bar--discuss .vertical-tab-bar__toggle:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 /* Discuss タブバーの下部ラベルはフォントサイズをやや小さく（以前のDiscuss仕様に合わせる） */

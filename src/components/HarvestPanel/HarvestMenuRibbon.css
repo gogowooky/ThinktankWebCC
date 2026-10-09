@@ -2,5 +2,6 @@
 
 .harvest-menu-ribbon {
   background: var(--harvest-menuribbon-bg);
-  color: rgba(255, 255, 255, 0.9);
+  --on-ribbon-rgb: var(--harvest-on-menuribbon-rgb);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
 }

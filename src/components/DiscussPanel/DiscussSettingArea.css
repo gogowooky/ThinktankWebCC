@@ -11,6 +11,7 @@
   flex: 1;
   min-height: 0;
   background: var(--discuss-ribbon-bg, #2a2a2a);
+  --on-ribbon-rgb: var(--discuss-on-ribbon-rgb);
   overflow: visible;
   min-width: 120px;
   max-width: 400px;
@@ -27,8 +28,8 @@
   padding: 0 12px;
   font-size: calc(11px * var(--tt-font-scale, 1));
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.75);
+  border-bottom: 1px solid rgb(var(--on-ribbon-rgb, 255 255 255) / 0.1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -51,6 +52,7 @@
   height: 28px;
   padding: 0 6px;
   background: var(--discuss-ribbon-soft);
+  --on-ribbon-rgb: var(--discuss-on-ribbon-soft-rgb);
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
 }
 
@@ -61,15 +63,15 @@
   width: 24px;
   height: 22px;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
   transition: background 100ms ease, color 100ms ease;
   cursor: pointer;
   flex-shrink: 0;
 }
 
 .discuss-setting-area__chat-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 .discuss-setting-area__chat-btn:disabled {
@@ -78,14 +80,14 @@
 }
 
 .discuss-setting-area__chat-btn--active {
-  background: rgba(255, 255, 255, 0.18);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.18);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 .discuss-setting-area__chat-sep {
   width: 1px;
   height: 16px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.2);
   margin: 0 3px;
   flex-shrink: 0;
 }
@@ -131,7 +133,7 @@
   font-size: calc(9px * var(--tt-font-scale, 1));
   font-weight: 600;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.3);
   text-transform: uppercase;
   padding: 0 4px 4px;
   flex-shrink: 0;
@@ -144,13 +146,13 @@
   cursor: pointer;
   padding: 4px;
   margin-bottom: 4px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
   transition: color 0.15s ease;
   user-select: none;
 }
 
 .discuss-setting-area__section-header:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.8);
 }
 
 .discuss-setting-area__section-header .discuss-setting-area__section-label {
@@ -181,7 +183,7 @@
   width: 100%;
   font-size: calc(11px * var(--tt-font-scale, 1));
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.65);
   border-radius: 4px;
   transition: background 100ms ease, color 100ms ease;
   cursor: pointer;
@@ -195,8 +197,8 @@
 }
 
 .discuss-setting-area__btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 .discuss-setting-area__btn:disabled,
@@ -239,14 +241,14 @@
   justify-content: center;
   height: 28px;
   border-radius: 4px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
   transition: background 100ms ease, color 100ms ease;
   cursor: pointer;
 }
 
 .discuss-setting-area__icon-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
 .discuss-setting-area__icon-btn:disabled {
@@ -268,7 +270,7 @@
 .discuss-setting-area__divider {
   height: 1px;
   margin: 6px 8px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.08);
   flex-shrink: 0;
 }
 
@@ -276,7 +278,7 @@
 .discuss-setting-area__placeholder {
   padding: 12px;
   font-size: calc(11px * var(--tt-font-scale, 1));
-  color: rgba(255, 255, 255, 0.3);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.3);
   line-height: 1.5;
 }
 
@@ -296,13 +298,13 @@
 
 .discuss-setting-area__checkbox-text {
   font-size: calc(10px * var(--tt-font-scale, 1));
-  color: rgba(255, 255, 255, 0.75);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.75);
   user-select: none;
 }
 
 /* ── 色設定 ──────────────────────────────────── */
 /*
- * 色設定の各行（文字設定 / セクション / タグ色 / ハイライト色）は、
+ * 色設定の各行（文字色 / コメント色 / 項目色 / セクション色 / ハイライト色 / パネル色）は、
  * パネル幅に合わせて縮めたり折り返したりせず、常に同じ位置を保つ。
  * 幅が足りなくなった分は行からはみ出して隠れる（overflow: hidden）。
  */
@@ -345,12 +347,12 @@
 
 .discuss-setting-area__color-label {
   font-size: calc(10px * var(--tt-font-scale, 1));
-  color: rgba(255, 255, 255, 0.75);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.75);
 }
 
 .discuss-setting-area__color-picker {
   -webkit-appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgb(var(--on-ribbon-rgb, 255 255 255) / 0.2);
   width: 21px;
   height: 21px;
   padding: 0;
@@ -377,7 +379,22 @@
 
 .discuss-setting-area__heading-style-label {
   font-size: calc(10px * var(--tt-font-scale, 1));
-  color: rgba(255, 255, 255, 0.75);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.75);
+}
+
+/*
+ * 文字色 / コメント色 / 項目色 / パネル色 の先頭ラベル。幅を固定して、各行の最初の色見本を
+ * 同じ位置に揃える（ラベルは「基本」「>>>」「Thinktank」など長さがまちまち）。
+ * 文字色の行はセル内の間隔が 8px、他の行は 6px なので、後者だけ差分の 2px を右に足す。
+ */
+.discuss-setting-area__swatch-label {
+  width: 5.2em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discuss-setting-area__heading-style-row > .discuss-setting-area__swatch-label {
+  margin-right: 2px;
 }
 
 .discuss-setting-area__small-checkbox {
@@ -386,7 +403,7 @@
   gap: 3px;
   font-size: calc(10px * var(--tt-font-scale, 1));
   font-weight: bold;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
   cursor: pointer;
 }
 
@@ -406,8 +423,8 @@
 .discuss-setting-area__text-input {
   width: 100%;
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  border: 1px solid rgb(var(--on-ribbon-rgb, 255 255 255) / 0.2);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
   border-radius: 4px;
   padding: 6px 24px 6px 8px; /* 右側にボタン用の余白 */
   font-size: calc(12px * var(--tt-font-scale, 1));
@@ -416,7 +433,7 @@
 }
 
 .discuss-setting-area__text-input:focus {
-  border-color: rgba(255, 255, 255, 0.5);
+  border-color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
 }
 
 .discuss-setting-area__clear-btn {
@@ -424,7 +441,7 @@
   right: 6px;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.4);
   cursor: pointer;
   padding: 2px;
   display: flex;
@@ -435,8 +452,8 @@
 }
 
 .discuss-setting-area__clear-btn:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.1);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.8);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.1);
 }
 
 /* ── 入れ替えボタン ────────────────────────────────── */
@@ -444,19 +461,19 @@
   width: 100%;
   padding: 5px 8px;
   font-size: calc(11px * var(--tt-font-scale, 1));
-  color: rgba(255, 255, 255, 0.65);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.65);
+  border: 1px solid rgb(var(--on-ribbon-rgb, 255 255 255) / 0.15);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.05);
   cursor: pointer;
   text-align: center;
   transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
 }
 
 .discuss-setting-area__swap-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
+  border-color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.3);
 }
 
 /* ── アイコンボタン（danger） ──────────────────────── */

@@ -129,7 +129,7 @@ body[data-focus-column="DiscussSetting"] .vertical-tab-bar--discuss .vertical-ta
   gap: 5px;
   padding: 4px 10px;
   background: var(--discuss-ribbon-bg, #3f3f3f);
-  color: rgba(255, 255, 255, 0.92);
+  color: rgb(var(--discuss-on-ribbon-rgb, 255 255 255) / 0.92);
   border-radius: 4px;
   font-size: calc(12px * var(--tt-font-scale, 1));
   font-weight: 500;
