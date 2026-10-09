@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.7 feat: リボン文字色の自動調整とTextEditor色設定UIの拡充
+
+- 日付: 2026-10-09
+- コミット番号: b33b094
+
+パネル基礎色を明るい色にしても読めるよう、リボン・メニューリボン・縦タブバー・設定トレイ上の文字とアイコンの色を、地の明るさから白/黒で自動選択するようにした（src/utils/panelTheme.ts。WCAGコントラスト比で白が3:1以上なら白を優先し、既定テーマの見た目は不変）。リボン系CSS 16ファイルの白固定値を判定色に置き換え、削除系の赤文字も地に応じて濃淡が変わる。Discuss>TextEditor設定の色設定は 文字色 / コメント色 / 項目色 / セクション色 / ハイライト色 / パネル色 に再編し、旧「文字設定」を文字色とセクション色に分割、旧「タグ色」(Url/File/Tag)を文字色の末尾へ統合した。コメント色・項目色は Marks の各記号ごとに StyleN を、パネル色は5パネルの基礎色を編集でき、各行の先頭の色見本の位置を揃えた。あわせて Thinktank_Status-Action-Binding.md に DiscussSettingPanel.Area.OpenWidth を追記（未登録IDだった DiscussPanel.Area.OpenWidth を統合）し、foredit の割合を実装どおり30%に修正。変更: 26ファイル（+497 / -214行）。
+
 ### v2.1.6 fix: 保存の直列化で自己衝突ダイアログを解消し、tableの列ヘッダーをmetadataへ移行
 
 - 日付: 2026-10-08

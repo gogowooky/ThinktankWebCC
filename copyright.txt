@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "7c68088",
-  "commitDateTime": "2026-10-08-172821",
-  "commitMessage": "fix: 保存の直列化で自己衝突ダイアログを解消し、tableの列ヘッダーをmetadataへ移行"
+  "commitId": "b33b094",
+  "commitDateTime": "2026-10-09-174805",
+  "commitMessage": "feat: リボン文字色の自動調整とTextEditor色設定UIの拡充"
 }
