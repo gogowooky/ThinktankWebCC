@@ -330,7 +330,13 @@
       "PowerShell(bq query --use_legacy_sql=false --format=csv --max_rows=50 $q)",
       "PowerShell(npx vitest run src/utils/tableFormat.test.ts src/utils/thinkFormat.test.ts src/services/thoughtSupport.test.ts server/services/conversationPresentation.test.ts 2>&1)",
       "Bash(awk -F: '{print $1}')",
-      "Bash(grep -E \"^[-+].*\\(/\\\\*|\\\\*/|^\\\\+\\\\s+\\\\*|^-\\\\s+\\\\*\\)\")"
+      "Bash(grep -E \"^[-+].*\\(/\\\\*|\\\\*/|^\\\\+\\\\s+\\\\*|^-\\\\s+\\\\*\\)\")",
+      "Bash(PYTHONUTF8=1 python \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/81aa3d25-b25d-4646-b5f5-3f34b5e92839/scratchpad/record.py\")",
+      "Bash(PYTHONUTF8=1 python \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/81aa3d25-b25d-4646-b5f5-3f34b5e92839/scratchpad/wire_raw.py\")",
+      "Bash(PYTHONUTF8=1 python \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/81aa3d25-b25d-4646-b5f5-3f34b5e92839/scratchpad/patch_editor.py\")",
+      "Bash(sed -n '/private _loadFromContent/,/^  }/p' src/views/TTShortcutManager.ts)",
+      "Bash(sed -n '/_parseSection\\\\|sectionToEntries\\\\|テーブル1セクション分/,/^  }/p' src/views/TTShortcutManager.ts)",
+      "Bash(grep -vE \"^\\\\s*$|vite\\\\]|esbuild|oxc\")"
     ]
   }
 }

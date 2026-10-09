@@ -492,10 +492,12 @@ export class TTDiscussPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
-  public SetMediaType(areaId: string, mediaType: MediaType): void {
+  /** rawYaml は TextEditor のときだけ有効（YAML＋本文表示。TTDiscussArea.RawYaml） */
+  public SetMediaType(areaId: string, mediaType: MediaType, rawYaml: boolean = false): void {
     const area = this.GetArea(areaId);
     if (!area) return;
     area.MediaType = mediaType;
+    area.RawYaml   = rawYaml && mediaType === 'texteditor';
     this.NotifyUpdated();
   }
 

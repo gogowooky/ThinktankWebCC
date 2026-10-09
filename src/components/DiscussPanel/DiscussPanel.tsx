@@ -146,7 +146,7 @@ interface SharedProps {
   onDragStart:      (e: React.MouseEvent, areaId: string) => void;
   onDragEnter:      (areaId: string) => void;
   onDragLeave:      () => void;
-  onMediaType:      (areaId: string, type: MediaType) => void;
+  onMediaType:      (areaId: string, type: MediaType, rawYaml?: boolean) => void;
   onClose:          (areaId: string) => void;
   onSplitRatio:     (nodeId: string, ratio: number) => void;
 }
@@ -848,8 +848,8 @@ export function DiscussPanel({ app, layoutMode }: Props) {
     setOverAreaId(null);
   }, []);
 
-  const handleMediaType = useCallback((areaId: string, type: MediaType) => {
-    panel.SetMediaType(areaId, type);
+  const handleMediaType = useCallback((areaId: string, type: MediaType, rawYaml?: boolean) => {
+    panel.SetMediaType(areaId, type, rawYaml);
   }, [panel]);
 
   const handleClose = useCallback((areaId: string) => {

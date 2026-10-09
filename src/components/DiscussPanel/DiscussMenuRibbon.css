@@ -117,6 +117,13 @@ body[data-focus-column="Discuss"] .discuss-menu-ribbon--focused .discuss-menu-ri
   color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
 
+/* TextEditor を YAML＋本文で表示中（Shift+Click）。通常表示と見分けるためアイコンを赤くする。
+   地の明るさに合わせ、暗い地では明るい赤、明るい地では濃い赤になるよう文字色と混ぜる */
+.discuss-menu-ribbon__media-btn--raw,
+.discuss-menu-ribbon__media-btn--raw:hover {
+  color: color-mix(in srgb, #ff3b3b 75%, rgb(var(--on-ribbon-rgb, 255 255 255)));
+}
+
 /* 閉じるボタン */
 .discuss-menu-ribbon__close {
   display: flex;

@@ -41,6 +41,15 @@ export class TTThink extends TTObject {
     this._metadataSaved = JSON.stringify(this.Metadata);
   }
 
+  /**
+   * Keywords / RelatedIDs は保存済みの値を追跡していないため、Content・Metadata が
+   * 変わらずにこれらだけ書き換えた呼び出し側（YAML＋本文の TextEditor 等）が明示的に立てる。
+   */
+  private _fieldsDirty = false;
+  public markFieldsDirty(): void {
+    this._fieldsDirty = true;
+  }
+
   /** true = メタデータのみ取得済み、content は未フェッチ */
   public IsMetaOnly: boolean = false;
 
@@ -160,11 +169,13 @@ export class TTThink extends TTObject {
   private _unconfirmedContent: string | null = null;
 
   private async _saveNow(force: boolean): Promise<void> {
-    if (!this.IsDirty && !this.IsMetadataDirty && !force) return;
+    if (!this.IsDirty && !this.IsMetadataDirty && !this._fieldsDirty && !force) return;
     this._cancelRetry();
     // 応答待ちの間も入力は続くため、送った時点の内容だけを保存済みとして記録する
     const content = this._content;
     const metadataJson = JSON.stringify(this.Metadata);
+    const fieldsDirty = this._fieldsDirty;
+    this._fieldsDirty = false;
     try {
       const meta = await this._send(content, force);
       if (meta.updatedAt) {
@@ -183,6 +194,7 @@ export class TTThink extends TTObject {
       // 呼び出し元が保存失敗を検知できるよう、ログのみで握りつぶさず再送出する。
       // ここで飲み込むと「保存済みのはずが実は保存されていない」というデータ消失に繋がる。
       console.error(`[TTThink] SaveContent failed (${this.ID}):`, e);
+      if (fieldsDirty) this._fieldsDirty = true;
       if (e instanceof StorageTimeoutError) this._unconfirmedContent = content;
       if (!(e instanceof StorageConflictError)) {
         reportSaveResult(this.ID, true);

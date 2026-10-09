@@ -191,7 +191,8 @@ interface Props {
   isDirty?:          boolean;
   isOutsideBundle?:  boolean;
   onDragStart:       (e: React.MouseEvent) => void;
-  onMediaTypeChange: (type: MediaType) => void;
+  /** rawYaml: TextEditor アイコンを Shift+Click したとき true（YAML＋本文表示）*/
+  onMediaTypeChange: (type: MediaType, rawYaml?: boolean) => void;
   onClose:           () => void;
   onResourceDrop:    (thinkId: string, e: React.DragEvent) => void;
   onUrlDrop?:        (url: string, title: string) => void;
@@ -267,9 +268,9 @@ export function DiscussMenuRibbon({ area, contentType, isFocused, isDirty = fals
         {mediaButtons.map(({ type, Icon, title }) => (
           <button
             key={type}
-            className={`discuss-menu-ribbon__media-btn${area.MediaType === type ? ' discuss-menu-ribbon__media-btn--active' : ''}`}
-            onClick={() => onMediaTypeChange(type)}
-            data-tip={title}
+            className={`discuss-menu-ribbon__media-btn${area.MediaType === type ? ' discuss-menu-ribbon__media-btn--active' : ''}${type === 'texteditor' && area.MediaType === 'texteditor' && area.RawYaml ? ' discuss-menu-ribbon__media-btn--raw' : ''}`}
+            onClick={e => onMediaTypeChange(type, type === 'texteditor' && e.shiftKey)}
+            data-tip={type === 'texteditor' ? `${title}（Shift+クリック: YAML込みで表示・保存）` : title}
             data-tip-side="left"
           >
             <Icon size={12} />

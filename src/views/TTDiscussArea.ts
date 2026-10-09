@@ -24,6 +24,13 @@ export class TTDiscussArea extends TTUIItem {
   /** 表示形式 */
   public MediaType: MediaType = 'texteditor';
 
+  /**
+   * TextEditor を YAML frontmatter（基本項目＋metadata）込みで表示・保存する。
+   * TextEditor アイコンの Shift+Click でだけ入り、表示形式の切替や別Thinkの Load で解除する
+   * （metadata を直接書き換えるモードなので、意図せず持ち越さない）。
+   */
+  public RawYaml: boolean = false;
+
   /** 表示中のThinkデータID（空 = 未設定）*/
   public ResourceID: string = '';
 
@@ -67,6 +74,7 @@ export class TTDiscussArea extends TTUIItem {
   public OpenThink(resourceId: string, mediaType: MediaType, title: string = '', recordHistory: boolean = true): void {
     this.ResourceID = resourceId;
     this.MediaType  = mediaType;
+    this.RawYaml    = false;
     this.Title      = title;
     if (recordHistory) this._pushHistory(resourceId, mediaType, title);
     this.NotifyUpdated();

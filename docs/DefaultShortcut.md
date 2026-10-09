@@ -78,7 +78,11 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 # Editor Editor 検索
 *TextEditor ,       ,Shift+Ctrl+F           ,TextEditor.CurrentEditor.ShowFind          ,検索ダイアログを表示する
 *TextEditor ,       ,Shift+Ctrl+H           ,TextEditor.CurrentEditor.ShowReplace       ,置換ダイアログを表示する
-*TextEditor ,       ,Ctrl+V                 ,TextEditor.EditText.PasteMarkdown          ,ペースト（Markdown判定付加）
+*TextEditor ,       ,Shift+Ctrl+V           ,TextEditor.EditText.PasteMarkdown          ,ペースト（Markdown判定付加）
+*TextEditor ,       ,Ctrl+V                 ,TextEditor.CurrentEditor.DefaultAction     ,テキストエディタのdefaultアクション
+
+*TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
+*TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
 
 # ハイライト関連
 *TextEditor ,       ,Alt+W                  ,TextEditor.CurrentEditor.CursorPos:PrevHighlighter     ,Highlighterの前のヒットに移動する
@@ -106,13 +110,11 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 # Editor カーソル アクション文字
 *TextEditor ,       ,Shift+Alt+Backspace    ,DiscussPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
 *TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を1つ前に戻る
+
 *TextEditor ,       ,Ctrl+Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu          ,ファイル履歴をメニューで表示
 
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
-*TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
 *TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
-*TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
-
 # Editor カーソル 折畳行
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
@@ -140,8 +142,8 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 # Editor 編集
 *TextEditor ,       ,Ctrl+Z             ,TextEditor.EditText.Undo                       ,編集を元に戻す
 *TextEditor ,       ,Ctrl+Y             ,TextEditor.EditText.Redo                       ,編集をやり直す
-*TextEditor ,       ,Delete             ,TextEditor.EditText.Delete                     ,カーソル右の文字を削除
-*TextEditor ,       ,Backspace          ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
+*TextEditor ,       ,Delete             ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
+*TextEditor ,       ,Backspace          ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
 *TextEditor ,       ,Ctrl+D             ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
 *TextEditor ,       ,Ctrl+H             ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
 

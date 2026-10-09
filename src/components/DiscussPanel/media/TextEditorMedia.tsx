@@ -28,6 +28,7 @@ import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '..
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
 import { reportSaveError } from '../../../utils/saveError';
+import { parseRawThinkText, rawFieldsToContent, rawTextMatchesThink, toRawThinkText } from '../../../utils/rawThinkText';
 import { jumpPosition, takeEditorOpen } from '../../../utils/editorJump';
 import './TextEditorMedia.css';
 
@@ -70,13 +71,30 @@ function getClosedHeadings(editor: any): string {
   return getCollapsedStartLines(editor).join(',');
 }
 
-function getEditorValue(think: NonNullable<MediaProps['think']>): string {
+function getEditorValue(think: NonNullable<MediaProps['think']>, rawYaml = false): string {
+  if (rawYaml) return toRawThinkText(think);
   return editorValueIncludesTitleLine(think.ContentType)
     ? (think.Content ?? '')
     : extractBody(think.Content);
 }
 
-function reconstructContent(think: NonNullable<MediaProps['think']>, body: string): string {
+/**
+ * エディタの値から保存用の Content を組み立てる。
+ * YAML＋本文表示では YAML 側の keywords / related_ids / metadata をここで Think に書き戻す。
+ * YAML が壊れていれば null を返し、呼び出し側は保存しない（未保存のまま残す）。
+ */
+function reconstructContent(think: NonNullable<MediaProps['think']>, body: string, rawYaml = false): string | null {
+  if (rawYaml) {
+    const fields = parseRawThinkText(body);
+    if ('error' in fields) return null;
+    if (fields.keywords !== think.Keywords || fields.relatedIds !== think.RelatedIDs) {
+      think.Keywords   = fields.keywords;
+      think.RelatedIDs = fields.relatedIds;
+      think.markFieldsDirty();
+    }
+    think.Metadata = fields.metadata;
+    return rawFieldsToContent(fields);
+  }
   if (editorValueIncludesTitleLine(think.ContentType)) return body;
   const firstLine = think.Content.split('\n')[0] ?? '';
   return body ? `${firstLine}\n${body}` : firstLine;
@@ -184,8 +202,10 @@ function registerHexColorProvider(monaco: any) {
 }
 
 
-export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, vault, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef }: MediaProps, ref) {
-  const savedRef    = useRef(think ? getEditorValue(think) : '');
+export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, vault, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef, rawYaml }: MediaProps, ref) {
+  // YAML表示の有無は DiscussArea が key で作り直すため、インスタンスごとに固定
+  const rawYamlRef  = useRef(rawYaml ?? false);
+  const savedRef    = useRef(think ? getEditorValue(think, rawYamlRef.current) : '');
   const firstLineRef = useRef(think ? extractTitleLine(think.Content) : '');
   const editorRef   = useRef<any>(null);
   const disposablesRef = useRef<any[]>([]);
@@ -226,7 +246,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   }, [fontScale]);
 
   useEffect(() => {
-    savedRef.current   = think ? getEditorValue(think) : '';
+    savedRef.current   = think ? getEditorValue(think, rawYamlRef.current) : '';
     firstLineRef.current = think ? extractTitleLine(think.Content) : '';
     onDirtyChange(false);
   }, [think?.ID, onDirtyChange]);
@@ -236,10 +256,13 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     const editor = editorRef.current;
     if (!editor || !think) return;
     
-    const nextVal = getEditorValue(think);
+    const nextVal = getEditorValue(think, rawYamlRef.current);
     
     // 現在エディタに未保存の変更がない場合のみ外部の変更を反映
     const currentEditorVal = editor.getValue();
+    // YAML表示では、保存直後に整形し直した YAML で上書きすると入力中のカーソルが飛ぶので、
+    // 内容が同じ（書式だけの違い）なら反映しない
+    if (rawYamlRef.current && rawTextMatchesThink(currentEditorVal, think)) return;
     if (currentEditorVal !== nextVal && currentEditorVal === savedRef.current) {
       editor.setValue(nextVal);
       savedRef.current = nextVal;
@@ -399,9 +422,10 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const currentThink = thinkRef.current;
       if (!currentThink) return;
       const body = editor.getValue();
-      const currentSaved = getEditorValue(currentThink);
+      const currentSaved = getEditorValue(currentThink, rawYamlRef.current);
       if (body !== currentSaved) {
-        const nextContent = reconstructContent(currentThink, body);
+        const nextContent = reconstructContent(currentThink, body, rawYamlRef.current);
+        if (nextContent === null) return;
         onSaveRef.current(nextContent, currentThink.ID)
           .then(() => {
             savedRef.current = body;
@@ -434,9 +458,15 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (!think) return;
       const body = editor.getValue();
+      const nextContent = reconstructContent(think, body, rawYamlRef.current);
+      if (nextContent === null) {
+        const parsed = parseRawThinkText(body);
+        showToast(`保存できません（${'error' in parsed ? parsed.error : 'YAML'}）`, 'error');
+        return;
+      }
       savedRef.current = body;
       // 保存失敗時は App.tsx の unhandledrejection ハンドラーが SyncState='error' を出す。
-      void onSave(reconstructContent(think, body), think.ID);
+      void onSave(nextContent, think.ID);
     });
 
     // 状態の復元
@@ -525,10 +555,11 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }
 
     updateDecorations();
-  }, [onSave, think, areaId]); // updateDecorations は後で依存に追加
+  }, [onSave, think, areaId, showToast]); // updateDecorations は後で依存に追加
 
   // マウント/アンマウント時のアクティブエディタのクリーンアップ
   useEffect(() => {
+    const rawYamlAtMount = rawYamlRef.current;
     return () => {
       if (autoSaveTimerRef.current) {
         clearTimeout(autoSaveTimerRef.current);
@@ -540,9 +571,10 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const currentOnSave = onSaveRef.current;
       if (editor && currentThink && currentOnSave) {
         const body = editor.getValue();
-        const currentSaved = getEditorValue(currentThink);
-        if (body !== currentSaved) {
-          currentOnSave(reconstructContent(currentThink, body), currentThink.ID)
+        const currentSaved = getEditorValue(currentThink, rawYamlAtMount);
+        const nextContent = body !== currentSaved ? reconstructContent(currentThink, body, rawYamlAtMount) : null;
+        if (nextContent !== null) {
+          currentOnSave(nextContent, currentThink.ID)
             .catch((err: unknown) => {
               reportSaveError('[TextEditorMedia] Unmount auto save failed:', err);
             });
@@ -572,9 +604,10 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const editor = editorRef.current;
       if (!editor || !think) return;
       const body = editor.getValue();
-      const currentSaved = getEditorValue(think);
+      const currentSaved = getEditorValue(think, rawYamlRef.current);
       if (body === currentSaved) return; // think.Content と一致 → 保存不要
-      const nextContent = reconstructContent(think, body);
+      const nextContent = reconstructContent(think, body, rawYamlRef.current);
+      if (nextContent === null) return;
       return onSave(nextContent, think.ID)
         .then(() => {
           savedRef.current = body;
@@ -972,7 +1005,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     onDirtyChange(isDirty);
     updateDecorations();
     // どの種別も第一行（frontmatterがあればその title: 値）がタイトルなので、memoと同じくリアルタイム同期する
-    if (onTitleChange && think) {
+    // YAML表示では1行目が "---" なので、タイトルは保存時に Content から決め直す
+    if (onTitleChange && think && !rawYamlRef.current) {
       const newTitle = extractTitleLine(v);
       if (newTitle !== firstLineRef.current) {
         firstLineRef.current = newTitle;
@@ -987,7 +1021,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     if (isDirty && think) {
       autoSaveTimerRef.current = setTimeout(() => {
         const body = v;
-        const nextContent = reconstructContent(think, body);
+        // 入力途中の YAML は壊れていることが多いので、その間は黙って保存を見送る
+        const nextContent = reconstructContent(think, body, rawYamlRef.current);
+        if (nextContent === null) return;
         onSave(nextContent, think.ID)
           .then(() => {
             savedRef.current = body;
@@ -1083,7 +1119,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     >
       <Editor
         key={`${think.ID}-${refreshKey ?? 0}`}
-        defaultValue={getEditorValue(think)}
+        defaultValue={getEditorValue(think, rawYamlRef.current)}
         language={think?.ContentType === 'html' ? 'html' : 'markdown'}
         theme={editorSettings ? "custom-markdown-theme" : "vs-dark"}
         onMount={handleMount}

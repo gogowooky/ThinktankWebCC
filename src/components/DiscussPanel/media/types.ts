@@ -48,6 +48,11 @@ export interface MediaProps {
    * 選択は panel 単位で1つなので、DiscussSettingArea の AI相談 と同じ値が変わる。
    */
   onAiChatModelChange?: (selection: AiModelSelection) => void;
+  /**
+   * TextEditor を YAML frontmatter（基本項目＋metadata）込みで表示し、保存時は YAML 側の
+   * title / keywords / related_ids / metadata も書き戻す（TTDiscussArea.RawYaml）。
+   */
+  rawYaml?: boolean;
   /** TextEditor 用の設定 */
   editorSettings?: {
     lineNumbers: boolean;

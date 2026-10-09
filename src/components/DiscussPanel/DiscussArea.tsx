@@ -51,7 +51,7 @@ interface Props {
   onDragStart:       (e: React.MouseEvent, areaId: string) => void;
   onDragEnter:       (areaId: string) => void;
   onDragLeave:       () => void;
-  onMediaTypeChange: (areaId: string, type: MediaType) => void;
+  onMediaTypeChange: (areaId: string, type: MediaType, rawYaml?: boolean) => void;
   onClose:           (areaId: string) => void;
 }
 
@@ -316,7 +316,8 @@ export function DiscussArea({
   const renderMedia = () => {
     switch (area.MediaType) {
       case 'panes':      return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
-      case 'texteditor': return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
+      // YAML表示の切替でエディタを作り直し、表示内容（YAML有無）と保存の扱いを入れ替える
+      case 'texteditor': return <TextEditorMedia key={area.RawYaml ? 'raw-yaml' : 'text'} ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} rawYaml={area.RawYaml} />;
       case 'html': return <HtmlMedia ref={mediaRef as React.Ref<HtmlMediaRef>} {...mediaProps} />;
       case 'markdown':   return <MarkdownMedia   ref={mediaRef as React.Ref<MarkdownMediaRef>}   {...mediaProps} />;
       case 'datagrid':   return <DataGridMedia   ref={mediaRef as React.Ref<DataGridMediaRef>}   {...mediaProps} />;
@@ -327,12 +328,12 @@ export function DiscussArea({
   };
 
   const handleDragStart    = useCallback((e: React.MouseEvent) => onDragStart(e, area.ID),      [onDragStart, area.ID]);
-  const handleMediaChange  = useCallback((type: MediaType) => {
-    // TextEditor から離れるとき、未保存の内容を自動保存する（isDirty 不問、内部で差分チェック）
+  const handleMediaChange  = useCallback((type: MediaType, rawYaml?: boolean) => {
+    // TextEditor から離れるとき（YAML表示の切替を含む）、未保存の内容を自動保存する（isDirty 不問、内部で差分チェック）
     if (area.MediaType === 'texteditor' || area.MediaType === 'panes') {
       void autoSaveRef.current?.();
     }
-    onMediaTypeChange(area.ID, type);
+    onMediaTypeChange(area.ID, type, rawYaml);
   }, [area.MediaType, area.ID, onMediaTypeChange]);
   const handleClose        = useCallback(()                     => onClose(area.ID),              [onClose, area.ID]);
   const handleDragEnter    = useCallback(()                     => onDragEnter(area.ID),           [onDragEnter, area.ID]);
