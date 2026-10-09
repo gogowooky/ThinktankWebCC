@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.8 feat: TextEditorのYAML込み表示・保存モード（TextEditorアイコンのShift+Click）
+
+- 日付: 2026-10-09
+- コミット番号: 92a947e
+
+Pane の TextEditor アイコンを Shift+Click すると、保存ファイルと同じ形式で、基本項目（thinkid / category / title / keywords / related_ids / updated_at）と metadata を YAML frontmatter にまとめて本文と一緒に表示・編集できるモードを追加した（src/utils/rawThinkText.ts）。このモードで保存すると title / keywords / related_ids / metadata も書き戻し、thinkid / category / updated_at の書き換えは無視する。YAML が壊れている間は保存せず（自動保存は見送り、Ctrl+S はトーストで理由を表示）、保存後に整形し直した YAML でエディタを上書きしないよう書式だけの差は同一内容として扱う。モード中は TextEditor アイコンを赤で表示し、通常クリック・表示切替・別Thinkの Load で解除する。あわせて Keywords / RelatedIDs だけを変えた場合も保存されるよう TTThink に markFieldsDirty() を追加。DefaultShortcut.md では Ctrl+V / Delete / Backspace をエディタ既定動作に割り当て、PasteMarkdown を Shift+Ctrl+V に移した。変更: 13ファイル（+298 / -39行）。
+
 ### v2.1.7 feat: リボン文字色の自動調整とTextEditor色設定UIの拡充
 
 - 日付: 2026-10-09
