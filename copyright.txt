@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "92a947e",
-  "commitDateTime": "2026-10-09-212204",
-  "commitMessage": "feat: TextEditorのYAML込み表示・保存モード（TextEditorアイコンのShift+Click）"
+  "commitId": "9f75c7d",
+  "commitDateTime": "2026-10-13-002416",
+  "commitMessage": "feat: キー・色・タグ設定をVaultメモへ書き戻すボタンを追加し、設定アイコンを整理"
 }

@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.9 feat: キー・色・タグ設定をVaultメモへ書き戻すボタンを追加し、設定アイコンを整理
+
+- 日付: 2026-10-13
+- コミット番号: 9f75c7d
+
+Discuss>TextEditor設定>設定 のキー設定・色設定・タグ設定に、現在値を読み込み元の Vault メモ（ThinktankKeyBinding / ThinktankColorBinding / ThinktankSearchTag）へ書き戻すボタンを追加した（TextEditor.{KeyBinding|ColorBinding|SearchTag}.Save。メモが無ければ作成し、読み込みと同じ形式で書くので読み直すと同じ状態に戻る）。アイコンを file-down（読み取り）/ file-x-2（defaultに戻す）/ file-pen（書き戻し）にし、ツールチップを「xから読み取る」「(設定)をdefaultに戻す」「xに書き戻す」に短縮、結果をステータスバーに表示する。あわせて反応しなかった ExPanel モードの既定ショートカット3行を削除し、DefaultShortcut.md の ExOpt モードを *TextEditor 限定に変更、DefaultMenu.md を追加。変更: 12ファイル（+239 / -86行）。また直前のコミット 6aecfd5 で、AIChat のモデルを Status 変数（AIChat.ModelNames.* と {Panel}.AIChat.ModelName）で選び、各社のモデル一覧 API から絞った最新の主要モデルと会話できるようにした（Claude の会話実装を追加。会話先はこれまで環境変数の固定モデルだった）。
+
 ### v2.1.8 feat: TextEditorのYAML込み表示・保存モード（TextEditorアイコンのShift+Click）
 
 - 日付: 2026-10-09
