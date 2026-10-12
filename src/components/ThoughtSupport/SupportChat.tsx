@@ -39,6 +39,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
     ['--support-toolbar-bg' as string]: `var(--${panel}-menuribbon-bg)`,
   }}>
     <SupportConversation vault={props.vault} panelName={props.panelName} bundleId={props.bundleId ?? ''} chatId={props.selectedId}
+      modelSelector={props.modelSelector}
       draftScope={scope} pane={props.pane} onStartTask={props.onStartTask} />
   </div>;
 });

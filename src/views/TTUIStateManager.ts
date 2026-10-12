@@ -37,6 +37,12 @@ import { getAppZoom, setAppZoom } from '../utils/appZoom';
 import type { ColorProp } from '../utils/defaultColor';
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 import { TTShortcutManager } from './TTShortcutManager';
+import {
+  AI_CHAT_PROVIDER_NAMES, NO_MODEL, applySelection, getModelNames, isProviderName, loadAiModelCatalog, setModelNames,
+  type AiChatProviderName,
+} from '../services/aiChatModelStatus';
+import { apiFetch } from '../services/apiClient';
+import { loadAiModelSelection } from '../services/aiModels';
 import { StorageManager } from '../services/storage/StorageManager';
 import { canonicalPanelName, canonicalPanelStatusKey, canonicalPanelStatusList } from '../utils/panelNames';
 
@@ -217,6 +223,46 @@ function getFocusedPaneAllowedModes(app: TTApplication): string[] {
 function getFocusedArea(app: TTApplication): TTDiscussArea | null {
   const id = app.DiscussPanel.FocusedAreaId;
   return id ? (app.DiscussPanel.GetArea(id) ?? null) : null;
+}
+
+/**
+ * AIChat.ModelNames.{プロバイダ}：今使える主要モデルの ID の CSV（先頭が選択中）。
+ * 値は全パネル共通の状態（services/aiChatModelStatus.ts）に持つ。使えるモデルの一覧は
+ * 起動時にサーバーから取得し（refreshAiModelCatalog）、一覧に無い ID は書き込み時に捨てる。
+ */
+function aiChatModelNameSpecs(): Record<string, PropSpec> {
+  const specs: Record<string, PropSpec> = {};
+  for (const name of AI_CHAT_PROVIDER_NAMES) {
+    specs[`AIChat.ModelNames.${name}`] = {
+      panel: 'Application',
+      default: NO_MODEL,
+      type: 'string',
+      // 一覧は実行時に決まるので、ここでは CSV であることだけを確かめる
+      candidates: '^[^,]+(,[^,]+)*$',
+      description: `各パネルのAIChatが${name}のときのモデルID（CSV。先頭が選択中）`,
+      get: () => getModelNames(name),
+      set: (_app, v) => { setModelNames(name, v); },
+    };
+  }
+  return specs;
+}
+
+/** {Panel}.AIChat.ModelName：そのパネルの AIChat が使うプロバイダ名 */
+function aiChatProviderSpec(
+  panel: PanelKey,
+  description: string,
+  get: (app: TTApplication) => AiChatProviderName,
+  set: (app: TTApplication, v: AiChatProviderName) => void,
+): PropSpec {
+  return {
+    panel,
+    default: 'Claude',
+    type: 'string',
+    candidates: `^(${AI_CHAT_PROVIDER_NAMES.join('|')})$`,
+    description,
+    get,
+    set: (app, v) => { if (isProviderName(v)) set(app, v); },
+  };
 }
 
 // 静的な文字列インデックス（色設定・プリセット等の動的キーを許容するため）。
@@ -635,6 +681,19 @@ const PROP_SPECS: Record<string, PropSpec> = {
     get: (app) => capitalize(app.HarvestPanel.ViewMode),
     set: (app, v) => { app.HarvestPanel.SetViewMode(v.toLowerCase() as HarvestViewMode); },
   },
+
+  // ── AIChat モデル（docs/Thinktank_Status-Action-Binding.md の # Panel AIChat）──
+  ...aiChatModelNameSpecs(),
+  'ThinktankPanel.AIChat.ModelName': aiChatProviderSpec('ThinktankPanel', 'ThinktankPanelのAIChatで用いるAIモデル名',
+    app => app.ThinktankPanel.AIChatProviderName, (app, v) => { app.ThinktankPanel.AIChatProviderName = v; }),
+  'SeedsPanel.AIChat.ModelName': aiChatProviderSpec('SeedsPanel', 'SeedsPanelのAIChatで用いるAIモデル名',
+    app => app.SeedsPanel.AIChatProviderName, (app, v) => { app.SeedsPanel.AIChatProviderName = v; }),
+  'DiscussSettingPanel.AIChat.ModelName': aiChatProviderSpec('DiscussPanel', 'DiscussSettingPanelのAIChatで用いるAIモデル名',
+    app => app.DiscussPanel.SettingAIChatProviderName, (app, v) => { app.DiscussPanel.SettingAIChatProviderName = v; }),
+  'DiscussPanel.AIChat.ModelName': aiChatProviderSpec('DiscussPanel', 'DiscussPanelのAIChatで用いるAIモデル名',
+    app => app.DiscussPanel.AIChatProviderName, (app, v) => { app.DiscussPanel.AIChatProviderName = v; }),
+  'HarvestPanel.AIChat.ModelName': aiChatProviderSpec('HarvestPanel', 'HarvestPanelのAIChatで用いるAIモデル名',
+    app => app.HarvestPanel.AIChatProviderName, (app, v) => { app.HarvestPanel.AIChatProviderName = v; }),
 
   // パネル・ツールバーのテーマ色は docs/DefaultColor.md の <Panel>.Theme.* が定義元。
   // 下の DEFAULT_COLOR_ENTRIES ループが登録し、CSS変数への展開は utils/panelTheme.ts が行う。
@@ -1092,6 +1151,57 @@ export class TTUIStateManager {
     if (stored) {
       this._applyContent(stored);
     }
+    if (!stored?.includes('.AIChat.ModelName')) this._migrateLegacyAiModels();
+    void this.refreshAiModelCatalog();
+  }
+
+  /**
+   * サーバーから各社の「今使える主要モデル」を取得し、AIChat.ModelNames.* を揃え直す。
+   * 起動時の md・保存値の適用より後に呼ぶ（保存済みの選択を先頭に残すため）。
+   */
+  async refreshAiModelCatalog(): Promise<void> {
+    const loaded = await loadAiModelCatalog(async () => {
+      const res = await apiFetch('/api/think-support/conversations/models');
+      if (!res.ok) throw new Error(`models ${res.status}`);
+      return res.json();
+    });
+    if (!loaded || !this._app) return;
+    for (const name of AI_CHAT_PROVIDER_NAMES) {
+      this._emit(`AIChat.ModelNames.${name}`, getModelNames(name));
+    }
+    this._app.NotifyUpdated(false);
+  }
+
+  /**
+   * 旧版は AIChat のモデル選択をパネルごとに localStorage（tt-ai-model-*）へ {provider, model} で
+   * 保存していた。UI状態にまだ AIChat の Status が無い初回だけ、それを引き継ぐ。
+   */
+  private _migrateLegacyAiModels(): void {
+    const app = this._app;
+    if (!app) return;
+    const legacy: [string, (name: AiChatProviderName) => void][] = [
+      ['tt-ai-model-thinktank', n => { app.ThinktankPanel.AIChatProviderName = n; }],
+      ['tt-ai-model-seeds',     n => { app.SeedsPanel.AIChatProviderName = n; }],
+      ['tt-ai-model-harvest',   n => { app.HarvestPanel.AIChatProviderName = n; }],
+      // Discuss は旧版で Pane と設定パネルが1つの選択を共有していた（さらに古いパネル名のキーも見る）
+      ['tt-ai-model-discuss|tt-ai-model-develop|tt-ai-model-workout',
+        n => { app.DiscussPanel.AIChatProviderName = n; app.DiscussPanel.SettingAIChatProviderName = n; }],
+    ];
+    let migrated = false;
+    for (const [keys, set] of legacy) {
+      let key: string | undefined;
+      try {
+        key = keys.split('|').find(k => localStorage.getItem(k) !== null);
+      } catch {
+        return;
+      }
+      if (!key) continue;
+      set(applySelection(loadAiModelSelection(key)));
+      migrated = true;
+    }
+    if (!migrated) return;
+    this._saveToLocalStorage();
+    app.NotifyUpdated(false);
   }
 
   /** DataGrid/Card が UIState Think を保存したときのフック（DiscussArea から呼ぶ）*/

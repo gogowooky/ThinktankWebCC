@@ -7,7 +7,8 @@
  * 変更する場合は両方を更新すること。
  */
 
-export type AiProvider = 'anthropic' | 'openai' | 'gemini';
+/** local は Local AI 用の枠（AIChat.ModelNames.Local）。まだ使えず、選択肢にも出さない */
+export type AiProvider = 'anthropic' | 'openai' | 'gemini' | 'local';
 
 export interface AiModelOption {
   provider: AiProvider;
@@ -40,6 +41,7 @@ export const PROVIDER_LABELS: Record<AiProvider, string> = {
   anthropic: 'Claude',
   openai:    'OpenAI',
   gemini:    'Gemini',
+  local:     'Local',
 };
 
 /** サーバーで API キーが設定済みか（プロバイダ別）。true のものだけ選択肢に出す。 */
@@ -49,6 +51,7 @@ const ALL_PROVIDERS_AVAILABLE: AiProviderAvailability = {
   anthropic: true,
   openai:    true,
   gemini:    true,
+  local:     false,
 };
 
 /**
@@ -68,6 +71,7 @@ export async function fetchAiProviderAvailability(
       anthropic: raw.anthropic === true,
       openai:    raw.openai    === true,
       gemini:    raw.gemini    === true,
+      local:     false,
     };
   } catch {
     return { ...ALL_PROVIDERS_AVAILABLE };

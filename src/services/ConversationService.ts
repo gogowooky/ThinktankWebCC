@@ -1,5 +1,6 @@
 import { apiFetch } from './apiClient';
 import type { TTVault } from '../models/TTVault';
+import type { AiModelSelection } from './aiModels';
 import type { ContextSnapshot } from './contextTypes';
 import { canonicalJson, readConversationLog, validateContext, validateTurn, type ConversationContext, type ConversationTurn } from '../../server/services/conversationRecord';
 export type { ConversationContext, ConversationTurn } from '../../server/services/conversationRecord';
@@ -70,10 +71,12 @@ export class ConversationClient {
     }
     return log.turns;
   }
-  async generate(context: ConversationContext, question: string, historyIds: string[], signal: AbortSignal, chatId?: string): Promise<ConversationTurn> {
+  /** model を渡すとそのモデルと会話する（省略時はサーバー既定）。値は Status AIChat.* から決める */
+  async generate(context: ConversationContext, question: string, historyIds: string[], signal: AbortSignal, chatId?: string, model?: AiModelSelection): Promise<ConversationTurn> {
     const requestId = crypto.randomUUID();
     const value = await json(await apiFetch('/api/think-support/conversations/turns', { method: 'POST', signal,
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, context, question, historyIds, confirmed: true, chatId }) }));
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, context, question, historyIds, confirmed: true, chatId,
+        ...(model ? { provider: model.provider, model: model.model } : {}) }) }));
     validateTurn(value);
     if (value.id !== requestId || value.context.bundleId !== context.bundleId || value.context.vaultId !== context.vaultId
       || canonicalJson(value.context) !== canonicalJson(context) || value.question !== question) throw new Error('応答の対象が送信内容と一致しません。');

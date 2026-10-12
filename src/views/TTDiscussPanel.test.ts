@@ -15,13 +15,16 @@ import {
 
 const leaf = (areaId: string): LeafNode => ({ id: `n-${areaId}`, type: 'leaf', areaId });
 
-it('preserves the model selected under the Develop panel name', () => {
-  localStorage.clear();
-  localStorage.setItem('tt-ai-model-develop', JSON.stringify({ provider: 'gemini', model: 'gemini-2.5-pro' }));
+it('keeps the Pane chat and the settings chat on separate providers while sharing the model per provider', () => {
   const panel = new TTDiscussPanel();
-  expect(panel.AIChatProvider).toBe('gemini');
-  expect(panel.AIChatModel).toBe('gemini-2.5-pro');
-  expect(JSON.parse(localStorage.getItem('tt-ai-model-discuss')!)).toEqual({ provider: 'gemini', model: 'gemini-2.5-pro' });
+  panel.SetAIChatModel({ provider: 'gemini', model: 'gemini-2.5-pro' });
+  panel.SetSettingAIChatModel({ provider: 'anthropic', model: 'claude-sonnet-5' });
+  expect([panel.AIChatProvider, panel.AIChatModel]).toEqual(['gemini', 'gemini-2.5-pro']);
+  expect([panel.SettingAIChatProvider, panel.SettingAIChatModel]).toEqual(['anthropic', 'claude-sonnet-5']);
+  // 同じプロバイダのモデルは全パネル共通（AIChat.ModelNames.* の先頭）
+  const other = new TTDiscussPanel();
+  other.AIChatProviderName = 'Gemini';
+  expect(other.AIChatModel).toBe('gemini-2.5-pro');
 });
 
 describe('collectAreaIds', () => {

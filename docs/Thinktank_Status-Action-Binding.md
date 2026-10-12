@@ -1,30 +1,29 @@
 # IDの命名規則および設計ルール
-<!--
 本アプリの Action と Status の ID ルール：
 1. Action/Statusはともに、*.*.* 形式のIDを基本とします。
 2. Statusは読み取り専用とします。
 3. Status値の変更はActionで行い、そのActionのIDは、{Status ID}:*形式のIDとします。
--->
 
 # AIへの指示
-・ 本ファイルでは、実装または修正をしてほしいStatusまたはActionについて、以下のフォーマットで記載いたします。記載内容に基づいて対応してください。　対象とする記載は空行までとし、空行後の記載は無視してください。# Application から始まる行以降については対応の必要はありません。完了後はコミットコメントに概要を記入し、commit&pushしてください。その他以下は、見出し行の指示に従って実装、調査、修正等を行ってください。また、対応中のタイトルが分かるように表示してください。
-(行頭) ## 実装：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容に基づいて実装し、日付を変更してください。
-(行頭) ## 修正：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容に基づいて修正し、日付を変更してください。
-(行頭) ## 調査：　日付　ID　　⇒　指定IDのStatus/Actionをコンテンツ内容について調査・回答を追記し、日付を変更してください。
-(行頭) ## 完了：　日付　ID　　⇒　指定IDのStatus/Actionについては変更の必要はありません。
+・ 本ファイルでは、実装または修正をしてほしいStatusまたはActionについて、以下のフォーマットで記載いたします。
+　修正の単位はAction/Status記載されているsection(## Action/Status名)単位で行ってください。
+　下に示したフォーマットの、見出し行の指示（実装、調査、修正）に従ってください。
+　指示の実施完了後に日付を追加または変更してください。
+　完了後はコミットコメントに概要を記入し、commit&pushしてください。
+　対応中のタイトルが分かるように表示してください。
 
-# Action
+・実装または修正をしてほしいStatusまたはActionのフォーマット
+(行頭) ## Action 実装：　日付　ID　　⇒　指定IDのActionをコンテンツ内容に基づいて実装し、成功したら実装→完了としてください。
+(行頭) ## Action 修正：　日付　ID　　⇒　指定IDのActionをコンテンツ内容に基づいて修正し、成功したら修正→完了としてください。
+(行頭) ## Action 調査：　日付　ID　　⇒　指定IDのActionをコンテンツ内容について調査・回答を追記し、成功したら修正→完了としてください。
+(行頭) ## Action 完了：　日付　ID　　⇒　指定IDのActionについては変更の必要はありません。
+(行頭) ## Action：　日付　ID　　⇒　指定IDのActionについては変更の必要はありません。
 
-# Status
-
-# 対応不要： その他：ナビゲーション　ファイル内・ファイル間ジャンプ
-# 対応不要： その他：メニュー
-# 対応不要： その他：D&D対応
-　Thinktank/Seedsからのthinkメモの D&D
-　ファイルシステムからのファイル/ディレクトリの D&D
-　ブラウザからの urlの D&D
-# 対応不要： その他：設定ファイルの仕組みFix
-# 対応不要： その他：AI調整
+(行頭) ## Status 実装：　日付　ID　　⇒　指定IDのStatusをコンテンツ内容に基づいて実装し、成功したら実装→完了としてください。
+(行頭) ## Status 修正：　日付　ID　　⇒　指定IDのStatusをコンテンツ内容に基づいて修正し、成功したら修正→完了としてください。
+(行頭) ## Status 調査：　日付　ID　　⇒　指定IDのStatusをコンテンツ内容について調査・回答を追記し、成功したら修正→完了としてください。
+(行頭) ## Status 完了：　日付　ID　　⇒　指定IDのStatusについては変更の必要はありません。
+(行頭) ## Status：　日付　ID　　⇒　指定IDのStatusについては変更の必要はありません。
 　
 
 # Application ======================================================================================================
@@ -335,6 +334,110 @@ key:            DiscussPanel.FocusedPane.PaneNumber:ReFocus
 　DiscussPanelの指定のPane番号に再度フォーカスする
   
 
+# Panel AIChat =====================================================================================================
+
+## Status 完了：　261012　AIChat.ModelNames.Claude
+起動時にClaude APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
+description:    各パネルのAIChatがClaudeのときのモデルID（CSV。先頭が選択中）
+key:            AIChat.ModelNames.Claude
+current:        claude-opus-5
+default:        None
+type:           string
+candidates:     ^[^,]+(,[^,]+)*$
+
+## Status 完了：　261012　AIChat.ModelNames.OpenAI
+起動時にOpenAI APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
+description:    各パネルのAIChatがOpenAIのときのモデルID（CSV。先頭が選択中）
+key:            AIChat.ModelNames.OpenAI
+current:        gpt-6.1-sol
+default:        None
+type:           string
+candidates:     ^[^,]+(,[^,]+)*$
+
+## Status 完了：　261012　AIChat.ModelNames.Gemini
+起動時にGemini APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
+description:    各パネルのAIChatがGeminiのときのモデルID（CSV。先頭が選択中）
+key:            AIChat.ModelNames.Gemini
+current:        gemini-3.8-flash
+default:        None
+type:           string
+candidates:     ^[^,]+(,[^,]+)*$
+
+## Status 完了：　261012　AIChat.ModelNames.Local
+起動時にLocal AI APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。現時点でLocal AIは使用できないので None のみとする。
+description:    各パネルのAIChatがLocalのときのモデルID（CSV。先頭が選択中）
+key:            AIChat.ModelNames.Local
+current:        None
+default:        None
+type:           string
+candidates:     ^[^,]+(,[^,]+)*$
+
+
+## Status 完了：　261012　ThinktankPanel.AIChat.ModelName
+AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
+description:    ThinktankPanelのAIChatで用いるAIモデル名
+key:            ThinktankPanel.AIChat.ModelName
+current:        Claude
+default:        Claude
+type:           string
+candidates:     ^(Claude|OpenAI|Gemini|Local)$
+
+## Status 完了：　261012　SeedsPanel.AIChat.ModelName
+AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
+description:    SeedsPanelのAIChatで用いるAIモデル名
+key:            SeedsPanel.AIChat.ModelName
+current:        Claude
+default:        Claude
+type:           string
+candidates:     ^(Claude|OpenAI|Gemini|Local)$
+
+## Status 完了：　261012　DiscussSettingPanel.AIChat.ModelName
+AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
+description:    DiscussSettingPanelのAIChatで用いるAIモデル名
+key:            DiscussSettingPanel.AIChat.ModelName
+current:        Claude
+default:        Claude
+type:           string
+candidates:     ^(Claude|OpenAI|Gemini|Local)$
+
+## Status 完了：　261012　DiscussPanel.AIChat.ModelName
+AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
+description:    DiscussPanelのAIChatで用いるAIモデル名
+key:            DiscussPanel.AIChat.ModelName
+current:        Claude
+default:        Claude
+type:           string
+candidates:     ^(Claude|OpenAI|Gemini|Local)$
+
+## Status 完了：　261012　HarvestPanel.AIChat.ModelName
+AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
+description:    HarvestPanelのAIChatで用いるAIモデル名
+key:            HarvestPanel.AIChat.ModelName
+current:        Claude
+default:        Claude
+type:           string
+candidates:     ^(Claude|OpenAI|Gemini|Local)$
+
+　A（261012実装）：
+　　■ AIChat.ModelNames.*（全パネル共通。src\services\aiChatModelStatus.ts）
+　　　値は API のモデルIDの CSV で、先頭が選択中。起動時にサーバーの
+　　　/api/think-support/conversations/models（server\services\AIModelCatalog.ts）から各社の
+　　　「今使える最新の主要モデル」を取得して設定し直す。保存済みの選択が一覧にあれば先頭に残し、
+　　　一覧に無いIDは捨てる。一覧は各社のモデル一覧APIの結果をサーバーが24時間保持する
+　　　（取得に失敗した社は前回の一覧。APIキーが無い社は None）。絞り込みの規則：
+　　　　Claude … opus / sonnet / haiku の系列ごとに最新の版（同じ版なら日付なしの別名）
+　　　　OpenAI … 最新の大版（gpt-6 等）の系統ごとに最新の版。codex・音声・検索などの用途別と日付付きは除く
+　　　　Gemini … flash / pro / flash-lite ごとに最新の安定版（preview・exp・tts・image 等は除く）
+　　　Local は現時点で常に None。
+　　　2026-10-12 時点の実際の一覧：OpenAI = gpt-6-astra,gpt-6-luna,gpt-6.1-sol、
+　　　Gemini = gemini-3.8-flash,gemini-2.5-pro,gemini-3.5-flash-lite、Claude は APIキーが認証エラー（401）で空。
+　　■ {Panel}.AIChat.ModelName（パネルごと。DiscussSetting と Discuss の Pane は別々）
+　　　会話の送信時に、このプロバイダの AIChat.ModelNames.* の先頭のモデルを指定して送る。
+　　　サーバーは上記の一覧（許可リスト）にあるモデルだけを受け付け、その社と会話する
+　　　（Claude の会話実装 AnthropicProvider を追加）。会話の記録の provider / model も送ったモデルになる。
+　　　会話画面の「条件・機能・参照情報 > 参照情報」の AI 欄で選び直せ、選んだモデルがその社の先頭に移り、
+　　　そのパネルのプロバイダも切り替わる。
+　　　旧版のパネル別の保存値（localStorage の tt-ai-model-*）は初回起動時に引き継ぐ。
 
 # Panel ============================================================================================================
 ## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
@@ -449,8 +552,6 @@ key:            FocusedPanel.Mode.Name:Next
 　フォーカスされているアイコン（種別アイコン / メニューアイコンのいずれか）を押下します。
 　（旧 ContentType:Action / Menu:Action を統合。実装内容は下部 # Panel セクションの
 　　FocusedPanel.Filter の A（260902実装）を参照）
-
-
 
 
 ## Action：　260714　ThinktankPanel.Filter.Cursor:Action

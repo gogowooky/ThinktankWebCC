@@ -12,6 +12,9 @@ import { ProgressProposal } from './ProgressProposal';
 import { SubtaskProposal } from './SubtaskProposal';
 import { SubtaskContextView, ProgressContextDetail } from './SubtaskContextView';
 import { SUBTASK_REVIEW_QUESTION } from '../../../server/services/subtaskContext';
+import type { AiModelSelectorProps } from '../ThinktankPanel/AiChatView';
+import { modelChoices } from '../../services/aiChatModelStatus';
+import { selectionToValue } from '../../services/aiModels';
 import '../ThinktankPanel/ColumnSortDialog.css';
 import './BundleConversation.css';
 
@@ -50,6 +53,22 @@ function Answer({ presentation, onOpen }: { presentation: ReturnType<typeof conv
     return link ? <button key={index} type="button" onClick={() => onOpen(link.thinkId)}>{part}</button> : part;
   })}</p>;
 }
+/**
+ * 会話に使うモデルの選択。選択肢は Status AIChat.ModelNames.*（各社の今使える主要モデル）。
+ * 選び直すとそのモデルがそのプロバイダの先頭（選択中）になり、このパネルのプロバイダも切り替わる。
+ */
+function ModelSelect({ selector, disabled }: { selector: AiModelSelectorProps; disabled: boolean }) {
+  const choices = modelChoices();
+  const value = selectionToValue(selector.value);
+  const known = choices.some(c => selectionToValue(c.selection) === value);
+  return <p>AI：<select aria-label="AIモデル" value={value} disabled={disabled} onChange={e => {
+    const picked = choices.find(c => selectionToValue(c.selection) === e.target.value);
+    if (picked) selector.onChange(picked.selection);
+  }}>
+    {!known && <option value={value}>{selector.value.provider} / {selector.value.model}（使えません）</option>}
+    {choices.map(c => <option key={selectionToValue(c.selection)} value={selectionToValue(c.selection)}>{c.name} / {c.selection.model}</option>)}
+  </select></p>;
+}
 /** 入力欄の高さを中身ちょうどに合わせる。いったん auto に戻さないと、行を減らしても
     scrollHeight が縮まず（今の高さが下限になる）、欄が伸びたきり戻らない。
     空のときは高さを書かない。Chromium の scrollHeight は placeholder の折り返し行数まで
@@ -59,7 +78,9 @@ function fitToText(el: HTMLTextAreaElement) {
   el.style.height = el.value ? `${el.scrollHeight}px` : '';
 }
 /** inputHeader は宿主が入力帯の先頭に差し込む操作。ログと一緒に流れると押せないので、ここへ預ける。 */
-interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; inputHeader?: ReactNode; consultation?: boolean }
+interface ConversationProps { vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; inputHeader?: ReactNode; consultation?: boolean;
+  /** 送信に使うモデル。省略時はサーバー既定のモデルと会話する */
+  modelSelector?: AiModelSelectorProps }
 function cachedChatHistory(vault: TTVault, chatId?: string): ConversationTurn[] {
   if (!chatId) return [];
   try {
@@ -71,7 +92,7 @@ export function BundleConversation(props: ConversationProps) {
   if (!vaultKeys.has(props.vault)) vaultKeys.set(props.vault, ++nextVaultKey);
   return <ConversationPanel key={JSON.stringify([vaultKeys.get(props.vault), props.bundleId, props.chatId, props.draftScope])} {...props} />;
 }
-function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'seeds', inputHeader, consultation = false }: ConversationProps) {
+function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'seeds', inputHeader, consultation = false, modelSelector }: ConversationProps) {
   const draft = getDraft(vault, selectedBundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`);
   const bundleId = selectedBundleId;
   const cachedHistory = cachedChatHistory(vault, chatId);
@@ -209,7 +230,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     const abort = new AbortController(); controller.current = abort;
     let saved = false;
     try {
-      const turn = await client.generate(ready.context, question, ready.history.slice(-6).map(t => t.id), abort.signal, chatId);
+      const turn = await client.generate(ready.context, question, ready.history.slice(-6).map(t => t.id), abort.signal, chatId, modelSelector?.value);
       if (!alive.current || abort.signal.aborted) return;
       draft.pending = turn; setPending(turn); setBusy('会話を保存しています…');
       await persist(turn);
@@ -355,7 +376,9 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         </details>}
         {(status || context) && <details>
           <summary>参照情報</summary>
-          {status && <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>}
+          {status && (status.enabled && modelSelector
+            ? <ModelSelect selector={modelSelector} disabled={!!busy || !!pending} />
+            : <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>)}
           {context && <>
             <p>相談の対象：{context.scope === 'chat-only' ? '課題化前の相談' : vault.GetThink(context.bundleId)?.Name || context.bundleId}</p>
             <p>参照資料：{context.scope === 'chat-only' ? 'なし' : `${context.sources.length}件`}</p>

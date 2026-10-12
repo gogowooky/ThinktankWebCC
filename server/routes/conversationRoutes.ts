@@ -2,13 +2,27 @@ import { Router } from 'express';
 import { decodeMetadata } from '../services/metadataCodec.js';
 import { bigqueryService } from '../services/BigQueryService.js';
 import type { BigQueryService } from '../services/BigQueryService.js';
-import { configuredProvider, type AIProvider } from '../services/AIProvider.js';
+import { configuredProvider, providerFor, type AIProvider } from '../services/AIProvider.js';
+import { aiModelCatalog, type ModelCatalog } from '../services/AIModelCatalog.js';
 import { ConversationService, verifyContextHashes } from '../services/ConversationService.js';
 import { id, text, object, validateContext, validateTurn, readConversationLog, legacyConversationTurns, mergeConversationTranscript, MAX_LOG_BYTES, canonicalJson } from '../services/conversationRecord.js';
 
 type Store = Pick<BigQueryService, 'getRecord' | 'saveThinkSupport' | 'saveChatConversation'>;
 class RouteError extends Error { constructor(readonly status: number, message: string) { super(message); } }
-export function createConversationRoutes(provider: AIProvider = configuredProvider(), store: Store = bigqueryService) {
+/** 画面が指定したモデルの扱い。テストでは一覧取得と相手の生成を差し替える */
+export interface ModelResolver {
+  catalog(): Promise<ModelCatalog>;
+  /** 一覧に載っていて API キーもあるモデルなら会話の相手を返す。それ以外は null */
+  resolve(provider: string, model: string): Promise<AIProvider | null>;
+}
+const defaultResolver: ModelResolver = {
+  catalog: () => aiModelCatalog.get(),
+  async resolve(provider, model) {
+    if (!await aiModelCatalog.allows(provider, model)) return null;
+    return providerFor(provider as 'anthropic' | 'openai' | 'gemini', model);
+  },
+};
+export function createConversationRoutes(provider: AIProvider = configuredProvider(), store: Store = bigqueryService, models: ModelResolver = defaultResolver) {
   const router = Router();
   const service = new ConversationService(provider);
   const running = new Set<string>();
@@ -54,6 +68,11 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       updatedAt: version, keywords: chat.keywords ?? '', relatedIds: chat.related_ids ?? '' } };
   }
   router.get('/status', (_req, res) => { res.json({ enabled: provider.name !== 'none', provider: provider.name, model: provider.model }); });
+  // 画面が Status AIChat.ModelNames.* に設定する「各社で今使える主要モデル」。AI対話が停止中なら空
+  router.get('/models', async (_req, res) => {
+    if (provider.name === 'none') { res.json({ anthropic: [], openai: [], gemini: [] }); return; }
+    try { res.json(await models.catalog()); } catch { res.status(503).json({ error: 'モデル一覧を取得できません。' }); }
+  });
   router.get('/bundles/:id', async (req, res) => {
     try {
       const bundleId = String(req.params.id);
@@ -85,10 +104,18 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     const timeout = setTimeout(() => controller.abort(), 120000);
     let key = '';
     try {
-      const { requestId, question, context, confirmed, historyIds, chatId } = req.body ?? {};
+      const { requestId, question, context, confirmed, historyIds, chatId, provider: requestedProvider, model: requestedModel } = req.body ?? {};
       if (!id(requestId) || !text(question, 4000) || confirmed !== true || !Array.isArray(historyIds)
         || historyIds.length > 6 || !historyIds.every(id) || (chatId !== undefined && !id(chatId))) throw new RouteError(400, '質問と送信範囲の確認が必要です。');
       validateContext(context); verifyContextHashes(context);
+      // モデル未指定なら従来どおりサーバー既定。指定されたら一覧（許可リスト）にあるものだけ受け付ける
+      let target = provider;
+      if (requestedProvider !== undefined || requestedModel !== undefined) {
+        const resolved = typeof requestedProvider === 'string' && typeof requestedModel === 'string'
+          ? await models.resolve(requestedProvider, requestedModel) : null;
+        if (!resolved) throw new RouteError(400, `指定のAIモデル（${String(requestedProvider)} / ${String(requestedModel)}）は使えません。`);
+        target = resolved;
+      }
       key = chatId || context.bundleId;
       if (running.has(key)) { key = ''; throw new RouteError(409, 'このBundleは応答を生成中です。'); }
       running.add(key);
@@ -101,7 +128,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       }
       const history = log.turns.filter(t => t.context.vaultId === context.vaultId).slice(-6);
       if (JSON.stringify(history.map(t => t.id)) !== JSON.stringify(historyIds)) throw new RouteError(409, '会話履歴が更新されています。送信範囲を再確認してください。');
-      const turn = await service.answer(requestId, question, context, history, controller.signal);
+      const turn = await service.answer(requestId, question, context, history, controller.signal, target);
       if (!controller.signal.aborted) res.json(turn);
     } catch (e) {
       if (!res.destroyed) res.status(controller.signal.aborted ? 504 : e instanceof RouteError ? e.status : 422)

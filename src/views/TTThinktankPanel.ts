@@ -10,11 +10,10 @@ import { TTUIItem } from '../models/TTUIItem';
 import type { ContentType } from '../types/index';
 import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
-import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
+import { applySelection, onModelNamesChange, selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
-const AI_MODEL_STORAGE_KEY = 'tt-ai-model-thinktank';
 
 /** ThinktankArea の表示モード */
 export type ThinktankViewMode =
@@ -202,15 +201,22 @@ export class TTThinktankPanel extends TTUIItem {
 
   // ── AI Chat モデル選択 ────────────────────────────────────────────────
 
-  /** AI Chat のホストプロバイダ（このパネル専用。ブラウザ再起動後も localStorage から復元） */
-  public AIChatProvider: AiProvider = loadAiModelSelection(AI_MODEL_STORAGE_KEY).provider;
-  /** AI Chat のホストモデルID */
-  public AIChatModel: string = loadAiModelSelection(AI_MODEL_STORAGE_KEY).model;
+  // プロバイダ（Status ThinktankPanel.AIChat.ModelName）はこのパネル専用、モデルはプロバイダ単位で
+  // 全パネル共通（Status AIChat.ModelNames.*。services/aiChatModelStatus.ts）。
+
+  /** Status ThinktankPanel.AIChat.ModelName の実体 */
+  public AIChatProviderName: AiChatProviderName = 'Claude';
+
+  /** 送信に使うプロバイダ（AIChatProviderName と AIChat.ModelNames.* から導く） */
+  public get AIChatProvider(): AiProvider { return selectionFor(this.AIChatProviderName).provider; }
+  /** 送信に使うモデルID */
+  public get AIChatModel(): string { return selectionFor(this.AIChatProviderName).model; }
 
   public SetAIChatModel(selection: AiModelSelection): void {
-    this.AIChatProvider = selection.provider;
-    this.AIChatModel = selection.model;
-    saveAiModelSelection(AI_MODEL_STORAGE_KEY, selection);
+    this.AIChatProviderName = applySelection(selection);
     this.NotifyUpdated();
   }
+
+  // 他パネルで同じプロバイダのモデルが選び直されたら、このパネルの表示も更新する
+  private readonly _offModelNames = onModelNamesChange(() => this.NotifyUpdated());
 }

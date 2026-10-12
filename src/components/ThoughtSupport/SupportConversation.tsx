@@ -8,6 +8,7 @@ import { SimilarTasks } from './SimilarTasks';
 import { BundleConversation } from './BundleConversation';
 import { ConversationClient } from '../../services/ConversationService';
 import { taskSeedFromConversation, type TaskSeed } from '../../services/taskSeed';
+import type { AiModelSelectorProps } from '../ThinktankPanel/AiChatView';
 
 const taskClient = new ConversationClient();
 
@@ -19,9 +20,11 @@ interface Props {
   draftScope: string;
   pane?: boolean;
   onStartTask?: (chatId: string, title: string, seed?: TaskSeed) => Promise<void>;
+  /** パネルの AIChat モデル（Status {Panel}.AIChat.ModelName と AIChat.ModelNames.*）*/
+  modelSelector?: AiModelSelectorProps;
 }
 
-export function SupportConversation({ vault, panelName, chatId, draftScope, pane, onStartTask }: Props) {
+export function SupportConversation({ vault, panelName, chatId, draftScope, pane, onStartTask, modelSelector }: Props) {
   useAppUpdate(vault);
   const [message, setMessage] = useState('');
   const [taskEditorOpen, setTaskEditorOpen] = useState(false);
@@ -133,7 +136,7 @@ export function SupportConversation({ vault, panelName, chatId, draftScope, pane
   return <div className="support-conversation">
     {association.error && <div role="status"><p>{association.error}</p>{association.candidates.map(candidate => <button key={candidate.ID} type="button" disabled={taskBusy} onClick={() => void chooseTask(candidate.ID)}>「{candidate.Name}」を相談の対象にする</button>)}</div>}
     {!valid && !association.error && <p role="status">{chatValid ? 'このChatに対応する課題が未設定です。関連付けを確認してください。' : '上部のリストで相談するChatを選択してください。'}</p>}
-    {valid && <BundleConversation vault={vault} bundleId={bundleValid ? bundle.ID : undefined} chatId={chat.ID} draftScope={draftScope} consultation={panelName === 'Thinktank'} onOpen={id => void openSource(id)} inputHeader={taskStart} />}
+    {valid && <BundleConversation vault={vault} bundleId={bundleValid ? bundle.ID : undefined} chatId={chat.ID} draftScope={draftScope} consultation={panelName === 'Thinktank'} onOpen={id => void openSource(id)} inputHeader={taskStart} modelSelector={modelSelector} />}
     {!valid && taskStart}
     {message && !taskStart && <p role="status">{message}</p>}
   </div>;

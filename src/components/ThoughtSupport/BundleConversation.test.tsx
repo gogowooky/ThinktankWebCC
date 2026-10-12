@@ -267,7 +267,7 @@ it('continues with a second question using refreshed sources and the saved histo
   await input('次の質問');
   api.generate.mockResolvedValueOnce({ ...first, id: 'second', question: '次の質問', context: refreshed });
   await click('送信');
-  expect(api.generate.mock.calls[1]).toEqual([refreshed, '次の質問', ['turn'], expect.any(AbortSignal), 'chat-a']);
+  expect(api.generate.mock.calls[1]).toEqual([refreshed, '次の質問', ['turn'], expect.any(AbortSignal), 'chat-a', undefined]);
   expect(api.save).toHaveBeenCalledTimes(2);
 });
 it('recovers from a connection failure through the same Send control', async () => {
@@ -338,4 +338,17 @@ it('can cancel preparation without losing input or generating automatically', as
   expect(button('送信').disabled).toBe(false);
   await click('送信');
   expect(api.generate).toHaveBeenCalledTimes(1);
+});
+it('sends the model chosen for the panel and lets the user switch it in the reference info', async () => {
+  const { setAvailableModels } = await import('../../services/aiChatModelStatus');
+  setAvailableModels('Gemini', ['gemini-3.6-flash', 'gemini-3.5-pro']);
+  const onChange = vi.fn();
+  const selection = { provider: 'gemini' as const, model: 'gemini-3.6-flash' };
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" onOpen={vi.fn()} modelSelector={{ value: selection, onChange }} />));
+  const select = host.querySelector<HTMLSelectElement>('select[aria-label="AIモデル"]')!;
+  expect(select.value).toBe('gemini:gemini-3.6-flash');
+  await act(async () => { select.value = 'gemini:gemini-3.5-pro'; select.dispatchEvent(new Event('change', { bubbles: true })); });
+  expect(onChange).toHaveBeenCalledWith({ provider: 'gemini', model: 'gemini-3.5-pro' });
+  await input('質問'); await click('送信');
+  expect(api.generate.mock.calls[0][5]).toEqual(selection);
 });

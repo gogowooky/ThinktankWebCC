@@ -117,3 +117,23 @@ it('does not overwrite unknown history versions or deleted bundles', async () =>
   store.getRecord.mockResolvedValue({ success: true, data: { ...record, is_deleted: true } });
   expect((await generate()).status).toBe(404); expect(p.generate).not.toHaveBeenCalled();
 });
+it('answers with the model the screen picked when the catalog allows it, and rejects others before any AI call', async () => {
+  const picked: AIProvider = { name: 'anthropic', model: 'claude-opus-5', generate: vi.fn(async () => ({ reply: '回答', insufficientEvidence: false, citations: [{ thinkId: 'source', quote: '本文' }], proposals: [] })) };
+  const resolve = vi.fn(async (provider: string, model: string) => provider === 'anthropic' && model === 'claude-opus-5' ? picked : null);
+  const app = express(); app.use(express.json());
+  app.use('/picked', createConversationRoutes(p, store as unknown as BigQueryService, { catalog: async () => ({ anthropic: ['claude-opus-5'], openai: [], gemini: [] }), resolve }));
+  const local = createServer(app); await new Promise<void>(r => local.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${(local.address() as { port: number }).port}/picked`;
+  const post = (changes: object) => fetch(`${base}/turns`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requestId: 'turn', question: '質問', context: source, confirmed: true, historyIds: [], ...changes }) });
+  try {
+    const ok = await post({ provider: 'anthropic', model: 'claude-opus-5' });
+    expect(ok.status).toBe(200);
+    expect(await ok.json()).toMatchObject({ provider: 'anthropic', model: 'claude-opus-5' });
+    expect(p.generate).not.toHaveBeenCalled();
+    expect((await post({ provider: 'gemini', model: 'gemini-2.0-flash' })).status).toBe(400);
+    expect((await post({ provider: 'anthropic' })).status).toBe(400);
+    expect(picked.generate).toHaveBeenCalledTimes(1);
+    expect(await (await fetch(`${base}/models`)).json()).toEqual({ anthropic: ['claude-opus-5'], openai: [], gemini: [] });
+  } finally { local.closeAllConnections(); await new Promise<void>(r => local.close(() => r())); }
+});

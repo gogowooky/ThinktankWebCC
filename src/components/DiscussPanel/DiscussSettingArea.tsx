@@ -449,7 +449,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
               <SupportChat ref={aiChatViewRef} vault={vault} panelName="Discuss"
                 selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={TTApplication.Instance.SeedsPanel.BundleID}
                 onMessages={setChatMessages} onWaiting={setChatWaiting}
-                modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
+                modelSelector={{ value: { provider: panel.SettingAIChatProvider, model: panel.SettingAIChatModel }, onChange: selection => panel.SetSettingAIChatModel(selection) }} />
             </div>
           </div>
         ) : activeSettings === 'panes' ? (

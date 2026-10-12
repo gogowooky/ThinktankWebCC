@@ -7,7 +7,7 @@ import { TTUIItem } from '../models/TTUIItem';
 import { TTDiscussArea } from './TTDiscussArea';
 import { TTUIStateManager } from './TTUIStateManager';
 import type { MediaType } from '../types';
-import { loadAiModelSelection, saveAiModelSelection } from '../services/aiModels';
+import { applySelection, onModelNamesChange, selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import {
   DEFAULT_MARKS, createColorStatusDefaults, getDefaultColorStyle, toggleAttr,
@@ -15,21 +15,6 @@ import {
 import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
-const AI_MODEL_STORAGE_KEY = 'tt-ai-model-discuss';
-
-function loadDiscussAiModelSelection(): AiModelSelection {
-  try {
-    if (localStorage.getItem(AI_MODEL_STORAGE_KEY) === null) {
-      for (const legacyKey of ['tt-ai-model-develop', 'tt-ai-model-workout']) {
-        if (localStorage.getItem(legacyKey) !== null) {
-          saveAiModelSelection(AI_MODEL_STORAGE_KEY, loadAiModelSelection(legacyKey));
-          break;
-        }
-      }
-    }
-  } catch { /* storage may be unavailable */ }
-  return loadAiModelSelection(AI_MODEL_STORAGE_KEY);
-}
 
 export type DiscussViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
 
@@ -299,21 +284,32 @@ export class TTDiscussPanel extends TTUIItem {
   }
 
   // ── AI Chat モデル選択 ────────────────────────────────────────────────
-  // DiscussSettingArea（設定パネルのChatタブ）と、各Pane内のChatMedia
-  // （DiscussPanel.DoOnCursorPos:Chat 等で開くAI Chat Pane）が共通で使う。
-  // パネル単位で1つだけ選択を持ち、両者は常に同じモデルを参照する。
+  // プロバイダは Pane の Chat（Status DiscussPanel.AIChat.ModelName）と設定パネルの会話履歴
+  // （Status DiscussSettingPanel.AIChat.ModelName）で別々に持つ。モデルはプロバイダ単位で
+  // 全パネル共通（Status AIChat.ModelNames.*。services/aiChatModelStatus.ts）。
 
-  /** AI Chat のホストプロバイダ（ブラウザ再起動後も localStorage から復元） */
-  public AIChatProvider: AiProvider = loadDiscussAiModelSelection().provider;
-  /** AI Chat のホストモデルID */
-  public AIChatModel: string = loadDiscussAiModelSelection().model;
+  /** Status DiscussPanel.AIChat.ModelName の実体（Pane 内の ChatMedia が使う） */
+  public AIChatProviderName: AiChatProviderName = 'Claude';
+  /** Status DiscussSettingPanel.AIChat.ModelName の実体（DiscussSettingArea の会話履歴が使う） */
+  public SettingAIChatProviderName: AiChatProviderName = 'Claude';
+
+  public get AIChatProvider(): AiProvider { return selectionFor(this.AIChatProviderName).provider; }
+  public get AIChatModel(): string { return selectionFor(this.AIChatProviderName).model; }
+  public get SettingAIChatProvider(): AiProvider { return selectionFor(this.SettingAIChatProviderName).provider; }
+  public get SettingAIChatModel(): string { return selectionFor(this.SettingAIChatProviderName).model; }
 
   public SetAIChatModel(selection: AiModelSelection): void {
-    this.AIChatProvider = selection.provider;
-    this.AIChatModel = selection.model;
-    saveAiModelSelection(AI_MODEL_STORAGE_KEY, selection);
+    this.AIChatProviderName = applySelection(selection);
     this.NotifyUpdated();
   }
+
+  public SetSettingAIChatModel(selection: AiModelSelection): void {
+    this.SettingAIChatProviderName = applySelection(selection);
+    this.NotifyUpdated();
+  }
+
+  // 他パネルで同じプロバイダのモデルが選び直されたら、このパネルの表示も更新する
+  private readonly _offModelNames = onModelNamesChange(() => this.NotifyUpdated());
 
   // ── Area CRUD ──────────────────────────────────────────────────────────
 

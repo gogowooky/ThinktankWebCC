@@ -11,11 +11,12 @@ export function verifyContextHashes(context: ConversationContext): void {
 }
 export class ConversationService {
   constructor(private readonly provider: AIProvider) {}
-  async answer(id: string, question: string, context: ConversationContext, history: ConversationTurn[], signal: AbortSignal): Promise<ConversationTurn> {
-    if (this.provider.name === 'none') throw new Error('AI対話は停止中です。');
+  /** provider は画面が指定したモデルの相手。省略時はサーバー既定（THINK_SUPPORT_AI_*） */
+  async answer(id: string, question: string, context: ConversationContext, history: ConversationTurn[], signal: AbortSignal, provider: AIProvider = this.provider): Promise<ConversationTurn> {
+    if (provider.name === 'none') throw new Error('AI対話は停止中です。');
     validateContext(context); verifyContextHashes(context);
     signal.throwIfAborted();
-    const raw = context.sources.length || context.subtasks?.items.length || context.bundleProgress?.status === 'recorded' || context.manualState || context.scope === 'chat-only' ? await this.provider.generate({ question, context,
+    const raw = context.sources.length || context.subtasks?.items.length || context.bundleProgress?.status === 'recorded' || context.manualState || context.scope === 'chat-only' ? await provider.generate({ question, context,
       history: history.slice(-6).map(t => ({ question: t.question, reply: t.answer.reply })),
     }, signal) : { reply: '参照できる資料がありません。Bundleに資料を追加して再取得してください。', insufficientEvidence: true, citations: [], proposals: [] };
     signal.throwIfAborted();
@@ -43,7 +44,7 @@ export class ConversationService {
         ...(raw.progressProposals !== undefined ? { progressProposals: raw.progressProposals } : {}),
         ...(raw.subtaskCandidates !== undefined ? { subtaskCandidates: raw.subtaskCandidates } : {}),
         ...(raw.pauseCandidates !== undefined ? { pauseCandidates: raw.pauseCandidates } : {}) },
-      provider: this.provider.name, model: this.provider.model };
+      provider: provider.name, model: provider.model };
     validateTurn(turn);
     return turn;
   }

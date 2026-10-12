@@ -99,13 +99,48 @@ export class GeminiProvider implements AIProvider {
     try { return JSON.parse(parts.join('')); } catch { throw new Error('Gemini応答を読み取れませんでした。'); }
   }
 }
+/**
+ * 回答の形式を守らせるため、スキーマを入力に持つツールを1つだけ渡して必ず呼ばせ、
+ * その入力をそのまま回答として受け取る。
+ */
+export class AnthropicProvider implements AIProvider {
+  readonly name = 'anthropic';
+  constructor(readonly model: string, private readonly key: string, private readonly request: typeof fetch = fetch) {}
+  async generate(input: ProviderInput, signal: AbortSignal): Promise<unknown> {
+    const response = await this.request('https://api.anthropic.com/v1/messages', {
+      method: 'POST', signal, redirect: 'error',
+      headers: { 'x-api-key': this.key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: this.model, max_tokens: 6000, system: CONVERSATION_POLICY,
+        messages: [{ role: 'user', content: JSON.stringify(input) }],
+        tools: [{ name: 'think_support_answer', description: '本人への回答を所定の形式で返す', input_schema: schema }],
+        tool_choice: { type: 'tool', name: 'think_support_answer' },
+      }),
+    });
+    if (!response.ok) throw new Error('Claude接続に失敗しました。サーバーの設定と利用制限を確認してください。');
+    const data: unknown = await response.json();
+    if (!object(data) || !Array.isArray(data.content)) throw new Error('Claudeから回答を取得できませんでした。');
+    if (data.stop_reason === 'refusal') throw new Error('AIはこの依頼への回答を控えました。');
+    const call = data.content.find(part => object(part) && part.type === 'tool_use' && part.name === 'think_support_answer');
+    if (!object(call) || !object(call.input)) throw new Error('Claude応答が完了していません。');
+    return call.input;
+  }
+}
+
+export type ConversationProviderName = 'anthropic' | 'openai' | 'gemini';
+
+/** プロバイダ名とモデルIDから会話の相手を作る。APIキーが無ければ null */
+export function providerFor(name: ConversationProviderName, model: string, env: NodeJS.ProcessEnv = process.env): AIProvider | null {
+  if (name === 'anthropic' && env.ANTHROPIC_API_KEY?.trim()) return new AnthropicProvider(model, env.ANTHROPIC_API_KEY.trim());
+  if (name === 'openai' && env.OPENAI_API_KEY?.trim()) return new OpenAIProvider(model, env.OPENAI_API_KEY.trim());
+  if (name === 'gemini' && env.GEMINI_API_KEY?.trim()) return new GeminiProvider(model, env.GEMINI_API_KEY.trim());
+  return null;
+}
+
+/** 画面がモデルを指定しなかったときの既定の会話相手（環境変数 THINK_SUPPORT_AI_*） */
 export function configuredProvider(env: NodeJS.ProcessEnv = process.env): AIProvider {
   if (env.THINK_SUPPORT_AI_ENABLED !== 'true' || !env.THINK_SUPPORT_AI_MODEL?.trim()) return new DisabledAIProvider();
-  if (env.THINK_SUPPORT_AI_PROVIDER === 'openai' && env.OPENAI_API_KEY?.trim()) {
-    return new OpenAIProvider(env.THINK_SUPPORT_AI_MODEL.trim(), env.OPENAI_API_KEY.trim());
-  }
-  if (env.THINK_SUPPORT_AI_PROVIDER === 'gemini' && env.GEMINI_API_KEY?.trim()) {
-    return new GeminiProvider(env.THINK_SUPPORT_AI_MODEL.trim(), env.GEMINI_API_KEY.trim());
-  }
-  return new DisabledAIProvider();
+  const name = env.THINK_SUPPORT_AI_PROVIDER;
+  if (name !== 'anthropic' && name !== 'openai' && name !== 'gemini') return new DisabledAIProvider();
+  return providerFor(name, env.THINK_SUPPORT_AI_MODEL.trim(), env) ?? new DisabledAIProvider();
 }
