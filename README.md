@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.10 feat: 会話の記録を開くアイコンをAI回答文の末尾に同じ行で表示
+
+- 日付: 2026-10-13
+- コミット番号: 4499065
+
+AIChat（BundleConversation）で各ターンの会話記録を開くアイコンボタン（.bundle-conversation-record-open）を、提案カードの下ではなく AI 回答文（Answer）の末尾に同じ行で続けて表示するように変更した。変更: 3ファイル（+12 / -8行）。
+
 ### v2.1.9 feat: キー・色・タグ設定をVaultメモへ書き戻すボタンを追加し、設定アイコンを整理
 
 - 日付: 2026-10-13

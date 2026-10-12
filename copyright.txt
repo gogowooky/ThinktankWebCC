@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.9",
+  "version": "2.1.10",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "9f75c7d",
-  "commitDateTime": "2026-10-13-002416",
-  "commitMessage": "feat: キー・色・タグ設定をVaultメモへ書き戻すボタンを追加し、設定アイコンを整理"
+  "commitId": "4499065",
+  "commitDateTime": "2026-10-13-003240",
+  "commitMessage": "feat: 会話の記録を開くアイコンをAI回答文の末尾に同じ行で表示"
 }
