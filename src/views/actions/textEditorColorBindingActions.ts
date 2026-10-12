@@ -1,6 +1,6 @@
 /**
  * textEditorColorBindingActions.ts
- * TextEditor.ColorBinding.* アクション（Vaultメモからの色設定読込／Defaultへのリセット）の登録。
+ * TextEditor.ColorBinding.* アクション（Vaultメモからの色設定読込／Defaultへのリセット／メモへの書き戻し）の登録。
  */
 import type { TTApplication } from '../TTApplication';
 import type { ConfigKey } from '../TTUIStateManager';
@@ -8,6 +8,7 @@ import { TTActions } from '../TTActions';
 import { TTUIStateManager } from '../TTUIStateManager';
 import { parseDefaultColor, DEFAULT_COLOR_ENTRIES, COLOR_PROPS } from '../../utils/defaultColor';
 import type { DefaultColorEntry } from '../../utils/defaultColor';
+import { writeBindingMemo, writeResultMessage } from './bindingMemo';
 
 /** 起動中に検索するVaultメモのタイトル（大文字小文字は区別しない） */
 const COLOR_BINDING_THINK_NAME = 'ThinktankColorBinding';
@@ -52,6 +53,21 @@ export function registerTextEditorColorBindingActions(app: TTApplication): void 
     Completion: (item) => {
       TTUIStateManager.instance.applyProperties(toPropertyEntries(DEFAULT_COLOR_ENTRIES), false);
       item.Result = '色設定をDefaultに戻しました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.ColorBinding.Save',
+    Description: `現在の色設定をVault内の「${COLOR_BINDING_THINK_NAME}」という名前のMemoに書き戻す（無ければ作る）`,
+    Completion: async (item) => {
+      // docs/DefaultColor.md と同じ「StatusID, Color, BgColor, Attrs」形式。Load で読み直すと同じ状態に戻る
+      const lines = DEFAULT_COLOR_ENTRIES.map(({ statusId }) => {
+        const style = app.DiscussPanel.GetColorStatus(statusId);
+        return [statusId, ...COLOR_PROPS.map(prop => style[prop])].join(', ');
+      });
+      const body = ['# StatusID, Color, BgColor, Attrs', ...lines].join('\n');
+      const result = await writeBindingMemo(app, COLOR_BINDING_THINK_NAME, body);
+      item.Result = writeResultMessage('色設定', COLOR_BINDING_THINK_NAME, result);
     },
   });
 }

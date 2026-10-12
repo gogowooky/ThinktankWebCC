@@ -173,13 +173,12 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 *TextEditor ,ExDate ,N                  ,TextEditor.EditDate.SetNow                     ,現在日時に設定
 *TextEditor ,ExDate ,Q                  ,TextEditor.EditDate.Reset                      ,元に戻す
 
-# Editor オプション　モード
-*           ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                ,エディタオプションモード
-*           ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:Toggle        ,行番号On/Off
-*           ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:Toggle           ,折返しOn/Off
-*           ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:Toggle            ,ミニマップOn/Off
-*           ,ExOpt  ,F                  ,TextEditor.FullWidthSpace.IsVisible:Toggle     ,全角スペース表示On/Off
-*           ,ExOpt  ,U                  ,TextEditor.UnicodeHighlight.IsVisible:Toggle   ,エラー文字強調On/Off
-*           ,ExOpt  ,B                  ,TextEditor.BracketPairColorization.IsVisible:Toggle ,括弧強調On/Off
-
+# Editor オプション　モード 
+*TextEditor ,       ,Alt+O              ,Application.Status.ExMode:ExOpt                        ,エディタオプションモード
+*TextEditor ,ExOpt  ,L                  ,TextEditor.LineNumbers.IsVisible:Toggle                ,行番号On/Off
+*TextEditor ,ExOpt  ,W                  ,TextEditor.WordWrap.IsVisible:Toggle                   ,折返しOn/Off
+*TextEditor ,ExOpt  ,M                  ,TextEditor.Minimap.IsVisible:Toggle                    ,ミニマップOn/Off
+*TextEditor ,ExOpt  ,F                  ,TextEditor.FullWidthSpace.IsVisible:Toggle             ,全角スペース表示On/Off
+*TextEditor ,ExOpt  ,U                  ,TextEditor.UnicodeHighlight.IsVisible:Toggle           ,エラー文字強調On/Off
+*TextEditor ,ExOpt  ,B                  ,TextEditor.BracketPairColorization.IsVisible:Toggle    ,括弧強調On/Off
 

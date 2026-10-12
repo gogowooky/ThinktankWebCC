@@ -1,12 +1,13 @@
 /**
  * textEditorSearchTagActions.ts
- * TextEditor.SearchTag.* アクション（Vaultメモからのタグ定義読込／サーバー取得分へのリセット）の登録。
+ * TextEditor.SearchTag.* アクション（Vaultメモからのタグ定義読込／サーバー取得分へのリセット／メモへの書き戻し）の登録。
  */
 import type { TTApplication } from '../TTApplication';
 import { TTActions } from '../TTActions';
 import { parseSearchTagContent } from '../../utils/searchTagFormat';
-import { applySearchTagItemsOverride, resetSearchTagItemsOverride } from '../../utils/tagInsertMenu';
-import { applySearchTagUrlOverride, resetSearchTagUrlOverride } from './textEditorCursorContentActions';
+import { applySearchTagItemsOverride, getEffectiveSearchTagItems, resetSearchTagItemsOverride } from '../../utils/tagInsertMenu';
+import { applySearchTagUrlOverride, getEffectiveSearchTagUrls, resetSearchTagUrlOverride } from './textEditorCursorContentActions';
+import { writeBindingMemo, writeResultMessage } from './bindingMemo';
 
 /** 起動中に検索するVaultメモのタイトル（大文字小文字は区別しない） */
 const SEARCH_TAG_THINK_NAME = 'ThinktankSearchTag';
@@ -43,6 +44,22 @@ export function registerTextEditorSearchTagActions(app: TTApplication): void {
       resetSearchTagItemsOverride();
       resetSearchTagUrlOverride();
       item.Result = 'タグ定義をDefaultに戻しました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.SearchTag.Save',
+    Description: `現在のタグ定義をVault内の「${SEARCH_TAG_THINK_NAME}」という名前のMemoに書き戻す（無ければ作る）`,
+    Completion: async (item) => {
+      const [items, urls] = await Promise.all([getEffectiveSearchTagItems(), getEffectiveSearchTagUrls()]);
+      if (items.length === 0) {
+        item.Result = '[未取得] タグ定義を取得できないため書き戻しませんでした';
+        return;
+      }
+      // docs/DefaultSearchTag.md と同じ「ID, "Description", URL」形式（URL が無いタグは NoURL）
+      const lines = items.map(t => `${t.id}, "${t.description}", ${urls[t.id.toLowerCase()] || 'NoURL'}`);
+      const result = await writeBindingMemo(app, SEARCH_TAG_THINK_NAME, ['# ID, "Description", URL', ...lines].join('\n'));
+      item.Result = writeResultMessage('タグ定義', SEARCH_TAG_THINK_NAME, result);
     },
   });
 }

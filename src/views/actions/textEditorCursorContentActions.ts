@@ -129,6 +129,11 @@ export function applySearchTagUrlOverride(rows: SearchTagRow[]): void {
   );
 }
 
+/** 現在有効な検索URLテンプレート（キーは小文字のタグID）。TextEditor.SearchTag.Save が書き戻す */
+export function getEffectiveSearchTagUrls(): Promise<Record<string, string>> {
+  return getSearchTags();
+}
+
 /** 上書きを解除し、サーバー取得分（docs/DefaultSearchTag.md）に戻す */
 export function resetSearchTagUrlOverride(): void {
   _overrideSearchTags = null;

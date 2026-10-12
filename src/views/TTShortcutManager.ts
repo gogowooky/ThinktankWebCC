@@ -103,9 +103,6 @@ const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
   { focus: '*', exmode: '', key: 'ctrl+shift+l', action: 'TextEditor.LineNumbers.IsVisible:toggle',    description: '行番号切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+w', action: 'TextEditor.WordWrap.IsVisible:toggle',       description: '折り返し切り替え' },
   { focus: '*', exmode: '', key: 'ctrl+shift+m', action: 'TextEditor.Minimap.IsVisible:toggle',        description: 'ミニマップ切り替え' },
-  { focus: '*', exmode: 'ExPanel', key: 'o', action: 'FocusedPanel.Area.IsOpen:Toggle', description: 'フォーカスパネル開閉' },
-  { focus: '*', exmode: 'ExPanel', key: 'p', action: 'FocusedPanel.Mode.Name:Prev',      description: 'フォーカスパネルモード前' },
-  { focus: '*', exmode: 'ExPanel', key: 'n', action: 'FocusedPanel.Mode.Name:Next',      description: 'フォーカスパネルモード次' },
   { focus: '*TextEditor', exmode: '', key: 'alt+arrowup',    action: 'TextEditor.CurrentFolding.Heading:VisiblePrev',          description: '現表示範囲の折畳タイトル行を前方向に探索してカーソル移動' },
   { focus: '*TextEditor', exmode: '', key: 'alt+arrowdown',  action: 'TextEditor.CurrentFolding.Heading:VisibleNext',          description: '現表示範囲の折畳タイトル行を後方向に探索してカーソル移動' },
   { focus: '*TextEditor', exmode: '', key: 'alt+arrowright', action: 'TextEditor.CurrentFolding.Heading:OpenStepwise', description: 'カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく' },
@@ -235,6 +232,18 @@ export class TTShortcutManager {
   }
 
   GetShortcuts(): ShortcutEntry[] { return [...this._shortcuts]; }
+
+  /**
+   * 現在のショートカットを DefaultShortcut.md と同じ表形式（タイトル行を除く）で書き出す。
+   * TextEditor.KeyBinding.Save がメモへ書き戻すのに使い、Load で読み直すと同じ状態に戻る。
+   * key の "|" は複数キー区切りと区別するため "\|" に、"," や '"' を含むセルは CSV の引用で書く。
+   */
+  serializeTable(): string {
+    const cell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+    const rows = this._shortcuts.map(s =>
+      [s.focus || '*', s.exmode, s.key.replace(/\|/g, '\\|'), s.action, s.description].map(cell).join(','));
+    return ['> focus,exmode,key,action,description', ...rows].join('\n');
+  }
 
   /** ショートカット設定を DefaultShortcut.md の内容にリセットする */
   resetToDefault(): void {

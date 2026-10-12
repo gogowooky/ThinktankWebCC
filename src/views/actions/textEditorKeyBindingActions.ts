@@ -1,10 +1,11 @@
 /**
  * textEditorKeyBindingActions.ts
- * TextEditor.KeyBinding.* アクション（Vaultメモからのキー設定読込／Defaultへのリセット）の登録。
+ * TextEditor.KeyBinding.* アクション（Vaultメモからのキー設定読込／Defaultへのリセット／メモへの書き戻し）の登録。
  */
 import type { TTApplication } from '../TTApplication';
 import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
+import { writeBindingMemo, writeResultMessage } from './bindingMemo';
 
 /** 起動中に検索するVaultメモのタイトル（大文字小文字は区別しない） */
 const KEY_BINDING_THINK_NAME = 'ThinktankKeyBinding';
@@ -37,6 +38,15 @@ export function registerTextEditorKeyBindingActions(app: TTApplication): void {
     Completion: (item) => {
       TTShortcutManager.instance.resetToDefault();
       item.Result = 'キー設定をDefaultに戻しました';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.KeyBinding.Save',
+    Description: `現在のキー設定をVault内の「${KEY_BINDING_THINK_NAME}」という名前のMemoに書き戻す（無ければ作る）`,
+    Completion: async (item) => {
+      const result = await writeBindingMemo(app, KEY_BINDING_THINK_NAME, TTShortcutManager.instance.serializeTable());
+      item.Result = writeResultMessage('キー設定', KEY_BINDING_THINK_NAME, result);
     },
   });
 }

@@ -33,13 +33,15 @@ import {
   Mic,
   MicOff,
   Eraser,
-  Star,
-  Power,
+  FileDown,
+  FileX2,
+  FilePen,
 } from 'lucide-react';
 import type { TTDiscussPanel } from '../../views/TTDiscussPanel';
 import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { TTActions } from '../../views/TTActions';
+import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTVoiceInput, isVoiceInputSupported } from '../../views/TTVoiceInput';
 import type { SettingsType } from './DiscussTabBar';
 import { DEVELOP_SETTINGS } from './DiscussTabBar';
@@ -164,6 +166,16 @@ function MarkStyleRows({ panel, kind }: { panel: TTDiscussPanel; kind: MarkKind 
     </>
   );
 }
+
+/**
+ * 設定 > キー設定 / 色設定 / タグ設定 の行。memo は読み込み元・書き戻し先の Vault メモの名前で、
+ * TextEditor.{KeyBinding|ColorBinding|SearchTag}.{Load|Reset|Save} が同じ名前を使う。
+ */
+const BINDING_ROWS: { label: string; memo: string; actionPrefix: string }[] = [
+  { label: 'キー設定', memo: 'ThinktankKeyBinding',   actionPrefix: 'TextEditor.KeyBinding' },
+  { label: '色設定',   memo: 'ThinktankColorBinding', actionPrefix: 'TextEditor.ColorBinding' },
+  { label: 'タグ設定', memo: 'ThinktankSearchTag',    actionPrefix: 'TextEditor.SearchTag' },
+];
 
 // ── 方向アイコン ──────────────────────────────────────────────────────────
 
@@ -620,7 +632,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
               {isMemoSettingsOpen && (
                 <div className="discuss-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>新規</span>
+                    <span className="discuss-setting-area__color-label" style={{ width: '28px', flexShrink: 0 }}>新規</span>
                     <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
                         ref={firstTexteditorRef}
@@ -642,7 +654,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>保存</span>
+                    <span className="discuss-setting-area__color-label" style={{ width: '28px', flexShrink: 0 }}>保存</span>
                     <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
                         className="discuss-setting-area__icon-btn"
@@ -663,7 +675,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '28px', flexShrink: 0 }}>巻戻</span>
+                    <span className="discuss-setting-area__color-label" style={{ width: '28px', flexShrink: 0 }}>巻戻</span>
                     <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
                         className="discuss-setting-area__icon-btn"
@@ -701,7 +713,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
               {isEditSettingsOpen && (
                 <div className="discuss-setting-area__section-content">
                   <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>音声入力</span>
+                    <span className="discuss-setting-area__color-label" style={{ width: '56px', flexShrink: 0 }}>音声入力</span>
                     <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
                       <button
                         className={`discuss-setting-area__icon-btn${isVoiceListening ? ' discuss-setting-area__icon-btn--active' : ''}`}
@@ -759,69 +771,37 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
 
               {isKeySettingsOpen && (
                 <div className="discuss-setting-area__section-content">
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>キー設定</span>
-                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
-                      <button
-                        className="discuss-setting-area__icon-btn"
-                        onClick={() => TTActions.Execute('TextEditor.KeyBinding.Load')}
-                        data-tip="Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定を上書きする（key一致分のみ置換、他は維持）"
-                        data-tip-side="top-start"
-                      >
-                        <Star size={16} className="ws-icon" />
-                      </button>
-                      <button
-                        className="discuss-setting-area__icon-btn"
-                        onClick={() => TTActions.Execute('TextEditor.KeyBinding.Reset')}
-                        data-tip="キー設定をDefaultの状態に戻す"
-                        data-tip-side="top-start"
-                      >
-                        <Power size={16} className="ws-icon" />
-                      </button>
+                  {BINDING_ROWS.map(({ label, memo, actionPrefix }) => (
+                    <div key={actionPrefix} style={{ display: 'flex', alignItems: 'center' }}>
+                      <span className="discuss-setting-area__color-label" style={{ width: '56px', flexShrink: 0 }}>{label}</span>
+                      <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
+                        <button
+                          className="discuss-setting-area__icon-btn"
+                          onClick={() => TTShortcutManager.instance.executeActionDirect(`${actionPrefix}.Load`)}
+                          data-tip={`${memo}から読み取る`}
+                          data-tip-side="top-start"
+                        >
+                          <FileDown size={16} className="ws-icon" />
+                        </button>
+                        <button
+                          className="discuss-setting-area__icon-btn"
+                          onClick={() => TTShortcutManager.instance.executeActionDirect(`${actionPrefix}.Reset`)}
+                          data-tip={`${label}をdefaultに戻す`}
+                          data-tip-side="top-start"
+                        >
+                          <FileX2 size={16} className="ws-icon" />
+                        </button>
+                        <button
+                          className="discuss-setting-area__icon-btn"
+                          onClick={() => TTShortcutManager.instance.executeActionDirect(`${actionPrefix}.Save`)}
+                          data-tip={`${memo}に書き戻す`}
+                          data-tip-side="top-start"
+                        >
+                          <FilePen size={16} className="ws-icon" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>色設定</span>
-                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
-                      <button
-                        className="discuss-setting-area__icon-btn"
-                        onClick={() => TTActions.Execute('TextEditor.ColorBinding.Load')}
-                        data-tip="Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定を上書きする（id一致分のみ置換、他は維持）"
-                        data-tip-side="top-start"
-                      >
-                        <Star size={16} className="ws-icon" />
-                      </button>
-                      <button
-                        className="discuss-setting-area__icon-btn"
-                        onClick={() => TTActions.Execute('TextEditor.ColorBinding.Reset')}
-                        data-tip="色設定をDefaultの状態に戻す"
-                        data-tip-side="top-start"
-                      >
-                        <Power size={16} className="ws-icon" />
-                      </button>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <span style={{ fontSize: 'calc(10px * var(--tt-font-scale, 1))', color: 'rgba(255,255,255,0.4)', width: '56px', flexShrink: 0 }}>タグ設定</span>
-                    <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
-                      <button
-                        className="discuss-setting-area__icon-btn"
-                        onClick={() => TTActions.Execute('TextEditor.SearchTag.Load')}
-                        data-tip="Vault内の「ThinktankSearchTag」という名前のMemoを読み込み、タグ定義を上書きする（id一致分のみ置換、他は維持）"
-                        data-tip-side="top-start"
-                      >
-                        <Star size={16} className="ws-icon" />
-                      </button>
-                      <button
-                        className="discuss-setting-area__icon-btn"
-                        onClick={() => TTActions.Execute('TextEditor.SearchTag.Reset')}
-                        data-tip="タグ定義をDefaultの状態に戻す"
-                        data-tip-side="top-start"
-                      >
-                        <Power size={16} className="ws-icon" />
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>

@@ -95,6 +95,12 @@ export function applySearchTagItemsOverride(rows: SearchTagRow[]): void {
   _treeCache = null;
 }
 
+/** 現在有効なタグ項目（サーバー取得分に Vault メモの上書きを重ねたもの）。TextEditor.SearchTag.Save が書き戻す */
+export async function getEffectiveSearchTagItems(): Promise<TagItem[]> {
+  await loadTree();
+  return mergedItems();
+}
+
 /** 上書きを解除し、サーバー取得分（docs/DefaultSearchTag.md）に戻す */
 export function resetSearchTagItemsOverride(): void {
   _overrideItems = null;
