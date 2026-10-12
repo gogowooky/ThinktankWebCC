@@ -102,8 +102,9 @@
    枠は「フィルター選択」（ColumnSortDialog.css）を流用し、位置だけ会話面に合わせる。
    backdrop の inset:0 が会話面に収まるよう、.bundle-conversation を位置の基準にする。 */
 .bundle-conversation { position: relative; }
+/* 回答文の末尾に同じ行で続けて置く */
 .bundle-conversation-record-open {
-  display: inline-flex; align-items: center; padding: 2px 0; margin-top: 2px;
+  display: inline-flex; align-items: center; padding: 0; margin-left: 4px; vertical-align: -2px;
   color: var(--field-muted, #64748b); text-decoration: none;
 }
 .bundle-conversation-record-open:hover { color: inherit; }

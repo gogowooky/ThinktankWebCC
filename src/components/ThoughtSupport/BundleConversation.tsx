@@ -46,12 +46,13 @@ function download(turn: ConversationTurn) {
   const link = document.createElement('a'); link.href = url; link.download = `think-conversation-${turn.id}.json`; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-function Answer({ presentation, onOpen }: { presentation: ReturnType<typeof conversationPresentation>; onOpen: (id: string) => void }) {
+/** after は回答文の直後（同じ行）に続けて置く要素。記録を開くアイコン用 */
+function Answer({ presentation, onOpen, after }: { presentation: ReturnType<typeof conversationPresentation>; onOpen: (id: string) => void; after?: ReactNode }) {
   const { reply, links } = presentation;
   return <p><strong>AI：</strong>{reply.split(/(\[Think:[A-Za-z0-9_-]+,\d+\])/g).map((part, index) => {
     const link = links.find(link => link.marker === part);
     return link ? <button key={index} type="button" onClick={() => onOpen(link.thinkId)}>{part}</button> : part;
-  })}</p>;
+  })}{after}</p>;
 }
 /**
  * 会話に使うモデルの選択。選択肢は Status AIChat.ModelNames.*（各社の今使える主要モデル）。
@@ -305,13 +306,13 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
         {loaded && !turns.length && <p className="bundle-conversation-empty">まだ会話はありません。</p>}
         {turns.map((turn, index) => <article key={turn.id}>
           <p><strong>You：</strong>{turn.question}</p>
-          <Answer presentation={presentations[index]} onOpen={onOpen} />
+          {/* 記録そのものは普段読むものではないので、回答の直後にアイコンだけ置いて別画面へ送る */}
+          <Answer presentation={presentations[index]} onOpen={onOpen} after={
+            <button type="button" className="bundle-conversation-record-open" onClick={() => setRecord(turn)}
+              aria-label="この会話の記録を表示" title="この会話の記録を表示"><FileJson size={14} /></button>} />
           <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
           {turn.id === history.at(-1)?.id && <ProgressProposal key={`${vault.ID}:${turn.context.bundleId}:${turn.id}`} vault={vault} turn={turn} disabled={!!busy || !!pending} />}
           {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
-          {/* 記録そのものは普段読むものではないので、会話の直下にアイコンだけ置いて別画面へ送る */}
-          <button type="button" className="bundle-conversation-record-open" onClick={() => setRecord(turn)}
-            aria-label="この会話の記録を表示" title="この会話の記録を表示"><FileJson size={14} /></button>
         </article>)}
       </div>
       {/* 入力とその状態表示（資料範囲・待機・保存失敗）は、履歴をたどっている間も
