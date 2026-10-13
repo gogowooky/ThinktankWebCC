@@ -305,7 +305,7 @@ FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに追加�
 　　- 選択が無いときは何もせず「[選択テキストなし]」を返します。
 　　実機で、改行を含む選択が「hello world」として入ること、続けて「foo」を追加すると
 　　「hello world foo」になること、入力欄にフォーカスし :Unfocus で元へ戻ることを確認しました。
-　　キー割当は DefaultShortcut.md にまだありません。
+　　キー割当（docs\DefaultShortcut.md）: *TextEditor で Alt+F。
 
 ## Status：　260625　ToolBar.HighlighterMode.Text
 description:    ハイライターの入力テキスト
