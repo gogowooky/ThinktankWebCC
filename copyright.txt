@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.12",
+  "version": "2.1.13",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "2877c4b",
-  "commitDateTime": "2026-10-13-115250",
-  "commitMessage": "feat: DefaultMenu.mdから作る汎用メニューとDoOnCaretPosを追加し、Default*.mdのコメント規則を統一"
+  "commitId": "adcae11",
+  "commitDateTime": "2026-10-13-134446",
+  "commitMessage": "refactor: 検索フィルターUIとSplitterを共通化し、未使用コンポーネントと同期URL既定値を整理"
 }

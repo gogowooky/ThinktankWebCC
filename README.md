@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.13 refactor: 検索フィルターUIとSplitterを共通化し、未使用コンポーネントと同期URL既定値を整理
+
+- 日付: 2026-10-13
+- コミット番号: adcae11
+
+docs/261013 のリファクタリング事前調査の候補から、C1 → B1 → B2 → A1 → A2 を実施した（詳細は docs/261013/リファクタリング実施結果.md）。C1: StorageManager / ElectronStorageBackend の同期URL既定値を廃止し、Electron main が起動したサーバーの実ポートを使えるようにした。B1: 現行入口から参照されない DiscussPanelRibbon / HarvestChat / ThinktankAiView / ThoughtsFilter（TSX・CSS 計8ファイル）を削除。B2: SupportChat の空の保存・スクロールRef、未使用Props、不要な state・コールバックを整理。A1: Thinktank / Seeds の検索バー・フィルターパネル・共通CSSを components/Filters に集約し、全文検索処理を useContentSearch に抽出。A2: 縦横 Splitter のドラッグ処理を軸指定の useSplitterDrag に抽出。テストは92ファイル・610件すべて成功。変更: 46ファイル（+1351 / -2338行）。
+
 ### v2.1.12 feat: DefaultMenu.mdから作る汎用メニューとDoOnCaretPosを追加し、Default*.mdのコメント規則を統一
 
 - 日付: 2026-10-13
