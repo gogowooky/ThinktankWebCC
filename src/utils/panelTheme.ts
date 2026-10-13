@@ -43,10 +43,23 @@ export function panelThemeStatusId(kind: PanelThemeKind): string {
 /** パネル間ボーダーのマウスオーバー／ドラッグ中の色を持つ StatusID */
 export const FOCUSING_BORDER_STATUS_ID = 'FocusingBorder.Theme';
 
+/**
+ * Discuss パネルの Pane 領域へ Think ファイルを D&D するときのゴースト（落とし先の表示）の色。
+ * Added = Pane 領域全体への追加位置、Divided = 単独 Pane を分割した位置、
+ * Replaced = 置き換える単独 Pane のタイトル部分。Color だけを使い、濃淡は CSS 側で付ける。
+ */
+export type DDGhostKind = 'Added' | 'Divided' | 'Replaced';
+export const DD_GHOST_KINDS: DDGhostKind[] = ['Added', 'Divided', 'Replaced'];
+
+export function ddGhostStatusId(kind: DDGhostKind): string {
+  return `DDGhost.${kind}.Theme`;
+}
+
 /** applyPanelThemeCss を呼び直すべき StatusID変数のワイルドカード一覧 */
 export const THEME_STATUS_KEYS: string[] = [
   ...PANEL_THEME_KINDS.map(kind => `${panelThemeStatusId(kind)}.*`),
   `${FOCUSING_BORDER_STATUS_ID}.*`,
+  ...DD_GHOST_KINDS.map(kind => `${ddGhostStatusId(kind)}.*`),
 ];
 
 /** テーマ適用中だけトランジションを止めるクラス（index.css で定義） */
@@ -83,6 +96,12 @@ export function applyPanelThemeCss(store: Record<string, ColorStyle> | undefined
   const focusing: ColorStyle =
     store?.[FOCUSING_BORDER_STATUS_ID] ?? getDefaultColorStyle(FOCUSING_BORDER_STATUS_ID);
   setVar(root, '--focusing-border', focusing.Color);
+
+  for (const kind of DD_GHOST_KINDS) {
+    const statusId = ddGhostStatusId(kind);
+    const ghost: ColorStyle = store?.[statusId] ?? getDefaultColorStyle(statusId);
+    setVar(root, `--ddghost-${kind.toLowerCase()}`, ghost.Color);
+  }
 
   // 新しい色で1フレーム描かせてからトランジションを戻す
   requestAnimationFrame(() => {

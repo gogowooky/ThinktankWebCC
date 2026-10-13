@@ -53,7 +53,7 @@ import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPick
 import type { ChatMessage } from '../../types';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, parseMarks, styleStatusId, type MarkKind } from '../../utils/defaultColor';
-import { PANEL_THEME_KINDS, panelThemeStatusId, type PanelThemeKind } from '../../utils/panelTheme';
+import { DD_GHOST_KINDS, FOCUSING_BORDER_STATUS_ID, PANEL_THEME_KINDS, ddGhostStatusId, panelThemeStatusId } from '../../utils/panelTheme';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import './DiscussSettingArea.css';
 
@@ -94,14 +94,25 @@ const TEXT_EDITOR_TAG_COLORS: { statusId: string; label: string }[] = [
   { statusId: LINK_STYLE_STATUS_IDS.tag,      label: 'Tag' },
 ];
 
-/** 「パネル色」に並べる各パネルの基礎色（<Panel>.Theme.Color）。派生色・文字色は panelTheme.ts が導く */
-const PANEL_THEME_LABELS: Record<PanelThemeKind, string> = {
-  Thinktank: 'Thinktank',
-  Seeds:     'Seeds',
-  Discuss:   'Discuss',
-  Harvest:   'Harvest',
-  ToolBar:   'ToolBar',
-};
+/**
+ * 「パネル色」に並べる色（いずれも <StatusID>.Color だけを編集する）。
+ *   各パネルの基礎色（<Panel>.Theme）… 派生色・文字色は panelTheme.ts が導く
+ *   Border（FocusingBorder.Theme）    … パネル間ボーダーのマウスオーバー／ドラッグ中の色
+ *   Added / Divided / Replaced（DDGhost.*.Theme）… Pane 領域への Think D&D のゴーストの色
+ */
+const PANEL_COLOR_ROWS: { statusId: string; label: string; tip: string }[] = [
+  ...PANEL_THEME_KINDS.map(kind => ({ statusId: panelThemeStatusId(kind), label: kind, tip: `${kind}パネルの基礎色` })),
+  { statusId: FOCUSING_BORDER_STATUS_ID, label: 'Border', tip: 'パネル間ボーダーのマウスオーバー／ドラッグ中の色' },
+  ...DD_GHOST_KINDS.map(kind => ({
+    statusId: ddGhostStatusId(kind),
+    label: kind,
+    tip: {
+      Added:    'D&D時のゴースト色：Pane領域全体へのPane追加位置',
+      Divided:  'D&D時のゴースト色：単独Paneを分割したPane位置',
+      Replaced: 'D&D時のゴースト色：置き換える単独Paneのタイトル部分',
+    }[kind],
+  })),
+];
 
 /** 文字色・B・U・背景色（BG）を1行で編集する。コメント / 行頭文字 / Url・File・Tag で共通 */
 function ColorStyleRow({ panel, statusId, label }: { panel: TTDiscussPanel; statusId: string; label: string }) {
@@ -1125,12 +1136,10 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
 
               {isPanelColorOpen && (
                 <div className="discuss-setting-area__section-content">
-                  {PANEL_THEME_KINDS.map(kind => {
-                    const statusId = panelThemeStatusId(kind);
+                  {PANEL_COLOR_ROWS.map(({ statusId, label, tip }) => {
                     const style = panel.GetColorStatus(statusId);
-                    const label = PANEL_THEME_LABELS[kind];
                     return (
-                      <div key={kind} className="discuss-setting-area__heading-style-row">
+                      <div key={statusId} className="discuss-setting-area__heading-style-row">
                         <span className="discuss-setting-area__heading-style-label discuss-setting-area__swatch-label">{label}</span>
                         <input
                           type="color"
@@ -1141,7 +1150,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                             // CSS変数への展開は AppLayout がこのキーの変更通知で行う
                             TTUIStateManager.instance.notifyPropertyChanged(`${statusId}.Color`);
                           }}
-                          data-tip={`${label}パネルの基礎色`}
+                          data-tip={tip}
                         />
                       </div>
                     );

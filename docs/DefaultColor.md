@@ -59,3 +59,6 @@ ToolBar.Theme,                      #2d2d2d,        #ffffff,          undefined
 # パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色。Color のみ使う
 FocusingBorder.Theme,               #5cbeff,        undefined,          undefined
 
+DDGhost.Divided.Theme,              #00AA00,       undefined,          undefined
+DDGhost.Added.Theme,                #00AA55,       undefined,          undefined
+DDGhost.Replaced.Theme,             #0055AA,       undefined,          undefined

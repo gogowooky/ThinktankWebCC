@@ -108,13 +108,12 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 
 
 # Editor カーソル アクション文字
-*TextEditor ,       ,Shift+Alt+Backspace    ,DiscussPanel.FocusedPane.FileHistory:Next          ,ファイル履歴を1つ後に進む
-*TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev          ,ファイル履歴を1つ前に戻る
+; *TextEditor ,       ,Shift+Alt+Backspace    ,DiscussPanel.FocusedPane.FileHistory:Next    ,ファイル履歴を1つ後に進む
+; *TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev    ,ファイル履歴を1つ前に戻る
+*TextEditor ,       ,Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu           ,ファイル履歴をメニューで表示
 
-*TextEditor ,       ,Ctrl+Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu          ,ファイル履歴をメニューで表示
-
-*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
-*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos             ,URL・パス・タグの起動
+*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos         ,URL・パス・タグの起動
+*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos         ,URL・パス・タグの起動
 # Editor カーソル 折畳行
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose
@@ -181,4 +180,3 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 *TextEditor ,ExOpt  ,F                  ,TextEditor.FullWidthSpace.IsVisible:Toggle             ,全角スペース表示On/Off
 *TextEditor ,ExOpt  ,U                  ,TextEditor.UnicodeHighlight.IsVisible:Toggle           ,エラー文字強調On/Off
 *TextEditor ,ExOpt  ,B                  ,TextEditor.BracketPairColorization.IsVisible:Toggle    ,括弧強調On/Off
-

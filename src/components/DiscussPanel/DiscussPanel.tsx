@@ -284,6 +284,12 @@ export function DiscussPanel({ app, layoutMode }: Props) {
 
   interface DropOverlay {
     type:   'add' | 'split';
+    /**
+     * ゴーストの色の種類。added = Pane 領域全体（端・空の領域）から決めた位置、
+     * divided = 特定 Pane の上で決めた位置。Pane が1つのときは type が 'add' でも divided になる
+     * （ドロップ時の動作は type で決まり、色とは別）。
+     */
+    ghost:  'added' | 'divided';
     dir:    DropEdgeDir;
     style:  React.CSSProperties;
     areaId?: string;
@@ -612,6 +618,7 @@ export function DiscussPanel({ app, layoutMode }: Props) {
     if (panel.Layout === null) {
       return {
         type: 'add' as const,
+        ghost: 'added' as const,
         dir: 'right' as DropEdgeDir,
         style: { left: 0, top: 0, width: br.width, height: br.height } as React.CSSProperties,
       };
@@ -636,7 +643,7 @@ export function DiscussPanel({ app, layoutMode }: Props) {
         dir === 'right' ? { right: 0,  top: 0, width: fw, height: br.height } :
         dir === 'up'    ? { left: 0,   top: 0, width: br.width, height: fh } :
                           { left: 0, bottom: 0, width: br.width, height: fh };
-      return { type: 'add' as const, dir, style: s };
+      return { type: 'add' as const, ghost: 'added' as const, dir, style: s };
     }
 
     // 内側 → 各ペインで分割
@@ -667,9 +674,9 @@ export function DiscussPanel({ app, layoutMode }: Props) {
       splitDir === 'up'    ? { left: aLeft,          top: aTop, width: aW,   height: aH/2 } :
                               { left: aLeft, top: aTop + aH/2,  width: aW,   height: aH/2 };
 
-    // ── エリアが1つだけのとき：split→addに統一（緑オーバーレイ）──
+    // ── エリアが1つだけのとき：ドロップ時の動作は add に統一する（色は Pane 上なので divided のまま）──
     const overlayType = panel.Areas.length <= 1 ? 'add' as const : 'split' as const;
-    return { type: overlayType, dir: splitDir, areaId, style: s };
+    return { type: overlayType, ghost: 'divided' as const, dir: splitDir, areaId, style: s };
   }, [panel]);
 
   const handleBodyDragOver = useCallback((e: React.DragEvent) => {
@@ -952,7 +959,7 @@ export function DiscussPanel({ app, layoutMode }: Props) {
         {/* D&D ドロップ位置プレビューオーバーレイ */}
         {dropOverlay && (
           <div
-            className={`discuss-panel__drop-overlay discuss-panel__drop-overlay--${dropOverlay.type}`}
+            className={`discuss-panel__drop-overlay discuss-panel__drop-overlay--${dropOverlay.ghost}`}
             style={{ position: 'absolute', pointerEvents: 'none', ...dropOverlay.style }}
           />
         )}

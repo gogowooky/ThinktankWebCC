@@ -43,6 +43,12 @@
      どのパネルにも属さないので FocusingBorder.Theme.Color として単独で持つ。 */
   --focusing-border:      #5cbeff;
 
+  /* Discuss の Pane 領域へ Think を D&D するときのゴーストの色（DDGhost.*.Theme.Color）。
+     panelTheme.ts が上書きする。ここは DefaultColor.md と同じ既定値 */
+  --ddghost-added:        #00aa55;
+  --ddghost-divided:      #00aa00;
+  --ddghost-replaced:     #0055aa;
+
   /* リボン＝基礎色そのもの */
   --thinktank-ribbon-bg: var(--thinktank-base);
   --seeds-ribbon-bg:  var(--seeds-base);

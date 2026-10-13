@@ -34,16 +34,16 @@ body[data-focus-column="DiscussSetting"] .vertical-tab-bar--discuss .vertical-ta
   border-radius: 3px;
 }
 
-/* エリア分割: 半透明青 + 実線ボーダー */
-.discuss-panel__drop-overlay--split {
-  background: rgba(100, 160, 255, 0.22);
-  border: 2px solid rgba(100, 160, 255, 0.75);
+/* 特定 Pane の上で決めた位置（その Pane の分割）: DDGhost.Divided.Theme.Color の半透明 + 実線ボーダー */
+.discuss-panel__drop-overlay--divided {
+  background: color-mix(in srgb, var(--ddghost-divided) 22%, transparent);
+  border: 2px solid color-mix(in srgb, var(--ddghost-divided) 75%, transparent);
 }
 
-/* エリア追加: やや薄い青 + 破線ボーダー */
-.discuss-panel__drop-overlay--add {
-  background: rgba(100, 200, 140, 0.20);
-  border: 2px dashed rgba(100, 200, 140, 0.8);
+/* Pane 領域全体（端・空の領域）で決めた追加位置: DDGhost.Added.Theme.Color の半透明 + 破線ボーダー */
+.discuss-panel__drop-overlay--added {
+  background: color-mix(in srgb, var(--ddghost-added) 20%, transparent);
+  border: 2px dashed color-mix(in srgb, var(--ddghost-added) 80%, transparent);
 }
 
 /* Alt+ThinkFileDrag（Insert）挿入位置プレビューCaret。
