@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.17 docs: Status-Action-Binding.md のパネル別セクション整理と DefaultColor.md の注記
+
+- 日付: 2026-10-13
+- コミット番号: cff5d22
+
+v2.1.16 以降の変更（70e011f〜cff5d22）をまとめて記録する。ToolBar の Translate（翻訳）モードを Search（キーワード検索）モードに改めた（モード名 Search、フォーカス名 ToolBar.Search、ID は ToolBar.SearchMode.Text*。旧名の保存値は読込時に読み替え）。Search モードに Clear / Focus / Unfocus、SetAndFocus（選択テキストがあれば設定し、選択が無くても入力欄へフォーカス。Alt+F）、Search（SearchID の検索サイトで入力テキストを外部ブラウザに開く。Enter）、ShowMenu（DefaultMenu.md の「Keyword検索」メニューで検索サイトを選んで検索。Alt+Enter）を追加し、Status ToolBar.SearchMode.Text:SearchID（既定 Google）を入力欄の左に KeyAction の FOCUS 値と同じ見た目で表示する。GoogleRoute / YahooTransfer の URL 組み立てをタグと共通化。Highlighter / Command / Search の入力欄アクションを共通の登録関数に集約。画面下端で開いたメニューが画面外にはみ出さないよう、ルートメニューを高さぶん持ち上げる。Alt+Think の D&D 中に挿入位置プレビューが折り畳みで隠れた行へカーソルを送り、TextEditor の折り畳みが開いていた不具合を修正（utils/editorDropPosition.ts に分離しテスト追加）。DefaultShortcut.md の ToolBar 行の列ずれ修正、Status-Action-Binding.md のパネル別セクション整理。型チェック成功、関連テスト 123件成功。変更: 17ファイル（+605 / -369行）。
+
 ### v2.1.16 feat: 選択・出現・折畳の色を .Theme.Color へ移し、選択範囲を出現より手前に表示
 
 - 日付: 2026-10-13
