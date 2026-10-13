@@ -20,8 +20,7 @@ import { useSupportChats } from '../../hooks/useSupportChats';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { TTThink } from '../../models/TTThink';
-import { StorageManager } from '../../services/storage/StorageManager';
+import { useContentSearch } from '../../hooks/useContentSearch';
 import { SeedsMenuRibbon } from './SeedsMenuRibbon';
 import { SeedsSettingsView } from './SeedsSettingsView';
 import type { SeedsSettingsViewRef } from './SeedsSettingsView';
@@ -37,13 +36,13 @@ import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import { buildBundleNames } from '../../utils/bundleNames';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
-import type { ChatMessage, ContentType } from '../../types';
+import type { ContentType } from '../../types';
 import {
   parseBundle, serializeBundle,
   NEW_CHAT_SENTINEL_ID,
 } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
-import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
+import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './SeedsArea.css';
 import { BundleStatusView } from './BundleStatusView';
 
@@ -105,14 +104,13 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const [visibleTypes, setVisibleTypes] = useState<Set<ContentType>>(() => new Set(ALL_CONTENT_TYPES));
 
   // 検索 state（保管庫全体への全文/AI検索）
-  const [searchQuery,    setSearchQuery]    = useState('');
-  const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);
-  const [searchLoading,  setSearchLoading]  = useState(false);
-  const [searchSearched, setSearchSearched] = useState(false);
+  const {
+    searchQuery, searchResults, searchLoading, searchSearched,
+    setSearchQuery, setSearchResults, setSearchSearched,
+    handleSearchQueryChange, handleSearch,
+  } = useContentSearch(vault, 'SeedsArea');
 
   // ── チャット state ─────────────────────────────────────────────────────
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatWaiting,  setChatWaiting]  = useState(false);
   const aiChatViewRef                   = useRef<SupportChatRef>(null);
   const filterPanelRef                  = useRef<SeedsFilterPanelRef>(null);
   const settingsViewRef                 = useRef<SeedsSettingsViewRef>(null);
@@ -192,7 +190,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     if (bundle?.IsMetaOnly) {
       void bundle.LoadContent().then(() => vault.NotifyUpdated());
     }
-  }, [panel.BundleID, vault]);
+  }, [panel.BundleID, vault, setSearchQuery, setSearchResults, setSearchSearched]);
 
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
@@ -304,37 +302,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const handleSelectAllTypes = useCallback(() => setVisibleTypes(new Set(ALL_CONTENT_TYPES)), []);
   const handleClearAllTypes  = useCallback(() => setVisibleTypes(new Set()), []);
 
-  const handleSearchQueryChange = useCallback((v: string) => {
-    setSearchQuery(v);
-    setSearchSearched(false);
-  }, []);
-
-  const handleSearch = useCallback(async () => {
-    const q = searchQuery.trim();
-    if (!q) return;
-    addContentSearchKeywordToHighlighter(q);
-    setSearchLoading(true);
-    try {
-      const metas = await StorageManager.instance.search(q);
-      setSearchResults(metas.map(meta => {
-        const existing = vault.GetThink(meta.thinkid);
-        if (existing) return existing;
-        const t = new TTThink();
-        t.ID = meta.thinkid; t.VaultID = vault.ID;
-        t.ContentType = meta.category as TTThink['ContentType'];
-        t.Keywords = meta.keywords ?? ''; t.RelatedIDs = meta.relatedIds ?? '';
-        t.IsMetaOnly = true; t.setContentSilent(meta.title);
-        return t;
-      }));
-    } catch (e) {
-      console.error('[SeedsArea] search failed:', e);
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-      setSearchSearched(true);
-    }
-  }, [searchQuery, vault]);
-
   // タイトル絞り込み実行（Enter確定時）
   const handleTitleFilterSearch = useCallback(() => {
     const q = filter.trim();
@@ -366,12 +333,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const handleOpenThinkInDiscuss = useCallback((id: string) => {
     app.OpenThinkInDiscuss(id);
   }, [app]);
-
-  const handleSaveChat = useCallback(() => aiChatViewRef.current?.save(), []);
-
-  const saveChatTip = selectedTodoMemoId
-    ? `Chatを${selectedTodoMemoId}に保管します`
-    : 'Chatを新規のchatとして保管します';
 
   // AIChat一覧の選択状態を更新する（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
@@ -406,8 +367,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         showCheckedOnly={showCheckedOnly}
         showColumnDialog={showColumnDialog}
         showFilterSelectDialog={showFilterSelectDialog}
-        canSaveChat={false}
-        saveChatTip="会話履歴は閲覧専用です"
         visibleCount={visibleThinks.length}
         totalCount={typeFilteredBase.length}
         hasBundle={!!panel.BundleID}
@@ -418,7 +377,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
-        onSaveChat={handleSaveChat}
         onClearTodoSelection={() => handleSelectTodoMemo('')}
         onRefresh={handleRefresh}
       />
@@ -526,8 +484,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
             />
             <div className="seeds-area__chat-body">
               <SupportChat ref={aiChatViewRef} vault={vault} panelName="Seeds"
-                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={panel.BundleID}
-                onMessages={setChatMessages} onWaiting={setChatWaiting}
+                selectedId={selectedTodoMemoId} bundleId={panel.BundleID}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
             </div>
           </div>

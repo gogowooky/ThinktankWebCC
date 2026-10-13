@@ -18,7 +18,7 @@ declare global {
         save:           (p: SavePayload)  => Promise<ThinkMeta>;
         delete:         (id: string)      => Promise<void>;
         search:         (q: string)       => Promise<ThinkMeta[]>;
-        syncFromServer: (url: string)     => Promise<SyncResult>;
+        syncFromServer: (url?: string)    => Promise<SyncResult>;
       };
       getPathForFile: (file: File) => string;
       /**
@@ -44,7 +44,8 @@ export class ElectronStorageBackend implements IStorageBackend {
   delete(id: string):           Promise<void>          { return this.api.delete(id); }
   search(query: string):        Promise<ThinkMeta[]>   { return this.api.search(query); }
 
-  syncFromServer(serverUrl = 'http://localhost:8080'): Promise<SyncResult> {
+  // 未指定時の接続先は、自前サーバーのportを把握しているメインプロセスで決める。
+  syncFromServer(serverUrl?: string): Promise<SyncResult> {
     return this.api.syncFromServer(serverUrl);
   }
 }

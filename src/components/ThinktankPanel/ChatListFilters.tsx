@@ -1,6 +1,6 @@
 import { CheckSquare, FolderKanban, CircleHelp, CalendarDays, Repeat, MessageCircle, Circle, Play, Hourglass, Pause, CircleCheck, CircleX, CircleDashed, SquareCheck, X, type LucideIcon } from 'lucide-react';
 import { parseManagedChatTitle } from '../../utils/managedChat';
-import './ThinktankSearchBar.css';
+import '../Filters/SearchBar.css';
 
 export const CHAT_KINDS = ['ASK', 'TASK', 'TODO', 'PROJ', 'EVNT', 'LOOP', '未分類'] as const;
 export const CHAT_STATES = ['未着手', '進行中', '待機', '保留', '完了', '中止', '状態未設定'] as const;

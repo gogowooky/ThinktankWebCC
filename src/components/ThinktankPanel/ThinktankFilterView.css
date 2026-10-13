@@ -8,7 +8,7 @@
   overflow: hidden;
 }
 
-/* ThoughtsFilter と同じ見た目の各フィルターバー */
+/* 各フィルターバー */
 .tt-filter-view__bar {
   display: flex;
   align-items: center;
@@ -19,7 +19,7 @@
   flex-shrink: 0;
 }
 
-/* バー内アイコン（ThoughtsFilter の Search アイコンと同スタイル） */
+/* バー内アイコン */
 .tt-filter-view__bar-icon {
   flex-shrink: 0;
   color: #555;

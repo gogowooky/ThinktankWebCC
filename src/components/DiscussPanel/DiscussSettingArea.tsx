@@ -39,7 +39,6 @@ import {
 } from 'lucide-react';
 import type { TTDiscussPanel } from '../../views/TTDiscussPanel';
 import type { TTVault } from '../../models/TTVault';
-import type { TTThink } from '../../models/TTThink';
 import { TTActions } from '../../views/TTActions';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTVoiceInput, isVoiceInputSupported } from '../../views/TTVoiceInput';
@@ -50,7 +49,6 @@ import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialo
 import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
 import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
-import type { ChatMessage } from '../../types';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, parseMarks, styleStatusId, type MarkKind } from '../../utils/defaultColor';
 import { DD_GHOST_KINDS, FOCUSING_BORDER_STATUS_ID, PANEL_THEME_KINDS, ddGhostStatusId, panelThemeStatusId } from '../../utils/panelTheme';
@@ -316,8 +314,6 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
   }));
 
   // ── 会話履歴チャット state ───────────────────────────────────────────────
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatWaiting,  setChatWaiting]  = useState(false);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Discuss');
   const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
@@ -334,12 +330,6 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
       setSelectedTodoMemoId('');
     }
   }, [todoMemoThinks, selectedTodoMemoId]);
-
-  const handleSaveChat = useCallback(() => aiChatViewRef.current?.save(), []);
-
-  const saveChatTip = selectedTodoMemoId
-    ? `Chatを${selectedTodoMemoId}に保管します`
-    : 'Chatを新規のchatとして保管します';
 
   // AIChat一覧の選択状態を更新する（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
@@ -399,7 +389,6 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
             <div className="discuss-setting-area__chat-toolbar">
               <button
                 className="discuss-setting-area__chat-btn"
-                onClick={handleSaveChat}
                 disabled={true}
                 data-tip="会話履歴は閲覧専用です"
               >
@@ -470,8 +459,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
             />
             <div className="discuss-setting-area__chat-body">
               <SupportChat ref={aiChatViewRef} vault={vault} panelName="Discuss"
-                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={TTApplication.Instance.SeedsPanel.BundleID}
-                onMessages={setChatMessages} onWaiting={setChatWaiting}
+                selectedId={selectedTodoMemoId} bundleId={TTApplication.Instance.SeedsPanel.BundleID}
                 modelSelector={{ value: { provider: panel.SettingAIChatProvider, model: panel.SettingAIChatModel }, onChange: selection => panel.SetSettingAIChatModel(selection) }} />
             </div>
           </div>

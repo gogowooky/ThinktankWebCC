@@ -20,8 +20,6 @@ interface Props {
   showCheckedOnly:      boolean;
   showColumnDialog:     boolean;
   showFilterSelectDialog: boolean;
-  canSaveChat:          boolean;
-  saveChatTip:          string;
   visibleCount?:        number;
   totalCount?:          number;
   onCheckAll:           () => void;
@@ -31,7 +29,6 @@ interface Props {
   onToggleCheckedOnly:  () => void;
   onToggleColumnDialog: () => void;
   onToggleFilterSelectDialog: () => void;
-  onSaveChat:           () => void;
   onClearTodoSelection: () => void;
   onRefresh:            () => void;
   hasBundle:            boolean;
@@ -42,13 +39,12 @@ export function SeedsMenuRibbon({
   mediaType,
   visibleIds, checkedIds, showCheckedOnly,
   showColumnDialog, showFilterSelectDialog,
-  canSaveChat, saveChatTip,
   visibleCount, totalCount,
   hasBundle,
   onCheckAll, onClearChecks, onExcludeChecked, onClearBundle,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
-  onSaveChat, onClearTodoSelection, onRefresh,
+  onClearTodoSelection, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -67,11 +63,10 @@ export function SeedsMenuRibbon({
     if (showChatControls) {
       return (
         <div className="menu-ribbon seeds-menu-ribbon">
-          <div className="tooltip-wrapper" data-tip={saveChatTip} data-tip-side="right">
+          <div className="tooltip-wrapper" data-tip="会話履歴は閲覧専用です" data-tip-side="right">
             <button
               className="menu-ribbon__btn menu-ribbon__btn--icon"
-              onClick={onSaveChat}
-              disabled={!canSaveChat}
+              disabled
             >
               <Save size={14} />
             </button>

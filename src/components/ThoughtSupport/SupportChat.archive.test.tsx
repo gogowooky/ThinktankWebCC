@@ -24,9 +24,9 @@ it.each(['Thinktank', 'Seeds', 'Discuss', 'Harvest'] as const)('%s omits the leg
   const host = document.createElement('div'); const root = createRoot(host); const ref = createRef<SupportChatRef>();
   try {
     await act(async () => root.render(<SupportChat ref={ref} vault={vault} selectedId={chat.ID} bundleId={bundle.ID} panelName={panelName}
-      onSelected={vi.fn()} onMessages={vi.fn()} onWaiting={vi.fn()} modelSelector={{ value: { provider: 'openai', model: 'unused' }, onChange: vi.fn() }} />));
+      modelSelector={{ value: { provider: 'openai', model: 'unused' }, onChange: vi.fn() }} />));
     expect(host.textContent).not.toContain('これまでの会話'); expect(host.querySelector('.support-chat-history')).toBeNull();
-    expect(load).not.toHaveBeenCalled(); ref.current?.save(); expect(save).not.toHaveBeenCalled();
+    expect(load).not.toHaveBeenCalled(); expect(save).not.toHaveBeenCalled();
     expect(chat.Content).toBe(before); expect(JSON.stringify(chat.Metadata)).toBe(metadataBefore);
   } finally { await act(async () => root.unmount()); vi.restoreAllMocks(); vi.unstubAllGlobals(); }
 });

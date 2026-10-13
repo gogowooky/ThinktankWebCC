@@ -27,7 +27,7 @@
   min-height: 0;
 }
 
-/* HarvestChat がメモ選択(DataGrid)の残りの高さを占有する */
+/* SupportChat がメモ選択(DataGrid)の残りの高さを占有する */
 .harvest-area__chat-body {
   flex: 1;
   min-height: 0;

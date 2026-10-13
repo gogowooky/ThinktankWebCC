@@ -18,8 +18,8 @@ import { startTaskFromChat } from '../../services/startTaskFromChat';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { TTThink } from '../../models/TTThink';
-import { StorageManager } from '../../services/storage/StorageManager';
+import type { TTThink } from '../../models/TTThink';
+import { useContentSearch } from '../../hooks/useContentSearch';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
 import { ThinktankFilterPanel } from './ThinktankFilterPanel';
 import type { ThinktankFilterPanelRef } from './ThinktankFilterPanel';
@@ -27,7 +27,7 @@ import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchBar } from './ThinktankSearchBar';
 import { applySort } from '../../utils/sortUtils';
 import { buildBundleNames } from '../../utils/bundleNames';
-import type { ChatMessage, ContentType } from '../../types';
+import type { ContentType } from '../../types';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
@@ -36,7 +36,7 @@ import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISI
 import type { FilterVisibility } from './FilterSelectDialog';
 import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
-import { addContentSearchKeywordToHighlighter, addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
+import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './ThinktankArea.css';
 
 import type { LayoutMode } from '../Layout/AppLayout';
@@ -131,8 +131,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   }, [layoutMode]);
 
   // チャット state
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [chatWaiting,  setChatWaiting]  = useState(false);
   const aiChatViewRef                   = useRef<SupportChatRef>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Thinktank');
   const newChat = useNewSupportChat(vault, setSelectedTodoMemoId);
@@ -196,10 +194,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   }, [panel.ShouldResetTypesToAll, panel]);
 
   // 検索 state（ビュー切り替えで消えないよう ThinktankArea で保持）
-  const [searchQuery,    setSearchQuery]    = useState('');
-  const [searchResults,  setSearchResults]  = useState<TTThink[]>([]);
-  const [searchLoading,  setSearchLoading]  = useState(false);
-  const [searchSearched, setSearchSearched] = useState(false);
+  const {
+    searchQuery, searchResults, searchLoading, searchSearched,
+    setSearchQuery, setSearchResults, setSearchSearched,
+    handleSearchQueryChange, handleSearch,
+  } = useContentSearch(vault, 'ThinktankArea');
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
@@ -312,12 +311,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleSelectAllTypes = useCallback(() => setVisibleTypes(new Set(ALL_CONTENT_TYPES)), []);
   const handleClearAllTypes  = useCallback(() => setVisibleTypes(new Set()), []);
 
-  const handleSearchQueryChange = useCallback((v: string) => {
-    setSearchQuery(v);
-    // 入力変更時は検索確定状態を解除（Enter で再検索するまで母集合は全件）
-    setSearchSearched(false);
-  }, []);
-
   const canCreateBundle = true;
 
   const handleCreateBundle = useCallback(async () => {
@@ -330,13 +323,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     panel.ClearChecks();
   }, [panel, vault, searchSearched, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
 
-  // チャット送信・保存
-  const handleSaveChat = useCallback(() => aiChatViewRef.current?.save(), []);
-
-  const saveChatTip = selectedTodoMemoId
-    ? `Chatを${selectedTodoMemoId}に保管します`
-    : 'Chatを新規のchatとして保管します';
-
   // 新規Chatは保存成功後に選択する。既存Chatの下書きは共通UIが保持する。
   const handleSelectTodoMemo = (id: string) => {
     aiChatViewRef.current?.abortStreaming();
@@ -347,37 +333,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     const bundle = await startTaskFromChat(vault, chatId, title, seed);
     app.OpenBundle(bundle.ID, 'graph');
   }, [app, vault]);
-
-  // 検索実行
-  const handleSearch = useCallback(async () => {
-    const q = searchQuery.trim();
-    if (!q) return;
-    addContentSearchKeywordToHighlighter(q);
-    setSearchLoading(true);
-    try {
-      const metas = await StorageManager.instance.search(q);
-      const thinks = metas.map(meta => {
-        const existing = vault.GetThink(meta.thinkid);
-        if (existing) return existing;
-        const t = new TTThink();
-        t.ID          = meta.thinkid;
-        t.VaultID     = vault.ID;
-        t.ContentType = meta.category as TTThink['ContentType'];
-        t.Keywords    = meta.keywords  ?? '';
-        t.RelatedIDs  = meta.relatedIds ?? '';
-        t.IsMetaOnly  = true;
-        t.setContentSilent(meta.title);
-        return t;
-      });
-      setSearchResults(thinks);
-    } catch (e) {
-      console.error('[ThinktankArea] search failed:', e);
-      setSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-      setSearchSearched(true);
-    }
-  }, [searchQuery, vault]);
 
   // pendingSearchQueryRef がセットされていて searchQuery が一致したら検索実行
   useEffect(() => {
@@ -417,9 +372,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         />
         <div className="thinktank-area__chat-body">
           <SupportChat ref={aiChatViewRef} vault={vault} panelName="Thinktank"
-                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
+                selectedId={selectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
                 onStartTask={handleStartTask}
-                onMessages={setChatMessages} onWaiting={setChatWaiting}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
         </div>
       </div>
@@ -463,8 +417,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         showColumnDialog={showColumnDialog}
         showFilterSelectDialog={showFilterSelectDialog}
         canCreateBundle={canCreateBundle}
-        canSaveChat={false}
-        saveChatTip="会話履歴は閲覧専用です"
         visibleCount={filterVisible.length}
         totalCount={allThinks.length}
         onCheckAll={handleCheckAll}
@@ -474,7 +426,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
         onCreateBundle={handleCreateBundle}
-        onSaveChat={handleSaveChat}
         onClearTodoSelection={() => handleSelectTodoMemo('')}
         onRefresh={onRefresh}
       />

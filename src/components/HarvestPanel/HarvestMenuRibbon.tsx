@@ -9,11 +9,8 @@ import './HarvestMenuRibbon.css';
 
 interface Props {
   viewMode:              string;
-  canSaveChat:           boolean;
-  saveChatTip:           string;
   showColumnDialog:      boolean;
   showFilterSelectDialog: boolean;
-  onSaveChat:            () => void;
   onToggleColumnDialog:  () => void;
   onToggleFilterSelectDialog: () => void;
   onClearTodoSelection:  () => void;
@@ -21,9 +18,9 @@ interface Props {
 }
 
 export function HarvestMenuRibbon({
-  viewMode, canSaveChat, saveChatTip,
+  viewMode,
   showColumnDialog, showFilterSelectDialog,
-  onSaveChat, onToggleColumnDialog, onToggleFilterSelectDialog,
+  onToggleColumnDialog, onToggleFilterSelectDialog,
   onClearTodoSelection, onRefresh,
 }: Props) {
   if (viewMode === 'settings') {
@@ -32,11 +29,10 @@ export function HarvestMenuRibbon({
 
   return (
     <div className="menu-ribbon harvest-menu-ribbon">
-      <div className="tooltip-wrapper" data-tip={saveChatTip} data-tip-side="right">
+      <div className="tooltip-wrapper" data-tip="会話履歴は閲覧専用です" data-tip-side="right">
         <button
           className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onSaveChat}
-          disabled={!canSaveChat}
+          disabled
         >
           <Save size={14} />
         </button>

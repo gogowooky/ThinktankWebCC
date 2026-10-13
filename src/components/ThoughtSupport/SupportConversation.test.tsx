@@ -52,7 +52,7 @@ afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGloba
 async function show(bundleId = 'a', selectedId = 'chat-a', onStartTask?: (chatId: string, title: string) => Promise<void>) {
   await act(async () => root.render(<SupportChat vault={vault} selectedId={selectedId} bundleId={bundleId} panelName="Thinktank"
     onStartTask={onStartTask}
-    onSelected={vi.fn()} onMessages={vi.fn()} onWaiting={vi.fn()} modelSelector={{ value: { provider: 'openai', model: 'unused' }, onChange: vi.fn() }} />));
+    modelSelector={{ value: { provider: 'openai', model: 'unused' }, onChange: vi.fn() }} />));
 }
 it('uses the Chat selected in the upper list and has no second selector or conversation-history panel', async () => {
   // Chat名は上のリストの選択行に出ているので、会話欄では繰り返さない。

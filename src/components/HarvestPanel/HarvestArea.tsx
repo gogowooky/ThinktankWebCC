@@ -5,10 +5,10 @@ import { useSupportChats } from '../../hooks/useSupportChats';
  * HarvestArea.tsx
  * Phase 10: HarvestPanel のメインエリア。
  *
- * - メモ選択(DataGrid) + HarvestChat（AI との CLI ターミナル風チャット）
+ * - メモ選択(DataGrid) + SupportChat
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { HarvestMenuRibbon } from './HarvestMenuRibbon';
@@ -74,13 +74,6 @@ export function HarvestArea({ app, viewMode }: Props) {
     return () => clearTimeout(timer);
   }, [viewMode]);
 
-  // 選択中のThinkがあればそこへ上書き保存、なければ新規の chat Think として保存する（Seedsの選択中Bundleへリンク）
-  const handleSaveChat = useCallback(() => harvestChatRef.current?.save(), []);
-
-  const saveChatTip = selectedTodoMemoId
-    ? `Chatを${selectedTodoMemoId}に保管します`
-    : 'Chatを新規のchatとして保管します';
-
   // AIChat一覧の選択状態を更新する（空選択でクリア）。
   // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
   // 入力と応答は共通チャットが自動保存する。
@@ -101,11 +94,8 @@ export function HarvestArea({ app, viewMode }: Props) {
       {/* ── メニューリボン ─────────────────────────────────────── */}
       <HarvestMenuRibbon
         viewMode={viewMode}
-        canSaveChat={false}
-        saveChatTip="会話履歴は閲覧専用です"
         showColumnDialog={showColumnDialog}
         showFilterSelectDialog={showFilterSelectDialog}
-        onSaveChat={handleSaveChat}
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
         onClearTodoSelection={() => handleSelectTodoMemo('')}
@@ -155,8 +145,7 @@ export function HarvestArea({ app, viewMode }: Props) {
             />
             <div className="harvest-area__chat-body">
               <SupportChat ref={harvestChatRef} vault={vault} panelName="Harvest"
-                selectedId={selectedTodoMemoId} onSelected={setSelectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
-                onMessages={msgs => panel.LoadChat(msgs)} onWaiting={value => panel.SetStreaming(value)}
+                selectedId={selectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
                 modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
             </div>
           </>

@@ -66,7 +66,7 @@ export class StorageManager {
     return this.backend.search(query);
   }
 
-  public syncFromServer(serverUrl = 'http://localhost:8080'): Promise<SyncResult> {
+  public syncFromServer(serverUrl?: string): Promise<SyncResult> {
     if (this.mode !== 'electron') {
       return Promise.reject(new Error('[StorageManager] syncFromServer は Electron モードのみ利用可能'));
     }

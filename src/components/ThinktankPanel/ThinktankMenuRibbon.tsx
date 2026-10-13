@@ -16,8 +16,6 @@ interface Props {
   showColumnDialog:      boolean;
   showFilterSelectDialog: boolean;
   canCreateBundle:       boolean;
-  canSaveChat:           boolean;
-  saveChatTip:           string;
   visibleCount?:         number;
   totalCount?:           number;
   onCheckAll:            () => void;
@@ -27,7 +25,6 @@ interface Props {
   onToggleColumnDialog:  () => void;
   onToggleFilterSelectDialog: () => void;
   onCreateBundle:        () => void;
-  onSaveChat:            () => void;
   onClearTodoSelection:  () => void;
   onRefresh:             () => void;
 }
@@ -36,12 +33,12 @@ export function ThinktankMenuRibbon({
   viewMode,
   visibleIds, checkedIds, showCheckedOnly,
   showColumnDialog, showFilterSelectDialog,
-  canCreateBundle, canSaveChat, saveChatTip,
+  canCreateBundle,
   visibleCount, totalCount,
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
-  onCreateBundle, onSaveChat, onClearTodoSelection, onRefresh,
+  onCreateBundle, onClearTodoSelection, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -62,11 +59,10 @@ export function ThinktankMenuRibbon({
   if (viewMode === 'chat') {
     return (
       <div className="menu-ribbon thinktank-menu-ribbon">
-        <div className="tooltip-wrapper" data-tip={saveChatTip} data-tip-side="right">
+        <div className="tooltip-wrapper" data-tip="会話履歴は閲覧専用です" data-tip-side="right">
           <button
             className="menu-ribbon__btn menu-ribbon__btn--icon"
-            onClick={onSaveChat}
-            disabled={!canSaveChat}
+            disabled
           >
             <Save size={14} />
           </button>
