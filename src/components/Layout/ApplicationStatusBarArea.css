@@ -223,6 +223,12 @@
   text-overflow: ellipsis;
 }
 
+/* 翻訳モードの入力欄の左に置く検索サイトID。見た目は KeyAction の FOCUS の値と同じ */
+.ApplicationStatusBarArea__search-id {
+  flex-shrink: 0;
+  margin-left: 4px;
+}
+
 .ApplicationStatusBarArea__ka-value--exmode {
   color: #f9a825;
   background: rgba(249, 168, 37, 0.15);

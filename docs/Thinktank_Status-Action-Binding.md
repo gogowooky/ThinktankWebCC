@@ -290,9 +290,9 @@ key:            ToolBar.TranslateMode.Text:Focus
 description:    ToolBarの翻訳入力欄をクリアする
 key:            ToolBar.TranslateMode.Text:Clear
 　ToolBarの翻訳入力欄をクリアする
-## Action：　261013　ToolBar.TranslateMode.Text:SetSelected
-description:    選択テキストを翻訳入力欄に設定して、翻訳入力欄にフォーカスする
-key:            ToolBar.TranslateMode.Text:SetSelected
+## Action：　261013　ToolBar.TranslateMode.Text:SetAndFocus
+description:    選択テキストがあれば翻訳入力欄に設定し、翻訳入力欄にフォーカスする
+key:            ToolBar.TranslateMode.Text:SetAndFocus
 FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに設定する。
 
 　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に登録しました。
@@ -301,9 +301,10 @@ FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに設定�
 　　- 入力欄の内容は選択テキストで置き換えます（既存の入力には追加しません）。
 　　- 設定後は ToolBar.TranslateMode.Text:Focus を実行して翻訳モードに切り替え、入力欄にフォーカスします。
 　　 直前のフォーカス位置もこのとき記憶されるので、:Unfocus で元に戻れます。
-　　- 選択が無いときは何もせず「[選択テキストなし]」を返します（入力欄はそのまま）。
+　　- 選択が無いときは入力欄の内容をそのままにして、フォーカスだけ移します。
 　　（261013）当初は ToolBar.TranslateMode.Text:AddSelected（既存の入力の末尾に追加）として実装しましたが、
-　　　ID を SetSelected に改め、追加ではなく置き換えにしました。
+　　　ID を SetSelected に改め、追加ではなく置き換えにしました。さらに ID を SetAndFocus に改め、
+　　　選択が無くてもフォーカスするようにしました（それまでは選択が無いと何もしませんでした）。
 　　キー割当（docs\DefaultShortcut.md）: *TextEditor で Alt+F。
 ## Status：　261013　ToolBar.TranslateMode.Text:SearchID
 docs\DefaultSearchTag.mdに登録されている検索サイトの「ID」。
@@ -317,6 +318,8 @@ candidates:     .*
 　A（261013実装）：TTDiscussPanel.TranslateSearchID（既定 Google）を実体とし、
 　　src\views\settings\toolbarSpecs.ts に Status として登録しました。
 　　空にした場合は Google に戻します（current が空のまま起動時に読み込まれても検索先が無くならないように）。
+　（261013）ToolBar の Translate モードでは、入力欄の左にこの値を表示します
+　　（見た目は KeyAction モードの FOCUS の値と同じ。src\components\Layout\ApplicationStatusBarArea.tsx）。
 ## Action：　261013　ToolBar.TranslateMode.Text:ShowMenu
 「Keyword検索」がタイトルのMenuを表示しIDを取得し、ToolBar.TranslateMode.Text:SearchIDに設定後、ToolBar.TranslateMode.Text:Searchを実行する
 description:    検索サイトをメニューから選んでToolBar.TranslateMode.Text:SearchIDに設定し、検索する

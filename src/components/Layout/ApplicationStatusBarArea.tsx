@@ -334,6 +334,14 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     // 通常の入力フィールド (Highlight, Command, Translate, Reminder 等、または Copyrightの静的表示)
     return (
       <div className="ApplicationStatusBarArea__input-wrap">
+        {authorState === 'off' && mode === 'translate' && (
+          <span
+            className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus ApplicationStatusBarArea__search-id"
+            data-tip="検索サイト（ToolBar.TranslateMode.Text:SearchID）。Enter で検索、Alt+Enter で変更"
+          >
+            {panel.TranslateSearchID}
+          </span>
+        )}
         <StatusBarInputPanel
           inputRef={inputRef}
           value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}

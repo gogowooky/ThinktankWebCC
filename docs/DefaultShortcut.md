@@ -93,9 +93,9 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 *TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
 
-*TextEditor ,       ,Alt+F                  ,ToolBar.TranslateMode.Text:SetSelected                 ,選択テキストを翻訳入力欄に設定してフォーカスする
-ToolBar.Translate   ,       ,Enter                  ,ToolBar.TranslateMode.Text:Search                      ,翻訳入力欄のテキストでキーワード検索する
-ToolBar.Translate   ,       ,Alt+Enter              ,ToolBar.TranslateMode.Text:ShowMenu                    ,キーワード検索サイトを設定する
+*TextEditor ,       ,Alt+F                  ,ToolBar.TranslateMode.Text:SetAndFocus                  ,選択テキストを翻訳入力欄に設定してフォーカスする
+ToolBar.Translate,  ,Enter                  ,ToolBar.TranslateMode.Text:Search                      ,翻訳入力欄のテキストでキーワード検索する
+ToolBar.Translate,  ,Alt+Enter              ,ToolBar.TranslateMode.Text:ShowMenu                    ,キーワード検索サイトを設定する
 
 # ToolBar
 ToolBar*    ,       ,Alt+C                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
