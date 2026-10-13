@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-vi.mock('./apiClient', () => ({ apiFetch: vi.fn() }));
+vi.mock('./apiClient', async () => ({ apiFetch: vi.fn(), ...await import('./apiResponse') }));
 import { webcrypto, createHash } from 'node:crypto';
 import { prepareExport } from './ExternalService';
-import { exportDiff, latestConnection, notebookUrl, validateManifest } from '../../server/services/externalRecord';
+import { exportDiff, latestConnection, notebookUrl, validateManifest } from '../../server/contracts/externalRecord';
 import type { ContextSnapshot, ContextSource } from './contextTypes';
 import { emptyContextState } from './legacyContextAdapter';
 beforeEach(() => vi.stubGlobal('crypto', webcrypto));

@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { decodeMetadata } from './metadataCodec.js';
+import { BundleRepository, nextRecordVersion, storedVersion } from './BundleRepository.js';
 import type { BigQueryService } from './BigQueryService.js';
 import type { AIProvider } from './AIProvider.js';
 import { ConversationService, verifyContextHashes } from './ConversationService.js';
@@ -10,18 +11,15 @@ export class AgentError extends Error { constructor(readonly status: number, mes
 export type AgentStore = Pick<BigQueryService, 'getRecord' | 'saveThinkSupport' | 'applyAgentArtifact'>;
 export class AgentService {
   private readonly active = new Map<string, AbortController>();
-  constructor(private readonly provider: AIProvider, private readonly store: AgentStore) {}
+  private readonly bundles: BundleRepository;
+  constructor(private readonly provider: AIProvider, private readonly store: AgentStore) {
+    this.bundles = new BundleRepository(store, AgentError, {
+      unavailable: 'ジョブ保存先に接続できません。', metadata: 'Bundleの保存形式が不正です。',
+    }, true);
+  }
   status() { return { enabled: this.provider.name !== 'none', provider: this.provider.name, model: this.provider.model, scope: 'bundle-only' }; }
   async read(bundleId: string) {
-    if (!id(bundleId)) throw new AgentError(400, 'Bundle IDが不正です。');
-    const result = await this.store.getRecord(bundleId);
-    if (!result.success) throw new AgentError(503, 'ジョブ保存先に接続できません。');
-    const record = result.data;
-    if (!record || record.category !== 'bundle' || record.is_deleted) throw new AgentError(404, '保存済みBundleがありません。');
-    const metadata: unknown = structuredClone(decodeMetadata(record.metadata) ?? {});
-    if (!object(metadata)) throw new AgentError(422, 'Bundleの保存形式が不正です。');
-    const version = object(record.updated_at) && 'value' in record.updated_at ? String(record.updated_at.value) : String(record.updated_at);
-    if (!Number.isFinite(Date.parse(version))) throw new AgentError(422, '保存版を確認できません。');
+    const { metadata, version } = await this.bundles.read(bundleId);
     return { metadata, version, log: readAgentLog(metadata.thinkAgentJobs, bundleId) };
   }
   private find(log: AgentLog, jobId: string) {
@@ -32,11 +30,11 @@ export class AgentService {
   private async edit(bundleId: string, change: (log: AgentLog, now: string) => AgentJob): Promise<AgentJob> {
     for (let retry = 0; retry < 3; retry++) {
       const { metadata, version, log } = await this.read(bundleId);
-      const now = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
+      const now = nextRecordVersion(version);
       const job = change(log, now);
       readAgentLog(log, bundleId);
       if (Buffer.byteLength(JSON.stringify(log)) > 2000000) throw new AgentError(409, 'ジョブ履歴の容量上限です。別のBundleで実行してください。');
-      const saved = await this.store.saveThinkSupport(bundleId, version, { ...metadata, thinkAgentJobs: log }, now);
+      const saved = await this.bundles.save(bundleId, version, { ...metadata, thinkAgentJobs: log }, now);
       if (!saved.success) throw new AgentError(503, 'ジョブ保存を確認できません。状態を再取得してください。');
       if (saved.data) return job;
     }
@@ -128,7 +126,7 @@ export class AgentService {
     if (hash !== contentHash) throw new AgentError(409, '確認した成果物と一致しません。差分を再確認してください。');
     if (job.applied) return job;
     if (version !== expectedVersion) throw new AgentError(409, 'Bundleの保存版が変わりました。再取得して内容を再確認してください。');
-    const now = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
+    const now = nextRecordVersion(version);
     job.applied = { thinkId: artifact.thinkId, confirmedAt: now, contentHash: hash }; job.updatedAt = now;
     const saved = await this.store.applyAgentArtifact(bundleId, version, { ...metadata, thinkAgentJobs: log }, now,
       { ...artifact, metadata: { thinkAgentArtifact: { schemaVersion: 1, jobId, bundleId, contentHash: hash } } });
@@ -145,7 +143,7 @@ export class AgentService {
     if (!r || r.is_deleted || r.category !== 'memo') throw new AgentError(404, '適用先Thinkがありません。自動再作成は行いません。');
     const metadata: unknown = decodeMetadata(r.metadata) ?? {};
     if (!object(metadata) || !object(metadata.thinkAgentArtifact) || metadata.thinkAgentArtifact.jobId !== jobId || metadata.thinkAgentArtifact.bundleId !== bundleId) throw new AgentError(409, '適用先の対応を確認できません。');
-    const updatedAt = object(r.updated_at) && 'value' in r.updated_at ? String(r.updated_at.value) : String(r.updated_at);
+    const updatedAt = storedVersion(r.updated_at);
     return { id: job.applied.thinkId, fullContent: `${r.title ?? ''}\n${r.content ?? ''}`, updatedAt, metadata };
   }
 }

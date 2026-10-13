@@ -1,9 +1,9 @@
-import { apiFetch } from './apiClient';
+import { apiFetch, readApiJson } from './apiClient';
 import type { TTVault } from '../models/TTVault';
 import type { AiModelSelection } from './aiModels';
 import type { ContextSnapshot } from './contextTypes';
-import { canonicalJson, readConversationLog, validateContext, validateTurn, type ConversationContext, type ConversationTurn } from '../../server/services/conversationRecord';
-export type { ConversationContext, ConversationTurn } from '../../server/services/conversationRecord';
+import { canonicalJson, readConversationLog, validateContext, validateTurn, type ConversationContext, type ConversationTurn } from '../../server/contracts/conversationRecord';
+export type { ConversationContext, ConversationTurn } from '../../server/contracts/conversationRecord';
 
 export function conversationContext(snapshot: ContextSnapshot): ConversationContext {
   const context: ConversationContext = {
@@ -24,16 +24,9 @@ export function chatOnlyConversationContext(vaultId: string, chatId: string): Co
   };
   validateContext(context); return context;
 }
-async function json(response: Response): Promise<unknown> {
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new Error(typeof body?.error === 'string' ? body.error : '通信に失敗しました。');
-  }
-  return response.json();
-}
 export class ConversationClient {
   async status(signal?: AbortSignal): Promise<{ enabled: boolean; provider: string; model: string }> {
-    const value = await json(await apiFetch('/api/think-support/conversations/status', { signal }));
+    const value = await readApiJson(await apiFetch('/api/think-support/conversations/status', { signal }));
     if (!value || typeof value !== 'object' || !('enabled' in value) || typeof value.enabled !== 'boolean'
       || !('provider' in value) || typeof value.provider !== 'string' || !('model' in value) || typeof value.model !== 'string') throw new Error('接続状態を確認できません。');
     return { enabled: value.enabled, provider: value.provider, model: value.model };
@@ -47,7 +40,7 @@ export class ConversationClient {
       ? bundleId ? `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}/bundles/${encodeURIComponent(bundleId)}`
         : `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}`
       : `/api/think-support/conversations/bundles/${encodeURIComponent(bundleId!)}`;
-    const value = await json(await apiFetch(path + query, { signal }));
+    const value = await readApiJson(await apiFetch(path + query, { signal }));
     const log = readConversationLog(value);
     if (!chatId && log.turns.some(t => t.context.bundleId !== bundleId)) throw new Error('履歴の対象が一致しません。');
     // Only a complete saved record can advance the local save baseline. Never overwrite editor changes.
@@ -74,7 +67,7 @@ export class ConversationClient {
   /** model を渡すとそのモデルと会話する（省略時はサーバー既定）。値は Status AIChat.* から決める */
   async generate(context: ConversationContext, question: string, historyIds: string[], signal: AbortSignal, chatId?: string, model?: AiModelSelection): Promise<ConversationTurn> {
     const requestId = crypto.randomUUID();
-    const value = await json(await apiFetch('/api/think-support/conversations/turns', { method: 'POST', signal,
+    const value = await readApiJson(await apiFetch('/api/think-support/conversations/turns', { method: 'POST', signal,
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId, context, question, historyIds, confirmed: true, chatId,
         ...(model ? { provider: model.provider, model: model.model } : {}) }) }));
     validateTurn(value);
@@ -87,7 +80,7 @@ export class ConversationClient {
       ? bundleId ? `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}/bundles/${encodeURIComponent(bundleId)}/turns/${encodeURIComponent(turn.id)}`
         : `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}/turns/${encodeURIComponent(turn.id)}`
       : `/api/think-support/conversations/bundles/${encodeURIComponent(turn.context.bundleId)}/turns/${encodeURIComponent(turn.id)}`;
-    await json(await apiFetch(path, {
+    await readApiJson(await apiFetch(path, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(turn),
     }));
   }

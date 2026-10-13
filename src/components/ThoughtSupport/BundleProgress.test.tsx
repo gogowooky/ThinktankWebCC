@@ -7,7 +7,7 @@ vi.mock('../../services/ProgressService', () => ({ ProgressService: class { read
 vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { instance: { mode: 'pwa' } } }));
 import { BundleProgress } from './BundleProgress';
 import { TTVault } from '../../models/TTVault';
-import { emptyProgress, type ProgressInput } from '../../../server/services/progressRecord';
+import { emptyProgress, type ProgressInput } from '../../../server/contracts/progressRecord';
 const state = (bundleId = 'a', input?: ProgressInput) => ({ bundleId, version: '2026-09-14T00:00:00Z',
   log: { schemaVersion: 1, events: input ? [{ id: 'saved', revision: 1, author: 'human', confirmedAt: '2026-09-14T00:00:00Z', input }] : [] },
   review: { goal: '目的', nextAction: '次の行動', completionCriteria: '条件', notes: [] } });

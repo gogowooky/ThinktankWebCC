@@ -5,9 +5,9 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 import { TTDiscussArea } from './TTDiscussArea';
-import { TTUIStateManager } from './TTUIStateManager';
 import type { MediaType } from '../types';
-import { applySelection, onModelNamesChange, selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
+import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
+import { setPanelCheckedIds, togglePanelChecks, setPanelAreaOpen, setPanelAiModel, subscribePanelAiModel } from './panelBehavior';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import {
   DEFAULT_MARKS, createColorStatusDefaults, getDefaultColorStyle, toggleAttr,
@@ -75,6 +75,8 @@ export interface SplitNodeData {
 }
 
 export type LayoutNode = LeafNode | SplitNodeData;
+export type PaneDirection = 'left' | 'right' | 'up' | 'down';
+export type PanePlacement = 'add' | 'split';
 
 // ── ノード ID 生成 ────────────────────────────────────────────────────
 
@@ -164,27 +166,12 @@ export class TTDiscussPanel extends TTUIItem {
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {
-    this.SharedState.checkedIds = val;
-    if (this._parent) {
-      const app = this._parent as any;
-      for (const key of ['ThinktankPanel', 'SeedsPanel', 'HarvestPanel']) {
-        app[key]?.NotifyUpdated();
-      }
-    }
-    TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');
+    setPanelCheckedIds(this, 'DiscussPanel', val);
   }
 
   /** 指定した ID (群) のチェック状態を切り替える / 指定する */
   public ToggleCheck(id: string | string[], forceChecked?: boolean): void {
-    const ids = Array.isArray(id) ? id : [id];
-    const current = new Set(this.CheckedThoughtIDs);
-    ids.forEach(targetId => {
-      const isChecked = current.has(targetId);
-      const nextChecked = (forceChecked !== undefined) ? forceChecked : !isChecked;
-      if (nextChecked) current.add(targetId); else current.delete(targetId);
-    });
-    this.CheckedThoughtIDs = Array.from(current);
-    this.NotifyUpdated();
+    togglePanelChecks(this, id, forceChecked);
   }
 
   public override get ClassName(): string { return 'TTDiscussPanel'; }
@@ -220,9 +207,9 @@ export class TTDiscussPanel extends TTUIItem {
   public AreaUserWidth: number = INIT_AREA_WIDTH.Discuss;
 
 
-  public ToggleArea(): void { this.IsAreaOpen = !this.IsAreaOpen; this.NotifyUpdated(); }
-  public OpenArea():   void { if (!this.IsAreaOpen) { this.IsAreaOpen = true;  this.NotifyUpdated(); } }
-  public CloseArea():  void { if (this.IsAreaOpen)  { this.IsAreaOpen = false; this.NotifyUpdated(); } }
+  public ToggleArea(): void { setPanelAreaOpen(this, !this.IsAreaOpen); }
+  public OpenArea():   void { setPanelAreaOpen(this, true); }
+  public CloseArea():  void { setPanelAreaOpen(this, false); }
 
   // ── TextEditor 設定 ───────────────────────────────────────────────────
   public TextEditor: TextEditorSettings = new TextEditorSettings();
@@ -299,17 +286,15 @@ export class TTDiscussPanel extends TTUIItem {
   public get SettingAIChatModel(): string { return selectionFor(this.SettingAIChatProviderName).model; }
 
   public SetAIChatModel(selection: AiModelSelection): void {
-    this.AIChatProviderName = applySelection(selection);
-    this.NotifyUpdated();
+    setPanelAiModel(this, selection);
   }
 
   public SetSettingAIChatModel(selection: AiModelSelection): void {
-    this.SettingAIChatProviderName = applySelection(selection);
-    this.NotifyUpdated();
+    setPanelAiModel(this, selection, 'SettingAIChatProviderName');
   }
 
   // 他パネルで同じプロバイダのモデルが選び直されたら、このパネルの表示も更新する
-  private readonly _offModelNames = onModelNamesChange(() => this.NotifyUpdated());
+  private readonly _offModelNames = subscribePanelAiModel(this);
 
   // ── Area CRUD ──────────────────────────────────────────────────────────
 
@@ -326,96 +311,62 @@ export class TTDiscussPanel extends TTUIItem {
     return area;
   }
 
-  public AddRight(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
-    const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
-    if (!focusId || !this.Layout) return null;
+  public InsertArea(resourceId: string, mediaType: MediaType, title: string, dir: PaneDirection, placement: 'add'): TTDiscussArea;
+  public InsertArea(resourceId: string, mediaType: MediaType, title: string, dir: PaneDirection, placement: PanePlacement): TTDiscussArea | null;
+  public InsertArea(resourceId: string, mediaType: MediaType, title: string, dir: PaneDirection, placement: PanePlacement): TTDiscussArea | null {
+    const focusId = placement === 'split'
+      ? this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null)
+      : null;
+    if (placement === 'split' && (!focusId || !this.Layout)) return null;
+
+    const direction = dir === 'left' || dir === 'right' ? 'v' : 'h';
+    const position = dir === 'left' || dir === 'up' ? 'first' : 'second';
     const area = this._createArea(resourceId, mediaType, title);
-    this.Layout = addToFocused(this.Layout, focusId, area.ID, 'v');
+    if (placement === 'split') {
+      this.Layout = addToFocused(this.Layout!, focusId!, area.ID, direction, position);
+    } else {
+      const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
+      this.Layout = this.Layout === null ? newLeaf : {
+        id: newNodeId(), type: 'split', direction,
+        first: position === 'first' ? newLeaf : this.Layout,
+        second: position === 'second' ? newLeaf : this.Layout,
+      };
+    }
     this.FocusedAreaId = area.ID;
     this.NotifyUpdated();
     return area;
+  }
+
+  public AddRight(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
+    return this.InsertArea(resourceId, mediaType, title, 'right', 'split');
   }
 
   public AddBelow(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
-    const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
-    if (!focusId || !this.Layout) return null;
-    const area = this._createArea(resourceId, mediaType, title);
-    this.Layout = addToFocused(this.Layout, focusId, area.ID, 'h');
-    this.FocusedAreaId = area.ID;
-    this.NotifyUpdated();
-    return area;
+    return this.InsertArea(resourceId, mediaType, title, 'down', 'split');
   }
 
   public AddLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
-    const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
-    if (!focusId || !this.Layout) return null;
-    const area = this._createArea(resourceId, mediaType, title);
-    this.Layout = addToFocused(this.Layout, focusId, area.ID, 'v', 'first');
-    this.FocusedAreaId = area.ID;
-    this.NotifyUpdated();
-    return area;
+    return this.InsertArea(resourceId, mediaType, title, 'left', 'split');
   }
 
   public AddAbove(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea | null {
-    const focusId = this.FocusedAreaId ?? (this.Layout ? collectAreaIds(this.Layout)[0] : null);
-    if (!focusId || !this.Layout) return null;
-    const area = this._createArea(resourceId, mediaType, title);
-    this.Layout = addToFocused(this.Layout, focusId, area.ID, 'h', 'first');
-    this.FocusedAreaId = area.ID;
-    this.NotifyUpdated();
-    return area;
+    return this.InsertArea(resourceId, mediaType, title, 'up', 'split');
   }
 
   public AddToLeft(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
-    const area = this._createArea(resourceId, mediaType, title);
-    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
-    if (this.Layout === null) {
-      this.Layout = newLeaf;
-    } else {
-      this.Layout = { id: newNodeId(), type: 'split', direction: 'v', first: newLeaf, second: this.Layout };
-    }
-    this.FocusedAreaId = area.ID;
-    this.NotifyUpdated();
-    return area;
+    return this.InsertArea(resourceId, mediaType, title, 'left', 'add');
   }
 
   public AddToRight(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
-    const area = this._createArea(resourceId, mediaType, title);
-    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
-    if (this.Layout === null) {
-      this.Layout = newLeaf;
-    } else {
-      this.Layout = { id: newNodeId(), type: 'split', direction: 'v', first: this.Layout, second: newLeaf };
-    }
-    this.FocusedAreaId = area.ID;
-    this.NotifyUpdated();
-    return area;
+    return this.InsertArea(resourceId, mediaType, title, 'right', 'add');
   }
 
   public AddToTop(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
-    const area = this._createArea(resourceId, mediaType, title);
-    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
-    if (this.Layout === null) {
-      this.Layout = newLeaf;
-    } else {
-      this.Layout = { id: newNodeId(), type: 'split', direction: 'h', first: newLeaf, second: this.Layout };
-    }
-    this.FocusedAreaId = area.ID;
-    this.NotifyUpdated();
-    return area;
+    return this.InsertArea(resourceId, mediaType, title, 'up', 'add');
   }
 
   public AddToBottom(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {
-    const area = this._createArea(resourceId, mediaType, title);
-    const newLeaf: LeafNode = { id: newNodeId(), type: 'leaf', areaId: area.ID };
-    if (this.Layout === null) {
-      this.Layout = newLeaf;
-    } else {
-      this.Layout = { id: newNodeId(), type: 'split', direction: 'h', first: this.Layout, second: newLeaf };
-    }
-    this.FocusedAreaId = area.ID;
-    this.NotifyUpdated();
-    return area;
+    return this.InsertArea(resourceId, mediaType, title, 'down', 'add');
   }
 
   public RemoveArea(areaId: string): void {

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { ProgressService, type ProgressState } from '../../services/ProgressService';
-import { emptyProgress, validateProgress, MILESTONE_LABELS, REACH_LABELS, type ProgressInput } from '../../../server/services/progressRecord';
+import { emptyProgress, validateProgress, MILESTONE_LABELS, REACH_LABELS, type ProgressInput } from '../../../server/contracts/progressRecord';
 
 const service = new ProgressService();
 export function ProgressProposal({ vault, turn, disabled }: { vault: TTVault; turn: ConversationTurn; disabled: boolean }) {

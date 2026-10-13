@@ -1,5 +1,5 @@
-import type { SubtaskContext, ProgressContext } from '../../../server/services/subtaskContext';
-import { MILESTONES, MILESTONE_LABELS, REACH_LABELS } from '../../../server/services/progressRecord';
+import type { SubtaskContext, ProgressContext } from '../../../server/contracts/subtaskContext';
+import { MILESTONES, MILESTONE_LABELS, REACH_LABELS } from '../../../server/contracts/progressRecord';
 
 export function SubtaskContextView({ value, onOpen }: { value: SubtaskContext; onOpen: (id: string) => void }) {
   return <details><summary>子課題の状況（{value.items.length}件）</summary>

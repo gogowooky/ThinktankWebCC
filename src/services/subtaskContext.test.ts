@@ -7,9 +7,9 @@ import { captureSubtaskContext } from './subtaskContext';
 import { ContextService } from './ContextService';
 import { conversationContext } from './ConversationService';
 import { ConversationService } from '../../server/services/ConversationService';
-import { emptyProgress } from '../../server/services/progressRecord';
-import { validateContext, readConversationLog } from '../../server/services/conversationRecord';
-import { SUBTASK_REVIEW_QUESTION, validateSubtaskContext } from '../../server/services/subtaskContext';
+import { emptyProgress } from '../../server/contracts/progressRecord';
+import { validateContext, readConversationLog } from '../../server/contracts/conversationRecord';
+import { SUBTASK_REVIEW_QUESTION, validateSubtaskContext } from '../../server/contracts/subtaskContext';
 import { prepareProposalReview } from './proposalReview';
 import type { ThinkMeta } from './storage/IStorageBackend';
 

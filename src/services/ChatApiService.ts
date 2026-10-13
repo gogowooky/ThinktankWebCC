@@ -1,7 +1,7 @@
-/** AI-neutral entry point. Previous implementation is retained in .legacy.ts. */
+/** 旧SSE呼び出しが残る場合にも、停止済みAPIへ通信させない。 */
 import type { AiModelSelection } from './aiModels';
-export type { ChatRequestMessage, ChatStreamCallbacks } from './ChatApiService.legacy';
-import type { ChatRequestMessage, ChatStreamCallbacks } from './ChatApiService.legacy';
+export type { ChatRequestMessage, ChatStreamCallbacks } from './ChatApiService.types';
+import type { ChatRequestMessage, ChatStreamCallbacks } from './ChatApiService.types';
 
 export async function streamChat(
   _messages: ChatRequestMessage[], _systemPrompt: string,

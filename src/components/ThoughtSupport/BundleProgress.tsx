@@ -4,7 +4,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ContextService } from '../../services/ContextService';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { ProgressService, type ProgressState } from '../../services/ProgressService';
-import { emptyProgress, validateProgress, readProgress, MILESTONES, MILESTONE_LABELS, REACH_LABELS, type ProgressInput, type Reach } from '../../../server/services/progressRecord';
+import { emptyProgress, validateProgress, readProgress, MILESTONES, MILESTONE_LABELS, REACH_LABELS, type ProgressInput, type Reach } from '../../../server/contracts/progressRecord';
 import type { ContextSource } from '../../services/contextTypes';
 import './BundleProgress.css';
 

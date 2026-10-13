@@ -2,7 +2,7 @@ import type { TTVault } from '../models/TTVault';
 import { StorageManager } from './storage/StorageManager';
 import type { TaskSeed } from './taskSeed';
 import { parseManagedChatTitle } from '../utils/managedChat';
-import { emptyThinkValues, readThinkSupport } from '../../server/services/thinkSupportRecord';
+import { emptyThinkValues, readThinkSupport } from '../../server/contracts/thinkSupportRecord';
 import { bindChatToTask, resolveChatTask } from './chatTask';
 
 const pending = new WeakMap<TTVault, Map<string, Promise<import('../models/TTThink').TTThink>>>();

@@ -3,8 +3,7 @@
  * AI Chat のホスト（プロバイダ・モデル）選択に関する共有定義。
  *
  * 選択肢はユーザー確認済みの8モデル（Claude 4種・OpenAI 1種・Gemini 3種）。
- * サーバー側 server/config/aiModels.ts に同じ内容の許可リストを持つため、
- * 変更する場合は両方を更新すること。
+ * 既存パネルの選択保存・旧設定の読み込み互換性を維持する。
  */
 
 /** local は Local AI 用の枠（AIChat.ModelNames.Local）。まだ使えず、選択肢にも出さない */
@@ -37,67 +36,11 @@ export const DEFAULT_AI_MODEL_SELECTION: AiModelSelection = {
   model:    AI_MODEL_OPTIONS[0].model,
 };
 
-export const PROVIDER_LABELS: Record<AiProvider, string> = {
-  anthropic: 'Claude',
-  openai:    'OpenAI',
-  gemini:    'Gemini',
-  local:     'Local',
-};
-
-/** サーバーで API キーが設定済みか（プロバイダ別）。true のものだけ選択肢に出す。 */
-export type AiProviderAvailability = Record<AiProvider, boolean>;
-
-const ALL_PROVIDERS_AVAILABLE: AiProviderAvailability = {
-  anthropic: true,
-  openai:    true,
-  gemini:    true,
-  local:     false,
-};
-
-/**
- * サーバーの /api/chat/providers を叩き、利用可能なプロバイダを返す。
- * 取得失敗時は「全て利用可能」を返す（フェイルオープン）。
- * 実際に使えないプロバイダを選んでも送信はサーバー側で 503 になるだけで、
- * ネットワーク一時障害でドロップダウンが空になるより害が小さい。
- */
-export async function fetchAiProviderAvailability(
-  apiFetch: (path: string, init?: RequestInit) => Promise<Response>,
-): Promise<AiProviderAvailability> {
-  try {
-    const res = await apiFetch('/api/chat/providers');
-    if (!res.ok) return { ...ALL_PROVIDERS_AVAILABLE };
-    const raw = (await res.json()) as Partial<AiProviderAvailability>;
-    return {
-      anthropic: raw.anthropic === true,
-      openai:    raw.openai    === true,
-      gemini:    raw.gemini    === true,
-      local:     false,
-    };
-  } catch {
-    return { ...ALL_PROVIDERS_AVAILABLE };
-  }
-}
-
-/** 利用可能なプロバイダのモデルだけに絞った選択肢一覧 */
-export function availableModelOptions(availability: AiProviderAvailability): AiModelOption[] {
-  return AI_MODEL_OPTIONS.filter(o => availability[o.provider]);
-}
-
 function isValidSelection(v: unknown): v is AiModelSelection {
   if (!v || typeof v !== 'object') return false;
   const s = v as Record<string, unknown>;
   return typeof s['provider'] === 'string' && typeof s['model'] === 'string' &&
     AI_MODEL_OPTIONS.some(o => o.provider === s['provider'] && o.model === s['model']);
-}
-
-/** value="provider:model" 形式の <select> value を分解する */
-export function parseSelectionValue(value: string): AiModelSelection | null {
-  const idx = value.indexOf(':');
-  if (idx < 0) return null;
-  const provider = value.slice(0, idx);
-  const model    = value.slice(idx + 1);
-  const found = AI_MODEL_OPTIONS.find(o => o.provider === provider && o.model === model);
-  return found ? { provider: found.provider, model: found.model } : null;
 }
 
 export function selectionToValue(selection: AiModelSelection): string {
@@ -110,15 +53,6 @@ export function modelLabel(selection: AiModelSelection): string {
     o => o.provider === selection.provider && o.model === selection.model,
   );
   return found ? found.label : selection.model;
-}
-
-/**
- * AI発言の先頭に付ける「(モデル名)」の1行（末尾の改行を含む）。
- * 発言そのものに含めるので、保管したチャットにもどのモデルの回答かが残る。
- * 表示側はこの行を含む本文をそのまま描画する（発言者名の別表示は持たない）。
- */
-export function aiSpeakerPrefix(selection: AiModelSelection): string {
-  return `(${modelLabel(selection)})\n`;
 }
 
 /**

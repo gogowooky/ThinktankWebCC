@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FileSearchClient } from '../../services/FileSearchClient';
-import type { FileSearchPage, FileSearchStatus } from '../../../server/services/fileSearchRecord';
+import type { FileSearchPage, FileSearchStatus } from '../../../server/contracts/fileSearchRecord';
 import './BundleExternal.css';
 import type { TTVault } from '../../models/TTVault';
 import { BundleFileSearchBinding } from './BundleFileSearchBinding';

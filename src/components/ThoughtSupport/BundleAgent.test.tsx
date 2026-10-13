@@ -9,7 +9,7 @@ vi.mock('../../services/ConversationService', () => ({ conversationContext: (val
 vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { instance: { mode: 'pwa' } } }));
 import { BundleAgent } from './BundleAgent';
 import { TTVault } from '../../models/TTVault';
-import type { AgentJob } from '../../../server/services/agentRecord';
+import type { AgentJob } from '../../../server/contracts/agentRecord';
 const context = (bundleId = 'a') => ({ schemaVersion: 1 as const, snapshotId: 'snapshot', vaultId: 'vault', bundleId, capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only' as const, quality: 'complete' as const,
   sources: [{ thinkId: 'source', title: '資料', content: '本文', contentHash: 'a'.repeat(64) }], manualState: null, issues: [] });
 const job = (): AgentJob => ({ schemaVersion: 1, id: 'job', kind: 'summary', instruction: 'Aの依頼', context: context(), createdAt: '2026-09-14T00:00:00Z', updatedAt: '2026-09-14T00:00:00Z',

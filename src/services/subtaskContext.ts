@@ -2,7 +2,7 @@ import type { TTVault } from '../models/TTVault';
 import type { TTThink } from '../models/TTThink';
 import { readTaskRelation } from './taskRelation';
 import { readSubtaskProgress } from './subtaskProgress';
-import { validateSubtaskContext, type SubtaskContext, type ProgressContext } from '../../server/services/subtaskContext';
+import { validateSubtaskContext, type SubtaskContext, type ProgressContext } from '../../server/contracts/subtaskContext';
 
 export function captureProgressContext(think: TTThink): ProgressContext {
   if (think.IsDirty || think.IsMetadataDirty) return { status: 'unsaved' };

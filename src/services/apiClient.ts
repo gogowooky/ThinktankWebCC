@@ -51,3 +51,5 @@ export function apiFetch(path: string, init: RequestInit = {}): Promise<Response
   if (config.apiKey) headers.set('X-Thinktank-Api-Key', config.apiKey);
   return fetch(apiUrl(path), { ...init, headers });
 }
+
+export { readApiJson } from './apiResponse';

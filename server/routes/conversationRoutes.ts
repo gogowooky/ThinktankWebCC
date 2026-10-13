@@ -1,5 +1,8 @@
 import { Router } from 'express';
 import { decodeMetadata } from '../services/metadataCodec.js';
+import { BundleRepository, nextRecordVersion, storedVersion } from '../services/BundleRepository.js';
+import { appendConversationTurn } from '../services/conversationPersistence.js';
+import type { ConversationTurn } from '../contracts/conversationRecord.js';
 import { bigqueryService } from '../services/BigQueryService.js';
 import type { BigQueryService } from '../services/BigQueryService.js';
 import { configuredProvider, providerFor, type AIProvider } from '../services/AIProvider.js';
@@ -26,17 +29,13 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
   const router = Router();
   const service = new ConversationService(provider);
   const running = new Set<string>();
+  const bundles = new BundleRepository(store, RouteError, {
+    unavailable: '会話の保存先に接続できません。', missing: '保存済みのBundleがありません。', metadata: 'Bundleの保存形式が不正です。',
+  });
   async function read(bundleId: string) {
-    const result = await store.getRecord(bundleId);
-    if (!result.success) throw new RouteError(503, '会話の保存先に接続できません。');
-    const r = result.data;
-    if (!r || r.category !== 'bundle' || r.is_deleted) throw new RouteError(404, '保存済みのBundleがありません。');
-    const metadata: unknown = decodeMetadata(r.metadata) ?? {};
-    if (!object(metadata)) throw new RouteError(422, 'Bundleの保存形式が不正です。');
+    const { metadata, version } = await bundles.read(bundleId);
     const log = readConversationLog(metadata.thinkConversations);
     if (log.turns.some(t => t.context.bundleId !== bundleId)) throw new RouteError(422, '履歴の対象Bundleが一致しません。');
-    const version = typeof r.updated_at === 'object' && r.updated_at !== null && 'value' in r.updated_at ? String(r.updated_at.value) : String(r.updated_at);
-    if (!Number.isFinite(Date.parse(version))) throw new RouteError(422, '保存版を確認できません。');
     return { metadata, log, version };
   }
   async function readChat(chatId: string, bundleId?: string, requestedVaultId?: string, syncText = false) {
@@ -49,7 +48,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     if (!object(parsedMetadata)) throw new RouteError(422, 'Chatファイルの保存形式が不正です。');
     let metadata = parsedMetadata;
     const stored = readConversationLog(metadata.thinkConversations);
-    let version = typeof chat.updated_at === 'object' && chat.updated_at !== null && 'value' in chat.updated_at ? String(chat.updated_at.value) : String(chat.updated_at);
+    let version = storedVersion(chat.updated_at);
     if (!Number.isFinite(Date.parse(version))) throw new RouteError(422, '保存版を確認できません。');
     const vaultId = requestedVaultId || stored.turns[0]?.context.vaultId;
     const recovered = vaultId ? legacyConversationTurns(chat.content ?? '', vaultId, chatId, version) : [];
@@ -60,12 +59,17 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
     let content = chat.content ?? '';
     const synchronized = mergeConversationTranscript(content, log.turns);
     if (syncText && (synchronized !== content || missing.length > 0)) {
-      const updatedAt = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
+      const updatedAt = nextRecordVersion(version);
       const result = await store.saveChatConversation(chatId, version, { ...metadata, thinkConversations: log }, synchronized, updatedAt);
       if (result.success && result.data) { content = synchronized; version = updatedAt; metadata = { ...metadata, thinkConversations: log }; }
     }
     return { metadata, log, version, content, savedChat: { id: chatId, title: chat.title ?? '', content, metadata,
       updatedAt: version, keywords: chat.keywords ?? '', relatedIds: chat.related_ids ?? '' } };
+  }
+  async function saveChatTurn(chatId: string, bundleId: string | undefined, turn: ConversationTurn) {
+    const state = await readChat(chatId, bundleId, turn.context.vaultId);
+    await appendConversationTurn(state, turn, (metadata, log, updatedAt) =>
+      store.saveChatConversation(chatId, state.version, metadata, mergeConversationTranscript(state.content, log.turns), updatedAt), RouteError);
   }
   router.get('/status', (_req, res) => { res.json({ enabled: provider.name !== 'none', provider: provider.name, model: provider.model }); });
   // 画面が Status AIChat.ModelNames.* に設定する「各社で今使える主要モデル」。AI対話が停止中なら空
@@ -142,18 +146,9 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       if (!id(bundleId) || !id(turnId)) throw new RouteError(400, '保存対象が不正です。');
       const turn: unknown = req.body; validateTurn(turn); verifyContextHashes(turn.context);
       if (turn.id !== turnId || turn.context.bundleId !== bundleId) throw new RouteError(400, '会話の保存対象が一致しません。');
-      const { metadata, log, version } = await read(bundleId);
-      const existing = log.turns.find(t => t.id === turnId);
-      if (existing) {
-        if (canonicalJson(existing) !== canonicalJson(turn)) throw new RouteError(409, '同じ会話IDの保存内容が異なります。');
-        res.json({ saved: true }); return;
-      }
-      const next = { schemaVersion: 1, turns: [...log.turns, turn] };
-      if (next.turns.length > 100 || Buffer.byteLength(JSON.stringify(next)) > MAX_LOG_BYTES) throw new RouteError(409, '履歴の保存上限です。回答をJSONで書き出してください。');
-      const updatedAt = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
-      const result = await store.saveThinkSupport(bundleId, version, { ...metadata, thinkConversations: next }, updatedAt);
-      if (!result.success) throw new RouteError(503, '保存を確認できません。保存だけ再試行してください。');
-      if (!result.data) throw new RouteError(409, '別の更新と競合しました。保存だけ再試行してください。');
+      const state = await read(bundleId);
+      await appendConversationTurn(state, turn, (metadata, _log, updatedAt) =>
+        bundles.save(bundleId, state.version, metadata, updatedAt), RouteError);
       res.json({ saved: true });
     } catch (e) { res.status(e instanceof RouteError ? e.status : 422).json({ error: e instanceof Error ? e.message : '保存できません。' }); }
   });
@@ -163,18 +158,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       if (!id(chatId) || !id(bundleId) || !id(turnId)) throw new RouteError(400, '保存対象が不正です。');
       const turn: unknown = req.body; validateTurn(turn); verifyContextHashes(turn.context);
       if (turn.id !== turnId || turn.context.bundleId !== bundleId) throw new RouteError(400, '会話の保存対象が一致しません。');
-      const { metadata, log, version, content } = await readChat(chatId, bundleId, turn.context.vaultId);
-      const existing = log.turns.find(t => t.id === turnId);
-      if (existing) {
-        if (canonicalJson(existing) !== canonicalJson(turn)) throw new RouteError(409, '同じ会話IDの保存内容が異なります。');
-        res.json({ saved: true }); return;
-      }
-      const next = { schemaVersion: 1, turns: [...log.turns, turn] };
-      if (next.turns.length > 100 || Buffer.byteLength(JSON.stringify(next)) > MAX_LOG_BYTES) throw new RouteError(409, '履歴の保存上限です。回答をJSONで書き出してください。');
-      const updatedAt = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
-      const result = await store.saveChatConversation(chatId, version, { ...metadata, thinkConversations: next }, mergeConversationTranscript(content, next.turns), updatedAt);
-      if (!result.success) throw new RouteError(503, '保存を確認できません。保存だけ再試行してください。');
-      if (!result.data) throw new RouteError(409, '別の更新と競合しました。保存だけ再試行してください。');
+      await saveChatTurn(chatId, bundleId, turn);
       res.json({ saved: true });
     } catch (e) { res.status(e instanceof RouteError ? e.status : 422).json({ error: e instanceof Error ? e.message : '保存できません。' }); }
   });
@@ -184,18 +168,7 @@ export function createConversationRoutes(provider: AIProvider = configuredProvid
       if (!id(chatId) || !id(turnId)) throw new RouteError(400, '保存対象が不正です。');
       const turn: unknown = req.body; validateTurn(turn); verifyContextHashes(turn.context);
       if (turn.id !== turnId || turn.context.scope !== 'chat-only' || turn.context.bundleId !== chatId) throw new RouteError(400, '会話の保存対象が一致しません。');
-      const { metadata, log, version, content } = await readChat(chatId, undefined, turn.context.vaultId);
-      const existing = log.turns.find(t => t.id === turnId);
-      if (existing) {
-        if (canonicalJson(existing) !== canonicalJson(turn)) throw new RouteError(409, '同じ会話IDの保存内容が異なります。');
-        res.json({ saved: true }); return;
-      }
-      const next = { schemaVersion: 1, turns: [...log.turns, turn] };
-      if (next.turns.length > 100 || Buffer.byteLength(JSON.stringify(next)) > MAX_LOG_BYTES) throw new RouteError(409, '履歴の保存上限です。回答をJSONで書き出してください。');
-      const updatedAt = new Date(Math.max(Date.now(), Date.parse(version) + 1)).toISOString();
-      const result = await store.saveChatConversation(chatId, version, { ...metadata, thinkConversations: next }, mergeConversationTranscript(content, next.turns), updatedAt);
-      if (!result.success) throw new RouteError(503, '保存を確認できません。保存だけ再試行してください。');
-      if (!result.data) throw new RouteError(409, '別の更新と競合しました。保存だけ再試行してください。');
+      await saveChatTurn(chatId, undefined, turn);
       res.json({ saved: true });
     } catch (e) { res.status(e instanceof RouteError ? e.status : 422).json({ error: e instanceof Error ? e.message : '保存できません。' }); }
   });

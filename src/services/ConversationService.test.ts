@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ fetch: vi.fn(), save: vi.fn() }));
-vi.mock('./apiClient', () => ({ apiFetch: mocks.fetch }));
+vi.mock('./apiClient', async () => ({ apiFetch: mocks.fetch, ...await import('./apiResponse') }));
 vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: { save: mocks.save } } }));
 import { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';

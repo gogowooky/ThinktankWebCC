@@ -7,7 +7,7 @@ import { TTThink } from '../../models/TTThink';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { SubtaskProposal } from './SubtaskProposal';
 import { SubtaskList } from './SubtaskList';
-import { emptyProgress } from '../../../server/services/progressRecord';
+import { emptyProgress } from '../../../server/contracts/progressRecord';
 const history = vi.hoisted(() => vi.fn());
 vi.mock('../../services/ConversationService', () => ({ ConversationClient: class { history = history; } }));
 const turn = { id: 'turn', context: { scope: 'bundle-only', vaultId: 'vault', bundleId: 'parent' },

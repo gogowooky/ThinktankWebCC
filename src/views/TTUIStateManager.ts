@@ -1,3 +1,7 @@
+import { PROP_SPECS } from './settings/propSpecs';
+import type { ConfigKey, ConfigListener, PropDef } from './settings/types';
+export type { ConfigKey, ConfigListener } from './settings/types';
+export { focusSelector } from './settings/stateHelpers';
 /**
  * TTUIStateManager.ts
  * UIアイテム状態の永続化・Undo/Redo管理。
@@ -9,8 +13,8 @@
  * ③ Undo/Redo（メモリ内スタック、最大50件）
  *
  * 【設計】
- * キーごとの全情報（読み取り・書き込み・メタデータ）を PROP_SPECS に一元集約。
- * 新しいUI設定項目を追加する場合は PROP_SPECS にオブジェクトを1つ追加するだけでよい。
+ * 領域別の設定定義を settings/propSpecs.ts で同じ順序の PROP_SPECS に集約する。
+ * このクラスは永続化・移行・Undo/Redoと通知を担当する。
  *
  * 列構成: description, key, current, default, type, candidates
  *   description:説明
@@ -23,27 +27,14 @@
 
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
-import { parseTableContent, tableSectionToContent, TableSection } from '../utils/tableFormat';
-import type { ThinktankViewMode } from './TTThinktankPanel';
-import type { SeedsViewMode } from './TTSeedsPanel';
-import type { DiscussViewMode } from './TTDiscussPanel';
-import { collectAreaIds } from './TTDiscussPanel';
-import { TTDiscussArea } from './TTDiscussArea';
-import type { HarvestViewMode } from './TTHarvestPanel';
-import type { MediaType, ContentType } from '../types';
-import { getFocusName } from '../utils/getFocusName';
-import { COLOR_PROPS, DEFAULT_COLOR_ENTRIES, DEFAULT_MARKS, isUnset, parseMarks } from '../utils/defaultColor';
-import { getAppZoom, setAppZoom } from '../utils/appZoom';
-import type { ColorProp } from '../utils/defaultColor';
+import { parseTableContent, TableSection } from '../utils/tableFormat';
+
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
-import { TTShortcutManager } from './TTShortcutManager';
-import {
-  AI_CHAT_PROVIDER_NAMES, NO_MODEL, applySelection, getModelNames, isProviderName, loadAiModelCatalog, setModelNames,
-  type AiChatProviderName,
-} from '../services/aiChatModelStatus';
+
+import { AI_CHAT_PROVIDER_NAMES, applySelection, getModelNames, loadAiModelCatalog, type AiChatProviderName } from '../services/aiChatModelStatus';
 import { apiFetch } from '../services/apiClient';
 import { loadAiModelSelection } from '../services/aiModels';
-import { StorageManager } from '../services/storage/StorageManager';
+
 import { canonicalPanelName, canonicalPanelStatusKey, canonicalPanelStatusList } from '../utils/panelNames';
 
 function canonicalStateKey(key: string): ConfigKey {
@@ -55,1055 +46,6 @@ function canonicalStateValue(key: ConfigKey, value: string): string {
   if (key === 'ToolBar.StatusMode.Text') return canonicalPanelStatusList(value);
   if (key === 'DiscussSettingPanel.Mode.Name' && ['workout', 'develop', 'discuss'].includes(value.toLowerCase())) return 'Panes';
   return value;
-}
-
-// ── ConfigKey / ConfigListener: 状態変数の型定義 ─────────────────────────────
-
-export type ConfigKey =
-  | 'ThinktankPanel.Area.IsOpen'
-  | 'ThinktankPanel.Area.OpenWidth'
-  | 'ThinktankPanel.Mode.Name'
-  | 'SeedsPanel.Area.IsOpen'
-  | 'SeedsPanel.Area.OpenWidth'
-  | 'SeedsPanel.Mode.Name'
-  | 'SeedsPanel.Bundle.ID'
-  | 'DiscussSettingPanel.Area.IsOpen'
-  | 'DiscussSettingPanel.Area.OpenWidth'
-  | 'DiscussSettingPanel.Mode.Name'
-  | 'HarvestPanel.Area.IsOpen'
-  | 'HarvestPanel.Area.OpenWidth'
-  | 'HarvestPanel.Mode.Name'
-  | 'Thinktank.Ribbon.BgColor'
-  | 'Thinktank.Area.BgColor'
-  | 'Seeds.Ribbon.BgColor'
-  | 'Seeds.Area.BgColor'
-  | 'Discuss.Ribbon.BgColor'
-  | 'Discuss.Area.BgColor'
-  | 'Harvest.Ribbon.BgColor'
-  | 'Harvest.Area.BgColor'
-  | 'ToolBar.BgColor'
-  | 'ToolBar.Color'
-  | 'TextEditor.LineNumbers.IsVisible'
-  | 'TextEditor.Bullet.StyleSet'
-  | 'TextEditor.Bullet.ColorSet'
-  | 'TextEditor.Bullet.AttrSet'
-  | 'TextEditor.Comment.StyleSet'
-  | 'TextEditor.Comment.ColorSet'
-  | 'TextEditor.WordWrap.IsVisible'
-  | 'TextEditor.Minimap.IsVisible'
-  | 'TextEditor.FullWidthSpace.IsVisible'
-  | 'TextEditor.UnicodeHighlight.IsVisible'
-  | 'TextEditor.BracketPairColorization.IsVisible'
-  | 'TextEditor.FindOption.MatchCase'
-  | 'TextEditor.FindOption.MatchWholeWord'
-  | 'TextEditor.FindOption.UseRexp'
-  | 'TextEditor.ReplaceOption.PreserveCase'
-  | 'TextEditor.Heading.Style1'
-  | 'TextEditor.Heading.Style2'
-  | 'TextEditor.Heading.Style3'
-  | 'TextEditor.Heading.Style4'
-  | 'TextEditor.Heading.Style5'
-  | 'TextEditor.Highlighter.Style1'
-  | 'TextEditor.Highlighter.Style2'
-  | 'TextEditor.Highlighter.Style3'
-  | 'TextEditor.Highlighter.Style4'
-  | 'TextEditor.Highlighter.Style5'
-  | 'TextEditor.Highlighter.Style6'
-  | 'TextEditor.Url.Style'
-  | 'TextEditor.Filepath.Style'
-  | 'TextEditor.Tag.Style'
-  | 'ToolBar.Mode.Name'
-  | 'ToolBar.StatusMode.Text'
-  | 'Application.FocusedPanel.Name'
-  | 'Application.FocusedArea.Name'
-  | 'Application.Status.ExMode'
-  | 'Application.Resource.LocalExporting'
-  | 'TextEditor.CurrentEditor.CursorPos'
-  | 'TextEditor.CurrentEditor.TextOnCursorPos'
-  | 'DiscussPanel.Panes.Count'
-  | 'DiscussPanel.FocusedPane.ID'
-  | 'DiscussPanel.FocusedPane.PaneNumber'
-  | 'DiscussPanel.FocusedPane.Mode'
-  | 'DiscussPanel.FocusedPane.FileHistory'
-  | 'DiscussPanel.FocusedPane.FileHistoryPos'
-  | 'DiscussPanel.FocusedPane.FileHistoryMax'
-  | 'DiscussPanel.DroppedFile.ID'
-  | 'DiscussPanel.Panes.Layout'
-  | 'DiscussPanel.Panes.Display'
-  | 'TextEditor.CurrentFolding.HeadingOffset'
-  | 'TextEditor.CurrentFolding.HeadingNumber'
-  | 'Application.PanelDisplay.Mode'
-  | 'Application.Display.Zoom'
-  | 'Application.Execution.Status'
-  | 'Application.Synchronization.Status'
-  | 'Application.CheckedItem.IDs'
-  | 'ThinktankPanel.Filter.CursorPos'
-  | 'ThinktankPanel.Filter.CursorPosID'
-  | 'SeedsPanel.Filter.CursorPos'
-  | 'SeedsPanel.Filter.CursorPosID'
-  // `| string` だと上記リテラルが string に潰れて補完が一切効かなくなる。
-  // `(string & {})` なら「既知キーの補完を出しつつ任意の文字列も受ける」
-  // （色設定・プリセット等の動的キーのため任意文字列は引き続き許容）。
-  // 注: これは補完のための緩和であり、typo の型レベル検出はしない。
-  // 完全な typo 検出には PROP_SPECS を単一の真実として再構成する必要がある（D-8）。
-  | (string & {});
-
-export type ConfigListener = (key: ConfigKey, value: string) => void;
-
-// ── PropDef: serialize() が返すテーブル行の型 ────────────────────────────────
-
-interface PropDef {
-  key:         ConfigKey;
-  current:     string;
-  default:     string;
-  type:        'boolean' | 'string' | 'color' | 'json' | 'integer';
-  candidates:  string;
-  description: string;
-}
-
-// ── PropSpec: キーごとの定義を一元管理するオブジェクト ──────────────────────
-//
-// 各エントリに以下をすべて記述する：
-//   panel       : 変更通知先のパネル識別子
-//   default     : デフォルト値（文字列）
-//   type        : データ型
-//   candidates  : 値変更前の照合に使う正規表現。値を抽出して next/prev で循環
-//   description : 説明
-//   get(app)    : TTApplication から現在値を文字列で読み取る
-//   set(app, v) : 文字列値 v を TTApplication のプロパティに書き込む
-//
-// 特別な値: toggle (boolean のみ), next (列挙型), prev (列挙型)
-// ※ set() 内で NotifyUpdated() は呼ばない。_applyContent() がまとめて呼ぶ。
-
-type PanelKey = 'ThinktankPanel' | 'SeedsPanel' | 'DiscussPanel' | 'HarvestPanel' | 'Application';
-
-interface PropSpec {
-  panel:       PanelKey;
-  default:     string;
-  type:        PropDef['type'];
-  candidates:  string;
-  description: string;
-  isConst?:    boolean;
-  get: (app: TTApplication) => string;
-  set: (app: TTApplication, value: string) => void;
-  /** next/prev で循環する値リストを動的に返す（省略時は candidates から抽出） */
-  getValues?: (app: TTApplication) => string[];
-}
-
-
-
-/**
- * PROP_SPECS
- * UI設定の全項目定義。新規項目の追加はここにオブジェクトを1つ追記するだけでよい。
- * _getProps() / _applyProp() はこの定義を参照するため個別修正不要。
- */
-function getFocusedPaneAllowedModes(app: TTApplication): string[] {
-  const area = app.DiscussPanel.FocusedAreaId ? app.DiscussPanel.GetArea(app.DiscussPanel.FocusedAreaId) : null;
-  if (!area || !area.ResourceID) {
-    return ['Panes', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
-  }
-  const think = app.Models.Vault.GetThink(area.ResourceID);
-  if (!think) {
-    return ['Panes', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
-  }
-  const mapping: Record<ContentType, MediaType[]> = {
-    memo: ['texteditor', 'markdown'],
-    html: ['texteditor', 'html'],
-    nettext: ['texteditor', 'markdown'],
-    bundle: ['texteditor', 'datagrid', 'markdown', 'card', 'graph'],
-    table: ['texteditor', 'datagrid', 'card'],
-    chat: ['texteditor', 'chat'],
-    links: ['texteditor', 'markdown'],
-  };
-  const allowed = mapping[think.ContentType] || ['texteditor', 'markdown'];
-  return allowed.map(m => capitalize(m));
-}
-
-/** フォーカスされているPane（DiscussArea）を返す */
-function getFocusedArea(app: TTApplication): TTDiscussArea | null {
-  const id = app.DiscussPanel.FocusedAreaId;
-  return id ? (app.DiscussPanel.GetArea(id) ?? null) : null;
-}
-
-/**
- * AIChat.ModelNames.{プロバイダ}：今使える主要モデルの ID の CSV（先頭が選択中）。
- * 値は全パネル共通の状態（services/aiChatModelStatus.ts）に持つ。使えるモデルの一覧は
- * 起動時にサーバーから取得し（refreshAiModelCatalog）、一覧に無い ID は書き込み時に捨てる。
- */
-function aiChatModelNameSpecs(): Record<string, PropSpec> {
-  const specs: Record<string, PropSpec> = {};
-  for (const name of AI_CHAT_PROVIDER_NAMES) {
-    specs[`AIChat.ModelNames.${name}`] = {
-      panel: 'Application',
-      default: NO_MODEL,
-      type: 'string',
-      // 一覧は実行時に決まるので、ここでは CSV であることだけを確かめる
-      candidates: '^[^,]+(,[^,]+)*$',
-      description: `各パネルのAIChatが${name}のときのモデルID（CSV。先頭が選択中）`,
-      get: () => getModelNames(name),
-      set: (_app, v) => { setModelNames(name, v); },
-    };
-  }
-  return specs;
-}
-
-/** {Panel}.AIChat.ModelName：そのパネルの AIChat が使うプロバイダ名 */
-function aiChatProviderSpec(
-  panel: PanelKey,
-  description: string,
-  get: (app: TTApplication) => AiChatProviderName,
-  set: (app: TTApplication, v: AiChatProviderName) => void,
-): PropSpec {
-  return {
-    panel,
-    default: 'Claude',
-    type: 'string',
-    candidates: `^(${AI_CHAT_PROVIDER_NAMES.join('|')})$`,
-    description,
-    get,
-    set: (app, v) => { if (isProviderName(v)) set(app, v); },
-  };
-}
-
-// 静的な文字列インデックス（色設定・プリセット等の動的キーを許容するため）。
-// ConfigKey は呼び出し側の補完のためだけの型で、PROP_SPECS の網羅は強制しない。
-const PROP_SPECS: Record<string, PropSpec> = {
-
-  // ── ThinktankPanel ──────────────────────────────────────────────────────
-  'ThinktankPanel.Area.IsOpen': {
-    panel: 'ThinktankPanel',
-    default: 'true', type: 'boolean', candidates: '^(true|false)$',
-    description: '左パネル表示',
-    get: (app) => String(app.ThinktankPanel.IsAreaOpen),
-    set: (app, v) => { app.ThinktankPanel.IsAreaOpen = parseBool(v, app.ThinktankPanel.IsAreaOpen); },
-  },
-  'ThinktankPanel.Area.OpenWidth': {
-    panel: 'ThinktankPanel',
-    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'ThinktankパネルOpen時の幅',
-    get: (app) => app.ThinktankPanel.AreaWidthMode,
-    set: (app, v) => { app.ThinktankPanel.AreaWidthMode = v as typeof app.ThinktankPanel.AreaWidthMode; },
-  },
-  'ThinktankPanel.Mode.Name': {
-    panel: 'ThinktankPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Settings)$',
-    description: '左パネルモード',
-    get: (app) => capitalize(app.ThinktankPanel.ViewMode),
-    set: (app, v) => { app.ThinktankPanel.ViewMode = v.toLowerCase() as ThinktankViewMode; },
-  },
-  'ThinktankPanel.CurrentItem.ID': {
-    panel: 'ThinktankPanel',
-    default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6})?$',
-    description: '左パネル現在フォーカス項目ID',
-    get: (app) => app.ThinktankPanel.CurrentItemID || '',
-    set: (app, v) => { app.ThinktankPanel.CurrentItemID = v; },
-  },
-  'Application.CheckedItem.IDs': {
-    panel: 'Application',
-    default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6},)*\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6}$|^$',
-    description: 'チェックされたアイテムID群',
-    get: (app) => app.ThinktankPanel.CheckedThoughtIDs.join(','),
-    set: (app, v) => {
-      const ids = v ? v.split(',').map(id => id.trim()).filter(Boolean) : [];
-      const cur = app.ThinktankPanel.CheckedThoughtIDs;
-      if (cur.length !== ids.length || !cur.every((id, idx) => id === ids[idx])) {
-        app.ThinktankPanel.CheckedThoughtIDs = ids;
-        app.SeedsPanel.CheckedThoughtIDs = ids;
-      }
-    },
-  },
-
-  // ── SeedsPanel ────────────────────────────────────────────────────────────────
-  'SeedsPanel.CurrentItem.ID': {
-    panel: 'SeedsPanel',
-    default: '', type: 'string', candidates: '^(\\d{4}\\-\\d{2}\\-\\d{2}\\-\\d{6})?$',
-    description: '上部パネル現在フォーカス項目ID',
-    get: (app) => app.SeedsPanel.CurrentItemID || '',
-    set: (app, v) => { app.SeedsPanel.CurrentItemID = v; },
-  },
-  'SeedsPanel.Area.IsOpen': {
-    panel: 'SeedsPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: '上部パネル表示',
-    get: (app) => String(app.SeedsPanel.IsAreaOpen),
-    set: (app, v) => { app.SeedsPanel.IsAreaOpen = parseBool(v, app.SeedsPanel.IsAreaOpen); },
-  },
-  'SeedsPanel.Area.OpenWidth': {
-    panel: 'SeedsPanel',
-    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'SeedsパネルOpen時の幅',
-    get: (app) => app.SeedsPanel.AreaWidthMode,
-    set: (app, v) => { app.SeedsPanel.AreaWidthMode = v as typeof app.SeedsPanel.AreaWidthMode; },
-  },
-  'SeedsPanel.Mode.Name': {
-    panel: 'SeedsPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Graph|Chat|Settings)$',
-    description: '上部パネル表示モード',
-    get: (app) => capitalize(app.SeedsPanel.ViewMode),
-    set: (app, v) => { app.SeedsPanel.SetViewMode(v.toLowerCase() as SeedsViewMode); },
-  },
-  'SeedsPanel.Bundle.ID': {
-    panel: 'SeedsPanel',
-    default: 'none', type: 'string', candidates: '.*',
-    description: 'SeedsパネルのbundleファイルID',
-    get: (app) => app.SeedsPanel.BundleID || 'none',
-    set: (app, v) => {
-      if (v === 'none') {
-        app.SeedsPanel.ClearBundle();
-      } else {
-        app.SeedsPanel.OpenBundle(v);
-      }
-    },
-  },
-
-  // ── Filter CursorPos ─────────────────────────────────────────────────────────────
-  'ThinktankPanel.Filter.CursorPos': {
-    panel: 'ThinktankPanel',
-    default: '0', type: 'string', candidates: '.*',
-    description: 'Thinktank>Think一覧のカーソル位置',
-    isConst: true,
-    get: (app) => {
-      const list = app.ThinktankPanel.FilteredThoughts;
-      const curId = app.ThinktankPanel.CurrentItemID;
-      if (!curId || list.length === 0) return '0';
-      const idx = list.findIndex(t => t.ID === curId);
-      return idx >= 0 ? String(idx + 1) : '0';
-    },
-    set: (app, v) => {
-      const pos = parseInt(v, 10);
-      if (isNaN(pos) || pos <= 0) {
-        app.ThinktankPanel.CurrentItemID = '';
-        return;
-      }
-      const list = app.ThinktankPanel.FilteredThoughts;
-      const idx = pos - 1;
-      if (idx < list.length) {
-        app.ThinktankPanel.CurrentItemID = list[idx].ID;
-      }
-    },
-  },
-  'SeedsPanel.Filter.CursorPos': {
-    panel: 'SeedsPanel',
-    default: '0', type: 'string', candidates: '.*',
-    description: 'Seeds>Think一覧のカーソル位置',
-    isConst: true,
-    get: (app) => {
-      const list = app.SeedsPanel.FilteredThoughts;
-      const curId = app.SeedsPanel.CurrentItemID;
-      if (!curId || list.length === 0) return '0';
-      const idx = list.findIndex(t => t.ID === curId);
-      return idx >= 0 ? String(idx + 1) : '0';
-    },
-    set: (app, v) => {
-      const pos = parseInt(v, 10);
-      if (isNaN(pos) || pos <= 0) {
-        app.SeedsPanel.CurrentItemID = '';
-        return;
-      }
-      const list = app.SeedsPanel.FilteredThoughts;
-      const idx = pos - 1;
-      if (idx < list.length) {
-        app.SeedsPanel.CurrentItemID = list[idx].ID;
-      }
-    },
-  },
-  'ThinktankPanel.Filter.CursorPosID': {
-    panel: 'ThinktankPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: 'Thinktank>Think一覧のカーソル位置のID',
-    isConst: true,
-    get: (app) => {
-      const curId = app.ThinktankPanel.CurrentItemID;
-      // 一覧に存在しないID（フィルタ変更で消えた等）はカーソルなしとみなす
-      return app.ThinktankPanel.FilteredThoughts.some(t => t.ID === curId) ? curId : '';
-    },
-    set: (app, v) => {
-      if (!v || app.ThinktankPanel.FilteredThoughts.some(t => t.ID === v)) {
-        app.ThinktankPanel.CurrentItemID = v;
-      }
-    },
-  },
-  'SeedsPanel.Filter.CursorPosID': {
-    panel: 'SeedsPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: 'Seeds>Think一覧のカーソル位置のID',
-    isConst: true,
-    get: (app) => {
-      const curId = app.SeedsPanel.CurrentItemID;
-      return app.SeedsPanel.FilteredThoughts.some(t => t.ID === curId) ? curId : '';
-    },
-    set: (app, v) => {
-      if (!v || app.SeedsPanel.FilteredThoughts.some(t => t.ID === v)) {
-        app.SeedsPanel.CurrentItemID = v;
-      }
-    },
-  },
-
-  // ── DiscussPanel ───────────────────────────────────────────────────────────────
-  'DiscussSettingPanel.Area.IsOpen': {
-    panel: 'DiscussPanel',
-    default: 'true', type: 'boolean', candidates: '^(true|false)$',
-    description: 'ワークアウトパネル表示',
-    get: (app) => String(app.DiscussPanel.IsAreaOpen),
-    set: (app, v) => { app.DiscussPanel.IsAreaOpen = parseBool(v, app.DiscussPanel.IsAreaOpen); },
-  },
-  'DiscussSettingPanel.Area.OpenWidth': {
-    panel: 'DiscussPanel',
-    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'ワークアウトパネルOpen時の幅',
-    get: (app) => app.DiscussPanel.AreaWidthMode,
-    set: (app, v) => { app.DiscussPanel.AreaWidthMode = v as typeof app.DiscussPanel.AreaWidthMode; },
-  },
-  'DiscussSettingPanel.Mode.Name': {
-    panel: 'DiscussPanel',
-    default: 'Panes', type: 'string', candidates: '^(Panes|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
-    description: 'ワークアウト設定パネルモード',
-    get: (app) => capitalize(app.DiscussPanel.ViewMode),
-    set: (app, v) => { app.DiscussPanel.SetViewMode((['workout', 'develop', 'discuss'].includes(v.toLowerCase()) ? 'panes' : v.toLowerCase()) as DiscussViewMode); },
-  },
-
-  // ── TextEditor 検索・置換オプション ────────────────────────────────────────
-  'TextEditor.FindOption.MatchCase': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: '検索オプション：大文字小文字を区別',
-    get: (app) => String(app.DiscussPanel.TextEditor.FindOption.MatchCase),
-    set: (app, v) => { app.DiscussPanel.TextEditor.FindOption.MatchCase = parseBool(v, app.DiscussPanel.TextEditor.FindOption.MatchCase); },
-  },
-  'TextEditor.FindOption.MatchWholeWord': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: '検索オプション：単語単位で検索',
-    get: (app) => String(app.DiscussPanel.TextEditor.FindOption.MatchWholeWord),
-    set: (app, v) => { app.DiscussPanel.TextEditor.FindOption.MatchWholeWord = parseBool(v, app.DiscussPanel.TextEditor.FindOption.MatchWholeWord); },
-  },
-  'TextEditor.FindOption.UseRexp': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: '検索オプション：正規表現を使用',
-    get: (app) => String(app.DiscussPanel.TextEditor.FindOption.UseRexp),
-    set: (app, v) => { app.DiscussPanel.TextEditor.FindOption.UseRexp = parseBool(v, app.DiscussPanel.TextEditor.FindOption.UseRexp); },
-  },
-  'TextEditor.ReplaceOption.PreserveCase': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: '置換オプション：大文字小文字を保持',
-    get: (app) => String(app.DiscussPanel.TextEditor.ReplaceOption.PreserveCase),
-    set: (app, v) => { app.DiscussPanel.TextEditor.ReplaceOption.PreserveCase = parseBool(v, app.DiscussPanel.TextEditor.ReplaceOption.PreserveCase); },
-  },
-
-  // ── TextEditor（テキストエディタ設定）──────────────────────────────────────
-  'TextEditor.LineNumbers.IsVisible': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: '行番号表示',
-    get: (app) => String(app.DiscussPanel.TextEditor.LineNumbers.IsVisible),
-    set: (app, v) => { app.DiscussPanel.TextEditor.LineNumbers.IsVisible = parseBool(v, app.DiscussPanel.TextEditor.LineNumbers.IsVisible); },
-  },
-  'TextEditor.Bullet.Marks': {
-    panel: 'DiscussPanel',
-    default: DEFAULT_MARKS.Bullet, type: 'string', candidates: '.*',
-    description: '箇条書きの行頭記号（CSV。n番目が TextEditor.Bullet.StyleN に対応）',
-    get: (app) => app.DiscussPanel.TextEditor.Bullet.Marks,
-    set: (app, v) => { app.DiscussPanel.TextEditor.Bullet.Marks = v; },
-  },
-  'TextEditor.Bullet.StyleNum': {
-    panel: 'DiscussPanel',
-    default: String(parseMarks(DEFAULT_MARKS.Bullet).length),
-    type: 'integer', candidates: '^[0-9]+$',
-    // Marks のアイテム数そのものなので直接は書き換えられない（登録数を変えるには Marks を編集する）
-    description: '箇条書きスタイルの登録数（TextEditor.Bullet.Marks のアイテム数）',
-    get: (app) => String(parseMarks(app.DiscussPanel.TextEditor.Bullet.Marks).length),
-    set: () => {},
-  },
-  'TextEditor.Comment.Marks': {
-    panel: 'DiscussPanel',
-    default: DEFAULT_MARKS.Comment, type: 'string', candidates: '.*',
-    description: 'コメントの行頭記号（CSV。n番目が TextEditor.Comment.StyleN に対応）',
-    get: (app) => app.DiscussPanel.TextEditor.Comment.Marks,
-    set: (app, v) => { app.DiscussPanel.TextEditor.Comment.Marks = v; },
-  },
-  'TextEditor.Comment.StyleNum': {
-    panel: 'DiscussPanel',
-    default: String(parseMarks(DEFAULT_MARKS.Comment).length),
-    type: 'integer', candidates: '^[0-9]+$',
-    // Bullet.StyleNum と同じく Marks のアイテム数そのもの（直接は書き換えられない）
-    description: 'コメントスタイルの登録数（TextEditor.Comment.Marks のアイテム数）',
-    get: (app) => String(parseMarks(app.DiscussPanel.TextEditor.Comment.Marks).length),
-    set: () => {},
-  },
-  'TextEditor.WordWrap.IsVisible': {
-    panel: 'DiscussPanel',
-    default: 'true', type: 'boolean', candidates: '^(true|false)$',
-    description: '折り返し',
-    get: (app) => String(app.DiscussPanel.TextEditor.WordWrap.IsVisible),
-    set: (app, v) => { app.DiscussPanel.TextEditor.WordWrap.IsVisible = parseBool(v, app.DiscussPanel.TextEditor.WordWrap.IsVisible); },
-  },
-  'TextEditor.Minimap.IsVisible': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: 'ミニマップ',
-    get: (app) => String(app.DiscussPanel.TextEditor.Minimap.IsVisible),
-    set: (app, v) => { app.DiscussPanel.TextEditor.Minimap.IsVisible = parseBool(v, app.DiscussPanel.TextEditor.Minimap.IsVisible); },
-  },
-  'TextEditor.FullWidthSpace.IsVisible': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: '全角スペース表示',
-    get: (app) => String(app.DiscussPanel.TextEditor.FullWidthSpace.IsVisible),
-    set: (app, v) => { app.DiscussPanel.TextEditor.FullWidthSpace.IsVisible = parseBool(v, app.DiscussPanel.TextEditor.FullWidthSpace.IsVisible); },
-  },
-  'TextEditor.UnicodeHighlight.IsVisible': {
-    panel: 'DiscussPanel',
-    default: 'false', type: 'boolean', candidates: '^(true|false)$',
-    description: 'Unicode強調',
-    get: (app) => String(app.DiscussPanel.TextEditor.UnicodeHighlight.IsVisible),
-    set: (app, v) => { app.DiscussPanel.TextEditor.UnicodeHighlight.IsVisible = parseBool(v, app.DiscussPanel.TextEditor.UnicodeHighlight.IsVisible); },
-  },
-  'TextEditor.BracketPairColorization.IsVisible': {
-    panel: 'DiscussPanel',
-    default: 'true', type: 'boolean', candidates: '^(true|false)$',
-    description: '括弧ペア色分け',
-    get: (app) => String(app.DiscussPanel.TextEditor.BracketPairColorization.IsVisible),
-    set: (app, v) => { app.DiscussPanel.TextEditor.BracketPairColorization.IsVisible = parseBool(v, app.DiscussPanel.TextEditor.BracketPairColorization.IsVisible); },
-  },
-  // TextEditor.Text / .Selection / .Occurrence / .FoldingHeader の色は専用の定義を持たず、
-  // 下の DEFAULT_COLOR_ENTRIES ループが docs/DefaultColor.md から登録する（実体は ColorStatus）。
-
-  // ── ToolBar 表示モード ────────────────────────────────────────────────
-  'ToolBar.Mode.Name': {
-    panel: 'DiscussPanel',
-    default: 'Copyright', type: 'string',
-    candidates: '^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$',
-    description: 'Toolバー表示モード',
-    get: (app) => app.DiscussPanel.ToolBarMode,
-    set: (app, v) => { app.DiscussPanel.ToolBarMode = v; },
-  },
-  'ToolBar.StatusMode.Text': {
-    panel: 'DiscussPanel',
-    default: 'ThinktankPanel.Mode.Name,SeedsPanel.Mode.Name,DiscussSettingPanel.Mode.Name',
-    type: 'string',
-    candidates: '.*',
-    description: 'ステータスバー表示項目 (CSV)',
-    get: (app) => app.DiscussPanel.StatusModeText,
-    set: (app, v) => { app.DiscussPanel.StatusModeText = v; },
-  },
-  'ToolBar.HighlighterMode.Text': {
-    panel: 'DiscussPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: 'ハイライターの入力テキスト',
-    get: (app) => app.DiscussPanel.HighlightWord || '',
-    set: (app, v) => { app.DiscussPanel.HighlightWord = v; },
-  },
-  'ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag': {
-    panel: 'DiscussPanel',
-    default: 'true', type: 'boolean', candidates: '^(true|false)$',
-    description: 'コンテンツで絞込みのキーワードをハイライトする',
-    get: (app) => String(app.DiscussPanel.AddContentSearchKeywordFlag),
-    set: (app, v) => { app.DiscussPanel.AddContentSearchKeywordFlag = parseBool(v, app.DiscussPanel.AddContentSearchKeywordFlag); },
-  },
-  'ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag': {
-    panel: 'DiscussPanel',
-    default: 'true', type: 'boolean', candidates: '^(true|false)$',
-    description: 'タイトルで絞込みのキーワードをハイライトする',
-    get: (app) => String(app.DiscussPanel.AddTitleSearchKeywordFlag),
-    set: (app, v) => { app.DiscussPanel.AddTitleSearchKeywordFlag = parseBool(v, app.DiscussPanel.AddTitleSearchKeywordFlag); },
-  },
-  'ToolBar.CommandMode.Text': {
-    panel: 'DiscussPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: 'コマンドラインの入力テキスト',
-    get: (app) => app.DiscussPanel.CommandText || '',
-    set: (app, v) => { app.DiscussPanel.CommandText = v; },
-  },
-  'ToolBar.TranslateMode.Text': {
-    panel: 'DiscussPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: '翻訳の入力テキスト',
-    get: (app) => app.DiscussPanel.TranslateText || '',
-    set: (app, v) => { app.DiscussPanel.TranslateText = v; },
-  },
-  'ToolBar.ReminderMode.Text': {
-    panel: 'DiscussPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: 'リマインダーの入力テキスト',
-    get: (app) => app.DiscussPanel.ReminderText || '',
-    set: (app, v) => { app.DiscussPanel.ReminderText = v; },
-  },
-
-  // ── Application ──────────────────────────────────────────────────────────
-  'Application.FocusedPanel.Name': {
-    panel: 'Application',
-    default: 'Thinktank', type: 'string',
-    candidates: '^(Thinktank|Seeds|DiscussSetting|Discuss|Harvest)$',
-    description: 'フォーカスカラム',
-    getValues: (_app) => localStorage.getItem('tt-layout-mode') === 'simple'
-      ? ['Thinktank', 'DiscussSetting', 'Discuss']
-      : ['Thinktank', 'Seeds', 'DiscussSetting', 'Discuss', 'Harvest'],
-    get: (app) => app.FocusedColumn,
-    set: (app, v) => {
-      app.FocusedColumn = v;
-      const SELECTORS: Record<string, string> = {
-        'Thinktank':      '.thinktank-panel, .thinktank-area',
-        'Seeds':       '.seeds-panel, .seeds-area',
-        'DiscussSetting': '.discuss-setting-area',
-        'Discuss':        '.discuss-area',
-        'Harvest':        '.harvest-panel, .harvest-area',
-      };
-      const effectiveSel = (v === 'DiscussSetting' && !app.DiscussPanel.IsAreaOpen)
-        ? '.vertical-tab-bar--discuss .vertical-tab-bar__toggle'
-        : SELECTORS[v];
-      if (effectiveSel) {
-        focusSelector(effectiveSel);
-      }
-    },
-  },
-
-  // ── HarvestPanel ─────────────────────────────────────────────────────────
-  'HarvestPanel.Area.IsOpen': {
-    panel: 'HarvestPanel',
-    default: 'true', type: 'boolean', candidates: '^(true|false)$',
-    description: '右パネル表示',
-    get: (app) => String(app.HarvestPanel.IsAreaOpen),
-    set: (app, v) => { app.HarvestPanel.IsAreaOpen = parseBool(v, app.HarvestPanel.IsAreaOpen); },
-  },
-  'HarvestPanel.Area.OpenWidth': {
-    panel: 'HarvestPanel',
-    default: 'init', type: 'string', candidates: '^(init|user|foredit)$',
-    description: 'HarvestパネルOpen時の幅',
-    get: (app) => app.HarvestPanel.AreaWidthMode,
-    set: (app, v) => { app.HarvestPanel.AreaWidthMode = v as typeof app.HarvestPanel.AreaWidthMode; },
-  },
-  'HarvestPanel.Mode.Name': {
-    panel: 'HarvestPanel',
-    default: 'Chat', type: 'string', candidates: '^(Chat|Settings)$',
-    description: '右パネル表示モード',
-    get: (app) => capitalize(app.HarvestPanel.ViewMode),
-    set: (app, v) => { app.HarvestPanel.SetViewMode(v.toLowerCase() as HarvestViewMode); },
-  },
-
-  // ── AIChat モデル（docs/Thinktank_Status-Action-Binding.md の # Panel AIChat）──
-  ...aiChatModelNameSpecs(),
-  'ThinktankPanel.AIChat.ModelName': aiChatProviderSpec('ThinktankPanel', 'ThinktankPanelのAIChatで用いるAIモデル名',
-    app => app.ThinktankPanel.AIChatProviderName, (app, v) => { app.ThinktankPanel.AIChatProviderName = v; }),
-  'SeedsPanel.AIChat.ModelName': aiChatProviderSpec('SeedsPanel', 'SeedsPanelのAIChatで用いるAIモデル名',
-    app => app.SeedsPanel.AIChatProviderName, (app, v) => { app.SeedsPanel.AIChatProviderName = v; }),
-  'DiscussSettingPanel.AIChat.ModelName': aiChatProviderSpec('DiscussPanel', 'DiscussSettingPanelのAIChatで用いるAIモデル名',
-    app => app.DiscussPanel.SettingAIChatProviderName, (app, v) => { app.DiscussPanel.SettingAIChatProviderName = v; }),
-  'DiscussPanel.AIChat.ModelName': aiChatProviderSpec('DiscussPanel', 'DiscussPanelのAIChatで用いるAIモデル名',
-    app => app.DiscussPanel.AIChatProviderName, (app, v) => { app.DiscussPanel.AIChatProviderName = v; }),
-  'HarvestPanel.AIChat.ModelName': aiChatProviderSpec('HarvestPanel', 'HarvestPanelのAIChatで用いるAIモデル名',
-    app => app.HarvestPanel.AIChatProviderName, (app, v) => { app.HarvestPanel.AIChatProviderName = v; }),
-
-  // パネル・ツールバーのテーマ色は docs/DefaultColor.md の <Panel>.Theme.* が定義元。
-  // 下の DEFAULT_COLOR_ENTRIES ループが登録し、CSS変数への展開は utils/panelTheme.ts が行う。
-
-  // ── KeyboardFocus & Pane Info ──────────────────────────────────────────────
-  'Application.FocusedArea.Name': {
-    panel: 'Application',
-    default: 'None', type: 'string', candidates: '.*',
-    description: 'キーボードフォーカスエリア名',
-    isConst: true,
-    getValues: (app) => {
-      const list: string[] = [];
-      const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-      const isSimple = localStorage.getItem('tt-layout-mode') === 'simple';
-
-      if (app.ThinktankPanel.IsAreaOpen) {
-        list.push(`Thinktank.${capitalize(app.ThinktankPanel.ViewMode)}`);
-      }
-      if (!isSimple && app.SeedsPanel.IsAreaOpen) {
-        list.push(`Seeds.${capitalize(app.SeedsPanel.ViewMode)}`);
-      }
-      if (app.DiscussPanel.IsAreaOpen) {
-        list.push(`DiscussSetting.${capitalize(app.DiscussPanel.ViewMode)}`);
-      }
-      if (app.DiscussPanel.Areas.length > 0) {
-        for (const area of app.DiscussPanel.Areas) {
-          list.push(`Discuss.${capitalize(area.MediaType)}`);
-        }
-      }
-      if (!isSimple && app.HarvestPanel.IsAreaOpen) {
-        list.push(`Harvest.${capitalize(app.HarvestPanel.ViewMode)}`);
-      }
-      list.push(`ToolBar.${capitalize(app.DiscussPanel.ToolBarMode)}`);
-
-      return Array.from(new Set(list));
-    },
-    get: (_app) => getFocusName(document.activeElement),
-    set: (app, value) => {
-      if (!value || value === 'None') {
-        if (document.activeElement instanceof HTMLElement) {
-          document.activeElement.blur();
-        }
-        return;
-      }
-      if (value === 'Application.StatusBarArea') {
-        focusSelector('.ApplicationStatusBarArea');
-        return;
-      }
-
-      const parts = value.split('.');
-      const panelName = parts[0];
-      const subName = parts[1] || '';
-
-      const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-      const subNameCap = capitalize(subName);
-
-      if (panelName === 'Thinktank') {
-        app.ThinktankPanel.IsAreaOpen = true;
-        if (subName) {
-          app.ThinktankPanel.ViewMode = subName.toLowerCase() as any;
-        }
-        focusSelector('.thinktank-panel, .thinktank-area');
-      } else if (panelName === 'Seeds') {
-        app.SeedsPanel.IsAreaOpen = true;
-        if (subName) {
-          app.SeedsPanel.SetViewMode(subName.toLowerCase() as any);
-        }
-        focusSelector('.seeds-panel, .seeds-area');
-      } else if (panelName === 'DiscussSetting') {
-        app.DiscussPanel.IsAreaOpen = true;
-        if (subName) {
-          app.DiscussPanel.SetViewMode(subName.toLowerCase() as any);
-        }
-        focusSelector('.discuss-setting-area');
-      } else if (panelName === 'Harvest') {
-        app.HarvestPanel.IsAreaOpen = true;
-        if (subName) {
-          app.HarvestPanel.SetViewMode(subName.toLowerCase() as any);
-        }
-        focusSelector('.harvest-panel, .harvest-area');
-      } else if (panelName === 'ToolBar') {
-        if (subName) {
-          const modeMap: Record<string, string> = {
-            'keyaction': 'KeyAction',
-          };
-          const toolbarMode = modeMap[subName.toLowerCase()] || subNameCap;
-          app.DiscussPanel.ToolBarMode = toolbarMode;
-        }
-        focusSelector('.discuss-toolbar');
-      } else if (panelName === 'Discuss') {
-        if (subName && subName.toLowerCase() !== 'none') {
-          const typeLower = subName.toLowerCase();
-          setTimeout(() => {
-            const areas = Array.from(document.querySelectorAll<HTMLElement>('.discuss-area'));
-            const targetArea = areas.find(area => {
-              const content = area.querySelector<HTMLElement>('.discuss-area__content');
-              return content?.dataset.mediaType?.toLowerCase() === typeLower;
-            }) || areas[0];
-            
-            if (targetArea) {
-              const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
-              if (targetArea.matches(FOCUSABLE) && !targetArea.closest('[inert]')) {
-                targetArea.focus({ preventScroll: true });
-                return;
-              }
-              const focusable = Array.from(targetArea.querySelectorAll<HTMLElement>(FOCUSABLE))
-                .find(el => !el.closest('[inert]'));
-              if (focusable) focusable.focus({ preventScroll: true });
-              else if (!targetArea.closest('[inert]')) targetArea.focus({ preventScroll: true });
-            }
-          }, 50);
-        } else {
-          focusSelector('.discuss-area');
-        }
-      }
-    },
-  },
-  'Application.PanelDisplay.Mode': {
-    panel: 'Application',
-    default: 'Think', type: 'string', candidates: '^(Think|Edit)$',
-    description: 'パネル表示モード（Think=全表示, Edit=簡易表示）',
-    get: () => localStorage.getItem('tt-layout-mode') === 'simple' ? 'Edit' : 'Think',
-    set: (_app, v) => { localStorage.setItem('tt-layout-mode', v === 'Edit' ? 'simple' : 'sipoc'); },
-  },
-  'Application.Display.Zoom': {
-    panel: 'Application',
-    default: '100', type: 'integer', candidates: '^[0-9]{2,3}$',
-    description: '表示文字サイズの倍率（％。50〜200、10刻み）',
-    get: () => String(getAppZoom()),
-    set: (_app, v) => { setAppZoom(parseInt(v, 10) || 100); },
-  },
-  'Application.Execution.Status': {
-    panel: 'Application',
-    default: 'PWA', type: 'string', candidates: '^(PWA|Local|Electron)$',
-    description: 'アプリケーションの起動モード',
-    isConst: true,
-    get: () => {
-      const mode = StorageManager.instance.mode;
-      if (mode === 'electron') return 'Electron';
-      if (mode === 'local') return 'Local';
-      return 'PWA';
-    },
-    set: () => {},
-  },
-  'Application.Synchronization.Status': {
-    panel: 'Application',
-    default: 'synced', type: 'string', candidates: '^(synced|syncing|pending|error|offline)$',
-    description: 'アプリケーションの同期状態',
-    isConst: true,
-    get: (app) => app.Status.SyncState || 'synced',
-    set: () => {},
-  },
-  'Application.Status.ExMode': {
-    panel: 'Application',
-    default: 'None', type: 'string', candidates: '.*',
-    description: '一時拡張ショートカットモード',
-    isConst: true,
-    get: (app) => app.Status.ExMode || 'None',
-    set: () => {},
-  },
-  'Application.Resource.LocalExporting': {
-    panel: 'Application',
-    default: '0%', type: 'string', candidates: '.*',
-    description: 'エクスポート進捗率',
-    isConst: true,
-    get: (app) => app.Status.LocalExporting || '0%',
-    set: () => {},
-  },
-  'DiscussPanel.Panes.Count': {
-    panel: 'DiscussPanel',
-    default: '0', type: 'string', candidates: '^[0-9]+$',
-    description: '表示されているペインの数',
-    isConst: true,
-    get: (app) => String(app.DiscussPanel.Areas.length),
-    set: () => {},
-  },
-  'DiscussPanel.FocusedPane.ID': {
-    panel: 'DiscussPanel',
-    default: 'None', type: 'string', candidates: '.*',
-    description: 'フォーカスがあるペインのID',
-    isConst: true,
-    get: (app) => app.DiscussPanel.FocusedAreaId ?? 'None',
-    set: () => {},
-  },
-  'DiscussPanel.FocusedPane.PaneNumber': {
-    panel: 'DiscussPanel',
-    default: '0', type: 'string', candidates: '^[0-9]+$',
-    description: 'フォーカスがあるペインの番号（1始まり）',
-    isConst: true,
-    get: (app) => {
-      const layout = app.DiscussPanel.Layout;
-      if (!layout || !app.DiscussPanel.FocusedAreaId) return '0';
-      const order = collectAreaIds(layout);
-      const idx = order.indexOf(app.DiscussPanel.FocusedAreaId);
-      return idx >= 0 ? String(idx + 1) : '0';
-    },
-    set: () => {},
-  },
-  'DiscussPanel.FocusedPane.Mode': {
-    panel: 'DiscussPanel',
-    default: 'Discuss', type: 'string',
-    candidates: '^(Discuss|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
-    description: 'フォーカスがあるペインの表示モード',
-    getValues: (app) => getFocusedPaneAllowedModes(app),
-    get: (app) => {
-      const area = app.DiscussPanel.FocusedAreaId ? app.DiscussPanel.GetArea(app.DiscussPanel.FocusedAreaId) : null;
-      return capitalize(area?.MediaType ?? 'None');
-    },
-    set: (app, v) => {
-      if (app.DiscussPanel.FocusedAreaId) {
-        const allowed = getFocusedPaneAllowedModes(app).map(x => x.toLowerCase());
-        if (allowed.includes(v.toLowerCase())) {
-          app.DiscussPanel.SetMediaType(app.DiscussPanel.FocusedAreaId, v.toLowerCase() as MediaType);
-        }
-      }
-    },
-  },
-  'DiscussPanel.FocusedPane.FileHistory': {
-    panel: 'DiscussPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: 'フォーカスがあるペインのLoadファイル履歴（古い順・最大30件のCSV）',
-    isConst: true,
-    get: (app) => getFocusedArea(app)?.FileHistory.map(h => h.id).join(',') ?? '',
-    set: () => {},
-  },
-  'DiscussPanel.FocusedPane.FileHistoryPos': {
-    panel: 'DiscussPanel',
-    default: '0', type: 'string', candidates: '^[0-9]+$',
-    description: 'フォーカスがあるペインのファイル履歴の現在位置（1始まり。0=履歴なし）',
-    isConst: true,
-    get: (app) => String(getFocusedArea(app)?.HistoryPos ?? 0),
-    set: () => {},
-  },
-  'DiscussPanel.FocusedPane.FileHistoryMax': {
-    panel: 'DiscussPanel',
-    default: '0', type: 'string', candidates: '^[0-9]+$',
-    description: 'フォーカスがあるペインのファイル履歴の件数（最大30）',
-    isConst: true,
-    get: (app) => String(getFocusedArea(app)?.HistoryMax ?? 0),
-    set: () => {},
-  },
-  'DiscussPanel.DroppedFile.ID': {
-    panel: 'DiscussPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: '各パネルのThink一覧のThinkファイルがDiscussパネル内にDropされた際に設定されるファイルID',
-    isConst: true,
-    get: (app) => app.DiscussPanel.DroppedFileID || '',
-    set: () => {},
-  },
-  'TextEditor.CurrentFolding.HeadingOffset': {
-    panel: 'DiscussPanel',
-    default: '0', type: 'string', candidates: '.*',
-    description: 'カーソル位置が属する見出し行の開始位置（先頭文字位置）',
-    isConst: true,
-    get: (app) => app.DiscussPanel.TextEditor.CurrentFoldingHeadingOffset ?? '0',
-    set: (app, v) => { app.DiscussPanel.TextEditor.CurrentFoldingHeadingOffset = v; },
-  },
-  'TextEditor.CurrentFolding.HeadingNumber': {
-    panel: 'DiscussPanel',
-    default: 'None', type: 'string', candidates: '.*',
-    description: 'カーソル位置が属する見出し行の番号(例: 1.3.4)',
-    isConst: true,
-    get: (app) => app.DiscussPanel.TextEditor.CurrentFoldingHeadingNumber ?? 'None',
-    set: (app, v) => { app.DiscussPanel.TextEditor.CurrentFoldingHeadingNumber = v; },
-  },
-  'TextEditor.CurrentEditor.CursorPos': {
-    panel: 'DiscussPanel',
-    default: '0', type: 'string', candidates: '.*',
-    description: '現在のエディタのカーソル位置',
-    isConst: true,
-    get: (app) => app.DiscussPanel.TextEditor.CurrentEditorCursorPos ?? '0',
-    set: (app, v) => {
-      app.DiscussPanel.TextEditor.CurrentEditorCursorPos = v;
-      const offset = parseInt(v, 10);
-      if (!isNaN(offset)) {
-        const editor = TTShortcutManager.instance.activeEditor;
-        if (editor) {
-          const model = editor.getModel();
-          if (model) {
-            const pos = model.getPositionAt(offset);
-            const curPos = editor.getPosition();
-            if (curPos && (curPos.lineNumber !== pos.lineNumber || curPos.column !== pos.column)) {
-              editor.setPosition(pos);
-              editor.revealPositionInCenterIfOutsideViewport(pos);
-            }
-          }
-        }
-      }
-    },
-  },
-  'TextEditor.CurrentEditor.TextOnCursorPos': {
-    panel: 'DiscussPanel',
-    default: '', type: 'string', candidates: '.*',
-    description: '現在のエディタのカーソル位置のテキスト',
-    isConst: true,
-    get: (app) => app.DiscussPanel.TextEditor.CurrentEditorTextOnCursorPos ?? '',
-    set: (app, v) => { app.DiscussPanel.TextEditor.CurrentEditorTextOnCursorPos = v; },
-  },
-  'DiscussPanel.Panes.Layout': {
-    panel: 'DiscussPanel',
-    default: 'null', type: 'string', candidates: '.*',
-    description: 'Paneレイアウト構造(JSON)',
-    get: (app) => app.DiscussPanel.Layout ? JSON.stringify(app.DiscussPanel.Layout) : 'null',
-    set: (app, v) => {
-      try {
-        app.DiscussPanel.Layout = (v && v !== 'null') ? JSON.parse(v) : null;
-      } catch (e) {
-        console.error('Failed to parse DiscussPanel.Panes.Layout', e);
-      }
-    },
-  },
-  'DiscussPanel.Panes.Display': {
-    panel: 'DiscussPanel',
-    default: '[]', type: 'string', candidates: '.*',
-    description: '各Paneのロード状態(JSON)',
-    get: (app) => {
-      const list = app.DiscussPanel.Areas.map(a => ({
-        id: a.ID,
-        resourceId: a.ResourceID,
-        mediaType: a.MediaType,
-        title: a.Title
-      }));
-      return JSON.stringify(list);
-    },
-    set: (app, v) => {
-      try {
-        const list = v ? JSON.parse(v) : [];
-        if (!Array.isArray(list)) return;
-        
-        // 既存の Areas を一度クリアし、ID情報を保持したまま再構築
-        app.DiscussPanel.Areas = [];
-        for (const item of list) {
-          const area = new TTDiscussArea();
-          area.ID = item.id;
-          area._parent = app.DiscussPanel;
-          area.OpenThink(item.resourceId, item.mediaType, item.title);
-          app.DiscussPanel.Areas = [...app.DiscussPanel.Areas, area];
-        }
-      } catch (e) {
-        console.error('Failed to parse DiscussPanel.Panes.Display', e);
-      }
-    },
-  },
-};
-
-// Bullet / Comment の Style1..20（記号,色,属性 の結合値）は廃止した。
-// 行頭記号は TextEditor.<種別>.Marks、色・表示属性は docs/DefaultColor.md の
-// TextEditor.<種別>.Style(1..N).* に分かれ、後者は下の DEFAULT_COLOR_ENTRIES ループが登録する。
-
-// ── docs/DefaultColor.md 由来の StatusID変数 ──────────────────────────────────
-//
-// 1行（StatusID名, Color, BgColor, Attrs）から
-// `<StatusID>.Color` / `<StatusID>.BgColor` / `<StatusID>.Attrs` の3変数を登録し、
-// CSVの各値をその既定値にする。
-// 既存キーと重なる場合は get/set を既存定義のまま残し、既定値だけをファイル側で上書きする
-// （色の既定値の定義元を DefaultColor.md に一本化するため）。
-// `undefined` は無設定値なので、既存キーの既定値は上書きしない。
-
-const COLOR_PROP_TYPE: Record<ColorProp, PropDef['type']> = {
-  Color:   'color',
-  BgColor: 'color',
-  Attrs:   'string',
-};
-
-const COLOR_VALUE_PATTERN = '^(#[0-9a-fA-F]{3,8}|undefined|none)$';
-const ATTR_NAMES = 'bold|italic|underline|strikethrough';
-
-const COLOR_PROP_CANDIDATES: Record<ColorProp, string> = {
-  Color:   COLOR_VALUE_PATTERN,
-  BgColor: COLOR_VALUE_PATTERN,
-  Attrs:   `^(undefined|none|(${ATTR_NAMES})(\\|(${ATTR_NAMES}))*)$`,
-};
-
-const COLOR_PROP_LABEL: Record<ColorProp, string> = {
-  Color:   '文字色',
-  BgColor: '背景色',
-  Attrs:   `表示属性 (${ATTR_NAMES})`,
-};
-
-function colorStatusPanel(statusId: string): PanelKey {
-  const prefix = statusId.split('.')[0];
-  if (prefix === 'Thinktank') return 'ThinktankPanel';
-  if (prefix === 'Seeds')  return 'SeedsPanel';
-  if (prefix === 'Harvest')   return 'HarvestPanel';
-  if (prefix === 'Application')    return 'Application';
-  if (prefix === 'FocusingBorder') return 'Application';
-  return 'DiscussPanel';
-}
-
-for (const entry of DEFAULT_COLOR_ENTRIES) {
-  for (const prop of COLOR_PROPS) {
-    const key      = `${entry.statusId}.${prop}`;
-    const defValue = entry.style[prop];
-    const existing = (PROP_SPECS as Record<string, PropSpec | undefined>)[key];
-
-    if (existing) {
-      if (!isUnset(defValue)) existing.default = defValue;
-      continue;
-    }
-
-    (PROP_SPECS as Record<string, PropSpec>)[key] = {
-      panel: colorStatusPanel(entry.statusId),
-      default: defValue,
-      type: COLOR_PROP_TYPE[prop],
-      candidates: COLOR_PROP_CANDIDATES[prop],
-      description: `${entry.statusId} の${COLOR_PROP_LABEL[prop]}`,
-      get: (app: TTApplication) => app.DiscussPanel.GetColorStatus(entry.statusId)[prop],
-      set: (app: TTApplication, v: string) => { app.DiscussPanel.SetColorStatus(entry.statusId, prop, v, false); },
-    };
-  }
 }
 
 // ── TTUIStateManager ──────────────────────────────────────────────────────────
@@ -1127,7 +69,7 @@ export class TTUIStateManager {
     return TTUIStateManager._instance;
   }
 
-  private constructor() {}
+  private constructor() { }
 
   /**
    * 初期化。TTApplication.Instance 生成後に呼ぶ。
@@ -1181,8 +123,8 @@ export class TTUIStateManager {
     if (!app) return;
     const legacy: [string, (name: AiChatProviderName) => void][] = [
       ['tt-ai-model-thinktank', n => { app.ThinktankPanel.AIChatProviderName = n; }],
-      ['tt-ai-model-seeds',     n => { app.SeedsPanel.AIChatProviderName = n; }],
-      ['tt-ai-model-harvest',   n => { app.HarvestPanel.AIChatProviderName = n; }],
+      ['tt-ai-model-seeds', n => { app.SeedsPanel.AIChatProviderName = n; }],
+      ['tt-ai-model-harvest', n => { app.HarvestPanel.AIChatProviderName = n; }],
       // Discuss は旧版で Pane と設定パネルが1つの選択を共有していた（さらに古いパネル名のキーも見る）
       ['tt-ai-model-discuss|tt-ai-model-develop|tt-ai-model-workout',
         n => { app.DiscussPanel.AIChatProviderName = n; app.DiscussPanel.SettingAIChatProviderName = n; }],
@@ -1329,9 +271,9 @@ export class TTUIStateManager {
       return {
         key,
         current,
-        default:     spec.default,
-        type:        spec.type,
-        candidates:  spec.candidates,
+        default: spec.default,
+        type: spec.type,
+        candidates: spec.candidates,
         description: spec.description,
       };
     });
@@ -1418,13 +360,13 @@ export class TTUIStateManager {
         // パネル色は <Panel>.Theme.Color（基礎色）へ集約。旧 Area.BgColor は基礎色からの
         // 派生になったので引き継がない（旧キーは spec が無いため読み飛ばされる）。
         .replace(/\bThinktank\.Ribbon\.BgColor\b/g, 'Thinktank.Theme.Color')
-        .replace(/\bSeeds\.Ribbon\.BgColor\b/g,  'Seeds.Theme.Color')
-        .replace(/\bSeeds\.Bundle\.Name\b/g,     'SeedsPanel.Bundle.ID')
+        .replace(/\bSeeds\.Ribbon\.BgColor\b/g, 'Seeds.Theme.Color')
+        .replace(/\bSeeds\.Bundle\.Name\b/g, 'SeedsPanel.Bundle.ID')
         .replace(/\bSeedsPanel\.Bundle\.Name\b/g, 'SeedsPanel.Bundle.ID')
-        .replace(/\bDiscuss\.Ribbon\.BgColor\b/g,   'Discuss.Theme.Color')
-        .replace(/\bHarvest\.Ribbon\.BgColor\b/g,   'Harvest.Theme.Color')
-        .replace(/\bToolBar\.BgColor\b/g,           'ToolBar.Theme.Color')
-        .replace(/\bToolBar\.Color\b/g,             'ToolBar.Theme.BgColor');
+        .replace(/\bDiscuss\.Ribbon\.BgColor\b/g, 'Discuss.Theme.Color')
+        .replace(/\bHarvest\.Ribbon\.BgColor\b/g, 'Harvest.Theme.Color')
+        .replace(/\bToolBar\.BgColor\b/g, 'ToolBar.Theme.Color')
+        .replace(/\bToolBar\.Color\b/g, 'ToolBar.Theme.BgColor');
       let sections = parseTableContent(content);
       let section = sections[0];
 
@@ -1446,7 +388,7 @@ export class TTUIStateManager {
 
       // 1st pass: const エントリ → default 列の値を適用（ファイルで編集可能なプリセットデータを読み込む）
       for (const row of section.rows) {
-        const key  = canonicalStateKey(row[keyIdx]?.trim() ?? '');
+        const key = canonicalStateKey(row[keyIdx]?.trim() ?? '');
         const spec = PROP_SPECS[key];
         if (!spec?.isConst) continue;
         const defaultVal = defIdx >= 0 ? (row[defIdx] ?? spec.default) : spec.default;
@@ -1455,8 +397,8 @@ export class TTUIStateManager {
       }
 
       // 旧キーからのマイグレーション用集計バッファ
-      const oldHighlighters: Record<number, { color?: string; bgColor?: string; attrs?: string }> = {};
-      const oldHeadings: Record<number, { color?: string; bgColor?: string; attrs?: string }> = {};
+      const oldHighlighters: Record<number, { color?: string; bgColor?: string; attrs?: string; }> = {};
+      const oldHeadings: Record<number, { color?: string; bgColor?: string; attrs?: string; }> = {};
 
       // 2nd pass: 通常エントリ → current 列の値を適用
       for (const row of section.rows) {
@@ -1568,7 +510,7 @@ export class TTUIStateManager {
 
     // ドット区切りの各階層でのワイルドカード通知（例: "Column.Thinktank.IsOpen" -> "Column.Thinktank.*", "Column.*"）
     const parts = key.split('.');
-    for (let i = 1; i < parts.length; i++) {
+    for (let i = 1;i < parts.length;i++) {
       const subCat = parts.slice(0, i).join('.') + '.*';
       this._listeners.get(subCat)?.forEach(listener => listener(key, value));
     }
@@ -1608,52 +550,15 @@ export class TTUIStateManager {
   }
 }
 
-// ── ユーティリティ ────────────────────────────────────────────────────────────
-function capitalize(s: string): string {
-  if (!s) return '';
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
-
 function extractValuesFromPattern(pattern: string): string[] {
   const match = pattern.match(/\^?\(([^)]+)\)\$?/);
   if (!match) return [];
   return match[1].split('|').map(v => v.trim());
 }
 
-function parseBool(value: string, current: boolean): boolean {
-  if (value === 'toggle') return !current;
-  if (value === 'true')   return true;
-  if (value === 'false')  return false;
-  return current;
-}
-
 function csvEscape(v: string): string {
   return v.includes(',') || v.includes('"') || v.includes('\n')
     ? `"${v.replace(/"/g, '""')}"` : v;
-}
-
-export function focusSelector(selector: string, fallbackSelector?: string): void {
-  const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
-  setTimeout(() => {
-    let root = document.querySelector<HTMLElement>(selector);
-    if (!root && fallbackSelector) {
-      root = document.querySelector<HTMLElement>(fallbackSelector);
-    }
-    if (!root) return;
-
-    if (root.matches(FOCUSABLE) && !root.closest('[inert]')) {
-      root.focus({ preventScroll: true });
-      return;
-    }
-    const focusable = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
-      .find(el => !el.closest('[inert]'));
-    if (focusable) {
-      focusable.focus({ preventScroll: true });
-    } else if (!root.closest('[inert]')) {
-      root.focus({ preventScroll: true });
-    }
-  }, 50);
 }
 
 /**
@@ -1682,10 +587,10 @@ export function parseMarkdownStatus(content: string): TableSection {
       if (match) {
         const propName = match[1].toLowerCase();
         let propValue = match[2].trim();
-        
+
         // クォーテーションで囲まれている場合は解除
         if ((propValue.startsWith("'") && propValue.endsWith("'")) ||
-            (propValue.startsWith('"') && propValue.endsWith('"'))) {
+          (propValue.startsWith('"') && propValue.endsWith('"'))) {
           propValue = propValue.slice(1, -1);
         }
         currentItem[propName] = propValue;

@@ -1,7 +1,7 @@
-import { apiFetch } from './apiClient';
+import { apiFetch, readApiJson } from './apiClient';
 import type { ContextSnapshot } from './contextTypes';
-import { readExternalLog, validateManifest, type ExternalInput, type ExternalLog, type ExportManifest } from '../../server/services/externalRecord';
-import { object } from '../../server/services/conversationRecord';
+import { readExternalLog, validateManifest, type ExternalInput, type ExternalLog, type ExportManifest } from '../../server/contracts/externalRecord';
+import { object } from '../../server/contracts/conversationRecord';
 
 export interface ExternalState { bundleId: string; version: string; log: ExternalLog }
 export async function prepareExport(snapshot: ContextSnapshot): Promise<{ manifest: ExportManifest; files: { name: string; content: string }[] }> {
@@ -23,8 +23,7 @@ export async function prepareExport(snapshot: ContextSnapshot): Promise<{ manife
   return { manifest, files: snapshot.sources.map(s => ({ name: `${s.thinkId}.md`, content: s.content })) };
 }
 async function parse(response: Response, bundleId: string): Promise<ExternalState> {
-  const value: unknown = await response.json();
-  if (!response.ok) throw new Error(object(value) && typeof value.error === 'string' ? value.error : '保存先との通信に失敗しました。');
+  const value = await readApiJson(response, '保存先との通信に失敗しました。');
   if (!object(value) || value.bundleId !== bundleId || typeof value.version !== 'string' || !Number.isFinite(Date.parse(value.version)) || !object(value.log)) throw new Error('取得結果の対象または版が不正です。');
   return { bundleId, version: value.version, log: readExternalLog(value.log, bundleId) };
 }

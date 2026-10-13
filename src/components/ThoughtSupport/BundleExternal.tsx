@@ -2,10 +2,10 @@ import { useReducer } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { ContextService } from '../../services/ContextService';
 import { ExternalService, prepareExport, type ExternalState } from '../../services/ExternalService';
-import { exportDiff, latestConnection, notebookUrl } from '../../../server/services/externalRecord';
+import { exportDiff, latestConnection, notebookUrl } from '../../../server/contracts/externalRecord';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { createExternalBackup, parseExternalBackup, MAX_EXTERNAL_BACKUP_BYTES, type ImportedExternalData } from '../../services/externalBackup';
-import type { ExportManifest, ExternalInput } from '../../../server/services/externalRecord';
+import type { ExportManifest, ExternalInput } from '../../../server/contracts/externalRecord';
 import './BundleExternal.css';
 
 interface Draft {

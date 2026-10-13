@@ -1,7 +1,7 @@
 /**
  * server/index.ts (v6)
  * Express サーバーエントリポイント
- * port 8080: BigQuery CRUD API + AI チャット API + Embedding/セマンティック検索 API（Phase 15）
+ * port 8080: BigQuery CRUD API + 思考支援 API
  */
 
 // 最初の import であることが重要（.env の値を参照する他モジュールより必ず先に評価させるため）
@@ -22,7 +22,6 @@ import { createExternalRoutes } from './routes/externalRoutes.js';
 import { createFileSearchRoutes } from './routes/fileSearchRoutes.js';
 import { createAgentRoutes } from './routes/agentRoutes.js';
 import { createSystemRoutes, createPublicSystemRoutes } from './routes/systemRoutes.js';
-import { vectorStoreService }     from './services/VectorStoreService.js';
 import { apiAuth, assertApiAuthConfigured } from './middleware/apiAuth.js';
 
 const __dirname  = path.dirname(fileURLToPath(import.meta.url));
@@ -131,12 +130,6 @@ async function start() {
   console.log(bqOk    ? '[Server] BigQuery initialized'  : '[Server] BigQuery init failed');
   console.log(driveOk ? '[Server] Drive initialized'     : '[Server] Drive init failed');
 
-  if (bqOk) {
-    const bq  = bigqueryService.getBigQuery()!;
-    const pid = bigqueryService.getProjectId()!;
-    await vectorStoreService.initialize(bq, pid);
-    console.log('[Server] VectorStore disabled; legacy data preserved');
-  }
 }
 
 start().catch((err) => {

@@ -1,5 +1,5 @@
-import { id, object, text } from '../../server/services/conversationRecord';
-import { readExternalLog, validateManifest, type ExternalLog, type ExportManifest } from '../../server/services/externalRecord';
+import { id, object, text } from '../../server/contracts/conversationRecord';
+import { readExternalLog, validateManifest, type ExternalLog, type ExportManifest } from '../../server/contracts/externalRecord';
 
 export const MAX_EXTERNAL_BACKUP_BYTES = 2100000;
 export interface ExternalBackup {

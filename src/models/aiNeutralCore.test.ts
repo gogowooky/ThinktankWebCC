@@ -6,7 +6,7 @@ vi.mock('../services/ChatApiService', () => { throw new Error('Core operations m
 import { TTVault } from './TTVault';
 import { TTSeedsPanel } from '../views/TTSeedsPanel';
 import { parseBundle } from '../utils/thinkFormat';
-import { readThinkSupport } from '../../server/services/thinkSupportRecord';
+import { readThinkSupport } from '../../server/contracts/thinkSupportRecord';
 import type { ConversationTurn } from '../services/ConversationService';
 
 it('adopts separate candidates once each, preserves successes after partial failure, and reuses them after reload', async () => {

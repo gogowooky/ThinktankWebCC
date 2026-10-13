@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { ConversationClient, type ConversationTurn } from '../../services/ConversationService';
-import { canonicalJson } from '../../../server/services/conversationRecord';
+import { canonicalJson } from '../../../server/contracts/conversationRecord';
 
 const client = new ConversationClient();
 export function SubtaskProposal({ vault, turn, chatId, disabled }: {

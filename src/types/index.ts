@@ -103,11 +103,3 @@ export interface ChatMessage {
 }
 
 // #endregion
-
-// ════════════════════════════════════════════════════════════════════════
-// #region ユーティリティ型
-// ════════════════════════════════════════════════════════════════════════
-
-export type CsvValue = string | undefined | null;
-
-// #endregion

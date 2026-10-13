@@ -10,18 +10,17 @@
 
 import { TTCollection } from './TTCollection';
 import { TTThink } from './TTThink';
-import { TTObject } from './TTObject';
 import type { ContentType } from '../types';
 import { TTModels } from './TTModels';
 import { formatDateRangeJapanese, computeDateRange } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
 import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
 import type { ThinkMeta } from '../services/storage/IStorageBackend';
-import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../server/services/thinkSupportRecord';
+import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../server/contracts/thinkSupportRecord';
 import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
 import type { ConversationTurn } from '../services/ConversationService';
-import { validateSubtaskCandidates } from '../../server/services/lifecycleProposals';
+import { validateSubtaskCandidates } from '../../server/contracts/lifecycleProposals';
 
 /** Optional diagnostics for isolated, read-only context resolution. Existing UI defaults are preserved. */
 export interface BundleResolutionOptions {
@@ -34,9 +33,6 @@ export interface BundleResolutionOptions {
 export class TTVault extends TTCollection {
   /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
   public VaultName: string = 'vault_ver2';
-
-  /** LocalFS ルートフォルダパス（Local モード用）*/
-  public DataFolder: string = './../ThinktankLocal/vault_ver2';
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
   private _bundleThinksCache: Map<string, string[]> = new Map();
@@ -51,7 +47,6 @@ export class TTVault extends TTCollection {
     this.ID = vaultName;
     this.VaultName = vaultName;
     this.Name = vaultName;
-    this.ItemSaveProperties = 'ID,Name,ContentType,Keywords,VaultID,UpdateDate';
   }
 
   // ── 型付きアクセス ─────────────────────────────────────────────────
@@ -342,10 +337,6 @@ export class TTVault extends TTCollection {
     return this.AddItem(think) as TTThink;
   }
 
-  protected override CreateChildInstance(): TTObject {
-    return new TTThink();
-  }
-
   // ── ストレージ連携（Phase 13）────────────────────────────────────────
 
   /**
@@ -450,6 +441,53 @@ export class TTVault extends TTCollection {
     });
   }
 
+  private async _createThink(options: {
+    id?: string;
+    contentType: ContentType;
+    fullContent: string;
+    keywords?: string;
+    relatedIds?: string;
+    metadata?: Record<string, unknown>;
+    bundleId?: string;
+  }): Promise<TTThink> {
+    const { contentType, fullContent, keywords = '', relatedIds = '', metadata, bundleId } = options;
+    const id = options.id ?? TTVault.generateUniqueId(new Set(this._children.keys()));
+    const previous = this._children.get(id);
+    const think = new TTThink();
+    think.ID = id;
+    think.VaultID = this.ID;
+    think.ContentType = contentType;
+    think.Keywords = keywords;
+    think.RelatedIDs = relatedIds;
+    think.IsMetaOnly = false;
+    think.setContentSilent(fullContent);
+    if (metadata) think.Metadata = metadata;
+    think._parent = this;
+    this._children.set(id, think);
+    this.Count = this._children.size;
+    this.InvalidateItemsCache();
+    try {
+      const saved = await StorageManager.instance.save({ thinkid: id, category: contentType, fullContent,
+        keywords, relatedIds, ...(metadata ? { metadata } : {}) });
+      if (saved?.updatedAt) think.UpdatedAt = saved.updatedAt;
+    } catch (error) {
+      // 固定IDの上書きに失敗したときも、保存前の項目を失わないように戻す。
+      if (this._children.get(id) === think) {
+        if (previous) this._children.set(id, previous);
+        else this._children.delete(id);
+        this.Count = this._children.size;
+        this.InvalidateItemsCache();
+      }
+      think._parent = null;
+      throw error;
+    }
+    think.markSaved();
+    if (metadata) think.markMetadataSaved();
+    if (bundleId) await this._linkThinkToBundle(bundleId, id);
+    this.NotifyUpdated();
+    return think;
+  }
+
   /** bundle新規作成の共通ロジック */
   private async _createBundle(options: {
     prefix: string,
@@ -463,62 +501,14 @@ export class TTVault extends TTCollection {
     originChatId?: string
   }): Promise<TTThink> {
     const { prefix, title, searchQuery, filterKeyword, dates, ids = [] } = options;
-    const existingIds = new Set(this._children.keys());
-    const newId = TTVault.generateUniqueId(existingIds);
-
-    const fullContent = serializeBundle({
-      prefix,
-      title,
-      searchQuery,
-      filterKeyword,
-      dates: dates ? {
-        createdDate: dates.createdDate,
-        createdRange: dates.createdRange,
-        updatedDate: dates.updatedDate,
-        updatedRange: dates.updatedRange,
-      } : undefined,
-      ids,
-    });
-
-    const think = new TTThink();
-    think.ID          = newId;
-    think.VaultID     = this.ID;
-    think.ContentType = 'bundle';
-    think.IsMetaOnly  = false;
-    think.RelatedIDs = ids.join(',');
-    think.setContentSilent(fullContent);
+    const fullContent = serializeBundle({ prefix, title, searchQuery, filterKeyword, dates, ids });
     const metadata = {
       ...(options.thinkSupport ? { thinkSupport: options.thinkSupport } : {}),
       ...(options.originChatId ? { taskOrigin: { schemaVersion: 1, chatId: options.originChatId } } : {}),
       ...(options.taskRelation ? { taskRelation: options.taskRelation } : {}),
     };
-    if (Object.keys(metadata).length) think.Metadata = metadata;
-    think._parent     = this;
-    this._children.set(newId, think);
-    this.Count = this._children.size;
-    this.InvalidateItemsCache();
-
-    try {
-      await StorageManager.instance.save({
-        thinkid:     newId,
-        category:    'bundle',
-        fullContent,
-        keywords:    '',
-        relatedIds:  ids.join(','),
-        ...(Object.keys(metadata).length ? { metadata } : {}),
-      });
-    } catch (e) {
-      // 保存に失敗した場合、サーバーに存在しない「幻の」Thinkをメモリ上に
-      // 残さないようロールバックする（次回リロードで消える古い挙動より安全）。
-      this._children.delete(newId);
-      this.Count = this._children.size;
-      this.InvalidateItemsCache();
-      throw e;
-    }
-    think.markSaved();
-    if (Object.keys(metadata).length) think.markMetadataSaved();
-    this.NotifyUpdated();
-    return think;
+    return this._createThink({ contentType: 'bundle', fullContent, relatedIds: ids.join(','),
+      ...(Object.keys(metadata).length ? { metadata } : {}) });
   }
 
   /** 全文検索モード: 検索語と条件から作成 */
@@ -595,43 +585,8 @@ export class TTVault extends TTCollection {
 
   /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */
   public async CreateBlankThink(contentType: ContentType, initialName: string = '', bundleId?: string, metadata?: Record<string, unknown>): Promise<TTThink> {
-    const existingIds = new Set(this._children.keys());
-    const newId = TTVault.generateUniqueId(existingIds);
-
-    const think = new TTThink();
-    think.ID          = newId;
-    think.VaultID     = this.ID;
-    think.ContentType = contentType;
-    think.IsMetaOnly  = false;
-    think.setContentSilent(initialName);
-    if (metadata) think.Metadata = structuredClone(metadata);
-    think._parent     = this;
-    this._children.set(newId, think);
-    this.Count = this._children.size;
-    this.InvalidateItemsCache();
-
-    try {
-      await StorageManager.instance.save({
-        thinkid:     newId,
-        category:    contentType,
-        fullContent: initialName,
-        keywords:    '',
-        relatedIds:  '',
-        ...(metadata ? { metadata: think.Metadata } : {}),
-      });
-    } catch (e) {
-      this._children.delete(newId);
-      this.Count = this._children.size;
-      this.InvalidateItemsCache();
-      throw e;
-    }
-    think.markSaved();
-    if (metadata) think.markMetadataSaved();
-
-    if (bundleId) await this._linkThinkToBundle(bundleId, newId);
-
-    this.NotifyUpdated();
-    return think;
+    return this._createThink({ contentType, fullContent: initialName, bundleId,
+      ...(metadata ? { metadata: structuredClone(metadata) } : {}) });
   }
 
   /** 指定した Bundle の ID リストに newId を追加して保存する（内部ヘルパー） */
@@ -667,77 +622,13 @@ export class TTVault extends TTCollection {
 
   /** links データ（URL/path リンク集）を作成して保存する */
   public async CreateLinksThink(title: string, url: string): Promise<TTThink> {
-    const existingIds = new Set(this._children.keys());
-    const newId       = TTVault.generateUniqueId(existingIds);
-    const fullContent = serializeLinks(title, [{ title, url }]);
-
-    const think = new TTThink();
-    think.ID          = newId;
-    think.VaultID     = this.ID;
-    think.ContentType = 'links';
-    think.IsMetaOnly  = false;
-    think.setContentSilent(fullContent);
-    think._parent     = this;
-    this._children.set(newId, think);
-    this.Count = this._children.size;
-    this.InvalidateItemsCache();
-
-    try {
-      await StorageManager.instance.save({
-        thinkid:     newId,
-        category:    'links',
-        fullContent,
-        keywords:    '',
-        relatedIds:  '',
-      });
-    } catch (e) {
-      this._children.delete(newId);
-      this.Count = this._children.size;
-      this.InvalidateItemsCache();
-      throw e;
-    }
-    think.markSaved();
-    this.NotifyUpdated();
-    return think;
+    return this._createThink({ contentType: 'links', fullContent: serializeLinks(title, [{ title, url }]) });
   }
 
   /** チャット会話を TTThink(ContentType='chat') として保存する。
    *  bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */
   public async CreateChatThink(content: string, bundleId?: string): Promise<TTThink> {
-    const existingIds = new Set(this._children.keys());
-    const newId = TTVault.generateUniqueId(existingIds);
-
-    const think = new TTThink();
-    think.ID          = newId;
-    think.VaultID     = this.ID;
-    think.ContentType = 'chat';
-    think.IsMetaOnly  = false;
-    think.setContentSilent(content);
-    think._parent     = this;
-    this._children.set(newId, think);
-    this.Count = this._children.size;
-    this.InvalidateItemsCache();
-
-    try {
-      await StorageManager.instance.save({
-        thinkid:     newId,
-        category:    'chat',
-        fullContent: content,
-        keywords:    '',
-        relatedIds:  '',
-      });
-    } catch (e) {
-      this._children.delete(newId);
-      this.Count = this._children.size;
-      this.InvalidateItemsCache();
-      throw e;
-    }
-    think.markSaved();
-
-    if (bundleId) await this._linkThinkToBundle(bundleId, newId);
-
-    this.NotifyUpdated();
-    return think;
+    return this._createThink({ contentType: 'chat', fullContent: content, bundleId });
   }
 
   /**
@@ -751,28 +642,7 @@ export class TTVault extends TTCollection {
     keywords: string,
     fullContent: string,
   ): Promise<TTThink> {
-    const think = new TTThink();
-    think.ID          = id;
-    think.VaultID     = this.ID;
-    think.ContentType = contentType;
-    think.Keywords    = keywords;
-    think.IsMetaOnly  = false;
-    think.setContentSilent(fullContent);
-    think._parent     = this;
-    this._children.set(id, think);
-    this.Count = this._children.size;
-    this.InvalidateItemsCache();
-    try {
-      await StorageManager.instance.save({ thinkid: id, category: contentType, fullContent, keywords, relatedIds: '' });
-    } catch (e) {
-      this._children.delete(id);
-      this.Count = this._children.size;
-      this.InvalidateItemsCache();
-      throw e;
-    }
-    think.markSaved();
-    this.NotifyUpdated();
-    return think;
+    return this._createThink({ id, contentType, keywords, fullContent });
   }
 
   /** 指定 ID の Think を BQ から削除しメモリからも除去する。
@@ -796,12 +666,6 @@ export class TTVault extends TTCollection {
     if (failedIds.length > 0) {
       throw new Error(`一部のThinkの削除に失敗しました: ${failedIds.join(', ')}`);
     }
-  }
-
-  // ── LocalFS パスユーティリティ ─────────────────────────────────────
-
-  public buildLocalPath(contentType: ContentType, id: string): string {
-    return `${this.DataFolder}/${contentType}/${id}.md`;
   }
 
   // ── ID 生成 ────────────────────────────────────────────────────────

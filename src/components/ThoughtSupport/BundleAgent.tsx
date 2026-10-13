@@ -6,8 +6,8 @@ import { StorageManager } from '../../services/storage/StorageManager';
 import { ContextService } from '../../services/ContextService';
 import { conversationContext, type ConversationContext } from '../../services/ConversationService';
 import { AgentClient, type AgentState } from '../../services/AgentClient';
-import { AGENT_KINDS, AGENT_STATUS, artifactFor, type AgentJob, type AgentKind } from '../../../server/services/agentRecord';
-import { canonicalJson } from '../../../server/services/conversationRecord';
+import { AGENT_KINDS, AGENT_STATUS, artifactFor, type AgentJob, type AgentKind } from '../../../server/contracts/agentRecord';
+import { canonicalJson } from '../../../server/contracts/conversationRecord';
 import './BundleAgent.css';
 
 interface Draft {

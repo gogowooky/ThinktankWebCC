@@ -1,4 +1,4 @@
-import { emptyProgress, MILESTONES, readProgress, type ProgressEvent, type Reach } from '../../server/services/progressRecord';
+import { emptyProgress, MILESTONES, readProgress, type ProgressEvent, type Reach } from '../../server/contracts/progressRecord';
 
 export type SubtaskProgress = { status: 'recorded'; event: ProgressEvent }
   | { status: 'unrecorded' } | { status: 'unreadable' };

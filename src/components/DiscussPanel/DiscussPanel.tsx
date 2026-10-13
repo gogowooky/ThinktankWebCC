@@ -13,7 +13,8 @@ import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTActions } from '../../views/TTActions';
 import type { TTDiscussArea } from '../../views/TTDiscussArea';
 import type { TTVault } from '../../models/TTVault';
-import type { LayoutNode, SplitNodeData, DiscussViewMode } from '../../views/TTDiscussPanel';
+import type { LayoutNode, SplitNodeData, DiscussViewMode, PaneDirection, PanePlacement } from '../../views/TTDiscussPanel';
+import { duplicateDiscussPane } from '../../views/insertDiscussPane';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { Splitter } from '../Layout/Splitter';
 import { PanelArea } from '../Layout/PanelArea';
@@ -342,87 +343,17 @@ export function DiscussPanel({ app, layoutMode }: Props) {
 
   // ── エリア分割（FocusPaneと同じ内容）────────────────────────────────
 
-  const handleSplitRight = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddFirst(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddRight(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
+  const handleInsertPane = useCallback((dir: PaneDirection, placement: PanePlacement) =>
+    duplicateDiscussPane(panel, vault, dir, placement), [vault, panel]);
 
-  const handleSplitBelow = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddFirst(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddBelow(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
-
-  const handleSplitLeft = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddFirst(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddLeft(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
-
-  const handleSplitAbove = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddFirst(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddAbove(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
-
-  // ── エリア追加（FocusPaneと同じ内容、空のとき新規）────────────────────
-
-  const handleAddRight = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddToRight(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddToRight(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
-
-  const handleAddBelow = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddToBottom(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddToBottom(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
-
-  const handleAddLeft = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddToLeft(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddToLeft(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
-
-  const handleAddTop = useCallback(async () => {
-    if (panel.Layout === null) {
-      const t = await vault.CreateBlankThink('memo', '新規メモ');
-      panel.AddToTop(t.ID, 'texteditor', t.Name);
-    } else {
-      const f = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
-      if (f) panel.AddToTop(f.ResourceID, f.MediaType, f.Title);
-    }
-  }, [vault, panel]);
+  const handleSplitRight = useCallback(() => handleInsertPane('right', 'split'), [handleInsertPane]);
+  const handleSplitBelow = useCallback(() => handleInsertPane('down', 'split'), [handleInsertPane]);
+  const handleSplitLeft = useCallback(() => handleInsertPane('left', 'split'), [handleInsertPane]);
+  const handleSplitAbove = useCallback(() => handleInsertPane('up', 'split'), [handleInsertPane]);
+  const handleAddRight = useCallback(() => handleInsertPane('right', 'add'), [handleInsertPane]);
+  const handleAddBelow = useCallback(() => handleInsertPane('down', 'add'), [handleInsertPane]);
+  const handleAddLeft = useCallback(() => handleInsertPane('left', 'add'), [handleInsertPane]);
+  const handleAddTop = useCallback(() => handleInsertPane('up', 'add'), [handleInsertPane]);
 
   const handleRemoveFocused = useCallback(() => {
     if (panel.FocusedAreaId) panel.RemoveArea(panel.FocusedAreaId);
@@ -796,18 +727,8 @@ export function DiscussPanel({ app, layoutMode }: Props) {
       const newThink = await vault.CreateLinksThink(link.title, link.url);
       const id    = newThink.ID;
       const title = newThink.Name;
-      if (overlay.type === 'add') {
-        if (overlay.dir === 'left')       panel.AddToLeft(id,   'texteditor', title);
-        else if (overlay.dir === 'right') panel.AddToRight(id,  'texteditor', title);
-        else if (overlay.dir === 'up')    panel.AddToTop(id,    'texteditor', title);
-        else                              panel.AddToBottom(id, 'texteditor', title);
-      } else {
-        if (overlay.areaId) panel.FocusArea(overlay.areaId);
-        if (overlay.dir === 'left')       panel.AddLeft(id,  'texteditor', title);
-        else if (overlay.dir === 'right') panel.AddRight(id, 'texteditor', title);
-        else if (overlay.dir === 'up')    panel.AddAbove(id, 'texteditor', title);
-        else                              panel.AddBelow(id, 'texteditor', title);
-      }
+      if (overlay.type === 'split' && overlay.areaId) panel.FocusArea(overlay.areaId);
+      panel.InsertArea(id, 'texteditor', title, overlay.dir, overlay.type);
     }
   }, [computeDropOverlay, panel, vault]);
 

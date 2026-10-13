@@ -117,6 +117,42 @@ it('does not overwrite unknown history versions or deleted bundles', async () =>
   store.getRecord.mockResolvedValue({ success: true, data: { ...record, is_deleted: true } });
   expect((await generate()).status).toBe(404); expect(p.generate).not.toHaveBeenCalled();
 });
+
+const saveDestinations = [
+  { name: 'Bundle', path: '/bundles/bundle/turns/turn', chatOnly: false },
+  { name: 'Chat with Bundle', path: '/chats/chat/bundles/bundle/turns/turn', chatOnly: false },
+  { name: 'Chat-only', path: '/chats/chat/turns/turn', chatOnly: true },
+];
+function destinationTurn(chatOnly: boolean): ConversationTurn {
+  return chatOnly ? { ...turn, context: { ...turn.context, snapshotId: 'chat', bundleId: 'chat', scope: 'chat-only', sources: [], manualState: null },
+    answer: { ...turn.answer, citations: [], proposals: [] } } : turn;
+}
+function destinationRecords(saved: ConversationTurn[]) {
+  store.getRecord.mockImplementation(async (id: string) => ({ success: true, data: {
+    ...record, category: id === 'chat' ? 'chat' : 'bundle', content: '',
+    metadata: JSON.stringify({ keep: 1, thinkConversations: { schemaVersion: 1, turns: saved } }),
+  } }));
+}
+function putDestination(path: string, value: ConversationTurn) {
+  return fetch(`${url}/active${path}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(value) });
+}
+it.each(saveDestinations)('$name preserves replay detection and its target validation', async ({ path, chatOnly }) => {
+  const value = destinationTurn(chatOnly);
+  destinationRecords([value]);
+  expect((await putDestination(path, value)).status).toBe(200);
+  expect((await putDestination(path, { ...value, answer: { ...value.answer, reply: '別の回答' } })).status).toBe(409);
+  expect((await putDestination(path, { ...value, context: { ...value.context, bundleId: 'other', ...(chatOnly ? { snapshotId: 'other' } : {}) } })).status).toBe(400);
+  expect(store.saveThinkSupport).not.toHaveBeenCalled();
+  expect(store.saveChatConversation).not.toHaveBeenCalled();
+  expect(p.generate).not.toHaveBeenCalled();
+});
+it.each(saveDestinations)('$name preserves the storage CAS conflict response', async ({ path, chatOnly }) => {
+  destinationRecords([]);
+  store.saveThinkSupport.mockResolvedValue({ success: true, data: false });
+  store.saveChatConversation.mockResolvedValue({ success: true, data: false });
+  expect((await putDestination(path, destinationTurn(chatOnly))).status).toBe(409);
+  expect(p.generate).not.toHaveBeenCalled();
+});
 it('answers with the model the screen picked when the catalog allows it, and rejects others before any AI call', async () => {
   const picked: AIProvider = { name: 'anthropic', model: 'claude-opus-5', generate: vi.fn(async () => ({ reply: '回答', insufficientEvidence: false, citations: [{ thinkId: 'source', quote: '本文' }], proposals: [] })) };
   const resolve = vi.fn(async (provider: string, model: string) => provider === 'anthropic' && model === 'claude-opus-5' ? picked : null);

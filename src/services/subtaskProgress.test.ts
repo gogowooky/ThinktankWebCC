@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { emptyProgress } from '../../server/services/progressRecord';
+import { emptyProgress } from '../../server/contracts/progressRecord';
 import { readSubtaskProgress, summarizeSubtaskProgress } from './subtaskProgress';
 
 const event = (revision: number, input = emptyProgress()) => ({ id: `event-${revision}`, revision,

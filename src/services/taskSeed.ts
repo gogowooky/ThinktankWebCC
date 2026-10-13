@@ -1,5 +1,5 @@
 import type { ConversationTurn } from './ConversationService';
-import { emptyThinkValues, type ThinkValues } from '../../server/services/thinkSupportRecord';
+import { emptyThinkValues, type ThinkValues } from '../../server/contracts/thinkSupportRecord';
 
 export type TaskSeed = Pick<ThinkValues, 'goal' | 'completionCriteria'>;
 

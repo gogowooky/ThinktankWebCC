@@ -1,26 +1,21 @@
-import { apiFetch } from './apiClient';
-import { object, type ConversationContext } from '../../server/services/conversationRecord';
-import { readAgentLog, type AgentJob, type AgentKind, type AgentLog } from '../../server/services/agentRecord';
+import { apiFetch, readApiJson } from './apiClient';
+import { object, type ConversationContext } from '../../server/contracts/conversationRecord';
+import { readAgentLog, type AgentJob, type AgentKind, type AgentLog } from '../../server/contracts/agentRecord';
 export interface AgentState { bundleId: string; version: string; log: AgentLog }
 const base = '/api/think-support/agents';
-async function json(response: Response): Promise<unknown> {
-  const value: unknown = await response.json();
-  if (!response.ok) throw new Error(object(value) && typeof value.error === 'string' ? value.error : 'Agent APIとの通信に失敗しました。');
-  return value;
-}
 export class AgentClient {
   async status(): Promise<{ enabled: boolean; provider: string; model: string }> {
-    const value = await json(await apiFetch(`${base}/status`));
+    const value = await readApiJson(await apiFetch(`${base}/status`), 'Agent APIとの通信に失敗しました。');
     if (!object(value) || typeof value.enabled !== 'boolean' || typeof value.provider !== 'string' || typeof value.model !== 'string') throw new Error('接続状態が不正です。');
     return { enabled: value.enabled, provider: value.provider, model: value.model };
   }
   async read(bundleId: string): Promise<AgentState> {
-    const value = await json(await apiFetch(`${base}/bundles/${encodeURIComponent(bundleId)}`));
+    const value = await readApiJson(await apiFetch(`${base}/bundles/${encodeURIComponent(bundleId)}`), 'Agent APIとの通信に失敗しました。');
     if (!object(value) || value.bundleId !== bundleId || typeof value.version !== 'string' || !Number.isFinite(Date.parse(value.version))) throw new Error('ジョブの対象が一致しません。');
     return { bundleId, version: value.version, log: readAgentLog(value.log, bundleId) };
   }
   private async job(path: string, body: unknown, bundleId: string, jobId: string): Promise<AgentJob> {
-    const value = await json(await apiFetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }));
+    const value = await readApiJson(await apiFetch(`${base}${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), 'Agent APIとの通信に失敗しました。');
     const job = readAgentLog({ schemaVersion: 1, jobs: [value] }, bundleId).jobs[0];
     if (job.id !== jobId) throw new Error('ジョブの応答IDが一致しません。');
     return job;
@@ -32,7 +27,7 @@ export class AgentClient {
     return this.job(`/bundles/${encodeURIComponent(bundleId)}/jobs/${encodeURIComponent(jobId)}/${action}`, { ...extra, confirmed: true }, bundleId, jobId);
   }
   async artifact(bundleId: string, jobId: string) {
-    const value = await json(await apiFetch(`${base}/bundles/${encodeURIComponent(bundleId)}/jobs/${encodeURIComponent(jobId)}/artifact`));
+    const value = await readApiJson(await apiFetch(`${base}/bundles/${encodeURIComponent(bundleId)}/jobs/${encodeURIComponent(jobId)}/artifact`), 'Agent APIとの通信に失敗しました。');
     if (!object(value) || typeof value.id !== 'string' || typeof value.fullContent !== 'string' || typeof value.updatedAt !== 'string' || !object(value.metadata)) throw new Error('成果物の形式が不正です。');
     return { id: value.id, fullContent: value.fullContent, updatedAt: value.updatedAt, metadata: value.metadata };
   }

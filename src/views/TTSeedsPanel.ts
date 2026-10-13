@@ -10,7 +10,8 @@ import { TTUIItem } from '../models/TTUIItem';
 import type { MediaType } from '../types';
 import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
-import { applySelection, onModelNamesChange, selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
+import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
+import { setPanelCheckedIds, togglePanelChecks, setPanelAreaOpen, setPanelAiModel, subscribePanelAiModel } from './panelBehavior';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
@@ -35,14 +36,7 @@ export class TTSeedsPanel extends TTUIItem {
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {
-    this.SharedState.checkedIds = val;
-    if (this._parent) {
-      const app = this._parent as any;
-      for (const key of ['ThinktankPanel', 'DiscussPanel', 'HarvestPanel']) {
-        app[key]?.NotifyUpdated();
-      }
-    }
-    TTUIStateManager.instance.notifyPropertyChanged('Application.CheckedItem.IDs');
+    setPanelCheckedIds(this, 'SeedsPanel', val);
   }
 
   /** 表示モード（filter/graph/chat/settings）*/
@@ -77,24 +71,17 @@ export class TTSeedsPanel extends TTUIItem {
 
   /** SeedsAreaの開閉を切り替える */
   public ToggleArea(): void {
-    this.IsAreaOpen = !this.IsAreaOpen;
-    this.NotifyUpdated();
+    setPanelAreaOpen(this, !this.IsAreaOpen);
   }
 
   /** SeedsAreaを開く */
   public OpenArea(): void {
-    if (!this.IsAreaOpen) {
-      this.IsAreaOpen = true;
-      this.NotifyUpdated();
-    }
+    setPanelAreaOpen(this, true);
   }
 
   /** SeedsAreaを閉じる */
   public CloseArea(): void {
-    if (this.IsAreaOpen) {
-      this.IsAreaOpen = false;
-      this.NotifyUpdated();
-    }
+    setPanelAreaOpen(this, false);
   }
 
   // ── Bundle表示 ───────────────────────────────────────────────────────
@@ -133,20 +120,7 @@ export class TTSeedsPanel extends TTUIItem {
 
   /** 指定した ID (群) のチェック状態を切り替える / 指定する */
   public ToggleCheck(id: string | string[], forceChecked?: boolean): void {
-    const ids = Array.isArray(id) ? id : [id];
-    const current = new Set(this.CheckedThoughtIDs);
-
-    ids.forEach(targetId => {
-      const nextChecked = (forceChecked !== undefined) ? forceChecked : !current.has(targetId);
-      if (nextChecked) {
-        current.add(targetId);
-      } else {
-        current.delete(targetId);
-      }
-    });
-
-    this.CheckedThoughtIDs = Array.from(current);
-    this.NotifyUpdated();
+    togglePanelChecks(this, id, forceChecked);
   }
 
   // ── 表示モード ────────────────────────────────────────────────────────
@@ -192,10 +166,9 @@ export class TTSeedsPanel extends TTUIItem {
   public get AIChatModel(): string { return selectionFor(this.AIChatProviderName).model; }
 
   public SetAIChatModel(selection: AiModelSelection): void {
-    this.AIChatProviderName = applySelection(selection);
-    this.NotifyUpdated();
+    setPanelAiModel(this, selection);
   }
 
   // 他パネルで同じプロバイダのモデルが選び直されたら、このパネルの表示も更新する
-  private readonly _offModelNames = onModelNamesChange(() => this.NotifyUpdated());
+  private readonly _offModelNames = subscribePanelAiModel(this);
 }

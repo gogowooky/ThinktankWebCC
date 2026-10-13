@@ -6,7 +6,7 @@ vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: storage
 vi.mock('./ChatApiService', () => { throw new Error('Context must not import AI execution'); });
 import { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
-import { ContextService, LatestBundleContextReader, type ContextReader } from './ContextService';
+import { ContextService, type ContextReader } from './ContextService';
 import { emptyThinkValues } from './ThinkSupportService';
 
 const ROOT = '2026-09-13-100000', NESTED = '2026-09-13-100001', A = '2026-09-13-100002', B = '2026-09-13-100003', MISSING = '2026-09-13-100004';
@@ -198,13 +198,14 @@ describe('read-only Bundle context', () => {
     a.Metadata.thoughtSupport = { decisions: '途中で変更' }; body.resolve('本文'); await assertion;
   });
 
-  it('allows concurrent requests without scope mixing and rejects superseded UI requests', async () => {
+  it('keeps concurrent scopes separate and rejects cancelled context reads', async () => {
     const body = deferred<string | null>(); const r = reader(); vi.mocked(r.getBody).mockReturnValue(body.promise);
     const a = item(A, '遅い資料'); a.IsMetaOnly = true;
     const v = vault(item(ROOT, `課題A\n* ${A}`, 'bundle'), item(NESTED, `課題B\n* ${B}`, 'bundle'), a, item(B, '速い資料'));
-    const service = new ContextService(v, r); const latest = new LatestBundleContextReader(service);
-    const first = latest.read(ROOT); const rejected = expect(first).rejects.toMatchObject({ name: 'AbortError' });
-    const second = await latest.read(NESTED);
+    const service = new ContextService(v, r); const controller = new AbortController();
+    const first = service.getBundleContext(ROOT, { signal: controller.signal }); const rejected = expect(first).rejects.toMatchObject({ name: 'AbortError' });
+    controller.abort();
+    const second = await service.getBundleContext(NESTED);
     body.resolve('遅い本文'); await rejected;
     expect(second.bundleId).toBe(NESTED); expect(second.sources.map(s => s.thinkId)).toEqual([B]);
     const [one, two] = await Promise.all([service.getBundleContext(ROOT), service.getBundleContext(NESTED)]);

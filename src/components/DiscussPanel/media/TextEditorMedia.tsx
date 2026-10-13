@@ -1,12 +1,3 @@
-/**
- * TextEditorMedia.tsx
- * Monaco Editor によるテキスト編集メディア。
- *
- * - Ctrl+S: onSave を呼んで保存
- * - 変更があるとき onDirtyChange(true) → Ribbon に ● を表示
- * - think.ID が変わると editor を再マウント（key prop で制御）
- */
-
 import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
 import './monacoSetup';
 import Editor, { type OnMount } from '@monaco-editor/react';
@@ -16,21 +7,28 @@ import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
 import { getHeadingAttributes } from '../../../utils/markdownHeadings';
-import { splitContent, extractTitleLine } from '../../../utils/thinkFormat';
-import { editorValueIncludesTitleLine, toFoldingRanges } from '../../../utils/markdownSections';
-import {
-  FOLDING_HEADER_BG_CLASS,
-  INLINE_MASK_CHAR, INLINE_STYLE_RULES, colorStyleToCss, foldingHeaderStyleCss,
-  injectInlineStyleCss, inlineStyleClass, isUnset, linkStyleClass, linkStyleCss, styleClass,
-} from '../../../utils/defaultColor';
+import { extractTitleLine } from '../../../utils/thinkFormat';
+import { FOLDING_HEADER_BG_CLASS, colorStyleToCss, foldingHeaderStyleCss, injectInlineStyleCss, isUnset, linkStyleCss, styleClass } from '../../../utils/defaultColor';
 import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColor';
 import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../DiscussMenuRibbon';
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
 import { reportSaveError } from '../../../utils/saveError';
-import { parseRawThinkText, rawFieldsToContent, rawTextMatchesThink, toRawThinkText } from '../../../utils/rawThinkText';
+import { parseRawThinkText, rawTextMatchesThink } from '../../../utils/rawThinkText';
 import { jumpPosition, takeEditorOpen } from '../../../utils/editorJump';
 import './TextEditorMedia.css';
+import { getEditorValue, reconstructContent } from './texteditor/editorContent';
+import { getCollapsedStartLines, getClosedHeadings } from './texteditor/editorFolding';
+import { registerMarkdownFolding, registerHexColorProvider } from './texteditor/editorProviders';
+import { applyEditorDecorations } from './texteditor/editorDecorations';
+/**
+ * TextEditorMedia.tsx
+ * Monaco Editor によるテキスト編集メディア。
+ *
+ * - Ctrl+S: onSave を呼んで保存
+ * - 変更があるとき onDirtyChange(true) → Ribbon に ● を表示
+ * - think.ID が変わると editor を再マウント（key prop で制御）
+ */
 
 /** Monaco の等倍時 fontSize / lineHeight（表示文字サイズ倍率の基準値）。 */
 const EDITOR_BASE_FONT_SIZE = 13;
@@ -48,166 +46,12 @@ export interface TextEditorMediaRef {
 
 interface Toast { msg: string; type: 'success' | 'error'; }
 
-function extractBody(content: string): string {
-  return splitContent(content).body;
-}
-
-/** 折り畳まれている（＝閉じている）範囲の開始行番号。画面に見えているのはこの行だけになる */
-function getCollapsedStartLines(editor: any): number[] {
-  const regions = (editor.getContribution?.('editor.contrib.folding') as any)
-    ?.foldingModel?.regions;
-  if (!regions) return [];
-
-  const closed: number[] = [];
-  for (let i = 0; i < regions.length; i++) {
-    if (regions.isCollapsed(i)) {
-      closed.push(regions.getStartLineNumber(i));
-    }
-  }
-  return closed;
-}
-
-function getClosedHeadings(editor: any): string {
-  return getCollapsedStartLines(editor).join(',');
-}
-
-function getEditorValue(think: NonNullable<MediaProps['think']>, rawYaml = false): string {
-  if (rawYaml) return toRawThinkText(think);
-  return editorValueIncludesTitleLine(think.ContentType)
-    ? (think.Content ?? '')
-    : extractBody(think.Content);
-}
-
-/**
- * エディタの値から保存用の Content を組み立てる。
- * YAML＋本文表示では YAML 側の keywords / related_ids / metadata をここで Think に書き戻す。
- * YAML が壊れていれば null を返し、呼び出し側は保存しない（未保存のまま残す）。
- */
-function reconstructContent(think: NonNullable<MediaProps['think']>, body: string, rawYaml = false): string | null {
-  if (rawYaml) {
-    const fields = parseRawThinkText(body);
-    if ('error' in fields) return null;
-    if (fields.keywords !== think.Keywords || fields.relatedIds !== think.RelatedIDs) {
-      think.Keywords   = fields.keywords;
-      think.RelatedIDs = fields.relatedIds;
-      think.markFieldsDirty();
-    }
-    think.Metadata = fields.metadata;
-    return rawFieldsToContent(fields);
-  }
-  if (editorValueIncludesTitleLine(think.ContentType)) return body;
-  const firstLine = think.Content.split('\n')[0] ?? '';
-  return body ? `${firstLine}\n${body}` : firstLine;
-}
-
-/**
- * インデント除去後のテキストが Bullet / Comment のどの行頭記号で始まるかを判定する。
- * 記号は長いものから照合する（">>>" を ">" より優先させるため）。
- * 表示属性が空のスタイルは装飾しても見た目が変わらないので該当なし扱いにする。
- */
-function matchMarkStyle(
-  kind: MarkKind,
-  styles: MarkStyle[],
-  textAfterIndent: string,
-): { className: string } | null {
-  const candidates = styles
-    .map((s, index) => ({ ...s, index }))
-    .sort((a, b) => b.mark.length - a.mark.length);
-
-  for (const c of candidates) {
-    const pattern = c.mark.endsWith(' ') ? c.mark : c.mark + ' ';
-    if (!textAfterIndent.startsWith(pattern)) continue;
-    return colorStyleToCss(c.style)
-      ? { className: styleClass(kind, c.index + 1) }
-      : null;
-  }
-  return null;
-}
-
-let isMarkdownFoldingRegistered = false;
-
-function registerMarkdownFolding(monaco: any) {
-  if (isMarkdownFoldingRegistered) return;
-  isMarkdownFoldingRegistered = true;
-
-  // 範囲の算出は markdownSections に集約している。MarkdownMedia の <details> 折り畳みと
-  // think.Metadata.editor.closedHeadings（行番号）を共有するため、ここで独自に数えないこと。
-  monaco.languages.registerFoldingRangeProvider('markdown', {
-    provideFoldingRanges: (model: any) =>
-      toFoldingRanges(model.getValue()).map((range) => ({
-        start: range.start,
-        end: range.end,
-        kind: monaco.languages.FoldingRangeKind.Region,
-      })),
-  });
-}
-
-/** #RGB / #RGBA / #RRGGBB / #RRGGBBAA を Monaco の色情報（0-1レンジ）に変換する */
-function hexToColor(hex: string): { red: number; green: number; blue: number; alpha: number } {
-  const expand = hex.length <= 4
-    ? hex.split('').map(c => c + c).join('')
-    : hex;
-  const r = parseInt(expand.slice(0, 2), 16) / 255;
-  const g = parseInt(expand.slice(2, 4), 16) / 255;
-  const b = parseInt(expand.slice(4, 6), 16) / 255;
-  const a = expand.length >= 8 ? parseInt(expand.slice(6, 8), 16) / 255 : 1;
-  return { red: r, green: g, blue: b, alpha: a };
-}
-
-function colorToHex(color: { red: number; green: number; blue: number; alpha: number }): string {
-  const toHex = (c: number) => Math.round(c * 255).toString(16).padStart(2, '0');
-  const rgb = `${toHex(color.red)}${toHex(color.green)}${toHex(color.blue)}`;
-  return `#${color.alpha < 1 ? rgb + toHex(color.alpha) : rgb}`;
-}
-
-const HEX_COLOR_REGEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b/g;
-
-let isColorProviderRegistered = false;
-
-/**
- * #RRGGBB 等のHexコードにVSCode同様の色swatchを表示し、クリックで色変更ダイアログを開けるようにする。
- * Monacoの colorDecorators はこのプロバイダの登録有無に関わらずONだが、プロバイダが無いと
- * 何もハイライトされない。
- */
-function registerHexColorProvider(monaco: any) {
-  if (isColorProviderRegistered) return;
-  isColorProviderRegistered = true;
-
-  monaco.languages.registerColorProvider('markdown', {
-    provideDocumentColors(model: any) {
-      const text = model.getValue();
-      const results: any[] = [];
-      let match: RegExpExecArray | null;
-      HEX_COLOR_REGEX.lastIndex = 0;
-      while ((match = HEX_COLOR_REGEX.exec(text)) !== null) {
-        const startPos = model.getPositionAt(match.index);
-        const endPos = model.getPositionAt(match.index + match[0].length);
-        results.push({
-          color: hexToColor(match[0].slice(1)),
-          range: {
-            startLineNumber: startPos.lineNumber,
-            startColumn: startPos.column,
-            endLineNumber: endPos.lineNumber,
-            endColumn: endPos.column,
-          },
-        });
-      }
-      return results;
-    },
-    provideColorPresentations(_model: any, colorInfo: any) {
-      const hex = colorToHex(colorInfo.color);
-      return [{ label: hex, textEdit: { range: colorInfo.range, text: hex } }];
-    },
-  });
-}
-
-
 export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, vault, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef, rawYaml }: MediaProps, ref) {
   // YAML表示の有無は DiscussArea が key で作り直すため、インスタンスごとに固定
-  const rawYamlRef  = useRef(rawYaml ?? false);
-  const savedRef    = useRef(think ? getEditorValue(think, rawYamlRef.current) : '');
+  const rawYamlRef = useRef(rawYaml ?? false);
+  const savedRef = useRef(think ? getEditorValue(think, rawYamlRef.current) : '');
   const firstLineRef = useRef(think ? extractTitleLine(think.Content) : '');
-  const editorRef   = useRef<any>(null);
+  const editorRef = useRef<any>(null);
   const disposablesRef = useRef<any[]>([]);
   const headingStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringRef = useRef(true);
@@ -227,7 +71,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     getEditor: () => editorRef.current,
   }));
   const [isDragOver, setIsDragOver] = useState(false);
-  const [toast,      setToast]      = useState<Toast | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 表示文字サイズ（拡大表示 / 縮小表示）。Monaco は CSS を継承しないため
@@ -240,13 +84,13 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   }, []);
   useEffect(() => {
     editorRef.current?.updateOptions({
-      fontSize:   Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
+      fontSize: Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
       lineHeight: Math.round(EDITOR_BASE_LINE_HEIGHT * fontScale),
     });
   }, [fontScale]);
 
   useEffect(() => {
-    savedRef.current   = think ? getEditorValue(think, rawYamlRef.current) : '';
+    savedRef.current = think ? getEditorValue(think, rawYamlRef.current) : '';
     firstLineRef.current = think ? extractTitleLine(think.Content) : '';
     onDirtyChange(false);
   }, [think?.ID, onDirtyChange]);
@@ -255,9 +99,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   useEffect(() => {
     const editor = editorRef.current;
     if (!editor || !think) return;
-    
+
     const nextVal = getEditorValue(think, rawYamlRef.current);
-    
+
     // 現在エディタに未保存の変更がない場合のみ外部の変更を反映
     const currentEditorVal = editor.getValue();
     // YAML表示では、保存直後に整形し直した YAML で上書きすると入力中のカーソルが飛ぶので、
@@ -304,10 +148,10 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         const headings = getHeadingAttributes(editor);
         const pos = editor.getPosition();
         const model = editor.getModel();
-        
+
         let offsetVal = '0';
         let numberVal = 'None';
-        
+
         let cursorOffsetStr = '0';
         let textOnCursor = '';
 
@@ -644,14 +488,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
             { token: '', foreground: editorSettings.foreground.replace('#', '') }
           ],
           colors: {
-            'editor.background':                    editorSettings.background,
-            'editor.selectionBackground':            editorSettings.selectionBackground,
+            'editor.background': editorSettings.background,
+            'editor.selectionBackground': editorSettings.selectionBackground,
             // フォーカスが外れたときの選択色。明示しないと Monaco が
             // editor.selectionBackground の50%を使い、フォーカスの有無で色が変わる
-            'editor.inactiveSelectionBackground':    editorSettings.selectionBackground,
-            'editor.wordHighlightBackground':        editorSettings.occurrenceBackground,
-            'editor.wordHighlightStrongBackground':  editorSettings.occurrenceBackground,
-            'editor.selectionHighlightBackground':   editorSettings.occurrenceBackground,
+            'editor.inactiveSelectionBackground': editorSettings.selectionBackground,
+            'editor.wordHighlightBackground': editorSettings.occurrenceBackground,
+            'editor.wordHighlightStrongBackground': editorSettings.occurrenceBackground,
+            'editor.selectionHighlightBackground': editorSettings.occurrenceBackground,
           }
         });
         monaco.editor.setTheme('custom-markdown-theme');
@@ -686,7 +530,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
     for (const [elementId, kind, styles] of [
       ['text-editor-comment-styles', 'Comment', editorSettings.commentStyles ?? []],
-      ['text-editor-bullet-styles',  'Bullet',  editorSettings.bulletStyles  ?? []],
+      ['text-editor-bullet-styles', 'Bullet', editorSettings.bulletStyles ?? []],
     ] as [string, MarkKind, MarkStyle[]][]) {
       let el = document.getElementById(elementId);
       if (!el) {
@@ -765,238 +609,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const decorationsCollectionRef = useRef<any>(null);
 
   const updateDecorations = useCallback(() => {
-    const editor = editorRef.current;
-    if (!editor || !decorationsCollectionRef.current || !editorSettings) return;
-
-    const model = editor.getModel();
-    if (!model) return;
-
-    // コメント設定のパース
-    // Comment / Bullet のスタイルは editorSettings から配列で直接取得します
-    const commentStyles = editorSettings.commentStyles || [];
-    const bulletStyles = editorSettings.bulletStyles || [];
-
-    // --- ハイライトグループの動的スタイル注入 ---
-    let highlightStyleEl = document.getElementById('text-editor-highlight-styles');
-    if (!highlightStyleEl) {
-      highlightStyleEl = document.createElement('style');
-      highlightStyleEl.id = 'text-editor-highlight-styles';
-      document.head.appendChild(highlightStyleEl);
-    }
-    // 色・属性は docs/DefaultColor.md 由来の TextEditor.Highlighter.Style(1..6).* に従う
-    highlightStyleEl.textContent = editorSettings.highlightStyles.map((style, index) => {
-      const decls = colorStyleToCss(style);
-      return decls ? `.${styleClass('Highlighter', index + 1)} { ${decls} border-radius: 2px; }` : '';
-    }).filter(Boolean).join('\n');
-
-    const newDecorations: any[] = [];
-    const linesCount = model.getLineCount();
-
-    for (let i = 1; i <= linesCount; i++) {
-      const lineContent = model.getLineContent(i);
-      
-      // 見出しの装飾
-      const match = lineContent.match(/^(\s{0,3})(#{1,6})\s/);
-      if (match) {
-        const level = match[2].length;
-        const style = editorSettings.headingStyles[level - 1];
-
-        const minimapOptions = style && !isUnset(style.Color) ? {
-          color: style.Color,
-          position: 1 // (window as any).monaco.editor.MinimapPosition.Inline
-        } : undefined;
-
-        newDecorations.push({
-          range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
-          options: {
-            isWholeLine: true,
-            inlineClassName: styleClass('Heading', level),
-            minimap: minimapOptions
-          }
-        });
-      } else {
-        // インデントのスキップ
-        const indentMatch = lineContent.match(/^([ \t\u3000]*)(.*)/);
-        const textAfterIndent = indentMatch ? indentMatch[2] : lineContent;
-
-        // 行頭記号の装飾。Comment を先に見て、該当しなければ Bullet を見る
-        const matched = matchMarkStyle('Comment', commentStyles, textAfterIndent)
-                     ?? matchMarkStyle('Bullet',  bulletStyles,  textAfterIndent);
-
-        if (matched) {
-          newDecorations.push({
-            range: new (window as any).monaco.Range(i, 1, i, lineContent.length + 1),
-            options: {
-              isWholeLine: true,
-              inlineClassName: matched.className
-            }
-          });
-        }
-      }
-
-      // 全角スペースの装飾
-      if (editorSettings.showFullWidthSpace) {
-        const regex = /\u3000/g;
-        let spaceMatch;
-        while ((spaceMatch = regex.exec(lineContent)) !== null) {
-          const startCol = spaceMatch.index + 1;
-          const endCol = startCol + 1;
-          newDecorations.push({
-            range: new (window as any).monaco.Range(i, startCol, i, endCol),
-            options: {
-              inlineClassName: 'full-width-space-decoration'
-            }
-          });
-        }
-      }
-
-      // 単語ハイライトの装飾（複数グループ対応）
-      if (editorSettings.highlightWord) {
-        // カンマでグループ分割 (最大5つ)
-        const groups = editorSettings.highlightWord.split(',').slice(0, 5);
-        groups.forEach((groupStr, groupIndex) => {
-          // 半角スペースで単語分割
-          const words = groupStr.split(' ').map(w => w.trim()).filter(w => w.length > 0);
-          if (words.length === 0) return;
-
-          const groupStyle = editorSettings.highlightStyles[groupIndex];
-
-          words.forEach(word => {
-            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const regex = new RegExp(escapedWord, 'g');
-            let wordMatch;
-            while ((wordMatch = regex.exec(lineContent)) !== null) {
-              const startCol = wordMatch.index + 1;
-              const endCol = startCol + word.length;
-              newDecorations.push({
-                range: new (window as any).monaco.Range(i, startCol, i, endCol),
-                options: {
-                  inlineClassName: styleClass('Highlighter', groupIndex + 1),
-                  minimap: groupStyle && !isUnset(groupStyle.BgColor) ? {
-                    color: groupStyle.BgColor,
-                    position: 1 // Inline
-                  } : undefined
-                }
-              });
-            }
-          });
-        });
-      }
-
-      // 1. ダブルクォーテーションで囲まれたURIやファイルパスのハイライト
-      const quotedRegex = /"([^"]+)"/g;
-      let quotedMatch;
-      const decoratedRanges: { start: number; end: number }[] = [];
-
-      const isRangeDecorated = (start: number, end: number) => {
-        return decoratedRanges.some(r => {
-          return (start >= r.start && start < r.end) || (end > r.start && end <= r.end) || (start <= r.start && end >= r.end);
-        });
-      };
-
-      while ((quotedMatch = quotedRegex.exec(lineContent)) !== null) {
-        const content = quotedMatch[1];
-        const isUri = /^https?:\/\//i.test(content) || /^file:\/\//i.test(content);
-        const isFilePath = /^([a-zA-Z]:\\|\\\\)/.test(content) || /^([a-zA-Z]:\/)/.test(content);
-        if (isUri || isFilePath) {
-          const startCol = quotedMatch.index + 2; // " の次から
-          const endCol = startCol + content.length; // 内側の文字列の長さ分
-          
-          newDecorations.push({
-            range: new (window as any).monaco.Range(i, startCol, i, endCol),
-            options: {
-              inlineClassName: linkStyleClass('filepath')
-            }
-          });
-          // ダブルクォーテーション全体を含む範囲を装飾済みとして記録する
-          decoratedRanges.push({ 
-            start: quotedMatch.index + 1, 
-            end: quotedMatch.index + 1 + quotedMatch[0].length 
-          });
-        }
-      }
-
-      // 2. URL のハイライト
-      const urlRegex = /https?:\/\/[^\s")]+/g;
-      let urlMatch;
-      while ((urlMatch = urlRegex.exec(lineContent)) !== null) {
-        const startCol = urlMatch.index + 1;
-        const endCol = startCol + urlMatch[0].length;
-        if (isRangeDecorated(startCol, endCol)) continue;
-
-        newDecorations.push({
-          range: new (window as any).monaco.Range(i, startCol, i, endCol),
-          options: {
-            inlineClassName: linkStyleClass('url')
-          }
-        });
-        decoratedRanges.push({ start: startCol, end: endCol });
-      }
-
-      // 3. Filepath のハイライト
-      const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
-      let fileMatch;
-      while ((fileMatch = fileRegex.exec(lineContent)) !== null) {
-        const startCol = fileMatch.index + 1;
-        const endCol = startCol + fileMatch[0].length;
-        if (isRangeDecorated(startCol, endCol)) continue;
-
-        newDecorations.push({
-          range: new (window as any).monaco.Range(i, startCol, i, endCol),
-          options: {
-            inlineClassName: linkStyleClass('filepath')
-          }
-        });
-        decoratedRanges.push({ start: startCol, end: endCol });
-      }
-
-      // 4. Tag のハイライト
-      const tagRegex = /\[([^\]]+)\]/g;
-      let tagMatch;
-      while ((tagMatch = tagRegex.exec(lineContent)) !== null) {
-        const startCol = tagMatch.index + 1;
-        const endCol = startCol + tagMatch[0].length;
-        if (isRangeDecorated(startCol, endCol)) continue;
-
-        newDecorations.push({
-          range: new (window as any).monaco.Range(i, startCol, i, endCol),
-          options: {
-            inlineClassName: linkStyleClass('tag')
-          }
-        });
-        decoratedRanges.push({ start: startCol, end: endCol });
-      }
-
-      // 5. インライン書式（**bold** / __underline__ / ~~strikethrough~~ / *italic*）
-      // URL/Tag の decoratedRanges とは独立に判定する。両方に該当する範囲は
-      // Monaco が両方の inlineClassName を適用するため、片方を捨てる必要はない。
-      // 判定の済んだ記号だけを伏せ字にして次のルールへ渡すことで、`**太字**` の `*` が
-      // 斜体の記号として再解釈されるのを防ぎつつ、`*斜体の中の **太字**` の入れ子は残す。
-      let scanLine = lineContent;
-      for (const rule of INLINE_STYLE_RULES) {
-        const regex = new RegExp(rule.pattern, 'g');
-        const markers: number[] = [];
-        let inlineMatch;
-        while ((inlineMatch = regex.exec(scanLine)) !== null) {
-          const startCol = inlineMatch.index + 1;
-          const endCol = startCol + inlineMatch[0].length;
-          newDecorations.push({
-            range: new (window as any).monaco.Range(i, startCol, i, endCol),
-            options: {
-              inlineClassName: inlineStyleClass(rule.name)
-            }
-          });
-          markers.push(inlineMatch.index, inlineMatch.index + inlineMatch[0].length - rule.marker.length);
-        }
-        for (const at of markers) {
-          scanLine = scanLine.slice(0, at)
-            + INLINE_MASK_CHAR.repeat(rule.marker.length)
-            + scanLine.slice(at + rule.marker.length);
-        }
-      }
-    }
-
-    decorationsCollectionRef.current.set(newDecorations);
+    applyEditorDecorations(editorRef.current, decorationsCollectionRef.current, editorSettings);
   }, [editorSettings]);
 
   const handleChange = useCallback((value: string | undefined) => {
@@ -1089,8 +702,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     for (const file of files) {
       if (isElectron) {
         // Electron: webUtils.getPathForFile 経由でローカルパスを取得（Electron 32+対応）
-        const byApi     = window.electronAPI?.getPathForFile(file);
-        const byPlain   = e.dataTransfer.getData('text/plain').trim() || undefined;
+        const byApi = window.electronAPI?.getPathForFile(file);
+        const byPlain = e.dataTransfer.getData('text/plain').trim() || undefined;
         const localPath = byApi ?? byPlain ?? file.name;
         insertAtCursor(`[File:${file.name}](${localPath})`);
       } else {
@@ -1126,23 +739,23 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         onChange={handleChange}
         loading={<div className="text-editor-media__loading">エディタ読み込み中…</div>}
         options={{
-          minimap:            { enabled: editorSettings?.minimap ?? false },
-          fontSize:           Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
-          lineHeight:         Math.round(EDITOR_BASE_LINE_HEIGHT * fontScale),
-          lineNumbers:        (editorSettings?.lineNumbers ?? true) ? 'on' : 'off',
-          wordWrap:           (editorSettings?.wordWrap ?? true) ? 'on' : 'off',
+          minimap: { enabled: editorSettings?.minimap ?? false },
+          fontSize: Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
+          lineHeight: Math.round(EDITOR_BASE_LINE_HEIGHT * fontScale),
+          lineNumbers: (editorSettings?.lineNumbers ?? true) ? 'on' : 'off',
+          wordWrap: (editorSettings?.wordWrap ?? true) ? 'on' : 'off',
           scrollBeyondLastLine: false,
-          fontFamily:         "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
-          padding:            { top: 10, bottom: 10 },
+          fontFamily: "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
+          padding: { top: 10, bottom: 10 },
           renderLineHighlight: 'line',
-          smoothScrolling:    true,
-          folding:            true,
+          smoothScrolling: true,
+          folding: true,
           showFoldingControls: 'always',
           // Monaco 標準の折り畳みハイライト（.folded-background）を切る。
           // その色 editor.foldBackground の既定値は「選択色の30%」で、切らないと
           // TextEditor.Selection の変更が折り畳み行の色に混ざる。折り畳み行の色は
           // TextEditor.FoldingHeader だけが決めるようにする。
-          foldingHighlight:   false,
+          foldingHighlight: false,
           unicodeHighlight: {
             ambiguousCharacters: editorSettings?.unicodeHighlight ?? true,
             invisibleCharacters: editorSettings?.unicodeHighlight ?? true,

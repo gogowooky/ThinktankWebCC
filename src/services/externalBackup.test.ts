@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { createExternalBackup, parseExternalBackup, MAX_EXTERNAL_BACKUP_BYTES } from './externalBackup';
-import type { ExternalLog, ExportManifest } from '../../server/services/externalRecord';
+import type { ExternalLog, ExportManifest } from '../../server/contracts/externalRecord';
 const manifest: ExportManifest = { schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId: 'bundle', capturedAt: '2026-09-14T00:00:00Z',
   normalizationVersion: 'exact-utf8-v1', status: 'prepared', quality: 'partial', sources: [], issues: ['未確認'] };
 const log: ExternalLog = { schemaVersion: 1, events: [{ id: 'op', recordedAt: '2026-09-14T00:00:00Z', input: { vaultId: 'vault', accountKey: 'work', provider: 'notebooklm-manual',

@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import type { TTVault } from '../../models/TTVault';
-import type { AiModelSelectorProps } from '../ThinktankPanel/AiChatView';
+import type { AiModelSelectorProps } from './modelSelectorTypes';
 import type { SupportPanel } from '../../services/thoughtSupport';
 import './SupportChat.css';
 import './SupportConversation.css';

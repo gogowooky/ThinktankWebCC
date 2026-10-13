@@ -4,7 +4,7 @@ import { StorageManager } from './storage/StorageManager';
 import type { ThinkMeta } from './storage/IStorageBackend';
 import type { ContextIssue, ContextIssueCode, ContextSnapshot, ContextSource } from './contextTypes';
 import { appendLegacyContext, emptyContextState } from './legacyContextAdapter';
-import { readThinkSupport } from '../../server/services/thinkSupportRecord';
+import { readThinkSupport } from '../../server/contracts/thinkSupportRecord';
 import { captureSubtaskContext, captureProgressContext } from './subtaskContext';
 
 export interface ContextReader {
@@ -176,19 +176,5 @@ export class ContextService {
       resolvedThinkIds: [...new Set([...members.map(t => t.ID), ...issues.filter(i => i.code === 'missing_think').map(i => i.thinkId)])],
       sources, state, manualState, issues, ...(subtasks ? { subtasks, bundleProgress } : {}),
     });
-  }
-}
-
-/** One instance per UI consumer. Superseded results can never be published as the current Bundle. */
-export class LatestBundleContextReader {
-  private controller?: AbortController;
-  constructor(private readonly service: ContextService) {}
-  cancel(): void { this.controller?.abort(); }
-  async read(bundleId: string): Promise<ContextSnapshot> {
-    this.cancel();
-    const controller = new AbortController(); this.controller = controller;
-    const snapshot = await this.service.getBundleContext(bundleId, { signal: controller.signal });
-    assertNotAborted(controller.signal);
-    return snapshot;
   }
 }

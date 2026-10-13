@@ -2,8 +2,8 @@ import { useReducer } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { FileSearchClient } from '../../services/FileSearchClient';
-import { latestBinding, type BindingState } from '../../../server/services/fileSearchBindingRecord';
-import { storeName, type FileSearchPage, type FileSearchStatus } from '../../../server/services/fileSearchRecord';
+import { latestBinding, type BindingState } from '../../../server/contracts/fileSearchBindingRecord';
+import { storeName, type FileSearchPage, type FileSearchStatus } from '../../../server/contracts/fileSearchRecord';
 
 interface Draft {
   connectionId: string; target: string; action: 'link' | 'unlink'; confirmed: boolean; busy: boolean;

@@ -14,7 +14,7 @@ import { BundleConversation } from './BundleConversation';
 import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
 import type { ConversationContext, ConversationTurn } from '../../services/ConversationService';
-import { SUBTASK_REVIEW_QUESTION } from '../../../server/services/subtaskContext';
+import { SUBTASK_REVIEW_QUESTION } from '../../../server/contracts/subtaskContext';
 const context = (bundleId = 'a'): ConversationContext => ({ schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId, capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only', quality: 'complete', sources: [], manualState: null, issues: [] });
 const turn = (): ConversationTurn => ({ schemaVersion: 1, id: 'turn', createdAt: '2026-09-14T00:00:00Z', question: '質問', context: context(), answer: { reply: '回答', insufficientEvidence: true, citations: [], proposals: [] }, provider: 'test', model: 'model' });
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;

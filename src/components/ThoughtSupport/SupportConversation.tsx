@@ -8,7 +8,7 @@ import { SimilarTasks } from './SimilarTasks';
 import { BundleConversation } from './BundleConversation';
 import { ConversationClient } from '../../services/ConversationService';
 import { taskSeedFromConversation, type TaskSeed } from '../../services/taskSeed';
-import type { AiModelSelectorProps } from '../ThinktankPanel/AiChatView';
+import type { AiModelSelectorProps } from './modelSelectorTypes';
 
 const taskClient = new ConversationClient();
 

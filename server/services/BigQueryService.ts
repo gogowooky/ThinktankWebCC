@@ -67,9 +67,6 @@ export class BigQueryService {
     }
   }
 
-  getBigQuery(): BigQuery | null { return this.bigquery; }
-  getProjectId(): string | undefined { return this.projectId; }
-
   /** P2 updates metadata only. The version check and write share one transaction. */
   async saveThinkSupport(thinkId: string, expectedVersion: string, metadata: object, updatedAt: string): Promise<BqResult<boolean>> {
     if (!this.bigquery) return { success: false, error: 'not initialized' };
