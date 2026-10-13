@@ -7,7 +7,7 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
-### v2.1.10 feat: D&Dゴーストの色をStatus変数で設定し、パネル色にBorderとゴースト色を追加
+### v2.1.11 feat: D&Dゴーストの色をStatus変数で設定し、パネル色にBorderとゴースト色を追加
 
 - 日付: 2026-10-13
 - コミット番号: 3ca32eb
