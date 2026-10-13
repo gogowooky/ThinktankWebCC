@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.14 refactor: 残りの共通化（A3〜A8）と旧AI・未使用コードの整理（B3〜B5）を実施
+
+- 日付: 2026-10-13
+- コミット番号: 5de1975
+
+docs/261013 のリファクタリング事前調査の残り A3〜A8・B3〜B5 を実施した（詳細は docs/261013/リファクタリング実施結果_残りAB.md）。A3: 4パネルの共有チェック・開閉・AI選択を panelBehavior に共通化。A4: Discuss の8方向挿入を InsertArea に集約。A5: Think 作成5経路を _createThink に集約。A6: JSON応答・HTTPエラー読取を共通化し、型・validator 10ファイルを server/contracts へ分離。A7: Bundle の読込・版確認・CAS を BundleRepository に、会話保存の共通処理を conversationPersistence に集約。A8: 設定定義を領域別 registry へ、Discuss設定を5種別UIへ、DataGrid・TextEditor を責務別ファイルへ分割（TTUIStateManager 1,717→622行、DiscussSettingArea 1,227→55行、DataGridMedia 1,041→38行、TextEditorMedia 1,173→786行）。B3: 旧コレクションCSV APIなど未使用コードを削除。B4: 旧AI・SSEコードと専用テスト13ファイルを docs/legacy-ai へ隔離し、旧SDK3種を依存から整理。B5: 空の VectorStoreService を除去。全回帰テスト 101ファイル・664件成功。変更: 163ファイル（+8366 / -7747行）。
+
 ### v2.1.13 refactor: 検索フィルターUIとSplitterを共通化し、未使用コンポーネントと同期URL既定値を整理
 
 - 日付: 2026-10-13

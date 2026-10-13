@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.13",
+  "version": "2.1.14",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "adcae11",
-  "commitDateTime": "2026-10-13-134446",
-  "commitMessage": "refactor: 検索フィルターUIとSplitterを共通化し、未使用コンポーネントと同期URL既定値を整理"
+  "commitId": "5de1975",
+  "commitDateTime": "2026-10-13-141849",
+  "commitMessage": "refactor: 残りの共通化（A3〜A8）と旧AI・未使用コードの整理（B3〜B5）を実施"
 }
