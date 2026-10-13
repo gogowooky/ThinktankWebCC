@@ -186,9 +186,11 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
       const left = rect
         ? rect.left + (rect.width - PANEL_WIDTH) / 2
         : (window.innerWidth - PANEL_WIDTH) / 2;
+      // 画面下端の基準（ToolBar の入力欄など）では下へ開くとはみ出すため、高さぶん持ち上げて収める
+      const height = panel.el.getBoundingClientRect().height;
       const top = rect ? rect.top + 6 : 60;
       panel.el.style.left = `${clamp(left, 4, window.innerWidth - PANEL_WIDTH - 4)}px`;
-      panel.el.style.top  = `${clamp(top, 4, window.innerHeight - 40)}px`;
+      panel.el.style.top  = `${clamp(top, 4, Math.max(4, window.innerHeight - height - 4))}px`;
     };
 
     const placeSubmenu = (panel: MenuPanel, parent: MenuPanel, rowIdx: number) => {

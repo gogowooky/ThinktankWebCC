@@ -140,6 +140,70 @@ export function resetSearchTagUrlOverride(): void {
   _overrideSearchTags = null;
 }
 
+export type BuiltUrl = { url: string; label: string } | { error: string };
+
+/** GoogleRoute（DefaultSearchTag.md では NoURL）の URL。引数は地点のカンマ区切り */
+export function buildGoogleRouteUrl(arg: string): BuiltUrl {
+  const places = arg.split(',').map(p => p.trim()).filter(Boolean);
+  if (places.length < 2) return { error: '経由地は2つ以上指定してください' };
+  const encoded = places.map(p => encodeURIComponent(p)).join('/');
+  return { url: `https://www.google.com/maps/dir/${encoded}/`, label: places.join(' → ') };
+}
+
+/**
+ * YahooTransfer（DefaultSearchTag.md では NoURL）の URL。
+ * 引数は "key value" をカンマ区切りで並べる（例：from 東京駅,to 大阪駅,dep 10:00）。
+ */
+export function buildYahooTransferUrl(arg: string): BuiltUrl {
+  const paramMap: Record<string, string> = {};
+  arg.split(',').forEach(token => {
+    const trimmed = token.trim();
+    const spaceIdx = trimmed.indexOf(' ');
+    if (spaceIdx < 0) return;
+    const key = trimmed.slice(0, spaceIdx).trim().toLowerCase();
+    const val = trimmed.slice(spaceIdx + 1).trim();
+    if (['from', 'to', 'dep', 'arr', 'via'].includes(key) && val) paramMap[key] = val;
+  });
+
+  const { from = '', to = '', via = '', dep = '', arr = '' } = paramMap;
+  if (!from || !to) return { error: 'YahooTransferには from と to が必要です（例：from 東京駅,to 大阪駅）' };
+
+  const params = new URLSearchParams();
+  params.set('from', from);
+  params.set('to', to);
+  if (via) params.set('via', via);
+
+  // dep（出発時刻）と arr（到着時刻）が両方指定された場合は dep を優先する
+  const timeStr = dep || arr;
+  if (timeStr) {
+    const [hh = '0', mm = '0'] = timeStr.split(':');
+    const now = new Date();
+    params.set('y', String(now.getFullYear()));
+    params.set('m', String(now.getMonth() + 1));
+    params.set('d', String(now.getDate()));
+    params.set('hh', hh.padStart(2, '0'));
+    const mmPad = mm.padStart(2, '0');
+    params.set('m1', mmPad[0]);
+    params.set('m2', mmPad[1]);
+  }
+  params.set('type', arr && !dep ? '4' : '1');
+
+  return { url: `https://transit.yahoo.co.jp/search/result?${params.toString()}`, label: `${from} → ${to}` };
+}
+
+/**
+ * 検索サイト ID と語から開く URL を作る（ToolBar.TranslateMode.Text:Search 用）。
+ * URL テンプレートは DoOnCursorPos:WebSearch:Open と同じもの（ThinktankSearchTag メモの上書きを含む）。
+ */
+export async function buildKeywordSearchUrl(searchId: string, word: string): Promise<BuiltUrl> {
+  const id = searchId.trim().toLowerCase();
+  if (id === 'googleroute') return buildGoogleRouteUrl(word);
+  if (id === 'yahootransfer') return buildYahooTransferUrl(word);
+  const template = (await getSearchTags())[id];
+  if (!template) return { error: _searchTagLoadError ?? `検索サイト [${searchId}] のURLが見つかりません（docs/DefaultSearchTag.md）` };
+  return { url: template.replace('{0}', encodeURIComponent(word)), label: `${searchId}:${word}` };
+}
+
 export function registerTextEditorCursorContentActions(app: TTApplication): void {
   function getCurrentTextOnCursor(): string {
     const editor = TTShortcutManager.instance.activeEditor;
@@ -325,24 +389,26 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     }
   });
 
+  /** [ID:引数] タグの引数部分。タグでなければ null */
+  const tagArgOnCursor = (): string | null => {
+    const text = getTextOnCursorSafe();
+    if (!text || !text.startsWith('[') || !text.endsWith(']')) return null;
+    const inner = text.slice(1, -1);
+    const colonIdx = inner.indexOf(':');
+    return colonIdx < 0 ? null : inner.slice(colonIdx + 1);
+  };
+
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open',
     Description: 'Google Mapsで複数地点のルートを表示します',
     Completion: (item) => {
       try {
-        const text = getTextOnCursorSafe();
-        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
-          item.Result = 'カーソル位置のテキストがGoogleRouteタグではありません';
-          return;
-        }
-        const inner = text.slice(1, -1);
-        const colonIdx = inner.indexOf(':');
-        if (colonIdx < 0) { item.Result = 'GoogleRouteタグの形式が正しくありません'; return; }
-        const places = inner.slice(colonIdx + 1).split(',').map(p => p.trim()).filter(Boolean);
-        if (places.length < 2) { item.Result = '経由地は2つ以上指定してください'; return; }
-        const encoded = places.map(p => encodeURIComponent(p)).join('/');
-        window.open(`https://www.google.com/maps/dir/${encoded}/`, '_blank');
-        item.Result = `Google Mapsルート [${places.join(' → ')}] を開きました`;
+        const arg = tagArgOnCursor();
+        if (arg === null) { item.Result = 'カーソル位置のテキストがGoogleRouteタグではありません'; return; }
+        const built = buildGoogleRouteUrl(arg);
+        if ('error' in built) { item.Result = built.error; return; }
+        window.open(built.url, '_blank');
+        item.Result = `Google Mapsルート [${built.label}] を開きました`;
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
       }
@@ -354,54 +420,12 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     Description: 'Yahoo乗換案内で電車の乗換を検索します',
     Completion: (item) => {
       try {
-        const text = getTextOnCursorSafe();
-        if (!text || !text.startsWith('[') || !text.endsWith(']')) {
-          item.Result = 'カーソル位置のテキストがYahooTransferタグではありません';
-          return;
-        }
-        const inner = text.slice(1, -1);
-        const colonIdx = inner.indexOf(':');
-        if (colonIdx < 0) { item.Result = 'YahooTransferタグの形式が正しくありません'; return; }
-
-        // パラメータは "key value" 形式をカンマ区切りで列挙する（例：from 東京駅,to 大阪駅,dep 10:00）
-        const paramMap: Record<string, string> = {};
-        inner.slice(colonIdx + 1).split(',').forEach(token => {
-          const trimmed = token.trim();
-          if (!trimmed) return;
-          const spaceIdx = trimmed.indexOf(' ');
-          if (spaceIdx < 0) return;
-          const key = trimmed.slice(0, spaceIdx).trim().toLowerCase();
-          const val = trimmed.slice(spaceIdx + 1).trim();
-          if (['from', 'to', 'dep', 'arr', 'via'].includes(key) && val) {
-            paramMap[key] = val;
-          }
-        });
-
-        const { from = '', to = '', via = '', dep = '', arr = '' } = paramMap;
-        if (!from || !to) { item.Result = 'YahooTransferタグには from と to が必要です'; return; }
-
-        const params = new URLSearchParams();
-        params.set('from', from);
-        params.set('to', to);
-        if (via) params.set('via', via);
-
-        // dep（出発時刻）と arr（到着時刻）が両方指定された場合は dep を優先する
-        const timeStr = dep || arr;
-        if (timeStr) {
-          const [hh = '0', mm = '0'] = timeStr.split(':');
-          const now = new Date();
-          params.set('y', String(now.getFullYear()));
-          params.set('m', String(now.getMonth() + 1));
-          params.set('d', String(now.getDate()));
-          params.set('hh', hh.padStart(2, '0'));
-          const mmPad = mm.padStart(2, '0');
-          params.set('m1', mmPad[0]);
-          params.set('m2', mmPad[1]);
-        }
-        params.set('type', arr && !dep ? '4' : '1');
-
-        window.open(`https://transit.yahoo.co.jp/search/result?${params.toString()}`, '_blank');
-        item.Result = `Yahoo乗換案内 [${from} → ${to}] を開きました`;
+        const arg = tagArgOnCursor();
+        if (arg === null) { item.Result = 'カーソル位置のテキストがYahooTransferタグではありません'; return; }
+        const built = buildYahooTransferUrl(arg);
+        if ('error' in built) { item.Result = built.error; return; }
+        window.open(built.url, '_blank');
+        item.Result = `Yahoo乗換案内 [${built.label}] を開きました`;
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
       }

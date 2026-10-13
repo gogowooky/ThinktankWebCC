@@ -1,7 +1,7 @@
 /**
  * textEditorHighlighterToolbarActions.ts
  * Highlighter検索ヒット間のカーソル移動（CursorPos:*Highlighter）と、
- * ToolBar の Highlighter/Command/Translate/CurrentMode 入力欄操作アクションの登録。
+ * ToolBar の Highlighter/Command/Translate/CurrentMode 入力欄操作と、翻訳入力欄からのキーワード検索アクションの登録。
  *
  * 元は views/TTFocusedPanelActions.ts の registerTextEditorCursorPosActions に同居していたが、
  * 独立したドメインのため分離した。
@@ -13,6 +13,11 @@ import { TTShortcutManager } from '../TTShortcutManager';
 import { TTUIStateManager, type ConfigKey } from '../TTUIStateManager';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { findHighlightRanges } from '../../utils/highlightMatches';
+import { showDefaultMenu } from '../../utils/defaultMenu';
+import { buildKeywordSearchUrl } from './textEditorCursorContentActions';
+
+/** 検索サイトを選ぶメニュー（docs/DefaultMenu.md のメニュー名） */
+const KEYWORD_SEARCH_MENU = 'Keyword検索';
 
 export function registerTextEditorHighlighterToolbarActions(app: TTApplication): void {
   // ── Highlighter 検索移動 ──────────────────────────────────────────────────
@@ -201,6 +206,42 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
       // 戻り先の記憶を Focus と共有するため、Focus アクションを通して入力欄に入る
       await TTActions.Execute('ToolBar.TranslateMode.Text:Focus');
       item.Result = `翻訳入力欄に設定: ${selected}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.TranslateMode.Text:Search',
+    Description: '翻訳入力欄のテキストを、ToolBar.TranslateMode.Text:SearchID の検索サイトで外部ブラウザに開く',
+    Completion: async (item) => {
+      const word = TTUIStateManager.instance.getProperty('ToolBar.TranslateMode.Text').trim();
+      if (!word) {
+        item.Result = '[入力なし] 翻訳入力欄が空です';
+        return;
+      }
+      const searchId = TTUIStateManager.instance.getProperty('ToolBar.TranslateMode.Text:SearchID');
+      try {
+        const built = await buildKeywordSearchUrl(searchId, word);
+        if ('error' in built) { item.Result = built.error; return; }
+        window.open(built.url, '_blank');
+        item.Result = `${searchId} で検索しました: ${built.label}`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.TranslateMode.Text:ShowMenu',
+    Description: '「Keyword検索」メニュー（docs/DefaultMenu.md）で検索サイトを選び、SearchID に設定して検索する',
+    Completion: async (item) => {
+      const searchId = await showDefaultMenu(KEYWORD_SEARCH_MENU, getToolBarInput());
+      if (!searchId) {
+        item.Result = '[キャンセル] 検索サイトは変更していません';
+        return;
+      }
+      TTUIStateManager.instance.applyProperty('ToolBar.TranslateMode.Text:SearchID', searchId);
+      const searched = await TTActions.Execute('ToolBar.TranslateMode.Text:Search');
+      item.Result = `検索サイトを ${searchId} に設定しました。${searched.Result}`;
     },
   });
 

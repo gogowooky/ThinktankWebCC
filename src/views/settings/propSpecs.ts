@@ -47,6 +47,7 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   'ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag': toolbarSpecs['ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag'],
   'ToolBar.CommandMode.Text': toolbarSpecs['ToolBar.CommandMode.Text'],
   'ToolBar.TranslateMode.Text': toolbarSpecs['ToolBar.TranslateMode.Text'],
+  'ToolBar.TranslateMode.Text:SearchID': toolbarSpecs['ToolBar.TranslateMode.Text:SearchID'],
   'ToolBar.ReminderMode.Text': toolbarSpecs['ToolBar.ReminderMode.Text'],
   'Application.FocusedPanel.Name': applicationSpecs['Application.FocusedPanel.Name'],
   'HarvestPanel.Area.IsOpen': panelSpecs['HarvestPanel.Area.IsOpen'],

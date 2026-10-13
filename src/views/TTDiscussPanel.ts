@@ -234,6 +234,8 @@ export class TTDiscussPanel extends TTUIItem {
   public CommandText: string = '';
   public TranslateText: string = '';
   public ReminderText: string = '';
+  /** 翻訳入力欄のテキストを検索する検索サイトの ID（docs/DefaultSearchTag.md） */
+  public TranslateSearchID: string = 'Google';
 
   public SetCommandText(v: string) { this.CommandText = v; this.NotifyUpdated(); }
   public SetTranslateText(v: string) { this.TranslateText = v; this.NotifyUpdated(); }

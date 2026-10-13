@@ -54,6 +54,13 @@ export const toolbarSpecs: Record<string, PropSpec> = {
     get: (app) => app.DiscussPanel.TranslateText || '',
     set: (app, v) => { app.DiscussPanel.TranslateText = v; },
   },
+  'ToolBar.TranslateMode.Text:SearchID': {
+    panel: 'DiscussPanel',
+    default: 'Google', type: 'string', candidates: '.*',
+    description: '入力文字の検索サイトID',
+    get: (app) => app.DiscussPanel.TranslateSearchID,
+    set: (app, v) => { app.DiscussPanel.TranslateSearchID = v.trim() || 'Google'; },
+  },
   'ToolBar.ReminderMode.Text': {
     panel: 'DiscussPanel',
     default: '', type: 'string', candidates: '.*',

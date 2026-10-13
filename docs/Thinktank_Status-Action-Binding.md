@@ -305,6 +305,46 @@ FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに設定�
 　　（261013）当初は ToolBar.TranslateMode.Text:AddSelected（既存の入力の末尾に追加）として実装しましたが、
 　　　ID を SetSelected に改め、追加ではなく置き換えにしました。
 　　キー割当（docs\DefaultShortcut.md）: *TextEditor で Alt+F。
+## Status：　261013　ToolBar.TranslateMode.Text:SearchID
+docs\DefaultSearchTag.mdに登録されている検索サイトの「ID」。
+description:    入力文字の検索サイトID
+key:            ToolBar.TranslateMode.Text:SearchID
+current:        
+default:        Google
+type:           string
+candidates:     .*
+
+　A（261013実装）：TTDiscussPanel.TranslateSearchID（既定 Google）を実体とし、
+　　src\views\settings\toolbarSpecs.ts に Status として登録しました。
+　　空にした場合は Google に戻します（current が空のまま起動時に読み込まれても検索先が無くならないように）。
+## Action：　261013　ToolBar.TranslateMode.Text:ShowMenu
+「Keyword検索」がタイトルのMenuを表示しIDを取得し、ToolBar.TranslateMode.Text:SearchIDに設定後、ToolBar.TranslateMode.Text:Searchを実行する
+description:    検索サイトをメニューから選んでToolBar.TranslateMode.Text:SearchIDに設定し、検索する
+key:            ToolBar.TranslateMode.Text:ShowMenu
+
+　A（261013実装）：docs\DefaultMenu.md の「Keyword検索」メニューを showDefaultMenu で表示し、
+　　選んだ ID を SearchID に設定してから :Search を実行します。Esc などで閉じた場合は SearchID を変えません。
+　　メニューは ToolBar の入力欄を基準に表示します。入力欄が画面の下端にあり、メニューが画面外へ
+　　はみ出していたため、src\utils\monacoMenu.ts でメニューの高さぶん上へずらして画面内に収めるようにしました
+　　（他のメニューでも、下端近くで開いたときは同じように収まります）。
+## Action：　261013　ToolBar.TranslateMode.Text:Search
+docs\DefaultSearchTag.mdからSearchIDに応じたURLを取得し、URLの"{0}"をToolBar.TranslateMode.Textで置換し、外部ブラウザで開く
+description:    入力テキストを検索する
+key:            ToolBar.TranslateMode.Text:Search
+
+　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に登録しました。
+　　- URL テンプレートは [ID:語] タグ（DoOnCursorPos:WebSearch:Open）と同じものを使います
+　　 （ThinktankSearchTag メモでの上書きも反映されます）。語は URL エンコードして {0} に入れます。
+　　- DefaultSearchTag.md で NoURL の GoogleRoute / YahooTransfer は、タグと同じ書式で URL を組み立てます
+　　 （GoogleRoute は「東京駅,大阪駅」、YahooTransfer は「from 東京,to 大阪」）。そのため URL の組み立てを
+　　 textEditorCursorContentActions.ts の共通関数（buildGoogleRouteUrl / buildYahooTransferUrl）に移しました。
+　　- 入力が空のとき、URL が無い ID のときは開かずに理由を返します。
+　　キー割当（docs\DefaultShortcut.md）：ToolBar.Translate で Enter（:Search）／Alt+Enter（:ShowMenu）。
+　　この2行は exmode 列が抜けていて列がずれていたため、空の exmode 列を補いました。
+　　実機で、Enter で Google、Alt+Enter → Q → B で Bing（SearchID も Bing に変わる）、
+　　GoogleRoute・YahooTransfer の URL、空入力・未登録 ID の扱いを確認しました。
+　　日本語入力の確定中の Enter は確定にだけ使われ、検索は次の Enter で行います。
+
 
 ## Status：　260625　ToolBar.HighlighterMode.Text
 description:    ハイライターの入力テキスト
