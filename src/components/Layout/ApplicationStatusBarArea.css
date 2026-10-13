@@ -223,7 +223,7 @@
   text-overflow: ellipsis;
 }
 
-/* 翻訳モードの入力欄の左に置く検索サイトID。見た目は KeyAction の FOCUS の値と同じ */
+/* Search モードの入力欄の左に置く検索サイトID。見た目は KeyAction の FOCUS の値と同じ */
 .ApplicationStatusBarArea__search-id {
   flex-shrink: 0;
   margin-left: 4px;

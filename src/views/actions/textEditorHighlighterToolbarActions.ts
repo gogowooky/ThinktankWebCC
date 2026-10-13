@@ -1,7 +1,7 @@
 /**
  * textEditorHighlighterToolbarActions.ts
  * Highlighter検索ヒット間のカーソル移動（CursorPos:*Highlighter）と、
- * ToolBar の Highlighter/Command/Translate/CurrentMode 入力欄操作と、翻訳入力欄からのキーワード検索アクションの登録。
+ * ToolBar の Highlighter/Command/Search/CurrentMode 入力欄操作と、Search 入力欄からのキーワード検索アクションの登録。
  *
  * 元は views/TTFocusedPanelActions.ts の registerTextEditorCursorPosActions に同居していたが、
  * 独立したドメインのため分離した。
@@ -136,10 +136,10 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     },
   });
 
-  // ── ToolBar Highlighter / Command / Translate 入力欄（Clear / Focus / Unfocus）──
+  // ── ToolBar Highlighter / Command / Search 入力欄（Clear / Focus / Unfocus）──
   // 3モードとも同じ #StatusBarTextInput を使い、表示中のモードだけが描画される。
   // 戻り先はモードごとに持つ（あるモードの Unfocus が別モードで記憶した位置へ戻らないように）。
-  const registerModeInputActions = (mode: 'Highlighter' | 'Command' | 'Translate', label: string): void => {
+  const registerModeInputActions = (mode: 'Highlighter' | 'Command' | 'Search', label: string): void => {
     const textKey = `ToolBar.${mode}Mode.Text` as ConfigKey;
     let prevFocus: HTMLElement | null = null;
 
@@ -190,31 +190,31 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
 
   registerModeInputActions('Highlighter', 'Highlighter');
   registerModeInputActions('Command', 'Command');
-  registerModeInputActions('Translate', '翻訳');
+  registerModeInputActions('Search', 'キーワード検索');
 
   TTActions.Register({
-    ActionID: 'ToolBar.TranslateMode.Text:SetAndFocus',
-    Description: '選択テキストがあれば翻訳入力欄に設定し、翻訳入力欄にフォーカスする',
+    ActionID: 'ToolBar.SearchMode.Text:SetAndFocus',
+    Description: '選択テキストがあればキーワード検索入力欄に設定し、キーワード検索入力欄にフォーカスする',
     Completion: async (item) => {
       // 入力欄は1行なので、選択の改行は空白に寄せる
       const selected = getSelectedTextInFocusedPane().replace(/\s*\r?\n\s*/g, ' ').trim();
-      if (selected) TTUIStateManager.instance.applyProperty('ToolBar.TranslateMode.Text', selected);
+      if (selected) TTUIStateManager.instance.applyProperty('ToolBar.SearchMode.Text', selected);
       // 戻り先の記憶を Focus と共有するため、Focus アクションを通して入力欄に入る
-      await TTActions.Execute('ToolBar.TranslateMode.Text:Focus');
-      item.Result = selected ? `翻訳入力欄に設定: ${selected}` : '翻訳入力欄にフォーカスしました';
+      await TTActions.Execute('ToolBar.SearchMode.Text:Focus');
+      item.Result = selected ? `キーワード検索入力欄に設定: ${selected}` : 'キーワード検索入力欄にフォーカスしました';
     },
   });
 
   TTActions.Register({
-    ActionID: 'ToolBar.TranslateMode.Text:Search',
-    Description: '翻訳入力欄のテキストを、ToolBar.TranslateMode.Text:SearchID の検索サイトで外部ブラウザに開く',
+    ActionID: 'ToolBar.SearchMode.Text:Search',
+    Description: 'キーワード検索入力欄のテキストを、ToolBar.SearchMode.Text:SearchID の検索サイトで外部ブラウザに開く',
     Completion: async (item) => {
-      const word = TTUIStateManager.instance.getProperty('ToolBar.TranslateMode.Text').trim();
+      const word = TTUIStateManager.instance.getProperty('ToolBar.SearchMode.Text').trim();
       if (!word) {
-        item.Result = '[入力なし] 翻訳入力欄が空です';
+        item.Result = '[入力なし] キーワード検索入力欄が空です';
         return;
       }
-      const searchId = TTUIStateManager.instance.getProperty('ToolBar.TranslateMode.Text:SearchID');
+      const searchId = TTUIStateManager.instance.getProperty('ToolBar.SearchMode.Text:SearchID');
       try {
         const built = await buildKeywordSearchUrl(searchId, word);
         if ('error' in built) { item.Result = built.error; return; }
@@ -227,7 +227,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
   });
 
   TTActions.Register({
-    ActionID: 'ToolBar.TranslateMode.Text:ShowMenu',
+    ActionID: 'ToolBar.SearchMode.Text:ShowMenu',
     Description: '「Keyword検索」メニュー（docs/DefaultMenu.md）で検索サイトを選び、SearchID に設定して検索する',
     Completion: async (item) => {
       const searchId = await showDefaultMenu(KEYWORD_SEARCH_MENU, getToolBarInput());
@@ -235,8 +235,8 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
         item.Result = '[キャンセル] 検索サイトは変更していません';
         return;
       }
-      TTUIStateManager.instance.applyProperty('ToolBar.TranslateMode.Text:SearchID', searchId);
-      const searched = await TTActions.Execute('ToolBar.TranslateMode.Text:Search');
+      TTUIStateManager.instance.applyProperty('ToolBar.SearchMode.Text:SearchID', searchId);
+      const searched = await TTActions.Execute('ToolBar.SearchMode.Text:Search');
       item.Result = `検索サイトを ${searchId} に設定しました。${searched.Result}`;
     },
   });
@@ -245,7 +245,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
   const TOOLBAR_MODE_TEXT_KEY: Record<string, ConfigKey> = {
     Highlighter: 'ToolBar.HighlighterMode.Text',
     Command:     'ToolBar.CommandMode.Text',
-    Translate:   'ToolBar.TranslateMode.Text',
+    Search:      'ToolBar.SearchMode.Text',
     Reminder:    'ToolBar.ReminderMode.Text',
     Status:      'ToolBar.StatusMode.Text',
   };

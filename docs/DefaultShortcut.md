@@ -89,13 +89,13 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 *TextEditor ,       ,Alt+S                  ,TextEditor.CurrentEditor.CursorPos:NextHighlighter     ,Highlighterの次のヒットに移動する
 *TextEditor ,       ,Shift+Alt+W            ,TextEditor.CurrentEditor.CursorPos:FirstHighlighter    ,Highlighterの先頭ヒットに移動する
 *TextEditor ,       ,Shift+Alt+S            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
-
 *TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
 
-*TextEditor ,       ,Alt+F                  ,ToolBar.TranslateMode.Text:SetAndFocus                  ,選択テキストを翻訳入力欄に設定してフォーカスする
-ToolBar.Translate,  ,Enter                  ,ToolBar.TranslateMode.Text:Search                      ,翻訳入力欄のテキストでキーワード検索する
-ToolBar.Translate,  ,Alt+Enter              ,ToolBar.TranslateMode.Text:ShowMenu                    ,キーワード検索サイトを設定する
+# キーワード検索関連
+*TextEditor ,       ,Alt+F                  ,ToolBar.SearchMode.Text:SetAndFocus                    ,選択テキストをキーワード検索入力欄に設定してフォーカスする
+ToolBar.Search,     ,Enter                  ,ToolBar.SearchMode.Text:Search                         ,キーワード検索入力欄のテキストで検索する
+ToolBar.Search,     ,Alt+Enter              ,ToolBar.SearchMode.Text:ShowMenu                       ,キーワード検索サイトを設定する
 
 # ToolBar
 ToolBar*    ,       ,Alt+C                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする

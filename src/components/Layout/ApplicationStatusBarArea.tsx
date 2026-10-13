@@ -58,7 +58,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     const initMode = TOOLBAR_TO_MODE[panel.ToolBarMode] ?? 'highlight';
     if (initMode === 'highlight') return panel.HighlightWord;
     if (initMode === 'command') return panel.CommandText || '';
-    if (initMode === 'translate') return panel.TranslateText || '';
+    if (initMode === 'search') return panel.SearchText || '';
     if (initMode === 'reminder') return panel.ReminderText || '';
     return '';
   });
@@ -115,9 +115,9 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   useEffect(() => {
     if (mode === 'highlight') setText(panel.HighlightWord);
     else if (mode === 'command') setText(panel.CommandText || '');
-    else if (mode === 'translate') setText(panel.TranslateText || '');
+    else if (mode === 'search') setText(panel.SearchText || '');
     else if (mode === 'reminder') setText(panel.ReminderText || '');
-  }, [panel.HighlightWord, panel.CommandText, panel.TranslateText, panel.ReminderText, mode]);
+  }, [panel.HighlightWord, panel.CommandText, panel.SearchText, panel.ReminderText, mode]);
 
   // ExMode: モディファイアキーがすべて離されたら自動クリア（常時監視）
   useEffect(() => {
@@ -234,7 +234,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     let t = '';
     if (m === 'highlight') t = panel.HighlightWord;
     else if (m === 'command') t = panel.CommandText || '';
-    else if (m === 'translate') t = panel.TranslateText || '';
+    else if (m === 'search') t = panel.SearchText || '';
     else if (m === 'reminder') t = panel.ReminderText || '';
     setText(t);
     inputRef.current?.focus();
@@ -246,7 +246,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     setText(v);
     if (mode === 'highlight') panel.SetHighlightWord(v);
     else if (mode === 'command') panel.SetCommandText(v);
-    else if (mode === 'translate') panel.SetTranslateText(v);
+    else if (mode === 'search') panel.SetSearchText(v);
     else if (mode === 'reminder') panel.SetReminderText(v);
   }, [mode, panel]);
 
@@ -287,7 +287,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     setText('');
     if (mode === 'highlight') panel.SetHighlightWord('');
     else if (mode === 'command') panel.SetCommandText('');
-    else if (mode === 'translate') panel.SetTranslateText('');
+    else if (mode === 'search') panel.SetSearchText('');
     else if (mode === 'reminder') panel.SetReminderText('');
   }, [mode, panel]);
 
@@ -331,15 +331,15 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       }
     }
 
-    // 通常の入力フィールド (Highlight, Command, Translate, Reminder 等、または Copyrightの静的表示)
+    // 通常の入力フィールド (Highlight, Command, Search, Reminder 等、または Copyrightの静的表示)
     return (
       <div className="ApplicationStatusBarArea__input-wrap">
-        {authorState === 'off' && mode === 'translate' && (
+        {authorState === 'off' && mode === 'search' && (
           <span
             className="ApplicationStatusBarArea__ka-value ApplicationStatusBarArea__ka-value--focus ApplicationStatusBarArea__search-id"
-            data-tip="検索サイト（ToolBar.TranslateMode.Text:SearchID）。Enter で検索、Alt+Enter で変更"
+            data-tip="検索サイト（ToolBar.SearchMode.Text:SearchID）。Enter で検索、Alt+Enter で変更"
           >
-            {panel.TranslateSearchID}
+            {panel.SearchSiteID}
           </span>
         )}
         <StatusBarInputPanel

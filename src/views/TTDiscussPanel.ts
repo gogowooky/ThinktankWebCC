@@ -230,15 +230,15 @@ export class TTDiscussPanel extends TTUIItem {
     this.NotifyUpdated();
   }
 
-  // ── コマンド・翻訳・リマインダーテキスト設定 ──────────────────────────────────────
+  // ── コマンド・キーワード検索・リマインダーテキスト設定 ──────────────────────────────────────
   public CommandText: string = '';
-  public TranslateText: string = '';
+  public SearchText: string = '';
   public ReminderText: string = '';
-  /** 翻訳入力欄のテキストを検索する検索サイトの ID（docs/DefaultSearchTag.md） */
-  public TranslateSearchID: string = 'Google';
+  /** キーワード検索入力欄のテキストを検索する検索サイトの ID（docs/DefaultSearchTag.md） */
+  public SearchSiteID: string = 'Google';
 
   public SetCommandText(v: string) { this.CommandText = v; this.NotifyUpdated(); }
-  public SetTranslateText(v: string) { this.TranslateText = v; this.NotifyUpdated(); }
+  public SetSearchText(v: string) { this.SearchText = v; this.NotifyUpdated(); }
   public SetReminderText(v: string) { this.ReminderText = v; this.NotifyUpdated(); }
 
   // ── TextEditor ヘルパーメソッド ─────────────────────────────────────────

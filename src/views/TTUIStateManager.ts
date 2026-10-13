@@ -45,6 +45,7 @@ function canonicalStateValue(key: ConfigKey, value: string): string {
   if (key === 'Application.FocusedPanel.Name') return canonicalPanelName(value);
   if (key === 'ToolBar.StatusMode.Text') return canonicalPanelStatusList(value);
   if (key === 'DiscussSettingPanel.Mode.Name' && ['workout', 'develop', 'discuss'].includes(value.toLowerCase())) return 'Panes';
+  if (key === 'ToolBar.Mode.Name' && value === 'Translate') return 'Search';
   return value;
 }
 
@@ -390,6 +391,8 @@ export class TTUIStateManager {
         // 選択・出現・折畳は背景色を BgColor から <ID>.Theme.Color へ移した（Color と BgColor の役割を入れ替え）
         .replace(/\bTextEditor\.(Selection|Occurrence|FoldingHeader)\.(Color|BgColor|Attrs)\b/g,
           (_m, id: string, prop: string) => `TextEditor.${id}.Theme.${prop === 'Color' ? 'BgColor' : prop === 'BgColor' ? 'Color' : prop}`)
+        // ToolBar の Translate モードは Search（キーワード検索）モードに改めた
+        .replace(/\bToolBar\.TranslateMode\.Text\b/g, 'ToolBar.SearchMode.Text')
         .replace(/\bDiscussPanel\.Pane\.Count\b/g, 'DiscussPanel.Panes.Count')
         .replace(/\bDiscussPanel\.Pane\.Layout\b/g, 'DiscussPanel.Panes.Layout')
         .replace(/\bDiscussPanel\.Pane\.Display\b/g, 'DiscussPanel.Panes.Display')

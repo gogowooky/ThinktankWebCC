@@ -192,7 +192,7 @@ export function buildYahooTransferUrl(arg: string): BuiltUrl {
 }
 
 /**
- * 検索サイト ID と語から開く URL を作る（ToolBar.TranslateMode.Text:Search 用）。
+ * 検索サイト ID と語から開く URL を作る（ToolBar.SearchMode.Text:Search 用）。
  * URL テンプレートは DoOnCursorPos:WebSearch:Open と同じもの（ThinktankSearchTag メモの上書きを含む）。
  */
 export async function buildKeywordSearchUrl(searchId: string, word: string): Promise<BuiltUrl> {

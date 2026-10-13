@@ -1,9 +1,9 @@
 import React from 'react';
-import { Info, Highlighter, Keyboard, Terminal, BookA, Bell, Copyright } from 'lucide-react';
+import { Info, Highlighter, Keyboard, Terminal, Search, Bell, Copyright } from 'lucide-react';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-export type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'translate' | 'reminder';
+export type ToolMode = 'status' | 'highlight' | 'keyaction' | 'command' | 'search' | 'reminder';
 
 export interface ModeEntry {
   id:          ToolMode;
@@ -19,7 +19,7 @@ export const MODES: ModeEntry[] = [
   { id: 'highlight', icon: <Highlighter size={14} />, label: 'Highlighter', placeholder: '例: harvest fixme, error warn, info' },
   { id: 'keyaction', icon: <Keyboard    size={14} />, label: 'KeyAction',   placeholder: 'KeyAction...' },
   { id: 'command',   icon: <Terminal    size={14} />, label: 'Command',     placeholder: 'Command...' },
-  { id: 'translate', icon: <BookA       size={14} />, label: 'Translate',   placeholder: 'Translate...' },
+  { id: 'search',    icon: <Search      size={14} />, label: 'Search',      placeholder: 'Keyword...' },
   { id: 'reminder',  icon: <Bell        size={14} />, label: 'Reminder',    placeholder: 'Reminder...' },
 ];
 

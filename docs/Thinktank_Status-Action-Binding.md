@@ -239,7 +239,7 @@ key:            ToolBar.Mode.Name
 current:        KeyAction
 default:        KeyAction
 type:           string
-candidates:     ^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$
+candidates:     ^(Status|Highlighter|KeyAction|Command|Search|Reminder|Copyright)$
 
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の7つです。
@@ -247,7 +247,7 @@ candidates:     ^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyri
 　　- Highlighter （ハイライター）
 　　- KeyAction （キーアクション）
 　　- Command （コマンド）
-　　- Translate （翻訳）
+　　- Search （キーワード検索）
 　　- Reminder （リマインダー）
 　　- Copyright （著作権・コピーライト情報）
 
@@ -271,69 +271,76 @@ type:           string
 candidates:     .*
 
 
-## Status：　260625　ToolBar.TranslateMode.Text
-description:    翻訳の入力テキスト
-key:            ToolBar.TranslateMode.Text
+## Status：　260625　ToolBar.SearchMode.Text
+description:    キーワード検索の入力テキスト
+key:            ToolBar.SearchMode.Text
 current:        
 default:        
 type:           string
 candidates:     .*
-## Action：　261013　ToolBar.TranslateMode.Text:Unfocus
-description:    ToolBarの翻訳入力欄から元の位置に戻る
-key:            ToolBar.TranslateMode.Text:Unfocus
-　ToolBarの翻訳入力欄から元の位置に戻る
-## Action：　261013　ToolBar.TranslateMode.Text:Focus
-description:    ToolBarの翻訳入力欄にフォーカスする
-key:            ToolBar.TranslateMode.Text:Focus
-　ToolBarの翻訳入力欄にフォーカスする
-## Action：　261013　ToolBar.TranslateMode.Text:Clear
-description:    ToolBarの翻訳入力欄をクリアする
-key:            ToolBar.TranslateMode.Text:Clear
-　ToolBarの翻訳入力欄をクリアする
-## Action：　261013　ToolBar.TranslateMode.Text:SetAndFocus
-description:    選択テキストがあれば翻訳入力欄に設定し、翻訳入力欄にフォーカスする
-key:            ToolBar.TranslateMode.Text:SetAndFocus
-FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに設定する。
+
+　（261013）ToolBar の Translate（翻訳）モードを Search（キーワード検索）モードに改めました。
+　　- モード名 Translate → Search（ToolBar.Mode.Name）、フォーカス名 ToolBar.Translate → ToolBar.Search
+　　- StatusID・ActionID の ToolBar.TranslateMode.Text* → ToolBar.SearchMode.Text*
+　　- タブのアイコンは虫眼鏡、入力欄のプレースホルダーは「Keyword...」
+　　保存済みの旧名（ToolBar.TranslateMode.Text*、ToolBar.Mode.Name の Translate）は読込時に新しい名前へ読み替えます。
+　　ThinktankKeyBinding メモに旧名で書き戻したショートカットは読み替えないので、書き直しが必要です。
+## Action：　261013　ToolBar.SearchMode.Text:Unfocus
+description:    ToolBarのキーワード検索入力欄から元の位置に戻る
+key:            ToolBar.SearchMode.Text:Unfocus
+　ToolBarのキーワード検索入力欄から元の位置に戻る
+## Action：　261013　ToolBar.SearchMode.Text:Focus
+description:    ToolBarのキーワード検索入力欄にフォーカスする
+key:            ToolBar.SearchMode.Text:Focus
+　ToolBarのキーワード検索入力欄にフォーカスする
+## Action：　261013　ToolBar.SearchMode.Text:Clear
+description:    ToolBarのキーワード検索入力欄をクリアする
+key:            ToolBar.SearchMode.Text:Clear
+　ToolBarのキーワード検索入力欄をクリアする
+## Action：　261013　ToolBar.SearchMode.Text:SetAndFocus
+description:    選択テキストがあればキーワード検索入力欄に設定し、キーワード検索入力欄にフォーカスする
+key:            ToolBar.SearchMode.Text:SetAndFocus
+FocusedPaneの選択テキストの内容をToolBar.SearchMode.Textに設定する。
 
 　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に登録しました。
 　　- 選択テキストは Highlighter の AddSelected と同じく、エディタの選択を優先し、無ければ画面上の選択を使います。
 　　- 入力欄は1行のため、選択の改行は空白1つに置き換えます。
 　　- 入力欄の内容は選択テキストで置き換えます（既存の入力には追加しません）。
-　　- 設定後は ToolBar.TranslateMode.Text:Focus を実行して翻訳モードに切り替え、入力欄にフォーカスします。
+　　- 設定後は ToolBar.SearchMode.Text:Focus を実行してSearch モードに切り替え、入力欄にフォーカスします。
 　　 直前のフォーカス位置もこのとき記憶されるので、:Unfocus で元に戻れます。
 　　- 選択が無いときは入力欄の内容をそのままにして、フォーカスだけ移します。
-　　（261013）当初は ToolBar.TranslateMode.Text:AddSelected（既存の入力の末尾に追加）として実装しましたが、
+　　（261013）当初は ToolBar.SearchMode.Text:AddSelected（既存の入力の末尾に追加）として実装しましたが、
 　　　ID を SetSelected に改め、追加ではなく置き換えにしました。さらに ID を SetAndFocus に改め、
 　　　選択が無くてもフォーカスするようにしました（それまでは選択が無いと何もしませんでした）。
 　　キー割当（docs\DefaultShortcut.md）: *TextEditor で Alt+F。
-## Status：　261013　ToolBar.TranslateMode.Text:SearchID
+## Status：　261013　ToolBar.SearchMode.Text:SearchID
 docs\DefaultSearchTag.mdに登録されている検索サイトの「ID」。
 description:    入力文字の検索サイトID
-key:            ToolBar.TranslateMode.Text:SearchID
+key:            ToolBar.SearchMode.Text:SearchID
 current:        
 default:        Google
 type:           string
 candidates:     .*
 
-　A（261013実装）：TTDiscussPanel.TranslateSearchID（既定 Google）を実体とし、
+　A（261013実装）：TTDiscussPanel.SearchSiteID（既定 Google）を実体とし、
 　　src\views\settings\toolbarSpecs.ts に Status として登録しました。
 　　空にした場合は Google に戻します（current が空のまま起動時に読み込まれても検索先が無くならないように）。
-　（261013）ToolBar の Translate モードでは、入力欄の左にこの値を表示します
+　（261013）ToolBar の Search モードでは、入力欄の左にこの値を表示します
 　　（見た目は KeyAction モードの FOCUS の値と同じ。src\components\Layout\ApplicationStatusBarArea.tsx）。
-## Action：　261013　ToolBar.TranslateMode.Text:ShowMenu
-「Keyword検索」がタイトルのMenuを表示しIDを取得し、ToolBar.TranslateMode.Text:SearchIDに設定後、ToolBar.TranslateMode.Text:Searchを実行する
-description:    検索サイトをメニューから選んでToolBar.TranslateMode.Text:SearchIDに設定し、検索する
-key:            ToolBar.TranslateMode.Text:ShowMenu
+## Action：　261013　ToolBar.SearchMode.Text:ShowMenu
+「Keyword検索」がタイトルのMenuを表示しIDを取得し、ToolBar.SearchMode.Text:SearchIDに設定後、ToolBar.SearchMode.Text:Searchを実行する
+description:    検索サイトをメニューから選んでToolBar.SearchMode.Text:SearchIDに設定し、検索する
+key:            ToolBar.SearchMode.Text:ShowMenu
 
 　A（261013実装）：docs\DefaultMenu.md の「Keyword検索」メニューを showDefaultMenu で表示し、
 　　選んだ ID を SearchID に設定してから :Search を実行します。Esc などで閉じた場合は SearchID を変えません。
 　　メニューは ToolBar の入力欄を基準に表示します。入力欄が画面の下端にあり、メニューが画面外へ
 　　はみ出していたため、src\utils\monacoMenu.ts でメニューの高さぶん上へずらして画面内に収めるようにしました
 　　（他のメニューでも、下端近くで開いたときは同じように収まります）。
-## Action：　261013　ToolBar.TranslateMode.Text:Search
-docs\DefaultSearchTag.mdからSearchIDに応じたURLを取得し、URLの"{0}"をToolBar.TranslateMode.Textで置換し、外部ブラウザで開く
+## Action：　261013　ToolBar.SearchMode.Text:Search
+docs\DefaultSearchTag.mdからSearchIDに応じたURLを取得し、URLの"{0}"をToolBar.SearchMode.Textで置換し、外部ブラウザで開く
 description:    入力テキストを検索する
-key:            ToolBar.TranslateMode.Text:Search
+key:            ToolBar.SearchMode.Text:Search
 
 　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に登録しました。
 　　- URL テンプレートは [ID:語] タグ（DoOnCursorPos:WebSearch:Open）と同じものを使います
@@ -342,7 +349,7 @@ key:            ToolBar.TranslateMode.Text:Search
 　　 （GoogleRoute は「東京駅,大阪駅」、YahooTransfer は「from 東京,to 大阪」）。そのため URL の組み立てを
 　　 textEditorCursorContentActions.ts の共通関数（buildGoogleRouteUrl / buildYahooTransferUrl）に移しました。
 　　- 入力が空のとき、URL が無い ID のときは開かずに理由を返します。
-　　キー割当（docs\DefaultShortcut.md）：ToolBar.Translate で Enter（:Search）／Alt+Enter（:ShowMenu）。
+　　キー割当（docs\DefaultShortcut.md）：ToolBar.Search で Enter（:Search）／Alt+Enter（:ShowMenu）。
 　　この2行は exmode 列が抜けていて列がずれていたため、空の exmode 列を補いました。
 　　実機で、Enter で Google、Alt+Enter → Q → B で Bing（SearchID も Bing に変わる）、
 　　GoogleRoute・YahooTransfer の URL、空入力・未登録 ID の扱いを確認しました。

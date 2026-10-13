@@ -5,7 +5,7 @@ export const toolbarSpecs: Record<string, PropSpec> = {
   'ToolBar.Mode.Name': {
     panel: 'DiscussPanel',
     default: 'Copyright', type: 'string',
-    candidates: '^(Status|Highlighter|KeyAction|Command|Translate|Reminder|Copyright)$',
+    candidates: '^(Status|Highlighter|KeyAction|Command|Search|Reminder|Copyright)$',
     description: 'Toolバー表示モード',
     get: (app) => app.DiscussPanel.ToolBarMode,
     set: (app, v) => { app.DiscussPanel.ToolBarMode = v; },
@@ -47,19 +47,19 @@ export const toolbarSpecs: Record<string, PropSpec> = {
     get: (app) => app.DiscussPanel.CommandText || '',
     set: (app, v) => { app.DiscussPanel.CommandText = v; },
   },
-  'ToolBar.TranslateMode.Text': {
+  'ToolBar.SearchMode.Text': {
     panel: 'DiscussPanel',
     default: '', type: 'string', candidates: '.*',
-    description: '翻訳の入力テキスト',
-    get: (app) => app.DiscussPanel.TranslateText || '',
-    set: (app, v) => { app.DiscussPanel.TranslateText = v; },
+    description: 'キーワード検索の入力テキスト',
+    get: (app) => app.DiscussPanel.SearchText || '',
+    set: (app, v) => { app.DiscussPanel.SearchText = v; },
   },
-  'ToolBar.TranslateMode.Text:SearchID': {
+  'ToolBar.SearchMode.Text:SearchID': {
     panel: 'DiscussPanel',
     default: 'Google', type: 'string', candidates: '.*',
     description: '入力文字の検索サイトID',
-    get: (app) => app.DiscussPanel.TranslateSearchID,
-    set: (app, v) => { app.DiscussPanel.TranslateSearchID = v.trim() || 'Google'; },
+    get: (app) => app.DiscussPanel.SearchSiteID,
+    set: (app, v) => { app.DiscussPanel.SearchSiteID = v.trim() || 'Google'; },
   },
   'ToolBar.ReminderMode.Text': {
     panel: 'DiscussPanel',
