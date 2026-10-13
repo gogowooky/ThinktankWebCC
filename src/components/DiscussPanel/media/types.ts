@@ -78,7 +78,7 @@ export interface MediaProps {
     linkStyles?: LinkStyles;
     /** `**bold**` / `*italic*` / `__underline__` / `~~strikethrough~~` の表示属性 */
     inlineStyles?: InlineStyles;
-    /** 折り畳まれている行の表示属性（TextEditor.FoldingHeader.*） */
+    /** 折り畳まれている行の表示属性（TextEditor.FoldingHeader.Theme.*。背景色は Color） */
     foldingHeaderStyle?: ColorStyle;
   };
 }

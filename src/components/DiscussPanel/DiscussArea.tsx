@@ -276,8 +276,8 @@ export function DiscussArea({
     // エディタの基本色。Monaco のテーマには必ず値を渡す必要があるため、
     // DefaultColor.md 側が無設定のときだけ最終フォールバックを当てる。
     const textStyle       = pickColorStyle('TextEditor.Text',       panel?.TextEditor.ColorStatus);
-    const selectionStyle  = pickColorStyle('TextEditor.Selection',  panel?.TextEditor.ColorStatus);
-    const occurrenceStyle = pickColorStyle('TextEditor.Occurrence', panel?.TextEditor.ColorStatus);
+    const selectionStyle  = pickColorStyle('TextEditor.Selection.Theme',  panel?.TextEditor.ColorStatus);
+    const occurrenceStyle = pickColorStyle('TextEditor.Occurrence.Theme', panel?.TextEditor.ColorStatus);
     const colorOr = (value: string, fallback: string) => (isUnset(value) ? fallback : value);
 
     return {
@@ -291,8 +291,8 @@ export function DiscussArea({
       highlightStyles: pickIndexedStyles('Highlighter', panel?.TextEditor.ColorStatus),
       background:           colorOr(textStyle.BgColor,       '#f5f5f5'),
       foreground:           colorOr(textStyle.Color,         '#1e1e1e'),
-      selectionBackground:  colorOr(selectionStyle.BgColor,  '#cba8ff'),
-      occurrenceBackground: colorOr(occurrenceStyle.BgColor, '#ccffdd'),
+      selectionBackground:  colorOr(selectionStyle.Color,  '#cba8ff'),
+      occurrenceBackground: colorOr(occurrenceStyle.Color, '#ccffdd'),
       headingStyles:   pickIndexedStyles('Heading',     panel?.TextEditor.ColorStatus),
       commentStyles,
       bulletStyles,

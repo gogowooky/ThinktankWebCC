@@ -1,20 +1,26 @@
 import type { TTDiscussPanel } from '../../../views/TTDiscussPanel';
-import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, parseMarks, styleStatusId, type MarkKind } from '../../../utils/defaultColor';
+import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, parseMarks, styleStatusId, type ColorProp, type MarkKind } from '../../../utils/defaultColor';
 import { DD_GHOST_KINDS, FOCUSING_BORDER_STATUS_ID, PANEL_THEME_KINDS, ddGhostStatusId, panelThemeStatusId } from '../../../utils/panelTheme';
 
 export const TEXT_EDITOR_BASE_COLORS: {
   statusId: string;
   label: string;
-  hasColor: boolean;
+  /** 並べる色見本と、その見本が編集する ColorProp・ツールチップ */
+  pickers: { prop: ColorProp; tip: string; fallback: string; }[];
 }[][] = [
     // 配列1つが1行。基本｜選択 / 出現｜折畳 の2列に並べる
     [
-      { statusId: 'TextEditor.Text', label: '基本', hasColor: true },
-      { statusId: 'TextEditor.Selection', label: '選択', hasColor: false },
+      {
+        statusId: 'TextEditor.Text', label: '基本', pickers: [
+          { prop: 'Color', tip: '基本の文字色', fallback: '#000000' },
+          { prop: 'BgColor', tip: '基本の背景色', fallback: '#ffffff' },
+        ],
+      },
+      { statusId: 'TextEditor.Selection.Theme', label: '選択', pickers: [{ prop: 'Color', tip: '選択範囲の背景色', fallback: '#ffffff' }] },
     ],
     [
-      { statusId: 'TextEditor.Occurrence', label: '出現', hasColor: false },
-      { statusId: FOLDING_HEADER_STATUS_ID, label: '折畳', hasColor: false },
+      { statusId: 'TextEditor.Occurrence.Theme', label: '出現', pickers: [{ prop: 'Color', tip: '出現（同じ語）の背景色', fallback: '#ffffff' }] },
+      { statusId: FOLDING_HEADER_STATUS_ID, label: '折畳', pickers: [{ prop: 'Color', tip: '折り畳まれている行の背景色', fallback: '#ffffff' }] },
     ],
   ];
 

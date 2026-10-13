@@ -363,7 +363,10 @@
       "Bash(PYTHONUTF8=1 python /tmp/m.py)",
       "Bash(node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/81aa3d25-b25d-4646-b5f5-3f34b5e92839/scratchpad/fixws.js\")",
       "Bash(node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/81aa3d25-b25d-4646-b5f5-3f34b5e92839/scratchpad/fix2.js\")",
-      "Bash(node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/81aa3d25-b25d-4646-b5f5-3f34b5e92839/scratchpad/fix3.js\")"
+      "Bash(node \"C:/Users/gogow/AppData/Local/Temp/claude/C--Users-gogow-Documents-ThinktankWebCC/81aa3d25-b25d-4646-b5f5-3f34b5e92839/scratchpad/fix3.js\")",
+      "PowerShell(npm run typecheck 2>&1)",
+      "PowerShell(npx vitest run src/utils/defaultColor.test.ts src/views 2>&1)",
+      "Bash(git log *)"
     ]
   }
 }

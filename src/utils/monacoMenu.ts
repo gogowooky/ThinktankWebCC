@@ -261,12 +261,9 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
           return;
         }
         case 'Enter': activate(panel, panel.selected); return;
-        case 'Escape': {
-          // 子メニューが開いていれば1階層戻り、ルートのみならキャンセルする
-          if (panels.length > 1) closePanelsAfter(panels.length - 2);
-          else cancel();
-          return;
-        }
+        // どの階層からでもメニュー全体を閉じる。マウスを載せただけで子メニューが開くため、
+        // 1階層ずつ戻す動作だと Esc を押してもメニューが消えないように見える（1階層戻るのは ←）
+        case 'Escape': cancel(); return;
       }
 
       if (e.key.length !== 1) return;

@@ -387,6 +387,9 @@ export class TTUIStateManager {
         .replace(/\bDefault\.TextEditor\.Text\.Color\b/g, 'TextEditor.Text.Color')
         .replace(/\bDefault\.TextEditor\.Selection\.BgColor\b/g, 'TextEditor.Selection.BgColor')
         .replace(/\bDefault\.TextEditor\.Occurrence\.BgColor\b/g, 'TextEditor.Occurrence.BgColor')
+        // 選択・出現・折畳は背景色を BgColor から <ID>.Theme.Color へ移した（Color と BgColor の役割を入れ替え）
+        .replace(/\bTextEditor\.(Selection|Occurrence|FoldingHeader)\.(Color|BgColor|Attrs)\b/g,
+          (_m, id: string, prop: string) => `TextEditor.${id}.Theme.${prop === 'Color' ? 'BgColor' : prop === 'BgColor' ? 'Color' : prop}`)
         .replace(/\bDiscussPanel\.Pane\.Count\b/g, 'DiscussPanel.Panes.Count')
         .replace(/\bDiscussPanel\.Pane\.Layout\b/g, 'DiscussPanel.Panes.Layout')
         .replace(/\bDiscussPanel\.Pane\.Display\b/g, 'DiscussPanel.Panes.Display')

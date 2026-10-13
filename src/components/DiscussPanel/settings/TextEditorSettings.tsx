@@ -349,27 +349,21 @@ export function TextEditorSettings({
           {/* エディタの基本色。docs/DefaultColor.md の各StatusIDを直接編集する（Attrs は扱わない）*/}
           {TEXT_EDITOR_BASE_COLORS.map((row, rowIndex) => (
             <div key={rowIndex} className="discuss-setting-area__color-row">
-              {row.map(({ statusId, label, hasColor }, cellIndex) => {
+              {row.map(({ statusId, label, pickers }, cellIndex) => {
                 const style = panel.GetColorStatus(statusId);
                 return (
                   <div key={statusId} className="discuss-setting-area__color-cell">
                     <span className={`discuss-setting-area__color-label${cellIndex === 0 ? ' discuss-setting-area__swatch-label' : ''}`}>{label}</span>
-                    {hasColor && (
+                    {pickers.map(({ prop, tip, fallback }) => (
                       <input
+                        key={prop}
                         type="color"
                         className="discuss-setting-area__color-picker"
-                        value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
-                        onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
-                        data-tip={`${label}の文字色`}
+                        value={isUnset(style[prop]) ? fallback : style[prop].slice(0, 7)}
+                        onChange={e => panel.SetColorStatus(statusId, prop, e.target.value)}
+                        data-tip={tip}
                       />
-                    )}
-                    <input
-                      type="color"
-                      className="discuss-setting-area__color-picker"
-                      value={isUnset(style.BgColor) ? '#ffffff' : style.BgColor.slice(0, 7)}
-                      onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
-                      data-tip={`${label}の背景色`}
-                    />
+                    ))}
                   </div>
                 );
               })}

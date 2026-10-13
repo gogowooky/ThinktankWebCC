@@ -557,7 +557,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     injectInlineStyleCss(editorSettings.inlineStyles);
 
     // 折り畳まれている行用CSSの注入
-    // 色・属性は docs/DefaultColor.md 由来の TextEditor.FoldingHeader.* に従う
+    // 色は docs/DefaultColor.md 由来の TextEditor.FoldingHeader.Theme.Color に従う
     let foldingStyleEl = document.getElementById('text-editor-folding-header-styles');
     if (!foldingStyleEl) {
       foldingStyleEl = document.createElement('style');
@@ -587,10 +587,10 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     if (!editor || !collection) return;
 
     // Monaco 標準の折り畳みハイライト（選択色由来）は切ってあるので、
-    // ミニマップの印も TextEditor.FoldingHeader の背景色から出す
+    // ミニマップの印も TextEditor.FoldingHeader.Theme の色から出す
     const style = foldingHeaderStyleRef.current;
-    const minimapOptions = style && !isUnset(style.BgColor) ? {
-      color: style.BgColor,
+    const minimapOptions = style && !isUnset(style.Color) ? {
+      color: style.Color,
       position: 1 // MinimapPosition.Inline
     } : undefined;
 
@@ -753,8 +753,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           showFoldingControls: 'always',
           // Monaco 標準の折り畳みハイライト（.folded-background）を切る。
           // その色 editor.foldBackground の既定値は「選択色の30%」で、切らないと
-          // TextEditor.Selection の変更が折り畳み行の色に混ざる。折り畳み行の色は
-          // TextEditor.FoldingHeader だけが決めるようにする。
+          // TextEditor.Selection.Theme の変更が折り畳み行の色に混ざる。折り畳み行の色は
+          // TextEditor.FoldingHeader.Theme だけが決めるようにする。
           foldingHighlight: false,
           unicodeHighlight: {
             ambiguousCharacters: editorSettings?.unicodeHighlight ?? true,

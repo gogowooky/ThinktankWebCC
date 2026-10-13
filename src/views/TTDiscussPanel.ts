@@ -44,7 +44,7 @@ export class TextEditorSettings {
   Bullet  = { Marks: DEFAULT_MARKS.Bullet };
   Comment = { Marks: DEFAULT_MARKS.Comment };
 
-  // エディタの基本色（TextEditor.Text / .Selection / .Occurrence / .FoldingHeader）も
+  // エディタの基本色（TextEditor.Text / .Selection.Theme / .Occurrence.Theme / .FoldingHeader.Theme）も
   // 下の ColorStatus が持つ。専用フィールド（旧 TextEditor.Color.*）は廃止した。
   // Heading / Highlighter / Url / Filepath / Tag のスタイルも ColorStatus が持つ
   // （docs/DefaultColor.md の TextEditor.Heading.Style(1..6).* / .Highlighter.Style(1..6).*

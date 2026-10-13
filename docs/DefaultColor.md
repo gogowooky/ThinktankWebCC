@@ -7,9 +7,10 @@ TextEditor.Strikethrough,           undefined,      undefined,        strikethro
 TextEditor.Bold,                    undefined,      undefined,        bold
 
 TextEditor.Text,                    #1e1e1e,      #f5f5f5,        undefined
-TextEditor.Selection,               undefined,      #cba8ff,        undefined
-TextEditor.Occurrence,              undefined,      #ccffdd,        undefined
-TextEditor.FoldingHeader,           undefined,      #ffddff,        undefined
+# 選択範囲・出現・折り畳み行の背景色。Color だけを使う
+TextEditor.Selection.Theme,         #cba8ff,        undefined,        undefined
+TextEditor.Occurrence.Theme,        #ccffdd,        undefined,        undefined
+TextEditor.FoldingHeader.Theme,     #ffddff,        undefined,        undefined
 
 
 TextEditor.Url.Style,               #0000ff,      undefined,        underline

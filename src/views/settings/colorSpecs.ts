@@ -24,6 +24,13 @@ const COLOR_PROP_LABEL: Record<ColorProp, string> = {
   Attrs: `表示属性 (${ATTR_NAMES})`,
 };
 
+// *.Theme は文字や背景に直結せず、Color を主の色として用途ごとに解釈する（docs/DefaultColor.md）
+const THEME_PROP_LABEL: Record<ColorProp, string> = {
+  Color: '色',
+  BgColor: '第2の色',
+  Attrs: COLOR_PROP_LABEL.Attrs,
+};
+
 function colorStatusPanel(statusId: string): PanelKey {
   const prefix = statusId.split('.')[0];
   if (prefix === 'Thinktank') return 'ThinktankPanel';
@@ -51,7 +58,7 @@ export function registerColorStatusSpecs(PROP_SPECS: Record<string, PropSpec>): 
         default: defValue,
         type: COLOR_PROP_TYPE[prop],
         candidates: COLOR_PROP_CANDIDATES[prop],
-        description: `${entry.statusId} の${COLOR_PROP_LABEL[prop]}`,
+        description: `${entry.statusId} の${(entry.statusId.endsWith('.Theme') ? THEME_PROP_LABEL : COLOR_PROP_LABEL)[prop]}`,
         get: (app: TTApplication) => app.DiscussPanel.GetColorStatus(entry.statusId)[prop],
         set: (app: TTApplication, v: string) => { app.DiscussPanel.SetColorStatus(entry.statusId, prop, v, false); },
       };

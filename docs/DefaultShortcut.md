@@ -92,6 +92,8 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 
 *TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.CurrentMode.Text:Focus                         ,Highlighter入力欄にフォーカスする
+
+# ToolBar
 ToolBar*    ,       ,Alt+Q                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
 ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
 
@@ -112,6 +114,7 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 ; *TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev    ,ファイル履歴を1つ前に戻る
 *TextEditor ,       ,Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu           ,ファイル履歴をメニューで表示
 
+*TextEditor ,       ,Ctrl+T              ,TextEditor.CurrentEditor.DoOnCaretPos          ,URL・パス・タグの挿入または起動
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCaretPos          ,URL・パス・タグの挿入または起動
 *TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos         ,URL・パス・タグの起動
 

@@ -336,7 +336,7 @@ key:            DiscussPanel.FocusedPane.PaneNumber:ReFocus
 
 # Panel AIChat =====================================================================================================
 
-## Status 完了：　261012　AIChat.ModelNames.Claude
+## Status：　261012　AIChat.ModelNames.Claude
 起動時にClaude APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
 description:    各パネルのAIChatがClaudeのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.Claude
@@ -344,8 +344,7 @@ current:        claude-opus-5
 default:        None
 type:           string
 candidates:     ^[^,]+(,[^,]+)*$
-
-## Status 完了：　261012　AIChat.ModelNames.OpenAI
+## Status：　261012　AIChat.ModelNames.OpenAI
 起動時にOpenAI APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
 description:    各パネルのAIChatがOpenAIのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.OpenAI
@@ -353,8 +352,7 @@ current:        gpt-6.1-sol
 default:        None
 type:           string
 candidates:     ^[^,]+(,[^,]+)*$
-
-## Status 完了：　261012　AIChat.ModelNames.Gemini
+## Status：　261012　AIChat.ModelNames.Gemini
 起動時にGemini APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
 description:    各パネルのAIChatがGeminiのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.Gemini
@@ -362,8 +360,7 @@ current:        gemini-3.8-flash
 default:        None
 type:           string
 candidates:     ^[^,]+(,[^,]+)*$
-
-## Status 完了：　261012　AIChat.ModelNames.Local
+## Status：　261012　AIChat.ModelNames.Local
 起動時にLocal AI APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。現時点でLocal AIは使用できないので None のみとする。
 description:    各パネルのAIChatがLocalのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.Local
@@ -371,9 +368,7 @@ current:        None
 default:        None
 type:           string
 candidates:     ^[^,]+(,[^,]+)*$
-
-
-## Status 完了：　261012　ThinktankPanel.AIChat.ModelName
+## Status：　261012　ThinktankPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    ThinktankPanelのAIChatで用いるAIモデル名
 key:            ThinktankPanel.AIChat.ModelName
@@ -381,8 +376,7 @@ current:        Claude
 default:        Claude
 type:           string
 candidates:     ^(Claude|OpenAI|Gemini|Local)$
-
-## Status 完了：　261012　SeedsPanel.AIChat.ModelName
+## Status：　261012　SeedsPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    SeedsPanelのAIChatで用いるAIモデル名
 key:            SeedsPanel.AIChat.ModelName
@@ -390,8 +384,7 @@ current:        Claude
 default:        Claude
 type:           string
 candidates:     ^(Claude|OpenAI|Gemini|Local)$
-
-## Status 完了：　261012　DiscussSettingPanel.AIChat.ModelName
+## Status：　261012　DiscussSettingPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    DiscussSettingPanelのAIChatで用いるAIモデル名
 key:            DiscussSettingPanel.AIChat.ModelName
@@ -399,8 +392,7 @@ current:        Claude
 default:        Claude
 type:           string
 candidates:     ^(Claude|OpenAI|Gemini|Local)$
-
-## Status 完了：　261012　DiscussPanel.AIChat.ModelName
+## Status：　261012　DiscussPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    DiscussPanelのAIChatで用いるAIモデル名
 key:            DiscussPanel.AIChat.ModelName
@@ -408,8 +400,7 @@ current:        Claude
 default:        Claude
 type:           string
 candidates:     ^(Claude|OpenAI|Gemini|Local)$
-
-## Status 完了：　261012　HarvestPanel.AIChat.ModelName
+## Status：　261012　HarvestPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    HarvestPanelのAIChatで用いるAIモデル名
 key:            HarvestPanel.AIChat.ModelName
@@ -1222,12 +1213,16 @@ candidates:     ^[0-9]+$
 　「文字設定」先頭にあった 背景色 / 文字色 / 選択色 / 一致色 の4項目（旧 TextEditor.Color.*）は廃止し、
 　同じ位置で以下のStatusIDを直接編集するUIに置き換えました。Color と BgColor のみを扱い、Attrs のUIは持ちません。
 　　基本 … TextEditor.Text.(Color,BgColor)
-　　選択 … TextEditor.Selection.BgColor
-　　出現 … TextEditor.Occurrence.BgColor
-　　折畳 … TextEditor.FoldingHeader.BgColor
+　　選択 … TextEditor.Selection.Theme.Color
+　　出現 … TextEditor.Occurrence.Theme.Color
+　　折畳 … TextEditor.FoldingHeader.Theme.Color
+　（261013）選択・出現・折畳は TextEditor.(Selection|Occurrence|FoldingHeader).* から .Theme.* へ改名し、
+　背景色を BgColor から Color へ移しました（BgColor と Color の役割を入れ替え。Color だけを使います）。
+　旧名の保存値と、旧形式で書き戻された ThinktankColorBinding メモは読込時に新しい名前へ読み替えます。
 　文字色のUIを持つのは基本だけです。選択は Monaco が選択中の文字色（editor.selectionForeground）を
 　高コントラストテーマでしか適用せず、出現は wordHighlight に前景色のテーマ項目がないため、いずれも反映できません。
-　なお TextEditor.Selection.BgColor は、エディタのフォーカスの有無にかかわらず同じ色になります。
+　選択範囲と出現が重なった部分は選択の色を手前に表示します。
+　なお TextEditor.Selection.Theme.Color は、エディタのフォーカスの有無にかかわらず同じ色になります。
 　Monaco の既定では非フォーカス時に同色の50%（editor.inactiveSelectionBackground の既定値）になるため、
 　テーマ側で editor.inactiveSelectionBackground にも同じ値を明示しています。
 　既定値の定義元は他と同じく docs/DefaultColor.md で、専用フィールドを廃止したため値の実体は ColorStatus に一本化されました。
@@ -1939,7 +1934,7 @@ candidates:     ^(true|false)$
 ## Action：　260907　TextEditor.KeyBinding.Load
 description:    Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定をDefaultに戻してから適用する（Memoに無いキーはDefaultの状態になる）
 key:            TextEditor.KeyBinding.Load
-　Discuss>TextEditor設定>設定>キー設定のStarアイコンボタンから実行する。
+　Discuss>TextEditor設定>設定>キー設定のfile-penアイコンボタンから実行する。
 　Vault内でタイトルが「ThinktankKeyBinding」（大文字小文字不問）のMemoを検索し、見つかれば
 　`resetToDefault()` で docs/DefaultShortcut.md の状態へ戻したうえで、その内容
 　（docs/DefaultShortcut.md と同じテーブル形式）で TTShortcutManager.mergeContent() を呼び、
@@ -1953,12 +1948,21 @@ key:            TextEditor.KeyBinding.Load
 ## Action：　260905　TextEditor.KeyBinding.Reset
 description:    キー設定をDefaultの状態に戻す
 key:            TextEditor.KeyBinding.Reset
-　Discuss>TextEditor設定>設定>キー設定のPowerアイコンボタンから実行する。
+　Discuss>TextEditor設定>設定>キー設定のfile-xアイコンボタンから実行する。
 　docs/DefaultShortcut.md の内容でショートカット設定を初期状態に戻す（全件差し替え）。
+## Action：　261013　TextEditor.KeyBinding.Save
+description:    現在のキー設定をVault内の「ThinktankKeyBinding」という名前のMemoに書き戻す（無ければ作る）
+key:            TextEditor.KeyBinding.Save
+　Discuss>TextEditor設定>設定>キー設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankKeyBindingに書き戻す」）。
+　Vault内でタイトルが「ThinktankKeyBinding」（大文字小文字不問）のMemoを探し、あればタイトル行を残して本文を現在値で上書き保存、
+　無ければその名前で新しいMemoを作る（src/views/actions/bindingMemo.ts）。
+　本文は docs/DefaultShortcut.md と同じ表形式（> focus,exmode,key,action,description）で、現在の全ショートカットを書く
+　（TTShortcutManager.serializeTable()）。key の "|" は複数キー区切りと区別するため "\|" に、"," や '"' を含むセルは CSV の引用で書く。
+　Load と同じ形式で書くので、書き戻した後に Load すると同じ状態に戻る。結果はステータスバーの ACTION 欄に表示する。
 ## Action：　260905　TextEditor.ColorBinding.Load
 description:    Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定をDefaultに戻してから適用する（Memoに無い項目はDefaultの状態になる）
 key:            TextEditor.ColorBinding.Load
-　Discuss>TextEditor設定>設定>色設定のStarアイコンボタンから実行する。
+　Discuss>TextEditor設定>設定>色設定のfile-penアイコンボタンから実行する。
 　Vault内でタイトルが「ThinktankColorBinding」（大文字小文字不問）のMemoを検索し、見つかれば
 　まず DEFAULT_COLOR_ENTRIES（docs/DefaultColor.md）を適用して初期状態へ戻し、続いてその内容
 　（docs/DefaultColor.md と同じCSV形式：StatusID, Color, BgColor, Attrs）を適用する
@@ -1968,12 +1972,20 @@ key:            TextEditor.ColorBinding.Load
 ## Action：　260905　TextEditor.ColorBinding.Reset
 description:    色設定をDefaultの状態に戻す
 key:            TextEditor.ColorBinding.Reset
-　Discuss>TextEditor設定>設定>色設定のPowerアイコンボタンから実行する。
+　Discuss>TextEditor設定>設定>色設定のfile-xアイコンボタンから実行する。
 　docs/DefaultColor.md の内容で色設定を初期状態に戻す。Load同様、Undoスタックへの記録は行わない。
+## Action：　261013　TextEditor.ColorBinding.Save
+description:    現在の色設定をVault内の「ThinktankColorBinding」という名前のMemoに書き戻す（無ければ作る）
+key:            TextEditor.ColorBinding.Save
+　Discuss>TextEditor設定>設定>色設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankColorBindingに書き戻す」）。
+　Vault内でタイトルが「ThinktankColorBinding」（大文字小文字不問）のMemoを探し、あればタイトル行を残して本文を現在値で上書き保存、
+　無ければその名前で新しいMemoを作る（src/views/actions/bindingMemo.ts）。
+　本文は docs/DefaultColor.md と同じ「StatusID, Color, BgColor, Attrs」形式で、DefaultColor.md の全 StatusID の現在値を書く。
+　Load と同じ形式で書くので、書き戻した後に Load すると同じ状態に戻る。結果はステータスバーの ACTION 欄に表示する。
 ## Action：　260907　TextEditor.SearchTag.Load
 description:    Vault内の「ThinktankSearchTag」という名前のMemoを読み込み、タグ定義をDefaultに戻してから適用する（Memoに無いidはDefaultの状態になる）
 key:            TextEditor.SearchTag.Load
-　Discuss>TextEditor設定>設定>タグ設定のStarアイコンボタンから実行する。
+　Discuss>TextEditor設定>設定>タグ設定のfile-penアイコンボタンから実行する。
 　docs/DefaultSearchTag.md は他の2つと異なり ?raw バンドルではなく、サーバー
 　（server/routes/systemRoutes.ts の /api/system/search-tags・/search-tag-items）がリクエストの
 　たびにファイルを直接読んで配信する方式のため、サーバー側は一切変更せずクライアント側の
@@ -1991,8 +2003,17 @@ key:            TextEditor.SearchTag.Load
 ## Action：　260907　TextEditor.SearchTag.Reset
 description:    タグ定義をDefaultの状態に戻す
 key:            TextEditor.SearchTag.Reset
-　Discuss>TextEditor設定>設定>タグ設定のPowerアイコンボタンから実行する。
+　Discuss>TextEditor設定>設定>タグ設定のfile-xアイコンボタンから実行する。
 　Vaultメモ由来の上書き分をクリアし、サーバー取得分（docs/DefaultSearchTag.md）に戻す。
+## Action：　261013　TextEditor.SearchTag.Save
+description:    現在のタグ定義をVault内の「ThinktankSearchTag」という名前のMemoに書き戻す（無ければ作る）
+key:            TextEditor.SearchTag.Save
+　Discuss>TextEditor設定>設定>タグ設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankSearchTagに書き戻す」）。
+　Vault内でタイトルが「ThinktankSearchTag」（大文字小文字不問）のMemoを探し、あればタイトル行を残して本文を現在値で上書き保存、
+　無ければその名前で新しいMemoを作る（src/views/actions/bindingMemo.ts）。
+　本文は docs/DefaultSearchTag.md と同じ「ID, "Description", URL」形式で、サーバー取得分に Vaultメモの上書きを重ねた現在の
+　タグ定義を書く（URL の無いタグは NoURL）。タグ定義を取得できないときは書き戻さない。
+　Load と同じ形式で書くので、書き戻した後に Load すると同じ状態に戻る。結果はステータスバーの ACTION 欄に表示する。
 
 
 # TextEditor ExDate ================================================================================================

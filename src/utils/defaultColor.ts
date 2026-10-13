@@ -35,6 +35,12 @@ export function isUnset(value: string | undefined | null): boolean {
   return v === '' || v === UNSET || v === 'none';
 }
 
+/**
+ * 背景色を BgColor に持っていた旧 StatusID。現在は `<旧ID>.Theme` が Color にその色を持つ。
+ * 書き戻し済みの色設定メモ（ThinktankColorBinding）は旧形式のまま残っているため、読込時に読み替える。
+ */
+const LEGACY_THEME_STATUS_IDS = new Set(['TextEditor.Selection', 'TextEditor.Occurrence', 'TextEditor.FoldingHeader']);
+
 /** docs/DefaultColor.md 形式のテキストをパースする */
 export function parseDefaultColor(text: string): DefaultColorEntry[] {
   const entries: DefaultColorEntry[] = [];
@@ -46,14 +52,16 @@ export function parseDefaultColor(text: string): DefaultColorEntry[] {
     const statusId = parts[0];
     if (!statusId) continue;
 
-    entries.push({
-      statusId,
-      style: {
-        Color:   parts[1] || UNSET,
-        BgColor: parts[2] || UNSET,
-        Attrs:   parts[3] || UNSET,
-      },
-    });
+    const style: ColorStyle = {
+      Color:   parts[1] || UNSET,
+      BgColor: parts[2] || UNSET,
+      Attrs:   parts[3] || UNSET,
+    };
+    if (LEGACY_THEME_STATUS_IDS.has(statusId)) {
+      entries.push({ statusId: `${statusId}.Theme`, style: { ...style, Color: style.BgColor, BgColor: style.Color } });
+      continue;
+    }
+    entries.push({ statusId, style });
   }
   return entries;
 }
@@ -284,23 +292,21 @@ export function pickLinkStyles(store: Record<string, ColorStyle> | undefined): L
 
 // ── TextEditor の折り畳まれている行（折り畳みヘッダ行）────────────────────
 
-export const FOLDING_HEADER_STATUS_ID = 'TextEditor.FoldingHeader';
+export const FOLDING_HEADER_STATUS_ID = 'TextEditor.FoldingHeader.Theme';
 
 /** 折り畳まれている行のCSSクラス名（行全体の背景。isWholeLine の className に付ける）*/
 export const FOLDING_HEADER_BG_CLASS = 'custom-folding-header-bg';
 
 /**
  * 折り畳まれている行のCSSを組み立てる。
- * 扱うのは BgColor だけで、文字色・表示属性（Color / Attrs）は使わない
+ * 扱うのは Color（行の背景色になる）だけで、BgColor / Attrs は使わない
  * （折り畳まれた行の文字は見出し等その行本来のスタイルのままにする）。
  */
 export function foldingHeaderStyleCss(style: ColorStyle | undefined): string {
-  if (!style || isUnset(style.BgColor)) return '';
+  if (!style || isUnset(style.Color)) return '';
 
-  // 選択の描画（.cslr）に z-index を与えて折り畳み行の背景より前面に出す手は使わないこと。
-  // .lines-content は stacking context を作らないため、選択の矩形が本文（.view-lines）より
-  // 前面に来て文字が塗り潰される。
-  return `.monaco-editor .${FOLDING_HEADER_BG_CLASS} { background-color: ${style.BgColor} !important; }`;
+  // 選択範囲がこの背景より前面に出るのは TextEditorMedia.css の .view-overlays / .selected-text の z-index による
+  return `.monaco-editor .${FOLDING_HEADER_BG_CLASS} { background-color: ${style.Color} !important; }`;
 }
 
 // ── TextEditor のインライン書式 ────────────────────────────────────────────

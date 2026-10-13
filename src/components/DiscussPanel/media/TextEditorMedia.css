@@ -108,3 +108,13 @@
   user-select: none;
   background: #fafafa;
 }
+
+/* 選択範囲の背景を、出現（wordHighlight / selectionHighlight）などの装飾より手前に重ねる。
+   Monaco は選択 → 装飾の順に描くため、何もしないと重なった部分が出現の色で覆われて選択範囲が見えなくなる。
+   view-overlays 自体を重ね順の単位にしておかないと、z-index が文字の層（view-lines）まで越えて文字を隠してしまう */
+.monaco-editor .view-overlays {
+  z-index: 0;
+}
+.monaco-editor .view-overlays .selected-text {
+  z-index: 1;
+}
