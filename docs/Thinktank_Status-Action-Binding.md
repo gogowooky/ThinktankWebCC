@@ -290,21 +290,20 @@ key:            ToolBar.TranslateMode.Text:Focus
 description:    ToolBarの翻訳入力欄をクリアする
 key:            ToolBar.TranslateMode.Text:Clear
 　ToolBarの翻訳入力欄をクリアする
-## Action：　261013　ToolBar.TranslateMode.Text:AddSelected
-description:    選択テキストを翻訳入力欄に追加して、翻訳入力欄にフォーカスする
-key:            ToolBar.TranslateMode.Text:AddSelected
-FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに追加する。
+## Action：　261013　ToolBar.TranslateMode.Text:SetSelected
+description:    選択テキストを翻訳入力欄に設定して、翻訳入力欄にフォーカスする
+key:            ToolBar.TranslateMode.Text:SetSelected
+FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに設定する。
 
 　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に登録しました。
 　　- 選択テキストは Highlighter の AddSelected と同じく、エディタの選択を優先し、無ければ画面上の選択を使います。
 　　- 入力欄は1行のため、選択の改行は空白1つに置き換えます。
-　　- 既に入力がある場合は空白を挟んで末尾に追加し、空なら選択テキストだけを入れます
-　　 （Highlighter と違い CSV にはせず、重複の除外もしません）。
-　　- 追加後は ToolBar.TranslateMode.Text:Focus を実行して翻訳モードに切り替え、入力欄にフォーカスします。
+　　- 入力欄の内容は選択テキストで置き換えます（既存の入力には追加しません）。
+　　- 設定後は ToolBar.TranslateMode.Text:Focus を実行して翻訳モードに切り替え、入力欄にフォーカスします。
 　　 直前のフォーカス位置もこのとき記憶されるので、:Unfocus で元に戻れます。
-　　- 選択が無いときは何もせず「[選択テキストなし]」を返します。
-　　実機で、改行を含む選択が「hello world」として入ること、続けて「foo」を追加すると
-　　「hello world foo」になること、入力欄にフォーカスし :Unfocus で元へ戻ることを確認しました。
+　　- 選択が無いときは何もせず「[選択テキストなし]」を返します（入力欄はそのまま）。
+　　（261013）当初は ToolBar.TranslateMode.Text:AddSelected（既存の入力の末尾に追加）として実装しましたが、
+　　　ID を SetSelected に改め、追加ではなく置き換えにしました。
 　　キー割当（docs\DefaultShortcut.md）: *TextEditor で Alt+F。
 
 ## Status：　260625　ToolBar.HighlighterMode.Text

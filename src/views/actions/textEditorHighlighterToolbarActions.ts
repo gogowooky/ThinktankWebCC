@@ -188,20 +188,19 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
   registerModeInputActions('Translate', '翻訳');
 
   TTActions.Register({
-    ActionID: 'ToolBar.TranslateMode.Text:AddSelected',
-    Description: '選択テキストを翻訳入力欄に追加して、翻訳入力欄にフォーカスする',
+    ActionID: 'ToolBar.TranslateMode.Text:SetSelected',
+    Description: '選択テキストを翻訳入力欄に設定して、翻訳入力欄にフォーカスする',
     Completion: async (item) => {
-      // 入力欄は1行なので、選択の改行は空白に寄せる（Highlighter と違い語の区切りは持たない）
+      // 入力欄は1行なので、選択の改行は空白に寄せる
       const selected = getSelectedTextInFocusedPane().replace(/\s*\r?\n\s*/g, ' ').trim();
       if (!selected) {
         item.Result = '[選択テキストなし]';
         return;
       }
-      const current = TTUIStateManager.instance.getProperty('ToolBar.TranslateMode.Text').trim();
-      TTUIStateManager.instance.applyProperty('ToolBar.TranslateMode.Text', current ? `${current} ${selected}` : selected);
+      TTUIStateManager.instance.applyProperty('ToolBar.TranslateMode.Text', selected);
       // 戻り先の記憶を Focus と共有するため、Focus アクションを通して入力欄に入る
       await TTActions.Execute('ToolBar.TranslateMode.Text:Focus');
-      item.Result = `翻訳入力欄に追加: ${selected}`;
+      item.Result = `翻訳入力欄に設定: ${selected}`;
     },
   });
 

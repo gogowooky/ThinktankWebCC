@@ -93,7 +93,7 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 *TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
 
-*TextEditor ,       ,Alt+F                  ,ToolBar.TranslateMode.Text:AddSelected                 ,選択テキストを翻訳入力欄に追加してフォーカスする
+*TextEditor ,       ,Alt+F                  ,ToolBar.TranslateMode.Text:SetSelected                 ,選択テキストを翻訳入力欄に設定してフォーカスする
 
 
 # ToolBar
