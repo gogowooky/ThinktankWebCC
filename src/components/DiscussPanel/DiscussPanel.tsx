@@ -33,6 +33,7 @@ import type { MediaType } from '../../types';
 import type { LayoutMode } from '../Layout/AppLayout';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { INIT_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
+import { clientPointToPosition } from '../../utils/editorDropPosition';
 import './DiscussPanel.css';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
@@ -84,38 +85,6 @@ function computeEqualHeightRatios(
 // 初期幅は utils/panelAreaWidth.ts（INIT_AREA_WIDTH.Discuss）に集約
 const MIN_SETTINGS_WIDTH     = 120;
 const MAX_SETTINGS_WIDTH     = 400;
-
-/**
- * 画面座標(clientX/clientY)からMonacoエディタ上のモデル位置を求める。
- * editor.getTargetAtClientPoint() を優先するが、環境（ブラウザ/描画パイプライン）依存で
- * ヒットテストが機能しないケースがあるため、スクロール位置・行の高さ・文字幅から
- * 幾何計算で求めるフォールバックを用意する（等幅フォント前提のため厳密ではないが、
- * ドラッグ中のカーソル追従プレビュー用途としては十分な精度）。
- */
-function clientPointToPosition(editor: any, clientX: number, clientY: number): { lineNumber: number; column: number } | null {
-  const viaApi = editor.getTargetAtClientPoint?.(clientX, clientY)?.position;
-  if (viaApi) return viaApi;
-
-  const domNode = editor.getDomNode?.();
-  const model = editor.getModel?.();
-  const monacoNs = (window as any).monaco;
-  if (!domNode || !model || !monacoNs) return null;
-
-  const rect = domNode.getBoundingClientRect();
-  const layoutInfo = editor.getLayoutInfo();
-  const lineHeight = editor.getOption(monacoNs.editor.EditorOption.lineHeight) || 20;
-  const fontInfo = editor.getOption(monacoNs.editor.EditorOption.fontInfo);
-  const charWidth = fontInfo?.typicalHalfwidthCharacterWidth || 7;
-
-  const relY = clientY - rect.top + editor.getScrollTop();
-  const lineNumber = Math.min(model.getLineCount(), Math.max(1, Math.floor(relY / lineHeight) + 1));
-
-  const relX = clientX - rect.left - layoutInfo.contentLeft + editor.getScrollLeft();
-  const lineLength = model.getLineContent(lineNumber).length;
-  const column = Math.min(lineLength + 1, Math.max(1, Math.round(relX / charWidth) + 1));
-
-  return { lineNumber, column };
-}
 
 /**
  * 画面座標(clientX/clientY)の直下にある DiscussArea の ID を返す（無ければ null）。
