@@ -1,7 +1,7 @@
 /**
  * textEditorHighlighterToolbarActions.ts
  * Highlighter検索ヒット間のカーソル移動（CursorPos:*Highlighter）と、
- * ToolBar の Highlighter/Command/CurrentMode 入力欄操作アクションの登録。
+ * ToolBar の Highlighter/Command/Translate/CurrentMode 入力欄操作アクションの登録。
  *
  * 元は views/TTFocusedPanelActions.ts の registerTextEditorCursorPosActions に同居していたが、
  * 独立したドメインのため分離した。
@@ -88,14 +88,11 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     Completion: (item) => moveToHighlighter(item, (ranges) => ranges[ranges.length - 1]),
   });
 
-  // ── ToolBar Highlighter 入力欄 ────────────────────────────────────────────
-  const HIGHLIGHTER_INPUT_ID = 'StatusBarTextInput';
+  // ── ToolBar 入力欄 ────────────────────────────────────────────────────────
+  const TOOLBAR_INPUT_ID = 'StatusBarTextInput';
 
-  /** :Focus で記憶した、Highlighter入力欄に入る直前のフォーカス要素 */
-  let highlighterPrevFocus: HTMLElement | null = null;
-
-  const getHighlighterInput = (): HTMLInputElement | null =>
-    document.getElementById(HIGHLIGHTER_INPUT_ID) as HTMLInputElement | null;
+  const getToolBarInput = (): HTMLInputElement | null =>
+    document.getElementById(TOOLBAR_INPUT_ID) as HTMLInputElement | null;
 
   /** FocusedPane の選択テキスト（エディタ優先、なければ通常のDOM選択） */
   const getSelectedTextInFocusedPane = (): string => {
@@ -134,108 +131,61 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     },
   });
 
-  TTActions.Register({
-    ActionID: 'ToolBar.HighlighterMode.Text:Clear',
-    Description: 'Highlighter検索語をクリアする',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.Text', '');
-      item.Result = 'Highlighterをクリアしました';
-    },
-  });
+  // ── ToolBar Highlighter / Command / Translate 入力欄（Clear / Focus / Unfocus）──
+  // 3モードとも同じ #StatusBarTextInput を使い、表示中のモードだけが描画される。
+  // 戻り先はモードごとに持つ（あるモードの Unfocus が別モードで記憶した位置へ戻らないように）。
+  const registerModeInputActions = (mode: 'Highlighter' | 'Command' | 'Translate', label: string): void => {
+    const textKey = `ToolBar.${mode}Mode.Text` as ConfigKey;
+    let prevFocus: HTMLElement | null = null;
 
-  TTActions.Register({
-    ActionID: 'ToolBar.HighlighterMode.Text:Focus',
-    Description: 'Highlighter入力欄にフォーカスする',
-    Completion: (item) => {
-      const active = document.activeElement as HTMLElement | null;
-      // 入力欄自身にフォーカスがある場合は、戻り先を上書きしない
-      if (active && active.id !== HIGHLIGHTER_INPUT_ID) {
-        highlighterPrevFocus = active;
-      }
+    TTActions.Register({
+      ActionID: `${textKey}:Clear`,
+      Description: `ToolBarの${label}入力欄をクリアする`,
+      Completion: (item) => {
+        TTUIStateManager.instance.applyProperty(textKey, '');
+        item.Result = `${label}をクリアしました`;
+      },
+    });
 
-      // ToolBar が Highlighter モードでなければ切り替える（入力欄はこの後に描画される）
-      if (app.DiscussPanel.ToolBarMode !== 'Highlighter') {
-        TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'Highlighter');
-      }
-      // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
-      getHighlighterInput()?.focus();
-      requestAnimationFrame(() => getHighlighterInput()?.focus());
-      item.Result = 'Highlighter入力欄にフォーカスしました';
-    },
-  });
+    TTActions.Register({
+      ActionID: `${textKey}:Focus`,
+      Description: `ToolBarの${label}入力欄にフォーカスする`,
+      Completion: (item) => {
+        const active = document.activeElement as HTMLElement | null;
+        // 入力欄自身にフォーカスがある場合は、戻り先を上書きしない
+        if (active && active.id !== TOOLBAR_INPUT_ID) prevFocus = active;
 
-  TTActions.Register({
-    ActionID: 'ToolBar.HighlighterMode.Text:Unfocus',
-    Description: 'Highlighter入力欄から直前のフォーカス位置に戻る',
-    Completion: (item) => {
-      const prev = highlighterPrevFocus;
-      getHighlighterInput()?.blur();
-      if (prev && document.body.contains(prev)) {
-        prev.focus();
-        highlighterPrevFocus = null;
-        item.Result = 'フォーカスを元の位置に戻しました';
-        return;
-      }
-      highlighterPrevFocus = null;
-      item.Result = '[戻り先なし] 入力欄のフォーカスを外しました';
-    },
-  });
+        // 対象モードでなければ切り替える（入力欄はこの後に描画される）
+        if (app.DiscussPanel.ToolBarMode !== mode) {
+          TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', mode);
+        }
+        // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
+        getToolBarInput()?.focus();
+        requestAnimationFrame(() => getToolBarInput()?.focus());
+        item.Result = `${label}入力欄にフォーカスしました`;
+      },
+    });
 
-  // ── ToolBar Command 入力欄 ────────────────────────────────────────────
-  const COMMAND_INPUT_ID = 'StatusBarTextInput';
+    TTActions.Register({
+      ActionID: `${textKey}:Unfocus`,
+      Description: `ToolBarの${label}入力欄から元の位置に戻る`,
+      Completion: (item) => {
+        const prev = prevFocus;
+        prevFocus = null;
+        getToolBarInput()?.blur();
+        if (prev && document.body.contains(prev)) {
+          prev.focus();
+          item.Result = 'フォーカスを元の位置に戻しました';
+          return;
+        }
+        item.Result = '[戻り先なし] 入力欄のフォーカスを外しました';
+      },
+    });
+  };
 
-  /** :Focus で記憶した、Command入力欄に入る直前のフォーカス要素 */
-  let commandPrevFocus: HTMLElement | null = null;
-
-  const getCommandInput = (): HTMLInputElement | null =>
-    document.getElementById(COMMAND_INPUT_ID) as HTMLInputElement | null;
-
-  TTActions.Register({
-    ActionID: 'ToolBar.CommandMode.Text:Clear',
-    Description: 'ToolBarのCommandをクリアする',
-    Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('ToolBar.CommandMode.Text', '');
-      item.Result = 'Commandをクリアしました';
-    },
-  });
-
-  TTActions.Register({
-    ActionID: 'ToolBar.CommandMode.Text:Focus',
-    Description: 'ToolBarのCommand入力欄にフォーカスする',
-    Completion: (item) => {
-      const active = document.activeElement as HTMLElement | null;
-      // 入力欄自身にフォーカスがある場合は、戻り先を上書きしない
-      if (active && active.id !== COMMAND_INPUT_ID) {
-        commandPrevFocus = active;
-      }
-
-      // ToolBar が Command モードでなければ切り替える（入力欄はこの後に描画される）
-      if (app.DiscussPanel.ToolBarMode !== 'Command') {
-        TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'Command');
-      }
-      // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
-      getCommandInput()?.focus();
-      requestAnimationFrame(() => getCommandInput()?.focus());
-      item.Result = 'Command入力欄にフォーカスしました';
-    },
-  });
-
-  TTActions.Register({
-    ActionID: 'ToolBar.CommandMode.Text:Unfocus',
-    Description: 'ToolBarのCommand入力欄から元の位置に戻る',
-    Completion: (item) => {
-      const prev = commandPrevFocus;
-      getCommandInput()?.blur();
-      if (prev && document.body.contains(prev)) {
-        prev.focus();
-        commandPrevFocus = null;
-        item.Result = 'フォーカスを元の位置に戻しました';
-        return;
-      }
-      commandPrevFocus = null;
-      item.Result = '[戻り先なし] 入力欄のフォーカスを外しました';
-    },
-  });
+  registerModeInputActions('Highlighter', 'Highlighter');
+  registerModeInputActions('Command', 'Command');
+  registerModeInputActions('Translate', '翻訳');
 
   // ── ToolBar 現在モード共通操作（Clear/Copy/Paste） ────────────────────────
   const TOOLBAR_MODE_TEXT_KEY: Record<string, ConfigKey> = {

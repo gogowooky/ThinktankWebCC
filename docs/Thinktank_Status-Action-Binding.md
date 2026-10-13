@@ -223,6 +223,7 @@ candidates:      ^(None|Thinktank|Seeds|DiscussSetting|Discuss|Harvest)\..*$
 　　モード名を指定するショートカットが意図通り動作するようになりました。
 
 
+# ToolBar ======================================================================================================
 ## Action：　260616　ToolBar.Mode.Name:Next
 description:    ToolBarのモードを次の値に切り替える（循環）
 key:            ToolBar.Mode.Name:Next
@@ -289,6 +290,46 @@ current:
 default:        
 type:           string
 candidates:     .*
+
+## Action：　261013　ToolBar.TranslateMode.Text:Unfocus
+description:    ToolBarの翻訳入力欄から元の位置に戻る
+key:            ToolBar.TranslateMode.Text:Unfocus
+　ToolBarの翻訳入力欄から元の位置に戻る
+## Action：　261013　ToolBar.TranslateMode.Text:Focus
+description:    ToolBarの翻訳入力欄にフォーカスする
+key:            ToolBar.TranslateMode.Text:Focus
+　ToolBarの翻訳入力欄にフォーカスする
+## Action：　261013　ToolBar.TranslateMode.Text:Clear
+description:    ToolBarの翻訳入力欄をクリアする
+key:            ToolBar.TranslateMode.Text:Clear
+　ToolBarの翻訳入力欄をクリアする
+
+## Action：　261013　ToolBar.HighlighterMode.Text:Unfocus
+description:    ToolBarのHighlighter入力欄から元の位置に戻る
+key:            ToolBar.HighlighterMode.Text:Unfocus
+　ToolBarのHighlighter入力欄から元の位置に戻る
+## Action：　261013　ToolBar.HighlighterMode.Text:Focus
+description:    ToolBarのHighlighter入力欄にフォーカスする
+key:            ToolBar.HighlighterMode.Text:Focus
+　ToolBarのHighlighter入力欄にフォーカスする
+## Action：　261013　ToolBar.HighlighterMode.Text:Clear
+description:    ToolBarのHighlighter入力欄をクリアする
+key:            ToolBar.HighlighterMode.Text:Clear
+　ToolBarのHighlighter入力欄をクリアする
+
+　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に、
+　　Highlighter / Command / Translate の3モード共通の登録関数（registerModeInputActions）を置き、
+　　各モードの :Clear / :Focus / :Unfocus をそこから登録するようにしました。Translate の3アクションは新規です。
+　　- Clear: ToolBar.<モード>Mode.Text を空にする。
+　　- Focus: 直前のフォーカス要素を記憶し、ToolBar をそのモードに切り替えて入力欄（#StatusBarTextInput）にフォーカスする。
+　　- Unfocus: Focus で記憶した位置へフォーカスを戻す（戻り先が無ければ入力欄のフォーカスを外すだけ）。
+　　3モードは同じ入力欄を使いますが、戻り先はモードごとに持ちます。
+　　Highlighter と Command は既に実装済みで、動作は変えていません（Highlighter は下部の
+　　「ToolBar.HighlighterMode.Text:AddSelected」付近にも 260715 の記載が残っています）。
+　　Clear の key 欄が ToolBar.CommandMode.Text:Clear になっていたため、見出しのIDに合わせて直しました。
+　　実機で、Translate の Focus → モード切替と入力欄へのフォーカス、Clear → 空になる、
+　　Unfocus → 元の要素へ戻ることを確認しました。Highlighter / Command の Focus / Unfocus も従来どおり動きます。
+
 
 ## Action：　260728　ToolBar.CommandMode.Text:Unfocus
 description:    ToolBarのCommand入力欄から元の位置に戻る

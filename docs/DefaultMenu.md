@@ -36,5 +36,32 @@
 "タグ挿入 > T)Tag > C)ChatTitle検索",　　　　　　　　ChatTitle
 "タグ挿入 > T)Tag > H)ChatContent検索",　　　　　　　　ChatContents
 
+"Web検索 > Q)検索 > J)Google検索J",           Google
+"Web検索 > Q)検索 > E)Google検索E",           GoogleE
+"Web検索 > Q)検索 > B)Bing",                  Bing
+"Web検索 > Q)検索 > Y)Yahoo!検索",            Yahoo
+"Web検索 > Q)検索 > W)WikipediaJ",            Wikipedia
+"Web検索 > Q)検索 > Q)WikipediaE",            WikipediaE
+"Web検索 > D)辞書 > J)Google翻訳JE",          GoogleJE
+"Web検索 > D)辞書 > E)Google翻訳EJ",          GoogleEJ
+"Web検索 > G)場所 > M)Googleマップ",          GoogleMap
+"Web検索 > M)Media > Y)Youtube",              Youtube
+"Web検索 > M)Media > S)Spotify",              Spotify
+"Web検索 > S)科学 > S)Googleスカラー",        GScholar
+"Web検索 > S)科学 > P)Pubmed検索",            Pubmed
+"Web検索 > S)科学 > W)WikipediaJ",            Wikipedia
+"Web検索 > S)科学 > Q)WikipediaE",            WikipediaE
+"Web検索 > P)製薬 > P)Pubmed検索",            Pubmed
+"Web検索 > P)製薬 > N)国立保健医療科学院",     NIPH
+"Web検索 > P)製薬 > C)ClinicalTrials.gov",     CTG
+"Web検索 > P)製薬 > O)コルテリス",                Cortellis
+"Web検索 > P)製薬 > P)医薬品医療機器総合機構",    PMDA
+"Web検索 > P)製薬 > K)日本学術振興会科研費",      KAKEN
+"Web検索 > P)製薬 > E)欧州医薬品庁",              EMA
+"Web検索 > P)製薬 > J)科学技術振興機構",          JST
+"Web検索 > P)製薬 > M)PubMed Central",            PMC
+"Web検索 > P)製薬 > W)厚生労働省",                MHLW
+"Web検索 > G)場所 > R)Googleルート",　　　　　　　　GoogleRoute
+"Web検索 > G)場所 > Y)Yahoo乗換案内",　　　　　　　　YahooTransfer
 
 
