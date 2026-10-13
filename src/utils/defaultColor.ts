@@ -3,7 +3,7 @@
  * docs/DefaultColor.md をアプリの色設定の唯一の定義元として読み込む。
  *
  * 書式:
- *   - `#` / `;` / `>` で始まる行はコメント（行頭の空白は無視して判定する）
+ *   - `#` / `;` / `>` / `|` で始まる行はコメント（行頭の空白は無視して判定する。utils/commentLine.ts）
  *   - CSV 1行 = `StatusID名, Color値, BgColor値, Attrs値`
  *   - `undefined` は無設定値
  *
@@ -12,6 +12,7 @@
  */
 
 import defaultColorContent from '../../docs/DefaultColor.md?raw';
+import { isCommentLine } from './commentLine';
 
 /** 無設定を表す値。DefaultColor.md 上の `undefined` に対応する */
 export const UNSET = 'undefined';
@@ -39,8 +40,7 @@ export function parseDefaultColor(text: string): DefaultColorEntry[] {
   const entries: DefaultColorEntry[] = [];
   for (const rawLine of text.split('\n')) {
     const line = rawLine.trim();
-    if (!line) continue;
-    if (/^[#;>]/.test(line)) continue;
+    if (!line || isCommentLine(line)) continue;
 
     const parts = line.split(',').map(s => s.trim());
     const statusId = parts[0];

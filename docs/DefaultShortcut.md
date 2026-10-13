@@ -112,8 +112,9 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 ; *TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev    ,ファイル履歴を1つ前に戻る
 *TextEditor ,       ,Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu           ,ファイル履歴をメニューで表示
 
-*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCursorPos         ,URL・パス・タグの起動
+*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCaretPos          ,URL・パス・タグの挿入または起動
 *TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos         ,URL・パス・タグの起動
+
 # Editor カーソル 折畳行
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
 *TextEditor ,       ,Alt+ArrowLeft          ,TextEditor.CurrentFolding.Heading:CloseStepwise    ,折畳行をStepClose

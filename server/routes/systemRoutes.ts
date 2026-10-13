@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SEARCH_TAG_FILE = resolve(__dirname, '../../docs/DefaultSearchTag.md');
+/** Default*.md 共通のコメント行（行頭の空白を除いて # ; > | で始まる）。src/utils/commentLine.ts と同じ規則 */
+const COMMENT_LINE_RE = /^\s*[#;>|]/;
 
 // 関連付けを介して即座にコードが実行される拡張子。ノート内のパスを開くという
 // 本来の用途（文書・画像・フォルダ）に実行可能ファイルは含まれないため拒否する。
@@ -70,7 +72,7 @@ export function createPublicSystemRoutes(): Router {
       const tags: Record<string, string> = {};
       for (const line of text.split('\n')) {
         const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
+        if (!trimmed || COMMENT_LINE_RE.test(trimmed)) continue;
         const firstComma = trimmed.indexOf(',');
         const lastComma  = trimmed.lastIndexOf(',');
         if (firstComma === -1 || firstComma === lastComma) continue;
@@ -95,7 +97,7 @@ export function createPublicSystemRoutes(): Router {
       const items: { id: string; description: string }[] = [];
       for (const line of text.split('\n')) {
         const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
+        if (!trimmed || COMMENT_LINE_RE.test(trimmed)) continue;
         const firstComma = trimmed.indexOf(',');
         const lastComma  = trimmed.lastIndexOf(',');
         if (firstComma === -1 || firstComma === lastComma) continue;

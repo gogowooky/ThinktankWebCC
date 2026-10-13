@@ -1216,7 +1216,9 @@ candidates:     ^[0-9]+$
 　　項目色 … TextEditor.Bullet.Marks の各記号 → TextEditor.Bullet.Style(n).*
 　　セクション色 … TextEditor.Heading.Style(1..6).*
 　　ハイライト色 … TextEditor.Highlighter.Style(1..6).*
-　　パネル色   … (Thinktank|Seeds|Discuss|Harvest|ToolBar).Theme.Color（基礎色のみ）
+　（261013）パネル色は DiscussSettingPanel>Pane設定 の「アクション」の下へ移しました。
+　　パネル色   … (Thinktank|Seeds|Discuss|Harvest|ToolBar).Theme.Color（基礎色のみ）、
+　　　　　　　　 Border（FocusingBorder.Theme.Color）、Added/Divided/Replaced（DDGhost.*.Theme.Color）
 　「文字設定」先頭にあった 背景色 / 文字色 / 選択色 / 一致色 の4項目（旧 TextEditor.Color.*）は廃止し、
 　同じ位置で以下のStatusIDを直接編集するUIに置き換えました。Color と BgColor のみを扱い、Attrs のUIは持ちません。
 　　基本 … TextEditor.Text.(Color,BgColor)
@@ -1453,6 +1455,17 @@ key:            TextEditor.CurrentEditor.DoOnCursorPos
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:Open　を実施
 　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:Open　を実施
 　※ダブルクリック（Left2）起動時などの状態更新ズレ（一回前のリンクが起動する問題）をエディタ同期関数（syncTextOnCursor）の導入により修正完了。
+## Action：　261013　TextEditor.CurrentEditor.DoOnCaretPos
+description:    文字選択中は選択文字をタグで囲み、選択していなければ DoOnCursorPos と同じく対象を開く
+key:            TextEditor.CurrentEditor.DoOnCaretPos
+　・文字選択状態の場合
+　　↓タグ挿入メニュー（docs/DefaultMenu.md の「タグ挿入」。utils/defaultMenu.ts の showDefaultMenu）を表示
+　　↓IDがnull → 終了
+　　↓選択文字を切り取って、IDのタグ（[ID:]、Jump は [:>]、Reference は [:]）を挿入し、
+　　　挿入後キャレット位置（閉じ括弧の直前）に選択文字をペーストする → 終了
+　　　（クリップボードは使わず1回の編集で行うので、Undo 1回で元に戻る。キャレットは貼り付けた文字の直後）
+　・文字選択状態でない場合は、TextEditor.CurrentEditor.DoOnCursorPos を実施。
+　キー割当は docs\DefaultShortcut.md には追加していない（TTActions.Execute / コマンドから実行可能）。
 ## Status：　260629　TextEditor.CurrentEditor.TextOnCursorPos
 description:    現在のエディタのカーソル位置のテキスト（URL、ファイルパス、タグなど）
 key:            TextEditor.CurrentEditor.TextOnCursorPos

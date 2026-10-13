@@ -3,8 +3,8 @@
  * monaco editor の F1（Quick Input）風の見た目と、Windows のコンテキストメニューと同じ
  * menutree 型の操作（親アイテムを選ぶと子メニューが右側にフライアウトする）を持つメニュー。
  *
- * TextEditor.CurrentEditor.DoOnCursorPos:Menu の2系統
- * （カーソル位置のアクション選択 / タグ挿入）で共通して使う描画・操作エンジン。
+ * TextEditor.CurrentEditor.DoOnCursorPos:Menu（カーソル位置のアクション選択）と、
+ * docs/DefaultMenu.md から作るメニュー（defaultMenu.ts。タグ挿入など）で共通して使う描画・操作エンジン。
  */
 
 export interface MenuNode {
@@ -15,6 +15,8 @@ export interface MenuNode {
   detail?:   string;
   /** 葉ノードのみ：決定時に解決される値 */
   value?:    string;
+  /** 行にマウスを載せたときのツールチップ */
+  tip?:      string;
   /** 枝ノードのみ */
   children?: MenuNode[];
 }
@@ -24,6 +26,41 @@ interface MenuPanel {
   listEl:   HTMLElement;
   nodes:    MenuNode[];
   selected: number;
+}
+
+// "X)ラベル" 形式から先頭一文字（ニーモニック）とラベル本体を取り出す。
+// 形式に合致しない場合はニーモニックなし（先頭一文字選択の対象外）として扱う。
+function parseMnemonic(part: string): { key: string; label: string } {
+  const m = /^(.)\)(.*)$/.exec(part.trim());
+  if (m) return { key: m[1], label: m[2].trim() };
+  return { key: '', label: part.trim() };
+}
+
+/**
+ * 階層（["Q)検索", "J)Google検索J"] のような各段の名前）の並びからメニューの木を作る。
+ * 同じ親（同一ラベル）の枝は1つにまとめ、階層の深さは問わない。
+ */
+export function buildMenuTree(entries: { path: string[]; value: string; tip?: string }[]): MenuNode[] {
+  const roots: MenuNode[] = [];
+  for (const { path, value, tip } of entries) {
+    const parts = path.map(s => s.trim()).filter(Boolean);
+    if (parts.length === 0) continue;
+    let siblings = roots;
+    for (let i = 0; i < parts.length; i++) {
+      const { key, label } = parseMnemonic(parts[i]);
+      if (i === parts.length - 1) {
+        siblings.push({ key, label, value, tip });
+      } else {
+        let branch = siblings.find(n => n.label === label && n.children);
+        if (!branch) {
+          branch = { key, label, children: [] };
+          siblings.push(branch);
+        }
+        siblings = branch.children!;
+      }
+    }
+  }
+  return roots;
 }
 
 const PANEL_WIDTH = 300;
@@ -97,6 +134,7 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
       panel.nodes.forEach((node, idx) => {
         const row = document.createElement('div');
         row.className = `tt-menu-row${idx === panel.selected ? ' is-selected' : ''}`;
+        if (node.tip) row.title = node.tip;
 
         const keyEl = document.createElement('span');
         keyEl.className = 'tt-menu-row__key';

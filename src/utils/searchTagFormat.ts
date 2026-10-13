@@ -4,18 +4,20 @@
  * server/routes/systemRoutes.ts の同等ロジックをクライアント側（Vaultメモ上書き用）に移植したもの。
  */
 
+import { isCommentLine } from './commentLine';
+
 export interface SearchTagRow {
   id:          string;
   description: string;
   url:         string;
 }
 
-/** docs/DefaultSearchTag.md 形式のテキストを行ごとにパースする（#始まり・空行はコメントとして無視） */
+/** docs/DefaultSearchTag.md 形式のテキストを行ごとにパースする（空行とコメント行は無視。規則は utils/commentLine.ts） */
 export function parseSearchTagContent(content: string): SearchTagRow[] {
   const rows: SearchTagRow[] = [];
   for (const line of content.split('\n')) {
     const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith('#')) continue;
+    if (!trimmed || isCommentLine(trimmed)) continue;
 
     const firstComma = trimmed.indexOf(',');
     const lastComma  = trimmed.lastIndexOf(',');

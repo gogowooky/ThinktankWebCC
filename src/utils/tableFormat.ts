@@ -6,7 +6,7 @@
  *   1行目: タイトル（保存先では frontmatter / BQ の title）
  *   列ヘッダー: metadata の colheader（CSV文字列）。本文には書かない
  *   値csv行...（通常のCSV行はデータ行）
- *   # ; > | で始まる行はコメント行（保存時も保持、データとして扱わない）
+ *   行頭の空白を除いて # ; > | で始まる行はコメント行（保存時も保持、データとして扱わない。utils/commentLine.ts）
  *
  * 旧形式: colheader が無い table は、本文の最初の > 行を列ヘッダーとして読む。
  * DataGrid から保存すると colheader へ移し、本文の > 行を消す。
@@ -16,6 +16,8 @@
  *   - カラム順変更は保存時に各データ行の列順を更新する
  *   - 新規追加行はファイル末尾に追加する
  */
+
+import { isCommentLine } from './commentLine';
 
 export type RawLineType = 'columns' | 'data' | 'comment' | 'empty';
 
@@ -36,11 +38,6 @@ export interface TableSection {
   headerText?: string;
 }
 
-const COMMENT_PREFIXES = ['#', ';', '>', '|'];
-
-function isCommentLine(line: string): boolean {
-  return COMMENT_PREFIXES.some(p => line.startsWith(p));
-}
 
 /** think.Metadata.colheader を列ヘッダー文字列として取り出す（無効値は undefined） */
 export function readColHeader(metadata: unknown): string | undefined {
@@ -97,9 +94,11 @@ export function parseTableContent(content: string, colheader?: string): TableSec
   let headerText = fromMetadata ? colheader! : undefined;
 
   for (const line of lines) {
-    if (!fromMetadata && line.startsWith('>') && headerText === undefined) {
-      columns.push(...parseCsvLine(line.slice(1).trim()));
-      headerText = line.slice(1);
+    // コメント行と同じく、行頭の空白は無視して列見出しの > を探す
+    const lead = line.trimStart();
+    if (!fromMetadata && lead.startsWith('>') && headerText === undefined) {
+      columns.push(...parseCsvLine(lead.slice(1).trim()));
+      headerText = lead.slice(1);
       rawLines.push({ type: 'columns', text: line });
     } else if (isCommentLine(line)) {
       rawLines.push({ type: 'comment', text: line });

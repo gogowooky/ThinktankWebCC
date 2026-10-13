@@ -33,9 +33,9 @@ import {
   Mic,
   MicOff,
   Eraser,
-  FileDown,
-  FileX2,
   FilePen,
+  FileX,
+  FileInput,
 } from 'lucide-react';
 import type { TTDiscussPanel } from '../../views/TTDiscussPanel';
 import type { TTVault } from '../../models/TTVault';
@@ -627,6 +627,42 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                 </div>
               )}
             </div>
+            <div className="discuss-setting-area__divider" />
+
+            {/* パネル色（各パネルの基礎色。リボン・淡色・ホバー・文字色はここから自動で導かれる）*/}
+            <div className="discuss-setting-area__section">
+              <div
+                className="discuss-setting-area__section-header"
+                onClick={() => setIsPanelColorOpen(!isPanelColorOpen)}
+              >
+                {isPanelColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>パネル色</span>
+              </div>
+
+              {isPanelColorOpen && (
+                <div className="discuss-setting-area__section-content">
+                  {PANEL_COLOR_ROWS.map(({ statusId, label, tip }) => {
+                    const style = panel.GetColorStatus(statusId);
+                    return (
+                      <div key={statusId} className="discuss-setting-area__heading-style-row">
+                        <span className="discuss-setting-area__heading-style-label discuss-setting-area__swatch-label">{label}</span>
+                        <input
+                          type="color"
+                          className="discuss-setting-area__color-picker"
+                          value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
+                          onChange={e => {
+                            panel.SetColorStatus(statusId, 'Color', e.target.value);
+                            // CSS変数への展開は AppLayout がこのキーの変更通知で行う
+                            TTUIStateManager.instance.notifyPropertyChanged(`${statusId}.Color`);
+                          }}
+                          data-tip={tip}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </>
         ) : activeSettings === 'texteditor' ? (
           <>
@@ -792,7 +828,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                           data-tip={`${memo}から読み取る`}
                           data-tip-side="top-start"
                         >
-                          <FileDown size={16} className="ws-icon" />
+                          <FilePen size={16} className="ws-icon" />
                         </button>
                         <button
                           className="discuss-setting-area__icon-btn"
@@ -800,7 +836,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                           data-tip={`${label}をdefaultに戻す`}
                           data-tip-side="top-start"
                         >
-                          <FileX2 size={16} className="ws-icon" />
+                          <FileX size={16} className="ws-icon" />
                         </button>
                         <button
                           className="discuss-setting-area__icon-btn"
@@ -808,7 +844,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                           data-tip={`${memo}に書き戻す`}
                           data-tip-side="top-start"
                         >
-                          <FilePen size={16} className="ws-icon" />
+                          <FileInput size={16} className="ws-icon" />
                         </button>
                       </div>
                     </div>
@@ -1116,42 +1152,6 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
                             U
                           </label>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div className="discuss-setting-area__divider" />
-
-            {/* パネル色（各パネルの基礎色。リボン・淡色・ホバー・文字色はここから自動で導かれる）*/}
-            <div className="discuss-setting-area__section">
-              <div
-                className="discuss-setting-area__section-header"
-                onClick={() => setIsPanelColorOpen(!isPanelColorOpen)}
-              >
-                {isPanelColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span className="discuss-setting-area__section-label" style={{ marginBottom: 0 }}>パネル色</span>
-              </div>
-
-              {isPanelColorOpen && (
-                <div className="discuss-setting-area__section-content">
-                  {PANEL_COLOR_ROWS.map(({ statusId, label, tip }) => {
-                    const style = panel.GetColorStatus(statusId);
-                    return (
-                      <div key={statusId} className="discuss-setting-area__heading-style-row">
-                        <span className="discuss-setting-area__heading-style-label discuss-setting-area__swatch-label">{label}</span>
-                        <input
-                          type="color"
-                          className="discuss-setting-area__color-picker"
-                          value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
-                          onChange={e => {
-                            panel.SetColorStatus(statusId, 'Color', e.target.value);
-                            // CSS変数への展開は AppLayout がこのキーの変更通知で行う
-                            TTUIStateManager.instance.notifyPropertyChanged(`${statusId}.Color`);
-                          }}
-                          data-tip={tip}
-                        />
                       </div>
                     );
                   })}

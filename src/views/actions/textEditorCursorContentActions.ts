@@ -13,7 +13,7 @@ import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { TTUIStateManager } from '../TTUIStateManager';
 import { showMonacoMenu } from '../../utils/monacoMenu';
-import { showTagInsertMenu } from '../../utils/tagInsertMenu';
+import { showDefaultMenu } from '../../utils/defaultMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
 import { apiFetch } from '../../services/apiClient';
@@ -640,13 +640,13 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         const text = getTextOnCursorSafe();
         if (!text) {
           // カーソル位置が url/filepath/tag のいずれでもない場合は、
-          // docs/DefaultSearchTag.md を元にしたタグ挿入メニューを表示する
+          // docs/DefaultMenu.md の「タグ挿入」メニューを表示し、選ばれた ID のタグを挿入する
           const editor = TTShortcutManager.instance.activeEditor;
           if (!editor) {
             item.Result = 'エディタが見つかりません';
             return;
           }
-          return showTagInsertMenu('タグ挿入', editor.getDomNode?.() ?? null).then(id => {
+          return showDefaultMenu('タグ挿入', editor.getDomNode?.() ?? null).then(id => {
             if (!id) {
               item.Result = 'メニューの選択をキャンセルしました';
               return;
@@ -719,6 +719,46 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
             return res.then(subItem => { item.Result = subItem.Result; });
           }
           item.Result = res.Result;
+        });
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCaretPos',
+    Description: '文字選択中はタグ挿入メニューで選んだタグで選択文字を囲み、選択していなければ DoOnCursorPos と同じく対象を開く',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        const model = editor?.getModel?.();
+        // メニュー表示でフォーカスが移る前に、選択範囲と選択文字を確保しておく
+        const sel = editor?.getSelection?.();
+        if (!editor || !model || !sel || sel.isEmpty()) {
+          const res = TTActions.Execute('TextEditor.CurrentEditor.DoOnCursorPos', item.Mods);
+          if (res instanceof Promise) return res.then(subItem => { item.Result = subItem.Result; });
+          item.Result = res.Result;
+          return;
+        }
+        const selected: string = model.getValueInRange(sel);
+
+        return showDefaultMenu('タグ挿入', editor.getDomNode?.() ?? null).then(id => {
+          if (!id) {
+            item.Result = 'メニューの選択をキャンセルしました';
+            return;
+          }
+          // 選択文字を切り取り、タグを挿入して、タグの値の位置（閉じ括弧の直前）に選択文字を入れる。
+          // クリップボードは使わず1回の編集にまとめる（Undo 1回で元に戻り、クリップボードも汚さない）
+          const tag = TAG_INSERT_TEXT[id] ?? `[${id}:]`;
+          const caret = tag.length - 1;
+          const text = tag.slice(0, caret) + selected + tag.slice(caret);
+          const startOffset = model.getOffsetAt({ lineNumber: sel.startLineNumber, column: sel.startColumn });
+          editor.executeEdits('do-on-caret-pos', [{ range: sel, text, forceMoveMarkers: true }]);
+          // キャレットは貼り付けた選択文字の直後（閉じ括弧の手前）
+          editor.setPosition(model.getPositionAt(startOffset + caret + selected.length));
+          editor.focus();
+          item.Result = `選択文字をタグ ${tag} で囲みました`;
         });
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
