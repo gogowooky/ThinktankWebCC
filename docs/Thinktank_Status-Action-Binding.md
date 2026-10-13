@@ -262,27 +262,6 @@ candidates:     .*
 　ToolBarがStatusモードのPanelには、EditBoxとTextBoxを配置し、PanelにフォーカスがあるときはEditBoxが、FocusがはずれるとTextBoxが表示されます。
 　EditBoxに入力された値が、このToolBar.StatusMode.Textに保存されます。
 　TextBoxのときには、ToolBar.StatusMode.TextをCSV形式のStatusIDとして読み取り、「StatusID1:{値1}」、「StatusID2:{値2}」...「StatusIDn:{値n}」というフォーマットで表示します。
-## Status：　260625　ToolBar.HighlighterMode.Text
-description:    ハイライターの入力テキスト
-key:            ToolBar.HighlighterMode.Text
-current:        
-default:        
-type:           string
-candidates:     .*
-## Status：　260625　ToolBar.CommandMode.Text
-description:    コマンドラインの入力テキスト
-key:            ToolBar.CommandMode.Text
-current:        
-default:        
-type:           string
-candidates:     .*
-## Status：　260625　ToolBar.TranslateMode.Text
-description:    翻訳の入力テキスト
-key:            ToolBar.TranslateMode.Text
-current:        
-default:        
-type:           string
-candidates:     .*
 ## Status：　260625　ToolBar.ReminderMode.Text
 description:    リマインダーの入力テキスト
 key:            ToolBar.ReminderMode.Text
@@ -291,6 +270,14 @@ default:
 type:           string
 candidates:     .*
 
+
+## Status：　260625　ToolBar.TranslateMode.Text
+description:    翻訳の入力テキスト
+key:            ToolBar.TranslateMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
 ## Action：　261013　ToolBar.TranslateMode.Text:Unfocus
 description:    ToolBarの翻訳入力欄から元の位置に戻る
 key:            ToolBar.TranslateMode.Text:Unfocus
@@ -303,34 +290,118 @@ key:            ToolBar.TranslateMode.Text:Focus
 description:    ToolBarの翻訳入力欄をクリアする
 key:            ToolBar.TranslateMode.Text:Clear
 　ToolBarの翻訳入力欄をクリアする
+## Action：　261013　ToolBar.TranslateMode.Text:AddSelected
+description:    選択テキストを翻訳入力欄に追加して、翻訳入力欄にフォーカスする
+key:            ToolBar.TranslateMode.Text:AddSelected
+FocusedPaneの選択テキストの内容をToolBar.TranslateMode.Textに追加する。
 
-## Action：　261013　ToolBar.HighlighterMode.Text:Unfocus
-description:    ToolBarのHighlighter入力欄から元の位置に戻る
-key:            ToolBar.HighlighterMode.Text:Unfocus
-　ToolBarのHighlighter入力欄から元の位置に戻る
-## Action：　261013　ToolBar.HighlighterMode.Text:Focus
-description:    ToolBarのHighlighter入力欄にフォーカスする
-key:            ToolBar.HighlighterMode.Text:Focus
-　ToolBarのHighlighter入力欄にフォーカスする
-## Action：　261013　ToolBar.HighlighterMode.Text:Clear
-description:    ToolBarのHighlighter入力欄をクリアする
+　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に登録しました。
+　　- 選択テキストは Highlighter の AddSelected と同じく、エディタの選択を優先し、無ければ画面上の選択を使います。
+　　- 入力欄は1行のため、選択の改行は空白1つに置き換えます。
+　　- 既に入力がある場合は空白を挟んで末尾に追加し、空なら選択テキストだけを入れます
+　　 （Highlighter と違い CSV にはせず、重複の除外もしません）。
+　　- 追加後は ToolBar.TranslateMode.Text:Focus を実行して翻訳モードに切り替え、入力欄にフォーカスします。
+　　 直前のフォーカス位置もこのとき記憶されるので、:Unfocus で元に戻れます。
+　　- 選択が無いときは何もせず「[選択テキストなし]」を返します。
+　　実機で、改行を含む選択が「hello world」として入ること、続けて「foo」を追加すると
+　　「hello world foo」になること、入力欄にフォーカスし :Unfocus で元へ戻ることを確認しました。
+　　キー割当は DefaultShortcut.md にまだありません。
+
+## Status：　260625　ToolBar.HighlighterMode.Text
+description:    ハイライターの入力テキスト
+key:            ToolBar.HighlighterMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
+## Status：　260906　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
+　　TTDiscussPanel.AddContentSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter()／
+　　ThinktankArea・SeedsArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
+
+description:    コンテンツで絞込みのキーワードをハイライトする
+key:            ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
+current:        'true'
+default:        'true'
+type:           bool
+candidates:     ^(true|false)^$
+
+　A（260814実装）：TTDiscussPanel.AddContentSearchKeywordFlag（既定true）として実体を追加し、
+　　TTUIStateManagerにStatusとして登録しました。実行判定は共通ユーティリティ
+　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter() が担い、
+　　既存の「選択テキストをHighlighterへ追加」（AddSelected）と同じグループ重複排除ロジックで
+　　ToolBar.HighlighterMode.Text にキーワードを追加します。
+　　「実行したとき」= コンテンツ絞り込み欄でEnter確定した瞬間とし、以下3箇所に適用しました。
+　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleSearch）
+　　- SeedsPanel Think一覧（SeedsArea.tsx handleSearch）
+　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx、従来onSearchが
+　　　NOOPだったためEnter確定時に追加する処理を新設。ライブ絞り込み自体の挙動は変更なし）
+　　実機検証（Vite+Expressのdevサーバー）で、Think一覧のコンテンツ絞り込みEnter確定時に
+　　ToolBar.HighlighterMode.Text へキーワードが追加されること、フラグをfalseにすると
+　　追加されないことを確認しました。
+## Status：　260906　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
+
+　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
+　　TTDiscussPanel.AddTitleSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　src\utils\highlighterKeyword.ts の addTitleSearchKeywordToHighlighter()／
+　　ThinktankArea・SeedsArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
+
+description:    タイトルで絞込みのキーワードをハイライトする
+key:            ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
+current:        'true'
+default:        'true'
+type:           bool
+candidates:     ^(true|false)^$
+
+　A（260814実装）：TTDiscussPanel.AddTitleSearchKeywordFlag（既定true）として実体を追加し、
+　　TTUIStateManagerにStatusとして登録しました。追加判定は addContentSearchKeywordToHighlighter
+　　と同じユーティリティファイルの addTitleSearchKeywordToHighlighter() で行います。
+　　タイトル絞り込み欄（ThinktankFilterPanel/SeedsFilterPanel）はEnterキーで
+　　saveHistory()に加えonSearch?.()を呼ぶ実装が既にありましたが、呼び出し元3箇所で
+　　onSearchが未接続（ThinktankArea/SeedsArea）またはNOOP（ThinktankChatMemoPicker）
+　　だったため、いずれもEnter確定時に上記ユーティリティを呼ぶハンドラーを新設・接続しました。
+　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleTitleFilterSearch）
+　　- SeedsPanel Think一覧（SeedsArea.tsx handleTitleFilterSearch）
+　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx handleTitleSearch）
+　　既存のタイトル絞り込み自体（都度ライブ適用）の挙動は変更していません。
+　　実機検証で、Think一覧のタイトル絞り込みEnter確定時にToolBar.HighlighterMode.Text へ
+　　キーワードが追加されること、フラグをfalseにすると追加されないことを確認しました。
+## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
+description:    選択テキストをHighlighter検索語に追加する
+key:            ToolBar.HighlighterMode.Text:AddSelected
+FocusedPaneの選択テキストの内容をToolBar.HighlighterMode.TextにCSV形式で追加する。
+## Action：　260715　ToolBar.HighlighterMode.Text:Clear
+description:    Highlighter検索語をクリアする
 key:            ToolBar.HighlighterMode.Text:Clear
-　ToolBarのHighlighter入力欄をクリアする
+ToolBar.HighlighterMode.Textをクリアする
+## Action：　260715　ToolBar.HighlighterMode.Text:Unfocus
+description:    Highlighter入力欄から直前のフォーカス位置に戻る
+key:            ToolBar.HighlighterMode.Text:Unfocus
+ToolBar.HighlighterMode.Text:Focusで記憶した直前のFocus位置に戻る。
+## Action：　260715　ToolBar.HighlighterMode.Text:Focus
+description:    Highlighter入力欄にフォーカスする
+key:            ToolBar.HighlighterMode.Text:Focus
+ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その際、直前のFocus位置を記憶する。
 
-　A（261013実装）：src\views\actions\textEditorHighlighterToolbarActions.ts に、
-　　Highlighter / Command / Translate の3モード共通の登録関数（registerModeInputActions）を置き、
-　　各モードの :Clear / :Focus / :Unfocus をそこから登録するようにしました。Translate の3アクションは新規です。
-　　- Clear: ToolBar.<モード>Mode.Text を空にする。
-　　- Focus: 直前のフォーカス要素を記憶し、ToolBar をそのモードに切り替えて入力欄（#StatusBarTextInput）にフォーカスする。
-　　- Unfocus: Focus で記憶した位置へフォーカスを戻す（戻り先が無ければ入力欄のフォーカスを外すだけ）。
-　　3モードは同じ入力欄を使いますが、戻り先はモードごとに持ちます。
-　　Highlighter と Command は既に実装済みで、動作は変えていません（Highlighter は下部の
-　　「ToolBar.HighlighterMode.Text:AddSelected」付近にも 260715 の記載が残っています）。
-　　Clear の key 欄が ToolBar.CommandMode.Text:Clear になっていたため、見出しのIDに合わせて直しました。
-　　実機で、Translate の Focus → モード切替と入力欄へのフォーカス、Clear → 空になる、
-　　Unfocus → 元の要素へ戻ることを確認しました。Highlighter / Command の Focus / Unfocus も従来どおり動きます。
+　A：4アクションとも TTFocusedPanelActions に実装しました。
+　　- AddSelected: FocusedPaneの選択テキスト（改行を含む場合は1行目）をカンマ区切りのグループとして追加。既存と重複する場合は追加しない。
+　　- Clear: ToolBar.HighlighterMode.Text（= DiscussPanel.HighlightWord）を空にする。
+　　- Focus: 直前のフォーカス要素を記憶し、ToolBarをHighlighterモードに切り替えて入力欄（#StatusBarTextInput）にフォーカス。
+　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
+　　キー割当（docs\DefaultShortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
 
 
+## Status：　260625　ToolBar.CommandMode.Text
+description:    コマンドラインの入力テキスト
+key:            ToolBar.CommandMode.Text
+current:        
+default:        
+type:           string
+candidates:     .*
 ## Action：　260728　ToolBar.CommandMode.Text:Unfocus
 description:    ToolBarのCommand入力欄から元の位置に戻る
 key:            ToolBar.CommandMode.Text:Unfocus
@@ -369,11 +440,6 @@ key:            ToolBar.CurrentMode.Text:Paste
 description:    ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする
 key:            ToolBar.CurrentMode.Text:Copy
 　ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする
-## Action：　260728　DiscussPanel.FocusedPane.PaneNumber:ReFocus
-description:    DiscussPanelの現在フォーカス中のPaneに再度フォーカスする
-key:            DiscussPanel.FocusedPane.PaneNumber:ReFocus
-　DiscussPanelの指定のPane番号に再度フォーカスする
-  
 
 # Panel AIChat =====================================================================================================
 
@@ -818,6 +884,7 @@ candidates:     ^(Chat|Settings)$
 
 
 
+ 
 ## Action：　260619　DiscussPanel.FocusedPane.Mode:Next
 description:    フォーカスペインの表示モードを次に切り替える
 key:            DiscussPanel.FocusedPane.Mode:Next
@@ -850,6 +917,10 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 
 ## Status：　260613　DiscussPanel.FocusedPane.ID
 
+## Action：　260728　DiscussPanel.FocusedPane.PaneNumber:ReFocus
+description:    DiscussPanelの現在フォーカス中のPaneに再度フォーカスする
+key:            DiscussPanel.FocusedPane.PaneNumber:ReFocus
+　DiscussPanelの指定のPane番号に再度フォーカスする
 ## Action：　260619　DiscussPanel.FocusedPane.PaneNumber:Next
 description:    フォーカスペインを次のペインに移動する
 key:            DiscussPanel.FocusedPane.PaneNumber:Next
@@ -935,6 +1006,7 @@ current:        []
 default:        []
 type:           json
 candidates:     .*
+
 
 # Panel D&D ======================================================================================================
 ## Action：　260724　DiscussPanel.DroppedFile.ID:Load
@@ -1594,85 +1666,6 @@ key:            TextEditor.CurrentEditor.CursorPos:LastHighlighter
 　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
 　　キー割当（docs\DefaultShortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
-## Status：　260906　ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
-　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
-
-　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
-　　TTDiscussPanel.AddContentSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
-　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter()／
-　　ThinktankArea・SeedsArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
-
-description:    コンテンツで絞込みのキーワードをハイライトする
-key:            ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag
-current:        'true'
-default:        'true'
-type:           bool
-candidates:     ^(true|false)^$
-
-　A（260814実装）：TTDiscussPanel.AddContentSearchKeywordFlag（既定true）として実体を追加し、
-　　TTUIStateManagerにStatusとして登録しました。実行判定は共通ユーティリティ
-　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter() が担い、
-　　既存の「選択テキストをHighlighterへ追加」（AddSelected）と同じグループ重複排除ロジックで
-　　ToolBar.HighlighterMode.Text にキーワードを追加します。
-　　「実行したとき」= コンテンツ絞り込み欄でEnter確定した瞬間とし、以下3箇所に適用しました。
-　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleSearch）
-　　- SeedsPanel Think一覧（SeedsArea.tsx handleSearch）
-　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx、従来onSearchが
-　　　NOOPだったためEnter確定時に追加する処理を新設。ライブ絞り込み自体の挙動は変更なし）
-　　実機検証（Vite+Expressのdevサーバー）で、Think一覧のコンテンツ絞り込みEnter確定時に
-　　ToolBar.HighlighterMode.Text へキーワードが追加されること、フラグをfalseにすると
-　　追加されないことを確認しました。
-## Status：　260906　ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
-　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
-
-　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
-　　TTDiscussPanel.AddTitleSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
-　　src\utils\highlighterKeyword.ts の addTitleSearchKeywordToHighlighter()／
-　　ThinktankArea・SeedsArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
-
-description:    タイトルで絞込みのキーワードをハイライトする
-key:            ToolBar.HighlighterMode.Text:AddTitleSearchKeywordFlag
-current:        'true'
-default:        'true'
-type:           bool
-candidates:     ^(true|false)^$
-
-　A（260814実装）：TTDiscussPanel.AddTitleSearchKeywordFlag（既定true）として実体を追加し、
-　　TTUIStateManagerにStatusとして登録しました。追加判定は addContentSearchKeywordToHighlighter
-　　と同じユーティリティファイルの addTitleSearchKeywordToHighlighter() で行います。
-　　タイトル絞り込み欄（ThinktankFilterPanel/SeedsFilterPanel）はEnterキーで
-　　saveHistory()に加えonSearch?.()を呼ぶ実装が既にありましたが、呼び出し元3箇所で
-　　onSearchが未接続（ThinktankArea/SeedsArea）またはNOOP（ThinktankChatMemoPicker）
-　　だったため、いずれもEnter確定時に上記ユーティリティを呼ぶハンドラーを新設・接続しました。
-　　- ThinktankPanel Think一覧（ThinktankArea.tsx handleTitleFilterSearch）
-　　- SeedsPanel Think一覧（SeedsArea.tsx handleTitleFilterSearch）
-　　- 両パネル共通のAI相談メモピッカー（ThinktankChatMemoPicker.tsx handleTitleSearch）
-　　既存のタイトル絞り込み自体（都度ライブ適用）の挙動は変更していません。
-　　実機検証で、Think一覧のタイトル絞り込みEnter確定時にToolBar.HighlighterMode.Text へ
-　　キーワードが追加されること、フラグをfalseにすると追加されないことを確認しました。
-## Action：　260715　ToolBar.HighlighterMode.Text:AddSelected
-description:    選択テキストをHighlighter検索語に追加する
-key:            ToolBar.HighlighterMode.Text:AddSelected
-FocusedPaneの選択テキストの内容をToolBar.HighlighterMode.TextにCSV形式で追加する。
-## Action：　260715　ToolBar.HighlighterMode.Text:Clear
-description:    Highlighter検索語をクリアする
-key:            ToolBar.HighlighterMode.Text:Clear
-ToolBar.HighlighterMode.Textをクリアする
-## Action：　260715　ToolBar.HighlighterMode.Text:Unfocus
-description:    Highlighter入力欄から直前のフォーカス位置に戻る
-key:            ToolBar.HighlighterMode.Text:Unfocus
-ToolBar.HighlighterMode.Text:Focusで記憶した直前のFocus位置に戻る。
-## Action：　260715　ToolBar.HighlighterMode.Text:Focus
-description:    Highlighter入力欄にフォーカスする
-key:            ToolBar.HighlighterMode.Text:Focus
-ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その際、直前のFocus位置を記憶する。
-
-　A：4アクションとも TTFocusedPanelActions に実装しました。
-　　- AddSelected: FocusedPaneの選択テキスト（改行を含む場合は1行目）をカンマ区切りのグループとして追加。既存と重複する場合は追加しない。
-　　- Clear: ToolBar.HighlighterMode.Text（= DiscussPanel.HighlightWord）を空にする。
-　　- Focus: 直前のフォーカス要素を記憶し、ToolBarをHighlighterモードに切り替えて入力欄（#StatusBarTextInput）にフォーカス。
-　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
-　　キー割当（docs\DefaultShortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
 
 # TextEditor Cursor ================================================================================================
 ## Action：　260906　TextEditor.CurrentEditor.CursorPos:Focus
