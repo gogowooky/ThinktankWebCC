@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.10 feat: D&Dゴーストの色をStatus変数で設定し、パネル色にBorderとゴースト色を追加
+
+- 日付: 2026-10-13
+- コミット番号: 3ca32eb
+
+DiscussパネルのPane領域へThinkファイルをD&Dするときのゴーストの色を、DDGhost.(Added|Divided|Replaced).Theme.Color から取るようにした（Added = Pane領域全体の端・空の領域で決めた追加位置、Divided = 特定Paneの上で決めた位置、Replaced = 置き換える単独Paneのタイトル部分。これまでは固定色と境界線色の流用だった）。Paneが1つのときに分割位置もAdded色になっていた不具合は、色の種類をドロップ時の動作と分けて修正した。Discuss>TextEditor設定>パネル色の ToolBar の下に Border（FocusingBorder.Theme）と Added / Divided / Replaced を追加。DefaultColor.md に DDGhost.*.Theme を追加し、DefaultShortcut.md ではファイル履歴を Alt+Backspace でメニュー表示する割当に変更（前後移動はコメント化）。変更: 10ファイル（+83 / -38行）。
+
 ### v2.1.10 feat: 会話の記録を開くアイコンをAI回答文の末尾に同じ行で表示
 
 - 日付: 2026-10-13
