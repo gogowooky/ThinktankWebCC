@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.16 feat: 選択・出現・折畳の色を .Theme.Color へ移し、選択範囲を出現より手前に表示
+
+- 日付: 2026-10-13
+- コミット番号: b69d4fb
+
+TextEditor.(Selection|Occurrence|FoldingHeader).* を TextEditor.(Selection|Occurrence|FoldingHeader).Theme.* へ改名し、背景色を BgColor から Color へ移した（docs/DefaultColor.md・設定画面の色見本・エディタのテーマ・折り畳み行／ミニマップの色を追従）。旧名の保存値と旧形式で書き戻された ThinktankColorBinding メモは読込時に新しい名前へ読み替え、Color と BgColor を入れ替える。選択範囲と出現（wordHighlight / selectionHighlight）が重なった部分は選択の色を手前に表示する（.view-overlays を重ね順の単位にして、選択の色が文字を隠さないようにした）。タグ挿入などの DefaultMenu 系メニューは ESC でどの階層からでも全体を閉じる。TextEditor.(KeyBinding|ColorBinding|SearchTag).Save を Thinktank_Status-Action-Binding.md に登録し、DefaultShortcut.md に DoOnCaretPos（Ctrl+T）を追加。型チェック成功、関連テスト 18ファイル・113件成功。変更: 16ファイル（+154 / -85行）。
+
 ### v2.1.15 fix: Electron保存の書込境界・画面の寿命管理・Bundle解決cacheなどC2〜C7の不具合を修正
 
 - 日付: 2026-10-13

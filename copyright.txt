@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.15",
+  "version": "2.1.16",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "e2228f0",
-  "commitDateTime": "2026-10-13-160905",
-  "commitMessage": "fix: Electron保存の書込境界・画面の寿命管理・Bundle解決cacheなどC2〜C7の不具合を修正"
+  "commitId": "b69d4fb",
+  "commitDateTime": "2026-10-13-175349",
+  "commitMessage": "feat: 選択・出現・折畳の色を .Theme.Color へ移し、選択範囲を出現より手前に表示"
 }
