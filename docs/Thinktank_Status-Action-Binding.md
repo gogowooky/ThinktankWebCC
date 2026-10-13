@@ -191,7 +191,6 @@ key:            Application.FocusedArea.Name:next
 description:    フォーカスエリアを前に切り替える
 key:            Application.FocusedArea.Name:prev
 　ActionIDの接尾辞は小文字（:next / :prev）で登録されている。
-
 ## Status：　260615　Application.FocusedArea.Name
 description:    フォーカスエリア
 key:            Application.FocusedArea.Name
@@ -585,8 +584,7 @@ candidates:     ^(Claude|OpenAI|Gemini|Local)$
 　　　会話画面の「条件・機能・参照情報 > 参照情報」の AI 欄で選び直せ、選んだモデルがその社の先頭に移り、
 　　　そのパネルのプロバイダも切り替わる。
 　　　旧版のパネル別の保存値（localStorage の tt-ai-model-*）は初回起動時に引き継ぐ。
-
-# Panel ============================================================================================================
+# Panel Focused ============================================================================================================
 ## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
 エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
 description:    フォーカスパネルのエリア開閉をUser位置でトグルする
@@ -699,8 +697,7 @@ key:            FocusedPanel.Mode.Name:Next
 　フォーカスされているアイコン（種別アイコン / メニューアイコンのいずれか）を押下します。
 　（旧 ContentType:Action / Menu:Action を統合。実装内容は下部 # Panel セクションの
 　　FocusedPanel.Filter の A（260902実装）を参照）
-
-
+# Panel Thinktank ============================================================================================================
 ## Action：　260714　ThinktankPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
 key:            ThinktankPanel.Filter.Cursor:Action
@@ -772,7 +769,7 @@ current:        ''
 default:        ''
 type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
-
+# Panel Seeds ============================================================================================================
 ## Action：　260714　SeedsPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
 key:            SeedsPanel.Filter.Cursor:Action
@@ -857,7 +854,7 @@ current:        none
 default:        none
 type:           string
 candidates:     .*
-
+# Panel Discuss ============================================================================================================
 ## Status：　261009　DiscussSettingPanel.Area.OpenWidth
 key:の意味はThinktankPanel.Area.OpenWidthと同じ
 　（旧記載の DiscussPanel.Area.OpenWidth は未登録のIDだったため、実装上の StatusID であるこちらに統合しました）
@@ -899,40 +896,6 @@ candidates:     ^(Discuss|Texteditor|Markdown|Datagrid|Card|Graph)$
 　　- Datagrid （データグリッド）
 　　- Card （カードビュー）
 　　- Graph （グラフビュー）
-
-## Status：　260917　HarvestPanel.Area.OpenWidth
-key:の意味はThinktankPanel.Area.OpenWidthと同じ
-description:    HarvestパネルOpen時の幅
-key:            HarvestPanel.Area.OpenWidth
-type:           string
-candidates:     (init|user|foredit)
-## Status：　260619　HarvestPanel.Area.IsOpen
-
-description:    右パネル表示
-key:            HarvestPanel.Area.IsOpen
-current:        false
-default:        true
-type:           boolean
-candidates:     ^(true|false)$
-## Status：　260613　HarvestPanel.Mode.Name
-
-description:    右パネルモード
-key:            HarvestPanel.Mode.Name
-current:        Chat
-default:        Chat
-type:           string
-candidates:     ^(Chat|Settings)$
-
-
-　Q：設定値を記載してください。
-　A：設定可能な値は以下の2つです。
-　　- Chat （AI対話チャット）
-　　- Settings （設定）
-
-
-
-
-
  
 ## Action：　260619　DiscussPanel.FocusedPane.Mode:Next
 description:    フォーカスペインの表示モードを次に切り替える
@@ -1055,8 +1018,34 @@ current:        []
 default:        []
 type:           json
 candidates:     .*
+# Panel Harvest ============================================================================================================
+## Status：　260917　HarvestPanel.Area.OpenWidth
+key:の意味はThinktankPanel.Area.OpenWidthと同じ
+description:    HarvestパネルOpen時の幅
+key:            HarvestPanel.Area.OpenWidth
+type:           string
+candidates:     (init|user|foredit)
+## Status：　260619　HarvestPanel.Area.IsOpen
 
+description:    右パネル表示
+key:            HarvestPanel.Area.IsOpen
+current:        false
+default:        true
+type:           boolean
+candidates:     ^(true|false)$
+## Status：　260613　HarvestPanel.Mode.Name
 
+description:    右パネルモード
+key:            HarvestPanel.Mode.Name
+current:        Chat
+default:        Chat
+type:           string
+candidates:     ^(Chat|Settings)$
+
+　Q：設定値を記載してください。
+　A：設定可能な値は以下の2つです。
+　　- Chat （AI対話チャット）
+　　- Settings （設定）
 # Panel D&D ======================================================================================================
 ## Action：　260724　DiscussPanel.DroppedFile.ID:Load
 description:    DropされたThinkファイルをPaneにLoadする
@@ -1388,10 +1377,6 @@ candidates:     ^[0-9]+$
 　Monaco の既定では非フォーカス時に同色の50%（editor.inactiveSelectionBackground の既定値）になるため、
 　テーマ側で editor.inactiveSelectionBackground にも同じ値を明示しています。
 　既定値の定義元は他と同じく docs/DefaultColor.md で、専用フィールドを廃止したため値の実体は ColorStatus に一本化されました。
-
-
-
-
 # TextEditor Action ================================================================================================
 ## Action：　261008　TextEditor.CurrentEditor.DefaultAction
 texteditorのdefaultのアクションを実施する。（＝action bubleを停止させずにそのままthroughする）
@@ -1630,9 +1615,6 @@ current:
 default:        
 type:           string
 candidates:     .*
-
-
-
 # TextEditor Find/Replace ========================================================================================
 ## Action：　260716　TextEditor.CurrentEditor.ShowFind
 description:    検索ダイアログを表示/非表示トグルする
@@ -1686,8 +1668,7 @@ key:            TextEditor.ReplaceOption.PreserveCase:Toggle
 ## Status：　260715　TextEditor.FindOption.UseRexp
 　検索オプションの値
 ## Status：　260715　TextEditor.ReplaceOption.PreserveCase
-　置換オプションの値
-
+　置換オプションの
 # TextEditor Cursor Highlighter ====================================================================================
 ## Action：　260714　TextEditor.CurrentEditor.CursorPos:PrevHighlighter
 description:    Highlighter検索の前のヒットへ移動する
@@ -1715,7 +1696,6 @@ key:            TextEditor.CurrentEditor.CursorPos:LastHighlighter
 　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
 　　キー割当（docs\DefaultShortcut.md）: Ctrl+Shift+P/N = Prev/Next、Ctrl+Alt+P/N = First/Last
-
 # TextEditor Cursor ================================================================================================
 ## Action：　260906　TextEditor.CurrentEditor.CursorPos:Focus
 現在フォーカスがあるTextEditorのCursorPosにFocusします。
@@ -1777,8 +1757,6 @@ current:        0
 default:        0
 type:           string
 candidates:      .*
-
-
 # TextEditor Heading ===============================================================================================
 ## Action：　260622　TextEditor.CurrentFolding.Heading:OpenStepwise
 description:    見出し行を段階的に開く（Close→Open、Open→子をOpen）
@@ -1945,8 +1923,6 @@ key:            TextEditor.CurrentFolding.Heading:VisiblePrev
 　　setFoldStateByLevel）を再利用しているため、OpenLv2側に記載した2件の不具合修正
 　　（foldコマンドのすり替え仕様対策、カーソル退避閾値の修正）と、子Heading行の
 　　有無によるCloseオーバーライドは、いずれも本アクションにも同様に適用されています。
-
-
 # TextEditor ExOpt =================================================================================================
 ## Action：　260619　TextEditor.LineNumbers.IsVisible:Toggle
 description:    行番号表示をトグルする
@@ -2011,8 +1987,6 @@ current:        true
 default:        true
 type:           boolean
 candidates:     ^(true|false)$
-
-
 # TextEditor Settings ===============================================================================================
 ## Action：　260907　TextEditor.KeyBinding.Load
 description:    Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定をDefaultに戻してから適用する（Memoに無いキーはDefaultの状態になる）
@@ -2097,8 +2071,6 @@ key:            TextEditor.SearchTag.Save
 　本文は docs/DefaultSearchTag.md と同じ「ID, "Description", URL」形式で、サーバー取得分に Vaultメモの上書きを重ねた現在の
 　タグ定義を書く（URL の無いタグは NoURL）。タグ定義を取得できないときは書き戻さない。
 　Load と同じ形式で書くので、書き戻した後に Load すると同じ状態に戻る。結果はステータスバーの ACTION 欄に表示する。
-
-
 # TextEditor ExDate ================================================================================================
 ## Action：　260625　TextEditor.EditDate.InsertExDate
 description:    カーソル位置に日付文字を挿入しExDateモードに入る
