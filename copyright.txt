@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.14",
+  "version": "2.1.15",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "5de1975",
-  "commitDateTime": "2026-10-13-141849",
-  "commitMessage": "refactor: 残りの共通化（A3〜A8）と旧AI・未使用コードの整理（B3〜B5）を実施"
+  "commitId": "e2228f0",
+  "commitDateTime": "2026-10-13-160905",
+  "commitMessage": "fix: Electron保存の書込境界・画面の寿命管理・Bundle解決cacheなどC2〜C7の不具合を修正"
 }
