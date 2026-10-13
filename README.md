@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.12 feat: DefaultMenu.mdから作る汎用メニューとDoOnCaretPosを追加し、Default*.mdのコメント規則を統一
+
+- 日付: 2026-10-13
+- コミット番号: 2877c4b
+
+docs/DefaultMenu.md の MenuTree がメニュー名で始まる行からメニューを作り、選ばれた ID を返す汎用ルーチン showDefaultMenu を追加した（タイトル=メニュー名、ツールチップ=ID。utils/defaultMenu.ts）。DoOnCursorPos:Menu のタグ挿入メニューはこれに切り替え、旧来の表示処理は削除。TextEditor.CurrentEditor.DoOnCaretPos を追加し、文字選択中はタグ挿入メニューで選んだタグで選択文字を囲み、選択していなければ DoOnCursorPos と同じく対象を開く（Alt+Enter に割当。クリップボードは使わず1回の編集で行う）。Default*.md のコメント行の規則を「行頭の空白を除いて # ; > | で始まる行」に統一した（utils/commentLine.ts。サーバー側とクライアント側の読み込みすべて）。ほかに、パネル色を Discuss>Pane設定 の「アクション」の下へ移し、設定のキー・色・タグ設定のアイコンを file-pen / file-x / file-input に変更。DefaultMenu.md は MenuTree,ID 形式に、DefaultSearchTag.md の Description は単純な記載に整理。変更: 18ファイル（+405 / -249行）。
+
 ### v2.1.11 feat: D&Dゴーストの色をStatus変数で設定し、パネル色にBorderとゴースト色を追加
 
 - 日付: 2026-10-13
