@@ -215,11 +215,29 @@ export class TTShortcutManager {
   }
 
   init(app: TTApplication): void {
+    if (this._app && this._app !== app) this.detach(this._app);
     this._app = app;
     // ExMode 変化時にアクティブテーブルを再構築
     app.Status.AddOnUpdate('TTShortcutManager-exmode', () => {
       this.onExModeChange(app.Status.ExMode);
     });
+  }
+
+  static detachApplication(app: TTApplication): void {
+    TTShortcutManager._instance?.detach(app);
+  }
+
+  detach(app: TTApplication): void {
+    app.Status.RemoveOnUpdate('TTShortcutManager-exmode');
+    if (this._app !== app) return;
+    this._app = null;
+    this._activeEditor = null;
+    this._areaEditors.clear();
+    this._pendingThinkDrop = null;
+    this._heldMods = { ctrl: false, alt: false, shift: false, meta: false };
+    this._currentFocus = 'None';
+    this._currentExMode = '';
+    this._activeTable.clear();
   }
 
   async ensureThinkExists(_vault: TTVault): Promise<void> {

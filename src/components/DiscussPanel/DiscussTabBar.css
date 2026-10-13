@@ -29,6 +29,12 @@
   outline-offset: 1px;
 }
 
+.discuss-tab-bar__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: transparent;
+}
+
 /* ── 区切り線（Graph設定 と AI相談 の間）──────────────── */
 .discuss-tab-bar__divider {
   width: 20px;

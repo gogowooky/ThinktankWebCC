@@ -28,9 +28,13 @@ export interface TTActionItem {
 }
 
 /** アクション定義 */
-export interface TTAction {
+interface TTActionDefinition {
   ActionID:    ActionID;
   Description?: string;
   Category?:    string;
-  Completion:  (item: TTActionItem) => void | Promise<void>;
 }
+
+export type TTAction = TTActionDefinition & (
+  | { Completion: (item: TTActionItem) => void | Promise<void>; UnavailableReason?: undefined }
+  | { UnavailableReason: string; Completion?: never }
+);

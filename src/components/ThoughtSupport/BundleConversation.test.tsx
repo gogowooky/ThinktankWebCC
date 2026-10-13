@@ -13,18 +13,22 @@ vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { inst
 import { BundleConversation } from './BundleConversation';
 import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
+import { TTModels } from '../../models/TTModels';
+import { TTApplication } from '../../views/TTApplication';
 import type { ConversationContext, ConversationTurn } from '../../services/ConversationService';
 import { SUBTASK_REVIEW_QUESTION } from '../../../server/contracts/subtaskContext';
+import { resetDraftStores } from '../../services/draftStore';
 const context = (bundleId = 'a'): ConversationContext => ({ schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId, capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only', quality: 'complete', sources: [], manualState: null, issues: [] });
 const turn = (): ConversationTurn => ({ schemaVersion: 1, id: 'turn', createdAt: '2026-09-14T00:00:00Z', question: '質問', context: context(), answer: { reply: '回答', insufficientEvidence: true, citations: [], proposals: [] }, provider: 'test', model: 'model' });
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;
 beforeEach(() => {
+  resetDraftStores();
   vi.clearAllMocks(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   host = document.createElement('div'); root = createRoot(host); vault = new TTVault('vault');
   api.status.mockResolvedValue({ enabled: true, provider: 'test', model: 'model' }); api.history.mockResolvedValue([]);
   api.context.mockImplementation(async id => context(id)); api.generate.mockResolvedValue(turn()); api.save.mockResolvedValue(undefined);
 });
-afterEach(async () => { await act(async () => root.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); TTApplication.resetInstance(); resetDraftStores(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 it('shows consultation actions without asking users to select a review or decomposition prompt', async () => {
   await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" consultation
     inputHeader={<button>相談を課題として開始</button>} onOpen={vi.fn()} />));
@@ -41,12 +45,65 @@ it('captures Bundle sources after saved Chat synchronization completes', async (
   await act(async () => resolve([]));
   expect(api.context).toHaveBeenCalledWith('a', expect.anything());
 });
+it('does not request context or register a warning from history completed after reset', async () => {
+  let resolve!: (turns: ConversationTurn[]) => void;
+  api.history.mockImplementationOnce(() => new Promise<ConversationTurn[]>(r => { resolve = r; }));
+  await show('a', 'chat-a'); resetDraftStores();
+  const add = vi.spyOn(window, 'addEventListener');
+  await act(async () => resolve([]));
+  expect(api.context).not.toHaveBeenCalled();
+  expect(add.mock.calls.filter(([name]) => name === 'beforeunload')).toHaveLength(0);
+});
 async function show(id: string | undefined = 'a', chatId?: string) { await act(async () => root.render(<BundleConversation vault={vault} bundleId={id} chatId={chatId} onOpen={vi.fn()} />)); }
 async function showStrict(id: string | undefined = 'a', chatId?: string) { await act(async () => root.render(<StrictMode><BundleConversation vault={vault} bundleId={id} chatId={chatId} onOpen={vi.fn()} /></StrictMode>)); }
 function button(label: string) { return [...host.querySelectorAll('button')].find(b => b.textContent === label)!; }
 async function click(label: string) { await act(async () => { expect(button(label).disabled).toBe(false); button(label).click(); }); }
 async function input(value: string) { await act(async () => { const area = host.querySelector('textarea')!; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(area, value); area.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function prepare() { await input('質問'); }
+
+it('preserves a different Vault question and unload warning when the old app is disposed', async () => {
+  TTApplication.resetInstance();
+  const model = vi.spyOn(TTModels, 'Instance', 'get').mockReturnValue({ Vault: vault } as TTModels);
+  const oldApp = TTApplication.Instance; void oldApp.Models;
+  vault = new TTVault(vault.ID); model.mockReturnValue({ Vault: vault } as TTModels);
+  await show(); await input('新しいVaultの未保存質問');
+  oldApp.dispose(); TTApplication.resetInstance(); oldApp.dispose();
+  await show();
+  expect(host.querySelector('textarea')!.value).toBe('新しいVaultの未保存質問');
+  const leaving = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(leaving);
+  expect(leaving.defaultPrevented).toBe(true);
+});
+
+it('keeps one unload listener through StrictMode, hidden remounts and equal-ID Vault switches', async () => {
+  const add = vi.spyOn(window, 'addEventListener');
+  const firstVault = vault;
+  await showStrict(); await input('元のVaultの入力');
+  await act(async () => root.render(null));
+  const leaving = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(leaving);
+  expect(leaving.defaultPrevented).toBe(true);
+  vault = new TTVault(firstVault.ID);
+  await showStrict(); expect(host.querySelector('textarea')!.value).toBe('');
+  await input('同じIDの別Vaultの入力');
+  vault = firstVault;
+  await showStrict(); expect(host.querySelector('textarea')!.value).toBe('元のVaultの入力');
+  expect(add.mock.calls.filter(([name]) => name === 'beforeunload')).toHaveLength(1);
+});
+
+it('keeps an unsaved answer while hidden and discards it on explicit app-lifetime reset', async () => {
+  api.save.mockRejectedValueOnce(new Error('保存できません'));
+  await show(); await input('残す質問'); await click('送信');
+  expect(host.textContent).toContain('回答を保存できませんでした。');
+  await act(async () => root.render(null));
+  const leaving = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(leaving);
+  expect(leaving.defaultPrevented).toBe(true);
+  await show(); expect(host.textContent).toContain('回答を保存できませんでした。');
+  resetDraftStores();
+  await act(async () => root.render(null));
+  await show(); expect(host.querySelector('textarea')!.value).toBe('');
+  expect(host.textContent).not.toContain('回答を保存できませんでした。');
+  const clean = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(clean);
+  expect(clean.defaultPrevented).toBe(false);
+});
 
 it.each(['サブ課題への分解を相談する質問を入力', '続きから相談する質問を入力'])('only drafts %s and protects existing input', async label => {
   await show(); await click(label);
@@ -139,14 +196,14 @@ it('finishes preparation after the development StrictMode remount', async () => 
 it('allows a Chat-only conversation without loading Bundle context', async () => {
   await show('', 'chat-a');
   expect(api.context).not.toHaveBeenCalled();
-  expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault', vault);
+  expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault', vault, expect.any(Function));
   expect(host.textContent).toContain('参照資料：なし');
 });
 
 it('always loads the selected Bundle sources and sends them without an opt-in', async () => {
   await show('a', 'chat-a');
   expect(api.context).toHaveBeenCalledWith('a', expect.objectContaining({ maxSources: 300 }));
-  expect(api.history).toHaveBeenLastCalledWith('a', expect.any(AbortSignal), 'chat-a', 'vault', vault);
+  expect(api.history).toHaveBeenLastCalledWith('a', expect.any(AbortSignal), 'chat-a', 'vault', vault, expect.any(Function));
   expect(host.textContent).not.toContain('Bundle内の資料を使う');
   await input('資料について相談する'); await click('送信');
   expect(api.generate.mock.calls[0][0]).toMatchObject({ scope: 'bundle-only', bundleId: 'a' });

@@ -7,21 +7,42 @@ vi.mock('../../services/ProgressService', () => ({ ProgressService: class { read
 vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { instance: { mode: 'pwa' } } }));
 import { BundleProgress } from './BundleProgress';
 import { TTVault } from '../../models/TTVault';
+import { TTThink } from '../../models/TTThink';
+import { hasUnsavedDrafts, resetDraftStores } from '../../services/draftStore';
 import { emptyProgress, type ProgressInput } from '../../../server/contracts/progressRecord';
 const state = (bundleId = 'a', input?: ProgressInput) => ({ bundleId, version: '2026-09-14T00:00:00Z',
   log: { schemaVersion: 1, events: input ? [{ id: 'saved', revision: 1, author: 'human', confirmedAt: '2026-09-14T00:00:00Z', input }] : [] },
   review: { goal: '目的', nextAction: '次の行動', completionCriteria: '条件', notes: [] } });
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;
 beforeEach(() => {
+  resetDraftStores();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); vi.clearAllMocks(); host = document.createElement('div'); root = createRoot(host); vault = new TTVault('vault');
   api.read.mockImplementation(async id => state(id)); api.save.mockImplementation(async (id, _version, _op, input) => state(id, input));
 });
-afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.unstubAllGlobals(); });
 async function show(id = 'a') { await act(async () => root.render(<BundleProgress vault={vault} bundleId={id} onOpen={vi.fn()} />)); }
 function button(label: string) { return [...host.querySelectorAll('button')].find(b => b.textContent === label)!; }
 async function click(label: string) { await act(async () => { expect(button(label).disabled).toBe(false); button(label).click(); }); }
 async function input(index: number, value: string) { await act(async () => { const el = host.querySelectorAll('textarea')[index]; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function confirm() { await act(async () => (host.querySelectorAll('fieldset input[type=checkbox]')[1] as HTMLInputElement).click()); }
+it.each(['resolve', 'reject'])('ignores a pending save %s after reset without metadata updates or warning resurrection', async outcome => {
+  const bundle = new TTThink(); bundle.ID = 'a'; bundle.ContentType = 'bundle';
+  bundle.Metadata = { keep: true }; bundle.UpdatedAt = 'original'; bundle.markMetadataSaved(); vault.AddThink(bundle);
+  let resolve!: (value: unknown) => void, reject!: (error: Error) => void;
+  api.save.mockImplementationOnce(() => new Promise((done, fail) => { resolve = done; reject = fail; }));
+  await show(); await click('到達状態を取得・比較'); await input(0, '根拠'); await input(1, '残課題');
+  await confirm(); await click('到達状態を保存');
+  const notify = vi.spyOn(vault, 'NotifyUpdated'); resetDraftStores();
+  const add = vi.spyOn(window, 'addEventListener');
+  await act(async () => {
+    if (outcome === 'resolve') resolve(state('a', { ...emptyProgress(), evidence: '根拠', remaining: '残課題' }));
+    else reject(new Error('expired request'));
+  });
+  expect(bundle.Metadata).toEqual({ keep: true }); expect(bundle.UpdatedAt).toBe('original');
+  expect(notify).not.toHaveBeenCalled(); expect(hasUnsavedDrafts()).toBe(false);
+  expect(host.textContent).not.toContain('到達状態を保存しました'); expect(host.textContent).not.toContain('expired request');
+  expect(add.mock.calls.filter(([name]) => name === 'beforeunload')).toHaveLength(0); add.mockRestore();
+});
 it('requires confirmation, preserves drafts across switches, and saves the original Bundle', async () => {
   await show(); expect(api.read).not.toHaveBeenCalled(); await click('到達状態を取得・比較');
   await input(0, '実施を確認'); await input(1, '検証が残る'); expect(button('到達状態を保存').disabled).toBe(true);

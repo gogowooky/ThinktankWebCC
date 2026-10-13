@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act } from 'react';
+import { act, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const api = vi.hoisted(() => ({ read: vi.fn(), status: vi.fn(), create: vi.fn(), action: vi.fn(), context: vi.fn(), artifact: vi.fn() }));
@@ -9,6 +9,8 @@ vi.mock('../../services/ConversationService', () => ({ conversationContext: (val
 vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { instance: { mode: 'pwa' } } }));
 import { BundleAgent } from './BundleAgent';
 import { TTVault } from '../../models/TTVault';
+import { TTThink } from '../../models/TTThink';
+import { hasUnsavedDrafts, resetDraftStores } from '../../services/draftStore';
 import type { AgentJob } from '../../../server/contracts/agentRecord';
 const context = (bundleId = 'a') => ({ schemaVersion: 1 as const, snapshotId: 'snapshot', vaultId: 'vault', bundleId, capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only' as const, quality: 'complete' as const,
   sources: [{ thinkId: 'source', title: '資料', content: '本文', contentHash: 'a'.repeat(64) }], manualState: null, issues: [] });
@@ -17,15 +19,53 @@ const job = (): AgentJob => ({ schemaVersion: 1, id: 'job', kind: 'summary', ins
 const state = (bundleId = 'a', jobs: AgentJob[] = [job()]) => ({ bundleId, version: '2026-09-14T00:00:00Z', log: { schemaVersion: 1, jobs } });
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;
 beforeEach(() => {
+  resetDraftStores();
   vi.clearAllMocks(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); host = document.createElement('div'); root = createRoot(host); vault = new TTVault('vault');
   api.read.mockImplementation(async id => state(id, id === 'a' ? [job()] : [])); api.status.mockResolvedValue({ enabled: true, provider: 'test', model: 'model' });
   api.context.mockImplementation(async id => context(id)); api.create.mockResolvedValue(job()); api.action.mockResolvedValue(job());
 });
-afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.unstubAllGlobals(); });
 async function show(id = 'a') { await act(async () => root.render(<BundleAgent vault={vault} bundleId={id} onOpen={vi.fn()} />)); }
 function button(label: string) { return [...host.querySelectorAll('button')].find(b => b.textContent === label)!; }
 async function click(label: string) { await act(async () => { expect(button(label).disabled).toBe(false); button(label).click(); }); }
 async function approveJob() { await act(async () => (host.querySelector('article input[type=checkbox]') as HTMLInputElement).click()); }
+it('does not add or open an artifact when its pending read completes after reset', async () => {
+  api.read.mockResolvedValue(state('a', [{ ...job(), status: 'succeeded', result: { reply: '成果物', insufficientEvidence: true, citations: [], proposals: [] }, applied: {
+    thinkId: 'created', confirmedAt: '2026-09-14T00:00:00Z', contentHash: 'a'.repeat(64),
+  } }]));
+  let resolve!: (value: unknown) => void;
+  api.artifact.mockImplementationOnce(() => new Promise(r => { resolve = r; }));
+  const open = vi.fn();
+  await act(async () => root.render(<BundleAgent vault={vault} bundleId="a" onOpen={open} />));
+  await click('ジョブと接続状態を取得'); await click('追加したThinkを開く');
+  const addThink = vi.spyOn(vault, 'AddThink'), notify = vi.spyOn(vault, 'NotifyUpdated'); resetDraftStores();
+  const addListener = vi.spyOn(window, 'addEventListener');
+  await act(async () => resolve({ id: 'created', fullContent: '# 成果物\n内容', updatedAt: '2026-09-14T01:00:00Z', metadata: {} }));
+  expect(addThink).not.toHaveBeenCalled(); expect(notify).not.toHaveBeenCalled(); expect(open).not.toHaveBeenCalled();
+  expect(vault.GetThink('created')).toBeUndefined(); expect(hasUnsavedDrafts()).toBe(false);
+  expect(addListener.mock.calls.filter(([name]) => name === 'beforeunload')).toHaveLength(0); addListener.mockRestore();
+});
+it('restores the active target during StrictMode effect remounts before opening an artifact', async () => {
+  const saved = new TTThink(); saved.ID = 'created'; vault.AddThink(saved);
+  api.read.mockResolvedValue(state('a', [{ ...job(), status: 'succeeded', result: { reply: '成果物', insufficientEvidence: true, citations: [], proposals: [] }, applied: {
+    thinkId: saved.ID, confirmedAt: '2026-09-14T00:00:00Z', contentHash: 'a'.repeat(64),
+  } }]));
+  const open = vi.fn();
+  await act(async () => root.render(<StrictMode><BundleAgent vault={vault} bundleId="a" onOpen={open} /></StrictMode>));
+  await click('ジョブと接続状態を取得'); await click('追加したThinkを開く');
+  expect(open).toHaveBeenCalledWith('created');
+});
+it('keeps an Agent run unload warning after its Bundle is hidden until the run finishes', async () => {
+  let finish!: (value: AgentJob) => void;
+  api.action.mockImplementationOnce(() => new Promise<AgentJob>(resolve => { finish = resolve; }));
+  await show(); await click('ジョブと接続状態を取得'); await approveJob(); await click('ジョブを実行');
+  await show('b');
+  const leaving = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(leaving);
+  expect(leaving.defaultPrevented).toBe(true);
+  await act(async () => finish(job()));
+  const complete = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(complete);
+  expect(complete.defaultPrevented).toBe(false);
+});
 it('does not call APIs on display and cannot run AI when disabled', async () => {
   api.status.mockResolvedValue({ enabled: false, provider: 'none', model: '' }); await show(); expect(api.read).not.toHaveBeenCalled();
   await click('ジョブと接続状態を取得'); await approveJob(); expect(button('ジョブを実行').disabled).toBe(true); expect(api.action).not.toHaveBeenCalled();

@@ -8,18 +8,34 @@ import type { ConversationTurn } from '../../services/ConversationService';
 import { SubtaskProposal } from './SubtaskProposal';
 import { SubtaskList } from './SubtaskList';
 import { emptyProgress } from '../../../server/contracts/progressRecord';
+import { resetDraftStores } from '../../services/draftStore';
 const history = vi.hoisted(() => vi.fn());
 vi.mock('../../services/ConversationService', () => ({ ConversationClient: class { history = history; } }));
 const turn = { id: 'turn', context: { scope: 'bundle-only', vaultId: 'vault', bundleId: 'parent' },
   answer: { proposals: [{ field: 'nextAction', after: '会場を予約する' }] } } as ConversationTurn;
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;
 beforeEach(() => {
+  resetDraftStores();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); host = document.createElement('div'); root = createRoot(host);
   vault = new TTVault('vault'); const parent = new TTThink(); parent.ID = 'parent'; parent.ContentType = 'bundle'; parent.Name = '誕生日会'; vault.AddThink(parent);
   history.mockResolvedValue([turn]);
 });
-afterEach(async () => { await act(async () => root.unmount()); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 async function click(text: string) { await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === text)!.click(); }); }
+it.each(['history', 'create'])('does not continue or publish a subtask operation completed after reset during %s', async phase => {
+  let resolveHistory!: (value: ConversationTurn[]) => void, resolveCreate!: (value: TTThink) => void;
+  const create = vi.spyOn(vault, 'CreateSubtaskFromConversation').mockResolvedValue(new TTThink());
+  if (phase === 'history') history.mockImplementationOnce(() => new Promise<ConversationTurn[]>(r => { resolveHistory = r; }));
+  else create.mockImplementationOnce(() => new Promise<TTThink>(r => { resolveCreate = r; }));
+  await act(async () => root.render(<SubtaskProposal vault={vault} turn={turn} chatId="chat" disabled={false} />));
+  await click('次の行動をサブ課題にする'); await click('このサブ課題を追加');
+  resetDraftStores(); const add = vi.spyOn(window, 'addEventListener');
+  await act(async () => { if (phase === 'history') resolveHistory([turn]); else resolveCreate(new TTThink()); });
+  expect(create).toHaveBeenCalledTimes(phase === 'history' ? 0 : 1);
+  if (phase === 'create') expect(create.mock.calls[0][4]?.()).toBe(false);
+  expect(host.textContent).not.toContain('サブ課題を追加しました。');
+  expect(add.mock.calls.filter(([name]) => name === 'beforeunload')).toHaveLength(0); add.mockRestore();
+});
 it('reviews each candidate separately and keeps a successful adoption when another fails', async () => {
   const candidates = ['会場', '参加者'].map((title, i) => ({ id: `candidate-${i}`, title, goal: `${title}を整理`, completionCriteria: `${title}の確認完了`, reason: '独立して進める' }));
   const value = { ...turn, answer: { ...turn.answer, subtaskCandidates: candidates } };
@@ -27,11 +43,11 @@ it('reviews each candidate separately and keeps a successful adoption when anoth
   const create = vi.spyOn(vault, 'CreateSubtaskFromConversation').mockResolvedValue(new TTThink());
   await act(async () => root.render(<SubtaskProposal vault={vault} turn={value} chatId="chat" disabled={false} />));
   await click('候補「会場」を確認'); expect(host.textContent).toContain('会場の確認完了'); expect(create).not.toHaveBeenCalled();
-  await click('このサブ課題を追加'); expect(create).toHaveBeenLastCalledWith(value, 'chat', '会場', 'candidate-0');
+  await click('このサブ課題を追加'); expect(create).toHaveBeenLastCalledWith(value, 'chat', '会場', 'candidate-0', expect.any(Function));
   await click('候補「参加者」を確認'); create.mockRejectedValueOnce(new Error('保存失敗'));
   await click('このサブ課題を追加'); expect(host.textContent).toContain('保存失敗');
   expect(host.textContent).toContain('サブ課題を追加しました');
-  await click('このサブ課題を追加'); expect(create).toHaveBeenLastCalledWith(value, 'chat', '参加者', 'candidate-1');
+  await click('このサブ課題を追加'); expect(create).toHaveBeenLastCalledWith(value, 'chat', '参加者', 'candidate-1', expect.any(Function));
 });
 it('creates only after confirmation and rejects an outdated proposal', async () => {
   const create = vi.spyOn(vault, 'CreateSubtaskFromConversation').mockResolvedValue(new TTThink());
@@ -39,7 +55,7 @@ it('creates only after confirmation and rejects an outdated proposal', async () 
   await click('次の行動をサブ課題にする'); expect(create).not.toHaveBeenCalled();
   history.mockResolvedValueOnce([]);
   await click('このサブ課題を追加'); expect(create).not.toHaveBeenCalled(); expect(host.textContent).toContain('最新の提案');
-  await click('このサブ課題を追加'); expect(create).toHaveBeenCalledWith(turn, 'chat', '会場を予約する');
+  await click('このサブ課題を追加'); expect(create).toHaveBeenCalledWith(turn, 'chat', '会場を予約する', undefined, expect.any(Function));
   expect(host.textContent).toContain('サブ課題を追加しました');
 });
 it('lists only children of the selected parent and exposes the return to the parent', async () => {

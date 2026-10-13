@@ -6,7 +6,9 @@ const fs     = require('fs');
 const net    = require('net');
 const crypto = require('crypto');
 const { saveVaultRecord } = require('./vaultSave.cjs');
-const { parseFrontmatter, serialize, toThinkMeta } = require('./mdFormat.cjs');
+const { deleteVaultRecord } = require('./vaultWrite.cjs');
+const { syncVaultFromServer } = require('./vaultSync.cjs');
+const { parseFrontmatter, toThinkMeta } = require('./mdFormat.cjs');
 const { spawn } = require('child_process');
 
 // パッケージ版（electron-builder）は package.json の "name" からアプリ名・userDataパスを
@@ -27,22 +29,6 @@ function ensureVaultDir() {
 
 function recordPath(id) {
   return path.join(VAULT_DIR, `${id}.md`);
-}
-
-/** BigQuery同期用: サーバーのメタ＋本文からfrontmatterオブジェクトを組み立てる */
-function buildFrontmatterFromServer({ id, contentType, title, keywords, relatedIds, sizeBytes, isDeleted, createdAt, updatedAt, metadata }) {
-  return {
-    ...(metadata && typeof metadata === 'object' ? metadata : {}),
-    thinkid:     id,
-    category:    contentType,
-    title:       title || '',
-    keywords:    keywords   || null,
-    related_ids: relatedIds || null,
-    size_bytes:  sizeBytes ?? 0,
-    is_deleted:  isDeleted ?? false,
-    created_at:  createdAt,
-    updated_at:  updatedAt,
-  };
 }
 
 // ── IPC ハンドラー ────────────────────────────────────────────────────────
@@ -84,14 +70,7 @@ ipcMain.handle('storage:getContent', (_event, id) => {
 ipcMain.handle('storage:save', (_event, payload) => saveVaultRecord(VAULT_DIR, payload));
 
 ipcMain.handle('storage:delete', (_event, id) => {
-  const p = recordPath(id);
-  if (!fs.existsSync(p)) return;
-  try {
-    const { meta, body } = parseFrontmatter(fs.readFileSync(p, 'utf8'));
-    meta.is_deleted = true;
-    meta.updated_at = new Date().toISOString();
-    fs.writeFileSync(p, serialize(meta, body), 'utf8');
-  } catch {}
+  deleteVaultRecord(VAULT_DIR, id);
 });
 
 ipcMain.handle('storage:search', (_event, query) => {
@@ -141,50 +120,12 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
   ensureVaultDir();
   const { base, apiKey } = getSyncTarget(serverUrl);
   const authHeaders = apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {};
-
-  // 1. サーバーからメタ一覧を取得
   const serverMetas = await fetchJson(`${base}/api/bq/files/meta`, apiKey);
-
-  // ローカルより新しいものだけを対象に絞る
-  let skipped = 0;
-  const toSync = serverMetas.filter(meta => {
-    const p = recordPath(meta.thinkid);
-    if (fs.existsSync(p)) {
-      const local = parseFrontmatter(fs.readFileSync(p, 'utf8')).meta;
-      if (local.updated_at >= meta.updatedAt) { skipped++; return false; }
-    }
-    return true;
-  });
-
-  // 2. コンテンツを並行取得（対象が多くても順次待ちにしない）
-  const fetched = await Promise.all(toSync.map(async (meta) => {
-    const p = recordPath(meta.thinkid);
-    const isNew = !fs.existsSync(p);
+  return syncVaultFromServer(VAULT_DIR, serverMetas, async meta => {
     const res = await fetch(`${base}/api/bq/files/${encodeURIComponent(meta.thinkid)}/content`, { headers: authHeaders });
     if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}: content ${meta.thinkid}`);
-    const content = res.status === 404 ? '' : await res.json();
-    return { meta, content, isNew };
-  }));
-
-  let added = 0, updated = 0;
-  for (const { meta, content, isNew } of fetched) {
-    const frontmatterObj = buildFrontmatterFromServer({
-      id:          meta.thinkid,
-      contentType: meta.category,
-      title:       meta.title || '',
-      keywords:    meta.keywords,
-      relatedIds:  meta.relatedIds,
-      sizeBytes:   meta.sizeBytes || 0,
-      isDeleted:   meta.isDeleted || false,
-      createdAt:   meta.createdAt,
-      updatedAt:   meta.updatedAt,
-      metadata:    meta.metadata,
-    });
-    fs.writeFileSync(recordPath(meta.thinkid), serialize(frontmatterObj, content || ''), 'utf8');
-    isNew ? added++ : updated++;
-  }
-
-  return { added, updated, skipped, total: serverMetas.length };
+    return res.status === 404 ? '' : res.json();
+  });
 });
 
 // ── ローカルサーバー管理（パッケージ版） ────────────────────────────────────

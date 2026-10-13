@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { draftVaultLease } from '../../services/draftStore';
 import type { TTVault } from '../../models/TTVault';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { ThinkSupportService } from '../../services/ThinkSupportService';
@@ -8,6 +9,7 @@ import { CONTEXT_LABELS } from '../SeedsPanel/ContextSnapshotView';
 
 const service = new ThinkSupportService();
 export function ProposalReview({ vault, turn, disabled }: { vault: TTVault; turn: ConversationTurn; disabled: boolean }) {
+  const lifetime = useMemo(() => draftVaultLease(vault), [vault]);
   const [review, setReview] = useState<ThinkMeta>();
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -16,14 +18,17 @@ export function ProposalReview({ vault, turn, disabled }: { vault: TTVault; turn
   const bundle = vault.GetThink(turn.context.bundleId);
   if (!turn.answer.proposals.length || turn.context.scope !== 'bundle-only' || turn.context.vaultId !== vault.ID || bundle?.ContentType !== 'bundle') return null;
   async function act(save: boolean) {
+    if (!lifetime.isCurrent()) return;
     if (locked.current || disabled) return;
     locked.current = true; setBusy(true); setMessage('');
     try {
       const meta = save && review ? review : await service.read(turn.context.bundleId);
+      if (!lifetime.isCurrent()) return;
       const next = prepareProposalReview(turn, meta);
       if (next.alreadyApplied) { setSaved(true); setReview(undefined); setMessage('この内容は課題の概要に反映されています。'); return; }
       if (!save) { setReview(meta); return; }
       const result = await service.save(meta.thinkid, meta.updatedAt, next.values, next.sources);
+      if (!lifetime.isCurrent()) return;
       const live = vault.GetThink(meta.thinkid);
       if (live) {
         const dirty = live.IsMetadataDirty;
@@ -34,10 +39,11 @@ export function ProposalReview({ vault, turn, disabled }: { vault: TTVault; turn
       }
       setSaved(true); setReview(undefined); setMessage('課題の概要に反映しました。');
     } catch (error) {
+      if (!lifetime.isCurrent()) return;
       setReview(undefined);
       setMessage((error as Error).name === 'StorageConflictError'
         ? '別の更新がありました。もう一度内容を確認してください。' : (error as Error).message);
-    } finally { locked.current = false; setBusy(false); }
+    } finally { locked.current = false; if (lifetime.isCurrent()) setBusy(false); }
   }
   return <section aria-label="課題の概要への反映">
     {!saved && <button type="button" disabled={disabled || busy} onClick={() => void act(false)}>課題の概要に反映する内容を確認</button>}

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({ fetch: vi.fn(), save: vi.fn() }));
 vi.mock('./apiClient', async () => ({ apiFetch: mocks.fetch, ...await import('./apiResponse') }));
 vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: { save: mocks.save } } }));
@@ -7,6 +7,7 @@ import { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
 import { ConversationClient } from './ConversationService';
 import { startTaskFromChat } from './startTaskFromChat';
+import { draftVaultLease, disposeVaultDrafts, resetDraftStores } from './draftStore';
 
 let vault: TTVault, chat: TTThink;
 const savedChat = { id: 'chat', title: '# ASK:Thinktank｜相談', content: '保存済みの会話',
@@ -21,6 +22,20 @@ beforeEach(() => {
   chat.UpdatedAt = '2026-09-25T01:00:00Z'; chat.markSaved(); chat.markMetadataSaved(); vault.AddThink(chat);
 });
 const read = () => new ConversationClient().history(undefined, undefined, 'chat', 'vault', vault);
+afterEach(() => resetDraftStores());
+
+it('does not synchronize a saved Chat from a response after its Vault lifetime ends', async () => {
+  let resolve!: (value: Response) => void;
+  mocks.fetch.mockImplementationOnce(() => new Promise<Response>(r => { resolve = r; }));
+  const lifetime = draftVaultLease(vault), notify = vi.spyOn(vault, 'NotifyUpdated');
+  const before = { content: chat.Content, metadata: chat.Metadata, version: chat.UpdatedAt };
+  const pending = new ConversationClient().history(undefined, undefined, 'chat', vault.ID, vault, lifetime.isCurrent);
+  disposeVaultDrafts(vault);
+  resolve(response()); await pending;
+  expect(chat.Content).toBe(before.content); expect(chat.Metadata).toEqual(before.metadata);
+  expect(chat.UpdatedAt).toBe(before.version); expect(chat.IsMetaOnly).toBe(true);
+  expect(notify).not.toHaveBeenCalled(); expect(lifetime.isCurrent()).toBe(false);
+});
 
 it('creates a task after refreshing saved conversation content, metadata and version together', async () => {
   await read();

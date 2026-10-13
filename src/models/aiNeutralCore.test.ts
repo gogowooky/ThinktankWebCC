@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { expect, it, vi } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 const storage = vi.hoisted(() => ({ save: vi.fn().mockResolvedValue({ updatedAt: '2026-09-13T00:00:00Z' }), search: vi.fn().mockResolvedValue([]) }));
 vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
 vi.mock('../services/ChatApiService', () => { throw new Error('Core operations must not import AI execution'); });
@@ -8,6 +8,28 @@ import { TTSeedsPanel } from '../views/TTSeedsPanel';
 import { parseBundle } from '../utils/thinkFormat';
 import { readThinkSupport } from '../../server/contracts/thinkSupportRecord';
 import type { ConversationTurn } from '../services/ConversationService';
+import { disposeVaultDrafts, draftVaultLease, resetDraftStores } from '../services/draftStore';
+
+afterEach(() => { resetDraftStores(); });
+
+function deferred<Value>() {
+  let resolve!: (value: Value) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<Value>((yes, no) => { resolve = yes; reject = no; });
+  return { promise, resolve, reject };
+}
+
+async function subtaskFixture() {
+  const vault = new TTVault('vault');
+  const chat = await vault.CreateBlankThink('chat', '相談');
+  const parent = await vault.CreateTaskBundle('誕生日会', [chat.ID]);
+  const turn = { id: 'turn-lifetime', context: { scope: 'bundle-only', vaultId: vault.ID, bundleId: parent.ID },
+    answer: { proposals: [{ field: 'nextAction', after: '会場を予約する' }], subtaskCandidates: [
+      { id: 'venue', title: '会場の予約', goal: '会場を予約する', completionCriteria: '予約を確定する', reason: '分解' },
+    ] } } as ConversationTurn;
+  storage.save.mockClear();
+  return { vault, chat, parent, turn };
+}
 
 it('adopts separate candidates once each, preserves successes after partial failure, and reuses them after reload', async () => {
   const vault = new TTVault('vault');
@@ -105,4 +127,79 @@ it('creates one task Bundle with the confirmed title and links the consultation 
     category: 'bundle',
     relatedIds: chat.ID,
   }));
+});
+
+it('does not save or register a subtask after its lifetime has ended', async () => {
+  const { vault, chat, parent, turn } = await subtaskFixture();
+  const lifetime = draftVaultLease(vault);
+  const notify = vi.spyOn(vault, 'NotifyUpdated');
+  disposeVaultDrafts(vault);
+  await expect(vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約', 'venue', lifetime.isCurrent)).rejects.toThrow('処理期間');
+  expect(storage.save).not.toHaveBeenCalled();
+  expect(vault.GetBundles()).toEqual([parent]);
+  expect(notify).not.toHaveBeenCalled();
+});
+
+it.each([
+  { outcome: 'saved', candidateId: 'venue' },
+  { outcome: 'failed', candidateId: 'venue' },
+  { outcome: 'saved', candidateId: undefined },
+  { outcome: 'failed', candidateId: undefined },
+])('waits for an expired $outcome subtask save before a $candidateId retry', async ({ outcome, candidateId }) => {
+  const { vault, chat, parent, turn } = await subtaskFixture();
+  const save = deferred<{ updatedAt: string }>();
+  storage.save.mockImplementationOnce(() => save.promise);
+  const notify = vi.spyOn(vault, 'NotifyUpdated');
+  const oldLifetime = draftVaultLease(vault);
+  const oldRequest = vault.CreateSubtaskFromConversation(turn, chat.ID, '旧会場の予約', candidateId, oldLifetime.isCurrent);
+  const oldRejected = expect(oldRequest).rejects.toThrow(outcome === 'saved' ? '処理期間' : '保存失敗');
+  const optimistic = vault.GetBundles().find(bundle => bundle !== parent)!;
+  const markSaved = vi.spyOn(optimistic, 'markSaved');
+  const markMetadataSaved = vi.spyOn(optimistic, 'markMetadataSaved');
+
+  disposeVaultDrafts(vault);
+  const lifetime = draftVaultLease(vault);
+  const first = vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約', candidateId, lifetime.isCurrent);
+  const duplicate = vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約', candidateId, lifetime.isCurrent);
+  expect(storage.save).toHaveBeenCalledTimes(1);
+  expect(notify).not.toHaveBeenCalled();
+
+  if (outcome === 'saved') save.resolve({ updatedAt: '2026-10-13T00:00:00Z' });
+  else save.reject(new Error('保存失敗'));
+  await oldRejected;
+  const [created, coalesced] = await Promise.all([first, duplicate]);
+  expect(coalesced).toBe(created);
+  expect(created).not.toBe(optimistic);
+  expect(optimistic._parent).toBeNull();
+  expect(markSaved).not.toHaveBeenCalled();
+  expect(markMetadataSaved).not.toHaveBeenCalled();
+  expect(vault.GetThink(created.ID)).toBe(created);
+  expect(vault.GetBundles()).toEqual([parent, created]);
+  expect(created.Name).toBe('会場の予約');
+  expect(parseBundle(created.Content).ids).toEqual([chat.ID]);
+  expect(created.Metadata.taskRelation).toMatchObject({ parentId: parent.ID, chatId: chat.ID, turnId: turn.id });
+  expect(storage.save).toHaveBeenCalledTimes(2);
+  expect(notify).toHaveBeenCalledTimes(1);
+});
+
+it('rechecks a subtask retry lifetime after waiting and lets the latest lifetime create it', async () => {
+  const { vault, chat, parent, turn } = await subtaskFixture();
+  const save = deferred<{ updatedAt: string }>();
+  storage.save.mockImplementationOnce(() => save.promise);
+  const oldLifetime = draftVaultLease(vault);
+  const oldRejected = expect(vault.CreateSubtaskFromConversation(turn, chat.ID, '旧会場の予約', 'venue', oldLifetime.isCurrent)).rejects.toThrow('処理期間');
+  disposeVaultDrafts(vault);
+  const waitingLifetime = draftVaultLease(vault);
+  const waitingRejected = expect(vault.CreateSubtaskFromConversation(turn, chat.ID, '失効した新要求', 'venue', waitingLifetime.isCurrent)).rejects.toThrow('処理期間');
+  disposeVaultDrafts(vault);
+  const latestLifetime = draftVaultLease(vault);
+  const latest = vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約', 'venue', latestLifetime.isCurrent);
+  expect(storage.save).toHaveBeenCalledTimes(1);
+  save.resolve({ updatedAt: '2026-10-13T00:00:00Z' });
+  await Promise.all([oldRejected, waitingRejected]);
+  const created = await latest;
+  expect(vault.GetBundles()).toEqual([parent, created]);
+  expect(created.Name).toBe('会場の予約');
+  expect(storage.save).toHaveBeenCalledTimes(2);
+  expect(storage.save.mock.calls.some(([payload]) => payload.fullContent.includes('失効した新要求'))).toBe(false);
 });

@@ -73,7 +73,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     if (mode !== 'command') return [];
     const tokens = text.trim().toLowerCase().split(/\s+/).filter(Boolean);
     if (tokens.length === 0) return [];
-    return TTActions.GetRegisteredActions()
+    return TTActions.GetAvailableActions()
       .filter(a => {
         const lower = a.ActionID.toLowerCase();
         return tokens.every(t => lower.includes(t));

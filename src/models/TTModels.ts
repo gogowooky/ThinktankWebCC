@@ -9,6 +9,7 @@
 
 import { TTCollection } from './TTCollection';
 import { TTVault } from './TTVault';
+import { disposeVaultDrafts } from '../services/draftStore';
 
 export class TTModels extends TTCollection {
   /** メインの保管庫（BigQuery: thinktank.vault_ver2 / LocalFS: ./../ThinktankLocal/vault_ver2）*/
@@ -42,7 +43,12 @@ export class TTModels extends TTCollection {
     return TTModels._instance;
   }
 
+  public static get currentInstance(): TTModels | null {
+    return TTModels._instance;
+  }
+
   public static resetInstance(): void {
+    if (TTModels._instance) disposeVaultDrafts(TTModels._instance.Vault);
     TTModels._instance = null;
   }
 

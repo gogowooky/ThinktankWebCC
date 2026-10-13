@@ -21,6 +21,7 @@ export default tseslint.config(
       'release/**',
       'release2/**',
       'coverage/**',
+      'tmp/**',
       'node_modules/**',
       'docs/**',
       'scripts/**',

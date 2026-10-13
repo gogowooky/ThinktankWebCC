@@ -7,6 +7,7 @@ import { TTApplication } from '../../../views/TTApplication';
 import { DiscussSettingArea, type DiscussSettingAreaRef } from '../DiscussSettingArea';
 import { broadcastPanelSectionsSetAll } from '../../../hooks/usePanelSectionsSetAll';
 import type { DiscussSettingAreaProps } from './types';
+import { UNAVAILABLE_ACTIONS } from '../../../views/unavailableActions';
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -66,4 +67,14 @@ it('keeps the table section state while it is hidden by another settings view', 
   expect(host.querySelector('[data-tip="新規テーブルファイルを作成"]')).toBeNull();
   await act(async () => broadcastPanelSectionsSetAll('discuss', true));
   expect(host.querySelector('[data-tip="新規テーブルファイルを作成"]')).not.toBeNull();
+});
+
+it('marks rollback controls unavailable without offering a destructive operation', async () => {
+  await show('texteditor');
+  for (const action of [UNAVAILABLE_ACTIONS.rollbackThink, UNAVAILABLE_ACTIONS.rollbackAll]) {
+    const button = host.querySelector<HTMLButtonElement>(`button[title="${action.UnavailableReason}"]`)!;
+    expect(button).not.toBeNull();
+    expect(button.disabled).toBe(true);
+    expect(button.dataset.tip).toContain('未実装');
+  }
 });

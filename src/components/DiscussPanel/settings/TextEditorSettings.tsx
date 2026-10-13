@@ -1,3 +1,4 @@
+import { UNAVAILABLE_ACTIONS } from '../../../views/unavailableActions';
 import { ChevronDown, ChevronRight, File, FileText, FileClock, DatabaseBackup, Save, Mic, MicOff, Eraser, FilePen, FileX, FileInput } from 'lucide-react';
 import { TTActions } from '../../../views/TTActions';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
@@ -135,16 +136,18 @@ export function TextEditorSettings({
             <div className="discuss-setting-area__icon-row" style={{ flex: 1 }}>
               <button
                 className="discuss-setting-area__icon-btn"
-                onClick={() => TTActions.Execute('Application.Resource.RollbackFocusedThink')}
-                data-tip="直前にフォーカスされたThinkファイル1つをBQで1時間前の状態に戻す"
+                disabled
+                title={UNAVAILABLE_ACTIONS.rollbackThink.UnavailableReason}
+                data-tip={UNAVAILABLE_ACTIONS.rollbackThink.UnavailableReason}
                 data-tip-side="top-start"
               >
                 <FileClock size={16} className="ws-icon" />
               </button>
               <button
                 className="discuss-setting-area__icon-btn"
-                onClick={() => TTActions.Execute('Application.Resource.RollbackAll')}
-                data-tip="BQ全体を1時間前の状態に戻す"
+                disabled
+                title={UNAVAILABLE_ACTIONS.rollbackAll.UnavailableReason}
+                data-tip={UNAVAILABLE_ACTIONS.rollbackAll.UnavailableReason}
                 data-tip-side="top-start"
               >
                 <DatabaseBackup size={16} className="ws-icon" />

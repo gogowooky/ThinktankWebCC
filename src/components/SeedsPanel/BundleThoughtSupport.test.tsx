@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { act } from 'react';
+import { act, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 const api = vi.hoisted(() => ({ read: vi.fn(), save: vi.fn() }));
 vi.mock('../../services/ThinkSupportService', async original => ({ ...(await original<object>()), ThinkSupportService: class { read = api.read; save = api.save; } }));
@@ -10,19 +10,49 @@ import { BundleThoughtSupport } from './BundleThoughtSupport';
 import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
 import { emptyThinkValues } from '../../services/ThinkSupportService';
+import { hasUnsavedDrafts, resetDraftStores } from '../../services/draftStore';
 let host: HTMLDivElement; let root: ReturnType<typeof createRoot>; let vault: TTVault;
 function meta(id: string, goal = '', revision = 1) { return { id, contentType: 'bundle', updatedAt: `v${revision}`, metadata: { thinkSupport: { schemaVersion: 1, revision, values: { ...emptyThinkValues(), goal }, sources: {}, author: 'human', confirmedAt: '2026-09-13T00:00:00Z', updatedAt: '2026-09-13T00:00:00Z' } } }; }
 beforeEach(() => {
+  resetDraftStores();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); vi.clearAllMocks();
   host = document.createElement('div'); root = createRoot(host); vault = new TTVault('test');
   for (const id of ['a', 'b']) { const t = new TTThink(); t.ID = id; t.ContentType = 'bundle'; t.Content = '課題'; t.markSaved(); vault.AddItem(t); }
   api.read.mockImplementation(async id => meta(id));
 });
-afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.unstubAllGlobals(); });
 async function show(id: string) { await act(async () => root.render(<BundleThoughtSupport vault={vault} bundleId={id} onOpen={vi.fn()} />)); }
 async function input(value: string) { await act(async () => { const el = host.querySelector('textarea')!; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function click(text: string) { await act(async () => { const button = [...host.querySelectorAll('button')].find(b => b.textContent === text)!; expect(button.disabled).toBe(false); button.click(); }); }
 async function confirm() { await act(async () => (host.querySelector('input[type=checkbox]') as HTMLInputElement).click()); }
+it('does not restore a draft or warning when an outstanding read resolves after reset', async () => {
+  let resolve!: (value: unknown) => void;
+  api.read.mockImplementationOnce(() => new Promise(r => { resolve = r; }));
+  await show('a'); resetDraftStores();
+  const add = vi.spyOn(window, 'addEventListener');
+  await act(async () => vault.NotifyRefresh());
+  await act(async () => resolve(meta('a', '破棄した寿命の記録')));
+  expect(host.querySelector('textarea')).toBeNull();
+  expect(api.read).toHaveBeenCalledTimes(1); expect(hasUnsavedDrafts()).toBe(false);
+  expect(add.mock.calls.filter(([name]) => name === 'beforeunload')).toHaveLength(0);
+  add.mockRestore();
+  await act(async () => root.render(null));
+  api.read.mockResolvedValueOnce(meta('a', '再開始した画面の記録'));
+  await show('a'); expect(host.querySelector('textarea')!.value).toBe('再開始した画面の記録');
+});
+it('retains hidden StrictMode input, separates equal-ID Vaults and clears it on reset', async () => {
+  const original = vault;
+  const showStrict = async () => { await act(async () => root.render(<StrictMode><BundleThoughtSupport vault={vault} bundleId="a" onOpen={vi.fn()} /></StrictMode>)); };
+  await showStrict(); await input('元の保管庫の入力');
+  await act(async () => root.render(null));
+  const leaving = new Event('beforeunload', { cancelable: true }); window.dispatchEvent(leaving);
+  expect(leaving.defaultPrevented).toBe(true);
+  vault = new TTVault(original.ID); await showStrict(); expect(host.querySelector('textarea')!.value).toBe('');
+  await input('別の保管庫の入力');
+  vault = original; await showStrict(); expect(host.querySelector('textarea')!.value).toBe('元の保管庫の入力');
+  await act(async () => root.render(null)); resetDraftStores();
+  await showStrict(); expect(host.querySelector('textarea')!.value).toBe('');
+});
 it('keeps drafts across Bundle switches and requires confirmation before saving', async () => {
   await show('a'); await input('本人の目的');
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('本人の目的');

@@ -7,6 +7,7 @@ import { TTThink } from '../../models/TTThink';
 import { emptyProgress } from '../../../server/contracts/progressRecord';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { ProgressProposal } from './ProgressProposal';
+import { resetDraftStores } from '../../services/draftStore';
 const api = vi.hoisted(() => ({ read: vi.fn(), save: vi.fn() }));
 vi.mock('../../services/ProgressService', () => ({ ProgressService: class { read = api.read; save = api.save; } }));
 let root: ReturnType<typeof createRoot>, host: HTMLDivElement, vault: TTVault;
@@ -16,14 +17,26 @@ const turn = { id: 'turn', createdAt: '2026-09-22T00:00:00Z', context: { scope: 
 const previous = { ...emptyProgress(), evidence: '前回の根拠', remaining: '結果を検証する', paused: true, resumeCondition: '当日になったら' };
 const state = { bundleId: 'bundle', version: 'v1', log: { schemaVersion: 1, events: [{ id: 'old', input: previous }] }, review: { goal: '会を開く', completionCriteria: '全員参加', notes: [] } };
 beforeEach(() => {
+  resetDraftStores();
   vi.clearAllMocks(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   host = document.createElement('div'); root = createRoot(host); vault = new TTVault('vault');
   const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'bundle'; vault.AddThink(bundle);
   api.read.mockResolvedValue(structuredClone(state)); api.save.mockResolvedValue({ ...state, log: { schemaVersion: 1, events: [] } });
 });
-afterEach(async () => { await act(async () => root.unmount()); vi.unstubAllGlobals(); });
+afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.unstubAllGlobals(); });
 async function render(disabled = false, selected = turn) { await act(async () => root.render(<ProgressProposal vault={vault} turn={selected} disabled={disabled} />)); }
 async function click(label: string) { await act(async () => { [...host.querySelectorAll('button')].find(b => b.textContent === label)!.click(); }); }
+it('does not apply a saved progress proposal or render its completion after reset', async () => {
+  let resolve!: (value: unknown) => void;
+  api.save.mockImplementationOnce(() => new Promise(r => { resolve = r; }));
+  await render(); await click('到達状態の候補を確認'); await click('本人の判断として確認して記録');
+  const before = structuredClone(vault.GetThink('bundle')!.Metadata), notify = vi.spyOn(vault, 'NotifyUpdated');
+  resetDraftStores(); const add = vi.spyOn(window, 'addEventListener');
+  await act(async () => resolve(state));
+  expect(vault.GetThink('bundle')!.Metadata).toEqual(before); expect(notify).not.toHaveBeenCalled();
+  expect(host.textContent).not.toContain('本人確認済みの到達状態を記録しました。');
+  expect(add.mock.calls.filter(([name]) => name === 'beforeunload')).toHaveLength(0); add.mockRestore();
+});
 const pauseCandidate = { paused: true, userQuote: '保留します', reason: '回答待ち', resumeCondition: '', resumeSummary: '会場の回答を待つ' };
 it('requires a resume condition before explicitly saving a pause and preserves milestone states', async () => {
   const value = { ...turn, answer: { ...turn.answer, progressProposals: [], pauseCandidates: [pauseCandidate] } };

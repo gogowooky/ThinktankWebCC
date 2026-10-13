@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const storage = vi.hoisted(() => ({ save: vi.fn(), getBody: vi.fn() }));
 vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
 import { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
 import { startTaskFromChat } from './startTaskFromChat';
 import { parseBundle } from '../utils/thinkFormat';
+import { bindChatToTask } from './chatTask';
+import { disposeVaultDrafts, draftVaultLease, resetDraftStores } from './draftStore';
 let vault: TTVault, chat: TTThink;
 beforeEach(() => {
   storage.save.mockReset().mockResolvedValue({ updatedAt: '2026-09-20T02:00:00Z' });
@@ -15,6 +17,36 @@ beforeEach(() => {
   chat.Metadata = { thinkConversations: { turns: [{ id: 'turn' }] } };
   chat.UpdatedAt = '2026-09-20T01:00:00Z';
   chat.markSaved(); chat.markMetadataSaved(); vault.AddThink(chat);
+});
+afterEach(() => resetDraftStores());
+
+it.each(['body', 'rename', 'bundle'] as const)('stops old-Vault updates and subsequent writes after reset during %s', async phase => {
+  let resolve!: (value: string | { updatedAt: string }) => void;
+  const wait = () => new Promise<string | { updatedAt: string }>(r => { resolve = r; });
+  if (phase === 'body') { chat.IsMetaOnly = true; storage.getBody.mockImplementationOnce(wait); }
+  else if (phase === 'rename') storage.save.mockImplementationOnce(wait);
+  else storage.save.mockResolvedValueOnce({ updatedAt: '2026-09-20T02:00:00Z' }).mockImplementationOnce(wait);
+  const lifetime = draftVaultLease(vault);
+  const pending = startTaskFromChat(vault, chat.ID, '課題', undefined, lifetime.isCurrent);
+  await Promise.resolve();
+  const before = { content: chat.Content, metadata: structuredClone(chat.Metadata), version: chat.UpdatedAt };
+  const writes = storage.save.mock.calls.length, notify = vi.spyOn(vault, 'NotifyUpdated');
+  disposeVaultDrafts(vault);
+  const rejected = expect(pending).rejects.toThrow('処理期間');
+  resolve(phase === 'body' ? '本文' : { updatedAt: '2026-09-20T03:00:00Z' }); await rejected;
+  expect(chat.Content).toBe(before.content); expect(chat.Metadata).toEqual(before.metadata); expect(chat.UpdatedAt).toBe(before.version);
+  expect(storage.save).toHaveBeenCalledTimes(writes); expect(notify).not.toHaveBeenCalled(); expect(vault.GetBundles()).toHaveLength(0);
+});
+it('does not apply a saved task association to a Chat after its lifetime ends', async () => {
+  const bundle = new TTThink(); bundle.ID = 'task'; bundle.ContentType = 'bundle'; vault.AddThink(bundle);
+  let resolve!: (value: { updatedAt: string }) => void;
+  storage.save.mockImplementationOnce(() => new Promise(r => { resolve = r; }));
+  const lifetime = draftVaultLease(vault), before = chat.Content, notify = vi.spyOn(vault, 'NotifyUpdated');
+  const pending = bindChatToTask(vault, chat, bundle, lifetime.isCurrent);
+  disposeVaultDrafts(vault);
+  const rejected = expect(pending).rejects.toThrow('処理期間');
+  resolve({ updatedAt: '2026-09-20T03:00:00Z' }); await rejected;
+  expect(chat.Content).toBe(before); expect(chat.Metadata.taskContext).toBeUndefined(); expect(notify).not.toHaveBeenCalled();
 });
 
 it('renames the consultation while preserving its panel, state, transcript and metadata', async () => {
@@ -81,6 +113,62 @@ it('reuses the saved Bundle after final Chat binding fails, including after loca
 it('coalesces simultaneous task creation requests', async () => {
   const [a, b] = await Promise.all([startTaskFromChat(vault, chat.ID, '課題'), startTaskFromChat(vault, chat.ID, '課題')]);
   expect(a.ID).toBe(b.ID); expect(vault.GetBundles()).toHaveLength(1);
+});
+it.each(['saved', 'failed'] as const)('waits for an expired %s creation before coalescing new-lifetime retries', async outcome => {
+  let finish!: (value: { updatedAt: string }) => void;
+  let fail!: (error: Error) => void;
+  let started!: () => void;
+  const bundleStarted = new Promise<void>(resolve => { started = resolve; });
+  storage.save.mockResolvedValueOnce({ updatedAt: '2026-09-20T02:00:00Z' })
+    .mockImplementationOnce(() => new Promise((resolve, reject) => { finish = resolve; fail = reject; started(); }));
+  const oldLifetime = draftVaultLease(vault);
+  const oldRequest = startTaskFromChat(vault, chat.ID, '課題', undefined, oldLifetime.isCurrent);
+  const oldRejected = expect(oldRequest).rejects.toThrow('Bundleを作成できませんでした');
+  await bundleStarted;
+  const optimistic = vault.GetBundles()[0];
+  expect(optimistic).toBeTruthy();
+  disposeVaultDrafts(vault);
+  const lifetime = draftVaultLease(vault);
+  const first = startTaskFromChat(vault, chat.ID, '課題', undefined, lifetime.isCurrent);
+  const second = startTaskFromChat(vault, chat.ID, '課題', undefined, lifetime.isCurrent);
+  expect(storage.save).toHaveBeenCalledTimes(2);
+  if (outcome === 'saved') finish({ updatedAt: '2026-09-20T03:00:00Z' });
+  else fail(new Error('old persistence failed'));
+  await oldRejected;
+  const [created, coalesced] = await Promise.all([first, second]);
+  expect(created).toBe(coalesced);
+  expect(created).not.toBe(optimistic);
+  expect(vault.GetThink(created.ID)).toBe(created);
+  expect(vault.GetBundles()).toEqual([created]);
+  expect(chat.Metadata.taskContext.bundleId).toBe(created.ID);
+  const bindings = storage.save.mock.calls.map(([payload]) => payload.metadata?.taskContext?.bundleId).filter(Boolean);
+  expect(bindings).toEqual([created.ID]);
+  expect(storage.save.mock.calls.filter(([payload]) => payload.category === 'bundle')).toHaveLength(2);
+});
+it('rechecks a waiting lifetime and lets a later active lifetime retry safely', async () => {
+  let finish!: (value: { updatedAt: string }) => void;
+  let started!: () => void;
+  const bundleStarted = new Promise<void>(resolve => { started = resolve; });
+  storage.save.mockResolvedValueOnce({ updatedAt: '2026-09-20T02:00:00Z' })
+    .mockImplementationOnce(() => new Promise(resolve => { finish = resolve; started(); }));
+  const oldLifetime = draftVaultLease(vault);
+  const oldRequest = startTaskFromChat(vault, chat.ID, '課題', undefined, oldLifetime.isCurrent);
+  const oldRejected = expect(oldRequest).rejects.toThrow('処理期間');
+  await bundleStarted;
+  disposeVaultDrafts(vault);
+  const waitingLifetime = draftVaultLease(vault);
+  const waiting = startTaskFromChat(vault, chat.ID, '失効した新要求', undefined, waitingLifetime.isCurrent);
+  const waitingRejected = expect(waiting).rejects.toThrow('処理期間');
+  disposeVaultDrafts(vault);
+  const latestLifetime = draftVaultLease(vault);
+  const latest = startTaskFromChat(vault, chat.ID, '課題', undefined, latestLifetime.isCurrent);
+  expect(storage.save).toHaveBeenCalledTimes(2);
+  finish({ updatedAt: '2026-09-20T03:00:00Z' });
+  await oldRejected; await waitingRejected;
+  const created = await latest;
+  expect(vault.GetBundles()).toEqual([created]);
+  expect(chat.Metadata.taskContext.bundleId).toBe(created.ID);
+  expect(storage.save.mock.calls.some(([payload]) => payload.fullContent.includes('失効した新要求'))).toBe(false);
 });
 it('retains the legacy kind when explicitly starting a legacy Chat as a task', async () => {
   chat.setContentSilent(chat.Content.replace('ASK:', 'LOOP:')); chat.markSaved();

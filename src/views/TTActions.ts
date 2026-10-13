@@ -32,6 +32,10 @@ export class TTActions {
     const action = this._registry.get(actionId);
     
     if (action) {
+      if (action.UnavailableReason !== undefined) {
+        item.Result = `[未実装] ${action.UnavailableReason}`;
+        return item;
+      }
       try {
         const res = action.Completion(item);
         if (res instanceof Promise) {
@@ -40,8 +44,8 @@ export class TTActions {
             return item;
           });
         }
-      } catch (err: any) {
-        item.Result = `[エラー] ${err.message}`;
+      } catch (err: unknown) {
+        item.Result = `[エラー] ${err instanceof Error ? err.message : String(err)}`;
       }
     } else {
       item.Result = `[未定義] ${actionId}`;
@@ -52,5 +56,9 @@ export class TTActions {
   /** 登録されているすべてのアクションを取得する */
   static GetRegisteredActions(): TTAction[] {
     return Array.from(this._registry.values());
+  }
+
+  static GetAvailableActions(): TTAction[] {
+    return this.GetRegisteredActions().filter(action => action.UnavailableReason === undefined);
   }
 }

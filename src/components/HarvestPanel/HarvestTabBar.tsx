@@ -40,8 +40,9 @@ export function HarvestTabBar({ isOpen, viewMode, onToggle, onSetMode }: Props) 
       <button
         id="HarvestSetting"
         className={`harvest-tab-bar__btn${viewMode === 'settings' ? ' harvest-tab-bar__btn--active' : ''}`}
-        onClick={() => onSetMode('settings')}
-        data-tip="設定"
+        disabled
+        data-tip="Harvest設定は未実装です。"
+        title="Harvest設定は未実装です。"
         aria-label="HarvestSetting"
       >
         <Settings size={16} />

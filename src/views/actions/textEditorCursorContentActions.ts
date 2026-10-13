@@ -1,3 +1,4 @@
+import { UNAVAILABLE_ACTIONS } from '../unavailableActions';
 /**
  * textEditorCursorContentActions.ts
  * TextEditor.CurrentEditor.DoOnCursorPos:* アクション（カーソル位置のURL/パス/タグを
@@ -456,13 +457,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     }
   });
 
-  TTActions.Register({
-    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open',
-    Description: 'メールを開く、またはメール検索を行います（未実装）',
-    Completion: (item) => {
-      item.Result = '[Mail] アクションは未実装です';
-    }
-  });
+  TTActions.Register(UNAVAILABLE_ACTIONS.mail);
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open',
@@ -685,10 +680,13 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         }
 
         const allActions = TTActions.GetRegisteredActions();
-        const targetActions = allActions.filter(act => act.ActionID.startsWith(prefix));
+        const matchingActions = allActions.filter(act => act.ActionID.startsWith(prefix));
+        const targetActions = matchingActions.filter(act => act.UnavailableReason === undefined);
 
         if (targetActions.length === 0) {
-          item.Result = `${typeLabel}用の利用可能なアクションがありません`;
+          item.Result = matchingActions[0]?.UnavailableReason
+            ? `[未実装] ${matchingActions[0].UnavailableReason}`
+            : `${typeLabel}用の利用可能なアクションがありません`;
           return;
         }
 

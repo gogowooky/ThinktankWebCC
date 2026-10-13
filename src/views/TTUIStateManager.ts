@@ -61,6 +61,8 @@ export class TTUIStateManager {
   private _undoStack: string[] = [];
   private _redoStack: string[] = [];
   private _listeners = new Map<ConfigKey, Set<ConfigListener>>();
+  private _catalogGeneration = 0;
+  private _catalogController: AbortController | null = null;
 
   static get instance(): TTUIStateManager {
     if (!TTUIStateManager._instance) {
@@ -76,12 +78,26 @@ export class TTUIStateManager {
    * localStorage から即時ロードし、アプリ変更を debounce 保存する。
    */
   init(app: TTApplication): void {
+    this._cancelAiModelCatalog();
+    if (this._app && this._app !== app) this.detach(this._app);
+    else app.RemoveOnUpdate('TTUIStateManager');
     this._app = app;
     this._loadFromLocalStorage();
     app.AddOnUpdate('TTUIStateManager', () => {
       if (this._applying) return;
       this._scheduleSave();
     });
+  }
+
+  detach(app: TTApplication): void {
+    app.RemoveOnUpdate('TTUIStateManager');
+    if (this._app !== app) return;
+    this._cancelAiModelCatalog();
+    if (this._debounceTimer) clearTimeout(this._debounceTimer);
+    this._debounceTimer = null;
+    this._app = null;
+    this._undoStack = [];
+    this._redoStack = [];
   }
 
   /**
@@ -102,16 +118,33 @@ export class TTUIStateManager {
    * 起動時の md・保存値の適用より後に呼ぶ（保存済みの選択を先頭に残すため）。
    */
   async refreshAiModelCatalog(): Promise<void> {
-    const loaded = await loadAiModelCatalog(async () => {
-      const res = await apiFetch('/api/think-support/conversations/models');
-      if (!res.ok) throw new Error(`models ${res.status}`);
-      return res.json();
-    });
-    if (!loaded || !this._app) return;
-    for (const name of AI_CHAT_PROVIDER_NAMES) {
-      this._emit(`AIChat.ModelNames.${name}`, getModelNames(name));
+    this._cancelAiModelCatalog();
+    const generation = this._catalogGeneration;
+    const app = this._app;
+    const controller = new AbortController();
+    this._catalogController = controller;
+    const isCurrent = () => generation === this._catalogGeneration && this._app === app && !controller.signal.aborted;
+    try {
+      const loaded = await loadAiModelCatalog(async () => {
+        const res = await apiFetch('/api/think-support/conversations/models', { signal: controller.signal });
+        if (!res.ok) throw new Error(`models ${res.status}`);
+        return res.json();
+      }, isCurrent);
+      if (!loaded || !app || !isCurrent()) return;
+      for (const name of AI_CHAT_PROVIDER_NAMES) {
+        if (!isCurrent()) return;
+        this._emit(`AIChat.ModelNames.${name}`, getModelNames(name));
+      }
+      if (isCurrent()) app.NotifyUpdated(false);
+    } finally {
+      if (this._catalogController === controller) this._catalogController = null;
     }
-    this._app.NotifyUpdated(false);
+  }
+
+  private _cancelAiModelCatalog(): void {
+    this._catalogGeneration++;
+    this._catalogController?.abort();
+    this._catalogController = null;
   }
 
   /**

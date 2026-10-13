@@ -24,16 +24,17 @@ interface SettingsEntry {
   Icon: LucideIcon;
   name: string;
   id: string;
+  unavailableReason?: string;
 }
 
 export const DEVELOP_SETTINGS: SettingsEntry[] = [
   { type: 'panes',      Icon: PanelLeftDashed, name: 'Pane設定',       id: 'Panes' },
   { type: 'chat',       Icon: MessageCircle,   name: '会話履歴',         id: 'AiChat' },
   { type: 'texteditor', Icon: NotebookPen,     name: 'TextEditor設定', id: 'TextEditor' },
-  { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定',   id: 'Markdown' },
+  { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定',   id: 'Markdown', unavailableReason: 'Markdown設定は未実装です。' },
   { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定',   id: 'DataGrid' },
-  { type: 'card',       Icon: IdCard,          name: 'Card設定',       id: 'Card' },
-  { type: 'graph',      Icon: Share2,          name: 'Graph設定',      id: 'Graph' },
+  { type: 'card',       Icon: IdCard,          name: 'Card設定',       id: 'Card', unavailableReason: 'Card設定は未実装です。' },
+  { type: 'graph',      Icon: Share2,          name: 'Graph設定',      id: 'Graph', unavailableReason: 'Graph設定は未実装です。' },
   { type: 'html',       Icon: FileCode,        name: 'Html設定',       id: 'Html' },
 ];
 
@@ -61,7 +62,7 @@ export function DiscussTabBar({ activeSettings, isOpen, thinkTitle, onToggle, on
       onToggle={onToggle}
       bottomLabel={thinkTitle}
     >
-      {visibleSettings.map(({ type, Icon, name, id }) => (
+      {visibleSettings.map(({ type, Icon, name, id, unavailableReason }) => (
         <Fragment key={type}>
           {type === 'texteditor' && <div className="discuss-tab-bar__divider" />}
           <button
@@ -70,8 +71,10 @@ export function DiscussTabBar({ activeSettings, isOpen, thinkTitle, onToggle, on
               'discuss-tab-bar__btn',
               activeSettings === type ? 'discuss-tab-bar__btn--active' : '',
             ].join(' ')}
-            onClick={() => handleClick(type)}
-            data-tip={name}
+            disabled={unavailableReason !== undefined}
+            onClick={unavailableReason ? undefined : () => handleClick(type)}
+            data-tip={unavailableReason ?? name}
+            title={unavailableReason}
             aria-label={id}
           >
             <Icon size={16} />

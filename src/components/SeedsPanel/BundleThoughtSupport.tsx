@@ -1,4 +1,5 @@
-import { useEffect, useReducer, useState } from 'react';
+import { draftVaultLease, createDraftStore, type DraftVaultLease } from '../../services/draftStore';
+import { useEffect, useMemo, useReducer, useState } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import type { ContextSnapshot } from '../../services/contextTypes';
 import { ContextService } from '../../services/ContextService';
@@ -10,18 +11,9 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 
 interface Draft { values: ThinkValues; sources: ThinkSources; base: ThinkMeta; dirty: boolean; confirmed: boolean; busy: boolean; message: string; remote?: ThinkMeta }
 // Drafts survive Seeds/tab/Bundle switches for this Vault's lifetime. They never cross Vaults.
-const drafts = new WeakMap<TTVault, Map<string, Draft>>();
-function draftMap(vault: TTVault) {
-  let map = drafts.get(vault);
-  if (!map) {
-    map = new Map(); drafts.set(vault, map);
-    const savedMap = map;
-    // Keep the warning active even when Seeds is hidden while a draft exists.
-    window.addEventListener('beforeunload', event => {
-      if ([...savedMap.values()].some(d => d.dirty || d.busy)) { event.preventDefault(); event.returnValue = ''; }
-    });
-  }
-  return map;
+const drafts = createDraftStore<Draft>(d => d.dirty || d.busy);
+function draftMap(vault: TTVault, lifetime: DraftVaultLease) {
+  return drafts.map(vault, lifetime);
 }
 function fromMeta(base: ThinkMeta): Draft {
   const record = readThinkSupport(base.metadata?.thinkSupport);
@@ -30,45 +22,74 @@ function fromMeta(base: ThinkMeta): Draft {
 const service = new ThinkSupportService();
 
 export function BundleThoughtSupport({ vault, bundleId, onOpen }: { vault: TTVault; bundleId: string; onOpen: (id: string) => void }) {
+  const lifetime = useMemo(() => draftVaultLease(vault), [vault]);
   useAppUpdate(vault);
   const [, render] = useReducer(n => n + 1, 0);
   const [retry, setRetry] = useState(0);
   const [context, setContext] = useState<ContextSnapshot | null>(null);
   const [error, setError] = useState('');
   const [contextError, setContextError] = useState('');
-  const map = draftMap(vault);
+  const map = draftMap(vault, lifetime);
   const draft = map.get(bundleId);
   const supported = StorageManager.instance.mode === 'pwa';
   const snapshot = context?.bundleId === bundleId && context.vaultId === vault.ID ? context : null;
   useEffect(() => {
+    if (!lifetime.isCurrent()) return;
     let active = true;
     const abort = new AbortController();
     setContext(null); setError(''); setContextError('');
     void new ContextService(vault).getBundleContext(bundleId, { signal: abort.signal }).then(value => {
-      if (active) setContext(value);
-    }).catch(e => { if (active) setContextError(e instanceof Error ? e.message : '資料の取得に失敗しました。'); });
+      if (!lifetime.isCurrent()) return;
+      if (active && lifetime.isCurrent()) setContext(value);
+    }).catch(e => {
+      if (!lifetime.isCurrent()) return;
+      if (active && lifetime.isCurrent()) setContextError(e instanceof Error ? e.message : '資料の取得に失敗しました。');
+    });
     if (supported && !map.has(bundleId)) {
-      void service.read(bundleId).then(meta => { if (active) { map.set(bundleId, fromMeta(meta)); render(); } })
-        .catch(e => { if (active) setError(e.message); });
+      void service.read(bundleId).then(meta => {
+        if (!lifetime.isCurrent()) return;
+        if (active && lifetime.isCurrent()) { map.set(bundleId, fromMeta(meta)); render(); }
+      })
+        .catch(e => {
+          if (!lifetime.isCurrent()) return;
+          if (active && lifetime.isCurrent()) setError(e.message);
+        });
     }
-    return () => { active = false; abort.abort(); };
-  }, [vault, bundleId, retry, supported, map]);
+    return () => {
+      active = false; abort.abort();
+    };
+  }, [vault, bundleId, retry, supported, map, lifetime]);
   function change(update: Partial<Draft>) {
+    if (!lifetime.isCurrent()) return;
     if (!draft || draft.busy) return;
     Object.assign(draft, update, { dirty: true, confirmed: false, message: '' }); render();
   }
   async function checkLatest() {
+    if (!lifetime.isCurrent()) return;
     if (!draft || draft.busy) return;
     draft.busy = true; render();
-    try { draft.remote = await service.read(bundleId); draft.message = '最新の保存内容を表示しました。入力との差を確認してください。'; }
-    catch (e) { draft.message = (e as Error).message; }
-    finally { draft.busy = false; render(); vault.NotifyUpdated(false); }
+    try {
+      draft.remote = await service.read(bundleId);
+      if (!lifetime.isCurrent()) return;
+      draft.message = '最新の保存内容を表示しました。入力との差を確認してください。';
+    }
+    catch (e) {
+      if (!lifetime.isCurrent()) return;
+      draft.message = (e as Error).message;
+    }
+    finally {
+      if (lifetime.isCurrent()) {
+        draft.busy = false; render(); vault.NotifyUpdated(false);
+      }
+    }
   }
   async function save() {
+    if (!lifetime.isCurrent()) return;
     if (!draft || draft.busy || !draft.confirmed) return;
     draft.busy = true; draft.message = ''; render();
     try {
       const meta = await service.save(bundleId, draft.base.updatedAt, draft.values, draft.sources);
+      if (!lifetime.isCurrent()) return;
       // Merge only the saved P2 area into the live object; preserve any concurrent local edits.
       const live = vault.GetThink(bundleId);
       if (live) {
@@ -82,11 +103,16 @@ export function BundleThoughtSupport({ vault, bundleId, onOpen }: { vault: TTVau
       Object.assign(draft, fromMeta(meta), { message: '手動記録を保存しました。' });
       setRetry(n => n + 1);
     } catch (e) {
+      if (!lifetime.isCurrent()) return;
       draft.message = (e as Error).name === 'StorageConflictError'
         ? '保存競合：別の更新があります。入力を保持しています。「最新の保存内容を確認」から比較してください。'
         : (e as Error).message;
       draft.confirmed = false;
-    } finally { draft.busy = false; render(); vault.NotifyUpdated(false); }
+    } finally {
+      if (lifetime.isCurrent()) {
+        draft.busy = false; render(); vault.NotifyUpdated(false);
+      }
+    }
   }
   const remoteRecord = draft?.remote ? readThinkSupport(draft.remote.metadata?.thinkSupport) : null;
   return <section className="bundle-thought-support" aria-label="手動の思考状態">
@@ -105,6 +131,7 @@ export function BundleThoughtSupport({ vault, bundleId, onOpen }: { vault: TTVau
           <label>{CONTEXT_LABELS[field]}<textarea value={draft.values[field]} maxLength={10000}
             onChange={e => change({ values: { ...draft.values, [field]: e.target.value } })} /></label>
           <label>出典（任意）<select value={draft.sources[field]?.thinkId ?? ''} onChange={e => {
+            if (!lifetime.isCurrent()) return;
             const sources = { ...draft.sources }; const selected = snapshot?.sources.find(s => s.thinkId === e.target.value);
             if (selected) sources[field] = { thinkId: selected.thinkId, contentHash: selected.contentHash }; else delete sources[field];
             change({ sources });
@@ -118,7 +145,10 @@ export function BundleThoughtSupport({ vault, bundleId, onOpen }: { vault: TTVau
           {draft.sources[field] && snapshot?.sources.some(s => s.thinkId === draft.sources[field]?.thinkId && s.contentHash !== draft.sources[field]?.contentHash) &&
             <p>出典は記録時から変更されています。内容を確認し、必要なら出典を選び直してください。</p>}
         </div>)}
-        <label><input type="checkbox" checked={draft.confirmed} onChange={e => { draft.confirmed = e.target.checked; render(); }} />この内容を自分の手動記録として確認しました</label>
+        <label><input type="checkbox" checked={draft.confirmed} onChange={e => {
+          if (!lifetime.isCurrent()) return;
+          draft.confirmed = e.target.checked; render();
+        }} />この内容を自分の手動記録として確認しました</label>
         <p><button type="button" disabled={!draft.dirty || !draft.confirmed || !!draft.remote} onClick={() => void save()}>思考状態を保存</button>{' '}
           <button type="button" onClick={() => void checkLatest()}>最新の保存内容を確認</button></p>
       </fieldset>
@@ -130,8 +160,14 @@ export function BundleThoughtSupport({ vault, bundleId, onOpen }: { vault: TTVau
         {THINK_FIELDS.map(field => <div key={field}><strong>{CONTEXT_LABELS[field]}</strong><p style={{ whiteSpace: 'pre-wrap' }}>{remoteRecord?.values[field] || '未記録'}</p>
           {remoteRecord?.sources[field] && <p>保存済み出典：<button type="button" onClick={() => onOpen(remoteRecord.sources[field]!.thinkId)}>{remoteRecord.sources[field]!.thinkId}</button><br />本文ハッシュ：<code>{remoteRecord.sources[field]!.contentHash}</code></p>}
         </div>)}
-        <button disabled={draft.busy} onClick={() => { draft.base = draft.remote!; draft.remote = undefined; draft.confirmed = false; draft.dirty = true; render(); }}>比較を終え、現在の入力で再確認する</button>{' '}
-        <button disabled={draft.busy} onClick={() => { Object.assign(draft, fromMeta(draft.remote!)); render(); }}>入力を破棄し、保存内容を採用</button>
+        <button disabled={draft.busy} onClick={() => {
+          if (!lifetime.isCurrent()) return;
+          draft.base = draft.remote!; draft.remote = undefined; draft.confirmed = false; draft.dirty = true; render();
+        }}>比較を終え、現在の入力で再確認する</button>{' '}
+        <button disabled={draft.busy} onClick={() => {
+          if (!lifetime.isCurrent()) return;
+          Object.assign(draft, fromMeta(draft.remote!)); render();
+        }}>入力を破棄し、保存内容を採用</button>
       </section>}
     </>}
     <button type="button" onClick={() => setRetry(n => n + 1)}>参照資料を再取得</button>

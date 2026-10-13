@@ -3,6 +3,7 @@ import { useNewSupportChat } from '../../hooks/useNewSupportChat';
 import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
 import { useSupportChats } from '../../hooks/useSupportChats';
 import { startTaskFromChat } from '../../services/startTaskFromChat';
+import { draftVaultLease } from '../../services/draftStore';
 /**
  * ThinktankArea.tsx
  * ThinktankPanel のコンテンツエリア。
@@ -20,6 +21,7 @@ import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import type { TTThink } from '../../models/TTThink';
 import { useContentSearch } from '../../hooks/useContentSearch';
+import { useThinktankViewMode } from '../../hooks/useThinktankViewMode';
 import { ThinktankMenuRibbon } from './ThinktankMenuRibbon';
 import { ThinktankFilterPanel } from './ThinktankFilterPanel';
 import type { ThinktankFilterPanelRef } from './ThinktankFilterPanel';
@@ -67,10 +69,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // Simpleモード時にchatモードが選択されていたらfilterに切り替える
-  if (layoutMode === 'simple' && panel.ViewMode === 'chat') {
-    panel.SetViewMode('filter');
-  }
+  const viewMode = useThinktankViewMode(panel, layoutMode);
 
   // filter モードの可視アイテムとタイトルクエリはコールバックで受け取る
   const [filterVisible,    setFilterVisible]    = useState<TTThink[]>([]);
@@ -170,7 +169,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // mode 切り替え時: 適切な入力要素に自動フォーカス
   useEffect(() => {
     const timer = setTimeout(() => {
-      switch (panel.ViewMode) {
+      switch (viewMode) {
         case 'filter':
           filterPanelRef.current?.focus();
           break;
@@ -183,7 +182,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       }
     }, 50);
     return () => clearTimeout(timer);
-  }, [panel.ViewMode]);
+  }, [viewMode]);
 
   // 全種別検索フラグの監視
   useEffect(() => {
@@ -227,7 +226,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const sortedBase = useMemo(() => applySort(typeFilteredBase, sort, bundleNames), [typeFilteredBase, sort, bundleNames]);
 
   // chat / settings 以外はすべて Think一覧（filter）として扱う（旧モードの残存値対策）
-  const isFilterMode = panel.ViewMode !== 'chat' && panel.ViewMode !== 'settings';
+  const isFilterMode = viewMode !== 'chat' && viewMode !== 'settings';
 
   const visibleThinks = isFilterMode ? filterVisible : [];
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
@@ -330,7 +329,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   };
 
   const handleStartTask = useCallback(async (chatId: string, title: string, seed?: import('../../services/taskSeed').TaskSeed) => {
-    const bundle = await startTaskFromChat(vault, chatId, title, seed);
+    const lease = draftVaultLease(vault);
+    const bundle = await startTaskFromChat(vault, chatId, title, seed, lease.isCurrent);
+    if (!lease.isCurrent()) return;
     app.OpenBundle(bundle.ID, 'graph');
   }, [app, vault]);
 
@@ -353,7 +354,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   let content: React.ReactNode;
 
-  if (panel.ViewMode === 'chat') {
+  if (viewMode === 'chat') {
     content = (
       <div className="thinktank-area__chat-wrap">
         {supportListError && <p role="alert">{supportListError}</p>}
@@ -378,7 +379,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         </div>
       </div>
     );
-  } else if (panel.ViewMode === 'settings') {
+  } else if (viewMode === 'settings') {
     content = <ThinktankSettingsView ref={settingsViewRef} />;
   } else {
     // filter モード（検索・Bundle一覧を統合）
@@ -407,10 +408,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   return (
     <div className="thinktank-area">
       <div className="panel-title-row thinktank-area__title-row">
-        Thinktank&gt;{THINKTANK_MODE_NAMES[panel.ViewMode] ?? panel.ViewMode}
+        Thinktank&gt;{THINKTANK_MODE_NAMES[viewMode] ?? viewMode}
       </div>
       <ThinktankMenuRibbon
-        viewMode={panel.ViewMode}
+        viewMode={viewMode}
         visibleIds={visibleIds}
         checkedIds={panel.CheckedThoughtIDs}
         showCheckedOnly={panel.ShowCheckedOnly}
@@ -441,7 +442,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       )}
 
       {showFilterSelectDialog && (
-        panel.ViewMode === 'chat' ? (
+        viewMode === 'chat' ? (
           <FilterSelectDialog
             visibility={chatFilterVisibility}
             onChange={setChatFilterVisibility}

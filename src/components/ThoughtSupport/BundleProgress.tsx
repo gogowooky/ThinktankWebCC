@@ -1,4 +1,5 @@
-import { useReducer } from 'react';
+import { draftVaultLease, createDraftStore, type DraftVaultLease } from '../../services/draftStore';
+import { useMemo, useReducer } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { ContextService } from '../../services/ContextService';
@@ -9,19 +10,10 @@ import type { ContextSource } from '../../services/contextTypes';
 import './BundleProgress.css';
 
 interface Draft { input: ProgressInput; base?: ProgressState; remote?: ProgressState; operationId: string; dirty: boolean; confirmed: boolean; busy: boolean; message: string; sources: readonly ContextSource[] }
-const drafts = new WeakMap<TTVault, Map<string, Draft>>();
+const drafts = createDraftStore<Draft>(d => d.dirty || d.busy);
 const service = new ProgressService();
-function getDraft(vault: TTVault, id: string) {
-  let map = drafts.get(vault);
-  if (!map) {
-    map = new Map(); drafts.set(vault, map); const records = map;
-    window.addEventListener('beforeunload', e => {
-      if ([...records.values()].some(d => d.dirty || d.busy)) { e.preventDefault(); e.returnValue = ''; }
-    });
-  }
-  let draft = map.get(id);
-  if (!draft) { draft = { input: emptyProgress(), operationId: crypto.randomUUID(), dirty: false, confirmed: false, busy: false, message: '', sources: [] }; map.set(id, draft); }
-  return draft;
+function getDraft(vault: TTVault, id: string, lifetime: DraftVaultLease) {
+  return drafts.get(vault, id, () => ({ input: emptyProgress(), operationId: crypto.randomUUID(), dirty: false, confirmed: false, busy: false, message: '', sources: [] }), lifetime);
 }
 function current(state: ProgressState): ProgressInput { return state.log.events[state.log.events.length - 1]?.input ?? emptyProgress(); }
 const fields = { evidence: '確認根拠・変更理由（必須）', remaining: '残課題とその扱い（なければ「なし」）', resumeSummary: '再開時の要約', resumeCondition: '再開条件・待っている情報（保留時必須）' } as const;
@@ -35,43 +27,69 @@ function Summary({ input, onOpen }: { input: ProgressInput; onOpen: (id: string)
   </div>;
 }
 export function BundleProgress({ vault, bundleId, onOpen }: { vault: TTVault; bundleId: string; onOpen: (id: string) => void }) {
+  const lifetime = useMemo(() => draftVaultLease(vault), [vault]);
   useAppUpdate(vault);
   const [, render] = useReducer(n => n + 1, 0);
-  const draft = getDraft(vault, bundleId);
+  const draft = getDraft(vault, bundleId, lifetime);
   const supported = StorageManager.instance.mode === 'pwa';
-  function notify() { render(); vault.NotifyUpdated(false); }
+  function notify() {
+    if (!lifetime.isCurrent()) return;
+    render(); vault.NotifyUpdated(false);
+  }
   function change(input: ProgressInput) {
+    if (!lifetime.isCurrent()) return;
     if (draft.busy) return;
     Object.assign(draft, { input, operationId: crypto.randomUUID(), dirty: true, confirmed: false, message: '' }); notify();
   }
   function adopt(state: ProgressState) {
+    if (!lifetime.isCurrent()) return;
     Object.assign(draft, { base: state, remote: undefined, input: structuredClone(current(state)), operationId: crypto.randomUUID(), dirty: false, confirmed: false });
   }
   async function load() {
+    if (!lifetime.isCurrent()) return;
     if (draft.busy) return;
     draft.busy = true; draft.message = ''; draft.confirmed = false; notify();
     try {
       const state = await service.read(bundleId);
+      if (!lifetime.isCurrent()) return;
       if (draft.dirty) { draft.remote = state; draft.message = '最新の保存内容と入力を比較してください。'; } else adopt(state);
-    } catch (e) { draft.message = (e as Error).message; }
-    finally { draft.busy = false; notify(); }
+    } catch (e) {
+      if (!lifetime.isCurrent()) return;
+      draft.message = (e as Error).message;
+    }
+    finally {
+      if (lifetime.isCurrent()) {
+        draft.busy = false; notify();
+      }
+    }
   }
   async function loadSources() {
+    if (!lifetime.isCurrent()) return;
     if (draft.busy) return;
     draft.busy = true; draft.confirmed = false; notify();
     try {
       const snapshot = await new ContextService(vault).getBundleContext(bundleId);
+      if (!lifetime.isCurrent()) return;
       draft.sources = snapshot.sources;
       draft.message = snapshot.issues.length ? snapshot.issues.map(i => i.message).join('\n') : '根拠資料を取得しました。';
-    } catch (e) { draft.message = (e as Error).message; }
-    finally { draft.busy = false; notify(); }
+    } catch (e) {
+      if (!lifetime.isCurrent()) return;
+      draft.message = (e as Error).message;
+    }
+    finally {
+      if (lifetime.isCurrent()) {
+        draft.busy = false; notify();
+      }
+    }
   }
   async function save() {
+    if (!lifetime.isCurrent()) return;
     if (!draft.base || !draft.confirmed || !draft.dirty || draft.remote || draft.busy) return;
     draft.busy = true; draft.message = ''; notify();
     try {
       validateProgress(draft.input);
       const state = await service.save(bundleId, draft.base.version, draft.operationId, draft.input);
+      if (!lifetime.isCurrent()) return;
       // Keep the editor's whole-record version conservative; other metadata may have changed remotely.
       const live = vault.GetThink(bundleId);
       if (live) {
@@ -80,10 +98,18 @@ export function BundleProgress({ vault, bundleId, onOpen }: { vault: TTVault; bu
         if (!dirty) live.markMetadataSaved();
       }
       adopt(state); draft.message = '本人確認済みの到達状態を保存しました。';
-    } catch (e) { draft.message = (e as Error).message; draft.confirmed = false; }
-    finally { draft.busy = false; notify(); }
+    } catch (e) {
+      if (!lifetime.isCurrent()) return;
+      draft.message = (e as Error).message; draft.confirmed = false;
+    }
+    finally {
+      if (lifetime.isCurrent()) {
+        draft.busy = false; notify();
+      }
+    }
   }
   function exportHistory() {
+    if (!lifetime.isCurrent()) return;
     const payload = { bundleId, saved: draft.base?.log, unsaved: draft.dirty ? draft.input : undefined };
     const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
     const link = document.createElement('a'); link.href = url; link.download = `think-progress-${bundleId}.json`; link.click();
@@ -117,12 +143,21 @@ export function BundleProgress({ vault, bundleId, onOpen }: { vault: TTVault; bu
           {draft.input.sources.map(s => <div key={s.thinkId}><button type="button" onClick={() => onOpen(s.thinkId)}>選択済み根拠：{s.thinkId}</button>{' '}<button type="button" onClick={() => change({ ...draft.input, sources: draft.input.sources.filter(p => p.thinkId !== s.thinkId) })}>根拠の選択を解除</button>
             {!draft.sources.some(p => p.thinkId === s.thinkId && p.contentHash === s.contentHash) && <p>この根拠の本文は未取得、または記録時から変更されています。内容を確認してください。</p>}</div>)}
           <details><summary>保存する内容を確認</summary><Summary input={draft.input} onOpen={onOpen} /></details>
-          <label><input type="checkbox" checked={draft.confirmed} onChange={e => { draft.confirmed = e.target.checked; notify(); }} />根拠・残課題・到達状態を本人の判断として確認しました</label>
+          <label><input type="checkbox" checked={draft.confirmed} onChange={e => {
+            if (!lifetime.isCurrent()) return;
+            draft.confirmed = e.target.checked; notify();
+          }} />根拠・残課題・到達状態を本人の判断として確認しました</label>
           <button type="button" disabled={!draft.dirty || !draft.confirmed || !!draft.remote} onClick={() => void save()}>到達状態を保存</button>
         </fieldset>
         {draft.remote && <section aria-label="到達状態の競合比較"><h4>最新保存内容（現在の入力は保持中）</h4><Summary input={current(draft.remote)} onOpen={onOpen} />
-          <button type="button" disabled={draft.busy} onClick={() => { draft.base = draft.remote; draft.remote = undefined; draft.confirmed = false; draft.operationId = crypto.randomUUID(); notify(); }}>比較後、現在の入力を再確認</button>{' '}
-          <button type="button" disabled={draft.busy} onClick={() => { adopt(draft.remote!); notify(); }}>入力を破棄して保存内容を採用</button></section>}
+          <button type="button" disabled={draft.busy} onClick={() => {
+            if (!lifetime.isCurrent()) return;
+            draft.base = draft.remote; draft.remote = undefined; draft.confirmed = false; draft.operationId = crypto.randomUUID(); notify();
+          }}>比較後、現在の入力を再確認</button>{' '}
+          <button type="button" disabled={draft.busy} onClick={() => {
+            if (!lifetime.isCurrent()) return;
+            adopt(draft.remote!); notify();
+          }}>入力を破棄して保存内容を採用</button></section>}
         <details><summary>本人確認の履歴（{draft.base.log.events.length}件）</summary>{[...draft.base.log.events].reverse().map(e => <details key={e.id}><summary>第{e.revision}版 · {e.confirmedAt}</summary><Summary input={e.input} onOpen={onOpen} /></details>)}</details>
         <button type="button" onClick={exportHistory}>到達状態と下書きをJSONで書き出す</button>
       </>}

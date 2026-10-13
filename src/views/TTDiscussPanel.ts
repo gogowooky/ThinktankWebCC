@@ -296,6 +296,11 @@ export class TTDiscussPanel extends TTUIItem {
   // 他パネルで同じプロバイダのモデルが選び直されたら、このパネルの表示も更新する
   private readonly _offModelNames = subscribePanelAiModel(this);
 
+  public dispose(): void {
+    this._offModelNames();
+    this._parent = null;
+  }
+
   // ── Area CRUD ──────────────────────────────────────────────────────────
 
   public AddFirst(resourceId: string, mediaType: MediaType, title: string = ''): TTDiscussArea {

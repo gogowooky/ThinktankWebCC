@@ -25,3 +25,9 @@
   background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.18);
   color: rgb(var(--on-ribbon-rgb, 255 255 255));
 }
+
+.harvest-tab-bar__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: transparent;
+}

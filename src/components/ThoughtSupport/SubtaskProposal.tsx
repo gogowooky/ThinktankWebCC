@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { draftVaultLease } from '../../services/draftStore';
 import type { TTVault } from '../../models/TTVault';
 import { ConversationClient, type ConversationTurn } from '../../services/ConversationService';
 import { canonicalJson } from '../../../server/contracts/conversationRecord';
@@ -16,6 +17,7 @@ export function SubtaskProposal({ vault, turn, chatId, disabled }: {
 function SingleSubtaskProposal({ vault, turn, chatId, disabled, candidateId }: {
   vault: TTVault; turn: ConversationTurn; chatId?: string; disabled: boolean; candidateId?: string;
 }) {
+  const lifetime = useMemo(() => draftVaultLease(vault), [vault]);
   const candidate = turn.answer.subtaskCandidates?.find(p => p.id === candidateId);
   const proposal = candidate ? { after: candidate.goal } : turn.answer.proposals.find(p => p.field === 'nextAction');
   const [open, setOpen] = useState(false);
@@ -26,16 +28,18 @@ function SingleSubtaskProposal({ vault, turn, chatId, disabled, candidateId }: {
   const locked = useRef(false);
   if (!proposal || !chatId || turn.context.scope !== 'bundle-only' || turn.context.vaultId !== vault.ID) return null;
   async function save() {
+    if (!lifetime.isCurrent()) return;
     if (locked.current || disabled || !chatId) return;
     locked.current = true; setBusy(true); setMessage('');
     try {
       const history = await client.history(turn.context.bundleId, undefined, chatId, vault.ID);
+      if (!lifetime.isCurrent()) return;
       if (canonicalJson(history.at(-1)) !== canonicalJson(turn)) throw new Error('会話が更新されています。最新の提案を確認してください。');
-      if (candidateId !== undefined) await vault.CreateSubtaskFromConversation(turn, chatId, title, candidateId);
-      else await vault.CreateSubtaskFromConversation(turn, chatId, title);
+      await vault.CreateSubtaskFromConversation(turn, chatId, title, candidateId, lifetime.isCurrent);
+      if (!lifetime.isCurrent()) return;
       setSaved(true); setOpen(false); setMessage('サブ課題を追加しました。Seedsの分析で確認できます。');
-    } catch (e) { setMessage((e as Error).message); }
-    finally { locked.current = false; setBusy(false); }
+    } catch (e) { if (lifetime.isCurrent()) setMessage((e as Error).message); }
+    finally { locked.current = false; if (lifetime.isCurrent()) setBusy(false); }
   }
   return <section aria-label="サブ課題の追加">
     {!saved && !open && <button type="button" disabled={disabled} onClick={() => {

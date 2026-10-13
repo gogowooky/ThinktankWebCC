@@ -30,12 +30,14 @@ export function resolveChatTask(vault: TTVault, chat?: TTThink): ChatTask {
     ? { error: 'TASKの対応課題が見つかりません。関連付けを確認してください。' } : {}) };
 }
 
-export async function bindChatToTask(vault: TTVault, chat: TTThink, bundle: TTThink) {
+export async function bindChatToTask(vault: TTVault, chat: TTThink, bundle: TTThink, isCurrent: () => boolean = () => true) {
+  if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
   if (chat.IsDirty || chat.IsMetadataDirty) throw new Error('Chatの編集を保存してから関連付けてください。');
   const before = chat.Content, version = chat.UpdatedAt, metadataBefore = JSON.stringify(chat.Metadata);
   let content = before;
   if (chat.IsMetaOnly) {
     const body = await StorageManager.instance.getBody(chat.ID);
+    if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
     if (body === null) throw new Error('Chat本文を読み込めません。');
     content = `${chat.TitleLine}\n${body}`;
   }
@@ -53,6 +55,7 @@ export async function bindChatToTask(vault: TTVault, chat: TTThink, bundle: TTTh
   if (fullContent === before && JSON.stringify(metadata) === metadataBefore) return;
   const saved = await StorageManager.instance.save({ thinkid: chat.ID, category: 'chat', fullContent, metadata,
     keywords: chat.Keywords, relatedIds: chat.RelatedIDs, baseUpdatedAt: version || undefined });
+  if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
   if (!current()) throw new Error('関連付けは保存されました。編集中の内容を確認してから再読み込みしてください。');
   chat.setContentSilent(fullContent); chat.Metadata = metadata; chat.IsMetaOnly = false;
   if (saved.updatedAt) chat.UpdatedAt = saved.updatedAt;

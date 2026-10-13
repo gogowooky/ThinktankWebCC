@@ -13,8 +13,11 @@ import { TTSeedsPanel } from './TTSeedsPanel';
 import { TTDiscussPanel } from './TTDiscussPanel';
 import { TTHarvestPanel } from './TTHarvestPanel';
 import { TTApplicationStatus } from './TTApplicationStatus';
-import { TTUIStateManager } from './TTUIStateManager';
+import { TTUIStateManager, type ConfigKey, type ConfigListener } from './TTUIStateManager';
 import type { MediaType } from '../types';
+import { disposeVaultDrafts } from '../services/draftStore';
+import type { TTVault } from '../models/TTVault';
+import { TTShortcutManager } from './TTShortcutManager';
 
 export class TTApplication extends TTUIItem {
   /** 4パネルのビューモデル */
@@ -31,10 +34,19 @@ export class TTApplication extends TTUIItem {
 
   /** データ層（シングルトン参照）*/
   public get Models(): TTModels {
-    return TTModels.Instance;
+    const models = TTModels.Instance;
+    if (!this._disposed && this._ownedVault !== models.Vault) {
+      if (this._ownedVault) disposeVaultDrafts(this._ownedVault);
+      this._ownedVault = models.Vault;
+    }
+    return models;
   }
 
   private static _instance: TTApplication | null = null;
+  private readonly _offStateListeners: Array<() => void> = [];
+  private _disposed = false;
+  // 新しいrootを遅延生成せず、生成済みrootだけを初期所有する。
+  private _ownedVault: TTVault | null = TTModels.currentInstance?.Vault ?? null;
 
   public override get ClassName(): string {
     return 'TTApplication';
@@ -67,22 +79,26 @@ export class TTApplication extends TTUIItem {
 
     // TTUIStateManager からのプロパティ更新を購読して、対象パネルを更新する
     const stateManager = TTUIStateManager.instance;
-    stateManager.addListener('ThinktankPanel.*', () => this.ThinktankPanel.NotifyUpdated());
-    stateManager.addListener('SeedsPanel.*', () => this.SeedsPanel.NotifyUpdated());
-    stateManager.addListener('DiscussPanel.*', () => this.DiscussPanel.NotifyUpdated());
-    stateManager.addListener('DiscussSettingPanel.*', () => this.DiscussPanel.NotifyUpdated());
-    stateManager.addListener('HarvestPanel.*', () => this.HarvestPanel.NotifyUpdated());
-    stateManager.addListener('Application.*', () => this.NotifyUpdated(false));
-    stateManager.addListener('TextEditor.*', () => this.DiscussPanel.NotifyUpdated());
-    stateManager.addListener('ToolBar.*', () => this.DiscussPanel.NotifyUpdated());
-    stateManager.addListener('Thinktank.*', () => this.ThinktankPanel.NotifyUpdated());
-    stateManager.addListener('Seeds.*', () => this.SeedsPanel.NotifyUpdated());
-    stateManager.addListener('Discuss.*', () => this.DiscussPanel.NotifyUpdated());
-    stateManager.addListener('Harvest.*', () => this.HarvestPanel.NotifyUpdated());
+    const listen = (key: ConfigKey, listener: ConfigListener) => {
+      stateManager.addListener(key, listener);
+      this._offStateListeners.push(() => stateManager.removeListener(key, listener));
+    };
+    listen('ThinktankPanel.*', () => this.ThinktankPanel.NotifyUpdated());
+    listen('SeedsPanel.*', () => this.SeedsPanel.NotifyUpdated());
+    listen('DiscussPanel.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('DiscussSettingPanel.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('HarvestPanel.*', () => this.HarvestPanel.NotifyUpdated());
+    listen('Application.*', () => this.NotifyUpdated(false));
+    listen('TextEditor.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('ToolBar.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('Thinktank.*', () => this.ThinktankPanel.NotifyUpdated());
+    listen('Seeds.*', () => this.SeedsPanel.NotifyUpdated());
+    listen('Discuss.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('Harvest.*', () => this.HarvestPanel.NotifyUpdated());
   }
 
   public static get Instance(): TTApplication {
-    if (!TTApplication._instance) {
+    if (!TTApplication._instance || TTApplication._instance._disposed) {
       TTApplication._instance = new TTApplication();
       (window as any).ttApp = TTApplication._instance;
     }
@@ -90,7 +106,25 @@ export class TTApplication extends TTUIItem {
   }
 
   public static resetInstance(): void {
+    TTApplication._instance?.dispose();
     TTApplication._instance = null;
+  }
+
+  public dispose(): void {
+    if (this._disposed) return;
+    this._disposed = true;
+    for (const off of this._offStateListeners.splice(0)) off();
+    this.ThinktankPanel.dispose();
+    this.SeedsPanel.dispose();
+    this.DiscussPanel.dispose();
+    this.HarvestPanel.dispose();
+    this.Status._parent = null;
+    TTUIStateManager.instance.detach(this);
+    TTShortcutManager.detachApplication(this);
+    if (this._ownedVault) disposeVaultDrafts(this._ownedVault);
+    this._ownedVault = null;
+    const target = window as Window & { ttApp?: TTApplication };
+    if (target.ttApp === this) delete target.ttApp;
   }
 
   // ── 主要操作 ──────────────────────────────────────────────────────────

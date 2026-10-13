@@ -209,4 +209,9 @@ export class TTHarvestPanel extends TTUIItem {
 
   // 他パネルで同じプロバイダのモデルが選び直されたら、このパネルの表示も更新する
   private readonly _offModelNames = subscribePanelAiModel(this);
+
+  public dispose(): void {
+    this._offModelNames();
+    this._parent = null;
+  }
 }

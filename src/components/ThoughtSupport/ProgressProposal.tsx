@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { draftVaultLease } from '../../services/draftStore';
 import type { TTVault } from '../../models/TTVault';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { ProgressService, type ProgressState } from '../../services/ProgressService';
@@ -6,6 +7,7 @@ import { emptyProgress, validateProgress, MILESTONE_LABELS, REACH_LABELS, type P
 
 const service = new ProgressService();
 export function ProgressProposal({ vault, turn, disabled }: { vault: TTVault; turn: ConversationTurn; disabled: boolean }) {
+  const lifetime = useMemo(() => draftVaultLease(vault), [vault]);
   const [review, setReview] = useState<{ state: ProgressState; input: ProgressInput }>();
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -18,11 +20,13 @@ export function ProgressProposal({ vault, turn, disabled }: { vault: TTVault; tu
   if ((!proposals.length && !pause) || turn.context.scope !== 'bundle-only' || turn.context.vaultId !== vault.ID || bundle?.ContentType !== 'bundle') return null;
 
   async function act(save: boolean) {
+    if (!lifetime.isCurrent()) return;
     if (locked.current || disabled) return;
     locked.current = true; setBusy(true); setMessage('');
     try {
       if (!save) {
         const state = await service.read(turn.context.bundleId);
+        if (!lifetime.isCurrent()) return;
         if (state.log.events.some(e => e.id === turn.id)) {
           setSaved(true); setReview(undefined); setMessage('この会話からの到達状態は記録済みです。'); return;
         }
@@ -48,6 +52,7 @@ export function ProgressProposal({ vault, turn, disabled }: { vault: TTVault; tu
       if (!review) return;
       validateProgress(review.input);
       const result = await service.save(turn.context.bundleId, review.state.version, turn.id, review.input);
+      if (!lifetime.isCurrent()) return;
       const live = vault.GetThink(turn.context.bundleId);
       if (live) {
         const dirty = live.IsMetadataDirty;
@@ -57,8 +62,9 @@ export function ProgressProposal({ vault, turn, disabled }: { vault: TTVault; tu
       }
       setSaved(true); setReview(undefined); setMessage('本人確認済みの到達状態を記録しました。');
     } catch (error) {
+      if (!lifetime.isCurrent()) return;
       setMessage((error as Error).message);
-    } finally { locked.current = false; setBusy(false); }
+    } finally { locked.current = false; if (lifetime.isCurrent()) setBusy(false); }
   }
   const previous = review?.state.log.events.at(-1)?.input ?? emptyProgress();
   return <section aria-label="会話から到達状態を記録">

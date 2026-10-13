@@ -12,7 +12,7 @@ import { TTCollection } from './TTCollection';
 import { TTThink } from './TTThink';
 import type { ContentType } from '../types';
 import { TTModels } from './TTModels';
-import { formatDateRangeJapanese, computeDateRange } from '../utils/dateUtils';
+import { formatDateRangeJapanese } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
 import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
 import type { ThinkMeta } from '../services/storage/IStorageBackend';
@@ -21,6 +21,14 @@ import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
 import type { ConversationTurn } from '../services/ConversationService';
 import { validateSubtaskCandidates } from '../../server/contracts/lifecycleProposals';
+import {
+  createBundleResolutionState, mergeBundleConditions, addBundleFilterMatches,
+  hasBundleSearchConditions, addBundleSearchMatches, finishBundleResolution,
+} from './bundleResolution';
+import {
+  captureBundleResolutionSnapshot, matchesBundleResolutionSnapshot, matchesBundleContentBeforeLoad, acceptBundleContentLoad,
+  type BundleResolutionSnapshot,
+} from './bundleResolutionCache';
 
 /** Optional diagnostics for isolated, read-only context resolution. Existing UI defaults are preserved. */
 export interface BundleResolutionOptions {
@@ -35,8 +43,11 @@ export class TTVault extends TTCollection {
   public VaultName: string = 'vault_ver2';
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
-  private _bundleThinksCache: Map<string, string[]> = new Map();
-  private _subtaskCreations = new Map<string, Promise<TTThink>>();
+  private _bundleThinksCache = new Map<string, { ids: string[]; snapshot: BundleResolutionSnapshot }>();
+  private _bundleCacheRevision = 0;
+  private _bundleRequestGenerations = new Map<string, number>();
+  private _bundleInputsSnapshot: BundleResolutionSnapshot | null = null;
+  private _subtaskCreations = new Map<string, { promise: Promise<TTThink>; isCurrent: () => boolean }>();
 
   public override get ClassName(): string {
     return 'TTVault';
@@ -47,6 +58,37 @@ export class TTVault extends TTCollection {
     this.ID = vaultName;
     this.VaultName = vaultName;
     this.Name = vaultName;
+  }
+
+  private _invalidateBundleResults(): void {
+    this._bundleCacheRevision++;
+    this._bundleThinksCache.clear();
+    this._bundleRequestGenerations.clear();
+    this._bundleInputsSnapshot = null;
+  }
+
+  public override NotifyUpdated(updateProperty: boolean = true): void {
+    // Seeds は解決結果の表示通知にもこのAPIを使うため、入力が同じ通知では検索cacheを保つ。
+    if (this._bundleInputsSnapshot
+      && !matchesBundleResolutionSnapshot(this._bundleInputsSnapshot, this.ID, this.IsLoaded, this.GetThinks())) {
+      this._invalidateBundleResults();
+    }
+    super.NotifyUpdated(updateProperty);
+  }
+
+  public override NotifyRefresh(): void {
+    this._invalidateBundleResults();
+    super.NotifyRefresh();
+  }
+
+  protected override InvalidateItemsCache(): void {
+    this._invalidateBundleResults();
+    super.InvalidateItemsCache();
+  }
+
+  protected override ClearItemsSilent(): void {
+    this._invalidateBundleResults();
+    super.ClearItemsSilent();
   }
 
   // ── 型付きアクセス ─────────────────────────────────────────────────
@@ -77,23 +119,23 @@ export class TTVault extends TTCollection {
     const rootBundle = this.GetThink(bundleId);
     if (!rootBundle || rootBundle.ContentType !== 'bundle') return [];
 
-    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'bundle');
-    const finalIds = new Set<string>();
-    const excludeIds = new Set<string>();
+    const thinks = this.GetThinks();
+    const allThinks = thinks.filter(t => t.ContentType !== 'bundle');
+    const snapshot = captureBundleResolutionSnapshot(this.ID, this.IsLoaded, thinks);
+    this._bundleInputsSnapshot = snapshot;
+    const revision = this._bundleCacheRevision;
+    const generation = (this._bundleRequestGenerations.get(bundleId) ?? 0) + 1;
+    this._bundleRequestGenerations.set(bundleId, generation);
+    const discardCurrentCache = () => {
+      if (revision === this._bundleCacheRevision && generation === this._bundleRequestGenerations.get(bundleId)) {
+        this._bundleThinksCache.delete(bundleId);
+      }
+    };
+    let cacheable = true;
+    const state = createBundleResolutionState();
     const activePath = new Set<string>();
-    const conditions = new Map<string, string>();
 
-    // 解析用パラメータ
-    let filterKeyword = '';
-    let filterCreatedRange: { from: string; to: string } | null = null;
-    let filterUpdatedRange: { from: string; to: string } | null = null;
-    
-    let searchQuery = '';
-    let searchCreatedRange: { from: string; to: string } | null = null;
-    let searchUpdatedRange: { from: string; to: string } | null = null;
-
-    // 再帰的にパラメータを収集
-    const collectParams = async (tid: string, visited: Set<string>) => {
+    const collectParams = async (tid: string, visited: Set<string>): Promise<void> => {
       if (activePath.has(tid)) {
         options.onIssue?.({ code: 'cycle', thinkId: tid });
         return;
@@ -101,228 +143,87 @@ export class TTVault extends TTCollection {
       if (visited.has(tid)) return;
       visited.add(tid);
       activePath.add(tid);
-
-      const t = this.GetThink(tid);
-      if (!t || t.ContentType !== 'bundle') return;
-      if (t.IsMetaOnly) await t.LoadContent();
-      if (strict && t.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした');
-
-      const parsed = parseBundle(t.Content);
-      options.onBundle?.(t);
-
+      const think = this.GetThink(tid);
+      if (!think || think.ContentType !== 'bundle') return;
+      if (think.IsMetaOnly) {
+        const unchangedBeforeLoad = matchesBundleContentBeforeLoad(snapshot, think);
+        await think.LoadContent();
+        if (!unchangedBeforeLoad) cacheable = false;
+        acceptBundleContentLoad(snapshot, think);
+      }
+      if (strict && think.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした');
+      const parsed = parseBundle(think.Content);
+      options.onBundle?.(think);
       for (const id of parsed.ids) {
-        const sub = this.GetThink(id);
-        if (sub?.ContentType === 'bundle') {
-          await collectParams(id, visited);
-        } else {
-          finalIds.add(id);
-        }
+        if (this.GetThink(id)?.ContentType === 'bundle') await collectParams(id, visited);
+        else state.ids.add(id);
       }
-
-      if (parsed.excludeIds) {
-        parsed.excludeIds.forEach(id => excludeIds.add(id));
-      }
-
-      // The legacy resolver uses the last non-empty value for each condition.
-      // Context consumers must be told when this discards a different condition.
-      for (const [group, entries] of Object.entries({ filter: parsed.filter, search: parsed.search })) {
-        for (const [key, value] of Object.entries(entries)) {
-          if (!value) continue;
-          const name = `${group}.${key}`;
-          const encoded = JSON.stringify(value);
-          if (conditions.has(name) && conditions.get(name) !== encoded) {
-            options.onIssue?.({ code: 'conflicting_conditions', thinkId: tid });
-          }
-          conditions.set(name, encoded);
-        }
-      }
-
-      if (parsed.search.query) searchQuery = parsed.search.query;
-      if (parsed.search.createdRange) {
-        searchCreatedRange = computeDateRange(parsed.search.createdRange.dateStr, parsed.search.createdRange.rangeStr);
-      }
-      if (parsed.search.updatedRange) {
-        searchUpdatedRange = computeDateRange(parsed.search.updatedRange.dateStr, parsed.search.updatedRange.rangeStr);
-      }
-
-      if (parsed.filter.keyword) filterKeyword = parsed.filter.keyword;
-      if (parsed.filter.createdRange) {
-        filterCreatedRange = computeDateRange(parsed.filter.createdRange.dateStr, parsed.filter.createdRange.rangeStr);
-      }
-      if (parsed.filter.updatedRange) {
-        filterUpdatedRange = computeDateRange(parsed.filter.updatedRange.dateStr, parsed.filter.updatedRange.rangeStr);
-      }
+      mergeBundleConditions(state, parsed).forEach(() => {
+        options.onIssue?.({ code: 'conflicting_conditions', thinkId: tid });
+      });
       activePath.delete(tid);
     };
 
-    await collectParams(bundleId, new Set());
-
-    // 1. フィルター実行
-    if (filterKeyword || filterCreatedRange || filterUpdatedRange) {
-      const q = filterKeyword.toLowerCase();
-      for (const t of allThinks) {
-        if (q && !`${t.Name} ${t.Keywords}`.toLowerCase().includes(q)) continue;
-        if (filterCreatedRange) {
-          const range = filterCreatedRange as { from: string; to: string };
-          const d = t.ID.slice(0, 10);
-          if (d < range.from || d > range.to) continue;
-        }
-        if (filterUpdatedRange) {
-          const range = filterUpdatedRange as { from: string; to: string };
-          const d = (t.UpdatedAt || t.ID).slice(0, 10);
-          if (d < range.from || d > range.to) continue;
-        }
-        finalIds.add(t.ID);
-      }
-    }
-
-    // 2. 全文検索実行
-    if (searchQuery || searchCreatedRange || searchUpdatedRange) {
+    try { await collectParams(bundleId, new Set()); }
+    catch (error) { discardCurrentCache(); throw error; }
+    addBundleFilterMatches(state, allThinks);
+    if (hasBundleSearchConditions(state)) {
       try {
-        const metas = await (options.search ?? (query => StorageManager.instance.search(query)))(searchQuery);
-        for (const meta of metas) {
-          if (meta.category === 'bundle') continue;
-
-          // 日付条件チェック
-          if (searchCreatedRange) {
-            const range = searchCreatedRange as { from: string; to: string };
-            const d = meta.thinkid.slice(0, 10);
-            if (d < range.from || d > range.to) continue;
-          }
-          if (searchUpdatedRange) {
-            const range = searchUpdatedRange as { from: string; to: string };
-            const d = (meta.updatedAt || meta.thinkid).slice(0, 10);
-            if (d < range.from || d > range.to) continue;
-          }
-          finalIds.add(meta.thinkid);
-        }
-      } catch (e) {
-        if (strict) throw e;
-        console.error('[TTVault] GetThinksForBundleAsync search failed:', e);
+        const metas = await (options.search ?? (query => StorageManager.instance.search(query)))(state.search.query);
+        addBundleSearchMatches(state, metas);
+      } catch (error) {
+        discardCurrentCache();
+        if (strict) throw error;
+        cacheable = false;
+        console.error('[TTVault] GetThinksForBundleAsync search failed:', error);
       }
     }
 
-    // デフォルト: 何も指定がなければ全データ
-    if (finalIds.size === 0 && !filterKeyword && !searchQuery && !filterCreatedRange && !filterUpdatedRange && !searchCreatedRange && !searchUpdatedRange) {
-      if (options.allowImplicitAll === false) {
-        options.onIssue?.({ code: 'implicit_all_blocked', thinkId: bundleId });
-        return [];
-      }
-      const result = allThinks.filter(t => !excludeIds.has(t.ID));
-      this._bundleThinksCache.set(bundleId, result.map(t => t.ID));
-      return result;
+    const result = finishBundleResolution(state, allThinks, options.allowImplicitAll !== false);
+    if (result.implicitAllBlocked) {
+      options.onIssue?.({ code: 'implicit_all_blocked', thinkId: bundleId });
+      return [];
     }
-
-    for (const id of excludeIds) {
-      finalIds.delete(id);
+    for (const id of result.missingIds) options.onIssue?.({ code: 'missing_think', thinkId: id });
+    // 入力変更と後発要求の両方を照合し、待ち時間の長い旧結果が同期表示へ戻るのを防ぐ。
+    if (cacheable && revision === this._bundleCacheRevision
+      && generation === this._bundleRequestGenerations.get(bundleId)
+      && matchesBundleResolutionSnapshot(snapshot, this.ID, this.IsLoaded, this.GetThinks())) {
+      this._bundleThinksCache.set(bundleId, { ids: result.members.map(think => think.ID), snapshot });
+      this._bundleInputsSnapshot = snapshot;
     }
-
-    const idMap = new Map(allThinks.map(t => [t.ID, t]));
-    for (const id of finalIds) {
-      if (!idMap.has(id)) options.onIssue?.({ code: 'missing_think', thinkId: id });
-    }
-    const result = [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
-    this._bundleThinksCache.set(bundleId, result.map(t => t.ID));
-    return result;
+    return result.members;
   }
 
   /** GetThinksForBundleAsync の同期版（非同期ロードや検索はスキップ）*/
   public GetThinksForBundle(bundleId: string): TTThink[] {
-    const cachedIds = this._bundleThinksCache.get(bundleId);
-    if (cachedIds) {
-      const allThinks = this.GetThinks().filter(t => t.ContentType !== 'bundle');
-      const idMap = new Map(allThinks.map(t => [t.ID, t]));
-      return cachedIds.map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+    const thinks = this.GetThinks();
+    const allThinks = thinks.filter(t => t.ContentType !== 'bundle');
+    const cached = this._bundleThinksCache.get(bundleId);
+    if (cached && matchesBundleResolutionSnapshot(cached.snapshot, this.ID, this.IsLoaded, thinks)) {
+      const byId = new Map(allThinks.map(think => [think.ID, think]));
+      return cached.ids.map(id => byId.get(id)).filter((think): think is TTThink => think !== undefined);
     }
-
+    this._bundleThinksCache.delete(bundleId);
     const rootBundle = this.GetThink(bundleId);
-    if (!rootBundle || rootBundle.ContentType !== 'bundle') return [];
-    if (rootBundle.IsMetaOnly) return []; // 未ロードなら空
+    if (!rootBundle || rootBundle.ContentType !== 'bundle' || rootBundle.IsMetaOnly) return [];
 
-    const allThinks = this.GetThinks().filter(t => t.ContentType !== 'bundle');
-    const finalIds = new Set<string>();
-    const excludeIds = new Set<string>();
-
-    let filterKeyword = '';
-    let filterCreatedRange: { from: string; to: string } | null = null;
-    let filterUpdatedRange: { from: string; to: string } | null = null;
-    let searchQuery = '';
-    let searchCreatedRange: { from: string; to: string } | null = null;
-    let searchUpdatedRange: { from: string; to: string } | null = null;
-
-    const collectParamsSync = (tid: string, visited: Set<string>) => {
+    const state = createBundleResolutionState();
+    const collectParams = (tid: string, visited: Set<string>): void => {
       if (visited.has(tid)) return;
       visited.add(tid);
-      const t = this.GetThink(tid);
-      if (!t || t.ContentType !== 'bundle' || t.IsMetaOnly) return;
-
-      const parsed = parseBundle(t.Content);
-
+      const think = this.GetThink(tid);
+      if (!think || think.ContentType !== 'bundle' || think.IsMetaOnly) return;
+      const parsed = parseBundle(think.Content);
       for (const id of parsed.ids) {
-        const sub = this.GetThink(id);
-        if (sub?.ContentType === 'bundle') collectParamsSync(id, visited);
-        else finalIds.add(id);
+        if (this.GetThink(id)?.ContentType === 'bundle') collectParams(id, visited);
+        else state.ids.add(id);
       }
-
-      if (parsed.excludeIds) {
-        parsed.excludeIds.forEach(id => excludeIds.add(id));
-      }
-
-      if (parsed.search.query) searchQuery = parsed.search.query;
-      if (parsed.search.createdRange) {
-        searchCreatedRange = computeDateRange(parsed.search.createdRange.dateStr, parsed.search.createdRange.rangeStr);
-      }
-      if (parsed.search.updatedRange) {
-        searchUpdatedRange = computeDateRange(parsed.search.updatedRange.dateStr, parsed.search.updatedRange.rangeStr);
-      }
-
-      if (parsed.filter.keyword) filterKeyword = parsed.filter.keyword;
-      if (parsed.filter.createdRange) {
-        filterCreatedRange = computeDateRange(parsed.filter.createdRange.dateStr, parsed.filter.createdRange.rangeStr);
-      }
-      if (parsed.filter.updatedRange) {
-        filterUpdatedRange = computeDateRange(parsed.filter.updatedRange.dateStr, parsed.filter.updatedRange.rangeStr);
-      }
+      mergeBundleConditions(state, parsed);
     };
-
-    collectParamsSync(bundleId, new Set());
-
-    if (filterKeyword || filterCreatedRange || filterUpdatedRange) {
-      const q = filterKeyword.toLowerCase();
-      for (const t of allThinks) {
-        if (q && !`${t.Name} ${t.Keywords}`.toLowerCase().includes(q)) continue;
-        if (filterCreatedRange) {
-          const range = filterCreatedRange as { from: string; to: string };
-          const d = t.ID.slice(0, 10);
-          if (d < range.from || d > range.to) continue;
-        }
-        if (filterUpdatedRange) {
-          const range = filterUpdatedRange as { from: string; to: string };
-          const d = (t.UpdatedAt || t.ID).slice(0, 10);
-          if (d < range.from || d > range.to) continue;
-        }
-        finalIds.add(t.ID);
-      }
-    }
-
-    if (
-      finalIds.size === 0 &&
-      !filterKeyword &&
-      !filterCreatedRange &&
-      !filterUpdatedRange &&
-      !searchQuery &&
-      !searchCreatedRange &&
-      !searchUpdatedRange
-    ) {
-      return allThinks.filter(t => !excludeIds.has(t.ID));
-    }
-
-    for (const id of excludeIds) {
-      finalIds.delete(id);
-    }
-
-    const idMap = new Map(allThinks.map(t => [t.ID, t]));
-    return [...finalIds].map(id => idMap.get(id)).filter((t): t is TTThink => t !== undefined);
+    collectParams(bundleId, new Set());
+    addBundleFilterMatches(state, allThinks);
+    return finishBundleResolution(state, allThinks).members;
   }
 
   /** ID で TTThink を取得する（型付き）*/
@@ -449,7 +350,9 @@ export class TTVault extends TTCollection {
     relatedIds?: string;
     metadata?: Record<string, unknown>;
     bundleId?: string;
+    isCurrent?: () => boolean;
   }): Promise<TTThink> {
+    if (options.isCurrent && !options.isCurrent()) throw new Error('アプリの処理期間が終了しました。');
     const { contentType, fullContent, keywords = '', relatedIds = '', metadata, bundleId } = options;
     const id = options.id ?? TTVault.generateUniqueId(new Set(this._children.keys()));
     const previous = this._children.get(id);
@@ -469,6 +372,7 @@ export class TTVault extends TTCollection {
     try {
       const saved = await StorageManager.instance.save({ thinkid: id, category: contentType, fullContent,
         keywords, relatedIds, ...(metadata ? { metadata } : {}) });
+      if (options.isCurrent && !options.isCurrent()) throw new Error('アプリの処理期間が終了しました。');
       if (saved?.updatedAt) think.UpdatedAt = saved.updatedAt;
     } catch (error) {
       // 固定IDの上書きに失敗したときも、保存前の項目を失わないように戻す。
@@ -498,7 +402,8 @@ export class TTVault extends TTCollection {
     ids?: string[],
     thinkSupport?: ThinkSupportRecord,
     taskRelation?: TaskRelation,
-    originChatId?: string
+    originChatId?: string,
+    isCurrent?: () => boolean
   }): Promise<TTThink> {
     const { prefix, title, searchQuery, filterKeyword, dates, ids = [] } = options;
     const fullContent = serializeBundle({ prefix, title, searchQuery, filterKeyword, dates, ids });
@@ -508,7 +413,7 @@ export class TTVault extends TTCollection {
       ...(options.taskRelation ? { taskRelation: options.taskRelation } : {}),
     };
     return this._createThink({ contentType: 'bundle', fullContent, relatedIds: ids.join(','),
-      ...(Object.keys(metadata).length ? { metadata } : {}) });
+      ...(Object.keys(metadata).length ? { metadata } : {}), ...(options.isCurrent ? { isCurrent: options.isCurrent } : {}) });
   }
 
   /** 全文検索モード: 検索語と条件から作成 */
@@ -538,7 +443,7 @@ export class TTVault extends TTCollection {
   }
 
   /** 本人が採用した課題名と関連資料から、1課題を表すBundleを作成する。 */
-  public async CreateTaskBundle(title: string, ids: string[], seed?: TaskSeed, originChatId?: string): Promise<TTThink> {
+  public async CreateTaskBundle(title: string, ids: string[], seed?: TaskSeed, originChatId?: string, isCurrent?: () => boolean): Promise<TTThink> {
     const normalizedTitle = title.replace(/[\r\n]+/g, ' ').trim();
     if (!normalizedTitle) throw new Error('課題名を入力してください。');
     if (normalizedTitle.length > 200) throw new Error('課題名は200文字以内で入力してください。');
@@ -549,11 +454,12 @@ export class TTVault extends TTCollection {
       values: { ...emptyThinkValues(), goal: seed.goal, completionCriteria: seed.completionCriteria }, sources: {},
     } : undefined;
     if (thinkSupport) readThinkSupport(thinkSupport);
-    return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds, thinkSupport, originChatId });
+    return this._createBundle({ prefix: '', title: normalizedTitle, ids: uniqueIds, thinkSupport, originChatId, isCurrent });
   }
 
   /** Candidate identity keeps retries separate without rewriting the parent Bundle. */
-  public async CreateSubtaskFromConversation(turn: ConversationTurn, chatId: string, title: string, candidateId?: string): Promise<TTThink> {
+  public async CreateSubtaskFromConversation(turn: ConversationTurn, chatId: string, title: string, candidateId?: string, isCurrent: () => boolean = () => true): Promise<TTThink> {
+    if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
     if (candidateId !== undefined) validateSubtaskCandidates(turn.answer.subtaskCandidates, turn.context.scope);
     const parentId = turn.context.bundleId;
     const candidate = candidateId === undefined ? undefined : turn.answer.subtaskCandidates?.find(p => p.id === candidateId);
@@ -568,7 +474,17 @@ export class TTVault extends TTCollection {
     }
     const key = JSON.stringify([parentId, chatId, turn.id, candidateId]);
     const pending = this._subtaskCreations.get(key);
-    if (pending) return pending;
+    if (pending) {
+      if (pending.isCurrent()) {
+        const created = await pending.promise;
+        if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
+        return created;
+      }
+      // 旧保存の楽観登録を再利用しないよう、確定または巻戻し後に新寿命で再解決する。
+      try { await pending.promise; } catch { /* 旧寿命の失敗は新しい要求へ引き継がない。 */ }
+      if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
+      return this.CreateSubtaskFromConversation(turn, chatId, title, candidateId, isCurrent);
+    }
     const existing = this.GetBundles().find(b => {
       const r = readTaskRelation(b.Metadata.taskRelation);
       return r?.parentId === parentId && r.chatId === chatId && r.turnId === turn.id && r.candidateId === candidateId;
@@ -578,9 +494,13 @@ export class TTVault extends TTCollection {
     const thinkSupport: ThinkSupportRecord = { schemaVersion: 1, revision: 1, author: 'human', confirmedAt: now,
       updatedAt: now, values: { ...emptyThinkValues(), goal: proposal.after, completionCriteria: candidate?.completionCriteria ?? '' }, sources: {} };
     readThinkSupport(thinkSupport);
-    const creation = this._createBundle({ prefix: '', title: normalized, ids: [chatId], thinkSupport, taskRelation: relation });
+    const creation = { promise: this._createBundle({ prefix: '', title: normalized, ids: [chatId], thinkSupport, taskRelation: relation, isCurrent }), isCurrent };
     this._subtaskCreations.set(key, creation);
-    try { return await creation; } finally { this._subtaskCreations.delete(key); }
+    try {
+      const created = await creation.promise;
+      if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
+      return created;
+    } finally { if (this._subtaskCreations.get(key) === creation) this._subtaskCreations.delete(key); }
   }
 
   /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */

@@ -31,7 +31,7 @@ export class ConversationClient {
       || !('provider' in value) || typeof value.provider !== 'string' || !('model' in value) || typeof value.model !== 'string') throw new Error('接続状態を確認できません。');
     return { enabled: value.enabled, provider: value.provider, model: value.model };
   }
-  async history(bundleId: string | undefined, signal?: AbortSignal, chatId?: string, vaultId?: string, vault?: TTVault): Promise<ConversationTurn[]> {
+  async history(bundleId: string | undefined, signal?: AbortSignal, chatId?: string, vaultId?: string, vault?: TTVault, isCurrent?: () => boolean): Promise<ConversationTurn[]> {
     const chat = chatId ? vault?.GetThink(chatId) : undefined;
     const before = chat && !chat.IsDirty && !chat.IsMetadataDirty
       ? { content: chat.Content, metadata: JSON.stringify(chat.Metadata), version: chat.UpdatedAt } : undefined;
@@ -45,7 +45,7 @@ export class ConversationClient {
     if (!chatId && log.turns.some(t => t.context.bundleId !== bundleId)) throw new Error('履歴の対象が一致しません。');
     // Only a complete saved record can advance the local save baseline. Never overwrite editor changes.
     const saved = value && typeof value === 'object' && 'savedChat' in value ? value.savedChat : undefined;
-    if (chat && before && vault?.GetThink(chatId!) === chat && !signal?.aborted
+    if ((!isCurrent || isCurrent()) && chat && before && vault?.GetThink(chatId!) === chat && !signal?.aborted
       && !chat.IsDirty && !chat.IsMetadataDirty && chat.Content === before.content
       && JSON.stringify(chat.Metadata) === before.metadata && chat.UpdatedAt === before.version
       && saved && typeof saved === 'object' && 'id' in saved && saved.id === chatId

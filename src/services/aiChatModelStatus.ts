@@ -137,14 +137,16 @@ export function modelChoices(): { name: AiChatProviderName; selection: AiModelSe
  * 起動時に呼ぶ。サーバーの /models（各社のモデル一覧 API から絞った主要モデル）を取得して反映する。
  * 取得できなければ一覧は未取得のまま（保存済みの選択で送信し、可否はサーバーが判定する）。
  */
-export async function loadAiModelCatalog(fetchJson: () => Promise<unknown>): Promise<boolean> {
+export async function loadAiModelCatalog(fetchJson: () => Promise<unknown>, canApply: () => boolean = () => true): Promise<boolean> {
   let data: unknown;
   try { data = await fetchJson(); } catch { return false; }
-  if (!data || typeof data !== 'object') return false;
+  if (!canApply() || !data || typeof data !== 'object') return false;
   const catalog = data as Record<string, unknown>;
   for (const name of AI_CHAT_PROVIDER_NAMES) {
+    // モデル変更の通知からアプリが破棄される場合も、残りの社の一覧を旧要求から反映しない。
+    if (!canApply()) return false;
     const ids = catalog[PROVIDER_OF[name]];
     if (Array.isArray(ids) && ids.every(id => typeof id === 'string')) setAvailableModels(name, ids as string[]);
   }
-  return true;
+  return canApply();
 }

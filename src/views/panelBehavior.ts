@@ -48,5 +48,11 @@ export function setPanelAiModel(
 }
 
 export function subscribePanelAiModel(panel: Notifiable): () => void {
-  return onModelNamesChange(() => panel.NotifyUpdated());
+  let active = true;
+  const off = onModelNamesChange(() => { if (active) panel.NotifyUpdated(); });
+  return () => {
+    if (!active) return;
+    active = false;
+    off();
+  };
 }
