@@ -81,7 +81,7 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 *TextEditor ,       ,Shift+Ctrl+V           ,TextEditor.EditText.PasteMarkdown          ,ペースト（Markdown判定付加）
 *TextEditor ,       ,Ctrl+V                 ,TextEditor.CurrentEditor.DefaultAction     ,テキストエディタのdefaultアクション
 
-*TextEditor ,       ,Alt+Shift+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
+*TextEditor ,       ,Alt+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
 *TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos:Menu        ,URL・パス・タグのメニュー表示
 
 # ハイライト関連
@@ -91,16 +91,21 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 *TextEditor ,       ,Shift+Alt+S            ,TextEditor.CurrentEditor.CursorPos:LastHighlighter     ,Highlighterの末尾ヒットに移動する
 *TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 *TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
-
 # キーワード検索関連
 *TextEditor ,       ,Alt+F                  ,ToolBar.SearchMode.Text:SetAndFocus                    ,選択テキストをキーワード検索入力欄に設定してフォーカスする
 ToolBar.Search,     ,Enter                  ,ToolBar.SearchMode.Text:Search                         ,キーワード検索入力欄のテキストで検索する
 ToolBar.Search,     ,Alt+Enter              ,ToolBar.SearchMode.Text:ShowMenu                       ,キーワード検索サイトを設定する
-
 # ToolBar
 ToolBar*    ,       ,Alt+C                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
 ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
+# Editor カーソル アクション文字
+; *TextEditor ,       ,Shift+Alt+Backspace    ,DiscussPanel.FocusedPane.FileHistory:Next    ,ファイル履歴を1つ後に進む
+; *TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev    ,ファイル履歴を1つ前に戻る
+*TextEditor ,       ,Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu           ,ファイル履歴をメニューで表示
 
+*TextEditor ,       ,Ctrl+T              ,TextEditor.CurrentEditor.DoOnCaretPos          ,URL・パス・タグの挿入または起動
+*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCaretPos          ,URL・パス・タグの挿入または起動
+*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos         ,URL・パス・タグの起動
 
 # Editor カーソル
 *TextEditor ,       ,Ctrl+P                 ,TextEditor.CurrentEditor.CursorPos:PrevLine            ,カーソルを一つ上の行に移動する（ArrowUp相当）
@@ -114,14 +119,23 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Ctrl+E                 ,TextEditor.CurrentEditor.CursorPos:LineEnd+            ,行末尾に移動→全選択
 
 
-# Editor カーソル アクション文字
-; *TextEditor ,       ,Shift+Alt+Backspace    ,DiscussPanel.FocusedPane.FileHistory:Next    ,ファイル履歴を1つ後に進む
-; *TextEditor ,       ,Alt+Backspace          ,DiscussPanel.FocusedPane.FileHistory:Prev    ,ファイル履歴を1つ前に戻る
-*TextEditor ,       ,Alt+Backspace     ,DiscussPanel.FocusedPane.FileHistory:Menu           ,ファイル履歴をメニューで表示
+# Editor 編集
+*TextEditor ,       ,Ctrl+Z             ,TextEditor.EditText.Undo                       ,編集を元に戻す
+*TextEditor ,       ,Ctrl+Y             ,TextEditor.EditText.Redo                       ,編集をやり直す
+*TextEditor ,       ,Delete             ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
+*TextEditor ,       ,Backspace          ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
+*TextEditor ,       ,Ctrl+D             ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
+*TextEditor ,       ,Ctrl+H             ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
 
-*TextEditor ,       ,Ctrl+T              ,TextEditor.CurrentEditor.DoOnCaretPos          ,URL・パス・タグの挿入または起動
-*TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCaretPos          ,URL・パス・タグの挿入または起動
-*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos         ,URL・パス・タグの起動
+*TextEditor ,       ,Ctrl+I             ,TextEditor.FoldingHeading.IncLevel             ,折り畳みレベルを上げる
+*TextEditor ,       ,Shift+Ctrl+I       ,TextEditor.FoldingHeading.DecLevel             ,折り畳みレベルを下げる
+
+*TextEditor ,       ,Ctrl+/             ,TextEditor.Bullet.NextStyle                    ,行頭文字を次に変更
+*TextEditor ,       ,Shift+Ctrl+?       ,TextEditor.Bullet.PrevStyle                    ,行頭文字を前に変更
+
+*TextEditor ,       ,Ctrl+.             ,TextEditor.Comment.NextStyle                   ,コメント文字を次に変更
+*TextEditor ,       ,Shift+Ctrl+>       ,TextEditor.Comment.PrevStyle                   ,コメント文字を前に変更
+
 
 # Editor カーソル 折畳行
 *TextEditor ,       ,Alt+ArrowRight         ,TextEditor.CurrentFolding.Heading:OpenStepwise     ,折畳行をStepOpen
@@ -146,23 +160,6 @@ ToolBar*    ,       ,Alt+X                  ,DiscussPanel.FocusedPane.PaneNumber
 *TextEditor ,       ,Alt+Shift+Ctrl+P       ,TextEditor.CurrentFolding.Heading:SiblingPrev      ,前の兄弟折畳行へ移動
 *TextEditor ,       ,Alt+Shift+Ctrl+N       ,TextEditor.CurrentFolding.Heading:SiblingNext      ,次の兄弟折畳行へ移動
 
-
-# Editor 編集
-*TextEditor ,       ,Ctrl+Z             ,TextEditor.EditText.Undo                       ,編集を元に戻す
-*TextEditor ,       ,Ctrl+Y             ,TextEditor.EditText.Redo                       ,編集をやり直す
-*TextEditor ,       ,Delete             ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
-*TextEditor ,       ,Backspace          ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
-*TextEditor ,       ,Ctrl+D             ,TextEditor.CurrentEditor.DefaultAction         ,テキストエディタのdefaultアクション
-*TextEditor ,       ,Ctrl+H             ,TextEditor.EditText.Backspace                  ,カーソル左の文字を削除
-
-*TextEditor ,       ,Ctrl+I             ,TextEditor.FoldingHeading.IncLevel             ,折り畳みレベルを上げる
-*TextEditor ,       ,Shift+Ctrl+I       ,TextEditor.FoldingHeading.DecLevel             ,折り畳みレベルを下げる
-
-*TextEditor ,       ,Ctrl+/             ,TextEditor.Bullet.NextStyle                    ,行頭文字を次に変更
-*TextEditor ,       ,Shift+Ctrl+?       ,TextEditor.Bullet.PrevStyle                    ,行頭文字を前に変更
-
-*TextEditor ,       ,Ctrl+.             ,TextEditor.Comment.NextStyle                   ,コメント文字を次に変更
-*TextEditor ,       ,Shift+Ctrl+>       ,TextEditor.Comment.PrevStyle                   ,コメント文字を前に変更
 
 # Editor 日付 編集モード
 *TextEditor ,       ,Alt+T              ,TextEditor.EditDate.InsertExDate               ,日付編集モード開始

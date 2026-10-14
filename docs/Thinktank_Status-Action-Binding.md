@@ -1456,6 +1456,11 @@ key:            TextEditor.CurrentEditor.DoOnCursorPos:Menu
 　filepath: TextEditor.CurrentEditor.DoOnCursorPos:File:*　をメニューで表示し選択して実施
 　tag:      TextEditor.CurrentEditor.DoOnCursorPos:Tag:*　をメニューで表示し選択して実施
 　いずれでもない場合はmenuからtagを選択して挿入します。
+　（261014修正）文字を選択しているときは、カーソル位置の種別にかかわらず「タグ挿入」メニューを出し、
+　　選択文字を選んだタグの値の位置（閉じ括弧の直前）に入れて囲みます（例：「東京タワー」→ [Google:東京タワー]）。
+　　それまでは選択文字がタグで置き換わって消えていました。処理は TextEditor.CurrentEditor.DoOnCaretPos の
+　　文字選択時と同じ関数（textEditorCursorContentActions.ts の insertTagFromMenu）を使います。
+　　1回の編集にまとめるので Undo 1回で元に戻り、クリップボードも使いません。
 
 ### 今回のメニューは想定と異なりますので、再構成をお願いします。
 F1押下で出てくるmonaco editorオリジナルメニューのようなスタイルにしてください。
