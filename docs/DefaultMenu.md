@@ -83,6 +83,8 @@
 "YahooTransfer > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
 
 "Think > O)Thinkを開く・検索",                     TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
+"Think > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+"Think > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
 
 "Mail > O)メールを開く・検索",                        TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
 "Mail > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
