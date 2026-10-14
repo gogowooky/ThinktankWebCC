@@ -1408,6 +1408,12 @@ description:    カーソル位置のテキスト種別に応じたアクショ�
 　　それまでは選択文字がタグで置き換わって消えていました。処理は TextEditor.CurrentEditor.DoOnCaretPos の
 　　文字選択時と同じ関数（textEditorCursorContentActions.ts の insertTagFromMenu）を使います。
 　　1回の編集にまとめるので Undo 1回で元に戻り、クリップボードも使いません。
+　（261014修正）url / filepath / tag のメニューの中身を docs\DefaultMenu.md から作るようにしました。
+　　メニュー名はカーソル位置の種類（Url / File / WebSearch / GoogleRoute / YahooTransfer / Think / Mail / Chat / AI / Anchor）で、
+　　そのメニュー名で始まる行が項目になり、ID 列の ActionID を実行します（例："WebSearch > D)タグを除く", TextEditor.CurrentEditor.DoOnCursorPos:DeTag）。
+　　並び順・表示名・先頭文字キーも DefaultMenu.md で決めます。それまでは ActionID が DoOnCursorPos:{種類}: で
+　　始まるアクションを集めて並べていましたが、何が出るかがコードを読まないと分からないため改めました。
+　　メニュー名の行が無い種類では「メニュー項目がありません」と表示します。メニューのタイトルは「種類: カーソル位置のテキスト」です。
 
 ### 今回のメニューは想定と異なりますので、再構成をお願いします。
 F1押下で出てくるmonaco editorオリジナルメニューのようなスタイルにしてください。
@@ -1516,20 +1522,22 @@ description:    カーソル位置のURLをブラウザで開く
 description:    カーソル位置のファイルパスをOS既定アプリで開く
 　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
-description:    外部ブラウザでWeb検索する
-## Action：　261014　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:DeTag
+description:    外部ブラウザで表示する
+## Action：　261014　TextEditor.CurrentEditor.DoOnCursorPos:DeTag
 description:    タグを除く
 
 　A（261014実装）：カーソル位置の [ID:値] タグを、値の文字だけに置き換えます（例：[Google:東京タワー] → 東京タワー）。
-　　キャレットは値の直後。Undo 1回で元に戻ります。カーソル位置がタグでなければ何もしません。
-## Action：　261014　TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:ReTag
+　　キャレットは値の直後。Undo 1回で元に戻ります。
+　　ID 部分の無いタグ（[TAG]、Anchor の [:見出し]）やタグ以外の位置では何もしません。
+## Action：　261014　TextEditor.CurrentEditor.DoOnCursorPos:ReTag
 description:    タグを選択しなおす
 
 　A（261014実装）：「タグ挿入」メニュー（docs\DefaultMenu.md）でタグを選び、値はそのままでタグだけを替えます
 　　（例：[Google:東京タワー] → [Bing:東京タワー]）。キャレットは値の直後（閉じ括弧の手前）、Undo 1回で元に戻ります。
 　　メニューでの選択と書き換えは DoOnCursorPos:Menu の文字選択時と同じ処理（insertTagFromMenu）です。
-　どちらも ID が DoOnCursorPos:WebSearch: で始まるので、WebSearch タグ上で DoOnCursorPos:Menu を開くと
-　Open（O）／DeTag（D）／ReTag（R）の3項目が並びます。
+　（261014）当初は DoOnCursorPos:WebSearch:DeTag / :ReTag として WebSearch タグ専用に作りましたが、
+　　タグの種類によらない共通のアクションに改めました。どのタグのメニューに出すかは docs\DefaultMenu.md で決めます
+　　（DoOnCursorPos:Menu の 261014 の記載を参照）。
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
 description:    カーソル位置のGoogleRouteタグでGoogleマップのルートを開く
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open

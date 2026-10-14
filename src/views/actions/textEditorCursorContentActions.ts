@@ -13,7 +13,6 @@ import type { ActionID, TTActionItem } from '../TTAction';
 import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { TTUIStateManager } from '../TTUIStateManager';
-import { showMonacoMenu } from '../../utils/monacoMenu';
 import { showDefaultMenu } from '../../utils/defaultMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
@@ -702,53 +701,13 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           return insertTagFromMenu(editor, item);
         }
 
-        const prefixMap = {
-          url: 'TextEditor.CurrentEditor.DoOnCursorPos:Url:',
-          filepath: 'TextEditor.CurrentEditor.DoOnCursorPos:File:',
-        };
+        // メニューの中身は docs/DefaultMenu.md の、種類名（Url / File / タグの種類）で始まる行。
+        // 項目の ID 列が実行する ActionID になる（並び・表示名・先頭文字キーも md 側で決める）
+        const kind = text.startsWith('http://') || text.startsWith('https://') ? 'Url'
+          : text.startsWith('[') && text.endsWith(']') ? classifyTagSubTag(text)
+          : 'File';
 
-        let prefix = '';
-        let typeLabel = '';
-        if (text.startsWith('http://') || text.startsWith('https://')) {
-          prefix = prefixMap.url;
-          typeLabel = 'URL アクション';
-        } else if (text.startsWith('[') && text.endsWith(']')) {
-          const subTag = classifyTagSubTag(text);
-          prefix = `TextEditor.CurrentEditor.DoOnCursorPos:${subTag}:`;
-          typeLabel = `タグ(${subTag}) アクション`;
-        } else {
-          prefix = prefixMap.filepath;
-          typeLabel = 'パス アクション';
-        }
-
-        const allActions = TTActions.GetRegisteredActions();
-        const matchingActions = allActions.filter(act => act.ActionID.startsWith(prefix));
-        const targetActions = matchingActions.filter(act => act.UnavailableReason === undefined);
-
-        if (targetActions.length === 0) {
-          item.Result = matchingActions[0]?.UnavailableReason
-            ? `[未実装] ${matchingActions[0].UnavailableReason}`
-            : `${typeLabel}用の利用可能なアクションがありません`;
-          return;
-        }
-
-        // タグ挿入メニューと同じ monaco F1 風メニューで選択させる。
-        // ニーモニックはアクションID末尾（Open 等）の先頭一文字。
-        const actionNodes = targetActions.map(act => {
-          const shortName = act.ActionID.split(':').pop() ?? act.ActionID;
-          return {
-            key: shortName.charAt(0),
-            label: act.Description || act.ActionID,
-            detail: shortName,
-            value: act.ActionID,
-          };
-        });
-
-        return showMonacoMenu({
-          title: `${typeLabel}: ${text}`,
-          nodes: actionNodes,
-          anchor: editor?.getDomNode?.() ?? null,
-        }).then(actionId => {
+        return showDefaultMenu(kind, editor?.getDomNode?.() ?? null, `${kind}: ${text}`).then(actionId => {
           if (!actionId) {
             item.Result = 'メニューの選択をキャンセルしました';
             return;
@@ -787,7 +746,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     }
   });
 
-  /** カーソル位置の [ID:値] タグの範囲と中身。タグでなければ null（判定は getCurrentTextOnCursor のタグと同じ） */
+  /** カーソル位置の [ID:値] タグの範囲と中身。該当しなければ null（タグの位置判定は getCurrentTextOnCursor と同じ） */
   const tagOnCursor = (editor: typeof TTShortcutManager.prototype.activeEditor) => {
     const pos = editor?.getPosition?.();
     const model = editor?.getModel?.();
@@ -801,7 +760,8 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       if (pos.column < startColumn || pos.column > endColumn) continue;
       const inner = match[1];
       const colonIdx = inner.indexOf(':');
-      if (colonIdx < 0) return null;
+      // ID 部分が無いタグ（[TAG] や Anchor の [:見出し]）は外す・付け替える対象にしない
+      if (colonIdx <= 0) return null;
       const monaco = (window as unknown as { monaco: { Range: new (a: number, b: number, c: number, d: number) => unknown } }).monaco;
       return {
         range: new monaco.Range(pos.lineNumber, startColumn, pos.lineNumber, endColumn),
@@ -814,13 +774,13 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   };
 
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:DeTag',
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:DeTag',
     Description: 'カーソル位置のタグを外し、値の文字だけを残す',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
         const tag = tagOnCursor(editor);
-        if (!tag) { item.Result = 'カーソル位置のテキストがタグではありません'; return; }
+        if (!tag) { item.Result = 'カーソル位置に [ID:値] 形式のタグがありません'; return; }
         editor.executeEdits('detag', [{ range: tag.range, text: tag.value, forceMoveMarkers: true }]);
         editor.setPosition(editor.getModel().getPositionAt(tag.startOffset + tag.value.length));
         editor.focus();
@@ -832,13 +792,13 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   });
 
   TTActions.Register({
-    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:ReTag',
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:ReTag',
     Description: 'カーソル位置のタグを「タグ挿入」メニューで選びなおす（値はそのまま）',
     Completion: (item) => {
       try {
         const editor = TTShortcutManager.instance.activeEditor;
         const tag = tagOnCursor(editor);
-        if (!tag) { item.Result = 'カーソル位置のテキストがタグではありません'; return; }
+        if (!tag) { item.Result = 'カーソル位置に [ID:値] 形式のタグがありません'; return; }
         return insertTagFromMenu(editor, item, { range: tag.range, value: tag.value });
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;

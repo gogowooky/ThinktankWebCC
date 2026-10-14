@@ -64,4 +64,36 @@
 "Keyword検索 > G)場所 > R)Googleルート",　　　　　　　　GoogleRoute
 "Keyword検索 > G)場所 > Y)Yahoo乗換案内",　　　　　　　　YahooTransfer
 
+# DoOnCursorPos:Menu のメニュー。メニュー名はカーソル位置の種類（Url / File / タグの種類）で、ID 列は実行する ActionID
 
+"Url > O)ブラウザで開く",                           TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
+
+"File > O)既定のアプリで開く",                        TextEditor.CurrentEditor.DoOnCursorPos:File:Open
+
+"WebSearch > O)ブラウザで検索",                     TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
+"WebSearch > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+"WebSearch > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
+
+"GoogleRoute > O)Googleマップでルートを開く",          TextEditor.CurrentEditor.DoOnCursorPos:GoogleRoute:Open
+"GoogleRoute > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+"GoogleRoute > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
+
+"YahooTransfer > O)Yahoo乗換案内で検索",            TextEditor.CurrentEditor.DoOnCursorPos:YahooTransfer:Open
+"YahooTransfer > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+"YahooTransfer > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
+
+"Think > O)Thinkを開く・検索",                     TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
+
+"Mail > O)メールを開く・検索",                        TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
+"Mail > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+"Mail > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
+
+"Chat > O)Think一覧でchat検索",                   TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open
+"Chat > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+"Chat > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
+
+"AI > O)外部AIへ接続",                            TextEditor.CurrentEditor.DoOnCursorPos:AI:Open
+"AI > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+"AI > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
+
+"Anchor > O)アンカーへ移動・Highlighter設定",          TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
