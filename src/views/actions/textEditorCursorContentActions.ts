@@ -657,10 +657,15 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
    * 選択範囲はメニュー表示でフォーカスが移る前に確保しておく。
    * クリップボードは使わず1回の編集にまとめる（Undo 1回で元に戻り、クリップボードも汚さない）。
    */
-  const insertTagFromMenu = (editor: typeof TTShortcutManager.prototype.activeEditor, item: TTActionItem): Promise<void> => {
+  const insertTagFromMenu = (
+    editor: typeof TTShortcutManager.prototype.activeEditor,
+    item: TTActionItem,
+    /** 置き換える範囲とタグに入れる値。省略時は選択範囲と選択文字 */
+    target?: { range: typeof TTShortcutManager.prototype.activeEditor; value: string },
+  ): Promise<void> => {
     const model = editor.getModel();
-    const sel = editor.getSelection();
-    const selected: string = sel && !sel.isEmpty() ? model.getValueInRange(sel) : '';
+    const sel = target?.range ?? editor.getSelection();
+    const selected: string = target ? target.value : sel && !sel.isEmpty() ? model.getValueInRange(sel) : '';
     return showDefaultMenu('タグ挿入', editor.getDomNode?.() ?? null).then(id => {
       if (!id) {
         item.Result = 'メニューの選択をキャンセルしました';
@@ -675,7 +680,8 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       // キャレットは選択文字の直後（閉じ括弧の手前）。選択が無ければ値を続けて入力できる位置
       editor.setPosition(model.getPositionAt(startOffset + caret + selected.length));
       editor.focus();
-      item.Result = selected ? `選択文字をタグ ${tag} で囲みました` : `タグ ${tag} を挿入しました`;
+      item.Result = target ? `タグを ${tag} に変更しました`
+        : selected ? `選択文字をタグ ${tag} で囲みました` : `タグ ${tag} を挿入しました`;
     });
   };
 
@@ -775,6 +781,65 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           return;
         }
         return insertTagFromMenu(editor, item);
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    }
+  });
+
+  /** カーソル位置の [ID:値] タグの範囲と中身。タグでなければ null（判定は getCurrentTextOnCursor のタグと同じ） */
+  const tagOnCursor = (editor: typeof TTShortcutManager.prototype.activeEditor) => {
+    const pos = editor?.getPosition?.();
+    const model = editor?.getModel?.();
+    if (!pos || !model) return null;
+    const lineContent: string = model.getLineContent(pos.lineNumber);
+    const tagRegex = /\[([^\]]+)\]/g;
+    let match;
+    while ((match = tagRegex.exec(lineContent)) !== null) {
+      const startColumn = match.index + 1;
+      const endColumn = startColumn + match[0].length;
+      if (pos.column < startColumn || pos.column > endColumn) continue;
+      const inner = match[1];
+      const colonIdx = inner.indexOf(':');
+      if (colonIdx < 0) return null;
+      const monaco = (window as unknown as { monaco: { Range: new (a: number, b: number, c: number, d: number) => unknown } }).monaco;
+      return {
+        range: new monaco.Range(pos.lineNumber, startColumn, pos.lineNumber, endColumn),
+        id: inner.slice(0, colonIdx).trim(),
+        value: inner.slice(colonIdx + 1),
+        startOffset: model.getOffsetAt({ lineNumber: pos.lineNumber, column: startColumn }) as number,
+      };
+    }
+    return null;
+  };
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:DeTag',
+    Description: 'カーソル位置のタグを外し、値の文字だけを残す',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        const tag = tagOnCursor(editor);
+        if (!tag) { item.Result = 'カーソル位置のテキストがタグではありません'; return; }
+        editor.executeEdits('detag', [{ range: tag.range, text: tag.value, forceMoveMarkers: true }]);
+        editor.setPosition(editor.getModel().getPositionAt(tag.startOffset + tag.value.length));
+        editor.focus();
+        item.Result = `タグ [${tag.id}:] を外しました`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:ReTag',
+    Description: 'カーソル位置のタグを「タグ挿入」メニューで選びなおす（値はそのまま）',
+    Completion: (item) => {
+      try {
+        const editor = TTShortcutManager.instance.activeEditor;
+        const tag = tagOnCursor(editor);
+        if (!tag) { item.Result = 'カーソル位置のテキストがタグではありません'; return; }
+        return insertTagFromMenu(editor, item, { range: tag.range, value: tag.value });
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
       }
