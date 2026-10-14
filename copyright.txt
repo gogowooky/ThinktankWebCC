@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.1.17",
+  "version": "2.1.18",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "cff5d22",
-  "commitDateTime": "2026-10-13-214543",
-  "commitMessage": "docs: Status-Action-Binding.md のパネル別セクション整理と DefaultColor.md の注記"
+  "commitId": "e00f497",
+  "commitDateTime": "2026-10-14-103921",
+  "commitMessage": "docs: DefaultMenu.md の Think メニューに DeTag / ReTag を追加"
 }

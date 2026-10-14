@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.18 docs: DefaultMenu.md の Think メニューに DeTag / ReTag を追加
+
+- 日付: 2026-10-14
+- コミット番号: e00f497
+
+v2.1.17 以降の変更（4e27abc〜e00f497）をまとめて記録する。TextEditor.CurrentEditor.DoOnCursorPos:Menu のメニューを docs/DefaultMenu.md から作るようにした（カーソル位置の種類 Url / File / WebSearch / GoogleRoute / YahooTransfer / Think / Mail / Chat / AI / Anchor をメニュー名とし、ID 列の ActionID を実行。ActionID の接頭辞でアクションを集める方式を廃止）。文字選択中は「タグ挿入」メニューで選択文字をタグで囲むように修正（選択文字が消えていた。DoOnCaretPos と処理を共通化）。タグの種類によらない共通アクション DoOnCursorPos:DeTag（[ID:値] を値だけにする）／ReTag（タグ挿入メニューでタグを付け替える）を追加。Action の説明を Thinktank_Status-Action-Binding.md の description から取るようにし（コード側より優先）、md の Action 節から key 行を削除、description の無かった22節に現在の説明を記載。型チェック成功、関連テスト 206件成功。変更: 8ファイル（+303 / -274行）。
+
 ### v2.1.17 docs: Status-Action-Binding.md のパネル別セクション整理と DefaultColor.md の注記
 
 - 日付: 2026-10-13
