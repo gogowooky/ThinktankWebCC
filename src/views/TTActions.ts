@@ -4,13 +4,15 @@
  */
 
 import type { TTAction, TTActionItem, ActionID } from './TTAction';
+import { actionDescriptionFromDoc } from './actionDescriptions';
 
 export class TTActions {
   private static readonly _registry = new Map<ActionID, TTAction>();
 
-  /** アクションを登録する */
+  /** アクションを登録する。説明は docs/Thinktank_Status-Action-Binding.md に記載があればそちらを優先する */
   static Register(action: TTAction): void {
-    this._registry.set(action.ActionID, action);
+    const docDescription = actionDescriptionFromDoc(action.ActionID);
+    this._registry.set(action.ActionID, docDescription ? { ...action, Description: docDescription } : action);
   }
 
   /** ActionID でアクションを取得する */
