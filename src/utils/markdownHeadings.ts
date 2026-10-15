@@ -7,7 +7,7 @@
  * 循環依存を生んでいたため、依存を持たない純粋なロジックとして独立させた。
  */
 import type { editor as MonacoEditor } from 'monaco-editor';
-import { findFrontmatterRange } from './markdownSections';
+import { findFrontmatterRange, collectHeadings } from './markdownSections';
 
 export interface HeadingAttribute {
   line: number;
@@ -103,10 +103,9 @@ export function getHeadingAttributes(editor: MonacoEditor.IStandaloneCodeEditor)
   const model = editor.getModel();
   if (!model) return [];
 
-  const lineCount = model.getLineCount();
   const attributes: HeadingAttribute[] = [];
 
-  // 見出しレベル(1〜6)ごとのカウンター
+  // 見出しレベルごとのカウンター（collectHeadings は7個以上の # も見出しとして返すため可変長）
   const counters = [0, 0, 0, 0, 0, 0];
 
   // 現在折りたたまれている行を Set にキャッシュして判定を O(1) にする
@@ -144,30 +143,26 @@ export function getHeadingAttributes(editor: MonacoEditor.IStandaloneCodeEditor)
   }
 
   // 1パス目: 基本情報を収集
-  for (let i = 1; i <= lineCount; i++) {
-    const lineContent = model.getLineContent(i);
-    const level = getHeadingLevel(lineContent);
+  // 見出しの判定は折畳範囲（toFoldingRanges）と同じ collectHeadings に揃える。行ごとに
+  // getHeadingLevel で判定するとコードフェンス内の "# ..." まで見出しとして数えてしまい、
+  // 以降の headingNumber の親番号がずれて兄弟判定・スコープ判定が折畳と食い違う。
+  for (const { line, level } of collectHeadings(model.getValue())) {
+    const offset = model.getOffsetAt({ lineNumber: line, column: 1 });
 
-    if (level > 0) {
-      // 累積文字数オフセット(0始まり)を取得
-      const offset = model.getOffsetAt({ lineNumber: i, column: 1 });
-
-      // 見出し番号の生成
-      counters[level - 1]++;
-      // 現在のレベルより深いレベルのカウンターはリセット
-      for (let k = level; k < 6; k++) {
-        counters[k] = 0;
-      }
-      const headingNumber = counters.slice(0, level).join('.');
-
-      attributes.push({
-        line: i,
-        level,
-        offset,
-        headingNumber,
-        isHidden: false,
-      });
+    while (counters.length < level) counters.push(0);
+    counters[level - 1]++;
+    for (let k = level; k < counters.length; k++) {
+      counters[k] = 0;
     }
+    const headingNumber = counters.slice(0, level).join('.');
+
+    attributes.push({
+      line,
+      level,
+      offset,
+      headingNumber,
+      isHidden: false,
+    });
   }
 
   // 2パス目: 各見出しの非表示判定
