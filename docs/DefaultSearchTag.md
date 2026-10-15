@@ -41,6 +41,7 @@ ThinkContents,  Think全文検索,      NoURL
 ChatTitle,      Chatタイトル検索,   NoURL
 ChatContents,   Chat全文検索,       NoURL
 
+
 ; Tag.GoogleRoute:     GoogleMapでplace1,2,3...を通るルートを表示するためのタグ        例：[GOOGLEROUTE:place1,place2,place3...]
 ; Tag.YahooTransfer:   Yahoo乗換案内で電車を検索するためのタグ                         例：[YAHOOTRANSFER:from 東京駅,to 大阪駅,via 名古屋駅,dep 10:00]
 ;                      パラメータは "key value" 形式のCSV（key: from/to/dep/arr/via、viaは省略可、dep/arrはhh:mm形式）
@@ -51,6 +52,7 @@ ChatContents,   Chat全文検索,       NoURL
 ; Tag.ThinkContents    4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)
 ; Tag.ChatTitle        6.1 Thinktank>Think一覧でタイトル絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:keywords]
 ; Tag.ChatContents     6.2 Thinktank>Think一覧のコンテンツ絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:>keywords]
+
 ; Tag.Mail             5.1 特定mailを指定するタグ                                      例：[MAIL:ID]（アクション未実装）
 ;                      5.2 mail検索をするためのタグ                                    例：[MAIL:keywords]（アクション未実装）
 ; Mail,           "A)ActionTag > M)メール（未実装）",                                     NoURL
