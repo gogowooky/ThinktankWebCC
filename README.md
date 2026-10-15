@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.1.19 docs: Drive 正本・AI CLI・Firebase 中継への構成変更の設計メモを追加
+
+- 日付: 2026-10-16
+- コミット番号: fb380ac
+
+v2.1.18 以降の変更（6ff450f〜fb380ac）をまとめて記録する。構成変更の設計メモ docs/ARCHITECTURE_DRIVE_FIREBASE.md を追加（構想段階・未実装）：データの正本を BigQuery から Google Drive 上の Thought ごとの .md に移し、思考支援データは <thinkid>.support.json に分ける。AI は PC 版アプリからローカルの AI CLI を隔離して実行し、PC ブラウザの Web 版からは Firebase（Firestore）経由でエンドツーエンド暗号化して PC 版アプリに中継する（携帯は AI なし）。Express・BigQuery・Cloud Run・IAP は廃止し、PC 版はメインプロセスとカスタムプロトコル、Web 版は Firebase Hosting の静的 SPA にする。他人への配布を前提とし、最大の検証課題は Drive の drive.file 権限で見える範囲。見出し番号の判定を折畳と同じ collectHeadings に揃え、コードフェンス内の # 行を見出しとして数えないよう修正（テスト追加）。DefaultShortcut.md の Editor/ToolBar の節を SearchMode / Highlighter 別に整理。関連テスト 1件成功。変更: 5ファイル（+414 / -33行）。
+
 ### v2.1.18 docs: DefaultMenu.md の Think メニューに DeTag / ReTag を追加
 
 - 日付: 2026-10-14
