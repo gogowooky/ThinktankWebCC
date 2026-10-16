@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.5.0 feat: Drive 正本 Vault エンジン・AI CLI 実行・Firebase 中継の初期実装を追加
+
+- 日付: 2026-10-16
+- コミット番号: 71e5af0
+
+v2.1.19 以降の変更（bf4c378〜71e5af0）をまとめて記録する。Drive 正本・AI CLI・Firebase 中継への構成変更の初期実装。shared/ に PC 版・Web 版共通の純粋ロジック（Vault 形式バージョン1の .md / .support.json 読み書き、検索索引、衝突検知、プロンプト組立、回答検証、中継プロトコルと AES-256-GCM 暗号化、ドメインプロファイル、業務管理操作）を追加し、scripts/build-electron-shared.mjs で CJS にビルドして electron/main.cjs から読み込む。メインプロセスに vaultEngine（vault_ver2 への保存、trash 移動、楽観ロック、端末別シャード索引、Drive for desktop の衝突コピー検出）、aiCliRunner（claude / codex / gemini の自動検出と設定隔離実行）、relayAgent（中継役 PC として Web 版からの検索・差分・本文・AI 依頼を処理）を追加し、storage / vault / profile / ai / relay の IPC を整備。src/platform/ に機能一覧（capabilities）と Web 版の DriveApiStorageBackend・FirestoreRelayClient・GoogleAuthService・IndexedDbVaultCache を追加。業務管理（情報の昇格レビュー PromotionReview、Program Gate の ProgramOperationsPanel、OperationsService）とドメインプロファイル・クラウド中継の設定パネルを追加（.thinktank/prompts/ に clinical-trial / elderly-support の標準プロファイル）。BigQuery→Vault 変換・検証ツール（scripts/convert-vault）と中継エージェント起動スクリプト（npm run relay:start）を追加。docs/261016/ に最終案の設計メモ・変換検証レポート・業務管理構想案などを追加。shared のテスト 8件成功。変更: 55ファイル（+11931 / -243行）。
+
 ### v2.1.19 docs: Drive 正本・AI CLI・Firebase 中継への構成変更の設計メモを追加
 
 - 日付: 2026-10-16
