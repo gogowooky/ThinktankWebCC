@@ -7,6 +7,8 @@ import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from '
 import { Save, ChevronDown, ChevronRight, AArrowUp, AArrowDown, Columns2, Columns4 } from 'lucide-react';
 import { TTActions } from '../../views/TTActions';
 import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
+import { DomainProfileSettingsPanel } from './DomainProfileSettingsPanel';
+import { CloudRelaySettingsPanel } from './CloudRelaySettingsPanel';
 import './ThinktankSettingsView.css';
 
 export interface ThinktankSettingsViewRef {
@@ -188,6 +190,9 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
           </>
         )}
       </section>
+
+      <DomainProfileSettingsPanel />
+      <CloudRelaySettingsPanel />
     </div>
   );
 });

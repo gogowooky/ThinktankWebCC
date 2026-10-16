@@ -1,6 +1,8 @@
 # 構成変更の設計メモ：Drive 正本 ＋ AI CLI ＋ Firebase 中継（2026-10-15）
 
-状態：**構想段階（未実装）**。この文書は方針と論点の整理であり、実装・移行・デプロイはまだ行っていない。2026-10-16 更新：PC 版と Web 版の内部構成（§2.1、§2.2）、CLI 設定の隔離とプロンプトのテンプレート（§7.1）、中継のエンドツーエンド暗号化と Firebase の運用（§7.2）、Drive トークンの更新（§8）を追記。
+> **2026-10-16：最終案は [docs/261013/システム設計メモ_Drive正本とAI_CLI.md](261013/システム設計メモ_Drive正本とAI_CLI.md) に整理した。** この文書は検討の記録として残す。最終案では、中継を「読み取り」と「AI」だけにし（保存は全端末が Drive に直接）、中継役の PC は利用者が1台を指定する。データ変換の手順も最終案にまとめた。
+
+状態：**構想段階（未実装）**。この文書は方針と論点の整理であり、実装・移行・デプロイはまだ行っていない。2026-10-16 更新：PC 版と Web 版の内部構成と同時開発の構成（§2.1〜§2.3）、CLI 設定の隔離とプロンプトのテンプレート（§7.1）、中継のエンドツーエンド暗号化と Firebase の運用（§7.2）、Drive トークンの更新（§8）を追記。
 
 ## 0. 決定事項と前提
 
@@ -116,6 +118,42 @@ Web版アプリ（移行後）  ※ Firebase Hosting から配信される静的
 | ログイン | Firebase Auth（ポップアップでよい） | PC 版はシステムのブラウザ経由（PKCE） |
 
 保存・検索・AI の部分は、PC 版と Web 版で同じ `IStorageBackend` などの仕組みの裏側だけを差し替える。画面のコードは共通にする。
+
+### 2.3 開発の構成：PC 版と Web 版を同時に開発するために
+
+今は保存以外の処理をすべて Express が共通で引き受けているので、PC 版と Web 版で違うのは保存先だけである。移行後は処理の中心が PC 版のメインプロセスと Web 版のブラウザに分かれるので、そのまま進めると同じ処理を2回書くことになり、両者の動きがずれていく。すでに frontmatter の読み書きが `electron/mdFormat.cjs`、`src/utils/thinkFormat.ts`、`server/routes/bigqueryRoutes.ts` の3か所に分かれている。
+
+**必須：共通にする部分と差し替える部分を、次のように分ける。**
+
+```
+shared/        純粋なロジック（PC 版・Web 版の両方で使う。Node にもブラウザにも依存しない）
+               ・.md / .support.json の形式、frontmatter の読み書き
+               ・索引の作成、全文検索（本文だけ）、衝突の検知
+               ・プロンプトのテンプレートの組み立て、回答の検証
+               ・中継の依頼・応答の形式、暗号化
+src/           画面（React）。PC 版・Web 版で共通
+src/platform/
+   ├─ electron/  IPC でメインプロセスに依頼する実装
+   └─ web/       Drive API・Firestore を直接呼ぶ実装
+electron/      メインプロセス（PC 版だけ）：ファイル、CLI、Firebase の待ち受け
+```
+
+1. **差し替える部分はインターフェースにする。** 今の `IStorageBackend` と同じやり方を、保存・検索・AI・ログインに広げる。画面は「保存する」「AI に聞く」とだけ呼び、PC 版か Web 版かを意識しない
+2. **機能の出し分けは1か所にまとめる。** 今は `window.electronAPI` の有無を6つのファイル（`src/main.tsx`、`src/services/apiClient.ts`、`StorageManager.ts`、`ElectronStorageBackend.ts`、`DiscussMenuRibbon.tsx`、`TextEditorMedia.tsx`）で直接調べている。これを機能の一覧（`platform.capabilities`：CLI を使えるか、ローカルのファイルを開けるか、AI が使える状態か、など）に置き換え、画面はそれだけを見る
+3. **共通のロジックは `shared/` に1つだけ置く。** `electron/main.cjs` は CJS 固定なので（CLAUDE.md）、`shared/` の TypeScript をメインプロセス用にバンドルして読み込む仕組みを用意する（今の `server/` → `dist-server/` と同じ考え方）。CJS で書き直して二重にしない。今の `electron/*.cjs` にあるファイル形式の処理も `shared/` に移す
+4. **同じテストを両方の実装で動かす。** 「保存して読み込むと同じ内容に戻る」「外で変更されていたら保存を止める」などの契約テストを1つ書き、PC 版と Web 版の両方の実装で実行する
+5. **AI の依頼は PC 版でも Web 版でも同じ形にする。** PC 版は IPC で、Web 版は Firestore 経由で、同じ形の依頼をメインプロセスに渡す。プロンプトを組み立てて CLI を実行する処理はメインプロセスの1か所だけにする。中継（§7.2）は、PC 版で動いている処理をそのまま使う
+
+**開発のしかた**
+
+- Vite の開発サーバーは1つ。ブラウザで `localhost:5173` を開けば Web 版、Electron で同じ URL を開けば PC 版として動く。起動するのは Vite と Electron だけ（§2.1）
+- Firestore と Auth は Firebase Emulator Suite を使い、手元の PC だけで試す。PC 版とブラウザを同じ PC で同時に起動すれば、中継もその場で試せる
+- Drive API にはエミュレーターがないので、開発用の Google アカウントとフォルダを用意するか、ローカルのフォルダを Drive に見立てた偽の実装を作ってテストに使う
+
+**今より手間が増える点**
+
+- **リリースが2系統になる。** PC 版は electron-builder、Web 版は `firebase deploy`。片方だけ更新されることがあるので、**中継の依頼の形式とファイル形式にバージョン番号を入れ**、古い PC 版と新しい Web 版の組み合わせでも壊れないようにする
+- **ログインの方式が違う。** Web 版はポップアップ、PC 版はシステムのブラウザ経由（PKCE）。共通にできないので、それぞれ作ってテストする
 
 ## 3. データ設計
 
@@ -334,11 +372,12 @@ Firebase のプロジェクトは Google Cloud のプロジェクトでもある
 ## 11. 移行の順序（案）
 
 1. **検証**：§8 の Drive 権限（Picker とフォルダ、`drive.file` で見える範囲）、§10-6 の利用規約、CLI の非対話実行を、小さな試作で確かめる
-2. **データ移行**：BigQuery の内容を Drive の `.md` に書き出す（既存の `/api/bq/files/export` を活用できる）。バックアップと復元を確認する
-3. **PC 版アプリ**：Vault の保存先を選べるようにし、索引キャッシュと衝突検知を入れる。この時点で BigQuery への同期は止める
-4. **PC 版の AI**：CLI プロバイダ（隔離実行とアプリ側のプロンプトのテンプレートを含む）をメインプロセスに追加し、思考支援・会話のデータを Drive 側に移す
-5. **PC 版から Express を外す**：画面をカスタムプロトコルで配信し、Express の子プロセスの起動と `server.env` の読み込みを削除する。`electron:dev` を Vite と Electron だけにする
-6. **Web 版**：`IStorageBackend` に `DriveApiStorageBackend` を追加して `BigQueryStorageBackend` を置き換え、Firebase Hosting と Auth に載せ替える。Drive のトークン更新を入れる
-7. **中継**：Firestore を使った依頼と応答の仕組みを、エンドツーエンド暗号化とペアリングを含めて、PC 版アプリ（メインプロセス）と Web 版の両方に実装する。セキュリティルールと App Check を設定する
-8. **廃止**：Express（`server/`）、BigQuery、Cloud Run、IAP、Secret Manager、サービスアカウントを止め、`StorageManager` の `'local'` モードなど使われていないコードを削除する
-9. **配布の準備**：コード署名、自動アップデート、初回設定、OAuth の同意画面と審査
+2. **開発の土台**：`shared/` と `src/platform/` を作り、`shared/` をメインプロセス用にバンドルする仕組みを用意する。ファイル形式の処理を `shared/` に集め、`window.electronAPI` の直接の判定を `platform.capabilities` に置き換え、契約テストを書く（§2.3）
+3. **データ移行**：BigQuery の内容を Drive の `.md` に書き出す（既存の `/api/bq/files/export` を活用できる）。バックアップと復元を確認する
+4. **PC 版アプリ**：Vault の保存先を選べるようにし、索引キャッシュと衝突検知を入れる。この時点で BigQuery への同期は止める
+5. **PC 版の AI**：CLI プロバイダ（隔離実行とアプリ側のプロンプトのテンプレートを含む）をメインプロセスに追加し、思考支援・会話のデータを Drive 側に移す
+6. **PC 版から Express を外す**：画面をカスタムプロトコルで配信し、Express の子プロセスの起動と `server.env` の読み込みを削除する。`electron:dev` を Vite と Electron だけにする
+7. **Web 版**：`IStorageBackend` に `DriveApiStorageBackend` を追加して `BigQueryStorageBackend` を置き換え、Firebase Hosting と Auth に載せ替える。Drive のトークン更新を入れる
+8. **中継**：Firestore を使った依頼と応答の仕組みを、エンドツーエンド暗号化とペアリングを含めて、PC 版アプリ（メインプロセス）と Web 版の両方に実装する。セキュリティルールと App Check を設定する
+9. **廃止**：Express（`server/`）、BigQuery、Cloud Run、IAP、Secret Manager、サービスアカウントを止め、`StorageManager` の `'local'` モードなど使われていないコードを削除する
+10. **配布の準備**：コード署名、自動アップデート、初回設定、OAuth の同意画面と審査

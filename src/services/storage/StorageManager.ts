@@ -12,12 +12,17 @@ import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend'
 import { LocalStorageBackend }    from './LocalStorageBackend';
 import { BigQueryStorageBackend } from './BigQueryStorageBackend';
 import { ElectronStorageBackend, type SyncResult } from './ElectronStorageBackend';
+import { DriveApiStorageBackend } from '../../platform/web/DriveApiStorageBackend';
+import { GoogleAuthService } from '../../platform/web/GoogleAuthService';
+
+const WEB_STORAGE_PROVIDER_KEY = 'tt_web_storage_provider'; // 'drive' | 'bigquery'
 
 export class StorageManager {
   private static _instance: StorageManager | null = null;
 
-  public readonly backend: IStorageBackend;
+  public backend: IStorageBackend;
   public readonly mode: 'electron' | 'local' | 'pwa';
+  public webProvider: 'drive' | 'bigquery' = 'bigquery';
 
   private constructor() {
     if (window.electronAPI) {
@@ -30,9 +35,20 @@ export class StorageManager {
       this.mode    = 'local';
       console.log(`[StorageManager] mode=local, api=${apiUrl}`);
     } else {
-      this.backend = new BigQueryStorageBackend();
-      this.mode    = 'pwa';
-      console.log('[StorageManager] mode=pwa (BigQuery via Express)');
+      this.mode = 'pwa';
+      const preferred =
+        typeof localStorage !== 'undefined'
+          ? localStorage.getItem(WEB_STORAGE_PROVIDER_KEY)
+          : null;
+      if (preferred === 'drive' || (preferred !== 'bigquery' && GoogleAuthService.hasValidToken())) {
+        this.backend = new DriveApiStorageBackend();
+        this.webProvider = 'drive';
+        console.log('[StorageManager] mode=pwa (Google Drive + IndexedDB Cache)');
+      } else {
+        this.backend = new BigQueryStorageBackend();
+        this.webProvider = 'bigquery';
+        console.log('[StorageManager] mode=pwa (BigQuery via Express)');
+      }
     }
   }
 
@@ -41,6 +57,23 @@ export class StorageManager {
       StorageManager._instance = new StorageManager();
     }
     return StorageManager._instance;
+  }
+
+  /**
+   * Web版のストレージプロバイダ（'drive' | 'bigquery'）を動的に切り替える。
+   */
+  public setWebProvider(provider: 'drive' | 'bigquery'): void {
+    if (this.mode !== 'pwa') return;
+    this.webProvider = provider;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(WEB_STORAGE_PROVIDER_KEY, provider);
+    }
+    this.backend =
+      provider === 'drive' ? new DriveApiStorageBackend() : new BigQueryStorageBackend();
+  }
+
+  public getDriveBackend(): DriveApiStorageBackend | null {
+    return this.backend instanceof DriveApiStorageBackend ? this.backend : null;
   }
 
   // ── 公開メソッド（TTVault / TTThink から呼ぶ） ─────────────────────
@@ -73,3 +106,4 @@ export class StorageManager {
     return (this.backend as ElectronStorageBackend).syncFromServer(serverUrl);
   }
 }
+

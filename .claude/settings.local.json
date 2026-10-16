@@ -367,7 +367,8 @@
       "PowerShell(npm run typecheck 2>&1)",
       "PowerShell(npx vitest run src/utils/defaultColor.test.ts src/views 2>&1)",
       "Bash(git log *)",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(git status *)"
     ]
   }
 }

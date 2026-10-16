@@ -11,6 +11,7 @@ import { parseManagedChatTitle } from '../../utils/managedChat';
 import { ProposalReview } from './ProposalReview';
 import { ProgressProposal } from './ProgressProposal';
 import { SubtaskProposal } from './SubtaskProposal';
+import { PromotionReview } from './PromotionReview';
 import { SubtaskContextView, ProgressContextDetail } from './SubtaskContextView';
 import { SUBTASK_REVIEW_QUESTION } from '../../../server/contracts/subtaskContext';
 import type { AiModelSelectorProps } from './modelSelectorTypes';
@@ -107,7 +108,9 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   const locked = useRef(false);
   const composing = useRef(false);
   const prepareVersion = useRef(0);
-  const supported = StorageManager.instance.mode === 'pwa';
+  const supported =
+    StorageManager.instance.mode === 'pwa' ||
+    (StorageManager.instance.mode === 'electron' && Boolean(window.electronAPI?.ai));
   useEffect(() => {
     if (!lifetime.isCurrent()) return;
     alive.current = true;
@@ -353,6 +356,9 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
           {turn.id === history.at(-1)?.id && <ProgressProposal key={`${vault.ID}:${turn.context.bundleId}:${turn.id}`} vault={vault} turn={turn} disabled={!!busy || !!pending} />}
           {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
+          {turn.id === history.at(-1)?.id && (Boolean(window.electronAPI?.ai) || Boolean(vault.GetThink(turn.context.bundleId)?.Metadata?.operations)) && (
+            <PromotionReview vault={vault} bundleId={turn.context.bundleId} chatId={chatId} turnId={turn.id} disabled={!!busy || !!pending} onOpen={onOpen} />
+          )}
         </article>)}
       </div>
       {/* 入力とその状態表示（資料範囲・待機・保存失敗）は、履歴をたどっている間も

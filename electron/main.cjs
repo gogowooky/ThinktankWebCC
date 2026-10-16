@@ -1,15 +1,17 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, session, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, session, dialog, protocol, net: electronNet } = require('electron');
 const path   = require('path');
 const fs     = require('fs');
 const net    = require('net');
 const crypto = require('crypto');
-const { saveVaultRecord } = require('./vaultSave.cjs');
-const { deleteVaultRecord } = require('./vaultWrite.cjs');
+const { pathToFileURL } = require('url');
 const { syncVaultFromServer } = require('./vaultSync.cjs');
-const { parseFrontmatter, toThinkMeta } = require('./mdFormat.cjs');
 const { spawn } = require('child_process');
+const { VaultEngine } = require('./vaultEngine.cjs');
+const aiCliRunner = require('./aiCliRunner.cjs');
+const { RelayAgent } = require('./relayAgent.cjs');
+const shared = require('./shared-dist/index.js');
 
 // パッケージ版（electron-builder）は package.json の "name" からアプリ名・userDataパスを
 // 自動的に決定するが、開発時（`electron electron/main.cjs` を直接起動）は同じ仕組みが
@@ -18,142 +20,40 @@ const { spawn } = require('child_process');
 // を呼ぶ前に設定する必要がある）。
 app.setName('thinktank');
 
-const isDev    = process.env.NODE_ENV === 'development';
-const VAULT_DIR = path.join(app.getPath('userData'), 'thinktank', 'vault_ver2');
+// ── カスタムプロトコル app://thinktank/ の特権登録（システム設計メモ §12.2） ──
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'app',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true,
+    },
+  },
+]);
 
-// ── ヘルパー ──────────────────────────────────────────────────────────────
-
-function ensureVaultDir() {
-  if (!fs.existsSync(VAULT_DIR)) fs.mkdirSync(VAULT_DIR, { recursive: true });
-}
-
-function recordPath(id) {
-  return path.join(VAULT_DIR, `${id}.md`);
-}
-
-// ── IPC ハンドラー ────────────────────────────────────────────────────────
-
-ipcMain.handle('storage:listMeta', () => {
-  ensureVaultDir();
-  const files = fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.md'));
-
-  // 読み取り失敗を握り潰すと「0件ロード」という結果だけが残り原因を追えなくなる。
-  // 権限エラー(EPERM/EACCES)とファイル破損を区別できるよう、種類ごとに集計して出す。
-  const errors = new Map();
-  const metas  = [];
-  for (const f of files) {
-    try {
-      const { meta } = parseFrontmatter(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8'));
-      metas.push(toThinkMeta(meta));
-    } catch (e) {
-      const key = `${e.code ?? 'parse'}: ${String(e.message).slice(0, 80)}`;
-      errors.set(key, (errors.get(key) ?? 0) + 1);
-    }
-  }
-
-  if (errors.size > 0) {
-    console.error(`[Vault] listMeta: ${files.length}件中 ${files.length - metas.length}件を読めませんでした`);
-    for (const [k, v] of errors) console.error(`  ${v}件  ${k}`);
-  }
-  return metas;
-});
-
-ipcMain.handle('storage:getContent', (_event, id) => {
-  const p = recordPath(id);
-  if (!fs.existsSync(p)) return null;
-  try {
-    const { body } = parseFrontmatter(fs.readFileSync(p, 'utf8'));
-    return body ?? null;
-  } catch { return null; }
-});
-
-ipcMain.handle('storage:save', (_event, payload) => saveVaultRecord(VAULT_DIR, payload));
-
-ipcMain.handle('storage:delete', (_event, id) => {
-  deleteVaultRecord(VAULT_DIR, id);
-});
-
-ipcMain.handle('storage:search', (_event, query) => {
-  ensureVaultDir();
-  const q = (query || '').toLowerCase();
-  return fs.readdirSync(VAULT_DIR)
-    .filter(f => f.endsWith('.md'))
-    .map(f => {
-      try { return parseFrontmatter(fs.readFileSync(path.join(VAULT_DIR, f), 'utf8')); }
-      catch { return null; }
-    })
-    .filter(d => d && !d.meta.is_deleted && (
-      (d.meta.title    || '').toLowerCase().includes(q) ||
-      (d.body          || '').toLowerCase().includes(q) ||
-      (d.meta.keywords || '').toLowerCase().includes(q)
-    ))
-    .map(d => toThinkMeta(d.meta));
-});
-
-// ── BigQuery 同期 ─────────────────────────────────────────────────────────
-
-/**
- * BigQuery 同期の取得先と認証情報を決める。
- *
- * /api/* は共有シークレット認証が有効なので、ヘッダーを付けないと 401 になる。
- * レンダラー側は vite proxy がヘッダーを注入してくれるが、この同期処理は
- * メインプロセスから直接サーバーを叩くため proxy を経由しない。
- */
-function getSyncTarget(explicitUrl) {
-  // パッケージ版: 自前で起動したサーバー（BigQuery 認証情報を持つ）を使う
-  if (!explicitUrl && serverOrigin) {
-    return { base: serverOrigin, apiKey: serverApiKey };
-  }
-  // dev: concurrently が起動した 8080 のサーバー。鍵は server/.env から読む。
-  // localhost は ::1 に解決されうるが、サーバーは 127.0.0.1 バインドなので明示する。
-  const base = (explicitUrl || 'http://127.0.0.1:8080').replace(/\/$/, '');
-  return { base, apiKey: serverApiKey || loadServerEnv().API_SHARED_SECRET };
-}
-
-async function fetchJson(url, apiKey) {
-  const res = await fetch(url, { headers: apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {} });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-  return res.json();
-}
-
-ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
-  ensureVaultDir();
-  const { base, apiKey } = getSyncTarget(serverUrl);
-  const authHeaders = apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {};
-  const serverMetas = await fetchJson(`${base}/api/bq/files/meta`, apiKey);
-  return syncVaultFromServer(VAULT_DIR, serverMetas, async meta => {
-    const res = await fetch(`${base}/api/bq/files/${encodeURIComponent(meta.thinkid)}/content`, { headers: authHeaders });
-    if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}: content ${meta.thinkid}`);
-    return res.status === 404 ? '' : res.json();
-  });
-});
-
-// ── ローカルサーバー管理（パッケージ版） ────────────────────────────────────
-//
-// dev では concurrently が server(8080) と vite(5173) を起動するため、ここでは何もしない。
-// パッケージ版には起動役がいないので、メインプロセスが dist-server を子プロセスとして
-// 起動し、UI もそのサーバー自身から配信する。
-//
-// file:// で dist/index.html を読み込まない理由:
-//   ① 相対パス '/api/...' が file:///api/... に解決されサーバーへ到達できない
-//   ② onHeadersReceived が発火せず CSP を適用できない
-// サーバー配信（http://127.0.0.1:PORT）にすれば、どちらも自然に解決する。
-
-let serverProcess = null;
-let serverApiKey  = null;
-/** 自前で起動したローカルサーバーのオリジン。dev（起動しない）では null */
-let serverOrigin  = null;
-
-function findFreePort() {
-  return new Promise((resolve, reject) => {
-    const srv = net.createServer();
-    srv.on('error', reject);
-    srv.listen(0, '127.0.0.1', () => {
-      const { port } = srv.address();
-      srv.close(() => resolve(port));
+// ── 多重起動防止（システム設計メモ §12.3） ──────────────────────────────────
+// ローカル Vault ファイルへの同時書き込み競合や複数の中継役プロセス乱立を防ぐため、
+// 単一インスタンスロックを取得する（セルフトest実行時を除く）。
+if (process.env.TT_SELFTEST !== '1') {
+  const gotLock = app.requestSingleInstanceLock();
+  if (!gotLock) {
+    app.quit();
+  } else {
+    app.on('second-instance', () => {
+      const wins = BrowserWindow.getAllWindows();
+      if (wins.length > 0) {
+        const w = wins[0];
+        if (w.isMinimized()) w.restore();
+        w.focus();
+      }
     });
-  });
+  }
 }
+
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * アプリのルートディレクトリ。
@@ -169,30 +69,241 @@ function appRoot() {
   return path.join(__dirname, '..');
 }
 
-/**
- * サーバー実体の場所を返す。
- *
- * dist-server は extraResources（resources/ 直下）ではなくアプリ本体側に置く。
- * resources/dist-server から起動すると Node のモジュール解決が
- * resources/dist-server/node_modules → resources/node_modules … と辿るため、
- * asar 内の node_modules にある express 等を解決できず起動に失敗する。
- * アプリ本体側（resources/app/）に置けば resources/app/node_modules が
- * 解決パスに入る（この配置のため package.json で asar: false にしている）。
- */
+const DEFAULT_VAULT_DIR = path.join(app.getPath('userData'), 'thinktank', 'vault_ver2');
+
+const vaultEngine = new VaultEngine({
+  userDataDir: app.getPath('userData'),
+  appRootDir: appRoot(),
+  defaultVaultDir: DEFAULT_VAULT_DIR,
+});
+
+const relayAgent = new RelayAgent({
+  userDataDir: app.getPath('userData'),
+  vaultEngine,
+  aiCliRunner,
+});
+
+// ── IPC ハンドラー（Storage / Vault v1） ────────────────────────────────────
+
+ipcMain.handle('storage:listMeta', () => {
+  return vaultEngine.listMeta();
+});
+
+ipcMain.handle('storage:getContent', (_event, id) => {
+  return vaultEngine.getContent(id);
+});
+
+ipcMain.handle('storage:getRecord', (_event, id) => {
+  return vaultEngine.getRecord(id);
+});
+
+ipcMain.handle('storage:getSupport', (_event, id) => {
+  const rec = vaultEngine.getRecord(id);
+  return rec ? rec.support : null;
+});
+
+ipcMain.handle('storage:save', (_event, payload) => {
+  return vaultEngine.saveRecord(payload);
+});
+
+ipcMain.handle('storage:saveSupport', (_event, id, metadata, expectedVersion) => {
+  return vaultEngine.saveSupportMetadata(id, metadata, expectedVersion);
+});
+
+ipcMain.handle('storage:delete', (_event, id) => {
+  return vaultEngine.deleteRecord(id);
+});
+
+ipcMain.handle('storage:search', (_event, query) => {
+  return vaultEngine.search(query || '');
+});
+
+// ── IPC ハンドラー（Vault 設定・衝突検知・シャード索引） ──────────────────
+
+ipcMain.handle('vault:getConfig', () => {
+  return vaultEngine.getConfig();
+});
+
+ipcMain.handle('vault:setConfig', (_event, partial) => {
+  return vaultEngine.saveConfig(partial || {});
+});
+
+ipcMain.handle('vault:selectFolder', async () => {
+  const wins = BrowserWindow.getAllWindows();
+  const res = await dialog.showOpenDialog(wins[0] || undefined, {
+    title: 'Vault フォルダ（Google Drive の Thinktank フォルダ等）を選択',
+    defaultPath: vaultEngine.getVaultRootDir(),
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (res.canceled || !res.filePaths || res.filePaths.length === 0) {
+    return null;
+  }
+  const selected = res.filePaths[0];
+  return vaultEngine.saveConfig({ vaultDir: selected });
+});
+
+ipcMain.handle('vault:listConflicts', () => {
+  return vaultEngine.listConflictFiles();
+});
+
+ipcMain.handle('vault:writeShard', () => {
+  return vaultEngine.writeDeviceShard();
+});
+
+// ── IPC ハンドラー（ドメインプロファイル切替 .thinktank/prompts/） ─────────
+
+ipcMain.handle('profile:getActive', () => {
+  return vaultEngine.getActiveDomainProfile();
+});
+
+ipcMain.handle('profile:listAvailable', () => {
+  return Object.values(shared.BUILTIN_DOMAIN_PROFILES).map((p) => ({
+    id: p.id,
+    name: p.name,
+    subtitle: p.subtitle,
+    description: p.description,
+  }));
+});
+
+ipcMain.handle('profile:setActive', (_event, profileId) => {
+  return vaultEngine.setActiveDomainProfile(profileId);
+});
+
+ipcMain.handle('profile:saveCustom', (_event, profileObj) => {
+  return vaultEngine.saveCustomDomainProfile(profileObj);
+});
+
+// ── IPC ハンドラー（ローカル AI CLI 設定隔離実行） ────────────────────────
+
+ipcMain.handle('ai:getStatus', () => {
+  const clis = aiCliRunner.detectAvailableClis();
+  return {
+    availableClis: clis,
+    preferredCli: vaultEngine.config.preferredCli || 'claude',
+    preferredModel: vaultEngine.config.preferredModel || '',
+    activeProfileId: vaultEngine.getActiveDomainProfile().id,
+  };
+});
+
+ipcMain.handle('ai:conversation', async (_event, params) => {
+  const profile = params?.profileId
+    ? vaultEngine.getDomainProfileById(params.profileId)
+    : vaultEngine.getActiveDomainProfile();
+
+  return aiCliRunner.runDomainAiConversation({
+    ...params,
+    cliName: params?.cliName || vaultEngine.config.preferredCli || 'claude',
+    model: params?.model || vaultEngine.config.preferredModel || undefined,
+    profile,
+  });
+});
+
+ipcMain.handle('ai:agent', async (_event, params) => {
+  const profile = params?.profileId
+    ? vaultEngine.getDomainProfileById(params.profileId)
+    : vaultEngine.getActiveDomainProfile();
+
+  return aiCliRunner.runDomainAiConversation({
+    ...params,
+    cliName: params?.cliName || vaultEngine.config.preferredCli || 'claude',
+    model: params?.model || vaultEngine.config.preferredModel || undefined,
+    profile,
+  });
+});
+
+// ── IPC ハンドラー（中継役PC RelayAgent） ──────────────────────────────────
+
+ipcMain.handle('relay:getStatus', () => {
+  return relayAgent.getStatus();
+});
+
+ipcMain.handle('relay:configure', (_event, partial) => {
+  return relayAgent.saveConfig(partial || {});
+});
+
+ipcMain.handle('relay:rotateSecret', () => {
+  return relayAgent.rotatePairingSecret();
+});
+
+ipcMain.handle('relay:executePlain', async (_event, envelope) => {
+  return relayAgent.executePlainRequest(envelope);
+});
+
+ipcMain.handle('relay:handleEncrypted', async (_event, payload) => {
+  return relayAgent.handleEncryptedRequest(payload);
+});
+
+// ── BigQuery 同期（後方互換・移行期サポート） ───────────────────────────────
+
+function getSyncTarget(explicitUrl) {
+  if (!explicitUrl && serverOrigin) {
+    return { base: serverOrigin, apiKey: serverApiKey };
+  }
+  const base = (explicitUrl || 'http://127.0.0.1:8080').replace(/\/$/, '');
+  return { base, apiKey: serverApiKey || loadServerEnv().API_SHARED_SECRET };
+}
+
+async function fetchJson(url, apiKey) {
+  const res = await fetch(url, { headers: apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {} });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
+  return res.json();
+}
+
+ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
+  const vDir = vaultEngine.getVaultDir();
+  const { base, apiKey } = getSyncTarget(serverUrl);
+  const authHeaders = apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {};
+  const serverMetas = await fetchJson(`${base}/api/bq/files/meta`, apiKey);
+  return syncVaultFromServer(vDir, serverMetas, async meta => {
+    const res = await fetch(`${base}/api/bq/files/${encodeURIComponent(meta.thinkid)}/content`, { headers: authHeaders });
+    if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}: content ${meta.thinkid}`);
+    return res.status === 404 ? '' : res.json();
+  });
+});
+
+// ── カスタムプロトコル app://thinktank/ ハンドラ登録 ─────────────────────────
+
+function registerAppProtocol() {
+  const distDir = path.join(appRoot(), 'dist');
+  protocol.handle('app', (request) => {
+    const urlObj = new URL(request.url);
+    let relPath = decodeURIComponent(urlObj.pathname || '/');
+    if (relPath === '/' || relPath === '') {
+      relPath = '/index.html';
+    }
+    const safeRel = path.normalize(relPath).replace(/^(\.\.(\/|\\|$))+/, '');
+    let targetPath = path.join(distDir, safeRel);
+    if (!fs.existsSync(targetPath) || fs.statSync(targetPath).isDirectory()) {
+      targetPath = path.join(distDir, 'index.html');
+    }
+    return electronNet.fetch(pathToFileURL(targetPath).toString());
+  });
+}
+
+// ── ローカルサーバー管理（パッケージ版・後方互換用） ─────────────────────────
+
+let serverProcess = null;
+let serverApiKey  = null;
+let serverOrigin  = null;
+
+function findFreePort() {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.on('error', reject);
+    srv.listen(0, '127.0.0.1', () => {
+      const { port } = srv.address();
+      srv.close(() => resolve(port));
+    });
+  });
+}
+
 function resolveServerEntry() {
   return path.join(appRoot(), 'dist-server', 'index.js');
 }
 
-/**
- * サーバー用の環境変数を読む。
- * パッケージ版には server/.env が同梱されないため、userData 配下の server.env を
- * 第一候補にする（利用者が API キー等を後から設定できる場所）。
- */
 function loadServerEnv() {
   const candidates = [
-    // インストール後に利用者が API キー等を設定する場所（最優先）
     path.join(app.getPath('userData'), 'server.env'),
-    // 開発時のリポジトリ内 .env（パッケージには含めない）
     path.join(appRoot(), 'server', '.env'),
   ];
 
@@ -208,7 +319,6 @@ function loadServerEnv() {
     break;
   }
 
-  // `npm run server:dev` のインライン処理と同じ展開（キーファイルのパス → 中身）
   if (env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE && !env.GOOGLE_SERVICE_ACCOUNT_KEY) {
     try {
       env.GOOGLE_SERVICE_ACCOUNT_KEY = fs.readFileSync(env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE, 'utf8');
@@ -219,7 +329,6 @@ function loadServerEnv() {
   return env;
 }
 
-// 低速マシンでも起動を落とさないよう余裕をとる（通常は1秒未満で応答する）
 async function waitForHealth(origin, timeoutMs = 60000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
@@ -236,22 +345,22 @@ async function waitForHealth(origin, timeoutMs = 60000) {
 async function startLocalServer() {
   const entry = resolveServerEntry();
   if (!fs.existsSync(entry)) {
-    throw new Error(`サーバー実体が見つかりません: ${entry}（npm run build:server 済みか確認）`);
+    // dist-server が存在しない場合はカスタムプロトコル app://thinktank/ にフォールバック
+    console.log('[main] dist-server なし -> app://thinktank/index.html で直接配信します');
+    return 'app://thinktank/index.html';
   }
 
   const port = await findFreePort();
-  // 127.0.0.1 バインドに加え、同一マシンの他プロセスからの呼び出しも弾く。
-  // 起動ごとに使い捨てで、ディスクには残さない。
   serverApiKey = crypto.randomBytes(32).toString('hex');
 
   const env = {
     ...process.env,
     ...loadServerEnv(),
-    ELECTRON_RUN_AS_NODE: '1',   // Electron バイナリを素の Node として使う（node の別途インストール不要）
+    ELECTRON_RUN_AS_NODE: '1',
     PORT:                 String(port),
     API_SHARED_SECRET:    serverApiKey,
   };
-  delete env.K_SERVICE;          // ローカル起動なので公開ホスティング判定に入れない
+  delete env.K_SERVICE;
 
   serverProcess = spawn(process.execPath, [entry], { env, stdio: ['ignore', 'pipe', 'pipe'] });
   serverProcess.stdout.on('data', d => process.stdout.write(`[server] ${d}`));
@@ -271,28 +380,21 @@ async function startLocalServer() {
 function stopLocalServer() {
   if (!serverProcess) return;
   const proc = serverProcess;
-  serverProcess = null;   // exit ハンドラでのエラーログを抑止する
+  serverProcess = null;
   proc.kill();
 }
 
 // ── CSP ────────────────────────────────────────────────────────────────────
-//
-// 以前は if (isDev) の中でしか設定しておらず、パッケージ版が CSP なしで出荷される
-// 状態だった（開発時だけ緩く保護し、本番は無防備という逆転）。両方に適用する。
-// Monaco は monacoSetup.ts の loader.config({ monaco }) でバンドル済みのため、
-// cdn.jsdelivr.net の許可は不要。
 
 function installCsp() {
   const csp = isDev
-    ? "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; " +
-      "connect-src 'self' ws://localhost:* http://localhost:*; " +
-      "img-src 'self' data: blob:; worker-src 'self' blob:; " +
+    ? "default-src 'self' app: 'unsafe-inline' 'unsafe-eval' http://localhost:*; " +
+      "connect-src 'self' app: ws://localhost:* http://localhost:* https://*.googleapis.com https://*.firebaseio.com; " +
+      "img-src 'self' app: data: blob:; worker-src 'self' app: blob:; " +
       "object-src 'none'; base-uri 'none';"
-    // パッケージ版は UI も API も同一オリジン（http://127.0.0.1:PORT）なので 'self' で足りる。
-    // 'unsafe-eval' は Monaco が必要とするため残す。
-    : "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; " +
-      "img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; " +
-      "worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';";
+    : "default-src 'self' app:; script-src 'self' app: 'unsafe-eval'; style-src 'self' app: 'unsafe-inline'; " +
+      "img-src 'self' app: data: blob:; font-src 'self' app: data:; connect-src 'self' app: https://*.googleapis.com https://*.firebaseio.com; " +
+      "worker-src 'self' app: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';";
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
@@ -312,15 +414,10 @@ function createWindow(startUrl) {
       contextIsolation: true,
       nodeIntegration:  false,
       sandbox:          false,
-      // レンダラーへローカルサーバーの共有シークレットを渡す経路。
-      // preload が process.argv から読み取り、contextBridge 経由で公開する。
       additionalArguments: serverApiKey ? [`--tt-api-key=${serverApiKey}`] : [],
     },
   });
 
-  // パッケージ版は devtools を開かないため、レンダラー側のエラーが完全に見えなくなる。
-  // 警告以上をメインプロセスの標準出力へ転送し、障害調査の手掛かりを残す。
-  // Electron 42 で引数がイベントオブジェクト形式に変わったため、両形式を受ける。
   win.webContents.on('console-message', (...args) => {
     const e = args[0];
     const isNewApi = e && typeof e === 'object' && 'level' in e && typeof e.level === 'string';
@@ -334,10 +431,6 @@ function createWindow(startUrl) {
     console.error(`[main] 画面の読み込みに失敗: ${desc} (${code}) ${url}`);
   });
 
-  // 未保存の変更があるまま閉じられるのを防ぐ（PROJECT_REVIEW_REPORT.md D-1）。
-  // ブラウザの beforeunload だけでは Electron はダイアログを出さないため、
-  // メインプロセス側で確認する。判定・フラッシュはレンダラー（App.tsx）が公開する
-  // window 関数を executeJavaScript で呼び出す（IPC 配線を増やさない）。
   let forceClose = false;
   win.on('close', (e) => {
     if (forceClose) return;
@@ -362,7 +455,7 @@ function createWindow(startUrl) {
         message: '未保存の変更があります',
         detail: 'エディタに保存されていない変更があります。',
       });
-      if (response === 2) return; // キャンセル
+      if (response === 2) return;
       if (response === 0) {
         try {
           await win.webContents.executeJavaScript(
@@ -377,7 +470,6 @@ function createWindow(startUrl) {
     })();
   });
 
-  // TT_SELFTEST=1 のときだけ、レンダラーから API へ実際に到達できるかを検証する
   if (process.env.TT_SELFTEST === '1') {
     console.log('[selftest] 有効');
     win.webContents.once('did-finish-load', async () => {
@@ -393,7 +485,6 @@ function createWindow(startUrl) {
         let evalBlocked = null;
         try { (0, eval)('1+1'); evalBlocked = false; } catch { evalBlocked = true; }
 
-        // ストレージ経路の実測（Electron では IPC が Vault の読み込み元）
         let ipcMetaCount = null, ipcError = null, contentLen = null;
         try {
           const metas = await api.storage.listMeta();
@@ -404,7 +495,6 @@ function createWindow(startUrl) {
           }
         } catch (e) { ipcError = String(e && e.message || e); }
 
-        // 一覧が実際に描画されたか（仮想スクロールのため可視分のみ）
         await new Promise(r => setTimeout(r, 2500));
         const renderedTitles = document.querySelectorAll('.thoughts-list__title').length;
 
@@ -422,7 +512,6 @@ function createWindow(startUrl) {
     });
   }
 
-  // リスナーをすべて登録してから読み込む（did-fail-load 等を取りこぼさないため）
   win.loadURL(startUrl);
   if (isDev) win.webContents.openDevTools({ mode: 'detach' });
 }
@@ -431,18 +520,18 @@ function createWindow(startUrl) {
 
 app.whenReady()
   .then(async () => {
-    ensureVaultDir();
-    // userData の解決結果が環境によって食い違う事故が起きうるため、
-    // 実際に読み書きするディレクトリと件数を起動時に必ず記録する
+    registerAppProtocol();
+    const vDir = vaultEngine.getVaultDir();
     console.log(`[Vault] userData=${app.getPath('userData')}`);
-    console.log(`[Vault] dir=${VAULT_DIR} files=${fs.readdirSync(VAULT_DIR).filter(f => f.endsWith('.md')).length}`);
+    console.log(`[Vault] dir=${vDir} files=${fs.existsSync(vDir) ? fs.readdirSync(vDir).filter(f => f.endsWith('.md')).length : 0}`);
     installCsp();
 
-    // dev: concurrently が起動済みの vite(5173) を読む。サーバーは二重起動しない
-    //      （CLAUDE.md の「electron:dev を多重起動しない」に該当するため）
-    const startUrl = isDev ? 'http://localhost:5173' : await startLocalServer();
+    const startUrl = isDev
+      ? 'http://localhost:5173'
+      : process.env.TT_USE_APP_PROTOCOL === '1'
+        ? 'app://thinktank/index.html'
+        : await startLocalServer();
 
-    // BigQuery 同期の接続先・認証が解決できるかを起動時に確認する（読み取りのみ）
     if (process.env.TT_SELFTEST === '1') {
       const t = getSyncTarget();
       let status = 'n/a';

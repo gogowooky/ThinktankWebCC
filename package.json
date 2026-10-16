@@ -20,6 +20,8 @@
     "electron:dev": "concurrently -k -n server,vite,electron -c blue,green,yellow \"npm run server:dev\" \"wait-on http://localhost:8080/api/health && cross-env ELECTRON_DEV=true vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
     "electron:build": "tsc -p tsconfig.json && vite build && npm run build:server",
     "electron:package": "npm run electron:build && electron-builder --win --publish never",
+    "relay:start": "node scripts/run-relay-agent.mjs",
+    "dev:web-relay": "concurrently -k -n relay,vite -c magenta,green \"node scripts/run-relay-agent.mjs\" \"wait-on http://localhost:8080/api/health && vite\"",
     "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1"
   },
   "main": "electron/main.cjs",

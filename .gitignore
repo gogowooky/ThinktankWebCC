@@ -4,6 +4,8 @@ node_modules/
 # Build outputs
 dist/
 dist-server/
+electron/shared-dist/
+.staging_vault/
 release/
 release2/
 

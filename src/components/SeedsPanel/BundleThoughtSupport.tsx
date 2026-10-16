@@ -31,7 +31,9 @@ export function BundleThoughtSupport({ vault, bundleId, onOpen }: { vault: TTVau
   const [contextError, setContextError] = useState('');
   const map = draftMap(vault, lifetime);
   const draft = map.get(bundleId);
-  const supported = StorageManager.instance.mode === 'pwa';
+  const supported =
+    StorageManager.instance.mode === 'pwa' ||
+    (StorageManager.instance.mode === 'electron' && Boolean(window.electronAPI?.storage?.saveSupport));
   const snapshot = context?.bundleId === bundleId && context.vaultId === vault.ID ? context : null;
   useEffect(() => {
     if (!lifetime.isCurrent()) return;

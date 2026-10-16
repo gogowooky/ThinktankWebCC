@@ -1,12 +1,47 @@
 /**
  * ElectronStorageBackend.ts
- * Electron IPC 経由でメインプロセスの fs 操作を呼び出すバックエンド
+ * Electron IPC 経由でメインプロセスの fs / VaultEngine 操作を呼び出すバックエンド
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
+import type { DomainProfile } from '../../../shared/domainProfile';
+import type { ValidatedAiResponse } from '../../../shared/responseValidator';
+import type { FirestoreRelayChunkDoc, RelayEnvelopePlaintext, RelayResponsePlaintext } from '../../../shared/relayProtocol';
+import type { DriveConflictFileInfo } from '../../../shared/conflict';
+import type { IndexShardV1 } from '../../../shared/searchIndex';
 
 export interface SyncResult {
   added: number; updated: number; skipped: number; total: number;
+}
+
+export interface ElectronVaultConfig {
+  vaultDir: string;
+  vaultRootDir: string;
+  trashDir: string;
+  indexDir: string;
+  promptsDir: string;
+  deviceId: string;
+  preferredCli: 'claude' | 'codex' | 'gemini';
+  preferredModel: string;
+  activeProfileId: string;
+}
+
+export interface ElectronAiStatus {
+  availableClis: Record<string, { available: boolean; path: string | null }>;
+  preferredCli: 'claude' | 'codex' | 'gemini';
+  preferredModel: string;
+  activeProfileId: string;
+}
+
+export interface ElectronRelayStatus {
+  enabled: boolean;
+  deviceId: string;
+  deviceName: string;
+  pairingSecret: string;
+  firebaseProjectId: string;
+  lastHeartbeatAt: string;
+  isAlive: boolean;
+  processedCount: number;
 }
 
 declare global {
@@ -15,10 +50,38 @@ declare global {
       storage: {
         listMeta:       ()                => Promise<ThinkMeta[]>;
         getContent:     (id: string)      => Promise<string | null>;
+        getRecord?:     (id: string)      => Promise<{ meta: ThinkMeta; body: string; support: Record<string, unknown>; updatedAt: string } | null>;
+        getSupport?:    (id: string)      => Promise<Record<string, unknown> | null>;
         save:           (p: SavePayload)  => Promise<ThinkMeta>;
+        saveSupport?:   (id: string, metadata: Record<string, unknown>, expectedVer?: string) => Promise<{ thinkid: string; updatedAt: string; metadata: Record<string, unknown> }>;
         delete:         (id: string)      => Promise<void>;
         search:         (q: string)       => Promise<ThinkMeta[]>;
         syncFromServer: (url?: string)    => Promise<SyncResult>;
+      };
+      vault?: {
+        getConfig:     () => Promise<ElectronVaultConfig>;
+        setConfig:     (partial: Partial<ElectronVaultConfig>) => Promise<ElectronVaultConfig>;
+        selectFolder:  () => Promise<ElectronVaultConfig | null>;
+        listConflicts: () => Promise<Array<DriveConflictFileInfo & { sizeBytes: number; mtimeIso: string }>>;
+        writeShard:    () => Promise<IndexShardV1>;
+      };
+      profile?: {
+        getActive:     () => Promise<DomainProfile>;
+        listAvailable: () => Promise<Array<{ id: string; name: string; subtitle: string; description: string }>>;
+        setActive:     (profileId: string) => Promise<DomainProfile>;
+        saveCustom:    (profileObj: DomainProfile) => Promise<DomainProfile>;
+      };
+      ai?: {
+        getStatus:    () => Promise<ElectronAiStatus>;
+        conversation: (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string; fallbackUsed: boolean; cliError?: string }>;
+        agent:        (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string; fallbackUsed: boolean; cliError?: string }>;
+      };
+      relay?: {
+        getStatus:       () => Promise<ElectronRelayStatus>;
+        configure:       (partial: Record<string, unknown>) => Promise<ElectronRelayStatus>;
+        rotateSecret:    () => Promise<ElectronRelayStatus>;
+        executePlain:    <TReq = unknown, TRes = unknown>(envelope: RelayEnvelopePlaintext<TReq>) => Promise<RelayResponsePlaintext<TRes>>;
+        handleEncrypted: (payload: { encryptedRequest: string; chunks?: FirestoreRelayChunkDoc[] }) => Promise<{ encryptedResponse: string; responseChunks: FirestoreRelayChunkDoc[] }>;
       };
       getPathForFile: (file: File) => string;
       /**

@@ -13,6 +13,7 @@ import { BundleAgent } from '../ThoughtSupport/BundleAgent';
 import { BundleExternal } from '../ThoughtSupport/BundleExternal';
 import { FileSearchConnection } from '../ThoughtSupport/FileSearchConnection';
 import { SubtaskList } from '../ThoughtSupport/SubtaskList';
+import { ProgramOperationsPanel } from './ProgramOperationsPanel';
 
 interface Props { vault: TTVault; bundleId: string; onOpen: (id: string) => void }
 export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(function BundleStatusView({ vault, bundleId, onOpen }, ref) {
@@ -89,6 +90,7 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
     </>}
     <details className="bundle-status__advanced"><summary>詳細な記録・進捗・連携</summary>
       <p>AIが整理した内容の修正や、厳密な進捗・外部連携が必要な場合に使用します。</p>
+      <ProgramOperationsPanel vault={vault} bundleId={bundleId} onOpen={onOpen} />
       <BundleThoughtSupport vault={vault} bundleId={bundleId} onOpen={onOpen} />
       <BundleProgress vault={vault} bundleId={bundleId} onOpen={onOpen} />
       <BundleAgent vault={vault} bundleId={bundleId} onOpen={onOpen} />

@@ -1,0 +1,5 @@
+{
+  "activeProfileId": "clinical-trial",
+  "availableProfiles": ["clinical-trial", "elderly-support"],
+  "description": "activeProfileId を 'clinical-trial' または 'elderly-support' に変更することで、アプリ全体のAIコンテキスト・専門Agent・昇格項目・UIラベルが切り替わります。"
+}
