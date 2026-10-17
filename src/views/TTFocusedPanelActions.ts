@@ -917,7 +917,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   TTActions.Register({
     ActionID: 'Application.Resource.ExportToLocal',
-    Description: 'BQ保存済みThinkファイルをローカルにエクスポートする',
+    Description: 'サーバー保存済みThinkファイルをローカルにエクスポートする',
     Completion: (item) => {
       const status = app.Status as any;
       if (status && typeof status.SetLocalExporting === 'function') {
@@ -926,7 +926,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
       const pollInterval = setInterval(async () => {
         try {
-          const res = await apiFetch('/api/bq/files/export/status');
+          const res = await apiFetch('/api/vault/files/export/status');
           if (res.ok) {
             const progress = await res.json() as { running: boolean; total: number; current: number };
             if (progress.total > 0 && status && typeof status.SetLocalExporting === 'function') {
@@ -939,7 +939,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
         }
       }, 300);
 
-      return apiFetch('/api/bq/files/export', { method: 'POST' })
+      return apiFetch('/api/vault/files/export', { method: 'POST' })
         .then(async (res) => {
           clearInterval(pollInterval);
           if (!res.ok) {
@@ -962,12 +962,12 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
-  // ── 巻戻（BQ time travel による1時間前への復元）──────────────────────────
-  // TODO: バックエンドに BigQuery time travel（FOR SYSTEM_TIME AS OF）を使う
+  // ── 巻戻（1時間前への復元）──────────────────────────
+  // TODO: バックエンドに過去版を参照できる
   //       復元APIを新設し、下記2アクションの中身を実装する。
   //        - 単一Think:  直前にフォーカスされた file_id 1件のみを1時間前のレコードで上書き
   //          （対象は DiscussPanel.FocusedPane.FileHistory の先頭）
-  //        - BQ全体:     thinktank.vault 全体を1時間前のスナップショットで置換
+  //        - 全体:       Vault 全体を1時間前のスナップショットで置換
   //       現状はUIの受け皿のみで、実行しても復元は行われない。
   TTActions.Register(UNAVAILABLE_ACTIONS.rollbackThink);
   TTActions.Register(UNAVAILABLE_ACTIONS.rollbackAll);

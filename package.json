@@ -22,6 +22,7 @@
     "electron:package": "npm run electron:build && electron-builder --win --publish never",
     "relay:start": "node scripts/run-relay-agent.mjs",
     "dev:web-relay": "concurrently -k -n relay,vite -c magenta,green \"node scripts/run-relay-agent.mjs\" \"wait-on http://localhost:8080/api/health && vite\"",
+    "firebase:deploy": "npm run build && npx firebase-tools deploy --only hosting",
     "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1"
   },
   "main": "electron/main.cjs",

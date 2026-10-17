@@ -54,3 +54,6 @@ tmp/
 
 # MS Office temp lock files
 ~$*
+
+# Firebase CLI のデプロイキャッシュ
+.firebase/

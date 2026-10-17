@@ -21,7 +21,7 @@ export class ContextReadError extends Error {
 
 const defaultReader: ContextReader = {
   getBody: id => StorageManager.instance.getBody(id),
-  // Current storage contract supplies no completeness information; BQ caps at 200.
+  // Current storage contract supplies no completeness information; the backend caps search at 200.
   search: async query => ({ items: await StorageManager.instance.search(query), complete: false }),
 };
 

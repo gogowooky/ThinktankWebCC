@@ -3,7 +3,7 @@
  * table ContentType のテキスト形式パース・エクスポートユーティリティ
  *
  * フォーマット仕様:
- *   1行目: タイトル（保存先では frontmatter / BQ の title）
+ *   1行目: タイトル（保存先では frontmatter の title）
  *   列ヘッダー: metadata の colheader（CSV文字列）。本文には書かない
  *   値csv行...（通常のCSV行はデータ行）
  *   行頭の空白を除いて # ; > | で始まる行はコメント行（保存時も保持、データとして扱わない。utils/commentLine.ts）

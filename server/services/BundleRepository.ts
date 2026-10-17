@@ -1,8 +1,8 @@
-import type { BigQueryService } from './BigQueryService.js';
+import type { VaultStore } from './vaultStore.js';
 import { decodeMetadata } from './metadataCodec.js';
 import { id, object } from '../contracts/conversationRecord.js';
 
-export type BundleStore = Pick<BigQueryService, 'getRecord' | 'saveThinkSupport'>;
+export type BundleStore = Pick<VaultStore, 'getRecord' | 'saveThinkSupport'>;
 export type RecordError = new (status: number, message: string) => Error;
 interface ReadMessages { unavailable: string; missing: string; metadata: string }
 const defaultMessages: ReadMessages = {

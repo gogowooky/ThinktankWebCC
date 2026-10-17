@@ -222,7 +222,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     // A pending answer retains its original scope even if the reference policy changes.
     await client.save(turn, chatId, turn.context.scope === 'chat-only' ? undefined : turn.context.bundleId);
     if (!lifetime.isCurrent()) return;
-    // Update only the dialog state: BQ's full-record version remains conservative in the editor.
+    // Update only the dialog state: the stored full-record version remains conservative in the editor.
     if (draft.pending?.id !== turn.id) return;
     draft.pending = undefined; draft.question = '';
     if (lifetime.isCurrent() && alive.current) {
@@ -342,7 +342,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
     if (el) el.scrollTop = el.scrollHeight;
   }, [turns.length, busy, lifetime]);
   return <section className="bundle-conversation" aria-label="AIとの会話">
-    {!supported ? <p>AIChatはBigQueryモードで利用できます。</p> : <>
+    {!supported ? <p>AIChatはブラウザ版で利用できます。</p> : <>
       <div className="bundle-conversation-log" ref={logRef}>
         {/* Chat名はログの1行目として履歴と一緒に流す。専用の帯にすると、その分だけ読める行が減る。 */}
         {chatTitle && <h3 className="bundle-conversation-title">{chatTitle}</h3>}

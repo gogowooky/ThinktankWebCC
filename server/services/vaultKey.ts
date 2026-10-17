@@ -28,7 +28,7 @@ export type VaultKeyCheck = { ok: true } | { ok: false; error: string };
 
 /**
  * 書き込み前の検証。`isDeleted` 時は tombstone なので category を問わない
- * （既存の BigQueryService.delete が category='' で save を呼ぶため）。
+ * （削除時に category='' で保存されるため）。
  */
 export function validateVaultKey(
   fileId: unknown,

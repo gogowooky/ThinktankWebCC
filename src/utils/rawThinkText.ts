@@ -2,7 +2,7 @@
  * rawThinkText.ts
  * TextEditor の「YAML＋本文」表示（Pane の TextEditor アイコンを Shift+Click）で使う変換。
  *
- * 保存先の形式（electron/mdFormat.cjs の frontmatter / BigQuery の各列）と同じく、
+ * 保存先の形式（electron/mdFormat.cjs の frontmatter）と同じく、
  * 基本項目と metadata を1つの YAML frontmatter にまとめ、その後ろに本文を置く。
  *   ---
  *   thinkid / category / title / keywords / related_ids / updated_at   … 基本項目

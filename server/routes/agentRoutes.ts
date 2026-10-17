@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { AgentService, AgentError } from '../services/AgentService.js';
 import { configuredProvider } from '../services/AIProvider.js';
-import { bigqueryService } from '../services/BigQueryService.js';
+import { unavailableVaultStore } from '../services/vaultStore.js';
 import { id } from '../services/conversationRecord.js';
 
-export function createAgentRoutes(service = new AgentService(configuredProvider(), bigqueryService)) {
+export function createAgentRoutes(service = new AgentService(configuredProvider(), unavailableVaultStore)) {
   const router = Router();
   router.get('/status', (_req, res) => { res.json(service.status()); });
   router.get('/bundles/:id', async (req, res) => {

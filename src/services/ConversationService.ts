@@ -1,5 +1,7 @@
 import { apiFetch, readApiJson } from './apiClient';
 import type { TTVault } from '../models/TTVault';
+import { TTModels } from '../models/TTModels';
+import { StorageManager } from './storage/StorageManager';
 import type { AiModelSelection } from './aiModels';
 import type { ContextSnapshot } from './contextTypes';
 import {
@@ -21,6 +23,13 @@ import { extractOperationsState, addPromotionCandidate } from '../../shared/oper
 import type { ValidatedPromotionCandidate } from '../../shared/responseValidator';
 
 export type { ConversationContext, ConversationTurn } from '../../server/contracts/conversationRecord';
+
+function isWebCloudMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (StorageManager.instance?.webProvider === 'drive') return true;
+  const host = window.location?.hostname || '';
+  return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com');
+}
 
 /** Turn ID ごとに AI が抽出した昇格候補（PromotionCandidates）を保持するインメモリマップ */
 const turnPromotionCandidatesMap = new Map<string, ValidatedPromotionCandidate[]>();
@@ -91,6 +100,14 @@ export class ConversationClient {
       };
     }
 
+    if (isWebCloudMode()) {
+      return {
+        enabled: false,
+        provider: 'firebase-e2ee-relay',
+        model: 'unconfigured',
+      };
+    }
+
     const value = await readApiJson(
       await apiFetch('/api/think-support/conversations/status', { signal }),
     );
@@ -133,6 +150,74 @@ export class ConversationClient {
       }
       if (chatId && vaultId && rec.body) {
         return legacyConversationTurns(rec.body, vaultId, chatId, rec.meta.updatedAt || new Date().toISOString());
+      }
+      return [];
+    }
+
+    if (isWebCloudMode()) {
+      const targetId = chatId || bundleId;
+      if (!targetId) return [];
+      const activeVault = vault ?? TTModels.Instance?.Vault;
+      const targetThink = activeVault?.GetThink(targetId);
+
+      if (FirestoreRelayClient.isConfigured() && (!targetThink || targetThink.IsMetaOnly)) {
+        try {
+          const relayRes = await FirestoreRelayClient.request<
+            { thinkid: string; includeSupport?: boolean },
+            {
+              thinkid: string;
+              meta?: { metadata?: Record<string, unknown>; updatedAt?: string };
+              body?: string;
+              support?: Record<string, unknown>;
+            } | null
+          >('getBody', { thinkid: targetId, includeSupport: true });
+          if (relayRes.ok && relayRes.result) {
+            const rawSupport =
+              relayRes.result.support?.thinkConversations ??
+              relayRes.result.meta?.metadata?.thinkConversations;
+            if (rawSupport) {
+              try {
+                const log = readConversationLog(rawSupport);
+                if (log.turns.length > 0) return log.turns;
+              } catch {
+                // ignore
+              }
+            }
+            if (chatId && vaultId && relayRes.result.body) {
+              return legacyConversationTurns(
+                relayRes.result.body,
+                vaultId,
+                chatId,
+                relayRes.result.meta?.updatedAt || new Date().toISOString(),
+              );
+            }
+          }
+        } catch {
+          // Relay オフライン時はローカルモデルの値をそのまま使用
+        }
+      }
+
+      if (!targetThink) return [];
+      const rawLog = targetThink.Metadata?.thinkConversations;
+      try {
+        const log = readConversationLog(rawLog);
+        if (log.turns.length > 0) {
+          return log.turns;
+        }
+      } catch {
+        // Fallback to legacy text turns
+      }
+      if (chatId && vaultId && targetThink.Content) {
+        const nl = targetThink.Content.indexOf('\n');
+        const body = nl >= 0 ? targetThink.Content.slice(nl + 1) : '';
+        if (body.trim()) {
+          return legacyConversationTurns(
+            body,
+            vaultId,
+            chatId,
+            targetThink.UpdatedAt || new Date().toISOString(),
+          );
+        }
       }
       return [];
     }
@@ -442,6 +527,106 @@ export class ConversationClient {
           keywords: rec.meta.keywords,
           relatedIds: rec.meta.relatedIds,
         });
+      }
+      return;
+    }
+
+    if (isWebCloudMode()) {
+      const targetId = chatId || bundleId || turn.context.bundleId;
+      const activeVault = TTModels.Instance?.Vault;
+      const think = activeVault?.GetThink(targetId);
+
+      let currentTurns: ConversationTurn[] = [];
+      try {
+        currentTurns = readConversationLog(think?.Metadata?.thinkConversations).turns;
+      } catch {
+        currentTurns = [];
+      }
+      const nextTurns = currentTurns.some((t) => t.id === turn.id)
+        ? currentTurns
+        : [...currentTurns, turn];
+      const nextLog = { schemaVersion: 1 as const, turns: nextTurns };
+
+      // 昇格候補があれば対象 Bundle / Chat の operations にも追加
+      const extractedCandidates = turnPromotionCandidatesMap.get(turn.id) ?? [];
+      const targetOpsId = bundleId || turn.context.bundleId || targetId;
+      const opsThink = activeVault?.GetThink(targetOpsId);
+      if (opsThink && extractedCandidates.length > 0) {
+        let opsState = extractOperationsState(
+          opsThink.Metadata,
+          DomainProfileManager.activeProfile,
+        );
+        for (const cand of extractedCandidates) {
+          opsState = addPromotionCandidate(
+            opsState,
+            {
+              bundleId: targetOpsId,
+              sourceChatThinkid: chatId,
+              sourceMessageId: turn.id,
+              type: cand.type,
+              title: cand.title,
+              summary: cand.summary,
+              rationale: cand.rationale,
+              impactScope: cand.impactScope,
+              proposedOwner: cand.proposedOwner,
+              dueDate: cand.dueDate,
+              citations: cand.citations,
+              createdBy: 'ai',
+            },
+            'ai',
+          );
+        }
+        opsThink.Metadata = {
+          ...(opsThink.Metadata ?? {}),
+          operations: opsState,
+        };
+        if (targetOpsId !== targetId) {
+          const savedOpsMeta = await StorageManager.instance.save({
+            thinkid: opsThink.ID,
+            category: opsThink.ContentType,
+            fullContent: opsThink.Content,
+            keywords: opsThink.Keywords,
+            relatedIds: opsThink.RelatedIDs,
+            metadata: opsThink.Metadata,
+            baseUpdatedAt: opsThink.UpdatedAt || undefined,
+          });
+          opsThink.UpdatedAt = savedOpsMeta.updatedAt;
+          opsThink.markSaved();
+          opsThink.markMetadataSaved();
+        }
+      }
+
+      if (think) {
+        const nextMetadata: Record<string, unknown> = {
+          ...(think.Metadata ?? {}),
+          thinkConversations: nextLog,
+        };
+        think.Metadata = nextMetadata;
+
+        let fullContent = think.Content || `# ${think.Name}`;
+        if (chatId && think.ContentType === 'chat') {
+          const nl = fullContent.indexOf('\n');
+          const titleLine =
+            nl >= 0 ? fullContent.slice(0, nl).replace(/\r$/, '') : fullContent.replace(/\r$/, '');
+          const bodyText = nl >= 0 ? fullContent.slice(nl + 1) : '';
+          const mergedBody = mergeConversationTranscript(bodyText, nextTurns);
+          fullContent = mergedBody ? `${titleLine}\n${mergedBody}` : titleLine;
+          think.setContentSilent(fullContent);
+        }
+
+        const savedMeta = await StorageManager.instance.save({
+          thinkid: think.ID,
+          category: think.ContentType,
+          fullContent,
+          keywords: think.Keywords,
+          relatedIds: think.RelatedIDs,
+          metadata: nextMetadata,
+          baseUpdatedAt: think.UpdatedAt || undefined,
+        });
+        think.UpdatedAt = savedMeta.updatedAt;
+        think.markSaved();
+        think.markMetadataSaved();
+        activeVault?.NotifyUpdated(false);
       }
       return;
     }

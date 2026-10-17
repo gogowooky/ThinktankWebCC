@@ -1,7 +1,7 @@
 /**
  * server/index.ts (v6)
  * Express サーバーエントリポイント
- * port 8080: BigQuery CRUD API + 思考支援 API
+ * port 8080: 思考支援 API
  */
 
 // 最初の import であることが重要（.env の値を参照する他モジュールより必ず先に評価させるため）
@@ -11,8 +11,6 @@ import express from 'express';
 import path    from 'path';
 import fs      from 'fs';
 import { fileURLToPath } from 'url';
-import { createBigQueryRoutes }   from './routes/bigqueryRoutes.js';
-import { bigqueryService }        from './services/BigQueryService.js';
 import { createDriveRoutes }      from './routes/driveRoutes.js';
 import { driveService }           from './services/driveService.js';
 import { createChatRoutes }       from './routes/chatRoutes.js';
@@ -61,9 +59,6 @@ app.use('/api/system', createPublicSystemRoutes());
 
 // 以降の /api/* は共有シークレット認証（API_SHARED_SECRET 未設定時はスキップ）
 app.use('/api', apiAuth);
-
-// BigQuery CRUD
-app.use('/api/bq', createBigQueryRoutes());
 
 // Google Drive upload
 app.use('/api/drive', createDriveRoutes());
@@ -122,12 +117,8 @@ async function start() {
 
   // 鍵JSONが無くても ADC（Cloud Run のランタイムサービスアカウント）で
   // 初期化できるため、ここで早期リターンしてはならない。従来はこの分岐により
-  // Cloud Run 上で BigQuery/Drive が常に無効化されていた。
-  const [bqOk, driveOk] = await Promise.all([
-    bigqueryService.initialize(),
-    driveService.initialize(),
-  ]);
-  console.log(bqOk    ? '[Server] BigQuery initialized'  : '[Server] BigQuery init failed');
+  // Cloud Run 上で Drive が常に無効化されていた。
+  const driveOk = await driveService.initialize();
   console.log(driveOk ? '[Server] Drive initialized'     : '[Server] Drive init failed');
 
 }

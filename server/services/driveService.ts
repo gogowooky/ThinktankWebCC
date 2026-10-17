@@ -20,7 +20,7 @@ export class DriveService {
   private initialized = false;
 
   async initialize(): Promise<boolean> {
-    // BigQuery と違い Drive は ADC では動かない可能性が高い。Cloud Run の
+    // Drive は ADC では動かない可能性が高い。Cloud Run の
     // メタデータサーバーが発行するトークンのスコープは cloud-platform であり、
     // これは Workspace API である Drive のスコープを含まないため。
     // Cloud Run 上で Drive を使う場合は鍵JSONを Secret Manager 経由で

@@ -5,24 +5,24 @@
  * window.__THINKTANK_MODE__ === 'local'
  *   → LocalStorageBackend（C# API @ window.__THINKTANK_LOCAL_API__）
  * それ以外（PWA / ブラウザ直接）
- *   → BigQueryStorageBackend（Express /api/bq/*）
+ *   → DriveApiStorageBackend（Google Drive API）または LocalRelayStorageBackend（ローカル中継サーバ /api/vault/*）
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
 import { LocalStorageBackend }    from './LocalStorageBackend';
-import { BigQueryStorageBackend } from './BigQueryStorageBackend';
+import { LocalRelayStorageBackend } from './LocalRelayStorageBackend';
 import { ElectronStorageBackend, type SyncResult } from './ElectronStorageBackend';
 import { DriveApiStorageBackend } from '../../platform/web/DriveApiStorageBackend';
 import { GoogleAuthService } from '../../platform/web/GoogleAuthService';
 
-const WEB_STORAGE_PROVIDER_KEY = 'tt_web_storage_provider'; // 'drive' | 'bigquery'
+const WEB_STORAGE_PROVIDER_KEY = 'tt_web_storage_provider'; // 'drive' | 'local'
 
 export class StorageManager {
   private static _instance: StorageManager | null = null;
 
   public backend: IStorageBackend;
   public readonly mode: 'electron' | 'local' | 'pwa';
-  public webProvider: 'drive' | 'bigquery' = 'bigquery';
+  public webProvider: 'drive' | 'local' = 'local';
 
   private constructor() {
     if (window.electronAPI) {
@@ -40,14 +40,25 @@ export class StorageManager {
         typeof localStorage !== 'undefined'
           ? localStorage.getItem(WEB_STORAGE_PROVIDER_KEY)
           : null;
-      if (preferred === 'drive' || (preferred !== 'bigquery' && GoogleAuthService.hasValidToken())) {
+      const isLocalhost =
+        typeof window !== 'undefined' &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+      // 本番Webホスティング環境（Firebase Hosting等）では Express サーバが存在しないため、
+      // 明示的に local が選ばれていない限り drive（Google Drive API）を既定にする
+      const shouldUseDrive =
+        preferred === 'drive' ||
+        (!isLocalhost && preferred !== 'local') ||
+        (preferred !== 'local' && GoogleAuthService.hasValidToken());
+
+      if (shouldUseDrive) {
         this.backend = new DriveApiStorageBackend();
         this.webProvider = 'drive';
         console.log('[StorageManager] mode=pwa (Google Drive + IndexedDB Cache)');
       } else {
-        this.backend = new BigQueryStorageBackend();
-        this.webProvider = 'bigquery';
-        console.log('[StorageManager] mode=pwa (BigQuery via Express)');
+        this.backend = new LocalRelayStorageBackend();
+        this.webProvider = 'local';
+        console.log('[StorageManager] mode=pwa (Local relay server)');
       }
     }
   }
@@ -60,16 +71,16 @@ export class StorageManager {
   }
 
   /**
-   * Web版のストレージプロバイダ（'drive' | 'bigquery'）を動的に切り替える。
+   * Web版のストレージプロバイダ（'drive' | 'local'）を動的に切り替える。
    */
-  public setWebProvider(provider: 'drive' | 'bigquery'): void {
+  public setWebProvider(provider: 'drive' | 'local'): void {
     if (this.mode !== 'pwa') return;
     this.webProvider = provider;
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(WEB_STORAGE_PROVIDER_KEY, provider);
     }
     this.backend =
-      provider === 'drive' ? new DriveApiStorageBackend() : new BigQueryStorageBackend();
+      provider === 'drive' ? new DriveApiStorageBackend() : new LocalRelayStorageBackend();
   }
 
   public getDriveBackend(): DriveApiStorageBackend | null {

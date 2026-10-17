@@ -94,13 +94,58 @@ function ensureIsolatedSandboxDir() {
 }
 
 /**
+ * 環境変数に GEMINI_API_KEY が無い場合、プロジェクト直下または server/.env から補完する。
+ */
+let cachedEnvGeminiKey = null;
+function resolveGeminiApiKey() {
+  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+  if (cachedEnvGeminiKey !== null) return cachedEnvGeminiKey || undefined;
+  const envFiles = [
+    path.resolve(__dirname, '../.env'),
+    path.resolve(__dirname, '../server/.env'),
+  ];
+  for (const envPath of envFiles) {
+    try {
+      if (!fs.existsSync(envPath)) continue;
+      const content = fs.readFileSync(envPath, 'utf8');
+      const match = content.match(/^\s*GEMINI_API_KEY\s*=\s*(.+)\s*$/m);
+      if (match && match[1]) {
+        const val = match[1].trim().replace(/^['"]|['"]$/g, '');
+        if (val) {
+          cachedEnvGeminiKey = val;
+          return val;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+  cachedEnvGeminiKey = '';
+  return undefined;
+}
+
+/**
  * UI側のモデルID（claude-sonnet-5 等）を各 CLI が受け付けるモデル名／エイリアスへ正規化する。
  */
 function normalizeCliModel(cliName, modelOverride) {
+  const m = String(modelOverride || '').trim().toLowerCase();
+  if (cliName === 'gemini') {
+    // gemini CLI は -m 未指定だと内部ルーターが廃止済みの gemini-2.5-pro / 2.5-flash を選択して
+    // ModelNotFoundError (404) になるため、常に利用可能な現行モデルを明示指定する。
+    if (!m || m === 'none' || m.endsWith('-default') || m.endsWith('-isolated')) {
+      return 'gemini-3.8-flash';
+    }
+    if (m.includes('2.5-pro') || m.includes('1.5-pro') || m === 'pro') {
+      return 'gemini-3.1-pro-preview';
+    }
+    if (m.includes('flash')) {
+      return 'gemini-3.8-flash';
+    }
+    return modelOverride;
+  }
   if (!modelOverride || modelOverride === 'None' || modelOverride.endsWith('-default') || modelOverride.endsWith('-isolated')) {
     return null;
   }
-  const m = String(modelOverride).trim().toLowerCase();
   if (cliName === 'claude') {
     if (m.includes('opus')) return 'opus';
     if (m.includes('haiku')) return 'haiku';
@@ -109,10 +154,6 @@ function normalizeCliModel(cliName, modelOverride) {
   }
   if (cliName === 'codex') {
     if (m === 'gpt-5.6') return null; // codex CLI の既定最新モデルを使用
-    return modelOverride;
-  }
-  if (cliName === 'gemini') {
-    if (m === 'gemini-3.5-flash') return 'gemini-2.5-flash';
     return modelOverride;
   }
   return modelOverride;
@@ -184,16 +225,29 @@ function executeIsolatedCli({ cliName = 'claude', model, promptText, timeoutMs =
     const sandboxDir = ensureIsolatedSandboxDir();
     const args = buildCliArgs(cliName, model);
     const isCmdWrapper = process.platform === 'win32' && binPath.toLowerCase().endsWith('.cmd');
+    const geminiApiKey = cliName === 'gemini' ? resolveGeminiApiKey() : undefined;
+
+    // claude / codex CLI はローカルの CLI ログインセッション（サブスクリプション認証）を使用するため、
+    // 環境変数に古い ANTHROPIC_API_KEY / OPENAI_API_KEY が残っていると "Invalid API key" エラーになるのを防ぐ。
+    const childEnv = {
+      ...process.env,
+      GEMINI_CLI_TRUST_WORKSPACE: 'true',
+      NO_COLOR: '1',
+      CI: '1',
+    };
+    if (cliName === 'claude') {
+      delete childEnv.ANTHROPIC_API_KEY;
+    } else if (cliName === 'codex') {
+      delete childEnv.OPENAI_API_KEY;
+    } else if (cliName === 'gemini' && geminiApiKey) {
+      childEnv.GEMINI_API_KEY = geminiApiKey;
+    }
 
     const child = spawn(binPath, args, {
       cwd: sandboxDir,
       shell: isCmdWrapper,
       windowsHide: true,
-      env: {
-        ...process.env,
-        NO_COLOR: '1',
-        CI: '1',
-      },
+      env: childEnv,
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 

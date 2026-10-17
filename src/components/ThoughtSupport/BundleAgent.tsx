@@ -201,7 +201,7 @@ export function BundleAgent({ vault, bundleId, onOpen }: { vault: TTVault; bundl
   const jobs = draft.state?.log.jobs.filter(j => j.context.vaultId === vault.ID) ?? [];
   return <section className="bundle-agent" aria-label="資料の処理ジョブ">
     <h3>資料の処理ジョブ</h3><p>Bundle内資料の要約・比較を成果物候補にします。外部検索は未対応です。</p>
-    {!supported ? <p>AgentジョブはBigQueryモードで利用できます。</p> : <>
+    {!supported ? <p>Agentジョブはブラウザ版で利用できます。</p> : <>
       <button type="button" disabled={draft.busy} onClick={() => void load()}>ジョブと接続状態を取得</button>
       {draft.availability && <p>AI：{draft.availability.enabled ? `${draft.availability.provider} / ${draft.availability.model}` : '停止中（ジョブの登録・閲覧・成果物確認は可能）'}</p>}
       <fieldset disabled={draft.busy || !!draft.running}><legend>新しいジョブ</legend>

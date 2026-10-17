@@ -8,6 +8,8 @@ export type RelayOperationKind =
   | 'search'
   | 'listDiff'
   | 'getBody'
+  | 'saveRecord'
+  | 'deleteRecord'
   | 'ai.conversation'
   | 'ai.agent'
   | 'ping';

@@ -1,12 +1,12 @@
 import { BundleRepository, nextRecordVersion } from './BundleRepository.js';
-import type { BigQueryService } from './BigQueryService.js';
+import type { VaultStore } from './vaultStore.js';
 import { canonicalJson, id } from './conversationRecord.js';
 import { FileSearchError, type FileSearchProvider } from './FileSearchProvider.js';
 import { latestBinding, readBindingLog, validateBindingInput, type BindingInput, type BindingLog, type BindingState } from './fileSearchBindingRecord.js';
 
 export class FileSearchBindingService {
   private readonly bundles: BundleRepository;
-  constructor(store: Pick<BigQueryService, 'getRecord' | 'saveThinkSupport'>, private readonly provider: FileSearchProvider) {
+  constructor(store: Pick<VaultStore, 'getRecord' | 'saveThinkSupport'>, private readonly provider: FileSearchProvider) {
     this.bundles = new BundleRepository(store, FileSearchError);
   }
   private async load(bundleId: string) {

@@ -428,8 +428,15 @@ export class DriveApiStorageBackend implements IStorageBackend {
     return this.cache.getBody(id);
   }
 
+  private hasDriveFolderConfigured(): boolean {
+    return (
+      GoogleAuthService.hasValidToken() &&
+      Boolean(GoogleAuthService.getConfig().driveRootFolderId)
+    );
+  }
+
   /**
-   * 保存：Web版は中継役PCを通さず Google Drive API に直接保存する（システム設計メモ §11.1）。
+   * 保存：Web版は Google Drive API に直接保存し、中継役PCが接続されていれば中継役PC側の Vault にも反映する（システム設計メモ §11.1）。
    * 保存直前に既存ファイルの updated_at と比較し、衝突があれば StorageConflictError を投げる。
    */
   public async save(payload: SavePayload): Promise<ThinkMeta> {
@@ -438,7 +445,7 @@ export class DriveApiStorageBackend implements IStorageBackend {
     let existingFileItem: DriveFileItem | null = null;
     let vaultVer2Id = '';
 
-    if (GoogleAuthService.hasValidToken()) {
+    if (this.hasDriveFolderConfigured()) {
       const folders = await this.ensureSubFolders();
       vaultVer2Id = folders.vaultVer2Id;
       existingFileItem = await this.findFileInFolder(vaultVer2Id, `${thinkid}.md`);
@@ -480,7 +487,7 @@ export class DriveApiStorageBackend implements IStorageBackend {
       body,
     });
 
-    if (GoogleAuthService.hasValidToken() && vaultVer2Id) {
+    if (this.hasDriveFolderConfigured() && vaultVer2Id) {
       await this.uploadFileText(
         vaultVer2Id,
         `${thinkid}.md`,
@@ -507,6 +514,12 @@ export class DriveApiStorageBackend implements IStorageBackend {
           existingSupItem?.id,
         );
       }
+    } else if (FirestoreRelayClient.isConfigured()) {
+      try {
+        await FirestoreRelayClient.request<SavePayload, ThinkMeta>('saveRecord', payload);
+      } catch {
+        // 中継役PCオフライン時は IndexedDB キャッシュ保存を優先
+      }
     }
 
     const parsed = parseMdRecord(mdContent, thinkid);
@@ -523,7 +536,9 @@ export class DriveApiStorageBackend implements IStorageBackend {
     if (payload.metadata) {
       await this.cache.putSupport(thinkid, payload.metadata);
     }
-    void this.updateWebIndexShardInBackground();
+    if (this.hasDriveFolderConfigured()) {
+      void this.updateWebIndexShardInBackground();
+    }
 
     return savedMeta;
   }
@@ -532,7 +547,7 @@ export class DriveApiStorageBackend implements IStorageBackend {
    * 削除：物理削除せず Drive の trash/ フォルダへ移動する（システム設計メモ §4.3）。
    */
   public async delete(id: string): Promise<void> {
-    if (GoogleAuthService.hasValidToken()) {
+    if (this.hasDriveFolderConfigured()) {
       const { vaultVer2Id, trashId } = await this.ensureSubFolders();
       for (const filename of [`${id}.md`, `${id}.support.json`]) {
         const item = await this.findFileInFolder(vaultVer2Id, filename);
@@ -548,9 +563,17 @@ export class DriveApiStorageBackend implements IStorageBackend {
           );
         }
       }
+    } else if (FirestoreRelayClient.isConfigured()) {
+      try {
+        await FirestoreRelayClient.request('deleteRecord', { thinkid: id });
+      } catch {
+        // ignore offline relay error
+      }
     }
     await this.cache.removeMeta(id);
-    void this.updateWebIndexShardInBackground(id);
+    if (this.hasDriveFolderConfigured()) {
+      void this.updateWebIndexShardInBackground(id);
+    }
   }
 
   /**

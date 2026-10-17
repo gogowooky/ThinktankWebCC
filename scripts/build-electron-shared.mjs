@@ -28,6 +28,7 @@ const sharedFiles = [
   'shared/responseValidator.ts',
   'shared/relayProtocol.ts',
   'shared/relayCrypto.ts',
+  'shared/firebaseAuth.ts',
   'shared/index.ts',
 ].map((f) => path.join(rootDir, f));
 

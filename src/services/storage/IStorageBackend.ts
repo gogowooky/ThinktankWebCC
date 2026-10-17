@@ -1,7 +1,7 @@
 /**
  * IStorageBackend.ts
  * ストレージバックエンド共通インターフェース
- * LocalStorageBackend（C# API）と BigQueryStorageBackend（Express）の両方が実装する
+ * 各保存先（Electron / Google Drive / ローカル中継サーバ など）のバックエンドが実装する
  */
 
 export interface ThinkMeta {
@@ -27,7 +27,7 @@ export interface SavePayload {
   /**
    * この Think を読み込んだ時点のサーバー側 updatedAt。指定すると、保存前にサーバーが
    * それより新しいレコードを持っていた場合に StorageConflictError で弾く（楽観ロック。
-   * PROJECT_REVIEW_REPORT.md D-2）。現状 BigQuery バックエンドのみ対応。
+   * PROJECT_REVIEW_REPORT.md D-2）。対応するかどうかはバックエンドごとに異なる。
    */
   baseUpdatedAt?: string;
 }

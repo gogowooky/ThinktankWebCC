@@ -120,7 +120,7 @@ export function BundleThoughtSupport({ vault, bundleId, onOpen }: { vault: TTVau
   return <section className="bundle-thought-support" aria-label="手動の思考状態">
     <h3>課題の概要</h3>
     <p>手動で記録するBundle全体の思考状態です。空欄は未記録です。</p>
-    {!supported && <p>手動保存はBigQueryモードで利用できます。この保存先では参照資料を閲覧できます。</p>}
+    {!supported && <p>手動保存はブラウザ版で利用できます。この保存先では参照資料を閲覧できます。</p>}
     {!supported && snapshot?.manualState && <dl>{THINK_FIELDS.map(field => <div key={field}><dt>{CONTEXT_LABELS[field]}</dt><dd>{snapshot.manualState?.values[field] || '未記録'}</dd></div>)}</dl>}
     {error && <p role="alert">{error}</p>}
     {supported && !draft && !error && <p role="status">保存内容を読み込んでいます…</p>}

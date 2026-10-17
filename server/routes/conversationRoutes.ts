@@ -3,14 +3,14 @@ import { decodeMetadata } from '../services/metadataCodec.js';
 import { BundleRepository, nextRecordVersion, storedVersion } from '../services/BundleRepository.js';
 import { appendConversationTurn } from '../services/conversationPersistence.js';
 import type { ConversationTurn } from '../contracts/conversationRecord.js';
-import { bigqueryService } from '../services/BigQueryService.js';
-import type { BigQueryService } from '../services/BigQueryService.js';
+import { unavailableVaultStore } from '../services/vaultStore.js';
+import type { VaultStore } from '../services/vaultStore.js';
 import { configuredProvider, providerFor, type AIProvider } from '../services/AIProvider.js';
 import { aiModelCatalog, type ModelCatalog } from '../services/AIModelCatalog.js';
 import { ConversationService, verifyContextHashes } from '../services/ConversationService.js';
 import { id, text, object, validateContext, validateTurn, readConversationLog, legacyConversationTurns, mergeConversationTranscript, MAX_LOG_BYTES, canonicalJson } from '../services/conversationRecord.js';
 
-type Store = Pick<BigQueryService, 'getRecord' | 'saveThinkSupport' | 'saveChatConversation'>;
+type Store = Pick<VaultStore, 'getRecord' | 'saveThinkSupport' | 'saveChatConversation'>;
 class RouteError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 /** 画面が指定したモデルの扱い。テストでは一覧取得と相手の生成を差し替える */
 export interface ModelResolver {
@@ -25,7 +25,7 @@ const defaultResolver: ModelResolver = {
     return providerFor(provider as 'anthropic' | 'openai' | 'gemini', model);
   },
 };
-export function createConversationRoutes(provider: AIProvider = configuredProvider(), store: Store = bigqueryService, models: ModelResolver = defaultResolver) {
+export function createConversationRoutes(provider: AIProvider = configuredProvider(), store: Store = unavailableVaultStore, models: ModelResolver = defaultResolver) {
   const router = Router();
   const service = new ConversationService(provider);
   const running = new Set<string>();

@@ -12,3 +12,4 @@ export * from './promptBuilder';
 export * from './responseValidator';
 export * from './relayProtocol';
 export * from './relayCrypto';
+export * from './firebaseAuth';

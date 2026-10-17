@@ -69,7 +69,23 @@ function appRoot() {
   return path.join(__dirname, '..');
 }
 
-const DEFAULT_VAULT_DIR = path.join(app.getPath('userData'), 'thinktank', 'vault_ver2');
+function resolveDefaultVaultDir() {
+  if (process.env.THINKTANK_VAULT_DIR) {
+    return process.env.THINKTANK_VAULT_DIR;
+  }
+  const gDriveCandidates = [
+    'G:\\マイドライブ\\Thinktank\\vault_ver2',
+    'G:\\My Drive\\Thinktank\\vault_ver2',
+  ];
+  for (const candidate of gDriveCandidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return path.join(app.getPath('userData'), 'thinktank', 'vault_ver2');
+}
+
+const DEFAULT_VAULT_DIR = resolveDefaultVaultDir();
 
 const vaultEngine = new VaultEngine({
   userDataDir: app.getPath('userData'),
@@ -233,7 +249,7 @@ ipcMain.handle('relay:handleEncrypted', async (_event, payload) => {
   return relayAgent.handleEncryptedRequest(payload);
 });
 
-// ── BigQuery 同期（後方互換・移行期サポート） ───────────────────────────────
+// ── サーバー同期（ローカル中継サーバの Vault を取り込む） ───────────────────────────
 
 function getSyncTarget(explicitUrl) {
   if (!explicitUrl && serverOrigin) {
@@ -253,9 +269,9 @@ ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
   const vDir = vaultEngine.getVaultDir();
   const { base, apiKey } = getSyncTarget(serverUrl);
   const authHeaders = apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {};
-  const serverMetas = await fetchJson(`${base}/api/bq/files/meta`, apiKey);
+  const serverMetas = await fetchJson(`${base}/api/vault/files/meta`, apiKey);
   return syncVaultFromServer(vDir, serverMetas, async meta => {
-    const res = await fetch(`${base}/api/bq/files/${encodeURIComponent(meta.thinkid)}/content`, { headers: authHeaders });
+    const res = await fetch(`${base}/api/vault/files/${encodeURIComponent(meta.thinkid)}/content`, { headers: authHeaders });
     if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}: content ${meta.thinkid}`);
     return res.status === 404 ? '' : res.json();
   });
@@ -477,10 +493,10 @@ function createWindow(startUrl) {
         const api = window.electronAPI;
         const cfg = api && api.apiConfig;
         const hasKey = !!(cfg && cfg.apiKey);
-        const withKey = await fetch('/api/bq/files/meta', {
+        const withKey = await fetch('/api/vault/files/meta', {
           headers: cfg && cfg.apiKey ? { 'X-Thinktank-Api-Key': cfg.apiKey } : {},
         }).then(r => r.status).catch(e => 'ERR ' + e.message);
-        const without = await fetch('/api/bq/files/meta').then(r => r.status).catch(e => 'ERR ' + e.message);
+        const without = await fetch('/api/vault/files/meta').then(r => r.status).catch(e => 'ERR ' + e.message);
         const csp = await fetch(location.href).then(r => r.headers.get('content-security-policy')).catch(() => null);
         let evalBlocked = null;
         try { (0, eval)('1+1'); evalBlocked = false; } catch { evalBlocked = true; }
@@ -536,7 +552,7 @@ app.whenReady()
       const t = getSyncTarget();
       let status = 'n/a';
       try {
-        const r = await fetch(`${t.base}/api/bq/files/meta`, {
+        const r = await fetch(`${t.base}/api/vault/files/meta`, {
           headers: t.apiKey ? { 'X-Thinktank-Api-Key': t.apiKey } : {},
         });
         status = `HTTP ${r.status}` + (r.ok ? ` / ${(await r.json()).length}件` : '');

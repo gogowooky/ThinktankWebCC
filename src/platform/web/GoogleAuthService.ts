@@ -9,6 +9,9 @@ const STORAGE_KEY_ACCESS_TOKEN = 'thinktank.web.googleAccessToken';
 const STORAGE_KEY_TOKEN_EXPIRY = 'thinktank.web.googleTokenExpiry';
 const STORAGE_KEY_DRIVE_FOLDER_ID = 'thinktank.web.driveRootFolderId';
 
+const DEFAULT_GOOGLE_CLIENT_ID =
+  '699735546730-9td02a2p0hj5jj9srvqr9m48fhd0qc8h.apps.googleusercontent.com';
+
 export interface GoogleAuthConfig {
   clientId: string;
   accessToken: string;
@@ -21,7 +24,7 @@ class GoogleAuthServiceImpl {
     const envClientId =
       (typeof import.meta !== 'undefined' &&
         (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_GOOGLE_CLIENT_ID) ||
-      '';
+      DEFAULT_GOOGLE_CLIENT_ID;
     const envFolderId =
       (typeof import.meta !== 'undefined' &&
         (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_DRIVE_FOLDER_ID) ||
@@ -80,7 +83,8 @@ class GoogleAuthServiceImpl {
 
     return new Promise((resolve, reject) => {
       const redirectUri = `${window.location.origin}${window.location.pathname}`;
-      const scope = 'https://www.googleapis.com/auth/drive';
+      // openid/email は Firebase がこのトークンで本人を確認するために要る
+      const scope = 'openid email profile https://www.googleapis.com/auth/drive';
       const authUrl =
         `https://accounts.google.com/o/oauth2/v2/auth` +
         `?client_id=${encodeURIComponent(cfg.clientId)}` +
@@ -96,25 +100,52 @@ class GoogleAuthServiceImpl {
         return;
       }
 
+      const cleanup = () => {
+        window.clearInterval(timer);
+        window.removeEventListener('message', onMsg);
+      };
+
+      const handleSuccess = (token: string, expiresInSec: number) => {
+        cleanup();
+        try {
+          if (!popup.closed) popup.close();
+        } catch {
+          // ignore
+        }
+        const updated = this.saveConfig({
+          accessToken: token,
+          expiresAtMs: Date.now() + expiresInSec * 1000,
+        });
+        resolve(updated);
+      };
+
+      const onMsg = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+        if (event.data?.type === 'GOOGLE_OAUTH_TOKEN' && event.data.token) {
+          handleSuccess(event.data.token, Number(event.data.expiresInSec || 3600));
+        }
+      };
+      window.addEventListener('message', onMsg);
+
       const timer = window.setInterval(() => {
         try {
           if (popup.closed) {
-            window.clearInterval(timer);
+            cleanup();
+            // ポップアップが閉じられた直後に localStorage を最終確認
+            const currentToken = localStorage.getItem(STORAGE_KEY_ACCESS_TOKEN);
+            if (currentToken) {
+              resolve(this.getConfig());
+              return;
+            }
             reject(new Error('ログインウィンドウが閉じられました。'));
             return;
           }
           const hash = popup.location.hash;
           if (hash && hash.includes('access_token=')) {
-            window.clearInterval(timer);
             const params = new URLSearchParams(hash.replace(/^#/, ''));
             const token = params.get('access_token') || '';
             const expiresInSec = Number(params.get('expires_in') || '3600');
-            popup.close();
-            const updated = this.saveConfig({
-              accessToken: token,
-              expiresAtMs: Date.now() + expiresInSec * 1000,
-            });
-            resolve(updated);
+            handleSuccess(token, expiresInSec);
           }
         } catch {
           // クロスオリジン遷移中は無視して待機

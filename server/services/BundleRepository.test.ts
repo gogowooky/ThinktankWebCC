@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { BundleRepository, nextRecordVersion, type BundleStore } from './BundleRepository';
-import type { VaultRecord } from './BigQueryService';
+import type { VaultRecord } from './vaultStore';
 
 class ReadError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 const version = '2026-10-13T00:00:00Z';
@@ -11,7 +11,7 @@ function setup(changes: Partial<VaultRecord> = {}, clone = false) {
 }
 afterEach(() => { vi.restoreAllMocks(); });
 
-it('reads metadata and a BigQuery timestamp without writing, then preserves the CAS outcome', async () => {
+it('reads metadata and a {value} timestamp without writing, then preserves the CAS outcome', async () => {
   const { repository, store } = setup();
   const state = await repository.read('bundle');
   expect(state).toMatchObject({ metadata: { keep: { value: 1 } }, version });

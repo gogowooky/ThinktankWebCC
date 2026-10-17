@@ -5,7 +5,6 @@
  * データ階層: TTVault > Bundles > Bundle > Think
  *
  * LocalFS パス: ./../ThinktankLocal/vault_ver2/{ContentType}/{ID}.md
- * BigQuery テーブル: thinktank.vault_ver2
  */
 
 import { TTCollection } from './TTCollection';
@@ -39,7 +38,7 @@ export interface BundleResolutionOptions {
 }
 
 export class TTVault extends TTCollection {
-  /** 保管庫名（LocalFS ではディレクトリ名、BigQuery ではテーブル識別子）*/
+  /** 保管庫名（LocalFS ではディレクトリ名）*/
   public VaultName: string = 'vault_ver2';
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
@@ -565,7 +564,7 @@ export class TTVault extends TTCollection {
     return this._createThink({ id, contentType, keywords, fullContent });
   }
 
-  /** 指定 ID の Think を BQ から削除しメモリからも除去する。
+  /** 指定 ID の Think を 保存先から削除しメモリからも除去する。
    *  一部の削除が失敗した場合でも成功した分はメモリからも除去し（サーバーと状態を
    *  一致させる）、失敗した ID を含むエラーを呼び出し元に通知する。 */
   public async DeleteThinks(ids: string[]): Promise<void> {

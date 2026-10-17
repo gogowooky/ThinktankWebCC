@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { BundleRepository, nextRecordVersion } from '../services/BundleRepository.js';
-import { bigqueryService, type BigQueryService } from '../services/BigQueryService.js';
+import { unavailableVaultStore, type VaultStore } from '../services/vaultStore.js';
 import { id } from '../services/conversationRecord.js';
 import { readProgress, validateProgress, sameProgress, progressReview, type ProgressEvent } from '../services/progressRecord.js';
 
 class ProgressError extends Error { constructor(readonly status: number, message: string) { super(message); } }
-export function createProgressRoutes(store: Pick<BigQueryService, 'getRecord' | 'saveThinkSupport'> = bigqueryService) {
+export function createProgressRoutes(store: Pick<VaultStore, 'getRecord' | 'saveThinkSupport'> = unavailableVaultStore) {
   const router = Router();
   const bundles = new BundleRepository(store, ProgressError);
   async function read(bundleId: string) {

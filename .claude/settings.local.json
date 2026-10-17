@@ -368,7 +368,15 @@
       "PowerShell(npx vitest run src/utils/defaultColor.test.ts src/views 2>&1)",
       "Bash(git log *)",
       "Bash(grep -v \"^$\")",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $p = Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.OwningProcess\\)\"; [pscustomobject]@{Addr=$_.LocalAddress; PID=$_.OwningProcess; Name=$p.Name; Cmd=$p.CommandLine} } | Format-List)",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 8080 -State Listen -ErrorAction SilentlyContinue; if \\(-not $c\\) { 'FREE' } else { $c | ForEach-Object { $p = Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.OwningProcess\\)\"; [pscustomobject]@{Addr=$_.LocalAddress; PID=$_.OwningProcess; Name=$p.Name; Cmd=$p.CommandLine} } | Format-List })",
+      "Bash(curl -s -w '\\\\nHTTP %{http_code}\\\\n' 'https://firestore.googleapis.com/v1/projects/thinktankweb-483408/databases/\\(default\\)/documents/users/default_user/config/activeRelay')",
+      "Bash(powershell -c 'Get-NetTCPConnection -LocalPort 8080 -State Listen -EA SilentlyContinue | % { \\(Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.OwningProcess\\)\"\\).CommandLine }')",
+      "Bash(sed -i \"s#export \\\\* from './relayCrypto';#export * from './relayCrypto';\\\\nexport * from './firebaseAuth';#\" shared/index.ts)",
+      "Bash(sed -i \"s#  'shared/relayCrypto.ts',#  'shared/relayCrypto.ts',\\\\n  'shared/firebaseAuth.ts',#\" scripts/build-electron-shared.mjs)",
+      "Bash(node scripts/build-electron-shared.mjs)",
+      "Bash(powershell -c 'Get-NetTCPConnection -LocalPort 8080 -State Listen -EA SilentlyContinue | % { $_.OwningProcess; \\(Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($_.OwningProcess\\)\"\\).CommandLine }')"
     ]
   }
 }

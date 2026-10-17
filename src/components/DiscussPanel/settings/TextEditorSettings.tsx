@@ -124,7 +124,7 @@ export function TextEditorSettings({
               <button
                 className="discuss-setting-area__icon-btn"
                 onClick={() => TTActions.Execute('Application.Resource.ExportToLocal')}
-                data-tip="BQ保存済みThinkファイルをローカルにエクスポート"
+                data-tip="サーバー保存済みThinkファイルをローカルにエクスポート"
                 data-tip-side="top-start"
               >
                 <DatabaseArrowDown size={16} className="ws-icon" />

@@ -4,7 +4,7 @@ import { AgentService, type AgentStore } from './AgentService';
 import { DisabledAIProvider, type AIProvider } from './AIProvider';
 import { artifactFor, readAgentLog } from './agentRecord';
 import type { ConversationContext } from './conversationRecord';
-import type { VaultRecord } from './BigQueryService';
+import type { VaultRecord } from './vaultStore';
 
 const context = (): ConversationContext => ({ schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId: 'bundle', capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only', quality: 'complete',
   sources: [{ thinkId: 'source', title: '資料', content: '本文', contentHash: createHash('sha256').update('本文').digest('hex') }], manualState: null, issues: [] });

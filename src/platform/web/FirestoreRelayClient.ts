@@ -14,17 +14,17 @@ import {
   type FirestoreRelayChunkDoc,
 } from '../../../shared/relayProtocol';
 import { encryptRelayPayload, decryptRelayPayload } from '../../../shared/relayCrypto';
+import { firestoreUserDocumentsBaseUrl } from '../../../shared/firebaseAuth';
+import { FirebaseAuthService } from './FirebaseAuthService';
 
 const STORAGE_KEY_RELAY_DEVICE_ID = 'thinktank.web.relayDeviceId';
 const STORAGE_KEY_RELAY_SECRET = 'thinktank.web.relayPairingSecret';
 const STORAGE_KEY_FIREBASE_PROJECT = 'thinktank.web.firebaseProjectId';
-const STORAGE_KEY_FIREBASE_UID = 'thinktank.web.firebaseUid';
 
 export interface RelayClientConfig {
   targetDeviceId: string;
   pairingSecret: string;
   firebaseProjectId: string;
-  firebaseUid: string;
 }
 
 class FirestoreRelayClientImpl {
@@ -38,7 +38,6 @@ class FirestoreRelayClientImpl {
         targetDeviceId: envObj.VITE_RELAY_DEVICE_ID || '',
         pairingSecret: envObj.VITE_RELAY_PAIRING_SECRET || '',
         firebaseProjectId: envObj.VITE_FIREBASE_PROJECT_ID || '',
-        firebaseUid: envObj.VITE_FIREBASE_UID || 'default_user',
       };
     }
     return {
@@ -50,8 +49,6 @@ class FirestoreRelayClientImpl {
         localStorage.getItem(STORAGE_KEY_FIREBASE_PROJECT) ||
         envObj.VITE_FIREBASE_PROJECT_ID ||
         '',
-      firebaseUid:
-        localStorage.getItem(STORAGE_KEY_FIREBASE_UID) || envObj.VITE_FIREBASE_UID || 'default_user',
     };
   }
 
@@ -65,9 +62,6 @@ class FirestoreRelayClientImpl {
       }
       if (partial.firebaseProjectId !== undefined) {
         localStorage.setItem(STORAGE_KEY_FIREBASE_PROJECT, partial.firebaseProjectId.trim());
-      }
-      if (partial.firebaseUid !== undefined) {
-        localStorage.setItem(STORAGE_KEY_FIREBASE_UID, partial.firebaseUid.trim());
       }
     }
     return this.getConfig();
@@ -124,19 +118,91 @@ class FirestoreRelayClientImpl {
 
     const encryptedRequest = await encryptRelayPayload(envelope, cfg.pairingSecret);
     const chunks = splitIntoChunks(encryptedRequest, 'request');
-    const baseUrl = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
-      cfg.firebaseProjectId,
-    )}/databases/(default)/documents/users/${encodeURIComponent(cfg.firebaseUid)}`;
+
+    const tryLocalEncryptedRelay = async (): Promise<RelayResponsePlaintext<TRes> | null> => {
+      try {
+        const res = await fetch('http://localhost:8080/api/relay/encrypted', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            encryptedRequest: chunks.length === 1 ? encryptedRequest : '',
+            chunks,
+          }),
+        });
+        if (!res.ok) return null;
+        const data = (await res.json()) as {
+          encryptedResponse?: string;
+          responseChunks?: FirestoreRelayChunkDoc[];
+        };
+        const cipherOut =
+          data.responseChunks && data.responseChunks.length > 0
+            ? reassembleChunks(data.responseChunks)
+            : data.encryptedResponse || '';
+        if (!cipherOut) return null;
+        return await decryptRelayPayload<RelayResponsePlaintext<TRes>>(
+          cipherOut,
+          cfg.pairingSecret,
+        );
+      } catch {
+        return null;
+      }
+    };
+
+    // ルールは users/{uid} を本人だけに許すので、中継役PCと同じ Google アカウントの uid で読み書きする
+    let auth: { uid: string; idToken: string };
+    try {
+      auth = await FirebaseAuthService.getAuth();
+    } catch (authErr) {
+      const localRes = await tryLocalEncryptedRelay();
+      if (localRes) return localRes;
+      throw authErr;
+    }
+
+    const baseUrl = firestoreUserDocumentsBaseUrl(cfg.firebaseProjectId, auth.uid);
+    const authHeaders = { Authorization: `Bearer ${auth.idToken}` };
 
     // Active Relay のハートビート確認
-    const activeRelayRes = await fetch(`${baseUrl}/config/activeRelay`);
+    const activeRelayRes = await fetch(`${baseUrl}/config/activeRelay`, { headers: authHeaders });
+    if (activeRelayRes.status === 404) {
+      const localRes = await tryLocalEncryptedRelay();
+      if (localRes) return localRes;
+      throw new Error(
+        '中継役PCが見つかりません。中継役PC（http://localhost:8080/relay-login）で同じ Google アカウントでログインしているか確認してください。',
+      );
+    }
+    if (activeRelayRes.status === 401 || activeRelayRes.status === 403) {
+      throw new Error(`Firestore へのアクセスが拒否されました (HTTP ${activeRelayRes.status})`);
+    }
     if (activeRelayRes.ok) {
       const activeDoc = (await activeRelayRes.json()) as {
         fields?: { lastHeartbeatAt?: { stringValue?: string } };
       };
       const hb = activeDoc.fields?.lastHeartbeatAt?.stringValue;
       if (hb && !isRelayHeartbeatAlive(hb)) {
+        const localRes = await tryLocalEncryptedRelay();
+        if (localRes) return localRes;
         throw new Error('指定された中継役PCは現在オフラインです（ハートビート期限切れ）。');
+      }
+    }
+
+    // 大きなペイロードはチャンクを先に書き込んでから queued ドキュメントを作成する
+    if (chunks.length > 1) {
+      for (const ch of chunks) {
+        await fetch(
+          `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}/chunks?documentId=req_${ch.index}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...authHeaders },
+            body: JSON.stringify({
+              fields: {
+                index: { integerValue: String(ch.index) },
+                total: { integerValue: String(ch.total) },
+                direction: { stringValue: 'request' },
+                data: { stringValue: ch.data },
+              },
+            }),
+          },
+        );
       }
     }
 
@@ -147,7 +213,7 @@ class FirestoreRelayClientImpl {
       `${baseUrl}/relayRequests?documentId=${encodeURIComponent(requestId)}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           fields: {
             requestId: { stringValue: requestId },
@@ -173,6 +239,7 @@ class FirestoreRelayClientImpl {
       await new Promise((r) => setTimeout(r, 800));
       const pollRes = await fetch(
         `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}`,
+        { headers: authHeaders },
       );
       if (!pollRes.ok) continue;
       const doc = (await pollRes.json()) as {
@@ -186,6 +253,7 @@ class FirestoreRelayClientImpl {
         if (chunkCount > 1 && !fullCipher) {
           const chunksRes = await fetch(
             `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}/chunks`,
+            { headers: authHeaders },
           );
           const chunksJson = (await chunksRes.json()) as {
             documents?: Array<{

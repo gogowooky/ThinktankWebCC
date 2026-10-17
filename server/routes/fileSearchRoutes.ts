@@ -3,9 +3,9 @@ import { configuredFileSearchProvider, FileSearchError, type FileSearchProvider 
 import { id } from '../services/conversationRecord.js';
 import { validPageToken } from '../services/fileSearchRecord.js';
 import { FileSearchBindingService } from '../services/FileSearchBindingService.js';
-import { bigqueryService } from '../services/BigQueryService.js';
+import { unavailableVaultStore } from '../services/vaultStore.js';
 
-export function createFileSearchRoutes(provider: FileSearchProvider = configuredFileSearchProvider(), bindings: Pick<FileSearchBindingService, 'read' | 'save'> = new FileSearchBindingService(bigqueryService, provider)) {
+export function createFileSearchRoutes(provider: FileSearchProvider = configuredFileSearchProvider(), bindings: Pick<FileSearchBindingService, 'read' | 'save'> = new FileSearchBindingService(unavailableVaultStore, provider)) {
   const router = Router();
   router.get('/bundles/:id/binding', async (req, res) => {
     try { res.set('Cache-Control', 'no-store').json(await bindings.read(String(req.params.id))); }

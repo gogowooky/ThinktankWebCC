@@ -1,14 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { decodeMetadata } from './metadataCodec.js';
 import { BundleRepository, nextRecordVersion, storedVersion } from './BundleRepository.js';
-import type { BigQueryService } from './BigQueryService.js';
+import type { VaultStore } from './vaultStore.js';
 import type { AIProvider } from './AIProvider.js';
 import { ConversationService, verifyContextHashes } from './ConversationService.js';
 import { canonicalJson, id, object, text, validateContext, type ConversationContext } from './conversationRecord.js';
 import { agentQuestion, artifactFor, readAgentLog, type AgentKind, type AgentJob, type AgentLog } from './agentRecord.js';
 
 export class AgentError extends Error { constructor(readonly status: number, message: string) { super(message); } }
-export type AgentStore = Pick<BigQueryService, 'getRecord' | 'saveThinkSupport' | 'applyAgentArtifact'>;
+export type AgentStore = Pick<VaultStore, 'getRecord' | 'saveThinkSupport' | 'applyAgentArtifact'>;
 export class AgentService {
   private readonly active = new Map<string, AbortController>();
   private readonly bundles: BundleRepository;

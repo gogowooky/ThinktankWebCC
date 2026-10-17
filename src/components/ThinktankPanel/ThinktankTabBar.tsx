@@ -73,8 +73,8 @@ export function ThinktankTabBar({
       {onSync && (
         <button
           className="tab-icon-btn"
-          data-tip="BigQuery同期"
-          aria-label="BigQuery同期"
+          data-tip="サーバー同期"
+          aria-label="サーバー同期"
           onClick={onSync}
         >
           <RefreshCw size={16} />

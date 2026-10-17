@@ -1,7 +1,7 @@
 /**
  * vaultVersion.ts
  * 楽観ロックの比較ロジック（PROJECT_REVIEW_REPORT.md D-2）。
- * BigQuery の TIMESTAMP は文字列か {value: string} で返るため正規化してから比較する。
+ * 保存版の時刻は文字列か {value: string} で届くため正規化してから比較する。
  */
 
 export function normalizeTimestamp(t: unknown): number {

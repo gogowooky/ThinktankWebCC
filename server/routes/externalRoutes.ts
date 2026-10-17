@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { BundleRepository, nextRecordVersion } from '../services/BundleRepository.js';
-import { bigqueryService, type BigQueryService } from '../services/BigQueryService.js';
+import { unavailableVaultStore, type VaultStore } from '../services/vaultStore.js';
 import { canonicalJson, id } from '../services/conversationRecord.js';
 import { readExternalLog, validateExternalInput, type ExternalLog } from '../services/externalRecord.js';
 
 class ExternalError extends Error { constructor(readonly status: number, message: string) { super(message); } }
-export function createExternalRoutes(store: Pick<BigQueryService, 'getRecord' | 'saveThinkSupport'> = bigqueryService) {
+export function createExternalRoutes(store: Pick<VaultStore, 'getRecord' | 'saveThinkSupport'> = unavailableVaultStore) {
   const router = Router();
   const bundles = new BundleRepository(store, ExternalError);
   async function read(bundleId: string) {

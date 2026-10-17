@@ -1,4 +1,6 @@
 import { apiFetch, readApiJson } from './apiClient';
+import { TTModels } from '../models/TTModels';
+import { StorageManager } from './storage/StorageManager';
 import {
   readProgress,
   validateProgress,
@@ -15,6 +17,13 @@ export interface ProgressState {
   version: string;
   log: ProgressLog;
   review: ProgressReview;
+}
+
+function isWebCloudMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (StorageManager.instance?.webProvider === 'drive') return true;
+  const host = window.location?.hostname || '';
+  return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com');
 }
 
 async function parse(response: Response, bundleId: string): Promise<ProgressState> {
@@ -48,6 +57,20 @@ export class ProgressService {
       return {
         bundleId,
         version: rec.meta.updatedAt,
+        log,
+        review,
+      };
+    }
+
+    if (isWebCloudMode()) {
+      const think = TTModels.Instance?.Vault?.GetThink(bundleId);
+      if (!think) throw new Error('対象のBundleが見つかりません。');
+      const metadata = think.Metadata ?? {};
+      const log = readProgress(metadata.thinkProgress);
+      const review = progressReview(metadata, bundleId);
+      return {
+        bundleId,
+        version: think.UpdatedAt || new Date().toISOString(),
         log,
         review,
       };
@@ -113,6 +136,66 @@ export class ProgressService {
         version: saved.updatedAt,
         log: nextLog,
         review: progressReview(saved.metadata, bundleId),
+      };
+    }
+
+    if (isWebCloudMode()) {
+      validateProgress(input);
+      const think = TTModels.Instance?.Vault?.GetThink(bundleId);
+      if (!think) throw new Error('対象のBundleが見つかりません。');
+      const metadata = think.Metadata ?? {};
+      const currentLog = readProgress(metadata.thinkProgress);
+
+      const existing = currentLog.events.find((e) => e.id === operationId);
+      if (existing) {
+        if (!sameProgress(existing.input, input)) {
+          throw new Error('同じ操作IDで異なる到達状態は保存できません。');
+        }
+        return {
+          bundleId,
+          version: think.UpdatedAt || new Date().toISOString(),
+          log: currentLog,
+          review: progressReview(metadata, bundleId),
+        };
+      }
+
+      const nextLog: ProgressLog = {
+        schemaVersion: 1,
+        events: [
+          ...currentLog.events,
+          {
+            id: operationId,
+            revision: currentLog.events.length + 1,
+            confirmedAt: new Date().toISOString(),
+            author: 'human',
+            input,
+          },
+        ],
+      };
+
+      const nextMetadata: Record<string, unknown> = {
+        ...metadata,
+        thinkProgress: nextLog,
+      };
+      think.Metadata = nextMetadata;
+      const savedMeta = await StorageManager.instance.save({
+        thinkid: think.ID,
+        category: think.ContentType,
+        fullContent: think.Content,
+        keywords: think.Keywords,
+        relatedIds: think.RelatedIDs,
+        metadata: nextMetadata,
+        baseUpdatedAt: version || think.UpdatedAt || undefined,
+      });
+      think.UpdatedAt = savedMeta.updatedAt;
+      think.markSaved();
+      think.markMetadataSaved();
+      TTModels.Instance?.Vault?.NotifyUpdated(false);
+      return {
+        bundleId,
+        version: savedMeta.updatedAt,
+        log: nextLog,
+        review: progressReview(nextMetadata, bundleId),
       };
     }
 

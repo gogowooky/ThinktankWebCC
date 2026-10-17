@@ -120,7 +120,7 @@ export function BundleProgress({ vault, bundleId, onOpen }: { vault: TTVault; bu
   try { local = readProgress(vault.GetThink(bundleId)?.Metadata.thinkProgress); } catch (e) { localError = (e as Error).message; }
   return <section className="bundle-progress" aria-label="進行と到達状態">
     <h3>進行と到達状態</h3><p>必要な範囲だけ記録します。「実行」と「検証」は別の到達状態です。旧「完了」やAI提案から自動確定しません。</p>
-    {!supported ? <>{localError && <p role="alert">{localError}</p>}<p>保存はBigQueryモードで利用できます。</p>{local?.events.map(e => <details key={e.id}><summary>{e.confirmedAt} · 本人確認済み</summary><Summary input={e.input} onOpen={onOpen} /></details>)}</> : <>
+    {!supported ? <>{localError && <p role="alert">{localError}</p>}<p>保存はブラウザ版で利用できます。</p>{local?.events.map(e => <details key={e.id}><summary>{e.confirmedAt} · 本人確認済み</summary><Summary input={e.input} onOpen={onOpen} /></details>)}</> : <>
       <button type="button" disabled={draft.busy} onClick={() => void load()}>到達状態を取得・比較</button>
       {draft.base && <>
         <section aria-label="保存済みの到達状態"><h4>保存済みの記録と再開メモ</h4>

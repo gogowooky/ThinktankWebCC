@@ -82,7 +82,7 @@ export function legacyConversationTurns(content: string, vaultId: string, chatId
   }
   return turns;
 }
-// BigQuery JSON columns may reorder keys; equality must not depend on serialization order.
+// Stored JSON may reorder keys; equality must not depend on serialization order.
 export function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`;
   if (object(value)) return `{${Object.keys(value).sort().map(key => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(',')}}`;

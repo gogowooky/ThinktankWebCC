@@ -1,6 +1,6 @@
 /**
- * BigQueryStorageBackend.ts
- * Express BigQuery API（/api/bq/...）を呼ぶストレージバックエンド
+ * LocalRelayStorageBackend.ts
+ * ローカル中継サーバの Vault API（/api/vault/...）を呼ぶストレージバックエンド
  * Vite proxy により /api/* → http://localhost:8080 に転送される
  */
 
@@ -12,20 +12,20 @@ import { apiFetch } from '../apiClient';
 // 応答のない保存が残ると、TTThink が直列化している同じ Think の後続保存が永久に待たされる
 export const SAVE_TIMEOUT_MS = 30_000;
 
-export class BigQueryStorageBackend implements IStorageBackend {
-  private readonly base = '/api/bq';
+export class LocalRelayStorageBackend implements IStorageBackend {
+  private readonly base = '/api/vault';
 
   async listMeta(): Promise<ThinkMeta[]> {
     const res = await apiFetch(`${this.base}/files/meta`);
-    if (!res.ok) throw new Error(`BQ listMeta failed: ${res.status}`);
+    if (!res.ok) throw new Error(`Vault listMeta failed: ${res.status}`);
     return res.json() as Promise<ThinkMeta[]>;
   }
 
-  // API パス /files/:id/content はサーバーの content 列＝本文のみを返す（タイトル行は title 列）
+  // API パス /files/:id/content は本文のみを返す（タイトル行は title として別に持つ）
   async getBody(id: string): Promise<string | null> {
     const res = await apiFetch(`${this.base}/files/${encodeURIComponent(id)}/content`);
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`BQ getBody failed: ${res.status}`);
+    if (!res.ok) throw new Error(`Vault getBody failed: ${res.status}`);
     return res.json() as Promise<string>;
   }
 
@@ -53,7 +53,7 @@ export class BigQueryStorageBackend implements IStorageBackend {
         const j = await res.json().catch(() => ({})) as { serverUpdatedAt?: string };
         throw new StorageConflictError(payload.thinkid, j.serverUpdatedAt ?? '');
       }
-      if (!res.ok) throw new Error(`BQ save failed: ${res.status}`);
+      if (!res.ok) throw new Error(`Vault save failed: ${res.status}`);
       return await res.json() as ThinkMeta;
     } catch (e) {
       if (controller.signal.aborted) throw new StorageTimeoutError(payload.thinkid);
@@ -68,14 +68,14 @@ export class BigQueryStorageBackend implements IStorageBackend {
       `${this.base}/files/${encodeURIComponent(id)}`,
       { method: 'DELETE' }
     );
-    if (!res.ok && res.status !== 404) throw new Error(`BQ delete failed: ${res.status}`);
+    if (!res.ok && res.status !== 404) throw new Error(`Vault delete failed: ${res.status}`);
   }
 
   async search(query: string): Promise<ThinkMeta[]> {
     const res = await apiFetch(
       `${this.base}/files/search?q=${encodeURIComponent(query)}`
     );
-    if (!res.ok) throw new Error(`BQ search failed: ${res.status}`);
+    if (!res.ok) throw new Error(`Vault search failed: ${res.status}`);
     return res.json() as Promise<ThinkMeta[]>;
   }
 }

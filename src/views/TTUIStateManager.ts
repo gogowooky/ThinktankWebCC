@@ -127,6 +127,17 @@ export class TTUIStateManager {
     const isCurrent = () => generation === this._catalogGeneration && this._app === app && !controller.signal.aborted;
     try {
       const loaded = await loadAiModelCatalog(async () => {
+        if (typeof window !== 'undefined') {
+          const host = window.location?.hostname || '';
+          if (host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) {
+            return {
+              anthropic: ['claude-sonnet-5', 'claude-opus-5', 'claude-opus-4-8', 'claude-haiku-4-5'],
+              openai: ['gpt-5.6'],
+              gemini: ['gemini-3.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
+              local: ['None'],
+            };
+          }
+        }
         const res = await apiFetch('/api/think-support/conversations/models', { signal: controller.signal });
         if (!res.ok) throw new Error(`models ${res.status}`);
         return res.json();

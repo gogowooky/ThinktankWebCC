@@ -12,7 +12,7 @@ import { TTVault } from './TTVault';
 import { disposeVaultDrafts } from '../services/draftStore';
 
 export class TTModels extends TTCollection {
-  /** メインの保管庫（BigQuery: thinktank.vault_ver2 / LocalFS: ./../ThinktankLocal/vault_ver2）*/
+  /** メインの保管庫（LocalFS: ./../ThinktankLocal/vault_ver2）*/
   public Vault: TTVault;
 
   private static _instance: TTModels | null = null;

@@ -1,10 +1,10 @@
 /**
  * metadataCodec.ts
- * BigQuery vault_ver2.metadata 列のデコード共通処理。
+ * 保存済み metadata 列のデコード共通処理。
  *
  * metadata 列がネイティブ JSON 型の場合、そこに格納した「JSON文字列スカラー」
- * （YAMLテキストを JSON.stringify で包んだもの。BigQueryService.encodeMetadata 参照）を
- * BigQueryクライアントは JSON テキスト表現のまま返す（例: '"editor:\n  ..."'）。
+ * （YAMLテキストを JSON.stringify で包んだもの）を
+ * 読み出し側は JSON テキスト表現のまま受け取る（例: '"editor:\n  ..."'）。
  * これを yaml.load にそのまま渡すと、ダブルクォートで囲まれた1つのYAMLスカラーとして
  * 解釈され、中身が展開されずに文字列のまま返ってしまう。
  * そのため、ダブルクォートで始まる場合は先に JSON.parse で一段アンラップしてから

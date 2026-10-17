@@ -3,7 +3,7 @@
  * v5 個別データアイテム（旧 TTDataItem を v5 仕様にリネーム・更新）
  *
  * データ階層: TTVault > Bundles > Bundle > Think
- * Think = 個別データアイテム（BigQueryの1レコード）
+ * Think = 個別データアイテム（Vault の1レコード）
  * Bundle = ContentType='bundle' の TTThink（ThinkIDリスト or Filter文字列を本文に持つ）
  */
 
@@ -76,7 +76,7 @@ export class TTThink extends TTObject {
   /**
    * タイトル行と本文を連ねた全テキスト（Content = TitleLine + '\n' + Body）。
    *
-   * 保存先では2列に分かれている（BigQuery の title 列と content 列）。保存時は
+   * 保存先では2列に分かれている（title と content）。保存時は
    * splitContent() が1行目を title へ切り出し、読み込み時は LoadContent() が
    * 再び連結してここへ入れる。つまりストレージ層の「content」はこの Content とは
    * 別物（本文のみ）で、そちらは getBody() という名前で扱う。
@@ -89,7 +89,7 @@ export class TTThink extends TTObject {
   }
 
   /**
-   * Content の1行目。BigQuery の title 列へ保存される生の行で、`#` や `>>` などの
+   * Content の1行目。title として保存される生の行で、`#` や `>>` などの
    * 記号を含む。記号を落とした表示用の題名は Name（_extractTitle が生成）。
    */
   public get TitleLine(): string {

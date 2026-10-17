@@ -6,7 +6,7 @@ import { createConversationRoutes } from './conversationRoutes';
 import { DisabledAIProvider, type AIProvider } from '../services/AIProvider';
 import { ConversationService } from '../services/ConversationService';
 import type { ConversationContext, ConversationTurn } from '../services/conversationRecord';
-import type { BigQueryService } from '../services/BigQueryService';
+import type { VaultStore } from '../services/vaultStore';
 
 const source: ConversationContext = { schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId: 'bundle', capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only', quality: 'complete',
   sources: [{ thinkId: 'source', title: '資料', content: '本文', contentHash: createHash('sha256').update('本文').digest('hex') }], issues: [], manualState: null };
@@ -17,7 +17,7 @@ const record = { file_id: 'bundle', category: 'bundle', updated_at: '2026-09-14T
 beforeEach(async () => {
   vi.clearAllMocks(); store.getRecord.mockResolvedValue({ success: true, data: record }); store.saveThinkSupport.mockResolvedValue({ success: true, data: true }); store.saveChatConversation.mockResolvedValue({ success: true, data: true });
   turn = await new ConversationService(p).answer('turn', '質問', source, [], new AbortController().signal); vi.mocked(p.generate).mockClear();
-  const app = express(); app.use(express.json()); app.use('/active', createConversationRoutes(p, store as unknown as BigQueryService)); app.use('/disabled', createConversationRoutes(new DisabledAIProvider(), store as unknown as BigQueryService));
+  const app = express(); app.use(express.json()); app.use('/active', createConversationRoutes(p, store as unknown as VaultStore)); app.use('/disabled', createConversationRoutes(new DisabledAIProvider(), store as unknown as VaultStore));
   server = createServer(app); await new Promise<void>(r => server.listen(0, '127.0.0.1', r));
   url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
 });
@@ -157,7 +157,7 @@ it('answers with the model the screen picked when the catalog allows it, and rej
   const picked: AIProvider = { name: 'anthropic', model: 'claude-opus-5', generate: vi.fn(async () => ({ reply: '回答', insufficientEvidence: false, citations: [{ thinkId: 'source', quote: '本文' }], proposals: [] })) };
   const resolve = vi.fn(async (provider: string, model: string) => provider === 'anthropic' && model === 'claude-opus-5' ? picked : null);
   const app = express(); app.use(express.json());
-  app.use('/picked', createConversationRoutes(p, store as unknown as BigQueryService, { catalog: async () => ({ anthropic: ['claude-opus-5'], openai: [], gemini: [] }), resolve }));
+  app.use('/picked', createConversationRoutes(p, store as unknown as VaultStore, { catalog: async () => ({ anthropic: ['claude-opus-5'], openai: [], gemini: [] }), resolve }));
   const local = createServer(app); await new Promise<void>(r => local.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${(local.address() as { port: number }).port}/picked`;
   const post = (changes: object) => fetch(`${base}/turns`, { method: 'POST', headers: { 'Content-Type': 'application/json' },

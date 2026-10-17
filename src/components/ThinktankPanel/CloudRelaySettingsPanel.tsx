@@ -10,6 +10,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { GoogleAuthService } from '../../platform/web/GoogleAuthService';
 import { FirestoreRelayClient } from '../../platform/web/FirestoreRelayClient';
+import { FirebaseAuthService } from '../../platform/web/FirebaseAuthService';
 import { TTModels } from '../../models/TTModels';
 
 const TEXT_MAIN = 'color-mix(in srgb, var(--thinktank-base, #1d618f) 30%, #16161f)';
@@ -60,7 +61,7 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   const isElectron = typeof window !== 'undefined' && Boolean(window.electronAPI);
   const [isOpen, setIsOpen] = useState(true);
 
-  const [webProvider, setWebProvider] = useState<'drive' | 'bigquery'>(
+  const [webProvider, setWebProvider] = useState<'drive' | 'local'>(
     StorageManager.instance.webProvider,
   );
 
@@ -86,7 +87,7 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   // Firebase E2EE 中継設定
   const initialRelayCfg = FirestoreRelayClient.getConfig();
   const [firebaseProjectId, setFirebaseProjectId] = useState(initialRelayCfg.firebaseProjectId);
-  const [firebaseUid, setFirebaseUid] = useState(initialRelayCfg.firebaseUid);
+  const [firebaseUser, setFirebaseUser] = useState(FirebaseAuthService.getCurrentUser());
   const [targetDeviceId, setTargetDeviceId] = useState(initialRelayCfg.targetDeviceId);
   const [pairingSecret, setPairingSecret] = useState(initialRelayCfg.pairingSecret);
 
@@ -99,6 +100,13 @@ export const CloudRelaySettingsPanel: React.FC = () => {
     lastHeartbeatAt: string | null;
   } | null>(null);
 
+  // Web版から見たローカル中継サーバ (/api/health) の稼働状態
+  const [localServerInfo, setLocalServerInfo] = useState<{
+    mode?: string;
+    vaultDir?: string;
+    deviceId?: string;
+  } | null>(null);
+
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -108,12 +116,36 @@ export const CloudRelaySettingsPanel: React.FC = () => {
       const st = await driveBackend.getCacheStats();
       setCacheStats(st);
     }
+    if (!FirebaseAuthService.getCurrentUser()) {
+      const synced = await FirebaseAuthService.syncFromLocalRelayIfAvailable();
+      if (synced) {
+        setFirebaseUser({ uid: synced.uid, email: synced.email });
+      }
+    }
     if (typeof window !== 'undefined' && window.electronAPI?.relay?.getStatus) {
       try {
         const st = await window.electronAPI.relay.getStatus();
         setPcRelayStatus(st);
       } catch {
         // ignore
+      }
+    } else {
+      try {
+        let res = await fetch('/api/health');
+        const ct = res.headers?.get?.('content-type') || '';
+        if (!res.ok || ct.includes('text/html')) {
+          res = await fetch('http://localhost:8080/api/health');
+        }
+        if (res.ok && !(res.headers?.get?.('content-type') || '').includes('text/html')) {
+          const info = (await res.json()) as {
+            mode?: string;
+            vaultDir?: string;
+            deviceId?: string;
+          };
+          setLocalServerInfo(info);
+        }
+      } catch {
+        setLocalServerInfo(null);
       }
     }
   }, []);
@@ -122,13 +154,13 @@ export const CloudRelaySettingsPanel: React.FC = () => {
     void refreshStats();
   }, [refreshStats, webProvider]);
 
-  const handleProviderChange = async (next: 'drive' | 'bigquery') => {
+  const handleProviderChange = async (next: 'drive' | 'local') => {
     StorageManager.instance.setWebProvider(next);
     setWebProvider(next);
     setStatusMessage(
       next === 'drive'
-        ? 'データ接続先を「Google Drive 正本 + IndexedDB 高速キャッシュ」に切り替えました。'
-        : 'データ接続先を「BigQuery (Express 経由)」に切り替えました。',
+        ? 'データ接続先を「Google Drive API 直接接続 + IndexedDB キャッシュ」に切り替えました。'
+        : 'データ接続先を「ローカル中継サーバ（PC内 Vault フォルダ & AI CLI）」に切り替えました。',
     );
     try {
       await TTModels.Instance.Vault.LoadCache();
@@ -160,22 +192,32 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   };
 
   const handleOAuthLogin = async () => {
-    GoogleAuthService.saveConfig({ clientId: googleClientId });
+    const effectiveClientId =
+      googleClientId.trim() ||
+      '699735546730-9td02a2p0hj5jj9srvqr9m48fhd0qc8h.apps.googleusercontent.com';
+    setGoogleClientId(effectiveClientId);
+    GoogleAuthService.saveConfig({ clientId: effectiveClientId });
     setBusy(true);
-    setStatusMessage('Google ログインウィンドウを開いています...');
+    setStatusMessage('Google ログインウィンドウを開いています... ポップアップでログインと権限を許可してください。');
     try {
       const cfg = await GoogleAuthService.startBrowserOAuthFlow();
       setGoogleAccessToken(cfg.accessToken);
-      setStatusMessage('Google アクセストークンを取得しました。');
-      if (!cfg.driveRootFolderId) {
+      setStatusMessage('Google アクセストークンを取得しました！ Drive 設定を保存中...');
+      try {
+        await FirebaseAuthService.signInWithGoogleToken();
+        setFirebaseUser(FirebaseAuthService.getCurrentUser());
+      } catch (e) {
+        setStatusMessage(`Firebase ログイン失敗: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      if (!cfg.driveRootFolderId && !driveRootFolderId) {
         try {
           const folderId = await GoogleAuthService.autoDetectThinktankFolder('Thinktank');
           setDriveRootFolderId(folderId);
           setStatusMessage(
-            `Google ログイン完了 &「Thinktank」フォルダ (${folderId}) を自動検出しました。`,
+            `Google ログイン成功！「Thinktank」フォルダ (${folderId}) を自動検出して設定しました。`,
           );
         } catch {
-          // フォルダ自動検出失敗時は手動入力を促す
+          setStatusMessage('Google ログイン成功！「Drive ルートフォルダID」を入力して「Drive設定を保存」を押してください。');
         }
       }
       if (webProvider === 'drive') {
@@ -190,14 +232,19 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   };
 
   const handleAutoDetectFolder = async () => {
+    if (!googleAccessToken.trim()) {
+      setStatusMessage('先に「Google でログイン」ボタンを押してアクセストークンを取得してください。');
+      return;
+    }
     GoogleAuthService.saveConfig({ accessToken: googleAccessToken });
     setBusy(true);
+    setStatusMessage('Google Drive 内の「Thinktank」フォルダを検索中...');
     try {
       const folderId = await GoogleAuthService.autoDetectThinktankFolder('Thinktank');
       setDriveRootFolderId(folderId);
-      setStatusMessage(`Drive 上の「Thinktank」フォルダを検出しました (ID: ${folderId})。`);
+      setStatusMessage(`Drive 上の「Thinktank」フォルダを自動検出しました (ID: ${folderId})。「Drive設定を保存」を押してください。`);
     } catch (e) {
-      setStatusMessage(`フォルダ自動検出エラー: ${e instanceof Error ? e.message : String(e)}`);
+      setStatusMessage(`フォルダ自動検出エラー: ${e instanceof Error ? e.message : String(e)}。Google ドライブの URL からフォルダIDをコピーして直接貼り付けてください。`);
     } finally {
       setBusy(false);
     }
@@ -206,7 +253,7 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   const handleSyncBodyPackNow = async () => {
     const driveBackend = StorageManager.instance.getDriveBackend();
     if (!driveBackend) {
-      setStatusMessage('先に「Google Drive 正本モード」に切り替えてください。');
+      setStatusMessage('先に「Google Drive API 直接接続」に切り替えてください。');
       return;
     }
     setBusy(true);
@@ -228,7 +275,6 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   const handleSaveRelayConfig = () => {
     FirestoreRelayClient.saveConfig({
       firebaseProjectId,
-      firebaseUid,
       targetDeviceId,
       pairingSecret,
     });
@@ -243,7 +289,6 @@ export const CloudRelaySettingsPanel: React.FC = () => {
         enabled: nextEnabled,
         ...(pairingSecret ? { pairingSecret } : {}),
         ...(firebaseProjectId ? { firebaseProjectId } : {}),
-        ...(firebaseUid ? { firebaseUid } : {}),
       });
       setPcRelayStatus(st);
       setStatusMessage(
@@ -266,12 +311,43 @@ export const CloudRelaySettingsPanel: React.FC = () => {
       >
         {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <h2 className="tt-settings-section__title">
-          Google Drive 正本・全文検索キャッシュ・Firebase E2EE 中継
+          データ接続先・Google Drive API・Firebase E2EE 中継
         </h2>
       </div>
 
       {isOpen && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+          {statusMessage && (
+            <div
+              role="status"
+              style={{
+                padding: '8px 12px',
+                borderRadius: '6px',
+                backgroundColor: statusMessage.includes('エラー') || statusMessage.includes('失敗')
+                  ? 'rgba(239, 68, 68, 0.15)'
+                  : statusMessage.includes('完了') || statusMessage.includes('取得') || statusMessage.includes('成功')
+                    ? 'rgba(34, 197, 94, 0.15)'
+                    : 'rgba(59, 130, 246, 0.15)',
+                border: `1px solid ${
+                  statusMessage.includes('エラー') || statusMessage.includes('失敗')
+                    ? '#ef4444'
+                    : statusMessage.includes('完了') || statusMessage.includes('取得') || statusMessage.includes('成功')
+                      ? '#22c55e'
+                      : '#3b82f6'
+                }`,
+                color: TEXT_MAIN,
+                fontSize: 'calc(11.5px * var(--tt-font-scale, 1))',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}
+            >
+              {busy ? '⏳' : statusMessage.includes('エラー') || statusMessage.includes('失敗') ? '⚠️' : '✅'}
+              <span>{statusMessage}</span>
+            </div>
+          )}
+
           {!isElectron && (
             <div
               style={{
@@ -295,6 +371,19 @@ export const CloudRelaySettingsPanel: React.FC = () => {
                 <button
                   type="button"
                   disabled={busy}
+                  onClick={() => void handleProviderChange('local')}
+                  style={
+                    webProvider === 'local'
+                      ? primaryBtnStyle
+                      : secondaryBtnStyle
+                  }
+                >
+                  {webProvider === 'local' ? '● ' : '○ '}
+                  ローカル中継サーバ（PC内 Vault フォルダ &amp; AI CLI）
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
                   onClick={() => void handleProviderChange('drive')}
                   style={
                     webProvider === 'drive'
@@ -303,22 +392,24 @@ export const CloudRelaySettingsPanel: React.FC = () => {
                   }
                 >
                   {webProvider === 'drive' ? '● ' : '○ '}
-                  Google Drive 正本 + IndexedDB 高速キャッシュ（新方式）
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void handleProviderChange('bigquery')}
-                  style={
-                    webProvider === 'bigquery'
-                      ? primaryBtnStyle
-                      : secondaryBtnStyle
-                  }
-                >
-                  {webProvider === 'bigquery' ? '● ' : '○ '}
-                  BigQuery / ローカル開発サーバ（従来方式）
+                  Google Drive API 直接接続 + IndexedDB キャッシュ（外出先・単体Web用）
                 </button>
               </div>
+              {webProvider === 'local' && localServerInfo?.vaultDir && (
+                <div
+                  style={{
+                    marginTop: '6px',
+                    padding: '6px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: SUB_CARD_BG,
+                    fontSize: 'calc(10.5px * var(--tt-font-scale, 1))',
+                    color: TEXT_MAIN,
+                  }}
+                >
+                  接続中 Vault: <code>{localServerInfo.vaultDir}</code>
+                  {localServerInfo.deviceId ? ` (Device: ${localServerInfo.deviceId})` : ''}
+                </div>
+              )}
             </div>
           )}
 
@@ -527,23 +618,60 @@ export const CloudRelaySettingsPanel: React.FC = () => {
                   style={inputStyle}
                 />
               </label>
-              <label
+            </div>
+
+            {!isElectron && (
+              <div
                 style={{
+                  padding: '8px',
+                  borderRadius: '4px',
+                  backgroundColor: SUB_CARD_BG,
+                  border: `1px solid ${BORDER_COLOR}`,
                   fontSize: 'calc(11px * var(--tt-font-scale, 1))',
-                  color: TEXT_MUTED,
-                  flex: '1 1 140px',
+                  color: TEXT_MAIN,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '6px',
                 }}
               >
-                Firebase User UID
-                <input
-                  type="text"
-                  value={firebaseUid}
-                  onChange={(e) => setFirebaseUid(e.target.value)}
-                  placeholder="default_user"
-                  style={inputStyle}
-                />
-              </label>
-            </div>
+                <span>
+                  Firebase ログイン:{' '}
+                  {firebaseUser ? (
+                    <>
+                      <strong>{firebaseUser.email || '(メール不明)'}</strong> (UID:{' '}
+                      <code>{firebaseUser.uid}</code>)
+                    </>
+                  ) : (
+                    '未ログイン（中継役PCと同じ Google アカウントでログインしてください）'
+                  )}
+                </span>
+                {firebaseUser ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      FirebaseAuthService.signOut();
+                      setFirebaseUser(null);
+                      setStatusMessage('Firebase からログアウトしました。');
+                    }}
+                    style={secondaryBtnStyle}
+                  >
+                    ログアウト
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void handleOAuthLogin()}
+                    style={primaryBtnStyle}
+                  >
+                    Google でログイン
+                  </button>
+                )}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               <label

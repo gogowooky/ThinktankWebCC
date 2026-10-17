@@ -10,5 +10,9 @@ export async function readApiJson(
       ? value.error : errorMessage;
     throw new Error(message);
   }
+  const contentType = response.headers?.get?.('content-type') || '';
+  if (contentType.includes('text/html')) {
+    throw new Error(errorMessage);
+  }
   return response.json();
 }

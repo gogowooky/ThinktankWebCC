@@ -81,7 +81,7 @@ export function BundleFileSearchBinding({ vault, bundleId, status, page }: { vau
   return <section aria-label="BundleのFile Search保存先">
     <h4>このBundleの資料保存先</h4>
     <p>接続ごとに1つの既存ストアを登録します。保存時にストアIDへのアクセスを再確認します。資料の送信・外部削除は行いません。</p>
-    {!supported && <p>ストア対応の保存はBigQueryモードで利用できます。</p>}
+    {!supported && <p>ストア対応の保存はブラウザ版で利用できます。</p>}
     <button disabled={draft.busy || !supported} onClick={() => void load()}>登録済みのストア対応を取得</button>
     <fieldset disabled={draft.busy || !supported}>
       <legend>保存する変更</legend>

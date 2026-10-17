@@ -5,7 +5,7 @@ describe('normalizeTimestamp', () => {
   it('ISO 文字列', () => {
     expect(normalizeTimestamp('2026-08-31T10:00:00.000Z')).toBe(Date.parse('2026-08-31T10:00:00Z'));
   });
-  it('BigQuery の {value} 形式', () => {
+  it('{value} 形式', () => {
     expect(normalizeTimestamp({ value: '2026-08-31T10:00:00Z' })).toBe(
       Date.parse('2026-08-31T10:00:00Z'),
     );
