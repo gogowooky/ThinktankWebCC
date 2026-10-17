@@ -2,14 +2,7 @@
 
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
-// メインプロセスが additionalArguments で渡すローカルサーバーの共有シークレット。
-// dev（vite proxy がヘッダーを付与する）では渡されないため undefined になる。
-const apiKeyArg = process.argv.find(a => a.startsWith('--tt-api-key='));
-const apiKey = apiKeyArg ? apiKeyArg.slice('--tt-api-key='.length) : undefined;
-
 contextBridge.exposeInMainWorld('electronAPI', {
-  // UI はローカルサーバーまたは app://thinktank から配信されるため baseUrl は空。
-  apiConfig: { baseUrl: '', apiKey },
   storage: {
     listMeta:      ()                            => ipcRenderer.invoke('storage:listMeta'),
     getContent:    (id)                          => ipcRenderer.invoke('storage:getContent', id),
@@ -19,7 +12,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     saveSupport:   (id, metadata, expectedVer)   => ipcRenderer.invoke('storage:saveSupport', id, metadata, expectedVer),
     delete:        (id)                          => ipcRenderer.invoke('storage:delete', id),
     search:        (query)                       => ipcRenderer.invoke('storage:search', query),
-    syncFromServer:(serverUrl)                   => ipcRenderer.invoke('storage:syncFromServer', serverUrl),
   },
   vault: {
     getConfig:     ()                            => ipcRenderer.invoke('vault:getConfig'),
@@ -45,6 +37,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     rotateSecret:    ()                          => ipcRenderer.invoke('relay:rotateSecret'),
     executePlain:    (envelope)                  => ipcRenderer.invoke('relay:executePlain', envelope),
     handleEncrypted: (payload)                   => ipcRenderer.invoke('relay:handleEncrypted', payload),
+  },
+  system: {
+    openPath:        (target)                    => ipcRenderer.invoke('system:openPath', target),
   },
   getPathForFile: (file) => webUtils.getPathForFile(file),
 });

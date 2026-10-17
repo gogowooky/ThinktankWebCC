@@ -2,7 +2,7 @@ import type { TTVault } from '../models/TTVault';
 import { StorageManager } from './storage/StorageManager';
 import type { TaskSeed } from './taskSeed';
 import { parseManagedChatTitle } from '../utils/managedChat';
-import { emptyThinkValues, readThinkSupport } from '../../server/contracts/thinkSupportRecord';
+import { emptyThinkValues, readThinkSupport } from '../../shared/contracts/thinkSupportRecord';
 import { bindChatToTask, resolveChatTask } from './chatTask';
 import type { TTThink } from '../models/TTThink';
 

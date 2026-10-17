@@ -1,8 +1,9 @@
 # 行動指針
 
 ## プロジェクト概要
-Thinktank — Electron + React + TypeScript + Express のデスクトップアプリ。
+Thinktank — Electron + React + TypeScript のデスクトップアプリ（Web 版は Firebase Hosting）。
 アイデアをVaultに蓄積し、AIとの対話で思考を補完する。
+データの正本は Google Drive 上の `.md`、AI はローカルの AI CLI。構成は `docs/ARCHITECTURE_DRIVE_FIREBASE.md` を参照。
 
 ## 要件・仕様
 詳細は `docs/requirements.md` を参照。概念・差別化の軸は `docs/concept.md` を参照。
@@ -10,30 +11,35 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 ## 開発環境の起動
 
 ```bash
-# サーバー・Vite が未起動の場合
+# Electron 版（Vite と Electron を起動。データと AI は IPC で electron/ 側が扱う）
 npm run electron:dev
 
-# サーバー・Vite が起動済みの場合（Electronのみ）
+# Vite が起動済みの場合（Electronのみ）
 NODE_ENV=development npx electron electron/main.cjs
+
+# ブラウザ版をローカル中継で動かす（scripts/run-relay-agent.mjs が 127.0.0.1:8080 で待ち受け、Vite が /api を転送）
+npm run dev:web-relay
 ```
+
+`shared/*.ts` を変更したら `node scripts/build-electron-shared.mjs` で `electron/shared-dist/` を作り直す
+（electron/ と run-relay-agent はこの CJS 版を require する）。
 
 ## コーディング規約
 - TypeScript strict モード。`any` は使わない
 - コンポーネントは `src/components/<FeatureName>/` に配置
-- サーバーコードは `server/` に記述し `dist-server/` にビルド
+- 画面と electron/ の両方で使う型・検証は `shared/`（記録の契約は `shared/contracts/`）に置く
 - コメントは WHY のみ。WHAT は書かない
 
 ## 重要な注意事項
-- `dist-server/` は `server/` のビルド成果物。直接編集しない
-- Electronメインプロセスは `electron/main.cjs`
-- BigQuery/Drive の認証は、ローカルでは `server/.env` の `GOOGLE_SERVICE_ACCOUNT_KEY_FILE`、
-  Cloud Run では ADC と Secret Manager で管理。デプロイ手順は `docs/CloudRun_Deploy.md` を参照
-- 公開環境のアクセス制御は IAP（Cloud Run 直接統合）。`server/middleware/apiAuth.ts` が唯一の判定箇所
+- Express サーバー（`server/`・`dist-server/`）と Cloud Run は廃止済み。HTTP の API サーバーを新設しない
+- Electronメインプロセスは `electron/main.cjs`。パッケージ版の画面は `app://thinktank/` から配信する
+- 画面から OS・ファイルに触れる処理は preload（`electron/preload.cjs`）経由の IPC にする
+- Web 版（Firebase Hosting）は Drive API と Firestore 経由の E2EE 中継で動く。デプロイは `npm run firebase:deploy`
 - GPU キャッシュエラー（Windows）は無視してよい
 
 ## 変更を加える前に
 - `src/components/DiscussPanel/` など既存コンポーネントの構造を Read で確認する
-- サーバー側変更後は `npm run build:server` でビルドし直す
+- `electron/*.cjs` や `shared/` を変更したら Electron を再起動する（HMR は効かない）
 
 ## パネル構成
 - **ThinktankPanel** — Vaultの閲覧・検索・フィルタ（一覧表示）
@@ -49,19 +55,11 @@ NODE_ENV=development npx electron electron/main.cjs
 - `<Panel>MenuRibbon.tsx` — メニュー付きツールバー
 - 各 `.tsx` と同名の `.css` をセットで置く
 
-## サーバー変更時のビルド手順
-`server/*.ts` を変更したら必ずビルドし直すこと：
-```bash
-npm run build:server
-```
-ビルドせずに `electron:dev` を起動すると古いコードが動く。
-
 ## データモデル
-- メインテーブル: `thinktank.vault_ver2`（Thoughtの保存先。旧`thinktank.vault`から複製・切替済み。ローカル保存先も`vault_ver2`フォルダ）
-- 埋め込みテーブル: `thinktank.tt_embeddings`（ベクトル検索用、現在削除済み）
-- スキーマ変更は `server/services/BigQueryService.ts` の `initialize()` を確認すること
+- Thought は Vault フォルダ（既定は Google Drive の `Thinktank/vault_ver2`）の `<thinkid>.md`。思考支援などのメタデータは `<thinkid>.support.json`
+- 読み書きの実装は `electron/vaultEngine.cjs`（Electron・ローカル中継）と `src/platform/web/DriveApiStorageBackend.ts`（Web 版）
+- 旧 BigQuery（`thinktank.vault_ver2`）は廃止済み。移行用スクリプトだけが `scripts/` に残る
 
 ## やってはいけないこと
-- `dist-server/` を手動編集（ビルドで上書きされる）
 - `electron/main.cjs` を ES Module 形式に書き換える（CJS固定）
-- `npm run electron:dev` を多重起動（ポート競合でサーバーが即終了する）
+- `npm run electron:dev` を多重起動（単一インスタンスロックで後発が終了し、Vite もポート競合する）

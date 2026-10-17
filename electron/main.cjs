@@ -1,13 +1,10 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, session, dialog, protocol, net: electronNet } = require('electron');
+const { app, BrowserWindow, ipcMain, session, dialog, protocol, shell, net: electronNet } = require('electron');
 const path   = require('path');
 const fs     = require('fs');
-const net    = require('net');
-const crypto = require('crypto');
 const { pathToFileURL } = require('url');
-const { syncVaultFromServer } = require('./vaultSync.cjs');
-const { spawn } = require('child_process');
+const { validateOpenPath } = require('./openPath.cjs');
 const { VaultEngine } = require('./vaultEngine.cjs');
 const aiCliRunner = require('./aiCliRunner.cjs');
 const { RelayAgent } = require('./relayAgent.cjs');
@@ -62,8 +59,7 @@ const isDev = process.env.NODE_ENV === 'development';
  * どちらも __dirname の 1 つ上で一致する。
  *
  * app.getAppPath() は使わないこと。開発時（electron に main.cjs のパスを直接渡す起動）
- * では <repo>/electron を返し、リポジトリ直下にならないため server/.env や
- * dist-server を取り違える。
+ * では <repo>/electron を返し、リポジトリ直下にならないため dist や docs を取り違える。
  */
 function appRoot() {
   return path.join(__dirname, '..');
@@ -249,32 +245,17 @@ ipcMain.handle('relay:handleEncrypted', async (_event, payload) => {
   return relayAgent.handleEncryptedRequest(payload);
 });
 
-// ── サーバー同期（ローカル中継サーバの Vault を取り込む） ───────────────────────────
+// ── IPC ハンドラー（OS の既定アプリでローカルファイルを開く） ───────────────
 
-function getSyncTarget(explicitUrl) {
-  if (!explicitUrl && serverOrigin) {
-    return { base: serverOrigin, apiKey: serverApiKey };
+ipcMain.handle('system:openPath', async (_event, target) => {
+  const verdict = validateOpenPath(target);
+  if (!verdict.ok) {
+    console.warn(`[main] Blocked openPath (${verdict.reason}): ${target}`);
+    return { ok: false, error: verdict.reason };
   }
-  const base = (explicitUrl || 'http://127.0.0.1:8080').replace(/\/$/, '');
-  return { base, apiKey: serverApiKey || loadServerEnv().API_SHARED_SECRET };
-}
-
-async function fetchJson(url, apiKey) {
-  const res = await fetch(url, { headers: apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {} });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-  return res.json();
-}
-
-ipcMain.handle('storage:syncFromServer', async (_event, serverUrl) => {
-  const vDir = vaultEngine.getVaultDir();
-  const { base, apiKey } = getSyncTarget(serverUrl);
-  const authHeaders = apiKey ? { 'X-Thinktank-Api-Key': apiKey } : {};
-  const serverMetas = await fetchJson(`${base}/api/vault/files/meta`, apiKey);
-  return syncVaultFromServer(vDir, serverMetas, async meta => {
-    const res = await fetch(`${base}/api/vault/files/${encodeURIComponent(meta.thinkid)}/content`, { headers: authHeaders });
-    if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}: content ${meta.thinkid}`);
-    return res.status === 404 ? '' : res.json();
-  });
+  // shell.openPath は失敗時に理由の文字列、成功時に空文字を返す
+  const error = await shell.openPath(verdict.resolved);
+  return error ? { ok: false, error } : { ok: true };
 });
 
 // ── カスタムプロトコル app://thinktank/ ハンドラ登録 ─────────────────────────
@@ -294,110 +275,6 @@ function registerAppProtocol() {
     }
     return electronNet.fetch(pathToFileURL(targetPath).toString());
   });
-}
-
-// ── ローカルサーバー管理（パッケージ版・後方互換用） ─────────────────────────
-
-let serverProcess = null;
-let serverApiKey  = null;
-let serverOrigin  = null;
-
-function findFreePort() {
-  return new Promise((resolve, reject) => {
-    const srv = net.createServer();
-    srv.on('error', reject);
-    srv.listen(0, '127.0.0.1', () => {
-      const { port } = srv.address();
-      srv.close(() => resolve(port));
-    });
-  });
-}
-
-function resolveServerEntry() {
-  return path.join(appRoot(), 'dist-server', 'index.js');
-}
-
-function loadServerEnv() {
-  const candidates = [
-    path.join(app.getPath('userData'), 'server.env'),
-    path.join(appRoot(), 'server', '.env'),
-  ];
-
-  const env = {};
-  for (const file of candidates) {
-    if (!fs.existsSync(file)) continue;
-    for (const line of fs.readFileSync(file, 'utf8').split('\n')) {
-      const m = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*?)\s*$/);
-      if (!m || line.trim().startsWith('#')) continue;
-      env[m[1]] = m[2].replace(/^["']|["']$/g, '');
-    }
-    console.log(`[main] server env loaded from ${file}`);
-    break;
-  }
-
-  if (env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE && !env.GOOGLE_SERVICE_ACCOUNT_KEY) {
-    try {
-      env.GOOGLE_SERVICE_ACCOUNT_KEY = fs.readFileSync(env.GOOGLE_SERVICE_ACCOUNT_KEY_FILE, 'utf8');
-    } catch (e) {
-      console.error(`[main] service account key の読み込みに失敗: ${e.message}`);
-    }
-  }
-  return env;
-}
-
-async function waitForHealth(origin, timeoutMs = 60000) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (!serverProcess) throw new Error('ローカルサーバーが起動直後に終了しました');
-    try {
-      const res = await fetch(`${origin}/api/health`);
-      if (res.ok) return;
-    } catch { /* 起動待ち */ }
-    await new Promise(r => setTimeout(r, 200));
-  }
-  throw new Error('ローカルサーバーが応答しませんでした');
-}
-
-async function startLocalServer() {
-  const entry = resolveServerEntry();
-  if (!fs.existsSync(entry)) {
-    // dist-server が存在しない場合はカスタムプロトコル app://thinktank/ にフォールバック
-    console.log('[main] dist-server なし -> app://thinktank/index.html で直接配信します');
-    return 'app://thinktank/index.html';
-  }
-
-  const port = await findFreePort();
-  serverApiKey = crypto.randomBytes(32).toString('hex');
-
-  const env = {
-    ...process.env,
-    ...loadServerEnv(),
-    ELECTRON_RUN_AS_NODE: '1',
-    PORT:                 String(port),
-    API_SHARED_SECRET:    serverApiKey,
-  };
-  delete env.K_SERVICE;
-
-  serverProcess = spawn(process.execPath, [entry], { env, stdio: ['ignore', 'pipe', 'pipe'] });
-  serverProcess.stdout.on('data', d => process.stdout.write(`[server] ${d}`));
-  serverProcess.stderr.on('data', d => process.stderr.write(`[server] ${d}`));
-  serverProcess.on('exit', (code, signal) => {
-    console.error(`[main] ローカルサーバーが終了しました (code=${code}, signal=${signal})`);
-    serverProcess = null;
-  });
-
-  const origin = `http://127.0.0.1:${port}`;
-  await waitForHealth(origin);
-  serverOrigin = origin;
-  console.log(`[main] ローカルサーバー起動: ${origin}`);
-  return origin;
-}
-
-function stopLocalServer() {
-  if (!serverProcess) return;
-  const proc = serverProcess;
-  serverProcess = null;
-  proc.kill();
 }
 
 // ── CSP ────────────────────────────────────────────────────────────────────
@@ -430,7 +307,6 @@ function createWindow(startUrl) {
       contextIsolation: true,
       nodeIntegration:  false,
       sandbox:          false,
-      additionalArguments: serverApiKey ? [`--tt-api-key=${serverApiKey}`] : [],
     },
   });
 
@@ -491,12 +367,6 @@ function createWindow(startUrl) {
     win.webContents.once('did-finish-load', async () => {
       const probe = `(async () => {
         const api = window.electronAPI;
-        const cfg = api && api.apiConfig;
-        const hasKey = !!(cfg && cfg.apiKey);
-        const withKey = await fetch('/api/vault/files/meta', {
-          headers: cfg && cfg.apiKey ? { 'X-Thinktank-Api-Key': cfg.apiKey } : {},
-        }).then(r => r.status).catch(e => 'ERR ' + e.message);
-        const without = await fetch('/api/vault/files/meta').then(r => r.status).catch(e => 'ERR ' + e.message);
         const csp = await fetch(location.href).then(r => r.headers.get('content-security-policy')).catch(() => null);
         let evalBlocked = null;
         try { (0, eval)('1+1'); evalBlocked = false; } catch { evalBlocked = true; }
@@ -510,13 +380,16 @@ function createWindow(startUrl) {
             contentLen = c === null ? null : c.length;
           }
         } catch (e) { ipcError = String(e && e.message || e); }
+        const openPathRejectsRelative = api.system
+          ? (await api.system.openPath('relative.txt')).ok === false
+          : null;
 
         await new Promise(r => setTimeout(r, 2500));
         const renderedTitles = document.querySelectorAll('.thoughts-list__title').length;
 
         return JSON.stringify({
-          hasElectronAPI: !!api, hasKey, withKey, without, evalBlocked,
-          ipcMetaCount, ipcError, contentLen, renderedTitles,
+          hasElectronAPI: !!api, evalBlocked, ipcMetaCount, ipcError, contentLen,
+          openPathRejectsRelative, renderedTitles, origin: location.origin,
           csp: csp ? csp.slice(0, 45) + '...' : null
         });
       })()`;
@@ -535,30 +408,14 @@ function createWindow(startUrl) {
 // ── アプリ起動 ─────────────────────────────────────────────────────────────
 
 app.whenReady()
-  .then(async () => {
+  .then(() => {
     registerAppProtocol();
     const vDir = vaultEngine.getVaultDir();
     console.log(`[Vault] userData=${app.getPath('userData')}`);
     console.log(`[Vault] dir=${vDir} files=${fs.existsSync(vDir) ? fs.readdirSync(vDir).filter(f => f.endsWith('.md')).length : 0}`);
     installCsp();
 
-    const startUrl = isDev
-      ? 'http://localhost:5173'
-      : process.env.TT_USE_APP_PROTOCOL === '1'
-        ? 'app://thinktank/index.html'
-        : await startLocalServer();
-
-    if (process.env.TT_SELFTEST === '1') {
-      const t = getSyncTarget();
-      let status = 'n/a';
-      try {
-        const r = await fetch(`${t.base}/api/vault/files/meta`, {
-          headers: t.apiKey ? { 'X-Thinktank-Api-Key': t.apiKey } : {},
-        });
-        status = `HTTP ${r.status}` + (r.ok ? ` / ${(await r.json()).length}件` : '');
-      } catch (e) { status = 'ERR ' + e.message; }
-      console.log(`[selftest] syncTarget base=${t.base} hasKey=${!!t.apiKey} -> ${status}`);
-    }
+    const startUrl = isDev ? 'http://localhost:5173' : 'app://thinktank/index.html';
 
     createWindow(startUrl);
     app.on('activate', () => {
@@ -567,13 +424,9 @@ app.whenReady()
   })
   .catch(err => {
     console.error('[main] 起動に失敗しました:', err);
-    stopLocalServer();
     app.quit();
   });
 
-app.on('before-quit',        stopLocalServer);
-app.on('will-quit',          stopLocalServer);
 app.on('window-all-closed', () => {
-  stopLocalServer();
   if (process.platform !== 'darwin') app.quit();
 });

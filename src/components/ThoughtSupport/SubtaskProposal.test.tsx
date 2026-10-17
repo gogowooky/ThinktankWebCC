@@ -7,7 +7,7 @@ import { TTThink } from '../../models/TTThink';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { SubtaskProposal } from './SubtaskProposal';
 import { SubtaskList } from './SubtaskList';
-import { emptyProgress } from '../../../server/contracts/progressRecord';
+import { emptyProgress } from '../../../shared/contracts/progressRecord';
 import { resetDraftStores } from '../../services/draftStore';
 const history = vi.hoisted(() => vi.fn());
 vi.mock('../../services/ConversationService', () => ({ ConversationClient: class { history = history; } }));

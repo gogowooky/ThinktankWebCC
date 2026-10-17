@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { prepareProposalReview } from './proposalReview';
-import { emptyThinkValues } from '../../server/contracts/thinkSupportRecord';
+import { emptyThinkValues } from '../../shared/contracts/thinkSupportRecord';
 import type { ConversationTurn } from './ConversationService';
 import type { ThinkMeta } from './storage/IStorageBackend';
 

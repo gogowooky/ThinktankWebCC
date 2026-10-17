@@ -5,7 +5,6 @@ import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { isUnset, parseAttrs, styleStatusId } from '../../../utils/defaultColor';
 import type { DiscussSettingsContext } from './types';
 import { TEXT_EDITOR_BASE_COLORS, TEXT_EDITOR_TAG_COLORS, ColorStyleRow, MarkStyleRows } from './ColorSettings';
-import { DatabaseArrowDown } from './SettingsIcons';
 const BINDING_ROWS: { label: string; memo: string; actionPrefix: string; }[] = [
   { label: 'キー設定', memo: 'ThinktankKeyBinding', actionPrefix: 'TextEditor.KeyBinding' },
   { label: '色設定', memo: 'ThinktankColorBinding', actionPrefix: 'TextEditor.ColorBinding' },
@@ -120,14 +119,6 @@ export function TextEditorSettings({
                 data-tip-side="top-start"
               >
                 <Save size={16} className="ws-icon" />
-              </button>
-              <button
-                className="discuss-setting-area__icon-btn"
-                onClick={() => TTActions.Execute('Application.Resource.ExportToLocal')}
-                data-tip="サーバー保存済みThinkファイルをローカルにエクスポート"
-                data-tip-side="top-start"
-              >
-                <DatabaseArrowDown size={16} className="ws-icon" />
               </button>
             </div>
           </div>

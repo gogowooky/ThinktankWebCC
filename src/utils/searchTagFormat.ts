@@ -1,7 +1,7 @@
 /**
  * searchTagFormat.ts
  * docs/DefaultSearchTag.md 形式（ID, "Description", URL）のパース。
- * server/routes/systemRoutes.ts の同等ロジックをクライアント側（Vaultメモ上書き用）に移植したもの。
+ * 既定値（defaultSearchTags.ts）と Vault メモによる上書きの両方がこれで読む。
  */
 
 import { isCommentLine } from './commentLine';

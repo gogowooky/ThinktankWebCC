@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
-import { emptyProgress } from '../../../server/contracts/progressRecord';
+import { emptyProgress } from '../../../shared/contracts/progressRecord';
 import type { ConversationTurn } from '../../services/ConversationService';
 import { ProgressProposal } from './ProgressProposal';
 import { resetDraftStores } from '../../services/draftStore';

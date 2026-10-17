@@ -31,8 +31,7 @@ import { parseTableContent, TableSection } from '../utils/tableFormat';
 
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 
-import { AI_CHAT_PROVIDER_NAMES, applySelection, getModelNames, loadAiModelCatalog, type AiChatProviderName } from '../services/aiChatModelStatus';
-import { apiFetch } from '../services/apiClient';
+import { AI_CHAT_PROVIDER_NAMES, applyAiModelCatalog, applySelection, getModelNames, type AiChatProviderName } from '../services/aiChatModelStatus';
 import { loadAiModelSelection } from '../services/aiModels';
 
 import { canonicalPanelName, canonicalPanelStatusKey, canonicalPanelStatusList } from '../utils/panelNames';
@@ -62,8 +61,6 @@ export class TTUIStateManager {
   private _undoStack: string[] = [];
   private _redoStack: string[] = [];
   private _listeners = new Map<ConfigKey, Set<ConfigListener>>();
-  private _catalogGeneration = 0;
-  private _catalogController: AbortController | null = null;
 
   static get instance(): TTUIStateManager {
     if (!TTUIStateManager._instance) {
@@ -79,7 +76,6 @@ export class TTUIStateManager {
    * localStorage から即時ロードし、アプリ変更を debounce 保存する。
    */
   init(app: TTApplication): void {
-    this._cancelAiModelCatalog();
     if (this._app && this._app !== app) this.detach(this._app);
     else app.RemoveOnUpdate('TTUIStateManager');
     this._app = app;
@@ -93,7 +89,6 @@ export class TTUIStateManager {
   detach(app: TTApplication): void {
     app.RemoveOnUpdate('TTUIStateManager');
     if (this._app !== app) return;
-    this._cancelAiModelCatalog();
     if (this._debounceTimer) clearTimeout(this._debounceTimer);
     this._debounceTimer = null;
     this._app = null;
@@ -111,52 +106,19 @@ export class TTUIStateManager {
       this._applyContent(stored);
     }
     if (!stored?.includes('.AIChat.ModelName')) this._migrateLegacyAiModels();
-    void this.refreshAiModelCatalog();
+    this.refreshAiModelCatalog();
   }
 
   /**
-   * サーバーから各社の「今使える主要モデル」を取得し、AIChat.ModelNames.* を揃え直す。
+   * 各社の主要モデル（AI_MODEL_CATALOG）で AIChat.ModelNames.* を揃え直す。
    * 起動時の md・保存値の適用より後に呼ぶ（保存済みの選択を先頭に残すため）。
    */
-  async refreshAiModelCatalog(): Promise<void> {
-    this._cancelAiModelCatalog();
-    const generation = this._catalogGeneration;
+  refreshAiModelCatalog(): void {
+    applyAiModelCatalog();
     const app = this._app;
-    const controller = new AbortController();
-    this._catalogController = controller;
-    const isCurrent = () => generation === this._catalogGeneration && this._app === app && !controller.signal.aborted;
-    try {
-      const loaded = await loadAiModelCatalog(async () => {
-        if (typeof window !== 'undefined') {
-          const host = window.location?.hostname || '';
-          if (host.endsWith('.web.app') || host.endsWith('.firebaseapp.com')) {
-            return {
-              anthropic: ['claude-sonnet-5', 'claude-opus-5', 'claude-opus-4-8', 'claude-haiku-4-5'],
-              openai: ['gpt-5.6'],
-              gemini: ['gemini-3.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
-              local: ['None'],
-            };
-          }
-        }
-        const res = await apiFetch('/api/think-support/conversations/models', { signal: controller.signal });
-        if (!res.ok) throw new Error(`models ${res.status}`);
-        return res.json();
-      }, isCurrent);
-      if (!loaded || !app || !isCurrent()) return;
-      for (const name of AI_CHAT_PROVIDER_NAMES) {
-        if (!isCurrent()) return;
-        this._emit(`AIChat.ModelNames.${name}`, getModelNames(name));
-      }
-      if (isCurrent()) app.NotifyUpdated(false);
-    } finally {
-      if (this._catalogController === controller) this._catalogController = null;
-    }
-  }
-
-  private _cancelAiModelCatalog(): void {
-    this._catalogGeneration++;
-    this._catalogController?.abort();
-    this._catalogController = null;
+    if (!app) return;
+    for (const name of AI_CHAT_PROVIDER_NAMES) this._emit(`AIChat.ModelNames.${name}`, getModelNames(name));
+    app.NotifyUpdated(false);
   }
 
   /**

@@ -9,11 +9,11 @@
       "autoPort": true
     },
     {
-      "name": "backend",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "server:dev"],
+      "name": "relay",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/run-relay-agent.mjs"],
       "port": 8080,
-      "autoPort": true
+      "autoPort": false
     },
     {
       "name": "clone-frontend",

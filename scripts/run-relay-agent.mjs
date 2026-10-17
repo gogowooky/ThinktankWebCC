@@ -328,17 +328,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 3. AI Model Catalog & Conversation Status (/api/think-support/conversations/*)
-    if (pathname === '/api/think-support/conversations/models' && req.method === 'GET') {
-      sendJson(res, 200, {
-        anthropic: ['claude-sonnet-5', 'claude-opus-5', 'claude-opus-4-8', 'claude-haiku-4-5'],
-        openai: ['gpt-5.6'],
-        gemini: ['gemini-3.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
-        local: ['None'],
-      });
-      return;
-    }
-
+    // 3. AI 会話（/api/think-support/conversations/*）。履歴と保存は画面側が /api/vault 経由で行う
     if (pathname === '/api/think-support/conversations/status' && req.method === 'GET') {
       const preferredCli = vaultEngine.config.preferredCli || 'claude';
       sendJson(res, 200, {
@@ -346,20 +336,6 @@ const server = http.createServer(async (req, res) => {
         provider: `local-cli:${preferredCli}`,
         model: `${preferredCli}-isolated`,
       });
-      return;
-    }
-
-    // 会話履歴の取得
-    const chatHistoryMatch = pathname.match(
-      /^\/api\/think-support\/conversations\/(?:chats\/([^/]+)(?:\/bundles\/([^/]+))?|bundles\/([^/]+))$/,
-    );
-    if (chatHistoryMatch && req.method === 'GET') {
-      const targetId = decodeURIComponent(
-        chatHistoryMatch[1] || chatHistoryMatch[2] || chatHistoryMatch[3] || '',
-      );
-      const rec = vaultEngine.getRecord(targetId);
-      const log = rec?.support?.thinkConversations || { schemaVersion: 1, turns: [] };
-      sendJson(res, 200, log);
       return;
     }
 
@@ -419,64 +395,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 会話 Turn の保存
-    const saveTurnMatch = pathname.match(
-      /^\/api\/think-support\/conversations\/(?:chats\/([^/]+)(?:\/bundles\/([^/]+))?|bundles\/([^/]+))\/turns\/([^/]+)$/,
-    );
-    if (saveTurnMatch && req.method === 'PUT') {
-      const targetId = decodeURIComponent(
-        saveTurnMatch[1] || saveTurnMatch[2] || saveTurnMatch[3] || '',
-      );
-      const turn = await readJsonBody(req);
-      const rec = vaultEngine.getRecord(targetId);
-      const existingLog = rec?.support?.thinkConversations || { schemaVersion: 1, turns: [] };
-      const existingTurns = Array.isArray(existingLog.turns) ? existingLog.turns : [];
-      const nextTurns = existingTurns.some((t) => t.id === turn.id)
-        ? existingTurns
-        : [...existingTurns, turn];
-      const nextLog = { schemaVersion: 1, turns: nextTurns };
-      vaultEngine.saveSupportMetadata(targetId, { thinkConversations: nextLog });
-      invalidateMetaCache();
-      sendJson(res, 200, { ok: true, turns: nextTurns });
-      return;
-    }
-
-    // 4. ThinkSupport & Progress 互換エンドポイント
-    const supportBundleMatch = pathname.match(/^\/api\/think-support\/bundles\/([^/]+)$/);
-    if (supportBundleMatch) {
-      const bundleId = decodeURIComponent(supportBundleMatch[1]);
-      if (req.method === 'GET') {
-        const rec = vaultEngine.getRecord(bundleId);
-        sendJson(res, 200, rec?.support?.thinkSupport || null);
-        return;
-      }
-      if (req.method === 'PUT') {
-        const body = await readJsonBody(req);
-        vaultEngine.saveSupportMetadata(bundleId, { thinkSupport: body });
-        invalidateMetaCache();
-        sendJson(res, 200, body);
-        return;
-      }
-    }
-
-    const progressBundleMatch = pathname.match(/^\/api\/progress\/bundles\/([^/]+)$/);
-    if (progressBundleMatch) {
-      const bundleId = decodeURIComponent(progressBundleMatch[1]);
-      if (req.method === 'GET') {
-        const rec = vaultEngine.getRecord(bundleId);
-        sendJson(res, 200, rec?.support?.bundleProgress || null);
-        return;
-      }
-      if (req.method === 'PUT') {
-        const body = await readJsonBody(req);
-        vaultEngine.saveSupportMetadata(bundleId, { bundleProgress: body });
-        invalidateMetaCache();
-        sendJson(res, 200, body);
-        return;
-      }
-    }
-
-    // 5. E2EE Relay 直接エンドポイント (/api/relay/encrypted)
+    // 4. E2EE Relay 直接エンドポイント (/api/relay/encrypted)
     if (pathname === '/api/relay/encrypted' && req.method === 'POST') {
       const body = await readJsonBody(req);
       const out = await relayAgent.handleEncryptedRequest(body);
@@ -499,7 +418,7 @@ const server = http.createServer(async (req, res) => {
 
 server.on('error', (err) => {
   if (err && err.code === 'EADDRINUSE') {
-    console.log(`[RelayAgent] ポート ${PORT} は既に別プロセス（Express等）が使用中です。Firestore 中継待機のみ継続します。`);
+    console.log(`[RelayAgent] ポート ${PORT} は既に別プロセスが使用中です。Firestore 中継待機のみ継続します。`);
   } else {
     console.error('[RelayAgent] HTTP Server Error:', err);
   }

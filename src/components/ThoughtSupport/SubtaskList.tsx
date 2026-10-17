@@ -3,7 +3,7 @@ import type { TTVault } from '../../models/TTVault';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { readTaskRelation } from '../../services/taskRelation';
 import { readSubtaskProgress, summarizeSubtaskProgress } from '../../services/subtaskProgress';
-import { MILESTONES, MILESTONE_LABELS, REACH_LABELS } from '../../../server/contracts/progressRecord';
+import { MILESTONES, MILESTONE_LABELS, REACH_LABELS } from '../../../shared/contracts/progressRecord';
 import { SubtaskChatButton } from './SubtaskChatButton';
 
 export function SubtaskList({ vault, bundleId }: { vault: TTVault; bundleId: string }) {

@@ -7,7 +7,7 @@
  */
 
 import {
-  MessageCircle, Files, Settings, RefreshCw,
+  MessageCircle, Files, Settings,
 } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
@@ -19,7 +19,6 @@ interface Props {
   viewMode: ThinktankViewMode;
   onSetViewMode: (mode: ThinktankViewMode) => void;
   onRefresh: () => void;
-  onSync?: () => void;
   vaultName?: string;
   isEditMode?: boolean;
 }
@@ -44,7 +43,6 @@ export function ThinktankTabBar({
   viewMode,
   onSetViewMode,
   onRefresh,
-  onSync,
   vaultName,
   isEditMode = false,
 }: Props) {
@@ -70,16 +68,6 @@ export function ThinktankTabBar({
           {icon}
         </button>
       ))}
-      {onSync && (
-        <button
-          className="tab-icon-btn"
-          data-tip="サーバー同期"
-          aria-label="サーバー同期"
-          onClick={onSync}
-        >
-          <RefreshCw size={16} />
-        </button>
-      )}
       <button
         id="ThinktankSetting"
         className={`tab-icon-btn${viewMode === 'settings' ? ' tab-icon-btn--active' : ''}`}

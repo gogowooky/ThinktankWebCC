@@ -15,11 +15,11 @@ import { formatDateRangeJapanese } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
 import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
 import type { ThinkMeta } from '../services/storage/IStorageBackend';
-import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../server/contracts/thinkSupportRecord';
+import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
 import type { ConversationTurn } from '../services/ConversationService';
-import { validateSubtaskCandidates } from '../../server/contracts/lifecycleProposals';
+import { validateSubtaskCandidates } from '../../shared/contracts/lifecycleProposals';
 import {
   createBundleResolutionState, mergeBundleConditions, addBundleFilterMatches,
   hasBundleSearchConditions, addBundleSearchMatches, finishBundleResolution,

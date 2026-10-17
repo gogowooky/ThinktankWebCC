@@ -1,23 +1,16 @@
-import { apiFetch, readApiJson } from './apiClient';
 import { TTModels } from '../models/TTModels';
 import { StorageManager } from './storage/StorageManager';
 import type { ThinkMeta } from './storage/IStorageBackend';
 import { StorageConflictError } from './storage/IStorageBackend';
+import { ensureFullContent } from './bundleMetadataStore';
 import {
   readThinkSupport,
   type ThinkValues,
   type ThinkSources,
   type ThinkSupportRecord,
-} from '../../server/contracts/thinkSupportRecord';
-export { THINK_FIELDS, emptyThinkValues, readThinkSupport } from '../../server/contracts/thinkSupportRecord';
-export type { ThinkField, ThinkValues, ThinkSources, ThinkSupportRecord } from '../../server/contracts/thinkSupportRecord';
-
-function isWebCloudMode(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (StorageManager.instance?.webProvider === 'drive') return true;
-  const host = window.location?.hostname || '';
-  return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com');
-}
+} from '../../shared/contracts/thinkSupportRecord';
+export { THINK_FIELDS, emptyThinkValues, readThinkSupport } from '../../shared/contracts/thinkSupportRecord';
+export type { ThinkField, ThinkValues, ThinkSources, ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 
 export class ThinkSupportService {
   async read(id: string): Promise<ThinkMeta> {
@@ -30,38 +23,24 @@ export class ThinkSupportService {
       return rec.meta;
     }
 
-    if (isWebCloudMode()) {
-      const think = TTModels.Instance?.Vault?.GetThink(id);
-      if (!think || think.ID !== id || think.ContentType !== 'bundle') {
-        throw new Error('Bundleの保存情報を確認できません。');
-      }
-      readThinkSupport(think.Metadata?.thinkSupport);
-      const nowIso = think.UpdatedAt || new Date().toISOString();
-      return {
-        thinkid: think.ID,
-        category: think.ContentType,
-        title: think.Name,
-        keywords: think.Keywords || '',
-        relatedIds: think.RelatedIDs || '',
-        sizeBytes: think.Content.length,
-        createdAt: nowIso,
-        updatedAt: nowIso,
-        isDeleted: false,
-        metadata: think.Metadata,
-      };
-    }
-
-    const response = await apiFetch(`/api/vault/files/${encodeURIComponent(id)}/think-support`);
-    const meta = (await readApiJson(
-      response,
-      '保存済みの思考状態を取得できませんでした。',
-      { useServerError: false },
-    )) as ThinkMeta;
-    if (meta.thinkid !== id || meta.category !== 'bundle' || !meta.updatedAt) {
+    const think = TTModels.Instance?.Vault?.GetThink(id);
+    if (!think || think.ID !== id || think.ContentType !== 'bundle') {
       throw new Error('Bundleの保存情報を確認できません。');
     }
-    readThinkSupport(meta.metadata?.thinkSupport);
-    return meta;
+    readThinkSupport(think.Metadata?.thinkSupport);
+    const nowIso = think.UpdatedAt || new Date().toISOString();
+    return {
+      thinkid: think.ID,
+      category: think.ContentType,
+      title: think.Name,
+      keywords: think.Keywords || '',
+      relatedIds: think.RelatedIDs || '',
+      sizeBytes: think.Content.length,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      isDeleted: false,
+      metadata: think.Metadata,
+    };
   }
 
   async save(
@@ -108,59 +87,43 @@ export class ThinkSupportService {
       return latest.meta;
     }
 
-    if (isWebCloudMode()) {
-      const think = TTModels.Instance?.Vault?.GetThink(id);
-      if (!think || think.ID !== id || think.ContentType !== 'bundle') {
-        throw new Error('Bundleの保存情報を確認できません。');
-      }
-      const prevRecord = readThinkSupport(think.Metadata?.thinkSupport);
-      const nowIso = new Date().toISOString();
-      const thinkSupport: ThinkSupportRecord = {
-        schemaVersion: 1,
-        revision: (prevRecord?.revision ?? 0) + 1,
-        values,
-        sources,
-        author: 'human',
-        confirmedAt: nowIso,
-        updatedAt: nowIso,
-      };
-      readThinkSupport(thinkSupport);
-
-      const nextMetadata: Record<string, unknown> = {
-        ...(think.Metadata ?? {}),
-        thinkSupport,
-      };
-      think.Metadata = nextMetadata;
-      const savedMeta = await StorageManager.instance.save({
-        thinkid: think.ID,
-        category: think.ContentType,
-        fullContent: think.Content,
-        keywords: think.Keywords,
-        relatedIds: think.RelatedIDs,
-        metadata: nextMetadata,
-        baseUpdatedAt: expectedVersion || think.UpdatedAt || undefined,
-      });
-      think.UpdatedAt = savedMeta.updatedAt;
-      think.markSaved();
-      think.markMetadataSaved();
-      TTModels.Instance?.Vault?.NotifyUpdated(false);
-      readThinkSupport(savedMeta.metadata?.thinkSupport);
-      return savedMeta;
+    const think = TTModels.Instance?.Vault?.GetThink(id);
+    if (!think || think.ID !== id || think.ContentType !== 'bundle') {
+      throw new Error('Bundleの保存情報を確認できません。');
     }
+    const prevRecord = readThinkSupport(think.Metadata?.thinkSupport);
+    const nowIso = new Date().toISOString();
+    const thinkSupport: ThinkSupportRecord = {
+      schemaVersion: 1,
+      revision: (prevRecord?.revision ?? 0) + 1,
+      values,
+      sources,
+      author: 'human',
+      confirmedAt: nowIso,
+      updatedAt: nowIso,
+    };
+    readThinkSupport(thinkSupport);
 
-    const response = await apiFetch(`/api/vault/files/${encodeURIComponent(id)}/think-support`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ expectedVersion, values, sources, confirmed: true }),
+    await ensureFullContent(think);
+    const nextMetadata: Record<string, unknown> = {
+      ...(think.Metadata ?? {}),
+      thinkSupport,
+    };
+    think.Metadata = nextMetadata;
+    const savedMeta = await StorageManager.instance.save({
+      thinkid: think.ID,
+      category: think.ContentType,
+      fullContent: think.Content,
+      keywords: think.Keywords,
+      relatedIds: think.RelatedIDs,
+      metadata: nextMetadata,
+      baseUpdatedAt: expectedVersion || think.UpdatedAt || undefined,
     });
-    if (response.status === 409) throw new StorageConflictError(id, '');
-    const meta = (await readApiJson(
-      response,
-      '保存を確認できませんでした。入力は保持しています。最新の保存内容を確認してください。',
-      { useServerError: false },
-    )) as ThinkMeta;
-    if (meta.thinkid !== id) throw new Error('保存結果の対象が一致しません。');
-    readThinkSupport(meta.metadata?.thinkSupport);
-    return meta;
+    think.UpdatedAt = savedMeta.updatedAt;
+    think.markSaved();
+    think.markMetadataSaved();
+    TTModels.Instance?.Vault?.NotifyUpdated(false);
+    readThinkSupport(savedMeta.metadata?.thinkSupport);
+    return savedMeta;
   }
 }

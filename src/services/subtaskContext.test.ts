@@ -6,10 +6,9 @@ import { TTThink } from '../models/TTThink';
 import { captureSubtaskContext } from './subtaskContext';
 import { ContextService } from './ContextService';
 import { conversationContext } from './ConversationService';
-import { ConversationService } from '../../server/services/ConversationService';
-import { emptyProgress } from '../../server/contracts/progressRecord';
-import { validateContext, readConversationLog } from '../../server/contracts/conversationRecord';
-import { SUBTASK_REVIEW_QUESTION, validateSubtaskContext } from '../../server/contracts/subtaskContext';
+import { emptyProgress } from '../../shared/contracts/progressRecord';
+import { validateContext, readConversationLog, type ConversationTurn } from '../../shared/contracts/conversationRecord';
+import { SUBTASK_REVIEW_QUESTION, validateSubtaskContext } from '../../shared/contracts/subtaskContext';
 import { prepareProposalReview } from './proposalReview';
 import type { ThinkMeta } from './storage/IStorageBackend';
 
@@ -46,7 +45,7 @@ it('rejects over-limit child lists and context text instead of silently truncati
   const large = { scope: 'loaded-direct-children', items: Array.from({ length: 30 }, (_, i) => ({ bundleId: `id-${i}`, title: 'a'.repeat(2000), status: 'unrecorded' })) };
   expect(() => validateSubtaskContext(large, 'parent')).toThrow('大きすぎる');
 });
-it('connects the captured child status to the parent AI and reviewable next-action proposals without saving', async () => {
+it('carries the captured child status into a saved turn and reviewable next-action proposals without saving', async () => {
   const vault = setup(); vault.AddThink(child('child'));
   const original = JSON.stringify(vault.GetThinks().map(t => t.Metadata));
   const reader = { getBody: vi.fn(), search: vi.fn() };
@@ -55,11 +54,10 @@ it('connects the captured child status to the parent AI and reviewable next-acti
   expect(reader.getBody).not.toHaveBeenCalled(); expect(reader.search).not.toHaveBeenCalled();
   expect(snapshot.sources).toEqual([]);
   const context = conversationContext(snapshot);
-  const generate = vi.fn().mockResolvedValue({ reply: 'childの本人確認済み記録では参加者数の確認が残っています。', insufficientEvidence: false, citations: [],
-    proposals: [{ field: 'nextAction', after: '参加者の返事を確認する', reason: '子課題の残作業' }], progressProposals: [] });
-  const turn = await new ConversationService({ name: 'test', model: 'test', generate }).answer('review', SUBTASK_REVIEW_QUESTION, context, [], new AbortController().signal);
-  expect(generate.mock.calls[0][0].context.subtasks.items[0].event).toEqual(event);
-  expect(turn.answer.progressProposals).toEqual([]);
+  expect(context.subtasks?.items[0].event).toEqual(event);
+  const turn: ConversationTurn = { schemaVersion: 1, id: 'review', createdAt: '2026-09-24T00:00:01Z', question: SUBTASK_REVIEW_QUESTION, context, provider: 'test', model: 'test',
+    answer: { reply: 'childの本人確認済み記録では参加者数の確認が残っています。', insufficientEvidence: false, citations: [],
+      proposals: [{ field: 'nextAction', before: '', after: '参加者の返事を確認する', reason: '子課題の残作業' }], progressProposals: [] } };
   expect(readConversationLog({ schemaVersion: 1, turns: [turn] }).turns[0].context.subtasks).toEqual(context.subtasks);
   const reviewed = prepareProposalReview(turn, { thinkid: 'parent', category: 'bundle', metadata: {} } as ThinkMeta);
   expect(reviewed.values.nextAction).toBe('参加者の返事を確認する');
@@ -86,14 +84,6 @@ it('includes the current task pause and resume memo without conflating child sta
   const unsaved = await new ContextService(vault).getBundleContext('parent', { includeSubtasks: true });
   expect(unsaved.bundleProgress).toEqual({ status: 'unsaved' });
   expect(() => validateContext({ ...context, scope: 'chat-only', snapshotId: 'parent', subtasks: undefined })).toThrow('Chat単独');
-});
-it('marks unknown child records as insufficient evidence even when the provider does not', async () => {
-  const vault = setup(); const unknown = child('unknown'); unknown.Metadata.thinkProgress = undefined; unknown.markMetadataSaved(); vault.AddThink(unknown);
-  const snapshot = await new ContextService(vault).getBundleContext('parent', { includeSubtasks: true });
-  const context = { ...conversationContext(snapshot), quality: 'complete' as const };
-  const generate = vi.fn().mockResolvedValue({ reply: '確認が必要です。', insufficientEvidence: false, citations: [], proposals: [] });
-  const result = await new ConversationService({ name: 'test', model: 'test', generate }).answer('review', '次は？', context, [], new AbortController().signal);
-  expect(result.answer.insufficientEvidence).toBe(true); expect(generate).toHaveBeenCalledTimes(1);
 });
 it('rejects child changes during snapshot collection instead of combining different moments', async () => {
   const vault = setup(); const task = child('child'); vault.AddThink(task);

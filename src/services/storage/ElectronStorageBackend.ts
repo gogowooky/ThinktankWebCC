@@ -10,10 +10,6 @@ import type { FirestoreRelayChunkDoc, RelayEnvelopePlaintext, RelayResponsePlain
 import type { DriveConflictFileInfo } from '../../../shared/conflict';
 import type { IndexShardV1 } from '../../../shared/searchIndex';
 
-export interface SyncResult {
-  added: number; updated: number; skipped: number; total: number;
-}
-
 export interface ElectronVaultConfig {
   vaultDir: string;
   vaultRootDir: string;
@@ -56,7 +52,6 @@ declare global {
         saveSupport?:   (id: string, metadata: Record<string, unknown>, expectedVer?: string) => Promise<{ thinkid: string; updatedAt: string; metadata: Record<string, unknown> }>;
         delete:         (id: string)      => Promise<void>;
         search:         (q: string)       => Promise<ThinkMeta[]>;
-        syncFromServer: (url?: string)    => Promise<SyncResult>;
       };
       vault?: {
         getConfig:     () => Promise<ElectronVaultConfig>;
@@ -83,12 +78,10 @@ declare global {
         executePlain:    <TReq = unknown, TRes = unknown>(envelope: RelayEnvelopePlaintext<TReq>) => Promise<RelayResponsePlaintext<TRes>>;
         handleEncrypted: (payload: { encryptedRequest: string; chunks?: FirestoreRelayChunkDoc[] }) => Promise<{ encryptedResponse: string; responseChunks: FirestoreRelayChunkDoc[] }>;
       };
+      system?: {
+        openPath: (target: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+      };
       getPathForFile: (file: File) => string;
-      /**
-       * パッケージ版でメインプロセスが起動したローカルサーバーの接続情報。
-       * dev（vite proxy 経由で相対パスが通る）では undefined。
-       */
-      apiConfig?: { baseUrl: string; apiKey?: string };
     };
   }
 }
@@ -106,9 +99,4 @@ export class ElectronStorageBackend implements IStorageBackend {
   save(payload: SavePayload):   Promise<ThinkMeta>     { return this.api.save(payload); }
   delete(id: string):           Promise<void>          { return this.api.delete(id); }
   search(query: string):        Promise<ThinkMeta[]>   { return this.api.search(query); }
-
-  // 未指定時の接続先は、自前サーバーのportを把握しているメインプロセスで決める。
-  syncFromServer(serverUrl?: string): Promise<SyncResult> {
-    return this.api.syncFromServer(serverUrl);
-  }
 }

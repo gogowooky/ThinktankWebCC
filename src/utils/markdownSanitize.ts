@@ -5,7 +5,7 @@
  * marked は「Markdown → HTML 変換器」であってサニタイザではない（sanitize オプションは
  * v5 で廃止済み）。生の <script> や onerror 属性はそのまま通過する。
  * ContentType='nettext' は Web から取り込んだ外部由来テキストであり、Electron では
- * preload の electronAPI（Vault の全読み書き・syncFromServer）に到達できてしまうため、
+ * preload の electronAPI（Vault の全読み書き・ローカルファイル起動）に到達できてしまうため、
  * 描画前に必ずここを通す。
  *
  * 描画側（MarkdownMedia）から分離してあるのは、DOM 依存の挙動を単体で検証できるようにするため。

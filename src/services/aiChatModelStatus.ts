@@ -5,7 +5,7 @@
  *   AIChat.ModelNames.{Claude|OpenAI|Gemini|Local} … そのプロバイダで今使える主要モデルの ID の CSV。先頭が選択中
  *   {Panel}.AIChat.ModelName                       … そのパネルが使うプロバイダ名（各パネルが保持）
  *
- * 使えるモデルの一覧は起動時にサーバー（各社のモデル一覧 API）から取得する（loadAiModelCatalog）。
+ * 使えるモデルの一覧は AI_MODEL_CATALOG を起動時に反映する（applyAiModelCatalog）。
  * モデルの選択はプロバイダ単位で全パネル共通、どのプロバイダを使うかはパネルごとに決まる。
  * 送信時の { provider, model } は selectionFor() で両者を組み合わせて作る。
  */
@@ -134,19 +134,20 @@ export function modelChoices(): { name: AiChatProviderName; selection: AiModelSe
 }
 
 /**
- * 起動時に呼ぶ。サーバーの /models（各社のモデル一覧 API から絞った主要モデル）を取得して反映する。
- * 取得できなければ一覧は未取得のまま（保存済みの選択で送信し、可否はサーバーが判定する）。
+ * 各社の主要モデル。AI は各社の CLI で実行するため、ここに無いモデルも CLI 側で指定できる。
+ * モデル一覧 API は API キーを要するので、取得せずにこの一覧を使う。
  */
-export async function loadAiModelCatalog(fetchJson: () => Promise<unknown>, canApply: () => boolean = () => true): Promise<boolean> {
-  let data: unknown;
-  try { data = await fetchJson(); } catch { return false; }
-  if (!canApply() || !data || typeof data !== 'object') return false;
-  const catalog = data as Record<string, unknown>;
+export const AI_MODEL_CATALOG: Readonly<Record<AiProvider, readonly string[]>> = {
+  anthropic: ['claude-sonnet-5', 'claude-opus-5', 'claude-opus-4-8', 'claude-haiku-4-5'],
+  openai: ['gpt-5.6'],
+  gemini: ['gemini-3.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
+  local: [NO_MODEL],
+};
+
+/** 起動時に呼ぶ。保存済みの選択を先頭に残したまま、各社の一覧を catalog に揃える */
+export function applyAiModelCatalog(catalog: Readonly<Partial<Record<AiProvider, readonly string[]>>> = AI_MODEL_CATALOG): void {
   for (const name of AI_CHAT_PROVIDER_NAMES) {
-    // モデル変更の通知からアプリが破棄される場合も、残りの社の一覧を旧要求から反映しない。
-    if (!canApply()) return false;
     const ids = catalog[PROVIDER_OF[name]];
-    if (Array.isArray(ids) && ids.every(id => typeof id === 'string')) setAvailableModels(name, ids as string[]);
+    if (ids) setAvailableModels(name, [...ids]);
   }
-  return canApply();
 }

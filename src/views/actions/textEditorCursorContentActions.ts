@@ -16,16 +16,12 @@ import { TTUIStateManager } from '../TTUIStateManager';
 import { showDefaultMenu } from '../../utils/defaultMenu';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
-import { apiFetch } from '../../services/apiClient';
+import { defaultSearchTagUrls } from '../../utils/defaultSearchTags';
 import type { SearchTagRow } from '../../utils/searchTagFormat';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
-// サーバー（docs/DefaultSearchTag.md）から取得した基礎データ
-let _baseSearchTags: Record<string, string> | null = null;
-// Vaultメモ（ThinktankSearchTag）由来の上書き分。id一致分のみ _baseSearchTags を置換する
+// Vaultメモ（ThinktankSearchTag）由来の上書き分。id一致分のみ既定値（docs/DefaultSearchTag.md）を置換する
 let _overrideSearchTags: Record<string, string> | null = null;
-// 一覧の取得自体に失敗した場合の理由（「該当キーなし」と区別して表示するため）
-let _searchTagLoadError: string | null = null;
 
 // タグ挿入メニューで挿入する本文。既定は `[ID:]` だが、アンカー系はID名を含まない
 // 固定書式（docs/DefaultSearchTag.md の Tag.Anchor 8.1 / 8.2 の記法）になる。
@@ -95,31 +91,12 @@ function openThinkAtTarget(app: TTApplication, thinkId: string, suffix?: string)
 }
 
 async function getSearchTags(): Promise<Record<string, string>> {
-  if (!_baseSearchTags) {
-    _searchTagLoadError = null;
-    try {
-      const res = await apiFetch('/api/system/search-tags');
-      if (res.ok) {
-        const raw = await res.json() as Record<string, string>;
-        // キーを小文字化して大文字・小文字を問わず検索できるようにする
-        _baseSearchTags = Object.fromEntries(
-          Object.entries(raw).map(([k, v]) => [k.toLowerCase(), v])
-        );
-      } else {
-        _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（HTTP ${res.status}）`;
-        return _overrideSearchTags ?? {};
-      }
-    } catch (err) {
-      _searchTagLoadError = `検索テンプレート一覧の取得に失敗しました（サーバー未起動の可能性）: ${getErrorMessage(err)}`;
-      return _overrideSearchTags ?? {};
-    }
-  }
-  return { ...(_baseSearchTags ?? {}), ...(_overrideSearchTags ?? {}) };
+  return { ...defaultSearchTagUrls(), ...(_overrideSearchTags ?? {}) };
 }
 
 /**
  * Vaultメモ（ThinktankSearchTag）由来の行で検索URLテンプレートを上書きマージする
- * （idが一致する項目だけ置換し、それ以外はサーバー取得分のまま維持する。NoURL行は除外）。
+ * （idが一致する項目だけ置換し、それ以外は既定値のまま維持する。NoURL行は除外）。
  */
 export function applySearchTagUrlOverride(rows: SearchTagRow[]): void {
   _overrideSearchTags = Object.fromEntries(
@@ -134,7 +111,7 @@ export function getEffectiveSearchTagUrls(): Promise<Record<string, string>> {
   return getSearchTags();
 }
 
-/** 上書きを解除し、サーバー取得分（docs/DefaultSearchTag.md）に戻す */
+/** 上書きを解除し、既定値（docs/DefaultSearchTag.md）に戻す */
 export function resetSearchTagUrlOverride(): void {
   _overrideSearchTags = null;
 }
@@ -199,7 +176,7 @@ export async function buildKeywordSearchUrl(searchId: string, word: string): Pro
   if (id === 'googleroute') return buildGoogleRouteUrl(word);
   if (id === 'yahootransfer') return buildYahooTransferUrl(word);
   const template = (await getSearchTags())[id];
-  if (!template) return { error: _searchTagLoadError ?? `検索サイト [${searchId}] のURLが見つかりません（docs/DefaultSearchTag.md）` };
+  if (!template) return { error: `検索サイト [${searchId}] のURLが見つかりません（docs/DefaultSearchTag.md）` };
   return { url: template.replace('{0}', encodeURIComponent(word)), label: `${searchId}:${word}` };
 }
 
@@ -311,15 +288,13 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           item.Result = 'カーソル位置のテキストがファイルパスではありません';
           return;
         }
-        return apiFetch('/api/system/open', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: text })
-        }).then(async res => {
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.error || `HTTP ${res.status}`);
-          }
+        const system = window.electronAPI?.system;
+        if (!system) {
+          item.Result = 'ローカルファイルの起動はPC版（Electron）でのみ利用できます';
+          return;
+        }
+        return system.openPath(text).then(res => {
+          if (!res.ok) throw new Error(res.error);
           item.Result = `パス [${text}] を起動しました`;
         }).catch((err: unknown) => {
           console.error('Failed to open path', err);
@@ -376,7 +351,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         const WEB_SEARCH_TEMPLATES = await getSearchTags();
         const template = WEB_SEARCH_TEMPLATES[key.toLowerCase()];
         if (!template) {
-          item.Result = _searchTagLoadError ?? `検索テンプレート [${key}] が見つかりません`;
+          item.Result = `検索テンプレート [${key}] が見つかりません`;
           return;
         }
         const url = template.replace('{0}', encodeURIComponent(val));

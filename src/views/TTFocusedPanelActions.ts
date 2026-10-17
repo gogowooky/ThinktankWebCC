@@ -915,53 +915,6 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
-  TTActions.Register({
-    ActionID: 'Application.Resource.ExportToLocal',
-    Description: 'サーバー保存済みThinkファイルをローカルにエクスポートする',
-    Completion: (item) => {
-      const status = app.Status as any;
-      if (status && typeof status.SetLocalExporting === 'function') {
-        status.SetLocalExporting('0%');
-      }
-
-      const pollInterval = setInterval(async () => {
-        try {
-          const res = await apiFetch('/api/vault/files/export/status');
-          if (res.ok) {
-            const progress = await res.json() as { running: boolean; total: number; current: number };
-            if (progress.total > 0 && status && typeof status.SetLocalExporting === 'function') {
-              const pct = Math.round((progress.current / progress.total) * 100);
-              status.SetLocalExporting(`${pct}%`);
-            }
-          }
-        } catch (e) {
-          console.error('Failed to poll export status:', e);
-        }
-      }, 300);
-
-      return apiFetch('/api/vault/files/export', { method: 'POST' })
-        .then(async (res) => {
-          clearInterval(pollInterval);
-          if (!res.ok) {
-            throw new Error(`Export API failed: ${res.status}`);
-          }
-          const result = await res.json() as { success: boolean; count: number; path: string };
-          if (status && typeof status.SetLocalExporting === 'function') {
-            status.SetLocalExporting('100%');
-          }
-          item.Result = `保存完了: ${result.count}件を ${result.path} に保存しました`;
-        })
-        .catch((err) => {
-          clearInterval(pollInterval);
-          if (status && typeof status.SetLocalExporting === 'function') {
-            status.SetLocalExporting('0%');
-          }
-          item.Result = `[エラー] ${err.message}`;
-          throw err;
-        });
-    },
-  });
-
   // ── 巻戻（1時間前への復元）──────────────────────────
   // TODO: バックエンドに過去版を参照できる
   //       復元APIを新設し、下記2アクションの中身を実装する。

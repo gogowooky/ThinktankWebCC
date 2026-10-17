@@ -3,10 +3,10 @@ import { useMemo, useReducer } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { ContextService } from '../../services/ContextService';
 import { ExternalService, prepareExport, type ExternalState } from '../../services/ExternalService';
-import { exportDiff, latestConnection, notebookUrl } from '../../../server/contracts/externalRecord';
+import { exportDiff, latestConnection, notebookUrl } from '../../../shared/contracts/externalRecord';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { createExternalBackup, parseExternalBackup, MAX_EXTERNAL_BACKUP_BYTES, type ImportedExternalData } from '../../services/externalBackup';
-import type { ExportManifest, ExternalInput } from '../../../server/contracts/externalRecord';
+import type { ExportManifest, ExternalInput } from '../../../shared/contracts/externalRecord';
 import './BundleExternal.css';
 
 interface Draft {
@@ -26,7 +26,7 @@ function download(name: string, content: string, type: string) {
 export function BundleExternal({ vault, bundleId }: { vault: TTVault; bundleId: string }) {
   const lifetime = useMemo(() => draftVaultLease(vault), [vault]);
   const [, render] = useReducer(n => n + 1, 0); const draft = draftFor(vault, bundleId, lifetime);
-  const supported = StorageManager.instance.mode === 'pwa';
+  const supported = StorageManager.instance.mode !== 'local';
   const previous = draft.state && latestConnection(draft.state.log, vault.ID, draft.account.trim());
   let targetUrl = '';
   try { targetUrl = notebookUrl(draft.url.trim()); } catch { /* Validate incomplete input on explicit save. */ }

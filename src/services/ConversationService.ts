@@ -2,6 +2,8 @@ import { apiFetch, readApiJson } from './apiClient';
 import type { TTVault } from '../models/TTVault';
 import { TTModels } from '../models/TTModels';
 import { StorageManager } from './storage/StorageManager';
+import { usesLocalRelay } from './runtimeMode';
+import { ensureFullContent } from './bundleMetadataStore';
 import type { AiModelSelection } from './aiModels';
 import type { ContextSnapshot } from './contextTypes';
 import {
@@ -15,21 +17,14 @@ import {
   type ConversationTurn,
   type Citation,
   type Proposal,
-} from '../../server/contracts/conversationRecord';
-import { THINK_FIELDS, type ThinkField } from '../../server/contracts/thinkSupportRecord';
+} from '../../shared/contracts/conversationRecord';
+import { THINK_FIELDS, type ThinkField } from '../../shared/contracts/thinkSupportRecord';
 import { DomainProfileManager } from '../platform/DomainProfileManager';
 import { FirestoreRelayClient } from '../platform/web/FirestoreRelayClient';
 import { extractOperationsState, addPromotionCandidate } from '../../shared/operations';
 import type { ValidatedPromotionCandidate } from '../../shared/responseValidator';
 
-export type { ConversationContext, ConversationTurn } from '../../server/contracts/conversationRecord';
-
-function isWebCloudMode(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (StorageManager.instance?.webProvider === 'drive') return true;
-  const host = window.location?.hostname || '';
-  return host.endsWith('.web.app') || host.endsWith('.firebaseapp.com');
-}
+export type { ConversationContext, ConversationTurn } from '../../shared/contracts/conversationRecord';
 
 /** Turn ID ごとに AI が抽出した昇格候補（PromotionCandidates）を保持するインメモリマップ */
 const turnPromotionCandidatesMap = new Map<string, ValidatedPromotionCandidate[]>();
@@ -100,7 +95,7 @@ export class ConversationClient {
       };
     }
 
-    if (isWebCloudMode()) {
+    if (!usesLocalRelay()) {
       return {
         enabled: false,
         provider: 'firebase-e2ee-relay',
@@ -154,147 +149,71 @@ export class ConversationClient {
       return [];
     }
 
-    if (isWebCloudMode()) {
-      const targetId = chatId || bundleId;
-      if (!targetId) return [];
-      const activeVault = vault ?? TTModels.Instance?.Vault;
-      const targetThink = activeVault?.GetThink(targetId);
+    const targetId = chatId || bundleId;
+    if (!targetId) return [];
+    const activeVault = vault ?? TTModels.Instance?.Vault;
+    const targetThink = activeVault?.GetThink(targetId);
 
-      if (FirestoreRelayClient.isConfigured() && (!targetThink || targetThink.IsMetaOnly)) {
-        try {
-          const relayRes = await FirestoreRelayClient.request<
-            { thinkid: string; includeSupport?: boolean },
-            {
-              thinkid: string;
-              meta?: { metadata?: Record<string, unknown>; updatedAt?: string };
-              body?: string;
-              support?: Record<string, unknown>;
-            } | null
-          >('getBody', { thinkid: targetId, includeSupport: true });
-          if (relayRes.ok && relayRes.result) {
-            const rawSupport =
-              relayRes.result.support?.thinkConversations ??
-              relayRes.result.meta?.metadata?.thinkConversations;
-            if (rawSupport) {
-              try {
-                const log = readConversationLog(rawSupport);
-                if (log.turns.length > 0) return log.turns;
-              } catch {
-                // ignore
-              }
-            }
-            if (chatId && vaultId && relayRes.result.body) {
-              return legacyConversationTurns(
-                relayRes.result.body,
-                vaultId,
-                chatId,
-                relayRes.result.meta?.updatedAt || new Date().toISOString(),
-              );
+    if (FirestoreRelayClient.isConfigured() && (!targetThink || targetThink.IsMetaOnly)) {
+      try {
+        const relayRes = await FirestoreRelayClient.request<
+          { thinkid: string; includeSupport?: boolean },
+          {
+            thinkid: string;
+            meta?: { metadata?: Record<string, unknown>; updatedAt?: string };
+            body?: string;
+            support?: Record<string, unknown>;
+          } | null
+        >('getBody', { thinkid: targetId, includeSupport: true });
+        if (relayRes.ok && relayRes.result) {
+          const rawSupport =
+            relayRes.result.support?.thinkConversations ??
+            relayRes.result.meta?.metadata?.thinkConversations;
+          if (rawSupport) {
+            try {
+              const log = readConversationLog(rawSupport);
+              if (log.turns.length > 0) return log.turns;
+            } catch {
+              // ignore
             }
           }
-        } catch {
-          // Relay オフライン時はローカルモデルの値をそのまま使用
-        }
-      }
-
-      if (!targetThink) return [];
-      const rawLog = targetThink.Metadata?.thinkConversations;
-      try {
-        const log = readConversationLog(rawLog);
-        if (log.turns.length > 0) {
-          return log.turns;
+          if (chatId && vaultId && relayRes.result.body) {
+            return legacyConversationTurns(
+              relayRes.result.body,
+              vaultId,
+              chatId,
+              relayRes.result.meta?.updatedAt || new Date().toISOString(),
+            );
+          }
         }
       } catch {
-        // Fallback to legacy text turns
+        // Relay オフライン時はローカルモデルの値をそのまま使用
       }
-      if (chatId && vaultId && targetThink.Content) {
-        const nl = targetThink.Content.indexOf('\n');
-        const body = nl >= 0 ? targetThink.Content.slice(nl + 1) : '';
-        if (body.trim()) {
-          return legacyConversationTurns(
-            body,
-            vaultId,
-            chatId,
-            targetThink.UpdatedAt || new Date().toISOString(),
-          );
-        }
-      }
-      return [];
     }
 
-    const chat = chatId ? vault?.GetThink(chatId) : undefined;
-    const before =
-      chat && !chat.IsDirty && !chat.IsMetadataDirty
-        ? {
-            content: chat.Content,
-            metadata: JSON.stringify(chat.Metadata),
-            version: chat.UpdatedAt,
-          }
-        : undefined;
-    const query = vaultId ? `?vaultId=${encodeURIComponent(vaultId)}` : '';
-    const path = chatId
-      ? bundleId
-        ? `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}/bundles/${encodeURIComponent(bundleId)}`
-        : `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}`
-      : `/api/think-support/conversations/bundles/${encodeURIComponent(bundleId!)}`;
-    const value = await readApiJson(await apiFetch(path + query, { signal }));
-    const log = readConversationLog(value);
-    if (!chatId && log.turns.some((t) => t.context.bundleId !== bundleId)) {
-      throw new Error('履歴の対象が一致しません。');
+    if (!targetThink) return [];
+    const rawLog = targetThink.Metadata?.thinkConversations;
+    try {
+      const log = readConversationLog(rawLog);
+      if (log.turns.length > 0) {
+        return log.turns;
+      }
+    } catch {
+      // Fallback to legacy text turns
     }
-    // Only a complete saved record can advance the local save baseline. Never overwrite editor changes.
-    const saved =
-      value && typeof value === 'object' && 'savedChat' in value ? value.savedChat : undefined;
-    if (
-      (!isCurrent || isCurrent()) &&
-      chat &&
-      before &&
-      vault?.GetThink(chatId!) === chat &&
-      !signal?.aborted &&
-      !chat.IsDirty &&
-      !chat.IsMetadataDirty &&
-      chat.Content === before.content &&
-      JSON.stringify(chat.Metadata) === before.metadata &&
-      chat.UpdatedAt === before.version &&
-      saved &&
-      typeof saved === 'object' &&
-      'id' in saved &&
-      saved.id === chatId &&
-      'title' in saved &&
-      typeof saved.title === 'string' &&
-      'content' in saved &&
-      typeof saved.content === 'string' &&
-      'metadata' in saved &&
-      saved.metadata &&
-      typeof saved.metadata === 'object' &&
-      !Array.isArray(saved.metadata) &&
-      'keywords' in saved &&
-      typeof saved.keywords === 'string' &&
-      'relatedIds' in saved &&
-      typeof saved.relatedIds === 'string' &&
-      'updatedAt' in saved &&
-      typeof saved.updatedAt === 'string' &&
-      Number.isFinite(Date.parse(saved.updatedAt)) &&
-      (!before.version || Date.parse(saved.updatedAt) >= Date.parse(before.version))
-    ) {
-      const changed =
-        chat.Content !== `${saved.title}\n${saved.content}` ||
-        JSON.stringify(chat.Metadata) !== JSON.stringify(saved.metadata) ||
-        chat.UpdatedAt !== saved.updatedAt ||
-        chat.IsMetaOnly ||
-        chat.Keywords !== saved.keywords ||
-        chat.RelatedIDs !== saved.relatedIds;
-      chat.setContentSilent(`${saved.title}\n${saved.content}`);
-      chat.Metadata = structuredClone(saved.metadata) as Record<string, unknown>;
-      chat.Keywords = saved.keywords;
-      chat.RelatedIDs = saved.relatedIds;
-      chat.UpdatedAt = saved.updatedAt;
-      chat.IsMetaOnly = false;
-      chat.markSaved();
-      chat.markMetadataSaved();
-      if (changed) vault.NotifyUpdated(false);
+    if (chatId && vaultId && targetThink.Content) {
+      const nl = targetThink.Content.indexOf('\n');
+      const body = nl >= 0 ? targetThink.Content.slice(nl + 1) : '';
+      if (body.trim()) {
+        return legacyConversationTurns(
+          body,
+          vaultId,
+          chatId,
+          targetThink.UpdatedAt || new Date().toISOString(),
+        );
+      }
     }
-    return log.turns;
+    return [];
   }
 
   /** model を渡すとそのモデルと会話する（省略時はサーバーまたはローカルCLI既定）。 */
@@ -424,6 +343,9 @@ export class ConversationClient {
       return turn;
     }
 
+    if (!usesLocalRelay()) {
+      throw new Error('AIに接続できません。PC版を使うか、中継役PCとの接続を設定してください。');
+    }
     const value = await readApiJson(
       await apiFetch('/api/think-support/conversations/turns', {
         method: 'POST',
@@ -531,117 +453,104 @@ export class ConversationClient {
       return;
     }
 
-    if (isWebCloudMode()) {
-      const targetId = chatId || bundleId || turn.context.bundleId;
-      const activeVault = TTModels.Instance?.Vault;
-      const think = activeVault?.GetThink(targetId);
+    const targetId = chatId || bundleId || turn.context.bundleId;
+    const activeVault = TTModels.Instance?.Vault;
+    const think = activeVault?.GetThink(targetId);
 
-      let currentTurns: ConversationTurn[] = [];
-      try {
-        currentTurns = readConversationLog(think?.Metadata?.thinkConversations).turns;
-      } catch {
-        currentTurns = [];
-      }
-      const nextTurns = currentTurns.some((t) => t.id === turn.id)
-        ? currentTurns
-        : [...currentTurns, turn];
-      const nextLog = { schemaVersion: 1 as const, turns: nextTurns };
+    let currentTurns: ConversationTurn[] = [];
+    try {
+      currentTurns = readConversationLog(think?.Metadata?.thinkConversations).turns;
+    } catch {
+      currentTurns = [];
+    }
+    const nextTurns = currentTurns.some((t) => t.id === turn.id)
+      ? currentTurns
+      : [...currentTurns, turn];
+    const nextLog = { schemaVersion: 1 as const, turns: nextTurns };
 
-      // 昇格候補があれば対象 Bundle / Chat の operations にも追加
-      const extractedCandidates = turnPromotionCandidatesMap.get(turn.id) ?? [];
-      const targetOpsId = bundleId || turn.context.bundleId || targetId;
-      const opsThink = activeVault?.GetThink(targetOpsId);
-      if (opsThink && extractedCandidates.length > 0) {
-        let opsState = extractOperationsState(
-          opsThink.Metadata,
-          DomainProfileManager.activeProfile,
+    // 昇格候補があれば対象 Bundle / Chat の operations にも追加
+    const extractedCandidates = turnPromotionCandidatesMap.get(turn.id) ?? [];
+    const targetOpsId = bundleId || turn.context.bundleId || targetId;
+    const opsThink = activeVault?.GetThink(targetOpsId);
+    if (opsThink && extractedCandidates.length > 0) {
+      let opsState = extractOperationsState(
+        opsThink.Metadata,
+        DomainProfileManager.activeProfile,
+      );
+      for (const cand of extractedCandidates) {
+        opsState = addPromotionCandidate(
+          opsState,
+          {
+            bundleId: targetOpsId,
+            sourceChatThinkid: chatId,
+            sourceMessageId: turn.id,
+            type: cand.type,
+            title: cand.title,
+            summary: cand.summary,
+            rationale: cand.rationale,
+            impactScope: cand.impactScope,
+            proposedOwner: cand.proposedOwner,
+            dueDate: cand.dueDate,
+            citations: cand.citations,
+            createdBy: 'ai',
+          },
+          'ai',
         );
-        for (const cand of extractedCandidates) {
-          opsState = addPromotionCandidate(
-            opsState,
-            {
-              bundleId: targetOpsId,
-              sourceChatThinkid: chatId,
-              sourceMessageId: turn.id,
-              type: cand.type,
-              title: cand.title,
-              summary: cand.summary,
-              rationale: cand.rationale,
-              impactScope: cand.impactScope,
-              proposedOwner: cand.proposedOwner,
-              dueDate: cand.dueDate,
-              citations: cand.citations,
-              createdBy: 'ai',
-            },
-            'ai',
-          );
-        }
-        opsThink.Metadata = {
-          ...(opsThink.Metadata ?? {}),
-          operations: opsState,
-        };
-        if (targetOpsId !== targetId) {
-          const savedOpsMeta = await StorageManager.instance.save({
-            thinkid: opsThink.ID,
-            category: opsThink.ContentType,
-            fullContent: opsThink.Content,
-            keywords: opsThink.Keywords,
-            relatedIds: opsThink.RelatedIDs,
-            metadata: opsThink.Metadata,
-            baseUpdatedAt: opsThink.UpdatedAt || undefined,
-          });
-          opsThink.UpdatedAt = savedOpsMeta.updatedAt;
-          opsThink.markSaved();
-          opsThink.markMetadataSaved();
-        }
       }
-
-      if (think) {
-        const nextMetadata: Record<string, unknown> = {
-          ...(think.Metadata ?? {}),
-          thinkConversations: nextLog,
-        };
-        think.Metadata = nextMetadata;
-
-        let fullContent = think.Content || `# ${think.Name}`;
-        if (chatId && think.ContentType === 'chat') {
-          const nl = fullContent.indexOf('\n');
-          const titleLine =
-            nl >= 0 ? fullContent.slice(0, nl).replace(/\r$/, '') : fullContent.replace(/\r$/, '');
-          const bodyText = nl >= 0 ? fullContent.slice(nl + 1) : '';
-          const mergedBody = mergeConversationTranscript(bodyText, nextTurns);
-          fullContent = mergedBody ? `${titleLine}\n${mergedBody}` : titleLine;
-          think.setContentSilent(fullContent);
-        }
-
-        const savedMeta = await StorageManager.instance.save({
-          thinkid: think.ID,
-          category: think.ContentType,
-          fullContent,
-          keywords: think.Keywords,
-          relatedIds: think.RelatedIDs,
-          metadata: nextMetadata,
-          baseUpdatedAt: think.UpdatedAt || undefined,
+      opsThink.Metadata = {
+        ...(opsThink.Metadata ?? {}),
+        operations: opsState,
+      };
+      if (targetOpsId !== targetId) {
+        await ensureFullContent(opsThink);
+        const savedOpsMeta = await StorageManager.instance.save({
+          thinkid: opsThink.ID,
+          category: opsThink.ContentType,
+          fullContent: opsThink.Content,
+          keywords: opsThink.Keywords,
+          relatedIds: opsThink.RelatedIDs,
+          metadata: opsThink.Metadata,
+          baseUpdatedAt: opsThink.UpdatedAt || undefined,
         });
-        think.UpdatedAt = savedMeta.updatedAt;
-        think.markSaved();
-        think.markMetadataSaved();
-        activeVault?.NotifyUpdated(false);
+        opsThink.UpdatedAt = savedOpsMeta.updatedAt;
+        opsThink.markSaved();
+        opsThink.markMetadataSaved();
       }
-      return;
     }
 
-    const path = chatId
-      ? bundleId
-        ? `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}/bundles/${encodeURIComponent(bundleId)}/turns/${encodeURIComponent(turn.id)}`
-        : `/api/think-support/conversations/chats/${encodeURIComponent(chatId)}/turns/${encodeURIComponent(turn.id)}`
-      : `/api/think-support/conversations/bundles/${encodeURIComponent(turn.context.bundleId)}/turns/${encodeURIComponent(turn.id)}`;
-    await readApiJson(
-      await apiFetch(path, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(turn),
-      }),
-    );
+    if (think) {
+      await ensureFullContent(think);
+      const nextMetadata: Record<string, unknown> = {
+        ...(think.Metadata ?? {}),
+        thinkConversations: nextLog,
+      };
+      think.Metadata = nextMetadata;
+
+      let fullContent = think.Content || `# ${think.Name}`;
+      if (chatId && think.ContentType === 'chat') {
+        const nl = fullContent.indexOf('\n');
+        const titleLine =
+          nl >= 0 ? fullContent.slice(0, nl).replace(/\r$/, '') : fullContent.replace(/\r$/, '');
+        const bodyText = nl >= 0 ? fullContent.slice(nl + 1) : '';
+        const mergedBody = mergeConversationTranscript(bodyText, nextTurns);
+        fullContent = mergedBody ? `${titleLine}\n${mergedBody}` : titleLine;
+        think.setContentSilent(fullContent);
+      }
+
+      const savedMeta = await StorageManager.instance.save({
+        thinkid: think.ID,
+        category: think.ContentType,
+        fullContent,
+        keywords: think.Keywords,
+        relatedIds: think.RelatedIDs,
+        metadata: nextMetadata,
+        baseUpdatedAt: think.UpdatedAt || undefined,
+      });
+      think.UpdatedAt = savedMeta.updatedAt;
+      think.markSaved();
+      think.markMetadataSaved();
+      activeVault?.NotifyUpdated(false);
+    }
+    return;
   }
 }

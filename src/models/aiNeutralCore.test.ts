@@ -6,7 +6,7 @@ vi.mock('../services/ChatApiService', () => { throw new Error('Core operations m
 import { TTVault } from './TTVault';
 import { TTSeedsPanel } from '../views/TTSeedsPanel';
 import { parseBundle } from '../utils/thinkFormat';
-import { readThinkSupport } from '../../server/contracts/thinkSupportRecord';
+import { readThinkSupport } from '../../shared/contracts/thinkSupportRecord';
 import type { ConversationTurn } from '../services/ConversationService';
 import { disposeVaultDrafts, draftVaultLease, resetDraftStores } from '../services/draftStore';
 

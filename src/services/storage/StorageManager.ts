@@ -11,7 +11,7 @@
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
 import { LocalStorageBackend }    from './LocalStorageBackend';
 import { LocalRelayStorageBackend } from './LocalRelayStorageBackend';
-import { ElectronStorageBackend, type SyncResult } from './ElectronStorageBackend';
+import { ElectronStorageBackend } from './ElectronStorageBackend';
 import { DriveApiStorageBackend } from '../../platform/web/DriveApiStorageBackend';
 import { GoogleAuthService } from '../../platform/web/GoogleAuthService';
 
@@ -44,7 +44,7 @@ export class StorageManager {
         typeof window !== 'undefined' &&
         (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
 
-      // 本番Webホスティング環境（Firebase Hosting等）では Express サーバが存在しないため、
+      // 本番Webホスティング環境（Firebase Hosting等）ではローカル中継に届かないため、
       // 明示的に local が選ばれていない限り drive（Google Drive API）を既定にする
       const shouldUseDrive =
         preferred === 'drive' ||
@@ -108,13 +108,6 @@ export class StorageManager {
 
   public search(query: string): Promise<ThinkMeta[]> {
     return this.backend.search(query);
-  }
-
-  public syncFromServer(serverUrl?: string): Promise<SyncResult> {
-    if (this.mode !== 'electron') {
-      return Promise.reject(new Error('[StorageManager] syncFromServer は Electron モードのみ利用可能'));
-    }
-    return (this.backend as ElectronStorageBackend).syncFromServer(serverUrl);
   }
 }
 

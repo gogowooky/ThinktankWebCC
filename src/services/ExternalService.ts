@@ -1,7 +1,8 @@
-import { apiFetch, readApiJson } from './apiClient';
 import type { ContextSnapshot } from './contextTypes';
-import { readExternalLog, validateManifest, type ExternalInput, type ExternalLog, type ExportManifest } from '../../server/contracts/externalRecord';
-import { object } from '../../server/contracts/conversationRecord';
+import { readExternalLog, validateExternalInput, validateManifest, type ExternalInput, type ExternalLog, type ExportManifest } from '../../shared/contracts/externalRecord';
+import { canonicalJson, id } from '../../shared/contracts/conversationRecord';
+import { readBundleMetadata, saveBundleMetadata } from './bundleMetadataStore';
+import { StorageConflictError } from './storage/IStorageBackend';
 
 export interface ExternalState { bundleId: string; version: string; log: ExternalLog }
 export async function prepareExport(snapshot: ContextSnapshot): Promise<{ manifest: ExportManifest; files: { name: string; content: string }[] }> {
@@ -22,18 +23,31 @@ export async function prepareExport(snapshot: ContextSnapshot): Promise<{ manife
   }
   return { manifest, files: snapshot.sources.map(s => ({ name: `${s.thinkId}.md`, content: s.content })) };
 }
-async function parse(response: Response, bundleId: string): Promise<ExternalState> {
-  const value = await readApiJson(response, '保存先との通信に失敗しました。');
-  if (!object(value) || value.bundleId !== bundleId || typeof value.version !== 'string' || !Number.isFinite(Date.parse(value.version)) || !object(value.log)) throw new Error('取得結果の対象または版が不正です。');
-  return { bundleId, version: value.version, log: readExternalLog(value.log, bundleId) };
-}
 export class ExternalService {
   async read(bundleId: string): Promise<ExternalState> {
-    return parse(await apiFetch(`/api/think-support/external/bundles/${encodeURIComponent(bundleId)}`), bundleId);
+    const { metadata, version } = await readBundleMetadata(bundleId);
+    return { bundleId, version, log: readExternalLog(metadata.thinkExternal, bundleId) };
   }
   async save(bundleId: string, version: string, operationId: string, input: ExternalInput): Promise<ExternalState> {
-    return parse(await apiFetch(`/api/think-support/external/bundles/${encodeURIComponent(bundleId)}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedVersion: version, operationId, confirmed: true, input }),
-    }), bundleId);
+    if (!id(operationId) || !Number.isFinite(Date.parse(version))) throw new Error('本人確認と保存版が必要です。');
+    validateExternalInput(input, bundleId);
+    const current = await this.read(bundleId);
+    // 応答を失った後の再試行は、同じ操作IDかつ同じ内容なら保存済みとして返す
+    const existing = current.log.events.find(e => e.id === operationId);
+    if (existing) {
+      if (canonicalJson(existing.input) !== canonicalJson(input)) throw new Error('同じ操作IDの内容が異なります。');
+      return current;
+    }
+    if (current.version !== version) throw new Error('保存競合です。登録済み記録を再取得し、比較・再確認してください。');
+    if (current.log.events.length >= 100) throw new Error('履歴が100件に達しました。自動削除は行いません。');
+    const next: ExternalLog = { schemaVersion: 1, events: [...current.log.events, { id: operationId, recordedAt: new Date().toISOString(), input }] };
+    if (new TextEncoder().encode(JSON.stringify(next)).length > 2000000) throw new Error('履歴の容量上限です。');
+    try {
+      const saved = await saveBundleMetadata(bundleId, version, { thinkExternal: next });
+      return { bundleId, version: saved.version, log: next };
+    } catch (e) {
+      if (e instanceof StorageConflictError) throw Object.assign(new Error('保存競合です。登録済み記録を再取得してください。'), { cause: e });
+      throw e;
+    }
   }
 }

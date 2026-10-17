@@ -4,7 +4,7 @@ import { StorageManager } from './storage/StorageManager';
 import type { ThinkMeta } from './storage/IStorageBackend';
 import type { ContextIssue, ContextIssueCode, ContextSnapshot, ContextSource } from './contextTypes';
 import { appendLegacyContext, emptyContextState } from './legacyContextAdapter';
-import { readThinkSupport } from '../../server/contracts/thinkSupportRecord';
+import { readThinkSupport } from '../../shared/contracts/thinkSupportRecord';
 import { captureSubtaskContext, captureProgressContext } from './subtaskContext';
 
 export interface ContextReader {

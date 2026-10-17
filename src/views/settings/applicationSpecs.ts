@@ -201,12 +201,4 @@ export const applicationSpecs: Record<string, PropSpec> = {
     get: (app) => app.Status.ExMode || 'None',
     set: () => { },
   },
-  'Application.Resource.LocalExporting': {
-    panel: 'Application',
-    default: '0%', type: 'string', candidates: '.*',
-    description: 'エクスポート進捗率',
-    isConst: true,
-    get: (app) => app.Status.LocalExporting || '0%',
-    set: () => { },
-  }
 };

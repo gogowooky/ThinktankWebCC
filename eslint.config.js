@@ -17,7 +17,6 @@ export default tseslint.config(
   {
     ignores: [
       'dist/**',
-      'dist-server/**',
       'release/**',
       'release2/**',
       'coverage/**',
@@ -42,7 +41,7 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
 
   {
-    files: ['src/**/*.{ts,tsx}', 'server/**/*.ts'],
+    files: ['src/**/*.{ts,tsx}', 'shared/**/*.ts'],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -84,18 +83,10 @@ export default tseslint.config(
 
   // テストコードは any / 非 null アサーションを許容
   {
-    files: ['src/**/*.test.{ts,tsx}', 'server/**/*.test.ts'],
+    files: ['src/**/*.test.{ts,tsx}', 'shared/**/*.test.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
     },
-  },
-
-  // server のテストは tsconfig の対象外（build に含めないため exclude 済み）なので
-  // 型情報を使う lint を無効化する（構文ルールは引き続き効く）。
-  {
-    files: ['server/**/*.test.ts'],
-    languageOptions: { parserOptions: { projectService: false, project: null } },
-    rules: { '@typescript-eslint/no-floating-promises': 'off' },
   },
 );

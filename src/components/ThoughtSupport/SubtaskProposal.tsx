@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { draftVaultLease } from '../../services/draftStore';
 import type { TTVault } from '../../models/TTVault';
 import { ConversationClient, type ConversationTurn } from '../../services/ConversationService';
-import { canonicalJson } from '../../../server/contracts/conversationRecord';
+import { canonicalJson } from '../../../shared/contracts/conversationRecord';
 
 const client = new ConversationClient();
 export function SubtaskProposal({ vault, turn, chatId, disabled }: {

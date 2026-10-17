@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applySelection, availableModels, canSend, getModelNames, loadAiModelCatalog, modelChoices, normalizeModelNames, onModelNamesChange,
+  AI_MODEL_CATALOG, applyAiModelCatalog, applySelection, availableModels, canSend, getModelNames, modelChoices, normalizeModelNames, onModelNamesChange,
   selectionFor, setModelNames,
 } from './aiChatModelStatus';
 
@@ -18,11 +18,11 @@ describe('AIChat model status', () => {
     expect(normalizeModelNames('OpenAI', 'gpt-5.6', [])).toBe('None');
   });
 
-  it('applies the server catalog while keeping the stored selection first', async () => {
+  it('applies a catalog while keeping the stored selection first', () => {
     setModelNames('Claude', 'claude-sonnet-5');
-    expect(await loadAiModelCatalog(async () => ({
+    applyAiModelCatalog({
       anthropic: ['claude-opus-5', 'claude-sonnet-5', 'claude-haiku-4-5'], openai: [], gemini: ['gemini-3.6-flash'],
-    }))).toBe(true);
+    });
     expect(getModelNames('Claude')).toBe('claude-sonnet-5,claude-opus-5,claude-haiku-4-5');
     expect(getModelNames('OpenAI')).toBe('None');
     expect(selectionFor('Gemini')).toEqual({ provider: 'gemini', model: 'gemini-3.6-flash' });
@@ -41,37 +41,9 @@ describe('AIChat model status', () => {
     off();
   });
 
-  it('leaves the state alone when the catalog cannot be fetched', async () => {
-    expect(await loadAiModelCatalog(async () => { throw new Error('offline'); })).toBe(false);
-  });
-
-  it('does not publish a catalog whose owner expired while reading', async () => {
-    const before = [getModelNames('Claude'), getModelNames('OpenAI'), getModelNames('Gemini')];
-    let current = true;
-    let finish!: (value: unknown) => void;
-    const pending = loadAiModelCatalog(() => new Promise(resolve => { finish = resolve; }), () => current);
-    let notifications = 0;
-    const off = onModelNamesChange(() => { notifications++; });
-    try {
-      current = false;
-      finish({ anthropic: ['expired'], openai: ['expired'], gemini: ['expired'] });
-      expect(await pending).toBe(false);
-      expect([getModelNames('Claude'), getModelNames('OpenAI'), getModelNames('Gemini')]).toEqual(before);
-      expect(notifications).toBe(0);
-    } finally { off(); }
-  });
-
-  it('stops applying remaining providers when a model notification expires the owner', async () => {
-    const beforeOpenAI = availableModels('OpenAI'), beforeGemini = availableModels('Gemini');
-    let current = true;
-    const off = onModelNamesChange(() => { current = false; });
-    try {
-      expect(await loadAiModelCatalog(async () => ({
-        anthropic: ['applied-before-expiry'], openai: ['expired'], gemini: ['expired'],
-      }), () => current)).toBe(false);
-      expect(getModelNames('Claude')).toBe('applied-before-expiry');
-      expect(availableModels('OpenAI')).toBe(beforeOpenAI);
-      expect(availableModels('Gemini')).toBe(beforeGemini);
-    } finally { off(); }
+  it('uses the built-in catalog by default', () => {
+    applyAiModelCatalog();
+    expect(availableModels('OpenAI')).toEqual(AI_MODEL_CATALOG.openai);
+    expect(getModelNames('Local')).toBe('None');
   });
 });

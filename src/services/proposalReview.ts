@@ -1,5 +1,5 @@
 import type { ConversationTurn } from './ConversationService';
-import { emptyThinkValues, readThinkSupport } from '../../server/contracts/thinkSupportRecord';
+import { emptyThinkValues, readThinkSupport } from '../../shared/contracts/thinkSupportRecord';
 import type { ThinkMeta } from './storage/IStorageBackend';
 
 export function prepareProposalReview(turn: ConversationTurn, meta: ThinkMeta) {

@@ -9,9 +9,7 @@ import './BundleStatusView.css';
 import { BundleThoughtSupport } from './BundleThoughtSupport';
 import { ContextService } from '../../services/ContextService';
 import { BundleProgress } from '../ThoughtSupport/BundleProgress';
-import { BundleAgent } from '../ThoughtSupport/BundleAgent';
 import { BundleExternal } from '../ThoughtSupport/BundleExternal';
-import { FileSearchConnection } from '../ThoughtSupport/FileSearchConnection';
 import { SubtaskList } from '../ThoughtSupport/SubtaskList';
 import { ProgramOperationsPanel } from './ProgramOperationsPanel';
 
@@ -93,9 +91,7 @@ export const BundleStatusView = forwardRef<{ focus: () => void }, Props>(functio
       <ProgramOperationsPanel vault={vault} bundleId={bundleId} onOpen={onOpen} />
       <BundleThoughtSupport vault={vault} bundleId={bundleId} onOpen={onOpen} />
       <BundleProgress vault={vault} bundleId={bundleId} onOpen={onOpen} />
-      <BundleAgent vault={vault} bundleId={bundleId} onOpen={onOpen} />
       <BundleExternal vault={vault} bundleId={bundleId} />
-      <FileSearchConnection vault={vault} bundleId={bundleId} />
     </details>
   </div>;
 });

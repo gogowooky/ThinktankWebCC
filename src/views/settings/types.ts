@@ -57,7 +57,6 @@ export type ConfigKey =
   | 'Application.FocusedPanel.Name'
   | 'Application.FocusedArea.Name'
   | 'Application.Status.ExMode'
-  | 'Application.Resource.LocalExporting'
   | 'TextEditor.CurrentEditor.CursorPos'
   | 'TextEditor.CurrentEditor.TextOnCursorPos'
   | 'DiscussPanel.Panes.Count'

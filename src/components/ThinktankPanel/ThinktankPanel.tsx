@@ -55,21 +55,6 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
     app.RefreshAll().catch(e => console.error('[ThinktankPanel] RefreshAll failed:', e));
   }, [app]);
 
-  const isElectron = StorageManager.instance.mode === 'electron';
-  const handleSync = useCallback(() => {
-    app.Status.SetSyncState('syncing');
-    StorageManager.instance.syncFromServer()
-      .then(r => {
-        console.log(`[Sync] done: +${r.added} updated:${r.updated} skip:${r.skipped}`);
-        app.Status.SetSyncState('synced');
-        return app.RefreshAll();
-      })
-      .catch(e => {
-        console.error('[Sync] failed:', e);
-        app.Status.SetSyncState('error');
-      });
-  }, [app]);
-
   return (
     <div className="thinktank-panel">
       <ThinktankTabBar
@@ -78,7 +63,6 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
         viewMode={panel.ViewMode}
         onSetViewMode={handleSetViewMode}
         onRefresh={handleRefresh}
-        onSync={isElectron ? handleSync : undefined}
         vaultName={vault.VaultName}
         isEditMode={layoutMode === 'simple'}
       />

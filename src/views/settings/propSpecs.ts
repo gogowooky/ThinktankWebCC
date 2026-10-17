@@ -65,7 +65,6 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   'Application.Execution.Status': applicationSpecs['Application.Execution.Status'],
   'Application.Synchronization.Status': applicationSpecs['Application.Synchronization.Status'],
   'Application.Status.ExMode': applicationSpecs['Application.Status.ExMode'],
-  'Application.Resource.LocalExporting': applicationSpecs['Application.Resource.LocalExporting'],
   'DiscussPanel.Panes.Count': discussSpecs['DiscussPanel.Panes.Count'],
   'DiscussPanel.FocusedPane.ID': discussSpecs['DiscussPanel.FocusedPane.ID'],
   'DiscussPanel.FocusedPane.PaneNumber': discussSpecs['DiscussPanel.FocusedPane.PaneNumber'],

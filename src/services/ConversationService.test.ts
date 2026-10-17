@@ -1,69 +1,41 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-const mocks = vi.hoisted(() => ({ fetch: vi.fn(), save: vi.fn() }));
+const mocks = vi.hoisted(() => ({ fetch: vi.fn(), save: vi.fn(), webProvider: 'drive' as 'drive' | 'local' }));
 vi.mock('./apiClient', async () => ({ apiFetch: mocks.fetch, ...await import('./apiResponse') }));
-vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: { save: mocks.save } } }));
+vi.mock('../platform/web/FirestoreRelayClient', () => ({ FirestoreRelayClient: { isConfigured: () => false, request: mocks.fetch } }));
+vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: { save: mocks.save, get webProvider() { return mocks.webProvider; } } } }));
 import { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
-import { ConversationClient } from './ConversationService';
-import { startTaskFromChat } from './startTaskFromChat';
-import { draftVaultLease, disposeVaultDrafts, resetDraftStores } from './draftStore';
+import { ConversationClient, chatOnlyConversationContext } from './ConversationService';
+import type { ConversationTurn } from '../../shared/contracts/conversationRecord';
 
 let vault: TTVault, chat: TTThink;
-const savedChat = { id: 'chat', title: '# ASK:Thinktank｜相談', content: '保存済みの会話',
-  updatedAt: '2026-09-25T02:00:00Z', keywords: '資料', relatedIds: 'source',
-  metadata: { keep: true, thinkConversations: { schemaVersion: 1, turns: [] } } };
-function response() { return new Response(JSON.stringify({ schemaVersion: 1, turns: [], savedChat })); }
+const turn = (bundleId: string): ConversationTurn => ({
+  schemaVersion: 1, id: 'turn', createdAt: '2026-09-25T00:00:00Z', question: '質問', provider: 'test', model: 'test',
+  context: chatOnlyConversationContext('vault', bundleId),
+  answer: { reply: '回答', insufficientEvidence: false, citations: [], proposals: [] },
+});
 beforeEach(() => {
-  vi.clearAllMocks(); mocks.fetch.mockResolvedValue(response());
-  mocks.save.mockResolvedValue({ updatedAt: '2026-09-25T03:00:00Z' });
+  vi.clearAllMocks(); mocks.webProvider = 'drive';
   vault = new TTVault('vault'); chat = new TTThink(); chat.ID = 'chat'; chat.ContentType = 'chat';
-  chat.Content = '# ASK:Thinktank｜相談'; chat.IsMetaOnly = true;
+  chat.Content = '# ASK:Thinktank｜相談'; chat.Metadata = { thinkConversations: { schemaVersion: 1, turns: [turn('chat')] } };
   chat.UpdatedAt = '2026-09-25T01:00:00Z'; chat.markSaved(); chat.markMetadataSaved(); vault.AddThink(chat);
 });
-const read = () => new ConversationClient().history(undefined, undefined, 'chat', 'vault', vault);
-afterEach(() => resetDraftStores());
+afterEach(() => vi.unstubAllGlobals());
 
-it('does not synchronize a saved Chat from a response after its Vault lifetime ends', async () => {
-  let resolve!: (value: Response) => void;
-  mocks.fetch.mockImplementationOnce(() => new Promise<Response>(r => { resolve = r; }));
-  const lifetime = draftVaultLease(vault), notify = vi.spyOn(vault, 'NotifyUpdated');
-  const before = { content: chat.Content, metadata: chat.Metadata, version: chat.UpdatedAt };
-  const pending = new ConversationClient().history(undefined, undefined, 'chat', vault.ID, vault, lifetime.isCurrent);
-  disposeVaultDrafts(vault);
-  resolve(response()); await pending;
-  expect(chat.Content).toBe(before.content); expect(chat.Metadata).toEqual(before.metadata);
-  expect(chat.UpdatedAt).toBe(before.version); expect(chat.IsMetaOnly).toBe(true);
-  expect(notify).not.toHaveBeenCalled(); expect(lifetime.isCurrent()).toBe(false);
+it('reads browser history from the loaded Vault without any HTTP request', async () => {
+  const turns = await new ConversationClient().history(undefined, undefined, 'chat', 'vault', vault);
+  expect(turns.map(t => t.id)).toEqual(['turn']);
+  expect(mocks.fetch).not.toHaveBeenCalled();
 });
 
-it('creates a task after refreshing saved conversation content, metadata and version together', async () => {
-  await read();
-  expect(chat.IsDirty).toBe(false); expect(chat.IsMetadataDirty).toBe(false);
-  expect(chat.IsMetaOnly).toBe(false); expect(chat.Metadata).toEqual(savedChat.metadata);
-  const bundle = await startTaskFromChat(vault, 'chat', '教材課題');
-  expect(bundle.ContentType).toBe('bundle');
-  expect(mocks.save).toHaveBeenNthCalledWith(1, expect.objectContaining({
-    baseUpdatedAt: savedChat.updatedAt, fullContent: '# ASK:Thinktank｜教材課題\n保存済みの会話',
-    metadata: savedChat.metadata, keywords: '資料', relatedIds: 'source',
-  }));
+it('refuses to generate in the hosted browser version when no relay is configured', async () => {
+  await expect(new ConversationClient().generate(chatOnlyConversationContext('vault', 'chat'), '質問', [], new AbortController().signal))
+    .rejects.toThrow('AIに接続できません');
+  expect(mocks.fetch).not.toHaveBeenCalled();
 });
-it.each(['before', 'during'])('preserves manual content edits made %s the history request', async timing => {
-  let resolve!: (value: Response) => void;
-  mocks.fetch.mockImplementation(() => new Promise<Response>(r => { resolve = r; }));
-  if (timing === 'before') chat.Content += '\n手動編集';
-  const pending = read();
-  if (timing === 'during') chat.Content += '\n手動編集';
-  resolve(response()); await pending;
-  expect(chat.Content).toContain('手動編集'); expect(chat.IsDirty).toBe(true);
-  expect(chat.UpdatedAt).toBe('2026-09-25T01:00:00Z');
-  await expect(startTaskFromChat(vault, 'chat', '課題')).rejects.toThrow('編集を保存');
-  expect(mocks.save).not.toHaveBeenCalled();
-});
-it('preserves unsaved metadata and ignores an older server record', async () => {
-  chat.Metadata = { local: true }; await read();
-  expect(chat.Metadata).toEqual({ local: true }); expect(chat.IsMetadataDirty).toBe(true);
-  chat.markMetadataSaved(); chat.UpdatedAt = '2026-09-25T04:00:00Z';
-  mocks.fetch.mockResolvedValue(response()); await read();
-  expect(chat.Metadata).toEqual({ local: true }); expect(chat.IsMetaOnly).toBe(true);
+
+it('reports the AI as unavailable instead of calling a server when no relay is configured', async () => {
+  await expect(new ConversationClient().status()).resolves.toMatchObject({ enabled: false });
+  expect(mocks.fetch).not.toHaveBeenCalled();
 });

@@ -94,13 +94,6 @@ default:        100
 type:           integer
 candidates:      ^[0-9]{2,3}$
 
-## Action：　260628　Application.Resource.ExportToLocal
-description:    BQ保存済みThinkファイルをローカルにエクスポートする
-　BQに保存されているThinkファイルデータをローカル側に保存する
-　保存先は {root}/../Thinktank_{yyyyMMdd}/ とする
-　ファイル種別がmemoのものは同フォルダ直下に保存するが、その他のファイル種別はファイル種別名毎のフォルダに保存する。
-## Status：　260628　Application.Resource.LocalExporting
-　Application.Resource.ExportToLocalの実行中タスクの進捗率を表示してください。
 ## Action：　260911　Application.Resource.RollbackFocusedThink
 description:    直前にフォーカスされたThinkファイル１つをBQで1時間前の状態に戻す
 　対象は DiscussPanel.FocusedPane.FileHistory の先頭のThinkファイル1件。
