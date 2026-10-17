@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript + Express のデスクトップア�
 
 <!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
 
+### v2.5.1 refactor: Express から BigQuery を削除し、Firebase ログイン連携と中継エージェントのループバック待ち受けを追加
+
+- 日付: 2026-10-18
+- コミット番号: 8318aa3
+
+Express（server/）から BigQueryService と /api/bq ルートを削除し、思考支援・会話・進行状況・外部連携・File Search・エージェントの各ルートが使う保存先型を server/services/vaultStore.ts に切り出した（既定は「保存先なし」を返す）。ソース全体から BigQuery を思わせる名前を除去：BigQueryStorageBackend → LocalRelayStorageBackend、API パス /api/bq → /api/vault（画面側・中継エージェント・Electron）、Web 版データ接続先の内部値 'bigquery' → 'local'、「BigQuery同期」「BigQueryモードで利用できます」などの文言、設定画面の BigQuery 保存先表示、関連コメント。中継エージェント（scripts/run-relay-agent.mjs）は認証なしで Vault の読み書きと AI CLI 実行を受けるため、LAN から届かないよう 127.0.0.1 のみで待ち受けるよう変更。Firebase Auth（Google アクセストークンを交換）で Firestore 中継をユーザーごとに分離し、firestore.rules・firebase.json・.firebaserc・Hosting デプロイスクリプト（npm run firebase:deploy）を追加、中継エージェントのログイン画面（/relay-login）とトークン共有を追加。.firebase/ を .gitignore に追加。型チェック成功、テスト 649件成功。変更: 69ファイル（+1609 / -1081行）。
+
 ### v2.5.0 feat: Drive 正本 Vault エンジン・AI CLI 実行・Firebase 中継の初期実装を追加
 
 - 日付: 2026-10-16
