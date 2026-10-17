@@ -1,11 +1,18 @@
 # Thinktank
 
-Thinktank — Electron + React + TypeScript + Express のデスクトップアプリ。
+Thinktank — Electron + React + TypeScript のデスクトップアプリ（Web 版は Firebase Hosting）。
 アイデアをVaultに蓄積し、AIとの対話で思考を補完する。
 
 ## 更新履歴
 
-<!-- git-update スキルがコミットのたびに、deploy.ps1 がデプロイのたびに、この直下へ新しい順で追記する -->
+<!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
+
+### v2.5.2 refactor: Express（server/）と Cloud Run を廃止し、残る機能を Electron IPC・ブラウザ側へ移す
+
+- 日付: 2026-10-18
+- コミット番号: a242630
+
+Express（server/・dist-server/）を廃止し、残っていた機能を移すか廃止した。記録の契約（会話・思考支援・到達状態・外部連携・サブ課題など）を server/contracts から shared/contracts/ へ移動。検索タグは docs/DefaultSearchTag.md をビルド時に取り込む形にし（src/utils/defaultSearchTags.ts）、ローカルファイル起動は IPC system:openPath（electron/openPath.cjs で実行ファイル・UNC・相対パスを拒否してから shell.openPath）に置き換えた（ブラウザ版は「PC版のみ」と表示）。到達状態・外部連携（NotebookLM 連携記録）・思考支援・会話の履歴と保存は、Electron は IPC、ブラウザは読み込み済み Vault＋StorageManager で読み書きするよう統一（src/services/bundleMetadataStore.ts）。外部連携は Electron でも使えるようになり、ブラウザ経路の保存では本文未読込の Think を先に読み込んで本文の消失を防ぐ。AI モデル一覧は静的カタログ（AI_MODEL_CATALOG）にした。Agent・File Search・ExportToLocal・サーバー同期は UI ごと廃止。Electron のローカルサーバー起動と共有キーを廃止し、パッケージ版は常に app://thinktank/ から配信、TT_SELFTEST は IPC を検証する形に変更。Dockerfile・.dockerignore・deploy.ps1/.bat・rotate-keys.ps1、package.json の dev/server:dev/start/build:server/deploy と express・multer・googleapis・ws 等の依存、中継エージェントの未使用互換ルートを削除。CLAUDE.md を新構成に合わせて更新。型チェック成功、テスト 562件成功、vite build 成功、Electron セルフテスト（app://thinktank、5506件）成功。変更: 155ファイル（+1214 / -7304行）。
 
 ### v2.5.1 refactor: Express から BigQuery を削除し、Firebase ログイン連携と中継エージェントのループバック待ち受けを追加
 

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "8318aa3",
-  "commitDateTime": "2026-10-18-005159",
-  "commitMessage": "refactor: Express から BigQuery を削除し、Firebase ログイン連携と中継エージェントのループバック待ち受けを追加"
+  "commitId": "a242630",
+  "commitDateTime": "2026-10-18-021834",
+  "commitMessage": "refactor: Express（server/）と Cloud Run を廃止し、残る機能を Electron IPC・ブラウザ側へ移す"
 }
