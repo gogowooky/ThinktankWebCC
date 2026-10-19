@@ -16,6 +16,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 
+### v2.6.1 refactor: 起動をdev:electronへ統一し常駐relayを廃止
+
+- 日付: 2026-10-19
+- コミット番号: 7a02ef4
+
+`electron:dev`を`dev:electron`へ改名し、`relay:start`と`dev:web-relay`、常駐エージェントの起動スクリプトを廃止。Viteの8080プロキシとWeb版AIのlocalhostフォールバックを削除し、AI提供側をElectron版、Web版の通信をFirestoreリアルタイム中継に統一した。起動手順を更新。関連テスト10件と本番ビルドが成功。
+
 ### v2.6.0 feat: Firestore正本とPC連携モード
 
 - 日付: 2026-10-19

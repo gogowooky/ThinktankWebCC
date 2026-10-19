@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.0",
+  "version": "2.6.1",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "e750c7b",
-  "commitDateTime": "2026-10-19-230358",
-  "commitMessage": "feat: Firestore正本とPC連携モード"
+  "commitId": "7a02ef4",
+  "commitDateTime": "2026-10-19-232224",
+  "commitMessage": "refactor: 起動をdev:electronへ統一し常駐relayを廃止"
 }
