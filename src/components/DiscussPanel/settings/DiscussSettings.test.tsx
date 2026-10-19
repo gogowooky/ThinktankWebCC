@@ -8,6 +8,8 @@ import { DiscussSettingArea, type DiscussSettingAreaRef } from '../DiscussSettin
 import { broadcastPanelSectionsSetAll } from '../../../hooks/usePanelSectionsSetAll';
 import type { DiscussSettingAreaProps } from './types';
 import { UNAVAILABLE_ACTIONS } from '../../../views/unavailableActions';
+import { TTUIStateManager } from '../../../views/TTUIStateManager';
+import { registerFocusedPanelActions } from '../../../views/TTFocusedPanelActions';
 
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
@@ -67,6 +69,32 @@ it('keeps the table section state while it is hidden by another settings view', 
   expect(host.querySelector('[data-tip="新規テーブルファイルを作成"]')).toBeNull();
   await act(async () => broadcastPanelSectionsSetAll('discuss', true));
   expect(host.querySelector('[data-tip="新規テーブルファイルを作成"]')).not.toBeNull();
+});
+
+it('shows the table display section and runs the action named in each tooltip', async () => {
+  const app = TTApplication.Instance;
+  TTUIStateManager.instance.init(app);
+  registerFocusedPanelActions(app);
+  await show('datagrid');
+  const header = [...host.querySelectorAll<HTMLElement>('.discuss-setting-area__section-header')]
+    .find(element => element.textContent === '表示');
+  expect(header).toBeDefined();
+  const click = (actionId: string) => act(async () => host.querySelector<HTMLButtonElement>(`button[data-tip="${actionId}"]`)!.click());
+  const cell = app.DiscussPanel.Table.CellContent;
+
+  await click('Table.CellContent.Position:Right');
+  expect(cell.Position).toBe('Right');
+  expect(host.querySelector('button[data-tip="Table.CellContent.Position:Right"]')!.className).toContain('--active');
+  await click('Table.CellContent.Position:Center');
+  expect(cell.Position).toBe('Center');
+  await click('Table.CellContent.Position:Left');
+  expect(cell.Position).toBe('Left');
+
+  const before = cell.Display;
+  await click('Table.CellContent.Display:Toggle');
+  expect(cell.Display).toBe(before === 'Line' ? 'FitToColumn' : 'Line');
+  await click('Table.CellContent.Display:Toggle');
+  expect(cell.Display).toBe(before);
 });
 
 it('marks rollback controls unavailable without offering a destructive operation', async () => {

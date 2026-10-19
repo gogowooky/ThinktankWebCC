@@ -1,4 +1,4 @@
-import type { DiscussViewMode } from '../TTDiscussPanel';
+import type { DiscussViewMode, TableCellDisplay, TableCellPosition } from '../TTDiscussPanel';
 import { collectAreaIds } from '../TTDiscussPanel';
 import { TTDiscussArea } from '../TTDiscussArea';
 import type { MediaType } from '../../types';
@@ -107,6 +107,20 @@ export const discussSpecs: Record<string, PropSpec> = {
     isConst: true,
     get: (app) => app.DiscussPanel.DroppedFileID || '',
     set: () => { },
+  },
+  'Table.CellContent.Display': {
+    panel: 'DiscussPanel',
+    default: 'Line', type: 'string', candidates: '^(Line|FitToColumn)$',
+    description: 'テーブルのセル表示方法',
+    get: (app) => app.DiscussPanel.Table.CellContent.Display,
+    set: (app, v) => { app.DiscussPanel.Table.CellContent.Display = v as TableCellDisplay; },
+  },
+  'Table.CellContent.Position': {
+    panel: 'DiscussPanel',
+    default: 'Left', type: 'string', candidates: '^(Left|Center|Right)$',
+    description: 'テーブルのセル表示位置',
+    get: (app) => app.DiscussPanel.Table.CellContent.Position,
+    set: (app, v) => { app.DiscussPanel.Table.CellContent.Position = v as TableCellPosition; },
   },
   'DiscussPanel.Panes.Layout': {
     panel: 'DiscussPanel',

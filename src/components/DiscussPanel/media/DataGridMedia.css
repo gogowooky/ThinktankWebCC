@@ -641,6 +641,31 @@
   background: rgba(122,162,247,0.08);
 }
 
+/* セル表示位置（Status Table.CellContent.Position） */
+.table-grid--align-center .table-grid__data-cell { justify-content: center; text-align: center; }
+.table-grid--align-right  .table-grid__data-cell { justify-content: flex-end; text-align: right; }
+.table-grid--align-center .table-grid__cell-input { text-align: center; }
+.table-grid--align-right  .table-grid__cell-input { text-align: right; }
+
+/* 折返し表示（Status Table.CellContent.Display = FitToColumn）。
+   ハイライトの span ごとに flex item へ分かれると途中で改行が崩れるので block に戻す */
+.table-grid--wrap .table-grid__data-row {
+  align-items: stretch;
+  min-height: 28px;
+}
+.table-grid--wrap .table-grid__rownum-cell {
+  padding-top: 6px;
+}
+.table-grid--wrap .table-grid__data-cell {
+  display: block;
+  height: auto;
+  padding: 6px 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  line-height: 1.4;
+}
+
 
 /* 新規入力行 */
 .table-grid__new-row {

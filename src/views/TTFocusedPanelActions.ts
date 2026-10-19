@@ -18,7 +18,6 @@ import { getFocusName } from '../utils/getFocusName';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import type { AreaWidthMode } from '../utils/panelAreaWidth';
 import { ZOOM_DEFAULT, ZOOM_STEP } from '../utils/appZoom';
-import { apiFetch } from '../services/apiClient';
 import { showMonacoMenu } from '../utils/monacoMenu';
 import { collectAreaIds } from './TTDiscussPanel';
 import { registerTextEditorDateActions } from './actions/textEditorDateActions';
@@ -777,6 +776,34 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     Description: '縮小表示',
     Completion: (item) => stepAppZoom(item, -1),
   });
+
+  // Table Display（DataGrid のセル表示）
+  const applyTableStatus = (item: TTActionItem, key: ConfigKey, value: string): void => {
+    TTUIStateManager.instance.applyProperty(key, value);
+    item.Result = TTUIStateManager.instance.getProperty(key);
+  };
+  TTActions.Register({
+    ActionID: 'Table.CellContent.Display:Toggle',
+    Description: 'テーブルのセル表示方法をトグルする',
+    Completion: (item) => applyTableStatus(item, 'Table.CellContent.Display', 'next'),
+  });
+  TTActions.Register({
+    ActionID: 'Table.CellContent.Position:Toggle',
+    Description: 'テーブルのセルの表示位置をトグルする',
+    Completion: (item) => applyTableStatus(item, 'Table.CellContent.Position', 'next'),
+  });
+  const TABLE_POSITIONS: Array<[string, string]> = [
+    ['Left', 'テーブルのセルの表示位置を左寄せにする'],
+    ['Center', 'テーブルのセルの表示位置を中心寄せにする'],
+    ['Right', 'テーブルのセルの表示位置を右寄せにする'],
+  ];
+  for (const [position, description] of TABLE_POSITIONS) {
+    TTActions.Register({
+      ActionID: `Table.CellContent.Position:${position}`,
+      Description: description,
+      Completion: (item) => applyTableStatus(item, 'Table.CellContent.Position', position),
+    });
+  }
 
   // IsVisible 系トグル（LineNumbers/WordWrap/Minimap は TTShortcutManager の DEFAULT_SHORTCUTS が
   // 小文字 `:toggle` で参照するため、大文字小文字どちらの ActionID でも同じハンドラに解決させる）

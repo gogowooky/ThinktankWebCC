@@ -2,6 +2,8 @@ import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronUp, ChevronDown, ChevronsUpDown, Plus, RefreshCcw } from 'lucide-react';
 import { TTUIStateManager } from '../../../../views/TTUIStateManager';
+import { TTApplication } from '../../../../views/TTApplication';
+import { useAppUpdate } from '../../../../hooks/useAppUpdate';
 import type { TTThink } from '../../../../models/TTThink';
 import type { MediaProps } from '../types';
 import type { TableSection, RawLine } from '../../../../utils/tableFormat';
@@ -151,12 +153,20 @@ export function TableGridView({ think, onSave, onDirtyChange, editorSettings }: 
     return rows;
   }, [section, filter, sortState]);
 
+  const discussPanel = TTApplication.Instance.DiscussPanel;
+  useAppUpdate(discussPanel);
+  const { Display: cellDisplay, Position: cellPosition } = discussPanel.Table.CellContent;
+  const isWrap = cellDisplay === 'FitToColumn';
+
   const rowVirtualizer = useVirtualizer({
     count: displayRows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => 28,
     overscan: 8,
   });
+
+  // 折返し表示では行の高さが内容と列幅で変わるので、既測の高さを捨てて測り直させる
+  useEffect(() => { rowVirtualizer.measure(); }, [isWrap, columnWidths, rowVirtualizer]);
 
   // ── ハンドラー ─────────────────────────────────────────────────────────
 
@@ -349,7 +359,10 @@ export function TableGridView({ think, onSave, onDirtyChange, editorSettings }: 
   }
 
   return (
-    <div className="table-grid" onKeyDown={handleKeyDown}>
+    <div
+      className={`table-grid table-grid--align-${cellPosition.toLowerCase()}${isWrap ? ' table-grid--wrap' : ''}`}
+      onKeyDown={handleKeyDown}
+    >
 
       {/* セクションタブ */}
       {sections.length > 1 && (
@@ -474,9 +487,11 @@ export function TableGridView({ think, onSave, onDirtyChange, editorSettings }: 
                 <div
                   key={vRow.key}
                   className="table-grid__data-row"
+                  data-index={vRow.index}
+                  ref={isWrap ? rowVirtualizer.measureElement : undefined}
                   style={{
                     position: 'absolute', top: 0, left: 0,
-                    width: '100%', height: vRow.size,
+                    width: '100%', height: isWrap ? undefined : vRow.size,
                     transform: `translateY(${vRow.start}px)`,
                   }}
                 >

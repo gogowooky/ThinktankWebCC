@@ -18,6 +18,9 @@ import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 export type DiscussViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
 
+export type TableCellDisplay = 'Line' | 'FitToColumn';
+export type TableCellPosition = 'Left' | 'Center' | 'Right';
+
 // ── TextEditorSettings ────────────────────────────────────────────────────
 
 export class TextEditorSettings {
@@ -213,6 +216,12 @@ export class TTDiscussPanel extends TTUIItem {
 
   // ── TextEditor 設定 ───────────────────────────────────────────────────
   public TextEditor: TextEditorSettings = new TextEditorSettings();
+
+  // ── DataGrid（テーブル）のセル表示（全Pane共通） ─────────────────────────
+  /** Status `Table.CellContent.Display` / `Table.CellContent.Position` の実体 */
+  public Table = {
+    CellContent: { Display: 'Line' as TableCellDisplay, Position: 'Left' as TableCellPosition },
+  };
 
   // ── ハイライト設定（全Pane共通） ─────────────────────────────────────────
   public HighlightWord: string = '';

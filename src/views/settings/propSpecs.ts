@@ -77,6 +77,8 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   'TextEditor.CurrentFolding.HeadingNumber': editorSpecs['TextEditor.CurrentFolding.HeadingNumber'],
   'TextEditor.CurrentEditor.CursorPos': editorSpecs['TextEditor.CurrentEditor.CursorPos'],
   'TextEditor.CurrentEditor.TextOnCursorPos': editorSpecs['TextEditor.CurrentEditor.TextOnCursorPos'],
+  'Table.CellContent.Display': discussSpecs['Table.CellContent.Display'],
+  'Table.CellContent.Position': discussSpecs['Table.CellContent.Position'],
   'DiscussPanel.Panes.Layout': discussSpecs['DiscussPanel.Panes.Layout'],
   'DiscussPanel.Panes.Display': discussSpecs['DiscussPanel.Panes.Display'],
 };

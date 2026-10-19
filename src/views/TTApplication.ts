@@ -1,6 +1,6 @@
 /**
  * TTApplication.ts
- * Phase 4: アプリケーションルートビューモデル（更新版）。
+ * アプリケーションルートビューモデル（更新版）。
  *
  * 4パネル構成（ThinktankPanel / SeedsPanel / DiscussPanel / HarvestPanel）を統合管理。
  * TTModelsのデータ層と各パネルビューモデルを橋渡しする。
@@ -95,6 +95,7 @@ export class TTApplication extends TTUIItem {
     listen('Seeds.*', () => this.SeedsPanel.NotifyUpdated());
     listen('Discuss.*', () => this.DiscussPanel.NotifyUpdated());
     listen('Harvest.*', () => this.HarvestPanel.NotifyUpdated());
+    listen('Table.*', () => this.DiscussPanel.NotifyUpdated());
   }
 
   public static get Instance(): TTApplication {

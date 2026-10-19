@@ -87,11 +87,14 @@ export function useDiscussSettingsState(panel: TTDiscussPanel, vault: TTVault, a
 
   const [isTableSettingsOpen, setIsTableSettingsOpen] = useState(true);
 
+  const [isTableDisplaySettingsOpen, setIsTableDisplaySettingsOpen] = useState(true);
+
   usePanelSectionsSetAll('discuss', [
     setIsActionSettingsOpen, setIsDisplaySettingsOpen, setIsColorSettingsOpen,
     setIsCommentColorOpen, setIsBulletColorOpen, setIsSectionColorOpen,
     setIsHighlightColorOpen, setIsPanelColorOpen, setIsMemoSettingsOpen,
     setIsEditSettingsOpen, setIsKeySettingsOpen, setIsTableSettingsOpen,
+    setIsTableDisplaySettingsOpen,
   ]);
 
   const voiceSupported = useMemo(() => isVoiceInputSupported(), []);
@@ -160,6 +163,8 @@ export function useDiscussSettingsState(panel: TTDiscussPanel, vault: TTVault, a
     setIsKeySettingsOpen,
     isTableSettingsOpen,
     setIsTableSettingsOpen,
+    isTableDisplaySettingsOpen,
+    setIsTableDisplaySettingsOpen,
     voiceSupported,
     isVoiceListening,
     setIsVoiceListening,

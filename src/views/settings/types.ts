@@ -80,6 +80,8 @@ export type ConfigKey =
   | 'ThinktankPanel.Filter.CursorPosID'
   | 'SeedsPanel.Filter.CursorPos'
   | 'SeedsPanel.Filter.CursorPosID'
+  | 'Table.CellContent.Display'
+  | 'Table.CellContent.Position'
   // `| string` だと上記リテラルが string に潰れて補完が一切効かなくなる。
   // `(string & {})` なら「既知キーの補完を出しつつ任意の文字列も受ける」
   // （色設定・プリセット等の動的キーのため任意文字列は引き続き許容）。
