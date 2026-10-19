@@ -12,6 +12,7 @@ import { GoogleAuthService } from '../../platform/web/GoogleAuthService';
 import { FirestoreRelayClient } from '../../platform/web/FirestoreRelayClient';
 import { FirebaseAuthService } from '../../platform/web/FirebaseAuthService';
 import { TTModels } from '../../models/TTModels';
+import type { ElectronRelayStatus } from '../../services/storage/ElectronStorageBackend';
 
 const TEXT_MAIN = 'color-mix(in srgb, var(--thinktank-base, #1d618f) 30%, #16161f)';
 const TEXT_MUTED = 'var(--text-muted, #565f89)';
@@ -92,13 +93,7 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   const [pairingSecret, setPairingSecret] = useState(initialRelayCfg.pairingSecret);
 
   // PC版 Relay Host ステータス
-  const [pcRelayStatus, setPcRelayStatus] = useState<{
-    enabled: boolean;
-    deviceId: string;
-    deviceName: string;
-    pairingSecret: string;
-    lastHeartbeatAt: string | null;
-  } | null>(null);
+  const [pcRelayStatus, setPcRelayStatus] = useState<ElectronRelayStatus | null>(null);
 
   // Web版から見たローカル中継サーバ (/api/health) の稼働状態
   const [localServerInfo, setLocalServerInfo] = useState<{
@@ -123,6 +118,13 @@ export const CloudRelaySettingsPanel: React.FC = () => {
       }
     }
     if (typeof window !== 'undefined' && window.electronAPI?.relay?.getStatus) {
+      try {
+        await FirebaseAuthService.syncSessionToElectronRelay();
+      } catch (e) {
+        setStatusMessage(
+          `中継役ホストへの Firebase ログインの引き継ぎに失敗しました: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
       try {
         const st = await window.electronAPI.relay.getStatus();
         setPcRelayStatus(st);
@@ -153,6 +155,16 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   useEffect(() => {
     void refreshStats();
   }, [refreshStats, webProvider]);
+
+  // ハートビートは 25 秒ごとなので、開いている間はそれより短い間隔で状態を取り直す
+  useEffect(() => {
+    const getStatus = window.electronAPI?.relay?.getStatus;
+    if (!isOpen || !getStatus) return;
+    const timer = setInterval(() => {
+      void getStatus().then(setPcRelayStatus).catch(() => {});
+    }, 10_000);
+    return () => clearInterval(timer);
+  }, [isOpen]);
 
   const handleProviderChange = async (next: 'drive' | 'local') => {
     StorageManager.instance.setWebProvider(next);
@@ -586,6 +598,23 @@ export const CloudRelaySettingsPanel: React.FC = () => {
                 <div>
                   ペアリングシークレット: <code>{pcRelayStatus.pairingSecret}</code>
                 </div>
+                <div>
+                  Firebase ログイン:{' '}
+                  {pcRelayStatus.firebaseSignedIn
+                    ? `済み（${pcRelayStatus.firebaseEmail || 'メール不明'}）`
+                    : '未ログイン（上の「Google でログイン」でログインすると、この中継役ホストにも引き継がれます）'}
+                </div>
+                <div>
+                  中継の状態:{' '}
+                  {!pcRelayStatus.enabled
+                    ? '停止中'
+                    : pcRelayStatus.isAlive
+                      ? `オンライン（Firestore に最後に届いた時刻: ${new Date(pcRelayStatus.lastHeartbeatAt).toLocaleString()}）`
+                      : 'オフライン（Firestore に届いていません）'}
+                </div>
+                {pcRelayStatus.enabled && !pcRelayStatus.isAlive && pcRelayStatus.firestoreProblem && (
+                  <div style={{ color: TEXT_MUTED }}>理由: {pcRelayStatus.firestoreProblem}</div>
+                )}
                 <div style={{ marginTop: '6px' }}>
                   <button
                     type="button"

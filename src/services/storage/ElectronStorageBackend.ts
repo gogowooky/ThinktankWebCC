@@ -35,8 +35,12 @@ export interface ElectronRelayStatus {
   deviceName: string;
   pairingSecret: string;
   firebaseProjectId: string;
+  firebaseSignedIn: boolean;
+  firebaseEmail: string;
+  /** Firestore への書き込みに最後に成功した時刻。一度も成功していなければ空文字 */
   lastHeartbeatAt: string;
   isAlive: boolean;
+  firestoreProblem: string;
   processedCount: number;
 }
 
@@ -75,6 +79,8 @@ declare global {
         getStatus:       () => Promise<ElectronRelayStatus>;
         configure:       (partial: Record<string, unknown>) => Promise<ElectronRelayStatus>;
         rotateSecret:    () => Promise<ElectronRelayStatus>;
+        setFirebaseSession?: (session: { refreshToken: string; email: string; apiKey: string }) => Promise<ElectronRelayStatus>;
+        signOutFirebase?: () => Promise<ElectronRelayStatus>;
         executePlain:    <TReq = unknown, TRes = unknown>(envelope: RelayEnvelopePlaintext<TReq>) => Promise<RelayResponsePlaintext<TRes>>;
         handleEncrypted: (payload: { encryptedRequest: string; chunks?: FirestoreRelayChunkDoc[] }) => Promise<{ encryptedResponse: string; responseChunks: FirestoreRelayChunkDoc[] }>;
       };

@@ -35,6 +35,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getStatus:       ()                          => ipcRenderer.invoke('relay:getStatus'),
     configure:       (partial)                   => ipcRenderer.invoke('relay:configure', partial),
     rotateSecret:    ()                          => ipcRenderer.invoke('relay:rotateSecret'),
+    setFirebaseSession: (session)                => ipcRenderer.invoke('relay:setFirebaseSession', session),
+    signOutFirebase: ()                          => ipcRenderer.invoke('relay:signOutFirebase'),
     executePlain:    (envelope)                  => ipcRenderer.invoke('relay:executePlain', envelope),
     handleEncrypted: (payload)                   => ipcRenderer.invoke('relay:handleEncrypted', payload),
   },

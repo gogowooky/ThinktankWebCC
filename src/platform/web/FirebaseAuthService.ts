@@ -23,6 +23,10 @@ function getApiKey(): string {
   return env.VITE_FIREBASE_API_KEY || '';
 }
 
+function electronRelay() {
+  return typeof window !== 'undefined' ? window.electronAPI?.relay : undefined;
+}
+
 class FirebaseAuthServiceImpl {
   private session: FirebaseAuthSession | null = this.load();
   private refreshing: Promise<FirebaseAuthSession> | null = null;
@@ -53,6 +57,37 @@ class FirebaseAuthServiceImpl {
 
   public signOut(): void {
     this.save(null);
+    void electronRelay()?.signOutFirebase?.().catch(() => {});
+  }
+
+  /**
+   * 同じ PC で中継役を務めるプロセスにログインを引き継ぐ。
+   * Electron 版ならメインプロセスの中継役へ IPC で、ブラウザなら常駐エージェント（localhost:8080）へ送る。
+   */
+  private async shareSessionWithLocalRelay(session: FirebaseAuthSession): Promise<void> {
+    const setSession = electronRelay()?.setFirebaseSession;
+    if (setSession) {
+      await setSession({ refreshToken: session.refreshToken, email: session.email, apiKey: getApiKey() });
+      return;
+    }
+    await fetch('http://localhost:8080/relay-login/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken: session.refreshToken, email: session.email }),
+    });
+  }
+
+  /**
+   * Electron 版で、画面側はログイン済みなのにメインプロセスの中継役が未ログインのとき、ログインを渡す。
+   * 以前の版では画面側のログインがメインプロセスに渡らなかったため、起動時や設定画面を開いたときに補う。
+   */
+  public async syncSessionToElectronRelay(): Promise<boolean> {
+    const relay = electronRelay();
+    if (!this.session || !relay?.setFirebaseSession) return false;
+    const status = await relay.getStatus();
+    if (status.firebaseSignedIn) return false;
+    await this.shareSessionWithLocalRelay(this.session);
+    return true;
   }
 
   /** 有効な Google アクセストークンを Firebase の資格情報に交換する。 */
@@ -72,12 +107,7 @@ class FirebaseAuthServiceImpl {
       requestUri,
     );
     this.save(session);
-    // 同一PC上で relay:start (localhost:8080) が動いていれば、自動的にリフレッシュトークンを共有する
-    void fetch('http://localhost:8080/relay-login/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: session.refreshToken, email: session.email }),
-    }).catch(() => {});
+    void this.shareSessionWithLocalRelay(session).catch(() => {});
     return session;
   }
 

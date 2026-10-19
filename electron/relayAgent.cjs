@@ -17,10 +17,14 @@ class RelayAgent {
     this.userDataDir = userDataDir;
     this.vaultEngine = vaultEngine;
     this.aiCliRunner = aiCliRunner;
-    this.firebaseApiKey = firebaseApiKey || process.env.VITE_FIREBASE_API_KEY || '';
     this.configPath = path.join(userDataDir, 'relay-agent-config.json');
     this.config = this._loadConfig();
+    // パッケージ版のメインプロセスには .env が無いので、画面側から受け取って保存した値も使う
+    this.firebaseApiKey =
+      firebaseApiKey || process.env.VITE_FIREBASE_API_KEY || this.config.firebaseApiKey || '';
     this.heartbeatTimer = null;
+    // 画面の「オンライン」表示は、Firestore への書き込みに実際に成功した時刻だけで判断する
+    this.lastFirestoreOkAt = '';
     /** @type {{ uid: string, email: string, idToken: string, refreshToken: string, expiresAtMs: number } | null} */
     this.authSession = null;
     this._authRefreshing = null;
@@ -44,15 +48,31 @@ class RelayAgent {
       lastHeartbeatAt: new Date().toISOString(),
       processedCount: 0,
     };
+    let config = base;
     if (fs.existsSync(this.configPath)) {
       try {
         const loaded = JSON.parse(fs.readFileSync(this.configPath, 'utf8'));
-        return { ...base, ...loaded };
+        config = { ...base, ...loaded };
       } catch {
-        return base;
+        config = base;
       }
     }
-    return base;
+    // 端末 id は VaultEngine が一元管理する（索引シャード名と中継の宛先を一致させるため）
+    if (this.vaultEngine?.config?.deviceId) {
+      config.deviceId = this.vaultEngine.config.deviceId;
+    }
+    return config;
+  }
+
+  /** 保存済みの設定で中継役が有効なら、起動時に待ち受けを再開する。 */
+  start() {
+    if (this.config.enabled) {
+      this._startHeartbeat();
+    }
+  }
+
+  stop() {
+    this._stopHeartbeat();
   }
 
   saveConfig(partial) {
@@ -97,18 +117,23 @@ class RelayAgent {
       firebaseUid: this.config.firebaseRefreshToken ? this.config.firebaseUid : '',
       firebaseEmail: this.config.firebaseRefreshToken ? this.config.firebaseEmail || '' : '',
       firebaseSignedIn: Boolean(this.config.firebaseRefreshToken),
-      lastHeartbeatAt: this.config.lastHeartbeatAt,
-      isAlive: shared.isRelayHeartbeatAlive(this.config.lastHeartbeatAt),
+      lastHeartbeatAt: this.lastFirestoreOkAt,
+      isAlive: this.config.enabled && shared.isRelayHeartbeatAlive(this.lastFirestoreOkAt),
+      firestoreProblem: this._lastFirestoreProblem || '',
       processedCount: this.config.processedCount,
       activeRelayConfig,
     };
   }
 
   /**
-   * ログインページから受け取った Firebase の refresh token を検証して保存する。
-   * Firestore のルールが users/{uid} を本人だけに許すため、Web版と同じ Google アカウントの uid が要る。
+   * ログインページ（常駐エージェント）または Electron 版の画面から受け取った Firebase の refresh token を
+   * 検証して保存する。Firestore のルールが users/{uid} を本人だけに許すため、Web版と同じ Google アカウントの uid が要る。
    */
-  async setFirebaseRefreshToken(refreshToken, email = '') {
+  async setFirebaseRefreshToken(refreshToken, email = '', apiKey = '') {
+    if (apiKey && apiKey !== this.firebaseApiKey) {
+      this.firebaseApiKey = apiKey;
+      this.config.firebaseApiKey = apiKey;
+    }
     if (!this.firebaseApiKey) {
       throw new Error('VITE_FIREBASE_API_KEY が設定されていません。');
     }
@@ -126,6 +151,7 @@ class RelayAgent {
 
   signOutFirebase() {
     this.authSession = null;
+    this.lastFirestoreOkAt = '';
     return this.saveConfig({ firebaseUid: '', firebaseEmail: '', firebaseRefreshToken: '' });
   }
 
@@ -204,25 +230,35 @@ class RelayAgent {
   async _publishHeartbeatToFirestore() {
     const ctx = await this._getFirestoreContext();
     if (!ctx) return;
-    try {
-      const nowIso = new Date().toISOString();
-      this.config.lastHeartbeatAt = nowIso;
-      const res = await fetch(`${ctx.baseUrl}/config/activeRelay`, {
+    const nowIso = new Date().toISOString();
+    const body = JSON.stringify({
+      fields: {
+        deviceId: { stringValue: this.config.deviceId },
+        deviceName: { stringValue: this.config.deviceName },
+        lastHeartbeatAt: { stringValue: nowIso },
+      },
+    });
+    const patch = (docPath) =>
+      fetch(`${ctx.baseUrl}/${docPath}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...ctx.headers },
-        body: JSON.stringify({
-          fields: {
-            deviceId: { stringValue: this.config.deviceId },
-            deviceName: { stringValue: this.config.deviceName },
-            lastHeartbeatAt: { stringValue: nowIso },
-          },
-        }),
+        body,
       });
-      if (!res.ok) {
-        this._reportFirestoreProblem(`ハートビートの書き込みに失敗しました (HTTP ${res.status})`);
+    try {
+      // activeRelay は複数の中継役が上書きし合うので、Web版が宛先の生存を確かめられるよう端末ごとにも書く
+      const deviceRes = await patch(`devices/${encodeURIComponent(this.config.deviceId)}`);
+      const activeRes = await patch('config/activeRelay');
+      if (!deviceRes.ok || !activeRes.ok) {
+        this._reportFirestoreProblem(
+          `ハートビートの書き込みに失敗しました (HTTP ${deviceRes.ok ? activeRes.status : deviceRes.status})`,
+        );
+        return;
       }
-    } catch {
-      // ignore network error during heartbeat
+      this.lastFirestoreOkAt = nowIso;
+      this.config.lastHeartbeatAt = nowIso;
+      this._reportFirestoreProblem('');
+    } catch (err) {
+      this._reportFirestoreProblem(`Firestore に接続できません: ${err.message || err}`);
     }
   }
 
@@ -356,10 +392,8 @@ class RelayAgent {
 
   _startHeartbeat() {
     this._stopHeartbeat();
-    this.config.lastHeartbeatAt = new Date().toISOString();
     void this._publishHeartbeatToFirestore();
     this.heartbeatTimer = setInterval(() => {
-      this.config.lastHeartbeatAt = new Date().toISOString();
       void this._publishHeartbeatToFirestore();
     }, 25_000);
     this.pollTimer = setInterval(() => {

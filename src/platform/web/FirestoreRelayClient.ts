@@ -161,28 +161,26 @@ class FirestoreRelayClientImpl {
     const baseUrl = firestoreUserDocumentsBaseUrl(cfg.firebaseProjectId, auth.uid);
     const authHeaders = { Authorization: `Bearer ${auth.idToken}` };
 
-    // Active Relay のハートビート確認
-    const activeRelayRes = await fetch(`${baseUrl}/config/activeRelay`, { headers: authHeaders });
-    if (activeRelayRes.status === 404) {
+    // config/activeRelay は複数の中継役が上書きし合うので、宛先の端末自身のハートビートで生存を確かめる
+    const deviceRes = await fetch(
+      `${baseUrl}/devices/${encodeURIComponent(cfg.targetDeviceId)}`,
+      { headers: authHeaders },
+    );
+    if (deviceRes.status === 401 || deviceRes.status === 403) {
+      throw new Error(`Firestore へのアクセスが拒否されました (HTTP ${deviceRes.status})`);
+    }
+    const heartbeat = deviceRes.ok
+      ? ((await deviceRes.json()) as { fields?: { lastHeartbeatAt?: { stringValue?: string } } })
+          .fields?.lastHeartbeatAt?.stringValue
+      : undefined;
+    if (!heartbeat || !isRelayHeartbeatAlive(heartbeat)) {
       const localRes = await tryLocalEncryptedRelay();
       if (localRes) return localRes;
       throw new Error(
-        '中継役PCが見つかりません。中継役PC（http://localhost:8080/relay-login）で同じ Google アカウントでログインしているか確認してください。',
+        heartbeat
+          ? `中継役PC（${cfg.targetDeviceId}）は現在オフラインです（ハートビート期限切れ）。`
+          : `中継役PC（${cfg.targetDeviceId}）が見つかりません。その PC で中継役を開始し、同じ Google アカウントで Firebase にログインしているか確認してください。`,
       );
-    }
-    if (activeRelayRes.status === 401 || activeRelayRes.status === 403) {
-      throw new Error(`Firestore へのアクセスが拒否されました (HTTP ${activeRelayRes.status})`);
-    }
-    if (activeRelayRes.ok) {
-      const activeDoc = (await activeRelayRes.json()) as {
-        fields?: { lastHeartbeatAt?: { stringValue?: string } };
-      };
-      const hb = activeDoc.fields?.lastHeartbeatAt?.stringValue;
-      if (hb && !isRelayHeartbeatAlive(hb)) {
-        const localRes = await tryLocalEncryptedRelay();
-        if (localRes) return localRes;
-        throw new Error('指定された中継役PCは現在オフラインです（ハートビート期限切れ）。');
-      }
     }
 
     // 大きなペイロードはチャンクを先に書き込んでから queued ドキュメントを作成する

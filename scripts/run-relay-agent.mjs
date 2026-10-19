@@ -50,6 +50,7 @@ const vaultEngine = new VaultEngine({
   userDataDir,
   appRootDir,
   defaultVaultDir,
+  deviceIdPrefix: 'agent',
 });
 
 const relayAgent = new RelayAgent({

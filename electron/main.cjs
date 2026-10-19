@@ -87,6 +87,7 @@ const vaultEngine = new VaultEngine({
   userDataDir: app.getPath('userData'),
   appRootDir: appRoot(),
   defaultVaultDir: DEFAULT_VAULT_DIR,
+  deviceIdPrefix: 'pc',
 });
 
 const relayAgent = new RelayAgent({
@@ -235,6 +236,23 @@ ipcMain.handle('relay:configure', (_event, partial) => {
 
 ipcMain.handle('relay:rotateSecret', () => {
   return relayAgent.rotatePairingSecret();
+});
+
+// 画面側の Firebase ログインはメインプロセスの中継役に届かないため、refresh token をここで受け渡す
+ipcMain.handle('relay:setFirebaseSession', async (_event, session) => {
+  const { refreshToken, email, apiKey } = session || {};
+  if (typeof refreshToken !== 'string' || !refreshToken) {
+    throw new Error('Firebase の refresh token がありません。');
+  }
+  return relayAgent.setFirebaseRefreshToken(
+    refreshToken,
+    typeof email === 'string' ? email : '',
+    typeof apiKey === 'string' ? apiKey : '',
+  );
+});
+
+ipcMain.handle('relay:signOutFirebase', () => {
+  return relayAgent.signOutFirebase();
 });
 
 ipcMain.handle('relay:executePlain', async (_event, envelope) => {
@@ -411,8 +429,7 @@ app.whenReady()
   .then(() => {
     registerAppProtocol();
     const vDir = vaultEngine.getVaultDir();
-    console.log(`[Vault] userData=${app.getPath('userData')}`);
-    console.log(`[Vault] dir=${vDir} files=${fs.existsSync(vDir) ? fs.readdirSync(vDir).filter(f => f.endsWith('.md')).length : 0}`);
+    console.log(`[Vault] userData=${app.getPath('userData')} dir=${vDir}`);
     installCsp();
 
     const startUrl = isDev ? 'http://localhost:5173' : 'app://thinktank/index.html';
@@ -421,6 +438,7 @@ app.whenReady()
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow(startUrl);
     });
+    relayAgent.start();
   })
   .catch(err => {
     console.error('[main] 起動に失敗しました:', err);
@@ -429,4 +447,8 @@ app.whenReady()
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  relayAgent.stop();
 });

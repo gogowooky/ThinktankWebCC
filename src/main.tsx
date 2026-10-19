@@ -4,6 +4,7 @@ import './index.css'
 import App from './App'
 import { seedMobileDisplayDefaults } from './utils/deviceInfo'
 import { applyAppZoom } from './utils/appZoom'
+import { FirebaseAuthService } from './platform/web/FirebaseAuthService'
 
 // OAuth 2.0 リダイレクト後のポップアップ・コールバック処理
 if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
@@ -39,6 +40,13 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+// 画面側がログイン済みでもメインプロセスの中継役が未ログインのことがある（以前の版ではログインが渡らなかった）ので、起動時に引き継ぐ
+if (window.electronAPI?.relay) {
+  void FirebaseAuthService.syncSessionToElectronRelay().catch(err => {
+    console.warn('[Relay] Firebase のログインをメインプロセスに渡せませんでした', err);
+  });
+}
 
 // PWA サービスワーカーの登録 (http/httpsプロトコル時のみ実行し、Electron環境ではスキップする)
 // Electron dev時は http://localhost:5173 をロードするため protocol チェックだけでは
