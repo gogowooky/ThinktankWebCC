@@ -15,11 +15,16 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 ## 更新履歴
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
+<!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
 
 ### v2.6.1 refactor: 起動をdev:electronへ統一し常駐relayを廃止
 
 - 日付: 2026-10-19
 - コミット番号: 7a02ef4
+- デプロイ日: 2026-10-19（JST）
+- デプロイ対象コミット: 9a1f549（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 `electron:dev`を`dev:electron`へ改名し、`relay:start`と`dev:web-relay`、常駐エージェントの起動スクリプトを廃止。Viteの8080プロキシとWeb版AIのlocalhostフォールバックを削除し、AI提供側をElectron版、Web版の通信をFirestoreリアルタイム中継に統一した。起動手順を更新。関連テスト10件と本番ビルドが成功。
 
