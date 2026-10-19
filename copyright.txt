@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.5.3",
+  "version": "2.6.0",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "d4e254c",
-  "commitDateTime": "2026-10-19-103747",
-  "commitMessage": "fix: Electron 版の中継役が画面の Firebase ログインを受け取り、端末 id を分け、Firestore に届いたときだけオンライン表示する"
+  "commitId": "e750c7b",
+  "commitDateTime": "2026-10-19-230358",
+  "commitMessage": "feat: Firestore正本とPC連携モード"
 }

@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript のデスクトップアプリ（Web
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 
+### v2.6.0 feat: Firestore正本とPC連携モード
+
+- 日付: 2026-10-19
+- コミット番号: e750c7b
+
+Thinkファイルの正本をFirestoreへ集約し、外部資料はGoogle Drive、ローカルMarkdownはバックアップとして役割を分離。設定画面に既定OFFの「PC連携モード」を追加し、Electron版はAI CLI提供側、Web版は接続側としてログインと接続状態を明確化した。AI CLI依頼・応答の監視は定期ポーリングからFirestoreリアルタイムリスナーへ変更し、重複実行を防ぐ原子的claimを追加。アプリ版を2.6.0へ更新。
+
 ### v2.5.3 fix: Electron 版の中継役が画面の Firebase ログインを受け取り、端末 id を分け、Firestore に届いたときだけオンライン表示する
 
 - 日付: 2026-10-19
