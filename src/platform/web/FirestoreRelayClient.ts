@@ -16,12 +16,16 @@ import {
 import { encryptRelayPayload, decryptRelayPayload } from '../../../shared/relayCrypto';
 import { firestoreUserDocumentsBaseUrl } from '../../../shared/firebaseAuth';
 import { FirebaseAuthService } from './FirebaseAuthService';
+import { getFirebaseClient } from './firebaseClient';
+import { collection, doc, getDocs, onSnapshot } from 'firebase/firestore';
 
 const STORAGE_KEY_RELAY_DEVICE_ID = 'thinktank.web.relayDeviceId';
 const STORAGE_KEY_RELAY_SECRET = 'thinktank.web.relayPairingSecret';
 const STORAGE_KEY_FIREBASE_PROJECT = 'thinktank.web.firebaseProjectId';
+const STORAGE_KEY_RELAY_ENABLED = 'thinktank.web.pcLinkEnabled';
 
 export interface RelayClientConfig {
+  enabled: boolean;
   targetDeviceId: string;
   pairingSecret: string;
   firebaseProjectId: string;
@@ -35,12 +39,14 @@ class FirestoreRelayClientImpl {
       {};
     if (typeof localStorage === 'undefined') {
       return {
+        enabled: false,
         targetDeviceId: envObj.VITE_RELAY_DEVICE_ID || '',
         pairingSecret: envObj.VITE_RELAY_PAIRING_SECRET || '',
         firebaseProjectId: envObj.VITE_FIREBASE_PROJECT_ID || '',
       };
     }
     return {
+      enabled: localStorage.getItem(STORAGE_KEY_RELAY_ENABLED) === 'true',
       targetDeviceId:
         localStorage.getItem(STORAGE_KEY_RELAY_DEVICE_ID) || envObj.VITE_RELAY_DEVICE_ID || '',
       pairingSecret:
@@ -54,6 +60,9 @@ class FirestoreRelayClientImpl {
 
   public saveConfig(partial: Partial<RelayClientConfig>): RelayClientConfig {
     if (typeof localStorage !== 'undefined') {
+      if (partial.enabled !== undefined) {
+        localStorage.setItem(STORAGE_KEY_RELAY_ENABLED, String(partial.enabled));
+      }
       if (partial.targetDeviceId !== undefined) {
         localStorage.setItem(STORAGE_KEY_RELAY_DEVICE_ID, partial.targetDeviceId.trim());
       }
@@ -70,9 +79,12 @@ class FirestoreRelayClientImpl {
   public isConfigured(): boolean {
     const cfg = this.getConfig();
     if (typeof window !== 'undefined' && window.electronAPI?.relay) {
-      return true;
+      // Electron のローカルAIは ai IPC で直接判定し、PC連携設定とは分離する。
+      return false;
     }
-    return Boolean(cfg.targetDeviceId && cfg.pairingSecret && cfg.firebaseProjectId);
+    return Boolean(
+      cfg.enabled && cfg.targetDeviceId && cfg.pairingSecret && cfg.firebaseProjectId,
+    );
   }
 
   /**
@@ -110,9 +122,9 @@ class FirestoreRelayClientImpl {
 
     // 2. Web版：Firestore REST API 経由で中継役PCへ依頼
     const cfg = this.getConfig();
-    if (!cfg.pairingSecret || !cfg.firebaseProjectId || !cfg.targetDeviceId) {
+    if (!cfg.enabled || !cfg.pairingSecret || !cfg.firebaseProjectId || !cfg.targetDeviceId) {
       throw new Error(
-        '中継役PC（Active Relay）が未設定です。設定画面から中継役PCのデバイスIDとペアリングシークレットを設定してください。',
+        'PC連携モードがOFF、または接続先PCが未設定です。設定画面でPC連携を有効にし、デバイスIDとペアリングシークレットを設定してください。',
       );
     }
 
@@ -158,6 +170,12 @@ class FirestoreRelayClientImpl {
       throw authErr;
     }
 
+    const sdkUser = await FirebaseAuthService.ensureSdkAuth();
+    if (sdkUser.uid !== auth.uid) {
+      throw new Error('ThinkデータとPC連携で異なるFirebaseアカウントが選択されています。');
+    }
+    const { db } = await getFirebaseClient(cfg.firebaseProjectId);
+
     const baseUrl = firestoreUserDocumentsBaseUrl(cfg.firebaseProjectId, auth.uid);
     const authHeaders = { Authorization: `Bearer ${auth.idToken}` };
 
@@ -186,7 +204,7 @@ class FirestoreRelayClientImpl {
     // 大きなペイロードはチャンクを先に書き込んでから queued ドキュメントを作成する
     if (chunks.length > 1) {
       for (const ch of chunks) {
-        await fetch(
+        const chunkRes = await fetch(
           `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}/chunks?documentId=req_${ch.index}`,
           {
             method: 'POST',
@@ -201,6 +219,9 @@ class FirestoreRelayClientImpl {
             }),
           },
         );
+        if (!chunkRes.ok) {
+          throw new Error(`中継リクエストのチャンク送信に失敗しました (HTTP ${chunkRes.status})`);
+        }
       }
     }
 
@@ -220,7 +241,7 @@ class FirestoreRelayClientImpl {
             status: { stringValue: 'queued' },
             createdAt: { stringValue: nowIso },
             updatedAt: { stringValue: nowIso },
-            expiresAt: { stringValue: expiresIso },
+            expiresAt: { timestampValue: expiresIso },
             encryptedRequest: { stringValue: chunks.length === 1 ? encryptedRequest : '' },
             requestChunkCount: { integerValue: String(chunks.length) },
           },
@@ -231,53 +252,84 @@ class FirestoreRelayClientImpl {
       throw new Error(`Firestore 中継リクエストの送信に失敗しました (HTTP ${createRes.status})`);
     }
 
-    // 応答ポーリング
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, 800));
-      const pollRes = await fetch(
-        `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}`,
-        { headers: authHeaders },
-      );
-      if (!pollRes.ok) continue;
-      const doc = (await pollRes.json()) as {
-        fields?: Record<string, { stringValue?: string; integerValue?: string }>;
-      };
-      const status = doc.fields?.status?.stringValue;
-      if (status === 'succeeded') {
-        const encryptedResponse = doc.fields?.encryptedResponse?.stringValue || '';
-        const chunkCount = Number(doc.fields?.responseChunkCount?.integerValue || '1');
-        let fullCipher = encryptedResponse;
-        if (chunkCount > 1 && !fullCipher) {
-          const chunksRes = await fetch(
-            `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}/chunks`,
-            { headers: authHeaders },
-          );
-          const chunksJson = (await chunksRes.json()) as {
-            documents?: Array<{
-              fields?: Record<string, { stringValue?: string; integerValue?: string }>;
-            }>;
-          };
-          const responseChunks: FirestoreRelayChunkDoc[] = (chunksJson.documents || [])
-            .filter((d) => d.fields?.direction?.stringValue === 'response')
-            .map((d) => ({
-              index: Number(d.fields?.index?.integerValue || '0'),
-              total: Number(d.fields?.total?.integerValue || '1'),
-              direction: 'response' as const,
-              data: d.fields?.data?.stringValue || '',
-            }));
-          fullCipher = reassembleChunks(responseChunks);
-        }
-        return decryptRelayPayload<RelayResponsePlaintext<TRes>>(fullCipher, cfg.pairingSecret);
-      }
-      if (status === 'failed' || status === 'canceled') {
-        throw new Error(
-          doc.fields?.errorMessage?.stringValue || `中継処理が失敗しました (${status})`,
-        );
-      }
-    }
+    // 応答はFirestore SDKのリアルタイムリスナーで待つ。接続中に定期GETは行わない。
+    const requestRef = doc(db, 'users', auth.uid, 'relayRequests', requestId);
 
-    throw new Error('中継役PCからの応答がタイムアウトしました。');
+    return new Promise<RelayResponsePlaintext<TRes>>((resolve, reject) => {
+      let settled = false;
+      let unsubscribe = () => {};
+      const finish = (
+        result: { value: RelayResponsePlaintext<TRes> } | { error: unknown },
+      ) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeout);
+        unsubscribe();
+        if ('value' in result) resolve(result.value);
+        else reject(result.error);
+      };
+
+      const timeout = setTimeout(() => {
+        // 成功書き込みとの競合を避け、ここでは状態を上書きしない。未処理の依頼は
+        // expiresAtを見たPC側がexpiredへ遷移させる。
+        finish({ error: new Error('中継役PCからの応答がタイムアウトしました。') });
+      }, timeoutMs);
+
+      unsubscribe = onSnapshot(
+        requestRef,
+        (snapshot) => {
+          if (!snapshot.exists() || settled) return;
+          const data = snapshot.data() as {
+            status?: string;
+            encryptedResponse?: string;
+            responseChunkCount?: number;
+            errorMessage?: string;
+          };
+          if (data.status === 'succeeded') {
+            void (async () => {
+              try {
+                let fullCipher = data.encryptedResponse || '';
+                const chunkCount = Number(data.responseChunkCount || 1);
+                if (chunkCount > 1 && !fullCipher) {
+                  const chunkSnapshot = await getDocs(collection(requestRef, 'chunks'));
+                  const responseChunks: FirestoreRelayChunkDoc[] = chunkSnapshot.docs
+                    .map((item) => item.data() as Partial<FirestoreRelayChunkDoc>)
+                    .filter((item) => item.direction === 'response')
+                    .map((item) => ({
+                      index: Number(item.index || 0),
+                      total: Number(item.total || 1),
+                      direction: 'response' as const,
+                      data: item.data || '',
+                    }));
+                  fullCipher = reassembleChunks(responseChunks);
+                }
+                if (!fullCipher) throw new Error('中継役PCから空の応答を受信しました。');
+                const value = await decryptRelayPayload<RelayResponsePlaintext<TRes>>(
+                  fullCipher,
+                  cfg.pairingSecret,
+                );
+                finish({ value });
+              } catch (error) {
+                finish({ error });
+              }
+            })();
+            return;
+          }
+          if (
+            data.status === 'failed' ||
+            data.status === 'canceled' ||
+            data.status === 'expired'
+          ) {
+            finish({
+              error: new Error(
+                data.errorMessage || `中継処理が失敗しました (${data.status})`,
+              ),
+            });
+          }
+        },
+        (error) => finish({ error }),
+      );
+    });
   }
 }
 

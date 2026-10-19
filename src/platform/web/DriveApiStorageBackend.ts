@@ -18,7 +18,7 @@ import {
 import { verifyNoConflict, nextVersionTimestamp } from '../../../shared/conflict';
 import {
   mergeIndexShards,
-  mergeBodyPacks,
+  mergeBodyPackEntries,
   createIndexShard,
   parseSearchQuery,
   searchVaultRecords,
@@ -28,11 +28,33 @@ import {
 import { GoogleAuthService } from './GoogleAuthService';
 import { IndexedDbVaultCache } from './IndexedDbVaultCache';
 import { FirestoreRelayClient } from './FirestoreRelayClient';
+import { classifyVaultChanges, type DriveChange } from './driveChanges';
 
 const DRIVE_API_BASE = 'https://www.googleapis.com/drive/v3/files';
 const DRIVE_UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3/files';
+const DRIVE_CHANGES_BASE = 'https://www.googleapis.com/drive/v3/changes';
 const BODY_PACK_SYNC_TS_KEY = 'tt_drive_body_pack_synced_at';
 const WEB_DEVICE_ID_KEY = 'tt_web_device_id';
+const CHANGES_PAGE_TOKEN_KEY = 'tt_drive_changes_page_token';
+// これより多い変更は1件ずつ取り寄せるより索引から読み直したほうが速い
+const MAX_CHANGES_PER_SYNC = 5000;
+const MAX_CHANGED_FILES_PER_SYNC = 300;
+
+function loadChangesPageToken(): string | null {
+  return typeof localStorage !== 'undefined' ? localStorage.getItem(CHANGES_PAGE_TOKEN_KEY) : null;
+}
+
+function saveChangesPageToken(token: string): void {
+  if (typeof localStorage !== 'undefined') localStorage.setItem(CHANGES_PAGE_TOKEN_KEY, token);
+}
+
+function clearChangesPageToken(): void {
+  if (typeof localStorage !== 'undefined') localStorage.removeItem(CHANGES_PAGE_TOKEN_KEY);
+}
+
+function sortByUpdatedDesc(metas: ThinkMeta[]): ThinkMeta[] {
+  return metas.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+}
 
 function getWebDeviceId(): string {
   if (typeof localStorage === 'undefined') return 'web-default';
@@ -84,6 +106,15 @@ export class DriveApiStorageBackend implements IStorageBackend {
       lastBodySyncAt,
       bodySyncInProgress: this.bodySyncInProgress,
     };
+  }
+
+  /** この端末の IndexedDB キャッシュを消し、次の取得で中継役PCまたは Drive から読み直させる。 */
+  public async clearCache(): Promise<void> {
+    await this.cache.clearAll();
+    clearChangesPageToken();
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(BODY_PACK_SYNC_TS_KEY);
+    }
   }
 
   private async ensureSubFolders(): Promise<{
@@ -262,7 +293,7 @@ export class DriveApiStorageBackend implements IStorageBackend {
       }
       if (packs.length === 0) return 0;
 
-      const mergedBodies = mergeBodyPacks(packs);
+      const mergedBodies = mergeBodyPackEntries(packs);
       await this.cache.putBodies(mergedBodies);
       const nowIso = new Date().toISOString();
       if (typeof localStorage !== 'undefined') {
@@ -273,6 +304,42 @@ export class DriveApiStorageBackend implements IStorageBackend {
       return 0;
     } finally {
       this.bodySyncInProgress = false;
+    }
+  }
+
+  /**
+   * 索引シャードを作ったあとに PC などで更新された .md を Drive から直接読み、一覧と本文キャッシュを補う。
+   * PC 版が索引を書き出すまでの間（または PC 版が動いていない間）も、携帯に最新の版を出すため。
+   * 一度に読む件数には上限を設け、残りは次回の一覧取得に回す。
+   */
+  private async fetchMdNewerThan(sinceIso: string, maxFiles = 100): Promise<ThinkMeta[]> {
+    if (!sinceIso) return [];
+    try {
+      const { vaultVer2Id } = await this.ensureSubFolders();
+      const q =
+        `'${vaultVer2Id}' in parents and name contains '.md' and ` +
+        `modifiedTime > '${sinceIso}' and trashed = false`;
+      const res = await fetch(
+        `${DRIVE_API_BASE}?q=${encodeURIComponent(q)}&orderBy=modifiedTime desc&pageSize=${maxFiles}&fields=files(id,name,modifiedTime)`,
+        { headers: this.authHeaders() },
+      );
+      if (!res.ok) return [];
+      const data = (await res.json()) as { files?: DriveFileItem[] };
+      const metas: ThinkMeta[] = [];
+      for (const f of data.files ?? []) {
+        if (!f.name.endsWith('.md')) continue;
+        try {
+          const parsed = parseMdRecord(await this.downloadFileText(f.id), f.name.slice(0, -3));
+          if (parsed.isDeleted) continue;
+          metas.push(toVaultThinkMeta(parsed, null));
+          await this.cache.putBody(parsed.thinkid, parsed.body, parsed.updatedAt);
+        } catch {
+          // 読めないファイルは索引の情報のまま使う
+        }
+      }
+      return metas;
+    } catch {
+      return [];
     }
   }
 
@@ -318,8 +385,9 @@ export class DriveApiStorageBackend implements IStorageBackend {
   /**
    * 一覧取得：
    * 1. 中継役PCがオンラインなら listDiff で高速差分同期
-   * 2. オフラインなら Drive の .thinktank/index/shard-*.json を合成
-   * 3. IndexedDB キャッシュを更新して返し、裏で body-pack-*.json のバックグラウンド同期を開始する
+   * 2. オフラインなら、2 回目以降は Drive の Changes API で前回からの変更だけを当てる
+   * 3. 初回（目印が無い・キャッシュが空・変更が多すぎる）は Drive の .thinktank/index/shard-*.json を合成する
+   * 4. IndexedDB キャッシュを更新して返し、裏で body-pack-*.json のバックグラウンド同期を開始する
    */
   public async listMeta(): Promise<ThinkMeta[]> {
     const cached = await this.cache.getAllMeta();
@@ -351,29 +419,18 @@ export class DriveApiStorageBackend implements IStorageBackend {
 
     if (GoogleAuthService.hasValidToken()) {
       try {
-        const { indexId } = await this.ensureSubFolders();
-        const q = `'${indexId}' in parents and name contains 'shard-' and trashed = false`;
-        const res = await fetch(
-          `${DRIVE_API_BASE}?q=${encodeURIComponent(q)}&fields=files(id,name)`,
-          { headers: this.authHeaders() },
-        );
-        if (res.ok) {
-          const data = (await res.json()) as { files?: DriveFileItem[] };
-          const shards: IndexShardV1[] = [];
-          for (const f of data.files ?? []) {
-            try {
-              const txt = await this.downloadFileText(f.id);
-              shards.push(JSON.parse(txt) as IndexShardV1);
-            } catch {
-              // skip corrupt shard
-            }
-          }
-          if (shards.length > 0) {
-            const merged = mergeIndexShards(shards);
-            await this.cache.putMetas(merged);
-            void this.syncBodyPacksInBackground(false);
-            return merged;
-          }
+        // 2 回目以降は Changes API で「前回から変わったファイル」だけを取り寄せる（PC 版の索引の作り直しを待たない）
+        const savedToken = loadChangesPageToken();
+        if (savedToken && cached.length > 0 && (await this.applyDriveChanges(savedToken))) {
+          void this.syncBodyPacksInBackground(false);
+          return sortByUpdatedDesc(await this.cache.getAllMeta());
+        }
+        // 索引を読む前に目印を取っておく。読んでいる間の変更は次回の Changes API で拾い直せる（同じ変更を二度当てても結果は同じ）
+        const startToken = await this.fetchChangesStartToken();
+        const fromIndex = await this.loadFromIndexShards();
+        if (fromIndex) {
+          if (startToken) saveChangesPageToken(startToken);
+          return fromIndex;
         }
       } catch {
         // fallback to cached
@@ -383,11 +440,121 @@ export class DriveApiStorageBackend implements IStorageBackend {
     return cached;
   }
 
+  /** Drive 上の索引シャードを合成し、索引より新しい .md を補って一覧を作る（初回やキャッシュが空のとき）。 */
+  private async loadFromIndexShards(): Promise<ThinkMeta[] | null> {
+    const { indexId } = await this.ensureSubFolders();
+    const q = `'${indexId}' in parents and name contains 'shard-' and trashed = false`;
+    const res = await fetch(
+      `${DRIVE_API_BASE}?q=${encodeURIComponent(q)}&fields=files(id,name)`,
+      { headers: this.authHeaders() },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { files?: DriveFileItem[] };
+    const shards: IndexShardV1[] = [];
+    for (const f of data.files ?? []) {
+      try {
+        const txt = await this.downloadFileText(f.id);
+        shards.push(JSON.parse(txt) as IndexShardV1);
+      } catch {
+        // skip corrupt shard
+      }
+    }
+    if (shards.length === 0) return null;
+    const merged = mergeIndexShards(shards);
+    const newestShardAt = shards.reduce((max, s) => (s.updatedAt > max ? s.updatedAt : max), '');
+    const fresher = await this.fetchMdNewerThan(newestShardAt);
+    const byId = new Map<string, ThinkMeta>(merged.map((m) => [m.thinkid, m]));
+    for (const m of fresher) byId.set(m.thinkid, m);
+    const result = sortByUpdatedDesc([...byId.values()]);
+    await this.cache.putMetas(result);
+    void this.syncBodyPacksInBackground(false);
+    return result;
+  }
+
+  private async fetchChangesStartToken(): Promise<string | null> {
+    const res = await fetch(`${DRIVE_CHANGES_BASE}/startPageToken`, { headers: this.authHeaders() });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { startPageToken?: string };
+    return data.startPageToken ?? null;
+  }
+
   /**
-   * 本文取得：IndexedDB キャッシュ（本文パックまたは既読） → 中継役PC → Drive 直接取得の順で解決する。
+   * 目印（pageToken）以降の Drive の変更を読み、Vault の .md / .support.json / 削除をキャッシュに当てる。
+   * 変更が多すぎる・目印が無効なときは false を返し、呼び出し側に索引からの読み直しを任せる。
+   * 取り寄せに失敗したファイルがあれば目印を進めず、次回もう一度当てる。
+   */
+  private async applyDriveChanges(pageToken: string): Promise<boolean> {
+    const { vaultVer2Id, trashId } = await this.ensureSubFolders();
+    const changes: DriveChange[] = [];
+    let token: string | undefined = pageToken;
+    let newStartToken = '';
+    while (token) {
+      const url =
+        `${DRIVE_CHANGES_BASE}?pageToken=${encodeURIComponent(token)}&pageSize=1000` +
+        `&includeRemoved=true&spaces=drive` +
+        `&fields=${encodeURIComponent('nextPageToken,newStartPageToken,changes(fileId,removed,file(id,name,parents,trashed,modifiedTime))')}`;
+      const res = await fetch(url, { headers: this.authHeaders() });
+      if (!res.ok) {
+        if (res.status === 400 || res.status === 404) clearChangesPageToken();
+        return false;
+      }
+      const data = (await res.json()) as {
+        nextPageToken?: string;
+        newStartPageToken?: string;
+        changes?: DriveChange[];
+      };
+      changes.push(...(data.changes ?? []));
+      if (changes.length > MAX_CHANGES_PER_SYNC) {
+        clearChangesPageToken();
+        return false;
+      }
+      if (data.newStartPageToken) newStartToken = data.newStartPageToken;
+      token = data.nextPageToken;
+    }
+
+    const set = classifyVaultChanges(changes, { vaultFolderId: vaultVer2Id, trashFolderId: trashId });
+    if (set.mdFiles.length > MAX_CHANGED_FILES_PER_SYNC) {
+      clearChangesPageToken();
+      return false;
+    }
+
+    let failures = 0;
+    for (const thinkid of set.removedThinkIds) {
+      await this.cache.removeMeta(thinkid);
+    }
+    for (const { fileId, thinkid } of set.mdFiles) {
+      try {
+        const parsed = parseMdRecord(await this.downloadFileText(fileId), thinkid);
+        if (parsed.isDeleted) {
+          await this.cache.removeMeta(thinkid);
+          continue;
+        }
+        await this.cache.putMetas([toVaultThinkMeta(parsed, null)]);
+        await this.cache.putBody(thinkid, parsed.body, parsed.updatedAt);
+      } catch {
+        failures++;
+      }
+    }
+    for (const { fileId, thinkid } of set.supportFiles) {
+      try {
+        const sup = parseSupportFile(await this.downloadFileText(fileId), thinkid);
+        await this.cache.putSupport(thinkid, sup.metadata);
+      } catch {
+        failures++;
+      }
+    }
+
+    if (failures === 0 && newStartToken) saveChangesPageToken(newStartToken);
+    return true;
+  }
+
+  /**
+   * 本文取得：一覧の版（updatedAt）と一致する IndexedDB キャッシュ → 中継役PC → Drive 直接取得の順で解決する。
+   * どこからも取れないときだけ、版の合わない古いキャッシュを返す。
    */
   public async getBody(id: string): Promise<string | null> {
-    const cachedBody = await this.cache.getBody(id);
+    const expectedUpdatedAt = (await this.cache.getMeta(id))?.updatedAt;
+    const cachedBody = await this.cache.getBody(id, expectedUpdatedAt);
     if (cachedBody !== null) {
       return cachedBody;
     }
@@ -396,14 +563,16 @@ export class DriveApiStorageBackend implements IStorageBackend {
       try {
         const res = await FirestoreRelayClient.request<
           { thinkid: string },
-          { body: string; support?: Record<string, unknown> } | null
+          { body: string; meta?: ThinkMeta; support?: Record<string, unknown> } | null
         >('getBody', { thinkid: id });
         if (res.ok && res.result) {
-          await this.cache.putBody(id, res.result.body);
-          if (res.result.support) {
-            await this.cache.putSupport(id, res.result.support);
+          const { body, meta, support } = res.result;
+          if (meta) await this.cache.putMetas([meta]);
+          await this.cache.putBody(id, body, meta?.updatedAt ?? expectedUpdatedAt);
+          if (support) {
+            await this.cache.putSupport(id, support);
           }
-          return res.result.body;
+          return body;
         }
       } catch {
         // Drive 直接取得へフォールバック
@@ -417,7 +586,7 @@ export class DriveApiStorageBackend implements IStorageBackend {
         if (fileItem) {
           const rawMd = await this.downloadFileText(fileItem.id);
           const parsed = parseMdRecord(rawMd, id);
-          await this.cache.putBody(id, parsed.body);
+          await this.cache.putBody(id, parsed.body, parsed.updatedAt);
           return parsed.body;
         }
       } catch {
@@ -532,7 +701,7 @@ export class DriveApiStorageBackend implements IStorageBackend {
     const savedMeta = toVaultThinkMeta(parsed, sup);
 
     await this.cache.putMetas([savedMeta]);
-    await this.cache.putBody(thinkid, parsed.body);
+    await this.cache.putBody(thinkid, parsed.body, savedMeta.updatedAt);
     if (payload.metadata) {
       await this.cache.putSupport(thinkid, payload.metadata);
     }
@@ -635,16 +804,21 @@ export class DriveApiStorageBackend implements IStorageBackend {
       this.cache.getAllBodies(),
     ]);
 
+    // 版の合わない古い本文で検索すると、今の内容にない語で当たってしまうので使わない
+    const currentBody = (meta: ThinkMeta): string => {
+      const cached = bodyMap[meta.thinkid];
+      return cached && cached.updatedAt === meta.updatedAt ? cached.body : '';
+    };
     const searchable = metas.map((meta) => ({
       meta,
-      body: bodyMap[meta.thinkid] ?? '',
+      body: currentBody(meta),
     }));
 
     const localMatched = searchVaultRecords(searchable, query);
 
     // もし本文キャッシュがまだ十分に揃っておらず自由語検索がある場合は、Drive API 全文検索も併用
     const parsedQuery = parseSearchQuery(query);
-    const cachedBodyCount = Object.keys(bodyMap).length;
+    const cachedBodyCount = searchable.filter((s) => s.body !== '').length;
     if (
       parsedQuery.freeTerms.length > 0 &&
       cachedBodyCount < metas.length * 0.8 &&

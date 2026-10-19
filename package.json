@@ -1,7 +1,7 @@
 {
   "name": "thinktank",
   "private": true,
-  "version": "4.0.0",
+  "version": "2.6.0",
   "type": "module",
   "scripts": {
     "dev:vite": "vite",
@@ -47,6 +47,7 @@
     "@tanstack/react-virtual": "^3.11.2",
     "dompurify": "^3.4.12",
     "dotenv": "^17.3.1",
+    "firebase": "^10.14.1",
     "highlight.js": "^11.11.1",
     "js-yaml": "^4.3.2",
     "lucide-react": "^0.474.0",

@@ -1,6 +1,7 @@
 /**
  * shared/vaultFormat.ts
- * Drive 正本（形式バージョン 1）の <thinkid>.md と <thinkid>.support.json を扱う純粋ロジック。
+ * Firestore正本から書き出すMarkdownバックアップ（形式バージョン1）の
+ * <thinkid>.md と <thinkid>.support.json を扱う純粋ロジック。
  * Node（Electron メインプロセス・変換ツール）とブラウザ（PC版・Web版）の両方で共有する。
  */
 

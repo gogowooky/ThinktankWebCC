@@ -5,11 +5,12 @@
  */
 
 import { useState, useCallback, useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { Save, Library, X, ChevronDown, ChevronRight } from 'lucide-react';
+import { Save, Folder, X, ChevronDown, ChevronRight } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import type { TTVault } from '../../models/TTVault';
 import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 import './SeedsSettingsView.css';
+import { toLocalDate } from '../../utils/localDateTime';
 
 export interface SeedsSettingsViewRef {
   focus: () => void;
@@ -73,7 +74,7 @@ export const SeedsSettingsView = forwardRef<SeedsSettingsViewRef, Props>(functio
   if (!think) {
     return (
       <div className="seeds-settings-view seeds-settings-view--empty">
-        <Library size={24} className="seeds-settings-view__empty-icon" />
+        <Folder size={24} className="seeds-settings-view__empty-icon" />
         <span>Bundleをドロップして選択してください</span>
       </div>
     );
@@ -135,7 +136,7 @@ export const SeedsSettingsView = forwardRef<SeedsSettingsViewRef, Props>(functio
             <dt>作成日</dt>
             <dd>{think.ID.slice(0, 10)}</dd>
             <dt>更新日</dt>
-            <dd>{think.UpdatedAt ? think.UpdatedAt.slice(0, 10) : '—'}</dd>
+            <dd>{think.UpdatedAt ? toLocalDate(think.UpdatedAt) : '—'}</dd>
             <dt>種別</dt>
             <dd><code>{think.ContentType}</code></dd>
           </dl>

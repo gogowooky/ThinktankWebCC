@@ -2,17 +2,19 @@
  * StorageManager.ts
  * ストレージバックエンドのシングルトン管理クラス
  *
- * - Electron (PCアプリ): ElectronStorageBackend（IPC 経由で VaultEngine 操作）
- * - Web / PWA: DriveApiStorageBackend（Google Drive API）または LocalRelayStorageBackend（ローカル中継サーバ /api/vault/*）
+ * Electron / Web とも Think の正本は Firestore。
+ * Electron のローカル Markdown は FirestoreStorageBackend が保存成功後に
+ * best-effort で書き出すバックアップであり、読み取り元にはしない。
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
-import { LocalRelayStorageBackend } from './LocalRelayStorageBackend';
+import type { DriveApiStorageBackend } from '../../platform/web/DriveApiStorageBackend';
 import { ElectronStorageBackend } from './ElectronStorageBackend';
-import { DriveApiStorageBackend } from '../../platform/web/DriveApiStorageBackend';
-import { GoogleAuthService } from '../../platform/web/GoogleAuthService';
-
-const WEB_STORAGE_PROVIDER_KEY = 'tt_web_storage_provider'; // 'drive' | 'local'
+import {
+  FirestoreStorageBackend,
+  type MarkdownImportResult,
+  type FirestoreThinkRecord,
+} from '../../platform/web/FirestoreStorageBackend';
 
 export class StorageManager {
   private static _instance: StorageManager | null = null;
@@ -22,37 +24,17 @@ export class StorageManager {
   public webProvider: 'drive' | 'local' = 'local';
 
   private constructor() {
-    if (window.electronAPI) {
-      this.backend = new ElectronStorageBackend();
-      this.mode    = 'electron';
-      console.log('[StorageManager] mode=electron (IPC fs)');
-    } else {
-      this.mode = 'pwa';
-      const preferred =
-        typeof localStorage !== 'undefined'
-          ? localStorage.getItem(WEB_STORAGE_PROVIDER_KEY)
-          : null;
-      const isLocalhost =
-        typeof window !== 'undefined' &&
-        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-
-      // 本番Webホスティング環境（Firebase Hosting等）ではローカル中継に届かないため、
-      // 明示的に local が選ばれていない限り drive（Google Drive API）を既定にする
-      const shouldUseDrive =
-        preferred === 'drive' ||
-        (!isLocalhost && preferred !== 'local') ||
-        (preferred !== 'local' && GoogleAuthService.hasValidToken());
-
-      if (shouldUseDrive) {
-        this.backend = new DriveApiStorageBackend();
-        this.webProvider = 'drive';
-        console.log('[StorageManager] mode=pwa (Google Drive + IndexedDB Cache)');
-      } else {
-        this.backend = new LocalRelayStorageBackend();
-        this.webProvider = 'local';
-        console.log('[StorageManager] mode=pwa (Local relay server)');
-      }
-    }
+    this.mode =
+      typeof window !== 'undefined' && window.electronAPI ? 'electron' : 'pwa';
+    // relay APIを持たない旧preloadは移行前クライアント（および単体テスト）として
+    // ローカル保存を維持する。現行ElectronとWebの正本は必ずFirestore。
+    this.backend =
+      this.mode === 'electron' && !window.electronAPI?.relay
+        ? new ElectronStorageBackend()
+        : new FirestoreStorageBackend();
+    console.log(
+      `[StorageManager] mode=${this.mode} (${this.backend instanceof FirestoreStorageBackend ? 'Firestore canonical storage' : 'legacy IPC storage'})`,
+    );
   }
 
   public static get instance(): StorageManager {
@@ -63,20 +45,14 @@ export class StorageManager {
   }
 
   /**
-   * Web版のストレージプロバイダ（'drive' | 'local'）を動的に切り替える。
+   * 旧設定画面との一時的な互換API。Think の保存先は切り替えず、常に Firestore。
    */
   public setWebProvider(provider: 'drive' | 'local'): void {
-    if (this.mode !== 'pwa') return;
     this.webProvider = provider;
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(WEB_STORAGE_PROVIDER_KEY, provider);
-    }
-    this.backend =
-      provider === 'drive' ? new DriveApiStorageBackend() : new LocalRelayStorageBackend();
   }
 
   public getDriveBackend(): DriveApiStorageBackend | null {
-    return this.backend instanceof DriveApiStorageBackend ? this.backend : null;
+    return null;
   }
 
   // ── 公開メソッド（TTVault / TTThink から呼ぶ） ─────────────────────
@@ -100,6 +76,73 @@ export class StorageManager {
 
   public search(query: string): Promise<ThinkMeta[]> {
     return this.backend.search(query);
+  }
+
+  /** 本文とメタデータを同じ正本版として取得する（各サービスの部分更新用）。 */
+  public getRecord(id: string): Promise<FirestoreThinkRecord | null> {
+    if (this.backend instanceof FirestoreStorageBackend) {
+      return this.backend.getRecord(id);
+    }
+    const direct =
+      typeof window !== 'undefined' ? window.electronAPI?.storage?.getRecord : undefined;
+    if (direct) {
+      return direct(id).then((record) =>
+        record ? { meta: record.meta, body: record.body } : null,
+      );
+    }
+    return Promise.all([this.backend.listMeta(), this.backend.getBody(id)]).then(
+      ([metas, body]) => {
+        const meta = metas.find((item) => item.thinkid === id);
+        return meta && body !== null ? { meta, body } : null;
+      },
+    );
+  }
+
+  /**
+   * 本文を変えずにメタデータを部分更新する。現行クライアントではFirestoreの
+   * 楽観ロック付きsaveへ統合し、旧preloadだけはsaveSupport IPCへ委譲する。
+   */
+  public async updateMetadata(
+    id: string,
+    patch: Record<string, unknown>,
+    expectedVersion?: string,
+  ): Promise<ThinkMeta> {
+    const record = await this.getRecord(id);
+    if (!record) throw new Error(`保存対象「${id}」が見つかりません。`);
+
+    if (!(this.backend instanceof FirestoreStorageBackend)) {
+      const direct =
+        typeof window !== 'undefined' ? window.electronAPI?.storage?.saveSupport : undefined;
+      if (direct) {
+        const saved = await direct(id, patch, expectedVersion);
+        return {
+          ...record.meta,
+          updatedAt: saved.updatedAt,
+          metadata: saved.metadata,
+        };
+      }
+    }
+
+    const metadata = { ...(record.meta.metadata ?? {}), ...patch };
+    const fullContent = record.body
+      ? `${record.meta.title}\n${record.body}`
+      : record.meta.title;
+    return this.save({
+      thinkid: record.meta.thinkid,
+      category: record.meta.category,
+      fullContent,
+      keywords: record.meta.keywords,
+      relatedIds: record.meta.relatedIds,
+      metadata,
+      baseUpdatedAt: expectedVersion || record.meta.updatedAt || undefined,
+    });
+  }
+
+  public importElectronMarkdownBackup(): Promise<MarkdownImportResult> {
+    if (!(this.backend instanceof FirestoreStorageBackend)) {
+      throw new Error('Firestore正本を使用する現行PC版で実行してください。');
+    }
+    return this.backend.importElectronMarkdownBackup();
   }
 }
 

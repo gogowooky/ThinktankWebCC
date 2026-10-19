@@ -28,6 +28,7 @@ import {
   type GateStatus,
 } from '../../shared/operations';
 import type { ValidatedPromotionCandidate } from '../../shared/responseValidator';
+import { invokeIpc } from '../utils/ipcError';
 
 export class OperationsService {
   /**
@@ -38,15 +39,13 @@ export class OperationsService {
     const profile = DomainProfileManager.activeProfile;
     let rawMeta: Record<string, unknown> | undefined = vault.GetThink(bundleId)?.Metadata;
 
-    if (typeof window !== 'undefined' && window.electronAPI?.storage?.getRecord) {
-      try {
-        const rec = await window.electronAPI.storage.getRecord(bundleId);
-        if (rec?.meta?.metadata) {
-          rawMeta = rec.meta.metadata;
-        }
-      } catch {
-        // fallback to in-memory metadata
+    try {
+      const rec = await StorageManager.instance.getRecord(bundleId);
+      if (rec?.meta?.metadata) {
+        rawMeta = rec.meta.metadata;
       }
+    } catch {
+      // 一時的な接続断では、表示済みのメモリ状態を読み取り専用で利用する。
     }
 
     const state = extractOperationsState(rawMeta, profile);
@@ -76,37 +75,16 @@ export class OperationsService {
     nextState: BundleOperationsState,
   ): Promise<BundleOperationsState> {
     const think = vault.GetThink(bundleId);
-    const mergedMetadata: Record<string, unknown> = {
-      ...(think?.Metadata ?? {}),
-      operations: nextState,
-    };
-
-    if (typeof window !== 'undefined' && window.electronAPI?.storage?.saveSupport) {
-      const saved = await window.electronAPI.storage.saveSupport(bundleId, {
-        operations: nextState,
-      });
-      if (think) {
-        think.Metadata = saved.metadata;
-        think.UpdatedAt = saved.updatedAt;
-        think.markMetadataSaved();
-        vault.NotifyUpdated(false);
-      }
-      return nextState;
-    }
-
+    const record = await StorageManager.instance.getRecord(bundleId);
+    if (!record) throw new Error('保存対象のBundleが見つかりません。');
+    const savedMeta = await StorageManager.instance.updateMetadata(
+      bundleId,
+      { operations: nextState },
+      record.meta.updatedAt || undefined,
+    );
     if (think) {
-      think.Metadata = mergedMetadata;
-      const savedMeta = await StorageManager.instance.save({
-        thinkid: think.ID,
-        category: think.ContentType,
-        fullContent: think.Content,
-        keywords: think.Keywords,
-        relatedIds: think.RelatedIDs,
-        metadata: mergedMetadata,
-        baseUpdatedAt: think.UpdatedAt || undefined,
-      });
+      think.Metadata = savedMeta.metadata ?? { ...(think.Metadata ?? {}), operations: nextState };
       think.UpdatedAt = savedMeta.updatedAt;
-      think.markSaved();
       think.markMetadataSaved();
       vault.NotifyUpdated(false);
     }
@@ -285,8 +263,9 @@ export class OperationsService {
     let executedCli = 'local-cli';
     let promotionCandidates: ValidatedPromotionCandidate[] = [];
 
-    if (typeof window !== 'undefined' && window.electronAPI?.ai?.agent) {
-      const aiRes = await window.electronAPI.ai.agent({
+    const electronAi = typeof window !== 'undefined' ? window.electronAPI?.ai : undefined;
+    if (electronAi?.agent) {
+      const aiRes = await invokeIpc(() => electronAi.agent({
         profileId: profile.id,
         panelRole: 'Seeds',
         agentId,
@@ -296,7 +275,7 @@ export class OperationsService {
         gates: state.gates,
         relatedDocuments,
         userMessage,
-      });
+      }));
       reply = aiRes.reply;
       executedCli = aiRes.executedCli;
       promotionCandidates = aiRes.promotionCandidates || [];

@@ -4,7 +4,6 @@ import type { TTVault } from '../../models/TTVault';
 import { ContextService } from '../../services/ContextService';
 import { ExternalService, prepareExport, type ExternalState } from '../../services/ExternalService';
 import { exportDiff, latestConnection, notebookUrl } from '../../../shared/contracts/externalRecord';
-import { StorageManager } from '../../services/storage/StorageManager';
 import { createExternalBackup, parseExternalBackup, MAX_EXTERNAL_BACKUP_BYTES, type ImportedExternalData } from '../../services/externalBackup';
 import type { ExportManifest, ExternalInput } from '../../../shared/contracts/externalRecord';
 import './BundleExternal.css';
@@ -26,7 +25,6 @@ function download(name: string, content: string, type: string) {
 export function BundleExternal({ vault, bundleId }: { vault: TTVault; bundleId: string }) {
   const lifetime = useMemo(() => draftVaultLease(vault), [vault]);
   const [, render] = useReducer(n => n + 1, 0); const draft = draftFor(vault, bundleId, lifetime);
-  const supported = StorageManager.instance.mode !== 'local';
   const previous = draft.state && latestConnection(draft.state.log, vault.ID, draft.account.trim());
   let targetUrl = '';
   try { targetUrl = notebookUrl(draft.url.trim()); } catch { /* Validate incomplete input on explicit save. */ }
@@ -77,7 +75,7 @@ export function BundleExternal({ vault, bundleId }: { vault: TTVault; bundleId: 
   }
   async function save() {
     if (!lifetime.isCurrent()) return;
-    if (!supported || !draft.state || !draft.confirmed) return;
+    if (!draft.state || !draft.confirmed) return;
     await action(async () => {
       if (!lifetime.isCurrent()) return;
       const target = notebookUrl(draft.url.trim());
@@ -114,8 +112,7 @@ export function BundleExternal({ vault, bundleId }: { vault: TTVault; bundleId: 
     <h3>外部資料連携 — NotebookLMへ手動で渡す</h3>
     <p>Bundleの資料を取得し、Markdownを保存してNotebookLMへ手動で追加できます。自動送信はありません。</p>
     <p>この欄は手動連携です。Gemini File Searchの接続確認は下の専用欄で行えます。書き出し記録は同期完了を意味しません。</p>
-    {!supported && <p>この保存方式ではリンク履歴を保存できません。資料の書き出しは利用できます。</p>}
-    <button disabled={draft.busy || !supported} onClick={() => void load()}>登録済み連携を取得</button>{' '}
+    <button disabled={draft.busy} onClick={() => void load()}>登録済み連携を取得</button>{' '}
     <button disabled={draft.busy} onClick={() => void prepare()}>書き出す資料を取得</button>
     <fieldset disabled={draft.busy}>
       <legend>手動の連携先</legend>
@@ -144,7 +141,7 @@ export function BundleExternal({ vault, bundleId }: { vault: TTVault; bundleId: 
         draft.confirmed = e.target.checked; render();
       }} />
         連携先と準備・復元記録を確認し、手動連携の記録として保存する（外部同期は未確認）</label>
-      <button disabled={!supported || !draft.state || !draft.confirmed || !draft.account.trim() || !draft.url.trim()} onClick={() => void save()}>連携先と準備記録を保存</button>
+      <button disabled={!draft.state || !draft.confirmed || !draft.account.trim() || !draft.url.trim()} onClick={() => void save()}>連携先と準備記録を保存</button>
     </fieldset>
     <fieldset disabled={draft.busy}>
       <legend>対応表・連携履歴から再登録する</legend>

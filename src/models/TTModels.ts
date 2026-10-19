@@ -10,6 +10,15 @@ import { TTCollection } from './TTCollection';
 import { TTVault } from './TTVault';
 import { disposeVaultDrafts } from '../services/draftStore';
 
+function configuredVaultName(): string {
+  try {
+    const value = typeof localStorage !== 'undefined' ? localStorage.getItem('tt-vault-name') : '';
+    return value?.trim() && !value.includes('/') ? value.trim() : 'vault_ver2';
+  } catch {
+    return 'vault_ver2';
+  }
+}
+
 export class TTModels extends TTCollection {
   /** メインの保管庫（vault_ver2）*/
   public Vault: TTVault;
@@ -26,7 +35,7 @@ export class TTModels extends TTCollection {
     this.Name = 'Thinktank';
     this.Description = 'Root Model v5';
 
-    this.Vault = new TTVault('vault_ver2');
+    this.Vault = new TTVault(configuredVaultName());
     this.AddItem(this.Vault);
 
     // 失敗は握り潰され（LoadCache 内で 3 回リトライ + ログ）、通知されない設計。

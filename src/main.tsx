@@ -41,10 +41,15 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 )
 
-// 画面側がログイン済みでもメインプロセスの中継役が未ログインのことがある（以前の版ではログインが渡らなかった）ので、起動時に引き継ぐ
+// データ用Firebaseセッションをrendererとメインプロセスの間で相互に引き継ぐ。
 if (window.electronAPI?.relay) {
-  void FirebaseAuthService.syncSessionToElectronRelay().catch(err => {
-    console.warn('[Relay] Firebase のログインをメインプロセスに渡せませんでした', err);
+  void (async () => {
+    // メインプロセスのOSブラウザログインを正とし、rendererに古い別UIDの
+    // セッションが残っていても必ず同じアカウントへ揃える。
+    const mainSession = await FirebaseAuthService.syncFromElectronRelayIfAvailable();
+    if (!mainSession) await FirebaseAuthService.syncSessionToElectronRelay();
+  })().catch(err => {
+    console.warn('[Firebase] ログインをElectron内で同期できませんでした', err);
   });
 }
 

@@ -1,7 +1,7 @@
 /**
  * IStorageBackend.ts
  * ストレージバックエンド共通インターフェース
- * 各保存先（Electron / Google Drive / ローカル中継サーバ など）のバックエンドが実装する
+ * Think正本はFirestore。ElectronのローカルMarkdownは復旧用バックアップとして扱う。
  */
 
 export interface ThinkMeta {

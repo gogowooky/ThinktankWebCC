@@ -3,7 +3,7 @@
 ## プロジェクト概要
 Thinktank — Electron + React + TypeScript のデスクトップアプリ（Web 版は Firebase Hosting）。
 アイデアをVaultに蓄積し、AIとの対話で思考を補完する。
-データの正本は Google Drive 上の `.md`、AI はローカルの AI CLI。構成は `docs/ARCHITECTURE_DRIVE_FIREBASE.md` を参照。
+Thinkの正本はFirestore、外部資料はGoogle Drive、ローカル`.md`は復旧用バックアップ。AIはローカルのAI CLI。構成は `docs/261019/v2.6_Firestore正本とPC連携.md` を参照。
 
 ## 要件・仕様
 詳細は `docs/requirements.md` を参照。概念・差別化の軸は `docs/concept.md` を参照。
@@ -11,13 +11,13 @@ Thinktank — Electron + React + TypeScript のデスクトップアプリ（Web
 ## 開発環境の起動
 
 ```bash
-# Electron 版（Vite と Electron を起動。データと AI は IPC で electron/ 側が扱う）
+# Electron 版（Vite と Electron を起動。Think正本はFirestore、AI CLIはIPC）
 npm run electron:dev
 
 # Vite が起動済みの場合（Electronのみ）
 NODE_ENV=development npx electron electron/main.cjs
 
-# ブラウザ版をローカル中継で動かす（scripts/run-relay-agent.mjs が 127.0.0.1:8080 で待ち受け、Vite が /api を転送）
+# PC連携用の常駐エージェントとブラウザ版を同時に動かす
 npm run dev:web-relay
 ```
 
@@ -34,7 +34,7 @@ npm run dev:web-relay
 - Express サーバー（`server/`・`dist-server/`）と Cloud Run は廃止済み。HTTP の API サーバーを新設しない
 - Electronメインプロセスは `electron/main.cjs`。パッケージ版の画面は `app://thinktank/` から配信する
 - 画面から OS・ファイルに触れる処理は preload（`electron/preload.cjs`）経由の IPC にする
-- Web 版（Firebase Hosting）は Drive API と Firestore 経由の E2EE 中継で動く。デプロイは `npm run firebase:deploy`
+- Web版（Firebase Hosting）はFirestore正本を直接利用する。PC連携ON時だけFirestore経由のE2EE中継を使い、Drive APIは外部資料に限定する。デプロイは `npm run firebase:deploy`
 - GPU キャッシュエラー（Windows）は無視してよい
 
 ## 変更を加える前に
@@ -43,7 +43,7 @@ npm run dev:web-relay
 
 ## パネル構成
 - **ThinktankPanel** — Vaultの閲覧・検索・フィルタ（一覧表示）
-- **DiscussPanel** — 選択したThoughtの編集・AI対話・メディア表示
+- **DiscussPanel** — 選択したThinkファイルの編集・AI対話・メディア表示
 - **HarvestPanel** — AI主導の再思考・チャット
 - **SeedsPanel** — 設定・統計・全体ビュー
 
@@ -56,8 +56,9 @@ npm run dev:web-relay
 - 各 `.tsx` と同名の `.css` をセットで置く
 
 ## データモデル
-- Thought は Vault フォルダ（既定は Google Drive の `Thinktank/vault_ver2`）の `<thinkid>.md`。思考支援などのメタデータは `<thinkid>.support.json`
-- 読み書きの実装は `electron/vaultEngine.cjs`（Electron・ローカル中継）と `src/platform/web/DriveApiStorageBackend.ts`（Web 版）
+- Think本文・メタデータは `users/{uid}/vaults/{vaultId}/thinks/{thinkid}` のFirestore文書を正本とする
+- 共通の正本読み書きは `src/platform/web/FirestoreStorageBackend.ts`。`electron/vaultEngine.cjs` はMarkdownバックアップ・ローカル索引・AI CLI用のローカル参照を担当する
+- PC連携は既定OFF。ElectronはAI CLI提供側、Webは接続側。依頼・応答はFirestoreリアルタイムリスナーで監視する
 - 旧 BigQuery（`thinktank.vault_ver2`）は廃止済み。移行用スクリプトだけが `scripts/` に残る
 
 ## やってはいけないこと

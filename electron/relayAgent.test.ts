@@ -30,6 +30,8 @@ interface RelayAgentInstance {
   stop: () => void;
   firebaseApiKey: string;
   _publishHeartbeatToFirestore: () => Promise<void>;
+  _claimAndProcessFirestoreRequest: (sdk: Record<string, unknown>, db: unknown, ref: unknown) => Promise<void>;
+  handleEncryptedRequest: (payload: unknown) => Promise<{ encryptedResponse: string; responseChunks: Array<{ index: number; total: number; direction: 'response'; data: string }> }>;
 }
 const { RelayAgent } = require('./relayAgent.cjs') as {
   RelayAgent: new (opts: {
@@ -110,7 +112,7 @@ describe('RelayAgent online status', () => {
     expect(st.firestoreProblem).toContain('未ログイン');
   });
 
-  it('goes online only after Firestore accepts the heartbeat, and writes the per-device document', async () => {
+  it('writes one per-device heartbeat only while PC link mode is enabled', async () => {
     const calls: string[] = [];
     vi.stubGlobal('fetch', vi.fn(async (url: string) => {
       calls.push(url);
@@ -127,11 +129,12 @@ describe('RelayAgent online status', () => {
 
     expect(agent.firebaseApiKey).toBe('api-key-from-renderer');
     expect(st.firebaseSignedIn).toBe(true);
-    expect(calls.some(u => u.includes(`/devices/${encodeURIComponent(st.deviceId)}`))).toBe(true);
-    expect(calls.some(u => u.endsWith('/config/activeRelay'))).toBe(true);
+    expect(calls.some(u => u.includes(`/devices/${encodeURIComponent(st.deviceId)}`))).toBe(false);
 
     agent.saveConfig({ enabled: true });
     await agent._publishHeartbeatToFirestore();
+    expect(calls.some(u => u.includes(`/devices/${encodeURIComponent(st.deviceId)}`))).toBe(true);
+    expect(calls.some(u => u.endsWith('/config/activeRelay'))).toBe(false);
     expect(agent.getStatus().isAlive).toBe(true);
   });
 
@@ -151,5 +154,45 @@ describe('RelayAgent online status', () => {
     const st = agent.getStatus();
     expect(st.isAlive).toBe(false);
     expect(st.firestoreProblem).toContain('403');
+  });
+
+  it('atomically claims a queued request before executing it', async () => {
+    agent = new RelayAgent({ userDataDir, vaultEngine: newEngine('pc'), aiCliRunner });
+    agent.saveConfig({ enabled: true });
+    let data: Record<string, unknown> = {
+      requestId: 'req-1',
+      targetDeviceId: agent.getStatus().deviceId,
+      status: 'queued',
+      encryptedRequest: 'cipher',
+      requestChunkCount: 1,
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    };
+    const updates: Array<Record<string, unknown>> = [];
+    agent.handleEncryptedRequest = vi.fn(async () => ({
+      encryptedResponse: 'response-cipher',
+      responseChunks: [{ index: 0, total: 1, direction: 'response', data: 'response-cipher' }],
+    }));
+    const sdk = {
+      runTransaction: async (_db: unknown, callback: (transaction: {
+        get: () => Promise<{ exists: () => boolean; data: () => Record<string, unknown>; id: string }>;
+        update: (_ref: unknown, patch: Record<string, unknown>) => void;
+      }) => Promise<unknown>) => callback({
+        get: async () => ({ exists: () => true, data: () => ({ ...data }), id: 'req-1' }),
+        update: (_ref, patch) => {
+          updates.push(patch);
+          data = { ...data, ...patch };
+        },
+      }),
+      getDocs: vi.fn(async () => ({ docs: [] })),
+      collection: vi.fn(),
+      setDoc: vi.fn(),
+      doc: vi.fn(),
+    };
+
+    await agent._claimAndProcessFirestoreRequest(sdk, {}, {});
+
+    expect(updates[0]).toMatchObject({ status: 'running', claimedBy: agent.getStatus().deviceId });
+    expect(updates.at(-1)).toMatchObject({ status: 'succeeded', encryptedResponse: 'response-cipher' });
+    expect(agent.handleEncryptedRequest).toHaveBeenCalledTimes(1);
   });
 });

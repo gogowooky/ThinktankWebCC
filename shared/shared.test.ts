@@ -14,6 +14,7 @@ import {
   computeListDiff,
   createBodyPack,
   mergeBodyPacks,
+  mergeBodyPackEntries,
   getBuiltinDomainProfile,
   resolveDomainProfile,
   createEmptyOperationsState,
@@ -188,6 +189,13 @@ describe('shared/searchIndex', () => {
     const mergedBodies = mergeBodyPacks([packA, packB]);
     expect(mergedBodies.doc_1).toBe('生細胞率85%以上（改訂後）を出荷規格とする。');
     expect(mergedBodies.doc_2).toBe('治験届提出前の対面助言アジェンダ。');
+
+    // Web版のキャッシュが本文の版を確かめられるよう、版も一緒に返す
+    const entries = mergeBodyPackEntries([packA, packB]);
+    expect(entries.doc_1).toEqual({
+      updatedAt: '2026-10-15T00:00:00Z',
+      body: '生細胞率85%以上（改訂後）を出荷規格とする。',
+    });
   });
 });
 

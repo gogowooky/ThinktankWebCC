@@ -138,12 +138,12 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
       <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsVaultOpen(v => !v)}>
           {isVaultOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">保管庫名</h2>
+          <h2 className="tt-settings-section__title">データベース名</h2>
         </div>
         {isVaultOpen && (
           <>
             <p className="tt-settings-section__desc">
-              データの保存先に使われる識別名です。
+              Firestore上でThinkを分けるデータベース識別名です。
             </p>
 
             <div className="tt-settings-field">
@@ -175,9 +175,13 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
             </div>
 
             <div className="tt-settings-sub-section">
-              <h3 className="tt-settings-sub-section__title">保存先</h3>
+              <h3 className="tt-settings-sub-section__title">正本とバックアップ</h3>
               <dl className="tt-settings-paths">
-                <dt className="tt-settings-paths__label">Local</dt>
+                <dt className="tt-settings-paths__label">正本</dt>
+                <dd className="tt-settings-paths__value">
+                  <code>Firestore / vaults/<strong>{vaultName}</strong>/thinks</code>
+                </dd>
+                <dt className="tt-settings-paths__label">PCバックアップ</dt>
                 <dd className="tt-settings-paths__value">
                   <code>Thinktank/<strong>{vaultName}</strong>/&#123;thinkid&#125;.md</code>
                 </dd>

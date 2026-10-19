@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LayoutList, LibrarySquare, Save, ListRestart, SquareX } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LayoutList, FolderInput, Save, ListRestart, SquareX } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -168,7 +168,7 @@ export function ThinktankMenuRibbon({
           onClick={onCreateBundle}
           disabled={!canCreateBundle}
         >
-          <LibrarySquare size={14} />
+          <FolderInput size={14} />
         </button>
       </div>
 

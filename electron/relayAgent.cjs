@@ -12,8 +12,36 @@ const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
 
+const HEARTBEAT_INTERVAL_MS = 60_000;
+const TOKEN_REFRESH_MARGIN_MS = 5 * 60_000;
+const LISTENER_RETRY_MS = 5_000;
+
+async function loadFirebaseSdk() {
+  const [appSdk, authSdk, firestoreSdk] = await Promise.all([
+    import('firebase/app'),
+    import('firebase/auth'),
+    import('firebase/firestore'),
+  ]);
+  return {
+    initializeServerApp: appSdk.initializeServerApp,
+    deleteApp: appSdk.deleteApp,
+    getAuth: authSdk.getAuth,
+    getFirestore: firestoreSdk.getFirestore,
+    collection: firestoreSdk.collection,
+    doc: firestoreSdk.doc,
+    query: firestoreSdk.query,
+    where: firestoreSdk.where,
+    limit: firestoreSdk.limit,
+    onSnapshot: firestoreSdk.onSnapshot,
+    runTransaction: firestoreSdk.runTransaction,
+    getDocs: firestoreSdk.getDocs,
+    setDoc: firestoreSdk.setDoc,
+    terminate: firestoreSdk.terminate,
+  };
+}
+
 class RelayAgent {
-  constructor({ userDataDir, vaultEngine, aiCliRunner, firebaseApiKey }) {
+  constructor({ userDataDir, vaultEngine, aiCliRunner, firebaseApiKey, firestoreSdkLoader }) {
     this.userDataDir = userDataDir;
     this.vaultEngine = vaultEngine;
     this.aiCliRunner = aiCliRunner;
@@ -29,6 +57,17 @@ class RelayAgent {
     this.authSession = null;
     this._authRefreshing = null;
     this._lastFirestoreProblem = '';
+    this._firestoreSdkLoader = firestoreSdkLoader || loadFirebaseSdk;
+    this._firestoreUnsubscribe = null;
+    this._firestoreApp = null;
+    this._firestoreDb = null;
+    this._firestoreSdk = null;
+    this._firestoreListenerReady = false;
+    this._listenerGeneration = 0;
+    this._listenerRetryTimer = null;
+    this._listenerRenewTimer = null;
+    this._requestQueue = Promise.resolve();
+    this._processingCount = 0;
   }
 
   _loadConfig() {
@@ -125,6 +164,19 @@ class RelayAgent {
     };
   }
 
+  /** Renderer の Firebase SDK セッションを同じ利用者へ揃えるための保存済み資格情報。 */
+  getFirebaseSession() {
+    if (!this.config.firebaseRefreshToken || !this.firebaseApiKey || !this.config.firebaseUid) {
+      return null;
+    }
+    return {
+      refreshToken: this.config.firebaseRefreshToken,
+      email: this.config.firebaseEmail || '',
+      apiKey: this.firebaseApiKey,
+      uid: this.config.firebaseUid,
+    };
+  }
+
   /**
    * ログインページ（常駐エージェント）または Electron 版の画面から受け取った Firebase の refresh token を
    * 検証して保存する。Firestore のルールが users/{uid} を本人だけに許すため、Web版と同じ Google アカウントの uid が要る。
@@ -140,19 +192,24 @@ class RelayAgent {
     const session = await shared.refreshFirebaseIdToken(this.firebaseApiKey, refreshToken, email);
     this.authSession = session;
     this._lastFirestoreProblem = '';
-    const st = this.saveConfig({
+    this.saveConfig({
       firebaseUid: session.uid,
       firebaseEmail: email,
       firebaseRefreshToken: session.refreshToken,
     });
-    await this._publishHeartbeatToFirestore();
-    return st;
+    return this.getStatus();
   }
 
   signOutFirebase() {
+    this._stopHeartbeat();
     this.authSession = null;
     this.lastFirestoreOkAt = '';
-    return this.saveConfig({ firebaseUid: '', firebaseEmail: '', firebaseRefreshToken: '' });
+    return this.saveConfig({
+      enabled: false,
+      firebaseUid: '',
+      firebaseEmail: '',
+      firebaseRefreshToken: '',
+    });
   }
 
   async _getAuth() {
@@ -191,7 +248,7 @@ class RelayAgent {
     fs.writeFileSync(this.configPath, JSON.stringify(this.config, null, 2) + '\n', 'utf8');
   }
 
-  // 同じ失敗を 1.5 秒ごとに出し続けないよう、状態が変わったときだけ表示する
+  // 再接続時に同じ失敗を出し続けないよう、状態が変わったときだけ表示する
   _reportFirestoreProblem(message) {
     if (message === this._lastFirestoreProblem) return;
     const hadProblem = Boolean(this._lastFirestoreProblem);
@@ -228,6 +285,7 @@ class RelayAgent {
   }
 
   async _publishHeartbeatToFirestore() {
+    if (!this.config.enabled) return;
     const ctx = await this._getFirestoreContext();
     if (!ctx) return;
     const nowIso = new Date().toISOString();
@@ -238,19 +296,18 @@ class RelayAgent {
         lastHeartbeatAt: { stringValue: nowIso },
       },
     });
-    const patch = (docPath) =>
-      fetch(`${ctx.baseUrl}/${docPath}`, {
+    try {
+      const deviceRes = await fetch(
+        `${ctx.baseUrl}/devices/${encodeURIComponent(this.config.deviceId)}`,
+        {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...ctx.headers },
         body,
-      });
-    try {
-      // activeRelay は複数の中継役が上書きし合うので、Web版が宛先の生存を確かめられるよう端末ごとにも書く
-      const deviceRes = await patch(`devices/${encodeURIComponent(this.config.deviceId)}`);
-      const activeRes = await patch('config/activeRelay');
-      if (!deviceRes.ok || !activeRes.ok) {
+        },
+      );
+      if (!deviceRes.ok) {
         this._reportFirestoreProblem(
-          `ハートビートの書き込みに失敗しました (HTTP ${deviceRes.ok ? activeRes.status : deviceRes.status})`,
+          `ハートビートの書き込みに失敗しました (HTTP ${deviceRes.status})`,
         );
         return;
       }
@@ -262,143 +319,360 @@ class RelayAgent {
     }
   }
 
-  async _pollFirestoreRequests() {
-    if (this._pollingBusy) return;
-    this._pollingBusy = true;
+  _expiresAtMs(value) {
+    if (typeof value === 'string') return Date.parse(value);
+    if (typeof value === 'number') return value;
+    if (value && typeof value.toMillis === 'function') return value.toMillis();
+    return Number.NaN;
+  }
+
+  async _claimAndProcessFirestoreRequest(
+    sdk,
+    db,
+    requestRef,
+    generation = this._listenerGeneration,
+  ) {
+    // OFF後にsnapshot由来の直列queueが残っていても、新しい依頼をclaimしない。
+    if (!this.config.enabled || generation !== this._listenerGeneration) return;
+    this._processingCount += 1;
+    let claimed = false;
     try {
-      const ctx = await this._getFirestoreContext();
-      if (!ctx) return;
-      const { baseUrl, headers } = ctx;
-      // 一覧を先頭から読むと処理済みの文書が溜まったとき queued を取りこぼすので、queued だけを問い合わせる
-      const res = await fetch(`${baseUrl}:runQuery`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify({
-          structuredQuery: {
-            from: [{ collectionId: 'relayRequests' }],
-            where: {
-              fieldFilter: {
-                field: { fieldPath: 'status' },
-                op: 'EQUAL',
-                value: { stringValue: 'queued' },
-              },
-            },
-            limit: 20,
-          },
-        }),
+      const claim = await sdk.runTransaction(db, async (transaction) => {
+        if (!this.config.enabled || generation !== this._listenerGeneration) return null;
+        const snapshot = await transaction.get(requestRef);
+        if (!snapshot.exists()) return null;
+        const data = snapshot.data() || {};
+        if (data.status !== 'queued' || data.targetDeviceId !== this.config.deviceId) return null;
+
+        const nowIso = new Date().toISOString();
+        const expiresAtMs = this._expiresAtMs(data.expiresAt);
+        if (Number.isFinite(expiresAtMs) && expiresAtMs < Date.now()) {
+          transaction.update(requestRef, { status: 'expired', updatedAt: nowIso });
+          return null;
+        }
+
+        transaction.update(requestRef, {
+          status: 'running',
+          claimedBy: this.config.deviceId,
+          claimedAt: nowIso,
+          updatedAt: nowIso,
+        });
+        return { ...data, requestId: data.requestId || snapshot.id };
       });
-      if (!res.ok) {
-        this._reportFirestoreProblem(`中継リクエストの取得に失敗しました (HTTP ${res.status})`);
+      if (!claim) return;
+      claimed = true;
+
+      // claim直後に利用者がPC連携をOFFにした場合は、AI CLIを起動せず終了する。
+      if (!this.config.enabled || generation !== this._listenerGeneration) {
+        await sdk.runTransaction(db, async (transaction) => {
+          const latest = await transaction.get(requestRef);
+          if (!latest.exists()) return;
+          const latestData = latest.data() || {};
+          if (
+            latestData.status === 'running' &&
+            latestData.claimedBy === this.config.deviceId
+          ) {
+            transaction.update(requestRef, {
+              status: 'canceled',
+              updatedAt: new Date().toISOString(),
+              errorMessage: 'PC連携モードがOFFになりました。',
+            });
+          }
+        });
         return;
       }
-      this._reportFirestoreProblem('');
-      const rows = await res.json();
-      const docs = (Array.isArray(rows) ? rows : []).map((r) => r.document).filter(Boolean);
-      for (const doc of docs) {
-        const fields = doc.fields || {};
-        const status = fields.status?.stringValue;
-        const targetDeviceId = fields.targetDeviceId?.stringValue;
-        const requestId = fields.requestId?.stringValue;
-        if (
-          status !== 'queued' ||
-          !requestId ||
-          (targetDeviceId && targetDeviceId !== this.config.deviceId)
-        ) {
-          continue;
-        }
-        const encryptedRequest = fields.encryptedRequest?.stringValue || '';
-        const reqChunkCount = Number(fields.requestChunkCount?.integerValue || '1');
-        try {
-          let requestChunks = [];
-          if (reqChunkCount > 1 && !encryptedRequest) {
-            const chunksRes = await fetch(
-              `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}/chunks`,
-              { headers },
-            );
-            if (chunksRes.ok) {
-              const chunksJson = await chunksRes.json();
-              requestChunks = (chunksJson.documents || [])
-                .filter((d) => d.fields?.direction?.stringValue === 'request')
-                .map((d) => ({
-                  index: Number(d.fields?.index?.integerValue || '0'),
-                  total: Number(d.fields?.total?.integerValue || '1'),
-                  direction: 'request',
-                  data: d.fields?.data?.stringValue || '',
-                }));
-            }
+
+      const encryptedRequest = claim.encryptedRequest || '';
+      const reqChunkCount = Number(claim.requestChunkCount || 1);
+      let requestChunks = [];
+      if (reqChunkCount > 1 && !encryptedRequest) {
+        const chunksSnapshot = await sdk.getDocs(sdk.collection(requestRef, 'chunks'));
+        requestChunks = chunksSnapshot.docs
+          .map((chunkSnapshot) => chunkSnapshot.data() || {})
+          .filter((chunk) => chunk.direction === 'request')
+          .map((chunk) => ({
+            index: Number(chunk.index || 0),
+            total: Number(chunk.total || 1),
+            direction: 'request',
+            data: chunk.data || '',
+          }));
+      }
+
+      const out = await this.handleEncryptedRequest({ encryptedRequest, chunks: requestChunks });
+
+      // 実行中にOFFへ切り替わった場合も、後続queueを進めず応答を破棄する。
+      if (!this.config.enabled || generation !== this._listenerGeneration) {
+        await sdk.runTransaction(db, async (transaction) => {
+          const latest = await transaction.get(requestRef);
+          if (!latest.exists()) return;
+          const latestData = latest.data() || {};
+          if (
+            latestData.status === 'running' &&
+            latestData.claimedBy === this.config.deviceId
+          ) {
+            transaction.update(requestRef, {
+              status: 'canceled',
+              updatedAt: new Date().toISOString(),
+              errorMessage: 'PC連携モードがOFFになりました。',
+            });
           }
-          const out = await this.handleEncryptedRequest({
-            encryptedRequest,
-            chunks: requestChunks,
-          });
-          const resChunks = out.responseChunks || [];
-          if (resChunks.length > 1) {
-            for (const ch of resChunks) {
-              await fetch(
-                `${baseUrl}/relayRequests/${encodeURIComponent(requestId)}/chunks?documentId=res_${ch.index}`,
-                {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json', ...headers },
-                  body: JSON.stringify({
-                    fields: {
-                      index: { integerValue: String(ch.index) },
-                      total: { integerValue: String(ch.total) },
-                      direction: { stringValue: 'response' },
-                      data: { stringValue: ch.data },
-                    },
-                  }),
-                },
-              );
-            }
-          }
-          const nowIso = new Date().toISOString();
-          await fetch(`${baseUrl}/relayRequests/${encodeURIComponent(requestId)}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', ...headers },
-            body: JSON.stringify({
-              fields: {
-                ...fields,
-                status: { stringValue: 'succeeded' },
-                updatedAt: { stringValue: nowIso },
-                encryptedResponse: { stringValue: out.encryptedResponse || '' },
-                responseChunkCount: {
-                  integerValue: String(resChunks.length || 1),
-                },
-              },
-            }),
-          });
-        } catch (err) {
-          const nowIso = new Date().toISOString();
-          await fetch(`${baseUrl}/relayRequests/${encodeURIComponent(requestId)}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', ...headers },
-            body: JSON.stringify({
-              fields: {
-                ...fields,
-                status: { stringValue: 'failed' },
-                updatedAt: { stringValue: nowIso },
-                errorMessage: { stringValue: err.message || String(err) },
-              },
-            }),
+        });
+        return;
+      }
+      const responseChunks = out.responseChunks || [];
+      if (responseChunks.length > 1) {
+        for (const chunk of responseChunks) {
+          await sdk.setDoc(sdk.doc(requestRef, 'chunks', `res_${chunk.index}`), {
+            index: chunk.index,
+            total: chunk.total,
+            direction: 'response',
+            data: chunk.data,
           });
         }
       }
-    } catch {
-      // ignore polling error
+
+      await sdk.runTransaction(db, async (transaction) => {
+        const latest = await transaction.get(requestRef);
+        if (!latest.exists()) return;
+        const latestData = latest.data() || {};
+        if (
+          latestData.status !== 'running' ||
+          latestData.claimedBy !== this.config.deviceId
+        ) {
+          return;
+        }
+        transaction.update(requestRef, {
+          status: 'succeeded',
+          updatedAt: new Date().toISOString(),
+          encryptedResponse: out.encryptedResponse || '',
+          responseChunkCount: responseChunks.length || 1,
+        });
+      });
+    } catch (err) {
+      if (claimed) {
+        try {
+          await sdk.runTransaction(db, async (transaction) => {
+            const latest = await transaction.get(requestRef);
+            if (!latest.exists()) return;
+            const latestData = latest.data() || {};
+            if (
+              latestData.status !== 'running' ||
+              latestData.claimedBy !== this.config.deviceId
+            ) {
+              return;
+            }
+            transaction.update(requestRef, {
+              status: 'failed',
+              updatedAt: new Date().toISOString(),
+              errorMessage: err && err.message ? err.message : String(err),
+            });
+          });
+        } catch (updateErr) {
+          this._reportFirestoreProblem(
+            `中継リクエストの失敗状態を保存できません: ${updateErr.message || updateErr}`,
+          );
+        }
+      } else {
+        this._reportFirestoreProblem(
+          `中継リクエストを取得できません: ${err && err.message ? err.message : err}`,
+        );
+      }
     } finally {
-      this._pollingBusy = false;
+      this._processingCount -= 1;
+    }
+  }
+
+  _queueFirestoreSnapshot(snapshot, sdk, db, generation) {
+    if (generation !== this._listenerGeneration) return;
+    this._firestoreListenerReady = true;
+    this._reportFirestoreProblem('');
+    for (const change of snapshot.docChanges()) {
+      if (change.type !== 'added') continue;
+      const requestRef = change.doc.ref;
+      this._requestQueue = this._requestQueue
+        .then(() => this._claimAndProcessFirestoreRequest(sdk, db, requestRef, generation))
+        .catch((err) => {
+          this._reportFirestoreProblem(
+            `中継リクエストの処理に失敗しました: ${err && err.message ? err.message : err}`,
+          );
+        });
+    }
+  }
+
+  _scheduleFirestoreListenerRestart(generation, delayMs = LISTENER_RETRY_MS) {
+    if (generation !== this._listenerGeneration || this._listenerRetryTimer) return;
+    this._listenerRetryTimer = setTimeout(() => {
+      this._listenerRetryTimer = null;
+      if (
+        generation !== this._listenerGeneration ||
+        !this.config.enabled ||
+        !this.config.firebaseRefreshToken
+      ) {
+        return;
+      }
+      if (this._processingCount > 0) {
+        this._scheduleFirestoreListenerRestart(generation, LISTENER_RETRY_MS);
+        return;
+      }
+      this._restartFirestoreListener();
+    }, delayMs);
+  }
+
+  _restartFirestoreListener() {
+    this._stopFirestoreListener();
+    if (
+      !this.config.enabled ||
+      !this.config.firebaseProjectId ||
+      !this.config.firebaseRefreshToken ||
+      !this.firebaseApiKey
+    ) {
+      return;
+    }
+    const generation = this._listenerGeneration;
+    void this._startFirestoreListener(generation);
+  }
+
+  async _startFirestoreListener(generation) {
+    let sdk = null;
+    let serverApp = null;
+    let db = null;
+    try {
+      const auth = await this._getAuth();
+      if (!auth || generation !== this._listenerGeneration || !this.config.enabled) return;
+      sdk = await this._firestoreSdkLoader();
+      if (generation !== this._listenerGeneration || !this.config.enabled) return;
+
+      serverApp = sdk.initializeServerApp(
+        {
+          apiKey: this.firebaseApiKey,
+          authDomain: `${this.config.firebaseProjectId}.firebaseapp.com`,
+          projectId: this.config.firebaseProjectId,
+        },
+        { authIdToken: auth.idToken },
+      );
+      const serverAuth = sdk.getAuth(serverApp);
+      if (typeof serverAuth.authStateReady === 'function') {
+        await serverAuth.authStateReady();
+      }
+      if (!serverAuth.currentUser || serverAuth.currentUser.uid !== auth.uid) {
+        throw new Error('Firebase の利用者セッションを復元できませんでした。');
+      }
+      db = sdk.getFirestore(serverApp);
+      if (generation !== this._listenerGeneration || !this.config.enabled) {
+        this._disposeFirestoreResources(sdk, db, serverApp, Promise.resolve());
+        return;
+      }
+
+      const requests = sdk.collection(db, 'users', auth.uid, 'relayRequests');
+      const queuedForThisDevice = sdk.query(
+        requests,
+        sdk.where('targetDeviceId', '==', this.config.deviceId),
+        sdk.where('status', '==', 'queued'),
+        sdk.limit(20),
+      );
+
+      this._firestoreSdk = sdk;
+      this._firestoreApp = serverApp;
+      this._firestoreDb = db;
+      const unsubscribe = sdk.onSnapshot(
+        queuedForThisDevice,
+        (snapshot) => this._queueFirestoreSnapshot(snapshot, sdk, db, generation),
+        (err) => {
+          if (generation !== this._listenerGeneration) return;
+          this._firestoreListenerReady = false;
+          this._reportFirestoreProblem(
+            `Firestore の中継待ち受けが停止しました: ${err && err.message ? err.message : err}`,
+          );
+          this._scheduleFirestoreListenerRestart(generation);
+        },
+      );
+      if (generation !== this._listenerGeneration || !this.config.enabled) {
+        unsubscribe();
+        this._disposeFirestoreResources(sdk, db, serverApp, Promise.resolve());
+        return;
+      }
+      this._firestoreUnsubscribe = unsubscribe;
+
+      const renewDelay = Math.max(
+        1_000,
+        auth.expiresAtMs - Date.now() - TOKEN_REFRESH_MARGIN_MS,
+      );
+      this._listenerRenewTimer = setTimeout(() => {
+        this._listenerRenewTimer = null;
+        this._scheduleFirestoreListenerRestart(generation, 0);
+      }, renewDelay);
+    } catch (err) {
+      if (sdk && (db || serverApp)) {
+        this._disposeFirestoreResources(sdk, db, serverApp, Promise.resolve());
+      }
+      if (generation !== this._listenerGeneration || !this.config.enabled) return;
+      this._firestoreListenerReady = false;
+      this._reportFirestoreProblem(
+        `Firestore の中継待ち受けを開始できません: ${err && err.message ? err.message : err}`,
+      );
+      this._scheduleFirestoreListenerRestart(generation);
+    }
+  }
+
+  _disposeFirestoreResources(sdk, db, serverApp, pendingRequests) {
+    void Promise.resolve(pendingRequests)
+      .catch(() => {})
+      .then(async () => {
+        if (db && typeof sdk.terminate === 'function') {
+          await sdk.terminate(db).catch(() => {});
+        }
+        if (serverApp && typeof sdk.deleteApp === 'function') {
+          await sdk.deleteApp(serverApp).catch(() => {});
+        }
+      });
+  }
+
+  _stopFirestoreListener() {
+    this._listenerGeneration += 1;
+    this._firestoreListenerReady = false;
+    if (this._listenerRetryTimer) {
+      clearTimeout(this._listenerRetryTimer);
+      this._listenerRetryTimer = null;
+    }
+    if (this._listenerRenewTimer) {
+      clearTimeout(this._listenerRenewTimer);
+      this._listenerRenewTimer = null;
+    }
+    if (this._firestoreUnsubscribe) {
+      this._firestoreUnsubscribe();
+      this._firestoreUnsubscribe = null;
+    }
+    const sdk = this._firestoreSdk;
+    const db = this._firestoreDb;
+    const serverApp = this._firestoreApp;
+    const pendingRequests = this._requestQueue;
+    this._firestoreSdk = null;
+    this._firestoreDb = null;
+    this._firestoreApp = null;
+    if (sdk && (db || serverApp)) {
+      this._disposeFirestoreResources(sdk, db, serverApp, pendingRequests);
     }
   }
 
   _startHeartbeat() {
     this._stopHeartbeat();
+    if (!this.config.enabled) return;
+    if (
+      !this.config.firebaseProjectId ||
+      !this.config.firebaseRefreshToken ||
+      !this.firebaseApiKey
+    ) {
+      this._reportFirestoreProblem(
+        'Firebase 未ログインのため Firestore 中継を待ち受けていません。ログインページでログインしてください。',
+      );
+      return;
+    }
     void this._publishHeartbeatToFirestore();
     this.heartbeatTimer = setInterval(() => {
       void this._publishHeartbeatToFirestore();
-    }, 25_000);
-    this.pollTimer = setInterval(() => {
-      void this._pollFirestoreRequests();
-    }, 1_500);
+    }, HEARTBEAT_INTERVAL_MS);
+    const generation = this._listenerGeneration;
+    void this._startFirestoreListener(generation);
   }
 
   _stopHeartbeat() {
@@ -406,10 +680,7 @@ class RelayAgent {
       clearInterval(this.heartbeatTimer);
       this.heartbeatTimer = null;
     }
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
+    this._stopFirestoreListener();
   }
 
   /**

@@ -6,6 +6,10 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  /* 携帯のブラウザでは 100vh がアドレスバーの裏まで含むので、下端のツールバーが画面外に出る。
+     実際に見えている高さ（dvh）を優先し、iPhone のホームバーの分も空ける */
+  height: 100dvh;
+  padding-bottom: env(safe-area-inset-bottom);
   width: 100vw;
   overflow: hidden;
   background: var(--bg-primary);

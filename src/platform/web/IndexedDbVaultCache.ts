@@ -12,6 +12,13 @@ const STORE_META = 'meta';
 const STORE_BODY = 'body';
 const STORE_SUPPORT = 'support';
 
+interface CachedBody {
+  thinkid: string;
+  body: string;
+  /** この本文の版。古い版のキャッシュには無い */
+  updatedAt?: string;
+}
+
 export class IndexedDbVaultCache {
   private dbPromise: Promise<IDBDatabase | null> | null = null;
 
@@ -83,32 +90,54 @@ export class IndexedDbVaultCache {
     });
   }
 
-  public async getBody(thinkid: string): Promise<string | null> {
+  public async getMeta(thinkid: string): Promise<ThinkMeta | null> {
+    const db = await this.openDb();
+    if (!db) return null;
+    return new Promise((resolve) => {
+      const tx = db.transaction(STORE_META, 'readonly');
+      const req = tx.objectStore(STORE_META).get(thinkid);
+      req.onsuccess = () => resolve((req.result as ThinkMeta | undefined) ?? null);
+      req.onerror = () => resolve(null);
+    });
+  }
+
+  /**
+   * 本文を返す。expectedUpdatedAt を渡すと、その版の本文でなければ null を返す。
+   * 一覧の情報だけが新しくなり本文が古いまま表示される（携帯で古い版が見える）のを防ぐため。
+   * 版を記録していない古いキャッシュも、版の指定があれば使わない。
+   */
+  public async getBody(thinkid: string, expectedUpdatedAt?: string): Promise<string | null> {
     const db = await this.openDb();
     if (!db) return null;
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_BODY, 'readonly');
       const req = tx.objectStore(STORE_BODY).get(thinkid);
       req.onsuccess = () => {
-        const res = req.result as { thinkid: string; body: string } | undefined;
-        resolve(res ? res.body : null);
+        const res = req.result as CachedBody | undefined;
+        if (!res) {
+          resolve(null);
+        } else if (expectedUpdatedAt && res.updatedAt !== expectedUpdatedAt) {
+          resolve(null);
+        } else {
+          resolve(res.body);
+        }
       };
       req.onerror = () => resolve(null);
     });
   }
 
-  public async putBody(thinkid: string, body: string): Promise<void> {
+  public async putBody(thinkid: string, body: string, updatedAt?: string): Promise<void> {
     const db = await this.openDb();
     if (!db) return;
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_BODY, 'readwrite');
-      tx.objectStore(STORE_BODY).put({ thinkid, body });
+      tx.objectStore(STORE_BODY).put({ thinkid, body, updatedAt } satisfies CachedBody);
       tx.oncomplete = () => resolve();
       tx.onerror = () => resolve();
     });
   }
 
-  public async putBodies(bodies: Record<string, string>): Promise<void> {
+  public async putBodies(bodies: Record<string, { body: string; updatedAt?: string }>): Promise<void> {
     const db = await this.openDb();
     if (!db) return;
     const entries = Object.entries(bodies);
@@ -116,31 +145,45 @@ export class IndexedDbVaultCache {
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_BODY, 'readwrite');
       const store = tx.objectStore(STORE_BODY);
-      for (const [thinkid, body] of entries) {
-        store.put({ thinkid, body });
+      for (const [thinkid, { body, updatedAt }] of entries) {
+        store.put({ thinkid, body, updatedAt } satisfies CachedBody);
       }
       tx.oncomplete = () => resolve();
       tx.onerror = () => resolve();
     });
   }
 
-  public async getAllBodies(): Promise<Record<string, string>> {
+  public async getAllBodies(): Promise<Record<string, { body: string; updatedAt?: string }>> {
     const db = await this.openDb();
     if (!db) return {};
     return new Promise((resolve) => {
       const tx = db.transaction(STORE_BODY, 'readonly');
       const req = tx.objectStore(STORE_BODY).getAll();
       req.onsuccess = () => {
-        const list = (req.result as Array<{ thinkid: string; body: string }>) ?? [];
-        const map: Record<string, string> = {};
+        const list = (req.result as CachedBody[]) ?? [];
+        const map: Record<string, { body: string; updatedAt?: string }> = {};
         for (const item of list) {
           if (item && typeof item.thinkid === 'string' && typeof item.body === 'string') {
-            map[item.thinkid] = item.body;
+            map[item.thinkid] = { body: item.body, updatedAt: item.updatedAt };
           }
         }
         resolve(map);
       };
       req.onerror = () => resolve({});
+    });
+  }
+
+  /** メタデータ・本文・support をすべて消す（設定画面の「キャッシュを消して読み直す」用）。 */
+  public async clearAll(): Promise<void> {
+    const db = await this.openDb();
+    if (!db) return;
+    return new Promise((resolve) => {
+      const tx = db.transaction([STORE_META, STORE_BODY, STORE_SUPPORT], 'readwrite');
+      tx.objectStore(STORE_META).clear();
+      tx.objectStore(STORE_BODY).clear();
+      tx.objectStore(STORE_SUPPORT).clear();
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
     });
   }
 

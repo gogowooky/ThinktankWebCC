@@ -9,6 +9,7 @@ import type { TTThink } from '../../models/TTThink';
 import type { ColumnConfig } from './ColumnSortDialog';
 import { computeDateRange } from '../../utils/dateUtils';
 import './ThinktankFilterView.css';
+import { toLocalDate } from '../../utils/localDateTime';
 
 interface Props {
   thinks: TTThink[];
@@ -42,7 +43,7 @@ export function ThinktankFilterView({
     if (cR) items = items.filter(t => { const d = t.ID.slice(0, 10); return d >= cR.from && d <= cR.to; });
 
     const uR = computeDateRange(updatedDate, updatedRange);
-    if (uR) items = items.filter(t => { const d = (t.UpdatedAt || t.ID).slice(0, 10); return d >= uR.from && d <= uR.to; });
+    if (uR) items = items.filter(t => { const d = toLocalDate(t.UpdatedAt || t.ID); return d >= uR.from && d <= uR.to; });
 
     if (checkedOnly) items = items.filter(t => checkedIds.includes(t.ID));
     return items;

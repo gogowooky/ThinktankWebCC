@@ -4,13 +4,13 @@
  *
  * データ階層: TTVault > Bundles > Bundle > Think
  *
- * Vault パス: Thinktank/vault_ver2/{thinkid}.md
+ * 正本: Firestore users/{uid}/vaults/{vaultId}/thinks/{thinkid}
+ * PC版バックアップ: Thinktank/vault_ver2/{thinkid}.md
  */
 
 import { TTCollection } from './TTCollection';
 import { TTThink } from './TTThink';
 import type { ContentType } from '../types';
-import { TTModels } from './TTModels';
 import { formatDateRangeJapanese } from '../utils/dateUtils';
 import { StorageManager } from '../services/storage/StorageManager';
 import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
@@ -38,7 +38,7 @@ export interface BundleResolutionOptions {
 }
 
 export class TTVault extends TTCollection {
-  /** 保管庫名（LocalFS ではディレクトリ名）*/
+  /** Firestore上のVault ID（PC版ではMarkdownバックアップのディレクトリ名にも使う）*/
   public VaultName: string = 'vault_ver2';
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
@@ -240,7 +240,7 @@ export class TTVault extends TTCollection {
   // ── ストレージ連携────────────────────────────────────────
 
   /**
-   * ローカル中継モードでは、シェル起動直後にAPIサーバーがまだ
+   * 常駐エージェントを使うモードでは、シェル起動直後にAPIサーバーがまだ
    * listenを開始していないタイミングでこの呼び出しが競合することがある
    * （シェル側にreadiness gateが無いため）。一過性の接続失敗を「ロード済みだが
    * 空」として確定させてしまわないよう、短い間隔でリトライしてから諦める。

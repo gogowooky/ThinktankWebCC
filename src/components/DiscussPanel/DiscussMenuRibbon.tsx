@@ -7,11 +7,11 @@
  */
 
 import { useState, useCallback } from 'react';
-import { FileText, Library, Table, Link, MessageCircle, Globe, NotebookPen, BookOpenText, IdCard, Share2, X, type LucideIcon } from 'lucide-react';
+import { FileText, Folder, Table, Link, MessageCircle, Globe, NotebookPen, BookOpenText, IdCard, Share2, X, type LucideIcon } from 'lucide-react';
 
 const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo:    FileText,
-  bundle:  Library,
+  bundle:  Folder,
   table:   Table,
   links:   Link,
   chat:    MessageCircle,

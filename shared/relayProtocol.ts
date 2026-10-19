@@ -14,7 +14,13 @@ export type RelayOperationKind =
   | 'ai.agent'
   | 'ping';
 
-export type RelayRequestStatus = 'queued' | 'running' | 'succeeded' | 'failed' | 'canceled';
+export type RelayRequestStatus =
+  | 'queued'
+  | 'running'
+  | 'succeeded'
+  | 'failed'
+  | 'canceled'
+  | 'expired';
 
 export interface ActiveRelayConfig {
   deviceId: string;
@@ -74,6 +80,9 @@ export interface FirestoreRelayRequestDoc {
   targetDeviceId: string;
   kind: RelayOperationKind;
   status: RelayRequestStatus;
+  /** queued を原子的に取得した中継役。再接続時の二重実行を防ぐ。 */
+  claimedBy?: string;
+  claimedAt?: string;
   createdAt: string;
   updatedAt: string;
   expiresAt: string;

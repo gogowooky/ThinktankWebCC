@@ -73,18 +73,24 @@ class GoogleAuthServiceImpl {
   }
 
   /**
-   * ブラウザポップアップで Google OAuth 2.0 同意画面を開き、Drive スコープのアクセストークンを取得する。
+   * ブラウザポップアップで Google OAuth 2.0 同意画面を開く。
+   * Think 正本用の通常ログインでは基本プロフィールだけを要求し、外部資料を
+   * Google Drive から選ぶ操作をしたときだけ Drive スコープを追加する。
    */
-  public startBrowserOAuthFlow(): Promise<GoogleAuthConfig> {
+  public startBrowserOAuthFlow(options: { includeDrive?: boolean } = {}): Promise<GoogleAuthConfig> {
     const cfg = this.getConfig();
     if (!cfg.clientId) {
       return Promise.reject(new Error('Google OAuth Client ID を入力してください。'));
     }
 
     return new Promise((resolve, reject) => {
-      const redirectUri = `${window.location.origin}${window.location.pathname}`;
+      // Google Cloud Console に登録する URI はオリジン直下だけにしたいので、開いているページのパスは使わない
+      // （Hosting はどのパスでも index.html を返すため、/index.html や深いパスで開くと redirect_uri_mismatch になる）
+      const redirectUri = `${window.location.origin}/`;
       // openid/email は Firebase がこのトークンで本人を確認するために要る
-      const scope = 'openid email profile https://www.googleapis.com/auth/drive';
+      const scopes = ['openid', 'email', 'profile'];
+      if (options.includeDrive) scopes.push('https://www.googleapis.com/auth/drive.file');
+      const scope = scopes.join(' ');
       const authUrl =
         `https://accounts.google.com/o/oauth2/v2/auth` +
         `?client_id=${encodeURIComponent(cfg.clientId)}` +
@@ -179,6 +185,41 @@ class GoogleAuthServiceImpl {
     const folderId = data.files[0].id;
     this.saveConfig({ driveRootFolderId: folderId });
     return folderId;
+  }
+
+  /**
+   * drive.file の審査負担を増やさず使える、このアプリ専用フォルダを準備する。
+   * drive.file では利用者が別途作った既存フォルダを列挙できないため、アクセス可能な
+   * 同名フォルダが無い場合はアプリ自身で作成する。
+   */
+  public async ensureThinktankFolder(folderName = 'Thinktank'): Promise<string> {
+    try {
+      return await this.autoDetectThinktankFolder(folderName);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes('見つかりませんでした')) throw error;
+    }
+
+    const cfg = this.getConfig();
+    if (!cfg.accessToken) {
+      throw new Error('先に Google Drive へのアクセスを承認してください。');
+    }
+    const res = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${cfg.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: folderName,
+        mimeType: 'application/vnd.google-apps.folder',
+      }),
+    });
+    if (!res.ok) throw new Error(`Google Drive フォルダ作成エラー (HTTP ${res.status})`);
+    const data = (await res.json()) as { id?: string };
+    if (!data.id) throw new Error('作成したGoogle DriveフォルダのIDを取得できませんでした。');
+    this.saveConfig({ driveRootFolderId: data.id });
+    return data.id;
   }
 }
 

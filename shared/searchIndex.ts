@@ -277,22 +277,29 @@ export function createBodyPack(
 }
 
 /**
- * 複数の本文パック（body-pack-*.json）を合成し、各 thinkid の最新本文マップを返す。
+ * 複数の本文パック（body-pack-*.json）を合成し、各 thinkid の最新の本文とその版（updatedAt）を返す。
  */
-export function mergeBodyPacks(packs: readonly BodyPackV1[]): Record<string, string> {
-  const latest = new Map<string, BodyPackEntry>();
+export function mergeBodyPackEntries(packs: readonly BodyPackV1[]): Record<string, BodyPackEntry> {
+  const latest: Record<string, BodyPackEntry> = {};
   for (const pack of packs) {
     if (!pack || typeof pack !== 'object' || !pack.entries) continue;
     for (const [id, entry] of Object.entries(pack.entries)) {
       if (!entry || typeof entry.body !== 'string') continue;
-      const prev = latest.get(id);
+      const prev = latest[id];
       if (!prev || (entry.updatedAt || '') >= (prev.updatedAt || '')) {
-        latest.set(id, entry);
+        latest[id] = entry;
       }
     }
   }
+  return latest;
+}
+
+/**
+ * 複数の本文パック（body-pack-*.json）を合成し、各 thinkid の最新本文マップを返す。
+ */
+export function mergeBodyPacks(packs: readonly BodyPackV1[]): Record<string, string> {
   const result: Record<string, string> = {};
-  for (const [id, entry] of latest.entries()) {
+  for (const [id, entry] of Object.entries(mergeBodyPackEntries(packs))) {
     result[id] = entry.body;
   }
   return result;

@@ -2,7 +2,7 @@
  * TTThinktankPanel.ts
  * ThinktankPanelのビューモデル。
  *
- * Thoughts一覧の表示・選択・フィルタリングと
+ * Think一覧の表示・選択・フィルタリングと
  * ThinktankAreaの開閉状態を管理する。
  */
 
@@ -35,14 +35,14 @@ export class TTThinktankPanel extends TTUIItem {
   /** 現在選択中のBundleID（空 = 未選択）*/
   public SelectedBundleID: string = '';
 
-  /** 複数選択中のThoughtID一覧 */
+  /** 複数選択中の thinkid 一覧 */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {
     setPanelCheckedIds(this, 'ThinktankPanel', val);
   }
 
-  /** Thoughts絞り込みテキスト（タイトル/キーワード欄） */
+  /** Think一覧の絞り込みテキスト（タイトル/キーワード欄） */
   public Filter: string = '';
 
   /** コンテンツ検索テキスト（全文検索欄、セット後に検索実行） */

@@ -8,6 +8,9 @@ const { validateOpenPath } = require('./openPath.cjs');
 const { VaultEngine } = require('./vaultEngine.cjs');
 const aiCliRunner = require('./aiCliRunner.cjs');
 const { RelayAgent } = require('./relayAgent.cjs');
+const { loadDesktopClient, signInWithGoogleLoopback } = require('./googleLoopbackAuth.cjs');
+
+const GOOGLE_DESKTOP_CLIENT_FILE = 'google-oauth-desktop.json';
 const shared = require('./shared-dist/index.js');
 
 // パッケージ版（electron-builder）は package.json の "name" からアプリ名・userDataパスを
@@ -88,6 +91,7 @@ const vaultEngine = new VaultEngine({
   appRootDir: appRoot(),
   defaultVaultDir: DEFAULT_VAULT_DIR,
   deviceIdPrefix: 'pc',
+  autoIndexRefresh: true,
 });
 
 const relayAgent = new RelayAgent({
@@ -117,6 +121,10 @@ ipcMain.handle('storage:getSupport', (_event, id) => {
 
 ipcMain.handle('storage:save', (_event, payload) => {
   return vaultEngine.saveRecord(payload);
+});
+
+ipcMain.handle('storage:writeBackup', (_event, payload) => {
+  return vaultEngine.saveBackupSnapshot(payload);
 });
 
 ipcMain.handle('storage:saveSupport', (_event, id, metadata, expectedVersion) => {
@@ -230,6 +238,12 @@ ipcMain.handle('relay:getStatus', () => {
   return relayAgent.getStatus();
 });
 
+// OSブラウザで得たFirebaseセッションを、Think正本へ接続するrendererにも共有する。
+// contextBridge越しの同一アプリ内IPCに限定し、Webコンテンツへは公開しない。
+ipcMain.handle('relay:getFirebaseSession', () => {
+  return relayAgent.getFirebaseSession();
+});
+
 ipcMain.handle('relay:configure', (_event, partial) => {
   return relayAgent.saveConfig(partial || {});
 });
@@ -253,6 +267,45 @@ ipcMain.handle('relay:setFirebaseSession', async (_event, session) => {
 
 ipcMain.handle('relay:signOutFirebase', () => {
   return relayAgent.signOutFirebase();
+});
+
+// 製品版の画面（app://）は Google の戻り先に登録できないため、いつものブラウザでログインしてもらう
+let googleSignInRunning = null;
+ipcMain.handle('relay:signInWithGoogle', async (_event, options) => {
+  if (googleSignInRunning) throw new Error('ブラウザでのログインがすでに進行中です。ブラウザの画面を確認してください。');
+  const client = loadDesktopClient([
+    path.join(app.getPath('userData'), GOOGLE_DESKTOP_CLIENT_FILE),
+    path.join(__dirname, GOOGLE_DESKTOP_CLIENT_FILE),
+  ]);
+  if (!client) {
+    throw new Error(
+      `デスクトップ用の OAuth クライアントが設定されていません。Google Cloud コンソールで「デスクトップ アプリ」の OAuth クライアントを作り、` +
+      `ダウンロードした JSON を ${path.join(app.getPath('userData'), GOOGLE_DESKTOP_CLIENT_FILE)} に置いてください。`,
+    );
+  }
+  googleSignInRunning = (async () => {
+    const { accessToken } = await signInWithGoogleLoopback({
+      ...client,
+      openExternal: (url) => shell.openExternal(url),
+    });
+    const apiKey = (options && typeof options.apiKey === 'string' && options.apiKey) || relayAgent.firebaseApiKey;
+    if (!apiKey) throw new Error('Firebase の API キー（VITE_FIREBASE_API_KEY）が見つかりません。');
+    if (options && typeof options.firebaseProjectId === 'string' && options.firebaseProjectId) {
+      relayAgent.saveConfig({ firebaseProjectId: options.firebaseProjectId });
+    }
+    const session = await shared.signInWithGoogleAccessToken(apiKey, accessToken, 'http://localhost');
+    return relayAgent.setFirebaseRefreshToken(session.refreshToken, session.email, apiKey);
+  })();
+  try {
+    return await googleSignInRunning;
+  } finally {
+    googleSignInRunning = null;
+    const win = BrowserWindow.getAllWindows()[0];
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  }
 });
 
 ipcMain.handle('relay:executePlain', async (_event, envelope) => {
@@ -439,6 +492,9 @@ app.whenReady()
       if (BrowserWindow.getAllWindows().length === 0) createWindow(startUrl);
     });
     relayAgent.start();
+    // 前回の終了後に G: で変わったファイルも Web 版の索引に載るよう、起動後に一度作り直す
+    vaultEngine.scheduleIndexRefresh({ shardDelayMs: 30_000, bodyPackDelayMs: 10 * 60_000 });
+    vaultEngine.warmUpSearch().catch((err) => console.warn(`[Vault] 検索の準備に失敗しました: ${err.message || err}`));
   })
   .catch(err => {
     console.error('[main] 起動に失敗しました:', err);
@@ -451,4 +507,5 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   relayAgent.stop();
+  vaultEngine.stopIndexRefresh();
 });

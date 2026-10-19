@@ -174,13 +174,12 @@ export const applicationSpecs: Record<string, PropSpec> = {
   },
   'Application.Execution.Status': {
     panel: 'Application',
-    default: 'PWA', type: 'string', candidates: '^(PWA|Local|Electron)$',
+    default: 'PWA', type: 'string', candidates: '^(PWA|Electron)$',
     description: 'アプリケーションの起動モード',
     isConst: true,
     get: () => {
       const mode = StorageManager.instance.mode;
       if (mode === 'electron') return 'Electron';
-      if (mode === 'local') return 'Local';
       return 'PWA';
     },
     set: () => { },

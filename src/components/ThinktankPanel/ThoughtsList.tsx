@@ -1,9 +1,9 @@
 /**
  * ThoughtsList.tsx
- * Thoughts 一覧（仮想スクロール）。
+ * Think一覧（仮想スクロール）。
  *
  * 行形式: [チェック] [アイコン] タイトル [更新日]  行高さ 36px
- * チェックで複数 Thought 選択可能。
+ * チェックで複数の Thinkファイルを選択可能。
  * クリックで TTApplication.OpenBundle(id) を呼ぶ。
  *
  * フィルター構文:
@@ -13,13 +13,14 @@
 
 import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Library, FileText, MessageCircle, Link, Table2, Globe, FileCode, Activity, File } from 'lucide-react';
+import { Folder, FileText, MessageCircle, Link, Table2, Globe, FileCode, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
 import { useHighlight } from '../../contexts/HighlightContext';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
+import { toLocalDate, toLocalStamp } from '../../utils/localDateTime';
 import './ThoughtsList.css';
 
 export const ROW_HEIGHT = 36;
@@ -75,7 +76,7 @@ export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
 
 function getTypeIcon(contentType: string) {
   switch (contentType.toLowerCase()) {
-    case 'bundle':   return <Library       size={13} className="thoughts-list__icon" />;
+    case 'bundle':   return <Folder        size={13} className="thoughts-list__icon" />;
     case 'memo':     return <FileText    size={13} className="thoughts-list__icon" />;
     case 'chat':     return <MessageCircle size={13} className="thoughts-list__icon" />;
     case 'links':    return <Link        size={13} className="thoughts-list__icon" />;
@@ -87,10 +88,9 @@ function getTypeIcon(contentType: string) {
   }
 }
 
-/** ISO日時文字列 → "yyyy-MM-dd-hhmmss"（タイムゾーン変換はせず文字列のまま抽出）*/
+/** 更新日時 → ローカル時刻の "yyyy-MM-dd-HHmmss"（作成日の thinkid と同じ形・同じ時刻帯） */
 function formatUpdatedAtSub(iso: string): string {
-  if (!iso || iso.length < 19) return '';
-  return `${iso.slice(0, 10)}-${iso.slice(11, 13)}${iso.slice(14, 16)}${iso.slice(17, 19)}`;
+  return toLocalStamp(iso);
 }
 
 /** タイトル下に表示する 作成日(ID)/更新日 のサブテキストを、ダイアログの列順に従って組み立てる */
@@ -133,7 +133,7 @@ function renderCell(col: ColumnConfig, thought: TTThink, visibleCols: ColumnConf
     case 'UpdatedAt':
       // 更新日も同様にタイトル欄の下に表示する場合は独立セルを描画しない
       return showUpdatedSub ? null : (
-        <span key="UpdatedAt" className="thoughts-list__date thoughts-list__date--updated" data-tip="更新日" data-tip-side="left">{thought.UpdatedAt ? thought.UpdatedAt.slice(0, 10) : ''}</span>
+        <span key="UpdatedAt" className="thoughts-list__date thoughts-list__date--updated" data-tip="更新日" data-tip-side="left">{toLocalDate(thought.UpdatedAt)}</span>
       );
     case 'ContentType':
       return <span key="ContentType" className="thoughts-list__cell thoughts-list__cell--sm" data-tip="種別" data-tip-side="left">{thought.ContentType}</span>;
@@ -226,7 +226,7 @@ export function ThoughtsList({
   if (thoughts.length === 0) {
     return (
       <div className="thoughts-list thoughts-list--empty">
-        <span>Thought がありません</span>
+        <span>Thinkファイル がありません</span>
       </div>
     );
   }

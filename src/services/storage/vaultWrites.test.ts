@@ -17,6 +17,12 @@ const { VaultEngine } = require('../../../electron/vaultEngine.cjs') as {
       updatedAt: string;
       metadata?: Record<string, unknown>;
     };
+    saveBackupSnapshot: (payload: Record<string, unknown>) => {
+      thinkid: string;
+      title: string;
+      updatedAt: string;
+      metadata?: Record<string, unknown>;
+    };
     saveSupportMetadata: (
       thinkid: string,
       metadata: Record<string, unknown>,
@@ -127,6 +133,29 @@ describe('VaultEngine storage operations', () => {
     expect(metas).toHaveLength(1);
     expect(metas[0].metadata).toEqual({
       thoughtSupport: { version: 2, resume: '決定済み' },
+    });
+  });
+
+  it('keeps the canonical Firestore version in a Markdown backup snapshot', () => {
+    const engine = new VaultEngine({
+      userDataDir,
+      appRootDir: process.cwd(),
+      defaultVaultDir: vaultDir,
+    });
+    const canonicalVersion = '2026-10-19T12:34:56.789Z';
+    const saved = engine.saveBackupSnapshot({
+      thinkid: '2026-10-19-123456',
+      category: 'memo',
+      fullContent: 'Firestore title\nFirestore body',
+      createdAt: '2026-10-19T12:00:00.000Z',
+      updatedAt: canonicalVersion,
+      metadata: { source: 'firestore' },
+    });
+
+    expect(saved.updatedAt).toBe(canonicalVersion);
+    expect(engine.listMeta()[0]).toMatchObject({
+      updatedAt: canonicalVersion,
+      metadata: { source: 'firestore' },
     });
   });
 });

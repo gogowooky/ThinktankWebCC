@@ -330,7 +330,6 @@ async function runDomainAiConversation(params) {
     recentMessages,
     userMessage,
     timeoutMs = 120_000,
-    allowFallbackOnCliError = true,
   } = params;
 
   const resolvedProfile = profile || shared.getBuiltinDomainProfile('clinical-trial');
@@ -352,101 +351,41 @@ async function runDomainAiConversation(params) {
     userMessage,
   });
 
-  // 利用可能な CLI を選択（指定された CLI が無ければインストール済みの他の CLI へ自動切替）
+  // 指定された CLI が無ければ、インストール済みの他の CLI へ自動で切り替える
   const detected = detectAvailableClis();
-  let selectedCli = cliName;
-  if (!detected[selectedCli]?.available) {
-    const firstAvailable = SUPPORTED_CLIS.find((c) => detected[c]?.available);
-    if (firstAvailable) {
-      selectedCli = firstAvailable;
-    }
+  const selectedCli = detected[cliName]?.available
+    ? cliName
+    : SUPPORTED_CLIS.find((c) => detected[c]?.available);
+  if (!selectedCli) {
+    throw new AiCliError(
+      'AI CLI（Claude Code・Codex・Gemini CLI）がこの PC に見つかりません。いずれかをインストールしてログインすると、AI に相談できます。',
+    );
   }
 
+  // 失敗したときは AI の回答に見える定型文を返さず、必ずエラーにする。
+  // 以前は「資料を確認しました」「論点を抽出しました」という定型文と作り上げた昇格候補を AI の回答として返しており、
+  // 利用者が AI が資料を読んで答えたと思い込み、誤った内容を記録に残すおそれがあった。
+  let execResult;
   try {
-    const execResult = await executeIsolatedCli({
-      cliName: selectedCli,
-      model,
-      promptText,
-      timeoutMs,
-    });
-    const validated = shared.validateAiCliResponse(execResult.stdout);
-    return {
-      ...validated,
-      executedCli: selectedCli,
-      fallbackUsed: false,
-    };
+    execResult = await executeIsolatedCli({ cliName: selectedCli, model, promptText, timeoutMs });
   } catch (err) {
-    if (!allowFallbackOnCliError) {
-      throw err;
-    }
-    const docTitles = (relatedDocuments || []).map((d) => `「${d.title}」(${d.thinkid})`).slice(0, 3);
-    const agentObj = agentId
-      ? resolvedProfile.agents.find((a) => a.id === agentId)
-      : null;
-    const roleHeader = agentObj
-      ? `【${agentObj.name}】`
-      : `【${resolvedProfile.name} (${panelRole || 'Discuss'})】`;
+    throw new AiCliError(`AI CLI（${selectedCli}）の実行に失敗しました: ${err.message || err}`);
+  }
+  return {
+    ...shared.validateAiCliResponse(execResult.stdout),
+    executedCli: selectedCli,
+  };
+}
 
-    const fallbackReply = [
-      `${roleHeader} として「${bundleTitle || bundleId}」のコンテキストと参照資料（${
-        docTitles.length > 0 ? docTitles.join('、') : '参照資料なし'
-      }）を確認しました。`,
-      '',
-      `ご質問: 「${userMessage}」`,
-      '',
-      docTitles.length > 0
-        ? `現在の関連メモ ${(relatedDocuments || [])[0].title} [:>1] に基づき、上位共有（昇格候補）として検討すべき論点を抽出しました。内容をご確認のうえ、承認または修正してください。`
-        : '現在このテーマに紐づく根拠メモが不足しています（insufficientEvidence）。まずは関連するメモや記録を関連付けるか、現状の前提条件を教えてください。',
-      '',
-      `（※ローカル AI CLI [${selectedCli}] 呼び出し時の診断情報: ${err.message}）`,
-    ].join('\n');
-
-    const firstDoc = (relatedDocuments || [])[0];
-    const citations = firstDoc
-      ? [
-          {
-            sourceThinkid: firstDoc.thinkid,
-            sourceTitle: firstDoc.title,
-            snippet: (firstDoc.excerpt || '').slice(0, 120),
-          },
-        ]
-      : [];
-
-    const defaultKind = resolvedProfile.id === 'elderly-support' ? 'action' : 'risk';
-    const promotionCandidates = [
-      {
-        type: defaultKind,
-        title:
-          resolvedProfile.id === 'elderly-support'
-            ? `「${(userMessage || '').slice(0, 24)}」に関する確認メモ`
-            : `「${(userMessage || '').slice(0, 24)}」に関する検討・リスク確認`,
-        summary: userMessage,
-        rationale: agentObj
-          ? `${agentObj.name} の観点からの初期抽出`
-          : `${resolvedProfile.name} プロファイルに基づく初期抽出`,
-        impactScope: bundleTitle || bundleId,
-        citations,
-      },
-    ];
-
-    return {
-      reply: fallbackReply,
-      insufficientEvidence: !firstDoc,
-      citations,
-      proposals: [],
-      subtaskCandidates: [],
-      pauseCandidates: [],
-      promotionCandidates,
-      rawText: fallbackReply,
-      parsedAsJson: false,
-      executedCli: selectedCli,
-      fallbackUsed: true,
-      cliError: err.message,
-    };
+class AiCliError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AiCliError';
   }
 }
 
 module.exports = {
+  AiCliError,
   SUPPORTED_CLIS,
   resolveExecutablePath,
   detectAvailableClis,

@@ -221,7 +221,7 @@ function TableCardView({ think, onSave }: TableCardViewProps) {
   );
 }
 
-// ── ThinkCardView（既存の Vault / Thought 一覧カード）───────────────────────
+// ── ThinkCardView（既存の Vault / Think一覧カード）───────────────────────
 
 function ThinkCardView({ think, vault }: MediaProps) {
   const [filter, setFilter] = useState('');

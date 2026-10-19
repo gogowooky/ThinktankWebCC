@@ -6,14 +6,14 @@
  */
 
 import React, { useImperativeHandle, forwardRef, useRef } from 'react';
-import { TextSearch, X, FileText, Library, Table, Link, MessageCircle, Globe, FileCode, SquareCheck, type LucideIcon } from 'lucide-react';
+import { TextSearch, X, FileText, Folder, Table, Link, MessageCircle, Globe, FileCode, SquareCheck, type LucideIcon } from 'lucide-react';
 import type { ContentType } from '../../types';
 import './FilterPanel.css';
 import './SearchBar.css';
 
 const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'memo',    Icon: FileText,      label: 'メモ' },
-  { type: 'bundle',  Icon: Library,       label: 'Bundle' },
+  { type: 'bundle',  Icon: Folder,        label: 'Bundle' },
   { type: 'table',   Icon: Table,         label: 'テーブル' },
   { type: 'links',   Icon: Link,          label: 'リンク' },
   { type: 'chat',    Icon: MessageCircle, label: 'チャット' },

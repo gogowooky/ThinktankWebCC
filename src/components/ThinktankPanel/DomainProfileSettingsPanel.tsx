@@ -288,7 +288,7 @@ export function DomainProfileSettingsPanel() {
             </div>
           </details>
 
-          {/* 3. PC版設定（ローカル AI CLI 設定隔離実行・Vaultフォルダ） */}
+          {/* 3. PC版設定（ローカル AI CLI・Markdownバックアップ） */}
           {vaultConfig && (
             <details
               style={{
@@ -301,7 +301,7 @@ export function DomainProfileSettingsPanel() {
               }}
             >
               <summary style={{ cursor: 'pointer', fontWeight: 700, color: TEXT_MAIN }}>
-                PC版：ローカル AI CLI（設定隔離）・Vault 正本フォルダ設定
+                PC版：ローカル AI CLI・Markdownバックアップ
               </summary>
               <div
                 style={{
@@ -337,7 +337,7 @@ export function DomainProfileSettingsPanel() {
 
                 <div>
                   <div style={{ color: TEXT_MUTED }}>
-                    Vault 正本フォルダ: <code style={{ color: TEXT_MAIN }}>{vaultConfig.vaultDir}</code>
+                    Markdownバックアップ先: <code style={{ color: TEXT_MAIN }}>{vaultConfig.vaultDir}</code>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
                     <button
@@ -345,7 +345,7 @@ export function DomainProfileSettingsPanel() {
                       style={primaryBtnStyle}
                       onClick={() => void handleSelectVaultFolder()}
                     >
-                      Vault フォルダを変更…
+                      バックアップ先を変更…
                     </button>
                     <button
                       type="button"
@@ -355,17 +355,17 @@ export function DomainProfileSettingsPanel() {
                           ?.writeShard()
                           .then(() =>
                             setMessage(
-                              '端末シャード索引 & 本文パック (.thinktank/index/) を更新しました。',
+                              'Markdownバックアップ用のローカル索引を更新しました。',
                             ),
                           )
                       }
                     >
-                      シャード索引・本文パックを更新
+                      バックアップ索引を更新
                     </button>
                   </div>
                   {conflictsCount > 0 && (
                     <div style={{ color: '#b45309', fontWeight: 600, marginTop: '4px' }}>
-                      ⚠ Drive 衝突コピーファイルが {conflictsCount} 件検出されています。
+                      ⚠ Markdownバックアップ先に競合コピーが {conflictsCount} 件あります。
                     </div>
                   )}
                 </div>

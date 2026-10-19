@@ -1,6 +1,6 @@
 /**
  * LocalRelayStorageBackend.ts
- * ローカル中継サーバの Vault API（/api/vault/...）を呼ぶストレージバックエンド
+ * 常駐エージェントの Vault API（/api/vault/...）を呼ぶストレージバックエンド
  * Vite proxy により /api/* → http://localhost:8080 に転送される
  */
 

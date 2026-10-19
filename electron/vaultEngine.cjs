@@ -2,7 +2,7 @@
 
 /**
  * electron/vaultEngine.cjs
- * Drive 正本（形式バージョン1）のローカル Vault エンジン。
+ * Firestore正本の復旧用Markdownバックアップ（形式バージョン1）とローカル索引を扱うエンジン。
  * - vault_ver2/<thinkid>.md（基本項目のみ）と <thinkid>.support.json（思考支援・業務管理メタデータ）の分離管理
  * - 削除時の trash/ 移動
  * - 楽観ロック（expectedVersion）検証と単調増加タイムスタンプ
@@ -26,10 +26,14 @@ class VaultEngine {
    * @param {{ userDataDir: string, appRootDir: string, defaultVaultDir: string, deviceIdPrefix?: string }} options
    * deviceIdPrefix は起動するプログラムの種類（Electron 版は 'pc'、常駐エージェントは 'agent'）。
    */
-  constructor({ userDataDir, appRootDir, defaultVaultDir, deviceIdPrefix = 'pc' }) {
+  constructor({ userDataDir, appRootDir, defaultVaultDir, deviceIdPrefix = 'pc', autoIndexRefresh = false }) {
     this.userDataDir = userDataDir;
     this.appRootDir = appRootDir;
     this.deviceIdPrefix = deviceIdPrefix;
+    this.autoIndexRefresh = autoIndexRefresh;
+    this._shardTimer = null;
+    this._bodyPackTimer = null;
+    this._fullIndexPromise = null;
     this.configFilePath = path.join(userDataDir, 'vault-engine-config.json');
     this.overlayFilePath = path.join(userDataDir, 'vault-meta-overlay.json');
     this.config = this._loadConfig(defaultVaultDir);
@@ -79,6 +83,7 @@ class VaultEngine {
     overlay.updated[meta.thinkid] = meta;
     delete overlay.deleted[meta.thinkid];
     this._saveOverlay(overlay);
+    this.scheduleIndexRefresh();
   }
 
   _recordOverlayDelete(thinkid) {
@@ -92,6 +97,59 @@ class VaultEngine {
     delete overlay.updated[thinkid];
     overlay.deleted[thinkid] = new Date().toISOString();
     this._saveOverlay(overlay);
+    this.scheduleIndexRefresh();
+  }
+
+  /**
+   * Web 版は中継役がいないとき Drive 上の索引を読むので、保存のたびに索引を作り直さないと
+   * 携帯に古い一覧が出る。索引（約 1.5MB）は保存が落ち着いてから、本文パック（約 24MB）は
+   * Drive への送信量を抑えるため間隔を空けて書き出す。
+   */
+  scheduleIndexRefresh({ shardDelayMs = 15_000, bodyPackDelayMs = 30 * 60_000 } = {}) {
+    if (!this.autoIndexRefresh) return;
+    if (this._shardTimer) clearTimeout(this._shardTimer);
+    this._shardTimer = setTimeout(() => {
+      this._shardTimer = null;
+      this._writeIndexSafely({ includeBodyPack: false });
+    }, shardDelayMs);
+    this._shardTimer.unref?.();
+    if (!this._bodyPackTimer) {
+      this._bodyPackTimer = setTimeout(() => {
+        this._bodyPackTimer = null;
+        this._writeIndexSafely({ includeBodyPack: true });
+      }, bodyPackDelayMs);
+      this._bodyPackTimer.unref?.();
+    }
+  }
+
+  /** 索引シャードは一覧を作るたびに読むので、ファイルが変わっていなければ前回の解釈結果を使う。 */
+  _readShardCached(filePath) {
+    if (!this._shardCache) this._shardCache = new Map();
+    try {
+      const st = fs.statSync(filePath);
+      const hit = this._shardCache.get(filePath);
+      if (hit && hit.mtimeMs === st.mtimeMs && hit.size === st.size) return hit.data;
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      this._shardCache.set(filePath, { mtimeMs: st.mtimeMs, size: st.size, data });
+      return data;
+    } catch {
+      return null;
+    }
+  }
+
+  stopIndexRefresh() {
+    if (this._shardTimer) clearTimeout(this._shardTimer);
+    if (this._bodyPackTimer) clearTimeout(this._bodyPackTimer);
+    this._shardTimer = null;
+    this._bodyPackTimer = null;
+  }
+
+  _writeIndexSafely(options) {
+    try {
+      this.writeDeviceShard(options);
+    } catch (err) {
+      console.warn(`[Vault] 索引の書き出しに失敗しました: ${err.message || err}`);
+    }
   }
 
   _loadConfig(defaultVaultDir) {
@@ -297,12 +355,6 @@ class VaultEngine {
     const vDir = this.getVaultDir();
     if (!fs.existsSync(vDir)) return [];
 
-    if (this._metaMap && this._cachedVaultDir === vDir) {
-      const cached = Array.from(this._metaMap.values());
-      cached.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
-      return cached;
-    }
-
     const files = fs.readdirSync(vDir);
     const mdIds = [];
     const supSet = new Set();
@@ -327,11 +379,8 @@ class VaultEngine {
         if (shardFiles.length > 0) {
           const shards = [];
           for (const sf of shardFiles) {
-            try {
-              shards.push(JSON.parse(fs.readFileSync(path.join(indexDir, sf), 'utf8')));
-            } catch {
-              // ignore broken shard
-            }
+            const shard = this._readShardCached(path.join(indexDir, sf));
+            if (shard) shards.push(shard);
           }
           for (const m of shared.mergeIndexShards(shards)) {
             shardMap.set(m.thinkid, m);
@@ -342,18 +391,21 @@ class VaultEngine {
       }
     }
 
+    // 手元の記録（overlay）はこの PC で読んだ・書いた版。携帯の Web 版や別の PC が更新すると、
+    // その端末の索引シャードのほうが新しくなるので、そのときはファイルを読み直す。
+    // （以前は overlay が常にシャードより優先され、他の端末での更新に気づかなかった）
+    // G: の全ファイルの更新時刻を調べると数秒かかるため、シャードとの比較で読み直す対象を絞る。
     const overlay = this._loadOverlay();
-    for (const [id, meta] of Object.entries(overlay.updated)) {
-      if (meta && typeof meta === 'object') {
-        shardMap.set(id, meta);
-      }
-    }
 
     const metaMap = new Map();
     let overlayDirty = false;
     for (const id of mdIds) {
       const hasExternalSupport = supSet.has(id) || legSet.has(id);
-      const cachedMeta = shardMap.get(id);
+      const ownMeta = overlay.updated[id] && typeof overlay.updated[id] === 'object' ? overlay.updated[id] : null;
+      const shardMeta = shardMap.get(id);
+      const changedElsewhere =
+        ownMeta && shardMeta && (shardMeta.updatedAt || '') > (ownMeta.updatedAt || '');
+      const cachedMeta = changedElsewhere ? null : ownMeta || shardMeta;
       if (cachedMeta && (!hasExternalSupport || cachedMeta.metadata)) {
         metaMap.set(id, cachedMeta);
         continue;
@@ -367,6 +419,7 @@ class VaultEngine {
           : null;
         const meta = shared.toVaultThinkMeta(parsed, support);
         metaMap.set(meta.thinkid, meta);
+        if (this._bodyMap) this._bodyMap.set(meta.thinkid, parsed.body);
         overlay.updated[meta.thinkid] = meta;
         overlayDirty = true;
       } catch (e) {
@@ -480,14 +533,27 @@ class VaultEngine {
       }
     }
 
-    const updatedAt = shared.nextVersionTimestamp(
-      existing ? existing.updatedAt : payload.updated_at || payload.updatedAt,
-    );
-    const createdAt =
-      (existing && existing.createdAt) ||
-      payload.created_at ||
-      payload.createdAt ||
-      shared.inferCreatedAtFromThinkId(thinkid, updatedAt);
+    const isBackupSnapshot = payload.__canonicalBackupSnapshot === true;
+    const requestedUpdatedAt = String(payload.updated_at || payload.updatedAt || '');
+    if (isBackupSnapshot && !requestedUpdatedAt) {
+      throw new Error('Markdownバックアップに正本の updatedAt がありません。');
+    }
+    const updatedAt = isBackupSnapshot
+      ? requestedUpdatedAt
+      : shared.nextVersionTimestamp(
+          existing ? existing.updatedAt : requestedUpdatedAt,
+        );
+    const createdAt = isBackupSnapshot
+      ? String(
+          payload.created_at ||
+          payload.createdAt ||
+          (existing && existing.createdAt) ||
+          shared.inferCreatedAtFromThinkId(thinkid, updatedAt),
+        )
+      : (existing && existing.createdAt) ||
+        payload.created_at ||
+        payload.createdAt ||
+        shared.inferCreatedAtFromThinkId(thinkid, updatedAt);
 
     const category = String(
       payload.category ?? payload.contentType ?? (existing ? existing.category : 'memo'),
@@ -548,6 +614,8 @@ class VaultEngine {
           metadata: metaObj,
         });
         this._atomicWrite(this._supportPath(thinkid), supText);
+      } else if (isBackupSnapshot && fs.existsSync(this._supportPath(thinkid))) {
+        fs.unlinkSync(this._supportPath(thinkid));
       }
     }
 
@@ -556,6 +624,11 @@ class VaultEngine {
     const savedMeta = shared.toVaultThinkMeta(parsedSaved, supSaved);
     this._recordOverlayUpdate(savedMeta, parsedSaved.body);
     return savedMeta;
+  }
+
+  /** Firestore正本の版・作成日時を変えずにMarkdownバックアップへ反映する。 */
+  saveBackupSnapshot(payload) {
+    return this.saveRecord({ ...payload, __canonicalBackupSnapshot: true });
   }
 
   /**
@@ -658,40 +731,16 @@ class VaultEngine {
 
     const metas = this.listMeta();
     if (!this._bodyMap) {
-      const bodyMap = new Map();
-      const indexDir = this.getIndexDir();
-      if (fs.existsSync(indexDir) && typeof shared.mergeBodyPacks === 'function') {
+      const packTexts = this._bodyPackFiles().map((p) => {
         try {
-          const packFiles = fs
-            .readdirSync(indexDir)
-            .filter((f) => f.startsWith('body-pack-') && f.endsWith('.json'));
-          const packs = [];
-          for (const pf of packFiles) {
-            try {
-              packs.push(JSON.parse(fs.readFileSync(path.join(indexDir, pf), 'utf8')));
-            } catch {
-              // ignore broken pack
-            }
-          }
-          const mergedBodies = shared.mergeBodyPacks(packs);
-          for (const [id, b] of Object.entries(mergedBodies)) {
-            bodyMap.set(id, b);
-          }
+          return fs.readFileSync(p, 'utf8');
         } catch {
-          // ignore
+          return null;
         }
-      }
-      const overlay = this._loadOverlay();
-      for (const m of metas) {
-        if (!bodyMap.has(m.thinkid) || overlay.updated[m.thinkid]) {
-          try {
-            const raw = fs.readFileSync(path.join(vDir, `${m.thinkid}.md`), 'utf8');
-            const parsed = shared.parseMdRecord(raw, m.thinkid);
-            bodyMap.set(m.thinkid, parsed.body ?? '');
-          } catch {
-            bodyMap.set(m.thinkid, '');
-          }
-        }
+      });
+      const { bodyMap, versions } = this._bodyMapFromPacks(packTexts);
+      for (const m of this._staleBodies(metas, bodyMap, versions)) {
+        bodyMap.set(m.thinkid, this._readBodySync(vDir, m.thinkid));
       }
       this._bodyMap = bodyMap;
     }
@@ -704,33 +753,96 @@ class VaultEngine {
   }
 
   /**
+   * 全文検索の準備（本文の読み込み）を、起動後に裏で非同期に済ませておく。
+   * 本文パックは G: 上で 1 つ 24MB ほどあり、最初の検索で同期的に読むと数秒アプリが止まるため。
+   */
+  async warmUpSearch() {
+    if (this._bodyMap) return;
+    const vDir = this.getVaultDir();
+    if (!fs.existsSync(vDir)) return;
+    const metas = this.listMeta();
+    const packTexts = await Promise.all(
+      this._bodyPackFiles().map((p) => fs.promises.readFile(p, 'utf8').catch(() => null)),
+    );
+    const { bodyMap, versions } = this._bodyMapFromPacks(packTexts);
+    for (const m of this._staleBodies(metas, bodyMap, versions)) {
+      try {
+        const raw = await fs.promises.readFile(path.join(vDir, `${m.thinkid}.md`), 'utf8');
+        bodyMap.set(m.thinkid, shared.parseMdRecord(raw, m.thinkid).body ?? '');
+      } catch {
+        bodyMap.set(m.thinkid, '');
+      }
+    }
+    // 待っている間に同期の検索が先に作っていれば、そちらを使う
+    if (!this._bodyMap) this._bodyMap = bodyMap;
+  }
+
+  /** この端末の本文パックがあればそれだけを使う（全ファイルから作るので最新）。無ければ他の端末のものを使う。 */
+  _bodyPackFiles() {
+    const indexDir = this.getIndexDir();
+    if (!fs.existsSync(indexDir)) return [];
+    const own = path.join(indexDir, `body-pack-${this.config.deviceId}.json`);
+    if (fs.existsSync(own)) return [own];
+    return fs
+      .readdirSync(indexDir)
+      .filter((f) => f.startsWith('body-pack-') && f.endsWith('.json'))
+      .map((f) => path.join(indexDir, f));
+  }
+
+  _bodyMapFromPacks(packTexts) {
+    const bodyMap = new Map();
+    const versions = new Map();
+    const packs = [];
+    for (const text of packTexts) {
+      if (!text) continue;
+      try {
+        packs.push(JSON.parse(text));
+      } catch {
+        // ignore broken pack
+      }
+    }
+    for (const [id, entry] of Object.entries(shared.mergeBodyPackEntries(packs))) {
+      versions.set(id, entry.updatedAt);
+      bodyMap.set(id, entry.body);
+    }
+    return { bodyMap, versions };
+  }
+
+  /** 本文パックに無い、またはパックの版が一覧の版と違う（パックより後に更新された）もの。 */
+  _staleBodies(metas, bodyMap, versions) {
+    return metas.filter((m) => !bodyMap.has(m.thinkid) || versions.get(m.thinkid) !== m.updatedAt);
+  }
+
+  _readBodySync(vDir, thinkid) {
+    try {
+      return shared.parseMdRecord(fs.readFileSync(path.join(vDir, `${thinkid}.md`), 'utf8'), thinkid).body ?? '';
+    } catch {
+      return '';
+    }
+  }
+
+  /**
    * 端末別シャード索引 (.thinktank/index/shard-<deviceId>.json) および
    * Web版オフライン高速全文検索用の本文パック (body-pack-<deviceId>.json) を再構築して書き出す。
    */
-  writeDeviceShard() {
-    const vDir = this.getVaultDir();
-    const metas = [];
-    const searchable = [];
-    if (fs.existsSync(vDir)) {
-      for (const f of fs.readdirSync(vDir)) {
-        if (!f.endsWith('.md')) continue;
-        if (shared.parseDriveConflictFilename(f)) continue;
-        const fallbackId = f.slice(0, -3);
-        try {
-          const raw = fs.readFileSync(path.join(vDir, f), 'utf8');
-          const parsed = shared.parseMdRecord(raw, fallbackId);
-          if (parsed.isDeleted) continue;
-          const support = this.readSupportMetadata(parsed.thinkid, parsed);
-          const meta = shared.toVaultThinkMeta(parsed, support);
-          metas.push(meta);
-          searchable.push({ meta, body: parsed.body });
-        } catch {
-          // skip
-        }
-      }
+  writeDeviceShard({ includeBodyPack = true } = {}) {
+    // メインプロセスで G: の全ファイル（約 5,500件）を同期的に読むと 10 秒以上アプリが応答しなくなるので、
+    // まず一覧の記録からすぐ索引を書き、ファイルの読み直し（本文パックを含む）は非同期で少しずつ行う。
+    const shard = this._writeShardFile(this.listMeta());
+    if (includeBodyPack) {
+      this.writeFullIndexAsync().catch((err) => {
+        console.warn(`[Vault] 本文パックの書き出しに失敗しました: ${err.message || err}`);
+      });
     }
-    metas.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+    return shard;
+  }
 
+  /** 書き出し中の非同期の索引作成が終わるのを待つ（終了処理とテスト用）。 */
+  whenIndexIdle() {
+    return this._fullIndexPromise || Promise.resolve();
+  }
+
+  _collectDeletedIds() {
     const trashDir = this.getTrashDir();
     const deletedIds = {};
     if (fs.existsSync(trashDir)) {
@@ -741,17 +853,65 @@ class VaultEngine {
         }
       }
     }
-    const shard = shared.createIndexShard(this.config.deviceId, metas, deletedIds);
+    return deletedIds;
+  }
+
+  _writeShardFile(metas) {
+    const shard = shared.createIndexShard(this.config.deviceId, metas, this._collectDeletedIds());
     const shardPath = path.join(this.getIndexDir(), `shard-${this.config.deviceId}.json`);
     this._atomicWrite(shardPath, JSON.stringify(shard, null, 2) + '\n');
-
-    if (typeof shared.createBodyPack === 'function') {
-      const bodyPack = shared.createBodyPack(this.config.deviceId, searchable);
-      const bodyPackPath = path.join(this.getIndexDir(), `body-pack-${this.config.deviceId}.json`);
-      this._atomicWrite(bodyPackPath, JSON.stringify(bodyPack) + '\n');
-    }
-
     return shard;
+  }
+
+  /**
+   * G: の全ファイルを非同期に読み、ファイルの内容そのものから索引と本文パックを作り直す。
+   * 一覧の記録には G: をエディタで直接直した分などが入っていないことがあるため、ときどきこれで正す。
+   */
+  writeFullIndexAsync() {
+    if (this._fullIndexPromise) return this._fullIndexPromise;
+    this._fullIndexPromise = (async () => {
+      const vDir = this.getVaultDir();
+      if (!fs.existsSync(vDir)) return 0;
+      const names = (await fs.promises.readdir(vDir)).filter(
+        (f) => f.endsWith('.md') && !shared.parseDriveConflictFilename(f),
+      );
+      const metas = [];
+      const searchable = [];
+      const BATCH = 40;
+      for (let i = 0; i < names.length; i += BATCH) {
+        const results = await Promise.all(
+          names.slice(i, i + BATCH).map(async (f) => {
+            try {
+              const raw = await fs.promises.readFile(path.join(vDir, f), 'utf8');
+              const parsed = shared.parseMdRecord(raw, f.slice(0, -3));
+              if (parsed.isDeleted) return null;
+              const meta = shared.toVaultThinkMeta(parsed, this.readSupportMetadata(parsed.thinkid, parsed));
+              return { meta, body: parsed.body };
+            } catch {
+              return null;
+            }
+          }),
+        );
+        for (const r of results) {
+          if (!r) continue;
+          metas.push(r.meta);
+          searchable.push(r);
+        }
+      }
+      metas.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+      this._writeShardFile(metas);
+      if (typeof shared.createBodyPack === 'function') {
+        const bodyPack = shared.createBodyPack(this.config.deviceId, searchable);
+        const bodyPackPath = path.join(this.getIndexDir(), `body-pack-${this.config.deviceId}.json`);
+        const tmpPath = `${bodyPackPath}.tmp-${process.pid}`;
+        await fs.promises.writeFile(tmpPath, JSON.stringify(bodyPack) + '\n', 'utf8');
+        await fs.promises.rename(tmpPath, bodyPackPath);
+      }
+      return metas.length;
+    })().finally(() => {
+      this._fullIndexPromise = null;
+    });
+    return this._fullIndexPromise;
   }
 
   /**

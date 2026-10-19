@@ -6,21 +6,22 @@
  */
 
 import {
-  signInWithGoogleAccessToken,
   refreshFirebaseIdToken,
   needsFirebaseTokenRefresh,
   type FirebaseAuthSession,
 } from '../../../shared/firebaseAuth';
-import { GoogleAuthService } from './GoogleAuthService';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as signOutFirebaseSdk,
+  type User,
+} from 'firebase/auth';
+import { getFirebaseApiKey, getFirebaseClient } from './firebaseClient';
 
 const STORAGE_KEY_SESSION = 'thinktank.web.firebaseSession';
 
 function getApiKey(): string {
-  const env =
-    (typeof import.meta !== 'undefined' &&
-      (import.meta as unknown as { env?: Record<string, string> }).env) ||
-    {};
-  return env.VITE_FIREBASE_API_KEY || '';
+  return getFirebaseApiKey();
 }
 
 function electronRelay() {
@@ -55,14 +56,32 @@ class FirebaseAuthServiceImpl {
     return this.session ? { uid: this.session.uid, email: this.session.email } : null;
   }
 
-  public signOut(): void {
+  public async signOut(): Promise<void> {
     this.save(null);
-    void electronRelay()?.signOutFirebase?.().catch(() => {});
+    await Promise.all([
+      getFirebaseClient()
+        .then(({ auth }) => signOutFirebaseSdk(auth))
+        .catch(() => {}),
+      electronRelay()?.signOutFirebase?.().catch(() => {}) ?? Promise.resolve(),
+    ]);
+  }
+
+  private async saveSdkUser(user: User): Promise<FirebaseAuthSession> {
+    const tokenResult = await user.getIdTokenResult();
+    const session: FirebaseAuthSession = {
+      uid: user.uid,
+      email: user.email || '',
+      idToken: tokenResult.token,
+      refreshToken: user.refreshToken,
+      expiresAtMs: new Date(tokenResult.expirationTime).getTime(),
+    };
+    this.save(session);
+    return session;
   }
 
   /**
-   * 同じ PC で中継役を務めるプロセスにログインを引き継ぐ。
-   * Electron 版ならメインプロセスの中継役へ IPC で、ブラウザなら常駐エージェント（localhost:8080）へ送る。
+   * Electron内のメインプロセスへログインを引き継ぐ。
+   * Web版のデータログインをlocalhost常駐エージェントへ自動送信はしない。
    */
   private async shareSessionWithLocalRelay(session: FirebaseAuthSession): Promise<void> {
     const setSession = electronRelay()?.setFirebaseSession;
@@ -70,11 +89,6 @@ class FirebaseAuthServiceImpl {
       await setSession({ refreshToken: session.refreshToken, email: session.email, apiKey: getApiKey() });
       return;
     }
-    await fetch('http://localhost:8080/relay-login/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken: session.refreshToken, email: session.email }),
-    });
   }
 
   /**
@@ -90,72 +104,66 @@ class FirebaseAuthServiceImpl {
     return true;
   }
 
-  /** 有効な Google アクセストークンを Firebase の資格情報に交換する。 */
-  public async signInWithGoogleToken(): Promise<FirebaseAuthSession> {
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      throw new Error('VITE_FIREBASE_API_KEY が設定されていません。');
+  /**
+   * Web版のThink正本用ログイン。Drive用OAuthトークンとは分離し、
+   * Firebase Auth自身の永続セッションを作る。
+   */
+  public async signInWithGooglePopup(): Promise<FirebaseAuthSession> {
+    const { auth } = await getFirebaseClient();
+    const result = await signInWithPopup(auth, new GoogleAuthProvider());
+    const session = await this.saveSdkUser(result.user);
+    if (electronRelay()?.setFirebaseSession) {
+      void this.shareSessionWithLocalRelay(session).catch(() => {});
     }
-    if (!GoogleAuthService.hasValidToken()) {
-      throw new Error('先に「Google でログイン」を行ってください。');
+    return session;
+  }
+
+  /** Firestore の onSnapshot が使える Firebase SDK セッションを保証する。 */
+  public async ensureSdkAuth(): Promise<User> {
+    const { auth } = await getFirebaseClient();
+    if (auth.currentUser) {
+      await this.saveSdkUser(auth.currentUser);
+      return auth.currentUser;
     }
-    const requestUri =
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost';
-    const session = await signInWithGoogleAccessToken(
-      apiKey,
-      GoogleAuthService.getConfig().accessToken,
-      requestUri,
+    throw new Error('Firebase SDK が未ログインです。設定画面からもう一度ログインしてください。');
+  }
+
+  /** Electron メインプロセスで行ったOSブラウザログインをデータ画面へ引き継ぐ。 */
+  public async syncFromElectronRelayIfAvailable(): Promise<FirebaseAuthSession | null> {
+    const getSession = electronRelay()?.getFirebaseSession;
+    if (!getSession) return null;
+    const stored = await getSession();
+    if (!stored?.refreshToken) return null;
+    const session = await refreshFirebaseIdToken(
+      stored.apiKey || getApiKey(),
+      stored.refreshToken,
+      stored.email || '',
     );
     this.save(session);
-    void this.shareSessionWithLocalRelay(session).catch(() => {});
     return session;
   }
 
   /**
-   * 同一PC上で起動している中継役エージェント (http://localhost:8080/relay-login) が
-   * 既にログイン済みであれば、そのセッションを引き継ぐ。
-   */
-  public async syncFromLocalRelayIfAvailable(): Promise<FirebaseAuthSession | null> {
-    const apiKey = getApiKey();
-    if (!apiKey || typeof fetch !== 'function') return null;
-    try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 1500);
-      const res = await fetch('http://localhost:8080/relay-login/session', {
-        signal: ctrl.signal,
-      }).finally(() => clearTimeout(timer));
-      if (!res.ok) return null;
-      const data = (await res.json()) as {
-        signedIn?: boolean;
-        refreshToken?: string;
-        email?: string;
-      };
-      if (!data.signedIn || !data.refreshToken) return null;
-      const session = await refreshFirebaseIdToken(apiKey, data.refreshToken, data.email || '');
-      this.save(session);
-      return session;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
    * Firestore 用の uid と ID トークンを返す。期限が近ければ更新する。
-   * 未ログインでもローカル中継エージェントまたは Google トークンが有効なら自動で Firebase にサインインする
-   * （AI 実行中はユーザー操作が無くポップアップを開けないため）。
+   * 未ログイン時にDrive用トークンやlocalhostの資格情報から暗黙に再ログインはしない。
    */
   public async getAuth(): Promise<{ uid: string; idToken: string }> {
     let session = this.session;
-    if (!session) {
-      session = await this.syncFromLocalRelayIfAvailable();
+    // Web版では永続化された SDK Auth を先に復元する。Electron はメイン側の
+    // refresh token をRESTで利用するため、この経路に依存しない。
+    if (typeof window !== 'undefined' && !window.electronAPI) {
+      try {
+        const { auth } = await getFirebaseClient();
+        if (auth.currentUser) session = await this.saveSdkUser(auth.currentUser);
+      } catch {
+        // 従来セッションのrefresh経路を継続する
+      }
     }
     if (!session) {
-      if (!GoogleAuthService.hasValidToken()) {
-        throw new Error(
-          'Firebase 未ログインです。設定画面の「Google でログイン」または http://localhost:8080/relay-login でログインしてから再度お試しください。',
-        );
-      }
-      session = await this.signInWithGoogleToken();
+      session = await this.syncFromElectronRelayIfAvailable();
+    }
+    if (!session) {
+      throw new Error('Firebase 未ログインです。設定画面の「Google でログイン」からログインしてください。');
     }
     if (needsFirebaseTokenRefresh(session)) {
       if (!this.refreshing) {

@@ -56,3 +56,6 @@ tmp/
 
 # Firebase CLI のデプロイキャッシュ
 .firebase/
+
+# デスクトップ用 OAuth クライアント（Google Cloud からダウンロードしたもの）
+electron/google-oauth-desktop.json

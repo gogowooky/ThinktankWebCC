@@ -53,6 +53,7 @@ declare global {
         getRecord?:     (id: string)      => Promise<{ meta: ThinkMeta; body: string; support: Record<string, unknown>; updatedAt: string } | null>;
         getSupport?:    (id: string)      => Promise<Record<string, unknown> | null>;
         save:           (p: SavePayload)  => Promise<ThinkMeta>;
+        writeBackup?:   (p: SavePayload & { createdAt: string; updatedAt: string }) => Promise<ThinkMeta>;
         saveSupport?:   (id: string, metadata: Record<string, unknown>, expectedVer?: string) => Promise<{ thinkid: string; updatedAt: string; metadata: Record<string, unknown> }>;
         delete:         (id: string)      => Promise<void>;
         search:         (q: string)       => Promise<ThinkMeta[]>;
@@ -72,15 +73,17 @@ declare global {
       };
       ai?: {
         getStatus:    () => Promise<ElectronAiStatus>;
-        conversation: (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string; fallbackUsed: boolean; cliError?: string }>;
-        agent:        (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string; fallbackUsed: boolean; cliError?: string }>;
+        conversation: (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string }>;
+        agent:        (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string }>;
       };
       relay?: {
         getStatus:       () => Promise<ElectronRelayStatus>;
+        getFirebaseSession?: () => Promise<{ uid: string; email: string; refreshToken: string; apiKey: string } | null>;
         configure:       (partial: Record<string, unknown>) => Promise<ElectronRelayStatus>;
         rotateSecret:    () => Promise<ElectronRelayStatus>;
         setFirebaseSession?: (session: { refreshToken: string; email: string; apiKey: string }) => Promise<ElectronRelayStatus>;
         signOutFirebase?: () => Promise<ElectronRelayStatus>;
+        signInWithGoogle?: (options: { apiKey: string; firebaseProjectId: string }) => Promise<ElectronRelayStatus>;
         executePlain:    <TReq = unknown, TRes = unknown>(envelope: RelayEnvelopePlaintext<TReq>) => Promise<RelayResponsePlaintext<TRes>>;
         handleEncrypted: (payload: { encryptedRequest: string; chunks?: FirestoreRelayChunkDoc[] }) => Promise<{ encryptedResponse: string; responseChunks: FirestoreRelayChunkDoc[] }>;
       };

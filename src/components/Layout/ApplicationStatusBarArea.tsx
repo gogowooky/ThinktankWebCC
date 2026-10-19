@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Monitor, Globe, Columns4, Columns2, Laptop, CheckCircle, RefreshCw, Clock, AlertCircle, WifiOff } from 'lucide-react';
+import { Globe, Columns4, Columns2, Laptop, CheckCircle, RefreshCw, Clock, AlertCircle, WifiOff } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
@@ -295,7 +295,6 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   const isAuthorOn = authorState !== 'off';
 
   const storageMode = StorageManager.instance.mode;
-  const isLocalMode = storageMode === 'electron' || storageMode === 'local';
 
   const panelDisplayMode = TTUIStateManager.instance.getProperty('Application.PanelDisplay.Mode');
   const isEditMode = panelDisplayMode === 'Edit';
@@ -372,10 +371,10 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       <div
         id="StatusBarModeIndicator"
         className="ApplicationStatusBarArea__mode-indicator"
-        data-tip={`ExecutionMode:${storageMode === 'electron' ? 'Electron' : storageMode === 'local' ? 'Local' : 'PWA'}`}
+        data-tip={`ExecutionMode:${storageMode === 'electron' ? 'Electron' : 'PWA'}`}
         data-tip-side="right"
       >
-        {storageMode === 'electron' ? <Laptop size={14} /> : storageMode === 'local' ? <Monitor size={14} /> : <Globe size={14} />}
+        {storageMode === 'electron' ? <Laptop size={14} /> : <Globe size={14} />}
       </div>
       <div className="ApplicationStatusBarArea__indicator-divider" />
 

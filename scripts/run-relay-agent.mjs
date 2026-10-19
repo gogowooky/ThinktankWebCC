@@ -51,7 +51,10 @@ const vaultEngine = new VaultEngine({
   appRootDir,
   defaultVaultDir,
   deviceIdPrefix: 'agent',
+  autoIndexRefresh: true,
 });
+vaultEngine.scheduleIndexRefresh({ shardDelayMs: 30_000, bodyPackDelayMs: 10 * 60_000 });
+vaultEngine.warmUpSearch().catch((err) => console.warn(`[Vault] 検索の準備に失敗しました: ${err.message || err}`));
 
 const relayAgent = new RelayAgent({
   userDataDir,
@@ -249,7 +252,10 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         try {
-          const st = await relayAgent.setFirebaseRefreshToken(body.refreshToken, body.email || '');
+          await relayAgent.setFirebaseRefreshToken(body.refreshToken, body.email || '');
+          // relay:start 自体が「このPCを提供側として起動する」という明示操作。
+          // ログアウトでOFFになった後も、再ログインしたら同じプロセスで待受を再開する。
+          const st = relayAgent.saveConfig({ enabled: true });
           console.log(`[RelayAgent] Firebase にログインしました: ${st.firebaseEmail || '(メール不明)'} (uid: ${st.firebaseUid})`);
           sendJson(res, 200, { ok: true, uid: st.firebaseUid, email: st.firebaseEmail });
         } catch (err) {

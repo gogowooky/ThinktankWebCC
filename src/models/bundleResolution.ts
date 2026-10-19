@@ -2,6 +2,7 @@ import type { TTThink } from './TTThink';
 import type { ThinkMeta } from '../services/storage/IStorageBackend';
 import type { BundleContent } from '../utils/thinkFormat';
 import { computeDateRange } from '../utils/dateUtils';
+import { toLocalDate } from '../utils/localDateTime';
 
 type DateRange = { from: string; to: string } | null;
 interface Criteria { createdRange: DateRange; updatedRange: DateRange }
@@ -48,7 +49,7 @@ export function mergeBundleConditions(state: BundleResolutionState, parsed: Bund
 
 function matchesDates(id: string, updatedAt: string, criteria: Criteria): boolean {
   const created = id.slice(0, 10);
-  const updated = (updatedAt || id).slice(0, 10);
+  const updated = toLocalDate(updatedAt || id);
   return (!criteria.createdRange || (created >= criteria.createdRange.from && created <= criteria.createdRange.to))
     && (!criteria.updatedRange || (updated >= criteria.updatedRange.from && updated <= criteria.updatedRange.to));
 }
