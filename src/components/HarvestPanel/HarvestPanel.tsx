@@ -1,6 +1,6 @@
 /**
  * HarvestPanel.tsx
- * Phase 10: HarvestPanel 統合コンポーネント。
+ * HarvestPanel 統合コンポーネント。
  *
  * 構造（右側パネル）: [Splitter] [PanelArea > HarvestArea] [HarvestTabBar]
  * Think/Bundle の次の展開について AI と相談するパネル。

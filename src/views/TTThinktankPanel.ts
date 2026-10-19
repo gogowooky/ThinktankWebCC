@@ -1,6 +1,6 @@
 /**
  * TTThinktankPanel.ts
- * Phase 4: ThinktankPanelのビューモデル。
+ * ThinktankPanelのビューモデル。
  *
  * Thoughts一覧の表示・選択・フィルタリングと
  * ThinktankAreaの開閉状態を管理する。

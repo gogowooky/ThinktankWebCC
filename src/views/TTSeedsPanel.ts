@@ -1,6 +1,6 @@
 /**
  * TTSeedsPanel.ts
- * Phase 4: SeedsPanelのビューモデル。
+ * SeedsPanelのビューモデル。
  *
  * 選択されたBundleの内容表示・分析モードと
  * SeedsAreaの開閉状態を管理する。

@@ -1,6 +1,6 @@
 /**
  * ThinktankPanel.tsx
- * Phase 6: ThinktankPanel 統合コンポーネント。
+ * ThinktankPanel 統合コンポーネント。
  *
  * 構造: [ThinktankTabBar] [PanelArea > ThinktankArea]
  * AppLayout から差し込んで使う。

@@ -127,7 +127,7 @@ export class TTThink extends TTObject {
     this._savedContent = this._content;
   }
 
-  // ── ストレージ連携（Phase 13）──────────────────────────────────────
+  // ── ストレージ連携──────────────────────────────────────
 
   /** 保存先から本文（Body）を取り寄せ、手元のタイトル行と連結して Content を揃える。 */
   public async LoadContent(force: boolean = false): Promise<void> {

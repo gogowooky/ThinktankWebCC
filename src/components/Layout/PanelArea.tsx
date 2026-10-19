@@ -1,6 +1,6 @@
 /**
  * PanelArea.tsx
- * Phase 5: 各パネル共通のコンテンツエリア（開閉アニメーション付き）。
+ * 各パネル共通のコンテンツエリア（開閉アニメーション付き）。
  *
  * - isOpen=false のとき幅を 0 に収縮（overflow: hidden でコンテンツ非表示）
  * - CSS transition で滑らかにアニメーション

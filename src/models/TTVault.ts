@@ -4,7 +4,7 @@
  *
  * データ階層: TTVault > Bundles > Bundle > Think
  *
- * LocalFS パス: ./../ThinktankLocal/vault_ver2/{ContentType}/{ID}.md
+ * Vault パス: Thinktank/vault_ver2/{thinkid}.md
  */
 
 import { TTCollection } from './TTCollection';
@@ -237,10 +237,10 @@ export class TTVault extends TTCollection {
     return this.AddItem(think) as TTThink;
   }
 
-  // ── ストレージ連携（Phase 13）────────────────────────────────────────
+  // ── ストレージ連携────────────────────────────────────────
 
   /**
-   * ローカルAPIモード（ThinktankLocal）では、シェル起動直後にAPIサーバーがまだ
+   * ローカル中継モードでは、シェル起動直後にAPIサーバーがまだ
    * listenを開始していないタイミングでこの呼び出しが競合することがある
    * （シェル側にreadiness gateが無いため）。一過性の接続失敗を「ロード済みだが
    * 空」として確定させてしまわないよう、短い間隔でリトライしてから諦める。

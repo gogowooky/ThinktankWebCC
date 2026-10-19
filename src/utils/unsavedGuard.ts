@@ -3,7 +3,7 @@
  * 「開いているペインの保留中の自動保存を即実行する」関数のレジストリ。
  *
  * TextEditorMedia がマウント時に登録し、ウィンドウ終了・タブ非表示・Electron の
- * close ダイアログで一括フラッシュする（PROJECT_REVIEW_REPORT.md D-1: 未保存データ損失の防止）。
+ * close ダイアログで一括フラッシュする。
  *
  * ここは「保存の起動」だけを担う。dirty 判定は area.IsDirty（TTDiscussArea）、
  * 実際の保存は各メディアの onSave → TTThink.SaveContent が担う。

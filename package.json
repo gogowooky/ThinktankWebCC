@@ -13,7 +13,7 @@
     "test:watch": "node scripts/run-tests.mjs",
     "test:coverage": "node scripts/run-tests.mjs run --coverage",
     "preview": "vite preview",
-    "electron:dev": "concurrently -k -n vite,electron -c green,yellow \"cross-env ELECTRON_DEV=true vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
+    "electron:dev": "concurrently -k -n vite,electron -c green,yellow \"cross-env ELECTRON_DEV=true vite\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
     "electron:build": "tsc -p tsconfig.json && vite build",
     "electron:package": "npm run electron:build && electron-builder --win --publish never",
     "relay:start": "node scripts/run-relay-agent.mjs",
@@ -43,7 +43,6 @@
     }
   },
   "dependencies": {
-    "@google-cloud/bigquery": "^8.1.1",
     "@monaco-editor/react": "^4.6.0",
     "@tanstack/react-virtual": "^3.11.2",
     "dompurify": "^3.4.12",

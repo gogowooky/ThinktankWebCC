@@ -1,6 +1,6 @@
 /**
  * ThoughtsList.tsx
- * Phase 6: Thoughts 一覧（仮想スクロール）。
+ * Thoughts 一覧（仮想スクロール）。
  *
  * 行形式: [チェック] [アイコン] タイトル [更新日]  行高さ 36px
  * チェックで複数 Thought 選択可能。

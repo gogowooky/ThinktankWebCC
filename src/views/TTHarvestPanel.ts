@@ -1,6 +1,6 @@
 /**
  * TTHarvestPanel.ts
- * Phase 4: HarvestPanelのビューモデル。
+ * HarvestPanelのビューモデル。
  *
  * Think/Bundlesの次の展開についてAIと相談するパネル。
  * HarvestAreaの開閉状態とAI会話履歴を管理する。

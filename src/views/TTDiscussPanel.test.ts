@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 // jsdom を使う理由: このモジュールは TTUIStateManager 経由で services/storage/apiClient を
-// 読み込み、apiClient がモジュール評価時に `window` を参照する（PROJECT_REVIEW_REPORT.md E-7 の
-// テスタビリティ上の課題）。BSP 関数自体は純粋。
+// 読み込み、apiClient がモジュール評価時に `window` を参照する。BSP 関数自体は純粋。
 import { describe, it, expect } from 'vitest';
 import {
   collectAreaIds,

@@ -1,6 +1,6 @@
 /**
  * App.tsx
- * Phase 13: StorageManager 経由で実データをロードする。
+ * StorageManager 経由で実データをロードする。
  * TTModels コンストラクタが Vault.LoadCache() を非同期起動 →
  * データ到着時に NotifyUpdated → useAppUpdate で各パネルが再レンダリングされる。
  */
@@ -51,7 +51,7 @@ export default function App() {
     // 呼び出し元で個別に catch されていない箇所があるため、未処理の Promise rejection を
     // ここで一括捕捉し、ステータスバーの同期エラー表示（既存の SyncState='error' 導線）で
     // ユーザーに知らせる。以前はここで何も起きず、保存失敗が完全に無音だった。
-    // 楽観ロックの衝突（PROJECT_REVIEW_REPORT.md D-2）は専用の確認ダイアログで扱う。
+    // 楽観ロックの衝突は専用の確認ダイアログで扱う。
     // 同じ衝突で連続表示しないよう、対応中の thinkId を覚えておく。
     let conflictPromptOpen = false
     const handleConflict = (err: StorageConflictError) => {
@@ -89,7 +89,7 @@ export default function App() {
       else if (app.Status.SyncState === 'error') app.Status.SetSyncState('synced')
     })
 
-    // ②' 未保存データ損失の防止（PROJECT_REVIEW_REPORT.md D-1）
+    // ②' 未保存データ損失の防止
     //   - 開いているペインに未保存の変更（area.IsDirty）があればウィンドウ終了を確認で止める
     //   - タブ非表示・終了直前には保留中の自動保存（3秒デバウンス待ち）を先行実行する
     //   - Electron のパッケージ版は electron/main.cjs の close ハンドラーが下の window 関数を使う

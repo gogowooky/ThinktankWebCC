@@ -17,40 +17,143 @@ const os = require('os');
 const crypto = require('crypto');
 const shared = require('./shared-dist/index.js');
 
+function hostnameToken() {
+  return os.hostname().replace(/[^A-Za-z0-9_-]/g, '_');
+}
+
 class VaultEngine {
-  constructor({ userDataDir, appRootDir, defaultVaultDir }) {
+  /**
+   * @param {{ userDataDir: string, appRootDir: string, defaultVaultDir: string, deviceIdPrefix?: string }} options
+   * deviceIdPrefix は起動するプログラムの種類（Electron 版は 'pc'、常駐エージェントは 'agent'）。
+   */
+  constructor({ userDataDir, appRootDir, defaultVaultDir, deviceIdPrefix = 'pc' }) {
     this.userDataDir = userDataDir;
     this.appRootDir = appRootDir;
+    this.deviceIdPrefix = deviceIdPrefix;
     this.configFilePath = path.join(userDataDir, 'vault-engine-config.json');
+    this.overlayFilePath = path.join(userDataDir, 'vault-meta-overlay.json');
     this.config = this._loadConfig(defaultVaultDir);
+    this._metaMap = null;
+    this._bodyMap = null;
+    this._cachedVaultDir = null;
     this._ensureDirs();
   }
 
+  _invalidateCache() {
+    this._metaMap = null;
+    this._bodyMap = null;
+    this._cachedVaultDir = null;
+  }
+
+  _loadOverlay() {
+    if (!fs.existsSync(this.overlayFilePath)) {
+      return { updated: {}, deleted: {} };
+    }
+    try {
+      const parsed = JSON.parse(fs.readFileSync(this.overlayFilePath, 'utf8'));
+      return {
+        updated: parsed && typeof parsed.updated === 'object' ? parsed.updated : {},
+        deleted: parsed && typeof parsed.deleted === 'object' ? parsed.deleted : {},
+      };
+    } catch {
+      return { updated: {}, deleted: {} };
+    }
+  }
+
+  _saveOverlay(overlay) {
+    try {
+      this._atomicWrite(this.overlayFilePath, JSON.stringify(overlay) + '\n');
+    } catch {
+      // ignore
+    }
+  }
+
+  _recordOverlayUpdate(meta, body) {
+    if (this._metaMap) {
+      this._metaMap.set(meta.thinkid, meta);
+    }
+    if (this._bodyMap && typeof body === 'string') {
+      this._bodyMap.set(meta.thinkid, body);
+    }
+    const overlay = this._loadOverlay();
+    overlay.updated[meta.thinkid] = meta;
+    delete overlay.deleted[meta.thinkid];
+    this._saveOverlay(overlay);
+  }
+
+  _recordOverlayDelete(thinkid) {
+    if (this._metaMap) {
+      this._metaMap.delete(thinkid);
+    }
+    if (this._bodyMap) {
+      this._bodyMap.delete(thinkid);
+    }
+    const overlay = this._loadOverlay();
+    delete overlay.updated[thinkid];
+    overlay.deleted[thinkid] = new Date().toISOString();
+    this._saveOverlay(overlay);
+  }
+
   _loadConfig(defaultVaultDir) {
-    const defaultDeviceId = `pc_${os.hostname().replace(/[^A-Za-z0-9_-]/g, '_')}`;
     const base = {
       vaultDir: defaultVaultDir,
-      deviceId: defaultDeviceId,
+      deviceId: '',
       preferredCli: 'claude',
       preferredModel: '',
       activeProfileId: shared.DEFAULT_DOMAIN_PROFILE_ID,
     };
+    let config = base;
     if (fs.existsSync(this.configFilePath)) {
       try {
         const loaded = JSON.parse(fs.readFileSync(this.configFilePath, 'utf8'));
-        return { ...base, ...loaded };
+        config = { ...base, ...loaded };
       } catch {
-        return base;
+        config = base;
       }
     }
-    return base;
+    if (this._needsNewDeviceId(config.deviceId)) {
+      config.deviceId = this._generateDeviceId();
+      this._writeConfigFile(config);
+    }
+    return config;
+  }
+
+  /**
+   * 以前は PC 名だけから `pc_<PC名>` を作っていたため、同じ PC の Electron 版と常駐エージェントが
+   * 同じ id になり、索引シャードの上書きや中継の二重処理が起きていた。
+   * 既存の Electron 版の id は Web 版の宛先設定が参照しているので残し、それ以外の種類で旧形式なら作り直す。
+   */
+  _needsNewDeviceId(deviceId) {
+    if (typeof deviceId !== 'string' || !deviceId.trim()) return true;
+    const legacyId = `pc_${hostnameToken()}`;
+    return deviceId === legacyId && this.deviceIdPrefix !== 'pc';
+  }
+
+  _generateDeviceId() {
+    return `${this.deviceIdPrefix}_${hostnameToken()}_${crypto.randomBytes(3).toString('hex')}`;
+  }
+
+  _writeConfigFile(config) {
+    try {
+      fs.mkdirSync(path.dirname(this.configFilePath), { recursive: true });
+      fs.writeFileSync(this.configFilePath, JSON.stringify(config, null, 2) + '\n', 'utf8');
+    } catch {
+      // 書けなくても今回の起動はメモリ上の id で動ける
+    }
   }
 
   saveConfig(partial) {
+    const prevVaultDir = this.getVaultDir();
     this.config = { ...this.config, ...partial };
+    if (this._needsNewDeviceId(this.config.deviceId)) {
+      this.config.deviceId = this._generateDeviceId();
+    }
     fs.mkdirSync(path.dirname(this.configFilePath), { recursive: true });
     fs.writeFileSync(this.configFilePath, JSON.stringify(this.config, null, 2) + '\n', 'utf8');
     this._ensureDirs();
+    if (this.getVaultDir() !== prevVaultDir) {
+      this._invalidateCache();
+    }
     return this.getConfig();
   }
 
@@ -187,27 +290,97 @@ class VaultEngine {
 
   /**
    * Vault 内の全有効レコードのメタデータ一覧を返す。
+   * .thinktank/index/shard-*.json と差分オーバーレイ、インメモリキャッシュを併用し、
+   * Google Drive 仮想ドライブ上の数千ファイルに対する毎回の同期 I/O を回避する。
    */
   listMeta() {
     const vDir = this.getVaultDir();
     if (!fs.existsSync(vDir)) return [];
 
+    if (this._metaMap && this._cachedVaultDir === vDir) {
+      const cached = Array.from(this._metaMap.values());
+      cached.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+      return cached;
+    }
+
     const files = fs.readdirSync(vDir);
-    const metas = [];
+    const mdIds = [];
+    const supSet = new Set();
+    const legSet = new Set();
     for (const f of files) {
-      if (!f.endsWith('.md')) continue;
-      if (shared.parseDriveConflictFilename(f)) continue;
-      const fallbackId = f.slice(0, -3);
-      try {
-        const raw = fs.readFileSync(path.join(vDir, f), 'utf8');
-        const parsed = shared.parseMdRecord(raw, fallbackId);
-        if (parsed.isDeleted) continue;
-        const support = this.readSupportMetadata(parsed.thinkid, parsed);
-        metas.push(shared.toVaultThinkMeta(parsed, support));
-      } catch (e) {
-        console.warn(`[VaultEngine] listMeta skip ${f}:`, e.message);
+      if (f.endsWith('.support.json')) {
+        supSet.add(f.slice(0, -13));
+      } else if (f.endsWith('.json')) {
+        legSet.add(f.slice(0, -5));
+      } else if (f.endsWith('.md') && !shared.parseDriveConflictFilename(f)) {
+        mdIds.push(f.slice(0, -3));
       }
     }
+
+    const indexDir = this.getIndexDir();
+    const shardMap = new Map();
+    if (fs.existsSync(indexDir)) {
+      try {
+        const shardFiles = fs
+          .readdirSync(indexDir)
+          .filter((f) => f.startsWith('shard-') && f.endsWith('.json'));
+        if (shardFiles.length > 0) {
+          const shards = [];
+          for (const sf of shardFiles) {
+            try {
+              shards.push(JSON.parse(fs.readFileSync(path.join(indexDir, sf), 'utf8')));
+            } catch {
+              // ignore broken shard
+            }
+          }
+          for (const m of shared.mergeIndexShards(shards)) {
+            shardMap.set(m.thinkid, m);
+          }
+        }
+      } catch {
+        // ignore index read error
+      }
+    }
+
+    const overlay = this._loadOverlay();
+    for (const [id, meta] of Object.entries(overlay.updated)) {
+      if (meta && typeof meta === 'object') {
+        shardMap.set(id, meta);
+      }
+    }
+
+    const metaMap = new Map();
+    let overlayDirty = false;
+    for (const id of mdIds) {
+      const hasExternalSupport = supSet.has(id) || legSet.has(id);
+      const cachedMeta = shardMap.get(id);
+      if (cachedMeta && (!hasExternalSupport || cachedMeta.metadata)) {
+        metaMap.set(id, cachedMeta);
+        continue;
+      }
+      try {
+        const raw = fs.readFileSync(path.join(vDir, `${id}.md`), 'utf8');
+        const parsed = shared.parseMdRecord(raw, id);
+        if (parsed.isDeleted) continue;
+        const support = hasExternalSupport || parsed.legacyEmbeddedMetadata
+          ? this.readSupportMetadata(parsed.thinkid, parsed)
+          : null;
+        const meta = shared.toVaultThinkMeta(parsed, support);
+        metaMap.set(meta.thinkid, meta);
+        overlay.updated[meta.thinkid] = meta;
+        overlayDirty = true;
+      } catch (e) {
+        console.warn(`[VaultEngine] listMeta skip ${id}.md:`, e.message);
+      }
+    }
+    if (overlayDirty) {
+      this._saveOverlay(overlay);
+    }
+
+    this._metaMap = metaMap;
+    this._cachedVaultDir = vDir;
+
+    const metas = Array.from(metaMap.values());
     metas.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
     return metas;
   }
@@ -380,7 +553,9 @@ class VaultEngine {
 
     const parsedSaved = shared.parseMdRecord(mdText, thinkid);
     const supSaved = this.readSupportMetadata(thinkid, parsedSaved);
-    return shared.toVaultThinkMeta(parsedSaved, supSaved);
+    const savedMeta = shared.toVaultThinkMeta(parsedSaved, supSaved);
+    this._recordOverlayUpdate(savedMeta, parsedSaved.body);
+    return savedMeta;
   }
 
   /**
@@ -433,6 +608,14 @@ class VaultEngine {
         body: existing.body,
       });
       this._atomicWrite(mdPath, mdText);
+      const parsedSaved = shared.parseMdRecord(mdText, thinkid);
+      const savedMeta = shared.toVaultThinkMeta(parsedSaved, {
+        schemaVersion: 1,
+        thinkid,
+        updatedAt,
+        metadata: mergedMetadata,
+      });
+      this._recordOverlayUpdate(savedMeta, parsedSaved.body);
     }
 
     return {
@@ -461,33 +644,62 @@ class VaultEngine {
       if (fs.existsSync(destSup)) fs.unlinkSync(destSup);
       fs.renameSync(supPath, destSup);
     }
+    this._recordOverlayDelete(thinkid);
     return { thinkid, deletedAt: new Date().toISOString() };
   }
 
   /**
    * 全文検索（YAML frontmatter を含めず、本文＋タイトル・タグ＋フィールド指定で検索）。
+   * body-pack-*.json とインメモリキャッシュを活用し、毎回の全件ファイル読み込みを回避する。
    */
   search(query, limit = 200) {
     const vDir = this.getVaultDir();
     if (!fs.existsSync(vDir)) return [];
 
-    const searchable = [];
-    for (const f of fs.readdirSync(vDir)) {
-      if (!f.endsWith('.md')) continue;
-      if (shared.parseDriveConflictFilename(f)) continue;
-      try {
-        const raw = fs.readFileSync(path.join(vDir, f), 'utf8');
-        const parsed = shared.parseMdRecord(raw, f.slice(0, -3));
-        if (parsed.isDeleted) continue;
-        const support = this.readSupportMetadata(parsed.thinkid, parsed);
-        searchable.push({
-          meta: shared.toVaultThinkMeta(parsed, support),
-          body: parsed.body,
-        });
-      } catch {
-        // skip
+    const metas = this.listMeta();
+    if (!this._bodyMap) {
+      const bodyMap = new Map();
+      const indexDir = this.getIndexDir();
+      if (fs.existsSync(indexDir) && typeof shared.mergeBodyPacks === 'function') {
+        try {
+          const packFiles = fs
+            .readdirSync(indexDir)
+            .filter((f) => f.startsWith('body-pack-') && f.endsWith('.json'));
+          const packs = [];
+          for (const pf of packFiles) {
+            try {
+              packs.push(JSON.parse(fs.readFileSync(path.join(indexDir, pf), 'utf8')));
+            } catch {
+              // ignore broken pack
+            }
+          }
+          const mergedBodies = shared.mergeBodyPacks(packs);
+          for (const [id, b] of Object.entries(mergedBodies)) {
+            bodyMap.set(id, b);
+          }
+        } catch {
+          // ignore
+        }
       }
+      const overlay = this._loadOverlay();
+      for (const m of metas) {
+        if (!bodyMap.has(m.thinkid) || overlay.updated[m.thinkid]) {
+          try {
+            const raw = fs.readFileSync(path.join(vDir, `${m.thinkid}.md`), 'utf8');
+            const parsed = shared.parseMdRecord(raw, m.thinkid);
+            bodyMap.set(m.thinkid, parsed.body ?? '');
+          } catch {
+            bodyMap.set(m.thinkid, '');
+          }
+        }
+      }
+      this._bodyMap = bodyMap;
     }
+
+    const searchable = metas.map((meta) => ({
+      meta,
+      body: this._bodyMap.get(meta.thinkid) ?? '',
+    }));
     return shared.searchVaultRecords(searchable, query, limit);
   }
 

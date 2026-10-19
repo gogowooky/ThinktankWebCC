@@ -3,7 +3,7 @@ import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat'
 import { useSupportChats } from '../../hooks/useSupportChats';
 /**
  * HarvestArea.tsx
- * Phase 10: HarvestPanel のメインエリア。
+ * HarvestPanel のメインエリア。
  *
  * - メモ選択(DataGrid) + SupportChat
  */

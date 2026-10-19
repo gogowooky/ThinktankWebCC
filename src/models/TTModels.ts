@@ -3,8 +3,7 @@
  * v5 アプリ全体のモデルルート（シングルトン）
  *
  * データ階層: TTVault > Bundles > Bundle > Think
- * Phase 1-3: TTVault を中心とした基本構成
- * Phase 4 以降: TTApplication から参照される
+ * TTVault を中心とした基本構成
  */
 
 import { TTCollection } from './TTCollection';
@@ -12,7 +11,7 @@ import { TTVault } from './TTVault';
 import { disposeVaultDrafts } from '../services/draftStore';
 
 export class TTModels extends TTCollection {
-  /** メインの保管庫（LocalFS: ./../ThinktankLocal/vault_ver2）*/
+  /** メインの保管庫（vault_ver2）*/
   public Vault: TTVault;
 
   private static _instance: TTModels | null = null;

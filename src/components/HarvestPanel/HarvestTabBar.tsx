@@ -1,6 +1,6 @@
 /**
  * HarvestTabBar.tsx
- * Phase 10: HarvestPanel の 縦型タブバー（旧Ribbon）。
+ * HarvestPanel の 縦型タブバー（旧Ribbon）。
  *
  * side="right" でパネルの右端に配置。
  * ボタン: 会話履歴 / 設定 / 会話クリア

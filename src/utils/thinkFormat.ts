@@ -199,7 +199,7 @@ export interface BundleContent {
 
 /**
  * Think ID とみなす形式。yyyy-MM-dd-HHmmss、および末尾サフィックス（AI 生成の -memo /
- * 衝突回避の -a3f9 / 旧PC名付きの -LAPTOP-5FOVA1SU 等）を許容する。PROJECT_REVIEW_REPORT.md D-5。
+ * 衝突回避の -a3f9 / 旧PC名付きの -LAPTOP-5FOVA1SU 等）を許容する。
  */
 export const THINK_ID_RE = /^\d{4}-\d{2}-\d{2}-\d{6}(?:-[A-Za-z0-9]+)*$/;
 

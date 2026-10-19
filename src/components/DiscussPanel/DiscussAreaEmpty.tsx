@@ -1,6 +1,6 @@
 /**
  * DiscussAreaEmpty.tsx
- * Phase 7: 空の DiscussArea スロット（ドロップゾーン）。
+ * 空の DiscussArea スロット（ドロップゾーン）。
  *
  * ドラッグ中に他のエリアの代替ターゲットとして表示する。
  * または DiscussPanel に1つもエリアがない場合に全面表示する。

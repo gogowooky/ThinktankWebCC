@@ -61,14 +61,14 @@ it('removes every wildcard listener and model subscription on repeated applicati
   for (let cycle = 0; cycle < 3; cycle++) {
     const app = TTApplication.Instance;
     const notify = vi.spyOn(app.ThinktankPanel, 'NotifyUpdated');
-    expect(add.mock.calls).toHaveLength((cycle + 1) * 12);
+    expect(add.mock.calls).toHaveLength((cycle + 1) * 13);
     manager.init(app);
     expect(app.ListenerKeys).toContain('TTUIStateManager');
     notify.mockClear();
     TTApplication.resetInstance();
     app.dispose();
     expect(app.ListenerKeys).not.toContain('TTUIStateManager');
-    expect(remove.mock.calls).toHaveLength((cycle + 1) * 12);
+    expect(remove.mock.calls).toHaveLength((cycle + 1) * 13);
     setAvailableModels('Claude', []);
     expect(notify).not.toHaveBeenCalled();
     expect((window as Window & { ttApp?: TTApplication }).ttApp).toBeUndefined();

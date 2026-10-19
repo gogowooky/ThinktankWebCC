@@ -1,6 +1,6 @@
 /**
  * DiscussHSplitter.tsx
- * Phase 7: DiscussPanel の行間水平スプリッター（row-resize）。
+ * DiscussPanel の行間水平スプリッター（row-resize）。
  * pointer capture を使用してパネル外へのカーソル移動でもドラッグが途切れない。
  */
 

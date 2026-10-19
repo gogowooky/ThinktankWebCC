@@ -1,6 +1,6 @@
 /**
  * AppLayout.tsx
- * Phase 10: HarvestPanel を実装コンポーネントに差し替え。
+ * HarvestPanel を実装コンポーネントに差し替え。
  *
  * 左から順に:
  *   ThinktankPanel（Ribbon + Area） |
@@ -128,7 +128,7 @@ export function AppLayout() {
     <div className="ApplicationContainer">
       <div className="ApplicationLayout">
 
-        {/* ── ThinktankPanel（Phase 6 実装済み）─────────────────── */}
+        {/* ── ThinktankPanel─────────────────── */}
         <ThinktankPanel
           app={app}
           width={ttWidth}
@@ -137,7 +137,7 @@ export function AppLayout() {
           onLayoutModeChange={handleLayoutModeChange}
         />
 
-        {/* ── SeedsPanel（Phase 9 実装済み）──────────────────── */}
+        {/* ── SeedsPanel──────────────────── */}
         <div className="app-panel app-panel--seeds" style={showSidePanels ? undefined : { display: 'none' }}>
           <SeedsPanel
             app={app}
@@ -146,12 +146,12 @@ export function AppLayout() {
           />
         </div>
 
-        {/* ── DiscussPanel（Phase 7 実装済み）────────────────────── */}
+        {/* ── DiscussPanel────────────────────── */}
         <div className="app-panel app-panel--discuss">
           <DiscussPanel app={app} layoutMode={layoutMode} />
         </div>
 
-        {/* ── HarvestPanel（Phase 10 実装済み）─────────────────────── */}
+        {/* ── HarvestPanel─────────────────────── */}
         <div className="app-panel app-panel--harvest" style={showSidePanels ? undefined : { display: 'none' }}>
           <HarvestPanel
             app={app}

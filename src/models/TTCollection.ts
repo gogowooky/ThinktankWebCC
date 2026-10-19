@@ -95,10 +95,10 @@ export class TTCollection extends TTObject {
     this.NotifyUpdated();
   }
 
-  // ── ストレージフック（Phase 13 でオーバーライド） ────────────────────
+  // ── ストレージフック ────────────────────
 
   /**
-   * ストレージからロードする（Phase 13 で StorageManager に接続予定）。
+   * ストレージからロードする。
    * デフォルト実装は IsLoaded を true にするだけ。
    */
   public async LoadCache(): Promise<void> {

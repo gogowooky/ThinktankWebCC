@@ -14,7 +14,7 @@ export function parseActionDescriptions(text: string): Map<string, string> {
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
     if (/^#{1,3} /.test(line)) {
-      currentId = /^## Action/.test(line) ? line.split(/[\s　]+/).pop() ?? null : null;
+      currentId = /^## Action/.test(line) ? line.split(/[\s\u3000]+/).pop() ?? null : null;
       continue;
     }
     if (!currentId || result.has(currentId)) continue;

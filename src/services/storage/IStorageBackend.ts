@@ -27,7 +27,7 @@ export interface SavePayload {
   /**
    * この Think を読み込んだ時点のサーバー側 updatedAt。指定すると、保存前にサーバーが
    * それより新しいレコードを持っていた場合に StorageConflictError で弾く（楽観ロック。
-   * PROJECT_REVIEW_REPORT.md D-2）。対応するかどうかはバックエンドごとに異なる。
+   * ）。対応するかどうかはバックエンドごとに異なる。
    */
   baseUpdatedAt?: string;
 }

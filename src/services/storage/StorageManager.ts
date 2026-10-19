@@ -2,14 +2,11 @@
  * StorageManager.ts
  * ストレージバックエンドのシングルトン管理クラス
  *
- * window.__THINKTANK_MODE__ === 'local'
- *   → LocalStorageBackend（C# API @ window.__THINKTANK_LOCAL_API__）
- * それ以外（PWA / ブラウザ直接）
- *   → DriveApiStorageBackend（Google Drive API）または LocalRelayStorageBackend（ローカル中継サーバ /api/vault/*）
+ * - Electron (PCアプリ): ElectronStorageBackend（IPC 経由で VaultEngine 操作）
+ * - Web / PWA: DriveApiStorageBackend（Google Drive API）または LocalRelayStorageBackend（ローカル中継サーバ /api/vault/*）
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
-import { LocalStorageBackend }    from './LocalStorageBackend';
 import { LocalRelayStorageBackend } from './LocalRelayStorageBackend';
 import { ElectronStorageBackend } from './ElectronStorageBackend';
 import { DriveApiStorageBackend } from '../../platform/web/DriveApiStorageBackend';
@@ -21,7 +18,7 @@ export class StorageManager {
   private static _instance: StorageManager | null = null;
 
   public backend: IStorageBackend;
-  public readonly mode: 'electron' | 'local' | 'pwa';
+  public readonly mode: 'electron' | 'pwa';
   public webProvider: 'drive' | 'local' = 'local';
 
   private constructor() {
@@ -29,11 +26,6 @@ export class StorageManager {
       this.backend = new ElectronStorageBackend();
       this.mode    = 'electron';
       console.log('[StorageManager] mode=electron (IPC fs)');
-    } else if (window.__THINKTANK_MODE__ === 'local') {
-      const apiUrl = window.__THINKTANK_LOCAL_API__ ?? 'http://localhost:8081';
-      this.backend = new LocalStorageBackend(apiUrl);
-      this.mode    = 'local';
-      console.log(`[StorageManager] mode=local, api=${apiUrl}`);
     } else {
       this.mode = 'pwa';
       const preferred =
