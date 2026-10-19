@@ -1,7 +1,7 @@
 {
   "name": "thinktank",
   "private": true,
-  "version": "2.6.0",
+  "version": "2.6.1",
   "type": "module",
   "scripts": {
     "dev:vite": "vite",
@@ -13,11 +13,9 @@
     "test:watch": "node scripts/run-tests.mjs",
     "test:coverage": "node scripts/run-tests.mjs run --coverage",
     "preview": "vite preview",
-    "electron:dev": "concurrently -k -n vite,electron -c green,yellow \"cross-env ELECTRON_DEV=true vite\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
+    "dev:electron": "concurrently -k -n vite,electron -c green,yellow \"cross-env ELECTRON_DEV=true vite\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron electron/main.cjs\"",
     "electron:build": "tsc -p tsconfig.json && vite build",
     "electron:package": "npm run electron:build && electron-builder --win --publish never",
-    "relay:start": "node scripts/run-relay-agent.mjs",
-    "dev:web-relay": "concurrently -k -n relay,vite -c magenta,green \"node scripts/run-relay-agent.mjs\" \"wait-on http://localhost:8080/api/health && vite\"",
     "firebase:deploy": "npm run build && npx firebase-tools deploy --only hosting"
   },
   "main": "electron/main.cjs",

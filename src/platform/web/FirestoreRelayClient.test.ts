@@ -83,3 +83,13 @@ it('does not configure remote AI when PC link mode is off', () => {
   localStorage.setItem('thinktank.web.pcLinkEnabled', 'false');
   expect(FirestoreRelayClient.isConfigured()).toBe(false);
 });
+
+it('reports an offline Electron provider without trying the retired localhost agent', async () => {
+  const fetchMock = vi.fn(async () => new Response('{}', { status: 404 }));
+  vi.stubGlobal('fetch', fetchMock);
+  await expect(FirestoreRelayClient.request('ping', {})).rejects.toThrow('Electron版');
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  expect(fetchMock).toHaveBeenCalledWith(
+    expect.stringContaining('firestore.googleapis.com/'), expect.any(Object),
+  );
+});

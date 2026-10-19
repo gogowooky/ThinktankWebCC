@@ -131,44 +131,8 @@ class FirestoreRelayClientImpl {
     const encryptedRequest = await encryptRelayPayload(envelope, cfg.pairingSecret);
     const chunks = splitIntoChunks(encryptedRequest, 'request');
 
-    const tryLocalEncryptedRelay = async (): Promise<RelayResponsePlaintext<TRes> | null> => {
-      try {
-        const res = await fetch('http://localhost:8080/api/relay/encrypted', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            encryptedRequest: chunks.length === 1 ? encryptedRequest : '',
-            chunks,
-          }),
-        });
-        if (!res.ok) return null;
-        const data = (await res.json()) as {
-          encryptedResponse?: string;
-          responseChunks?: FirestoreRelayChunkDoc[];
-        };
-        const cipherOut =
-          data.responseChunks && data.responseChunks.length > 0
-            ? reassembleChunks(data.responseChunks)
-            : data.encryptedResponse || '';
-        if (!cipherOut) return null;
-        return await decryptRelayPayload<RelayResponsePlaintext<TRes>>(
-          cipherOut,
-          cfg.pairingSecret,
-        );
-      } catch {
-        return null;
-      }
-    };
-
     // ルールは users/{uid} を本人だけに許すので、中継役PCと同じ Google アカウントの uid で読み書きする
-    let auth: { uid: string; idToken: string };
-    try {
-      auth = await FirebaseAuthService.getAuth();
-    } catch (authErr) {
-      const localRes = await tryLocalEncryptedRelay();
-      if (localRes) return localRes;
-      throw authErr;
-    }
+    const auth = await FirebaseAuthService.getAuth();
 
     const sdkUser = await FirebaseAuthService.ensureSdkAuth();
     if (sdkUser.uid !== auth.uid) {
@@ -192,12 +156,10 @@ class FirestoreRelayClientImpl {
           .fields?.lastHeartbeatAt?.stringValue
       : undefined;
     if (!heartbeat || !isRelayHeartbeatAlive(heartbeat)) {
-      const localRes = await tryLocalEncryptedRelay();
-      if (localRes) return localRes;
       throw new Error(
         heartbeat
           ? `中継役PC（${cfg.targetDeviceId}）は現在オフラインです（ハートビート期限切れ）。`
-          : `中継役PC（${cfg.targetDeviceId}）が見つかりません。その PC で中継役を開始し、同じ Google アカウントで Firebase にログインしているか確認してください。`,
+          : `中継役PC（${cfg.targetDeviceId}）が見つかりません。そのPCのElectron版でFirebaseにログインし、PC連携モードをONにしてください。`,
       );
     }
 

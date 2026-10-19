@@ -8,13 +8,6 @@ export default defineConfig({
   server: {
     port: 5173,
     open: process.env.ELECTRON_DEV !== 'true',
-    // ブラウザ版をローカル中継（scripts/run-relay-agent.mjs）で動かす開発時の転送先
-    proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
   },
   test: {
     // 既定は Node 環境（純粋関数用・高速）。DOM を要するテストは

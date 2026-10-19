@@ -3,6 +3,15 @@
 Thinktank — Electron + React + TypeScript のデスクトップアプリ（Web 版は Firebase Hosting）。
 アイデアをVaultに蓄積し、AIとの対話で思考を補完する。
 
+## 開発時の起動
+
+- `npm run dev:electron`: Electron版とViteを起動。同じPCではブラウザで `http://localhost:5173` を開いてWeb版も利用できる。
+- `npm run dev:vite`: Web版のみ起動。Firebaseログイン後にThinkの閲覧・編集・保存が可能。
+
+Web版からAI CLIを利用する場合は、提供側のElectron版でFirebaseへログインし、PC連携モードをONにする。
+`electron:dev` は `dev:electron` へ改名し、`relay:start` と `dev:web-relay` は廃止した。
+ローカル窓口（8080）を起動する必要はない。
+
 ## 更新履歴
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->

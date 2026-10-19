@@ -4,8 +4,7 @@ export function isElectron(): boolean {
 
 /**
  * 旧版の平文 `/api/think-support/*` 経路は使わない。
- * localhostの常駐エージェントも、PC連携ON時にFirestoreRelayClientの
- * 暗号化 `/api/relay/encrypted` fallbackからだけ利用する。
+ * PC連携ON時はFirestoreRelayClientでElectron提供側に接続する。
  */
 export function usesLocalRelay(): boolean {
   return false;

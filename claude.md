@@ -12,17 +12,21 @@ Thinkの正本はFirestore、外部資料はGoogle Drive、ローカル`.md`は�
 
 ```bash
 # Electron 版（Vite と Electron を起動。Think正本はFirestore、AI CLIはIPC）
-npm run electron:dev
+npm run dev:electron
 
 # Vite が起動済みの場合（Electronのみ）
 NODE_ENV=development npx electron electron/main.cjs
 
-# PC連携用の常駐エージェントとブラウザ版を同時に動かす
-npm run dev:web-relay
+# ブラウザ版のみ（ThinkデータはFirestoreへ直接接続）
+npm run dev:vite
 ```
 
 `shared/*.ts` を変更したら `node scripts/build-electron-shared.mjs` で `electron/shared-dist/` を作り直す
-（electron/ と run-relay-agent はこの CJS 版を require する）。
+（electron/ はこの CJS 版を require する）。
+
+Web版へAI CLIを提供する場合はElectron版のPC連携モードをONにする。
+`dev:electron` はViteも起動するため、同じPCでWeb版も使う場合はブラウザで
+`http://localhost:5173` を開く。ローカル窓口（8080）と常駐エージェントの起動コマンドは廃止済み。
 
 ## コーディング規約
 - TypeScript strict モード。`any` は使わない
@@ -63,4 +67,4 @@ npm run dev:web-relay
 
 ## やってはいけないこと
 - `electron/main.cjs` を ES Module 形式に書き換える（CJS固定）
-- `npm run electron:dev` を多重起動（単一インスタンスロックで後発が終了し、Vite もポート競合する）
+- `npm run dev:electron` を多重起動（単一インスタンスロックで後発が終了し、Vite もポート競合する）
