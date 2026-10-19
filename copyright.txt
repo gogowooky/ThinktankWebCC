@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.5.2",
+  "version": "2.5.3",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "a242630",
-  "commitDateTime": "2026-10-18-021834",
-  "commitMessage": "refactor: Express（server/）と Cloud Run を廃止し、残る機能を Electron IPC・ブラウザ側へ移す"
+  "commitId": "d4e254c",
+  "commitDateTime": "2026-10-19-103747",
+  "commitMessage": "fix: Electron 版の中継役が画面の Firebase ログインを受け取り、端末 id を分け、Firestore に届いたときだけオンライン表示する"
 }

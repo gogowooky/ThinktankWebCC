@@ -7,6 +7,13 @@ Thinktank — Electron + React + TypeScript のデスクトップアプリ（Web
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 
+### v2.5.3 fix: Electron 版の中継役が画面の Firebase ログインを受け取り、端末 id を分け、Firestore に届いたときだけオンライン表示する
+
+- 日付: 2026-10-19
+- コミット番号: d4e254c
+
+v2.5.2 以降の変更（56a47a8〜d4e254c）をまとめて記録する。Electron 版の中継役：画面で Firebase にログインすると refresh token を IPC（relay:setFirebaseSession）でメインプロセスの中継役に渡し、起動時に画面側のログインを引き継ぐ。中継役は保存済みの設定で有効なら起動時に待ち受けを再開する。端末 id は VaultEngine が一元管理し、常駐エージェントは `agent_<PC名>_<乱数>` に（既存の Electron 版の `pc_<PC名>` は Web 版の宛先設定のため維持）。ハートビートは端末ごとの `devices/{deviceId}` にも書き、設定画面の「オンライン」は Firestore への書き込みに成功した時刻だけで判断し、ログイン状態と失敗の理由を表示する。Web 版は宛先の端末自身のハートビートで生存を確かめる。DataGrid設定に「表示」セクション（折返し・左寄・中央寄・右寄）と Table.CellContent.Display / Position のアクションを追加。移行用スクリプト（bq-to-local など）、旧 Vault 書き込み（mdFormat / vaultSave / vaultWrite を VaultEngine に統合）、local モード（LocalStorageBackend）、BigQuery の依存、古い設計文書（docs/ 64 件）を削除。テスト 564件成功。型チェックは local モード削除の残り（ApplicationStatusBarArea など 4 ファイル・6 件）で失敗が残る。実機の Electron で中継役が Firestore に届くことは未確認。変更: 130ファイル（+995 / -7207行）。
+
 ### v2.5.2 refactor: Express（server/）と Cloud Run を廃止し、残る機能を Electron IPC・ブラウザ側へ移す
 
 - 日付: 2026-10-18
