@@ -9,7 +9,7 @@
 
 import { useState, useMemo, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
-  FileText, Lightbulb, Table, Link, MessageCircle, Globe,
+  FileText, Lightbulb, Table, Link, MessagesSquare, Globe, BotMessageSquare,
   RefreshCcw, ChevronDown, ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
@@ -26,9 +26,9 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   bundle:  Lightbulb,
   table:   Table,
   links:   Link,
-  chat:    MessageCircle,
+  chat:    MessagesSquare,
   html: Globe,
-  nettext: Globe,
+  abstract: BotMessageSquare,
 };
 
 const CONTENT_COLORS: Record<ContentType, string> = {
@@ -38,7 +38,7 @@ const CONTENT_COLORS: Record<ContentType, string> = {
   links:   '#7b1fa2',
   chat:    '#d32f2f',
   html: '#00695c',
-  nettext: '#00838f',
+  abstract: '#00838f',
 };
 
 function plainText(content: string): string {

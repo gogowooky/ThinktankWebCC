@@ -176,25 +176,9 @@ export function appendLinkToContent(content: string, link: LinkItem): string {
 // #region bundle 形式 (ContentType = 'bundle')
 // ════════════════════════════════════════════════════════════════════════
 
-export interface BundleCondition {
-  dateStr: string;
-  rangeStr: string;
-}
-
 export interface BundleContent {
   title: string;
   ids: string[];
-  excludeIds?: string[];
-  filter: {
-    keyword?: string;
-    createdRange?: BundleCondition;
-    updatedRange?: BundleCondition;
-  };
-  search: {
-    query?: string;
-    createdRange?: BundleCondition;
-    updatedRange?: BundleCondition;
-  };
 }
 
 /**
@@ -213,13 +197,9 @@ export function parseBundle(content: string): BundleContent {
   const bodyLines = lines.slice(1);
 
   const ids: string[] = [];
-  const excludeIds: string[] = [];
   const result: BundleContent = {
     title,
     ids,
-    excludeIds,
-    filter: {},
-    search: {},
   };
 
   for (const line of bodyLines) {
@@ -230,37 +210,6 @@ export function parseBundle(content: string): BundleContent {
       // システムThinkのID（thinktank / __tt_ui_state__ 等）がBundleの範囲を意図せず絞り込んでいた。
       const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
       if (THINK_ID_RE.test(id)) ids.push(id);
-    } else if (s.startsWith('- ')) {
-      const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
-      if (id) {
-        if (THINK_ID_RE.test(id)) {
-          excludeIds.push(id);
-        }
-      }
-    } else if (s.startsWith('>> ')) {
-      const body = s.slice(3).trim();
-      if (body.startsWith('検索語：')) {
-        result.search.query = body.slice(4).trim();
-      } else if (body.startsWith('作成日：')) {
-        const [d, r] = body.slice(4).split(',').map(v => v.trim());
-        result.search.createdRange = { dateStr: d ?? '', rangeStr: r ?? '' };
-      } else if (body.startsWith('更新日：')) {
-        const [d, r] = body.slice(4).split(',').map(v => v.trim());
-        result.search.updatedRange = { dateStr: d ?? '', rangeStr: r ?? '' };
-      }
-    } else if (s.startsWith('> ')) {
-      const body = s.slice(2).trim();
-      if (body.startsWith('作成日：')) {
-        const [d, r] = body.slice(4).split(',').map(v => v.trim());
-        result.filter.createdRange = { dateStr: d ?? '', rangeStr: r ?? '' };
-      } else if (body.startsWith('更新日：')) {
-        const [d, r] = body.slice(4).split(',').map(v => v.trim());
-        result.filter.updatedRange = { dateStr: d ?? '', rangeStr: r ?? '' };
-      } else if (body.startsWith('Keyword：')) {
-        result.filter.keyword = body.slice('Keyword：'.length).trim();
-      } else if (!body.includes('：')) {
-        result.filter.keyword = body;
-      }
     }
   }
 
@@ -271,53 +220,16 @@ export function parseBundle(content: string): BundleContent {
  * bundle 新規作成オプション
  */
 export interface BundleCreateOptions {
-  prefix: string; // "> " または ">> "
   title: string;
-  searchQuery?: string;
-  filterKeyword?: string;
-  dates?: {
-    createdDate?: string;
-    createdRange?: string;
-    updatedDate?: string;
-    updatedRange?: string;
-  };
   ids?: string[];
-  excludeIds?: string[];
 }
 
 /**
  * オプションから bundle 本文（テキスト）をシリアライズして生成する
  */
 export function serializeBundle(options: BundleCreateOptions): string {
-  const { prefix, title, searchQuery, filterKeyword, dates, ids = [], excludeIds = [] } = options;
-  let body = '';
-
-  if (prefix === '>> ') {
-    if (searchQuery) body += `>> 検索語：${searchQuery}\n`;
-    if (dates?.createdDate || dates?.createdRange) {
-      body += `>> 作成日：${dates.createdDate || ''}, ${dates.createdRange || ''}\n`;
-    }
-    if (dates?.updatedDate || dates?.updatedRange) {
-      body += `>> 更新日：${dates.updatedDate || ''}, ${dates.updatedRange || ''}\n`;
-    }
-  } else if (prefix === '> ') {
-    if (filterKeyword) body += `> Keyword：${filterKeyword}\n`;
-    if (dates?.createdDate || dates?.createdRange) {
-      body += `> 作成日：${dates.createdDate || ''}, ${dates.createdRange || ''}\n`;
-    }
-    if (dates?.updatedDate || dates?.updatedRange) {
-      body += `> 更新日：${dates.updatedDate || ''}, ${dates.updatedRange || ''}\n`;
-    }
-  }
-
-  if (ids.length > 0) {
-    body += ids.map(id => `* ${id}`).join('\n') + '\n';
-  }
-  if (excludeIds.length > 0) {
-    body += excludeIds.map(id => `- ${id}`).join('\n') + '\n';
-  }
-
-  return `${title}\n${body.trim()}`;
+  const { title, ids = [] } = options;
+  return `${title}\n${ids.map(id => `* ${id}`).join('\n')}`;
 }
 
 // #endregion

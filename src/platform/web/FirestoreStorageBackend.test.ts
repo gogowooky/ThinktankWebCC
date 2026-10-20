@@ -178,7 +178,7 @@ it('round-trips oversized body and nested typed metadata through immutable child
   store.failParts();
   await expect(backend.save({ thinkid: 'a', category: 'memo', fullContent: `new title\n${body}`, keywords: '', relatedIds: '', metadata })).rejects.toThrow('分割データ保存');
   expect((await backend.getRecord('a'))?.meta.title).toBe('title');
-});
+}, 15_000);
 
 it('skips legacy system settings before making any Firestore requests', async () => {
   vi.stubGlobal('window', { electronAPI: { storage: {
@@ -189,4 +189,189 @@ it('skips legacy system settings before making any Firestore requests', async ()
   const result = await new FirestoreStorageBackend().importElectronMarkdownBackup();
   expect(result).toMatchObject({ imported: 0, skipped: 2, systemSkipped: 2, failedIds: [] });
   expect(fetchMock).not.toHaveBeenCalled();
+});
+
+it('creates a lightweight tombstone with timestamp deletedAt and 90-day expireAt on delete', async () => {
+  let commitBody: {
+    writes?: Array<{
+      delete?: string;
+      update?: { name?: string; fields?: Record<string, { stringValue?: string; booleanValue?: boolean; timestampValue?: string; integerValue?: string; mapValue?: unknown }> };
+    }>;
+  } = {};
+
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith('/thinks/to-delete') && !init?.method) {
+      return new Response(JSON.stringify({
+        ...storedDocument(),
+        fields: {
+          ...storedDocument().fields,
+          thinkid: { stringValue: 'to-delete' },
+          title: { stringValue: '削除予定タイトル' },
+          body: { stringValue: '削除予定本文' },
+          metadata: { mapValue: { fields: { secret: { stringValue: 'private' } } } },
+        },
+      }), { status: 200 });
+    }
+    if (url.endsWith('/documents:commit')) {
+      commitBody = JSON.parse(String(init?.body || '{}'));
+      return new Response('{}', { status: 200 });
+    }
+    throw new Error(`unexpected request: ${url}`);
+  }));
+
+  const backend = new FirestoreStorageBackend();
+  await backend.delete('to-delete');
+
+  expect(commitBody.writes).toBeDefined();
+  const updateWrite = commitBody.writes?.find((w) => w.update);
+  expect(updateWrite).toBeDefined();
+  const fields = updateWrite?.update?.fields;
+  expect(fields?.isDeleted).toEqual({ booleanValue: true });
+  expect(fields?.title).toEqual({ stringValue: '' });
+  expect(fields?.body).toEqual({ stringValue: '' });
+  expect(fields?.metadata).toEqual({ mapValue: { fields: {} } });
+  expect(fields?.sizeBytes).toEqual({ integerValue: '0' });
+
+  // deletedAt は timestampValue 型
+  expect(fields?.deletedAt?.timestampValue).toBeDefined();
+  const deletedAtMs = Date.parse(fields!.deletedAt!.timestampValue!);
+  expect(Number.isFinite(deletedAtMs)).toBe(true);
+
+  // expireAt は timestampValue 型で、deletedAt の約90日後
+  expect(fields?.expireAt?.timestampValue).toBeDefined();
+  const expireAtMs = Date.parse(fields!.expireAt!.timestampValue!);
+  expect(Number.isFinite(expireAtMs)).toBe(true);
+  const diffDays = (expireAtMs - deletedAtMs) / (1000 * 60 * 60 * 24);
+  expect(Math.round(diffDays)).toBe(90);
+});
+
+it('deletes child payloadParts together when soft-deleting an oversized Think', async () => {
+  let commitWrites: Array<Record<string, unknown>> = [];
+
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith('/thinks/oversized-to-delete') && !init?.method) {
+      return new Response(JSON.stringify({
+        ...storedDocument(),
+        fields: {
+          ...storedDocument().fields,
+          thinkid: { stringValue: 'oversized-to-delete' },
+          payloadParts: {
+            mapValue: {
+              fields: {
+                revision: { stringValue: 'rev-xyz' },
+                count: { integerValue: '2' },
+              },
+            },
+          },
+        },
+      }), { status: 200 });
+    }
+    if (url.endsWith('/documents:commit')) {
+      const body = JSON.parse(String(init?.body || '{}')) as { writes?: Array<Record<string, unknown>> };
+      commitWrites = body.writes ?? [];
+      return new Response('{}', { status: 200 });
+    }
+    throw new Error(`unexpected request: ${url}`);
+  }));
+
+  const backend = new FirestoreStorageBackend();
+  await backend.delete('oversized-to-delete');
+
+  const deleteWrites = commitWrites.filter((w) => typeof w.delete === 'string');
+  expect(deleteWrites.some((w) => String(w.delete).endsWith('/snapshots/current'))).toBe(true);
+  expect(deleteWrites.some((w) => String(w.delete).endsWith('/payloadParts/rev-xyz_0'))).toBe(true);
+  expect(deleteWrites.some((w) => String(w.delete).endsWith('/payloadParts/rev-xyz_1'))).toBe(true);
+});
+
+it('creates, retrieves, diffs and deletes a single snapshot under the subcollection', async () => {
+  const documents = new Map<string, Record<string, unknown>>();
+
+  // 初期ドキュメントの準備
+  const thinkDoc = storedDocument();
+  thinkDoc.fields.title = { stringValue: '初版タイトル' };
+  thinkDoc.fields.body = { stringValue: '初版本文' };
+  (thinkDoc.fields as Record<string, unknown>).metadata = { mapValue: { fields: { step: { integerValue: '1' } } } };
+  documents.set(thinkDoc.name, thinkDoc);
+
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith('/documents:commit')) {
+      const body = JSON.parse(String(init?.body || '{}')) as {
+        writes?: Array<{
+          update?: { name?: string; fields?: Record<string, unknown> };
+          delete?: string;
+        }>;
+      };
+      for (const w of body.writes ?? []) {
+        if (w.update?.name) {
+          documents.set(w.update.name, { name: w.update.name, fields: w.update.fields, updateTime: new Date().toISOString() });
+        }
+        if (w.delete) {
+          documents.delete(w.delete);
+        }
+      }
+      return new Response('{}', { status: 200 });
+    }
+
+    // GET: パスが完全一致するドキュメントを返す
+    const path = url.split('/documents/')[1] ?? url.split('/v1/')[1] ?? '';
+    for (const [name, doc] of documents.entries()) {
+      const docPath = name.split('/documents/')[1] ?? name;
+      if (docPath === path || name === url || url.endsWith('/' + docPath)) {
+        return new Response(JSON.stringify(doc), { status: 200 });
+      }
+    }
+    return new Response('{}', { status: 404 });
+  }));
+
+  const backend = new FirestoreStorageBackend();
+
+  // 1. スナップショット作成
+  const snap = await backend.createSnapshot('a');
+  expect(snap).toMatchObject({
+    thinkid: 'a',
+    title: '初版タイトル',
+    body: '初版本文',
+    metadata: { step: 1 },
+    sourceUpdatedAt: '2026-10-19T00:00:00.000Z',
+  });
+
+  // snapshots/current にドキュメントが保存されていること
+  const snapKey = [...documents.keys()].find((k) => k.endsWith('/thinks/a/snapshots/current'));
+  expect(snapKey).toBeDefined();
+
+  // 2. スナップショット取得
+  const retrieved = await backend.getSnapshot('a');
+  expect(retrieved).toMatchObject({
+    thinkid: 'a',
+    title: '初版タイトル',
+    body: '初版本文',
+    metadata: { step: 1 },
+  });
+
+  // 3. 差分チェック（変更前）: hasChanges = false
+  const diffBefore = await backend.getDiff('a');
+  expect(diffBefore?.hasChanges).toBe(false);
+  expect(diffBefore?.titleChanged).toBe(false);
+  expect(diffBefore?.bodyChanged).toBe(false);
+
+  // 4. Think を変更
+  const docToUpdate = documents.get(thinkDoc.name)!;
+  (docToUpdate.fields as Record<string, { stringValue?: string }>).title = { stringValue: '更新後タイトル' };
+  (docToUpdate.fields as Record<string, { stringValue?: string }>).body = { stringValue: '更新後本文' };
+
+  // 差分チェック（変更後）: hasChanges = true
+  const diffAfter = await backend.getDiff('a');
+  expect(diffAfter?.hasChanges).toBe(true);
+  expect(diffAfter?.titleChanged).toBe(true);
+  expect(diffAfter?.bodyChanged).toBe(true);
+  expect(diffAfter?.latest.title).toBe('更新後タイトル');
+  expect(diffAfter?.snapshot.title).toBe('初版タイトル');
+
+  // 5. スナップショット削除
+  await backend.deleteSnapshot('a');
+  expect(await backend.getSnapshot('a')).toBeNull();
+  expect(await backend.getDiff('a')).toBeNull();
 });

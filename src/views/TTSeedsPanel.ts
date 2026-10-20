@@ -2,7 +2,7 @@
  * TTSeedsPanel.ts
  * SeedsPanelのビューモデル。
  *
- * 選択されたBundleの内容表示・分析モードと
+ * 選択されたBundleの内容表示モードと
  * SeedsAreaの開閉状態を管理する。
  */
 
@@ -16,7 +16,7 @@ import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type SeedsViewMode = 'filter' | 'graph' | 'chat' | 'settings';
+export type SeedsViewMode = 'filter' | 'chat' | 'abstract' | 'settings';
 
 export class TTSeedsPanel extends TTUIItem {
   /** SeedsAreaの開閉状態（true=開いている）*/
@@ -39,7 +39,7 @@ export class TTSeedsPanel extends TTUIItem {
     setPanelCheckedIds(this, 'SeedsPanel', val);
   }
 
-  /** 表示モード（filter/graph/chat/settings）*/
+  /** 表示モード（filter/chat/abstract/settings）*/
   public ViewMode: SeedsViewMode = 'filter';
 
   /** MediaTypeの後方互換ゲッター（ViewModeから導出）*/

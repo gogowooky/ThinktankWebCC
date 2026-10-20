@@ -65,27 +65,22 @@ describe('links 形式の往復', () => {
 describe('bundle 形式の往復', () => {
   it('ID リストの serialize → parse', () => {
     const ids = ['2026-01-02-030405', '2026-01-02-030406'];
-    const parsed = parseBundle(serializeBundle({ prefix: '', title: '束', ids }));
+    const serialized = serializeBundle({ title: '束', ids });
+    expect(serialized).toBe('束\n* 2026-01-02-030405\n* 2026-01-02-030406');
+    const parsed = parseBundle(serialized);
     expect(parsed.title).toBe('束');
     expect(parsed.ids).toEqual(ids);
   });
 
-  it('除外 ID（- 行）を excludeIds に取り込む', () => {
-    const parsed = parseBundle('束\n* 2026-01-02-030405\n- 2026-01-02-030406');
+  it('廃止したフィルター式・検索式・除外行をメンバー指定として扱わない', () => {
+    const parsed = parseBundle('束\n> Keyword：設計\n> 作成日：2026-01-01,@7d\n>> 検索語：本文\n- 2026-01-02-030406\n* 2026-01-02-030405');
     expect(parsed.ids).toEqual(['2026-01-02-030405']);
-    expect(parsed.excludeIds).toEqual(['2026-01-02-030406']);
-  });
-
-  it('フィルタ Keyword 行を filter.keyword に取り込む', () => {
-    const parsed = parseBundle('束\n> Keyword：設計');
-    expect(parsed.filter.keyword).toBe('設計');
   });
 
   // ── D-5（対応済み 2026-08-31）────────────────────────────────────────
   it('サフィックス付き ID（AI 生成の -memo / 衝突回避の -a3f9 等）を ID として認識する', () => {
     const parsed = parseBundle('束\n* 2026-07-01-232001-memo\n* 2026-07-01-232002-a3f9');
     expect(parsed.ids).toEqual(['2026-07-01-232001-memo', '2026-07-01-232002-a3f9']);
-    expect(parsed.filter.keyword).toBeUndefined();
   });
 
   it('角括弧付きの ID 行も許容する', () => {
@@ -96,6 +91,5 @@ describe('bundle 形式の往復', () => {
   it('ID形式でない `* 行` は無視し、フィルタ語にも流用しない', () => {
     const parsed = parseBundle('束\n* 設計メモ\n* thinktank\n* __tt_ui_state__\n* 2026-07-01-232001\n* 2015-03-09-133514-LAPTOP-5FOVA1SU');
     expect(parsed.ids).toEqual(['2026-07-01-232001', '2015-03-09-133514-LAPTOP-5FOVA1SU']);
-    expect(parsed.filter.keyword).toBeUndefined();
   });
 });

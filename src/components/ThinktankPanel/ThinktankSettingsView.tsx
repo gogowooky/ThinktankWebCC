@@ -1,6 +1,6 @@
 /**
  * ThinktankSettingsView.tsx
- * 保管庫名を設定するビュー。
+ * Thinktank>設定。アクション・概要のAI設定・データ接続・Vault を並べる。
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
@@ -20,7 +20,6 @@ type Props = Record<never, never>; // props なし
 const LS_KEY_VALUE   = 'tt-vault-name';
 const LS_KEY_HISTORY = 'tt-vault-name-history';
 const DATALIST_ID    = 'tt-vault-name-list';
-const MAX_HISTORY    = 10;
 
 function loadValue(): string {
   return localStorage.getItem(LS_KEY_VALUE) ?? 'vault_ver2';
@@ -34,26 +33,18 @@ function loadHistory(): string[] {
   }
 }
 
-function saveValue(name: string): string[] {
-  localStorage.setItem(LS_KEY_VALUE, name);
-  const prev = loadHistory().filter(h => h !== name);
-  const next = [name, ...prev].slice(0, MAX_HISTORY);
-  localStorage.setItem(LS_KEY_HISTORY, JSON.stringify(next));
-  return next;
-}
-
 export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>(function ThinktankSettingsView(
   _props,
   ref,
 ) {
-  const vaultInputRef = useRef<HTMLInputElement>(null);
+  // Vault 欄は最下段にあるので、そこへフォーカスすると開いた瞬間に末尾までスクロールしてしまう
+  const rootRef = useRef<HTMLDivElement>(null);
   useImperativeHandle(ref, () => ({
-    focus: () => vaultInputRef.current?.focus(),
+    focus: () => rootRef.current?.focus({ preventScroll: true }),
   }));
 
   const [value,          setValue]          = useState(loadValue);
-  const [history,        setHistory]        = useState(loadHistory);
-  const [saved,          setSaved]          = useState(false);
+  const [history]                           = useState(loadHistory);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
   const [isZoomOpen,     setIsZoomOpen]     = useState(true);
   usePanelSectionsSetAll('thinktank', [setIsVaultOpen, setIsZoomOpen]);
@@ -66,28 +57,14 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
     void TTActions.Execute(actionId);
   }, []);
 
-  const handleSave = useCallback(() => {
-    const trimmed = value.trim() || 'vault_ver2';
-    setValue(trimmed);
-    setHistory(saveValue(trimmed));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 1500);
-  }, [value]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') handleSave();
-  }, [handleSave]);
-
-  const vaultName = value.trim() || 'vault_ver2';
-
   return (
-    <div className="tt-settings-view">
+    <div ref={rootRef} className="tt-settings-view" tabIndex={-1}>
 
-      {/* ── 表示 ── */}
+      {/* ── アクション ── */}
       <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsZoomOpen(v => !v)}>
           {isZoomOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">表示</h2>
+          <h2 className="tt-settings-section__title">アクション</h2>
         </div>
         {isZoomOpen && (
           <div className="tt-settings-zoom">
@@ -134,11 +111,14 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
       </section>
 
 
-      {/* ── 保管庫名 ── */}
+      <DomainProfileSettingsPanel />
+      <CloudRelaySettingsPanel />
+
+      {/* ── Vault ── */}
       <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsVaultOpen(v => !v)}>
           {isVaultOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">データベース名</h2>
+          <h2 className="tt-settings-section__title">Vault</h2>
         </div>
         {isVaultOpen && (
           <>
@@ -151,48 +131,23 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
                 {history.map(h => <option key={h} value={h} />)}
               </datalist>
               <input
-                ref={vaultInputRef}
                 className="tt-settings-input"
                 type="text"
                 list={DATALIST_ID}
                 value={value}
                 placeholder="vault_ver2"
-                onChange={e => { setValue(e.target.value); setSaved(false); }}
-                onKeyDown={handleKeyDown}
+                onChange={e => setValue(e.target.value)}
                 spellCheck={false}
                 autoComplete="off"
               />
-              <button
-                className={`tt-settings-save-btn${saved ? ' tt-settings-save-btn--saved' : ''}`}
-                onClick={handleSave}
-                data-tip="保存"
-                data-tip-side="left"
-                aria-label="保存"
-              >
-                <Save size={13} />
-                <span>{saved ? '保存済み' : '保存'}</span>
+              {/* Vault の切替はまだ受け付けないので、保存は押せないまま置いておく */}
+              <button className="tt-settings-icon-btn" disabled aria-label="保存">
+                <Save size={16} />
               </button>
-            </div>
-
-            <div className="tt-settings-sub-section">
-              <h3 className="tt-settings-sub-section__title">正本とバックアップ</h3>
-              <dl className="tt-settings-paths">
-                <dt className="tt-settings-paths__label">正本</dt>
-                <dd className="tt-settings-paths__value">
-                  <code>Firestore / vaults/<strong>{vaultName}</strong>/thinks</code>
-                </dd>
-                <dt className="tt-settings-paths__label">PCバックアップ</dt>
-                <dd className="tt-settings-paths__value">
-                  <code>Thinktank/<strong>{vaultName}</strong>/&#123;thinkid&#125;.md</code>
-                </dd>
-              </dl>
             </div>
           </>
         )}
       </section>
-
-      <DomainProfileSettingsPanel />
-      <CloudRelaySettingsPanel />
     </div>
   );
 });

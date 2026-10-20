@@ -37,6 +37,7 @@ import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
 import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from './FilterSelectDialog';
 import type { FilterVisibility } from './FilterSelectDialog';
 import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
+import { AbstractView } from '../Abstract/AbstractView';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './ThinktankArea.css';
@@ -45,14 +46,15 @@ import type { LayoutMode } from '../Layout/AppLayout';
 
 const THINKTANK_MODE_NAMES: Record<string, string> = {
   filter:   'Think一覧',
-  chat:     '会話履歴',
+  abstract: '概要',
+  chat:     '対話',
   settings: '設定',
 };
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext', 'html'];
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'html', 'abstract'];
 // Edit（=simple）で開く種別。編集の対象になる本文だけを出す。Bundleは資料の束、
-// Chatは会話履歴で、どちらもここで書き換えるものではないので既定では出さない。
-const EDIT_CONTENT_TYPES: ContentType[] = ['memo', 'table', 'links', 'html', 'nettext'];
+// Chatは会話履歴、Abstractは作業状態で、どれもここで書き換えるものではないので既定では出さない。
+const EDIT_CONTENT_TYPES: ContentType[] = ['memo', 'table', 'links', 'html'];
 const defaultVisibleTypes = (mode: LayoutMode) => new Set<ContentType>(mode === 'simple' ? EDIT_CONTENT_TYPES : ['bundle']);
 
 interface Props {
@@ -226,7 +228,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const sortedBase = useMemo(() => applySort(typeFilteredBase, sort, bundleNames), [typeFilteredBase, sort, bundleNames]);
 
   // chat / settings 以外はすべて Think一覧（filter）として扱う（旧モードの残存値対策）
-  const isFilterMode = viewMode !== 'chat' && viewMode !== 'settings';
+  const isFilterMode = viewMode === 'filter';
 
   const visibleThinks = isFilterMode ? filterVisible : [];
   const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
@@ -310,17 +312,13 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleSelectAllTypes = useCallback(() => setVisibleTypes(new Set(ALL_CONTENT_TYPES)), []);
   const handleClearAllTypes  = useCallback(() => setVisibleTypes(new Set()), []);
 
-  const canCreateBundle = true;
+  const canCreateBundle = panel.CheckedThoughtIDs.length > 0 || visibleIds.length > 0;
 
   const handleCreateBundle = useCallback(async () => {
-    const dates = { createdDate, createdRange, updatedDate, updatedRange };
-    if (searchSearched && searchQuery.trim() !== '') {
-      await vault.CreateBundleFromSearch(searchQuery.trim(), panel.CheckedThoughtIDs, dates);
-    } else {
-      await vault.CreateBundleFromFilter(filterTitleQuery.trim(), panel.CheckedThoughtIDs, dates);
-    }
+    const ids = panel.CheckedThoughtIDs.length > 0 ? panel.CheckedThoughtIDs : visibleIds;
+    await vault.CreateBundleFromIds(ids);
     panel.ClearChecks();
-  }, [panel, vault, searchSearched, searchQuery, filterTitleQuery, createdDate, createdRange, updatedDate, updatedRange]);
+  }, [panel, vault, visibleIds]);
 
   // 新規Chatは保存成功後に選択する。既存Chatの下書きは共通UIが保持する。
   const handleSelectTodoMemo = (id: string) => {
@@ -332,7 +330,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     const lease = draftVaultLease(vault);
     const bundle = await startTaskFromChat(vault, chatId, title, seed, lease.isCurrent);
     if (!lease.isCurrent()) return;
-    app.OpenBundle(bundle.ID, 'graph');
+    app.OpenBundle(bundle.ID, 'datagrid');
   }, [app, vault]);
 
   // pendingSearchQueryRef がセットされていて searchQuery が一致したら検索実行
@@ -381,6 +379,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     );
   } else if (viewMode === 'settings') {
     content = <ThinktankSettingsView ref={settingsViewRef} />;
+  } else if (viewMode === 'abstract') {
+    content = <AbstractView />;
   } else {
     // filter モード（検索・Bundle一覧を統合）
     content = (

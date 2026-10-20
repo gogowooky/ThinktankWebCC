@@ -14,7 +14,11 @@ import {
   FirestoreStorageBackend,
   type MarkdownImportResult,
   type FirestoreThinkRecord,
+  type ThinkSnapshotRecord,
+  type ThinkDiffResult,
 } from '../../platform/web/FirestoreStorageBackend';
+
+export type { ThinkSnapshotRecord, ThinkDiffResult };
 
 export class StorageManager {
   private static _instance: StorageManager | null = null;
@@ -143,6 +147,36 @@ export class StorageManager {
       throw new Error('Firestore正本を使用する現行PC版で実行してください。');
     }
     return this.backend.importElectronMarkdownBackup();
+  }
+
+  // ── スナップショット機能 ──────────────────────────────────────────
+
+  public createSnapshot(thinkid: string): Promise<ThinkSnapshotRecord> {
+    if (this.backend instanceof FirestoreStorageBackend) {
+      return this.backend.createSnapshot(thinkid);
+    }
+    throw new Error('スナップショット機能は Firestore ストレージでのみ利用可能です。');
+  }
+
+  public getSnapshot(thinkid: string): Promise<ThinkSnapshotRecord | null> {
+    if (this.backend instanceof FirestoreStorageBackend) {
+      return this.backend.getSnapshot(thinkid);
+    }
+    return Promise.resolve(null);
+  }
+
+  public deleteSnapshot(thinkid: string): Promise<void> {
+    if (this.backend instanceof FirestoreStorageBackend) {
+      return this.backend.deleteSnapshot(thinkid);
+    }
+    return Promise.resolve();
+  }
+
+  public getDiff(thinkid: string): Promise<ThinkDiffResult | null> {
+    if (this.backend instanceof FirestoreStorageBackend) {
+      return this.backend.getDiff(thinkid);
+    }
+    return Promise.resolve(null);
   }
 }
 

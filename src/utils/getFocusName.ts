@@ -72,6 +72,7 @@ export function getFocusName(el: Element | null): string {
       const id = btn.id || btn.getAttribute('aria-label') || '';
       if (id.includes('ThinkList')) return 'Thinktank.Filter';
       if (id.includes('AI') || id.includes('Chat')) return 'Thinktank.Chat';
+      if (id.includes('Abstract')) return 'Thinktank.Abstract';
       if (id.includes('Setting')) return 'Thinktank.Settings';
     }
     const mode = app?.ThinktankPanel?.ViewMode ?? 'filter';
@@ -92,8 +93,8 @@ export function getFocusName(el: Element | null): string {
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
       if (id.includes('ThinkList')) return 'Seeds.Filter';
-      if (id.includes('Research') || id.includes('Graph')) return 'Seeds.Graph';
       if (id.includes('AI') || id.includes('Chat')) return 'Seeds.Chat';
+      if (id.includes('Abstract')) return 'Seeds.Abstract';
       if (id.includes('Setting')) return 'Seeds.Settings';
     }
     const mode = app?.SeedsPanel?.ViewMode ?? 'filter';
@@ -114,6 +115,7 @@ export function getFocusName(el: Element | null): string {
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
       if (id.includes('AI') || id.includes('Chat')) return 'Harvest.Chat';
+      if (id.includes('Abstract')) return 'Harvest.Abstract';
       if (id.includes('Setting')) return 'Harvest.Settings';
     }
     const mode = app?.HarvestPanel?.ViewMode ?? 'chat';

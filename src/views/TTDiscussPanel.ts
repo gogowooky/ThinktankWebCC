@@ -16,7 +16,7 @@ import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type DiscussViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat';
+export type DiscussViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat' | 'abstract';
 
 export type TableCellDisplay = 'Line' | 'FitToColumn';
 export type TableCellPosition = 'Left' | 'Center' | 'Right';

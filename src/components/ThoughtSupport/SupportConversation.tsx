@@ -71,7 +71,7 @@ export function SupportConversation({ vault, panelName, chatId, draftScope, pane
     if (!lifetime.isCurrent()) return;
     const app = TTApplication.Instance;
     if (app.Models.Vault !== vault) return;
-    app.OpenBundle(id, 'graph');
+    app.OpenBundle(id, 'datagrid');
   }
   async function chooseTask(id: string) {
     if (!lifetime.isCurrent()) return;

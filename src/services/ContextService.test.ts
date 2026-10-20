@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createHash, webcrypto } from 'node:crypto';
-const storage = vi.hoisted(() => ({ getBody: vi.fn(), search: vi.fn(), save: vi.fn(), delete: vi.fn() }));
+const storage = vi.hoisted(() => ({ getBody: vi.fn(), save: vi.fn(), delete: vi.fn() }));
 vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
 vi.mock('./ChatApiService', () => { throw new Error('Context must not import AI execution'); });
 import { TTVault } from '../models/TTVault';
@@ -15,8 +15,7 @@ function item(id: string, content: string, type = 'memo') {
   t.Content = content; t.UpdatedAt = '2026-09-13T00:00:00Z'; t.markSaved(); return t;
 }
 function vault(...items: TTThink[]) { const v = new TTVault('test'); items.forEach(t => v.AddItem(t)); v.IsLoaded = true; return v; }
-function reader(): ContextReader { return { getBody: vi.fn().mockResolvedValue(null), search: vi.fn().mockResolvedValue({ items: [], complete: true }) }; }
-function meta(t: TTThink) { return { thinkid: t.ID, title: t.Name, category: t.ContentType, keywords: '', relatedIds: '', sizeBytes: 0, isDeleted: false, createdAt: t.UpdatedAt, updatedAt: t.UpdatedAt }; }
+function reader(): ContextReader { return { getBody: vi.fn().mockResolvedValue(null) }; }
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>(r => { resolve = r; });
@@ -43,10 +42,10 @@ describe('read-only Bundle context', () => {
     expect(snapshot.state.decisions).toEqual([]);
     expect(Object.isFrozen(snapshot.manualState?.values)).toBe(true);
   });
-  it('preserves nested scope/exclusions, hashes exact text, and never follows out-of-scope metadata references', async () => {
+  it('preserves nested scope, hashes exact text, and never follows out-of-scope metadata references', async () => {
     const a = item(A, '採用資料\n本文'); a.Metadata.thoughtSupport = { goal: '調べる', references: [B] };
-    const root = item(ROOT, `課題\n* ${NESTED}\n- ${B}`, 'bundle');
-    const v = vault(root, item(NESTED, `子課題\n* ${A}\n* ${B}`, 'bundle'), a, item(B, '対象外'));
+    const root = item(ROOT, `課題\n* ${NESTED}`, 'bundle');
+    const v = vault(root, item(NESTED, `子課題\n* ${A}`, 'bundle'), a, item(B, '対象外'));
     const original = JSON.stringify(v.GetThinks().map(t => [t.Content, t.Metadata, t.IsDirty]));
     const result = await new ContextService(v, reader()).getBundleContext(ROOT);
     expect(result.quality).toBe('complete');
@@ -63,23 +62,18 @@ describe('read-only Bundle context', () => {
     expect(original).not.toBe(JSON.stringify(v.GetThinks().map(t => [t.Content, t.Metadata, t.IsDirty])));
   });
 
-  it('reports missing references, but not explicitly excluded references', async () => {
-    const root = item(ROOT, `課題\n* ${A}\n* ${MISSING}\n* ${B}\n- ${B}`, 'bundle');
+  it('reports missing references from the ID list', async () => {
+    const root = item(ROOT, `課題\n* ${A}\n* ${MISSING}`, 'bundle');
     const result = await new ContextService(vault(root, item(A, '資料')), reader()).getBundleContext(ROOT);
     expect(result.sources.map(s => s.thinkId)).toEqual([A]);
     expect(result.issues).toEqual([expect.objectContaining({ code: 'missing_think', thinkId: MISSING })]);
     expect(result.resolvedThinkIds).toContain(MISSING);
   });
 
-  it.each(['課題', `課題\n- ${A}`])('blocks implicit all-Vault expansion for %s', async content => {
+  it.each(['課題', `課題\n> Keyword：資料`, `課題\n>> 検索語：資料`, `課題\n- ${A}`])('keeps retired non-ID Bundle content empty for %s', async content => {
     const result = await new ContextService(vault(item(ROOT, content, 'bundle'), item(A, '秘密')), reader()).getBundleContext(ROOT);
     expect(result.sources).toEqual([]);
-    expect(result.issues).toContainEqual(expect.objectContaining({ code: 'implicit_all_blocked' }));
-  });
-
-  it('preserves the existing UI default for empty Bundles', async () => {
-    const v = vault(item(ROOT, '課題', 'bundle'), item(A, '資料'));
-    expect((await v.GetThinksForBundleAsync(ROOT)).map(t => t.ID)).toEqual([A]);
+    expect(result.issues).toEqual([]);
   });
 
   it('detects cycles without broadening scope', async () => {
@@ -93,45 +87,6 @@ describe('read-only Bundle context', () => {
     const v = vault(item(ROOT, `課題\n* ${NESTED}\n* ${NESTED}`, 'bundle'), item(NESTED, `子\n* ${A}`, 'bundle'), item(A, '資料'));
     const result = await new ContextService(v, reader()).getBundleContext(ROOT);
     expect(result.quality).toBe('complete'); expect(result.sources).toHaveLength(1);
-  });
-
-  it('applies keyword/date conditions and re-evaluates a dynamic Bundle', async () => {
-    const a = item(A, '一致する資料'), b = item(B, '別資料');
-    const v = vault(item(ROOT, '課題\n> Keyword：一致\n> 更新日：2026-09-13,', 'bundle'), a, b);
-    const service = new ContextService(v, reader());
-    expect((await service.getBundleContext(ROOT)).sources.map(s => s.thinkId)).toEqual([A]);
-    a.Content = '対象外資料'; b.Name = '一致する追加資料';
-    expect((await service.getBundleContext(ROOT)).sources.map(s => s.thinkId)).toEqual([B]);
-  });
-
-  it('rejects ambiguous nested condition overrides for context only', async () => {
-    const v = vault(item(ROOT, `課題\n* ${NESTED}\n> Keyword：親`, 'bundle'), item(NESTED, '子課題\n> Keyword：子', 'bundle'), item(A, '親資料'));
-    const result = await new ContextService(v, reader()).getBundleContext(ROOT);
-    expect(result.sources).toEqual([]);
-    expect(result.issues).toContainEqual(expect.objectContaining({ code: 'conflicting_conditions' }));
-  });
-
-  it('uses search membership, dates and exclusions, and reports unknown completeness', async () => {
-    const a = item(A, '本文一致'), b = item(B, '除外'), missing = item(MISSING, '索引にだけある資料');
-    const r = reader(); vi.mocked(r.search).mockResolvedValue({ items: [meta(a), meta(b), meta(missing)], complete: false });
-    const v = vault(item(ROOT, `課題\n>> 検索語：検索\n>> 更新日：2026-09-13,\n- ${B}`, 'bundle'), a, b);
-    const result = await new ContextService(v, r).getBundleContext(ROOT);
-    expect(r.search).toHaveBeenCalledWith('検索');
-    expect(result.sources.map(s => s.thinkId)).toEqual([A]);
-    expect(result.issues.map(i => i.code)).toEqual(expect.arrayContaining(['search_incomplete', 'missing_think']));
-  });
-
-  it('does not include deleted search hits', async () => {
-    const a = item(A, '資料'); const r = reader();
-    vi.mocked(r.search).mockResolvedValue({ items: [{ ...meta(a), isDeleted: true }], complete: true });
-    const result = await new ContextService(vault(item(ROOT, '課題\n>> 検索語：検索', 'bundle'), a), r).getBundleContext(ROOT);
-    expect(result.sources).toEqual([]);
-  });
-
-  it('does not use partial or cached membership after search failure', async () => {
-    const r = reader(); vi.mocked(r.search).mockRejectedValue(new Error('offline'));
-    const result = await new ContextService(vault(item(ROOT, `課題\n* ${A}\n>> 検索語：検索`, 'bundle'), item(A, '資料')), r).getBundleContext(ROOT);
-    expect(result.sources).toEqual([]); expect(result.quality).toBe('partial');
   });
 
   it('loads bodies on copies, keeps empty bodies, and reports null/failed reads', async () => {
@@ -216,6 +171,6 @@ describe('read-only Bundle context', () => {
   it('does not start I/O for an already cancelled request', async () => {
     const r = reader(); const controller = new AbortController(); controller.abort();
     await expect(new ContextService(vault(item(ROOT, '課題', 'bundle')), r).getBundleContext(ROOT, { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
-    expect(r.getBody).not.toHaveBeenCalled(); expect(r.search).not.toHaveBeenCalled();
+    expect(r.getBody).not.toHaveBeenCalled();
   });
 });

@@ -17,14 +17,14 @@ export interface ElectronVaultConfig {
   indexDir: string;
   promptsDir: string;
   deviceId: string;
-  preferredCli: 'claude' | 'codex' | 'gemini';
+  preferredCli: 'claude' | 'codex' | 'antigravity';
   preferredModel: string;
   activeProfileId: string;
 }
 
 export interface ElectronAiStatus {
   availableClis: Record<string, { available: boolean; path: string | null }>;
-  preferredCli: 'claude' | 'codex' | 'gemini';
+  preferredCli: 'claude' | 'codex' | 'antigravity';
   preferredModel: string;
   activeProfileId: string;
 }

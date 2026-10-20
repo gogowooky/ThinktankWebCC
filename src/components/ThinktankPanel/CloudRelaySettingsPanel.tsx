@@ -6,13 +6,14 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Save, Unplug, PlugZap } from 'lucide-react';
 import { GoogleAuthService } from '../../platform/web/GoogleAuthService';
 import { FirestoreRelayClient } from '../../platform/web/FirestoreRelayClient';
 import { FirebaseAuthService } from '../../platform/web/FirebaseAuthService';
 import type { ElectronRelayStatus } from '../../services/storage/ElectronStorageBackend';
 import { TTModels } from '../../models/TTModels';
 import { StorageManager } from '../../services/storage/StorageManager';
+import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 
 function loadWebPcLinkEnabled(): boolean {
   return FirestoreRelayClient.getConfig().enabled;
@@ -36,6 +37,26 @@ const inputStyle: React.CSSProperties = {
   backgroundColor: CARD_BG,
   color: TEXT_MAIN,
   boxSizing: 'border-box',
+};
+
+const inlineRowStyle: React.CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+};
+
+const inlineLabelStyle: React.CSSProperties = {
+  fontSize: 'calc(11px * var(--tt-font-scale, 1))',
+  color: TEXT_MUTED,
+  whiteSpace: 'nowrap',
+  flexShrink: 0,
+};
+
+const inlineInputStyle: React.CSSProperties = {
+  ...inputStyle,
+  marginTop: 0,
+  flex: 1,
+  minWidth: 0,
 };
 
 const primaryBtnStyle: React.CSSProperties = {
@@ -65,6 +86,7 @@ const secondaryBtnStyle: React.CSSProperties = {
 export const CloudRelaySettingsPanel: React.FC = () => {
   const isElectron = typeof window !== 'undefined' && Boolean(window.electronAPI);
   const [isOpen, setIsOpen] = useState(true);
+  usePanelSectionsSetAll('thinktank', [setIsOpen]);
   const [webPcLinkEnabled, setWebPcLinkEnabled] = useState(loadWebPcLinkEnabled);
 
   // Google Drive Auth 設定
@@ -300,6 +322,9 @@ export const CloudRelaySettingsPanel: React.FC = () => {
   };
 
   const pcLinkEnabled = isElectron ? Boolean(pcRelayStatus?.enabled) : webPcLinkEnabled;
+  // PC版はメインプロセスのログインを正とする（refreshConnectionStatus 参照）
+  const signedIn = isElectron ? Boolean(pcRelayStatus?.firebaseSignedIn) : Boolean(firebaseUser);
+  const signedInEmail = isElectron ? pcRelayStatus?.firebaseEmail : firebaseUser?.email;
 
   return (
     <section className="tt-settings-section" style={{ color: TEXT_MAIN }}>
@@ -332,38 +357,34 @@ export const CloudRelaySettingsPanel: React.FC = () => {
 
           <div style={{ padding: '10px', borderRadius: '6px', border: `1px solid ${BORDER_COLOR}`, backgroundColor: CARD_BG, display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ fontWeight: 700, fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MAIN }}>
-              1. Think正本 — Firebase
+              1. Firebase設定
             </div>
-            <p style={{ margin: 0, color: TEXT_MUTED, fontSize: 'calc(11px * var(--tt-font-scale, 1))', lineHeight: 1.5 }}>
-              Think本文とメタデータはFirestoreを正本として、PC版とWeb版で同じ内容を利用します。PC連携モードをOFFにしても、このログインは維持されます。
-            </p>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-              <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED, flex: '1 1 200px' }}>
-                Firebase Project ID
-                <input type="text" value={firebaseProjectId} onChange={(e) => setFirebaseProjectId(e.target.value)} placeholder="your-firebase-project-id" style={inputStyle} />
-              </label>
-              <button type="button" disabled={busy} onClick={() => void handleSaveFirebaseConfig()} style={secondaryBtnStyle}>
-                接続設定を保存
+            <div style={inlineRowStyle}>
+              <label htmlFor="tt-firebase-project-id" style={inlineLabelStyle}>Project ID:</label>
+              <input id="tt-firebase-project-id" type="text" value={firebaseProjectId} onChange={(e) => setFirebaseProjectId(e.target.value)} placeholder="your-firebase-project-id" style={inlineInputStyle} />
+              <button type="button" className="tt-settings-icon-btn" disabled={busy} onClick={() => void handleSaveFirebaseConfig()} data-tip="接続設定を保存" aria-label="接続設定を保存">
+                <Save size={16} />
               </button>
             </div>
-            <div style={{ padding: '8px', borderRadius: '4px', backgroundColor: SUB_CARD_BG, border: `1px solid ${BORDER_COLOR}`, fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MAIN, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-              {isElectron ? (
-                <span>
-                  Firebaseログイン: {pcRelayStatus?.firebaseSignedIn
-                    ? <><strong>{pcRelayStatus.firebaseEmail || '(メール不明)'}</strong>（PC版）</>
+            <div style={{ padding: '8px', borderRadius: '4px', backgroundColor: SUB_CARD_BG, border: `1px solid ${BORDER_COLOR}`, fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MAIN, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+              <div style={{ minWidth: 0, flex: 1, overflowWrap: 'anywhere', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div>
+                  Firebaseログイン: {signedIn
+                    ? <><strong>{signedInEmail || '(メール不明)'}</strong>{isElectron && '（PC版）'}</>
                     : '未ログイン'}
-                </span>
-              ) : (
-                <span>
-                  Firebaseログイン: {firebaseUser
-                    ? <><strong>{firebaseUser.email || '(メール不明)'}</strong> (UID: <code>{firebaseUser.uid}</code>)</>
-                    : '未ログイン'}
-                </span>
-              )}
-              {(isElectron ? pcRelayStatus?.firebaseSignedIn : Boolean(firebaseUser)) ? (
+                </div>
+                {signedIn && firebaseUser?.uid && (
+                  <div>UID: <code>{firebaseUser.uid}</code></div>
+                )}
+              </div>
+              {signedIn ? (
                 <button
                   type="button"
+                  className="tt-settings-icon-btn"
                   disabled={busy}
+                  data-tip="ログアウト"
+                  data-tip-side="left"
+                  aria-label="ログアウト"
                   onClick={() => void (async () => {
                     await FirebaseAuthService.signOut();
                     setFirebaseUser(null);
@@ -375,37 +396,39 @@ export const CloudRelaySettingsPanel: React.FC = () => {
                     }
                     setStatusMessage('Firebaseからログアウトしました。PC連携も停止します。');
                   })()}
-                  style={secondaryBtnStyle}
                 >
-                  ログアウト
+                  <Unplug size={16} />
                 </button>
               ) : (
-                <button type="button" disabled={busy} onClick={() => void handleOAuthLogin()} style={primaryBtnStyle}>
-                  {isElectron ? 'ブラウザでGoogleにログイン' : 'Googleでログイン'}
+                <button
+                  type="button"
+                  className="tt-settings-icon-btn"
+                  disabled={busy}
+                  onClick={() => void handleOAuthLogin()}
+                  data-tip={isElectron ? 'ブラウザでGoogleにログイン' : 'Googleでログイン'}
+                  data-tip-side="left"
+                  aria-label={isElectron ? 'ブラウザでGoogleにログイン' : 'Googleでログイン'}
+                >
+                  <PlugZap size={16} />
                 </button>
               )}
             </div>
           </div>
 
           <div style={{ padding: '10px', borderRadius: '6px', border: `1px solid ${BORDER_COLOR}`, backgroundColor: CARD_BG, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-              <span>
-                <strong style={{ display: 'block', fontSize: 'calc(11px * var(--tt-font-scale, 1))' }}>2. PC連携モード</strong>
-                <span style={{ color: TEXT_MUTED, fontSize: 'calc(10.5px * var(--tt-font-scale, 1))' }}>
-                  {isElectron ? 'このPCをAI CLIの提供側（server）にします。' : 'このWeb版を自宅PCへの接続側（client）にします。'}
-                </span>
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, fontSize: 'calc(11px * var(--tt-font-scale, 1))' }}>
-                <input
-                  type="checkbox"
-                  role="switch"
-                  aria-label="PC連携モード"
-                  checked={pcLinkEnabled}
-                  disabled={busy || (isElectron && !pcRelayStatus)}
-                  onChange={(e) => void (isElectron ? handleTogglePcRelay(e.target.checked) : handleToggleWebPcLink(e.target.checked))}
-                />
-                {pcLinkEnabled ? 'ON' : 'OFF'}
-              </span>
+            <div style={{ fontWeight: 700, fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MAIN }}>
+              2. PC連携
+            </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MAIN }}>
+              {isElectron ? 'ホストとして連携する' : 'クライアントとして連携する'}
+              <input
+                type="checkbox"
+                role="switch"
+                aria-label="PC連携"
+                checked={pcLinkEnabled}
+                disabled={busy || (isElectron && !pcRelayStatus)}
+                onChange={(e) => void (isElectron ? handleTogglePcRelay(e.target.checked) : handleToggleWebPcLink(e.target.checked))}
+              />
             </label>
 
             {!pcLinkEnabled && (
@@ -432,21 +455,18 @@ export const CloudRelaySettingsPanel: React.FC = () => {
 
             {!isElectron && pcLinkEnabled && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ color: TEXT_MUTED, fontSize: 'calc(10.5px * var(--tt-font-scale, 1))' }}>
-                  役割: <strong style={{ color: TEXT_MAIN }}>AI CLI接続側（client）</strong>。提供側PCに表示された値を入力します。
+                <div style={inlineRowStyle}>
+                  <label htmlFor="tt-relay-device-id" style={inlineLabelStyle}>ホストPCのDevice ID:</label>
+                  <input id="tt-relay-device-id" type="text" value={targetDeviceId} onChange={(e) => setTargetDeviceId(e.target.value)} placeholder="pc-xxxx" style={inlineInputStyle} />
                 </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED, flex: '1 1 160px' }}>
-                    接続先PCのDevice ID
-                    <input type="text" value={targetDeviceId} onChange={(e) => setTargetDeviceId(e.target.value)} placeholder="pc-xxxx" style={inputStyle} />
-                  </label>
-                  <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED, flex: '1 1 180px' }}>
-                    E2EE共通パスフレーズ（Pairing Secret）
-                    <input type="password" value={pairingSecret} onChange={(e) => setPairingSecret(e.target.value)} placeholder="PBKDF2 + AES-256-GCM 共通鍵" style={inputStyle} />
-                  </label>
+                <div style={inlineRowStyle}>
+                  <label htmlFor="tt-relay-pairing-secret" style={inlineLabelStyle}>Pairing Secret:</label>
+                  <input id="tt-relay-pairing-secret" type="password" value={pairingSecret} onChange={(e) => setPairingSecret(e.target.value)} placeholder="PBKDF2 + AES-256-GCM 共通鍵" style={inlineInputStyle} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="button" disabled={busy} onClick={handleSaveRelayConfig} style={primaryBtnStyle}>PC連携設定を保存</button>
+                  <button type="button" className="tt-settings-icon-btn" disabled={busy} onClick={handleSaveRelayConfig} data-tip="PC連携設定を保存" data-tip-side="left" aria-label="PC連携設定を保存">
+                    <Save size={16} />
+                  </button>
                 </div>
               </div>
             )}
@@ -454,11 +474,8 @@ export const CloudRelaySettingsPanel: React.FC = () => {
 
           <div style={{ padding: '10px', borderRadius: '6px', border: `1px solid ${BORDER_COLOR}`, backgroundColor: CARD_BG, display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ fontWeight: 700, fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MAIN }}>
-              3. 外部資料とMarkdownバックアップ
+              3. Google Drive API設定（任意）
             </div>
-            <p style={{ margin: 0, color: TEXT_MUTED, fontSize: 'calc(11px * var(--tt-font-scale, 1))', lineHeight: 1.5 }}>
-              PDF・画像・Office文書などの外部資料はGoogle Driveに置き、Thinkにはリンクを保存します。Markdownは正本ではなく、閲覧・持ち出し・復旧用のバックアップです。
-            </p>
             {isElectron ? (
               <div style={{ padding: '7px 8px', borderRadius: '4px', backgroundColor: SUB_CARD_BG, color: TEXT_MUTED, fontSize: 'calc(10.5px * var(--tt-font-scale, 1))', display: 'flex', flexDirection: 'column', gap: '7px' }}>
                 <span>PC版のMarkdownバックアップ先は「ローカルAI CLI・Markdownバックアップ」で設定します。Google Driveのリンクは通常のブラウザで開けます。</span>
@@ -469,39 +486,34 @@ export const CloudRelaySettingsPanel: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <details style={{ padding: '8px', borderRadius: '4px', backgroundColor: SUB_CARD_BG, border: `1px solid ${BORDER_COLOR}` }}>
-                <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 'calc(11px * var(--tt-font-scale, 1))' }}>
-                  外部資料用Google Drive API設定（任意）
-                </summary>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                  <div style={{ color: TEXT_MUTED, fontSize: 'calc(10.5px * var(--tt-font-scale, 1))', lineHeight: 1.45 }}>
-                    審査範囲を抑えるため <code>drive.file</code> のみ使用します。既存の全Driveを検索せず、このアプリが作成した専用フォルダだけを扱います。
-                  </div>
-                  <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED }}>
-                    Google OAuth Client ID
-                    <input type="text" value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="xxxx.apps.googleusercontent.com" style={inputStyle} />
-                  </label>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="button" disabled={busy} onClick={() => void handleDriveOAuthLogin()} style={secondaryBtnStyle}>
-                      Google Driveへのアクセスを承認
-                    </button>
-                  </div>
-                  <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED }}>
-                    Access Token
-                    <input type="password" value={googleAccessToken} onChange={(e) => setGoogleAccessToken(e.target.value)} placeholder="ya29.a0..." style={inputStyle} />
-                  </label>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-                    <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED, flex: '1 1 200px' }}>
-                      外部資料のDriveルートフォルダID
-                      <input type="text" value={driveRootFolderId} onChange={(e) => setDriveRootFolderId(e.target.value)} placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz" style={inputStyle} />
-                    </label>
-                    <button type="button" disabled={busy} onClick={() => void handleAutoDetectFolder()} style={secondaryBtnStyle}>専用フォルダを準備</button>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button type="button" disabled={busy} onClick={handleSaveDriveSettings} style={primaryBtnStyle}>Drive設定を保存</button>
-                  </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ color: TEXT_MUTED, fontSize: 'calc(10.5px * var(--tt-font-scale, 1))', lineHeight: 1.45 }}>
+                  審査範囲を抑えるため <code>drive.file</code> のみ使用します。既存の全Driveを検索せず、このアプリが作成した専用フォルダだけを扱います。
                 </div>
-              </details>
+                <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED }}>
+                  Google OAuth Client ID
+                  <input type="text" value={googleClientId} onChange={(e) => setGoogleClientId(e.target.value)} placeholder="xxxx.apps.googleusercontent.com" style={inputStyle} />
+                </label>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" disabled={busy} onClick={() => void handleDriveOAuthLogin()} style={secondaryBtnStyle}>
+                    Google Driveへのアクセスを承認
+                  </button>
+                </div>
+                <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED }}>
+                  Access Token
+                  <input type="password" value={googleAccessToken} onChange={(e) => setGoogleAccessToken(e.target.value)} placeholder="ya29.a0..." style={inputStyle} />
+                </label>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: 'calc(11px * var(--tt-font-scale, 1))', color: TEXT_MUTED, flex: '1 1 200px' }}>
+                    外部資料のDriveルートフォルダID
+                    <input type="text" value={driveRootFolderId} onChange={(e) => setDriveRootFolderId(e.target.value)} placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz" style={inputStyle} />
+                  </label>
+                  <button type="button" disabled={busy} onClick={() => void handleAutoDetectFolder()} style={secondaryBtnStyle}>専用フォルダを準備</button>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" disabled={busy} onClick={handleSaveDriveSettings} style={primaryBtnStyle}>Drive設定を保存</button>
+                </div>
+              </div>
             )}
           </div>
         </div>

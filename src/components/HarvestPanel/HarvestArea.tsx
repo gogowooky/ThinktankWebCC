@@ -19,11 +19,13 @@ import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../Thinktank
 import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
 import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
+import { AbstractView } from '../Abstract/AbstractView';
 import '../../components/Layout/MenuRibbon.css';
 import './HarvestArea.css';
 
 const HARVEST_MODE_NAMES: Record<HarvestViewMode, string> = {
-  chat:     '会話履歴',
+  abstract: '概要',
+  chat:     '対話',
   settings: '設定',
 };
 
@@ -129,6 +131,8 @@ export function HarvestArea({ app, viewMode }: Props) {
               style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
             Harvest設定は今後追加予定です。
           </div>
+        ) : viewMode === 'abstract' ? (
+          <AbstractView />
         ) : (
           <>
             {supportListError && <p role="alert">{supportListError}</p>}

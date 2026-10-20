@@ -56,7 +56,7 @@ export interface RelayAiConversationPayload {
   panelRole?: 'seeds' | 'discuss' | 'harvest';
   agentId?: string;
   profileId?: string;
-  preferredCli?: 'claude' | 'codex' | 'gemini';
+  preferredCli?: 'claude' | 'codex' | 'antigravity';
 }
 
 export interface RelayEnvelopePlaintext<T = unknown> {

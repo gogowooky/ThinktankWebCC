@@ -19,6 +19,7 @@ import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 export type ThinktankViewMode =
   | 'filter'    // Think一覧（タイトル/日時/種別フィルター・全文/AI検索を統合）
   | 'chat'      // AI相談
+  | 'abstract'  // 概要
   | 'settings'; // 保管庫設定
 
 export class TTThinktankPanel extends TTUIItem {

@@ -14,7 +14,7 @@ it('opens the dedicated task and Discuss area, preserving the Chat selection for
   const listener = vi.fn(); window.addEventListener('thinktank-support-open', listener);
   try {
     openSupportChat('chat');
-    expect(mocks.app.SeedsPanel.OpenBundle).toHaveBeenCalledWith('child', 'graph');
+    expect(mocks.app.SeedsPanel.OpenBundle).toHaveBeenCalledWith('child', 'datagrid');
     expect(mocks.app.DiscussPanel.SetViewMode).toHaveBeenCalledWith('chat');
     expect(mocks.app.DiscussPanel.OpenArea).toHaveBeenCalled();
     expect(localStorage.getItem('thinktank.support.selection:vault:Discuss')).toBe('chat');

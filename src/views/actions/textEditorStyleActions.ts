@@ -20,8 +20,8 @@ interface StylePrefixConfig {
   shortLabel: string;
   /** アクションDescriptionに使う名称（例: "箇条書き文字" / "コメント記号"） */
   descLabel: string;
-  /** true: 行頭インデントを保持したまま記号だけ切り替える（Bullet用） */
-  respectIndent: boolean;
+  /** true: 直前行の本文開始位置に記号を揃える（Bullet用） */
+  alignToPreviousLine: boolean;
   /** 切り替え対象の行頭記号を登録順に返す */
   getMarks: (app: TTApplication) => string[];
 }
@@ -55,8 +55,15 @@ function registerStylePrefixActions(app: TTApplication, cfg: StylePrefixConfig):
 
       for (let line = startLine; line <= endLine; line++) {
         const lineContent = model.getLineContent(line);
-        const indent = cfg.respectIndent ? (lineContent.match(/^([ \t]*)/)?.[1] ?? '') : '';
-        const content = cfg.respectIndent ? lineContent.slice(indent.length) : lineContent;
+        const currentIndent = cfg.alignToPreviousLine ? (lineContent.match(/^\s*/)?.[0] ?? '') : '';
+        const content = cfg.alignToPreviousLine ? lineContent.slice(currentIndent.length) : lineContent;
+        let indent = currentIndent;
+        if (cfg.alignToPreviousLine && line > 1) {
+          const previousLine = model.getLineContent(line - 1);
+          const firstContentIndex = previousLine.search(/\S/);
+          // 空白行には揃える位置がないため、その場合だけ対象行の位置を維持する。
+          if (firstContentIndex >= 0) indent = previousLine.slice(0, firstContentIndex);
+        }
 
         // スタイル一覧のいずれかで始まっているか確認
         let matchedStyle: string | null = null;
@@ -124,7 +131,7 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
     actionPrefix: 'Bullet',
     shortLabel: 'バレット',
     descLabel: '箇条書き文字',
-    respectIndent: true,
+    alignToPreviousLine: true,
     getMarks: (a) => parseMarks(a.DiscussPanel.TextEditor.Bullet.Marks),
   });
 }
@@ -134,7 +141,7 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
     actionPrefix: 'Comment',
     shortLabel: 'コメント',
     descLabel: 'コメント記号',
-    respectIndent: false,
+    alignToPreviousLine: false,
     getMarks: (a) => parseMarks(a.DiscussPanel.TextEditor.Comment.Marks),
   });
 }

@@ -4,7 +4,7 @@
  *
  * marked は「Markdown → HTML 変換器」であってサニタイザではない（sanitize オプションは
  * v5 で廃止済み）。生の <script> や onerror 属性はそのまま通過する。
- * ContentType='nettext' は Web から取り込んだ外部由来テキストであり、Electron では
+ * Thinkの本文には Web 等から貼り込んだ外部由来テキストが混ざりうり、Electron では
  * preload の electronAPI（Vault の全読み書き・ローカルファイル起動）に到達できてしまうため、
  * 描画前に必ずここを通す。
  *

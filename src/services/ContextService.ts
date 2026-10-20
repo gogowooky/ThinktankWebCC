@@ -1,7 +1,6 @@
 import { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
 import { StorageManager } from './storage/StorageManager';
-import type { ThinkMeta } from './storage/IStorageBackend';
 import type { ContextIssue, ContextIssueCode, ContextSnapshot, ContextSource } from './contextTypes';
 import { appendLegacyContext, emptyContextState } from './legacyContextAdapter';
 import { readThinkSupport } from '../../shared/contracts/thinkSupportRecord';
@@ -9,8 +8,6 @@ import { captureSubtaskContext, captureProgressContext } from './subtaskContext'
 
 export interface ContextReader {
   getBody(id: string): Promise<string | null>;
-  /** complete must be explicitly guaranteed by the backend, including pagination. */
-  search(query: string): Promise<{ items: ThinkMeta[]; complete: boolean }>;
 }
 
 export class ContextReadError extends Error {
@@ -21,8 +18,6 @@ export class ContextReadError extends Error {
 
 const defaultReader: ContextReader = {
   getBody: id => StorageManager.instance.getBody(id),
-  // Current storage contract supplies no completeness information; the backend caps search at 200.
-  search: async query => ({ items: await StorageManager.instance.search(query), complete: false }),
 };
 
 function signature(vault: TTVault): string {
@@ -51,9 +46,6 @@ async function hash(content: string): Promise<string> {
 const messages: Record<ContextIssueCode, string> = {
   cycle: 'Bundleの循環参照があります。',
   missing_think: '対象Thinkが読込済みのVault一覧にありません。',
-  implicit_all_blocked: '対象指定がないため、全Vaultへの暗黙の拡張を停止しました。',
-  conflicting_conditions: '複数Bundleの検索条件が競合するため、資料範囲を確定できません。',
-  search_incomplete: '検索結果の完全性を確認できません。件数上限などで資料が欠けている可能性があります。',
   load_failed: '資料の本文を読み込めませんでした。',
   remote_version_unverified: '本文取得APIは版を返さないため、保存側の本文とメタデータの版の一致は未検証です。',
   decision_conflict: '異なる決定記録があります。出典ごとに並記し、採用判断は行っていません。',
@@ -121,24 +113,15 @@ export class ContextService {
     let members: TTThink[] = [];
     try {
       members = await copy.GetThinksForBundleAsync(bundleId, true, {
-        allowImplicitAll: false,
         onBundle: bundle => definitions.set(bundle.ID, bundle),
         onIssue: entry => issue(entry.code, entry.thinkId),
-        search: async query => {
-          assertNotAborted(signal);
-          const result = await this.reader.search(query);
-          assertNotAborted(signal);
-          if (!result.complete) issue('search_incomplete', bundleId);
-          // Deleted entries must never be added to context membership.
-          return result.items.filter(meta => !meta.isDeleted);
-        },
       });
     } catch {
       assertNotAborted(signal);
       issue('load_failed', bundleId);
       // Resolution failed: don't use partial membership or a stale cache.
     }
-    if (issues.some(i => i.code === 'cycle' || i.code === 'conflicting_conditions')) members = [];
+    if (issues.some(i => i.code === 'cycle')) members = [];
     if (options.maxSources !== undefined && members.length > options.maxSources) {
       throw new ContextReadError('context_too_large', `参照資料が${members.length}件あります。${options.maxSources}件以内のBundleに絞ってください。Thinktankでは資料を使わずに相談することもできます。`);
     }

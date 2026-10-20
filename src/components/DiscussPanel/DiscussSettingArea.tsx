@@ -6,6 +6,7 @@ import { PaneSettings } from './settings/PaneSettings';
 import { TextEditorSettings } from './settings/TextEditorSettings';
 import { HtmlSettings } from './settings/HtmlSettings';
 import { DataGridSettings } from './settings/DataGridSettings';
+import { AbstractView } from '../Abstract/AbstractView';
 import './DiscussSettingArea.css';
 
 export interface DiscussSettingAreaRef { focus: () => void; }
@@ -45,6 +46,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
             : activeSettings === 'texteditor' ? <TextEditorSettings {...context} />
               : activeSettings === 'html' ? <HtmlSettings {...context} />
                 : activeSettings === 'datagrid' ? <DataGridSettings {...context} />
+                  : activeSettings === 'abstract' ? <AbstractView />
                   : <div className="discuss-setting-area__placeholder">
                     {panelName} の設定は今後追加予定です。
                   </div>}

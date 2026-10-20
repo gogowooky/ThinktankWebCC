@@ -1,13 +1,14 @@
 /**
  * src/components/ThinktankPanel/DomainProfileSettingsPanel.tsx
  * 1. ドメインプロファイル（.thinktank/prompts/）切替・プロンプト/コンテキスト編集UI
- * 2. PC版 ローカル AI CLI（claude / codex / gemini 設定隔離実行）および Vault フォルダ設定UI
+ * 2. PC版 ローカル AI CLI（claude / codex / antigravity 設定隔離実行）および Vault フォルダ設定UI
  * Thinktank パネルの明るい地色と基礎色（--thinktank-base）に合わせた高視認性スタイルで描画する。
  */
 
 import React, { useEffect, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useDomainProfile } from '../../platform/DomainProfileManager';
+import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 import type { PanelId } from '../../../shared/domainProfile';
 import type {
   ElectronVaultConfig,
@@ -68,6 +69,7 @@ export function DomainProfileSettingsPanel() {
   } = useDomainProfile();
 
   const [isOpen, setIsOpen] = useState(true);
+  usePanelSectionsSetAll('thinktank', [setIsOpen]);
   const [editingPanel, setEditingPanel] = useState<PanelId>('Discuss');
   const [commonPolicyDraft, setCommonPolicyDraft] = useState(profile.commonPolicyPrompt);
   const [panelRoleDraft, setPanelRoleDraft] = useState(
@@ -123,7 +125,7 @@ export function DomainProfileSettingsPanel() {
     }
   }
 
-  async function handlePreferredCliChange(cli: 'claude' | 'codex' | 'gemini') {
+  async function handlePreferredCliChange(cli: 'claude' | 'codex' | 'antigravity') {
     if (!window.electronAPI?.vault) return;
     const updated = await window.electronAPI.vault.setConfig({ preferredCli: cli });
     setVaultConfig(updated);
@@ -144,7 +146,7 @@ export function DomainProfileSettingsPanel() {
       >
         {isOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         <h2 className="tt-settings-section__title">
-          運用プロファイル（コンテキスト切替） ＆ プロンプト編集
+          概要のAI設定
         </h2>
       </div>
 
@@ -318,7 +320,7 @@ export function DomainProfileSettingsPanel() {
                     value={vaultConfig.preferredCli}
                     onChange={(e) =>
                       void handlePreferredCliChange(
-                        e.target.value as 'claude' | 'codex' | 'gemini',
+                        e.target.value as 'claude' | 'codex' | 'antigravity',
                       )
                     }
                     style={controlStyle}
@@ -329,8 +331,8 @@ export function DomainProfileSettingsPanel() {
                     <option value="codex">
                       codex ({aiStatus?.availableClis?.codex?.available ? '検出済' : '未検出'})
                     </option>
-                    <option value="gemini">
-                      gemini ({aiStatus?.availableClis?.gemini?.available ? '検出済' : '未検出'})
+                    <option value="antigravity">
+                      Antigravity (agy) ({aiStatus?.availableClis?.antigravity?.available ? '検出済' : '未検出'})
                     </option>
                   </select>
                 </label>

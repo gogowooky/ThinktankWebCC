@@ -3,10 +3,10 @@
  * HarvestPanel の 縦型タブバー（旧Ribbon）。
  *
  * side="right" でパネルの右端に配置。
- * ボタン: 会話履歴 / 設定 / 会話クリア
+ * ボタン: 概要 / 対話 / 設定
  */
 
-import { MessageCircle, Settings } from 'lucide-react';
+import { MessageCircle, BotMessageSquare, Settings } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import './HarvestTabBar.css';
 
@@ -29,10 +29,19 @@ export function HarvestTabBar({ isOpen, viewMode, onToggle, onSetMode }: Props) 
       onToggle={onToggle}
     >
       <button
+        id="HarvestAbstract"
+        className={`harvest-tab-bar__btn${viewMode === 'abstract' ? ' harvest-tab-bar__btn--active' : ''}`}
+        onClick={() => onSetMode('abstract')}
+        data-tip="概要"
+        aria-label="HarvestAbstract"
+      >
+        <BotMessageSquare size={16} />
+      </button>
+      <button
         id="HarvestAI"
         className={`harvest-tab-bar__btn${viewMode === 'chat' ? ' harvest-tab-bar__btn--active' : ''}`}
         onClick={() => onSetMode('chat')}
-        data-tip="会話履歴"
+        data-tip="対話"
         aria-label="HarvestAI"
       >
         <MessageCircle size={16} />

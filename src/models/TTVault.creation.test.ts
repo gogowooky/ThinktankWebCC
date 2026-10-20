@@ -7,7 +7,7 @@ import { TTThink } from './TTThink';
 const version = '2026-10-13T01:00:00Z';
 const creators: Array<{ name: string; category: string; create: (vault: TTVault) => Promise<TTThink> }> = [
   { name: 'blank', category: 'memo', create: vault => vault.CreateBlankThink('memo', 'メモ') },
-  { name: 'bundle', category: 'bundle', create: vault => vault.CreateBundleFromIds([], '条件') },
+  { name: 'bundle', category: 'bundle', create: vault => vault.CreateBundleFromIds([]) },
   { name: 'links', category: 'links', create: vault => vault.CreateLinksThink('リンク', 'https://example.com') },
   { name: 'chat', category: 'chat', create: vault => vault.CreateChatThink('会話\n本文') },
   { name: 'fixed ID', category: 'memo', create: vault => vault.AddThinkWithContent('fixed', 'メモ', 'memo', 'keyword', 'メモ\n本文') },

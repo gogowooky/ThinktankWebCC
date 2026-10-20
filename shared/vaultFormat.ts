@@ -17,8 +17,8 @@ export const VALID_CATEGORIES = [
   'table',
   'links',
   'chat',
-  'nettext',
   'html',
+  'abstract',
 ] as const;
 
 export type ValidCategory = (typeof VALID_CATEGORIES)[number];

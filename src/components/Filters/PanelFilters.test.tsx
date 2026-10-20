@@ -15,7 +15,7 @@ const panels = [
   { name: 'Thinktank', prefix: 'tt-search-bar', SearchBar: ThinktankSearchBar, FilterPanel: ThinktankFilterPanel },
   { name: 'Seeds', prefix: 'seeds-search-bar', SearchBar: SeedsSearchBar, FilterPanel: SeedsFilterPanel },
 ];
-const allTypes: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'html', 'nettext'];
+const allTypes: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'html', 'abstract'];
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 

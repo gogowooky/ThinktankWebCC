@@ -21,7 +21,7 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'ThinktankPanel.Mode.Name': {
     panel: 'ThinktankPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Abstract|Settings)$',
     description: '左パネルモード',
     get: (app) => capitalize(app.ThinktankPanel.ViewMode),
     set: (app, v) => { app.ThinktankPanel.ViewMode = v.toLowerCase() as ThinktankViewMode; },
@@ -56,7 +56,7 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'SeedsPanel.Mode.Name': {
     panel: 'SeedsPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Graph|Chat|Settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Abstract|Settings)$',
     description: '上部パネル表示モード',
     get: (app) => capitalize(app.SeedsPanel.ViewMode),
     set: (app, v) => { app.SeedsPanel.SetViewMode(v.toLowerCase() as SeedsViewMode); },
@@ -171,7 +171,7 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'HarvestPanel.Mode.Name': {
     panel: 'HarvestPanel',
-    default: 'Chat', type: 'string', candidates: '^(Chat|Settings)$',
+    default: 'Chat', type: 'string', candidates: '^(Chat|Abstract|Settings)$',
     description: '右パネル表示モード',
     get: (app) => capitalize(app.HarvestPanel.ViewMode),
     set: (app, v) => { app.HarvestPanel.SetViewMode(v.toLowerCase() as HarvestViewMode); },

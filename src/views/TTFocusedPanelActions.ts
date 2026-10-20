@@ -4,7 +4,7 @@ import { UNAVAILABLE_ACTIONS } from './unavailableActions';
  * FocusedPanel 系 TTAction の登録。
  *
  * app.FocusedColumn が示すパネルに対して
- * ToggleAreaVisibility / SetViewModePrev / SetViewModeNext を実行する。
+ * ToggleAreaVisibility / SetViewModePrev / SetViewModeNext / 段階的な開閉 を実行する。
  *
  * 呼び出し: App.tsx の初期化フローで registerFocusedPanelActions(app) を呼ぶ。
  */
@@ -20,6 +20,7 @@ import type { AreaWidthMode } from '../utils/panelAreaWidth';
 import { ZOOM_DEFAULT, ZOOM_STEP } from '../utils/appZoom';
 import { showMonacoMenu } from '../utils/monacoMenu';
 import { collectAreaIds } from './TTDiscussPanel';
+import { setPanelSectionsAll, isAnyPanelSectionOpen, type SectionsPanelId } from '../hooks/usePanelSectionsSetAll';
 import { registerTextEditorDateActions } from './actions/textEditorDateActions';
 import { registerTextEditorBulletActions, registerTextEditorCommentActions } from './actions/textEditorStyleActions';
 import { registerTextEditorFoldingHeadingActions } from './actions/textEditorFoldingActions';
@@ -36,11 +37,20 @@ import { registerTextEditorPasteActions } from './actions/textEditorPasteActions
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
-  Thinktank:      ['filter', 'chat', 'settings'],
-  Seeds:       ['filter', 'graph', 'chat', 'settings'],
-  DiscussSetting: ['panes', 'texteditor', 'markdown', 'datagrid', 'card', 'graph', 'chat'],
-  Discuss:        ['panes', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
-  Harvest:        ['chat', 'settings'],
+  Thinktank:      ['filter', 'abstract', 'chat', 'settings'],
+  Seeds:       ['filter', 'abstract', 'chat', 'settings'],
+  DiscussSetting: ['panes', 'abstract', 'chat', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  Discuss:        ['panes', 'abstract', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  Harvest:        ['abstract', 'chat', 'settings'],
+};
+
+/** フォーカス列 → 開閉セクションの一括操作で使うパネルID（Discuss は2列とも設定エリアを指す） */
+const SECTIONS_PANEL_IDS: Record<string, SectionsPanelId> = {
+  Thinktank:      'thinktank',
+  Seeds:          'seeds',
+  DiscussSetting: 'discuss',
+  Discuss:        'discuss',
+  Harvest:        'harvest',
 };
 
 // ── 共通ヘルパー ─────────────────────────────────────────────────────────────
@@ -68,8 +78,8 @@ type FilterPanelSpec = {
   open:           (id: string) => void;
 };
 
-function getPanel(app: TTApplication): PanelLike | null {
-  switch (app.FocusedColumn) {
+function getPanel(app: TTApplication, column: string = app.FocusedColumn): PanelLike | null {
+  switch (column) {
     case 'Thinktank':      return app.ThinktankPanel;
     case 'Seeds':       return app.SeedsPanel;
     case 'DiscussSetting':
@@ -144,6 +154,53 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   };
   registerAreaToggle('Toggle',        'user',    'User');
   registerAreaToggle('ToggleForEdit', 'foredit', 'ForEdit');
+
+  // ── エリアの段階的な開閉 ───────────────────────────────────────────────
+  // 開: エリアが閉じていれば開くだけ。開いていれば下位項目をすべて開く。
+  // 閉: 下位項目が1つでも開いていればすべて閉じるだけ。無ければエリアを閉じる。
+  // トグルボタンの Shift+右クリックはボタンへフォーカスを移してから呼ぶので、
+  // FocusedColumn（focusin→rAF で遅れて更新）ではなく今のフォーカスから対象を決める。
+
+  const stepwiseTarget = (): { panel: PanelLike; sectionsId: SectionsPanelId } | null => {
+    const live = getFocusName(document.activeElement).split('.')[0];
+    const column = live && live !== 'None' ? live : app.FocusedColumn;
+    const panel = getPanel(app, column);
+    const sectionsId = SECTIONS_PANEL_IDS[column];
+    return panel && sectionsId ? { panel, sectionsId } : null;
+  };
+
+  TTActions.Register({
+    ActionID: 'FocusedPanel.Area.OpenStepwise',
+    Description: 'フォーカスパネルのエリアを段階的に開く',
+    Completion: (item) => {
+      const target = stepwiseTarget();
+      if (!target) { item.Result = '[対象なし]'; return; }
+      if (!target.panel.IsAreaOpen) {
+        target.panel.ToggleArea();
+        item.Result = 'エリアを開いた';
+        return;
+      }
+      setPanelSectionsAll(target.sectionsId, true);
+      item.Result = '下位項目をすべて開いた';
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'FocusedPanel.Area.CloseStepwise',
+    Description: 'フォーカスパネルのエリアを段階的に閉じる',
+    Completion: (item) => {
+      const target = stepwiseTarget();
+      if (!target) { item.Result = '[対象なし]'; return; }
+      if (!target.panel.IsAreaOpen) { item.Result = '[閉じている]'; return; }
+      if (isAnyPanelSectionOpen(target.sectionsId)) {
+        setPanelSectionsAll(target.sectionsId, false);
+        item.Result = '下位項目をすべて閉じた';
+        return;
+      }
+      target.panel.ToggleArea();
+      item.Result = 'エリアを閉じた';
+    },
+  });
 
   for (const [suffix, value, label] of [
     ['Initial', 'init',    '初期値'],

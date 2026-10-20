@@ -375,7 +375,7 @@ class RelayAgent {
             transaction.update(requestRef, {
               status: 'canceled',
               updatedAt: new Date().toISOString(),
-              errorMessage: 'PC連携モードがOFFになりました。',
+              errorMessage: 'PC連携がOFFになりました。',
             });
           }
         });
@@ -413,7 +413,7 @@ class RelayAgent {
             transaction.update(requestRef, {
               status: 'canceled',
               updatedAt: new Date().toISOString(),
-              errorMessage: 'PC連携モードがOFFになりました。',
+              errorMessage: 'PC連携がOFFになりました。',
             });
           }
         });

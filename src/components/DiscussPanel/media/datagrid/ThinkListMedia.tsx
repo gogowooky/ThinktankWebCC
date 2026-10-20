@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { FileText, Lightbulb, Table, Link, MessageCircle, Globe, type LucideIcon } from 'lucide-react';
+import { FileText, Lightbulb, Table, Link, MessagesSquare, Globe, BotMessageSquare, type LucideIcon } from 'lucide-react';
 import type { TTThink } from '../../../../models/TTThink';
 import type { ContentType } from '../../../../types';
 import type { MediaProps } from '../types';
@@ -12,9 +12,9 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   bundle: Lightbulb,
   table: Table,
   links: Link,
-  chat: MessageCircle,
+  chat: MessagesSquare,
   html: Globe,
-  nettext: Globe,
+  abstract: BotMessageSquare,
 };
 
 const CONTENT_LABELS: Record<ContentType, string> = {
@@ -24,7 +24,7 @@ const CONTENT_LABELS: Record<ContentType, string> = {
   links: 'リンク',
   chat: 'チャット',
   html: 'HTML',
-  nettext: 'Web文書',
+  abstract: '概要',
 };
 
 function formatDate(dateStr: string): string {

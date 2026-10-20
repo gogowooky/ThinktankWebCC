@@ -18,7 +18,7 @@ export type AppMode = 'pwa' | 'local';
 /**
  * TTThink のコンテンツ種別（v5）
  * v4: memo/chat/pickup/link/table
- * v5: memo/bundle/table/links/chat/nettext
+ * v5: memo/bundle/table/links/chat/html/abstract
  */
 export type ContentType =
   | 'memo'     // テキストメモ（markdown含む）
@@ -26,8 +26,8 @@ export type ContentType =
   | 'table'    // テーブルデータ（独自形式md）
   | 'links'    // URL/ローカルURI等へのリンク集
   | 'chat'     // AIとの対話記録
-  | 'html'    // HTML資料（1行目タイトル、以降HTML本文）
-  | 'nettext'; // ネット等からダウンロードしたテキスト
+  | 'html'     // HTML資料（1行目タイトル、以降HTML本文）
+  | 'abstract'; // 概要（作業の状態をchatから切り出して持つ）
 
 // #endregion
 

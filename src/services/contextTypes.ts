@@ -1,8 +1,7 @@
 import type { ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 import type { SubtaskContext, ProgressContext } from '../../shared/contracts/subtaskContext';
 /** Detached, immutable read models; no persistence or provider dependency. */
-export type ContextIssueCode = 'cycle' | 'missing_think' | 'implicit_all_blocked'
-  | 'conflicting_conditions' | 'search_incomplete' | 'load_failed'
+export type ContextIssueCode = 'cycle' | 'missing_think' | 'load_failed'
   | 'remote_version_unverified' | 'decision_conflict' | 'invalid_support_record';
 
 export interface ContextIssue {

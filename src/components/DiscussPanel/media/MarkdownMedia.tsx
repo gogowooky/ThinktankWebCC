@@ -103,21 +103,14 @@ export const MarkdownMedia = forwardRef<MarkdownMediaRef, MediaProps>(function M
 
   useEffect(() => {
     if (html && mdRef.current && think) {
-      const savedScroll = think.ContentType === 'nettext'
-        ? (think.Metadata?.webtextScrollTop ?? 0)
-        : (think.Metadata?.markdownScrollTop ?? 0);
-      mdRef.current.scrollTop = savedScroll;
+      mdRef.current.scrollTop = think.Metadata?.markdownScrollTop ?? 0;
     }
   }, [html, think?.ID, think]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     if (think) {
       if (!think.Metadata || typeof think.Metadata !== 'object') think.Metadata = {};
-      if (think.ContentType === 'nettext') {
-        think.Metadata.webtextScrollTop = e.currentTarget.scrollTop;
-      } else {
-        think.Metadata.markdownScrollTop = e.currentTarget.scrollTop;
-      }
+      think.Metadata.markdownScrollTop = e.currentTarget.scrollTop;
     }
   };
 

@@ -161,6 +161,7 @@ class VaultEngine {
       activeProfileId: shared.DEFAULT_DOMAIN_PROFILE_ID,
     };
     let config = base;
+    let shouldPersist = false;
     if (fs.existsSync(this.configFilePath)) {
       try {
         const loaded = JSON.parse(fs.readFileSync(this.configFilePath, 'utf8'));
@@ -169,10 +170,15 @@ class VaultEngine {
         config = base;
       }
     }
+    if (config.preferredCli === 'gemini') {
+      config.preferredCli = 'antigravity';
+      shouldPersist = true;
+    }
     if (this._needsNewDeviceId(config.deviceId)) {
       config.deviceId = this._generateDeviceId();
-      this._writeConfigFile(config);
+      shouldPersist = true;
     }
+    if (shouldPersist) this._writeConfigFile(config);
     return config;
   }
 
@@ -202,7 +208,10 @@ class VaultEngine {
 
   saveConfig(partial) {
     const prevVaultDir = this.getVaultDir();
-    this.config = { ...this.config, ...partial };
+    const normalizedPartial = partial.preferredCli === 'gemini'
+      ? { ...partial, preferredCli: 'antigravity' }
+      : partial;
+    this.config = { ...this.config, ...normalizedPartial };
     if (this._needsNewDeviceId(this.config.deviceId)) {
       this.config.deviceId = this._generateDeviceId();
     }

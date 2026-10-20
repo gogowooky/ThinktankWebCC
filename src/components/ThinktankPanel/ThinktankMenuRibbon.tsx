@@ -50,8 +50,8 @@ export function ThinktankMenuRibbon({
 
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
-  /* ── 設定モード: ボタンなし ─────────────────────────────── */
-  if (viewMode === 'settings') {
+  /* ── 設定・概要モード: ボタンなし ───────────────────────── */
+  if (viewMode === 'settings' || viewMode === 'abstract') {
     return <div className="menu-ribbon thinktank-menu-ribbon" />;
   }
 

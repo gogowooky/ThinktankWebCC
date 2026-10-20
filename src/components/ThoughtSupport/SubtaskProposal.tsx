@@ -37,7 +37,7 @@ function SingleSubtaskProposal({ vault, turn, chatId, disabled, candidateId }: {
       if (canonicalJson(history.at(-1)) !== canonicalJson(turn)) throw new Error('会話が更新されています。最新の提案を確認してください。');
       await vault.CreateSubtaskFromConversation(turn, chatId, title, candidateId, lifetime.isCurrent);
       if (!lifetime.isCurrent()) return;
-      setSaved(true); setOpen(false); setMessage('サブ課題を追加しました。Seedsの分析で確認できます。');
+      setSaved(true); setOpen(false); setMessage('サブ課題を追加しました。');
     } catch (e) { if (lifetime.isCurrent()) setMessage((e as Error).message); }
     finally { locked.current = false; if (lifetime.isCurrent()) setBusy(false); }
   }

@@ -13,8 +13,8 @@ import { useSupportChats } from '../../hooks/useSupportChats';
  *   - settings  → SeedsSettingsView（Bundle プロファイル）
  *   - filter    → 選択 Bundle 内の Think 一覧（datagrid メディアで描画）
  *   - markdown  → MarkdownMedia
- *   - graph     → BundleStatusView（分析：この課題の状況）
  *   - chat      → ChatMedia
+ *   - abstract  → AbstractView（概要）
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -44,14 +44,14 @@ import {
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './SeedsArea.css';
-import { BundleStatusView } from './BundleStatusView';
+import { AbstractView } from '../Abstract/AbstractView';
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'nettext', 'html'];
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'html', 'abstract'];
 
 const SEEDS_MODE_NAMES: Record<string, string> = {
-  filter: 'Think一覧',
-  graph:  '分析',
-  chat:   '会話履歴',
+  filter:   'Think一覧',
+  abstract: '概要',
+  chat:     '対話',
 };
 
 
@@ -114,7 +114,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const aiChatViewRef                   = useRef<SupportChatRef>(null);
   const filterPanelRef                  = useRef<SeedsFilterPanelRef>(null);
   const settingsViewRef                 = useRef<SeedsSettingsViewRef>(null);
-  const statusViewRef = useRef<{ focus: () => void }>(null);
   const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Seeds');
 
   // ── Think 一覧（選択 Bundle 内の全 Think → フィルタ適用）──────────────────
@@ -201,8 +200,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         filterPanelRef.current?.focus();
       } else if (panel.MediaType === 'chat') {
         aiChatViewRef.current?.focus();
-      } else if (panel.MediaType === 'graph') {
-        statusViewRef.current?.focus();
       }
     }, 50);
     return () => clearTimeout(timer);
@@ -241,32 +238,17 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     if (bundle.IsMetaOnly) await bundle.LoadContent();
 
     const parsed = parseBundle(bundle.Content);
-    const remaining = parsed.ids.filter(id => !panel.CheckedThoughtIDs.includes(id));
-    const currentExcludes = parsed.excludeIds || [];
-    const newExcludes = Array.from(new Set([...currentExcludes, ...panel.CheckedThoughtIDs]));
+    const remaining = thinksInBundle
+      .map(thinkInBundle => thinkInBundle.ID)
+      .filter(id => !panel.CheckedThoughtIDs.includes(id));
 
     const newContent = serializeBundle({
-      prefix: (parsed.search.query || parsed.search.createdRange || parsed.search.updatedRange) ? '>> ' : '> ',
       title: parsed.title,
-      searchQuery: parsed.search.query,
-      filterKeyword: parsed.filter.keyword,
-      dates: {
-        createdDate: parsed.filter.createdRange?.dateStr || parsed.search.createdRange?.dateStr,
-        createdRange: parsed.filter.createdRange?.rangeStr || parsed.search.createdRange?.rangeStr,
-        updatedDate: parsed.filter.updatedRange?.dateStr || parsed.search.updatedRange?.dateStr,
-        updatedRange: parsed.filter.updatedRange?.rangeStr || parsed.search.updatedRange?.rangeStr,
-      },
       ids: remaining,
-      excludeIds: newExcludes,
     });
 
     bundle.Content = newContent;
-
-    if (bundle.RelatedIDs) {
-      const relIds = bundle.RelatedIDs.split(',').filter(id => id.trim());
-      const newRelIds = relIds.filter(id => !panel.CheckedThoughtIDs.includes(id));
-      bundle.RelatedIDs = newRelIds.join(',');
-    }
+    bundle.RelatedIDs = remaining.join(',');
 
     await bundle.SaveContent();
 
@@ -276,7 +258,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     vault.NotifyUpdated();
 
     panel.SetCheckedThoughtIDs([]);
-  }, [panel, vault]);
+  }, [panel, vault, thinksInBundle]);
 
   const handleToggleCheckedOnly   = useCallback(() => setShowCheckedOnly(v => !v), []);
   const handleToggleColumnDialog  = useCallback(() => setShowColumnDialog(v => !v), []);
@@ -450,6 +432,8 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
       <div className="seeds-area__body">
         {showSettings ? (
           <SeedsSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearBundle()} />
+        ) : panel.ViewMode === 'abstract' ? (
+          <AbstractView />
         ) : isThinkListMode ? (
           !panel.BundleID ? (
             <div className="seeds-area__empty">
@@ -491,12 +475,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         ) : !think ? (
           <div className="seeds-area__empty">
             <span>Bundle をドロップして選択してください</span>
-          </div>
-        ) : panel.MediaType === 'graph' ? (
-          <div className="bundle-analysis">
-            <div className="bundle-analysis-content">
-              <BundleStatusView ref={statusViewRef} vault={vault} bundleId={panel.BundleID} onOpen={handleOpenThinkInDiscuss} />
-            </div>
           </div>
         ) : null}
       </div>

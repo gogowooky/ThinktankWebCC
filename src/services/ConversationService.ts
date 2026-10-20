@@ -206,12 +206,12 @@ export class ConversationClient {
         excerpt: s.content.slice(0, 2000),
       }));
 
-      let cliName: 'claude' | 'codex' | 'gemini' | undefined;
+      let cliName: 'claude' | 'codex' | 'antigravity' | undefined;
       if (model?.provider) {
         const pLower = model.provider.toLowerCase();
         if (pLower.includes('claude') || pLower.includes('anthropic')) cliName = 'claude';
         else if (pLower.includes('openai') || pLower.includes('codex') || pLower.includes('gpt')) cliName = 'codex';
-        else if (pLower.includes('gemini') || pLower.includes('google')) cliName = 'gemini';
+        else if (pLower.includes('gemini') || pLower.includes('google')) cliName = 'antigravity';
       }
 
       const payload = {

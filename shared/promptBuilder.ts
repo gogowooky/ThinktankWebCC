@@ -1,6 +1,6 @@
 /**
  * shared/promptBuilder.ts
- * DomainProfile と Bundle コンテキストから、AI CLI（claude / codex / gemini）へ渡す
+ * DomainProfile と Bundle コンテキストから、AI CLI（claude / codex / antigravity）へ渡す
  * 自己完結型プロンプトを生成する純粋関数群。
  * プロファイル（.thinktank/prompts/<profile>/）を差し替えるだけで、
  * 業務管理用と高齢者思考支援・生活支援用の振る舞いを完全に切り替える。

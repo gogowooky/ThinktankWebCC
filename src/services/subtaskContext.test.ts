@@ -48,10 +48,10 @@ it('rejects over-limit child lists and context text instead of silently truncati
 it('carries the captured child status into a saved turn and reviewable next-action proposals without saving', async () => {
   const vault = setup(); vault.AddThink(child('child'));
   const original = JSON.stringify(vault.GetThinks().map(t => t.Metadata));
-  const reader = { getBody: vi.fn(), search: vi.fn() };
+  const reader = { getBody: vi.fn() };
   const snapshot = await new ContextService(vault, reader).getBundleContext('parent', { includeSubtasks: true });
   expect(Object.isFrozen(snapshot.subtasks!.items[0].event!.input)).toBe(true);
-  expect(reader.getBody).not.toHaveBeenCalled(); expect(reader.search).not.toHaveBeenCalled();
+  expect(reader.getBody).not.toHaveBeenCalled();
   expect(snapshot.sources).toEqual([]);
   const context = conversationContext(snapshot);
   expect(context.subtasks?.items[0].event).toEqual(event);
@@ -90,7 +90,7 @@ it('rejects child changes during snapshot collection instead of combining differ
   const parent = vault.GetThink('parent')!; parent.IsMetaOnly = true;
   let resolve!: (body: string) => void;
   const getBody = vi.fn().mockReturnValue(new Promise<string>(r => { resolve = r; }));
-  const reading = new ContextService(vault, { getBody, search: vi.fn() }).getBundleContext('parent', { includeSubtasks: true });
+  const reading = new ContextService(vault, { getBody }).getBundleContext('parent', { includeSubtasks: true });
   const assertion = expect(reading).rejects.toMatchObject({ code: 'context_changed' });
   task.Metadata.thinkProgress = undefined; resolve(''); await assertion;
 });

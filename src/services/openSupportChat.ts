@@ -10,7 +10,7 @@ export function openSupportChat(id: string) {
   const subtask = readSubtaskChat(think.Metadata.subtaskChat);
   const owner = subtask ? 'Discuss' : parseManagedChatTitle(think.Name)?.panel ?? 'Thinktank';
   const bundleId = subtask?.bundleId ?? (typeof think.Metadata.taskContext?.bundleId === 'string' ? think.Metadata.taskContext.bundleId : supportRecord(think).bundleId);
-  if (bundleId && app.SeedsPanel.BundleID !== bundleId) app.SeedsPanel.OpenBundle(bundleId, 'graph');
+  if (bundleId && app.SeedsPanel.BundleID !== bundleId) app.SeedsPanel.OpenBundle(bundleId, 'datagrid');
   const panels = { Thinktank: app.ThinktankPanel, Seeds: app.SeedsPanel, Discuss: app.DiscussPanel, Harvest: app.HarvestPanel };
   panels[owner as keyof typeof panels].SetViewMode('chat');
   if (subtask) app.DiscussPanel.OpenArea();

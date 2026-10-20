@@ -11,7 +11,8 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { broadcastPanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
+import { setPanelSectionsAll } from '../../hooks/usePanelSectionsSetAll';
+import { TTActions } from '../../views/TTActions';
 import './VerticalTabBar.css';
 
 export type PanelSide = 'left' | 'right';
@@ -62,11 +63,19 @@ export function VerticalTabBar({
   const handleToggleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (!e.shiftKey) { onToggle(); return; }
     const open = !isOpen;
-    broadcastPanelSectionsSetAll(panelId, open);
-    e.currentTarget.closest('.vertical-tab-bar')?.parentElement
-      ?.querySelectorAll('details')
-      .forEach(d => { d.open = open; });
+    setPanelSectionsAll(panelId, open);
     if (open) onToggle();
+  };
+
+  // Shift+右クリック: 開ボタンなら FocusedPanel.Area.OpenStepwise、閉ボタンなら CloseStepwise。
+  // 対象パネルはフォーカスから決まるので、先にこのボタンへフォーカスを移してから実行する。
+  // document のショートカット処理（contextmenu）へは流さず、ブラウザのメニューも出さない。
+  const handleToggleContextMenu = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!e.shiftKey) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.focus();
+    void TTActions.Execute(isOpen ? 'FocusedPanel.Area.CloseStepwise' : 'FocusedPanel.Area.OpenStepwise');
   };
 
   return (
@@ -82,9 +91,10 @@ export function VerticalTabBar({
       <button
         className="vertical-tab-bar__toggle"
         onClick={handleToggleClick}
+        onContextMenu={handleToggleContextMenu}
         data-tip={isOpen
-          ? 'エリアを閉じる（Shift+クリック: パネル内をすべて折りたたむ）'
-          : 'エリアを開く（Shift+クリック: パネル内をすべて展開して開く）'}
+          ? 'エリアを閉じる（Shift+クリック: パネル内をすべて折りたたむ／Shift+右クリック: 段階的に閉じる）'
+          : 'エリアを開く（Shift+クリック: パネル内をすべて展開して開く／Shift+右クリック: 段階的に開く）'}
         aria-label={isOpen ? 'エリアを閉じる' : 'エリアを開く'}
       >
         {showChevronRight

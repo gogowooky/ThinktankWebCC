@@ -22,8 +22,8 @@
   padding-right: max(0px, var(--conversation-gutter, 0px) - var(--conversation-scrollbar, 6px));
 }
 .bundle-conversation label { display: block; margin: 10px 0; }
-/* 地色・枠・アクセントは宿主（AIChat＝.support-chat-host／分析＝.bundle-analysis）が
-   --field-* で与える。この部品は両方に置かれるので、自前で色を持つと片方で浮く。 */
+/* 地色・枠・アクセントは宿主（.support-chat-host）が --field-* で与える。
+   パネルごとに地色が違うので、自前で色を持つと宿主から浮く。 */
 .bundle-conversation textarea { display: block; width: 100%; box-sizing: border-box; min-height: 60px; font: inherit; color: inherit; background: var(--field-bg, #fff); border: 1px solid var(--field-border, rgba(0,0,0,.25)); border-radius: 4px; padding: 8px; }
 .bundle-conversation pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow: auto; }
 /* 一問一答は枠で囲わない。狭いパネルでは枠の分だけ本文が細り、行数も増える。

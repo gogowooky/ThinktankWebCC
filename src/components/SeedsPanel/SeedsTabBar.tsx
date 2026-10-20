@@ -3,16 +3,15 @@
  * SeedsPanel の縦型タブバー（旧Ribbon）。
  *
  * ボタン構成（上から）:
- *   Sparkles    – 会話履歴（データ分析チャット）
- *   LayoutList  – Think一覧（選択Bundle内のThinkリスト）
- *   BookUser    – Bundleプロファイル（Markdown表示）
- *   Microscope  – 分析（この課題の状況）
+ *   Files            – Think一覧（選択Bundle内のThinkリスト）
+ *   BotMessageSquare – 概要
+ *   MessageCircle    – 対話
  * ─────────────────── (spacer) ───────────────────
  *   Settings    – Seeds設定（Bundleプロファイル詳細）下寄せ
  */
 
 import { useCallback, useState } from 'react';
-import { MessageCircle, Files, Microscope, Settings, type LucideIcon } from 'lucide-react';
+import { MessageCircle, Files, BotMessageSquare, Settings, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { SeedsViewMode } from '../../views/TTSeedsPanel';
 import './SeedsTabBar.css';
@@ -21,8 +20,8 @@ type SeedsContentMode = Exclude<SeedsViewMode, 'settings'>;
 
 const VIEW_BUTTONS: Array<{ mode: SeedsContentMode; Icon: LucideIcon; title: string; id: string }> = [
   { mode: 'filter',   Icon: Files,         title: 'Think一覧',   id: 'SeedsThinkList' },
-  { mode: 'graph',    Icon: Microscope,    title: '分析', id: 'SeedsResearch' },
-  { mode: 'chat',     Icon: MessageCircle, title: '会話履歴',      id: 'SeedsAI' },
+  { mode: 'abstract', Icon: BotMessageSquare, title: '概要',     id: 'SeedsAbstract' },
+  { mode: 'chat',     Icon: MessageCircle, title: '対話',          id: 'SeedsAI' },
 ];
 
 interface Props {

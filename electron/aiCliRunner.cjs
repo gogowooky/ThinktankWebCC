@@ -2,7 +2,7 @@
 
 /**
  * electron/aiCliRunner.cjs
- * ローカル AI CLI（claude / codex / gemini）の自動検出と「設定隔離（空フォルダ cwd・設定無効化）」実行エンジン。
+ * ローカル AI CLI（claude / codex / antigravity）の自動検出と「設定隔離（空フォルダ cwd・設定無効化）」実行エンジン。
  * システム設計メモ §8 準拠。
  */
 
@@ -12,7 +12,12 @@ const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
 
-const SUPPORTED_CLIS = ['claude', 'codex', 'gemini'];
+const SUPPORTED_CLIS = ['claude', 'codex', 'antigravity'];
+const CLI_EXECUTABLE_NAMES = {
+  claude: 'claude',
+  codex: 'codex',
+  antigravity: 'agy',
+};
 
 /**
  * Windows 環境では npm グローバルコマンドは .cmd ラッパーまたは .exe として配置される。
@@ -20,10 +25,11 @@ const SUPPORTED_CLIS = ['claude', 'codex', 'gemini'];
  */
 function resolveExecutablePath(cliName) {
   if (!SUPPORTED_CLIS.includes(cliName)) return null;
+  const executableName = CLI_EXECUTABLE_NAMES[cliName];
 
   if (process.platform === 'win32') {
     try {
-      const out = execFileSync('where.exe', [cliName], {
+      const out = execFileSync('where.exe', [executableName], {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
         timeout: 4000,
@@ -45,8 +51,9 @@ function resolveExecutablePath(cliName) {
     const appData = process.env.APPDATA || '';
     const localAppData = process.env.LOCALAPPDATA || '';
     const candidates = [
-      path.join(appData, 'npm', `${cliName}.cmd`),
-      path.join(localAppData, 'Programs', 'OpenAI', 'Codex', 'bin', `${cliName}.exe`),
+      path.join(appData, 'npm', `${executableName}.cmd`),
+      path.join(localAppData, 'agy', 'bin', `${executableName}.exe`),
+      path.join(localAppData, 'Programs', 'OpenAI', 'Codex', 'bin', `${executableName}.exe`),
     ];
     for (const c of candidates) {
       if (fs.existsSync(c)) return c;
@@ -55,15 +62,17 @@ function resolveExecutablePath(cliName) {
   }
 
   try {
-    const out = execFileSync('which', [cliName], {
+    const out = execFileSync('which', [executableName], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
       timeout: 3000,
     }).trim();
-    return out && fs.existsSync(out) ? out : null;
+    if (out && fs.existsSync(out)) return out;
   } catch {
-    return null;
+    // 既定のインストール先を確認
   }
+  const defaultPath = path.join(os.homedir(), '.local', 'bin', executableName);
+  return fs.existsSync(defaultPath) ? defaultPath : null;
 }
 
 /**
@@ -83,7 +92,7 @@ function detectAvailableClis() {
 
 /**
  * 設定隔離用の空ディレクトリを OS 一時領域に用意する。
- * CLAUDE.md / AGENTS.md / GEMINI.md 等の勝手な読み込みを防ぐ。
+ * CLAUDE.md / AGENTS.md 等のワークスペース指示の勝手な読み込みを防ぐ。
  */
 function ensureIsolatedSandboxDir() {
   const dir = path.join(os.tmpdir(), 'thinktank-ai-cli-sandbox');
@@ -94,54 +103,16 @@ function ensureIsolatedSandboxDir() {
 }
 
 /**
- * 環境変数に GEMINI_API_KEY が無い場合、プロジェクト直下または server/.env から補完する。
- */
-let cachedEnvGeminiKey = null;
-function resolveGeminiApiKey() {
-  if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
-  if (cachedEnvGeminiKey !== null) return cachedEnvGeminiKey || undefined;
-  const envFiles = [
-    path.resolve(__dirname, '../.env'),
-    path.resolve(__dirname, '../server/.env'),
-  ];
-  for (const envPath of envFiles) {
-    try {
-      if (!fs.existsSync(envPath)) continue;
-      const content = fs.readFileSync(envPath, 'utf8');
-      const match = content.match(/^\s*GEMINI_API_KEY\s*=\s*(.+)\s*$/m);
-      if (match && match[1]) {
-        const val = match[1].trim().replace(/^['"]|['"]$/g, '');
-        if (val) {
-          cachedEnvGeminiKey = val;
-          return val;
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-  cachedEnvGeminiKey = '';
-  return undefined;
-}
-
-/**
  * UI側のモデルID（claude-sonnet-5 等）を各 CLI が受け付けるモデル名／エイリアスへ正規化する。
  */
 function normalizeCliModel(cliName, modelOverride) {
   const m = String(modelOverride || '').trim().toLowerCase();
-  if (cliName === 'gemini') {
-    // gemini CLI は -m 未指定だと内部ルーターが廃止済みの gemini-2.5-pro / 2.5-flash を選択して
-    // ModelNotFoundError (404) になるため、常に利用可能な現行モデルを明示指定する。
-    if (!m || m === 'none' || m.endsWith('-default') || m.endsWith('-isolated')) {
-      return 'gemini-3.8-flash';
-    }
-    if (m.includes('2.5-pro') || m.includes('1.5-pro') || m === 'pro') {
-      return 'gemini-3.1-pro-preview';
-    }
-    if (m.includes('flash')) {
-      return 'gemini-3.8-flash';
-    }
-    return modelOverride;
+  if (cliName === 'antigravity') {
+    if (!m || m === 'none' || m.endsWith('-default') || m.endsWith('-isolated')) return null;
+    if (!m.includes('gemini')) return null;
+    if (m.includes('pro')) return 'gemini-3.1-pro-high';
+    if (m.includes('flash')) return 'gemini-3.8-flash-medium';
+    return null;
   }
   if (!modelOverride || modelOverride === 'None' || modelOverride.endsWith('-default') || modelOverride.endsWith('-isolated')) {
     return null;
@@ -194,21 +165,61 @@ function buildCliArgs(cliName, modelOverride) {
       args.push('-');
       return args;
     }
-    case 'gemini': {
+    case 'antigravity': {
       const args = [
-        '-p',
-        '標準入力の指示に従いJSONで回答してください。',
+        '--input-format',
+        'stream-json',
         '--output-format',
-        'text',
+        'stream-json',
+        '--sandbox',
       ];
       if (normalizedModel) {
-        args.push('-m', normalizedModel);
+        args.push('--model', normalizedModel);
       }
       return args;
     }
     default:
       throw new Error(`未対応の AI CLI です: ${cliName}`);
   }
+}
+
+/**
+ * Antigravity のストリーミング入力だけは NDJSON の user event を要求する。
+ */
+function buildCliInput(cliName, promptText) {
+  if (cliName !== 'antigravity') return promptText;
+  return `${JSON.stringify({ event: 'user', message: { content: promptText } })}\n`;
+}
+
+/**
+ * Antigravity の NDJSON から最終 result.response を取り出し、他 CLI と同じ本文契約へ揃える。
+ */
+function extractCliResponse(cliName, stdout) {
+  if (cliName !== 'antigravity') return stdout;
+
+  let terminalResult = null;
+  for (const line of String(stdout || '').split(/\r?\n/)) {
+    if (!line.trim()) continue;
+    try {
+      const event = JSON.parse(line);
+      if (event?.event === 'result' && event.result && typeof event.result === 'object') {
+        terminalResult = event.result;
+      }
+    } catch {
+      // 診断行は無視し、機械可読な最終 result のみを採用する。
+    }
+  }
+
+  if (!terminalResult) {
+    throw new Error('Antigravity CLI の最終結果を取得できませんでした。');
+  }
+  if (terminalResult.status !== 'SUCCESS') {
+    throw new Error(terminalResult.error || `Antigravity CLI が ${terminalResult.status || '不明な状態'} で終了しました。`);
+  }
+  if (typeof terminalResult.response !== 'string' || !terminalResult.response.trim()) {
+    throw new Error('Antigravity CLI の応答が空でした。');
+  }
+  return terminalResult.response;
 }
 
 /**
@@ -225,13 +236,10 @@ function executeIsolatedCli({ cliName = 'claude', model, promptText, timeoutMs =
     const sandboxDir = ensureIsolatedSandboxDir();
     const args = buildCliArgs(cliName, model);
     const isCmdWrapper = process.platform === 'win32' && binPath.toLowerCase().endsWith('.cmd');
-    const geminiApiKey = cliName === 'gemini' ? resolveGeminiApiKey() : undefined;
-
     // claude / codex CLI はローカルの CLI ログインセッション（サブスクリプション認証）を使用するため、
     // 環境変数に古い ANTHROPIC_API_KEY / OPENAI_API_KEY が残っていると "Invalid API key" エラーになるのを防ぐ。
     const childEnv = {
       ...process.env,
-      GEMINI_CLI_TRUST_WORKSPACE: 'true',
       NO_COLOR: '1',
       CI: '1',
     };
@@ -239,8 +247,6 @@ function executeIsolatedCli({ cliName = 'claude', model, promptText, timeoutMs =
       delete childEnv.ANTHROPIC_API_KEY;
     } else if (cliName === 'codex') {
       delete childEnv.OPENAI_API_KEY;
-    } else if (cliName === 'gemini' && geminiApiKey) {
-      childEnv.GEMINI_API_KEY = geminiApiKey;
     }
 
     const child = spawn(binPath, args, {
@@ -293,15 +299,19 @@ function executeIsolatedCli({ cliName = 'claude', model, promptText, timeoutMs =
         );
         return;
       }
-      resolve({
-        cliName,
-        stdout,
-        stderr,
-        exitCode: code ?? 0,
-      });
+      try {
+        resolve({
+          cliName,
+          stdout: extractCliResponse(cliName, stdout),
+          stderr,
+          exitCode: code ?? 0,
+        });
+      } catch (err) {
+        reject(new Error(`${err.message || err}${stderr ? `: ${stderr.slice(0, 400)}` : ''}`));
+      }
     });
 
-    child.stdin.write(promptText, 'utf8');
+    child.stdin.write(buildCliInput(cliName, promptText), 'utf8');
     child.stdin.end();
   });
 }
@@ -352,13 +362,14 @@ async function runDomainAiConversation(params) {
   });
 
   // 指定された CLI が無ければ、インストール済みの他の CLI へ自動で切り替える
+  const requestedCli = cliName === 'gemini' ? 'antigravity' : cliName;
   const detected = detectAvailableClis();
-  const selectedCli = detected[cliName]?.available
-    ? cliName
+  const selectedCli = detected[requestedCli]?.available
+    ? requestedCli
     : SUPPORTED_CLIS.find((c) => detected[c]?.available);
   if (!selectedCli) {
     throw new AiCliError(
-      'AI CLI（Claude Code・Codex・Gemini CLI）がこの PC に見つかりません。いずれかをインストールしてログインすると、AI に相談できます。',
+      'AI CLI（Claude Code・Codex・Antigravity CLI）がこの PC に見つかりません。いずれかをインストールしてログインすると、AI に相談できます。',
     );
   }
 
@@ -390,7 +401,10 @@ module.exports = {
   resolveExecutablePath,
   detectAvailableClis,
   ensureIsolatedSandboxDir,
+  normalizeCliModel,
   buildCliArgs,
+  buildCliInput,
+  extractCliResponse,
   executeIsolatedCli,
   runDomainAiConversation,
 };

@@ -22,7 +22,7 @@ export const discussSpecs: Record<string, PropSpec> = {
   },
   'DiscussSettingPanel.Mode.Name': {
     panel: 'DiscussPanel',
-    default: 'Panes', type: 'string', candidates: '^(Panes|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat)$',
+    default: 'Panes', type: 'string', candidates: '^(Panes|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat|Abstract)$',
     description: 'ワークアウト設定パネルモード',
     get: (app) => capitalize(app.DiscussPanel.ViewMode),
     set: (app, v) => { app.DiscussPanel.SetViewMode((['workout', 'develop', 'discuss'].includes(v.toLowerCase()) ? 'panes' : v.toLowerCase()) as DiscussViewMode); },

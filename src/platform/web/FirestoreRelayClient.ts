@@ -124,7 +124,7 @@ class FirestoreRelayClientImpl {
     const cfg = this.getConfig();
     if (!cfg.enabled || !cfg.pairingSecret || !cfg.firebaseProjectId || !cfg.targetDeviceId) {
       throw new Error(
-        'PC連携モードがOFF、または接続先PCが未設定です。設定画面でPC連携を有効にし、デバイスIDとペアリングシークレットを設定してください。',
+        'PC連携がOFF、またはホストPCが未設定です。設定画面でPC連携を有効にし、ホストPCのDevice IDとPairing Secretを設定してください。',
       );
     }
 
@@ -159,7 +159,7 @@ class FirestoreRelayClientImpl {
       throw new Error(
         heartbeat
           ? `中継役PC（${cfg.targetDeviceId}）は現在オフラインです（ハートビート期限切れ）。`
-          : `中継役PC（${cfg.targetDeviceId}）が見つかりません。そのPCのElectron版でFirebaseにログインし、PC連携モードをONにしてください。`,
+          : `中継役PC（${cfg.targetDeviceId}）が見つかりません。そのPCのElectron版でFirebaseにログインし、PC連携をONにしてください。`,
       );
     }
 

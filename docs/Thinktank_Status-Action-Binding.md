@@ -82,7 +82,7 @@ description:    拡大表示
 　統一されている。文字だけが拡大・縮小し、余白・パネル幅・レイアウトは不変で再フローする
 　（zoom はブラウザ差が大きいため不使用）。Monaco エディタは CSS 非継承なので
 　TextEditorMedia が fontSize/lineHeight にこの倍率を掛けて updateOptions する。
-　倍率は localStorage（tt-app-zoom）に永続化。Thinktank>設定>表示サイズ のアイコンから呼び出す。
+　倍率は localStorage（tt-app-zoom）に永続化。Thinktank>設定>アクション>サイズ のアイコンから呼び出す。
 ## Action：　260827　Application.Display.Zoom:ZoomOut
 description:    縮小表示
 　表示文字サイズを 10% 縮小する（下限 50%）。
@@ -203,7 +203,7 @@ candidates:      ^(None|Thinktank|Seeds|DiscussSetting|Discuss|Harvest)\..*$
 　　モード名を指定するショートカットが意図通り動作するようになりました。
 
 
-# ToolBar ======================================================================================================
+# ToolBar ==========================================================================================================
 ## Action：　260616　ToolBar.Mode.Name:Next
 description:    ToolBarのモードを次の値に切り替える（循環）
 　ToolBar.Mode.Nameの設定値を次の値にする。値は循環式。
@@ -546,7 +546,39 @@ candidates:     ^(Claude|OpenAI|Gemini|Local)$
 　　　会話画面の「条件・機能・参照情報 > 参照情報」の AI 欄で選び直せ、選んだモデルがその社の先頭に移り、
 　　　そのパネルのプロバイダも切り替わる。
 　　　旧版のパネル別の保存値（localStorage の tt-ai-model-*）は初回起動時に引き継ぐ。
-# Panel Focused ============================================================================================================
+# Panel Focused ====================================================================================================
+## Action 完了：　261020　FocusedPanel.Area.OpenStepwise
+エリアが閉じているとき：エリアを開く　→終了
+下位項目をすべて開く →終了
+「Shift+FocusedPanelの開ボタン右クリック」にこのアクションをBindする
+description:    フォーカスパネルのエリアを段階的に開く
+
+## Action 完了：　261020　FocusedPanel.Area.CloseStepwise
+エリアが開いているときで、下位項目の一部が開いているとき：すべての下位項目を閉じる　→終了
+エリアを閉じる →終了
+「Shift+FocusedPanelの閉ボタン右クリック」にこのアクションをBindする
+description:    フォーカスパネルのエリアを段階的に閉じる
+
+　A（261020実装）：src\views\TTFocusedPanelActions.ts に2アクションを登録しました。
+　　- 対象パネルは今のキーボードフォーカス（getFocusName）から決め、取れなければ FocusedColumn を使います。
+　　　DiscussSetting / Discuss はどちらも Discuss の設定エリアが対象です。
+　　- 「下位項目」はエリア内の開閉セクション（見出しの ▼／▶）と <details> です。
+　　　開閉はエリア開閉ボタンの Shift+クリックと同じ仕組み（hooks\usePanelSectionsSetAll.ts の
+　　　setPanelSectionsAll）で行います。
+　　- 「一部が開いているか」は、いま表示されている見出しが ▼ か、開いた <details> があるかで判定します
+　　　（表示していないセクションの開閉状態は数えません）。Discuss は Pane 側の Markdown にも
+　　　<details> があるため、設定エリア（.discuss-setting-area）の中だけを見ます。
+　　- エリアを開くときの幅は変えません（その時点の OpenWidth のまま）。
+　　- 閉じているエリアに CloseStepwise を実行したときは何もしません（[閉じている]）。
+　　- Bind：各パネルの縦タブバーの開閉ボタン（components\Layout\VerticalTabBar.tsx）で、
+　　　Shift+右クリックすると、開ボタン（エリアが閉じている）なら OpenStepwise、
+　　　閉ボタン（エリアが開いている）なら CloseStepwise を実行します。押したボタンのパネルが
+　　　対象になるよう、実行前にそのボタンへフォーカスを移します。ブラウザの右クリックメニューは出さず、
+　　　DefaultShortcut.md のマウス割当（right1）にも流しません。
+　　- 注意：開閉ボタンはエリアを開くと閉ボタンに変わるため、ボタンからは OpenStepwise の2段目
+　　　（下位項目をすべて開く）に届きません。2段目はキー割当や TTActions.Execute から実行できます。
+　　- テスト：src\views\TTPanelAreaStepwise.test.ts
+
 ## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
 エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
 description:    フォーカスパネルのエリア開閉をUser位置でトグルする
@@ -662,7 +694,7 @@ description:    フォーカスパネルのThink一覧でフォーカス中の�
 　フォーカスされているアイコン（種別アイコン / メニューアイコンのいずれか）を押下します。
 　（旧 ContentType:Action / Menu:Action を統合。実装内容は下部 # Panel セクションの
 　　FocusedPanel.Filter の A（260902実装）を参照）
-# Panel Thinktank ============================================================================================================
+# Panel Thinktank ==================================================================================================
 ## Action：　260714　ThinktankPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
 　↓ カーソル位置のアイテムを開く　→　終了
@@ -730,7 +762,7 @@ current:        ''
 default:        ''
 type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
-# Panel Seeds ============================================================================================================
+# Panel Seeds ======================================================================================================
 ## Action：　260714　SeedsPanel.Filter.Cursor:Action
 description:    Think一覧のカーソル位置のアイテムを開く
 　↓ カーソル位置のアイテムを開く　→　終了
@@ -811,7 +843,7 @@ current:        none
 default:        none
 type:           string
 candidates:     .*
-# Panel Discuss ============================================================================================================
+# Panel Discuss ====================================================================================================
 ## Status：　261009　DiscussSettingPanel.Area.OpenWidth
 key:の意味はThinktankPanel.Area.OpenWidthと同じ
 　（旧記載の DiscussPanel.Area.OpenWidth は未登録のIDだったため、実装上の StatusID であるこちらに統合しました）
@@ -971,7 +1003,7 @@ current:        []
 default:        []
 type:           json
 candidates:     .*
-# Panel Harvest ============================================================================================================
+# Panel Harvest ====================================================================================================
 ## Status：　260917　HarvestPanel.Area.OpenWidth
 key:の意味はThinktankPanel.Area.OpenWidthと同じ
 description:    HarvestパネルOpen時の幅
@@ -999,7 +1031,7 @@ candidates:     ^(Chat|Settings)$
 　A：設定可能な値は以下の2つです。
 　　- Chat （AI対話チャット）
 　　- Settings （設定）
-# Panel D&D ======================================================================================================
+# Panel D&D ========================================================================================================
 ## Action：　260724　DiscussPanel.DroppedFile.ID:Load
 description:    DropされたThinkファイルをPaneにLoadする
 　IDを DiscussPanel.DroppedFile.ID:Load に修正してください。
@@ -1193,15 +1225,15 @@ description:    行頭のコメント記号を前のスタイルに変更する
 ## Action：　260625　TextEditor.Bullet.NextStyle
 description:    行頭の箇条書き文字を次のスタイルに変更する
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
-　各行における [ 　\t]* のあとの1文字目
+　行頭文字の位置は、一つ上の行で最初の非空白文字が始まる位置に揃える。一つ上の行に非空白文字がない場合は、対象行の位置を維持する。
 　　TextEditor.Bullet.StyleSet に含まれる：　次の値に置換
-　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの1番目の文字を挿入
+　　TextEditor.Bullet.StyleSet に含まれない：　上記の位置に、TextEditor.Bullet.StyleSetの1番目の文字を挿入
 ## Action：　260625　TextEditor.Bullet.PrevStyle
 description:    行頭の箇条書き文字を前のスタイルに変更する
 　カーソル位置の行、または、選択されている全行を対象に、行頭文字を設定する。　設定ルールは以下の通り。
-　各行における [ 　\t]* のあとの1文字目
+　行頭文字の位置は、一つ上の行で最初の非空白文字が始まる位置に揃える。一つ上の行に非空白文字がない場合は、対象行の位置を維持する。
 　　TextEditor.Bullet.StyleSet に含まれる：　前の値に置換
-　　TextEditor.Bullet.StyleSet に含まれない：　1文字目の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
+　　TextEditor.Bullet.StyleSet に含まれない：　上記の位置に、TextEditor.Bullet.StyleSetの最後の文字を挿入
 
 ## Action：　260619　TextEditor.EditText.Undo
 description:    編集を元に戻す（Undo）

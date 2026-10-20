@@ -3,7 +3,7 @@
  * DiscussPanel 左縦タブバー（旧リボン）。
  *
  * ボタン構成（上から）:
- *   Pane設定 / 会話履歴 / ─区切り線─ / TextEditor設定 / Markdown設定 /
+ *   Pane設定 / 概要 / 対話 / ─区切り線─ / TextEditor設定 / Markdown設定 /
  *   DataGrid設定 / Card設定 / Graph設定 / Html設定
  *
  * - 押下で対応する設定パネルを開く
@@ -12,12 +12,12 @@
  */
 
 import { Fragment } from 'react';
-import { PanelLeftDashed, NotebookPen, BookOpenText, Table, IdCard, Share2, FileCode, MessageCircle, type LucideIcon } from 'lucide-react';
+import { PanelsTopLeft, NotebookPen, BookOpenText, Table, IdCard, Share2, FileCode, MessageCircle, BotMessageSquare, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
 import './DiscussTabBar.css';
 
-export type SettingsType = Extract<MediaType, 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'>;
+export type SettingsType = Extract<MediaType, 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'> | 'abstract';
 
 interface SettingsEntry {
   type: SettingsType;
@@ -28,8 +28,9 @@ interface SettingsEntry {
 }
 
 export const DEVELOP_SETTINGS: SettingsEntry[] = [
-  { type: 'panes',      Icon: PanelLeftDashed, name: 'Pane設定',       id: 'Panes' },
-  { type: 'chat',       Icon: MessageCircle,   name: '会話履歴',         id: 'AiChat' },
+  { type: 'panes',      Icon: PanelsTopLeft,   name: 'Pane設定',       id: 'Panes' },
+  { type: 'abstract',   Icon: BotMessageSquare, name: '概要',          id: 'DiscussAbstract' },
+  { type: 'chat',       Icon: MessageCircle,   name: '対話',             id: 'AiChat' },
   { type: 'texteditor', Icon: NotebookPen,     name: 'TextEditor設定', id: 'TextEditor' },
   { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定',   id: 'Markdown', unavailableReason: 'Markdown設定は未実装です。' },
   { type: 'datagrid',   Icon: Table,           name: 'DataGrid設定',   id: 'DataGrid' },

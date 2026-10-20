@@ -2,12 +2,12 @@
  * ThinktankTabBar.tsx
  * ThinktankPanel の縦タブバー（旧Ribbon）ボタン群。
  *
- * 上部: Think一覧（検索・Bundle一覧を統合）/ 会話履歴
+ * 上部: Think一覧（検索・Bundle一覧を統合）/ 概要 / 対話
  * 下部: 設定
  */
 
 import {
-  MessageCircle, Files, Settings,
+  MessageCircle, Files, BotMessageSquare, Settings,
 } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
@@ -32,7 +32,8 @@ const MODE_BUTTONS: {
   id: string;
 }[] = [
   { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧', id: 'ThinktankThinkList' },
-  { mode: 'chat',    icon: <MessageCircle size={16} />, label: '会話履歴', id: 'ThinktankAI' },
+  { mode: 'abstract', icon: <BotMessageSquare size={16} />, label: '概要', id: 'ThinktankAbstract' },
+  { mode: 'chat',    icon: <MessageCircle size={16} />, label: '対話', id: 'ThinktankAI' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────

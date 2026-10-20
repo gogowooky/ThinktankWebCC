@@ -13,7 +13,7 @@
 
 import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Folder, FileText, MessageCircle, Link, Table2, Globe, FileCode, Activity, File } from 'lucide-react';
+import { Folder, FileText, MessagesSquare, Link, Table, BotMessageSquare, FileCode, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -78,11 +78,11 @@ function getTypeIcon(contentType: string) {
   switch (contentType.toLowerCase()) {
     case 'bundle':   return <Folder        size={13} className="thoughts-list__icon" />;
     case 'memo':     return <FileText    size={13} className="thoughts-list__icon" />;
-    case 'chat':     return <MessageCircle size={13} className="thoughts-list__icon" />;
+    case 'chat':     return <MessagesSquare size={13} className="thoughts-list__icon" />;
     case 'links':    return <Link        size={13} className="thoughts-list__icon" />;
-    case 'table':    return <Table2      size={13} className="thoughts-list__icon" />;
+    case 'table':    return <Table       size={13} className="thoughts-list__icon" />;
     case 'html':     return <FileCode    size={13} className="thoughts-list__icon" />;
-    case 'nettext':  return <Globe       size={13} className="thoughts-list__icon" />;
+    case 'abstract': return <BotMessageSquare size={13} className="thoughts-list__icon" />;
     case 'status':   return <Activity    size={13} className="thoughts-list__icon" />;
     default:         return <File        size={13} className="thoughts-list__icon" />;
   }

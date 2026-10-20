@@ -13,7 +13,7 @@ import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type HarvestViewMode = 'chat' | 'settings';
+export type HarvestViewMode = 'chat' | 'abstract' | 'settings';
 
 /** AIチャットのメッセージ */
 export interface ChatMessage {

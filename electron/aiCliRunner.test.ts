@@ -5,9 +5,20 @@ import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const fs = require('node:fs') as typeof import('node:fs');
-const { runDomainAiConversation, AiCliError } = require('./aiCliRunner.cjs') as {
+const {
+  runDomainAiConversation,
+  AiCliError,
+  SUPPORTED_CLIS,
+  buildCliArgs,
+  buildCliInput,
+  extractCliResponse,
+} = require('./aiCliRunner.cjs') as {
   runDomainAiConversation: (params: Record<string, unknown>) => Promise<{ reply: string }>;
   AiCliError: new (message: string) => Error;
+  SUPPORTED_CLIS: string[];
+  buildCliArgs: (cliName: string, model?: string) => string[];
+  buildCliInput: (cliName: string, prompt: string) => string;
+  extractCliResponse: (cliName: string, stdout: string) => string;
 };
 
 let emptyDir: string;
@@ -36,6 +47,46 @@ describe('runDomainAiConversation without any AI CLI', () => {
       userMessage: 'この資料の論点は？',
     });
     await expect(run).rejects.toBeInstanceOf(AiCliError);
-    await expect(run).rejects.toThrow('AI CLI（Claude Code・Codex・Gemini CLI）がこの PC に見つかりません');
+    await expect(run).rejects.toThrow('AI CLI（Claude Code・Codex・Antigravity CLI）がこの PC に見つかりません');
+  });
+});
+
+describe('Antigravity CLI adapter', () => {
+  it('replaces Gemini CLI in the supported CLI list', () => {
+    expect(SUPPORTED_CLIS).toEqual(['claude', 'codex', 'antigravity']);
+  });
+
+  it('uses sandboxed stream-json mode and maps the app model to an Antigravity model slug', () => {
+    expect(buildCliArgs('antigravity', 'gemini-3.5-flash')).toEqual([
+      '--input-format',
+      'stream-json',
+      '--output-format',
+      'stream-json',
+      '--sandbox',
+      '--model',
+      'gemini-3.8-flash-medium',
+    ]);
+  });
+
+  it('encodes a prompt as one user event and extracts the terminal response', () => {
+    const input = buildCliInput('antigravity', '論点を整理して');
+    expect(JSON.parse(input)).toEqual({
+      event: 'user',
+      message: { content: '論点を整理して' },
+    });
+
+    const output = [
+      JSON.stringify({ event: 'init', init: { cwd: 'sandbox' } }),
+      JSON.stringify({ event: 'result', result: { status: 'SUCCESS', response: '{"reply":"回答"}\n' } }),
+    ].join('\n');
+    expect(extractCliResponse('antigravity', output)).toBe('{"reply":"回答"}\n');
+  });
+
+  it('turns an Antigravity error result into an execution error', () => {
+    const output = JSON.stringify({
+      event: 'result',
+      result: { status: 'ERROR', response: '', error: 'authentication required' },
+    });
+    expect(() => extractCliResponse('antigravity', output)).toThrow('authentication required');
   });
 });

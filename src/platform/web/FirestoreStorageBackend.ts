@@ -25,6 +25,8 @@ const FIREBASE_PROJECT_STORAGE_KEY = 'thinktank.web.firebaseProjectId';
  * Firestoreの保存容量で判定する。JSON転送表現のサイズとは区別する。
  */
 export const FIRESTORE_THINK_MAX_BYTES = 1024 * 1024;
+export const TOMBSTONE_EXPIRATION_DAYS = 90;
+const TOMBSTONE_EXPIRATION_MS = TOMBSTONE_EXPIRATION_DAYS * 24 * 60 * 60 * 1000;
 
 function fieldsSize(fields: Record<string, FirestoreValue>): number {
   return Object.entries(fields).reduce((sum, [key, value]) => sum + utf8Bytes(key) + 1 + valueSize(value), 0);
@@ -32,6 +34,7 @@ function fieldsSize(fields: Record<string, FirestoreValue>): number {
 
 function valueSize(value: FirestoreValue): number {
   if (value.stringValue !== undefined) return utf8Bytes(value.stringValue) + 1;
+  if (value.timestampValue !== undefined) return 8;
   if (value.mapValue) return fieldsSize(value.mapValue.fields ?? {}) + 32;
   if (value.arrayValue) return (value.arrayValue.values ?? []).reduce((sum, item) => sum + valueSize(item), 0);
   if (value.booleanValue !== undefined || value.nullValue !== undefined) return 1;
@@ -47,6 +50,7 @@ interface FirestoreValue {
   integerValue?: string;
   booleanValue?: boolean;
   doubleValue?: number;
+  timestampValue?: string;
   nullValue?: null;
   mapValue?: { fields?: Record<string, FirestoreValue> };
   arrayValue?: { values?: FirestoreValue[] };
@@ -68,11 +72,36 @@ interface StoredThinkRecord {
   meta: ThinkMeta;
   body: string;
   firestoreUpdateTime: string;
+  payloadParts?: { revision: string; count: number };
 }
 
 export interface FirestoreThinkRecord {
   meta: ThinkMeta;
   body: string;
+}
+
+export interface ThinkSnapshotRecord {
+  thinkid: string;
+  title: string;
+  body: string;
+  metadata: Record<string, unknown>;
+  sourceUpdatedAt: string;
+  snapshotAt: string;
+}
+
+export interface ThinkDiffResult {
+  thinkid: string;
+  hasChanges: boolean;
+  titleChanged: boolean;
+  bodyChanged: boolean;
+  metadataChanged: boolean;
+  latest: {
+    title: string;
+    body: string;
+    metadata: Record<string, unknown>;
+    updatedAt: string;
+  };
+  snapshot: ThinkSnapshotRecord;
 }
 
 export interface MarkdownImportResult {
@@ -84,6 +113,10 @@ export interface MarkdownImportResult {
 
 function stringField(fields: Record<string, FirestoreValue>, name: string): string {
   return fields[name]?.stringValue ?? '';
+}
+
+function timestampOrStringField(fields: Record<string, FirestoreValue>, name: string): string {
+  return fields[name]?.timestampValue ?? fields[name]?.stringValue ?? '';
 }
 
 function booleanField(fields: Record<string, FirestoreValue>, name: string): boolean {
@@ -150,6 +183,7 @@ function decodeFirestoreValue(value: FirestoreValue): unknown {
   if (value.booleanValue !== undefined) return value.booleanValue;
   if (value.integerValue !== undefined) return Number(value.integerValue);
   if (value.doubleValue !== undefined) return value.doubleValue;
+  if (value.timestampValue !== undefined) return value.timestampValue;
   return null;
 }
 
@@ -302,12 +336,14 @@ export class FirestoreStorageBackend implements IStorageBackend {
     const record = this.parseDocument(document);
     const fields = document.fields ?? {};
     const manifest = fields.payloadParts?.mapValue?.fields;
-    if (!record || !manifest || record.meta.isDeleted) return record;
+    if (!record || !manifest) return record;
     const revision = stringField(manifest, 'revision');
     const count = integerField(manifest, 'count');
     if (!/^[A-Za-z0-9_-]+$/.test(revision) || !Number.isSafeInteger(count) || count < 1) {
       throw new Error('Thinkの分割保存情報が不正です。');
     }
+    record.payloadParts = { revision, count };
+    if (record.meta.isDeleted) return record;
     const ctx = await this.context();
     const restored: Record<string, unknown> = { body: '', metadata: {} };
     for (let index = 0; index < count; index++) {
@@ -399,6 +435,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
   private async fetchDocument(
     id: string,
     includeDeleted = false,
+    skipHydrate = false,
   ): Promise<StoredThinkRecord | null> {
     if (!isSafeThinkId(id)) throw new Error(`不正な thinkid です: ${id}`);
     const ctx = await this.context();
@@ -413,7 +450,18 @@ export class FirestoreStorageBackend implements IStorageBackend {
       const body = await this.readJson(response);
       throw new Error(`Firestore の Think 取得に失敗しました (${firestoreErrorMessage(response.status, body)})`);
     }
-    const parsed = await this.hydrateDocument((await response.json()) as FirestoreDocument);
+    const doc = (await response.json()) as FirestoreDocument;
+    const parsed = skipHydrate ? this.parseDocument(doc) : await this.hydrateDocument(doc);
+    if (skipHydrate && parsed) {
+      const manifest = doc.fields?.payloadParts?.mapValue?.fields;
+      if (manifest) {
+        const revision = stringField(manifest, 'revision');
+        const count = integerField(manifest, 'count');
+        if (/^[A-Za-z0-9_-]+$/.test(revision) && Number.isSafeInteger(count) && count >= 1) {
+          parsed.payloadParts = { revision, count };
+        }
+      }
+    }
     if (!parsed || (parsed.meta.isDeleted && !includeDeleted)) {
       this.records.delete(id);
       return null;
@@ -477,6 +525,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
     fields: Record<string, FirestoreValue>,
     existing: StoredThinkRecord | null,
     requireExistingVersion: boolean,
+    extraWrites: Array<Record<string, unknown>> = [],
   ): Promise<void> {
     const ctx = await this.context();
     const documentName = `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
@@ -525,6 +574,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
         headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
         body: JSON.stringify({
           writes: [
+            ...extraWrites,
             {
               update: { name: documentName, fields },
               ...(currentDocument ? { currentDocument } : {}),
@@ -595,7 +645,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
     if (!isSafeThinkId(id)) throw new Error(`不正な thinkid です: ${id}`);
     // delete() 契約には期待版がないため、同時更新時だけ最新を読み直して一度再試行する。
     for (let attempt = 0; attempt < 2; attempt++) {
-      const existing = await this.fetchDocument(id, true);
+      const existing = await this.fetchDocument(id, true, true);
       if (!existing) {
         await this.deleteElectronMarkdownBackup(id);
         return;
@@ -606,17 +656,48 @@ export class FirestoreStorageBackend implements IStorageBackend {
         return;
       }
       const deletedAt = nextVersionTimestamp(existing.meta.updatedAt);
-      const deletedMeta: ThinkMeta = {
-        ...existing.meta,
-        isDeleted: true,
-        updatedAt: deletedAt,
+      const deletedAtDate = new Date(deletedAt);
+      const expireAtIso = new Date(
+        (Number.isNaN(deletedAtDate.getTime()) ? Date.now() : deletedAtDate.getTime()) +
+          TOMBSTONE_EXPIRATION_MS,
+      ).toISOString();
+
+      // tombstone: 本文やmetadata等の内容を消去し、最小限のメタデータとTTL情報のみ残す
+      const tombstoneFields: Record<string, FirestoreValue> = {
+        schemaVersion: { integerValue: '1' },
+        thinkid: { stringValue: id },
+        category: { stringValue: existing.meta.category || 'memo' },
+        title: { stringValue: '' },
+        body: { stringValue: '' },
+        keywords: { stringValue: '' },
+        relatedIds: { stringValue: '' },
+        metadata: { mapValue: { fields: {} } },
+        sizeBytes: { integerValue: '0' },
+        isDeleted: { booleanValue: true },
+        createdAt: { stringValue: existing.meta.createdAt || deletedAt },
+        updatedAt: { stringValue: deletedAt },
+        deletedAt: { timestampValue: deletedAt },
+        expireAt: { timestampValue: expireAtIso },
       };
-      const fields = {
-        ...this.documentFields({ meta: deletedMeta, body: existing.body }),
-        deletedAt: { stringValue: deletedAt },
-      };
+
+      // 分割保存された子ドキュメント（payloadParts）やスナップショットがあればコミットで同時に削除する
+      const extraWrites: Array<Record<string, unknown>> = [];
+      const ctx = await this.context();
+      const documentName = `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
+        `/vaults/${this.vaultId}/thinks/${id}`;
+      extraWrites.push({
+        delete: `${documentName}/snapshots/current`,
+      });
+      if (existing.payloadParts) {
+        for (let i = 0; i < existing.payloadParts.count; i++) {
+          extraWrites.push({
+            delete: `${documentName}/payloadParts/${existing.payloadParts.revision}_${i}`,
+          });
+        }
+      }
+
       try {
-        await this.commitDocument(id, fields, existing, true);
+        await this.commitDocument(id, tombstoneFields, existing, true, extraWrites);
         this.records.delete(id);
         await this.deleteElectronMarkdownBackup(id);
         return;
@@ -748,5 +829,147 @@ export class FirestoreStorageBackend implements IStorageBackend {
         error,
       );
     }
+  }
+
+  // ── スナップショット機能 ──────────────────────────────────────────
+
+  /** 指定 Think の最新状態のコピーを snapshots/current に保存する（一覧には現れない） */
+  public async createSnapshot(thinkid: string): Promise<ThinkSnapshotRecord> {
+    if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
+    const record = await this.fetchDocument(thinkid);
+    if (!record || record.meta.isDeleted) {
+      throw new Error(`対象の Think「${thinkid}」が見つかりません。`);
+    }
+
+    const ctx = await this.context();
+    const snapshotDocName =
+      `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
+      `/vaults/${this.vaultId}/thinks/${thinkid}/snapshots/current`;
+    const snapshotAt = new Date().toISOString();
+    const fields: Record<string, FirestoreValue> = {
+      schemaVersion: { integerValue: '1' },
+      thinkid: { stringValue: thinkid },
+      title: { stringValue: record.meta.title },
+      body: { stringValue: record.body },
+      metadata: encodeMetadata(record.meta.metadata),
+      sourceUpdatedAt: { stringValue: record.meta.updatedAt },
+      snapshotAt: { timestampValue: snapshotAt },
+    };
+
+    const response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+        ctx.projectId,
+      )}/databases/(default)/documents:commit`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
+        body: JSON.stringify({
+          writes: [{ update: { name: snapshotDocName, fields } }],
+        }),
+      },
+    );
+    if (!response.ok) {
+      const body = await this.readJson(response);
+      throw new Error(
+        `スナップショットの保存に失敗しました (${firestoreErrorMessage(response.status, body)})`,
+      );
+    }
+
+    return {
+      thinkid,
+      title: record.meta.title,
+      body: record.body,
+      metadata: record.meta.metadata ?? {},
+      sourceUpdatedAt: record.meta.updatedAt,
+      snapshotAt,
+    };
+  }
+
+  /** snapshots/current のスナップショットを取得する */
+  public async getSnapshot(thinkid: string): Promise<ThinkSnapshotRecord | null> {
+    if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
+    const ctx = await this.context();
+    const url = `${ctx.collectionUrl}/${encodeURIComponent(thinkid)}/snapshots/current`;
+    const response = await fetch(url, { headers: ctx.authHeaders });
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      const body = await this.readJson(response);
+      throw new Error(
+        `スナップショットの取得に失敗しました (${firestoreErrorMessage(response.status, body)})`,
+      );
+    }
+    const doc = (await response.json()) as FirestoreDocument;
+    const fields = doc.fields ?? {};
+    const metadata = fields.metadata?.mapValue
+      ? (decodeFirestoreValue(fields.metadata) as Record<string, unknown>)
+      : parseMetadata(stringField(fields, 'metadataJson'));
+
+    return {
+      thinkid,
+      title: stringField(fields, 'title'),
+      body: stringField(fields, 'body'),
+      metadata,
+      sourceUpdatedAt: stringField(fields, 'sourceUpdatedAt'),
+      snapshotAt: timestampOrStringField(fields, 'snapshotAt') || doc.updateTime || '',
+    };
+  }
+
+  /** snapshots/current のスナップショットを破棄する */
+  public async deleteSnapshot(thinkid: string): Promise<void> {
+    if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
+    const ctx = await this.context();
+    const snapshotDocName =
+      `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
+      `/vaults/${this.vaultId}/thinks/${thinkid}/snapshots/current`;
+
+    const response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+        ctx.projectId,
+      )}/databases/(default)/documents:commit`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
+        body: JSON.stringify({
+          writes: [{ delete: snapshotDocName }],
+        }),
+      },
+    );
+    if (!response.ok) {
+      const body = await this.readJson(response);
+      throw new Error(
+        `スナップショットの削除に失敗しました (${firestoreErrorMessage(response.status, body)})`,
+      );
+    }
+  }
+
+  /** 最新版とスナップショット版を比較して差分情報を取得する */
+  public async getDiff(thinkid: string): Promise<ThinkDiffResult | null> {
+    if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
+    const [latest, snapshot] = await Promise.all([
+      this.fetchDocument(thinkid),
+      this.getSnapshot(thinkid),
+    ]);
+    if (!latest || latest.meta.isDeleted || !snapshot) return null;
+
+    const titleChanged = latest.meta.title !== snapshot.title;
+    const bodyChanged = latest.body !== snapshot.body;
+    const metadataChanged =
+      JSON.stringify(latest.meta.metadata ?? {}) !== JSON.stringify(snapshot.metadata ?? {});
+    const hasChanges = titleChanged || bodyChanged || metadataChanged;
+
+    return {
+      thinkid,
+      hasChanges,
+      titleChanged,
+      bodyChanged,
+      metadataChanged,
+      latest: {
+        title: latest.meta.title,
+        body: latest.body,
+        metadata: latest.meta.metadata ?? {},
+        updatedAt: latest.meta.updatedAt,
+      },
+      snapshot,
+    };
   }
 }
