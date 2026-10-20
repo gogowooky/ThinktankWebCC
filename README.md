@@ -21,6 +21,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-10-20
 - コミット番号: 7a580bd
+- デプロイ日: 2026-10-20（JST）
+- デプロイ対象コミット: c383b13（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 Think種別のwebtextを廃止してabstract（概要）を追加し、tableとchatのアイコンを変更。4パネルにサブパネル「概要」を追加し、「会話履歴」を「対話」に改名。Seedsの「分析」サブパネルを廃止し、Discuss>Pane設定のアイコンを変更。Thinktank>設定は「アクション」「概要のAI設定」「データ接続」「Vault」の構成に整理し、データ接続の操作をアイコンボタン中心にした。エリア開閉ボタンのShift+クリックを設定の全セクションに連動させ、Shift+右クリックに段階的な開閉（FocusedPanel.Area.OpenStepwise / CloseStepwise）を割り当てた。Bundleの固定IDリスト化、AI CLIのantigravity対応、MarkdownバックアップのFirestore取り込みなど作業中だった変更も含む。テスト584件が成功。
 
