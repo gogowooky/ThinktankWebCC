@@ -17,6 +17,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
 
+### v2.6.2 feat: abstract種別と概要サブパネルを追加し、各パネルのメニューと設定画面を整理
+
+- 日付: 2026-10-20
+- コミット番号: 7a580bd
+
+Think種別のwebtextを廃止してabstract（概要）を追加し、tableとchatのアイコンを変更。4パネルにサブパネル「概要」を追加し、「会話履歴」を「対話」に改名。Seedsの「分析」サブパネルを廃止し、Discuss>Pane設定のアイコンを変更。Thinktank>設定は「アクション」「概要のAI設定」「データ接続」「Vault」の構成に整理し、データ接続の操作をアイコンボタン中心にした。エリア開閉ボタンのShift+クリックを設定の全セクションに連動させ、Shift+右クリックに段階的な開閉（FocusedPanel.Area.OpenStepwise / CloseStepwise）を割り当てた。Bundleの固定IDリスト化、AI CLIのantigravity対応、MarkdownバックアップのFirestore取り込みなど作業中だった変更も含む。テスト584件が成功。
+
 ### v2.6.1 refactor: 起動をdev:electronへ統一し常駐relayを廃止
 
 - 日付: 2026-10-19
