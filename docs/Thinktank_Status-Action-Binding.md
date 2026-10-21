@@ -547,16 +547,16 @@ candidates:     ^(Claude|OpenAI|Gemini|Local)$
 　　　そのパネルのプロバイダも切り替わる。
 　　　旧版のパネル別の保存値（localStorage の tt-ai-model-*）は初回起動時に引き継ぐ。
 # Panel Focused ====================================================================================================
-## Action 完了：　261020　FocusedPanel.Area.OpenStepwise
+## Action 完了：　261021　FocusedPanel.Area.OpenStepwise
 エリアが閉じているとき：エリアを開く　→終了
 下位項目をすべて開く →終了
-「Shift+FocusedPanelの開ボタン右クリック」にこのアクションをBindする
+「Shift+FocusedPanelの開ボタン左クリック」にこのアクションをBindする
 description:    フォーカスパネルのエリアを段階的に開く
 
-## Action 完了：　261020　FocusedPanel.Area.CloseStepwise
+## Action 完了：　261021　FocusedPanel.Area.CloseStepwise
 エリアが開いているときで、下位項目の一部が開いているとき：すべての下位項目を閉じる　→終了
 エリアを閉じる →終了
-「Shift+FocusedPanelの閉ボタン右クリック」にこのアクションをBindする
+「Shift+FocusedPanelの閉ボタン左クリック」にこのアクションをBindする
 description:    フォーカスパネルのエリアを段階的に閉じる
 
 　A（261020実装）：src\views\TTFocusedPanelActions.ts に2アクションを登録しました。
@@ -578,6 +578,14 @@ description:    フォーカスパネルのエリアを段階的に閉じる
 　　- 注意：開閉ボタンはエリアを開くと閉ボタンに変わるため、ボタンからは OpenStepwise の2段目
 　　　（下位項目をすべて開く）に届きません。2段目はキー割当や TTActions.Execute から実行できます。
 　　- テスト：src\views\TTPanelAreaStepwise.test.ts
+
+　A（261021修正）：Bind を Shift+右クリックから Shift+左クリックに変えました（VerticalTabBar.tsx）。
+　　- 開閉ボタンの Shift+クリックは、開ボタンなら OpenStepwise、閉ボタンなら CloseStepwise を実行します。
+　　- これまでの Shift+クリック（パネル内をすべて展開して開く／すべて折りたたむ）は廃止しました。
+　　　Shift+右クリックは他の右クリックと同じ扱い（DefaultShortcut.md の right1）に戻ります。
+　　- Shift+クリックは DefaultShortcut.md のマウス割当（left1）には流しません。
+　　- 上の注意（ボタンからは OpenStepwise の2段目に届かない）は変わりません。
+　　- Web 版の Seeds パネルで、閉→Shift+クリックで開く→Shift+クリックで閉じる、を確認しました。
 
 ## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
 エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
