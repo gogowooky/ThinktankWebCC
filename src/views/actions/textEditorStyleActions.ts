@@ -132,7 +132,7 @@ export function registerTextEditorBulletActions(app: TTApplication): void {
     shortLabel: 'バレット',
     descLabel: '箇条書き文字',
     alignToPreviousLine: true,
-    getMarks: (a) => parseMarks(a.DiscussPanel.TextEditor.Bullet.Marks),
+    getMarks: (a) => parseMarks(a.WorkingPanel.TextEditor.Bullet.Marks),
   });
 }
 
@@ -142,6 +142,6 @@ export function registerTextEditorCommentActions(app: TTApplication): void {
     shortLabel: 'コメント',
     descLabel: 'コメント記号',
     alignToPreviousLine: false,
-    getMarks: (a) => parseMarks(a.DiscussPanel.TextEditor.Comment.Marks),
+    getMarks: (a) => parseMarks(a.WorkingPanel.TextEditor.Comment.Marks),
   });
 }

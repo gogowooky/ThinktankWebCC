@@ -6,16 +6,16 @@ import { setModelNames } from '../services/aiChatModelStatus';
 import { TTUIStateManager } from './TTUIStateManager';
 import { TTThinktankPanel } from './TTThinktankPanel';
 import { TTSeedsPanel } from './TTSeedsPanel';
-import { TTDiscussPanel } from './TTDiscussPanel';
+import { TTWorkingPanel } from './TTWorkingPanel';
 import { TTHarvestPanel } from './TTHarvestPanel';
 
-const names = ['ThinktankPanel', 'SeedsPanel', 'DiscussPanel', 'HarvestPanel'] as const;
+const names = ['ThinktankPanel', 'SeedsPanel', 'WorkingPanel', 'HarvestPanel'] as const;
 
 function setup() {
   const panels = {
     ThinktankPanel: new TTThinktankPanel(),
     SeedsPanel: new TTSeedsPanel(),
-    DiscussPanel: new TTDiscussPanel(),
+    WorkingPanel: new TTWorkingPanel(),
     HarvestPanel: new TTHarvestPanel(),
   };
   const parent = Object.assign(new TTNotifyBase(), panels);
@@ -87,7 +87,7 @@ it('keeps CheckAll copying and Seeds bundle opening behavior', () => {
   expect(panels.SeedsPanel.ViewMode).toBe('filter');
   expect(panels.HarvestPanel.CheckedThoughtIDs).toEqual([]);
   expect(events).toEqual([
-    'ThinktankPanel', 'parent', 'DiscussPanel', 'parent', 'HarvestPanel', 'parent',
+    'ThinktankPanel', 'parent', 'WorkingPanel', 'parent', 'HarvestPanel', 'parent',
     'Application.CheckedItem.IDs', 'SeedsPanel', 'parent', 'SeedsPanel.Project.ID',
   ]);
 });
@@ -96,7 +96,7 @@ it('keeps provider choices separate, models shared, and selection notifications 
   setModelNames('Gemini', 'model-before');
   const { panels, events } = setup();
   panels.HarvestPanel.AIChatProviderName = 'Gemini';
-  panels.DiscussPanel.SettingAIChatProviderName = 'OpenAI';
+  panels.WorkingPanel.SettingAIChatProviderName = 'OpenAI';
   panels.SeedsPanel.SetAIChatModel({ provider: 'gemini', model: 'model-after' });
   expect(events).toEqual([
     ...names.flatMap(name => [name, 'parent']), 'SeedsPanel', 'parent',
@@ -104,10 +104,10 @@ it('keeps provider choices separate, models shared, and selection notifications 
   expect(panels.SeedsPanel.AIChatProviderName).toBe('Gemini');
   expect(panels.HarvestPanel.AIChatModel).toBe('model-after');
   expect(panels.ThinktankPanel.AIChatProviderName).toBe('Claude');
-  expect(panels.DiscussPanel.SettingAIChatProviderName).toBe('OpenAI');
+  expect(panels.WorkingPanel.SettingAIChatProviderName).toBe('OpenAI');
 
-  panels.DiscussPanel.SetSettingAIChatModel({ provider: 'anthropic', model: 'settings-model' });
-  expect(panels.DiscussPanel.SettingAIChatProvider).toBe('anthropic');
-  expect(panels.DiscussPanel.SettingAIChatModel).toBe('settings-model');
-  expect(panels.DiscussPanel.AIChatProviderName).toBe('Claude');
+  panels.WorkingPanel.SetSettingAIChatModel({ provider: 'anthropic', model: 'settings-model' });
+  expect(panels.WorkingPanel.SettingAIChatProvider).toBe('anthropic');
+  expect(panels.WorkingPanel.SettingAIChatModel).toBe('settings-model');
+  expect(panels.WorkingPanel.AIChatProviderName).toBe('Claude');
 });

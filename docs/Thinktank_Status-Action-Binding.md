@@ -96,7 +96,7 @@ candidates:      ^[0-9]{2,3}$
 
 ## Action：　260911　Application.Resource.RollbackFocusedThink
 description:    直前にフォーカスされたThinkファイル１つをBQで1時間前の状態に戻す
-　対象は DiscussPanel.FocusedPane.FileHistory の先頭のThinkファイル1件。
+　対象は WorkingPanel.FocusedPane.FileHistory の先頭のThinkファイル1件。
 　BigQuery time travel（FOR SYSTEM_TIME AS OF）を使う復元APIが未実装のため、現状はUIの受け皿のみで、
 　実行してもステータスバーに「巻戻（Think1件）: 未実装です」と表示するだけで復元は行われない。
 ## Action：　260911　Application.Resource.RollbackAll
@@ -124,16 +124,16 @@ key:            Application.FocusedPanel.Name
 current:        Seeds
 default:        Thinktank
 type:           string
-candidates:      ^(Thinktank|Seeds|DiscussSetting|Discuss|Harvest)$
+candidates:      ^(Thinktank|Seeds|WorkingSetting|Working|Harvest)$
 
 　Q：設定値を記載してください。
 　A：設定されるすべての値（フォーカス対象となるパネル・エリア名）は以下の5つです。
 　　- Thinktank （左パネル：フィルター / チャット / 設定）
 　　- Seeds （上部パネル：データグリッド / グラフ / チャット / 設定）
-　　- DiscussSetting （ワークアウト設定トレイ / 垂直タブバー）
-　　- Discuss （ワークアウト編集エリア）
+　　- WorkingSetting （Working設定トレイ / 垂直タブバー）
+　　- Working （Working編集エリア）
 　　- Harvest （右パネル：AIチャット / 設定）
-　　※レイアウトモードが 'simple' の場合は、Thinktank, DiscussSetting, Discuss の3つのみが選択肢となります。
+　　※レイアウトモードが 'simple' の場合は、Thinktank, WorkingSetting, Working の3つのみが選択肢となります。
 
 
 ## Action：　260619　Application.Status.ExMode:ExApp
@@ -178,7 +178,7 @@ key:            Application.FocusedArea.Name
 current:        None
 default:        None
 type:           string
-candidates:      ^(None|Thinktank|Seeds|DiscussSetting|Discuss|Harvest)\..*$
+candidates:      ^(None|Thinktank|Seeds|WorkingSetting|Working|Harvest)\..*$
 
 　StatusBarKeyActionPanelのTextBox中にあるFOCUSにその値を表示してください。　
 　フォーカスされるものがある場合のみFOCUSされる
@@ -187,15 +187,15 @@ candidates:      ^(None|Thinktank|Seeds|DiscussSetting|Discuss|Harvest)\..*$
 　A：キーボードフォーカスがあるDOM要素と各パネルの表示モード状態に基づき、動的に以下の値が判定されて設定されます。
 　　- Thinktank.{ModeName}
 　　- Seeds.{ModeName}
-　　- DiscussSetting.{ModeName}
+　　- WorkingSetting.{ModeName}
 　　- ToolBar.{ModeName} 
-　　- Discuss.{MediaType}
+　　- Working.{MediaType}
 　　- Harvest.{ModeName}
 　　※フォーカスがどこにもない場合は None です。
 
 　Q：ToolBar>HilighterのTextboxにフォーカスがあるとき、値はどうなりますか？
 　A：ToolBar.Highlighter となります（修正前は誤って Application.StatusBarArea を返していました）。
-　　原因は getFocusName.ts のツールバー判定が、実際には存在しない .discuss-toolbar という
+　　原因は getFocusName.ts のツールバー判定が、実際には存在しない .working-toolbar という
 　　クラス名を参照していたため、常にマッチせずフォールバックの Application.StatusBarArea に
 　　落ちていたことです。実際のツールバー（Highlighter/Command/...入力欄を含む）は
 　　.ApplicationStatusBarArea として描画されるため、判定をこちらに修正しました。
@@ -296,7 +296,7 @@ default:        Google
 type:           string
 candidates:     .*
 
-　A（261013実装）：TTDiscussPanel.SearchSiteID（既定 Google）を実体とし、
+　A（261013実装）：TTWorkingPanel.SearchSiteID（既定 Google）を実体とし、
 　　src\views\settings\toolbarSpecs.ts に Status として登録しました。
 　　空にした場合は Google に戻します（current が空のまま起動時に読み込まれても検索先が無くならないように）。
 　（261013）ToolBar の Search モードでは、入力欄の左にこの値を表示します
@@ -339,7 +339,7 @@ candidates:     .*
 　各パネルの「Think一覧」「AI相談」に設定されているの「コンテンツで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
 
 　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
-　　TTDiscussPanel.AddContentSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　TTWorkingPanel.AddContentSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
 　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter()／
 　　ThinktankArea・SeedsArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
 
@@ -350,7 +350,7 @@ default:        'true'
 type:           bool
 candidates:     ^(true|false)^$
 
-　A（260814実装）：TTDiscussPanel.AddContentSearchKeywordFlag（既定true）として実体を追加し、
+　A（260814実装）：TTWorkingPanel.AddContentSearchKeywordFlag（既定true）として実体を追加し、
 　　TTUIStateManagerにStatusとして登録しました。実行判定は共通ユーティリティ
 　　src\utils\highlighterKeyword.ts の addContentSearchKeywordToHighlighter() が担い、
 　　既存の「選択テキストをHighlighterへ追加」（AddSelected）と同じグループ重複排除ロジックで
@@ -367,7 +367,7 @@ candidates:     ^(true|false)^$
 　各パネルの「Think一覧」「AI相談」に設定されているの「タイトルで絞込み」を実行したときの Keywordを、ToolBar.HighlighterMode.Text に追加するかどうかのフラグです。
 
 　A（260906確認）：260814実装分がコード上に維持されていることを確認しました。
-　　TTDiscussPanel.AddTitleSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
+　　TTWorkingPanel.AddTitleSearchKeywordFlag（既定true）／TTUIStateManager の Status 登録／
 　　src\utils\highlighterKeyword.ts の addTitleSearchKeywordToHighlighter()／
 　　ThinktankArea・SeedsArea・ThinktankChatMemoPicker からの呼び出しがいずれも現存。変更なし。
 
@@ -378,7 +378,7 @@ default:        'true'
 type:           bool
 candidates:     ^(true|false)^$
 
-　A（260814実装）：TTDiscussPanel.AddTitleSearchKeywordFlag（既定true）として実体を追加し、
+　A（260814実装）：TTWorkingPanel.AddTitleSearchKeywordFlag（既定true）として実体を追加し、
 　　TTUIStateManagerにStatusとして登録しました。追加判定は addContentSearchKeywordToHighlighter
 　　と同じユーティリティファイルの addTitleSearchKeywordToHighlighter() で行います。
 　　タイトル絞り込み欄（ThinktankFilterPanel/SeedsFilterPanel）はEnterキーで
@@ -406,7 +406,7 @@ ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その�
 
 　A：4アクションとも TTFocusedPanelActions に実装しました。
 　　- AddSelected: FocusedPaneの選択テキスト（改行を含む場合は1行目）をカンマ区切りのグループとして追加。既存と重複する場合は追加しない。
-　　- Clear: ToolBar.HighlighterMode.Text（= DiscussPanel.HighlightWord）を空にする。
+　　- Clear: ToolBar.HighlighterMode.Text（= WorkingPanel.HighlightWord）を空にする。
 　　- Focus: 直前のフォーカス要素を記憶し、ToolBarをHighlighterモードに切り替えて入力欄（#StatusBarTextInput）にフォーカス。
 　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
 　　キー割当（docs\DefaultShortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
@@ -531,18 +531,18 @@ current:        Claude
 default:        Claude
 type:           string
 candidates:     ^(Claude|OpenAI|Gemini|Local)$
-## Status：　261012　DiscussSettingPanel.AIChat.ModelName
+## Status：　261012　WorkingSettingPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
-description:    DiscussSettingPanelのAIChatで用いるAIモデル名
-key:            DiscussSettingPanel.AIChat.ModelName
+description:    WorkingSettingPanelのAIChatで用いるAIモデル名
+key:            WorkingSettingPanel.AIChat.ModelName
 current:        Claude
 default:        Claude
 type:           string
 candidates:     ^(Claude|OpenAI|Gemini|Local)$
-## Status：　261012　DiscussPanel.AIChat.ModelName
+## Status：　261012　WorkingPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
-description:    DiscussPanelのAIChatで用いるAIモデル名
-key:            DiscussPanel.AIChat.ModelName
+description:    WorkingPanelのAIChatで用いるAIモデル名
+key:            WorkingPanel.AIChat.ModelName
 current:        Claude
 default:        Claude
 type:           string
@@ -569,7 +569,7 @@ candidates:     ^(Claude|OpenAI|Gemini|Local)$
 　　　Local は現時点で常に None。
 　　　2026-10-12 時点の実際の一覧：OpenAI = gpt-6-astra,gpt-6-luna,gpt-6.1-sol、
 　　　Gemini = gemini-3.8-flash,gemini-2.5-pro,gemini-3.5-flash-lite、Claude は APIキーが認証エラー（401）で空。
-　　■ {Panel}.AIChat.ModelName（パネルごと。DiscussSetting と Discuss の Pane は別々）
+　　■ {Panel}.AIChat.ModelName（パネルごと。WorkingSetting と Working の Pane は別々）
 　　　会話の送信時に、このプロバイダの AIChat.ModelNames.* の先頭のモデルを指定して送る。
 　　　サーバーは上記の一覧（許可リスト）にあるモデルだけを受け付け、その社と会話する
 　　　（Claude の会話実装 AnthropicProvider を追加）。会話の記録の provider / model も送ったモデルになる。
@@ -593,13 +593,13 @@ description:    フォーカスパネルのエリアを段階的に閉じる
 
 　A（261020実装）：src\views\TTFocusedPanelActions.ts に2アクションを登録しました。
 　　- 対象パネルは今のキーボードフォーカス（getFocusName）から決め、取れなければ FocusedColumn を使います。
-　　　DiscussSetting / Discuss はどちらも Discuss の設定エリアが対象です。
+　　　WorkingSetting / Working はどちらも Working の設定エリアが対象です。
 　　- 「下位項目」はエリア内の開閉セクション（見出しの ▼／▶）と <details> です。
 　　　開閉はエリア開閉ボタンの Shift+クリックと同じ仕組み（hooks\usePanelSectionsSetAll.ts の
 　　　setPanelSectionsAll）で行います。
 　　- 「一部が開いているか」は、いま表示されている見出しが ▼ か、開いた <details> があるかで判定します
-　　　（表示していないセクションの開閉状態は数えません）。Discuss は Pane 側の Markdown にも
-　　　<details> があるため、設定エリア（.discuss-setting-area）の中だけを見ます。
+　　　（表示していないセクションの開閉状態は数えません）。Working は Pane 側の Markdown にも
+　　　<details> があるため、設定エリア（.working-setting-area）の中だけを見ます。
 　　- エリアを開くときの幅は変えません（その時点の OpenWidth のまま）。
 　　- 閉じているエリアに CloseStepwise を実行したときは何もしません（[閉じている]）。
 　　- Bind：各パネルの縦タブバーの開閉ボタン（components\Layout\VerticalTabBar.tsx）で、
@@ -876,56 +876,56 @@ current:        none
 default:        none
 type:           string
 candidates:     .*
-# Panel Discuss ====================================================================================================
-## Status：　261009　DiscussSettingPanel.Area.OpenWidth
+# Panel Working ====================================================================================================
+## Status：　261009　WorkingSettingPanel.Area.OpenWidth
 key:の意味はThinktankPanel.Area.OpenWidthと同じ
-　（旧記載の DiscussPanel.Area.OpenWidth は未登録のIDだったため、実装上の StatusID であるこちらに統合しました）
-　ワークアウト設定パネル（DiscussSetting：垂直タブバー＋設定トレイ）を開いたときの幅のモードです。
-　実体は TTDiscussPanel.AreaWidthMode で、px は panelAreaWidth.ts が導出します。
+　（旧記載の WorkingPanel.Area.OpenWidth は未登録のIDだったため、実装上の StatusID であるこちらに統合しました）
+　Working設定パネル（WorkingSetting：垂直タブバー＋設定トレイ）を開いたときの幅のモードです。
+　実体は TTWorkingPanel.AreaWidthMode で、px は panelAreaWidth.ts が導出します。
 　FocusedPanel.Area.OpenWidth:* / FocusedPanel.Area.IsOpen:Toggle* は、フォーカスが
-　DiscussSetting と Discuss のどちらにある場合もこの Status を対象にします。
+　WorkingSetting と Working のどちらにある場合もこの Status を対象にします。
 　Splitter で幅を変更すると user に切り替わります。
 
-description:    ワークアウトパネルOpen時の幅
-key:            DiscussSettingPanel.Area.OpenWidth
+description:    WorkingパネルOpen時の幅
+key:            WorkingSettingPanel.Area.OpenWidth
 current:        init
 default:        init
 type:           string
 candidates:     ^(init|user|foredit)$
-## Status：　260619　DiscussSettingPanel.Area.IsOpen
+## Status：　260619　WorkingSettingPanel.Area.IsOpen
 
-description:    ワークアウト設定パネル表示
-key:            DiscussSettingPanel.Area.IsOpen
+description:    Working設定パネル表示
+key:            WorkingSettingPanel.Area.IsOpen
 current:        false
 default:        true
 type:           boolean
 candidates:     ^(true|false)$
-## Status：　260613　DiscussSettingPanel.Mode.Name
+## Status：　260613　WorkingSettingPanel.Mode.Name
 
-description:    ワークアウト設定パネルモード
-key:            DiscussSettingPanel.Mode.Name
-current:        Discuss
-default:        Discuss
+description:    Working設定パネルモード
+key:            WorkingSettingPanel.Mode.Name
+current:        Working
+default:        Working
 type:           string
-candidates:     ^(Discuss|Texteditor|Markdown|Datagrid|Card|Graph)$
+candidates:     ^(Working|Texteditor|Markdown|Datagrid|Card|Graph)$
 
 
 　Q：設定値を記載してください。
 　A：設定可能な値は以下の6つです。
-　　- Discuss （概要設定）
+　　- Working （概要設定）
 　　- Texteditor （テキストエディタ）
 　　- Markdown （マークダウンプレビュー）
 　　- Datagrid （データグリッド）
 　　- Card （カードビュー）
 　　- Graph （グラフビュー）
  
-## Action：　260619　DiscussPanel.FocusedPane.Mode:Next
+## Action：　260619　WorkingPanel.FocusedPane.Mode:Next
 description:    フォーカスペインの表示モードを次に切り替える
-## Action：　260619　DiscussPanel.FocusedPane.Mode:Prev
+## Action：　260619　WorkingPanel.FocusedPane.Mode:Prev
 description:    フォーカスペインの表示モードを前に切り替える
-## Status：　260619　DiscussPanel.FocusedPane.Mode
-description:    ワークアウトパネルの表示モード
-key:            DiscussPanel.FocusedPane.Mode
+## Status：　260619　WorkingPanel.FocusedPane.Mode
+description:    Workingパネルの表示モード
+key:            WorkingPanel.FocusedPane.Mode
 current:        Texteditor
 default:        Texteditor
 type:           string
@@ -935,7 +935,7 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 　今、Next/Prevでその範囲を超えて設定されてしまっていますので、修正してください。docs\260606_Thinktank仕様書\02_UI・画面レイアウト仕様.mdの## 6. ContentType と MediaType のマッピングを参照してください。
 
 　Q：設定値を記載してください。
-　A：現在フォーカスされているペイン（DiscussArea）の表示モード（1文字目大文字）を取得・設定します。
+　A：現在フォーカスされているペイン（WorkingArea）の表示モード（1文字目大文字）を取得・設定します。
 　　設定・変更可能な値は以下の6つです（循環切替に対応）。
 　　- `Texteditor` （テキストエディタ）
 　　- `Markdown` （マークダウンプレビュー）
@@ -947,16 +947,16 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 
 
 
-## Status：　260613　DiscussPanel.FocusedPane.ID
+## Status：　260613　WorkingPanel.FocusedPane.ID
 
-## Action：　260728　DiscussPanel.FocusedPane.PaneNumber:ReFocus
-description:    DiscussPanelの現在フォーカス中のPaneに再度フォーカスする
-　DiscussPanelの指定のPane番号に再度フォーカスする
-## Action：　260619　DiscussPanel.FocusedPane.PaneNumber:Next
+## Action：　260728　WorkingPanel.FocusedPane.PaneNumber:ReFocus
+description:    WorkingPanelの現在フォーカス中のPaneに再度フォーカスする
+　WorkingPanelの指定のPane番号に再度フォーカスする
+## Action：　260619　WorkingPanel.FocusedPane.PaneNumber:Next
 description:    フォーカスペインを次のペインに移動する
-## Action：　260619　DiscussPanel.FocusedPane.PaneNumber:Prev
+## Action：　260619　WorkingPanel.FocusedPane.PaneNumber:Prev
 description:    フォーカスペインを前のペインに移動する
-## Status：　260619　DiscussPanel.FocusedPane.PaneNumber
+## Status：　260619　WorkingPanel.FocusedPane.PaneNumber
 
 　Q：設定値を記載してください。
 　A：現在表示されているペインの中でフォーカスされているペインの番号（1始まり）を返します。
@@ -964,7 +964,7 @@ description:    フォーカスペインを前のペインに移動する
 　　- `1`〜`6` （表示されているペインの配置順）
 　　- `0` （フォーカスされているペインがない場合）
 
-## Action：　260814　DiscussPanel.FocusedPane.FileHistory:Menu
+## Action：　260814　WorkingPanel.FocusedPane.FileHistory:Menu
 description:    フォーカスペインのファイル履歴をメニューで表示して選択する
 　フォーカスのあるPaneのファイル履歴を古いもの順でメニューに表示し、上下キーとEnterで選択する
 　メニューのスタイルは TextEditor.CurrentEditor.DoOnCursorPos:Menu と同じにしてください。
@@ -976,7 +976,7 @@ description:    フォーカスペインのファイル履歴をメニューで�
 　　　ID」を表示します。現在位置（HistoryPos）の行には先頭に ● を付けます。
 　　- ↑↓で選択、Enterで決定してその位置のファイルをLoadします（LoadHistoryAt。履歴移動なので
 　　　履歴自体は増えません）。Escでキャンセル、1〜9はニーモニック（数字キー）で即決定できます。
-　　- メニューはフォーカスPane（.discuss-area[data-area-id]）の上端中央に表示します。
+　　- メニューはフォーカスPane（.working-area[data-area-id]）の上端中央に表示します。
 　　- Paneが無い場合は[対象Paneなし]、履歴が0件の場合は[履歴なし]としてメニューを出しません。
 　　キー割当は docs\DefaultShortcut.md に *TextEditor の Ctrl+Alt+Backspace を追加しました
 　　（既存の Alt+Backspace＝Prev / Shift+Alt+Backspace＝Next と揃えています）。
@@ -988,50 +988,50 @@ description:    フォーカスペインのファイル履歴をメニューで�
 　　発火しないため、フォーカス判定（focusin→rAF）に依存する *TextEditor 限定のキー割当だけは
 　　実キー入力での確認ができていません（アクション本体はショートカットと同じ TTActions.Execute
 　　経路で検証済みです）。
-## Status：　260814　DiscussPanel.FocusedPane.FileHistory
+## Status：　260814　WorkingPanel.FocusedPane.FileHistory
 　フォーカスがあるPaneでLoadしたファイルの履歴（古い順・最大30件）をCSVで返す読み取り専用Statusです。
 
 description:    フォーカスがあるペインのLoadファイル履歴（古い順・最大30件のCSV）
-key:            DiscussPanel.FocusedPane.FileHistory
+key:            WorkingPanel.FocusedPane.FileHistory
 current:        ''
 default:        ''
 type:           string
 candidates:     .*
-## Status：　260814　DiscussPanel.FocusedPane.FileHistoryPos
+## Status：　260814　WorkingPanel.FocusedPane.FileHistoryPos
 description:    フォーカスがあるペインのファイル履歴の現在位置（1始まり。0=履歴なし）
-key:            DiscussPanel.FocusedPane.FileHistoryPos
+key:            WorkingPanel.FocusedPane.FileHistoryPos
 current:        0
 default:        0
 type:           string
 candidates:     ^[0-9]+$
-## Status：　260814　DiscussPanel.FocusedPane.FileHistoryMax
+## Status：　260814　WorkingPanel.FocusedPane.FileHistoryMax
 description:    フォーカスがあるペインのファイル履歴の件数（最大30）
-key:            DiscussPanel.FocusedPane.FileHistoryMax
+key:            WorkingPanel.FocusedPane.FileHistoryMax
 current:        0
 default:        0
 type:           string
 candidates:     ^[0-9]+$
 
-## Status：　260630　DiscussPanel.Pane.Count
-　IDをDiscussPanel.Panes.Countに変更
-## Status：　260911　DiscussPanel.Panes.Count
+## Status：　260630　WorkingPanel.Pane.Count
+　IDをWorkingPanel.Panes.Countに変更
+## Status：　260911　WorkingPanel.Panes.Count
 description:    表示されているペインの数
-key:            DiscussPanel.Panes.Count
+key:            WorkingPanel.Panes.Count
 current:        0
 default:        0
 type:           string
 candidates:     ^[0-9]+$
-　読み取り専用（isConst）。DiscussPanel.Areas の数から算出するため直接は書き換えられない。
-## Status：　260706　DiscussPanel.Panes.Layout
+　読み取り専用（isConst）。WorkingPanel.Areas の数から算出するため直接は書き換えられない。
+## Status：　260706　WorkingPanel.Panes.Layout
 description:    Paneレイアウト構造(JSON)
-key:            DiscussPanel.Panes.Layout
+key:            WorkingPanel.Panes.Layout
 current:        null
 default:        null
 type:           json
 candidates:     .*
-## Status：　260706　DiscussPanel.Panes.Display
+## Status：　260706　WorkingPanel.Panes.Display
 description:    各Paneのロード状態(JSON)
-key:            DiscussPanel.Panes.Display
+key:            WorkingPanel.Panes.Display
 current:        []
 default:        []
 type:           json
@@ -1065,32 +1065,32 @@ candidates:     ^(Chat|Settings)$
 　　- Chat （AI対話チャット）
 　　- Settings （設定）
 # Panel D&D ========================================================================================================
-## Action：　260724　DiscussPanel.DroppedFile.ID:Load
+## Action：　260724　WorkingPanel.DroppedFile.ID:Load
 description:    DropされたThinkファイルをPaneにLoadする
-　IDを DiscussPanel.DroppedFile.ID:Load に修正してください。
+　IDを WorkingPanel.DroppedFile.ID:Load に修正してください。
 
 　DropされたThinkファイルをPaneにLoadする
 
-　A（260724修正）：ActionID を 'DiscussPanel.Load.DroppedFile' から 'DiscussPanel.DroppedFile.ID:Load'
-　　に変更しました（TTFocusedPanelActions.ts の TTActions.Register、DiscussArea.tsx /
-　　DiscussPanel.tsx の実行・判定箇所、docs\DefaultShortcut.md の ThinkFileDrag 割当を統一）。
-　　命名規則（{Status ID}:*）に合わせ、対応するStatus DiscussPanel.DroppedFile.ID の実装と
+　A（260724修正）：ActionID を 'WorkingPanel.Load.DroppedFile' から 'WorkingPanel.DroppedFile.ID:Load'
+　　に変更しました（TTFocusedPanelActions.ts の TTActions.Register、WorkingArea.tsx /
+　　WorkingPanel.tsx の実行・判定箇所、docs\DefaultShortcut.md の ThinkFileDrag 割当を統一）。
+　　命名規則（{Status ID}:*）に合わせ、対応するStatus WorkingPanel.DroppedFile.ID の実装と
 　　あわせて対応しました。
-## Action：　260724　DiscussPanel.DroppedFile.ID:Insert
+## Action：　260724　WorkingPanel.DroppedFile.ID:Insert
 description:    DropされたThinkファイルを[memo:{ID}]タグとしてコンテンツ内に挿入する
-　IDを DiscussPanel.DroppedFile.ID:Insert に修正してください。
+　IDを WorkingPanel.DroppedFile.ID:Insert に修正してください。
 
 　DropされたThinkファイルの内容ではなく `[memo:{ID}]` タグをコンテンツ内に挿入する
 　Drop開始時にModifierキーを確認し、Alt+ThinkFileDragであればゴーストを表示せず、
 　mouseoverに合わせてカーソルを移動させる
 
-　A（260724修正）：ActionID を 'DiscussPanel.Insert.DroppedFile' から
-　　'DiscussPanel.DroppedFile.ID:Insert' に変更しました（対応箇所はLoad側と同様）。
+　A（260724修正）：ActionID を 'WorkingPanel.Insert.DroppedFile' から
+　　'WorkingPanel.DroppedFile.ID:Insert' に変更しました（対応箇所はLoad側と同様）。
 
 　A（260716時点）：ThinkFileDrag（修飾なし）/ Alt+ThinkFileDrag の判定を
 　　TTShortcutManager.resolveDragAction('ThinkFileDrag', e) で行っていましたが、この時点では
 　　ActionID文字列を各Dropハンドラー内でif分岐するだけで、TTActions.Registerによる正式な
-　　Action登録ができておらず、TTActions.Has('DiscussPanel.Load.DroppedFile') が false を
+　　Action登録ができておらず、TTActions.Has('WorkingPanel.Load.DroppedFile') が false を
 　　返す状態でした（＝「Actionの実装ができていない」状態）。
 
 　A（260718修正）：以下のとおり、TTActions.Registerで正式に2つのActionを登録し、
@@ -1099,15 +1099,15 @@ description:    DropされたThinkファイルを[memo:{ID}]タグとしてコ�
 　　- ドラッグ中のペイロード（ThinkID・配置先情報）はキーボードイベントに乗せられないため、
 　　　TTShortcutManager.setPendingThinkDrop() / consumePendingThinkDrop() で明示的に
 　　　受け渡します（ThinkDropContext型、TTShortcutManager.tsに定義）。
-　　- DiscussPanel.Load.DroppedFile: 'load-replace'（タイトルバードロップ、指定Areaを
-　　　丸ごと差し替え）と 'load-place'（コンテンツ領域の余白/端へのドロップ、DiscussPanel側で
+　　- WorkingPanel.Load.DroppedFile: 'load-replace'（タイトルバードロップ、指定Areaを
+　　　丸ごと差し替え）と 'load-place'（コンテンツ領域の余白/端へのドロップ、WorkingPanel側で
 　　　計算済みのオーバーレイ位置に新規Paneを追加）の2種類のcontextを受け取り分岐します。
-　　- DiscussPanel.Insert.DroppedFile: thinkIdのみを受け取り、事前に
+　　- WorkingPanel.Insert.DroppedFile: thinkIdのみを受け取り、事前に
 　　　TTShortcutManager.setActiveEditor()でセットされたエディタのカーソル位置へ
 　　　`[memo:{ID}]` を挿入します。TextEditorMediaRef.getEditor()で対象ペインの
 　　　生Monacoインスタンスを取得し、タイトルバー・コンテンツ領域どちらのドロップでも
 　　　同じActionを共通実行します。
-　　Insertはテキストエディタ（texteditor/discuss）でのみ実装しており、Markdown等の
+　　Insertはテキストエディタ（texteditor/working）でのみ実装しており、Markdown等の
 　　読み取り専用メディアや他のMediaTypeでは対象外です（それらは従来通りLoadのみ）。
 　　docs\DefaultShortcut.md のキー割当（*, ThinkFileDrag / Alt+ThinkFileDrag）は
 　　dragEventToStr()の正規化ルールと一致しており、修正不要と確認済みです。
@@ -1120,23 +1120,23 @@ description:    DropされたThinkファイルを[memo:{ID}]タグとしてコ�
 　　altKeyとこの追跡値をOR演算した実効値で判定するよう修正しました
 　　（ウィンドウがフォーカスを失った場合はblurで追跡値を全解除し、押しっぱなし誤検知を防止）。
 　　あわせて、ドラッグ元(ThoughtsList)のeffectAllowedが'copy'のみに制限され、
-　　ドロップ先各所（DiscussMenuRibbon/DiscussPanel）のdropEffectもAltを無視して
+　　ドロップ先各所（WorkingMenuRibbon/WorkingPanel）のdropEffectもAltを無視して
 　　常に'copy'固定になっていた点も、Alt押下時は'link'を示すよう修正しました
 　　（同一問題を引き起こしていた可能性のある副次的な要因のため、あわせて是正）。
 
 　Q（260718・2回目）：上記対応後、タイトルバーへのAlt+Dropでは正しくInsertになるが、
 　　コンテンツ領域へのAlt+Dropでは依然Loadになってしまう。
 　A：コンテンツ領域の判定は TextEditorMedia.handleDrop 単体で resolveDragAction() を
-　　呼び、Insert時のみそこで消費・それ以外はDiscussPanelの body-level ハンドラーへ
+　　呼び、Insert時のみそこで消費・それ以外はWorkingPanelの body-level ハンドラーへ
 　　バブリングさせてLoadを行う、という2箇所の判定に分かれた設計になっていました。
 　　実機の実ドラッグでは、Monaco内部のDOM構造やイベント配送の都合で、この2箇所の
 　　判定・タイミングがずれてInsertを取りこぼすケースがあると判断し、コンテンツ領域への
-　　Thinkドロップの判定・実行を DiscussPanel.handleBodyDrop 側の1箇所に一本化しました。
+　　Thinkドロップの判定・実行を WorkingPanel.handleBodyDrop 側の1箇所に一本化しました。
 　　- TTShortcutManager に areaId→生Monacoインスタンスのレジストリ
 　　　（registerAreaEditor/unregisterAreaEditor/getAreaEditor）を追加し、
 　　　TextEditorMediaがマウント/アンマウント時に自身のエディタを登録・解除する
-　　　（MediaProps.areaId、DiscussAreaからarea.IDとして渡す）
-　　- DiscussPanel.handleBodyDrop は、ドロップ位置の直下に既存Pane（overlay.areaId）が
+　　　（MediaProps.areaId、WorkingAreaからarea.IDとして渡す）
+　　- WorkingPanel.handleBodyDrop は、ドロップ位置の直下に既存Pane（overlay.areaId）が
 　　　あり、かつそのPaneのエディタが登録済みの場合のみresolveDragAction()でInsert判定を
 　　　行い、getAreaEditor()で取得したエディタを対象にInsertを実行する。それ以外
 　　　（新規Pane追加位置へのドロップ等、挿入先が無い場合）は従来通りLoadにフォールバックする
@@ -1147,7 +1147,7 @@ description:    DropされたThinkファイルを[memo:{ID}]タグとしてコ�
 
 　Q（260718・3回目）：Drop開始時にModifierキーを確認し、Alt+ThinkFileDragであれば
 　　ゴーストは表示せず、mouseoverに合わせてカーソルを移動させてほしい。
-　A：DiscussPanel.handleBodyDragOver で、Insertが成立する条件（ドロップ位置直下に
+　A：WorkingPanel.handleBodyDragOver で、Insertが成立する条件（ドロップ位置直下に
 　　既存Pane＋対象エディタ登録済み＋Alt押下）を満たす場合は setDropOverlay(null) として
 　　Pane配置のゴーストを表示せず、代わりに対象エディタのカーソルをmouseover位置へ
 　　その場で移動させ、挿入位置をプレビューするようにしました。
@@ -1162,20 +1162,20 @@ description:    DropされたThinkファイルを[memo:{ID}]タグとしてコ�
 　　確認しました。
 
 　Q（260719・1回目）：Alt押下時、Paneコンテンツ内へのゴースト（水色）は消えるが、
-　　DiscussPanel領域内への「新規Pane追加」ゴースト（緑）が消えず、Alt押下時にも
+　　WorkingPanel領域内への「新規Pane追加」ゴースト（緑）が消えず、Alt押下時にも
 　　関わらずInsertではなくLoadが起動してしまう。また、Alt押下時はDrop先のCaretを
 　　表示してマウスに追随させてほしい。
-　A：computeDropOverlay()は、既存Paneへのヒットテストより先に、DiscussPanel本体の
+　A：computeDropOverlay()は、既存Paneへのヒットテストより先に、WorkingPanel本体の
 　　外縁からの距離（OUTER_RATIO=15%）だけでisOuterを判定し、trueなら無条件に
 　　「新規Pane追加」（緑ゴースト、overlay.areaIdなし）を返す実装でした。既存Paneは
-　　通常DiscussPanel本体の端まで隙間なく敷き詰められるため、本体の外縁付近（15%
+　　通常WorkingPanel本体の端まで隙間なく敷き詰められるため、本体の外縁付近（15%
 　　マージン内）にある既存Paneをホバーした場合、isOuterがtrueになりoverlay.areaId
 　　が付かないまま「追加」ゴーストが確定してしまい、直前のInsert判定（overlay.areaId
 　　必須）が常にfalseになっていたことが原因でした（単一Pane構成では、本体の端＝Paneの
 　　端でもあるため必ず再現します）。
 　　isOuterの判定ロジック自体を変更するとLoad（新規Pane追加）側の既存挙動に影響するため、
-　　isOuterとは独立した findDiscussAreaIdAtPoint(clientX, clientY) を新設し、
-　　document.elementsFromPoint() で座標直下の .discuss-area[data-area-id] を
+　　isOuterとは独立した findWorkingAreaIdAtPoint(clientX, clientY) を新設し、
+　　document.elementsFromPoint() で座標直下の .working-area[data-area-id] を
 　　直接ヒットテストするようにしました。handleBodyDragOver / handleBodyDrop の両方で、
 　　Alt押下時はcomputeDropOverlay()のisOuter判定より先にこちらを優先し、対象Paneの
 　　エディタが見つかればInsert確定（ゴースト非表示）、見つからなければ従来通り
@@ -1197,9 +1197,9 @@ description:    DropされたThinkファイルを[memo:{ID}]タグとしてコ�
 　　移動せず、Monacoは内部的に非フォーカス状態のままとなり、カーソル（Caret）を
 　　描画しません。これが「合成イベントでの検証では動いたが実機の実ドラッグでは
 　　表示されない」不整合の原因でした。
-　　DOMフォーカスに依存しない方式に切り替え、DiscussPanel側で editor.
+　　DOMフォーカスに依存しない方式に切り替え、WorkingPanel側で editor.
 　　getScrolledVisiblePosition() によりモデル位置をピクセル座標へ変換し、
-　　独自の点滅バー要素（.discuss-panel__insert-caret、DiscussPanel.tsxの
+　　独自の点滅バー要素（.working-panel__insert-caret、WorkingPanel.tsxの
 　　insertCaret state）をゴーストオーバーレイと同じ絶対配置レイヤーに描画する
 　　方式にしました。Monacoへの setPosition() / focus() 呼び出し自体は挿入位置の
 　　確定や副次的なフォーカス合わせのため残していますが、視覚的なCaret表示は
@@ -1207,19 +1207,19 @@ description:    DropされたThinkファイルを[memo:{ID}]タグとしてコ�
 　　実機検証で、Alt押下中は独自Caretが表示されマウス位置に追従し、Alt解除・
 　　dragleave・drop完了のいずれでも正しく消去されること、Alt非押下時はCaretが
 　　一切表示されず従来通り緑ゴーストのみが出ることを確認しました。
-## Status：　260724　DiscussPanel.DroppedFile.ID
-　各パネルのThink一覧のThinkファイルがDiscussパネル内にDropされた際に、そのファイルのIDが設定されます。
+## Status：　260724　WorkingPanel.DroppedFile.ID
+　各パネルのThink一覧のThinkファイルがWorkingパネル内にDropされた際に、そのファイルのIDが設定されます。
 
-description:    DiscussパネルにDropされたThinkファイルのID
-key:            DiscussPanel.DroppedFile.ID
+description:    WorkingパネルにDropされたThinkファイルのID
+key:            WorkingPanel.DroppedFile.ID
 current:        ''
 default:        ''
 type:           string
 candidates:     .*
 
 　A（260724実装）：TTUIStateManager に読み取り専用（isConst）のStatusとして登録しました。
-　　実体は TTDiscussPanel.DroppedFileID（新設フィールド）で、DiscussPanel.DroppedFile.ID:Load /
-　　DiscussPanel.DroppedFile.ID:Insert の各Actionが、DropされたThinkの thinkId をドロップ成立
+　　実体は TTWorkingPanel.DroppedFileID（新設フィールド）で、WorkingPanel.DroppedFile.ID:Load /
+　　WorkingPanel.DroppedFile.ID:Insert の各Actionが、DropされたThinkの thinkId をドロップ成立
 　　直後（Load側はPane差し替え/新規Pane追加の成否によらず、Insert側はエディタ未選択でも）に
 　　設定します。
 
@@ -1342,9 +1342,9 @@ candidates:     ^[0-9]+$
 将来的にタグごとに分ける可能性あり、
 
 　TextEditor.Highlighter.Style(1..6).* / TextEditor.Heading.Style(1..6).* は docs/DefaultColor.md で定義します。
-　（DiscussSettingPanel>TextEditor設定 の セクション色 / ハイライト色 での変更もそちらの値を書き換えます）
+　（WorkingSettingPanel>TextEditor設定 の セクション色 / ハイライト色 での変更もそちらの値を書き換えます）
 
-　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Seeds|Discuss|Harvest|ToolBar).Theme.* で定義します。
+　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Seeds|Working|Harvest|ToolBar).Theme.* で定義します。
 　　Color   … パネルの基礎色（リボン等）。他のパネル色はこの色から生成します。
 　　BgColor … コンテンツ表示部（一覧・チャット等の白地）の背景色。
 　　（261009追記）リボン・メニューリボン・縦タブバー・設定トレイ上の文字/アイコン色は、地の明るさから
@@ -1354,7 +1354,7 @@ candidates:     ^[0-9]+$
 　パネル間ボーダー（スプリッター）のマウスオーバー中／ドラッグ中の色は
 　docs/DefaultColor.md の FocusingBorder.Theme.Color で定義します（BgColor / Attrs は未使用）。
 
-## Status：　261009　エディタ基本色のUI（DiscussSettingPanel>TextEditor設定>文字色）
+## Status：　261009　エディタ基本色のUI（WorkingSettingPanel>TextEditor設定>文字色）
 　（261009）旧「文字設定」を上下2つに分けました。上側の基本色（下記）を「文字色」、
 　下側のセクション１〜６（TextEditor.Heading.Style(1..6).*）を「セクション色」として別セクションにしています。
 　TextEditor設定の色関係のセクションは、上から次の順です（各行は 文字色・B・U・BG で編集）。
@@ -1363,8 +1363,8 @@ candidates:     ^[0-9]+$
 　　項目色 … TextEditor.Bullet.Marks の各記号 → TextEditor.Bullet.Style(n).*
 　　セクション色 … TextEditor.Heading.Style(1..6).*
 　　ハイライト色 … TextEditor.Highlighter.Style(1..6).*
-　（261013）パネル色は DiscussSettingPanel>Pane設定 の「アクション」の下へ移しました。
-　　パネル色   … (Thinktank|Seeds|Discuss|Harvest|ToolBar).Theme.Color（基礎色のみ）、
+　（261013）パネル色は WorkingSettingPanel>Pane設定 の「アクション」の下へ移しました。
+　　パネル色   … (Thinktank|Seeds|Working|Harvest|ToolBar).Theme.Color（基礎色のみ）、
 　　　　　　　　 Border（FocusingBorder.Theme.Color）、Added/Divided/Replaced（DDGhost.*.Theme.Color）
 　「文字設定」先頭にあった 背景色 / 文字色 / 選択色 / 一致色 の4項目（旧 TextEditor.Color.*）は廃止し、
 　同じ位置で以下のStatusIDを直接編集するUIに置き換えました。Color と BgColor のみを扱い、Attrs のUIは持ちません。
@@ -1400,9 +1400,9 @@ description:    テキストエディタのdefaultアクション
 　　TTActions にも登録済み（src\views\TTFocusedPanelActions.ts）ですが、コマンド等から直接実行した
 　　場合は素通しするキーが無いため何もしません。キー割当は DefaultShortcut.md には追加していません。
 
-## Action：　260814　DiscussPanel.FocusedPane.FileHistory:Next
+## Action：　260814　WorkingPanel.FocusedPane.FileHistory:Next
 description:    フォーカスペインのファイル履歴を1つ後の位置に進める
-　Discussパネルに表示されているPane毎に、最大30個までのLoadファイルの履歴リストを設定し、以下ルールで運用してください。
+　Workingパネルに表示されているPane毎に、最大30個までのLoadファイルの履歴リストを設定し、以下ルールで運用してください。
 　1. 最初のファイルがLoadされると、ファイル履歴にIDを記録し、HistoryPosとHistoryMaxを1にします。
 　2. 次のファイルがLoadされると、ファイル履歴にIDを追加し、HistoryPosとHistoryMaxを+1します。
 　3. HistoryMaxが31に達した場合は、履歴の2-30を1-29にスライドし、30番目に新しいIDを追加し、HistoryPosとHistoryMaxは30のままにしてください。
@@ -1410,9 +1410,9 @@ description:    フォーカスペインのファイル履歴を1つ後の位置
 　このActionは、フォーカスのあるPaneのファイル履歴において、HistoryPosのみを+1し、その位置のIDをLoadします。　HistoryPosがHistoryMaxのときは何もロードしません。
 　（260814修正：:Prev と動作を入れ替えました。修正前は「HistoryPosを-1」でした）
 
-### A（260814実装）：履歴の実体は Pane（TTDiscussArea）ごとの FileHistory / HistoryPos として
-　　src\views\TTDiscussArea.ts に持たせました。HistoryMax は FileHistory の件数から求まる
-　　派生値（getter）です。履歴への記録は TTDiscussArea.OpenThink()（＝Paneへのファイル
+### A（260814実装）：履歴の実体は Pane（TTWorkingArea）ごとの FileHistory / HistoryPos として
+　　src\views\TTWorkingArea.ts に持たせました。HistoryMax は FileHistory の件数から求まる
+　　派生値（getter）です。履歴への記録は TTWorkingArea.OpenThink()（＝Paneへのファイル
 　　Loadが必ず通る唯一の入口）で行うため、Think一覧からのオープン・D&D・タグからのジャンプ・
 　　起動時のPane復元など、経路によらず同じルールで記録されます。
 　　- 1件目のLoadでHistoryPos/HistoryMaxが1になり、以降のLoadで末尾に追加して+1します。
@@ -1425,7 +1425,7 @@ description:    フォーカスペインのファイル履歴を1つ後の位置
 　　　当時の表示形式のまま復元します。
 　　- 同一ファイルの再Load（既にその位置で開いているファイルのLoad）では履歴を増やさず、
 　　　MediaType・タイトルのみ最新化します（連続重複の抑止。仕様に明記のない点の補完）。
-　　Status（読み取り専用）として DiscussPanel.FocusedPane.FileHistory（IDのCSV）／
+　　Status（読み取り専用）として WorkingPanel.FocusedPane.FileHistory（IDのCSV）／
 　　FileHistoryPos／FileHistoryMax の3つを TTUIStateManager に登録しました。
 　　キー割当は docs\DefaultShortcut.md の ExApp+E／Shift+Alt+Backspace（Next）、
 　　ExApp+R／Alt+Backspace（Prev）です。
@@ -1441,7 +1441,7 @@ description:    フォーカスペインのファイル履歴を1つ後の位置
 　　（Shift+Alt+Backspace＝進む、Alt+Backspace＝戻る、ExApp+E＝進む、ExApp+R＝戻る）。
 　　実機検証で、4件Load後にPrevで 4→3→2→1 と戻り、Nextで 1→2→3→4 と進むこと、
 　　先頭・末尾でそれぞれ停止することを確認しました。
-## Action：　260814　DiscussPanel.FocusedPane.FileHistory:Prev
+## Action：　260814　WorkingPanel.FocusedPane.FileHistory:Prev
 description:    フォーカスペインのファイル履歴を1つ前の位置に戻す
 
 　このActionは、フォーカスのあるPaneのファイル履歴において、HistoryPosのみを-1し、その位置のIDをLoadします。　HistoryPosが1のときは何もロードしません。
@@ -1671,7 +1671,7 @@ description:    検索オプション「正規表現」をトグルする
 description:    置換オプション「大文字小文字を保持」をトグルする
 　置換オプションの値を変更する
 
-　A：値は DiscussPanel.TextEditor.FindOption / ReplaceOption に永続化されます。
+　A：値は WorkingPanel.TextEditor.FindOption / ReplaceOption に永続化されます。
 　　検索/置換ダイアログが表示中の場合は、トグルと同時に開いているダイアログのチェック
 　　ボックス状態にも即座に反映されます。
 ## Status：　260715　TextEditor.FindOption.MatchCase
@@ -1700,7 +1700,7 @@ description:    Highlighter検索の末尾ヒットへ移動する
 　↓ Highlighterに設定されたテキストを検索して末尾ヒットへ移動する　→　終了
 　Hilighterに設定されたテキストをカンマ(,)と空白( )で区切ってOR条件で検索する
 
-　A：検索語は ToolBar.HighlighterMode.Text（= DiscussPanel.HighlightWord）を、
+　A：検索語は ToolBar.HighlighterMode.Text（= WorkingPanel.HighlightWord）を、
 　　ハイライト表示と同じ規則でカンマ・空白区切りに分解し、OR条件（大文字小文字を区別）で検索します。
 　　ヒット位置の先頭にカーソルを移動し、画面外なら中央にスクロールします。
 　　Prev/Next は循環しません（端では移動せず「これ以上ヒットなし」）。
@@ -1987,7 +1987,7 @@ candidates:     ^(true|false)$
 # TextEditor Settings ===============================================================================================
 ## Action：　260907　TextEditor.KeyBinding.Load
 description:    Vault内の「ThinktankKeyBinding」という名前のMemoを読み込み、キー設定をDefaultに戻してから適用する（Memoに無いキーはDefaultの状態になる）
-　Discuss>TextEditor設定>設定>キー設定のfile-penアイコンボタンから実行する。
+　Working>TextEditor設定>設定>キー設定のfile-penアイコンボタンから実行する。
 　Vault内でタイトルが「ThinktankKeyBinding」（大文字小文字不問）のMemoを検索し、見つかれば
 　`resetToDefault()` で docs/DefaultShortcut.md の状態へ戻したうえで、その内容
 　（docs/DefaultShortcut.md と同じテーブル形式）で TTShortcutManager.mergeContent() を呼び、
@@ -2000,11 +2000,11 @@ description:    Vault内の「ThinktankKeyBinding」という名前のMemoを読
 　アプリ再起動時には反映されない（起動時は常に docs/DefaultShortcut.md を読み込む）。
 ## Action：　260905　TextEditor.KeyBinding.Reset
 description:    キー設定をDefaultの状態に戻す
-　Discuss>TextEditor設定>設定>キー設定のfile-xアイコンボタンから実行する。
+　Working>TextEditor設定>設定>キー設定のfile-xアイコンボタンから実行する。
 　docs/DefaultShortcut.md の内容でショートカット設定を初期状態に戻す（全件差し替え）。
 ## Action：　261013　TextEditor.KeyBinding.Save
 description:    現在のキー設定をVault内の「ThinktankKeyBinding」という名前のMemoに書き戻す（無ければ作る）
-　Discuss>TextEditor設定>設定>キー設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankKeyBindingに書き戻す」）。
+　Working>TextEditor設定>設定>キー設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankKeyBindingに書き戻す」）。
 　Vault内でタイトルが「ThinktankKeyBinding」（大文字小文字不問）のMemoを探し、あればタイトル行を残して本文を現在値で上書き保存、
 　無ければその名前で新しいMemoを作る（src/views/actions/bindingMemo.ts）。
 　本文は docs/DefaultShortcut.md と同じ表形式（> focus,exmode,key,action,description）で、現在の全ショートカットを書く
@@ -2012,7 +2012,7 @@ description:    現在のキー設定をVault内の「ThinktankKeyBinding」と�
 　Load と同じ形式で書くので、書き戻した後に Load すると同じ状態に戻る。結果はステータスバーの ACTION 欄に表示する。
 ## Action：　260905　TextEditor.ColorBinding.Load
 description:    Vault内の「ThinktankColorBinding」という名前のMemoを読み込み、色設定をDefaultに戻してから適用する（Memoに無い項目はDefaultの状態になる）
-　Discuss>TextEditor設定>設定>色設定のfile-penアイコンボタンから実行する。
+　Working>TextEditor設定>設定>色設定のfile-penアイコンボタンから実行する。
 　Vault内でタイトルが「ThinktankColorBinding」（大文字小文字不問）のMemoを検索し、見つかれば
 　まず DEFAULT_COLOR_ENTRIES（docs/DefaultColor.md）を適用して初期状態へ戻し、続いてその内容
 　（docs/DefaultColor.md と同じCSV形式：StatusID, Color, BgColor, Attrs）を適用する
@@ -2021,18 +2021,18 @@ description:    Vault内の「ThinktankColorBinding」という名前のMemoを�
 　Undoスタックへの記録は行わない。localStorage / __tt_ui_state__ には反映されるため、次回起動後も残る。
 ## Action：　260905　TextEditor.ColorBinding.Reset
 description:    色設定をDefaultの状態に戻す
-　Discuss>TextEditor設定>設定>色設定のfile-xアイコンボタンから実行する。
+　Working>TextEditor設定>設定>色設定のfile-xアイコンボタンから実行する。
 　docs/DefaultColor.md の内容で色設定を初期状態に戻す。Load同様、Undoスタックへの記録は行わない。
 ## Action：　261013　TextEditor.ColorBinding.Save
 description:    現在の色設定をVault内の「ThinktankColorBinding」という名前のMemoに書き戻す（無ければ作る）
-　Discuss>TextEditor設定>設定>色設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankColorBindingに書き戻す」）。
+　Working>TextEditor設定>設定>色設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankColorBindingに書き戻す」）。
 　Vault内でタイトルが「ThinktankColorBinding」（大文字小文字不問）のMemoを探し、あればタイトル行を残して本文を現在値で上書き保存、
 　無ければその名前で新しいMemoを作る（src/views/actions/bindingMemo.ts）。
 　本文は docs/DefaultColor.md と同じ「StatusID, Color, BgColor, Attrs」形式で、DefaultColor.md の全 StatusID の現在値を書く。
 　Load と同じ形式で書くので、書き戻した後に Load すると同じ状態に戻る。結果はステータスバーの ACTION 欄に表示する。
 ## Action：　260907　TextEditor.SearchTag.Load
 description:    Vault内の「ThinktankSearchTag」という名前のMemoを読み込み、タグ定義をDefaultに戻してから適用する（Memoに無いidはDefaultの状態になる）
-　Discuss>TextEditor設定>設定>タグ設定のfile-penアイコンボタンから実行する。
+　Working>TextEditor設定>設定>タグ設定のfile-penアイコンボタンから実行する。
 　docs/DefaultSearchTag.md は他の2つと異なり ?raw バンドルではなく、サーバー
 　（server/routes/systemRoutes.ts の /api/system/search-tags・/search-tag-items）がリクエストの
 　たびにファイルを直接読んで配信する方式のため、サーバー側は一切変更せずクライアント側の
@@ -2049,11 +2049,11 @@ description:    Vault内の「ThinktankSearchTag」という名前のMemoを読�
 　Undo/永続化のいずれの対象にもならない（セッション中のみ有効）。
 ## Action：　260907　TextEditor.SearchTag.Reset
 description:    タグ定義をDefaultの状態に戻す
-　Discuss>TextEditor設定>設定>タグ設定のfile-xアイコンボタンから実行する。
+　Working>TextEditor設定>設定>タグ設定のfile-xアイコンボタンから実行する。
 　Vaultメモ由来の上書き分をクリアし、サーバー取得分（docs/DefaultSearchTag.md）に戻す。
 ## Action：　261013　TextEditor.SearchTag.Save
 description:    現在のタグ定義をVault内の「ThinktankSearchTag」という名前のMemoに書き戻す（無ければ作る）
-　Discuss>TextEditor設定>設定>タグ設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankSearchTagに書き戻す」）。
+　Working>TextEditor設定>設定>タグ設定のfile-inputアイコンボタンから実行する（ツールチップ「ThinktankSearchTagに書き戻す」）。
 　Vault内でタイトルが「ThinktankSearchTag」（大文字小文字不問）のMemoを探し、あればタイトル行を残して本文を現在値で上書き保存、
 　無ければその名前で新しいMemoを作る（src/views/actions/bindingMemo.ts）。
 　本文は docs/DefaultSearchTag.md と同じ「ID, "Description", URL」形式で、サーバー取得分に Vaultメモの上書きを重ねた現在の
@@ -2155,9 +2155,9 @@ description:    テーブルのセルの表示位置を中心寄せにする
 description:    テーブルのセルの表示位置を右寄せにする
 
 　A（261018実装）：
-　　■ Status：TTDiscussPanel.Table.CellContent.Display / .Position（全Pane共通）を実体とし、
-　　　src\views\settings\discussSpecs.ts に登録しました（PROP_SPECS に載るので保存・Undo の対象）。
-　　　Table.* の変更は DiscussPanel に通知します（TTApplication の listen('Table.*')）。
+　　■ Status：TTWorkingPanel.Table.CellContent.Display / .Position（全Pane共通）を実体とし、
+　　　src\views\settings\workingSpecs.ts に登録しました（PROP_SPECS に載るので保存・Undo の対象）。
+　　　Table.* の変更は WorkingPanel に通知します（TTApplication の listen('Table.*')）。
 　　■ Action：src\views\TTFocusedPanelActions.ts に登録しました。
 　　　Display:Toggle は Line ⇔ FitToColumn、Position:Toggle は Left → Center → Right → Left の循環、
 　　　Position:Left / Center / Right はその値を設定します。結果（新しい値）は ACTION 欄に出ます。
@@ -2165,7 +2165,7 @@ description:    テーブルのセルの表示位置を右寄せにする
 　　　Line は従来どおり1行表示（はみ出しは省略）、FitToColumn は列幅で折り返し、行の高さは内容に合わせます
 　　　（仮想スクロールが行ごとに高さを測り直します）。Position は左寄せ・中央寄せ・右寄せです。
 　　　列ヘッダーと新規入力行は変えていません。
-　　■ 操作：Discuss>DataGrid設定>表示 に 折返し・左寄・中央寄・右寄 のボタンを置きました。
+　　■ 操作：Working>DataGrid設定>表示 に 折返し・左寄・中央寄・右寄 のボタンを置きました。
 　　　ツールチップは ActionID、押すとその Action を実行し、現在の設定に当たるボタンを強調表示します。
 　　　アイコンは lucide-react 0.474 のため、text-wrap / text-align-start / -center / -end の旧名
 　　　（WrapText / AlignLeft / AlignCenter / AlignRight）を使っています。
@@ -2173,7 +2173,7 @@ description:    テーブルのセルの表示位置を右寄せにする
 
 # その他
 ## AI Chatの運用の仕方１
-Thinktank>Chat では 問題解決の template, skelton 作成して、Seedsでパッケージ化して、discussで内容書いて、Harvestで回答を得るパターンがありえそうですね
+Thinktank>Chat では 問題解決の template, skelton 作成して、Seedsでパッケージ化して、workingで内容書いて、Harvestで回答を得るパターンがありえそうですね
 
 ## AI Chatの運用の仕方２
 Thinktank>Chat で既存のlinksファイルを Referenceしながら概要を捉え、
@@ -2203,7 +2203,7 @@ TextEditor.CurrentEditor.DoOnCursorPosは上記の例示を参考に、各TextEd
 
 ## 完了:　260614　ToolBar.KeyActionのTextBox中に表示されている値を説明してください
  　A：ステータスバーの `KeyAction` モード（`StatusBarKeyActionPanel`）では、以下の項目が横並びで表示され、ユーザーの入力やフォーカス状態を監視します。
- 　　- **focus** (フォーカスエリア名): 現在キーボードフォーカスがあるDOM要素に対応するエリア名。例: `Thinktank.Filter`, `Discuss.Texteditor`, `Harvest.Chat` など。
+ 　　- **focus** (フォーカスエリア名): 現在キーボードフォーカスがあるDOM要素に対応するエリア名。例: `Thinktank.Filter`, `Working.Texteditor`, `Harvest.Chat` など。
  　　- **mod** (修飾キー): 現在押されている修飾キー（`Ctrl`, `Alt`, `Shift`, `Meta`）。
  　　- **key** (キー名): 現在押下された直近のキー名（例: `A`, `Space`, `Enter` などの大文字表示）。
  　　- **mouse** (マウス操作): 直近のマウスイベントタイプとクリック座標（例: `click(320, 840)` など）。

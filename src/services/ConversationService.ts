@@ -241,7 +241,7 @@ export class ConversationClient {
         cliName,
         model: model?.model,
         profileId: profile.id,
-        panelRole: context.scope === 'chat-only' ? ('Thinktank' as const) : ('Discuss' as const),
+        panelRole: context.scope === 'chat-only' ? ('Thinktank' as const) : ('Working' as const),
         bundleId: context.bundleId,
         bundleTitle: context.sources[0]?.title || context.bundleId,
         bundleSummary: context.manualState?.values.goal || '',

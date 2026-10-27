@@ -5,7 +5,7 @@
  * TextEditorMedia がマウント時に登録し、ウィンドウ終了・タブ非表示・Electron の
  * close ダイアログで一括フラッシュする。
  *
- * ここは「保存の起動」だけを担う。dirty 判定は area.IsDirty（TTDiscussArea）、
+ * ここは「保存の起動」だけを担う。dirty 判定は area.IsDirty（TTWorkingArea）、
  * 実際の保存は各メディアの onSave → TTThink.SaveContent が担う。
  */
 

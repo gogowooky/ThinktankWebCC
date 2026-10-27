@@ -2,7 +2,7 @@
  * getFocusName.ts
  * フォーカス中の要素からコンポーネント名を返す共有ユーティリティ。
  *
- * DiscussToolBar の KeyAction 表示および TTShortcutManager の
+ * WorkingToolBar の KeyAction 表示および TTShortcutManager の
  * フォーカスパターンマッチングで共用する。
  */
 
@@ -15,46 +15,46 @@ export function getFocusName(el: Element | null): string {
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  // 1. DiscussTabBar (DiscussSetting.{ModeName})
-  const vtbDiscuss = el.closest('.vertical-tab-bar--discuss');
-  if (vtbDiscuss) {
+  // 1. WorkingTabBar (WorkingSetting.{ModeName})
+  const vtbWorking = el.closest('.vertical-tab-bar--working');
+  if (vtbWorking) {
     const btn = el.closest('button');
     if (btn) {
       const id = btn.id || btn.getAttribute('aria-label') || '';
-      if (id === 'Panes') return 'DiscussSetting.Panes';
-      if (id === 'TextEditor') return 'DiscussSetting.Texteditor';
-      if (id === 'Markdown') return 'DiscussSetting.Markdown';
-      if (id === 'DataGrid') return 'DiscussSetting.Datagrid';
-      if (id === 'Card') return 'DiscussSetting.Card';
-      if (id === 'Graph') return 'DiscussSetting.Graph';
+      if (id === 'Panes') return 'WorkingSetting.Panes';
+      if (id === 'TextEditor') return 'WorkingSetting.Texteditor';
+      if (id === 'Markdown') return 'WorkingSetting.Markdown';
+      if (id === 'DataGrid') return 'WorkingSetting.Datagrid';
+      if (id === 'Card') return 'WorkingSetting.Card';
+      if (id === 'Graph') return 'WorkingSetting.Graph';
     }
-    const mode = app?.DiscussPanel?.ViewMode ?? 'panes';
-    return `DiscussSetting.${capitalize(mode)}`;
+    const mode = app?.WorkingPanel?.ViewMode ?? 'panes';
+    return `WorkingSetting.${capitalize(mode)}`;
   }
 
   // 2. ToolBar.{ModeName}
   // 実際のツールバー（Highlighter/Command/...入力欄を含む）は .ApplicationStatusBarArea
-  // として描画される。.discuss-toolbar は該当するDOM要素が存在しない廃止済みクラス名。
+  // として描画される。.working-toolbar は該当するDOM要素が存在しない廃止済みクラス名。
   if (el.closest('.ApplicationStatusBarArea')) {
-    const mode = app?.DiscussPanel?.ToolBarMode ?? 'Copyright';
+    const mode = app?.WorkingPanel?.ToolBarMode ?? 'Copyright';
     return `ToolBar.${capitalize(mode)}`;
   }
 
-  // 3. DiscussArea (Discuss.{MediaType})
-  const wa = el.closest('.discuss-area');
+  // 3. WorkingArea (Working.{MediaType})
+  const wa = el.closest('.working-area');
   if (wa) {
-    const areasCount = app?.DiscussPanel?.Areas?.length ?? 0;
-    if (areasCount === 0) return 'Discuss.None';
+    const areasCount = app?.WorkingPanel?.Areas?.length ?? 0;
+    if (areasCount === 0) return 'Working.None';
 
-    const mt = (wa.querySelector('.discuss-area__content') as HTMLElement | null)?.dataset.mediaType ?? 'texteditor';
-    return `Discuss.${capitalize(mt)}`;
+    const mt = (wa.querySelector('.working-area__content') as HTMLElement | null)?.dataset.mediaType ?? 'texteditor';
+    return `Working.${capitalize(mt)}`;
   }
 
-  // 4. DiscussSettingArea (DiscussSetting.{ModeName})
-  const ws = el.closest('.discuss-setting-area');
+  // 4. WorkingSettingArea (WorkingSetting.{ModeName})
+  const ws = el.closest('.working-setting-area');
   if (ws) {
-    const mode = app?.DiscussPanel?.ViewMode ?? 'panes';
-    return `DiscussSetting.${capitalize(mode)}`;
+    const mode = app?.WorkingPanel?.ViewMode ?? 'panes';
+    return `WorkingSetting.${capitalize(mode)}`;
   }
 
   // 5. ThinktankPanel (Thinktank.{ModeName})

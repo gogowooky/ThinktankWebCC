@@ -2,7 +2,7 @@
  * TTApplication.ts
  * アプリケーションルートビューモデル（更新版）。
  *
- * 4パネル構成（ThinktankPanel / SeedsPanel / DiscussPanel / HarvestPanel）を統合管理。
+ * 4パネル構成（ThinktankPanel / SeedsPanel / WorkingPanel / HarvestPanel）を統合管理。
  * TTModelsのデータ層と各パネルビューモデルを橋渡しする。
  */
 
@@ -10,7 +10,7 @@ import { TTUIItem } from '../models/TTUIItem';
 import { TTModels } from '../models/TTModels';
 import { TTThinktankPanel } from './TTThinktankPanel';
 import { TTSeedsPanel } from './TTSeedsPanel';
-import { TTDiscussPanel } from './TTDiscussPanel';
+import { TTWorkingPanel } from './TTWorkingPanel';
 import { TTHarvestPanel } from './TTHarvestPanel';
 import { TTApplicationStatus } from './TTApplicationStatus';
 import { TTUIStateManager, type ConfigKey, type ConfigListener } from './TTUIStateManager';
@@ -23,7 +23,7 @@ export class TTApplication extends TTUIItem {
   /** 4パネルのビューモデル */
   public ThinktankPanel: TTThinktankPanel;
   public SeedsPanel: TTSeedsPanel;
-  public DiscussPanel: TTDiscussPanel;
+  public WorkingPanel: TTWorkingPanel;
   public HarvestPanel: TTHarvestPanel;
 
   /** アプリケーション全体の特殊状態 */
@@ -59,14 +59,14 @@ export class TTApplication extends TTUIItem {
 
     this.ThinktankPanel = new TTThinktankPanel();
     this.SeedsPanel  = new TTSeedsPanel();
-    this.DiscussPanel   = new TTDiscussPanel();
+    this.WorkingPanel   = new TTWorkingPanel();
     this.HarvestPanel   = new TTHarvestPanel();
     this.Status         = new TTApplicationStatus();
 
     // 子パネルの親を自身に設定（通知伝播用）
     this.ThinktankPanel._parent = this;
     this.SeedsPanel._parent  = this;
-    this.DiscussPanel._parent   = this;
+    this.WorkingPanel._parent   = this;
     this.HarvestPanel._parent   = this;
     this.Status._parent         = this;
 
@@ -74,7 +74,7 @@ export class TTApplication extends TTUIItem {
     const sharedCheckedState = { checkedIds: [] as string[] };
     this.ThinktankPanel.SharedState = sharedCheckedState;
     this.SeedsPanel.SharedState = sharedCheckedState;
-    this.DiscussPanel.SharedState = sharedCheckedState;
+    this.WorkingPanel.SharedState = sharedCheckedState;
     this.HarvestPanel.SharedState = sharedCheckedState;
 
     // TTUIStateManager からのプロパティ更新を購読して、対象パネルを更新する
@@ -85,17 +85,17 @@ export class TTApplication extends TTUIItem {
     };
     listen('ThinktankPanel.*', () => this.ThinktankPanel.NotifyUpdated());
     listen('SeedsPanel.*', () => this.SeedsPanel.NotifyUpdated());
-    listen('DiscussPanel.*', () => this.DiscussPanel.NotifyUpdated());
-    listen('DiscussSettingPanel.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('WorkingPanel.*', () => this.WorkingPanel.NotifyUpdated());
+    listen('WorkingSettingPanel.*', () => this.WorkingPanel.NotifyUpdated());
     listen('HarvestPanel.*', () => this.HarvestPanel.NotifyUpdated());
     listen('Application.*', () => this.NotifyUpdated(false));
-    listen('TextEditor.*', () => this.DiscussPanel.NotifyUpdated());
-    listen('ToolBar.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('TextEditor.*', () => this.WorkingPanel.NotifyUpdated());
+    listen('ToolBar.*', () => this.WorkingPanel.NotifyUpdated());
     listen('Thinktank.*', () => this.ThinktankPanel.NotifyUpdated());
     listen('Seeds.*', () => this.SeedsPanel.NotifyUpdated());
-    listen('Discuss.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('Working.*', () => this.WorkingPanel.NotifyUpdated());
     listen('Harvest.*', () => this.HarvestPanel.NotifyUpdated());
-    listen('Table.*', () => this.DiscussPanel.NotifyUpdated());
+    listen('Table.*', () => this.WorkingPanel.NotifyUpdated());
   }
 
   public static get Instance(): TTApplication {
@@ -117,7 +117,7 @@ export class TTApplication extends TTUIItem {
     for (const off of this._offStateListeners.splice(0)) off();
     this.ThinktankPanel.dispose();
     this.SeedsPanel.dispose();
-    this.DiscussPanel.dispose();
+    this.WorkingPanel.dispose();
     this.HarvestPanel.dispose();
     this.Status._parent = null;
     TTUIStateManager.instance.detach(this);
@@ -147,7 +147,7 @@ export class TTApplication extends TTUIItem {
     // HarvestPanel: コンテキストを連携
     this.HarvestPanel.LinkProject(projectId);
 
-    // DiscussPanel: projectに含まれないThinkのペインを削除
+    // WorkingPanel: projectに含まれないThinkのペインを削除
     this._removeOutOfProjectPanes(projectId);
 
     this.NotifyUpdated();
@@ -157,48 +157,48 @@ export class TTApplication extends TTUIItem {
     this.OpenProject(bundleId, mediaType);
   }
 
-  /** Project に含まれない Think のペインを DiscussPanel から削除する */
+  /** Project に含まれない Think のペインを WorkingPanel から削除する */
   private _removeOutOfProjectPanes(projectId: string): void {
     if (!projectId) return; // 何も選択されていない時は削除しない
     const vault = this.Models.Vault;
     const thinks = vault.GetThinksForProject(projectId);
     const allowed = new Set(thinks.map(t => t.ID));
     allowed.add(projectId);
-    const toRemove = this.DiscussPanel.Areas
+    const toRemove = this.WorkingPanel.Areas
       .filter(a => !allowed.has(a.ResourceID))
       .map(a => a.ID);
     for (const areaId of toRemove) {
-      this.DiscussPanel.RemoveArea(areaId);
+      this.WorkingPanel.RemoveArea(areaId);
     }
   }
 
-  /** 指定した ID の Think ペインを DiscussPanel から削除する */
-  public RemoveThinksFromDiscuss(ids: string[]): void {
+  /** 指定した ID の Think ペインを WorkingPanel から削除する */
+  public RemoveThinksFromWorking(ids: string[]): void {
     const idSet = new Set(ids);
-    const toRemove = this.DiscussPanel.Areas
+    const toRemove = this.WorkingPanel.Areas
       .filter(a => idSet.has(a.ResourceID))
       .map(a => a.ID);
     for (const areaId of toRemove) {
-      this.DiscussPanel.RemoveArea(areaId);
+      this.WorkingPanel.RemoveArea(areaId);
     }
   }
 
   /**
-   * ThinkをDiscussAreaで開く。
+   * ThinkをWorkingAreaで開く。
    * 既存のAreaが満杯（6個）の場合はnullを返す。
    *
    * @param thinkId ThinkのID
    * @param mediaType 表示形式
-   * @returns 開いたTTDiscussArea（満杯の場合はnull）
+   * @returns 開いたTTWorkingArea（満杯の場合はnull）
    */
-  public OpenThinkInDiscuss(thinkId: string, mediaType?: MediaType) {
+  public OpenThinkInWorking(thinkId: string, mediaType?: MediaType) {
     const vault = this.Models.Vault;
     const think = vault.GetThink(thinkId);
     const title = think?.Name ?? thinkId;
     mediaType ??= think?.ContentType === 'html' ? 'html' : 'texteditor';
 
-    return this.DiscussPanel.ReplaceFocused(thinkId, mediaType, title)
-        ?? this.DiscussPanel.AddFirst(thinkId, mediaType, title);
+    return this.WorkingPanel.ReplaceFocused(thinkId, mediaType, title)
+        ?? this.WorkingPanel.AddFirst(thinkId, mediaType, title);
   }
 
   /**
@@ -215,7 +215,7 @@ export class TTApplication extends TTUIItem {
    * 未保存のエディタ変更がある場合は確認ダイアログを出す。
    */
   public async RefreshAll(): Promise<void> {
-    const dirtyArea = this.DiscussPanel.Areas.find(a => a.IsDirty);
+    const dirtyArea = this.WorkingPanel.Areas.find(a => a.IsDirty);
     if (dirtyArea) {
       const ok = window.confirm(
         `「${dirtyArea.Title || dirtyArea.ResourceID}」に未保存の変更があります。\n更新すると変更が失われます。続けますか？`,
@@ -226,7 +226,7 @@ export class TTApplication extends TTUIItem {
     this.ThinktankPanel.ClearSelection();
     this.ThinktankPanel.ClearChecks();
     this.SeedsPanel.ClearProject();
-    this.DiscussPanel.ClearAll();
+    this.WorkingPanel.ClearAll();
     this.HarvestPanel.ClearLink();
 
     await this.Models.Vault.ReloadAll();
@@ -238,7 +238,7 @@ export class TTApplication extends TTUIItem {
     this.ThinktankPanel.ClearChecks();
     this.ThinktankPanel.ClearFilter();
     this.SeedsPanel.ClearProject();
-    this.DiscussPanel.ClearAll();
+    this.WorkingPanel.ClearAll();
     this.HarvestPanel.ClearLink();
     this.HarvestPanel.ClearChat();
     this.NotifyUpdated();

@@ -246,10 +246,10 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       const thinks = vault.GetThinksForBundle(bundleId);
       if (!thinks.some(t => t.ID === id)) return;
     }
-    app.OpenThinkInDiscuss(id);
+    app.OpenThinkInWorking(id);
   }, [app, vault]);
 
-  // Project 種別はその場で Seeds へ、それ以外は Discuss へ
+  // Project 種別はその場で Seeds へ、それ以外は Working へ
   const handleOpenItem = useCallback((id: string) => {
     const t = vault.GetThink(id);
     if (t?.ContentType === 'project') {
@@ -283,7 +283,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const handleDeleteChecked = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
     if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
-    app.RemoveThinksFromDiscuss(panel.CheckedThoughtIDs);
+    app.RemoveThinksFromWorking(panel.CheckedThoughtIDs);
     await vault.DeleteThinks(panel.CheckedThoughtIDs);
     panel.ClearChecks();
   }, [app, panel, vault]);

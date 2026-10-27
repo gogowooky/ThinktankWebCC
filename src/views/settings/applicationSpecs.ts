@@ -23,23 +23,23 @@ export const applicationSpecs: Record<string, PropSpec> = {
   'Application.FocusedPanel.Name': {
     panel: 'Application',
     default: 'Thinktank', type: 'string',
-    candidates: '^(Thinktank|Seeds|DiscussSetting|Discuss|Harvest)$',
+    candidates: '^(Thinktank|Seeds|WorkingSetting|Working|Harvest)$',
     description: 'フォーカスカラム',
     getValues: (_app) => localStorage.getItem('tt-layout-mode') === 'simple'
-      ? ['Thinktank', 'DiscussSetting', 'Discuss']
-      : ['Thinktank', 'Seeds', 'DiscussSetting', 'Discuss', 'Harvest'],
+      ? ['Thinktank', 'WorkingSetting', 'Working']
+      : ['Thinktank', 'Seeds', 'WorkingSetting', 'Working', 'Harvest'],
     get: (app) => app.FocusedColumn,
     set: (app, v) => {
       app.FocusedColumn = v;
       const SELECTORS: Record<string, string> = {
         'Thinktank': '.thinktank-panel, .thinktank-area',
         'Seeds': '.seeds-panel, .seeds-area',
-        'DiscussSetting': '.discuss-setting-area',
-        'Discuss': '.discuss-area',
+        'WorkingSetting': '.working-setting-area',
+        'Working': '.working-area',
         'Harvest': '.harvest-panel, .harvest-area',
       };
-      const effectiveSel = (v === 'DiscussSetting' && !app.DiscussPanel.IsAreaOpen)
-        ? '.vertical-tab-bar--discuss .vertical-tab-bar__toggle'
+      const effectiveSel = (v === 'WorkingSetting' && !app.WorkingPanel.IsAreaOpen)
+        ? '.vertical-tab-bar--working .vertical-tab-bar__toggle'
         : SELECTORS[v];
       if (effectiveSel) {
         focusSelector(effectiveSel);
@@ -62,18 +62,18 @@ export const applicationSpecs: Record<string, PropSpec> = {
       if (!isSimple && app.SeedsPanel.IsAreaOpen) {
         list.push(`Seeds.${capitalize(app.SeedsPanel.ViewMode)}`);
       }
-      if (app.DiscussPanel.IsAreaOpen) {
-        list.push(`DiscussSetting.${capitalize(app.DiscussPanel.ViewMode)}`);
+      if (app.WorkingPanel.IsAreaOpen) {
+        list.push(`WorkingSetting.${capitalize(app.WorkingPanel.ViewMode)}`);
       }
-      if (app.DiscussPanel.Areas.length > 0) {
-        for (const area of app.DiscussPanel.Areas) {
-          list.push(`Discuss.${capitalize(area.MediaType)}`);
+      if (app.WorkingPanel.Areas.length > 0) {
+        for (const area of app.WorkingPanel.Areas) {
+          list.push(`Working.${capitalize(area.MediaType)}`);
         }
       }
       if (!isSimple && app.HarvestPanel.IsAreaOpen) {
         list.push(`Harvest.${capitalize(app.HarvestPanel.ViewMode)}`);
       }
-      list.push(`ToolBar.${capitalize(app.DiscussPanel.ToolBarMode)}`);
+      list.push(`ToolBar.${capitalize(app.WorkingPanel.ToolBarMode)}`);
 
       return Array.from(new Set(list));
     },
@@ -109,12 +109,12 @@ export const applicationSpecs: Record<string, PropSpec> = {
           app.SeedsPanel.SetViewMode(subName.toLowerCase() as TTApplication['SeedsPanel']['ViewMode']);
         }
         focusSelector('.seeds-panel, .seeds-area');
-      } else if (panelName === 'DiscussSetting') {
-        app.DiscussPanel.IsAreaOpen = true;
+      } else if (panelName === 'WorkingSetting') {
+        app.WorkingPanel.IsAreaOpen = true;
         if (subName) {
-          app.DiscussPanel.SetViewMode(subName.toLowerCase() as TTApplication['DiscussPanel']['ViewMode']);
+          app.WorkingPanel.SetViewMode(subName.toLowerCase() as TTApplication['WorkingPanel']['ViewMode']);
         }
-        focusSelector('.discuss-setting-area');
+        focusSelector('.working-setting-area');
       } else if (panelName === 'Harvest') {
         app.HarvestPanel.IsAreaOpen = true;
         if (subName) {
@@ -127,16 +127,16 @@ export const applicationSpecs: Record<string, PropSpec> = {
             'keyaction': 'KeyAction',
           };
           const toolbarMode = modeMap[subName.toLowerCase()] || subNameCap;
-          app.DiscussPanel.ToolBarMode = toolbarMode;
+          app.WorkingPanel.ToolBarMode = toolbarMode;
         }
-        focusSelector('.discuss-toolbar');
-      } else if (panelName === 'Discuss') {
+        focusSelector('.working-toolbar');
+      } else if (panelName === 'Working') {
         if (subName && subName.toLowerCase() !== 'none') {
           const typeLower = subName.toLowerCase();
           setTimeout(() => {
-            const areas = Array.from(document.querySelectorAll<HTMLElement>('.discuss-area'));
+            const areas = Array.from(document.querySelectorAll<HTMLElement>('.working-area'));
             const targetArea = areas.find(area => {
-              const content = area.querySelector<HTMLElement>('.discuss-area__content');
+              const content = area.querySelector<HTMLElement>('.working-area__content');
               return content?.dataset.mediaType?.toLowerCase() === typeLower;
             }) || areas[0];
 
@@ -153,7 +153,7 @@ export const applicationSpecs: Record<string, PropSpec> = {
             }
           }, 50);
         } else {
-          focusSelector('.discuss-area');
+          focusSelector('.working-area');
         }
       }
     },

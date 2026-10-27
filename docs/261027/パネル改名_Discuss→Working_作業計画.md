@@ -32,12 +32,11 @@
 - `LEGACY_STATUS_KEYS` の `Discuss*` 行は、正規化後の名前（`WorkingPanel.Pane.Count` 等）で引けるように書き換える。
 - 「`TextEditor.WorkoutNotes` を変換しない」型のテストを `Discuss`／`Working` についても追加する（単語境界の確認）。
 
-### PC連携（Web⇔Electron）の2段階リリース
+### PC連携（Web⇔Electron）の2段階リリース → 不要と判明（実装時に確認）
 
-Web版とElectron版のバージョンがずれる期間があるため、通信値は2段階で切り替える。
-
-1. **v2.7.0（受理の拡張）**: 両側で `panelRole` に `'working' | 'discuss'` を受理し、内部では `Working` に正規化する。**送信値は `'discuss'` のまま**。
-2. **v2.7.x 以降（送信の切替）**: 両側が受理できるようになってから、送信値を `'working'` に変える。`'discuss'` の受理は当面残す。
+`shared/promptBuilder.ts` の `normalizePanelId` は thinktank/seeds/harvest 以外の値をすべて既定パネル（旧版では Discuss、新版では Working）に落とす。
+そのため新版が送る `'Working'` を旧版は Discuss として、旧版が送る `'Discuss'` を新版は Working として解釈し、版がずれても同じ役割プロンプトになる。
+送信値は最初から `'Working'` に切り替え、`relayProtocol.ts` の型だけ `'discuss'` も受理する形にした。手順9は不要。
 
 `shared/` を変えたら `node scripts/build-electron-shared.mjs` を実行して Electron を再起動する。
 

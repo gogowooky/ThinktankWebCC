@@ -5,6 +5,6 @@
 | 文書 | 内容 |
 |---|---|
 | [01 思考支援の枠組み](01_思考支援の枠組み.md) | アプリの目的、思考支援の循環（問い・資料・検討・決定・実行・検証・再開）、思考状態の定義 |
-| [02 UIの機能と役割](02_UIの機能と役割.md) | 4パネル（Thinktank / Seeds / Harvest / Discuss）の役割と操作体系 |
+| [02 UIの機能と役割](02_UIの機能と役割.md) | 4パネル（Thinktank / Seeds / Harvest / Working）の役割と操作体系 |
 | [業務管理構想案](../261016/業務管理構想案.md) | ドメインプロファイル切替、昇格候補（Promotion Candidate）と公式レコード（Promoted Record）、ゲート管理 |
 | [システム設計メモ（Drive正本とAI CLI）](../261016/システム設計メモ_Drive正本とAI_CLI.md) | Google Drive 正本・ローカル AI CLI 設定隔離実行・Firebase E2EE 中継のシステムアーキテクチャ |

@@ -32,8 +32,8 @@
   --thinktank-content-bg: #ffffff;
   --seeds-base:        #873960;
   --seeds-content-bg:  #ffffff;
-  --discuss-base:         #382830;
-  --discuss-content-bg:   #ffffff;
+  --working-base:         #382830;
+  --working-content-bg:   #ffffff;
   --harvest-base:         #324f46;
   --harvest-content-bg:   #ffffff;
   --toolbar-base:         #2d2d2d;
@@ -43,7 +43,7 @@
      どのパネルにも属さないので FocusingBorder.Theme.Color として単独で持つ。 */
   --focusing-border:      #5cbeff;
 
-  /* Discuss の Pane 領域へ Think を D&D するときのゴーストの色（DDGhost.*.Theme.Color）。
+  /* Working の Pane 領域へ Think を D&D するときのゴーストの色（DDGhost.*.Theme.Color）。
      panelTheme.ts が上書きする。ここは DefaultColor.md と同じ既定値 */
   --ddghost-added:        #00aa55;
   --ddghost-divided:      #00aa00;
@@ -52,30 +52,30 @@
   /* リボン＝基礎色そのもの */
   --thinktank-ribbon-bg: var(--thinktank-base);
   --seeds-ribbon-bg:  var(--seeds-base);
-  --discuss-ribbon-bg:   var(--discuss-base);
+  --working-ribbon-bg:   var(--working-base);
   --harvest-ribbon-bg:   var(--harvest-base);
 
   /* パネルの地色＝コンテンツ色に基礎色をごく薄く重ねたもの。
-     Discuss だけ濃いのは、地色がコンテンツの「まわり」ではなく Pane の「背後」にあり、
+     Working だけ濃いのは、地色がコンテンツの「まわり」ではなく Pane の「背後」にあり、
      白い Pane との境目が見える必要があるため。 */
   --thinktank-area-bg: color-mix(in srgb, var(--thinktank-base)  8%, var(--thinktank-content-bg));
   --seeds-area-bg:  color-mix(in srgb, var(--seeds-base)   8%, var(--seeds-content-bg));
   --harvest-area-bg:   color-mix(in srgb, var(--harvest-base)    8%, var(--harvest-content-bg));
-  --discuss-area-bg:   color-mix(in srgb, var(--discuss-base)   14%, var(--discuss-content-bg));
+  --working-area-bg:   color-mix(in srgb, var(--working-base)   14%, var(--working-content-bg));
 
   /* リボン内の濃淡（メニューリボン等） */
   --thinktank-ribbon-soft: color-mix(in srgb, var(--thinktank-base) 80%, var(--thinktank-content-bg));
   --seeds-ribbon-soft:  color-mix(in srgb, var(--seeds-base)  80%, var(--seeds-content-bg));
-  --discuss-ribbon-soft:   color-mix(in srgb, var(--discuss-base)   80%, var(--discuss-content-bg));
+  --working-ribbon-soft:   color-mix(in srgb, var(--working-base)   80%, var(--working-content-bg));
   --harvest-ribbon-soft:   color-mix(in srgb, var(--harvest-base)   80%, var(--harvest-content-bg));
 
-  /* 横向きツールバー（各 Area 上部の MenuRibbon）の地色。Discuss だけリボン色そのもの、
+  /* 横向きツールバー（各 Area 上部の MenuRibbon）の地色。Working だけリボン色そのもの、
      他3パネルは ribbon-soft という既存の使い分けをここに一本化する。
      スクロールバーのつまみなど「ツールバーと同じ色」を要求する箇所から参照するため、
      MenuRibbon 側の直接指定ではなくこのトークンを唯一の定義とする。 */
   --thinktank-menuribbon-bg: var(--thinktank-ribbon-soft);
   --seeds-menuribbon-bg:  var(--seeds-ribbon-soft);
-  --discuss-menuribbon-bg:   var(--discuss-ribbon-bg);
+  --working-menuribbon-bg:   var(--working-ribbon-bg);
   --harvest-menuribbon-bg:   var(--harvest-ribbon-soft);
 
   /* 一覧・ボタンの状態色（下地を透かすので transparent 合成） */
@@ -85,9 +85,9 @@
   --seeds-hover:     color-mix(in srgb, var(--seeds-base)   8%, transparent);
   --seeds-selected:  color-mix(in srgb, var(--seeds-base)  14%, transparent);
   --seeds-border:    color-mix(in srgb, var(--seeds-base)  25%, transparent);
-  --discuss-hover:      color-mix(in srgb, var(--discuss-base)    8%, transparent);
-  --discuss-selected:   color-mix(in srgb, var(--discuss-base)   14%, transparent);
-  --discuss-border:     color-mix(in srgb, var(--discuss-base)   25%, transparent);
+  --working-hover:      color-mix(in srgb, var(--working-base)    8%, transparent);
+  --working-selected:   color-mix(in srgb, var(--working-base)   14%, transparent);
+  --working-border:     color-mix(in srgb, var(--working-base)   25%, transparent);
   --harvest-hover:      color-mix(in srgb, var(--harvest-base)    8%, transparent);
   --harvest-selected:   color-mix(in srgb, var(--harvest-base)   14%, transparent);
   --harvest-border:     color-mix(in srgb, var(--harvest-base)   25%, transparent);
@@ -110,14 +110,14 @@
   --thinktank-on-ribbon-soft-rgb: 255 255 255;
   --seeds-on-ribbon-rgb:          255 255 255;
   --seeds-on-ribbon-soft-rgb:     255 255 255;
-  --discuss-on-ribbon-rgb:        255 255 255;
-  --discuss-on-ribbon-soft-rgb:   255 255 255;
+  --working-on-ribbon-rgb:        255 255 255;
+  --working-on-ribbon-soft-rgb:   255 255 255;
   --harvest-on-ribbon-rgb:        255 255 255;
   --harvest-on-ribbon-soft-rgb:   255 255 255;
-  /* メニューリボンの地に合わせた対応（Discuss だけはメニューリボン＝リボン色） */
+  /* メニューリボンの地に合わせた対応（Working だけはメニューリボン＝リボン色） */
   --thinktank-on-menuribbon-rgb: var(--thinktank-on-ribbon-soft-rgb);
   --seeds-on-menuribbon-rgb:     var(--seeds-on-ribbon-soft-rgb);
-  --discuss-on-menuribbon-rgb:   var(--discuss-on-ribbon-rgb);
+  --working-on-menuribbon-rgb:   var(--working-on-ribbon-rgb);
   --harvest-on-menuribbon-rgb:   var(--harvest-on-ribbon-soft-rgb);
 
   /* 同期インジケーター */
@@ -274,11 +274,11 @@ a {
 }
 
 /* SettingPanel内など、100%幅が必要な場所用 */
-.discuss-setting-panel__section-content .tooltip-wrapper {
+.working-setting-panel__section-content .tooltip-wrapper {
   display: flex;
   width: 100%;
 }
-.discuss-setting-panel__section-content .tooltip-wrapper > button {
+.working-setting-panel__section-content .tooltip-wrapper > button {
   width: 100%;
 }
 

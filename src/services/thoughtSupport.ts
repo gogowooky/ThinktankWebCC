@@ -1,7 +1,7 @@
 import type { ChatMessage } from '../types';
 import type { TTThink } from '../models/TTThink';
 
-export const PANELS = ['Thinktank', 'Seeds', 'Discuss', 'Harvest'] as const;
+export const PANELS = ['Thinktank', 'Seeds', 'Working', 'Harvest'] as const;
 export type SupportPanel = typeof PANELS[number];
 export const KINDS = ['ASK', 'TASK', 'TODO', 'PROJ', 'EVNT', 'LOOP'] as const;
 export interface SupportRecord {

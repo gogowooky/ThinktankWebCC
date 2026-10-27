@@ -1,6 +1,6 @@
 /**
  * AbstractView.tsx
- * Thinktank / Seeds / Discuss / Harvest に共通の「プロジェクト」サブパネル。
+ * Thinktank / Seeds / Working / Harvest に共通の「プロジェクト」サブパネル。
  */
 
 import { Target } from 'lucide-react';

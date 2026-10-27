@@ -3,11 +3,11 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Splitter } from '../components/Layout/Splitter';
-import { DiscussHSplitter } from '../components/DiscussPanel/DiscussHSplitter';
+import { WorkingHSplitter } from '../components/WorkingPanel/WorkingHSplitter';
 
 const splitters = [
   { name: 'panel width', Component: Splitter, axis: 'x', className: 'splitter', label: 'パネル幅を変更', cursor: 'col-resize' },
-  { name: 'Discuss row height', Component: DiscussHSplitter, axis: 'y', className: 'discuss-h-splitter', label: '行の高さを変更', cursor: 'row-resize' },
+  { name: 'Working row height', Component: WorkingHSplitter, axis: 'y', className: 'working-h-splitter', label: '行の高さを変更', cursor: 'row-resize' },
 ] as const;
 
 describe.each(splitters)('$name splitter', ({ Component, axis, className, label, cursor }) => {

@@ -25,7 +25,7 @@ it('passes the key through to the editor and skips the global binding while the 
   // グローバル行を先に置いても既定動作が優先されることを確かめる
   load(`*,,Ctrl+B,${GLOBAL},グローバル\n*TextEditor,,Ctrl+B,${DEFAULT_ACTION},既定動作`);
 
-  TTShortcutManager.instance.onFocusChange('Discuss.TextEditor');
+  TTShortcutManager.instance.onFocusChange('Working.TextEditor');
   const inEditor = press();
   expect(inEditor.defaultPrevented).toBe(false);
   expect(completion).not.toHaveBeenCalled();

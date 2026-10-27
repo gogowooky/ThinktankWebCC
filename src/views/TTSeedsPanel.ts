@@ -35,7 +35,7 @@ export class TTSeedsPanel extends TTUIItem {
   public get BundleID(): string { return this.ProjectID; }
   public set BundleID(val: string) { this.ProjectID = val; }
 
-  /** チェックされているThink IDリスト（Thinktank/Seeds/Discuss/Harvest で共通） */
+  /** チェックされているThink IDリスト（Thinktank/Seeds/Working/Harvest で共通） */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {

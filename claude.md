@@ -44,12 +44,12 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - GPU キャッシュエラー（Windows）は無視してよい
 
 ## 変更を加える前に
-- `src/components/DiscussPanel/` など既存コンポーネントの構造を Read で確認する
+- `src/components/WorkingPanel/` など既存コンポーネントの構造を Read で確認する
 - `electron/*.cjs` や `shared/` を変更したら Electron を再起動する（HMR は効かない）
 
 ## パネル構成
 - **ThinktankPanel** — Vaultの閲覧・検索・フィルタ（一覧表示）
-- **DiscussPanel** — 選択したThinkファイルの編集・AI対話・メディア表示
+- **WorkingPanel** — 選択したThinkファイルの編集・AI対話・メディア表示
 - **HarvestPanel** — AI主導の再思考・チャット
 - **SeedsPanel** — 設定・統計・全体ビュー
 

@@ -266,7 +266,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const handleDeleteChecked = useCallback(async () => {
     if (panel.CheckedThoughtIDs.length === 0) return;
     if (!window.confirm(`${panel.CheckedThoughtIDs.length} 件を削除しますか？`)) return;
-    app.RemoveThinksFromDiscuss(panel.CheckedThoughtIDs);
+    app.RemoveThinksFromWorking(panel.CheckedThoughtIDs);
     await vault.DeleteThinks(panel.CheckedThoughtIDs);
     panel.SetCheckedThoughtIDs([]);
   }, [app, vault, panel]);
@@ -311,8 +311,8 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     panel.SetCheckedThoughtIDs(Array.from(nextSet));
   }, [panel]);
 
-  const handleOpenThinkInDiscuss = useCallback((id: string) => {
-    app.OpenThinkInDiscuss(id);
+  const handleOpenThinkInWorking = useCallback((id: string) => {
+    app.OpenThinkInWorking(id);
   }, [app]);
 
   // AIChat一覧の選択状態を更新する（空選択でクリア）。
@@ -445,7 +445,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
               checkedIds={panel.CheckedThoughtIDs}
               columns={columns}
               bundleNames={bundleNames}
-              onOpen={handleOpenThinkInDiscuss}
+              onOpen={handleOpenThinkInWorking}
               onToggleCheck={handleToggleCheck}
               focusedId={focusedId}
               onFocusChange={handleFocusChange}

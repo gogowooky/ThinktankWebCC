@@ -23,10 +23,10 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
   // ── Highlighter 検索移動 ──────────────────────────────────────────────────
   /** Highlighter（ToolBar.HighlighterMode.Text）のヒット位置を昇順で返す。 */
   const findHighlighterMatches = (editor: any): any[] =>
-    findHighlightRanges(editor, app.DiscussPanel.HighlightWord, {
-      matchCase: app.DiscussPanel.HighlightMatchCase,
-      isRegex: app.DiscussPanel.HighlightIsRegex,
-      matchWidth: app.DiscussPanel.HighlightMatchWidth,
+    findHighlightRanges(editor, app.WorkingPanel.HighlightWord, {
+      matchCase: app.WorkingPanel.HighlightMatchCase,
+      isRegex: app.WorkingPanel.HighlightIsRegex,
+      matchWidth: app.WorkingPanel.HighlightMatchWidth,
     });
 
   const moveToHighlighter = (item: TTActionItem, pick: (ranges: any[], editor: any) => any | null): void => {
@@ -36,7 +36,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
         item.Result = '[エディタ未選択]';
         return;
       }
-      if (!app.DiscussPanel.HighlightWord.trim()) {
+      if (!app.WorkingPanel.HighlightWord.trim()) {
         item.Result = '[Highlighter未設定]';
         return;
       }
@@ -127,7 +127,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
         return;
       }
 
-      const current = app.DiscussPanel.HighlightWord;
+      const current = app.WorkingPanel.HighlightWord;
       const groups = current.split(',').map(g => g.trim()).filter(g => g.length > 0);
       if (groups.includes(selected)) {
         item.Result = `登録済み: ${selected}`;
@@ -165,7 +165,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
         if (active && active.id !== TOOLBAR_INPUT_ID) prevFocus = active;
 
         // 対象モードでなければ切り替える（入力欄はこの後に描画される）
-        if (app.DiscussPanel.ToolBarMode !== mode) {
+        if (app.WorkingPanel.ToolBarMode !== mode) {
           TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', mode);
         }
         // 既に描画済みなら即時、モード切替直後で未描画なら次フレームでフォーカスする
@@ -200,7 +200,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.HighlighterMode.MatchCase:Toggle',
     Description: 'ハイライターの大文字小文字区別モードを切り替える',
     Completion: (item) => {
-      const next = !app.DiscussPanel.HighlightMatchCase;
+      const next = !app.WorkingPanel.HighlightMatchCase;
       TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.MatchCase', String(next));
       item.Result = `大文字小文字区別: ${next ? 'ON' : 'OFF'}`;
     },
@@ -210,7 +210,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.HighlighterMode.IsRegex:Toggle',
     Description: 'ハイライターの正規表現モードを切り替える',
     Completion: (item) => {
-      const next = !app.DiscussPanel.HighlightIsRegex;
+      const next = !app.WorkingPanel.HighlightIsRegex;
       TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.IsRegex', String(next));
       item.Result = `正規表現モード: ${next ? 'ON' : 'OFF'}`;
     },
@@ -220,7 +220,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.HighlighterMode.MatchWidth:Toggle',
     Description: 'ハイライターの全角半角区別モードを切り替える',
     Completion: (item) => {
-      const next = !app.DiscussPanel.HighlightMatchWidth;
+      const next = !app.WorkingPanel.HighlightMatchWidth;
       TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.MatchWidth', String(next));
       item.Result = `全角半角区別: ${next ? 'ON' : 'OFF'}`;
     },
@@ -288,10 +288,10 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Clear',
     Description: 'ToolBarの現在のモードの入力欄のテキストを消去する',
     Completion: (item) => {
-      const key = TOOLBAR_MODE_TEXT_KEY[app.DiscussPanel.ToolBarMode];
+      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkingPanel.ToolBarMode];
       if (!key) { item.Result = '[対象モードなし]'; return; }
       TTUIStateManager.instance.applyProperty(key, '');
-      item.Result = `${app.DiscussPanel.ToolBarMode}をクリアしました`;
+      item.Result = `${app.WorkingPanel.ToolBarMode}をクリアしました`;
     },
   });
 
@@ -299,7 +299,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Focus',
     Description: 'ToolBarの現在のモードの入力欄にフォーカスする',
     Completion: (item) => {
-      const mode = app.DiscussPanel.ToolBarMode;
+      const mode = app.WorkingPanel.ToolBarMode;
       if (!TOOLBAR_MODE_TEXT_KEY[mode]) { item.Result = '[対象モードなし]'; return; }
 
       // Statusモードは StatusBarStatusPanel を使用しており、他モード共通の
@@ -327,7 +327,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Copy',
     Description: 'ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする',
     Completion: async (item) => {
-      const key = TOOLBAR_MODE_TEXT_KEY[app.DiscussPanel.ToolBarMode];
+      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkingPanel.ToolBarMode];
       if (!key) { item.Result = '[対象モードなし]'; return; }
       const value = TTUIStateManager.instance.getProperty(key);
       try {
@@ -343,7 +343,7 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
     ActionID: 'ToolBar.CurrentMode.Text:Paste',
     Description: 'ToolBarの現在のモードの入力欄にクリップボードのテキストをペーストする',
     Completion: async (item) => {
-      const key = TOOLBAR_MODE_TEXT_KEY[app.DiscussPanel.ToolBarMode];
+      const key = TOOLBAR_MODE_TEXT_KEY[app.WorkingPanel.ToolBarMode];
       if (!key) { item.Result = '[対象モードなし]'; return; }
       try {
         const clip = await navigator.clipboard.readText();

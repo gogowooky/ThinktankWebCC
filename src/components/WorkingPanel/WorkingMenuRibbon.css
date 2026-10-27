@@ -1,0 +1,143 @@
+/* WorkingMenuRibbon.css */
+
+.working-menu-ribbon {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 6px;
+  background: var(--working-menuribbon-bg);
+  --on-ribbon-rgb: var(--working-on-menuribbon-rgb);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.85);
+  gap: 4px;
+  flex-shrink: 0;
+  user-select: none;
+  transition: background 120ms ease;
+}
+
+/* フォーカス中リボン: タイトル下線のみ（背景色変更なし）*/
+.working-menu-ribbon--focused {
+}
+
+/* SeedsPanel.Bundle.ID で選択中のBundleに記載されていないThinkを表示中のリボン。
+   WorkingSettingパネルの縦型ToolBar選択アイコン（.working-tab-bar__btn--active）は
+   Working基本色の地の上に rgba(255,255,255,0.18) を重ねて「薄くした基本色」に見せているが、
+   このリボンの背後はWorking基本色ではないため、同じ計算結果になる不透明色を直接指定する
+   （= Working基本色(--working-base)に18%の白を混ぜた色）。*/
+.working-menu-ribbon--outside-bundle {
+  background: color-mix(in srgb, white 18%, var(--working-base));
+}
+
+.working-menu-ribbon--outside-bundle .working-menu-ribbon__title {
+  font-weight: normal;
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.80);
+}
+
+body[data-focus-column="Working"] .working-menu-ribbon--focused .working-menu-ribbon__title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
+}
+
+/* アイテムD&Dで Pane を置き換えるときのタイトル部分。DDGhost.Replaced.Theme.Color を
+   半透明で重ね、元の背景色を残したままシャドーとして見せる */
+.working-menu-ribbon--drop-target {
+  box-shadow: inset 0 0 0 9999px color-mix(in srgb, var(--ddghost-replaced) 40%, transparent);
+}
+
+/* ドラッグハンドル */
+.working-menu-ribbon__drag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 24px;
+  cursor: grab;
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.working-menu-ribbon__drag:active {
+  cursor: grabbing;
+}
+
+.working-menu-ribbon__drag:hover {
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.1);
+}
+
+/* タイトル */
+.working-menu-ribbon__title {
+  flex: 1;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 未保存マーカー */
+.working-menu-ribbon__dirty {
+  color: #e07b3a;
+  font-size: calc(9px * var(--tt-font-scale, 1));
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* MediaType ボタン群 */
+.working-menu-ribbon__media {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.working-menu-ribbon__media-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.working-menu-ribbon__media-btn:hover {
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
+}
+
+.working-menu-ribbon__media-btn--active {
+  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.2);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
+}
+
+/* TextEditor を YAML＋本文で表示中（Shift+Click）。通常表示と見分けるためアイコンを赤くする。
+   地の明るさに合わせ、暗い地では明るい赤、明るい地では濃い赤になるよう文字色と混ぜる */
+.working-menu-ribbon__media-btn--raw,
+.working-menu-ribbon__media-btn--raw:hover {
+  color: color-mix(in srgb, #ff3b3b 75%, rgb(var(--on-ribbon-rgb, 255 255 255)));
+}
+
+/* 閉じるボタン */
+.working-menu-ribbon__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.5);
+  flex-shrink: 0;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.working-menu-ribbon__close:hover {
+  background: rgba(220, 60, 60, 0.5);
+  color: rgb(var(--on-ribbon-rgb, 255 255 255));
+}

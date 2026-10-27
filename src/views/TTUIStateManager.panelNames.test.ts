@@ -18,16 +18,16 @@ it('loads old panel settings and serializes the current keys', () => {
   ].join('\n'));
 
   expect(app.SeedsPanel.AreaWidthMode).toBe('user');
-  expect(app.DiscussPanel.ViewMode).toBe('panes');
-  expect(app.DiscussPanel.GetColorStatus('Seeds.Theme').Color).toBe('#123456');
-  expect(app.DiscussPanel.StatusModeText).toBe('SeedsPanel.Mode.Name');
+  expect(app.WorkingPanel.ViewMode).toBe('panes');
+  expect(app.WorkingPanel.GetColorStatus('Seeds.Theme').Color).toBe('#123456');
+  expect(app.WorkingPanel.StatusModeText).toBe('SeedsPanel.Mode.Name');
   expect(app.FocusedColumn).toBe('Seeds');
   const saved = manager.serialize(app);
   expect(saved).toContain('SeedsPanel.Area.OpenWidth');
   expect(saved).not.toContain('OverviewPanel.Area.OpenWidth');
 });
 
-it('loads Develop settings and writes Discuss keys', () => {
+it('loads Develop settings and writes Working keys', () => {
   const app = TTApplication.Instance;
   const manager = TTUIStateManager.instance;
   manager.init(app);
@@ -40,11 +40,33 @@ it('loads Develop settings and writes Discuss keys', () => {
     '焦点,Application.FocusedPanel.Name,Develop,Thinktank,string,.*',
   ].join('\n'));
 
-  expect(app.DiscussPanel.GetColorStatus('Discuss.Theme').Color).toBe('#654321');
-  expect(app.DiscussPanel.ViewMode).toBe('panes');
-  expect(app.DiscussPanel.StatusModeText).toBe('DiscussPanel.Panes.Count');
-  expect(app.FocusedColumn).toBe('Discuss');
+  expect(app.WorkingPanel.GetColorStatus('Working.Theme').Color).toBe('#654321');
+  expect(app.WorkingPanel.ViewMode).toBe('panes');
+  expect(app.WorkingPanel.StatusModeText).toBe('WorkingPanel.Panes.Count');
+  expect(app.FocusedColumn).toBe('Working');
   const saved = manager.serialize(app);
-  expect(saved).toContain('Discuss.Theme.Color');
+  expect(saved).toContain('Working.Theme.Color');
   expect(saved).not.toContain('Develop.Theme.Color');
+});
+
+it('loads Discuss settings saved before the Working rename', () => {
+  const app = TTApplication.Instance;
+  const manager = TTUIStateManager.instance;
+  manager.init(app);
+  manager.onThinkSaved(TTUIStateManager.THINK_ID, [
+    'UI Settings',
+    '> description,key,current,default,type,candidates',
+    '色,Discuss.Theme.Color,#13579b,undefined,color,.*',
+    '設定,DiscussSettingPanel.Mode.Name,Discuss,Discuss,string,.*',
+    '表示,ToolBar.StatusMode.Text,DiscussPanel.Pane.Count,DiscussPanel.Pane.Count,string,.*',
+    '焦点,Application.FocusedPanel.Name,Discuss,Thinktank,string,.*',
+  ].join('\n'));
+
+  expect(app.WorkingPanel.GetColorStatus('Working.Theme').Color).toBe('#13579b');
+  expect(app.WorkingPanel.ViewMode).toBe('panes');
+  expect(app.WorkingPanel.StatusModeText).toBe('WorkingPanel.Panes.Count');
+  expect(app.FocusedColumn).toBe('Working');
+  const saved = manager.serialize(app);
+  expect(saved).toContain('Working.Theme.Color');
+  expect(saved).not.toContain('Discuss');
 });

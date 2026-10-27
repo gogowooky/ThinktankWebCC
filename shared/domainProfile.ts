@@ -8,7 +8,7 @@
  * ファイル未読込時や Web オフライン時にも同じ定義で動作するよう、標準プロファイルを同梱する。
  */
 
-export type PanelId = 'Thinktank' | 'Seeds' | 'Discuss' | 'Harvest';
+export type PanelId = 'Thinktank' | 'Seeds' | 'Working' | 'Harvest';
 
 export type PromotionKind =
   | 'decision'
@@ -220,11 +220,11 @@ export const CLINICAL_TRIAL_PROFILE: DomainProfile = {
         },
       ],
     },
-    Discuss: {
-      panelId: 'Discuss',
+    Working: {
+      panelId: 'Working',
       perspectiveLabel: 'Task（専門領域別の個別検討・資料編集・根拠検証）',
       coreQuestion: '次に誰が何を行い、どの根拠（Evidence）をもって完了とするか。',
-      rolePrompt: `あなたは Task ワークスペース（Discussパネル）の AI アドバイザーです。
+      rolePrompt: `あなたは Task ワークスペース（Workingパネル）の AI アドバイザーです。
 個別課題（非臨床ギャップ分析、CMC規格設定、PMDA相談資料作成、プロトコル検討など）について、参照資料（Evidence）の正確な引用に基づいて選択肢、仮説、反証、根拠、残余リスクを整理します。
 上位の Program や Task へ共有すべき事項があれば、会話全文を流すのではなく、Decision / Evidence / Risk / Assumption / Action の昇格候補（promotionCandidates）として構造化して提案してください。`,
       presetQuestions: [
@@ -280,7 +280,7 @@ export const CLINICAL_TRIAL_PROFILE: DomainProfile = {
       name: 'Regulatory Agent（薬事）',
       description: '規制経路（薬機法治験／安確法）、PMDA相談論点、提出資料ギャップを整理する',
       automationCeiling: '薬事論点・照会事項案の整理まで（薬事判断・当局提出は不可）',
-      panelAffinity: ['Discuss', 'Seeds', 'Thinktank'],
+      panelAffinity: ['Working', 'Seeds', 'Thinktank'],
       systemPrompt:
         'Regulatory Agentとして、対象品目の規制経路、PMDA対面助言（事前面談・品質・安全性・治験計画）の論点、治験届・添付資料のギャップを資料根拠に基づいて整理してください。薬事上の最終判断は人が行う前提で選択肢と根拠を示してください。',
     },
@@ -289,7 +289,7 @@ export const CLINICAL_TRIAL_PROFILE: DomainProfile = {
       name: 'CMC／GCTP Agent（品質・製造）',
       description: '製造方法、規格及び試験方法、安定性、原材料・生物由来原料基準、変更時の同等性影響を整理する',
       automationCeiling: '品質ギャップ・同等性論点の整理まで（品質承認・出荷判定は不可）',
-      panelAffinity: ['Discuss', 'Seeds'],
+      panelAffinity: ['Working', 'Seeds'],
       systemPrompt:
         'CMC／GCTP Agentとして、再生医療等製品の製造工程、特性解析、規格設定、安定性試験、原材料管理（生物由来原料基準対応）、製法変更前後の同等性/同質性評価の論点と不足Evidenceを整理してください。',
     },
@@ -298,7 +298,7 @@ export const CLINICAL_TRIAL_PROFILE: DomainProfile = {
       name: 'Nonclinical Agent（非臨床・安全性）',
       description: '非臨床安全性パッケージ（造腫瘍性、生体内分布、一般毒性等）と初回ヒト投与条件のギャップを整理する',
       automationCeiling: '非臨床ギャップ・リスク候補の抽出まで（安全性の最終判断は不可）',
-      panelAffinity: ['Discuss', 'Seeds'],
+      panelAffinity: ['Working', 'Seeds'],
       systemPrompt:
         'Nonclinical Agentとして、非臨床安全性試験（一般毒性、造腫瘍性、生体内分布/生着、免疫原性、効力裏付け）の充足状況と、臨床開始（FIH）に向けた科学的根拠・残余リスクを整理してください。',
     },
@@ -307,7 +307,7 @@ export const CLINICAL_TRIAL_PROFILE: DomainProfile = {
       name: 'Clinical Agent（臨床・プロトコル）',
       description: '治験実施計画書（対象患者、用量設定、評価項目、安全性監視）、治験薬概要書、施設準備課題を整理する',
       automationCeiling: 'プロトコル要素・運用課題の整理まで（医学的判断・被験者適格性確定は不可）',
-      panelAffinity: ['Discuss', 'Seeds'],
+      panelAffinity: ['Working', 'Seeds'],
       systemPrompt:
         'Clinical Agentとして、治験実施計画書の主要要素（選択/除外基準、用量漸増設計、主要/副次評価項目、中止基準、DSMB等）および医療機関の受入・採取・投与手順の課題を整理してください。',
     },
@@ -316,7 +316,7 @@ export const CLINICAL_TRIAL_PROFILE: DomainProfile = {
       name: 'Evidence Agent（根拠・引用検証）',
       description: '資料の引用正確性、版整合性、出典の欠落、資料間の数値・記述の矛盾を検証する',
       automationCeiling: '矛盾・引用不備の検出まで（証拠の採否決定は不可）',
-      panelAffinity: ['Discuss', 'Seeds', 'Harvest'],
+      panelAffinity: ['Working', 'Seeds', 'Harvest'],
       systemPrompt:
         'Evidence Agentとして、主張に対する引用元資料（thinkIdと原文quote）の厳密な整合性、複数資料間の数値や結論の食い違い、根拠資料の欠落を徹底的に検証してください。',
     },
@@ -502,11 +502,11 @@ export const ELDERLY_SUPPORT_PROFILE: DomainProfile = {
         },
       ],
     },
-    Discuss: {
-      panelId: 'Discuss',
+    Working: {
+      panelId: 'Working',
       perspectiveLabel: '具体的な段取り・メモづくり',
       coreQuestion: '次にどんな準備をして、何をメモに残しておきましょうか。',
-      rolePrompt: `あなたは「具体的な段取り・メモづくり（Discussパネル）」の支援パートナーです。
+      rolePrompt: `あなたは「具体的な段取り・メモづくり（Workingパネル）」の支援パートナーです。
 一つの用事や準備（受診時の質問メモ、買い物のリスト、手続きの順番、連絡先の整理など）について、手元のメモを見ながら具体的にどう進めるかを一緒に考えます。
 大切な決定事項や気をつけることは、後からひと目でわかるように「決めたこと」「やること」「気をつけること」として残す案（promotionCandidates）を出してください。`,
       presetQuestions: [
@@ -562,7 +562,7 @@ export const ELDERLY_SUPPORT_PROFILE: DomainProfile = {
       name: '健康・受診メモサポーター',
       description: '体調の記録、お薬のメモ、主治医やケアマネジャーに伝えたい質問を整理する',
       automationCeiling: '受診用メモ・質問案の整理まで（医療上の判断・診断・服薬指示は絶対に行わない）',
-      panelAffinity: ['Discuss', 'Seeds'],
+      panelAffinity: ['Working', 'Seeds'],
       systemPrompt:
         '健康・受診メモサポーターとして、日頃の体調メモから医師・薬剤師・ケアマネジャーに伝えるべき要点を整理してください。医学的な診断や薬の変更指示は決しておこなわず、必ず専門職への確認を促してください。',
     },
@@ -571,7 +571,7 @@ export const ELDERLY_SUPPORT_PROFILE: DomainProfile = {
       name: '記録・連絡先かくにんサポーター',
       description: '過去のメモから日時、約束、連絡先、大切な記録を正確に探し出して照合する',
       automationCeiling: '記録の照合・引用表示まで（記録の書き換え確定はご本人）',
-      panelAffinity: ['Discuss', 'Seeds', 'Harvest'],
+      panelAffinity: ['Working', 'Seeds', 'Harvest'],
       systemPrompt:
         '記録・連絡先かくにんサポーターとして、保存されているメモの中から関連する記述や日付、連絡先を正確に探し、思い違いや抜け漏れがないか優しく確認してください。',
     },
@@ -580,7 +580,7 @@ export const ELDERLY_SUPPORT_PROFILE: DomainProfile = {
       name: 'ご家族・支援者共有サポーター',
       description: 'ご家族や支援者に伝えておきたいこと・手伝ってほしいことを分かりやすくまとめる',
       automationCeiling: '共有用メッセージ案の作成まで（実際の連絡・送信はご本人）',
-      panelAffinity: ['Seeds', 'Discuss', 'Harvest'],
+      panelAffinity: ['Seeds', 'Working', 'Harvest'],
       systemPrompt:
         'ご家族・支援者共有サポーターとして、ご本人の気持ちや意向を尊重しながら、ご家族や周囲の支援者に伝えると安心な事項を簡潔で温かい文章にまとめてください。',
     },
@@ -702,6 +702,8 @@ export function resolveDomainProfile(raw: unknown, fallbackId = DEFAULT_DOMAIN_P
     return structuredClone(base);
   }
   const obj = raw as Partial<DomainProfile>;
+  // 旧パネル名 Discuss で保存されたカスタムプロファイルも読む
+  const legacyRoles = obj.panelRoles as (Partial<Record<PanelId | 'Discuss', PanelRoleConfig>> | undefined);
   const id = typeof obj.id === 'string' && obj.id.trim() ? obj.id.trim() : base.id;
   const knownBase = BUILTIN_DOMAIN_PROFILES[id] ?? base;
 
@@ -719,7 +721,7 @@ export function resolveDomainProfile(raw: unknown, fallbackId = DEFAULT_DOMAIN_P
     panelRoles: {
       Thinktank: { ...knownBase.panelRoles.Thinktank, ...(obj.panelRoles?.Thinktank ?? {}) },
       Seeds: { ...knownBase.panelRoles.Seeds, ...(obj.panelRoles?.Seeds ?? {}) },
-      Discuss: { ...knownBase.panelRoles.Discuss, ...(obj.panelRoles?.Discuss ?? {}) },
+      Working: { ...knownBase.panelRoles.Working, ...(legacyRoles?.Working ?? legacyRoles?.Discuss ?? {}) },
       Harvest: { ...knownBase.panelRoles.Harvest, ...(obj.panelRoles?.Harvest ?? {}) },
     },
     agents: Array.isArray(obj.agents) && obj.agents.length > 0 ? obj.agents : knownBase.agents,
@@ -747,7 +749,7 @@ export function resolveDomainProfile(raw: unknown, fallbackId = DEFAULT_DOMAIN_P
 }
 
 export type PromotionTargetType = PromotionKind;
-export type PanelRoleKey = PanelId | 'thinktank' | 'seeds' | 'discuss' | 'harvest';
+export type PanelRoleKey = PanelId | 'thinktank' | 'seeds' | 'working' | 'harvest';
 
 export function getBuiltinDomainProfile(profileId: string): DomainProfile {
   return BUILTIN_DOMAIN_PROFILES[profileId] ?? CLINICAL_TRIAL_PROFILE;

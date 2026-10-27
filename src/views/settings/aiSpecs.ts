@@ -43,10 +43,10 @@ export const aiSpecs: Record<string, PropSpec> = {
     app => app.ThinktankPanel.AIChatProviderName, (app, v) => { app.ThinktankPanel.AIChatProviderName = v; }),
   'SeedsPanel.AIChat.ModelName': aiChatProviderSpec('SeedsPanel', 'SeedsPanelのAIChatで用いるAIモデル名',
     app => app.SeedsPanel.AIChatProviderName, (app, v) => { app.SeedsPanel.AIChatProviderName = v; }),
-  'DiscussSettingPanel.AIChat.ModelName': aiChatProviderSpec('DiscussPanel', 'DiscussSettingPanelのAIChatで用いるAIモデル名',
-    app => app.DiscussPanel.SettingAIChatProviderName, (app, v) => { app.DiscussPanel.SettingAIChatProviderName = v; }),
-  'DiscussPanel.AIChat.ModelName': aiChatProviderSpec('DiscussPanel', 'DiscussPanelのAIChatで用いるAIモデル名',
-    app => app.DiscussPanel.AIChatProviderName, (app, v) => { app.DiscussPanel.AIChatProviderName = v; }),
+  'WorkingSettingPanel.AIChat.ModelName': aiChatProviderSpec('WorkingPanel', 'WorkingSettingPanelのAIChatで用いるAIモデル名',
+    app => app.WorkingPanel.SettingAIChatProviderName, (app, v) => { app.WorkingPanel.SettingAIChatProviderName = v; }),
+  'WorkingPanel.AIChat.ModelName': aiChatProviderSpec('WorkingPanel', 'WorkingPanelのAIChatで用いるAIモデル名',
+    app => app.WorkingPanel.AIChatProviderName, (app, v) => { app.WorkingPanel.AIChatProviderName = v; }),
   'HarvestPanel.AIChat.ModelName': aiChatProviderSpec('HarvestPanel', 'HarvestPanelのAIChatで用いるAIモデル名',
     app => app.HarvestPanel.AIChatProviderName, (app, v) => { app.HarvestPanel.AIChatProviderName = v; })
 };

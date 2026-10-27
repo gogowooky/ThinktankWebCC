@@ -1,6 +1,6 @@
 /**
  * editorDropPosition.ts
- * D&D 中のマウス位置から、Monaco エディタのカーソルを送る位置を求める（DiscussPanel の Alt+Think ドロップの挿入位置プレビュー）。
+ * D&D 中のマウス位置から、Monaco エディタのカーソルを送る位置を求める（WorkingPanel の Alt+Think ドロップの挿入位置プレビュー）。
  */
 /* eslint-disable @typescript-eslint/no-explicit-any -- Monaco エディタは公開型に無い API（折り畳みモデル）も使うため any で受ける */
 import { getHiddenAreas } from './markdownHeadings';

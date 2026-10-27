@@ -51,11 +51,11 @@
         }
       ]
     },
-    "Discuss": {
-      "panelId": "Discuss",
+    "Working": {
+      "panelId": "Working",
       "perspectiveLabel": "Task（専門領域別の個別検討・資料編集・根拠検証）",
       "coreQuestion": "次に誰が何を行い、どの根拠（Evidence）をもって完了とするか。",
-      "rolePrompt": "あなたは Task ワークスペース（Discussパネル）の AI アドバイザーです。\n個別課題（非臨床ギャップ分析、CMC規格設定、PMDA相談資料作成、プロトコル検討など）について、参照資料（Evidence）の正確な引用に基づいて選択肢、仮説、反証、根拠、残余リスクを整理します。\n上位の Program や Task へ共有すべき事項があれば、会話全文を流すのではなく、Decision / Evidence / Risk / Assumption / Action の昇格候補（promotionCandidates）として構造化して提案してください。",
+      "rolePrompt": "あなたは Task ワークスペース（Workingパネル）の AI アドバイザーです。\n個別課題（非臨床ギャップ分析、CMC規格設定、PMDA相談資料作成、プロトコル検討など）について、参照資料（Evidence）の正確な引用に基づいて選択肢、仮説、反証、根拠、残余リスクを整理します。\n上位の Program や Task へ共有すべき事項があれば、会話全文を流すのではなく、Decision / Evidence / Risk / Assumption / Action の昇格候補（promotionCandidates）として構造化して提案してください。",
       "presetQuestions": [
         {
           "id": "task-gap-analysis",
@@ -106,7 +106,7 @@
       "description": "規制経路（薬機法治験／安確法）、PMDA相談論点、提出資料ギャップを整理する",
       "automationCeiling": "薬事論点・照会事項案の整理まで（薬事判断・当局提出は不可）",
       "panelAffinity": [
-        "Discuss",
+        "Working",
         "Seeds",
         "Thinktank"
       ],
@@ -118,7 +118,7 @@
       "description": "製造方法、規格及び試験方法、安定性、原材料・生物由来原料基準、変更時の同等性影響を整理する",
       "automationCeiling": "品質ギャップ・同等性論点の整理まで（品質承認・出荷判定は不可）",
       "panelAffinity": [
-        "Discuss",
+        "Working",
         "Seeds"
       ],
       "systemPrompt": "CMC／GCTP Agentとして、再生医療等製品の製造工程、特性解析、規格設定、安定性試験、原材料管理（生物由来原料基準対応）、製法変更前後の同等性/同質性評価の論点と不足Evidenceを整理してください。"
@@ -129,7 +129,7 @@
       "description": "非臨床安全性パッケージ（造腫瘍性、生体内分布、一般毒性等）と初回ヒト投与条件のギャップを整理する",
       "automationCeiling": "非臨床ギャップ・リスク候補の抽出まで（安全性の最終判断は不可）",
       "panelAffinity": [
-        "Discuss",
+        "Working",
         "Seeds"
       ],
       "systemPrompt": "Nonclinical Agentとして、非臨床安全性試験（一般毒性、造腫瘍性、生体内分布/生着、免疫原性、効力裏付け）の充足状況と、臨床開始（FIH）に向けた科学的根拠・残余リスクを整理してください。"
@@ -140,7 +140,7 @@
       "description": "治験実施計画書（対象患者、用量設定、評価項目、安全性監視）、治験薬概要書、施設準備課題を整理する",
       "automationCeiling": "プロトコル要素・運用課題の整理まで（医学的判断・被験者適格性確定は不可）",
       "panelAffinity": [
-        "Discuss",
+        "Working",
         "Seeds"
       ],
       "systemPrompt": "Clinical Agentとして、治験実施計画書の主要要素（選択/除外基準、用量漸増設計、主要/副次評価項目、中止基準、DSMB等）および医療機関の受入・採取・投与手順の課題を整理してください。"
@@ -151,7 +151,7 @@
       "description": "資料の引用正確性、版整合性、出典の欠落、資料間の数値・記述の矛盾を検証する",
       "automationCeiling": "矛盾・引用不備の検出まで（証拠の採否決定は不可）",
       "panelAffinity": [
-        "Discuss",
+        "Working",
         "Seeds",
         "Harvest"
       ],

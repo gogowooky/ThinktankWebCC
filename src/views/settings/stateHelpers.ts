@@ -1,5 +1,5 @@
 import type { TTApplication } from '../TTApplication';
-import { TTDiscussArea } from '../TTDiscussArea';
+import { TTWorkingArea } from '../TTWorkingArea';
 import type { MediaType, ContentType } from '../../types';
 
 export function capitalize(s: string): string {
@@ -37,13 +37,13 @@ export function focusSelector(selector: string, fallbackSelector?: string): void
   }, 50);
 }
 
-export function getFocusedArea(app: TTApplication): TTDiscussArea | null {
-  const id = app.DiscussPanel.FocusedAreaId;
-  return id ? (app.DiscussPanel.GetArea(id) ?? null) : null;
+export function getFocusedArea(app: TTApplication): TTWorkingArea | null {
+  const id = app.WorkingPanel.FocusedAreaId;
+  return id ? (app.WorkingPanel.GetArea(id) ?? null) : null;
 }
 
 export function getFocusedPaneAllowedModes(app: TTApplication): string[] {
-  const area = app.DiscussPanel.FocusedAreaId ? app.DiscussPanel.GetArea(app.DiscussPanel.FocusedAreaId) : null;
+  const area = app.WorkingPanel.FocusedAreaId ? app.WorkingPanel.GetArea(app.WorkingPanel.FocusedAreaId) : null;
   if (!area || !area.ResourceID) {
     return ['Panes', 'Texteditor', 'Markdown', 'Datagrid', 'Card', 'Graph', 'Chat', 'Html'];
   }

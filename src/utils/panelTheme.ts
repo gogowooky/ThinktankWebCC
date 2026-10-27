@@ -20,17 +20,17 @@
 import { getDefaultColorStyle, isUnset } from './defaultColor';
 import type { ColorStyle } from './defaultColor';
 
-export type PanelThemeKind = 'Thinktank' | 'Seeds' | 'Discuss' | 'Harvest' | 'ToolBar';
+export type PanelThemeKind = 'Thinktank' | 'Seeds' | 'Working' | 'Harvest' | 'ToolBar';
 
 export const PANEL_THEME_KINDS: PanelThemeKind[] = [
-  'Thinktank', 'Seeds', 'Discuss', 'Harvest', 'ToolBar',
+  'Thinktank', 'Seeds', 'Working', 'Harvest', 'ToolBar',
 ];
 
 /** CSS変数の接頭辞 */
 const CSS_PREFIX: Record<PanelThemeKind, string> = {
   Thinktank: 'thinktank',
   Seeds:  'seeds',
-  Discuss:   'discuss',
+  Working:   'working',
   Harvest:   'harvest',
   ToolBar:   'toolbar',
 };
@@ -44,7 +44,7 @@ export function panelThemeStatusId(kind: PanelThemeKind): string {
 export const FOCUSING_BORDER_STATUS_ID = 'FocusingBorder.Theme';
 
 /**
- * Discuss パネルの Pane 領域へ Think ファイルを D&D するときのゴースト（落とし先の表示）の色。
+ * Working パネルの Pane 領域へ Think ファイルを D&D するときのゴースト（落とし先の表示）の色。
  * Added = Pane 領域全体への追加位置、Divided = 単独 Pane を分割した位置、
  * Replaced = 置き換える単独 Pane のタイトル部分。Color だけを使い、濃淡は CSS 側で付ける。
  */
