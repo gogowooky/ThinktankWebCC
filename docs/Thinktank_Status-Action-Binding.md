@@ -411,6 +411,36 @@ ToolBar.HighlighterMode.Textに文字入力するためにFocusする。その�
 　　- Unfocus: 入力欄のフォーカスを外し、Focusで記憶した要素へ戻す。
 　　キー割当（docs\DefaultShortcut.md）: Alt+H=AddSelected、Shift+Alt+H=Clear、Ctrl+Shift+H=Focus、（Highlighter入力欄で）Escape=Unfocus
 
+## Status 完了：　261021　ToolBar.HighlighterMode.MatchCase
+description:    ハイライターの大文字小文字を区別する (aA)
+key:            ToolBar.HighlighterMode.MatchCase
+current:        'false'
+default:        'false'
+type:           bool
+candidates:     ^(true|false)$
+## Action 完了：　261021　ToolBar.HighlighterMode.MatchCase:Toggle
+description:    ハイライターの大文字小文字区別モードを切り替える
+
+## Status 完了：　261021　ToolBar.HighlighterMode.IsRegex
+description:    ハイライターの正規表現モード (.*)
+key:            ToolBar.HighlighterMode.IsRegex
+current:        'false'
+default:        'false'
+type:           bool
+candidates:     ^(true|false)$
+## Action 完了：　261021　ToolBar.HighlighterMode.IsRegex:Toggle
+description:    ハイライターの正規表現モードを切り替える
+
+## Status 完了：　261021　ToolBar.HighlighterMode.MatchWidth
+description:    ハイライターの全角半角を区別する (全半)
+key:            ToolBar.HighlighterMode.MatchWidth
+current:        'false'
+default:        'false'
+type:           bool
+candidates:     ^(true|false)$
+## Action 完了：　261021　ToolBar.HighlighterMode.MatchWidth:Toggle
+description:    ハイライターの全角半角区別モードを切り替える
+
 
 ## Status：　260625　ToolBar.CommandMode.Text
 description:    コマンドラインの入力テキスト
@@ -546,7 +576,9 @@ candidates:     ^(Claude|OpenAI|Gemini|Local)$
 　　　会話画面の「条件・機能・参照情報 > 参照情報」の AI 欄で選び直せ、選んだモデルがその社の先頭に移り、
 　　　そのパネルのプロバイダも切り替わる。
 　　　旧版のパネル別の保存値（localStorage の tt-ai-model-*）は初回起動時に引き継ぐ。
+
 # Panel Focused ====================================================================================================
+
 ## Action 完了：　261021　FocusedPanel.Area.OpenStepwise
 エリアが閉じているとき：エリアを開く　→終了
 下位項目をすべて開く →終了
@@ -579,17 +611,10 @@ description:    フォーカスパネルのエリアを段階的に閉じる
 　　　（下位項目をすべて開く）に届きません。2段目はキー割当や TTActions.Execute から実行できます。
 　　- テスト：src\views\TTPanelAreaStepwise.test.ts
 
-　A（261021修正）：Bind を Shift+右クリックから Shift+左クリックに変えました（VerticalTabBar.tsx）。
-　　- 開閉ボタンの Shift+クリックは、開ボタンなら OpenStepwise、閉ボタンなら CloseStepwise を実行します。
-　　- これまでの Shift+クリック（パネル内をすべて展開して開く／すべて折りたたむ）は廃止しました。
-　　　Shift+右クリックは他の右クリックと同じ扱い（DefaultShortcut.md の right1）に戻ります。
-　　- Shift+クリックは DefaultShortcut.md のマウス割当（left1）には流しません。
-　　- 上の注意（ボタンからは OpenStepwise の2段目に届かない）は変わりません。
-　　- Web 版の Seeds パネルで、閉→Shift+クリックで開く→Shift+クリックで閉じる、を確認しました。
-
 ## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
 エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
 description:    フォーカスパネルのエリア開閉をUser位置でトグルする
+
 ## Action：　260917　FocusedPanel.Area.IsOpen:ToggleForEdit
 エリアを開くときはFocusedPanel.Area.OpenWidth:ForEditの位置で開く
 description:    フォーカスパネルのエリア開閉をForEdit位置でトグルする
@@ -840,13 +865,13 @@ current:        ''
 default:        ''
 type:           string
 candidates:     ^\d{4}\-\d{2}\-\d{2}\-\d{6}$
-## Status：　260624　SeedsPanel.Bundle.ID
+## Status：　260624　SeedsPanel.Project.ID
 　本StatusIDの中身
-　Seedsパネルに設定された Bundleファイルの IDです。
+　Seedsパネルに設定された Projectファイルの IDです。
 　※ 起動時のロードおよびD&Dドロップ時の即時反映対応完了。
 
-description:    SeedsパネルのBundleファイルID
-key:            SeedsPanel.Bundle.ID
+description:    SeedsパネルのProjectファイルID
+key:            SeedsPanel.Project.ID
 current:        none
 default:        none
 type:           string

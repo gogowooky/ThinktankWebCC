@@ -7,16 +7,16 @@
  */
 
 import { useState, useCallback } from 'react';
-import { FileText, Folder, Table, Link, MessageCircle, MessagesSquare, BotMessageSquare, Globe, NotebookPen, BookOpenText, IdCard, Share2, X, type LucideIcon } from 'lucide-react';
+import { FileText, Target, Table, Link, MessageCircle, MessagesSquare, Globe, NotebookPen, BookOpenText, IdCard, Share2, X, type LucideIcon } from 'lucide-react';
 
 const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo:    FileText,
-  bundle:  Folder,
+  project: Target,
+  bundle:  Target,
   table:   Table,
   links:   Link,
   chat:    MessagesSquare,
-  html: Globe,
-  abstract: BotMessageSquare,
+  html:    Globe,
 };
 import type { TTDiscussArea } from '../../views/TTDiscussArea';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
@@ -200,7 +200,7 @@ interface Props {
 
 export function DiscussMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
-    : contentType === 'bundle' ? BUNDLE_BUTTONS
+    : (contentType === 'project' || contentType === 'bundle') ? BUNDLE_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
     : contentType === 'html' ? HTML_BUTTONS
     : MEMO_BUTTONS;

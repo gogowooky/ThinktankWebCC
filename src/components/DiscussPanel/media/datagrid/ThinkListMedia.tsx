@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { FileText, Lightbulb, Table, Link, MessagesSquare, Globe, BotMessageSquare, type LucideIcon } from 'lucide-react';
+import { FileText, Target, Table, Link, MessagesSquare, Globe, type LucideIcon } from 'lucide-react';
 import type { TTThink } from '../../../../models/TTThink';
 import type { ContentType } from '../../../../types';
 import type { MediaProps } from '../types';
@@ -9,22 +9,20 @@ import { applyFilter } from '../../../ThinktankPanel/ThoughtsList';
 import { HighlightedText } from './HighlightedText';
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo: FileText,
-  bundle: Lightbulb,
+  project: Target,
   table: Table,
   links: Link,
   chat: MessagesSquare,
   html: Globe,
-  abstract: BotMessageSquare,
 };
 
 const CONTENT_LABELS: Record<ContentType, string> = {
   memo: 'メモ',
-  bundle: '思考',
+  project: 'プロジェクト',
   table: 'テーブル',
   links: 'リンク',
   chat: 'チャット',
   html: 'HTML',
-  abstract: '概要',
 };
 
 function formatDate(dateStr: string): string {
@@ -42,16 +40,16 @@ export function ThinkListMedia({ think, vault, editorSettings }: MediaProps) {
   const { seedsBundleIds, discussIds } = useHighlight();
 
   const [allItems, setAllItems] = useState<TTThink[]>(() => {
-    if (think?.ContentType === 'bundle') return vault.GetThinksForBundle(think.ID);
-    return vault.GetThinks().filter(t => t.ContentType !== 'bundle');
+    if (think?.ContentType === 'project') return vault.GetThinksForProject(think.ID);
+    return vault.GetThinks().filter(t => t.ContentType !== 'project');
   });
 
   useEffect(() => {
-    if (think?.ContentType !== 'bundle') {
-      setAllItems(vault.GetThinks().filter(t => t.ContentType !== 'bundle'));
+    if (think?.ContentType !== 'project') {
+      setAllItems(vault.GetThinks().filter(t => t.ContentType !== 'project'));
       return;
     }
-    void vault.GetThinksForBundleAsync(think.ID).then(setAllItems);
+    void vault.GetThinksForProjectAsync(think.ID).then(setAllItems);
   }, [think?.ID, vault]);
 
   const filtered = useMemo<TTThink[]>(() => {

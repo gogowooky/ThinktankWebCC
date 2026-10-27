@@ -9,7 +9,7 @@ const turn = { context: { scope: 'bundle-only', bundleId: 'bundle' }, answer: { 
   { field: 'completionCriteria', before: '', after: '参加者が楽しめたことを確認', reason: '会話から' },
 ] } } as ConversationTurn;
 function meta(): ThinkMeta {
-  return { thinkid: 'bundle', category: 'bundle', title: '誕生日会', keywords: '', relatedIds: '', sizeBytes: 0,
+  return { thinkid: 'bundle', category: 'project', title: '誕生日会', keywords: '', relatedIds: '', sizeBytes: 0,
     isDeleted: false, createdAt: '2026-09-16T00:00:00Z', updatedAt: '2026-09-16T00:00:00Z', metadata: { thinkSupport: {
     schemaVersion: 1, revision: 1, author: 'human', updatedAt: '2026-09-16T00:00:00Z', confirmedAt: '2026-09-16T00:00:00Z',
     values: { ...emptyThinkValues(), goal: '旧目的', decisions: '既存の決定' },

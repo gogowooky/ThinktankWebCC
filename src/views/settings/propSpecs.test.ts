@@ -2,6 +2,8 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { TTApplication } from '../TTApplication';
 import { TTUIStateManager } from '../TTUIStateManager';
+import { TTActions } from '../TTActions';
+import { registerFocusedPanelActions } from '../TTFocusedPanelActions';
 import { parseTableContent } from '../../utils/tableFormat';
 
 afterEach(() => { vi.clearAllTimers(); vi.useRealTimers(); });
@@ -37,4 +39,30 @@ it('applies and serializes settings from every registry domain in the existing o
     'ThinktankPanel.Mode.Name', 'ThinktankPanel.CurrentItem.ID', 'Application.CheckedItem.IDs', 'SeedsPanel.CurrentItem.ID']);
   expect(keys.indexOf('TextEditor.WordWrap.IsVisible')).toBeLessThan(keys.indexOf('ToolBar.Mode.Name'));
   expect(keys.indexOf('AIChat.ModelNames.Claude')).toBeLessThan(keys.indexOf('ThinktankPanel.AIChat.ModelName'));
+});
+
+it('toggles HighlighterMode MatchCase, IsRegex, and MatchWidth via actions and updates Status', async () => {
+  const app = TTApplication.Instance, manager = TTUIStateManager.instance;
+  manager.init(app);
+  registerFocusedPanelActions(app);
+
+  expect(app.DiscussPanel.HighlightMatchCase).toBe(false);
+  expect(app.DiscussPanel.HighlightIsRegex).toBe(false);
+  expect(app.DiscussPanel.HighlightMatchWidth).toBe(false);
+
+  await TTActions.Execute('ToolBar.HighlighterMode.MatchCase:Toggle');
+  expect(app.DiscussPanel.HighlightMatchCase).toBe(true);
+  expect(manager.getProperty('ToolBar.HighlighterMode.MatchCase')).toBe('true');
+
+  await TTActions.Execute('ToolBar.HighlighterMode.IsRegex:Toggle');
+  expect(app.DiscussPanel.HighlightIsRegex).toBe(true);
+  expect(manager.getProperty('ToolBar.HighlighterMode.IsRegex')).toBe('true');
+
+  await TTActions.Execute('ToolBar.HighlighterMode.MatchWidth:Toggle');
+  expect(app.DiscussPanel.HighlightMatchWidth).toBe(true);
+  expect(manager.getProperty('ToolBar.HighlighterMode.MatchWidth')).toBe('true');
+
+  await TTActions.Execute('ToolBar.HighlighterMode.MatchCase:Toggle');
+  expect(app.DiscussPanel.HighlightMatchCase).toBe(false);
+  expect(manager.getProperty('ToolBar.HighlighterMode.MatchCase')).toBe('false');
 });

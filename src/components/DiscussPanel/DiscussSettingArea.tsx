@@ -46,7 +46,7 @@ export const DiscussSettingArea = forwardRef<DiscussSettingAreaRef, Props>(funct
             : activeSettings === 'texteditor' ? <TextEditorSettings {...context} />
               : activeSettings === 'html' ? <HtmlSettings {...context} />
                 : activeSettings === 'datagrid' ? <DataGridSettings {...context} />
-                  : activeSettings === 'abstract' ? <AbstractView />
+                  : activeSettings === 'project' ? <AbstractView />
                   : <div className="discuss-setting-area__placeholder">
                     {panelName} の設定は今後追加予定です。
                   </div>}

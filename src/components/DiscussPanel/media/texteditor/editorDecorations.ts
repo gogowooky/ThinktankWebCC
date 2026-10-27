@@ -1,4 +1,5 @@
 import type { MediaProps } from '../types';
+import { splitHighlighterGroups, splitHighlighterWords, buildWordPattern } from '../../../../utils/highlighterPattern';
 import { INLINE_MASK_CHAR, INLINE_STYLE_RULES, colorStyleToCss, inlineStyleClass, isUnset, linkStyleClass, styleClass } from '../../../../utils/defaultColor';
 import type { MarkKind, MarkStyle } from '../../../../utils/defaultColor';
 import type { editor as MonacoEditor } from 'monaco-editor';
@@ -109,22 +110,37 @@ export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEdito
 
     // 単語ハイライトの装飾（複数グループ対応）
     if (editorSettings.highlightWord) {
+      const hlOptions = {
+        matchCase: editorSettings.highlightMatchCase,
+        isRegex: editorSettings.highlightIsRegex,
+        matchWidth: editorSettings.highlightMatchWidth,
+      };
       // カンマでグループ分割 (最大5つ)
-      const groups = editorSettings.highlightWord.split(',').slice(0, 5);
+      const groups = splitHighlighterGroups(editorSettings.highlightWord);
       groups.forEach((groupStr, groupIndex) => {
-        // 半角スペースで単語分割
-        const words = groupStr.split(' ').map(w => w.trim()).filter(w => w.length > 0);
+        // 半角/全角スペースで単語分割
+        const words = splitHighlighterWords(groupStr);
         if (words.length === 0) return;
 
         const groupStyle = editorSettings.highlightStyles[groupIndex];
 
         words.forEach(word => {
-          const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(escapedWord, 'g');
+          const pattern = buildWordPattern(word, hlOptions);
+          let regex: RegExp;
+          try {
+            regex = new RegExp(pattern, hlOptions.matchCase ? 'g' : 'gi');
+          } catch {
+            return;
+          }
           let wordMatch;
           while ((wordMatch = regex.exec(lineContent)) !== null) {
+            const matchLen = wordMatch[0].length;
+            if (matchLen === 0) {
+              regex.lastIndex++;
+              continue;
+            }
             const startCol = wordMatch.index + 1;
-            const endCol = startCol + word.length;
+            const endCol = startCol + matchLen;
             newDecorations.push({
               range: new window.monaco!.Range(i, startCol, i, endCol),
               options: {

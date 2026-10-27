@@ -6,7 +6,7 @@ export type ConfigKey =
   | 'SeedsPanel.Area.IsOpen'
   | 'SeedsPanel.Area.OpenWidth'
   | 'SeedsPanel.Mode.Name'
-  | 'SeedsPanel.Bundle.ID'
+  | 'SeedsPanel.Project.ID'
   | 'DiscussSettingPanel.Area.IsOpen'
   | 'DiscussSettingPanel.Area.OpenWidth'
   | 'DiscussSettingPanel.Mode.Name'

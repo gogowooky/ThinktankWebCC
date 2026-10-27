@@ -13,7 +13,7 @@ import { StorageManager } from '../services/storage/StorageManager';
 import { StorageConflictError, StorageTimeoutError } from '../services/storage/IStorageBackend';
 import type { SavePayload, ThinkMeta } from '../services/storage/IStorageBackend';
 import { reportSaveResult } from '../services/storage/saveStatus';
-import { parseBundle, splitContent, extractTitleLine } from '../utils/thinkFormat';
+import { parseProject, splitContent, extractTitleLine } from '../utils/thinkFormat';
 
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
@@ -253,10 +253,10 @@ export class TTThink extends TTObject {
 
   // ── ヘルパー ───────────────────────────────────────────────────────
 
-  /** bundle本文からThinkIDリストを取得する（ContentType='bundle'専用）*/
+  /** project本文からThinkIDリストを取得する（ContentType='project'専用）*/
   public getThinkIds(): string[] {
-    if (this.ContentType !== 'bundle') return [];
-    return parseBundle(this._content).ids;
+    if (this.ContentType !== 'project' && (this.ContentType as string) !== 'bundle') return [];
+    return parseProject(this._content).ids;
   }
 
   private _extractTitle(): void {
@@ -266,7 +266,7 @@ export class TTThink extends TTObject {
     }
     const titleLine = extractTitleLine(this._content).trim();
     let title = titleLine.replace(/^#+\s*/, '');
-    if (this.ContentType === 'bundle') {
+    if (this.ContentType === 'project' || (this.ContentType as string) === 'bundle') {
       title = title.replace(/^>>?\s*/, '');
     }
     this.Name = title || '新しいメモ';

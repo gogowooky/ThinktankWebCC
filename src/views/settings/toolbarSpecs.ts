@@ -26,6 +26,27 @@ export const toolbarSpecs: Record<string, PropSpec> = {
     get: (app) => app.DiscussPanel.HighlightWord || '',
     set: (app, v) => { app.DiscussPanel.HighlightWord = v; },
   },
+  'ToolBar.HighlighterMode.MatchCase': {
+    panel: 'DiscussPanel',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
+    description: 'ハイライターの大文字小文字を区別する (aA)',
+    get: (app) => String(app.DiscussPanel.HighlightMatchCase),
+    set: (app, v) => { app.DiscussPanel.HighlightMatchCase = parseBool(v, app.DiscussPanel.HighlightMatchCase); },
+  },
+  'ToolBar.HighlighterMode.IsRegex': {
+    panel: 'DiscussPanel',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
+    description: 'ハイライターの正規表現モード (.*)',
+    get: (app) => String(app.DiscussPanel.HighlightIsRegex),
+    set: (app, v) => { app.DiscussPanel.HighlightIsRegex = parseBool(v, app.DiscussPanel.HighlightIsRegex); },
+  },
+  'ToolBar.HighlighterMode.MatchWidth': {
+    panel: 'DiscussPanel',
+    default: 'false', type: 'boolean', candidates: '^(true|false)$',
+    description: 'ハイライターの全角半角を区別する (全半)',
+    get: (app) => String(app.DiscussPanel.HighlightMatchWidth),
+    set: (app, v) => { app.DiscussPanel.HighlightMatchWidth = parseBool(v, app.DiscussPanel.HighlightMatchWidth); },
+  },
   'ToolBar.HighlighterMode.Text:AddContentSearchKeywordFlag': {
     panel: 'DiscussPanel',
     default: 'true', type: 'boolean', candidates: '^(true|false)$',

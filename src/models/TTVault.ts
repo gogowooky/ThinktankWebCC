@@ -12,7 +12,7 @@ import { TTCollection } from './TTCollection';
 import { TTThink } from './TTThink';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
-import { parseBundle, serializeBundle, serializeLinks } from '../utils/thinkFormat';
+import { parseProject, serializeProject, updateProjectTargets, serializeLinks } from '../utils/thinkFormat';
 import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
@@ -93,25 +93,30 @@ export class TTVault extends TTCollection {
   }
 
   /**
-   * Bundles を取得する（ContentType='bundle' の TTThink 一覧）
-   * Bundles = TTVault を ContentType='bundle' でフィルターした集合
+   * Projects を取得する（ContentType='project' の TTThink 一覧）
    */
+  public GetProjects(): TTThink[] {
+    return this.GetThinks().filter(t => t.ContentType === 'project' || (t.ContentType as string) === 'bundle');
+  }
+
+  /** @deprecated Use GetProjects */
   public GetBundles(): TTThink[] {
-    return this.GetThinks().filter(t => t.ContentType === 'bundle');
+    return this.GetProjects();
   }
 
 
   /**
-   * 指定 Bundle の `*` 行に列挙された Think 群を非同期で返す。
-   * Bundle ID が含まれる場合は、その Bundle の ID リストも再帰的に解決する。
+   * 指定 Project の対象に列挙された Think 群を非同期で返す。
+   * Project ID が含まれる場合は、その Project の ID リストも再帰的に解決する。
    * 重複排除して TTThink[] を返す。
    */
-  public async GetThinksForBundleAsync(bundleId: string, strict: boolean = false, options: BundleResolutionOptions = {}): Promise<TTThink[]> {
+  public async GetThinksForProjectAsync(bundleId: string, strict: boolean = false, options: BundleResolutionOptions = {}): Promise<TTThink[]> {
+    const isProjectType = (ct?: string) => ct === 'project' || ct === 'bundle';
     const rootBundle = this.GetThink(bundleId);
-    if (!rootBundle || rootBundle.ContentType !== 'bundle') return [];
+    if (!rootBundle || !isProjectType(rootBundle.ContentType)) return [];
 
     const thinks = this.GetThinks();
-    const allThinks = thinks.filter(t => t.ContentType !== 'bundle');
+    const allThinks = thinks.filter(t => !isProjectType(t.ContentType));
     const snapshot = captureBundleResolutionSnapshot(this.ID, this.IsLoaded, thinks);
     this._bundleInputsSnapshot = snapshot;
     const revision = this._bundleCacheRevision;
@@ -135,7 +140,7 @@ export class TTVault extends TTCollection {
       visited.add(tid);
       activePath.add(tid);
       const think = this.GetThink(tid);
-      if (!think || think.ContentType !== 'bundle') return;
+      if (!think || !isProjectType(think.ContentType)) return;
       if (think.IsMetaOnly) {
         const unchangedBeforeLoad = matchesBundleContentBeforeLoad(snapshot, think);
         await think.LoadContent();
@@ -143,10 +148,10 @@ export class TTVault extends TTCollection {
         acceptBundleContentLoad(snapshot, think);
       }
       if (strict && think.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした');
-      const parsed = parseBundle(think.Content);
+      const parsed = parseProject(think.Content);
       options.onBundle?.(think);
       for (const id of parsed.ids) {
-        if (this.GetThink(id)?.ContentType === 'bundle') await collectParams(id, visited);
+        if (isProjectType(this.GetThink(id)?.ContentType)) await collectParams(id, visited);
         else state.ids.add(id);
       }
       activePath.delete(tid);
@@ -166,10 +171,16 @@ export class TTVault extends TTCollection {
     return result.members;
   }
 
-  /** GetThinksForBundleAsync の同期版（未読本文のロードはスキップ）*/
-  public GetThinksForBundle(bundleId: string): TTThink[] {
+  /** @deprecated Use GetThinksForProjectAsync */
+  public GetThinksForBundleAsync(bundleId: string, strict: boolean = false, options: BundleResolutionOptions = {}): Promise<TTThink[]> {
+    return this.GetThinksForProjectAsync(bundleId, strict, options);
+  }
+
+  /** GetThinksForProjectAsync の同期版（未読本文のロードはスキップ）*/
+  public GetThinksForProject(bundleId: string): TTThink[] {
+    const isProjectType = (ct?: string) => ct === 'project' || ct === 'bundle';
     const thinks = this.GetThinks();
-    const allThinks = thinks.filter(t => t.ContentType !== 'bundle');
+    const allThinks = thinks.filter(t => !isProjectType(t.ContentType));
     const cached = this._bundleThinksCache.get(bundleId);
     if (cached && matchesBundleResolutionSnapshot(cached.snapshot, this.ID, this.IsLoaded, thinks)) {
       const byId = new Map(allThinks.map(think => [think.ID, think]));
@@ -177,22 +188,27 @@ export class TTVault extends TTCollection {
     }
     this._bundleThinksCache.delete(bundleId);
     const rootBundle = this.GetThink(bundleId);
-    if (!rootBundle || rootBundle.ContentType !== 'bundle' || rootBundle.IsMetaOnly) return [];
+    if (!rootBundle || !isProjectType(rootBundle.ContentType) || rootBundle.IsMetaOnly) return [];
 
     const state = createBundleResolutionState();
     const collectParams = (tid: string, visited: Set<string>): void => {
       if (visited.has(tid)) return;
       visited.add(tid);
       const think = this.GetThink(tid);
-      if (!think || think.ContentType !== 'bundle' || think.IsMetaOnly) return;
-      const parsed = parseBundle(think.Content);
+      if (!think || !isProjectType(think.ContentType) || think.IsMetaOnly) return;
+      const parsed = parseProject(think.Content);
       for (const id of parsed.ids) {
-        if (this.GetThink(id)?.ContentType === 'bundle') collectParams(id, visited);
+        if (isProjectType(this.GetThink(id)?.ContentType)) collectParams(id, visited);
         else state.ids.add(id);
       }
     };
     collectParams(bundleId, new Set());
     return finishBundleResolution(state, allThinks).members;
+  }
+
+  /** @deprecated Use GetThinksForProject */
+  public GetThinksForBundle(bundleId: string): TTThink[] {
+    return this.GetThinksForProject(bundleId);
   }
 
   /** ID で TTThink を取得する（型付き）*/
@@ -224,7 +240,8 @@ export class TTVault extends TTCollection {
           const think = new TTThink();
           think.ID          = meta.thinkid;
           think.VaultID     = this.ID;
-          think.ContentType = meta.category as ContentType;
+          const rawCat      = meta.category;
+          think.ContentType = (rawCat === 'bundle' ? 'project' : rawCat === 'abstract' ? 'memo' : rawCat) as ContentType;
           think.Keywords    = meta.keywords  ?? '';
           think.RelatedIDs  = meta.relatedIds ?? '';
           // metadata が万一オブジェクト以外（文字列化されたYAML等）で届いた場合、
@@ -269,8 +286,8 @@ export class TTVault extends TTCollection {
    *  各 bundle の ThinkID を展開・重複排除して `* id` 行にまとめる
    *  タイトル: {count1}件＋{count2}件：{name1}＋{name2}＋...
    */
-  /** Bundle一覧モード: 複数 bundle を合成した新 bundle を作成する */
-  public async CreateBundleFromBundles(ids: string[]): Promise<TTThink> {
+  /** Project一覧モード: 複数 project を合成した新 project を作成する */
+  public async CreateProjectFromProjects(ids: string[]): Promise<TTThink> {
     const titles: string[] = [];
     const allThinkIds = new Set<string>();
     for (const id of ids) {
@@ -281,22 +298,32 @@ export class TTVault extends TTCollection {
       }
     }
     const uniqueIds = [...allThinkIds];
-    const title = `${uniqueIds.length}件：Bundleファイルの連結（${uniqueIds.join(' x ')}）`;
+    const title = `${uniqueIds.length}件：Projectファイルの連結（${uniqueIds.join(' x ')}）`;
 
-    return this._createBundle({
+    return this._createProject({
       title,
       ids: uniqueIds
     });
   }
 
-  /** Think ID の固定リストから Bundle を作成する。 */
-  public async CreateBundleFromIds(ids: string[]): Promise<TTThink> {
+  /** @deprecated Use CreateProjectFromProjects */
+  public CreateBundleFromBundles(ids: string[]): Promise<TTThink> {
+    return this.CreateProjectFromProjects(ids);
+  }
+
+  /** Think ID の固定リストから Project を作成する。 */
+  public async CreateProjectFromIds(ids: string[]): Promise<TTThink> {
     const uniqueIds = [...new Set(ids)];
     const firstName = uniqueIds.length > 0 ? (this.GetThink(uniqueIds[0])?.Name ?? uniqueIds[0]) : '';
     const title = uniqueIds.length > 0
       ? `${uniqueIds.length}件：含む「${firstName}」`
       : '0件：Thinkファイルの一覧';
-    return this._createBundle({ title, ids: uniqueIds });
+    return this._createProject({ title, ids: uniqueIds });
+  }
+
+  /** @deprecated Use CreateProjectFromIds */
+  public CreateBundleFromIds(ids: string[]): Promise<TTThink> {
+    return this.CreateProjectFromIds(ids);
   }
 
   private async _createThink(options: {
@@ -344,13 +371,13 @@ export class TTVault extends TTCollection {
     }
     think.markSaved();
     if (metadata) think.markMetadataSaved();
-    if (bundleId) await this._linkThinkToBundle(bundleId, id);
+    if (bundleId) await this._linkThinkToProject(bundleId, id);
     this.NotifyUpdated();
     return think;
   }
 
-  /** bundle新規作成の共通ロジック */
-  private async _createBundle(options: {
+  /** project新規作成の共通ロジック */
+  private async _createProject(options: {
     title: string,
     ids?: string[],
     thinkSupport?: ThinkSupportRecord,
@@ -359,18 +386,26 @@ export class TTVault extends TTCollection {
     isCurrent?: () => boolean
   }): Promise<TTThink> {
     const { title, ids = [] } = options;
-    const fullContent = serializeBundle({ title, ids });
+    const items = ids.map(id => {
+      const target = this.GetThink(id);
+      return {
+        id,
+        contentType: target?.ContentType ?? 'memo',
+        title: target?.Name || undefined,
+      };
+    });
+    const fullContent = serializeProject({ title, items });
     const metadata = {
       ...(options.thinkSupport ? { thinkSupport: options.thinkSupport } : {}),
       ...(options.originChatId ? { taskOrigin: { schemaVersion: 1, chatId: options.originChatId } } : {}),
       ...(options.taskRelation ? { taskRelation: options.taskRelation } : {}),
     };
-    return this._createThink({ contentType: 'bundle', fullContent, relatedIds: ids.join(','),
+    return this._createThink({ contentType: 'project', fullContent, relatedIds: ids.join(','),
       ...(Object.keys(metadata).length ? { metadata } : {}), ...(options.isCurrent ? { isCurrent: options.isCurrent } : {}) });
   }
 
-  /** 本人が採用した課題名と関連資料から、1課題を表すBundleを作成する。 */
-  public async CreateTaskBundle(title: string, ids: string[], seed?: TaskSeed, originChatId?: string, isCurrent?: () => boolean): Promise<TTThink> {
+  /** 本人が採用した課題名と関連資料から、1課題を表すProjectを作成する。 */
+  public async CreateTaskProject(title: string, ids: string[], seed?: TaskSeed, originChatId?: string, isCurrent?: () => boolean): Promise<TTThink> {
     const normalizedTitle = title.replace(/[\r\n]+/g, ' ').trim();
     if (!normalizedTitle) throw new Error('課題名を入力してください。');
     if (normalizedTitle.length > 200) throw new Error('課題名は200文字以内で入力してください。');
@@ -381,10 +416,15 @@ export class TTVault extends TTCollection {
       values: { ...emptyThinkValues(), goal: seed.goal, completionCriteria: seed.completionCriteria }, sources: {},
     } : undefined;
     if (thinkSupport) readThinkSupport(thinkSupport);
-    return this._createBundle({ title: normalizedTitle, ids: uniqueIds, thinkSupport, originChatId, isCurrent });
+    return this._createProject({ title: normalizedTitle, ids: uniqueIds, thinkSupport, originChatId, isCurrent });
   }
 
-  /** Candidate identity keeps retries separate without rewriting the parent Bundle. */
+  /** @deprecated Use CreateTaskProject */
+  public CreateTaskBundle(title: string, ids: string[], seed?: TaskSeed, originChatId?: string, isCurrent?: () => boolean): Promise<TTThink> {
+    return this.CreateTaskProject(title, ids, seed, originChatId, isCurrent);
+  }
+
+  /** Candidate identity keeps retries separate without rewriting the parent Project. */
   public async CreateSubtaskFromConversation(turn: ConversationTurn, chatId: string, title: string, candidateId?: string, isCurrent: () => boolean = () => true): Promise<TTThink> {
     if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
     if (candidateId !== undefined) validateSubtaskCandidates(turn.answer.subtaskCandidates, turn.context.scope);
@@ -394,8 +434,10 @@ export class TTVault extends TTCollection {
       : candidate ? { after: candidate.goal } : undefined;
     const normalized = title.replace(/[\r\n]+/g, ' ').trim();
     const relation: TaskRelation = { schemaVersion: 1, parentId, chatId, turnId: turn.id, panel: 'Discuss', ...(candidateId !== undefined ? { candidateId } : {}) };
+    const parentThink = this.GetThink(parentId);
+    const isParentProject = parentThink?.ContentType === 'project' || (parentThink?.ContentType as string) === 'bundle';
     if (turn.context.scope !== 'bundle-only' || turn.context.vaultId !== this.ID
-      || this.GetThink(parentId)?.ContentType !== 'bundle' || this.GetThink(chatId)?.ContentType !== 'chat'
+      || !isParentProject || this.GetThink(chatId)?.ContentType !== 'chat'
       || !proposal || !readTaskRelation(relation) || !normalized || normalized.length > 200) {
       throw new Error('サブ課題の対象・提案・課題名を確認してください。');
     }
@@ -412,7 +454,7 @@ export class TTVault extends TTCollection {
       if (!isCurrent()) throw new Error('アプリの処理期間が終了しました。');
       return this.CreateSubtaskFromConversation(turn, chatId, title, candidateId, isCurrent);
     }
-    const existing = this.GetBundles().find(b => {
+    const existing = this.GetProjects().find(b => {
       const r = readTaskRelation(b.Metadata.taskRelation);
       return r?.parentId === parentId && r.chatId === chatId && r.turnId === turn.id && r.candidateId === candidateId;
     });
@@ -421,7 +463,7 @@ export class TTVault extends TTCollection {
     const thinkSupport: ThinkSupportRecord = { schemaVersion: 1, revision: 1, author: 'human', confirmedAt: now,
       updatedAt: now, values: { ...emptyThinkValues(), goal: proposal.after, completionCriteria: candidate?.completionCriteria ?? '' }, sources: {} };
     readThinkSupport(thinkSupport);
-    const creation = { promise: this._createBundle({ title: normalized, ids: [chatId], thinkSupport, taskRelation: relation, isCurrent }), isCurrent };
+    const creation = { promise: this._createProject({ title: normalized, ids: [chatId], thinkSupport, taskRelation: relation, isCurrent }), isCurrent };
     this._subtaskCreations.set(key, creation);
     try {
       const created = await creation.promise;
@@ -430,28 +472,40 @@ export class TTVault extends TTCollection {
     } finally { if (this._subtaskCreations.get(key) === creation) this._subtaskCreations.delete(key); }
   }
 
-  /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのBundleのIDリストに新しいThinkを追加する。 */
+  /** 新規の空Thinkを作成して保存する。bundleId を渡すと、そのProjectのIDリストに新しいThinkを追加する。 */
   public async CreateBlankThink(contentType: ContentType, initialName: string = '', bundleId?: string, metadata?: Record<string, unknown>): Promise<TTThink> {
     return this._createThink({ contentType, fullContent: initialName, bundleId,
       ...(metadata ? { metadata: structuredClone(metadata) } : {}) });
   }
 
-  /** 指定した Bundle の ID リストに newId を追加して保存する（内部ヘルパー） */
-  public async LinkThinksToBundle(bundleId: string, ids: string[]): Promise<void> {
-    for (const id of ids) await this._linkThinkToBundle(bundleId, id);
+  /** 指定した Project の ID リストに newId を追加して保存する（内部ヘルパー） */
+  public async LinkThinksToProject(bundleId: string, ids: string[]): Promise<void> {
+    for (const id of ids) await this._linkThinkToProject(bundleId, id);
   }
 
-  private async _linkThinkToBundle(bundleId: string, newId: string): Promise<void> {
+  /** @deprecated Use LinkThinksToProject */
+  public LinkThinksToBundle(bundleId: string, ids: string[]): Promise<void> {
+    return this.LinkThinksToProject(bundleId, ids);
+  }
+
+  private async _linkThinkToProject(bundleId: string, newId: string): Promise<void> {
     const bundle = this.GetThink(bundleId);
-    if (!bundle || bundle.ContentType !== 'bundle') throw new Error('対象Bundleが見つかりません。');
+    const isProject = bundle?.ContentType === 'project' || (bundle?.ContentType as string) === 'bundle';
+    if (!bundle || !isProject) throw new Error('対象Projectが見つかりません。');
     if (bundle.IsMetaOnly) await bundle.LoadContent();
-    if (bundle.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした。');
-    const parsed = parseBundle(bundle.Content);
+    if (bundle.IsMetaOnly) throw new Error('Project本文を読み込めませんでした。');
+    const parsed = parseProject(bundle.Content);
     if (parsed.ids.includes(newId)) return;
-    const newContent = serializeBundle({
-      title: parsed.title,
-      ids: [...parsed.ids, newId],
+    const allIds = [...parsed.ids, newId];
+    const items = allIds.map(id => {
+      const target = this.GetThink(id);
+      return {
+        id,
+        contentType: target?.ContentType ?? 'memo',
+        title: target?.Name || undefined,
+      };
     });
+    const newContent = updateProjectTargets(bundle.Content, items);
     const previousContent = bundle.Content;
     bundle.Content = newContent;
     try { await bundle.SaveContent(); }

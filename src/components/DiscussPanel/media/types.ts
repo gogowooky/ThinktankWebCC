@@ -62,6 +62,9 @@ export interface MediaProps {
     unicodeHighlight: boolean;
     bracketPairColorization: boolean;
     highlightWord: string;
+    highlightMatchCase?: boolean;
+    highlightIsRegex?: boolean;
+    highlightMatchWidth?: boolean;
     /** ハイライトグループ1..6の表示属性（TextEditor.Highlighter.StyleN.*） */
     highlightStyles: ColorStyle[];
     /** エディタの基本色（TextEditor.Text.* / .Selection.* / .Occurrence.*） */

@@ -116,7 +116,7 @@ export function validateContext(value: unknown): asserts value is ConversationCo
     if (!object(s) || !id(s.thinkId) || ids.has(s.thinkId) || !text(s.title, 2000, true)
       || !text(s.content, MAX_CONTEXT_CHARS, true) || typeof s.contentHash !== 'string' || !/^[a-f0-9]{64}$/.test(s.contentHash)) throw new Error('資料または本文ハッシュが不正です。');
     ids.add(s.thinkId); length += s.content.length;
-    if (s.contentType !== undefined && !['memo', 'links', 'chat', 'bundle', 'table', 'html', 'abstract'].includes(String(s.contentType))) throw new Error('資料の種別が不正です。');
+    if (s.contentType !== undefined && !['memo', 'links', 'chat', 'project', 'bundle', 'table', 'html'].includes(String(s.contentType))) throw new Error('資料の種別が不正です。');
   }
   if (length > MAX_CONTEXT_CHARS) throw new Error('資料が大きすぎます。Bundleを分けてください。');
   if (value.manualState !== null) {

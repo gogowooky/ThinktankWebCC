@@ -17,7 +17,7 @@ export function ProgressProposal({ vault, turn, disabled }: { vault: TTVault; tu
   const pause = turn.answer.pauseCandidates?.[0];
   const reviewLabel = pause ? '到達状態・保留・再開の候補を確認' : '到達状態の候補を確認';
   const bundle = vault.GetThink(turn.context.bundleId);
-  if ((!proposals.length && !pause) || turn.context.scope !== 'bundle-only' || turn.context.vaultId !== vault.ID || bundle?.ContentType !== 'bundle') return null;
+  if ((!proposals.length && !pause) || turn.context.scope !== 'bundle-only' || turn.context.vaultId !== vault.ID || bundle?.ContentType !== 'project') return null;
 
   async function act(save: boolean) {
     if (!lifetime.isCurrent()) return;

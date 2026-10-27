@@ -23,7 +23,7 @@ export function HarvestMenuRibbon({
   onToggleColumnDialog, onToggleFilterSelectDialog,
   onClearTodoSelection, onRefresh,
 }: Props) {
-  if (viewMode === 'settings' || viewMode === 'abstract') {
+  if (viewMode === 'settings' || viewMode === 'project') {
     return <div className="menu-ribbon harvest-menu-ribbon" />;
   }
 

@@ -14,7 +14,7 @@ export type { ThinkField, ThinkValues, ThinkSources, ThinkSupportRecord } from '
 export class ThinkSupportService {
   async read(id: string): Promise<ThinkMeta> {
     const record = await StorageManager.instance.getRecord(id);
-    if (!record || record.meta.thinkid !== id || record.meta.category !== 'bundle') {
+    if (!record || record.meta.thinkid !== id || !['project', 'bundle'].includes(record.meta.category)) {
       throw new Error('Bundleの保存情報を確認できません。');
     }
     readThinkSupport(record.meta.metadata?.thinkSupport);
@@ -28,7 +28,7 @@ export class ThinkSupportService {
     sources: ThinkSources,
   ): Promise<ThinkMeta> {
     const current = await StorageManager.instance.getRecord(id);
-    if (!current || current.meta.category !== 'bundle') {
+    if (!current || !['project', 'bundle'].includes(current.meta.category)) {
       throw new Error('Bundleの保存情報を確認できません。');
     }
     const think = TTModels.Instance?.Vault?.GetThink(id);

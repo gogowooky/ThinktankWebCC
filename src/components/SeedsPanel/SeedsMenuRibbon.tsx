@@ -57,7 +57,7 @@ export function SeedsMenuRibbon({
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
   /* ── 設定モード / チャット・グラフモード ───────────────────── */
-  if (showSettings || mediaType === 'chat' || mediaType === 'abstract') {
+  if (showSettings || mediaType === 'chat' || mediaType === 'project') {
     const showChatControls = !showSettings && mediaType === 'chat';
 
     if (showChatControls) {

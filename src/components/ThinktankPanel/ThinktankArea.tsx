@@ -46,16 +46,16 @@ import type { LayoutMode } from '../Layout/AppLayout';
 
 const THINKTANK_MODE_NAMES: Record<string, string> = {
   filter:   'Think一覧',
-  abstract: '概要',
+  project:  'プロジェクト',
   chat:     '対話',
   settings: '設定',
 };
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'html', 'abstract'];
-// Edit（=simple）で開く種別。編集の対象になる本文だけを出す。Bundleは資料の束、
-// Chatは会話履歴、Abstractは作業状態で、どれもここで書き換えるものではないので既定では出さない。
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'project', 'table', 'links', 'chat', 'html'];
+// Edit（=simple）で開く種別。編集の対象になる本文だけを出す。Projectは資料の束、
+// Chatは会話履歴で、どれもここで書き換えるものではないので既定では出さない。
 const EDIT_CONTENT_TYPES: ContentType[] = ['memo', 'table', 'links', 'html'];
-const defaultVisibleTypes = (mode: LayoutMode) => new Set<ContentType>(mode === 'simple' ? EDIT_CONTENT_TYPES : ['bundle']);
+const defaultVisibleTypes = (mode: LayoutMode) => new Set<ContentType>(mode === 'simple' ? EDIT_CONTENT_TYPES : ['project']);
 
 interface Props {
   app: TTApplication;
@@ -249,11 +249,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     app.OpenThinkInDiscuss(id);
   }, [app, vault]);
 
-  // Bundle 種別はその場で Seeds へ、それ以外は Discuss へ
+  // Project 種別はその場で Seeds へ、それ以外は Discuss へ
   const handleOpenItem = useCallback((id: string) => {
     const t = vault.GetThink(id);
-    if (t?.ContentType === 'bundle') {
-      app.OpenBundle(id, 'datagrid');
+    if (t?.ContentType === 'project') {
+      app.OpenProject(id, 'datagrid');
     } else {
       handleSelect(id);
     }
@@ -379,14 +379,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     );
   } else if (viewMode === 'settings') {
     content = <ThinktankSettingsView ref={settingsViewRef} />;
-  } else if (viewMode === 'abstract') {
+  } else if (viewMode === 'project') {
     content = <AbstractView />;
   } else {
-    // filter モード（検索・Bundle一覧を統合）
+    // filter モード（検索・Project一覧を統合）
     content = (
       <ThinktankFilterView
         thinks={sortedBase}
-        selectedId={panel.SelectedBundleID}
+        selectedId={panel.SelectedProjectID}
         checkedIds={panel.CheckedThoughtIDs}
         checkedOnly={panel.ShowCheckedOnly}
         createdDate={createdDate}

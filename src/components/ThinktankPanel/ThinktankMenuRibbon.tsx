@@ -51,7 +51,7 @@ export function ThinktankMenuRibbon({
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
   /* ── 設定・概要モード: ボタンなし ───────────────────────── */
-  if (viewMode === 'settings' || viewMode === 'abstract') {
+  if (viewMode === 'settings' || viewMode === 'project') {
     return <div className="menu-ribbon thinktank-menu-ribbon" />;
   }
 
@@ -162,7 +162,7 @@ export function ThinktankMenuRibbon({
       </button>
 
       {/* ChecktoBundle: Bundle作成 */}
-      <div className="tooltip-wrapper" data-tip="チェックアイテムからbundleを作成">
+      <div className="tooltip-wrapper" data-tip="チェックアイテムからprojectを作成">
         <button
           className="menu-ribbon__btn menu-ribbon__btn--icon"
           onClick={onCreateBundle}

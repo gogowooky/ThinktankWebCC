@@ -124,7 +124,7 @@ it('creates one task Bundle with the confirmed title and links the consultation 
   expect((await vault.GetThinksForBundleAsync(bundle.ID, true)).map(t => t.ID)).toEqual([chat.ID]);
   expect(storage.save).toHaveBeenLastCalledWith(expect.objectContaining({
     thinkid: bundle.ID,
-    category: 'bundle',
+    category: 'project',
     relatedIds: chat.ID,
   }));
 });

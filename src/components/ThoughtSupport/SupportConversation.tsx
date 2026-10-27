@@ -47,7 +47,7 @@ export function SupportConversation({ vault, panelName, chatId, draftScope, pane
   const association = resolveChatTask(vault, chat);
   const bundle = association.bundle;
   const chatValid = chat?.ContentType === 'chat';
-  const bundleValid = bundle?.ContentType === 'bundle';
+  const bundleValid = bundle?.ContentType === 'project';
   const chatOnly = panelName === 'Thinktank' || !!pane;
   const valid = lifetime.isCurrent() && chatValid && !association.error && (bundleValid || chatOnly);
   async function openSource(id: string) {

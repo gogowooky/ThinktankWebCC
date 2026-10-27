@@ -18,7 +18,7 @@ it.each(['Thinktank', 'Seeds', 'Discuss', 'Harvest'] as const)('%s omits the leg
   vi.stubGlobal('fetch', fetch);
   const chat = new TTThink(); chat.ID = 'old-chat'; chat.ContentType = 'chat'; chat.Name = `TODO:${panelName}｜[進行中]Bundle`; chat.Content = '保存済み会話\n## 質問\n回答';
   chat.Metadata.supportPendingEffects = { operationId: 'preserve-pending' }; const before = chat.Content; const metadataBefore = JSON.stringify(chat.Metadata);
-  const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'bundle'; bundle.Name = 'Bundle'; bundle.Content = '# Bundle';
+  const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'project'; bundle.Name = 'Bundle'; bundle.Content = '# Bundle';
   const load = vi.spyOn(chat, 'LoadContent'); const save = vi.spyOn(chat, 'SaveContent');
   const vault = { GetThink: (id: string) => id === chat.ID ? chat : id === bundle.ID ? bundle : undefined, GetThinks: () => [chat, bundle], GetBundles: () => [bundle], AddOnUpdate: vi.fn(), RemoveOnUpdate: vi.fn() } as unknown as TTVault;
   const host = document.createElement('div'); const root = createRoot(host); const ref = createRef<SupportChatRef>();

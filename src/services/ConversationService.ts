@@ -2,6 +2,7 @@ import { apiFetch, readApiJson } from './apiClient';
 import type { TTVault } from '../models/TTVault';
 import { TTModels } from '../models/TTModels';
 import { StorageManager } from './storage/StorageManager';
+import { StorageConflictError } from './storage/IStorageBackend';
 import { usesLocalRelay } from './runtimeMode';
 import type { AiModelSelection } from './aiModels';
 import type { ContextSnapshot } from './contextTypes';
@@ -31,6 +32,28 @@ const turnPromotionCandidatesMap = new Map<string, ValidatedPromotionCandidate[]
 
 export function getTurnPromotionCandidates(turnId: string): ValidatedPromotionCandidate[] {
   return turnPromotionCandidatesMap.get(turnId) ?? [];
+}
+
+export function setTurnPromotionCandidatesForTest(
+  turnId: string,
+  candidates: ValidatedPromotionCandidate[],
+): void {
+  turnPromotionCandidatesMap.set(turnId, candidates);
+}
+
+// 同一プロセス内の複数パネルから同時に応答が返った際、同じ Bundle / Chat への保存が衝突しないよう直列化する。
+let saveQueue: Promise<void> = Promise.resolve();
+const MAX_CONFLICT_RETRIES = 3;
+
+function isConflictError(err: unknown): boolean {
+  if (err instanceof StorageConflictError) return true;
+  if (!err || typeof err !== 'object') return false;
+  const e = err as { code?: string; name?: string; message?: string };
+  return (
+    e.code === 'VERSION_CONFLICT' ||
+    e.name === 'StorageConflictError' ||
+    (typeof e.message === 'string' && e.message.includes('競合を検出しました'))
+  );
 }
 
 export function conversationContext(snapshot: ContextSnapshot): ConversationContext {
@@ -344,40 +367,37 @@ export class ConversationClient {
   }
 
   async save(turn: ConversationTurn, chatId?: string, bundleId?: string): Promise<void> {
+    const task = saveQueue.then(() => this._saveSerialized(turn, chatId, bundleId));
+    saveQueue = task.catch(() => {});
+    return task;
+  }
+
+  private async _saveSerialized(
+    turn: ConversationTurn,
+    chatId?: string,
+    bundleId?: string,
+  ): Promise<void> {
     const targetId = chatId || bundleId || turn.context.bundleId;
     const activeVault = TTModels.Instance?.Vault;
     const think = activeVault?.GetThink(targetId);
-    const record = await StorageManager.instance.getRecord(targetId);
-    if (!record) throw new Error('保存対象のレコードが見つかりません。');
 
-    let currentTurns: ConversationTurn[];
-    try {
-      currentTurns = readConversationLog(record.meta.metadata?.thinkConversations).turns;
-    } catch {
-      currentTurns = [];
-    }
-    const nextTurns = currentTurns.some((t) => t.id === turn.id)
-      ? currentTurns
-      : [...currentTurns, turn];
-    const nextLog = { schemaVersion: 1 as const, turns: nextTurns };
-
-    // 昇格候補があれば対象 Bundle / Chat の operations にも追加
     const extractedCandidates = turnPromotionCandidatesMap.get(turn.id) ?? [];
     const targetOpsId = bundleId || turn.context.bundleId || targetId;
-    const opsRecord =
-      targetOpsId === targetId
-        ? record
-        : await StorageManager.instance.getRecord(targetOpsId);
-    let operations: ReturnType<typeof extractOperationsState> | undefined;
-    if (opsRecord && extractedCandidates.length > 0) {
+
+    const applyCandidatesToOps = (
+      opsMetadata: Record<string, unknown> | undefined,
+    ): ReturnType<typeof extractOperationsState> => {
       let opsState = extractOperationsState(
-        opsRecord.meta.metadata,
+        opsMetadata,
         DomainProfileManager.activeProfile,
       );
-      for (const cand of extractedCandidates) {
+      extractedCandidates.forEach((cand, idx) => {
+        const candidateId = `cand_${turn.id}_${idx}`;
+        if (opsState.promotionCandidates.some((c) => c.id === candidateId)) return;
         opsState = addPromotionCandidate(
           opsState,
           {
+            id: candidateId,
             bundleId: targetOpsId,
             sourceChatThinkid: chatId,
             sourceMessageId: turn.id,
@@ -393,64 +413,102 @@ export class ConversationClient {
           },
           'ai',
         );
-      }
-      operations = opsState;
-      if (targetOpsId !== targetId) {
-        const savedOpsMeta = await StorageManager.instance.updateMetadata(
-          targetOpsId,
-          { operations: opsState },
-          opsRecord.meta.updatedAt || undefined,
-        );
-        const opsThink = activeVault?.GetThink(targetOpsId);
-        if (opsThink) {
-          opsThink.Metadata = savedOpsMeta.metadata ?? {};
-          opsThink.UpdatedAt = savedOpsMeta.updatedAt;
-          opsThink.markMetadataSaved();
+      });
+      return opsState;
+    };
+
+    // 昇格候補の対象 Bundle が保存対象 Chat とは別レコードの場合、Bundle 側を楽観ロック自動リトライ付きで先に更新する
+    if (extractedCandidates.length > 0 && targetOpsId !== targetId) {
+      for (let attempt = 0; attempt < MAX_CONFLICT_RETRIES; attempt++) {
+        const opsRecord = await StorageManager.instance.getRecord(targetOpsId);
+        if (!opsRecord) break;
+        const opsState = applyCandidatesToOps(opsRecord.meta.metadata);
+        try {
+          const savedOpsMeta = await StorageManager.instance.updateMetadata(
+            targetOpsId,
+            { operations: opsState },
+            opsRecord.meta.updatedAt || undefined,
+          );
+          const opsThink = activeVault?.GetThink(targetOpsId);
+          if (opsThink) {
+            opsThink.Metadata = savedOpsMeta.metadata ?? {};
+            opsThink.UpdatedAt = savedOpsMeta.updatedAt;
+            opsThink.markMetadataSaved();
+          }
+          break;
+        } catch (err) {
+          if (!isConflictError(err) || attempt === MAX_CONFLICT_RETRIES - 1) throw err;
         }
       }
     }
 
-    const nextMetadata: Record<string, unknown> = {
-      ...(record.meta.metadata ?? {}),
-      thinkConversations: nextLog,
-      ...(targetOpsId === targetId && operations ? { operations } : {}),
-    };
-    let savedMeta;
-    let savedFullContent = record.body
-      ? `${record.meta.title}\n${record.body}`
-      : record.meta.title;
-    if (chatId && record.meta.category === 'chat') {
-      const mergedBody = mergeConversationTranscript(record.body, nextTurns);
-      savedFullContent = mergedBody ? `${record.meta.title}\n${mergedBody}` : record.meta.title;
-      savedMeta = await StorageManager.instance.save({
-        thinkid: targetId,
-        category: record.meta.category,
-        fullContent: savedFullContent,
-        keywords: record.meta.keywords,
-        relatedIds: record.meta.relatedIds,
-        metadata: nextMetadata,
-        baseUpdatedAt: record.meta.updatedAt || undefined,
-      });
-    } else {
-      savedMeta = await StorageManager.instance.updateMetadata(
-        targetId,
-        {
-          thinkConversations: nextLog,
-          ...(targetOpsId === targetId && operations ? { operations } : {}),
-        },
-        record.meta.updatedAt || undefined,
-      );
-    }
+    // 会話ターン本体（および targetOpsId === targetId の場合の昇格候補）を楽観ロック自動リトライ付きで保存する
+    for (let attempt = 0; attempt < MAX_CONFLICT_RETRIES; attempt++) {
+      const record = await StorageManager.instance.getRecord(targetId);
+      if (!record) throw new Error('保存対象のレコードが見つかりません。');
 
-    if (think) {
-      think.Metadata = savedMeta.metadata ?? nextMetadata;
-      if (chatId && record.meta.category === 'chat') think.setContentSilent(savedFullContent);
-      think.UpdatedAt = savedMeta.updatedAt;
-      think.markSaved();
-      think.markMetadataSaved();
-      activeVault?.NotifyUpdated(false);
+      let currentTurns: ConversationTurn[];
+      try {
+        currentTurns = readConversationLog(record.meta.metadata?.thinkConversations).turns;
+      } catch {
+        currentTurns = [];
+      }
+      const nextTurns = currentTurns.some((t) => t.id === turn.id)
+        ? currentTurns
+        : [...currentTurns, turn];
+      const nextLog = { schemaVersion: 1 as const, turns: nextTurns };
+
+      const operations =
+        extractedCandidates.length > 0 && targetOpsId === targetId
+          ? applyCandidatesToOps(record.meta.metadata)
+          : undefined;
+
+      const nextMetadata: Record<string, unknown> = {
+        ...(record.meta.metadata ?? {}),
+        thinkConversations: nextLog,
+        ...(operations ? { operations } : {}),
+      };
+      let savedMeta;
+      let savedFullContent = record.body
+        ? `${record.meta.title}\n${record.body}`
+        : record.meta.title;
+      try {
+        if (chatId && record.meta.category === 'chat') {
+          const mergedBody = mergeConversationTranscript(record.body, nextTurns);
+          savedFullContent = mergedBody ? `${record.meta.title}\n${mergedBody}` : record.meta.title;
+          savedMeta = await StorageManager.instance.save({
+            thinkid: targetId,
+            category: record.meta.category,
+            fullContent: savedFullContent,
+            keywords: record.meta.keywords,
+            relatedIds: record.meta.relatedIds,
+            metadata: nextMetadata,
+            baseUpdatedAt: record.meta.updatedAt || undefined,
+          });
+        } else {
+          savedMeta = await StorageManager.instance.updateMetadata(
+            targetId,
+            {
+              thinkConversations: nextLog,
+              ...(operations ? { operations } : {}),
+            },
+            record.meta.updatedAt || undefined,
+          );
+        }
+
+        if (think) {
+          think.Metadata = savedMeta.metadata ?? nextMetadata;
+          if (chatId && record.meta.category === 'chat') think.setContentSilent(savedFullContent);
+          think.UpdatedAt = savedMeta.updatedAt;
+          think.markSaved();
+          think.markMetadataSaved();
+          activeVault?.NotifyUpdated(false);
+        }
+        turnPromotionCandidatesMap.delete(turn.id);
+        return;
+      } catch (err) {
+        if (!isConflictError(err) || attempt === MAX_CONFLICT_RETRIES - 1) throw err;
+      }
     }
-    turnPromotionCandidatesMap.delete(turn.id);
-    return;
   }
 }

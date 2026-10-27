@@ -46,3 +46,28 @@ it('keeps closed-heading line numbers and handles an unavailable folding contrib
   const missing = { getContribution: () => null } as unknown as MonacoEditor.IStandaloneCodeEditor;
   expect(getClosedHeadings(missing)).toBe('');
 });
+
+it('decorates words respecting matchCase, matchWidth, and regex options', () => {
+  class Range {
+    constructor(public startLineNumber: number, public startColumn: number, public endLineNumber: number, public endColumn: number) {}
+  }
+  window.monaco = { Range } as unknown as typeof import('monaco-editor');
+  const lines = ['abc ＡＢＣ 123 １２３'];
+  const editor = { getModel: () => ({ getLineCount: () => lines.length, getLineContent: (line: number) => lines[line - 1] }) } as unknown as MonacoEditor.IStandaloneCodeEditor;
+  const set = vi.fn<(decorations: MonacoEditor.IModelDeltaDecoration[]) => void>();
+  const collection = { set } as unknown as MonacoEditor.IEditorDecorationsCollection;
+  const style = { Color: '#ff0000', BgColor: 'none', Attrs: 'bold' };
+
+  // 1) 既定（大文字小文字不問・半角全角不問）: 'abc' で 'abc' と 'ＡＢＣ' の両方にマッチ
+  const settingsDefault: NonNullable<MediaProps['editorSettings']> = {
+    lineNumbers: true, wordWrap: true, minimap: true, showFullWidthSpace: false, unicodeHighlight: false,
+    bracketPairColorization: true, highlightWord: 'abc', highlightStyles: [style], headingStyles: [style],
+    background: '#ffffff', foreground: '#123456', selectionBackground: '#dddddd', occurrenceBackground: '#eeeeee',
+    highlightMatchCase: false, highlightMatchWidth: false, highlightIsRegex: false,
+  };
+  applyEditorDecorations(editor, collection, settingsDefault);
+  const decs = set.mock.calls[0][0].filter(d => d.options.inlineClassName === styleClass('Highlighter', 1));
+  expect(decs).toHaveLength(2);
+  expect(decs[0].range).toMatchObject({ startColumn: 1, endColumn: 4 });
+  expect(decs[1].range).toMatchObject({ startColumn: 5, endColumn: 8 });
+});

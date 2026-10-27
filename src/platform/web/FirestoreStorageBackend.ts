@@ -73,6 +73,7 @@ interface StoredThinkRecord {
   body: string;
   firestoreUpdateTime: string;
   payloadParts?: { revision: string; count: number };
+  needsCategoryMigration?: boolean;
 }
 
 export interface FirestoreThinkRecord {
@@ -296,11 +297,13 @@ export class FirestoreStorageBackend implements IStorageBackend {
       : parseMetadata(stringField(fields, 'metadataJson'));
     const fullContent = body ? `${title}\n${body}` : title;
     const storedSize = integerField(fields, 'sizeBytes');
+    const rawCategory = stringField(fields, 'category') || 'memo';
+    const category = rawCategory === 'bundle' ? 'project' : rawCategory === 'abstract' ? 'memo' : rawCategory;
 
     return {
       meta: {
         thinkid,
-        category: stringField(fields, 'category') || 'memo',
+        category,
         title,
         keywords: stringField(fields, 'keywords'),
         relatedIds: stringField(fields, 'relatedIds'),
@@ -312,6 +315,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
       },
       body,
       firestoreUpdateTime: document.updateTime || '',
+      needsCategoryMigration: rawCategory === 'bundle' || rawCategory === 'abstract',
     };
   }
 
@@ -506,12 +510,51 @@ export class FirestoreStorageBackend implements IStorageBackend {
       pageToken = page.nextPageToken || '';
     } while (pageToken);
 
+    const toMigrate = [...nextRecords.values()].filter((r) => r.needsCategoryMigration);
+    if (toMigrate.length > 0) {
+      await this.migrateLegacyCategories(ctx, toMigrate);
+    }
+
     this.records = nextRecords;
     this.hasLoadedList = true;
     await this.syncElectronMarkdownBackups(nextRecords, deletedIds);
     return [...nextRecords.values()]
       .map((record) => record.meta)
       .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+  }
+
+  private async migrateLegacyCategories(
+    ctx: { authHeaders: Record<string, string>; projectId: string; uid: string },
+    records: StoredThinkRecord[],
+  ): Promise<void> {
+    const batchSize = 400;
+    for (let i = 0; i < records.length; i += batchSize) {
+      const chunk = records.slice(i, i + batchSize);
+      const writes = chunk.map((record) => ({
+        update: {
+          name:
+            `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
+            `/vaults/${this.vaultId}/thinks/${record.meta.thinkid}`,
+          fields: { category: { stringValue: record.meta.category } },
+        },
+        updateMask: { fieldPaths: ['category'] },
+      }));
+      try {
+        await fetch(
+          `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
+            ctx.projectId,
+          )}/databases/(default)/documents:commit`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
+            body: JSON.stringify({ writes }),
+          },
+        );
+        for (const r of chunk) r.needsCategoryMigration = false;
+      } catch (err) {
+        console.warn('[FirestoreStorageBackend] category migration failed:', err);
+      }
+    }
   }
 
   public async getBody(id: string): Promise<string | null> {
@@ -621,9 +664,11 @@ export class FirestoreStorageBackend implements IStorageBackend {
       importedDates?.createdAt ||
       inferCreatedAtFromThinkId(payload.thinkid, updatedAt);
     const metadata = payload.metadata ?? existing?.meta.metadata ?? {};
+    const rawCat = payload.category || existing?.meta.category || 'memo';
+    const category = rawCat === 'bundle' ? 'project' : rawCat === 'abstract' ? 'memo' : rawCat;
     const meta: ThinkMeta = {
       thinkid: payload.thinkid,
-      category: payload.category || existing?.meta.category || 'memo',
+      category,
       title,
       keywords: payload.keywords ?? existing?.meta.keywords ?? '',
       relatedIds: payload.relatedIds ?? existing?.meta.relatedIds ?? '',
@@ -759,6 +804,64 @@ export class FirestoreStorageBackend implements IStorageBackend {
       } catch (error) {
         result.failedIds.push(meta.thinkid);
         console.warn(`[FirestoreStorageBackend] 初回移行に失敗しました (${meta.thinkid})`, error);
+      }
+    }
+    return result;
+  }
+
+  /** Firestore正本の全データを取得し、PC版のMarkdownバックアップへ一括書き出しする */
+  public async exportAllToElectronMarkdownBackup(): Promise<{ exported: number; failedIds: string[] }> {
+    const storage = typeof window !== 'undefined' ? window.electronAPI?.storage : undefined;
+    if (!storage?.save && !storage?.writeBackup) {
+      throw new Error('Markdownバックアップを保存できるPC版で実行してください。');
+    }
+    const metas = await this.listMeta();
+    const result = { exported: 0, failedIds: [] as string[] };
+    for (const meta of metas) {
+      if (meta.isDeleted) continue;
+      try {
+        const body = (await this.getBody(meta.thinkid)) ?? '';
+        await this.writeElectronMarkdownBackup({ meta, body });
+        result.exported += 1;
+      } catch (err) {
+        result.failedIds.push(meta.thinkid);
+        console.warn(`[FirestoreStorageBackend] バックアップ書出しに失敗しました (${meta.thinkid})`, err);
+      }
+    }
+    return result;
+  }
+
+  /** PC版のMarkdownバックアップからFirestoreへ強制的に全件書き戻す（上書き） */
+  public async restoreFromElectronMarkdownBackup(): Promise<{ restored: number; failedIds: string[] }> {
+    const storage = typeof window !== 'undefined' ? window.electronAPI?.storage : undefined;
+    if (!storage?.listMeta) {
+      throw new Error('Markdownバックアップを読み込めるPC版で実行してください。');
+    }
+    const metas = await storage.listMeta();
+    const result = { restored: 0, failedIds: [] as string[] };
+    for (const meta of metas) {
+      if (meta.thinkid === '__tt_ui_state__' || meta.thinkid === '__tt_shortcuts__' || meta.isDeleted) {
+        continue;
+      }
+      try {
+        const record = storage.getRecord ? await storage.getRecord(meta.thinkid) : null;
+        const body = record?.body ?? (await storage.getContent(meta.thinkid)) ?? '';
+        const sourceMeta = record?.meta ?? meta;
+        await this.saveRecord({
+          thinkid: sourceMeta.thinkid,
+          category: sourceMeta.category,
+          fullContent: body ? `${sourceMeta.title}\n${body}` : sourceMeta.title,
+          keywords: sourceMeta.keywords,
+          relatedIds: sourceMeta.relatedIds,
+          metadata: sourceMeta.metadata,
+        }, {
+          createdAt: sourceMeta.createdAt,
+          updatedAt: sourceMeta.updatedAt,
+        });
+        result.restored += 1;
+      } catch (err) {
+        result.failedIds.push(meta.thinkid);
+        console.warn(`[FirestoreStorageBackend] 書き戻しに失敗しました (${meta.thinkid})`, err);
       }
     }
     return result;

@@ -17,7 +17,7 @@ beforeEach(() => {
   resetDraftStores();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); vi.clearAllMocks();
   host = document.createElement('div'); root = createRoot(host); vault = new TTVault('test');
-  for (const id of ['a', 'b']) { const t = new TTThink(); t.ID = id; t.ContentType = 'bundle'; t.Content = '課題'; t.markSaved(); vault.AddItem(t); }
+  for (const id of ['a', 'b']) { const t = new TTThink(); t.ID = id; t.ContentType = 'project'; t.Content = '課題'; t.markSaved(); vault.AddItem(t); }
   api.read.mockImplementation(async id => meta(id));
 });
 afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.unstubAllGlobals(); });

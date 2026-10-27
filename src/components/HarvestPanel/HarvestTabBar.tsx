@@ -6,7 +6,7 @@
  * ボタン: 概要 / 対話 / 設定
  */
 
-import { MessageCircle, BotMessageSquare, Settings } from 'lucide-react';
+import { MessageCircle, Target, Settings } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import './HarvestTabBar.css';
 
@@ -29,13 +29,13 @@ export function HarvestTabBar({ isOpen, viewMode, onToggle, onSetMode }: Props) 
       onToggle={onToggle}
     >
       <button
-        id="HarvestAbstract"
-        className={`harvest-tab-bar__btn${viewMode === 'abstract' ? ' harvest-tab-bar__btn--active' : ''}`}
-        onClick={() => onSetMode('abstract')}
-        data-tip="概要"
-        aria-label="HarvestAbstract"
+        id="HarvestProject"
+        className={`harvest-tab-bar__btn${viewMode === 'project' ? ' harvest-tab-bar__btn--active' : ''}`}
+        onClick={() => onSetMode('project')}
+        data-tip="プロジェクト"
+        aria-label="HarvestProject"
       >
-        <BotMessageSquare size={16} />
+        <Target size={16} />
       </button>
       <button
         id="HarvestAI"

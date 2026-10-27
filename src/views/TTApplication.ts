@@ -137,29 +137,33 @@ export class TTApplication extends TTUIItem {
    * @param bundleId BundleのID
    * @param mediaType 表示形式（省略時はmarkdown）
    */
-  public OpenBundle(bundleId: string, mediaType: MediaType = 'markdown'): void {
+  public OpenProject(projectId: string, mediaType: MediaType = 'markdown'): void {
     // ThinktankPanel: 選択状態を更新
-    this.ThinktankPanel.SelectBundle(bundleId);
+    this.ThinktankPanel.SelectProject(projectId);
 
-    // SeedsPanel: Bundleを表示
-    this.SeedsPanel.OpenBundle(bundleId, mediaType);
+    // SeedsPanel: Projectを表示
+    this.SeedsPanel.OpenProject(projectId, mediaType);
 
     // HarvestPanel: コンテキストを連携
-    this.HarvestPanel.LinkBundle(bundleId);
+    this.HarvestPanel.LinkProject(projectId);
 
-    // DiscussPanel: bundleに含まれないThinkのペインを削除
-    this._removeOutOfBundlePanes(bundleId);
+    // DiscussPanel: projectに含まれないThinkのペインを削除
+    this._removeOutOfProjectPanes(projectId);
 
     this.NotifyUpdated();
   }
 
-  /** Bundle に含まれない Think のペインを DiscussPanel から削除する */
-  private _removeOutOfBundlePanes(bundleId: string): void {
-    if (!bundleId) return; // 何も選択されていない時は削除しない
+  public OpenBundle(bundleId: string, mediaType: MediaType = 'markdown'): void {
+    this.OpenProject(bundleId, mediaType);
+  }
+
+  /** Project に含まれない Think のペインを DiscussPanel から削除する */
+  private _removeOutOfProjectPanes(projectId: string): void {
+    if (!projectId) return; // 何も選択されていない時は削除しない
     const vault = this.Models.Vault;
-    const thinks = vault.GetThinksForBundle(bundleId);
+    const thinks = vault.GetThinksForProject(projectId);
     const allowed = new Set(thinks.map(t => t.ID));
-    allowed.add(bundleId);
+    allowed.add(projectId);
     const toRemove = this.DiscussPanel.Areas
       .filter(a => !allowed.has(a.ResourceID))
       .map(a => a.ID);
@@ -221,7 +225,7 @@ export class TTApplication extends TTUIItem {
 
     this.ThinktankPanel.ClearSelection();
     this.ThinktankPanel.ClearChecks();
-    this.SeedsPanel.ClearBundle();
+    this.SeedsPanel.ClearProject();
     this.DiscussPanel.ClearAll();
     this.HarvestPanel.ClearLink();
 
@@ -233,7 +237,7 @@ export class TTApplication extends TTUIItem {
     this.ThinktankPanel.ClearSelection();
     this.ThinktankPanel.ClearChecks();
     this.ThinktankPanel.ClearFilter();
-    this.SeedsPanel.ClearBundle();
+    this.SeedsPanel.ClearProject();
     this.DiscussPanel.ClearAll();
     this.HarvestPanel.ClearLink();
     this.HarvestPanel.ClearChat();

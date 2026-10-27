@@ -13,7 +13,7 @@ import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type HarvestViewMode = 'chat' | 'abstract' | 'settings';
+export type HarvestViewMode = 'chat' | 'project' | 'settings';
 
 /** AIチャットのメッセージ */
 export interface ChatMessage {
@@ -37,8 +37,11 @@ export class TTHarvestPanel extends TTUIItem {
   /** 表示モード */
   public ViewMode: HarvestViewMode = 'chat';
 
-  /** 連携中のBundleID（空 = 未設定）*/
-  public LinkedBundleID: string = '';
+  /** 連携中のProjectID（空 = 未設定）*/
+  public LinkedProjectID: string = '';
+
+  public get LinkedBundleID(): string { return this.LinkedProjectID; }
+  public set LinkedBundleID(val: string) { this.LinkedProjectID = val; }
 
   /** 連携中のThinkID（空 = 未設定）*/
   public LinkedThinkID: string = '';
@@ -99,16 +102,20 @@ export class TTHarvestPanel extends TTUIItem {
   // ── コンテキスト連携 ──────────────────────────────────────────────────
 
   /**
-   * BundleをHarvestPanelのコンテキストとして連携する。
+   * ProjectをHarvestPanelのコンテキストとして連携する。
    * Areaが閉じていれば自動的に開く。
    */
-  public LinkBundle(bundleId: string): void {
-    this.LinkedBundleID = bundleId;
+  public LinkProject(projectId: string): void {
+    this.LinkedProjectID = projectId;
     this.LinkedThinkID = '';
     if (!this.IsAreaOpen) {
       this.IsAreaOpen = true;
     }
     this.NotifyUpdated();
+  }
+
+  public LinkBundle(bundleId: string): void {
+    this.LinkProject(bundleId);
   }
 
   /**
@@ -121,7 +128,7 @@ export class TTHarvestPanel extends TTUIItem {
 
   /** コンテキスト連携をクリアする */
   public ClearLink(): void {
-    this.LinkedBundleID = '';
+    this.LinkedProjectID = '';
     this.LinkedThinkID = '';
     this.NotifyUpdated();
   }

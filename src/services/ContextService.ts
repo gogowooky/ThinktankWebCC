@@ -65,7 +65,7 @@ export class ContextService {
     const { signal } = options;
     assertNotAborted(signal);
     if (!this.vault.IsLoaded) throw new ContextReadError('vault_not_loaded', 'Vault一覧の読み込み完了後に再試行してください。');
-    if (this.vault.GetThink(bundleId)?.ContentType !== 'bundle') {
+    if (this.vault.GetThink(bundleId)?.ContentType !== 'project') {
       throw new ContextReadError('invalid_bundle', '指定されたBundleがありません。');
     }
     const startedAt = new Date().toISOString();

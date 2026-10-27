@@ -42,6 +42,7 @@ export interface ElectronRelayStatus {
   isAlive: boolean;
   firestoreProblem: string;
   processedCount: number;
+  isProcessing?: boolean;
 }
 
 declare global {

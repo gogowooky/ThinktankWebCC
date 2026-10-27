@@ -7,7 +7,7 @@ import { getEditorValue, reconstructContent } from './editorContent';
 
 it('keeps title lines editable for every media content type', () => {
   const think = new TTThink(); think.setContentSilent('# 題名\n本文');
-  for (const type of ['memo', 'bundle', 'table', 'chat', 'html', 'links', 'abstract'] as const) {
+  for (const type of ['memo', 'project', 'table', 'chat', 'html', 'links'] as const) {
     think.ContentType = type;
     expect(getEditorValue(think)).toBe('# 題名\n本文');
     expect(reconstructContent(think, '# 更新後\n新本文')).toBe('# 更新後\n新本文');

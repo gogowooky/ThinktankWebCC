@@ -13,15 +13,20 @@ export const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,200}$/;
 
 export const VALID_CATEGORIES = [
   'memo',
-  'bundle',
+  'project',
   'table',
   'links',
   'chat',
   'html',
-  'abstract',
 ] as const;
 
 export type ValidCategory = (typeof VALID_CATEGORIES)[number];
+
+export function normalizeCategory(value: string): string {
+  if (value === 'bundle') return 'project';
+  if (value === 'abstract') return 'memo';
+  return value;
+}
 
 export function isValidCategory(value: string): value is ValidCategory {
   return (VALID_CATEGORIES as readonly string[]).includes(value);
@@ -178,7 +183,7 @@ export function parseMdRecord(raw: string, fallbackId = ''): ParsedMdRecord {
   }
 
   const thinkid = String(fm.thinkid ?? fm.id ?? fallbackId);
-  const category = String(fm.category ?? fm.contentType ?? 'memo');
+  const category = normalizeCategory(String(fm.category ?? fm.contentType ?? 'memo'));
   const title = fm.title == null ? '' : String(fm.title);
   const keywords = toNullableString(fm.keywords);
   const relatedIds = toNullableString(fm.related_ids ?? fm.relatedIds);

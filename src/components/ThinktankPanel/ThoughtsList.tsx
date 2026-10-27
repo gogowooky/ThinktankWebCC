@@ -13,7 +13,7 @@
 
 import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Folder, FileText, MessagesSquare, Link, Table, BotMessageSquare, FileCode, Activity, File } from 'lucide-react';
+import { Target, FileText, MessagesSquare, Link, Table, FileCode, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -76,15 +76,15 @@ export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
 
 function getTypeIcon(contentType: string) {
   switch (contentType.toLowerCase()) {
-    case 'bundle':   return <Folder        size={13} className="thoughts-list__icon" />;
-    case 'memo':     return <FileText    size={13} className="thoughts-list__icon" />;
+    case 'project':
+    case 'bundle':   return <Target        size={13} className="thoughts-list__icon" />;
+    case 'memo':     return <FileText      size={13} className="thoughts-list__icon" />;
     case 'chat':     return <MessagesSquare size={13} className="thoughts-list__icon" />;
-    case 'links':    return <Link        size={13} className="thoughts-list__icon" />;
-    case 'table':    return <Table       size={13} className="thoughts-list__icon" />;
-    case 'html':     return <FileCode    size={13} className="thoughts-list__icon" />;
-    case 'abstract': return <BotMessageSquare size={13} className="thoughts-list__icon" />;
-    case 'status':   return <Activity    size={13} className="thoughts-list__icon" />;
-    default:         return <File        size={13} className="thoughts-list__icon" />;
+    case 'links':    return <Link          size={13} className="thoughts-list__icon" />;
+    case 'table':    return <Table         size={13} className="thoughts-list__icon" />;
+    case 'html':     return <FileCode      size={13} className="thoughts-list__icon" />;
+    case 'status':   return <Activity      size={13} className="thoughts-list__icon" />;
+    default:         return <File          size={13} className="thoughts-list__icon" />;
   }
 }
 

@@ -88,7 +88,7 @@ it('keeps CheckAll copying and Seeds bundle opening behavior', () => {
   expect(panels.HarvestPanel.CheckedThoughtIDs).toEqual([]);
   expect(events).toEqual([
     'ThinktankPanel', 'parent', 'DiscussPanel', 'parent', 'HarvestPanel', 'parent',
-    'Application.CheckedItem.IDs', 'SeedsPanel', 'parent', 'SeedsPanel.Bundle.ID',
+    'Application.CheckedItem.IDs', 'SeedsPanel', 'parent', 'SeedsPanel.Project.ID',
   ]);
 });
 

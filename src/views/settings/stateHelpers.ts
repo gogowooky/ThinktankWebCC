@@ -54,8 +54,7 @@ export function getFocusedPaneAllowedModes(app: TTApplication): string[] {
   const mapping: Record<ContentType, MediaType[]> = {
     memo: ['texteditor', 'markdown'],
     html: ['texteditor', 'html'],
-    abstract: ['texteditor', 'markdown'],
-    bundle: ['texteditor', 'datagrid', 'markdown', 'card', 'graph'],
+    project: ['texteditor', 'datagrid', 'markdown', 'card', 'graph'],
     table: ['texteditor', 'datagrid', 'card'],
     chat: ['texteditor', 'chat'],
     links: ['texteditor', 'markdown'],

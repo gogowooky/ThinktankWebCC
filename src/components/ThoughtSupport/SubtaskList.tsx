@@ -17,8 +17,8 @@ export function SubtaskList({ vault, bundleId }: { vault: TTVault; bundleId: str
     try {
       const { TTApplication } = await import('../../views/TTApplication');
       const app = TTApplication.Instance;
-      if (app.Models.Vault !== vault || vault.GetThink(id)?.ContentType !== 'bundle') throw new Error('課題が見つかりません。');
-      app.OpenBundle(id, 'datagrid');
+      if (app.Models.Vault !== vault || vault.GetThink(id)?.ContentType !== 'project') throw new Error('課題が見つかりません。');
+      app.OpenProject(id, 'datagrid');
     } catch (e) { setMessage((e as Error).message); }
   }
   if (!children.length && !relation) return null;

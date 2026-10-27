@@ -16,7 +16,7 @@ import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type DiscussViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat' | 'abstract';
+export type DiscussViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat' | 'project';
 
 export type TableCellDisplay = 'Line' | 'FitToColumn';
 export type TableCellPosition = 'Left' | 'Center' | 'Right';
@@ -226,6 +226,9 @@ export class TTDiscussPanel extends TTUIItem {
   // ── ハイライト設定（全Pane共通） ─────────────────────────────────────────
   public HighlightWord: string = '';
   public HighlightHistory: string[] = [];
+  public HighlightMatchCase: boolean = false;
+  public HighlightIsRegex: boolean = false;
+  public HighlightMatchWidth: boolean = false;
 
   /** Think一覧/AI相談の「コンテンツで絞込み」実行時、キーワードをHighlighterへ追加するか */
   public AddContentSearchKeywordFlag: boolean = true;
@@ -233,6 +236,12 @@ export class TTDiscussPanel extends TTUIItem {
   public AddTitleSearchKeywordFlag: boolean = true;
 
   public SetHighlightWord(v: string) { this.HighlightWord = v; this.NotifyUpdated(); }
+  public SetHighlightMatchCase(v: boolean) { this.HighlightMatchCase = v; this.NotifyUpdated(); }
+  public SetHighlightIsRegex(v: boolean) { this.HighlightIsRegex = v; this.NotifyUpdated(); }
+  public SetHighlightMatchWidth(v: boolean) { this.HighlightMatchWidth = v; this.NotifyUpdated(); }
+  public ToggleHighlightMatchCase() { this.HighlightMatchCase = !this.HighlightMatchCase; this.NotifyUpdated(); }
+  public ToggleHighlightIsRegex() { this.HighlightIsRegex = !this.HighlightIsRegex; this.NotifyUpdated(); }
+  public ToggleHighlightMatchWidth() { this.HighlightMatchWidth = !this.HighlightMatchWidth; this.NotifyUpdated(); }
   public AddHighlightHistory(v: string) {
     if (!v.trim()) return;
     this.HighlightHistory = [v, ...this.HighlightHistory.filter(h => h !== v)].slice(0, 10);

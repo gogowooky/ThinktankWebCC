@@ -9,7 +9,7 @@ import { parseBundle } from '../utils/thinkFormat';
 let vault: TTVault, child: TTThink;
 beforeEach(() => {
   storage.save.mockReset().mockResolvedValue({ updatedAt: '2026-09-17T00:00:00Z' });
-  vault = new TTVault('vault'); child = new TTThink(); child.ID = 'child'; child.ContentType = 'bundle';
+  vault = new TTVault('vault'); child = new TTThink(); child.ID = 'child'; child.ContentType = 'project';
   child.Content = '会場予約\n* 2026-09-16-120000\n// このコメントを保持する\n';
   child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'source-chat', turnId: 'turn', panel: 'Discuss' }, custom: { keep: true } };
   child.markSaved(); child.markMetadataSaved(); child.UpdatedAt = '2026-09-16T00:00:00Z'; vault.AddThink(child);

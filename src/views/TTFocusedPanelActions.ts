@@ -37,11 +37,11 @@ import { registerTextEditorPasteActions } from './actions/textEditorPasteActions
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
-  Thinktank:      ['filter', 'abstract', 'chat', 'settings'],
-  Seeds:       ['filter', 'abstract', 'chat', 'settings'],
-  DiscussSetting: ['panes', 'abstract', 'chat', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
-  Discuss:        ['panes', 'abstract', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
-  Harvest:        ['abstract', 'chat', 'settings'],
+  Thinktank:      ['filter', 'project', 'chat', 'settings'],
+  Seeds:       ['filter', 'project', 'chat', 'settings'],
+  DiscussSetting: ['panes', 'project', 'chat', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  Discuss:        ['panes', 'project', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  Harvest:        ['project', 'chat', 'settings'],
 };
 
 /** フォーカス列 → 開閉セクションの一括操作で使うパネルID（Discuss は2列とも設定エリアを指す） */
@@ -281,8 +281,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       currentItemKey: 'ThinktankPanel.CurrentItem.ID',
       // Bundle はその場で Seeds へ、それ以外は Discuss へ（一覧ダブルクリックと同じ挙動）
       open: (id) => {
-        if (app.Models.Vault.GetThink(id)?.ContentType === 'bundle') {
-          app.OpenBundle(id, 'datagrid');
+        if (app.Models.Vault.GetThink(id)?.ContentType === 'project') {
+          app.OpenProject(id, 'datagrid');
         } else {
           app.OpenThinkInDiscuss(id);
         }

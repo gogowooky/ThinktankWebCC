@@ -24,7 +24,7 @@ import '../../components/Layout/MenuRibbon.css';
 import './HarvestArea.css';
 
 const HARVEST_MODE_NAMES: Record<HarvestViewMode, string> = {
-  abstract: '概要',
+  project:  'プロジェクト',
   chat:     '対話',
   settings: '設定',
 };
@@ -131,7 +131,7 @@ export function HarvestArea({ app, viewMode }: Props) {
               style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
             Harvest設定は今後追加予定です。
           </div>
-        ) : viewMode === 'abstract' ? (
+        ) : viewMode === 'project' ? (
           <AbstractView />
         ) : (
           <>

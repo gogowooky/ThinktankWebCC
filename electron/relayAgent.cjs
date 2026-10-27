@@ -66,7 +66,8 @@ class RelayAgent {
     this._listenerGeneration = 0;
     this._listenerRetryTimer = null;
     this._listenerRenewTimer = null;
-    this._requestQueue = Promise.resolve();
+    this._activeRequests = new Set();
+    this._inFlightRequestIds = new Set();
     this._processingCount = 0;
   }
 
@@ -160,6 +161,7 @@ class RelayAgent {
       isAlive: this.config.enabled && shared.isRelayHeartbeatAlive(this.lastFirestoreOkAt),
       firestoreProblem: this._lastFirestoreProblem || '',
       processedCount: this.config.processedCount,
+      isProcessing: this._processingCount > 0,
       activeRelayConfig,
     };
   }
@@ -489,13 +491,25 @@ class RelayAgent {
     for (const change of snapshot.docChanges()) {
       if (change.type !== 'added') continue;
       const requestRef = change.doc.ref;
-      this._requestQueue = this._requestQueue
+      const requestKey =
+        (change.doc && change.doc.id) ||
+        (requestRef && (requestRef.id || requestRef.path)) ||
+        null;
+      if (requestKey && this._inFlightRequestIds.has(requestKey)) continue;
+      if (requestKey) this._inFlightRequestIds.add(requestKey);
+
+      const task = Promise.resolve()
         .then(() => this._claimAndProcessFirestoreRequest(sdk, db, requestRef, generation))
         .catch((err) => {
           this._reportFirestoreProblem(
             `中継リクエストの処理に失敗しました: ${err && err.message ? err.message : err}`,
           );
+        })
+        .finally(() => {
+          if (requestKey) this._inFlightRequestIds.delete(requestKey);
+          this._activeRequests.delete(task);
         });
+      this._activeRequests.add(task);
     }
   }
 
@@ -645,7 +659,7 @@ class RelayAgent {
     const sdk = this._firestoreSdk;
     const db = this._firestoreDb;
     const serverApp = this._firestoreApp;
-    const pendingRequests = this._requestQueue;
+    const pendingRequests = Promise.allSettled([...this._activeRequests]);
     this._firestoreSdk = null;
     this._firestoreDb = null;
     this._firestoreApp = null;

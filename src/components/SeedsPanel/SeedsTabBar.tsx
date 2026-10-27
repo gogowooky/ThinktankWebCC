@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useState } from 'react';
-import { MessageCircle, Files, BotMessageSquare, Settings, type LucideIcon } from 'lucide-react';
+import { MessageCircle, Files, Target, Settings, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { SeedsViewMode } from '../../views/TTSeedsPanel';
 import './SeedsTabBar.css';
@@ -20,7 +20,7 @@ type SeedsContentMode = Exclude<SeedsViewMode, 'settings'>;
 
 const VIEW_BUTTONS: Array<{ mode: SeedsContentMode; Icon: LucideIcon; title: string; id: string }> = [
   { mode: 'filter',   Icon: Files,         title: 'Think一覧',   id: 'SeedsThinkList' },
-  { mode: 'abstract', Icon: BotMessageSquare, title: '概要',     id: 'SeedsAbstract' },
+  { mode: 'project', Icon: Target, title: 'プロジェクト', id: 'SeedsProject' },
   { mode: 'chat',     Icon: MessageCircle, title: '対話',          id: 'SeedsAI' },
 ];
 

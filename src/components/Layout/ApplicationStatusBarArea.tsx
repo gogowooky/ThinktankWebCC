@@ -6,7 +6,7 @@
  */
 
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Globe, Columns4, Columns2, Laptop, CheckCircle, RefreshCw, Clock, AlertCircle, WifiOff } from 'lucide-react';
+import { Globe, Columns4, Columns2, Laptop } from 'lucide-react';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { StorageManager } from '../../services/storage/StorageManager';
 import { TTApplication } from '../../views/TTApplication';
@@ -303,6 +303,18 @@ export function ApplicationStatusBarArea({ panel }: Props) {
     TTUIStateManager.instance.applyProperty('Application.PanelDisplay.Mode', isEditMode ? 'Think' : 'Edit');
   }, [isEditMode]);
 
+  const handleToggleMatchCase = useCallback(() => {
+    TTShortcutManager.instance.executeActionDirect('ToolBar.HighlighterMode.MatchCase:Toggle');
+  }, []);
+
+  const handleToggleIsRegex = useCallback(() => {
+    TTShortcutManager.instance.executeActionDirect('ToolBar.HighlighterMode.IsRegex:Toggle');
+  }, []);
+
+  const handleToggleMatchWidth = useCallback(() => {
+    TTShortcutManager.instance.executeActionDirect('ToolBar.HighlighterMode.MatchWidth:Toggle');
+  }, []);
+
   // 左側コンテンツパネルの出し分け
   const renderPanel = () => {
     if (authorState === 'banner') {
@@ -341,6 +353,40 @@ export function ApplicationStatusBarArea({ panel }: Props) {
             {panel.SearchSiteID}
           </span>
         )}
+        {authorState === 'off' && mode === 'highlight' && (
+          <div className="ApplicationStatusBarArea__highlighter-modes" role="group" aria-label="ハイライト検索オプション">
+            <button
+              type="button"
+              className={`ApplicationStatusBarArea__hl-opt-btn ${panel.HighlightMatchCase ? 'ApplicationStatusBarArea__hl-opt-btn--active' : ''}`}
+              onClick={handleToggleMatchCase}
+              data-tip="大文字・小文字を区別（ToolBar.HighlighterMode.MatchCase）"
+              aria-label="大文字・小文字を区別"
+              aria-pressed={panel.HighlightMatchCase}
+            >
+              aA
+            </button>
+            <button
+              type="button"
+              className={`ApplicationStatusBarArea__hl-opt-btn ${panel.HighlightIsRegex ? 'ApplicationStatusBarArea__hl-opt-btn--active' : ''}`}
+              onClick={handleToggleIsRegex}
+              data-tip="正規表現（ToolBar.HighlighterMode.IsRegex）"
+              aria-label="正規表現"
+              aria-pressed={panel.HighlightIsRegex}
+            >
+              .*
+            </button>
+            <button
+              type="button"
+              className={`ApplicationStatusBarArea__hl-opt-btn ${panel.HighlightMatchWidth ? 'ApplicationStatusBarArea__hl-opt-btn--active' : ''}`}
+              onClick={handleToggleMatchWidth}
+              data-tip="全角・半角を区別（ToolBar.HighlighterMode.MatchWidth）"
+              aria-label="全角・半角を区別"
+              aria-pressed={panel.HighlightMatchWidth}
+            >
+              全半
+            </button>
+          </div>
+        )}
         <StatusBarInputPanel
           inputRef={inputRef}
           value={authorState === 'static' ? AUTHOR_BANNER_TEXT : text}
@@ -371,26 +417,10 @@ export function ApplicationStatusBarArea({ panel }: Props) {
       <div
         id="StatusBarModeIndicator"
         className="ApplicationStatusBarArea__mode-indicator"
-        data-tip={`ExecutionMode:${storageMode === 'electron' ? 'Electron' : 'PWA'}`}
+        data-tip={`ExecutionMode:${storageMode === 'electron' ? 'PC' : 'Web'}`}
         data-tip-side="right"
       >
         {storageMode === 'electron' ? <Laptop size={14} /> : <Globe size={14} />}
-      </div>
-      <div className="ApplicationStatusBarArea__indicator-divider" />
-
-      {/* 同期状態インジケータ */}
-      <div
-        id="StatusBarSyncIndicator"
-        className="ApplicationStatusBarArea__mode-indicator"
-        data-tip={`Synchronization:${status.SyncState || 'synced'}`}
-        data-tip-side="right"
-      >
-        {status.SyncState === 'synced' && <CheckCircle size={14} />}
-        {status.SyncState === 'syncing' && <RefreshCw size={14} className="tt-statusbar-spin" />}
-        {status.SyncState === 'pending' && <Clock size={14} />}
-        {status.SyncState === 'error' && <AlertCircle size={14} />}
-        {status.SyncState === 'offline' && <WifiOff size={14} />}
-        {!status.SyncState && <CheckCircle size={14} />}
       </div>
       <div className="ApplicationStatusBarArea__indicator-divider" />
 

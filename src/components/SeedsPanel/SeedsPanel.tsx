@@ -12,6 +12,7 @@ import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
 import { SeedsTabBar } from './SeedsTabBar';
 import { SeedsArea } from './SeedsArea';
+import { updateProjectTargets } from '../../utils/thinkFormat';
 import './SeedsPanel.css';
 
 const MIN_WIDTH = 160;
@@ -45,17 +46,17 @@ export function SeedsPanel({ app, width, onResize }: Props) {
     const checkedIds = app.ThinktankPanel.CheckedThoughtIDs;
     const isMultipleDrag = checkedIds.length > 0 && checkedIds.includes(id);
 
-    // 1ファイルのD&DでかつBundleであった場合、または複数選択されておらずドラッグされたのがBundleの場合
-    if (!isMultipleDrag && dropped.ContentType === 'bundle') {
-      panel.OpenBundle(id, 'datagrid');
+    // 1ファイルのD&DでかつProjectであった場合、または複数選択されておらずドラッグされたのがProjectの場合
+    if (!isMultipleDrag && dropped.ContentType === 'project') {
+      panel.OpenProject(id, 'datagrid');
     } else {
       // 複数ファイルがチェックされている状態でドラッグされた場合、
-      // または単体ファイルでかつbundle以外がドラッグされた場合
-      if (panel.BundleID) {
-        const targetBundle = vault.GetThink(panel.BundleID);
-        if (targetBundle && targetBundle.ContentType === 'bundle') {
-          // 追加対象のファイルIDリスト（自分自身のBundleは除外）
-          const droppedIds = (isMultipleDrag ? checkedIds : [id]).filter(tid => tid !== panel.BundleID);
+      // または単体ファイルでかつproject以外がドラッグされた場合
+      if (panel.ProjectID) {
+        const targetBundle = vault.GetThink(panel.ProjectID);
+        if (targetBundle && targetBundle.ContentType === 'project') {
+          // 追加対象のファイルIDリスト（自分自身のProjectは除外）
+          const droppedIds = (isMultipleDrag ? checkedIds : [id]).filter(tid => tid !== panel.ProjectID);
           if (droppedIds.length === 0) return;
 
           if (targetBundle.IsMetaOnly) await targetBundle.LoadContent();
@@ -70,24 +71,24 @@ export function SeedsPanel({ app, width, onResize }: Props) {
 
           if (hasFilter) {
             // 現在のフィルター一致結果を非同期で取得
-            const currentMatchedThinks = await vault.GetThinksForBundleAsync(targetBundle.ID);
+            const currentMatchedThinks = await vault.GetThinksForProjectAsync(targetBundle.ID);
             const currentMatchedIds = currentMatchedThinks.map(t => t.ID);
             newIds = Array.from(new Set([...currentMatchedIds, ...droppedIds]));
-
-            const titleLine = contentLines[0];
-            targetBundle.Content = [titleLine, ...newIds.map(tid => `* ${tid}`)].join('\n');
           } else {
             const existingIds = targetBundle.getThinkIds();
             newIds = Array.from(new Set([...existingIds, ...droppedIds]));
-
-            const nonIdLines = contentLines.filter(line => !line.trim().startsWith('* '));
-            targetBundle.Content = [...nonIdLines, ...newIds.map(tid => `* ${tid}`)].join('\n');
           }
+
+          const targetItems = newIds.map(tid => {
+            const t = vault.GetThink(tid);
+            return { id: tid, contentType: t?.ContentType ?? 'memo', title: t?.Name };
+          });
+          targetBundle.Content = updateProjectTargets(targetBundle.Content, targetItems);
 
           await targetBundle.SaveContent();
 
           // キャッシュ更新と画面再ロード
-          await vault.GetThinksForBundleAsync(targetBundle.ID);
+          await vault.GetThinksForProjectAsync(targetBundle.ID);
           setRefreshKey(k => k + 1);
           vault.NotifyUpdated();
         }

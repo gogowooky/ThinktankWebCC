@@ -26,14 +26,14 @@ afterEach(() => { expect(storage.save).not.toHaveBeenCalled(); expect(storage.de
 
 describe('read-only Bundle context', () => {
   it('rejects oversized conversation scope before downloading member bodies', async () => {
-    const root = item(ROOT, `課題\n* ${A}\n* ${B}`, 'bundle');
+    const root = item(ROOT, `課題\n* ${A}\n* ${B}`, 'project');
     const a = item(A, '資料A'), b = item(B, '資料B'); a.IsMetaOnly = true; b.IsMetaOnly = true;
     const source = reader();
     await expect(new ContextService(vault(root, a, b), source).getBundleContext(ROOT, { maxSources: 1 })).rejects.toThrow('参照資料が2件');
     expect(source.getBody).not.toHaveBeenCalled();
   });
   it('keeps confirmed manual state separate from legacy proposals and freezes its provenance', async () => {
-    const root = item(ROOT, `課題\n* ${A}`, 'bundle');
+    const root = item(ROOT, `課題\n* ${A}`, 'project');
     root.Metadata.thinkSupport = { schemaVersion: 1, revision: 1, values: { ...emptyThinkValues(), decisions: '本人の判断' }, sources: {}, author: 'human', confirmedAt: '2026-09-13T00:00:00Z', updatedAt: '2026-09-13T00:00:00Z' };
     root.Metadata.thoughtSupport = { proposals: '旧AI提案' };
     const snapshot = await new ContextService(vault(root, item(A, '資料')), reader()).getBundleContext(ROOT);
@@ -44,8 +44,8 @@ describe('read-only Bundle context', () => {
   });
   it('preserves nested scope, hashes exact text, and never follows out-of-scope metadata references', async () => {
     const a = item(A, '採用資料\n本文'); a.Metadata.thoughtSupport = { goal: '調べる', references: [B] };
-    const root = item(ROOT, `課題\n* ${NESTED}`, 'bundle');
-    const v = vault(root, item(NESTED, `子課題\n* ${A}`, 'bundle'), a, item(B, '対象外'));
+    const root = item(ROOT, `課題\n* ${NESTED}`, 'project');
+    const v = vault(root, item(NESTED, `子課題\n* ${A}`, 'project'), a, item(B, '対象外'));
     const original = JSON.stringify(v.GetThinks().map(t => [t.Content, t.Metadata, t.IsDirty]));
     const result = await new ContextService(v, reader()).getBundleContext(ROOT);
     expect(result.quality).toBe('complete');
@@ -63,7 +63,7 @@ describe('read-only Bundle context', () => {
   });
 
   it('reports missing references from the ID list', async () => {
-    const root = item(ROOT, `課題\n* ${A}\n* ${MISSING}`, 'bundle');
+    const root = item(ROOT, `課題\n* ${A}\n* ${MISSING}`, 'project');
     const result = await new ContextService(vault(root, item(A, '資料')), reader()).getBundleContext(ROOT);
     expect(result.sources.map(s => s.thinkId)).toEqual([A]);
     expect(result.issues).toEqual([expect.objectContaining({ code: 'missing_think', thinkId: MISSING })]);
@@ -71,20 +71,20 @@ describe('read-only Bundle context', () => {
   });
 
   it.each(['課題', `課題\n> Keyword：資料`, `課題\n>> 検索語：資料`, `課題\n- ${A}`])('keeps retired non-ID Bundle content empty for %s', async content => {
-    const result = await new ContextService(vault(item(ROOT, content, 'bundle'), item(A, '秘密')), reader()).getBundleContext(ROOT);
+    const result = await new ContextService(vault(item(ROOT, content, 'project'), item(A, '秘密')), reader()).getBundleContext(ROOT);
     expect(result.sources).toEqual([]);
     expect(result.issues).toEqual([]);
   });
 
   it('detects cycles without broadening scope', async () => {
-    const v = vault(item(ROOT, `課題\n* ${NESTED}\n* ${A}`, 'bundle'), item(NESTED, `子\n* ${ROOT}`, 'bundle'), item(A, '資料'));
+    const v = vault(item(ROOT, `課題\n* ${NESTED}\n* ${A}`, 'project'), item(NESTED, `子\n* ${ROOT}`, 'project'), item(A, '資料'));
     const result = await new ContextService(v, reader()).getBundleContext(ROOT);
     expect(result.sources).toEqual([]);
     expect(result.issues).toContainEqual(expect.objectContaining({ code: 'cycle', thinkId: ROOT }));
   });
 
   it('does not mistake shared nested Bundles for cycles', async () => {
-    const v = vault(item(ROOT, `課題\n* ${NESTED}\n* ${NESTED}`, 'bundle'), item(NESTED, `子\n* ${A}`, 'bundle'), item(A, '資料'));
+    const v = vault(item(ROOT, `課題\n* ${NESTED}\n* ${NESTED}`, 'project'), item(NESTED, `子\n* ${A}`, 'project'), item(A, '資料'));
     const result = await new ContextService(v, reader()).getBundleContext(ROOT);
     expect(result.quality).toBe('complete'); expect(result.sources).toHaveLength(1);
   });
@@ -95,7 +95,7 @@ describe('read-only Bundle context', () => {
     const r = reader(); vi.mocked(r.getBody).mockImplementation(async id => {
       if (id === MISSING) throw new Error('offline'); return id === A ? '' : null;
     });
-    const v = vault(item(ROOT, `課題\n* ${A}\n* ${B}\n* ${MISSING}`, 'bundle'), a, b, missing);
+    const v = vault(item(ROOT, `課題\n* ${A}\n* ${B}\n* ${MISSING}`, 'project'), a, b, missing);
     const before = JSON.stringify(v.GetThinks().map(t => [t.Content, t.Metadata, t.IsMetaOnly, t.IsDirty]));
     const result = await new ContextService(v, r).getBundleContext(ROOT);
     expect(result.sources).toEqual([expect.objectContaining({ thinkId: A, content: '資料\n', origin: 'storage-body' })]);
@@ -107,11 +107,11 @@ describe('read-only Bundle context', () => {
   });
 
   it('fails clearly for an unavailable root and reports an unavailable nested Bundle', async () => {
-    const root = item(ROOT, '課題', 'bundle'); root.IsMetaOnly = true;
+    const root = item(ROOT, '課題', 'project'); root.IsMetaOnly = true;
     const r = reader(); const v = vault(root);
     await expect(new ContextService(v, r).getBundleContext(ROOT)).rejects.toMatchObject({ code: 'bundle_unavailable' });
     root.IsMetaOnly = false; root.Content = `課題\n* ${NESTED}`;
-    const child = item(NESTED, '子', 'bundle'); child.IsMetaOnly = true; v.AddItem(child);
+    const child = item(NESTED, '子', 'project'); child.IsMetaOnly = true; v.AddItem(child);
     const result = await new ContextService(v, r).getBundleContext(ROOT);
     expect(result.sources).toEqual([]);
     expect(result.issues).toContainEqual(expect.objectContaining({ code: 'load_failed', thinkId: NESTED }));
@@ -121,7 +121,7 @@ describe('read-only Bundle context', () => {
     const a = item(A, '会話A', 'chat'), b = item(B, '会話B', 'chat');
     a.Metadata.thoughtSupport = { decisions: '案A', proposals: '案Cを提案', current: '比較中', version: 2, confirmedAt: '2026-09-13', confirmationQuote: '案Aにする' };
     b.Metadata.thoughtSupport = { decisions: '案B' };
-    const result = await new ContextService(vault(item(ROOT, `課題\n* ${A}\n* ${B}`, 'bundle'), a, b), reader()).getBundleContext(ROOT);
+    const result = await new ContextService(vault(item(ROOT, `課題\n* ${A}\n* ${B}`, 'project'), a, b), reader()).getBundleContext(ROOT);
     expect(result.state.decisions.map(s => s.value)).toEqual(['案A', '案B']);
     expect(result.state.decisions[0]).toMatchObject({ sourceThinkId: A, recordVersion: 2, authority: 'legacy-record' });
     expect(result.state.stage).toEqual([]); expect(result.state.provisionalConclusion).toEqual([]);
@@ -131,7 +131,7 @@ describe('read-only Bundle context', () => {
 
   it('reports malformed legacy fields without copying invalid values', async () => {
     const a = item(A, '資料'); a.Metadata.thoughtSupport = { goal: ['invalid'], decisions: '有効' };
-    const result = await new ContextService(vault(item(ROOT, `課題\n* ${A}`, 'bundle'), a), reader()).getBundleContext(ROOT);
+    const result = await new ContextService(vault(item(ROOT, `課題\n* ${A}`, 'project'), a), reader()).getBundleContext(ROOT);
     expect(result.state.goal).toEqual([]); expect(result.state.decisions[0].value).toBe('有効');
     expect(result.issues).toContainEqual(expect.objectContaining({ code: 'invalid_support_record' }));
   });
@@ -147,7 +147,7 @@ describe('read-only Bundle context', () => {
   it('rejects results if live data changes during loading', async () => {
     const body = deferred<string | null>(); const r = reader(); vi.mocked(r.getBody).mockReturnValue(body.promise);
     const a = item(A, '資料'); a.IsMetaOnly = true;
-    const v = vault(item(ROOT, `課題\n* ${A}`, 'bundle'), a);
+    const v = vault(item(ROOT, `課題\n* ${A}`, 'project'), a);
     const pending = new ContextService(v, r).getBundleContext(ROOT);
     const assertion = expect(pending).rejects.toMatchObject({ code: 'context_changed' });
     a.Metadata.thoughtSupport = { decisions: '途中で変更' }; body.resolve('本文'); await assertion;
@@ -156,7 +156,7 @@ describe('read-only Bundle context', () => {
   it('keeps concurrent scopes separate and rejects cancelled context reads', async () => {
     const body = deferred<string | null>(); const r = reader(); vi.mocked(r.getBody).mockReturnValue(body.promise);
     const a = item(A, '遅い資料'); a.IsMetaOnly = true;
-    const v = vault(item(ROOT, `課題A\n* ${A}`, 'bundle'), item(NESTED, `課題B\n* ${B}`, 'bundle'), a, item(B, '速い資料'));
+    const v = vault(item(ROOT, `課題A\n* ${A}`, 'project'), item(NESTED, `課題B\n* ${B}`, 'project'), a, item(B, '速い資料'));
     const service = new ContextService(v, r); const controller = new AbortController();
     const first = service.getBundleContext(ROOT, { signal: controller.signal }); const rejected = expect(first).rejects.toMatchObject({ name: 'AbortError' });
     controller.abort();
@@ -170,7 +170,7 @@ describe('read-only Bundle context', () => {
 
   it('does not start I/O for an already cancelled request', async () => {
     const r = reader(); const controller = new AbortController(); controller.abort();
-    await expect(new ContextService(vault(item(ROOT, '課題', 'bundle')), r).getBundleContext(ROOT, { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
+    await expect(new ContextService(vault(item(ROOT, '課題', 'project')), r).getBundleContext(ROOT, { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
     expect(r.getBody).not.toHaveBeenCalled();
   });
 });

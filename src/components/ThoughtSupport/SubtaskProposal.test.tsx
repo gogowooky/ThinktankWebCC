@@ -17,7 +17,7 @@ let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault;
 beforeEach(() => {
   resetDraftStores();
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true); host = document.createElement('div'); root = createRoot(host);
-  vault = new TTVault('vault'); const parent = new TTThink(); parent.ID = 'parent'; parent.ContentType = 'bundle'; parent.Name = '誕生日会'; vault.AddThink(parent);
+  vault = new TTVault('vault'); const parent = new TTThink(); parent.ID = 'parent'; parent.ContentType = 'project'; parent.Name = '誕生日会'; vault.AddThink(parent);
   history.mockResolvedValue([turn]);
 });
 afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
@@ -59,7 +59,7 @@ it('creates only after confirmation and rejects an outdated proposal', async () 
   expect(host.textContent).toContain('サブ課題を追加しました');
 });
 it('lists only children of the selected parent and exposes the return to the parent', async () => {
-  const child = new TTThink(); child.ID = 'child'; child.ContentType = 'bundle'; child.Name = '会場予約';
+  const child = new TTThink(); child.ID = 'child'; child.ContentType = 'project'; child.Name = '会場予約';
   child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'chat', turnId: 'turn', panel: 'Discuss' } };
   vault.AddThink(child);
   await act(async () => root.render(<SubtaskList vault={vault} bundleId="parent" />));
@@ -72,7 +72,7 @@ it('lists only children of the selected parent and exposes the return to the par
 
 it('updates the parent summary after a child confirmation without changing the parent record', async () => {
   const parentBefore = JSON.stringify(vault.GetThink('parent')!.Metadata);
-  const child = new TTThink(); child.ID = 'child'; child.ContentType = 'bundle'; child.Name = '会場予約';
+  const child = new TTThink(); child.ID = 'child'; child.ContentType = 'project'; child.Name = '会場予約';
   child.Metadata = { taskRelation: { schemaVersion: 1, parentId: 'parent', chatId: 'chat', turnId: 'turn', panel: 'Discuss' } };
   vault.AddThink(child);
   await act(async () => root.render(<SubtaskList vault={vault} bundleId="parent" />));

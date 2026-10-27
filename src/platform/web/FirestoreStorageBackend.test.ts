@@ -123,6 +123,34 @@ it('excludes soft-deleted documents from the canonical list', async () => {
   expect(listed[0].thinkid).toBe('a');
 });
 
+it('migrates legacy bundle documents in Firestore to project category during listMeta', async () => {
+  const bundleDoc = storedDocument();
+  bundleDoc.fields.category = { stringValue: 'bundle' };
+  let committedWrites: unknown[] = [];
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith('/documents:commit')) {
+      const body = JSON.parse(String(init?.body || '{}')) as { writes?: unknown[] };
+      committedWrites = body.writes ?? [];
+      return new Response('{}', { status: 200 });
+    }
+    return new Response(JSON.stringify({ documents: [bundleDoc] }), { status: 200 });
+  }));
+
+  const listed = await new FirestoreStorageBackend().listMeta();
+  expect(listed).toHaveLength(1);
+  expect(listed[0].category).toBe('project');
+  expect(committedWrites).toEqual([
+    {
+      update: {
+        name: 'projects/demo/databases/(default)/documents/users/user-1/vaults/vault_ver2/thinks/a',
+        fields: { category: { stringValue: 'project' } },
+      },
+      updateMask: { fieldPaths: ['category'] },
+    },
+  ]);
+});
+
 function mockDocumentStore() {
   const documents = new Map<string, { name: string; fields: Record<string, unknown>; updateTime: string }>();
   const writes: string[] = [];

@@ -173,13 +173,22 @@ export function appendLinkToContent(content: string, link: LinkItem): string {
 // #endregion
 
 // ════════════════════════════════════════════════════════════════════════
-// #region bundle 形式 (ContentType = 'bundle')
+// #region project 形式 (ContentType = 'project')
 // ════════════════════════════════════════════════════════════════════════
 
-export interface BundleContent {
+export interface ProjectTargetItem {
+  id: string;
+  contentType?: string;
+  title?: string;
+}
+
+export interface ProjectContent {
   title: string;
   ids: string[];
 }
+
+/** @deprecated Use ProjectContent */
+export type BundleContent = ProjectContent;
 
 /**
  * Think ID とみなす形式。yyyy-MM-dd-HHmmss、および末尾サフィックス（AI 生成の -memo /
@@ -187,49 +196,133 @@ export interface BundleContent {
  */
 export const THINK_ID_RE = /^\d{4}-\d{2}-\d{2}-\d{6}(?:-[A-Za-z0-9]+)*$/;
 
+const PROJECT_THINK_TAG_RE = /^(?:\*\s+)?\[(?:([A-Za-z0-9_-]+):)?([^\]:\s]+)\]/;
+
+export function isProjectThinkLine(line: string): boolean {
+  const s = line.trim();
+  const tagMatch = s.match(PROJECT_THINK_TAG_RE);
+  if (tagMatch && THINK_ID_RE.test(tagMatch[2])) return true;
+  if (s.startsWith('* ')) {
+    const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
+    if (THINK_ID_RE.test(id)) return true;
+  }
+  return false;
+}
+
+export function formatProjectTargetLine(item: ProjectTargetItem): string {
+  const tag = item.contentType || 'memo';
+  return item.title ? `[${tag}:${item.id}]: ${item.title}` : `[${tag}:${item.id}]`;
+}
+
 /**
- * bundle 本文を解析して構造化した BundleContent を返す
+ * project 本文を解析して構造化した ProjectContent を返す
  */
-export function parseBundle(content: string): BundleContent {
-  const lines = content.split('\n');
+export function parseProject(content: string): ProjectContent {
+  const lines = content.split(/\r?\n/);
   const rawTitle = lines[0] ?? '';
   const title = rawTitle.replace(/^>>?\s*/, '');
   const bodyLines = lines.slice(1);
 
   const ids: string[] = [];
-  const result: BundleContent = {
-    title,
-    ids,
-  };
-
   for (const line of bodyLines) {
     const s = line.trim();
+    const tagMatch = s.match(PROJECT_THINK_TAG_RE);
+    if (tagMatch) {
+      const candidateId = tagMatch[2];
+      if (THINK_ID_RE.test(candidateId)) {
+        ids.push(candidateId);
+      }
+      continue;
+    }
     if (s.startsWith('* ')) {
-      // 角括弧付き（AI が付けがち）も許容し、日付 ID + 任意サフィックス（-memo / -a3f9 等）を ID とみなす。
-      // ID形式でない値は無視する。かつてはフィルタ語に流用していたため、一覧書き出しで混入した
-      // システムThinkのID（thinktank / __tt_ui_state__ 等）がBundleの範囲を意図せず絞り込んでいた。
       const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
       if (THINK_ID_RE.test(id)) ids.push(id);
     }
   }
 
-  return result;
+  return { title, ids };
 }
 
+/** @deprecated Use parseProject */
+export const parseBundle = parseProject;
+
 /**
- * bundle 新規作成オプション
+ * project 新規作成オプション
  */
-export interface BundleCreateOptions {
+export interface ProjectCreateOptions {
   title: string;
   ids?: string[];
+  items?: ProjectTargetItem[];
+  status?: string;
+  lastEvaluatedAt?: string;
+  prompt?: string;
+  conditions?: string;
+  outputDestination?: string;
+  evaluationContent?: string;
+  evaluationDate?: string;
 }
 
+/** @deprecated Use ProjectCreateOptions */
+export type BundleCreateOptions = ProjectCreateOptions;
+
 /**
- * オプションから bundle 本文（テキスト）をシリアライズして生成する
+ * オプションから project 本文（Markdownテキスト）をシリアライズして生成する
  */
-export function serializeBundle(options: BundleCreateOptions): string {
-  const { title, ids = [] } = options;
-  return `${title}\n${ids.map(id => `* ${id}`).join('\n')}`;
+export function serializeProject(options: ProjectCreateOptions): string {
+  const { title, ids = [], items } = options;
+  const targetLines = items
+    ? items.map(formatProjectTargetLine)
+    : ids.map(id => formatProjectTargetLine({ id }));
+
+  const lines: string[] = [
+    title,
+    '=',
+    '# 状態',
+    `状態値：${options.status ?? '未着手'}`,
+    `最終評価日：${options.lastEvaluatedAt ?? ''}`,
+    '# 対象',
+    ...targetLines,
+    '# プロンプト',
+    ...(options.prompt ? [options.prompt] : []),
+    '# 条件',
+    ...(options.conditions ? [options.conditions] : []),
+    '# 出力先',
+    ...(options.outputDestination ? [options.outputDestination] : []),
+    '# 評価内容',
+    ...(options.evaluationContent ? [options.evaluationContent] : []),
+    '# 評価日時',
+    ...(options.evaluationDate ? [options.evaluationDate] : []),
+  ];
+  return lines.join('\n');
+}
+
+/** @deprecated Use serializeProject */
+export const serializeBundle = serializeProject;
+
+/**
+ * 既存の project 本文の「# 対象」セクション内の Think 参照行を更新する。
+ * 他のセクション（# 状態、# プロンプト等）や # 対象 内の非Think行（URL/GDrive/GMail等）は保持する。
+ * 旧形式（# 対象 セクションが無い本文）の場合は新フォーマットで再生成する。
+ */
+export function updateProjectTargets(content: string, items: ProjectTargetItem[]): string {
+  const lines = content.split(/\r?\n/);
+  const targetHeadingIdx = lines.findIndex((l, idx) => idx > 0 && /^#\s+対象\s*$/.test(l.trim()));
+  if (targetHeadingIdx === -1) {
+    const parsed = parseProject(content);
+    return serializeProject({ title: parsed.title, items });
+  }
+  let nextHeadingIdx = lines.findIndex((l, idx) => idx > targetHeadingIdx && /^#+\s+/.test(l.trim()));
+  if (nextHeadingIdx === -1) nextHeadingIdx = lines.length;
+
+  const sectionLines = lines.slice(targetHeadingIdx + 1, nextHeadingIdx);
+  const nonThinkLines = sectionLines.filter(l => l.trim() !== '' && !isProjectThinkLine(l));
+  const newTargetLines = [...items.map(formatProjectTargetLine), ...nonThinkLines];
+
+  return [
+    ...lines.slice(0, targetHeadingIdx + 1),
+    ...newTargetLines,
+    ...lines.slice(nextHeadingIdx),
+  ].join('\n');
 }
 
 // #endregion

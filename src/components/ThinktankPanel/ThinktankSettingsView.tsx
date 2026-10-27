@@ -1,6 +1,6 @@
 /**
  * ThinktankSettingsView.tsx
- * Thinktank>設定。アクション・概要のAI設定・データ接続・Vault を並べる。
+ * Thinktank>設定。アクション・概要のAI設定・Firebase・Google Drive API・Vault を並べる。
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
@@ -8,7 +8,8 @@ import { Save, ChevronDown, ChevronRight, AArrowUp, AArrowDown, Columns2, Column
 import { TTActions } from '../../views/TTActions';
 import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 import { DomainProfileSettingsPanel } from './DomainProfileSettingsPanel';
-import { CloudRelaySettingsPanel } from './CloudRelaySettingsPanel';
+import { FirebaseSettingsPanel } from './FirebaseSettingsPanel';
+import { GoogleDriveSettingsPanel } from './GoogleDriveSettingsPanel';
 import './ThinktankSettingsView.css';
 
 export interface ThinktankSettingsViewRef {
@@ -110,9 +111,9 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
         )}
       </section>
 
-
       <DomainProfileSettingsPanel />
-      <CloudRelaySettingsPanel />
+      <FirebaseSettingsPanel />
+      <GoogleDriveSettingsPanel />
 
       {/* ── Vault ── */}
       <section className="tt-settings-section">

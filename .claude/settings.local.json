@@ -421,7 +421,9 @@
       "Bash(node --check electron/aiCliRunner.cjs)",
       "Bash(sed -i 's/Promise<ValidatedAiResponse \\\\& { executedCli: string; fallbackUsed: boolean; cliError?: string }>/Promise<ValidatedAiResponse \\\\& { executedCli: string }>/g' src/services/storage/ElectronStorageBackend.ts)",
       "Bash(node scripts/run-tests.mjs run electron/aiCliRunner.test.ts src/utils/ipcError.test.ts)",
-      "Bash(node scripts/run-tests.mjs run src/utils/ipcError.test.ts electron/aiCliRunner.test.ts)"
+      "Bash(node scripts/run-tests.mjs run src/utils/ipcError.test.ts electron/aiCliRunner.test.ts)",
+      "PowerShell(npx vitest run src/views/TTPanelAreaStepwise.test.ts 2>&1)",
+      "PowerShell($c = Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue; foreach \\($x in $c\\) { $p = Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($x.OwningProcess\\)\"; \"$\\($x.OwningProcess\\) | $\\($p.CommandLine\\)\"; $pp = Get-CimInstance Win32_Process -Filter \"ProcessId=$\\($p.ParentProcessId\\)\"; \"parent $\\($p.ParentProcessId\\) | $\\($pp.CommandLine\\)\" }; try { \\(Invoke-WebRequest http://localhost:5173/ -UseBasicParsing -TimeoutSec 5\\).Content.Substring\\(0,600\\) } catch { $_.Exception.Message })"
     ]
   }
 }

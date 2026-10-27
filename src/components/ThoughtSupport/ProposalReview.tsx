@@ -16,7 +16,7 @@ export function ProposalReview({ vault, turn, disabled }: { vault: TTVault; turn
   const [saved, setSaved] = useState(false);
   const locked = useRef(false);
   const bundle = vault.GetThink(turn.context.bundleId);
-  if (!turn.answer.proposals.length || turn.context.scope !== 'bundle-only' || turn.context.vaultId !== vault.ID || bundle?.ContentType !== 'bundle') return null;
+  if (!turn.answer.proposals.length || turn.context.scope !== 'bundle-only' || turn.context.vaultId !== vault.ID || bundle?.ContentType !== 'project') return null;
   async function act(save: boolean) {
     if (!lifetime.isCurrent()) return;
     if (locked.current || disabled) return;

@@ -106,7 +106,7 @@ export const GraphMedia = forwardRef<GraphMediaRef, MediaProps>(function GraphMe
     });
 
     // Bundle の参照 Think
-    if (think.ContentType === 'bundle') {
+    if (think.ContentType === 'project') {
       vault.GetThinksForBundle(think.ID).forEach(rt => {
         if (!nodes.find(n => n.id === rt.ID)) {
           nodes.push({ id: rt.ID, name: rt.Name, type: rt.ContentType, isRef: true });

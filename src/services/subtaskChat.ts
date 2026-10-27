@@ -26,7 +26,7 @@ export async function ensureSubtaskChat(vault: TTVault, bundleId: string): Promi
 
 async function prepare(vault: TTVault, bundleId: string): Promise<TTThink> {
   const bundle = vault.GetThink(bundleId);
-  if (bundle?.ContentType !== 'bundle' || !readTaskRelation(bundle.Metadata.taskRelation)) {
+  if (bundle?.ContentType !== 'project' || !readTaskRelation(bundle.Metadata.taskRelation)) {
     throw new Error('サブ課題が見つかりません。');
   }
   if (bundle.IsMetaOnly) await bundle.LoadContent();
@@ -48,7 +48,7 @@ async function prepare(vault: TTVault, bundleId: string): Promise<TTThink> {
   const metadata = structuredClone(bundle.Metadata);
   const content = `${before}${before.endsWith('\n') ? '' : '\n'}* ${chat.ID}\n`;
   const result = await StorageManager.instance.save({
-    thinkid: bundleId, category: 'bundle', fullContent: content, keywords: bundle.Keywords,
+    thinkid: bundleId, category: 'project', fullContent: content, keywords: bundle.Keywords,
     relatedIds: [...ids, chat.ID].join(','), metadata, baseUpdatedAt: bundle.UpdatedAt || undefined,
   });
   if (vault.GetThink(bundleId) !== bundle || bundle.Content !== before || bundle.IsMetadataDirty) {

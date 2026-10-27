@@ -7,7 +7,7 @@
  */
 
 import {
-  MessageCircle, Files, BotMessageSquare, Settings,
+  MessageCircle, Files, Target, Settings,
 } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
@@ -32,7 +32,7 @@ const MODE_BUTTONS: {
   id: string;
 }[] = [
   { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧', id: 'ThinktankThinkList' },
-  { mode: 'abstract', icon: <BotMessageSquare size={16} />, label: '概要', id: 'ThinktankAbstract' },
+  { mode: 'project', icon: <Target size={16} />, label: 'プロジェクト', id: 'ThinktankProject' },
   { mode: 'chat',    icon: <MessageCircle size={16} />, label: '対話', id: 'ThinktankAI' },
 ];
 

@@ -15,7 +15,7 @@ beforeEach(() => {
   history.mockResolvedValue([]);
   vault = new TTVault('vault'); vault.IsLoaded = true;
   for (const id of ['a', 'b']) {
-    const bundle = new TTThink(); bundle.ID = id; bundle.ContentType = 'bundle'; bundle.Name = `Bundle ${id}`; vault.AddThink(bundle);
+    const bundle = new TTThink(); bundle.ID = id; bundle.ContentType = 'project'; bundle.Name = `Bundle ${id}`; vault.AddThink(bundle);
     const chat = new TTThink(); chat.ID = `chat-${id}`; chat.ContentType = 'chat'; chat.Name = `TODO:Thinktank｜[進行中]Bundle ${id}`; chat.Content = `${chat.Name}\n`; vault.AddThink(chat);
   }
 });

@@ -20,7 +20,7 @@ beforeEach(() => {
   resetDraftStores();
   vi.clearAllMocks(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   host = document.createElement('div'); root = createRoot(host); vault = new TTVault('vault');
-  const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'bundle'; vault.AddThink(bundle);
+  const bundle = new TTThink(); bundle.ID = 'bundle'; bundle.ContentType = 'project'; vault.AddThink(bundle);
   api.read.mockResolvedValue(structuredClone(state)); api.save.mockResolvedValue({ ...state, log: { schemaVersion: 1, events: [] } });
 });
 afterEach(async () => { await act(async () => root.unmount()); resetDraftStores(); vi.unstubAllGlobals(); });

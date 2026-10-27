@@ -105,11 +105,18 @@ export async function decryptRelayPayload<T>(
   const ct = base64ToBytes(env.ct);
   const key = await deriveAesGcmKey(secretPassphrase, salt);
 
-  const plainBuffer = await globalThis.crypto.subtle.decrypt(
-    { name: 'AES-GCM', iv: iv as BufferSource },
-    key,
-    ct as BufferSource,
-  );
+  let plainBuffer: ArrayBuffer;
+  try {
+    plainBuffer = await globalThis.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: iv as BufferSource },
+      key,
+      ct as BufferSource,
+    );
+  } catch {
+    throw new Error(
+      'E2EE 復号に失敗しました。PC版とWeb版の「Pairing Secret（暗号化シークレット）」が一致しているか確認してください。',
+    );
+  }
 
   const plainText = new TextDecoder().decode(plainBuffer);
   return JSON.parse(plainText) as T;

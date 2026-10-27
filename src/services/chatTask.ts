@@ -17,7 +17,7 @@ export function resolveChatTask(vault: TTVault, chat?: TTThink): ChatTask {
   if (ids.length > 1) return { candidates: [], error: '課題との関連付けが競合しています。関連情報を確認してください。' };
   if (ids.length === 1) {
     const bundle = vault.GetThink(ids[0]);
-    return bundle?.ContentType === 'bundle' ? { bundle, candidates: [bundle] }
+    return bundle?.ContentType === 'project' ? { bundle, candidates: [bundle] }
       : { candidates: [], error: '対応する課題を読み込めません。Vaultを再読み込みしてください。' };
   }
   const bundles = vault.GetBundles();

@@ -149,6 +149,20 @@ export class StorageManager {
     return this.backend.importElectronMarkdownBackup();
   }
 
+  public exportAllToElectronMarkdownBackup(): Promise<{ exported: number; failedIds: string[] }> {
+    if (!(this.backend instanceof FirestoreStorageBackend)) {
+      throw new Error('Firestore正本を使用する現行PC版で実行してください。');
+    }
+    return this.backend.exportAllToElectronMarkdownBackup();
+  }
+
+  public restoreFromElectronMarkdownBackup(): Promise<{ restored: number; failedIds: string[] }> {
+    if (!(this.backend instanceof FirestoreStorageBackend)) {
+      throw new Error('Firestore正本を使用する現行PC版で実行してください。');
+    }
+    return this.backend.restoreFromElectronMarkdownBackup();
+  }
+
   // ── スナップショット機能 ──────────────────────────────────────────
 
   public createSnapshot(thinkid: string): Promise<ThinkSnapshotRecord> {

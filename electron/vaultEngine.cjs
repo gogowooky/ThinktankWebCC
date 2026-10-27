@@ -36,6 +36,7 @@ class VaultEngine {
     this._fullIndexPromise = null;
     this.configFilePath = path.join(userDataDir, 'vault-engine-config.json');
     this.overlayFilePath = path.join(userDataDir, 'vault-meta-overlay.json');
+    this.defaultVaultDir = defaultVaultDir;
     this.config = this._loadConfig(defaultVaultDir);
     this._metaMap = null;
     this._bodyMap = null;
@@ -239,7 +240,13 @@ class VaultEngine {
    * そうでない場合は vaultDir 直下に vault_ver2 がある場合はそれを使う。
    */
   getVaultDir() {
-    const configured = this.config.vaultDir;
+    let configured = this.config.vaultDir;
+    // Drive for desktop 未起動などでドライブ自体が無いと mkdir が起動時に落ちる。
+    // 設定は残し、ドライブが戻れば自動で元の場所に戻す。
+    const driveRoot = path.parse(path.resolve(configured)).root;
+    if (driveRoot && !fs.existsSync(driveRoot)) {
+      configured = this.defaultVaultDir;
+    }
     if (path.basename(configured) === 'vault_ver2') {
       return configured;
     }

@@ -44,6 +44,7 @@ function canonicalStateValue(key: ConfigKey, value: string): string {
   if (key === 'Application.FocusedPanel.Name') return canonicalPanelName(value);
   if (key === 'ToolBar.StatusMode.Text') return canonicalPanelStatusList(value);
   if (key === 'DiscussSettingPanel.Mode.Name' && ['workout', 'develop', 'discuss'].includes(value.toLowerCase())) return 'Panes';
+  if (key.endsWith('.Mode.Name') && value.toLowerCase() === 'abstract') return 'Project';
   if (key === 'ToolBar.Mode.Name' && value === 'Translate') return 'Search';
   return value;
 }
@@ -373,8 +374,9 @@ export class TTUIStateManager {
         // 派生になったので引き継がない（旧キーは spec が無いため読み飛ばされる）。
         .replace(/\bThinktank\.Ribbon\.BgColor\b/g, 'Thinktank.Theme.Color')
         .replace(/\bSeeds\.Ribbon\.BgColor\b/g, 'Seeds.Theme.Color')
-        .replace(/\bSeeds\.Bundle\.Name\b/g, 'SeedsPanel.Bundle.ID')
-        .replace(/\bSeedsPanel\.Bundle\.Name\b/g, 'SeedsPanel.Bundle.ID')
+        .replace(/\bSeeds\.Bundle\.Name\b/g, 'SeedsPanel.Project.ID')
+        .replace(/\bSeedsPanel\.Bundle\.Name\b/g, 'SeedsPanel.Project.ID')
+        .replace(/\bSeedsPanel\.Bundle\.ID\b/g, 'SeedsPanel.Project.ID')
         .replace(/\bDiscuss\.Ribbon\.BgColor\b/g, 'Discuss.Theme.Color')
         .replace(/\bHarvest\.Ribbon\.BgColor\b/g, 'Harvest.Theme.Color')
         .replace(/\bToolBar\.BgColor\b/g, 'ToolBar.Theme.Color')

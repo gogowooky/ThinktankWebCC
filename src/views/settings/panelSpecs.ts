@@ -21,7 +21,7 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'ThinktankPanel.Mode.Name': {
     panel: 'ThinktankPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Abstract|Settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Project|Settings)$',
     description: '左パネルモード',
     get: (app) => capitalize(app.ThinktankPanel.ViewMode),
     set: (app, v) => { app.ThinktankPanel.ViewMode = v.toLowerCase() as ThinktankViewMode; },
@@ -56,21 +56,21 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'SeedsPanel.Mode.Name': {
     panel: 'SeedsPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Abstract|Settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Project|Settings)$',
     description: '上部パネル表示モード',
     get: (app) => capitalize(app.SeedsPanel.ViewMode),
     set: (app, v) => { app.SeedsPanel.SetViewMode(v.toLowerCase() as SeedsViewMode); },
   },
-  'SeedsPanel.Bundle.ID': {
+  'SeedsPanel.Project.ID': {
     panel: 'SeedsPanel',
     default: 'none', type: 'string', candidates: '.*',
-    description: 'SeedsパネルのbundleファイルID',
-    get: (app) => app.SeedsPanel.BundleID || 'none',
+    description: 'SeedsパネルのprojectファイルID',
+    get: (app) => app.SeedsPanel.ProjectID || 'none',
     set: (app, v) => {
       if (v === 'none') {
-        app.SeedsPanel.ClearBundle();
+        app.SeedsPanel.ClearProject();
       } else {
-        app.SeedsPanel.OpenBundle(v);
+        app.SeedsPanel.OpenProject(v);
       }
     },
   },
@@ -171,7 +171,7 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'HarvestPanel.Mode.Name': {
     panel: 'HarvestPanel',
-    default: 'Chat', type: 'string', candidates: '^(Chat|Abstract|Settings)$',
+    default: 'Chat', type: 'string', candidates: '^(Chat|Project|Settings)$',
     description: '右パネル表示モード',
     get: (app) => capitalize(app.HarvestPanel.ViewMode),
     set: (app, v) => { app.HarvestPanel.SetViewMode(v.toLowerCase() as HarvestViewMode); },

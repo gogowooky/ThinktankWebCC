@@ -7,7 +7,7 @@ import { TTThink } from './TTThink';
 const version = '2026-10-13T01:00:00Z';
 const creators: Array<{ name: string; category: string; create: (vault: TTVault) => Promise<TTThink> }> = [
   { name: 'blank', category: 'memo', create: vault => vault.CreateBlankThink('memo', 'メモ') },
-  { name: 'bundle', category: 'bundle', create: vault => vault.CreateBundleFromIds([]) },
+  { name: 'bundle', category: 'project', create: vault => vault.CreateBundleFromIds([]) },
   { name: 'links', category: 'links', create: vault => vault.CreateLinksThink('リンク', 'https://example.com') },
   { name: 'chat', category: 'chat', create: vault => vault.CreateChatThink('会話\n本文') },
   { name: 'fixed ID', category: 'memo', create: vault => vault.AddThinkWithContent('fixed', 'メモ', 'memo', 'keyword', 'メモ\n本文') },
@@ -79,7 +79,7 @@ it('clones creation metadata and uses the returned version on the next normal sa
 
 it('keeps a saved child and restores Bundle content when linking fails, allowing a retry', async () => {
   const vault = new TTVault('test');
-  const bundle = await vault.AddThinkWithContent('2026-10-13-010000', '資料', 'bundle', '', '資料');
+  const bundle = await vault.AddThinkWithContent('2026-10-13-010000', '資料', 'project', '', '資料');
   const before = bundle.Content;
   backend.save.mockResolvedValueOnce({ updatedAt: version }).mockRejectedValueOnce(new Error('offline'));
   await expect(vault.CreateBlankThink('memo', '子', bundle.ID)).rejects.toThrow('offline');

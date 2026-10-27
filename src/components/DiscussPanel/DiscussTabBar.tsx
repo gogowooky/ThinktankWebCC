@@ -12,12 +12,12 @@
  */
 
 import { Fragment } from 'react';
-import { PanelsTopLeft, NotebookPen, BookOpenText, Table, IdCard, Share2, FileCode, MessageCircle, BotMessageSquare, type LucideIcon } from 'lucide-react';
+import { PanelsTopLeft, NotebookPen, BookOpenText, Table, IdCard, Share2, FileCode, MessageCircle, Target, type LucideIcon } from 'lucide-react';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { MediaType } from '../../types';
 import './DiscussTabBar.css';
 
-export type SettingsType = Extract<MediaType, 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'> | 'abstract';
+export type SettingsType = Extract<MediaType, 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat'> | 'project';
 
 interface SettingsEntry {
   type: SettingsType;
@@ -29,7 +29,7 @@ interface SettingsEntry {
 
 export const DEVELOP_SETTINGS: SettingsEntry[] = [
   { type: 'panes',      Icon: PanelsTopLeft,   name: 'Pane設定',       id: 'Panes' },
-  { type: 'abstract',   Icon: BotMessageSquare, name: '概要',          id: 'DiscussAbstract' },
+  { type: 'project',    Icon: Target,           name: 'プロジェクト',  id: 'DiscussProject' },
   { type: 'chat',       Icon: MessageCircle,   name: '対話',             id: 'AiChat' },
   { type: 'texteditor', Icon: NotebookPen,     name: 'TextEditor設定', id: 'TextEditor' },
   { type: 'markdown',   Icon: BookOpenText,    name: 'Markdown設定',   id: 'Markdown', unavailableReason: 'Markdown設定は未実装です。' },

@@ -23,7 +23,11 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
   // ── Highlighter 検索移動 ──────────────────────────────────────────────────
   /** Highlighter（ToolBar.HighlighterMode.Text）のヒット位置を昇順で返す。 */
   const findHighlighterMatches = (editor: any): any[] =>
-    findHighlightRanges(editor, app.DiscussPanel.HighlightWord);
+    findHighlightRanges(editor, app.DiscussPanel.HighlightWord, {
+      matchCase: app.DiscussPanel.HighlightMatchCase,
+      isRegex: app.DiscussPanel.HighlightIsRegex,
+      matchWidth: app.DiscussPanel.HighlightMatchWidth,
+    });
 
   const moveToHighlighter = (item: TTActionItem, pick: (ranges: any[], editor: any) => any | null): void => {
     try {
@@ -191,6 +195,36 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
   registerModeInputActions('Highlighter', 'Highlighter');
   registerModeInputActions('Command', 'Command');
   registerModeInputActions('Search', 'キーワード検索');
+
+  TTActions.Register({
+    ActionID: 'ToolBar.HighlighterMode.MatchCase:Toggle',
+    Description: 'ハイライターの大文字小文字区別モードを切り替える',
+    Completion: (item) => {
+      const next = !app.DiscussPanel.HighlightMatchCase;
+      TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.MatchCase', String(next));
+      item.Result = `大文字小文字区別: ${next ? 'ON' : 'OFF'}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.HighlighterMode.IsRegex:Toggle',
+    Description: 'ハイライターの正規表現モードを切り替える',
+    Completion: (item) => {
+      const next = !app.DiscussPanel.HighlightIsRegex;
+      TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.IsRegex', String(next));
+      item.Result = `正規表現モード: ${next ? 'ON' : 'OFF'}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'ToolBar.HighlighterMode.MatchWidth:Toggle',
+    Description: 'ハイライターの全角半角区別モードを切り替える',
+    Completion: (item) => {
+      const next = !app.DiscussPanel.HighlightMatchWidth;
+      TTUIStateManager.instance.applyProperty('ToolBar.HighlighterMode.MatchWidth', String(next));
+      item.Result = `全角半角区別: ${next ? 'ON' : 'OFF'}`;
+    },
+  });
 
   TTActions.Register({
     ActionID: 'ToolBar.SearchMode.Text:SetAndFocus',

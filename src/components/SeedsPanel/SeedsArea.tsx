@@ -38,7 +38,7 @@ import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
 import type { ContentType } from '../../types';
 import {
-  parseBundle, serializeBundle,
+  updateProjectTargets,
   NEW_CHAT_SENTINEL_ID,
 } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
@@ -46,12 +46,12 @@ import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeywo
 import './SeedsArea.css';
 import { AbstractView } from '../Abstract/AbstractView';
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'bundle', 'table', 'links', 'chat', 'html', 'abstract'];
+const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'project', 'table', 'links', 'chat', 'html'];
 
 const SEEDS_MODE_NAMES: Record<string, string> = {
-  filter:   'Think一覧',
-  abstract: '概要',
-  chat:     '対話',
+  filter:  'Think一覧',
+  project: 'プロジェクト',
+  chat:    '対話',
 };
 
 
@@ -232,20 +232,19 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const handleClearChecks = useCallback(() => panel.SetCheckedThoughtIDs([]), [panel]);
 
   const handleExcludeChecked = useCallback(async () => {
-    if (panel.CheckedThoughtIDs.length === 0 || !panel.BundleID) return;
-    const bundle = vault.GetThink(panel.BundleID);
-    if (!bundle || bundle.ContentType !== 'bundle') return;
+    if (panel.CheckedThoughtIDs.length === 0 || !panel.ProjectID) return;
+    const bundle = vault.GetThink(panel.ProjectID);
+    if (!bundle || bundle.ContentType !== 'project') return;
     if (bundle.IsMetaOnly) await bundle.LoadContent();
 
-    const parsed = parseBundle(bundle.Content);
-    const remaining = thinksInBundle
-      .map(thinkInBundle => thinkInBundle.ID)
-      .filter(id => !panel.CheckedThoughtIDs.includes(id));
+    const remainingThinks = thinksInBundle
+      .filter(thinkInBundle => !panel.CheckedThoughtIDs.includes(thinkInBundle.ID));
+    const remaining = remainingThinks.map(t => t.ID);
 
-    const newContent = serializeBundle({
-      title: parsed.title,
-      ids: remaining,
-    });
+    const newContent = updateProjectTargets(
+      bundle.Content,
+      remainingThinks.map(t => ({ id: t.ID, contentType: t.ContentType, title: t.Name })),
+    );
 
     bundle.Content = newContent;
     bundle.RelatedIDs = remaining.join(',');
@@ -253,7 +252,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     await bundle.SaveContent();
 
     // 更新後のThink一覧を再取得してステートを更新し、変更を通知する
-    const newThinks = await vault.GetThinksForBundleAsync(panel.BundleID);
+    const newThinks = await vault.GetThinksForProjectAsync(panel.ProjectID);
     setThinksInBundle(newThinks);
     vault.NotifyUpdated();
 
@@ -431,13 +430,13 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
       {/* ── 本体 ───────────────────────────────────────────────── */}
       <div className="seeds-area__body">
         {showSettings ? (
-          <SeedsSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearBundle()} />
-        ) : panel.ViewMode === 'abstract' ? (
+          <SeedsSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearProject()} />
+        ) : panel.ViewMode === 'project' ? (
           <AbstractView />
         ) : isThinkListMode ? (
-          !panel.BundleID ? (
+          !panel.ProjectID ? (
             <div className="seeds-area__empty">
-              <span>Bundle をドロップして選択してください</span>
+              <span>Project をドロップして選択してください</span>
             </div>
           ) : (
             <ThoughtsList

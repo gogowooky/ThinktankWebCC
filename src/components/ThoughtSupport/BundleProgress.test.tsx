@@ -26,7 +26,7 @@ async function click(label: string) { await act(async () => { expect(button(labe
 async function input(index: number, value: string) { await act(async () => { const el = host.querySelectorAll('textarea')[index]; Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(el, value); el.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function confirm() { await act(async () => (host.querySelectorAll('fieldset input[type=checkbox]')[1] as HTMLInputElement).click()); }
 it.each(['resolve', 'reject'])('ignores a pending save %s after reset without metadata updates or warning resurrection', async outcome => {
-  const bundle = new TTThink(); bundle.ID = 'a'; bundle.ContentType = 'bundle';
+  const bundle = new TTThink(); bundle.ID = 'a'; bundle.ContentType = 'project';
   bundle.Metadata = { keep: true }; bundle.UpdatedAt = 'original'; bundle.markMetadataSaved(); vault.AddThink(bundle);
   let resolve!: (value: unknown) => void, reject!: (error: Error) => void;
   api.save.mockImplementationOnce(() => new Promise((done, fail) => { resolve = done; reject = fail; }));

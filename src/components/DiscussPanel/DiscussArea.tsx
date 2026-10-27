@@ -288,6 +288,9 @@ export function DiscussArea({
       unicodeHighlight: panel?.TextEditor.UnicodeHighlight.IsVisible ?? false,
       bracketPairColorization: panel?.TextEditor.BracketPairColorization.IsVisible ?? true,
       highlightWord: panel?.HighlightWord ?? '',
+      highlightMatchCase: panel?.HighlightMatchCase ?? false,
+      highlightIsRegex: panel?.HighlightIsRegex ?? false,
+      highlightMatchWidth: panel?.HighlightMatchWidth ?? false,
       highlightStyles: pickIndexedStyles('Highlighter', panel?.TextEditor.ColorStatus),
       background:           colorOr(textStyle.BgColor,       '#f5f5f5'),
       foreground:           colorOr(textStyle.Color,         '#1e1e1e'),
@@ -302,7 +305,7 @@ export function DiscussArea({
     };
   }, [panel?.TextEditor.LineNumbers.IsVisible, panel?.TextEditor.WordWrap.IsVisible, panel?.TextEditor.Minimap.IsVisible,
        panel?.TextEditor.FullWidthSpace.IsVisible, panel?.TextEditor.UnicodeHighlight.IsVisible,
-       panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord,
+       panel?.TextEditor.BracketPairColorization.IsVisible, panel?.HighlightWord, panel?.HighlightMatchCase, panel?.HighlightIsRegex, panel?.HighlightMatchWidth,
        panel?.TextEditor.ColorStatus,
        panel?.TextEditor.Bullet.Marks, panel?.TextEditor.Comment.Marks]);
 

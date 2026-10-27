@@ -1,18 +1,29 @@
 import type { MediaProps } from '../types';
 import { colorStyleToInlineStyle, styleClass } from '../../../../utils/defaultColor';
+import {
+  buildRegexFromWords,
+  splitHighlighterGroups,
+  splitHighlighterWords,
+} from '../../../../utils/highlighterPattern';
 
 export function HighlightedText({ text, editorSettings }: { text: string; editorSettings?: MediaProps['editorSettings']; }) {
   if (!editorSettings?.highlightWord) return <>{text}</>;
 
-  const groups = editorSettings.highlightWord.split(',').slice(0, 5);
+  const hlOptions = {
+    matchCase: editorSettings.highlightMatchCase,
+    isRegex: editorSettings.highlightIsRegex,
+    matchWidth: editorSettings.highlightMatchWidth,
+  };
+
+  const groups = splitHighlighterGroups(editorSettings.highlightWord);
   let segments: { text: string; groupIdx?: number; }[] = [{ text }];
 
   groups.forEach((groupStr, groupIdx) => {
-    const words = groupStr.split(' ').map(w => w.trim()).filter(w => w.length > 0);
+    const words = splitHighlighterWords(groupStr);
     if (words.length === 0) return;
 
-    const escapedWords = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const regex = new RegExp(`(${escapedWords.join('|')})`, 'g');
+    const regex = buildRegexFromWords(words, hlOptions, true);
+    if (!regex) return;
 
     const nextSegments: { text: string; groupIdx?: number; }[] = [];
     segments.forEach(seg => {

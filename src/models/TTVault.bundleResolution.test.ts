@@ -13,7 +13,7 @@ const A = '2026-10-12-110000';
 const B = '2026-10-13-110000';
 const MISSING = '2026-10-15-110000';
 
-function item(id: string, content: string, type: 'memo' | 'bundle' = 'memo') {
+function item(id: string, content: string, type: 'memo' | 'project' = 'memo') {
   const think = new TTThink();
   think.ID = id;
   think.ContentType = type;
@@ -60,8 +60,8 @@ afterEach(() => {
 });
 
 it('resolves nested ID lists and reports cycles and missing IDs', async () => {
-  const root = item(ROOT, `root\n* ${NESTED}\n* ${MISSING}`, 'bundle');
-  const child = item(NESTED, `child\n* ${ROOT}\n* ${A}`, 'bundle');
+  const root = item(ROOT, `root\n* ${NESTED}\n* ${MISSING}`, 'project');
+  const child = item(NESTED, `child\n* ${ROOT}\n* ${A}`, 'project');
   const v = vault(root, child, item(A, 'A'), item(B, 'B'));
   const onIssue = vi.fn();
   const onBundle = vi.fn();
@@ -76,7 +76,7 @@ it('resolves nested ID lists and reports cycles and missing IDs', async () => {
 });
 
 it('ignores retired filter/search expressions and treats an empty Bundle as an empty list', async () => {
-  const root = item(ROOT, 'root\n> Keyword：A\n> 作成日：2026-10-12\n>> 検索語：B', 'bundle');
+  const root = item(ROOT, 'root\n> Keyword：A\n> 作成日：2026-10-12\n>> 検索語：B', 'project');
   const v = vault(root, item(A, 'A'), item(B, 'B'));
 
   expect(v.GetThinksForBundle(ROOT)).toEqual([]);
@@ -84,7 +84,7 @@ it('ignores retired filter/search expressions and treats an empty Bundle as an e
 });
 
 it('loads a meta-only Bundle body and reuses the explicit membership cache', async () => {
-  const root = item(ROOT, 'root', 'bundle');
+  const root = item(ROOT, 'root', 'project');
   root.IsMetaOnly = true;
   const b = item(B, 'B');
   const v = vault(root, b);
@@ -97,7 +97,7 @@ it('loads a meta-only Bundle body and reuses the explicit membership cache', asy
 });
 
 it('preserves strict and partial-load behavior', async () => {
-  const root = item(ROOT, 'root', 'bundle');
+  const root = item(ROOT, 'root', 'project');
   root.IsMetaOnly = true;
   const v = vault(root, item(A, 'A'));
   root.LoadContent = vi.fn(async () => {});
@@ -107,8 +107,8 @@ it('preserves strict and partial-load behavior', async () => {
 });
 
 it('invalidates membership after root and nested Bundle edits', async () => {
-  const root = item(ROOT, `root\n* ${NESTED}`, 'bundle');
-  const child = item(NESTED, `child\n* ${A}`, 'bundle');
+  const root = item(ROOT, `root\n* ${NESTED}`, 'project');
+  const child = item(NESTED, `child\n* ${A}`, 'project');
   const v = vault(root, child, item(A, 'A'), item(B, 'B'));
 
   expect(ids(await v.GetThinksForBundleAsync(ROOT))).toEqual([A]);
@@ -119,14 +119,14 @@ it('invalidates membership after root and nested Bundle edits', async () => {
 });
 
 it('invalidates an empty-list cache on additions without broadening membership', async () => {
-  const v = vault(item(ROOT, 'root', 'bundle'), item(A, 'A'));
+  const v = vault(item(ROOT, 'root', 'project'), item(A, 'A'));
   await v.GetThinksForBundleAsync(ROOT);
   v.AddThink(item(B, 'B'));
   expect(v.GetThinksForBundle(ROOT)).toEqual([]);
 });
 
 it('drops cache across ReloadAll even when reloaded Think IDs are identical', async () => {
-  const root = item(ROOT, `root\n* ${A}`, 'bundle');
+  const root = item(ROOT, `root\n* ${A}`, 'project');
   const a = item(A, 'A');
   const b = item(B, 'B');
   const v = vault(root, a, b);
@@ -142,7 +142,7 @@ it('drops cache across ReloadAll even when reloaded Think IDs are identical', as
 });
 
 it('keeps a cached ID list through a notification with unchanged inputs', async () => {
-  const root = item(ROOT, `root\n* ${A}`, 'bundle');
+  const root = item(ROOT, `root\n* ${A}`, 'project');
   const a = item(A, 'A');
   const v = vault(root, a);
   await v.GetThinksForBundleAsync(ROOT);

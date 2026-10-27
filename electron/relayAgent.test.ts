@@ -31,6 +31,9 @@ interface RelayAgentInstance {
   firebaseApiKey: string;
   _publishHeartbeatToFirestore: () => Promise<void>;
   _claimAndProcessFirestoreRequest: (sdk: Record<string, unknown>, db: unknown, ref: unknown) => Promise<void>;
+  _queueFirestoreSnapshot: (snapshot: unknown, sdk: Record<string, unknown>, db: unknown, generation: number) => void;
+  _listenerGeneration: number;
+  _activeRequests: Set<Promise<void>>;
   handleEncryptedRequest: (payload: unknown) => Promise<{ encryptedResponse: string; responseChunks: Array<{ index: number; total: number; direction: 'response'; data: string }> }>;
 }
 const { RelayAgent } = require('./relayAgent.cjs') as {
@@ -194,5 +197,89 @@ describe('RelayAgent online status', () => {
     expect(updates[0]).toMatchObject({ status: 'running', claimedBy: agent.getStatus().deviceId });
     expect(updates.at(-1)).toMatchObject({ status: 'succeeded', encryptedResponse: 'response-cipher' });
     expect(agent.handleEncryptedRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('processes multiple queued requests in parallel without waiting for the first to finish', async () => {
+    agent = new RelayAgent({ userDataDir, vaultEngine: newEngine('pc'), aiCliRunner });
+    agent.saveConfig({ enabled: true });
+    const deviceId = agent.getStatus().deviceId;
+
+    const docs: Record<string, Record<string, unknown>> = {
+      'req-1': {
+        requestId: 'req-1',
+        targetDeviceId: deviceId,
+        status: 'queued',
+        encryptedRequest: 'cipher-1',
+        requestChunkCount: 1,
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      },
+      'req-2': {
+        requestId: 'req-2',
+        targetDeviceId: deviceId,
+        status: 'queued',
+        encryptedRequest: 'cipher-2',
+        requestChunkCount: 1,
+        expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      },
+    };
+
+    const started: string[] = [];
+    const completed: string[] = [];
+    let resolveFirst!: () => void;
+    const firstGate = new Promise<void>((r) => {
+      resolveFirst = r;
+    });
+
+    agent.handleEncryptedRequest = vi.fn(async (payload: unknown) => {
+      const cipher = (payload as { encryptedRequest: string }).encryptedRequest;
+      started.push(cipher);
+      if (cipher === 'cipher-1') {
+        await firstGate;
+      }
+      completed.push(cipher);
+      return {
+        encryptedResponse: `res-${cipher}`,
+        responseChunks: [{ index: 0, total: 1, direction: 'response' as const, data: `res-${cipher}` }],
+      };
+    });
+
+    const sdk = {
+      runTransaction: async (_db: unknown, callback: (transaction: {
+        get: (ref: { id: string }) => Promise<{ exists: () => boolean; data: () => Record<string, unknown>; id: string }>;
+        update: (ref: { id: string }, patch: Record<string, unknown>) => void;
+      }) => Promise<unknown>) => callback({
+        get: async (ref) => ({ exists: () => true, data: () => ({ ...docs[ref.id] }), id: ref.id }),
+        update: (ref, patch) => {
+          docs[ref.id] = { ...docs[ref.id], ...patch };
+        },
+      }),
+      getDocs: vi.fn(async () => ({ docs: [] })),
+      collection: vi.fn(),
+      setDoc: vi.fn(),
+      doc: vi.fn(),
+    };
+
+    const snapshot = {
+      docChanges: () => [
+        { type: 'added', doc: { id: 'req-1', ref: { id: 'req-1' } } },
+        { type: 'added', doc: { id: 'req-2', ref: { id: 'req-2' } } },
+      ],
+    };
+
+    agent._queueFirestoreSnapshot(snapshot, sdk, {}, agent._listenerGeneration);
+
+    // 1つ目のリクエストが応答待ちの間でも、2つ目のリクエストが並列に開始・完了することを確認する
+    await vi.waitFor(() => {
+      expect(started).toEqual(['cipher-1', 'cipher-2']);
+      expect(completed).toEqual(['cipher-2']);
+      expect(docs['req-2'].status).toBe('succeeded');
+      expect(docs['req-1'].status).toBe('running');
+    });
+
+    resolveFirst();
+    await Promise.allSettled([...agent._activeRequests]);
+
+    expect(completed).toEqual(['cipher-2', 'cipher-1']);
+    expect(docs['req-1'].status).toBe('succeeded');
   });
 });

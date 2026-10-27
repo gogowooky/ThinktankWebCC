@@ -7,12 +7,43 @@
  */
 
 const { spawn, execFileSync } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
 
 const SUPPORTED_CLIS = ['claude', 'codex', 'antigravity'];
+const DEFAULT_MAX_CONCURRENT_CLI_PROCESSES = 4;
+
+// PC版自身のIPCとWeb版中継リクエストが同時に集中した際、プロセス乱立によるメモリ枯渇を防ぐセマフォ。
+let maxConcurrentCliProcesses = DEFAULT_MAX_CONCURRENT_CLI_PROCESSES;
+let activeCliProcessCount = 0;
+const cliWaitQueue = [];
+
+function setMaxConcurrentCliProcesses(limit) {
+  const n = Number(limit);
+  maxConcurrentCliProcesses = Number.isInteger(n) && n >= 1 ? n : DEFAULT_MAX_CONCURRENT_CLI_PROCESSES;
+}
+
+function acquireCliSlot() {
+  if (activeCliProcessCount < maxConcurrentCliProcesses) {
+    activeCliProcessCount += 1;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    cliWaitQueue.push(resolve);
+  });
+}
+
+function releaseCliSlot() {
+  const next = cliWaitQueue.shift();
+  if (next) {
+    next();
+  } else {
+    activeCliProcessCount = Math.max(0, activeCliProcessCount - 1);
+  }
+}
 const CLI_EXECUTABLE_NAMES = {
   claude: 'claude',
   codex: 'codex',
@@ -100,6 +131,28 @@ function ensureIsolatedSandboxDir() {
     fs.mkdirSync(dir, { recursive: true });
   }
   return dir;
+}
+
+/**
+ * 複数プロセスの並列実行時に cwd 内のファイル作成・ロックが干渉しないよう、実行ごとの一時サブディレクトリを作成する。
+ */
+function createRunSandboxDir() {
+  const baseDir = ensureIsolatedSandboxDir();
+  const runDir = path.join(
+    baseDir,
+    `run_${Date.now()}_${process.pid}_${crypto.randomBytes(4).toString('hex')}`,
+  );
+  fs.mkdirSync(runDir, { recursive: true });
+  return runDir;
+}
+
+function cleanupRunSandboxDir(runDir) {
+  if (!runDir) return;
+  try {
+    fs.rmSync(runDir, { recursive: true, force: true });
+  } catch {
+    // Windows でプロセス終了直後にハンドルが一瞬残る場合があるため無視する
+  }
 }
 
 /**
@@ -225,95 +278,108 @@ function extractCliResponse(cliName, stdout) {
 /**
  * 指定された AI CLI を設定隔離環境で起動し、標準入力からプロンプトを渡して出力を取得する。
  */
-function executeIsolatedCli({ cliName = 'claude', model, promptText, timeoutMs = 120_000 }) {
-  return new Promise((resolve, reject) => {
-    const binPath = resolveExecutablePath(cliName);
-    if (!binPath) {
-      reject(new Error(`AI CLI "${cliName}" がこの PC に見つかりません。`));
-      return;
-    }
+async function executeIsolatedCli({
+  cliName = 'claude',
+  model,
+  promptText,
+  timeoutMs = 120_000,
+  spawnImpl = spawn,
+  binPathOverride,
+}) {
+  const binPath = binPathOverride || resolveExecutablePath(cliName);
+  if (!binPath) {
+    throw new Error(`AI CLI "${cliName}" がこの PC に見つかりません。`);
+  }
 
-    const sandboxDir = ensureIsolatedSandboxDir();
-    const args = buildCliArgs(cliName, model);
-    const isCmdWrapper = process.platform === 'win32' && binPath.toLowerCase().endsWith('.cmd');
-    // claude / codex CLI はローカルの CLI ログインセッション（サブスクリプション認証）を使用するため、
-    // 環境変数に古い ANTHROPIC_API_KEY / OPENAI_API_KEY が残っていると "Invalid API key" エラーになるのを防ぐ。
-    const childEnv = {
-      ...process.env,
-      NO_COLOR: '1',
-      CI: '1',
-    };
-    if (cliName === 'claude') {
-      delete childEnv.ANTHROPIC_API_KEY;
-    } else if (cliName === 'codex') {
-      delete childEnv.OPENAI_API_KEY;
-    }
-
-    const child = spawn(binPath, args, {
-      cwd: sandboxDir,
-      shell: isCmdWrapper,
-      windowsHide: true,
-      env: childEnv,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    let stdout = '';
-    let stderr = '';
-    let finished = false;
-
-    const timer = setTimeout(() => {
-      if (finished) return;
-      finished = true;
-      try {
-        child.kill();
-      } catch {
-        // ignore
+  await acquireCliSlot();
+  const sandboxDir = createRunSandboxDir();
+  try {
+    return await new Promise((resolve, reject) => {
+      const args = buildCliArgs(cliName, model);
+      const isCmdWrapper = process.platform === 'win32' && binPath.toLowerCase().endsWith('.cmd');
+      // claude / codex CLI はローカルの CLI ログインセッション（サブスクリプション認証）を使用するため、
+      // 環境変数に古い ANTHROPIC_API_KEY / OPENAI_API_KEY が残っていると "Invalid API key" エラーになるのを防ぐ。
+      const childEnv = {
+        ...process.env,
+        NO_COLOR: '1',
+        CI: '1',
+      };
+      if (cliName === 'claude') {
+        delete childEnv.ANTHROPIC_API_KEY;
+      } else if (cliName === 'codex') {
+        delete childEnv.OPENAI_API_KEY;
       }
-      reject(new Error(`AI CLI (${cliName}) がタイムアウトしました (${Math.round(timeoutMs / 1000)}秒)`));
-    }, timeoutMs);
 
-    child.stdout.on('data', (chunk) => {
-      stdout += chunk.toString('utf8');
+      const child = spawnImpl(binPath, args, {
+        cwd: sandboxDir,
+        shell: isCmdWrapper,
+        windowsHide: true,
+        env: childEnv,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+      let finished = false;
+
+      const timer = setTimeout(() => {
+        if (finished) return;
+        finished = true;
+        try {
+          child.kill();
+        } catch {
+          // ignore
+        }
+        reject(new Error(`AI CLI (${cliName}) がタイムアウトしました (${Math.round(timeoutMs / 1000)}秒)`));
+      }, timeoutMs);
+
+      child.stdout.on('data', (chunk) => {
+        stdout += chunk.toString('utf8');
+      });
+
+      child.stderr.on('data', (chunk) => {
+        stderr += chunk.toString('utf8');
+      });
+
+      child.on('error', (err) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        reject(err);
+      });
+
+      child.on('close', (code) => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        if (code !== 0 && !stdout.trim()) {
+          reject(
+            new Error(
+              `AI CLI (${cliName}) が終了コード ${code} で失敗しました: ${(stderr || '').slice(0, 400)}`,
+            ),
+          );
+          return;
+        }
+        try {
+          resolve({
+            cliName,
+            stdout: extractCliResponse(cliName, stdout),
+            stderr,
+            exitCode: code ?? 0,
+            sandboxDir,
+          });
+        } catch (err) {
+          reject(new Error(`${err.message || err}${stderr ? `: ${stderr.slice(0, 400)}` : ''}`));
+        }
+      });
+
+      child.stdin.write(buildCliInput(cliName, promptText), 'utf8');
+      child.stdin.end();
     });
-
-    child.stderr.on('data', (chunk) => {
-      stderr += chunk.toString('utf8');
-    });
-
-    child.on('error', (err) => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      reject(err);
-    });
-
-    child.on('close', (code) => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      if (code !== 0 && !stdout.trim()) {
-        reject(
-          new Error(
-            `AI CLI (${cliName}) が終了コード ${code} で失敗しました: ${(stderr || '').slice(0, 400)}`,
-          ),
-        );
-        return;
-      }
-      try {
-        resolve({
-          cliName,
-          stdout: extractCliResponse(cliName, stdout),
-          stderr,
-          exitCode: code ?? 0,
-        });
-      } catch (err) {
-        reject(new Error(`${err.message || err}${stderr ? `: ${stderr.slice(0, 400)}` : ''}`));
-      }
-    });
-
-    child.stdin.write(buildCliInput(cliName, promptText), 'utf8');
-    child.stdin.end();
-  });
+  } finally {
+    cleanupRunSandboxDir(sandboxDir);
+    releaseCliSlot();
+  }
 }
 
 /**
@@ -398,9 +464,13 @@ class AiCliError extends Error {
 module.exports = {
   AiCliError,
   SUPPORTED_CLIS,
+  DEFAULT_MAX_CONCURRENT_CLI_PROCESSES,
+  setMaxConcurrentCliProcesses,
   resolveExecutablePath,
   detectAvailableClis,
   ensureIsolatedSandboxDir,
+  createRunSandboxDir,
+  cleanupRunSandboxDir,
   normalizeCliModel,
   buildCliArgs,
   buildCliInput,

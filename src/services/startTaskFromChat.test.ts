@@ -38,7 +38,7 @@ it.each(['body', 'rename', 'bundle'] as const)('stops old-Vault updates and subs
   expect(storage.save).toHaveBeenCalledTimes(writes); expect(notify).not.toHaveBeenCalled(); expect(vault.GetBundles()).toHaveLength(0);
 });
 it('does not apply a saved task association to a Chat after its lifetime ends', async () => {
-  const bundle = new TTThink(); bundle.ID = 'task'; bundle.ContentType = 'bundle'; vault.AddThink(bundle);
+  const bundle = new TTThink(); bundle.ID = 'task'; bundle.ContentType = 'project'; vault.AddThink(bundle);
   let resolve!: (value: { updatedAt: string }) => void;
   storage.save.mockImplementationOnce(() => new Promise(r => { resolve = r; }));
   const lifetime = draftVaultLease(vault), before = chat.Content, notify = vi.spyOn(vault, 'NotifyUpdated');
@@ -106,9 +106,9 @@ it('reuses the saved Bundle after final Chat binding fails, including after loca
   const reloaded = new TTVault('vault'); reloaded.AddThink(chat); reloaded.AddThink(bundle);
   const result = await startTaskFromChat(reloaded, chat.ID, '課題');
   expect(result.ID).toBe(bundle.ID); expect(chat.Name).toContain('TASK:');
-  expect(storage.save.mock.calls.filter(([p]) => p.category === 'bundle')).toHaveLength(1);
+  expect(storage.save.mock.calls.filter(([p]) => p.category === 'project')).toHaveLength(1);
   await startTaskFromChat(reloaded, chat.ID, 'もう一度');
-  expect(storage.save.mock.calls.filter(([p]) => p.category === 'bundle')).toHaveLength(1);
+  expect(storage.save.mock.calls.filter(([p]) => p.category === 'project')).toHaveLength(1);
 });
 it('coalesces simultaneous task creation requests', async () => {
   const [a, b] = await Promise.all([startTaskFromChat(vault, chat.ID, '課題'), startTaskFromChat(vault, chat.ID, '課題')]);
@@ -143,7 +143,7 @@ it.each(['saved', 'failed'] as const)('waits for an expired %s creation before c
   expect(chat.Metadata.taskContext.bundleId).toBe(created.ID);
   const bindings = storage.save.mock.calls.map(([payload]) => payload.metadata?.taskContext?.bundleId).filter(Boolean);
   expect(bindings).toEqual([created.ID]);
-  expect(storage.save.mock.calls.filter(([payload]) => payload.category === 'bundle')).toHaveLength(2);
+  expect(storage.save.mock.calls.filter(([payload]) => payload.category === 'project')).toHaveLength(2);
 });
 it('rechecks a waiting lifetime and lets a later active lifetime retry safely', async () => {
   let finish!: (value: { updatedAt: string }) => void;

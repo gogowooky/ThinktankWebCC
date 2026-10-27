@@ -16,7 +16,7 @@ import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type SeedsViewMode = 'filter' | 'chat' | 'abstract' | 'settings';
+export type SeedsViewMode = 'filter' | 'chat' | 'project' | 'settings';
 
 export class TTSeedsPanel extends TTUIItem {
   /** SeedsAreaの開閉状態（true=開いている）*/
@@ -29,8 +29,11 @@ export class TTSeedsPanel extends TTUIItem {
   public AreaUserWidth: number = INIT_AREA_WIDTH.Seeds;
 
 
-  /** 表示中のBundleID（空 = 未選択）*/
-  public BundleID: string = '';
+  /** 表示中のProjectID（空 = 未選択）*/
+  public ProjectID: string = '';
+
+  public get BundleID(): string { return this.ProjectID; }
+  public set BundleID(val: string) { this.ProjectID = val; }
 
   /** チェックされているThink IDリスト（Thinktank/Seeds/Discuss/Harvest で共通） */
   public SharedState = { checkedIds: [] as string[] };
@@ -39,7 +42,7 @@ export class TTSeedsPanel extends TTUIItem {
     setPanelCheckedIds(this, 'SeedsPanel', val);
   }
 
-  /** 表示モード（filter/chat/abstract/settings）*/
+  /** 表示モード（filter/chat/project/settings）*/
   public ViewMode: SeedsViewMode = 'filter';
 
   /** MediaTypeの後方互換ゲッター（ViewModeから導出）*/
@@ -84,14 +87,14 @@ export class TTSeedsPanel extends TTUIItem {
     setPanelAreaOpen(this, false);
   }
 
-  // ── Bundle表示 ───────────────────────────────────────────────────────
+  // ── Project表示 ───────────────────────────────────────────────────────
 
   /**
-   * BundleをSeedsAreaで開く。
+   * ProjectをSeedsAreaで開く。
    * Areaが閉じていれば自動的に開く。
    */
-  public OpenBundle(bundleId: string, mediaType: MediaType = 'datagrid'): void {
-    this.BundleID = bundleId;
+  public OpenProject(projectId: string, mediaType: MediaType = 'datagrid'): void {
+    this.ProjectID = projectId;
     this.CheckedThoughtIDs = []; // チェッククリア
     if (mediaType !== 'settings' as string) {
       // datagrid メディアは Think一覧（filter）モードにマップする
@@ -101,15 +104,23 @@ export class TTSeedsPanel extends TTUIItem {
       this.IsAreaOpen = true;
     }
     this.NotifyUpdated();
-    TTUIStateManager.instance.notifyPropertyChanged('SeedsPanel.Bundle.ID');
+    TTUIStateManager.instance.notifyPropertyChanged('SeedsPanel.Project.ID');
   }
 
-  /** Bundle表示をクリアする */
-  public ClearBundle(): void {
-    this.BundleID = '';
+  public OpenBundle(bundleId: string, mediaType: MediaType = 'datagrid'): void {
+    this.OpenProject(bundleId, mediaType);
+  }
+
+  /** Project表示をクリアする */
+  public ClearProject(): void {
+    this.ProjectID = '';
     this.CheckedThoughtIDs = []; // チェッククリア
     this.NotifyUpdated();
-    TTUIStateManager.instance.notifyPropertyChanged('SeedsPanel.Bundle.ID');
+    TTUIStateManager.instance.notifyPropertyChanged('SeedsPanel.Project.ID');
+  }
+
+  public ClearBundle(): void {
+    this.ClearProject();
   }
 
   /** チェック状態を更新する */

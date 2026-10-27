@@ -72,7 +72,7 @@ describe('shared/vaultFormat', () => {
 
     const parsed = parseMdRecord(legacyMd, 'bundle_old_1');
     expect(parsed.thinkid).toBe('bundle_old_1');
-    expect(parsed.category).toBe('bundle');
+    expect(parsed.category).toBe('project');
     expect(parsed.body).toBe('本文テキスト');
     expect(parsed.legacyEmbeddedMetadata).toEqual({
       summary: '旧形式ではfrontmatterにsummaryが入っていた',

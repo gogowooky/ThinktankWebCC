@@ -6,6 +6,13 @@
  * [THINK:id,語] で開いたときの初回移動の両方が同じでなければならないので、ここだけに置く。
  */
 
+import {
+  buildWordPattern,
+  splitHighlighterGroups,
+  splitHighlighterWords,
+  type HighlighterPatternOptions,
+} from './highlighterPattern';
+
 export interface HighlightRange {
   startLineNumber: number;
   startColumn: number;
@@ -29,20 +36,30 @@ export interface HighlightEditor {
 }
 
 /** ヒット位置を先頭から順に返す。語が空・モデル無し・ヒット無しはいずれも空配列。 */
-export function findHighlightRanges(editor: HighlightEditor | null, highlightWord: string): HighlightRange[] {
+export function findHighlightRanges(
+  editor: HighlightEditor | null,
+  highlightWord: string,
+  options: HighlighterPatternOptions = {}
+): HighlightRange[] {
   const model = editor?.getModel();
   if (!model) return [];
-  const words = highlightWord
-    .split(/[,\s]+/)
-    .map(w => w.trim())
-    .filter(w => w.length > 0);
+
+  const groups = splitHighlighterGroups(highlightWord);
+  const words: string[] = [];
+  groups.forEach(g => {
+    words.push(...splitHighlighterWords(g));
+  });
   if (words.length === 0) return [];
 
-  // 語はそのまま探したいので、正規表現のメタ文字は打ち消してから OR で連結する
-  const pattern = words
-    .map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('|');
-  return model.findMatches(pattern, true, true, false, null, false)
-    .map(m => m.range)
-    .sort((a, b) => a.startLineNumber - b.startLineNumber || a.startColumn - b.startColumn);
+  const patterns = words.map(w => buildWordPattern(w, options));
+  const pattern = patterns.join('|');
+  const matchCase = options.matchCase ?? false;
+
+  try {
+    return model.findMatches(pattern, true, true, matchCase, null, false)
+      .map(m => m.range)
+      .sort((a, b) => a.startLineNumber - b.startLineNumber || a.startColumn - b.startColumn);
+  } catch {
+    return [];
+  }
 }

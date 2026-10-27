@@ -19,7 +19,7 @@ import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 export type ThinktankViewMode =
   | 'filter'    // Think一覧（タイトル/日時/種別フィルター・全文/AI検索を統合）
   | 'chat'      // AI相談
-  | 'abstract'  // 概要
+  | 'project'   // プロジェクト
   | 'settings'; // 保管庫設定
 
 export class TTThinktankPanel extends TTUIItem {
@@ -33,8 +33,11 @@ export class TTThinktankPanel extends TTUIItem {
   public AreaUserWidth: number = INIT_AREA_WIDTH.Thinktank;
 
 
-  /** 現在選択中のBundleID（空 = 未選択）*/
-  public SelectedBundleID: string = '';
+  /** 現在選択中のProjectID（空 = 未選択）*/
+  public SelectedProjectID: string = '';
+
+  public get SelectedBundleID(): string { return this.SelectedProjectID; }
+  public set SelectedBundleID(val: string) { this.SelectedProjectID = val; }
 
   /** 複数選択中の thinkid 一覧 */
   public SharedState = { checkedIds: [] as string[] };
@@ -94,21 +97,25 @@ export class TTThinktankPanel extends TTUIItem {
     setPanelAreaOpen(this, false);
   }
 
-  // ── Bundle選択 ───────────────────────────────────────────────────────
+  // ── Project選択 ───────────────────────────────────────────────────────
 
   /**
-   * Bundleを選択する。
-   * @returns 選択したBundleID
+   * Projectを選択する。
+   * @returns 選択したProjectID
    */
-  public SelectBundle(bundleId: string): string {
-    this.SelectedBundleID = bundleId;
+  public SelectProject(projectId: string): string {
+    this.SelectedProjectID = projectId;
     this.NotifyUpdated();
-    return bundleId;
+    return projectId;
   }
 
-  /** Bundle選択を解除する */
+  public SelectBundle(bundleId: string): string {
+    return this.SelectProject(bundleId);
+  }
+
+  /** Project選択を解除する */
   public ClearSelection(): void {
-    this.SelectedBundleID = '';
+    this.SelectedProjectID = '';
     this.NotifyUpdated();
   }
 

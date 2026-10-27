@@ -17,7 +17,7 @@ afterEach(() => vi.unstubAllGlobals());
 const event = { id: 'confirmed', revision: 1, author: 'human' as const, confirmedAt: '2026-09-24T00:00:00Z',
   input: { ...emptyProgress(), milestones: { ...emptyProgress().milestones, execution: 'achieved' as const }, evidence: '予約済みを確認', remaining: '参加者数の確認', paused: true, resumeCondition: '返事が届いたら' } };
 function child(id: string, parentId = 'parent') {
-  const think = new TTThink(); think.ID = id; think.ContentType = 'bundle'; think.Content = `# ${id}\n秘密の本文`;
+  const think = new TTThink(); think.ID = id; think.ContentType = 'project'; think.Content = `# ${id}\n秘密の本文`;
   think.Metadata = { taskRelation: { schemaVersion: 1, parentId, chatId: 'chat', turnId: 'turn', panel: 'Discuss' }, thinkProgress: { schemaVersion: 1, events: [structuredClone(event)] } };
   think.markSaved(); think.markMetadataSaved(); return think;
 }
@@ -59,7 +59,7 @@ it('carries the captured child status into a saved turn and reviewable next-acti
     answer: { reply: 'childの本人確認済み記録では参加者数の確認が残っています。', insufficientEvidence: false, citations: [],
       proposals: [{ field: 'nextAction', before: '', after: '参加者の返事を確認する', reason: '子課題の残作業' }], progressProposals: [] } };
   expect(readConversationLog({ schemaVersion: 1, turns: [turn] }).turns[0].context.subtasks).toEqual(context.subtasks);
-  const reviewed = prepareProposalReview(turn, { thinkid: 'parent', category: 'bundle', metadata: {} } as ThinkMeta);
+  const reviewed = prepareProposalReview(turn, { thinkid: 'parent', category: 'project', metadata: {} } as ThinkMeta);
   expect(reviewed.values.nextAction).toBe('参加者の返事を確認する');
   expect(JSON.stringify(vault.GetThinks().map(t => t.Metadata))).toBe(original);
 });

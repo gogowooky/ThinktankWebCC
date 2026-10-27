@@ -9,7 +9,7 @@
 
 import { useState, useMemo, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
-  FileText, Lightbulb, Table, Link, MessagesSquare, Globe, BotMessageSquare,
+  FileText, Target, Table, Link, MessagesSquare, Globe,
   RefreshCcw, ChevronDown, ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
@@ -23,22 +23,20 @@ import './CardMedia.css';
 
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo:    FileText,
-  bundle:  Lightbulb,
+  project: Target,
   table:   Table,
   links:   Link,
   chat:    MessagesSquare,
-  html: Globe,
-  abstract: BotMessageSquare,
+  html:    Globe,
 };
 
 const CONTENT_COLORS: Record<ContentType, string> = {
   memo:    '#3b78c4',
-  bundle:  '#c9a227',
+  project: '#c9a227',
   table:   '#2e7d32',
   links:   '#7b1fa2',
   chat:    '#d32f2f',
-  html: '#00695c',
-  abstract: '#00838f',
+  html:    '#00695c',
 };
 
 function plainText(content: string): string {
@@ -227,10 +225,10 @@ function ThinkCardView({ think, vault }: MediaProps) {
   const [filter, setFilter] = useState('');
 
   const allItems = useMemo<TTThink[]>(() => {
-    if (think?.ContentType === 'bundle') {
-      return vault.GetThinksForBundle(think.ID);
+    if (think?.ContentType === 'project') {
+      return vault.GetThinksForProject(think.ID);
     }
-    return vault.GetThinks().filter(t => t.ContentType !== 'bundle');
+    return vault.GetThinks().filter(t => t.ContentType !== 'project');
   }, [think, vault]);
 
   const filtered = useMemo<TTThink[]>(() => {

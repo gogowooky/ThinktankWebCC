@@ -8,7 +8,7 @@ function fixture() {
   const vault = new TTVault('vault');
   const chat = new TTThink(); chat.ID = 'chat'; chat.ContentType = 'chat'; chat.Content = 'ASK:Thinktank｜新しい相談'; vault.AddThink(chat);
   for (const [id, title, goal] of [['reading', '読書会の準備', '読書を通じて交流する'], ['travel', '旅行', '京都を巡る']]) {
-    const b = new TTThink(); b.ID = id; b.ContentType = 'bundle'; b.Content = title;
+    const b = new TTThink(); b.ID = id; b.ContentType = 'project'; b.Content = title;
     b.Metadata.thinkSupport = { values: { goal, completionCriteria: '開催結果を記録する' } }; vault.AddThink(b);
   }
   return vault;
@@ -28,7 +28,7 @@ it('does not claim matches for empty consultations or other vault histories', ()
   expect(() => findSimilarTasks(fixture(), 'chat', [turn('読書会', 'other')])).toThrow('少ない');
 });
 it('excludes the current task and ordinary collections, and returns no match honestly', () => {
-  const vault = fixture(); const b = new TTThink(); b.ID = 'collection'; b.ContentType = 'bundle'; b.Content = '読書会の資料集'; vault.AddThink(b);
+  const vault = fixture(); const b = new TTThink(); b.ID = 'collection'; b.ContentType = 'project'; b.Content = '読書会の資料集'; vault.AddThink(b);
   expect(findSimilarTasks(vault, 'chat', [turn('読書会')], 'reading').results).toEqual([]);
   expect(findSimilarTasks(vault, 'chat', [turn('野球大会')]).results).toEqual([]);
 });

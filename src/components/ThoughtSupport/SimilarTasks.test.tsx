@@ -12,7 +12,7 @@ beforeEach(() => {
   vi.clearAllMocks(); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   host = document.createElement('div'); root = createRoot(host); vault = new TTVault('vault');
   const chat = new TTThink(); chat.ID = 'chat'; chat.ContentType = 'chat'; chat.Content = 'ASK:Thinktank｜読書会'; vault.AddThink(chat);
-  const task = new TTThink(); task.ID = 'task'; task.ContentType = 'bundle'; task.Content = '読書会の開催';
+  const task = new TTThink(); task.ID = 'task'; task.ContentType = 'project'; task.Content = '読書会の開催';
   task.Metadata.thinkSupport = { values: { goal: '読書を楽しむ', completionCriteria: '開催する' } }; vault.AddThink(task);
   history.mockResolvedValue([]);
 });
