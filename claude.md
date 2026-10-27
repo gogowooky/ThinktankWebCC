@@ -33,6 +33,8 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - コンポーネントは `src/components/<FeatureName>/` に配置
 - 画面と electron/ の両方で使う型・検証は `shared/`（記録の契約は `shared/contracts/`）に置く
 - コメントは WHY のみ。WHAT は書かない
+- `Working`/`working` はパネル名（WorkingPanel・WorkingSettingPanel、旧 Discuss）専用。処理中・作業ディレクトリ等の意味では使わず `isBusy`・`isRunning`・`cwd` などにする（grep でパネル関連を一意に拾うため）
+- 旧パネル名（Workout/Develop/Discuss 等）の読み替えは `src/utils/panelNames.ts` などの互換レイヤーに集約し、ユーザーの指示があるまで削除しない
 
 ## 重要な注意事項
 - Express サーバー（`server/`・`dist-server/`）と Cloud Run は廃止済み。HTTP の API サーバーを新設しない
