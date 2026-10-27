@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "7a580bd",
-  "commitDateTime": "2026-10-20-222324",
-  "commitMessage": "feat: abstract種別と概要サブパネルを追加し、各パネルのメニューと設定画面を整理"
+  "commitId": "de8f37d",
+  "commitDateTime": "2026-10-27-225519",
+  "commitMessage": "feat: AI対話の並列処理と競合リトライ、ハイライト表記統一、データ接続設定の分離"
 }
