@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.3",
+  "version": "2.6.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "de8f37d",
-  "commitDateTime": "2026-10-27-225519",
-  "commitMessage": "feat: AI対話の並列処理と競合リトライ、ハイライト表記統一、データ接続設定の分離"
+  "commitId": "1e0ff7f",
+  "commitDateTime": "2026-10-28-144602",
+  "commitMessage": "feat: Thinktank MCPサーバー連携を追加"
 }
