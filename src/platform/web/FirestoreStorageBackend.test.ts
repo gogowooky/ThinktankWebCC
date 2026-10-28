@@ -123,6 +123,35 @@ it('excludes soft-deleted documents from the canonical list', async () => {
   expect(listed[0].thinkid).toBe('a');
 });
 
+it('returns the list before syncing PC backups and compares them through the local index', async () => {
+  const other = storedDocument('2026-10-20T00:00:00.000Z');
+  other.fields.thinkid = { stringValue: 'b' };
+  vi.stubGlobal('fetch', vi.fn(async () =>
+    new Response(JSON.stringify({ documents: [storedDocument(), other] }), { status: 200 }),
+  ));
+  let releaseIndex = () => {};
+  const indexRead = new Promise<void>((resolve) => { releaseIndex = resolve; });
+  const writeBackup = vi.fn(async () => {});
+  const getRecord = vi.fn();
+  vi.stubGlobal('window', { electronAPI: { storage: {
+    writeBackup,
+    getRecord,
+    listMeta: vi.fn(async () => {
+      await indexRead;
+      return [{ thinkid: 'a', updatedAt: '2026-10-19T00:00:00.000Z' }, { thinkid: 'b', updatedAt: '2026-10-01T00:00:00.000Z' }];
+    }),
+  } } });
+
+  const listed = await new FirestoreStorageBackend().listMeta();
+  expect(listed.map((meta) => meta.thinkid)).toEqual(['b', 'a']);
+  expect(writeBackup).not.toHaveBeenCalled();
+
+  releaseIndex();
+  await vi.waitFor(() => expect(writeBackup).toHaveBeenCalledTimes(1));
+  expect(writeBackup).toHaveBeenCalledWith(expect.objectContaining({ thinkid: 'b' }));
+  expect(getRecord).not.toHaveBeenCalled();
+});
+
 it('migrates legacy bundle documents in Firestore to project category during listMeta', async () => {
   const bundleDoc = storedDocument();
   bundleDoc.fields.category = { stringValue: 'bundle' };

@@ -429,6 +429,18 @@ function createWindow(startUrl) {
     if (severe) console.log(`[renderer:${level}] ${message}`);
   });
 
+  // 地図・検索タグなどの外部ページは既定ブラウザで開く。Google ログインのポップアップだけは
+  // 開いた画面へ結果を返す必要があるのでアプリ内に残す
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    let parsed;
+    try { parsed = new URL(url); } catch { return { action: 'deny' }; }
+    if (parsed.hostname === 'accounts.google.com') return { action: 'allow' };
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      shell.openExternal(url).catch((err) => console.error('[main] 外部ブラウザで開けませんでした:', err));
+    }
+    return { action: 'deny' };
+  });
+
   win.webContents.on('did-fail-load', (_e, code, desc, url) => {
     console.error(`[main] 画面の読み込みに失敗: ${desc} (${code}) ${url}`);
   });

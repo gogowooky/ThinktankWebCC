@@ -254,6 +254,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
   private readonly vaultId: string;
   private records = new Map<string, StoredThinkRecord>();
   private hasLoadedList = false;
+  private backupSync: Promise<void> = Promise.resolve();
 
   constructor(vaultId = '') {
     this.vaultId = getVaultId(vaultId);
@@ -517,7 +518,10 @@ export class FirestoreStorageBackend implements IStorageBackend {
 
     this.records = nextRecords;
     this.hasLoadedList = true;
-    await this.syncElectronMarkdownBackups(nextRecords, deletedIds);
+    // G: 上の数千件のbackup書き出しを待つと一覧表示が数十秒遅れるため、表示後に順番に追従させる
+    this.backupSync = this.backupSync
+      .then(() => this.syncElectronMarkdownBackups(nextRecords, deletedIds))
+      .catch((error) => console.warn('[FirestoreStorageBackend] Markdownバックアップの同期に失敗しました', error));
     return [...nextRecords.values()]
       .map((record) => record.meta)
       .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
@@ -872,7 +876,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
     body: string;
   }): Promise<void> {
     const storage = typeof window !== 'undefined' ? window.electronAPI?.storage : undefined;
-    if (!storage?.save) return;
+    if (!storage?.save && !storage?.writeBackup) return;
     const fullContent = record.body
       ? `${record.meta.title}\n${record.body}`
       : record.meta.title;
@@ -904,13 +908,25 @@ export class FirestoreStorageBackend implements IStorageBackend {
   ): Promise<void> {
     const storage = typeof window !== 'undefined' ? window.electronAPI?.storage : undefined;
     if (!storage?.writeBackup) return;
+    // 1件ずつ getRecord すると .md を全件読むことになるので、ローカル索引の一覧1回で比較する
+    let localUpdatedAt: Map<string, string> | null = null;
+    if (storage.listMeta) {
+      try {
+        localUpdatedAt = new Map((await storage.listMeta()).map((meta) => [meta.thinkid, meta.updatedAt]));
+      } catch (error) {
+        console.warn('[FirestoreStorageBackend] ローカル索引を読めないため1件ずつ比較します', error);
+      }
+    }
     for (const id of deletedIds) {
+      if (localUpdatedAt && !localUpdatedAt.has(id)) continue;
       await this.deleteElectronMarkdownBackup(id);
     }
     for (const record of records.values()) {
       try {
-        const local = storage.getRecord ? await storage.getRecord(record.meta.thinkid) : null;
-        if (local?.meta.updatedAt === record.meta.updatedAt) continue;
+        const localVersion = localUpdatedAt
+          ? localUpdatedAt.get(record.meta.thinkid)
+          : (storage.getRecord ? await storage.getRecord(record.meta.thinkid) : null)?.meta.updatedAt;
+        if (localVersion === record.meta.updatedAt) continue;
         await this.writeElectronMarkdownBackup(record);
       } catch (error) {
         console.warn(
