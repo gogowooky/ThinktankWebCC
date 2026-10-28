@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.4",
+  "version": "2.6.5",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "1e0ff7f",
-  "commitDateTime": "2026-10-28-144602",
-  "commitMessage": "feat: Thinktank MCPサーバー連携を追加"
+  "commitId": "043a8e1",
+  "commitDateTime": "2026-10-28-192636",
+  "commitMessage": "perf: バックアップ同期を非同期化し外部リンクをブラウザで開く"
 }
