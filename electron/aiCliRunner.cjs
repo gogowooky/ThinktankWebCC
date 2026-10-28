@@ -12,6 +12,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
+const { startMcpBridgeServer } = require('./mcpBridge.cjs');
 
 const SUPPORTED_CLIS = ['claude', 'codex', 'antigravity'];
 const DEFAULT_MAX_CONCURRENT_CLI_PROCESSES = 4;
@@ -20,6 +21,15 @@ const DEFAULT_MAX_CONCURRENT_CLI_PROCESSES = 4;
 let maxConcurrentCliProcesses = DEFAULT_MAX_CONCURRENT_CLI_PROCESSES;
 let activeCliProcessCount = 0;
 const cliWaitQueue = [];
+let defaultMcpHost = null;
+
+function setDefaultMcpHost(mcpHost) {
+  defaultMcpHost = mcpHost || null;
+}
+
+function getDefaultMcpHost() {
+  return defaultMcpHost;
+}
 
 function setMaxConcurrentCliProcesses(limit) {
   const n = Number(limit);
@@ -184,11 +194,70 @@ function normalizeCliModel(cliName, modelOverride) {
 }
 
 /**
+ * サンドボックスディレクトリ内に Thinktank MCP サーバー接続設定ファイルを生成する。
+ * - Claude Code 用: mcp-config.json / .mcp.json
+ * - Antigravity CLI 用: .agents/mcp_config.json
+ * - Codex CLI 用: .codex/config.toml
+ */
+function prepareSandboxMcpConfig(sandboxDir, options = {}) {
+  const mcpServerScript = options.mcpServerScript || path.join(__dirname, 'mcpServer.cjs');
+  const execCommand = options.execCommand || process.execPath;
+  const env = {
+    ELECTRON_RUN_AS_NODE: '1',
+    ...(options.pipePath ? { THINKTANK_MCP_PIPE: options.pipePath } : {}),
+    ...(options.vaultDir ? { THINKTANK_VAULT_DIR: options.vaultDir } : {}),
+    ...(options.userDataDir ? { THINKTANK_USER_DATA_DIR: options.userDataDir } : {}),
+    ...(options.projectId ? { THINKTANK_DEFAULT_PROJECT_ID: options.projectId } : {}),
+  };
+
+  const mcpJsonObj = {
+    mcpServers: {
+      thinktank: {
+        command: execCommand,
+        args: [mcpServerScript],
+        env,
+      },
+    },
+  };
+  const mcpJsonText = JSON.stringify(mcpJsonObj, null, 2) + '\n';
+
+  const mcpConfigPath = path.join(sandboxDir, 'mcp-config.json');
+  fs.writeFileSync(mcpConfigPath, mcpJsonText, 'utf8');
+  fs.writeFileSync(path.join(sandboxDir, '.mcp.json'), mcpJsonText, 'utf8');
+
+  const agyAgentsDir = path.join(sandboxDir, '.agents');
+  fs.mkdirSync(agyAgentsDir, { recursive: true });
+  fs.writeFileSync(path.join(agyAgentsDir, 'mcp_config.json'), mcpJsonText, 'utf8');
+
+  const codexDir = path.join(sandboxDir, '.codex');
+  fs.mkdirSync(codexDir, { recursive: true });
+  const envTomlEntries = Object.entries(env)
+    .map(([k, v]) => `${k} = ${JSON.stringify(String(v))}`)
+    .join(', ');
+  const codexToml = [
+    '[mcp_servers.thinktank]',
+    `command = ${JSON.stringify(execCommand)}`,
+    `args = [${JSON.stringify(mcpServerScript)}]`,
+    `env = { ${envTomlEntries} }`,
+    '',
+  ].join('\n');
+  fs.writeFileSync(path.join(codexDir, 'config.toml'), codexToml, 'utf8');
+
+  return {
+    mcpConfigPath,
+    mcpServerScript,
+    execCommand,
+    env,
+  };
+}
+
+/**
  * CLI 種別ごとの設定隔離コマンド引数を組み立てる。
  * プロンプト本文は長大になるためコマンドライン引数ではなく標準入力（stdin）から渡す。
  */
-function buildCliArgs(cliName, modelOverride) {
+function buildCliArgs(cliName, modelOverride, options = {}) {
   const normalizedModel = normalizeCliModel(cliName, modelOverride);
+  const mcpConfigPath = options && typeof options.mcpConfigPath === 'string' ? options.mcpConfigPath : null;
   switch (cliName) {
     case 'claude': {
       const args = [
@@ -200,6 +269,9 @@ function buildCliArgs(cliName, modelOverride) {
         '--output-format',
         'text',
       ];
+      if (mcpConfigPath) {
+        args.push('--mcp-config', mcpConfigPath, '--allowedTools', 'mcp__thinktank__*');
+      }
       if (normalizedModel) {
         args.push('--model', normalizedModel);
       }
@@ -285,6 +357,8 @@ async function executeIsolatedCli({
   timeoutMs = 120_000,
   spawnImpl = spawn,
   binPathOverride,
+  mcpHost,
+  projectId,
 }) {
   const binPath = binPathOverride || resolveExecutablePath(cliName);
   if (!binPath) {
@@ -293,9 +367,28 @@ async function executeIsolatedCli({
 
   await acquireCliSlot();
   const sandboxDir = createRunSandboxDir();
+  const activeMcpHost = mcpHost !== undefined ? mcpHost : defaultMcpHost;
+  let bridgeServer = null;
   try {
+    if (activeMcpHost) {
+      bridgeServer = await startMcpBridgeServer(activeMcpHost);
+    }
+    const vaultDir =
+      activeMcpHost && activeMcpHost.vaultEngine && typeof activeMcpHost.vaultEngine.getVaultDir === 'function'
+        ? activeMcpHost.vaultEngine.getVaultDir()
+        : undefined;
+    const userDataDir =
+      activeMcpHost && activeMcpHost.vaultEngine ? activeMcpHost.vaultEngine.userDataDir : undefined;
+
+    const { mcpConfigPath } = prepareSandboxMcpConfig(sandboxDir, {
+      pipePath: bridgeServer ? bridgeServer.pipePath : undefined,
+      vaultDir,
+      userDataDir,
+      projectId,
+    });
+
     return await new Promise((resolve, reject) => {
-      const args = buildCliArgs(cliName, model);
+      const args = buildCliArgs(cliName, model, { mcpConfigPath });
       const isCmdWrapper = process.platform === 'win32' && binPath.toLowerCase().endsWith('.cmd');
       // claude / codex CLI はローカルの CLI ログインセッション（サブスクリプション認証）を使用するため、
       // 環境変数に古い ANTHROPIC_API_KEY / OPENAI_API_KEY が残っていると "Invalid API key" エラーになるのを防ぐ。
@@ -377,6 +470,9 @@ async function executeIsolatedCli({
       child.stdin.end();
     });
   } finally {
+    if (bridgeServer) {
+      await bridgeServer.close().catch(() => {});
+    }
     cleanupRunSandboxDir(sandboxDir);
     releaseCliSlot();
   }
@@ -406,9 +502,11 @@ async function runDomainAiConversation(params) {
     recentMessages,
     userMessage,
     timeoutMs = 120_000,
+    mcpHost,
   } = params;
 
   const resolvedProfile = profile || shared.getBuiltinDomainProfile('clinical-trial');
+  const activeMcpHost = mcpHost !== undefined ? mcpHost : defaultMcpHost;
   const promptText = shared.buildConversationPrompt({
     profile: resolvedProfile,
     panelRole,
@@ -425,6 +523,7 @@ async function runDomainAiConversation(params) {
     relatedDocuments,
     recentMessages,
     userMessage,
+    mcpEnabled: true,
   });
 
   // 指定された CLI が無ければ、インストール済みの他の CLI へ自動で切り替える
@@ -444,7 +543,14 @@ async function runDomainAiConversation(params) {
   // 利用者が AI が資料を読んで答えたと思い込み、誤った内容を記録に残すおそれがあった。
   let execResult;
   try {
-    execResult = await executeIsolatedCli({ cliName: selectedCli, model, promptText, timeoutMs });
+    execResult = await executeIsolatedCli({
+      cliName: selectedCli,
+      model,
+      promptText,
+      timeoutMs,
+      mcpHost: activeMcpHost,
+      projectId: params.projectId || bundleId,
+    });
   } catch (err) {
     throw new AiCliError(`AI CLI（${selectedCli}）の実行に失敗しました: ${err.message || err}`);
   }
@@ -466,11 +572,14 @@ module.exports = {
   SUPPORTED_CLIS,
   DEFAULT_MAX_CONCURRENT_CLI_PROCESSES,
   setMaxConcurrentCliProcesses,
+  setDefaultMcpHost,
+  getDefaultMcpHost,
   resolveExecutablePath,
   detectAvailableClis,
   ensureIsolatedSandboxDir,
   createRunSandboxDir,
   cleanupRunSandboxDir,
+  prepareSandboxMcpConfig,
   normalizeCliModel,
   buildCliArgs,
   buildCliInput,

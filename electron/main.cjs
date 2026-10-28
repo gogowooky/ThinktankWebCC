@@ -8,6 +8,7 @@ const { validateOpenPath } = require('./openPath.cjs');
 const { VaultEngine } = require('./vaultEngine.cjs');
 const aiCliRunner = require('./aiCliRunner.cjs');
 const { RelayAgent } = require('./relayAgent.cjs');
+const { ThinktankMcpHost } = require('./mcpBridge.cjs');
 const { loadDesktopClient, signInWithGoogleLoopback } = require('./googleLoopbackAuth.cjs');
 
 const GOOGLE_DESKTOP_CLIENT_FILE = 'google-oauth-desktop.json';
@@ -99,6 +100,44 @@ const relayAgent = new RelayAgent({
   vaultEngine,
   aiCliRunner,
 });
+
+const mcpHost = new ThinktankMcpHost({
+  vaultEngine,
+  isThinkDirty: async (thinkid) => {
+    const wins = BrowserWindow.getAllWindows();
+    for (const win of wins) {
+      if (win.isDestroyed()) continue;
+      try {
+        const dirty = await win.webContents.executeJavaScript(
+          `Boolean(window.__ttIsThinkDirty && window.__ttIsThinkDirty(${JSON.stringify(String(thinkid))}))`,
+        );
+        if (dirty) return true;
+      } catch {
+        // ignore renderer probe failure
+      }
+    }
+    return false;
+  },
+  onRecordMutated: async (event) => {
+    const record = event.thinkid ? vaultEngine.getRecord(event.thinkid) : null;
+    const projectRecord =
+      event.projectId && event.projectId !== event.thinkid
+        ? vaultEngine.getRecord(event.projectId)
+        : null;
+    const payload = {
+      ...event,
+      record,
+      projectRecord,
+    };
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        win.webContents.send('vault:mcp-mutated', payload);
+      }
+    }
+  },
+});
+
+aiCliRunner.setDefaultMcpHost(mcpHost);
 
 // ── IPC ハンドラー（Storage / Vault v1） ────────────────────────────────────
 

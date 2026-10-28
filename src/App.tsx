@@ -95,7 +95,21 @@ export default function App() {
     //   - Electron のパッケージ版は electron/main.cjs の close ハンドラーが下の window 関数を使う
     const hasUnsavedChanges = () => app.DiscussPanel.Areas.some(a => a.IsDirty)
     window.__ttHasUnsavedChanges = hasUnsavedChanges
+    window.__ttIsThinkDirty = (thinkId: string) =>
+      app.DiscussPanel.Areas.some(a => a.IsDirty && a.ResourceID === thinkId) ||
+      Boolean(vault.GetThink(thinkId)?.IsDirty)
     window.__ttFlushAllSaves = () => flushAllPanes()
+
+    const unsubscribeMcpMutated = window.electronAPI?.vault?.onMcpMutated?.(payload => {
+      void (async () => {
+        if (payload.record) {
+          await vault.ApplyMcpRecordSync(payload.record)
+        }
+        if (payload.projectRecord) {
+          await vault.ApplyMcpRecordSync(payload.projectRecord)
+        }
+      })()
+    })
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       void flushAllPanes()
@@ -177,7 +191,9 @@ export default function App() {
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('pagehide', handlePageHide)
       document.removeEventListener('visibilitychange', handleFlushOnHide)
+      unsubscribeMcpMutated?.()
       delete window.__ttHasUnsavedChanges
+      delete window.__ttIsThinkDirty
       delete window.__ttFlushAllSaves
       cancelAnimationFrame(_focusRaf)
     }

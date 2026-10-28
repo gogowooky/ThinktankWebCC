@@ -13,3 +13,4 @@ export * from './responseValidator';
 export * from './relayProtocol';
 export * from './relayCrypto';
 export * from './firebaseAuth';
+export * from './mcpProtocol';

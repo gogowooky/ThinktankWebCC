@@ -45,6 +45,22 @@ export interface ElectronRelayStatus {
   isProcessing?: boolean;
 }
 
+export interface ElectronMcpMutatedRecord {
+  meta: ThinkMeta;
+  body: string;
+  support?: Record<string, unknown>;
+  updatedAt: string;
+}
+
+export interface ElectronMcpMutationPayload {
+  action: 'create' | 'update' | 'promotion_candidate';
+  thinkid: string;
+  projectId?: string;
+  candidateId?: string;
+  record?: ElectronMcpMutatedRecord | null;
+  projectRecord?: ElectronMcpMutatedRecord | null;
+}
+
 declare global {
   interface Window {
     electronAPI?: {
@@ -65,6 +81,7 @@ declare global {
         selectFolder:  () => Promise<ElectronVaultConfig | null>;
         listConflicts: () => Promise<Array<DriveConflictFileInfo & { sizeBytes: number; mtimeIso: string }>>;
         writeShard:    () => Promise<IndexShardV1>;
+        onMcpMutated?: (callback: (payload: ElectronMcpMutationPayload) => void) => () => void;
       };
       profile?: {
         getActive:     () => Promise<DomainProfile>;

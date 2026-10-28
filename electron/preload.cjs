@@ -20,6 +20,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     selectFolder:  ()                            => ipcRenderer.invoke('vault:selectFolder'),
     listConflicts: ()                            => ipcRenderer.invoke('vault:listConflicts'),
     writeShard:    ()                            => ipcRenderer.invoke('vault:writeShard'),
+    onMcpMutated:  (callback)                    => {
+      const handler = (_event, payload) => callback(payload);
+      ipcRenderer.on('vault:mcp-mutated', handler);
+      return () => ipcRenderer.removeListener('vault:mcp-mutated', handler);
+    },
   },
   profile: {
     getActive:     ()                            => ipcRenderer.invoke('profile:getActive'),

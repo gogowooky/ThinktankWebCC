@@ -537,6 +537,76 @@ export class TTVault extends TTCollection {
     return this._createThink({ id, contentType, keywords, fullContent });
   }
 
+  /**
+   * AI CLI が MCP サーバー経由で作成・更新したレコードを Firestore 正本およびインメモリ Vault へ同期反映する。
+   */
+  public async ApplyMcpRecordSync(record: {
+    meta: {
+      thinkid: string;
+      category: string;
+      title: string;
+      keywords?: string | null;
+      relatedIds?: string | null;
+      updatedAt?: string;
+      metadata?: Record<string, unknown>;
+    };
+    body: string;
+    support?: Record<string, unknown>;
+  }): Promise<TTThink> {
+    const id = record.meta.thinkid;
+    const rawCat = record.meta.category || 'memo';
+    const contentType = (rawCat === 'bundle' ? 'project' : rawCat === 'abstract' ? 'memo' : rawCat) as ContentType;
+    const fullContent = record.body ? `${record.meta.title}\n${record.body}` : record.meta.title;
+    const mergedMetadata = {
+      ...(record.meta.metadata ?? {}),
+      ...(record.support ?? {}),
+    };
+
+    let think = this.GetThink(id);
+    if (!think) {
+      think = new TTThink();
+      think.ID = id;
+      think.VaultID = this.ID;
+      think._parent = this;
+      this._children.set(id, think);
+      this.Count = this._children.size;
+      this.InvalidateItemsCache();
+    }
+
+    think.ContentType = contentType;
+    think.Keywords = record.meta.keywords ?? '';
+    think.RelatedIDs = record.meta.relatedIds ?? '';
+    think.IsMetaOnly = false;
+    think.setContentSilent(fullContent);
+    if (Object.keys(mergedMetadata).length > 0) {
+      think.Metadata = mergedMetadata;
+      think.markMetadataSaved();
+    }
+    if (record.meta.updatedAt) {
+      think.UpdatedAt = record.meta.updatedAt;
+    }
+    think.markSaved();
+
+    try {
+      const saved = await StorageManager.instance.save({
+        thinkid: id,
+        category: contentType,
+        fullContent,
+        keywords: think.Keywords,
+        relatedIds: think.RelatedIDs,
+        ...(Object.keys(mergedMetadata).length > 0 ? { metadata: mergedMetadata } : {}),
+      });
+      if (saved?.updatedAt) {
+        think.UpdatedAt = saved.updatedAt;
+      }
+    } catch (err) {
+      console.warn(`[TTVault] ApplyMcpRecordSync Firestore sync warning (${id}):`, err);
+    }
+
+    this.NotifyUpdated();
+    return think;
+  }
+
   /** 指定 ID の Think を 保存先から削除しメモリからも除去する。
    *  一部の削除が失敗した場合でも成功した分はメモリからも除去し（サーバーと状態を
    *  一致させる）、失敗した ID を含むエラーを呼び出し元に通知する。 */

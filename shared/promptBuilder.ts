@@ -53,6 +53,10 @@ export interface BuildConversationPromptParams {
   relatedDocuments?: PromptDocumentContext[];
   recentMessages?: PromptChatMessage[];
   userMessage: string;
+  /** Thinktank MCP サーバーが接続されている場合にツール利用案内を含める（既定: true） */
+  mcpEnabled?: boolean;
+  /** MCP有効時に関連資料の抜粋を圧縮してオンデマンド取得を促す1件あたり最大文字数（既定: 600） */
+  mcpExcerptMaxLength?: number;
 }
 
 function normalizePanelId(role?: PanelRoleKey): PanelId {
@@ -84,6 +88,8 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
     relatedDocuments = [],
     recentMessages = [],
     userMessage,
+    mcpEnabled = true,
+    mcpExcerptMaxLength = 600,
   } = params;
 
   const panelId = normalizePanelId(panelRole);
@@ -170,12 +176,34 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
   if (relatedDocuments.length > 0) {
     lines.push('');
     lines.push('## Related Vault Documents (Evidence Sources)');
+    const maxExcerptChars = mcpEnabled ? mcpExcerptMaxLength : 2000;
     for (const doc of relatedDocuments.slice(0, 15)) {
       lines.push(`### [thinkid: ${doc.thinkid}] ${doc.title}`);
+      if (doc.category) lines.push(`Category: ${doc.category}`);
       if (doc.updatedAt) lines.push(`UpdatedAt: ${doc.updatedAt}`);
-      lines.push(doc.excerpt.slice(0, 2000));
+      const trimmedExcerpt = doc.excerpt.slice(0, maxExcerptChars);
+      lines.push(
+        mcpEnabled && doc.excerpt.length > maxExcerptChars
+          ? `${trimmedExcerpt}\n...(※全文は MCP ツール thinktank_get_record で thinkid="${doc.thinkid}" を指定して取得できます)`
+          : trimmedExcerpt,
+      );
       lines.push('');
     }
+  }
+
+  if (mcpEnabled) {
+    lines.push('');
+    lines.push('# Available Thinktank MCP Tools');
+    lines.push(
+      '本セッションでは Thinktank MCP サーバー（`thinktank`）が接続されています。必要に応じて以下のツールを自律的に呼び出してください：',
+    );
+    lines.push('- `thinktank_search`: Vault内の関連メモ・課題・過去事例をキーワードやタグで全文検索する');
+    lines.push('- `thinktank_list_meta`: Vault全体または特定Projectに紐づくThinkのメタデータ一覧を取得する');
+    lines.push('- `thinktank_get_record`: 指定 `thinkid` の全文（body）および思考支援メタデータ（support）を取得する');
+    lines.push('- `thinktank_get_project_context`: 指定 `projectId` の目標・Gate状態・昇格済みレコード・関連Thinkを一括取得する');
+    lines.push('- `thinktank_create_think`: ユーザーの依頼に基づき新規Think（memo / task / links / table）を作成しProjectに紐づける');
+    lines.push('- `thinktank_update_think`: 既存Thinkを更新する（事前に `thinktank_get_record` で取得した `expectedVersion` が必須）');
+    lines.push('- `thinktank_add_promotion_candidate`: 重要な決定・根拠・リスク等をProjectの昇格候補（`pending_review`）として登録する');
   }
 
   if (recentMessages.length > 0) {

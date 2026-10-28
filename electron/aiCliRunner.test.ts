@@ -110,9 +110,17 @@ describe('Parallel AI CLI execution and sandbox isolation', () => {
     const spawnedDirs: string[] = [];
     const finishes: Array<() => void> = [];
 
-    const fakeSpawn = vi.fn((_bin: string, _args: string[], opts: { cwd: string }) => {
+    const fakeSpawn = vi.fn((bin: string, args: string[], opts: { cwd: string }) => {
       spawnedDirs.push(opts.cwd);
       expect(fs.existsSync(opts.cwd)).toBe(true);
+      // サンドボックス内に各CLI用のMCP設定ファイルが自動生成されていること
+      expect(fs.existsSync(join(opts.cwd, 'mcp-config.json'))).toBe(true);
+      expect(fs.existsSync(join(opts.cwd, '.agents', 'mcp_config.json'))).toBe(true);
+      expect(fs.existsSync(join(opts.cwd, '.codex', 'config.toml'))).toBe(true);
+      if (bin.includes('claude')) {
+        expect(args).toContain('--mcp-config');
+        expect(args).toContain('mcp__thinktank__*');
+      }
 
       const child = new EventEmitter() as InstanceType<typeof EventEmitter> & {
         stdout: InstanceType<typeof EventEmitter>;
