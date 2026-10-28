@@ -24,17 +24,17 @@ export const AREA_WIDTH_MODES: readonly AreaWidthMode[] = ['init', 'user', 'fore
 export type AreaWidthKey =
   | 'ThinktankPanel.Area.OpenWidth'
   | 'SeedsPanel.Area.OpenWidth'
-  | 'DiscussSettingPanel.Area.OpenWidth'
+  | 'WorkingSettingPanel.Area.OpenWidth'
   | 'HarvestPanel.Area.OpenWidth';
 
 /**
  * パネルごとの起動時の幅（init）。
- * AppLayout / DiscussPanel の両方が参照するので、値の持ち場はここ1箇所にする。
+ * AppLayout / WorkingPanel の両方が参照するので、値の持ち場はここ1箇所にする。
  */
 export const INIT_AREA_WIDTH = {
   Thinktank: 280,
   Seeds:  280,
-  Discuss:   280,
+  Working:   280,
   Harvest:   320,
 } as const;
 

@@ -33,6 +33,8 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - コンポーネントは `src/components/<FeatureName>/` に配置
 - 画面と electron/ の両方で使う型・検証は `shared/`（記録の契約は `shared/contracts/`）に置く
 - コメントは WHY のみ。WHAT は書かない
+- `Working`/`working` はパネル名（WorkingPanel・WorkingSettingPanel、旧 Discuss）専用。処理中・作業ディレクトリ等の意味では使わず `isBusy`・`isRunning`・`cwd` などにする（grep でパネル関連を一意に拾うため）
+- 旧パネル名（Workout/Develop/Discuss 等）の読み替えは `src/utils/panelNames.ts` などの互換レイヤーに集約し、ユーザーの指示があるまで削除しない
 
 ## 重要な注意事項
 - Express サーバー（`server/`・`dist-server/`）と Cloud Run は廃止済み。HTTP の API サーバーを新設しない
@@ -42,12 +44,12 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - GPU キャッシュエラー（Windows）は無視してよい
 
 ## 変更を加える前に
-- `src/components/DiscussPanel/` など既存コンポーネントの構造を Read で確認する
+- `src/components/WorkingPanel/` など既存コンポーネントの構造を Read で確認する
 - `electron/*.cjs` や `shared/` を変更したら Electron を再起動する（HMR は効かない）
 
 ## パネル構成
 - **ThinktankPanel** — Vaultの閲覧・検索・フィルタ（一覧表示）
-- **DiscussPanel** — 選択したThinkファイルの編集・AI対話・メディア表示
+- **WorkingPanel** — 選択したThinkファイルの編集・AI対話・メディア表示
 - **HarvestPanel** — AI主導の再思考・チャット
 - **SeedsPanel** — 設定・統計・全体ビュー
 

@@ -19,7 +19,7 @@ import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import type { AreaWidthMode } from '../utils/panelAreaWidth';
 import { ZOOM_DEFAULT, ZOOM_STEP } from '../utils/appZoom';
 import { showMonacoMenu } from '../utils/monacoMenu';
-import { collectAreaIds } from './TTDiscussPanel';
+import { collectAreaIds } from './TTWorkingPanel';
 import { setPanelSectionsAll, isAnyPanelSectionOpen, type SectionsPanelId } from '../hooks/usePanelSectionsSetAll';
 import { registerTextEditorDateActions } from './actions/textEditorDateActions';
 import { registerTextEditorBulletActions, registerTextEditorCommentActions } from './actions/textEditorStyleActions';
@@ -39,17 +39,17 @@ import { registerTextEditorPasteActions } from './actions/textEditorPasteActions
 const PANEL_VIEW_MODES: Record<string, string[]> = {
   Thinktank:      ['filter', 'project', 'chat', 'settings'],
   Seeds:       ['filter', 'project', 'chat', 'settings'],
-  DiscussSetting: ['panes', 'project', 'chat', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
-  Discuss:        ['panes', 'project', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  WorkingSetting: ['panes', 'project', 'chat', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
+  Working:        ['panes', 'project', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
   Harvest:        ['project', 'chat', 'settings'],
 };
 
-/** フォーカス列 → 開閉セクションの一括操作で使うパネルID（Discuss は2列とも設定エリアを指す） */
+/** フォーカス列 → 開閉セクションの一括操作で使うパネルID（Working は2列とも設定エリアを指す） */
 const SECTIONS_PANEL_IDS: Record<string, SectionsPanelId> = {
   Thinktank:      'thinktank',
   Seeds:          'seeds',
-  DiscussSetting: 'discuss',
-  Discuss:        'discuss',
+  WorkingSetting: 'working',
+  Working:        'working',
   Harvest:        'harvest',
 };
 
@@ -82,8 +82,8 @@ function getPanel(app: TTApplication, column: string = app.FocusedColumn): Panel
   switch (column) {
     case 'Thinktank':      return app.ThinktankPanel;
     case 'Seeds':       return app.SeedsPanel;
-    case 'DiscussSetting':
-    case 'Discuss':        return app.DiscussPanel;
+    case 'WorkingSetting':
+    case 'Working':        return app.WorkingPanel;
     case 'Harvest':        return app.HarvestPanel;
     default:               return null;
   }
@@ -97,12 +97,12 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // 幅そのものではなくモード（init/user/foredit）を切り替える。px の導出は
   // utils/panelAreaWidth.ts が担い、foredit はアプリ幅から毎回計算する。
 
-  /** フォーカス列 → 幅モードを持つ Status キー（Discuss は Pane 側の列も設定パネルを指す） */
+  /** フォーカス列 → 幅モードを持つ Status キー（Working は Pane 側の列も設定パネルを指す） */
   const AREA_WIDTH_KEYS: Record<string, ConfigKey> = {
     Thinktank:      'ThinktankPanel.Area.OpenWidth',
     Seeds:       'SeedsPanel.Area.OpenWidth',
-    DiscussSetting: 'DiscussSettingPanel.Area.OpenWidth',
-    Discuss:        'DiscussSettingPanel.Area.OpenWidth',
+    WorkingSetting: 'WorkingSettingPanel.Area.OpenWidth',
+    Working:        'WorkingSettingPanel.Area.OpenWidth',
     Harvest:        'HarvestPanel.Area.OpenWidth',
   };
 
@@ -113,7 +113,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     item.Result = TTUIStateManager.instance.getProperty(key);
   };
 
-  /** 幅モードを持つ Status キーの一覧（Discuss は2列が同じキーを指すので重複を除く） */
+  /** 幅モードを持つ Status キーの一覧（Working は2列が同じキーを指すので重複を除く） */
   const ALL_AREA_WIDTH_KEYS = [...new Set(Object.values(AREA_WIDTH_KEYS))];
 
   /**
@@ -279,12 +279,12 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       prefix:         'ThinktankPanel',
       panelOf:        () => app.ThinktankPanel,
       currentItemKey: 'ThinktankPanel.CurrentItem.ID',
-      // Bundle はその場で Seeds へ、それ以外は Discuss へ（一覧ダブルクリックと同じ挙動）
+      // Bundle はその場で Seeds へ、それ以外は Working へ（一覧ダブルクリックと同じ挙動）
       open: (id) => {
         if (app.Models.Vault.GetThink(id)?.ContentType === 'project') {
           app.OpenProject(id, 'datagrid');
         } else {
-          app.OpenThinkInDiscuss(id);
+          app.OpenThinkInWorking(id);
         }
       },
     },
@@ -292,7 +292,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       prefix:         'SeedsPanel',
       panelOf:        () => app.SeedsPanel,
       currentItemKey: 'SeedsPanel.CurrentItem.ID',
-      open: (id) => { app.OpenThinkInDiscuss(id); },
+      open: (id) => { app.OpenThinkInWorking(id); },
     },
   ];
 
@@ -650,10 +650,10 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.PaneNumber:Next',
+    ActionID: 'WorkingPanel.FocusedPane.PaneNumber:Next',
     Description: 'フォーカスペインを次のペインに移動する',
     Completion: (item) => {
-      const wPanel = app.DiscussPanel;
+      const wPanel = app.WorkingPanel;
       const layout = wPanel.Layout;
       if (!layout) { item.Result = '[レイアウトなし]'; return; }
       const order = collectAreaIds(layout);
@@ -669,10 +669,10 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.PaneNumber:Prev',
+    ActionID: 'WorkingPanel.FocusedPane.PaneNumber:Prev',
     Description: 'フォーカスペインを前のペインに移動する',
     Completion: (item) => {
-      const wPanel = app.DiscussPanel;
+      const wPanel = app.WorkingPanel;
       const layout = wPanel.Layout;
       if (!layout) { item.Result = '[レイアウトなし]'; return; }
       const order = collectAreaIds(layout);
@@ -688,14 +688,14 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.PaneNumber:ReFocus',
-    Description: 'DiscussPanelの現在フォーカス中のPaneに再度フォーカスする',
+    ActionID: 'WorkingPanel.FocusedPane.PaneNumber:ReFocus',
+    Description: 'WorkingPanelの現在フォーカス中のPaneに再度フォーカスする',
     Completion: (item) => {
-      const wPanel = app.DiscussPanel;
+      const wPanel = app.WorkingPanel;
       const areaId = wPanel.FocusedAreaId;
       if (!areaId) { item.Result = '[対象Paneなし]'; return; }
 
-      // FocusArea() は同一ID指定時 no-op のため、DiscussArea側の
+      // FocusArea() は同一ID指定時 no-op のため、WorkingArea側の
       // フォーカス適用エフェクト（isFocused: false→true の変化）を
       // 強制的に再発火させるため、一度 null にしてから次のマクロタスクで再設定する
       // （同一タスク内での再設定は React のバッチ処理により変化なしと扱われるため効かない）
@@ -709,20 +709,20 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   // ── Pane毎のLoadファイル履歴 ───────────────────────────────────────────
-  /** フォーカスされているPane（DiscussArea）を返す */
+  /** フォーカスされているPane（WorkingArea）を返す */
   const focusedArea = () => {
-    const id = app.DiscussPanel.FocusedAreaId;
-    return id ? (app.DiscussPanel.GetArea(id) ?? null) : null;
+    const id = app.WorkingPanel.FocusedAreaId;
+    return id ? (app.WorkingPanel.GetArea(id) ?? null) : null;
   };
 
   const notifyFileHistory = (): void => {
-    TTUIStateManager.instance.notifyConstPropertyChanged('DiscussPanel.FocusedPane.FileHistory');
-    TTUIStateManager.instance.notifyConstPropertyChanged('DiscussPanel.FocusedPane.FileHistoryPos');
-    TTUIStateManager.instance.notifyConstPropertyChanged('DiscussPanel.FocusedPane.FileHistoryMax');
+    TTUIStateManager.instance.notifyConstPropertyChanged('WorkingPanel.FocusedPane.FileHistory');
+    TTUIStateManager.instance.notifyConstPropertyChanged('WorkingPanel.FocusedPane.FileHistoryPos');
+    TTUIStateManager.instance.notifyConstPropertyChanged('WorkingPanel.FocusedPane.FileHistoryMax');
   };
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.FileHistory:Next',
+    ActionID: 'WorkingPanel.FocusedPane.FileHistory:Next',
     Description: 'フォーカスペインのファイル履歴を1つ後の位置に進める',
     Completion: (item) => {
       const area = focusedArea();
@@ -737,7 +737,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.FileHistory:Prev',
+    ActionID: 'WorkingPanel.FocusedPane.FileHistory:Prev',
     Description: 'フォーカスペインのファイル履歴を1つ前の位置に戻す',
     Completion: (item) => {
       const area = focusedArea();
@@ -751,7 +751,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.FileHistory:Menu',
+    ActionID: 'WorkingPanel.FocusedPane.FileHistory:Menu',
     Description: 'フォーカスペインのファイル履歴をメニューで表示して選択する',
     Completion: (item) => {
       const area = focusedArea();
@@ -769,7 +769,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
         };
       });
 
-      const anchor = document.querySelector<HTMLElement>(`.discuss-area[data-area-id="${area.ID}"]`);
+      const anchor = document.querySelector<HTMLElement>(`.working-area[data-area-id="${area.ID}"]`);
       return showMonacoMenu({ title: 'ファイル履歴', nodes, anchor }).then(value => {
         if (!value) { item.Result = 'メニューの選択をキャンセルしました'; return; }
         const entry = area.LoadHistoryAt(Number(value));
@@ -781,20 +781,20 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.Mode:Next',
+    ActionID: 'WorkingPanel.FocusedPane.Mode:Next',
     Description: 'フォーカスペインの表示モードを次に切り替える',
     Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('DiscussPanel.FocusedPane.Mode', 'next');
-      item.Result = TTUIStateManager.instance.getProperty('DiscussPanel.FocusedPane.Mode');
+      TTUIStateManager.instance.applyProperty('WorkingPanel.FocusedPane.Mode', 'next');
+      item.Result = TTUIStateManager.instance.getProperty('WorkingPanel.FocusedPane.Mode');
     },
   });
 
   TTActions.Register({
-    ActionID: 'DiscussPanel.FocusedPane.Mode:Prev',
+    ActionID: 'WorkingPanel.FocusedPane.Mode:Prev',
     Description: 'フォーカスペインの表示モードを前に切り替える',
     Completion: (item) => {
-      TTUIStateManager.instance.applyProperty('DiscussPanel.FocusedPane.Mode', 'prev');
-      item.Result = TTUIStateManager.instance.getProperty('DiscussPanel.FocusedPane.Mode');
+      TTUIStateManager.instance.applyProperty('WorkingPanel.FocusedPane.Mode', 'prev');
+      item.Result = TTUIStateManager.instance.getProperty('WorkingPanel.FocusedPane.Mode');
     },
   });
 
@@ -896,8 +896,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   const applyFindOptionsToController = (editor: any): void => {
     const state = getFindController(editor)?.getState?.();
     if (!state) return;
-    const findOpt = app.DiscussPanel.TextEditor.FindOption;
-    const replaceOpt = app.DiscussPanel.TextEditor.ReplaceOption;
+    const findOpt = app.WorkingPanel.TextEditor.FindOption;
+    const replaceOpt = app.WorkingPanel.TextEditor.ReplaceOption;
     state.change({
       matchCase: findOpt.MatchCase,
       wholeWord: findOpt.MatchWholeWord,
@@ -1003,7 +1003,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   // TODO: バックエンドに過去版を参照できる
   //       復元APIを新設し、下記2アクションの中身を実装する。
   //        - 単一Think:  直前にフォーカスされた file_id 1件のみを1時間前のレコードで上書き
-  //          （対象は DiscussPanel.FocusedPane.FileHistory の先頭）
+  //          （対象は WorkingPanel.FocusedPane.FileHistory の先頭）
   //        - 全体:       Vault 全体を1時間前のスナップショットで置換
   //       現状はUIの受け皿のみで、実行しても復元は行われない。
   TTActions.Register(UNAVAILABLE_ACTIONS.rollbackThink);
@@ -1028,7 +1028,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 // 見出し構造の解析（getHeadingLevel/getHeadingAttributes等）は utils/markdownHeadings.ts に
 // 分離済み（TTUIStateManager.ts との循環importを解消するため）。
 
-// TextEditor.CurrentEditor.CursorPos:* / DoOnCursorPos:* / DiscussPanel.DroppedFile:* アクションは
+// TextEditor.CurrentEditor.CursorPos:* / DoOnCursorPos:* / WorkingPanel.DroppedFile:* アクションは
 // views/actions/textEditorCursorMoveActions.ts、textEditorHighlighterToolbarActions.ts、
 // textEditorCursorContentActions.ts に分離済み。
 

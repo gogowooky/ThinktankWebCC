@@ -38,7 +38,7 @@ function colorStatusPanel(statusId: string): PanelKey {
   if (prefix === 'Harvest') return 'HarvestPanel';
   if (prefix === 'Application') return 'Application';
   if (prefix === 'FocusingBorder') return 'Application';
-  return 'DiscussPanel';
+  return 'WorkingPanel';
 }
 
 export function registerColorStatusSpecs(PROP_SPECS: Record<string, PropSpec>): void {
@@ -59,8 +59,8 @@ export function registerColorStatusSpecs(PROP_SPECS: Record<string, PropSpec>): 
         type: COLOR_PROP_TYPE[prop],
         candidates: COLOR_PROP_CANDIDATES[prop],
         description: `${entry.statusId} の${(entry.statusId.endsWith('.Theme') ? THEME_PROP_LABEL : COLOR_PROP_LABEL)[prop]}`,
-        get: (app: TTApplication) => app.DiscussPanel.GetColorStatus(entry.statusId)[prop],
-        set: (app: TTApplication, v: string) => { app.DiscussPanel.SetColorStatus(entry.statusId, prop, v, false); },
+        get: (app: TTApplication) => app.WorkingPanel.GetColorStatus(entry.statusId)[prop],
+        set: (app: TTApplication, v: string) => { app.WorkingPanel.SetColorStatus(entry.statusId, prop, v, false); },
       };
     }
   }

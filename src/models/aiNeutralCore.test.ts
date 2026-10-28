@@ -104,7 +104,7 @@ it('creates a related subtask once for simultaneous adoption and after reloading
   ]);
   expect(first.ID).toBe(second.ID);
   expect(storage.save).toHaveBeenCalledTimes(1);
-  expect(first.Metadata.taskRelation).toEqual({ schemaVersion: 1, parentId: parent.ID, chatId: chat.ID, turnId: turn.id, panel: 'Discuss' });
+  expect(first.Metadata.taskRelation).toEqual({ schemaVersion: 1, parentId: parent.ID, chatId: chat.ID, turnId: turn.id, panel: 'Working' });
   expect(readThinkSupport(first.Metadata.thinkSupport)?.values.goal).toBe('会場を予約する');
   expect(parseBundle(first.Content).ids).toEqual([chat.ID]);
   const reloaded = new TTVault('vault');

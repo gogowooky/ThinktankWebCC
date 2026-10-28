@@ -291,7 +291,7 @@ describe('shared/promptBuilder & shared/responseValidator', () => {
     const profile = getBuiltinDomainProfile('clinical-trial');
     const prompt = buildConversationPrompt({
       profile,
-      panelRole: 'Discuss',
+      panelRole: 'Working',
       agentId: 'cmc-gctp',
       bundleId: 'b_01',
       bundleTitle: '網膜シート治験準備',

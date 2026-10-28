@@ -53,7 +53,7 @@ export interface RelayGetBodyPayload {
 export interface RelayAiConversationPayload {
   bundleId: string;
   userMessage: string;
-  panelRole?: 'seeds' | 'discuss' | 'harvest';
+  panelRole?: 'seeds' | 'working' | 'discuss' | 'harvest';
   agentId?: string;
   profileId?: string;
   preferredCli?: 'claude' | 'codex' | 'antigravity';

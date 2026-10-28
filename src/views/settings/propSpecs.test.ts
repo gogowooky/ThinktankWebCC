@@ -16,7 +16,7 @@ it('applies and serializes settings from every registry domain in the existing o
     'Settings', '> description,key,current,default,type,candidates',
     'left,ThinktankPanel.Area.IsOpen,false,true,boolean,.*',
     'seeds,SeedsPanel.Area.OpenWidth,user,init,string,.*',
-    'discuss,DiscussSettingPanel.Mode.Name,Texteditor,Panes,string,.*',
+    'working,WorkingSettingPanel.Mode.Name,Texteditor,Panes,string,.*',
     'editor,TextEditor.WordWrap.IsVisible,false,true,boolean,.*',
     'toolbar,ToolBar.Mode.Name,Highlighter,Status,string,.*',
     'app,Application.Display.Zoom,125,100,integer,.*',
@@ -25,12 +25,12 @@ it('applies and serializes settings from every registry domain in the existing o
   ].join('\n'));
   expect(app.ThinktankPanel.IsAreaOpen).toBe(false);
   expect(app.SeedsPanel.AreaWidthMode).toBe('user');
-  expect(app.DiscussPanel.ViewMode).toBe('texteditor');
-  expect(app.DiscussPanel.TextEditor.WordWrap.IsVisible).toBe(false);
-  expect(app.DiscussPanel.ToolBarMode).toBe('Highlighter');
+  expect(app.WorkingPanel.ViewMode).toBe('texteditor');
+  expect(app.WorkingPanel.TextEditor.WordWrap.IsVisible).toBe(false);
+  expect(app.WorkingPanel.ToolBarMode).toBe('Highlighter');
   expect(manager.getProperty('Application.Display.Zoom')).toBe('125');
   expect(app.HarvestPanel.IsAreaOpen).toBe(false);
-  expect(app.DiscussPanel.GetColorStatus('TextEditor.Text').Color).toBe('#123456');
+  expect(app.WorkingPanel.GetColorStatus('TextEditor.Text').Color).toBe('#123456');
   const sections = parseTableContent(manager.serialize(app));
   const rows = sections[0].rows;
   const keyColumn = sections[0].columns.indexOf('key');
@@ -46,23 +46,23 @@ it('toggles HighlighterMode MatchCase, IsRegex, and MatchWidth via actions and u
   manager.init(app);
   registerFocusedPanelActions(app);
 
-  expect(app.DiscussPanel.HighlightMatchCase).toBe(false);
-  expect(app.DiscussPanel.HighlightIsRegex).toBe(false);
-  expect(app.DiscussPanel.HighlightMatchWidth).toBe(false);
+  expect(app.WorkingPanel.HighlightMatchCase).toBe(false);
+  expect(app.WorkingPanel.HighlightIsRegex).toBe(false);
+  expect(app.WorkingPanel.HighlightMatchWidth).toBe(false);
 
   await TTActions.Execute('ToolBar.HighlighterMode.MatchCase:Toggle');
-  expect(app.DiscussPanel.HighlightMatchCase).toBe(true);
+  expect(app.WorkingPanel.HighlightMatchCase).toBe(true);
   expect(manager.getProperty('ToolBar.HighlighterMode.MatchCase')).toBe('true');
 
   await TTActions.Execute('ToolBar.HighlighterMode.IsRegex:Toggle');
-  expect(app.DiscussPanel.HighlightIsRegex).toBe(true);
+  expect(app.WorkingPanel.HighlightIsRegex).toBe(true);
   expect(manager.getProperty('ToolBar.HighlighterMode.IsRegex')).toBe('true');
 
   await TTActions.Execute('ToolBar.HighlighterMode.MatchWidth:Toggle');
-  expect(app.DiscussPanel.HighlightMatchWidth).toBe(true);
+  expect(app.WorkingPanel.HighlightMatchWidth).toBe(true);
   expect(manager.getProperty('ToolBar.HighlighterMode.MatchWidth')).toBe('true');
 
   await TTActions.Execute('ToolBar.HighlighterMode.MatchCase:Toggle');
-  expect(app.DiscussPanel.HighlightMatchCase).toBe(false);
+  expect(app.WorkingPanel.HighlightMatchCase).toBe(false);
   expect(manager.getProperty('ToolBar.HighlighterMode.MatchCase')).toBe('false');
 });

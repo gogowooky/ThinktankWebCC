@@ -5,7 +5,7 @@
  * 左から順に:
  *   ThinktankPanel（Ribbon + Area） |
  *   SeedsPanel（Ribbon + Area）  |
- *   DiscussPanel（中央、flex:1）    |
+ *   WorkingPanel（中央、flex:1）    |
  *   HarvestPanel（Area + Ribbon）
  *
  * レイアウトモード:
@@ -19,7 +19,7 @@ import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { HighlightProvider } from '../../contexts/HighlightContext';
 import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
 import { SeedsPanel } from '../SeedsPanel/SeedsPanel';
-import { DiscussPanel } from '../DiscussPanel/DiscussPanel';
+import { WorkingPanel } from '../WorkingPanel/WorkingPanel';
 import { HarvestPanel } from '../HarvestPanel/HarvestPanel';
 import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
 import { THEME_STATUS_KEYS, applyPanelThemeCss } from '../../utils/panelTheme';
@@ -27,7 +27,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { INIT_AREA_WIDTH, MIN_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
 import './AppLayout.css';
 
-// パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Discuss 側と共用）
+// パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Working 側と共用）
 
 export type LayoutMode = 'sipoc' | 'simple';
 
@@ -90,7 +90,7 @@ export function AppLayout() {
   // パネルのテーマ色（<Panel>.Theme.* / FocusingBorder.Theme.*）を CSS 変数へ展開する。
   // 派生色は color-mix() で作るため、基礎色1つの変更が関連色すべてに波及する。
   useEffect(() => {
-    const apply = () => applyPanelThemeCss(app.DiscussPanel.TextEditor.ColorStatus);
+    const apply = () => applyPanelThemeCss(app.WorkingPanel.TextEditor.ColorStatus);
     apply();
     const listener = () => apply();
     for (const key of THEME_STATUS_KEYS) {
@@ -146,9 +146,9 @@ export function AppLayout() {
           />
         </div>
 
-        {/* ── DiscussPanel────────────────────── */}
-        <div className="app-panel app-panel--discuss">
-          <DiscussPanel app={app} layoutMode={layoutMode} />
+        {/* ── WorkingPanel────────────────────── */}
+        <div className="app-panel app-panel--working">
+          <WorkingPanel app={app} layoutMode={layoutMode} />
         </div>
 
         {/* ── HarvestPanel─────────────────────── */}
@@ -161,7 +161,7 @@ export function AppLayout() {
         </div>
 
       </div>
-      <ApplicationStatusBarArea panel={app.DiscussPanel} />
+      <ApplicationStatusBarArea panel={app.WorkingPanel} />
     </div>
     </HighlightProvider>
   );

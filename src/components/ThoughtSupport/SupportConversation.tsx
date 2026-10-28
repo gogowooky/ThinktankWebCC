@@ -59,7 +59,7 @@ export function SupportConversation({ vault, panelName, chatId, draftScope, pane
       if (app.Models.Vault !== vault) return;
       const source = vault.GetThink(id);
       if (!source) { setMessage('出典がVault一覧にありません。'); return; }
-      if (!app.DiscussPanel.FocusExistingResource(id)) app.DiscussPanel.AddToRight(id, 'texteditor', source.Name);
+      if (!app.WorkingPanel.FocusExistingResource(id)) app.WorkingPanel.AddToRight(id, 'texteditor', source.Name);
     } catch {
       if (!lifetime.isCurrent()) return;
       setMessage('出典を開けませんでした。');

@@ -34,11 +34,11 @@
   overflow: hidden;
 }
 
-/* DiscussPanel だけ残余スペースを占有する */
-.app-panel--discuss {
+/* WorkingPanel だけ残余スペースを占有する */
+.app-panel--working {
   flex: 1;
   flex-shrink: 1;
-  background: var(--discuss-area-bg);
+  background: var(--working-area-bg);
   overflow: hidden;
 }
 
@@ -66,13 +66,13 @@
   color: #444;
 }
 
-/* DiscussPanel のプレースホルダーは別カラー（背景が明るい灰色）*/
-.panel-placeholder--discuss {
+/* WorkingPanel のプレースホルダーは別カラー（背景が明るい灰色）*/
+.panel-placeholder--working {
   width: 100%;
   opacity: 0.4;
 }
 
-.panel-placeholder--discuss .panel-placeholder__title,
-.panel-placeholder--discuss .panel-placeholder__desc {
+.panel-placeholder--working .panel-placeholder__title,
+.panel-placeholder--working .panel-placeholder__desc {
   color: #222;
 }

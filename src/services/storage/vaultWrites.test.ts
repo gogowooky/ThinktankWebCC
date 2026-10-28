@@ -113,7 +113,7 @@ describe('VaultEngine storage operations', () => {
     const saved = engine1.saveRecord({
       thinkid: '2026-10-18-120000',
       category: 'chat',
-      fullContent: 'ASK:Discuss｜質問\n## 続きを教えて',
+      fullContent: 'ASK:Working｜質問\n## 続きを教えて',
       metadata: { thoughtSupport: { version: 1, resume: '候補を比較中' } },
     });
 

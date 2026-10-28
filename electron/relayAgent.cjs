@@ -756,7 +756,7 @@ class RelayAgent {
               'claude',
             model: payload.model || this.vaultEngine.config.preferredModel || undefined,
             profile,
-            panelRole: payload.panelRole || 'Discuss',
+            panelRole: payload.panelRole || 'Working',
             agentId: payload.agentId,
             bundleId: payload.bundleId || 'default',
             bundleTitle: bundleRec?.meta?.title || payload.bundleTitle || '中継リクエスト',

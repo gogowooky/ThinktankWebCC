@@ -15,7 +15,7 @@ import type {
   ElectronAiStatus,
 } from '../../services/storage/ElectronStorageBackend';
 
-const PANELS: PanelId[] = ['Thinktank', 'Seeds', 'Discuss', 'Harvest'];
+const PANELS: PanelId[] = ['Thinktank', 'Seeds', 'Working', 'Harvest'];
 
 const TEXT_MAIN = 'color-mix(in srgb, var(--thinktank-base, #1d618f) 30%, #16161f)';
 const TEXT_MUTED = 'var(--text-muted, #565f89)';
@@ -70,7 +70,7 @@ export function DomainProfileSettingsPanel() {
 
   const [isOpen, setIsOpen] = useState(true);
   usePanelSectionsSetAll('thinktank', [setIsOpen]);
-  const [editingPanel, setEditingPanel] = useState<PanelId>('Discuss');
+  const [editingPanel, setEditingPanel] = useState<PanelId>('Working');
   const [commonPolicyDraft, setCommonPolicyDraft] = useState(profile.commonPolicyPrompt);
   const [panelRoleDraft, setPanelRoleDraft] = useState(
     profile.panelRoles[editingPanel].rolePrompt,

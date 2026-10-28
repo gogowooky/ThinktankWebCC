@@ -4,7 +4,7 @@ import type { SupportPanel } from '../services/thoughtSupport';
 
 export function useSupportSelection(vault: TTVault, panel: SupportPanel) {
   const key = `thinktank.support.selection:${vault.VaultName}:${panel}`;
-  const legacyOwners: Partial<Record<SupportPanel, string[]>> = { Seeds: ['Overview'], Discuss: ['Develop', 'Workout'], Harvest: ['ReThink'] };
+  const legacyOwners: Partial<Record<SupportPanel, string[]>> = { Seeds: ['Overview'], Working: ['Discuss', 'Develop', 'Workout'], Harvest: ['ReThink'] };
   const legacyKeys = (legacyOwners[panel] ?? []).map(owner => `thinktank.support.selection:${vault.VaultName}:${owner}`);
   const [id, setId] = useState(() => {
     try { return localStorage.getItem(key) ?? legacyKeys.map(legacyKey => localStorage.getItem(legacyKey)).find(value => value !== null) ?? ''; }

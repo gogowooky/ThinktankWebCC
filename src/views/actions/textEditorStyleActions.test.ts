@@ -33,7 +33,7 @@ function runBulletAction(actionId: 'TextEditor.Bullet.NextStyle' | 'TextEditor.B
     executeEdits,
   });
   const app = {
-    DiscussPanel: { TextEditor: { Bullet: { Marks: '●,○' } } },
+    WorkingPanel: { TextEditor: { Bullet: { Marks: '●,○' } } },
   } as unknown as TTApplication;
   registerTextEditorBulletActions(app);
 

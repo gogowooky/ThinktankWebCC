@@ -54,7 +54,7 @@ export class TTHarvestPanel extends TTUIItem {
 
   // ── チェックボックス選択（Think一覧/chat選択欄で共通。TTApplication が4パネル分をまとめて共有）───
 
-  /** チェックされているThink IDリスト（Thinktank/Seeds/Discuss/Harvest で共通） */
+  /** チェックされているThink IDリスト（Thinktank/Seeds/Working/Harvest で共通） */
   public SharedState = { checkedIds: [] as string[] };
   public get CheckedThoughtIDs(): string[] { return this.SharedState.checkedIds; }
   public set CheckedThoughtIDs(val: string[]) {

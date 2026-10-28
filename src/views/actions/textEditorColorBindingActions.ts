@@ -62,7 +62,7 @@ export function registerTextEditorColorBindingActions(app: TTApplication): void 
     Completion: async (item) => {
       // docs/DefaultColor.md と同じ「StatusID, Color, BgColor, Attrs」形式。Load で読み直すと同じ状態に戻る
       const lines = DEFAULT_COLOR_ENTRIES.map(({ statusId }) => {
-        const style = app.DiscussPanel.GetColorStatus(statusId);
+        const style = app.WorkingPanel.GetColorStatus(statusId);
         return [statusId, ...COLOR_PROPS.map(prop => style[prop])].join(', ');
       });
       const body = ['# StatusID, Color, BgColor, Attrs', ...lines].join('\n');

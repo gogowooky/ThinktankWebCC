@@ -12,7 +12,7 @@
   overflow: hidden;
   background: var(--harvest-area-bg);
   /* ColumnSortDialog/FilterSelectDialog(position:absolute)がこのエリア基準で
-     配置されるよう、他パネル(Thinktank/Seeds/DiscussSetting)と同様に
+     配置されるよう、他パネル(Thinktank/Seeds/WorkingSetting)と同様に
      position:relative を明示する */
   position: relative;
 }

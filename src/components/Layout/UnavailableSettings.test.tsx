@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { DiscussTabBar } from '../DiscussPanel/DiscussTabBar';
+import { WorkingTabBar } from '../WorkingPanel/WorkingTabBar';
 import { HarvestTabBar } from '../HarvestPanel/HarvestTabBar';
 
 let host: HTMLDivElement;
@@ -13,9 +13,9 @@ beforeEach(() => {
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 
-it('keeps placeholder Discuss settings disabled while implemented settings remain usable', async () => {
+it('keeps placeholder Working settings disabled while implemented settings remain usable', async () => {
   const select = vi.fn();
-  await act(async () => root.render(<DiscussTabBar activeSettings="panes" isOpen={true} thinkTitle="" onToggle={vi.fn()} onSetActiveSettings={select} />));
+  await act(async () => root.render(<WorkingTabBar activeSettings="panes" isOpen={true} thinkTitle="" onToggle={vi.fn()} onSetActiveSettings={select} />));
   for (const id of ['Markdown', 'Card', 'Graph']) {
     const button = host.querySelector<HTMLButtonElement>(`#${id}`)!;
     expect(button.disabled).toBe(true);

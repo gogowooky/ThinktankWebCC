@@ -60,12 +60,12 @@ export interface BuildConversationPromptParams {
 }
 
 function normalizePanelId(role?: PanelRoleKey): PanelId {
-  if (!role) return 'Discuss';
+  if (!role) return 'Working';
   const lower = role.toLowerCase();
   if (lower === 'thinktank') return 'Thinktank';
   if (lower === 'seeds') return 'Seeds';
   if (lower === 'harvest') return 'Harvest';
-  return 'Discuss';
+  return 'Working';
 }
 
 /**
@@ -74,7 +74,7 @@ function normalizePanelId(role?: PanelRoleKey): PanelId {
 export function buildConversationPrompt(params: BuildConversationPromptParams): string {
   const {
     profile,
-    panelRole = 'Discuss',
+    panelRole = 'Working',
     agentId,
     bundleId,
     bundleTitle,
@@ -93,7 +93,7 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
   } = params;
 
   const panelId = normalizePanelId(panelRole);
-  const panelConfig = profile.panelRoles[panelId] ?? profile.panelRoles.Discuss;
+  const panelConfig = profile.panelRoles[panelId] ?? profile.panelRoles.Working;
   const specialistAgent = agentId
     ? profile.agents.find((a) => a.id === agentId)
     : undefined;

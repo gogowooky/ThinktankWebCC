@@ -9,8 +9,8 @@ interface CheckedPanel extends Notifiable {
   SharedState: { checkedIds: string[] };
   CheckedThoughtIDs: string[];
 }
-type PanelName = 'ThinktankPanel' | 'SeedsPanel' | 'DiscussPanel' | 'HarvestPanel';
-const PANEL_NAMES: readonly PanelName[] = ['ThinktankPanel', 'SeedsPanel', 'DiscussPanel', 'HarvestPanel'];
+type PanelName = 'ThinktankPanel' | 'SeedsPanel' | 'WorkingPanel' | 'HarvestPanel';
+const PANEL_NAMES: readonly PanelName[] = ['ThinktankPanel', 'SeedsPanel', 'WorkingPanel', 'HarvestPanel'];
 
 export function setPanelCheckedIds(panel: CheckedPanel, owner: PanelName, ids: string[]): void {
   panel.SharedState.checkedIds = ids;

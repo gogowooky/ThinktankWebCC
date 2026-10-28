@@ -2,7 +2,7 @@ import type { PropSpec } from './types';
 import { registerColorStatusSpecs } from './colorSpecs';
 import { panelSpecs } from './panelSpecs';
 import { applicationSpecs } from './applicationSpecs';
-import { discussSpecs } from './discussSpecs';
+import { workingSpecs } from './workingSpecs';
 import { editorSpecs } from './editorSpecs';
 import { toolbarSpecs } from './toolbarSpecs';
 import { aiSpecs, aiChatModelNames } from './aiSpecs';
@@ -23,9 +23,9 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   'SeedsPanel.Filter.CursorPos': panelSpecs['SeedsPanel.Filter.CursorPos'],
   'ThinktankPanel.Filter.CursorPosID': panelSpecs['ThinktankPanel.Filter.CursorPosID'],
   'SeedsPanel.Filter.CursorPosID': panelSpecs['SeedsPanel.Filter.CursorPosID'],
-  'DiscussSettingPanel.Area.IsOpen': discussSpecs['DiscussSettingPanel.Area.IsOpen'],
-  'DiscussSettingPanel.Area.OpenWidth': discussSpecs['DiscussSettingPanel.Area.OpenWidth'],
-  'DiscussSettingPanel.Mode.Name': discussSpecs['DiscussSettingPanel.Mode.Name'],
+  'WorkingSettingPanel.Area.IsOpen': workingSpecs['WorkingSettingPanel.Area.IsOpen'],
+  'WorkingSettingPanel.Area.OpenWidth': workingSpecs['WorkingSettingPanel.Area.OpenWidth'],
+  'WorkingSettingPanel.Mode.Name': workingSpecs['WorkingSettingPanel.Mode.Name'],
   'TextEditor.FindOption.MatchCase': editorSpecs['TextEditor.FindOption.MatchCase'],
   'TextEditor.FindOption.MatchWholeWord': editorSpecs['TextEditor.FindOption.MatchWholeWord'],
   'TextEditor.FindOption.UseRexp': editorSpecs['TextEditor.FindOption.UseRexp'],
@@ -59,8 +59,8 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   ...aiChatModelNames,
   'ThinktankPanel.AIChat.ModelName': aiSpecs['ThinktankPanel.AIChat.ModelName'],
   'SeedsPanel.AIChat.ModelName': aiSpecs['SeedsPanel.AIChat.ModelName'],
-  'DiscussSettingPanel.AIChat.ModelName': aiSpecs['DiscussSettingPanel.AIChat.ModelName'],
-  'DiscussPanel.AIChat.ModelName': aiSpecs['DiscussPanel.AIChat.ModelName'],
+  'WorkingSettingPanel.AIChat.ModelName': aiSpecs['WorkingSettingPanel.AIChat.ModelName'],
+  'WorkingPanel.AIChat.ModelName': aiSpecs['WorkingPanel.AIChat.ModelName'],
   'HarvestPanel.AIChat.ModelName': aiSpecs['HarvestPanel.AIChat.ModelName'],
   'Application.FocusedArea.Name': applicationSpecs['Application.FocusedArea.Name'],
   'Application.PanelDisplay.Mode': applicationSpecs['Application.PanelDisplay.Mode'],
@@ -68,22 +68,22 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   'Application.Execution.Status': applicationSpecs['Application.Execution.Status'],
   'Application.Synchronization.Status': applicationSpecs['Application.Synchronization.Status'],
   'Application.Status.ExMode': applicationSpecs['Application.Status.ExMode'],
-  'DiscussPanel.Panes.Count': discussSpecs['DiscussPanel.Panes.Count'],
-  'DiscussPanel.FocusedPane.ID': discussSpecs['DiscussPanel.FocusedPane.ID'],
-  'DiscussPanel.FocusedPane.PaneNumber': discussSpecs['DiscussPanel.FocusedPane.PaneNumber'],
-  'DiscussPanel.FocusedPane.Mode': discussSpecs['DiscussPanel.FocusedPane.Mode'],
-  'DiscussPanel.FocusedPane.FileHistory': discussSpecs['DiscussPanel.FocusedPane.FileHistory'],
-  'DiscussPanel.FocusedPane.FileHistoryPos': discussSpecs['DiscussPanel.FocusedPane.FileHistoryPos'],
-  'DiscussPanel.FocusedPane.FileHistoryMax': discussSpecs['DiscussPanel.FocusedPane.FileHistoryMax'],
-  'DiscussPanel.DroppedFile.ID': discussSpecs['DiscussPanel.DroppedFile.ID'],
+  'WorkingPanel.Panes.Count': workingSpecs['WorkingPanel.Panes.Count'],
+  'WorkingPanel.FocusedPane.ID': workingSpecs['WorkingPanel.FocusedPane.ID'],
+  'WorkingPanel.FocusedPane.PaneNumber': workingSpecs['WorkingPanel.FocusedPane.PaneNumber'],
+  'WorkingPanel.FocusedPane.Mode': workingSpecs['WorkingPanel.FocusedPane.Mode'],
+  'WorkingPanel.FocusedPane.FileHistory': workingSpecs['WorkingPanel.FocusedPane.FileHistory'],
+  'WorkingPanel.FocusedPane.FileHistoryPos': workingSpecs['WorkingPanel.FocusedPane.FileHistoryPos'],
+  'WorkingPanel.FocusedPane.FileHistoryMax': workingSpecs['WorkingPanel.FocusedPane.FileHistoryMax'],
+  'WorkingPanel.DroppedFile.ID': workingSpecs['WorkingPanel.DroppedFile.ID'],
   'TextEditor.CurrentFolding.HeadingOffset': editorSpecs['TextEditor.CurrentFolding.HeadingOffset'],
   'TextEditor.CurrentFolding.HeadingNumber': editorSpecs['TextEditor.CurrentFolding.HeadingNumber'],
   'TextEditor.CurrentEditor.CursorPos': editorSpecs['TextEditor.CurrentEditor.CursorPos'],
   'TextEditor.CurrentEditor.TextOnCursorPos': editorSpecs['TextEditor.CurrentEditor.TextOnCursorPos'],
-  'Table.CellContent.Display': discussSpecs['Table.CellContent.Display'],
-  'Table.CellContent.Position': discussSpecs['Table.CellContent.Position'],
-  'DiscussPanel.Panes.Layout': discussSpecs['DiscussPanel.Panes.Layout'],
-  'DiscussPanel.Panes.Display': discussSpecs['DiscussPanel.Panes.Display'],
+  'Table.CellContent.Display': workingSpecs['Table.CellContent.Display'],
+  'Table.CellContent.Position': workingSpecs['Table.CellContent.Position'],
+  'WorkingPanel.Panes.Layout': workingSpecs['WorkingPanel.Panes.Layout'],
+  'WorkingPanel.Panes.Display': workingSpecs['WorkingPanel.Panes.Display'],
 };
 
 registerColorStatusSpecs(PROP_SPECS);

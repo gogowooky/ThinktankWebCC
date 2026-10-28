@@ -3,7 +3,7 @@
  * 全グリッドで共有するハイライトID群を提供する Context。
  *
  * seedsBundleIds  : SeedsPanelで選択中BundleのThink ID一覧
- * discussIds         : DiscussPanelで現在開いているThink ID一覧
+ * workingIds         : WorkingPanelで現在開いているThink ID一覧
  */
 
 import { createContext, useContext } from 'react';
@@ -14,16 +14,16 @@ interface HighlightState {
   seedsBundleIds: string[];
   seedsIncludedIds: string[];
   seedsCheckedIds: string[];
-  discussIds: string[];
-  discussFocusedId: string | null;
+  workingIds: string[];
+  workingFocusedId: string | null;
 }
 
 const HighlightContext = createContext<HighlightState>({
   seedsBundleIds: [],
   seedsIncludedIds: [],
   seedsCheckedIds: [],
-  discussIds: [],
-  discussFocusedId: null,
+  workingIds: [],
+  workingFocusedId: null,
 });
 
 export function useHighlight(): HighlightState {
@@ -33,11 +33,11 @@ export function useHighlight(): HighlightState {
 export function HighlightProvider({ children }: { children: React.ReactNode }) {
   const app      = TTApplication.Instance;
   const seeds = app.SeedsPanel;
-  const discuss  = app.DiscussPanel;
+  const working  = app.WorkingPanel;
   const vault    = app.Models.Vault;
 
   useAppUpdate(seeds);
-  useAppUpdate(discuss);
+  useAppUpdate(working);
   useAppUpdate(vault);
 
   const seedsBundleId = seeds.BundleID;
@@ -49,10 +49,10 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
 
   const seedsCheckedIds = seeds.CheckedThoughtIDs;
 
-  const discussIds = discuss.Areas.map(a => a.ResourceID).filter(Boolean);
+  const workingIds = working.Areas.map(a => a.ResourceID).filter(Boolean);
 
-  const focusedArea = discuss.Areas.find(a => a.ID === discuss.FocusedAreaId);
-  const discussFocusedId = focusedArea ? focusedArea.ResourceID : null;
+  const focusedArea = working.Areas.find(a => a.ID === working.FocusedAreaId);
+  const workingFocusedId = focusedArea ? focusedArea.ResourceID : null;
 
   return (
     <HighlightContext.Provider
@@ -60,8 +60,8 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
         seedsBundleIds,
         seedsIncludedIds,
         seedsCheckedIds,
-        discussIds,
-        discussFocusedId,
+        workingIds,
+        workingFocusedId,
       }}
     >
       {children}

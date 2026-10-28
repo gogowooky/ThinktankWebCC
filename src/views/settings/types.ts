@@ -7,9 +7,9 @@ export type ConfigKey =
   | 'SeedsPanel.Area.OpenWidth'
   | 'SeedsPanel.Mode.Name'
   | 'SeedsPanel.Project.ID'
-  | 'DiscussSettingPanel.Area.IsOpen'
-  | 'DiscussSettingPanel.Area.OpenWidth'
-  | 'DiscussSettingPanel.Mode.Name'
+  | 'WorkingSettingPanel.Area.IsOpen'
+  | 'WorkingSettingPanel.Area.OpenWidth'
+  | 'WorkingSettingPanel.Mode.Name'
   | 'HarvestPanel.Area.IsOpen'
   | 'HarvestPanel.Area.OpenWidth'
   | 'HarvestPanel.Mode.Name'
@@ -17,8 +17,8 @@ export type ConfigKey =
   | 'Thinktank.Area.BgColor'
   | 'Seeds.Ribbon.BgColor'
   | 'Seeds.Area.BgColor'
-  | 'Discuss.Ribbon.BgColor'
-  | 'Discuss.Area.BgColor'
+  | 'Working.Ribbon.BgColor'
+  | 'Working.Area.BgColor'
   | 'Harvest.Ribbon.BgColor'
   | 'Harvest.Area.BgColor'
   | 'ToolBar.BgColor'
@@ -59,16 +59,16 @@ export type ConfigKey =
   | 'Application.Status.ExMode'
   | 'TextEditor.CurrentEditor.CursorPos'
   | 'TextEditor.CurrentEditor.TextOnCursorPos'
-  | 'DiscussPanel.Panes.Count'
-  | 'DiscussPanel.FocusedPane.ID'
-  | 'DiscussPanel.FocusedPane.PaneNumber'
-  | 'DiscussPanel.FocusedPane.Mode'
-  | 'DiscussPanel.FocusedPane.FileHistory'
-  | 'DiscussPanel.FocusedPane.FileHistoryPos'
-  | 'DiscussPanel.FocusedPane.FileHistoryMax'
-  | 'DiscussPanel.DroppedFile.ID'
-  | 'DiscussPanel.Panes.Layout'
-  | 'DiscussPanel.Panes.Display'
+  | 'WorkingPanel.Panes.Count'
+  | 'WorkingPanel.FocusedPane.ID'
+  | 'WorkingPanel.FocusedPane.PaneNumber'
+  | 'WorkingPanel.FocusedPane.Mode'
+  | 'WorkingPanel.FocusedPane.FileHistory'
+  | 'WorkingPanel.FocusedPane.FileHistoryPos'
+  | 'WorkingPanel.FocusedPane.FileHistoryMax'
+  | 'WorkingPanel.DroppedFile.ID'
+  | 'WorkingPanel.Panes.Layout'
+  | 'WorkingPanel.Panes.Display'
   | 'TextEditor.CurrentFolding.HeadingOffset'
   | 'TextEditor.CurrentFolding.HeadingNumber'
   | 'Application.PanelDisplay.Mode'
@@ -116,7 +116,7 @@ export interface PropDef {
 // 特別な値: toggle (boolean のみ), next (列挙型), prev (列挙型)
 // ※ set() 内で NotifyUpdated() は呼ばない。_applyContent() がまとめて呼ぶ。
 
-export type PanelKey = 'ThinktankPanel' | 'SeedsPanel' | 'DiscussPanel' | 'HarvestPanel' | 'Application';
+export type PanelKey = 'ThinktankPanel' | 'SeedsPanel' | 'WorkingPanel' | 'HarvestPanel' | 'Application';
 
 export interface PropSpec {
   panel: PanelKey;

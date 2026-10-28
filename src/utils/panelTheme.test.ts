@@ -20,7 +20,7 @@ describe('ribbon text color', () => {
   });
 
   it('keeps white text on every default panel theme, including the paler menu ribbon', () => {
-    for (const kind of ['Thinktank', 'Seeds', 'Discuss', 'Harvest']) {
+    for (const kind of ['Thinktank', 'Seeds', 'Working', 'Harvest']) {
       expect(ribbonTextRgb(getDefaultColorStyle(`${kind}.Theme`))).toEqual({ ribbon: WHITE, soft: WHITE });
     }
   });

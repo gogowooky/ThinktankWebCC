@@ -43,7 +43,7 @@ function canonicalStateKey(key: string): ConfigKey {
 function canonicalStateValue(key: ConfigKey, value: string): string {
   if (key === 'Application.FocusedPanel.Name') return canonicalPanelName(value);
   if (key === 'ToolBar.StatusMode.Text') return canonicalPanelStatusList(value);
-  if (key === 'DiscussSettingPanel.Mode.Name' && ['workout', 'develop', 'discuss'].includes(value.toLowerCase())) return 'Panes';
+  if (key === 'WorkingSettingPanel.Mode.Name' && ['workout', 'develop', 'discuss', 'working'].includes(value.toLowerCase())) return 'Panes';
   if (key.endsWith('.Mode.Name') && value.toLowerCase() === 'abstract') return 'Project';
   if (key === 'ToolBar.Mode.Name' && value === 'Translate') return 'Search';
   return value;
@@ -133,9 +133,9 @@ export class TTUIStateManager {
       ['tt-ai-model-thinktank', n => { app.ThinktankPanel.AIChatProviderName = n; }],
       ['tt-ai-model-seeds', n => { app.SeedsPanel.AIChatProviderName = n; }],
       ['tt-ai-model-harvest', n => { app.HarvestPanel.AIChatProviderName = n; }],
-      // Discuss は旧版で Pane と設定パネルが1つの選択を共有していた（さらに古いパネル名のキーも見る）
-      ['tt-ai-model-discuss|tt-ai-model-develop|tt-ai-model-workout',
-        n => { app.DiscussPanel.AIChatProviderName = n; app.DiscussPanel.SettingAIChatProviderName = n; }],
+      // Working は旧版で Pane と設定パネルが1つの選択を共有していた（さらに古いパネル名のキーも見る）
+      ['tt-ai-model-working|tt-ai-model-discuss|tt-ai-model-develop|tt-ai-model-workout',
+        n => { app.WorkingPanel.AIChatProviderName = n; app.WorkingPanel.SettingAIChatProviderName = n; }],
     ];
     let migrated = false;
     for (const [keys, set] of legacy) {
@@ -154,7 +154,7 @@ export class TTUIStateManager {
     app.NotifyUpdated(false);
   }
 
-  /** DataGrid/Card が UIState Think を保存したときのフック（DiscussArea から呼ぶ）*/
+  /** DataGrid/Card が UIState Think を保存したときのフック（WorkingArea から呼ぶ）*/
   onThinkSaved(thinkId: string, content: string): void {
     if (thinkId !== TTUIStateManager.THINK_ID) return;
     this._pushUndo();
@@ -348,8 +348,8 @@ export class TTUIStateManager {
         .replace(/\bThinktankPanel\.IsAreaOpen\b/g, 'ThinktankPanel.Area.IsOpen')
         .replace(/\bSeedsPanel\.Mode\.IsOpen\b/g, 'SeedsPanel.Area.IsOpen')
         .replace(/\bSeedsPanel\.IsAreaOpen\b/g, 'SeedsPanel.Area.IsOpen')
-        .replace(/\bDiscussSettingPanel\.Mode\.IsOpen\b/g, 'DiscussSettingPanel.Area.IsOpen')
-        .replace(/\bDiscussPanel\.IsAreaOpen\b/g, 'DiscussSettingPanel.Area.IsOpen')
+        .replace(/\bWorkingSettingPanel\.Mode\.IsOpen\b/g, 'WorkingSettingPanel.Area.IsOpen')
+        .replace(/\bWorkingPanel\.IsAreaOpen\b/g, 'WorkingSettingPanel.Area.IsOpen')
         .replace(/\bHarvestPanel\.Mode\.IsOpen\b/g, 'HarvestPanel.Area.IsOpen')
         .replace(/\bHarvestPanel\.IsAreaOpen\b/g, 'HarvestPanel.Area.IsOpen')
         .replace(/\bTextEditor\.Color\.Background\b/g, 'TextEditor.Text.BgColor')
@@ -367,9 +367,9 @@ export class TTUIStateManager {
           (_m, id: string, prop: string) => `TextEditor.${id}.Theme.${prop === 'Color' ? 'BgColor' : prop === 'BgColor' ? 'Color' : prop}`)
         // ToolBar の Translate モードは Search（キーワード検索）モードに改めた
         .replace(/\bToolBar\.TranslateMode\.Text\b/g, 'ToolBar.SearchMode.Text')
-        .replace(/\bDiscussPanel\.Pane\.Count\b/g, 'DiscussPanel.Panes.Count')
-        .replace(/\bDiscussPanel\.Pane\.Layout\b/g, 'DiscussPanel.Panes.Layout')
-        .replace(/\bDiscussPanel\.Pane\.Display\b/g, 'DiscussPanel.Panes.Display')
+        .replace(/\bWorkingPanel\.Pane\.Count\b/g, 'WorkingPanel.Panes.Count')
+        .replace(/\bWorkingPanel\.Pane\.Layout\b/g, 'WorkingPanel.Panes.Layout')
+        .replace(/\bWorkingPanel\.Pane\.Display\b/g, 'WorkingPanel.Panes.Display')
         // パネル色は <Panel>.Theme.Color（基礎色）へ集約。旧 Area.BgColor は基礎色からの
         // 派生になったので引き継がない（旧キーは spec が無いため読み飛ばされる）。
         .replace(/\bThinktank\.Ribbon\.BgColor\b/g, 'Thinktank.Theme.Color')
@@ -377,7 +377,7 @@ export class TTUIStateManager {
         .replace(/\bSeeds\.Bundle\.Name\b/g, 'SeedsPanel.Project.ID')
         .replace(/\bSeedsPanel\.Bundle\.Name\b/g, 'SeedsPanel.Project.ID')
         .replace(/\bSeedsPanel\.Bundle\.ID\b/g, 'SeedsPanel.Project.ID')
-        .replace(/\bDiscuss\.Ribbon\.BgColor\b/g, 'Discuss.Theme.Color')
+        .replace(/\bWorking\.Ribbon\.BgColor\b/g, 'Working.Theme.Color')
         .replace(/\bHarvest\.Ribbon\.BgColor\b/g, 'Harvest.Theme.Color')
         .replace(/\bToolBar\.BgColor\b/g, 'ToolBar.Theme.Color')
         .replace(/\bToolBar\.Color\b/g, 'ToolBar.Theme.BgColor');

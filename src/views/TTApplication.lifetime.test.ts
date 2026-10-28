@@ -11,7 +11,7 @@ import { createDraftStore, hasUnsavedDrafts, resetDraftStores } from '../service
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTThinktankPanel } from './TTThinktankPanel';
 import { TTSeedsPanel } from './TTSeedsPanel';
-import { TTDiscussPanel } from './TTDiscussPanel';
+import { TTWorkingPanel } from './TTWorkingPanel';
 import { TTHarvestPanel } from './TTHarvestPanel';
 
 beforeEach(() => { TTApplication.resetInstance(); resetDraftStores(); localStorage.clear(); models.vault = new TTVault(); vi.useFakeTimers(); });
@@ -97,7 +97,7 @@ it('detaches the old manager root and pending debounce save while resetting hidd
   expect(nextUpdate).toHaveBeenCalled();
 });
 
-it.each([TTThinktankPanel, TTSeedsPanel, TTDiscussPanel, TTHarvestPanel])('disposes the model-name subscription for %s', Panel => {
+it.each([TTThinktankPanel, TTSeedsPanel, TTWorkingPanel, TTHarvestPanel])('disposes the model-name subscription for %s', Panel => {
   const panel = new Panel(), notify = vi.spyOn(panel, 'NotifyUpdated');
   setAvailableModels('Claude', []);
   expect(notify).toHaveBeenCalledTimes(1);
