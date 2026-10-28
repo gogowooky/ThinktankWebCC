@@ -96,7 +96,7 @@ export default function App() {
     const hasUnsavedChanges = () => app.WorkingPanel.Areas.some(a => a.IsDirty)
     window.__ttHasUnsavedChanges = hasUnsavedChanges
     window.__ttIsThinkDirty = (thinkId: string) =>
-      app.DiscussPanel.Areas.some(a => a.IsDirty && a.ResourceID === thinkId) ||
+      app.WorkingPanel.Areas.some(a => a.IsDirty && a.ResourceID === thinkId) ||
       Boolean(vault.GetThink(thinkId)?.IsDirty)
     window.__ttFlushAllSaves = () => flushAllPanes()
 
