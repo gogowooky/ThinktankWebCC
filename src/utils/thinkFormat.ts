@@ -1,6 +1,7 @@
 /**
  * thinkFormat.ts
- * 各 ContentType（chat, links, bundle）に対応する、一元化されたパース・シリアライズモジュール。
+ * 各 ContentType（chat, bundle）に対応する、一元化されたパース・シリアライズモジュール。
+ * links は linkFormat.ts、table は tableFormat.ts。
  */
 
 import type { ChatMessage } from '../types';
@@ -125,52 +126,7 @@ export function chatContentTitle(prefix: string, messages: ChatMessage[]): strin
 
 // #endregion
 
-// ════════════════════════════════════════════════════════════════════════
-// #region links 形式 (ContentType = 'links')
-// ════════════════════════════════════════════════════════════════════════
-
-export interface LinkItem {
-  title: string;
-  url: string;
-}
-
-/**
- * links 本文を解析してリンクオブジェクトの配列を返す（タイトル行はスキップ）
- */
-export function parseLinks(content: string): LinkItem[] {
-  const links: LinkItem[] = [];
-  const lines = content.split('\n').slice(1);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith('* ')) continue;
-    const body = trimmed.slice(2).trim();
-    const match = body.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
-    if (match) {
-      links.push({ title: match[1], url: match[2] });
-    } else {
-      links.push({ title: body, url: body });
-    }
-  }
-  return links;
-}
-
-/**
- * リンク配列から links 本文（テキスト）をシリアライズして生成する
- */
-export function serializeLinks(title: string, links: LinkItem[]): string {
-  const body = links.map(link => `* [${link.title}](${link.url})`).join('\n');
-  return `${title}\n${body}`;
-}
-
-/**
- * 既存のコンテンツ末尾にリンクを追記する
- */
-export function appendLinkToContent(content: string, link: LinkItem): string {
-  const trimmed = content.trimEnd();
-  return trimmed + `\n\n* [${link.title}](${link.url})`;
-}
-
-// #endregion
+// links 形式（ContentType = 'links'）は linkFormat.ts
 
 // ════════════════════════════════════════════════════════════════════════
 // #region project 形式 (ContentType = 'project')

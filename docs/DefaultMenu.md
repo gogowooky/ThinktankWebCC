@@ -106,11 +106,6 @@
 
 # D&Dしたときの処理
 
-"URL.D&D > U)URLをそのまま挿入",TextEditor.CurrentEditor.DDInsert:Link
-"URL.D&D > T)Linkファイルを作成したタグを挿入",TextEditor.CurrentEditor.DDInsert:Tag
+"LINK.D&D > L)Linkをそのまま挿入",                  TextEditor.CurrentEditor.DDInsert:Link
+"LINK.D&D > T)タグを挿入",                          TextEditor.CurrentEditor.DDInsert:Tag
 
-"FILEPATH.D&D > P)Pathをそのまま挿入",TextEditor.CurrentEditor.DDInsert:Link
-"FILEPATH.D&D > T)Linkファイルを作成したタグを挿入",TextEditor.CurrentEditor.DDInsert:Tag
-
-;"Think.D&D > O)ファイルを開く"                         TextEditor.CurrentEditor.Insert:
-;"Think.D&D > T)Thinkファイルのタグを挿入"              TextEditor.CurrentEditor.Insert:Tag

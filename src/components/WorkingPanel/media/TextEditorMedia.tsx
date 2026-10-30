@@ -9,7 +9,7 @@ import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { extractTitleLine } from '../../../utils/thinkFormat';
 import { FOLDING_HEADER_BG_CLASS, colorStyleToCss, foldingHeaderStyleCss, injectInlineStyleCss, isUnset, linkStyleCss, styleClass } from '../../../utils/defaultColor';
 import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColor';
-import { extractLinkDrop, resolveLinkDrop } from '../WorkingMenuRibbon';
+import { externalDropDragKind, extractLinkDrop, resolveLinkDrop } from '../WorkingMenuRibbon';
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
 import { reportSaveError } from '../../../utils/saveError';
@@ -22,7 +22,6 @@ import { registerMarkdownFolding, registerHexColorProvider } from './texteditor/
 import { applyEditorDecorations } from './texteditor/editorDecorations';
 import { clientPointToPosition } from '../../../utils/editorDropPosition';
 import { isLocalPathTarget } from '../../../utils/linkFormat';
-import { showDefaultMenu } from '../../../utils/defaultMenu';
 /**
  * TextEditorMedia.tsx
  * Monaco Editor によるテキスト編集メディア。
@@ -677,8 +676,12 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // URL / パスでない通常の文字列D&Dは Monaco の既定動作へ渡す。
     const fallback = extractLinkDrop(e);
     if (!fallback) return;
+    // DataTransferはイベント終了後（最初のawait後）に読めなくなるブラウザがあるため、
+    // Files/Directoryの種別は同期区間で確定させる。
+    const dragKind = externalDropDragKind(e, fallback);
     e.preventDefault();
     e.stopPropagation();
+    const nativeEvent = e.nativeEvent;
 
     const editor = editorRef.current;
     if (!editor) return;
@@ -689,16 +692,19 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     if (!range) return;
 
     const link = await resolveLinkDrop(e) ?? fallback;
-    TTShortcutManager.instance.setActiveEditor(editor);
-    TTShortcutManager.instance.setPendingTextEditorDrop({ target: link.url, title: link.title, editor, range });
-
-    const menuName = isLocalPathTarget(link.url) ? 'FILEPATH.D&D' : 'URL.D&D';
-    const actionId = await showDefaultMenu(menuName, editor.getDomNode?.() ?? null, `${menuName}: ${link.url}`);
+    const actionId = dragKind ? TTShortcutManager.instance.resolveDragAction(dragKind, nativeEvent) : null;
     if (!actionId) {
-      TTShortcutManager.instance.setPendingTextEditorDrop(null);
       editor.focus();
       return;
     }
+    TTShortcutManager.instance.setActiveEditor(editor);
+    TTShortcutManager.instance.setPendingTextEditorDrop({
+      target: link.url,
+      title: link.title,
+      kind: isLocalPathTarget(link.url) ? 'path' : 'url',
+      editor,
+      range,
+    });
     // Action側がペイロードを同期的にconsumeしてから非同期処理へ入る。
     TTShortcutManager.instance.executeActionDirect(actionId);
     TTShortcutManager.instance.setPendingTextEditorDrop(null);
@@ -715,9 +721,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   return (
     <div
       className="text-editor-media"
-      onDragOver={handleDragOver}
+      onDragOverCapture={handleDragOver}
       onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      onDropCapture={handleDrop}
     >
       <Editor
         key={`${think.ID}-${refreshKey ?? 0}`}

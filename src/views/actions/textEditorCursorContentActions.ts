@@ -844,14 +844,37 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   };
 
   TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DDInsert:Menu',
+    Description: 'D&Dされた外部URLまたはパスの挿入方法をメニューから選ぶ',
+    Completion: async (item) => {
+      const ctx = consumeTextEditorDrop(item);
+      if (!ctx) return;
+      const menuName = 'LINK.D&D';
+      const actionId = await showDefaultMenu(menuName, ctx.editor.getDomNode?.() ?? null, `${menuName}: ${ctx.target}`);
+      if (!actionId) {
+        ctx.editor.focus();
+        item.Result = 'キャンセルしました';
+        return;
+      }
+      TTShortcutManager.instance.setPendingTextEditorDrop(ctx);
+      const selected = await TTActions.Execute(actionId);
+      item.Result = selected.Result;
+      item.Allow = selected.Allow;
+    },
+  });
+
+  TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DDInsert:Link',
     Description: 'D&DされたURLまたはパスをそのままテキストとして挿入する',
     Completion: (item) => {
       const ctx = consumeTextEditorDrop(item);
       if (!ctx) return;
-      ctx.editor.executeEdits('external-drop-link', [{ range: ctx.range, text: ctx.target, forceMoveMarkers: true }]);
+      // パスは本文中でもlinkファイルの # Link と同じ引用形式に統一する。
+      // URLは従来どおり引用符を付けず、そのまま挿入する。
+      const insertion = ctx.kind === 'path' ? `"${ctx.target.replace(/"/g, '""')}"` : ctx.target;
+      ctx.editor.executeEdits('external-drop-link', [{ range: ctx.range, text: insertion, forceMoveMarkers: true }]);
       ctx.editor.focus();
-      item.Result = `Insert: ${ctx.target}`;
+      item.Result = `Insert: ${insertion}`;
     },
   });
 

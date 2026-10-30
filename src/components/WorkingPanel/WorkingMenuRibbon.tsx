@@ -20,7 +20,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
 };
 import type { TTWorkingArea } from '../../views/TTWorkingArea';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
-import { detectLocalDragKind } from '../../utils/keyboardUtils';
+import { detectLocalDragKind, type LocalDragKind } from '../../utils/keyboardUtils';
 import type { MediaType } from '../../types';
 import './WorkingMenuRibbon.css';
 
@@ -108,6 +108,8 @@ export function parseWindowsUrlShortcut(content: string): string | null {
  */
 const LOCAL_DROP_DEFAULT_ACTION = 'WorkingPanel.Load.DroppedLink';
 const LOCAL_DROP_INSERT_ACTION  = 'WorkingPanel.Insert.DroppedLink';
+const LOCAL_DROP_MENU_ACTION    = 'TextEditor.CurrentEditor.DDInsert:Menu';
+const LOCAL_DROP_TAG_ACTION     = 'TextEditor.CurrentEditor.DDInsert:Tag';
 
 /**
  * OSファイルシステムからのFile/Dirドロップかどうかを判定し、疑似キー
@@ -129,7 +131,9 @@ function resolveLocalDropAction(e: React.DragEvent): { actionId: string | null }
 export function shouldAllowLocalDrop(e: React.DragEvent): boolean {
   const resolved = resolveLocalDropAction(e);
   if (!resolved) return true;
-  return resolved.actionId === LOCAL_DROP_DEFAULT_ACTION;
+  return resolved.actionId === LOCAL_DROP_DEFAULT_ACTION
+    || resolved.actionId === LOCAL_DROP_MENU_ACTION
+    || resolved.actionId === LOCAL_DROP_TAG_ACTION;
 }
 
 /**
@@ -140,44 +144,12 @@ export function shouldAllowLocalDrop(e: React.DragEvent): boolean {
 export function shouldInsertLocalDrop(e: React.DragEvent): boolean {
   const resolved = resolveLocalDropAction(e);
   if (!resolved) return false;
-  return resolved.actionId === LOCAL_DROP_INSERT_ACTION;
+  return resolved.actionId === LOCAL_DROP_INSERT_ACTION || resolved.actionId === LOCAL_DROP_TAG_ACTION;
 }
 
 export function extractLinkDrop(e: React.DragEvent): { url: string; title: string } | null {
-  // 1. ファイルドロップ（OS ファイルエクスプローラーから）
-  //    フルパス取得優先順: Electron file.path > text/plain のパス > file:// URI変換 > file.name
-  if (e.dataTransfer.files.length > 0) {
-    const file         = e.dataTransfer.files[0];
-    // Electron 32+: webUtils.getPathForFile 経由（file.path は非推奨）
-    const electronPath = window.electronAPI?.getPathForFile(file) ?? undefined;
-    const plainText    = e.dataTransfer.getData('text/plain').trim();
-    const uriFirst     = e.dataTransfer.getData('text/uri-list')
-                          .split(/\r?\n/).find(l => l.trim() && !l.startsWith('#'))?.trim() ?? '';
-    const plainIsPath  = /^[a-zA-Z]:[\\\/]/.test(plainText) || /^\\\\/.test(plainText) || /^\//.test(plainText);
-    const uriIsFile    = /^file:\/\//i.test(uriFirst);
-    const url =
-      electronPath ??
-      (plainIsPath ? plainText : null) ??
-      (uriIsFile   ? fileUriToPath(uriFirst) : null) ??
-      file.name;
-    const title = file.name.replace(/\.[^/.]+$/, '');
-    return { url, title };
-  }
-  // 2. プレーンテキスト（URL / Windows パス / Unix パス）
-  const plain = e.dataTransfer.getData('text/plain').trim();
-  if (plain) {
-    if (/^https?:\/\//i.test(plain) || /^ftp:\/\//i.test(plain)) {
-      return { url: plain, title: titleFromUrl(plain) };
-    }
-    if (/^file:\/\//i.test(plain)) {
-      const localPath = fileUriToPath(plain);
-      return { url: localPath, title: titleFromPath(localPath) };
-    }
-    if (/^[a-zA-Z]:[\\\/]/.test(plain) || /^\\\\/.test(plain) || /^\//.test(plain)) {
-      return { url: plain, title: titleFromPath(plain) };
-    }
-  }
-  // 3. URI list（ブラウザのアドレスバー / リンクドラッグ）
+  // 1. URI list（ブラウザのアドレスバー / リンクドラッグ）。ブラウザによってはFilesや
+  //    text/plainも同時に付くため、タイトルや一時ショートカットよりURLを必ず優先する。
   const uriList = e.dataTransfer.getData('text/uri-list');
   if (uriList) {
     const first = uriList.split(/\r?\n/).find(l => l.trim() && !l.startsWith('#'))?.trim();
@@ -189,7 +161,40 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
       return { url: first, title: titleFromUrl(first) };
     }
   }
+
+  // 2. プレーンテキスト（URL / Windows パス / Unix パス）
+  const plain = e.dataTransfer.getData('text/plain').trim();
+  if (plain) {
+    if (/^https?:\/\//i.test(plain) || /^ftp:\/\//i.test(plain)) {
+      return { url: plain, title: titleFromUrl(plain) };
+    }
+    if (/^file:\/\//i.test(plain)) {
+      const localPath = fileUriToPath(plain);
+      return { url: localPath, title: titleFromPath(localPath) };
+    }
+    if (/^[a-zA-Z]:[\\/]/.test(plain) || /^\\\\/.test(plain) || /^\//.test(plain)) {
+      return { url: plain, title: titleFromPath(plain) };
+    }
+  }
+  // 3. ファイルドロップ（OS ファイルエクスプローラー、またはブラウザのショートカット）
+  //    フルパス取得優先順: Electron API > text/plain のパス > file.name
+  if (e.dataTransfer.files.length > 0) {
+    const file         = e.dataTransfer.files[0];
+    const electronPath = window.electronAPI?.getPathForFile(file) ?? undefined;
+    const plainIsPath  = /^[a-zA-Z]:[\\/]/.test(plain) || /^\\\\/.test(plain) || /^\//.test(plain);
+    const url = electronPath ?? (plainIsPath ? plain : null) ?? file.name;
+    const title = file.name.replace(/\.[^/.]+$/, '');
+    return { url, title };
+  }
   return null;
+}
+
+/**
+ * 外部URL/パスをショートカットのD&D疑似イベントへ正規化する。
+ * OS由来のディレクトリだけLocalDirDrag、それ以外（ブラウザURLを含む）はLocalFileDrag。
+ */
+export function externalDropDragKind(e: React.DragEvent, link: { url: string; title: string } | null): LocalDragKind | null {
+  return detectLocalDragKind(e.dataTransfer) ?? (link ? 'LocalFileDrag' : null);
 }
 
 /**

@@ -50,6 +50,8 @@ ChatContents,   Chat全文検索,       NoURL
 ; Tag.Think:           4.1 特定thinkファイルを指定するためのタグ                       例：[THINK:id] [MEMO:id](前方互換用) 
 ; Tag.ThinkTitle       4.2 Thinktank>Think一覧のタイトル絞込でkeywordsを検索するタグ   例：[THINK:keywords] [MEMO:keywords](前方互換用)
 ; Tag.ThinkContents    4.3 Thinktank>Think一覧のコンテンツ絞込でkeywordsを検索するタグ 例：[THINK:>keywords] [MEMO:>keyword](前方互換用)
+; Tag.Link            linkファイル（1件のURL/パス）を参照するタグ。タグ名はリンク先で決まる        例：[link:id] [gmail:id] [gdrive:id] [gphoto:id] [gnb:id] [path:id]
+;                      値が ThinkID のときだけ Link タグとして扱う（docs/261030/linkファイル仕様.md）
 ; Tag.ChatTitle        6.1 Thinktank>Think一覧でタイトル絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:keywords]
 ; Tag.ChatContents     6.2 Thinktank>Think一覧のコンテンツ絞込みでkeywords検索するタグ(chatフィルター付)   例：[CHAT:>keywords]
 

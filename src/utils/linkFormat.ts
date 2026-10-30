@@ -6,6 +6,7 @@
  *   1行目  タイトル
  *   2行目  空行、または = の連続
  *   3行目〜 # Link / # Affiliation / # Abstract の見出し
+ *   pathは # Link で引用符に包み、# Affiliation は「(PC名)親フォルダ」とする。
  * 旧書式（「* [タイトル](URL)」の箇条書きを並べたリンク集）は読み取りだけ互換を保つ。
  */
 
@@ -64,14 +65,35 @@ export function pathRootOf(path: string): string {
   return '';
 }
 
+/** ファイル／ディレクトリパスの親フォルダ。絶対パスでなければ空文字。 */
+export function parentFolderOf(target: string): string {
+  let s = target.trim();
+  if (/^file:\/\//i.test(s)) {
+    try {
+      const url = new URL(s);
+      s = decodeURIComponent(url.pathname).replace(/^\/([a-zA-Z]:)/, '$1').replace(/\//g, '\\');
+    } catch { return ''; }
+  }
+  if (!WINDOWS_DRIVE_RE.test(s) && !s.startsWith('\\\\') && !s.startsWith('/')) return '';
+
+  // 末尾区切りは「ドロップ対象ディレクトリ自身」の末尾とみなし、まず除去する。
+  const driveRoot = /^[a-zA-Z]:[\\/]$/.test(s);
+  const unixRoot = s === '/';
+  if (!driveRoot && !unixRoot) s = s.replace(/[\\/]+$/, '');
+  const lastSeparator = Math.max(s.lastIndexOf('\\'), s.lastIndexOf('/'));
+  if (lastSeparator < 0) return '';
+  if (/^[a-zA-Z]:/.test(s) && lastSeparator === 2) return s.slice(0, 3);
+  if (lastSeparator === 0) return '/';
+  return s.slice(0, lastSeparator);
+}
+
 /** PC名が分からない環境（ブラウザ版）で Affiliation に入れる仮のPC名 */
 export const UNKNOWN_PC_NAME = 'unknown';
 
-/** # Affiliation の値。URLはサーバーアドレス、パスは「PC名:ルート」。 */
+/** # Affiliation の論理値。URLはサーバーアドレス、パスは「(PC名)親フォルダ」。 */
 export function linkAffiliationOf(target: string, pcName: string): string {
   if (isLocalPathTarget(target)) {
-    const root = pathRootOf(target);
-    return root ? `${pcName || UNKNOWN_PC_NAME}:${root}` : '';
+    return `(${pcName || UNKNOWN_PC_NAME})${parentFolderOf(target)}`;
   }
   return parseUrl(target)?.host ?? '';
 }
@@ -87,14 +109,27 @@ const LINK_SECTIONS = ['Link', 'Affiliation', 'Abstract'] as const;
 type LinkSection = typeof LINK_SECTIONS[number];
 const SECTION_HEADING_RE = /^#\s+(Link|Affiliation|Abstract)\s*$/i;
 
+function quoteValue(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
+}
+
+function unquoteValue(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')) {
+    return trimmed.slice(1, -1).replace(/""/g, '"');
+  }
+  return trimmed;
+}
+
 export function serializeLinkFile(file: LinkFile): string {
+  const isPath = isLocalPathTarget(file.link);
   const lines = [
     file.title,
     '=',
     '# Link',
-    file.link,
+    isPath ? quoteValue(file.link) : file.link,
     '# Affiliation',
-    ...(file.affiliation ? [file.affiliation] : []),
+    ...(file.affiliation ? [isPath ? quoteValue(file.affiliation) : file.affiliation] : []),
     '# Abstract',
     ...(file.abstract ? [file.abstract] : []),
   ];
@@ -122,12 +157,13 @@ export function parseLinkFile(content: string): LinkFile | null {
     }
     if (current) sections[current].push(line);
   }
-  const link = sections.Link.map(l => l.trim()).find(Boolean);
+  const serializedLink = sections.Link.map(l => l.trim()).find(Boolean);
+  const link = serializedLink ? unquoteValue(serializedLink) : '';
   if (link) {
     return {
       title,
       link,
-      affiliation: sections.Affiliation.join('\n').trim(),
+      affiliation: unquoteValue(sections.Affiliation.join('\n')),
       abstract: sections.Abstract.join('\n').trim(),
     };
   }

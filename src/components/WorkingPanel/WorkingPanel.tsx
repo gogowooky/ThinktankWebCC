@@ -25,7 +25,9 @@ import { WorkingTabBar } from './WorkingTabBar';
 import { NEW_HTML_CONTENT } from '../../utils/htmlPreview';
 import { WorkingSettingArea } from './WorkingSettingArea';
 import type { WorkingSettingAreaRef } from './WorkingSettingArea';
-import { extractLinkDrop, shouldAllowLocalDrop } from './WorkingMenuRibbon';
+import { externalDropDragKind, extractLinkDrop, resolveLinkDrop, shouldAllowLocalDrop } from './WorkingMenuRibbon';
+import { getPcName } from '../../utils/pcName';
+import { isLocalPathTarget } from '../../utils/linkFormat';
 import { parseTableContent, sectionToCsv, tableSectionToMetadataForm, readColHeader, parseCsvLine } from '../../utils/tableFormat';
 import type { TTThink } from '../../models/TTThink';
 import type { SettingsType } from './WorkingTabBar';
@@ -586,6 +588,21 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     if (!hasThink && !hasLink) return;
     e.preventDefault();
 
+    // 外部URL/パスがTextEditor上にある場合は、Pane追加用シールドを外してTextEditor自身の
+    // LocalFileDrag/LocalDirDrag処理へ渡す。シールドが残ると画像等のFilesドロップが
+    // WorkingPanel側に吸われ、新しいlinkファイルのPane作成になってしまう。
+    if (hasLink) {
+      const externalAreaId = findWorkingAreaIdAtPoint(e.clientX, e.clientY);
+      const externalEditor = externalAreaId ? TTShortcutManager.instance.getAreaEditor(externalAreaId) : null;
+      if (externalEditor) {
+        e.dataTransfer.dropEffect = 'copy';
+        setIsExternalDrag(false);
+        setDropOverlay(null);
+        setInsertCaret(null);
+        return;
+      }
+    }
+
     // Alt+ThinkFileDrag（Insert）は、computeDropOverlay()のisOuter（パネル外縁15%は
     // 新規Pane追加ゾーン）判定より優先してカーソル直下の既存Paneを直接ヒットテストする。
     // isOuter判定はパネル本体の端からの距離だけで決まるため、パネル端に近い既存Pane
@@ -652,6 +669,46 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   }, []);
 
   const handleBodyDrop = useCallback(async (e: React.DragEvent) => {
+    const thinkId = e.dataTransfer.getData('application/x-thought-id');
+    const fallbackLink = thinkId ? null : extractLinkDrop(e);
+
+    // TextEditor上の外部URL/パスは、シールドがdrop直前まで残った場合もここで救済し、
+    // Pane作成ではなくDefaultShortcutのLocalFileDrag/LocalDirDrag Actionへ渡す。
+    if (fallbackLink) {
+      const hoveredAreaId = findWorkingAreaIdAtPoint(e.clientX, e.clientY);
+      const editor = hoveredAreaId ? TTShortcutManager.instance.getAreaEditor(hoveredAreaId) : null;
+      if (editor) {
+        const dragKind = externalDropDragKind(e, fallbackLink);
+        const nativeEvent = e.nativeEvent;
+        const resolvedLink = resolveLinkDrop(e);
+        const position = clientPointToPosition(editor, e.clientX, e.clientY) ?? editor.getPosition?.();
+        const range = position
+          ? { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column }
+          : editor.getSelection?.();
+        e.preventDefault();
+        e.stopPropagation();
+        setDropOverlay(null);
+        setInsertCaret(null);
+        setIsExternalDrag(false);
+        if (!dragKind || !range) return;
+
+        const link = await resolvedLink ?? fallbackLink;
+        const actionId = TTShortcutManager.instance.resolveDragAction(dragKind, nativeEvent);
+        if (!actionId) return;
+        TTShortcutManager.instance.setActiveEditor(editor);
+        TTShortcutManager.instance.setPendingTextEditorDrop({
+          target: link.url,
+          title: link.title,
+          kind: isLocalPathTarget(link.url) ? 'path' : 'url',
+          editor,
+          range,
+        });
+        TTShortcutManager.instance.executeActionDirect(actionId);
+        TTShortcutManager.instance.setPendingTextEditorDrop(null);
+        return;
+      }
+    }
+
     const overlay = computeDropOverlay(e);
     setDropOverlay(null);
     setInsertCaret(null);
@@ -663,7 +720,6 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     // docs/DefaultShortcut.md参照）。コンテンツ領域へのThinkドロップはLoad/Insertいずれも
     // ここで一元的に判定する（各Paneのコンポーネント側では消費しない）。個別コンポーネントの
     // dragover/dropハンドラーとタイミング・判定がずれてAlt判定を取りこぼす問題を避けるため。
-    const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) {
       // Insertは、computeDropOverlay()のisOuter（パネル外縁は新規Pane追加ゾーン）判定より
       // 優先してカーソル直下の既存Paneを直接ヒットテストする（handleBodyDragOverと同じ理由。
@@ -693,7 +749,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     // URL / path D&D → links Think を新規作成
     const link = extractLinkDrop(e);
     if (link && shouldAllowLocalDrop(e)) {
-      const newThink = await vault.CreateLinksThink(link.title, link.url);
+      const newThink = await vault.CreateLinksThink(link.title, link.url, await getPcName());
       const id    = newThink.ID;
       const title = newThink.Name;
       if (overlay.type === 'split' && overlay.areaId) panel.FocusArea(overlay.areaId);

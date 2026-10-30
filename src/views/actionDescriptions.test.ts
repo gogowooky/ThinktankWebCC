@@ -29,6 +29,7 @@ describe('Action descriptions from Thinktank_Status-Action-Binding.md', () => {
   });
 
   it('DDInsertの完了節から説明を読み込む', () => {
+    expect(actionDescriptionFromDoc('TextEditor.CurrentEditor.DDInsert:Menu')).toBe('D&Dされた外部URLまたはパスの挿入方法をメニューから選ぶ');
     expect(actionDescriptionFromDoc('TextEditor.CurrentEditor.DDInsert:Link')).toBe('D&DされたURLまたはパスをそのままテキストとして挿入する');
     expect(actionDescriptionFromDoc('TextEditor.CurrentEditor.DDInsert:Tag')).toBe('D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する');
   });

@@ -5,6 +5,9 @@ import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { registerTextEditorCursorContentActions } from './textEditorCursorContentActions';
 
+const menuMocks = vi.hoisted(() => ({ showDefaultMenu: vi.fn() }));
+vi.mock('../../utils/defaultMenu', () => ({ showDefaultMenu: menuMocks.showDefaultMenu }));
+
 const LINK_ID = '2026-10-30-120000';
 
 interface FakeThink { ID: string; ContentType: string; Content: string; IsMetaOnly: boolean; LoadContent: () => Promise<void> }
@@ -49,9 +52,12 @@ let windowOpen: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   windowOpen = vi.fn();
   vi.stubGlobal('open', windowOpen);
+  menuMocks.showDefaultMenu.mockReset();
+  menuMocks.showDefaultMenu.mockResolvedValue(null);
 });
 afterEach(() => {
   TTShortcutManager.instance.setActiveEditor(null);
+  TTShortcutManager.instance.setPendingTextEditorDrop(null);
   vi.unstubAllGlobals();
 });
 
@@ -113,18 +119,18 @@ describe('ThinkファイルのInsertドロップ', () => {
 describe('URL / パスのDDInsert', () => {
   const range = { startLineNumber: 1, startColumn: 3, endLineNumber: 1, endColumn: 3 };
 
-  it('Linkはリンク先文字列をドロップ位置へそのまま挿入する', async () => {
+  it('Linkはパスを引用符で囲んでドロップ位置へ挿入する', async () => {
     const { editor, executeEdits, createLinksThink } = setup('', 1, undefined);
-    TTShortcutManager.instance.setPendingTextEditorDrop({ target: 'C:\\docs\\plan.md', title: 'plan', editor, range });
-    expect(await run('TextEditor.CurrentEditor.DDInsert:Link')).toBe('Insert: C:\\docs\\plan.md');
-    expect(executeEdits.mock.calls[0][1][0]).toMatchObject({ range, text: 'C:\\docs\\plan.md' });
+    TTShortcutManager.instance.setPendingTextEditorDrop({ target: 'C:\\docs\\plan.md', title: 'plan', kind: 'path', editor, range });
+    expect(await run('TextEditor.CurrentEditor.DDInsert:Link')).toBe('Insert: "C:\\docs\\plan.md"');
+    expect(executeEdits.mock.calls[0][1][0]).toMatchObject({ range, text: '"C:\\docs\\plan.md"' });
     expect(createLinksThink).not.toHaveBeenCalled();
   });
 
   it('Tagはlinkファイルを作り、リンク先に応じた参照タグを挿入する', async () => {
     const { editor, executeEdits, createLinksThink } = setup('', 1, undefined);
     const target = 'https://mail.google.com/mail/u/0/#inbox';
-    TTShortcutManager.instance.setPendingTextEditorDrop({ target, title: 'Gmail', editor, range });
+    TTShortcutManager.instance.setPendingTextEditorDrop({ target, title: 'Gmail', kind: 'url', editor, range });
     expect(await run('TextEditor.CurrentEditor.DDInsert:Tag')).toBe('Insert: [gmail:2026-10-30-130000]');
     expect(createLinksThink).toHaveBeenCalledWith('Gmail', target, '');
     expect(executeEdits.mock.calls[0][1][0]).toMatchObject({ range, text: '[gmail:2026-10-30-130000]' });
@@ -135,5 +141,15 @@ describe('URL / パスのDDInsert', () => {
     expect(await run('TextEditor.CurrentEditor.DDInsert:Tag')).toBe('[ドロップ情報なし]');
     expect(createLinksThink).not.toHaveBeenCalled();
     expect(executeEdits).not.toHaveBeenCalled();
+  });
+
+  it('Menuは統一LINK.D&Dメニューを表示し、選択したActionへ同じドロップ情報を渡す', async () => {
+    const { editor, executeEdits } = setup('', 1, undefined);
+    const target = 'https://example.com/page';
+    menuMocks.showDefaultMenu.mockResolvedValue('TextEditor.CurrentEditor.DDInsert:Link');
+    TTShortcutManager.instance.setPendingTextEditorDrop({ target, title: 'Example', kind: 'url', editor, range });
+    expect(await run('TextEditor.CurrentEditor.DDInsert:Menu')).toBe(`Insert: ${target}`);
+    expect(menuMocks.showDefaultMenu).toHaveBeenCalledWith('LINK.D&D', null, `LINK.D&D: ${target}`);
+    expect(executeEdits.mock.calls[0][1][0]).toMatchObject({ range, text: target });
   });
 });

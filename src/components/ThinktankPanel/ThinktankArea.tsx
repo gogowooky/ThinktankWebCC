@@ -380,7 +380,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   } else if (viewMode === 'settings') {
     content = <ThinktankSettingsView ref={settingsViewRef} />;
   } else if (viewMode === 'project') {
-    content = <AbstractView />;
+    content = <AbstractView projectView={panel.ProjectView} vault={vault} workingPanel={app.WorkingPanel} panelKey="thinktank" />;
   } else {
     // filter モード（検索・Project一覧を統合）
     content = (

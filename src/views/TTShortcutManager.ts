@@ -30,17 +30,14 @@
  *               ※ D&Dは preventDefault のタイミングがドロップ先DOM要素ごとに異なるため、
  *                 resolveDragAction() でActionIDの解決のみを行い、preventDefault と
  *                 TTActions.Execute() の呼び出しは各Dropハンドラー側が担う。ドラッグの
- *                 ペイロード（ThinkID・配置先情報）はキーボードイベントに乗せられないため、
- *                 setPendingThinkDrop() で明示的にセットしてから Execute() を呼ぶこと
- *                 （Completion側は consumePendingThinkDrop() で読み取る）。
+ *                 ペイロードはキーボードイベントに乗せられないため、ThinkはsetPendingThinkDrop()、
+ *                 外部URL/パスはsetPendingTextEditorDrop()で明示的にセットしてからExecute()を呼ぶ。
  *                 LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
- *                 （OSファイルシステムからのFile/Dirドロップ、docs/DefaultShortcut.md参照）は、
- *                 対応する4箇所の呼び出し元（WorkingMenuRibbon/WorkingArea/WorkingPanel/
- *                 TextEditorMedia）が既に同期的にLoad/Insert相当の処理を持っているため
- *                 TTActions.Execute() は経由せず、resolveDragAction() の戻り値を
- *                 shouldAllowLocalDrop() / shouldInsertLocalDrop()（WorkingMenuRibbon.tsx）
- *                 でActionID文字列の一致判定
- *                 のみに使う。Shortcutテーブルの行を書き換える／削除するとDropを抑止できる。
+ *                 （ブラウザURLを含む外部リソース、またはOSファイルシステムからのFile/Dirドロップ、
+ *                 docs/DefaultShortcut.md参照）は、
+ *                 TextEditorMediaでは解決したActionを実行する。他のドロップ先
+ *                 （WorkingMenuRibbon/WorkingArea/WorkingPanel）はPane配置などのUI処理を持つため、
+ *                 shouldAllowLocalDrop()でActionIDを確認して既定処理を行う。
  *   複数指定:   | 区切りで複数キーを同一アクションに割り当て可能
  *               | 自体を指定したい場合は "" でくくる（例: "ctrl+|"）
  */
@@ -103,6 +100,7 @@ export type ThinkDropContext =
 export interface TextEditorDropContext {
   target: string;
   title: string;
+  kind: 'url' | 'path';
   editor: any;
   range: any;
 }
@@ -259,6 +257,7 @@ export class TTShortcutManager {
     this._activeEditor = null;
     this._areaEditors.clear();
     this._pendingThinkDrop = null;
+    this._pendingTextEditorDrop = null;
     this._heldMods = { ctrl: false, alt: false, shift: false, meta: false };
     this._currentFocus = 'None';
     this._currentExMode = '';

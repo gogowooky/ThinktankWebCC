@@ -4,6 +4,7 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
+import { TTProjectView } from './TTProjectView';
 import { TTWorkingArea } from './TTWorkingArea';
 import type { MediaType } from '../types';
 import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
@@ -176,6 +177,9 @@ export class TTWorkingPanel extends TTUIItem {
   public ToggleCheck(id: string | string[], forceChecked?: boolean): void {
     togglePanelChecks(this, id, forceChecked);
   }
+
+  /** 「プロジェクト」サブパネルで表示中のファイル */
+  public ProjectView = new TTProjectView('WorkingPanel');
 
   public override get ClassName(): string { return 'TTWorkingPanel'; }
 

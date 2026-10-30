@@ -7,6 +7,7 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
+import { TTProjectView } from './TTProjectView';
 import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
 import { setPanelCheckedIds, togglePanelChecks, setPanelAreaOpen, setPanelAiModel, subscribePanelAiModel } from './panelBehavior';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
@@ -65,6 +66,9 @@ export class TTHarvestPanel extends TTUIItem {
   public ToggleCheck(id: string | string[], forceChecked?: boolean): void {
     togglePanelChecks(this, id, forceChecked);
   }
+
+  /** 「プロジェクト」サブパネルで表示中のファイル */
+  public ProjectView = new TTProjectView('HarvestPanel');
 
   public override get ClassName(): string {
     return 'TTHarvestPanel';

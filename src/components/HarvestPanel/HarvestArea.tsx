@@ -132,7 +132,7 @@ export function HarvestArea({ app, viewMode }: Props) {
             Harvest設定は今後追加予定です。
           </div>
         ) : viewMode === 'project' ? (
-          <AbstractView />
+          <AbstractView projectView={panel.ProjectView} vault={vault} workingPanel={app.WorkingPanel} panelKey="harvest" />
         ) : (
           <>
             {supportListError && <p role="alert">{supportListError}</p>}

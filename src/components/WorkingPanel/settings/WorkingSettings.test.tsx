@@ -3,6 +3,8 @@ import { act, createRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../../../hooks/useSupportChats', () => ({ useSupportChats: () => ({ chats: [], error: '' }) }));
+// プロジェクト表示は Monaco を読み込むため、設定画面のテストでは差し替える
+vi.mock('../../Abstract/AbstractView', () => ({ AbstractView: () => null }));
 import { TTApplication } from '../../../views/TTApplication';
 import { WorkingSettingArea, type WorkingSettingAreaRef } from '../WorkingSettingArea';
 import { broadcastPanelSectionsSetAll } from '../../../hooks/usePanelSectionsSetAll';

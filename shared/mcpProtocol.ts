@@ -233,7 +233,7 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
         category: {
           type: 'string',
           enum: ['memo', 'task', 'links', 'table'],
-          description: 'Thinkの種別（既定: memo）',
+          description: 'Thinkの種別（既定: memo）。links は1件のURL/パスにつき1ファイルで、本文は「=」の行に続けて「# Link」（URL、または引用符で囲んだパス）「# Affiliation」（URLはサーバーアドレス、パスは引用符で囲んだ「(PC名)親フォルダ」）「# Abstract」（概要）の見出しを置く',
         },
         keywords: {
           type: 'string',

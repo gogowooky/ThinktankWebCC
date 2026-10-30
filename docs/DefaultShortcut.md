@@ -65,15 +65,13 @@ Seeds.Filter     ,ExApp  ,Alt+ArrowDown  ,SeedsPanel.Filter.CursorPos:NextLine  
 Seeds.Filter     ,ExApp  ,Alt+Enter      ,SeedsPanel.Filter.Cursor:Action              ,Seeds>Think一覧のカーソル位置を開く
 Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck         ,Seeds>Think一覧のカーソル位置をチェック
 
-# Editor D&D Thinkファイル,ローカルファイル
-*,   ,ThinkFileDrag       ,WorkingPanel.DroppedFile.ID:Load   ,DropされたThinkファイルをPaneにLoadする
-*,   ,Alt+ThinkFileDrag   ,WorkingPanel.DroppedFile.ID:Insert ,DropされたThinkファイルをコンテンツ内に挿入する
-
-*,   ,LocalFileDrag       ,WorkingPanel.Load.DroppedLink   ,ローカルファイルDropで既定動作（Links Think作成）を行う
-*,   ,LocalDirDrag        ,WorkingPanel.Load.DroppedLink   ,ローカルディレクトリDropで既定動作（Links Think作成）を行う
-*,   ,Alt+LocalFileDrag   ,WorkingPanel.Insert.DroppedLink ,ローカルファイルDropをコンテンツ内カーソル位置に挿入する
-*,   ,Alt+LocalDirDrag    ,WorkingPanel.Insert.DroppedLink ,ローカルディレクトリDropをコンテンツ内カーソル位置に挿入する
-
+# Editor D&D Thinkファイル,外部URL・ローカルファイル
+*,   ,ThinkFileDrag       ,WorkingPanel.DroppedFile.ID:Load         ,DropされたThinkファイルをPaneにLoadする
+*,   ,Alt+ThinkFileDrag   ,WorkingPanel.DroppedFile.ID:Insert       ,DropされたThinkファイルをコンテンツ内に挿入する
+*,   ,LocalFileDrag       ,TextEditor.CurrentEditor.DDInsert:Menu   ,ブラウザURLまたはローカルファイルDropの挿入方法を選ぶ
+*,   ,LocalDirDrag        ,TextEditor.CurrentEditor.DDInsert:Menu   ,ローカルディレクトリDropの挿入方法を選ぶ
+*,   ,Alt+LocalFileDrag   ,TextEditor.CurrentEditor.DDInsert:Tag    ,ブラウザURLまたはローカルファイルをlinkファイル化してタグ挿入する
+*,   ,Alt+LocalDirDrag    ,TextEditor.CurrentEditor.DDInsert:Tag    ,ローカルディレクトリをlinkファイル化してタグ挿入する
 
 # Editor ActionTag
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCaretPos                  ,URL・パス・タグは1stAction →選択テキストをタグ化

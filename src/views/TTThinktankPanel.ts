@@ -7,6 +7,7 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
+import { TTProjectView } from './TTProjectView';
 import type { ContentType } from '../types/index';
 import type { TTThink } from '../models/TTThink';
 import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
@@ -69,6 +70,9 @@ export class TTThinktankPanel extends TTUIItem {
 
   /** フィルタ適用後の表示中Think一覧（CursorPosアクション用スナップショット） */
   public FilteredThoughts: TTThink[] = [];
+
+  /** 「プロジェクト」サブパネルで表示中のファイル */
+  public ProjectView = new TTProjectView('ThinktankPanel');
 
   public override get ClassName(): string {
     return 'TTThinktankPanel';

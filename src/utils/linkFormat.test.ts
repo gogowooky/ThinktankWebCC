@@ -4,6 +4,7 @@ import {
   formatLinkTag,
   linkAffiliationOf,
   linkTagNameOf,
+  parentFolderOf,
   parseLegacyLinks,
   parseLinkFile,
   parseLinkTag,
@@ -50,17 +51,21 @@ describe('Affiliation', () => {
     expect(linkAffiliationOf('http://localhost:5173/x', 'PC1')).toBe('localhost:5173');
   });
 
-  it('パスは PC名:ドライブ/共有名', () => {
+  it('パスは親フォルダを取得する', () => {
     expect(pathRootOf('c:\\Users\\a\\b.md')).toBe('C:');
     expect(pathRootOf('\\\\srv\\share\\dir\\x')).toBe('\\\\srv\\share');
     expect(pathRootOf('/home/a/b')).toBe('/home');
-    expect(linkAffiliationOf('C:\\Users\\a\\b.md', 'MYPC')).toBe('MYPC:C:');
-    expect(linkAffiliationOf('\\\\srv\\share\\x', 'MYPC')).toBe('MYPC:\\\\srv\\share');
+    expect(parentFolderOf('C:\\Users\\a\\b.md')).toBe('C:\\Users\\a');
+    expect(parentFolderOf('D:\\x')).toBe('D:\\');
+    expect(parentFolderOf('\\\\srv\\share\\dir\\x')).toBe('\\\\srv\\share\\dir');
+    expect(parentFolderOf('/home/a/b')).toBe('/home/a');
+    expect(linkAffiliationOf('C:\\Users\\a\\b.md', 'MYPC')).toBe('(MYPC)C:\\Users\\a');
+    expect(linkAffiliationOf('\\\\srv\\share\\x', 'MYPC')).toBe('(MYPC)\\\\srv\\share');
   });
 
-  it('PC名が分からなければ unknown、ルートが無ければ空', () => {
-    expect(linkAffiliationOf('D:\\x', '')).toBe('unknown:D:');
-    expect(linkAffiliationOf('report.pdf', 'MYPC')).toBe('');
+  it('PC名や親フォルダが分からない場合も判明分を記録する', () => {
+    expect(linkAffiliationOf('D:\\x', '')).toBe('(unknown)D:\\');
+    expect(linkAffiliationOf('report.pdf', 'MYPC')).toBe('(MYPC)');
   });
 });
 
@@ -79,8 +84,17 @@ describe('linkファイルの書式', () => {
   });
 
   it('serialize → parse で往復する', () => {
-    const file = { title: '資料', link: 'C:\\a\\b.md', affiliation: 'PC1:C:', abstract: '概要1\n概要2' };
-    expect(parseLinkFile(serializeLinkFile(file))).toEqual(file);
+    const file = { title: '資料', link: 'C:\\a\\b.md', affiliation: '(PC1)C:\\a', abstract: '概要1\n概要2' };
+    const serialized = serializeLinkFile(file);
+    expect(serialized).toContain('# Link\n"C:\\a\\b.md"');
+    expect(serialized).toContain('# Affiliation\n"(PC1)C:\\a"');
+    expect(parseLinkFile(serialized)).toEqual(file);
+  });
+
+  it('旧来の引用符なしpathも読み取れる', () => {
+    expect(parseLinkFile('T\n=\n# Link\nC:\\a\\b.jpg\n# Affiliation\nPC:C:\n# Abstract')).toMatchObject({
+      link: 'C:\\a\\b.jpg', affiliation: 'PC:C:',
+    });
   });
 
   it('2行目が空行やCRLFでも読める', () => {

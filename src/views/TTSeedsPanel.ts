@@ -7,6 +7,7 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
+import { TTProjectView } from './TTProjectView';
 import type { MediaType } from '../types';
 import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
@@ -59,6 +60,9 @@ export class TTSeedsPanel extends TTUIItem {
 
   /** フィルタ適用後の表示中Think一覧（CursorPosアクション用スナップショット） */
   public FilteredThoughts: TTThink[] = [];
+
+  /** 「プロジェクト」サブパネルで表示中のファイル */
+  public ProjectView = new TTProjectView('SeedsPanel');
 
   public override get ClassName(): string {
     return 'TTSeedsPanel';

@@ -50,8 +50,11 @@ export function ThinktankMenuRibbon({
 
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
-  /* ── 設定・概要モード: ボタンなし ───────────────────────── */
-  if (viewMode === 'settings' || viewMode === 'project') {
+  /* ── プロジェクト: AbstractView が自前のリボンを持つ ──────── */
+  if (viewMode === 'project') return null;
+
+  /* ── 設定モード: ボタンなし ─────────────────────────────── */
+  if (viewMode === 'settings') {
     return <div className="menu-ribbon thinktank-menu-ribbon" />;
   }
 

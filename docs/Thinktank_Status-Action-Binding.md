@@ -1227,7 +1227,14 @@ candidates:     .*
 description:    D&DされたURLまたはパスをそのままテキストとして挿入する
 　browser等のURL、Explorer等のファイルパス、URL/パス形式のテキスト、URL/パスを指す
 　WindowsショートカットがTextEditorへD&Dされたとき、「URL.D&D」または「FILEPATH.D&D」
-　メニューから選択して、ドロップ位置へリンク先文字列をそのまま挿入します。
+　メニューから選択して、ドロップ位置へリンク先文字列を挿入します。URLはそのまま、
+　ファイルパスは `"C:\\folder\\file.ext"` のように引用符で囲んで挿入します。
+
+## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Menu
+description:    D&Dされた外部URLまたはパスの挿入方法をメニューから選ぶ
+　LocalFileDrag（ブラウザURL・ローカルファイル）またはLocalDirDragを受け取り、統一された
+　「LINK.D&D」メニューを表示します。URLとパスの最終的なタグ種別はAction側で判別します。
+　ブラウザ専用のBrowserLinkDragは設けず、URLもLocalFileDragへ正規化します。
 
 ## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Tag
 description:    D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する
@@ -1235,6 +1242,9 @@ description:    D&DされたURLまたはパスのlinkファイルを作成し、
 　GMail / GDrive / GPhoto / GNB / path / link タグをドロップ位置へ挿入します。
 　WindowsのInternet Shortcut（.url）とShell Link（.lnk、Electron版）はリンク先を解決します。
 　メニュー定義はdocs\DefaultMenu.md、linkファイル書式とタグ判定はsrc\utils\linkFormat.tsに集約しています。
+　Electron版で画像等のローカルファイルをTextEditorへD&Dした場合も、Pane作成へ流さず
+　LocalFileDragとしてLINK.D&Dメニュー（またはAlt時のTag Action）へ渡します。
+　linkファイルではpathを引用符で囲み、Affiliationを「(PC名)親フォルダ」で記録します。
 
 
 # TextEditor Edit ==================================================================================================

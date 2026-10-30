@@ -56,6 +56,9 @@ export function SeedsMenuRibbon({
 
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
+  /* ── プロジェクト: AbstractView が自前のリボンを持つ ──────── */
+  if (!showSettings && mediaType === 'project') return null;
+
   /* ── 設定モード / チャット・グラフモード ───────────────────── */
   if (showSettings || mediaType === 'chat' || mediaType === 'project') {
     const showChatControls = !showSettings && mediaType === 'chat';

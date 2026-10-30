@@ -26,13 +26,14 @@ example.com
 リンク先の概要
 ```
 
-- `# Link` — リンク先の URL またはパス（1行）。
-- `# Affiliation` — URL ならサーバーアドレス（`URL.host`。ポートがあれば含む）、パスなら「PC名:ルート」。
-  - ルートは Windows のドライブ（`C:`）、UNC の共有（`\\server\share`）、Unix の最上位フォルダ（`/home`）。
+- `# Link` — リンク先の URL またはパス（1行）。パスは `"C:\path\file.jpg"` のように引用符で囲む。
+- `# Affiliation` — URL ならサーバーアドレス（`URL.host`。ポートがあれば含む）、パスなら
+  `"(PC名)親フォルダ"`（例：`"(MYPC)C:\Users\me\Pictures"`）。
   - PC名は Electron 版ではOSのホスト名。ブラウザ版ではホスト名を知る手段が無いため `unknown`。
   - ブラウザ版のファイルD&Dのようにファイル名しか取れない場合は空にする。
 - `# Abstract` — リンク先の概要。作成時は空。
 - 見出し名の大文字小文字、CRLF は読み取り時に問わない。
+- 読み取り時は旧来の引用符なしpath／Affiliationにも対応する。
 
 ## 3. 参照タグ
 

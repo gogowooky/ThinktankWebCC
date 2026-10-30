@@ -432,7 +432,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         {showSettings ? (
           <SeedsSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearProject()} />
         ) : panel.ViewMode === 'project' ? (
-          <AbstractView />
+          <AbstractView projectView={panel.ProjectView} vault={vault} workingPanel={app.WorkingPanel} panelKey="seeds" />
         ) : isThinkListMode ? (
           !panel.ProjectID ? (
             <div className="seeds-area__empty">

@@ -46,7 +46,7 @@ export const WorkingSettingArea = forwardRef<WorkingSettingAreaRef, Props>(funct
             : activeSettings === 'texteditor' ? <TextEditorSettings {...context} />
               : activeSettings === 'html' ? <HtmlSettings {...context} />
                 : activeSettings === 'datagrid' ? <DataGridSettings {...context} />
-                  : activeSettings === 'project' ? <AbstractView />
+                  : activeSettings === 'project' ? <AbstractView projectView={props.panel.ProjectView} vault={props.vault} workingPanel={props.panel} panelKey="working" />
                   : <div className="working-setting-area__placeholder">
                     {panelName} の設定は今後追加予定です。
                   </div>}

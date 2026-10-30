@@ -23,7 +23,9 @@ export function HarvestMenuRibbon({
   onToggleColumnDialog, onToggleFilterSelectDialog,
   onClearTodoSelection, onRefresh,
 }: Props) {
-  if (viewMode === 'settings' || viewMode === 'project') {
+  // プロジェクトは AbstractView が自前のリボンを持つ
+  if (viewMode === 'project') return null;
+  if (viewMode === 'settings') {
     return <div className="menu-ribbon harvest-menu-ribbon" />;
   }
 

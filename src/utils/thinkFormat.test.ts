@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   parseChat,
   serializeChat,
-  parseLinks,
-  serializeLinks,
   splitContent,
   parseProject,
   serializeProject,
@@ -42,23 +40,6 @@ describe('chat 形式の往復', () => {
   it('タイトル付き serialize は先頭行にタイトルを置く', () => {
     const out = serializeChat([{ id: 'a', role: 'user', content: 'q', timestamp: '' }], 'MyChat');
     expect(out.split('\n')[0]).toBe('MyChat');
-  });
-});
-
-describe('links 形式の往復', () => {
-  it('serialize → parse でリンクが保存される', () => {
-    const links = [
-      { title: 'Anthropic', url: 'https://www.anthropic.com' },
-      { title: 'GitHub', url: 'https://github.com' },
-    ];
-    const restored = parseLinks(serializeLinks('リンク集', links));
-    expect(restored).toEqual(links);
-  });
-
-  it('マークダウンリンク形式でない行は title=url として扱う', () => {
-    expect(parseLinks('タイトル\n* https://example.com')).toEqual([
-      { title: 'https://example.com', url: 'https://example.com' },
-    ]);
   });
 });
 
