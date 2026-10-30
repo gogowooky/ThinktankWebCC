@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.5",
+  "version": "2.6.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "043a8e1",
-  "commitDateTime": "2026-10-28-192636",
-  "commitMessage": "perf: バックアップ同期を非同期化し外部リンクをブラウザで開く"
+  "commitId": "1d41dc7",
+  "commitDateTime": "2026-10-30-111821",
+  "commitMessage": "feat: linkファイルを1リンク1ファイルの新書式にし参照タグとD&D挿入を追加"
 }
