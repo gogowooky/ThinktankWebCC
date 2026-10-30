@@ -17,6 +17,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
 
+### v2.6.7 feat: projectファイルに見通し・AIまとめ・AI議論を設け、LocalDirDragをLocalFileDragへ統合
+
+- 日付: 2026-10-30
+- コミット番号: e8594af
+
+projectファイルの書式を「見通し / 状態 / 対象 / プロンプト / 条件 / AIまとめ / AI議論」に改め、最終評価日・出力先・評価内容・評価日時を廃止。# 対象 には各種タグ・URL・パスを並べ、links Thinkは [link:ID] で載せる（[links:ID] は廃止し読み取りのみ互換、既存の詳しいLinkタグ名は更新時も保持）。# AIまとめ の [aiview:ID]、# AI議論 の [chat:ID] はDoOnCursorPosでThinkを開き、# 対象 へは重複させない。MCPからのProject紐づけも同じタグ名に統一。ディレクトリD&D用のLocalDirDragを廃止しLocalFileDragへ統合。仕様書 docs/261030/projectファイル仕様.md を追加。型検査成功、全672テスト成功。画面での動作確認は未実施。
+
 ### v2.6.6 feat: linkファイルを1リンク1ファイルの新書式にし参照タグとD&D挿入を追加
 
 - 日付: 2026-10-30

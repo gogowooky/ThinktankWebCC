@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.6",
+  "version": "2.6.7",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC260926BigChange",
   "commitPC": "E15",
-  "commitId": "1d41dc7",
-  "commitDateTime": "2026-10-30-111821",
-  "commitMessage": "feat: linkファイルを1リンク1ファイルの新書式にし参照タグとD&D挿入を追加"
+  "commitId": "e8594af",
+  "commitDateTime": "2026-10-30-120500",
+  "commitMessage": "feat: projectファイルに見通し・AIまとめ・AI議論を設け、LocalDirDragをLocalFileDragへ統合"
 }
