@@ -27,4 +27,9 @@ describe('Action descriptions from Thinktank_Status-Action-Binding.md', () => {
     TTActions.Register({ ActionID: 'Test.NotInDoc:Run', Description: 'コード側の説明', Completion: () => {} });
     expect(TTActions.Get('Test.NotInDoc:Run')?.Description).toBe('コード側の説明');
   });
+
+  it('DDInsertの完了節から説明を読み込む', () => {
+    expect(actionDescriptionFromDoc('TextEditor.CurrentEditor.DDInsert:Link')).toBe('D&DされたURLまたはパスをそのままテキストとして挿入する');
+    expect(actionDescriptionFromDoc('TextEditor.CurrentEditor.DDInsert:Tag')).toBe('D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する');
+  });
 });

@@ -86,6 +86,10 @@
 "Think > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
 "Think > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
 
+"Link > O)リンク先を開く",                        TextEditor.CurrentEditor.DoOnCursorPos:Link:Open
+"Link > L)linkファイルを開く",                     TextEditor.CurrentEditor.DoOnCursorPos:LinkFile:Open
+"Link > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
+
 "Mail > O)メールを開く・検索",                        TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
 "Mail > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
 "Mail > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
@@ -99,3 +103,14 @@
 "AI > R)タグを選びなおす",                  TextEditor.CurrentEditor.DoOnCursorPos:ReTag
 
 "Anchor > O)アンカーへ移動・Highlighter設定",          TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
+
+# D&Dしたときの処理
+
+"URL.D&D > U)URLをそのまま挿入",TextEditor.CurrentEditor.DDInsert:Link
+"URL.D&D > T)Linkファイルを作成したタグを挿入",TextEditor.CurrentEditor.DDInsert:Tag
+
+"FILEPATH.D&D > P)Pathをそのまま挿入",TextEditor.CurrentEditor.DDInsert:Link
+"FILEPATH.D&D > T)Linkファイルを作成したタグを挿入",TextEditor.CurrentEditor.DDInsert:Tag
+
+;"Think.D&D > O)ファイルを開く"                         TextEditor.CurrentEditor.Insert:
+;"Think.D&D > T)Thinkファイルのタグを挿入"              TextEditor.CurrentEditor.Insert:Tag

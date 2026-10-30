@@ -1223,6 +1223,18 @@ candidates:     .*
 　　直後（Load側はPane差し替え/新規Pane追加の成否によらず、Insert側はエディタ未選択でも）に
 　　設定します。
 
+## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Link
+description:    D&DされたURLまたはパスをそのままテキストとして挿入する
+　browser等のURL、Explorer等のファイルパス、URL/パス形式のテキスト、URL/パスを指す
+　WindowsショートカットがTextEditorへD&Dされたとき、「URL.D&D」または「FILEPATH.D&D」
+　メニューから選択して、ドロップ位置へリンク先文字列をそのまま挿入します。
+
+## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Tag
+description:    D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する
+　同じD&Dメニューから選択すると、URL/パスを1件のlinkファイルとして保存し、リンク先に応じた
+　GMail / GDrive / GPhoto / GNB / path / link タグをドロップ位置へ挿入します。
+　WindowsのInternet Shortcut（.url）とShell Link（.lnk、Electron版）はリンク先を解決します。
+　メニュー定義はdocs\DefaultMenu.md、linkファイル書式とタグ判定はsrc\utils\linkFormat.tsに集約しています。
 
 
 # TextEditor Edit ==================================================================================================
@@ -1602,6 +1614,16 @@ description:    カーソル位置のGoogleRouteタグでGoogleマップのル�
 description:    カーソル位置のYahooTransferタグでYahoo!乗換案内を開く
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
 description:    カーソル位置のThinkタグで対象Thinkを開く、またはタイトル・コンテンツ検索する
+## Action：　261030　TextEditor.CurrentEditor.DoOnCursorPos:Link:Open
+description:    カーソル位置のLinkタグが指す linkファイルのリンク先を開く
+　A（261030実装）：[link:ID] [gmail:ID] [gdrive:ID] [gphoto:ID] [gnb:ID] [path:ID]（タグ名の大文字小文字は問わない）の
+　　ID の linkファイルを読み、# Link のURLをブラウザで、パスをOS既定のアプリ（PC版のみ）で開きます。
+　　値が ThinkID でないタグ（[GMail:検索語] 等）は Link タグとして扱いません（docs\261028 のタグ増設計画に残す）。
+　　旧書式（箇条書きのリンク集）の linkファイルは先頭のリンクを開きます。http(s) 以外のURLは開きません。
+　　DoOnCursorPos（ダブルクリック等）で Link タグを実行したときの既定動作です。書式は docs\261030\linkファイル仕様.md。
+## Action：　261030　TextEditor.CurrentEditor.DoOnCursorPos:LinkFile:Open
+description:    カーソル位置のLinkタグが指す linkファイル自体をWorkingで開く
+　A（261030実装）：[THINK:ID] と同じく、フォーカス中のPaneに linkファイルを開いてエディタへフォーカスします。
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open
 description:    カーソル位置のMailタグでメールを開く、またはメール検索する
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Chat:Open

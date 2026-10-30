@@ -18,6 +18,8 @@ import { getErrorMessage } from '../../utils/errorMessage';
 import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
 import { defaultSearchTagUrls } from '../../utils/defaultSearchTags';
 import type { SearchTagRow } from '../../utils/searchTagFormat';
+import { formatLinkTag, isLocalPathTarget, linkTagNameOf, parseLinkFile, parseLinkTag, type LinkFile } from '../../utils/linkFormat';
+import { getPcName } from '../../utils/pcName';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
 // Vaultメモ（ThinktankSearchTag）由来の上書き分。id一致分のみ既定値（docs/DefaultSearchTag.md）を置換する
@@ -309,6 +311,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   // タグのsubTypeを判別するヘルパー
   function classifyTagSubTag(text: string): string {
     if (!text.startsWith('[') || !text.endsWith(']')) return 'Think';
+    if (parseLinkTag(text)) return 'Link';
     const inner = text.slice(1, -1);
     if (inner.startsWith(':')) return 'Anchor';
     const colonIdx = inner.indexOf(':');
@@ -449,6 +452,58 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
           app.ThinktankPanel.NotifyUpdated();
           item.Result = `全種別を対象に [${val}] でタイトル検索しました`;
         }
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    }
+  });
+
+  /** カーソル位置の [gdrive:ID] 等が指す linkファイルを読む。読めなければ理由の文字列 */
+  const linkFileOnCursor = async (): Promise<{ thinkId: string; file: LinkFile } | string> => {
+    const tag = parseLinkTag(getTextOnCursorSafe());
+    if (!tag) return 'カーソル位置のテキストがLinkタグではありません';
+    const think = app.Models.Vault.GetThink(tag.thinkId);
+    if (!think) return `linkファイル [${tag.thinkId}] が見つかりません`;
+    if (think.IsMetaOnly) await think.LoadContent();
+    const file = parseLinkFile(think.Content);
+    if (!file) return `linkファイル [${tag.thinkId}] にリンク先が書かれていません`;
+    return { thinkId: tag.thinkId, file };
+  };
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Link:Open',
+    Description: 'Linkタグ（[link:ID] [gdrive:ID] [path:ID] 等）が指す linkファイルのリンク先を開きます',
+    Completion: async (item) => {
+      try {
+        const resolved = await linkFileOnCursor();
+        if (typeof resolved === 'string') { item.Result = resolved; return; }
+        const target = resolved.file.link;
+        if (isLocalPathTarget(target)) {
+          const system = window.electronAPI?.system;
+          if (!system) { item.Result = 'ローカルファイルの起動はPC版（Electron）でのみ利用できます'; return; }
+          const res = await system.openPath(target);
+          if (!res.ok) throw new Error(res.error);
+          item.Result = `パス [${target}] を起動しました`;
+          return;
+        }
+        // javascript: 等を window.open に渡さない
+        if (!/^https?:\/\//i.test(target)) { item.Result = `リンク先 [${target}] はブラウザで開けない形式です`; return; }
+        window.open(target, '_blank');
+        item.Result = `URL [${target}] を開きました`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    }
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:LinkFile:Open',
+    Description: 'Linkタグが指す linkファイル自体をWorkingで開きます',
+    Completion: (item) => {
+      try {
+        const tag = parseLinkTag(getTextOnCursorSafe());
+        if (!tag) { item.Result = 'カーソル位置のテキストがLinkタグではありません'; return; }
+        item.Result = openThinkAtTarget(app, tag.thinkId);
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
       }
@@ -781,6 +836,43 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     }
   });
 
+  // ── URL / パス D&D ─────────────────────────────────────────────────────
+  const consumeTextEditorDrop = (item: TTActionItem) => {
+    const ctx = TTShortcutManager.instance.consumePendingTextEditorDrop();
+    if (!ctx) item.Result = '[ドロップ情報なし]';
+    return ctx;
+  };
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DDInsert:Link',
+    Description: 'D&DされたURLまたはパスをそのままテキストとして挿入する',
+    Completion: (item) => {
+      const ctx = consumeTextEditorDrop(item);
+      if (!ctx) return;
+      ctx.editor.executeEdits('external-drop-link', [{ range: ctx.range, text: ctx.target, forceMoveMarkers: true }]);
+      ctx.editor.focus();
+      item.Result = `Insert: ${ctx.target}`;
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DDInsert:Tag',
+    Description: 'D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する',
+    Completion: async (item) => {
+      const ctx = consumeTextEditorDrop(item);
+      if (!ctx) return;
+      try {
+        const linkThink = await app.Models.Vault.CreateLinksThink(ctx.title, ctx.target, await getPcName());
+        const tag = formatLinkTag(linkTagNameOf(ctx.target), linkThink.ID);
+        ctx.editor.executeEdits('external-drop-tag', [{ range: ctx.range, text: tag, forceMoveMarkers: true }]);
+        ctx.editor.focus();
+        item.Result = `Insert: ${tag}`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
   // ── ThinkFileDrag（D&D）─────────────────────────────────────────────────
   // 疑似キー ThinkFileDrag / Alt+ThinkFileDrag（docs/DefaultShortcut.md）の実行先。
   // ペイロード（ThinkID・配置先）は TTShortcutManager.setPendingThinkDrop() で
@@ -840,18 +932,27 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
 
   TTActions.Register({
     ActionID: 'WorkingPanel.DroppedFile.ID:Insert',
-    Description: 'ドロップされたThinkファイルを [memo:{ID}] タグとしてコンテンツ内に挿入する',
+    Description: 'ドロップされたThinkファイルを [memo:{ID}] タグ（linkファイルは [gdrive:{ID}] 等のLinkタグ）としてコンテンツ内に挿入する',
     Completion: (item) => {
       const ctx = TTShortcutManager.instance.consumePendingThinkDrop();
       const editor = TTShortcutManager.instance.activeEditor;
       if (!ctx) { item.Result = '[ドロップ情報なし]'; return; }
       app.WorkingPanel.DroppedFileID = ctx.thinkId;
       if (!editor) { item.Result = '[エディタ未選択]'; return; }
+      // 本文の読込を待つ間にキャレットが動いても、ドロップ時点の位置へ入れる
       const sel = editor.getSelection();
-      const text = `[memo:${ctx.thinkId}]`;
-      editor.executeEdits('think-drop', [{ range: sel, text, forceMoveMarkers: true }]);
-      editor.focus();
-      item.Result = `Insert: ${text}`;
+      const insert = (text: string) => {
+        editor.executeEdits('think-drop', [{ range: sel, text, forceMoveMarkers: true }]);
+        editor.focus();
+        item.Result = `Insert: ${text}`;
+      };
+      const think = app.Models.Vault.GetThink(ctx.thinkId);
+      if (think?.ContentType !== 'links') { insert(`[memo:${ctx.thinkId}]`); return; }
+      const loaded = think.IsMetaOnly ? think.LoadContent() : Promise.resolve();
+      return loaded.then(() => {
+        const file = parseLinkFile(think.Content);
+        insert(formatLinkTag(file ? linkTagNameOf(file.link) : 'link', ctx.thinkId));
+      });
     },
   });
 }

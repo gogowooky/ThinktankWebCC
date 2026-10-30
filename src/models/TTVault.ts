@@ -12,7 +12,8 @@ import { TTCollection } from './TTCollection';
 import { TTThink } from './TTThink';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
-import { parseProject, serializeProject, updateProjectTargets, serializeLinks } from '../utils/thinkFormat';
+import { parseProject, serializeProject, updateProjectTargets } from '../utils/thinkFormat';
+import { createLinkFile, serializeLinkFile } from '../utils/linkFormat';
 import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
@@ -512,9 +513,9 @@ export class TTVault extends TTCollection {
     catch (error) { bundle.Content = previousContent; throw error; }
   }
 
-  /** links データ（URL/path リンク集）を作成して保存する */
-  public async CreateLinksThink(title: string, url: string): Promise<TTThink> {
-    return this._createThink({ contentType: 'links', fullContent: serializeLinks(title, [{ title, url }]) });
+  /** 1件の URL/パスをまとめた linkファイルを作成して保存する（書式は utils/linkFormat.ts） */
+  public async CreateLinksThink(title: string, target: string, pcName: string = ''): Promise<TTThink> {
+    return this._createThink({ contentType: 'links', fullContent: serializeLinkFile(createLinkFile(title, target, pcName)) });
   }
 
   /** チャット会話を TTThink(ContentType='chat') として保存する。

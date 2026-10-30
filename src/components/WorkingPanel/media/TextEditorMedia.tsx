@@ -2,7 +2,6 @@ import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHand
 import './monacoSetup';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
-import { StorageManager } from '../../../services/storage/StorageManager';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { TTUIStateManager } from '../../../views/TTUIStateManager';
 import { TTApplication } from '../../../views/TTApplication';
@@ -10,7 +9,7 @@ import { getHeadingAttributes } from '../../../utils/markdownHeadings';
 import { extractTitleLine } from '../../../utils/thinkFormat';
 import { FOLDING_HEADER_BG_CLASS, colorStyleToCss, foldingHeaderStyleCss, injectInlineStyleCss, isUnset, linkStyleCss, styleClass } from '../../../utils/defaultColor';
 import type { ColorStyle, MarkKind, MarkStyle } from '../../../utils/defaultColor';
-import { extractLinkDrop, shouldAllowLocalDrop, shouldInsertLocalDrop } from '../WorkingMenuRibbon';
+import { extractLinkDrop, resolveLinkDrop } from '../WorkingMenuRibbon';
 import { getAppFontScale, FONT_SCALE_EVENT } from '../../../utils/appZoom';
 import { registerPaneFlush, unregisterPaneFlush } from '../../../utils/unsavedGuard';
 import { reportSaveError } from '../../../utils/saveError';
@@ -21,6 +20,9 @@ import { getEditorValue, reconstructContent } from './texteditor/editorContent';
 import { getCollapsedStartLines, getClosedHeadings } from './texteditor/editorFolding';
 import { registerMarkdownFolding, registerHexColorProvider } from './texteditor/editorProviders';
 import { applyEditorDecorations } from './texteditor/editorDecorations';
+import { clientPointToPosition } from '../../../utils/editorDropPosition';
+import { isLocalPathTarget } from '../../../utils/linkFormat';
+import { showDefaultMenu } from '../../../utils/defaultMenu';
 /**
  * TextEditorMedia.tsx
  * Monaco Editor によるテキスト編集メディア。
@@ -46,7 +48,7 @@ export interface TextEditorMediaRef {
 
 interface Toast { msg: string; type: 'success' | 'error'; }
 
-export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, vault, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef, rawYaml }: MediaProps, ref) {
+export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef, rawYaml }: MediaProps, ref) {
   // YAML表示の有無は WorkingArea が key で作り直すため、インスタンスごとに固定
   const rawYamlRef = useRef(rawYaml ?? false);
   const savedRef = useRef(think ? getEditorValue(think, rawYamlRef.current) : '');
@@ -117,14 +119,6 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ msg, type });
     toastTimer.current = setTimeout(() => setToast(null), 3500);
-  }, []);
-
-  const insertAtCursor = useCallback((text: string) => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    const sel = editor.getSelection();
-    editor.executeEdits('file-drop', [{ range: sel, text, forceMoveMarkers: true }]);
-    editor.focus();
   }, []);
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
@@ -648,15 +642,19 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }
   }, [onDirtyChange, updateDecorations, onTitleChange, think, onSave]);
 
-  // ── ファイルドロップ ──────────────────────────────────────────────────────
+  // ── URL / パス ドロップ ───────────────────────────────────────────────────
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     // Thinkドロップ（application/x-thought-id）はここで preventDefault/stopPropagation せず
     // WorkingPanel の body-level ハンドラーへバブリングさせる。そちらで Load先Paneのゴースト
     // オーバーレイ（dropOverlay）を計算・表示しており、ここで止めると出なくなる。
     // ドロップ自体は下の handleDrop 側でこのイベントを直接検出して処理するため、ゴースト表示
-    // を優先してここでは Files ドラッグのみを処理する。
-    if (!e.dataTransfer.types.includes('Files')) return;
+    // を優先してここでは外部 URL / パスドラッグだけを処理する。
+    const types = e.dataTransfer.types;
+    const hasFileOrUri = types.includes('Files') || types.includes('text/uri-list');
+    // text/plain は通常の選択文字列D&Dでも付くため、dragover中にURL/パスを読める場合だけ奪う。
+    const hasPlainLink = types.includes('text/plain') && !!extractLinkDrop(e);
+    if (!hasFileOrUri && !hasPlainLink) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
@@ -676,44 +674,35 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // このコンポーネント側とのタイミング・判定不一致を避けている。
     if (e.dataTransfer.types.includes('application/x-thought-id')) return;
 
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length === 0) return;
+    // URL / パスでない通常の文字列D&Dは Monaco の既定動作へ渡す。
+    const fallback = extractLinkDrop(e);
+    if (!fallback) return;
     e.preventDefault();
     e.stopPropagation();
 
-    // 通常ドロップ（Alt未使用）: 疑似キー LocalFileDrag/LocalDirDrag（docs/DefaultShortcut.md）経由で
-    // Links Think を作成し、このPaneを差し替える（WorkingArea.handleUrlDropと同じLoad系挙動）。
-    // Alt+ドロップは従来通りカーソル位置へファイル参照を挿入する（下のロジック）。
-    const altHeld = TTShortcutManager.instance.isDragAltHeld(e.nativeEvent);
-    if (altHeld) {
-      if (!shouldInsertLocalDrop(e)) return;
-    } else {
-      if (!shouldAllowLocalDrop(e)) return;
-      const link = extractLinkDrop(e);
-      if (!link || !areaId) return;
-      const newThink = await vault.CreateLinksThink(link.title, link.url);
-      const area = TTApplication.Instance.WorkingPanel.GetArea(areaId);
-      area?.OpenThink(newThink.ID, 'texteditor', newThink.Name);
+    const editor = editorRef.current;
+    if (!editor) return;
+    const position = clientPointToPosition(editor, e.clientX, e.clientY) ?? editor.getPosition?.();
+    const range = position
+      ? { startLineNumber: position.lineNumber, startColumn: position.column, endLineNumber: position.lineNumber, endColumn: position.column }
+      : editor.getSelection?.();
+    if (!range) return;
+
+    const link = await resolveLinkDrop(e) ?? fallback;
+    TTShortcutManager.instance.setActiveEditor(editor);
+    TTShortcutManager.instance.setPendingTextEditorDrop({ target: link.url, title: link.title, editor, range });
+
+    const menuName = isLocalPathTarget(link.url) ? 'FILEPATH.D&D' : 'URL.D&D';
+    const actionId = await showDefaultMenu(menuName, editor.getDomNode?.() ?? null, `${menuName}: ${link.url}`);
+    if (!actionId) {
+      TTShortcutManager.instance.setPendingTextEditorDrop(null);
+      editor.focus();
       return;
     }
-
-    const isElectron = StorageManager.instance.mode === 'electron';
-
-    for (const file of files) {
-      if (isElectron) {
-        // Electron: webUtils.getPathForFile 経由でローカルパスを取得（Electron 32+対応）
-        const byApi = window.electronAPI?.getPathForFile(file);
-        const byPlain = e.dataTransfer.getData('text/plain').trim() || undefined;
-        const localPath = byApi ?? byPlain ?? file.name;
-        insertAtCursor(`[File:${file.name}](${localPath})`);
-      } else {
-        // PWA: サービスアカウントには個人のDriveストレージクォータが無く、
-        // Google Workspace共有ドライブも前提にできないためアップロード非対応。
-        // Electron版でのみファイル参照の挿入をサポートする。
-        showToast(`✗ ファイルアップロードはPWA版では未対応です: ${file.name}`, 'error');
-      }
-    }
-  }, [showToast, insertAtCursor, areaId, vault]);
+    // Action側がペイロードを同期的にconsumeしてから非同期処理へ入る。
+    TTShortcutManager.instance.executeActionDirect(actionId);
+    TTShortcutManager.instance.setPendingTextEditorDrop(null);
+  }, []);
 
   if (!think) {
     return (

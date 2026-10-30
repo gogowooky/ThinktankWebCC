@@ -16,7 +16,7 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { useHighlight } from '../../contexts/HighlightContext';
 import { WorkingMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkingMenuRibbon';
 import { TextEditorMedia } from './media/TextEditorMedia';
-import { appendLinkToContent } from '../../utils/thinkFormat';
+import { getPcName } from '../../utils/pcName';
 import { readColHeader, tableContentWithBodyHeader } from '../../utils/tableFormat';
 import { reportSaveError } from '../../utils/saveError';
 import { FOLDING_HEADER_STATUS_ID, isUnset, pickColorStyle, pickIndexedStyles, pickInlineStyles, pickLinkStyles, pickMarkStyles } from '../../utils/defaultColor';
@@ -151,16 +151,17 @@ export function WorkingArea({
 
   // タイトルへの URL/path D&D → 常に新規 links Think を作成して表示
   const handleUrlDrop = useCallback(async (url: string, title: string) => {
-    const newThink = await vault.CreateLinksThink(title, url);
+    const newThink = await vault.CreateLinksThink(title, url, await getPcName());
     area.OpenThink(newThink.ID, 'texteditor', newThink.Name);
   }, [vault, area]);
 
-  // コンテンツ領域への URL/path D&D（links ペインのみ）→ 追記
+  // コンテンツ領域への URL/path D&D（links ペインのみ）。linkファイルは1件1ファイルなので
+  // 追記せず、タイトルへのドロップと同じく新しい linkファイルに差し替える。
   const [isContentLinkDrop, setIsContentLinkDrop] = useState(false);
-  const [contentRefreshKey, setContentRefreshKey] = useState(0);
 
   // キャプチャフェーズで処理: links ペイン上の URL/path ドロップを Monaco より先に捕捉する
   const handleContentDragOver = useCallback((e: React.DragEvent) => {
+    if (area.MediaType === 'texteditor') return;
     const current = vault.GetThink(area.ResourceID);
     if (current?.ContentType !== 'links') return;
     const types = e.dataTransfer.types;
@@ -169,13 +170,14 @@ export function WorkingArea({
     e.stopPropagation(); // Monaco に渡さない
     e.dataTransfer.dropEffect = 'copy';
     setIsContentLinkDrop(true);
-  }, [vault, area.ResourceID]);
+  }, [vault, area.ResourceID, area.MediaType]);
 
   const handleContentDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) setIsContentLinkDrop(false);
   }, []);
 
   const handleContentDrop = useCallback(async (e: React.DragEvent) => {
+    if (area.MediaType === 'texteditor') return;
     const current = vault.GetThink(area.ResourceID);
     if (current?.ContentType !== 'links') return;
     const link = extractLinkDrop(e);
@@ -183,10 +185,8 @@ export function WorkingArea({
     e.preventDefault();
     e.stopPropagation(); // TextEditorMedia / Monaco に渡さない
     setIsContentLinkDrop(false);
-    current.Content = appendLinkToContent(current.Content, link);
-    await current.SaveContent();
-    setContentRefreshKey(k => k + 1);
-  }, [vault, area.ResourceID]);
+    await handleUrlDrop(link.url, link.title);
+  }, [vault, area.ResourceID, area.MediaType, handleUrlDrop]);
 
   // タイトルへのThinkドロップ: Alt修飾の有無で Load（Pane差し替え）/ Insert（タグ挿入）を
   // 振り分ける。疑似キー ThinkFileDrag の解決・実行は TTShortcutManager + TTActions
@@ -313,7 +313,7 @@ export function WorkingArea({
   const aiChatModel = { provider: panel.AIChatProvider, model: panel.AIChatModel };
   const handleAiChatModelChange = (selection: AiModelSelection) => panel.SetAIChatModel(selection);
 
-  const mediaProps = { areaId: area.ID, think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, refreshKey: contentRefreshKey, autoSaveRef, aiChatModel, onAiChatModelChange: handleAiChatModelChange };
+  const mediaProps = { areaId: area.ID, think, vault, onSave: handleSave, onDirtyChange: setIsDirty, onTitleChange: handleTitleChange, editorSettings, autoSaveRef, aiChatModel, onAiChatModelChange: handleAiChatModelChange };
 
   // MediaType → コンポーネント切り替え
   const renderMedia = () => {
@@ -389,7 +389,7 @@ export function WorkingArea({
             zIndex: 10, pointerEvents: 'auto',
           }} />
         )}
-        {/* links ペインへのリンク追記ドロップオーバーレイ */}
+        {/* links ペインへのリンクドロップオーバーレイ */}
         {isContentLinkDrop && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
@@ -397,7 +397,7 @@ export function WorkingArea({
             border: '2px dashed rgba(80, 200, 120, 0.7)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <span style={{ color: 'rgba(80,200,120,0.9)', fontSize: 'calc(12px * var(--tt-font-scale, 1))', fontWeight: 600 }}>リンクを追記</span>
+            <span style={{ color: 'rgba(80,200,120,0.9)', fontSize: 'calc(12px * var(--tt-font-scale, 1))', fontWeight: 600 }}>新しいlinkファイルを作成</span>
           </div>
         )}
       </div>

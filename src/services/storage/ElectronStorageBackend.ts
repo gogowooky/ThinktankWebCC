@@ -107,6 +107,7 @@ declare global {
       };
       system?: {
         openPath: (target: string) => Promise<{ ok: true } | { ok: false; error: string }>;
+        readShortcutLink?: (target: string) => Promise<{ ok: true; target: string } | { ok: false; error: string }>;
       };
       getPathForFile: (file: File) => string;
     };

@@ -85,6 +85,16 @@ function fileUriToPath(uri: string): string {
   }
 }
 
+/** Windows の Internet Shortcut（.url）本文からリンク先を取り出す。 */
+export function parseWindowsUrlShortcut(content: string): string | null {
+  // WindowsがUTF-16で保存した .url を File.text() がNUL交じりで返す場合も読めるようにする。
+  const match = content.split('\0').join('').match(/^\s*URL\s*=\s*(.+?)\s*$/im);
+  if (!match) return null;
+  const target = match[1].trim();
+  if (!target) return null;
+  return /^file:\/\//i.test(target) ? fileUriToPath(target) : target;
+}
+
 /**
  * 疑似キー LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
  * （docs/DefaultShortcut.md）のデフォルトAction。ThinkFileDragのLoad/Insertと同じく、
@@ -180,6 +190,42 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
     }
   }
   return null;
+}
+
+/**
+ * extractLinkDrop() の非同期版。通常の URL / パスに加え、Windows の .url / .lnk
+ * ショートカットはリンク先を解決して返す。解決できない場合はショートカット自身のパスへ
+ * フォールバックし、D&D 操作そのものは失わない。
+ */
+export async function resolveLinkDrop(e: React.DragEvent): Promise<{ url: string; title: string } | null> {
+  const fallback = extractLinkDrop(e);
+  const file = e.dataTransfer.files[0];
+  if (!file) return fallback;
+
+  const shortcutTitle = file.name.replace(/\.(?:url|lnk)$/i, '');
+  if (/\.url$/i.test(file.name)) {
+    try {
+      const target = parseWindowsUrlShortcut(await file.text());
+      if (target) return { url: target, title: shortcutTitle };
+    } catch {
+      // File.text() を利用できないブラウザでは通常のファイルパス扱いへ戻す。
+    }
+  }
+
+  if (/\.lnk$/i.test(file.name)) {
+    const shortcutPath = window.electronAPI?.getPathForFile(file);
+    const readShortcutLink = window.electronAPI?.system?.readShortcutLink;
+    if (shortcutPath && readShortcutLink) {
+      try {
+        const result = await readShortcutLink(shortcutPath);
+        if (result.ok && result.target.trim()) return { url: result.target.trim(), title: shortcutTitle };
+      } catch {
+        // IPC エラー時もショートカット自身のパスを挿入できるようフォールバックする。
+      }
+    }
+  }
+
+  return fallback;
 }
 
 // ── コンポーネント ───────────────────────────────────────────────────────

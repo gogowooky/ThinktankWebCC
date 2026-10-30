@@ -23,6 +23,18 @@ describe('DefaultMenu.md menus', () => {
     expect(leaves(nodes).every(n => n.tip === n.value)).toBe(true);
   });
 
+  it('URL / FILEPATH のD&Dメニューから2つのDDInsert Actionを選べる', () => {
+    const rows = parseDefaultMenu(content);
+    expect(leaves(buildDefaultMenuNodes(rows, 'URL.D&D')).map(n => n.value)).toEqual([
+      'TextEditor.CurrentEditor.DDInsert:Link',
+      'TextEditor.CurrentEditor.DDInsert:Tag',
+    ]);
+    expect(leaves(buildDefaultMenuNodes(rows, 'FILEPATH.D&D')).map(n => n.value)).toEqual([
+      'TextEditor.CurrentEditor.DDInsert:Link',
+      'TextEditor.CurrentEditor.DDInsert:Tag',
+    ]);
+  });
+
   it('returns nothing for a menu name that is not defined', () => {
     expect(buildDefaultMenuNodes(parseDefaultMenu('"A > X)x", X1\n"B > Y)y", Y1'), 'C')).toEqual([]);
     expect(buildDefaultMenuNodes(parseDefaultMenu('"A > X)x", X1\n"AB > Y)y", Y1'), 'A').map(n => n.value)).toEqual(['X1']);

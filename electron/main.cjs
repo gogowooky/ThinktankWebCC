@@ -5,6 +5,7 @@ const path   = require('path');
 const fs     = require('fs');
 const { pathToFileURL } = require('url');
 const { validateOpenPath } = require('./openPath.cjs');
+const { validateShortcutPath } = require('./shortcutPath.cjs');
 const { VaultEngine } = require('./vaultEngine.cjs');
 const aiCliRunner = require('./aiCliRunner.cjs');
 const { RelayAgent } = require('./relayAgent.cjs');
@@ -366,6 +367,20 @@ ipcMain.handle('system:openPath', async (_event, target) => {
   // shell.openPath は失敗時に理由の文字列、成功時に空文字を返す
   const error = await shell.openPath(verdict.resolved);
   return error ? { ok: false, error } : { ok: true };
+});
+
+// Windows の .lnk は renderer の File API ではリンク先を読めないため、Electron の
+// shell.readShortcutLink() だけを限定公開する。任意ファイル読取にしないよう .lnk のみ許可する。
+ipcMain.handle('system:readShortcutLink', async (_event, target) => {
+  if (process.platform !== 'win32') return { ok: false, error: 'Windows shortcut is not supported on this OS' };
+  const verdict = validateShortcutPath(target);
+  if (!verdict.ok) return { ok: false, error: verdict.reason };
+  try {
+    const detail = shell.readShortcutLink(verdict.resolved);
+    return detail.target ? { ok: true, target: detail.target } : { ok: false, error: 'shortcut target is empty' };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
 });
 
 // ── カスタムプロトコル app://thinktank/ ハンドラ登録 ─────────────────────────

@@ -95,6 +95,18 @@ export type ThinkDropContext =
   | { thinkId: string; kind: 'load-replace'; areaId: string }
   | { thinkId: string; kind: 'load-place'; overlayType: 'add' | 'split'; dir: 'left' | 'right' | 'up' | 'down'; areaId?: string };
 
+/**
+ * URL / パス D&D 用のペイロード。メニューを開いている間にフォーカスやキャレットが
+ * 移動しても、ドロップされたエディタのドロップ位置へ確実に挿入できるよう、対象文字列と
+ * Monaco のエディタ・Range をまとめて保持する。
+ */
+export interface TextEditorDropContext {
+  target: string;
+  title: string;
+  editor: any;
+  range: any;
+}
+
 // ── デフォルトショートカット ──────────────────────────────────────────────
 
 const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
@@ -130,6 +142,7 @@ export class TTShortcutManager {
   private _shortcuts:  ShortcutEntry[]      = [...DEFAULT_SHORTCUTS];
   private _activeEditor: any = null;
   private _pendingThinkDrop: ThinkDropContext | null = null;
+  private _pendingTextEditorDrop: TextEditorDropContext | null = null;
   /** WorkingArea.ID → 生Monacoエディタインスタンス。D&D時にペイン単位でエディタを引くために使う */
   private _areaEditors: Map<string, any> = new Map();
 
@@ -173,6 +186,18 @@ export class TTShortcutManager {
   consumePendingThinkDrop(): ThinkDropContext | null {
     const ctx = this._pendingThinkDrop;
     this._pendingThinkDrop = null;
+    return ctx;
+  }
+
+  /** TextEditor の URL / パス D&D Action が参照するペイロードをセットする。 */
+  setPendingTextEditorDrop(ctx: TextEditorDropContext | null): void {
+    this._pendingTextEditorDrop = ctx;
+  }
+
+  /** TextEditor の URL / パス D&D ペイロードを一度だけ取得する。 */
+  consumePendingTextEditorDrop(): TextEditorDropContext | null {
+    const ctx = this._pendingTextEditorDrop;
+    this._pendingTextEditorDrop = null;
     return ctx;
   }
 
