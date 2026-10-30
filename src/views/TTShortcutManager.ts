@@ -26,13 +26,13 @@
  * ── key 書式 ─────────────────────────────────────────────────────────────
  *   キーボード: {ctrl|alt|shift|meta}+{key}  ※ 順不同・小文字
  *   マウス:     left1 / left2 / right1 / wheelup / wheeldown（修飾付き可）
- *   D&D:        ThinkFileDrag / LocalFileDrag / LocalDirDrag 等の疑似キー名（修飾付き可）
+ *   D&D:        ThinkFileDrag / LocalFileDrag 等の疑似キー名（修飾付き可）
  *               ※ D&Dは preventDefault のタイミングがドロップ先DOM要素ごとに異なるため、
  *                 resolveDragAction() でActionIDの解決のみを行い、preventDefault と
  *                 TTActions.Execute() の呼び出しは各Dropハンドラー側が担う。ドラッグの
  *                 ペイロードはキーボードイベントに乗せられないため、ThinkはsetPendingThinkDrop()、
  *                 外部URL/パスはsetPendingTextEditorDrop()で明示的にセットしてからExecute()を呼ぶ。
- *                 LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
+ *                 LocalFileDrag / Alt+LocalFileDrag
  *                 （ブラウザURLを含む外部リソース、またはOSファイルシステムからのFile/Dirドロップ、
  *                 docs/DefaultShortcut.md参照）は、
  *                 TextEditorMediaでは解決したActionを実行する。他のドロップ先

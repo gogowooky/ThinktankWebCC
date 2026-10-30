@@ -589,7 +589,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     e.preventDefault();
 
     // 外部URL/パスがTextEditor上にある場合は、Pane追加用シールドを外してTextEditor自身の
-    // LocalFileDrag/LocalDirDrag処理へ渡す。シールドが残ると画像等のFilesドロップが
+    // LocalFileDrag処理へ渡す。シールドが残ると画像等のFilesドロップが
     // WorkingPanel側に吸われ、新しいlinkファイルのPane作成になってしまう。
     if (hasLink) {
       const externalAreaId = findWorkingAreaIdAtPoint(e.clientX, e.clientY);
@@ -673,7 +673,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     const fallbackLink = thinkId ? null : extractLinkDrop(e);
 
     // TextEditor上の外部URL/パスは、シールドがdrop直前まで残った場合もここで救済し、
-    // Pane作成ではなくDefaultShortcutのLocalFileDrag/LocalDirDrag Actionへ渡す。
+    // Pane作成ではなくDefaultShortcutのLocalFileDrag Actionへ渡す。
     if (fallbackLink) {
       const hoveredAreaId = findWorkingAreaIdAtPoint(e.clientX, e.clientY);
       const editor = hoveredAreaId ? TTShortcutManager.instance.getAreaEditor(hoveredAreaId) : null;

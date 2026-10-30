@@ -130,4 +130,8 @@ describe('参照タグ', () => {
     expect(parseLinkTag('[memo:2026-10-30-120000]')).toBeNull();
     expect(parseLinkTag('link:2026-10-30-120000')).toBeNull();
   });
+
+  it('廃止した [links:ID] は [link:ID] として読む', () => {
+    expect(parseLinkTag('[links:2026-10-30-120000]')).toEqual({ tag: 'link', thinkId: '2026-10-30-120000' });
+  });
 });

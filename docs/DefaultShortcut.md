@@ -68,10 +68,8 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 # Editor D&D Thinkファイル,外部URL・ローカルファイル
 *,   ,ThinkFileDrag       ,WorkingPanel.DroppedFile.ID:Load         ,DropされたThinkファイルをPaneにLoadする
 *,   ,Alt+ThinkFileDrag   ,WorkingPanel.DroppedFile.ID:Insert       ,DropされたThinkファイルをコンテンツ内に挿入する
-*,   ,LocalFileDrag       ,TextEditor.CurrentEditor.DDInsert:Menu   ,ブラウザURLまたはローカルファイルDropの挿入方法を選ぶ
-*,   ,LocalDirDrag        ,TextEditor.CurrentEditor.DDInsert:Menu   ,ローカルディレクトリDropの挿入方法を選ぶ
-*,   ,Alt+LocalFileDrag   ,TextEditor.CurrentEditor.DDInsert:Tag    ,ブラウザURLまたはローカルファイルをlinkファイル化してタグ挿入する
-*,   ,Alt+LocalDirDrag    ,TextEditor.CurrentEditor.DDInsert:Tag    ,ローカルディレクトリをlinkファイル化してタグ挿入する
+*,   ,LocalFileDrag       ,TextEditor.CurrentEditor.DDInsert:Menu   ,ブラウザURL・ローカルファイル・ディレクトリDropの挿入方法を選ぶ
+*,   ,Alt+LocalFileDrag   ,TextEditor.CurrentEditor.DDInsert:Tag    ,ブラウザURL・ローカルファイル・ディレクトリをlinkファイル化してタグ挿入する
 
 # Editor ActionTag
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCaretPos                  ,URL・パス・タグは1stAction →選択テキストをタグ化

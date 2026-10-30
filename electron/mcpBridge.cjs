@@ -42,7 +42,7 @@ function extractLinkedIdsFromProjectBody(body) {
  * Project 本文の「# 対象」セクション（または末尾）に新規 Think 参照行を追加する。
  */
 function appendThinkToProjectBody(body, item) {
-  const tag = item.category || 'memo';
+  const tag = shared.projectTargetTag(item.category);
   const targetLine = item.title ? `[${tag}:${item.thinkid}]: ${item.title}` : `[${tag}:${item.thinkid}]`;
   const existingIds = extractLinkedIdsFromProjectBody(body);
   if (existingIds.has(item.thinkid)) return body;

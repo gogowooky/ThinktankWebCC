@@ -20,7 +20,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
 };
 import type { TTWorkingArea } from '../../views/TTWorkingArea';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
-import { detectLocalDragKind, type LocalDragKind } from '../../utils/keyboardUtils';
+import { isLocalFileDrag } from '../../utils/keyboardUtils';
 import type { MediaType } from '../../types';
 import './WorkingMenuRibbon.css';
 
@@ -96,7 +96,7 @@ export function parseWindowsUrlShortcut(content: string): string | null {
 }
 
 /**
- * 疑似キー LocalFileDrag / LocalDirDrag / Alt+LocalFileDrag / Alt+LocalDirDrag
+ * 疑似キー LocalFileDrag / Alt+LocalFileDrag（ディレクトリも含む）
  * （docs/DefaultShortcut.md）のデフォルトAction。ThinkFileDragのLoad/Insertと同じく、
  * 通常ドロップ＝Load（Links Think作成・Pane差し替え）、Alt+ドロップ＝Insert
  * （カーソル位置へのファイル参照挿入。TextEditorMedia.tsx側の既存アップロード/
@@ -106,6 +106,7 @@ export function parseWindowsUrlShortcut(content: string): string | null {
  * extractLinkDrop() の結果を使わず shouldAllowLocalDrop() / shouldInsertLocalDrop()
  * を必ず経由する。
  */
+const LOCAL_FILE_DRAG = 'LocalFileDrag';
 const LOCAL_DROP_DEFAULT_ACTION = 'WorkingPanel.Load.DroppedLink';
 const LOCAL_DROP_INSERT_ACTION  = 'WorkingPanel.Insert.DroppedLink';
 const LOCAL_DROP_MENU_ACTION    = 'TextEditor.CurrentEditor.DDInsert:Menu';
@@ -113,13 +114,12 @@ const LOCAL_DROP_TAG_ACTION     = 'TextEditor.CurrentEditor.DDInsert:Tag';
 
 /**
  * OSファイルシステムからのFile/Dirドロップかどうかを判定し、疑似キー
- * LocalFileDrag / LocalDirDrag としてShortcutテーブルに照会する。
+ * LocalFileDrag としてShortcutテーブルに照会する。
  * URL/テキストドラッグ（Filesを含まない）はこの仕組みの対象外のため null を返す。
  */
 function resolveLocalDropAction(e: React.DragEvent): { actionId: string | null } | null {
-  const dragKind = detectLocalDragKind(e.dataTransfer);
-  if (!dragKind) return null;
-  return { actionId: TTShortcutManager.instance.resolveDragAction(dragKind, e.nativeEvent) };
+  if (!isLocalFileDrag(e.dataTransfer)) return null;
+  return { actionId: TTShortcutManager.instance.resolveDragAction(LOCAL_FILE_DRAG, e.nativeEvent) };
 }
 
 /**
@@ -191,10 +191,10 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
 
 /**
  * 外部URL/パスをショートカットのD&D疑似イベントへ正規化する。
- * OS由来のディレクトリだけLocalDirDrag、それ以外（ブラウザURLを含む）はLocalFileDrag。
+ * ローカルのファイル・ディレクトリもブラウザURLも LocalFileDrag にまとめる。
  */
-export function externalDropDragKind(e: React.DragEvent, link: { url: string; title: string } | null): LocalDragKind | null {
-  return detectLocalDragKind(e.dataTransfer) ?? (link ? 'LocalFileDrag' : null);
+export function externalDropDragKind(e: React.DragEvent, link: { url: string; title: string } | null): typeof LOCAL_FILE_DRAG | null {
+  return isLocalFileDrag(e.dataTransfer) || link ? LOCAL_FILE_DRAG : null;
 }
 
 /**

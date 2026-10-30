@@ -153,3 +153,17 @@ describe('URL / パスのDDInsert', () => {
     expect(executeEdits.mock.calls[0][1][0]).toMatchObject({ range, text: target });
   });
 });
+
+describe('Projectの AIまとめ・AI議論 のタグ', () => {
+  it.each(['aiview', 'chat', 'AIView'])('[%s:ID] はそのThinkを開く', async tag => {
+    const { openThink } = setup(`[${tag}:${LINK_ID}]`, 2, fakeThink('chat', '議論\n## 質問'));
+    await run('TextEditor.CurrentEditor.DoOnCursorPos');
+    expect(openThink).toHaveBeenCalledWith(LINK_ID);
+  });
+
+  it('IDでない [chat:語] は開かずに従来どおりchat検索へ回す', async () => {
+    const { openThink } = setup('[chat:設計]', 2, undefined);
+    await run('TextEditor.CurrentEditor.DoOnCursorPos');
+    expect(openThink).not.toHaveBeenCalled();
+  });
+});

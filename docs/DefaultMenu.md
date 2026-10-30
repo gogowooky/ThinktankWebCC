@@ -1,6 +1,8 @@
 
 # MenuTree,                                   ID
 
+# TextEditor.CurrentEditor.DDInsert:Menu 
+
 "タグ挿入 > Q)検索 > J)Google検索J",           Google
 "タグ挿入 > Q)検索 > E)Google検索E",           GoogleE
 "タグ挿入 > Q)検索 > B)Bing",                  Bing
@@ -104,7 +106,7 @@
 
 "Anchor > O)アンカーへ移動・Highlighter設定",          TextEditor.CurrentEditor.DoOnCursorPos:Anchor:Open
 
-# D&Dしたときの処理
+# url&pathをD&Dしたときの処理、TextEditor.CurrentEditor.DDInsert:Menu
 
 "LINK.D&D > L)Linkをそのまま挿入",                  TextEditor.CurrentEditor.DDInsert:Link
 "LINK.D&D > T)タグを挿入",                          TextEditor.CurrentEditor.DDInsert:Tag

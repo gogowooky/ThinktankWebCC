@@ -429,7 +429,8 @@
       "Bash(tasklist //FI \"IMAGENAME eq electron.exe\")",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=21484\")",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"Name='electron.exe'\" | Where-Object { $_.CommandLine -notmatch '--type=' } | Select-Object ProcessId, ParentProcessId, CommandLine | Format-List; Get-CimInstance Win32_Process -Filter \"ProcessId=47184\" | Select-Object ParentProcessId, CommandLine | Format-List)",
-      "Bash(grep -v \"^\\\\s*//\")"
+      "Bash(grep -v \"^\\\\s*//\")",
+      "Bash(grep -rn \"プロンプト'\\\\|# 条件\\\\|'# 対象\\\\|対象\\\\\\\\\\\\\\\\s\" src shared electron --include=*.ts --include=*.tsx --include=*.cjs)"
     ]
   }
 }

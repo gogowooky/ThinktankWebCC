@@ -7,6 +7,7 @@
 import type { ChatMessage } from '../types';
 import { parseManagedChatTitle } from './managedChat';
 import { findFrontmatterRange, extractFrontmatterTitle } from './markdownSections';
+import { projectTargetTag } from '../../shared/vaultFormat';
 
 // ════════════════════════════════════════════════════════════════════════
 // #region chat 形式 (ContentType = 'chat')
@@ -140,8 +141,16 @@ export interface ProjectTargetItem {
 
 export interface ProjectContent {
   title: string;
+  /** 本文のどこかに書かれた Think 参照すべて（Projectの所属判定に使う） */
   ids: string[];
+  /** # AIまとめ の [aiview:ID] */
+  aiSummaryIds: string[];
+  /** # AI議論 の [chat:ID] */
+  aiDiscussionIds: string[];
 }
+
+export const PROJECT_AI_SUMMARY_HEADING = 'AIまとめ';
+export const PROJECT_AI_DISCUSSION_HEADING = 'AI議論';
 
 /** @deprecated Use ProjectContent */
 export type BundleContent = ProjectContent;
@@ -166,8 +175,35 @@ export function isProjectThinkLine(line: string): boolean {
 }
 
 export function formatProjectTargetLine(item: ProjectTargetItem): string {
-  const tag = item.contentType || 'memo';
+  const tag = projectTargetTag(item.contentType || 'memo');
   return item.title ? `[${tag}:${item.id}]: ${item.title}` : `[${tag}:${item.id}]`;
+}
+
+/** 行に書かれた Think 参照のタグ名とID。Think参照でなければ null */
+function projectThinkRef(line: string): { tag: string; id: string } | null {
+  const s = line.trim();
+  const tagMatch = s.match(PROJECT_THINK_TAG_RE);
+  if (tagMatch) return THINK_ID_RE.test(tagMatch[2]) ? { tag: tagMatch[1] ?? '', id: tagMatch[2] } : null;
+  if (s.startsWith('* ')) {
+    const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
+    if (THINK_ID_RE.test(id)) return { tag: '', id };
+  }
+  return null;
+}
+
+/** 見出し「# name」の直後から次の見出しまでの行の範囲。見出しが無ければ null */
+function projectSectionRange(lines: string[], name: string): { start: number; end: number } | null {
+  const heading = new RegExp(`^#\\s+${name}\\s*$`);
+  const headingIdx = lines.findIndex((l, idx) => idx > 0 && heading.test(l.trim()));
+  if (headingIdx === -1) return null;
+  const nextIdx = lines.findIndex((l, idx) => idx > headingIdx && /^#+\s+/.test(l.trim()));
+  return { start: headingIdx + 1, end: nextIdx === -1 ? lines.length : nextIdx };
+}
+
+function projectSectionIds(lines: string[], name: string): string[] {
+  const range = projectSectionRange(lines, name);
+  if (!range) return [];
+  return lines.slice(range.start, range.end).flatMap(l => projectThinkRef(l)?.id ?? []);
 }
 
 /**
@@ -177,26 +213,13 @@ export function parseProject(content: string): ProjectContent {
   const lines = content.split(/\r?\n/);
   const rawTitle = lines[0] ?? '';
   const title = rawTitle.replace(/^>>?\s*/, '');
-  const bodyLines = lines.slice(1);
-
-  const ids: string[] = [];
-  for (const line of bodyLines) {
-    const s = line.trim();
-    const tagMatch = s.match(PROJECT_THINK_TAG_RE);
-    if (tagMatch) {
-      const candidateId = tagMatch[2];
-      if (THINK_ID_RE.test(candidateId)) {
-        ids.push(candidateId);
-      }
-      continue;
-    }
-    if (s.startsWith('* ')) {
-      const id = s.slice(2).trim().replace(/^\[|\]$/g, '');
-      if (THINK_ID_RE.test(id)) ids.push(id);
-    }
-  }
-
-  return { title, ids };
+  const ids = lines.slice(1).flatMap(l => projectThinkRef(l)?.id ?? []);
+  return {
+    title,
+    ids,
+    aiSummaryIds: projectSectionIds(lines, PROJECT_AI_SUMMARY_HEADING),
+    aiDiscussionIds: projectSectionIds(lines, PROJECT_AI_DISCUSSION_HEADING),
+  };
 }
 
 /** @deprecated Use parseProject */
@@ -209,13 +232,12 @@ export interface ProjectCreateOptions {
   title: string;
   ids?: string[];
   items?: ProjectTargetItem[];
+  outlook?: string;
   status?: string;
-  lastEvaluatedAt?: string;
   prompt?: string;
   conditions?: string;
-  outputDestination?: string;
-  evaluationContent?: string;
-  evaluationDate?: string;
+  aiSummaryIds?: string[];
+  aiDiscussionIds?: string[];
 }
 
 /** @deprecated Use ProjectCreateOptions */
@@ -233,21 +255,20 @@ export function serializeProject(options: ProjectCreateOptions): string {
   const lines: string[] = [
     title,
     '=',
+    '# 見通し',
+    ...(options.outlook ? [options.outlook] : []),
     '# 状態',
     `状態値：${options.status ?? '未着手'}`,
-    `最終評価日：${options.lastEvaluatedAt ?? ''}`,
     '# 対象',
     ...targetLines,
     '# プロンプト',
     ...(options.prompt ? [options.prompt] : []),
     '# 条件',
     ...(options.conditions ? [options.conditions] : []),
-    '# 出力先',
-    ...(options.outputDestination ? [options.outputDestination] : []),
-    '# 評価内容',
-    ...(options.evaluationContent ? [options.evaluationContent] : []),
-    '# 評価日時',
-    ...(options.evaluationDate ? [options.evaluationDate] : []),
+    `# ${PROJECT_AI_SUMMARY_HEADING}`,
+    ...(options.aiSummaryIds ?? []).map(id => `[aiview:${id}]`),
+    `# ${PROJECT_AI_DISCUSSION_HEADING}`,
+    ...(options.aiDiscussionIds ?? []).map(id => `[chat:${id}]`),
   ];
   return lines.join('\n');
 }
@@ -257,27 +278,40 @@ export const serializeBundle = serializeProject;
 
 /**
  * 既存の project 本文の「# 対象」セクション内の Think 参照行を更新する。
- * 他のセクション（# 状態、# プロンプト等）や # 対象 内の非Think行（URL/GDrive/GMail等）は保持する。
+ * 他のセクション（# 状態、# プロンプト等）や # 対象 内の非Think行（URL/パス/検索タグ等）は保持する。
  * 旧形式（# 対象 セクションが無い本文）の場合は新フォーマットで再生成する。
  */
 export function updateProjectTargets(content: string, items: ProjectTargetItem[]): string {
   const lines = content.split(/\r?\n/);
-  const targetHeadingIdx = lines.findIndex((l, idx) => idx > 0 && /^#\s+対象\s*$/.test(l.trim()));
-  if (targetHeadingIdx === -1) {
+  const range = projectSectionRange(lines, '対象');
+  if (!range) {
     const parsed = parseProject(content);
     return serializeProject({ title: parsed.title, items });
   }
-  let nextHeadingIdx = lines.findIndex((l, idx) => idx > targetHeadingIdx && /^#+\s+/.test(l.trim()));
-  if (nextHeadingIdx === -1) nextHeadingIdx = lines.length;
 
-  const sectionLines = lines.slice(targetHeadingIdx + 1, nextHeadingIdx);
+  // 呼び出し元は本文全体の参照（ids）から items を作るため、AIまとめ・AI議論の参照が
+  // 混ざってくる。そのままだと # 対象 へ重複して書き足されるので除く。
+  const parsed = parseProject(content);
+  const aiIds = new Set([...parsed.aiSummaryIds, ...parsed.aiDiscussionIds]);
+  const sectionLines = lines.slice(range.start, range.end);
+  // [gdrive:ID] のように手で（または本文から）付けた詳しいLinkタグは書き換えで失わない
+  const existingTags = new Map(sectionLines.flatMap(l => {
+    const ref = projectThinkRef(l);
+    return ref ? [[ref.id, ref.tag] as const] : [];
+  }));
+  const formatLine = (item: ProjectTargetItem): string => {
+    const existing = existingTags.get(item.id);
+    const keepTag = item.contentType === 'links' && existing && existing !== 'links';
+    const line = formatProjectTargetLine(item);
+    return keepTag ? line.replace(/^\[[^:\]]*:/, `[${existing}:`) : line;
+  };
   const nonThinkLines = sectionLines.filter(l => l.trim() !== '' && !isProjectThinkLine(l));
-  const newTargetLines = [...items.map(formatProjectTargetLine), ...nonThinkLines];
+  const newTargetLines = [...items.filter(i => !aiIds.has(i.id)).map(formatLine), ...nonThinkLines];
 
   return [
-    ...lines.slice(0, targetHeadingIdx + 1),
+    ...lines.slice(0, range.start),
     ...newTargetLines,
-    ...lines.slice(nextHeadingIdx),
+    ...lines.slice(range.end),
   ].join('\n');
 }
 

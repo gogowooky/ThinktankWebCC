@@ -1232,9 +1232,11 @@ description:    D&DされたURLまたはパスをそのままテキストとし�
 
 ## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Menu
 description:    D&Dされた外部URLまたはパスの挿入方法をメニューから選ぶ
-　LocalFileDrag（ブラウザURL・ローカルファイル）またはLocalDirDragを受け取り、統一された
+　LocalFileDrag（ブラウザURL・ローカルファイル・ディレクトリ）を受け取り、統一された
 　「LINK.D&D」メニューを表示します。URLとパスの最終的なタグ種別はAction側で判別します。
 　ブラウザ専用のBrowserLinkDragは設けず、URLもLocalFileDragへ正規化します。
+　（261030）ディレクトリ用のLocalDirDragは割り当てるActionがファイルと同じだったため廃止し、
+　　ディレクトリもLocalFileDragとして扱います。
 
 ## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Tag
 description:    D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する

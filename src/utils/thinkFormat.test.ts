@@ -5,6 +5,7 @@ import {
   splitContent,
   parseProject,
   serializeProject,
+  updateProjectTargets,
 } from './thinkFormat';
 
 describe('splitContent', () => {
@@ -50,21 +51,73 @@ describe('project 形式の往復', () => {
     expect(serialized).toBe([
       '束',
       '=',
+      '# 見通し',
       '# 状態',
       '状態値：未着手',
-      '最終評価日：',
       '# 対象',
       '[memo:2026-01-02-030405]',
       '[memo:2026-01-02-030406]',
       '# プロンプト',
       '# 条件',
-      '# 出力先',
-      '# 評価内容',
-      '# 評価日時',
+      '# AIまとめ',
+      '# AI議論',
     ].join('\n'));
     const parsed = parseProject(serialized);
     expect(parsed.title).toBe('束');
     expect(parsed.ids).toEqual(ids);
+  });
+
+  it('見通し・AIまとめ・AI議論を書き、AIの参照を読み分ける', () => {
+    const serialized = serializeProject({
+      title: 'P', outlook: '来月までに方針を固める',
+      items: [{ id: '2026-01-02-030405', contentType: 'links', title: '資料' }],
+      aiSummaryIds: ['2026-01-02-030407'], aiDiscussionIds: ['2026-01-02-030408'],
+    });
+    expect(serialized).toBe([
+      'P', '=',
+      '# 見通し', '来月までに方針を固める',
+      '# 状態', '状態値：未着手',
+      '# 対象', '[link:2026-01-02-030405]: 資料',
+      '# プロンプト', '# 条件',
+      '# AIまとめ', '[aiview:2026-01-02-030407]',
+      '# AI議論', '[chat:2026-01-02-030408]',
+    ].join('\n'));
+    expect(parseProject(serialized)).toEqual({
+      title: 'P',
+      ids: ['2026-01-02-030405', '2026-01-02-030407', '2026-01-02-030408'],
+      aiSummaryIds: ['2026-01-02-030407'],
+      aiDiscussionIds: ['2026-01-02-030408'],
+    });
+  });
+
+  it('# 対象 の更新では url/path/検索タグ・Linkタグ名を残し、AIの参照を重複させない', () => {
+    const content = [
+      'P', '=', '# 状態', '状態値：進行中',
+      '# 対象',
+      '[gdrive:2026-01-02-030405]: 資料',
+      '[links:2026-01-02-030406]: 旧リンク',
+      'https://example.com/',
+      '"C:\\docs\\plan.md"',
+      '[Google:検索語]',
+      '# AI議論', '[chat:2026-01-02-030408]',
+    ].join('\n');
+    const updated = updateProjectTargets(content, [
+      { id: '2026-01-02-030405', contentType: 'links', title: '資料' },
+      { id: '2026-01-02-030406', contentType: 'links', title: '旧リンク' },
+      { id: '2026-01-02-030408', contentType: 'chat', title: '議論' },
+      { id: '2026-01-02-030409', contentType: 'memo', title: '追加' },
+    ]);
+    expect(updated).toBe([
+      'P', '=', '# 状態', '状態値：進行中',
+      '# 対象',
+      '[gdrive:2026-01-02-030405]: 資料',
+      '[link:2026-01-02-030406]: 旧リンク',
+      '[memo:2026-01-02-030409]: 追加',
+      'https://example.com/',
+      '"C:\\docs\\plan.md"',
+      '[Google:検索語]',
+      '# AI議論', '[chat:2026-01-02-030408]',
+    ].join('\n'));
   });
 
   it('タイトル付きThinkタグ形式（[memo:ID]: タイトル）も parse できる', () => {

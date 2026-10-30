@@ -320,9 +320,10 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     switch (key) {
       case 'googleroute': return 'GoogleRoute';
       case 'yahootransfer': return 'YahooTransfer';
-      case 'think': case 'thinktank': case 'memo': return 'Think';
+      case 'think': case 'thinktank': case 'memo': case 'aiview': return 'Think';
       case 'mail': return 'Mail';
-      case 'chat': return 'Chat';
+      // Project の # AI議論 に並ぶ [chat:ID] は検索ではなくそのchatを開く
+      case 'chat': return THINK_ID_RE.test(inner.slice(colonIdx + 1).trim()) ? 'Think' : 'Chat';
       case 'ai':
       case 'gemini':
       case 'chatgpt':

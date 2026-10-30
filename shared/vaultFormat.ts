@@ -28,6 +28,15 @@ export function normalizeCategory(value: string): string {
   return value;
 }
 
+/**
+ * Project の # 対象 に Think を載せるときのタグ名。links は参照タグ [link:ID] に合わせる
+ * （[links:ID] は廃止）。本文を読まずに決めるため gdrive 等の詳しいタグ名にはしない。
+ */
+export function projectTargetTag(category: string): string {
+  const normalized = normalizeCategory(category || 'memo');
+  return normalized === 'links' ? 'link' : normalized;
+}
+
 export function isValidCategory(value: string): value is ValidCategory {
   return (VALID_CATEGORIES as readonly string[]).includes(value);
 }

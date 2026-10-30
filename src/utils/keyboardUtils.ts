@@ -101,7 +101,7 @@ export interface ModifierKeysLike {
 
 /**
  * D&D用の疑似キー文字列を生成する（例: "alt+thinkfiledrag"）。
- * dragType は呼び出し側が渡すドラッグ種別名（ThinkFileDrag / LocalFileDrag / LocalDirDrag 等）で、
+ * dragType は呼び出し側が渡すドラッグ種別名（ThinkFileDrag / LocalFileDrag 等）で、
  * ネイティブのキー/マウスイベントに存在しない値のため KEY_NAME_MAP には依存せず、
  * 単純に小文字化してキー文字列を組み立てる。
  * e はネイティブイベントに限らず、実効的な修飾キー状態を表す任意のオブジェクトでよい
@@ -120,25 +120,11 @@ export function dragEventToStr(dragType: string, e: ModifierKeysLike): string {
 }
 
 /**
- * OSファイルシステムからのD&D（Files）が、ファイル/ディレクトリのどちらを含むかを判定する。
- * File API（DataTransfer.files）にはディレクトリ判定用のプロパティが無いため、
- * DataTransferItem.webkitGetAsEntry() が返す FileSystemEntry.isDirectory を見る
- * （Chromium/Electronでは dragenter/dragover 中でも呼び出せる）。
- * ディレクトリを1件でも含めば 'LocalDirDrag'、全件ファイルなら 'LocalFileDrag'、
- * Filesドラッグでなければ（URL/テキストドラッグ等） null を返す。
+ * OSファイルシステムからのD&D（Files）か。ディレクトリも割り当てるActionがファイルと
+ * 変わらないため区別せず、どちらも疑似キー LocalFileDrag として扱う。
  */
-export type LocalDragKind = 'LocalFileDrag' | 'LocalDirDrag';
-
-export function detectLocalDragKind(dataTransfer: DataTransfer): LocalDragKind | null {
-  if (!dataTransfer.types.includes('Files')) return null;
-  const items = dataTransfer.items;
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.kind !== 'file') continue;
-    const entry = item.webkitGetAsEntry?.();
-    if (entry?.isDirectory) return 'LocalDirDrag';
-  }
-  return 'LocalFileDrag';
+export function isLocalFileDrag(dataTransfer: DataTransfer): boolean {
+  return dataTransfer.types.includes('Files');
 }
 
 export function wheelEventToStr(e: WheelEvent): string {

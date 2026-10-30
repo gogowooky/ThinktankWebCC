@@ -200,7 +200,9 @@ export function formatLinkTag(tag: LinkTagName, thinkId: string): string {
 export function parseLinkTag(text: string): { tag: LinkTagName; thinkId: string } | null {
   const match = text.trim().match(/^\[([A-Za-z]+):\s*([^\]]*?)\s*\]$/);
   if (!match) return null;
-  const tag = LINK_TAG_NAMES.find(t => t === match[1].toLowerCase());
+  // 廃止した [links:ID]（旧Projectの # 対象 に残る）も読み取りだけ [link:ID] として扱う
+  const name = match[1].toLowerCase() === 'links' ? 'link' : match[1].toLowerCase();
+  const tag = LINK_TAG_NAMES.find(t => t === name);
   if (!tag || !THINK_ID_RE.test(match[2])) return null;
   return { tag, thinkId: match[2] };
 }

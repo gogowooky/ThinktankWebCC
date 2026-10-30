@@ -67,4 +67,22 @@ describe('ElectronローカルファイルのD&D', () => {
     expect(link).toEqual({ url: 'C:\\Users\\me\\Pictures\\photo.jpg', title: 'photo' });
     expect(externalDropDragKind(event, link)).toBe('LocalFileDrag');
   });
+
+  it('ディレクトリもLocalFileDragとして扱う', () => {
+    Object.defineProperty(window, 'electronAPI', {
+      configurable: true,
+      value: { getPathForFile: () => 'C:\\Users\\me\\Pictures' },
+    });
+    const event = {
+      dataTransfer: {
+        types: ['Files'],
+        files: [{ name: 'Pictures' }],
+        items: [{ kind: 'file', webkitGetAsEntry: () => ({ isDirectory: true }) }],
+        getData: () => '',
+      },
+    } as unknown as React.DragEvent;
+    const link = extractLinkDrop(event);
+    expect(link?.url).toBe('C:\\Users\\me\\Pictures');
+    expect(externalDropDragKind(event, link)).toBe('LocalFileDrag');
+  });
 });
