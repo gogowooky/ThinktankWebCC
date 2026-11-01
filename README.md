@@ -17,6 +17,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
 
+### v2.6.8 feat: プロジェクトとAIViewのサブパネルを再編し、AI CLIによるプロジェクト要約とChatごとのAI設定を追加
+
+- 日付: 2026-11-01
+- コミット番号: 7f57333
+
+各パネルのサブパネルを再編。Thinktank/Seeds>プロジェクトはロードしたprojectファイルをTextEditorだけで表示し（root・新規・クリア、右端のTextEditorアイコンはShift+クリックでYAML＋本文）、Think一覧はロード中のproject配下だけを表示して種別がprojectのみのとき状態・見通しフィルターを出す。4パネルにAIView・AIChatを追加し、AIViewの現状要約（Thinktank/Seeds）・進捗要約（Working）・実績要約（Harvest）はAI CLIがMCPで # AIまとめ の先頭のAIViewファイルへ「# [日付] ○○要約」「(モデル名)」の日報形式で追記する（作成状況はリボン直下に表示）。AI CLIにThinktank MCPが渡っていなかった問題を修正（codex・claude・Antigravity）。projectファイルに parentProjectid（最初の親を保持）、# 対象 の「*」（全ファイル）、目的別の3つのプロンプト見出しを追加。Working>Chat設定（新規chatファイル）を追加し、Chatの送信の右にAI種別（メニューで選択）・GNBのNotebook名（Dictionaryから選択）・webリンクを表示、chatファイルのmetadataに provider / model / notebookid を保存。Thinktank>設定>パネルAIを「Default AI」に改名、DefaultDictionary.yaml の文法エラーを修正。型検査成功、全751テスト成功。AI CLIによるAIViewファイルへの書き込みはcodexで確認、Electron版での通しの確認は未実施。
+
 ### v2.6.7 feat: projectファイルに見通し・AIまとめ・AI議論を設け、LocalDirDragをLocalFileDragへ統合
 
 - 日付: 2026-10-30
