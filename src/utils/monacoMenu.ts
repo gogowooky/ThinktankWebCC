@@ -156,12 +156,17 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
         }
         row.appendChild(tailEl);
 
-        const panelIdx = panels.indexOf(panel);
-        // マウス操作でも、キーボードでの選択位置・開いている階層を同じ状態に保つ
+        // マウス操作でも、キーボードでの選択位置・開いている階層を同じ状態に保つ。
+        // 行は作り直さず強調だけを付け替える。カーソル下の行を作り直すと、次のマウス操作（クリックの
+        // mousedown）で新しい行に mouseenter が届いてまた作り直され、mousedown と mouseup が別の要素に
+        // なって click が起きない（葉を選べない）
         row.addEventListener('mouseenter', () => {
+          const panelIdx = panels.indexOf(panel);
+          const submenuOpen = panel.selected === idx && panels.length > panelIdx + 1;
+          if (submenuOpen) return;
           closePanelsAfter(panelIdx);
           panel.selected = idx;
-          renderPanel(panel);
+          updateSelection(panel);
           if (node.children) openSubmenu(panel, idx);
         });
         row.addEventListener('click', () => {
@@ -170,6 +175,13 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
         });
 
         panel.listEl.appendChild(row);
+      });
+    };
+
+    /** 選択中の行の強調だけを付け替える（行は作り直さない） */
+    const updateSelection = (panel: MenuPanel) => {
+      Array.from(panel.listEl.children).forEach((row, idx) => {
+        row.classList.toggle('is-selected', idx === panel.selected);
       });
     };
 
@@ -240,7 +252,7 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
       if (!panel || panel.nodes.length === 0) return;
       closePanelsAfter(panels.indexOf(panel));
       panel.selected = (panel.selected + delta + panel.nodes.length) % panel.nodes.length;
-      renderPanel(panel);
+      updateSelection(panel);
       (panel.listEl.children[panel.selected] as HTMLElement)?.scrollIntoView({ block: 'nearest' });
     };
 
@@ -280,14 +292,14 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
 
       if (matches.length === 1) {
         panel.selected = matches[0].idx;
-        renderPanel(panel);
+        updateSelection(panel);
         activate(panel, matches[0].idx);
         return;
       }
       const next = matches.find(({ idx }) => idx > panel.selected) ?? matches[0];
       closePanelsAfter(panels.indexOf(panel));
       panel.selected = next.idx;
-      renderPanel(panel);
+      updateSelection(panel);
     };
 
     overlay.addEventListener('mousedown', (e) => { if (e.target === overlay) cancel(); });

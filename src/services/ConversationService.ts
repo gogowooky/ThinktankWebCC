@@ -82,6 +82,25 @@ export function chatOnlyConversationContext(vaultId: string, chatId: string): Co
   return context;
 }
 
+/** signal が中断されたら、promise の完了を待たずに AbortError で返す */
+export function untilAborted<T>(promise: Promise<T>, signal: AbortSignal, onAbort?: () => void): Promise<T> {
+  if (signal.aborted) {
+    onAbort?.();
+    return Promise.reject(new DOMException('中断しました。', 'AbortError'));
+  }
+  return new Promise<T>((resolve, reject) => {
+    const abort = () => {
+      onAbort?.();
+      reject(new DOMException('中断しました。', 'AbortError'));
+    };
+    signal.addEventListener('abort', abort, { once: true });
+    promise.then(
+      value => { signal.removeEventListener('abort', abort); resolve(value); },
+      error => { signal.removeEventListener('abort', abort); reject(error); },
+    );
+  });
+}
+
 export class ConversationClient {
   async status(signal?: AbortSignal): Promise<{ enabled: boolean; provider: string; model: string }> {
     if (typeof window !== 'undefined' && window.electronAPI?.ai?.getStatus) {
@@ -222,6 +241,7 @@ export class ConversationClient {
       }
 
       const payload = {
+        requestId,
         cliName,
         provider: model?.provider,
         model: model?.model,
@@ -245,13 +265,15 @@ export class ConversationClient {
       };
 
       const electronAi = typeof window !== 'undefined' ? window.electronAPI?.ai : undefined;
+      // 「中断」は応答を待たずに返す。PC版は実行中の AI CLI も止める（中継先の CLI は止められない）
       if (electronAi?.conversation) {
-        aiRes = await invokeIpc(() => electronAi.conversation(payload));
+        aiRes = await untilAborted(invokeIpc(() => electronAi.conversation(payload)), signal,
+          () => { void electronAi.cancel?.(requestId); });
       } else {
-        const relayRes = await FirestoreRelayClient.request<typeof payload, typeof aiRes>(
+        const relayRes = await untilAborted(FirestoreRelayClient.request<typeof payload, typeof aiRes>(
           'ai.conversation',
           payload,
-        );
+        ), signal);
         if (!relayRes.ok || !relayRes.result) {
           throw new Error(relayRes.error || 'Firebase E2EE 中継でのAI応答取得に失敗しました。');
         }

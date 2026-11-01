@@ -78,6 +78,8 @@
 .bundle-conversation-status:empty { display: none; }
 /* 待機・失敗の文言が無い間に出すもの（Pane の Chat の AI 種別）は「送信」と同じ色 */
 .bundle-conversation-status--idle { color: inherit; }
+/* 送信の失敗・中断の知らせはクリックで閉じる */
+.bundle-conversation-message { cursor: pointer; }
 .bundle-conversation-notice { margin: 12px 0; padding: 10px 12px; border-left: 2px solid var(--field-border, #94a3b8); background: var(--field-bg, #f1f5f9); border-radius: 4px; }
 .bundle-conversation-notice p { margin: 0 0 6px; white-space: pre-wrap; }
 .bundle-conversation-notice p:last-child { margin-bottom: 0; }

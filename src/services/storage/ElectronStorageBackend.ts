@@ -106,6 +106,8 @@ declare global {
         onAuthChanged?: (callback: (payload: { provider?: ElectronAiAuthProvider }) => void) => () => void;
         conversation: (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string }>;
         agent:        (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string }>;
+        /** 実行中の AI CLI を止める（requestId は conversation に渡したもの） */
+        cancel?:      (requestId: string) => Promise<boolean>;
       };
       relay?: {
         getStatus:       () => Promise<ElectronRelayStatus>;

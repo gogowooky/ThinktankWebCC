@@ -6,7 +6,7 @@
  * システム設計メモ §8 準拠。
  */
 
-const { spawn, execFileSync } = require('child_process');
+const { spawn, execFile, execFileSync } = require('child_process');
 const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
@@ -28,6 +28,8 @@ const AI_AUTH_LOGIN_URLS = Object.freeze({
 let maxConcurrentCliProcesses = DEFAULT_MAX_CONCURRENT_CLI_PROCESSES;
 let activeCliProcessCount = 0;
 const cliWaitQueue = [];
+/** runId → 中断の手段。executeIsolatedCli の間だけ登録する */
+const runningCliRuns = new Map();
 let defaultMcpHost = null;
 
 function setDefaultMcpHost(mcpHost) {
@@ -569,9 +571,27 @@ function extractCliResponse(cliName, stdout) {
     throw new Error(terminalResult.error || `Antigravity CLI が ${terminalResult.status || '不明な状態'} で終了しました。`);
   }
   if (typeof terminalResult.response !== 'string' || !terminalResult.response.trim()) {
+    // ヘッドレスでは承認を求められない操作（シェルコマンド等）を試みると、自動で拒否されて応答が空で終わる
+    const denied = Array.isArray(terminalResult.denied_actions)
+      ? terminalResult.denied_actions.map((a) => a?.display_name || a?.action).filter(Boolean)
+      : [];
+    if (denied.length) {
+      throw new AiCliDeniedError(
+        `Antigravity が許可されていない操作（${[...new Set(denied)].join('・')}）を使おうとしたため、応答できませんでした。`
+        + '質問を変えて送り直すか、別の AI を選んでください。',
+      );
+    }
     throw new Error('Antigravity CLI の応答が空でした。');
   }
   return terminalResult.response;
+}
+
+/** 許可していない操作を AI CLI が求めて止まった。stderr の英語の詳細は付けずに伝える */
+class AiCliDeniedError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'AiCliDeniedError';
+  }
 }
 
 /**
@@ -586,17 +606,24 @@ async function executeIsolatedCli({
   binPathOverride,
   mcpHost,
   projectId,
+  /** cancelCliRun で中断するときの識別子（画面の会話の requestId） */
+  runId,
 }) {
   const binPath = binPathOverride || resolveExecutablePath(cliName);
   if (!binPath) {
     throw new Error(`AI CLI "${cliName}" がこの PC に見つかりません。`);
   }
 
+  // 中断（cancelCliRun）は順番待ち中・実行中のどちらでも受け付ける
+  const run = { canceled: false, cancel: () => { run.canceled = true; } };
+  if (runId) runningCliRuns.set(runId, run);
+
   await acquireCliSlot();
   const sandboxDir = createRunSandboxDir();
   const activeMcpHost = mcpHost !== undefined ? mcpHost : defaultMcpHost;
   let bridgeServer = null;
   try {
+    if (run.canceled) throw new AiCliCanceledError();
     if (activeMcpHost) {
       bridgeServer = await startMcpBridgeServer(activeMcpHost);
     }
@@ -649,13 +676,19 @@ async function executeIsolatedCli({
       const timer = setTimeout(() => {
         if (finished) return;
         finished = true;
-        try {
-          child.kill();
-        } catch {
-          // ignore
-        }
+        killProcessTree(child);
         reject(new Error(`AI CLI (${cliName}) がタイムアウトしました (${Math.round(timeoutMs / 1000)}秒)`));
       }, timeoutMs);
+
+      run.cancel = () => {
+        run.canceled = true;
+        if (finished) return;
+        finished = true;
+        clearTimeout(timer);
+        killProcessTree(child);
+        reject(new AiCliCanceledError());
+      };
+      if (run.canceled) run.cancel();
 
       child.stdout.on('data', (chunk) => {
         stdout += chunk.toString('utf8');
@@ -693,19 +726,46 @@ async function executeIsolatedCli({
             sandboxDir,
           });
         } catch (err) {
+          if (err instanceof AiCliDeniedError) { reject(err); return; }
           reject(new Error(`${err.message || err}${stderr ? `: ${stderr.slice(0, 400)}` : ''}`));
         }
       });
 
+      if (finished) return;
       child.stdin.write(buildCliInput(cliName, promptText), 'utf8');
       child.stdin.end();
     });
   } finally {
+    if (runId && runningCliRuns.get(runId) === run) runningCliRuns.delete(runId);
     if (bridgeServer) {
       await bridgeServer.close().catch(() => {});
     }
     cleanupRunSandboxDir(sandboxDir);
     releaseCliSlot();
+  }
+}
+
+/** 実行中・順番待ち中の AI CLI を中断する（画面の「中断」）。該当が無ければ false */
+function cancelCliRun(runId) {
+  const run = runId ? runningCliRuns.get(runId) : undefined;
+  if (!run) return false;
+  run.cancel();
+  return true;
+}
+
+/**
+ * 子プロセスを孫プロセスごと止める。Windows の .cmd ラッパー（shell: true）では
+ * child.kill() が cmd.exe だけを止め、実際の CLI が残るため taskkill /T を使う
+ */
+function killProcessTree(child) {
+  try {
+    if (process.platform === 'win32' && child.pid) {
+      execFile('taskkill', ['/pid', String(child.pid), '/T', '/F'], { windowsHide: true }, () => {});
+    } else {
+      child.kill();
+    }
+  } catch {
+    // 既に終了している
   }
 }
 
@@ -939,8 +999,11 @@ async function runDomainAiConversation(params) {
       timeoutMs,
       mcpHost: activeMcpHost,
       projectId: params.projectId || bundleId,
+      runId: params.requestId,
     });
   } catch (err) {
+    if (err instanceof AiCliCanceledError) throw err;
+    if (err instanceof AiCliDeniedError) throw new AiCliError(err.message);
     throw new AiCliError(`AI CLI（${selectedCli}）の実行に失敗しました: ${err.message || err}`);
   }
   return {
@@ -954,6 +1017,13 @@ class AiCliError extends Error {
   constructor(message) {
     super(message);
     this.name = 'AiCliError';
+  }
+}
+
+class AiCliCanceledError extends Error {
+  constructor() {
+    super('AI CLI の実行を中断しました。');
+    this.name = 'AiCliCanceledError';
   }
 }
 
@@ -988,4 +1058,6 @@ module.exports = {
   getGeminiNotebookTitle,
   runGeminiNotebookConversation,
   runDomainAiConversation,
+  cancelCliRun,
+  AiCliCanceledError,
 };

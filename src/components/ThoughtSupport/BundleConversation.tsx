@@ -18,6 +18,9 @@ import './BundleConversation.css';
 const client = new ConversationClient();
 const PREPARING = '会話履歴・参照資料・AI設定を読み込んでいます…（入力できます）';
 const PLACEHOLDER = 'メッセージを入力、Enterで送信 · Shift+Enterで改行';
+const ABORTED_MESSAGE = '応答を中断しました。質問は保持しています。';
+/** 中断の知らせは、送信の右（AI 種別の表示場所）を塞ぎ続けないよう少しで消す */
+const ABORTED_MESSAGE_MS = 5000;
 /** 送信に必要な材料。state の反映を待たずに準備結果をそのまま送信へ渡すために使う。 */
 interface Ready { context: ConversationContext; history: ConversationTurn[] }
 interface Draft { question: string; pending?: ConversationTurn }
@@ -75,6 +78,14 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   const [status, setStatus] = useState<{ enabled: boolean; provider: string; model: string }>();
   const [busy, setBusy] = useState('');
   const [message, setMessage] = useState('');
+  // 送信の失敗・中断の知らせ。準備の状態（message：停止中・接続できない等）と違い、
+  // 送信の右（AI 種別の表示場所）を塞がないよう、クリック・次の入力・時間（中断のみ）で消す
+  const [notice, setNotice] = useState('');
+  useEffect(() => {
+    if (notice !== ABORTED_MESSAGE) return;
+    const timer = setTimeout(() => setNotice(current => current === ABORTED_MESSAGE ? '' : current), ABORTED_MESSAGE_MS);
+    return () => clearTimeout(timer);
+  }, [notice]);
   const [loaded, setLoaded] = useState(false);
   const [record, setRecord] = useState<ConversationTurn>();
   const alive = useRef(true);
@@ -225,7 +236,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   async function send(ready: Ready) {
     if (!lifetime.isCurrent()) return;
     if (locked.current || !question.trim() || pending) return;
-    locked.current = true; setBusy('回答を生成しています…'); setMessage('');
+    locked.current = true; setBusy('回答を生成しています…'); setMessage(''); setNotice('');
     const abort = new AbortController(); controller.current = abort;
     let saved = false;
     try {
@@ -238,7 +249,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
       saved = true;
     } catch (e) {
       if (!lifetime.isCurrent()) return;
-      if (lifetime.isCurrent() && alive.current) setMessage(abort.signal.aborted ? '応答を中断しました。質問は保持しています。' : (e as Error).message);
+      if (lifetime.isCurrent() && alive.current) setNotice(abort.signal.aborted ? ABORTED_MESSAGE : (e as Error).message);
     }
     finally {
       locked.current = false;
@@ -323,6 +334,8 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           onChange={e => {
             if (!lifetime.isCurrent()) return;
             draft.question = e.target.value; setQuestion(e.target.value);
+            // 前回の失敗・中断の知らせは、次の質問を書き始めたら下げる
+            if (notice && !busy) setNotice('');
           }} />
           {/* 待機表示もエラーも送信行に置く。入力欄の上下に帯が増えるほど、押す場所が遠くなる。
           行は入力欄の中（最下行）に置き、入力欄と押す場所を一体に見せる。
@@ -333,9 +346,11 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
               {busy === PREPARING && <button type="button" onClick={cancelPreparation}>準備を中断</button>}
               <button type="button" className="bundle-conversation-send" disabled={!question.trim() || !!busy || !!pending || (!!status && !status.enabled)} onClick={() => void submit()}>送信</button>
             </div>
-            <p className={`bundle-conversation-status${!busy && !(pending ? '' : message) && idleStatus ? ' bundle-conversation-status--idle' : ''}`} role="status">
+            <p className={`bundle-conversation-status${!busy && !(pending ? '' : notice || message) && idleStatus ? ' bundle-conversation-status--idle' : ''}`} role="status">
               {busy && <span className="bundle-conversation-spinner" aria-hidden="true" />}
-              {busy || (pending ? '' : message) || idleStatus}
+              {busy || (pending ? '' : (notice
+                ? <span className="bundle-conversation-message" title="クリックで閉じる" onClick={() => setNotice('')}>{notice}</span>
+                : message)) || idleStatus}
             </p>
           </div>
         </div>

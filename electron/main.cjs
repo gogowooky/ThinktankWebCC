@@ -279,6 +279,9 @@ ipcMain.handle('ai:conversation', async (_event, params) => {
   });
 });
 
+// 画面の「中断」。実行中（または順番待ち中）の AI CLI を止める
+ipcMain.handle('ai:cancel', (_event, requestId) => aiCliRunner.cancelCliRun(requestId));
+
 ipcMain.handle('ai:agent', async (_event, params) => {
   const profile = params?.profileId
     ? vaultEngine.getDomainProfileById(params.profileId)

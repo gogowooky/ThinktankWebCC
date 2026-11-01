@@ -155,6 +155,45 @@ describe('Thinktank MCP を各 CLI に渡す引数', () => {
   });
 });
 
+describe('Antigravity が許可されていない操作で止まったとき', () => {
+  it('英語の詳細ではなく、何が起きたかと次の手を日本語で伝える', () => {
+    const output = JSON.stringify({
+      event: 'result',
+      result: { status: 'SUCCESS', response: '', denied_actions: [{ action: 'command', display_name: 'RunCommand' }] },
+    });
+    expect(() => extractCliResponse('antigravity', output)).toThrow(
+      'Antigravity が許可されていない操作（RunCommand）を使おうとしたため、応答できませんでした。質問を変えて送り直すか、別の AI を選んでください。',
+    );
+  });
+});
+
+describe('実行中の AI CLI の中断', () => {
+  const { cancelCliRun, AiCliCanceledError } = require('./aiCliRunner.cjs') as {
+    cancelCliRun: (runId: string) => boolean;
+    AiCliCanceledError: new () => Error;
+  };
+
+  it('runId を指定して中断すると、プロセスを止めて中断のエラーで返す', async () => {
+    const child = new EventEmitter() as InstanceType<typeof EventEmitter> & {
+      stdout: InstanceType<typeof EventEmitter>; stderr: InstanceType<typeof EventEmitter>;
+      stdin: { write: () => void; end: () => void }; kill: () => void;
+    };
+    child.stdout = new EventEmitter(); child.stderr = new EventEmitter();
+    child.stdin = { write: vi.fn(), end: vi.fn() };
+    child.kill = vi.fn();
+    const spawned = vi.fn(() => child);
+    const run = executeIsolatedCli({
+      cliName: 'codex', promptText: 'q', binPathOverride: '/fake/codex', spawnImpl: spawned, runId: 'req-1',
+    });
+    await vi.waitFor(() => expect(spawned).toHaveBeenCalled());
+    expect(cancelCliRun('req-1')).toBe(true);
+    await expect(run).rejects.toBeInstanceOf(AiCliCanceledError);
+    expect(child.kill).toHaveBeenCalled();
+    // 終わった実行は中断の対象に残らない
+    expect(cancelCliRun('req-1')).toBe(false);
+  });
+});
+
 describe('記録に残す AI モデル名', () => {
   const { resolveModelLabel } = require('./aiCliRunner.cjs') as {
     resolveModelLabel: (cliName: string, model?: string, homeDir?: string) => string;

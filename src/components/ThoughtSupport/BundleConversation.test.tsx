@@ -350,3 +350,37 @@ it('sends the model chosen for the panel', async () => {
   await input('質問'); await click('送信');
   expect(api.generate.mock.calls[0][5]).toEqual(selection);
 });
+
+async function showWithAi() {
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" onOpen={vi.fn()} idleStatus={<span data-testid="ai">Claude</span>} />));
+}
+const statusText = () => host.querySelector('.bundle-conversation-status')?.textContent;
+
+it('中断すると AI の応答を待たずに止め、知らせは少しで消えて AI 種別に戻る', async () => {
+  api.generate.mockImplementationOnce((_c: unknown, _q: unknown, _h: unknown, signal: AbortSignal) => new Promise((_, reject) => {
+    signal.addEventListener('abort', () => reject(new DOMException('中断しました。', 'AbortError')));
+  }));
+  await showWithAi(); await input('相談'); await click('送信');
+  expect(statusText()).toContain('回答を生成しています');
+  vi.useFakeTimers();
+  await click('中断');
+  expect(statusText()).toBe('応答を中断しました。質問は保持しています。');
+  expect(host.querySelector('textarea')!.value).toBe('相談');
+  await act(async () => { vi.advanceTimersByTime(5000); });
+  expect(statusText()).toBe('Claude');
+});
+
+it('失敗の知らせはクリックか、次の質問の入力で消え、AI 種別を選べるようになる', async () => {
+  api.generate.mockRejectedValueOnce(new Error('AI CLI の実行に失敗しました'));
+  await showWithAi(); await input('相談'); await click('送信');
+  expect(statusText()).toBe('AI CLI の実行に失敗しました');
+  expect(host.querySelector('[data-testid="ai"]')).toBeNull();
+  await act(async () => { host.querySelector<HTMLElement>('.bundle-conversation-message')!.click(); });
+  expect(statusText()).toBe('Claude');
+
+  api.generate.mockRejectedValueOnce(new Error('もう一度失敗'));
+  await click('送信');
+  expect(statusText()).toBe('もう一度失敗');
+  await input('別の質問');
+  expect(statusText()).toBe('Claude');
+});

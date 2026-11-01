@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ConversationClient,
   chatOnlyConversationContext,
+  untilAborted,
   type ConversationTurn,
 } from './ConversationService';
 import { StorageManager } from './storage/StorageManager';
@@ -183,5 +184,22 @@ describe('ConversationClient parallel save and optimistic lock retry', () => {
     expect(getCount).toBe(2);
     const finalLog = readConversationLog(serverRecord.meta.metadata?.thinkConversations);
     expect(finalLog.turns.map((t) => t.id)).toEqual(['turn-existing', 'turn-new']);
+  });
+});
+
+describe('untilAborted（会話の「中断」）', () => {
+  it('中断されたら、AI の応答を待たずに AbortError で返し、止める処理を呼ぶ', async () => {
+    const controller = new AbortController();
+    const stop = vi.fn();
+    const pending = untilAborted(new Promise<string>(() => {}), controller.signal, stop);
+    controller.abort();
+    await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
+    expect(stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('中断されなければ、応答をそのまま返す', async () => {
+    const stop = vi.fn();
+    await expect(untilAborted(Promise.resolve('回答'), new AbortController().signal, stop)).resolves.toBe('回答');
+    expect(stop).not.toHaveBeenCalled();
   });
 });

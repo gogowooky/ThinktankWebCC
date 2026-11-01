@@ -192,6 +192,10 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
     lines.push('- `thinktank_get_project_context`: 指定 `projectId` の目標・Gate状態・関連Thinkを一括取得する');
     lines.push('- `thinktank_create_think`: ユーザーの依頼に基づき新規Think（memo / aiview / task / links / table）を作成しProjectに紐づける');
     lines.push('- `thinktank_update_think`: 既存Thinkを更新する（事前に `thinktank_get_record` で取得した `expectedVersion` が必須）');
+    // ヘッドレス実行では承認を求められないため、シェル等を使おうとすると拒否されて応答が空で終わる（Antigravity）
+    lines.push(
+      'このセッションではシェルコマンドの実行やファイルの直接の読み書きはできません（試みると拒否され、回答できずに終わります）。Vault の情報（Think・チャット・Project 等）は必ず上の MCP ツールで取得してください。',
+    );
   }
 
   if (recentMessages.length > 0) {

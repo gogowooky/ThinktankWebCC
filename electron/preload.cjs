@@ -43,6 +43,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
     conversation:  (params)                      => ipcRenderer.invoke('ai:conversation', params),
     agent:         (params)                      => ipcRenderer.invoke('ai:agent', params),
+    cancel:        (requestId)                   => ipcRenderer.invoke('ai:cancel', requestId),
   },
   relay: {
     getStatus:       ()                          => ipcRenderer.invoke('relay:getStatus'),
