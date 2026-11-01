@@ -4,14 +4,15 @@
  *
  * ボタン構成（上から）:
  *   Files            – Think一覧（選択Bundle内のThinkリスト）
- *   BotMessageSquare – 概要
- *   MessageCircle    – 対話
+ *   Target           – プロジェクト
+ *   CpuAi            – AIView
+ *   BotMessageSquare – AIChat
  * ─────────────────── (spacer) ───────────────────
  *   Settings    – Seeds設定（Bundleプロファイル詳細）下寄せ
  */
 
-import { useCallback, useState } from 'react';
-import { MessageCircle, Files, Target, Settings, type LucideIcon } from 'lucide-react';
+import { Files, Target, BotMessageSquare, Settings, type LucideIcon } from 'lucide-react';
+import { CpuAi } from '../AiPanels/CpuAi';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { SeedsViewMode } from '../../views/TTSeedsPanel';
 import './SeedsTabBar.css';
@@ -21,7 +22,8 @@ type SeedsContentMode = Exclude<SeedsViewMode, 'settings'>;
 const VIEW_BUTTONS: Array<{ mode: SeedsContentMode; Icon: LucideIcon; title: string; id: string }> = [
   { mode: 'filter',   Icon: Files,         title: 'Think一覧',   id: 'SeedsThinkList' },
   { mode: 'project', Icon: Target, title: 'プロジェクト', id: 'SeedsProject' },
-  { mode: 'chat',     Icon: MessageCircle, title: '対話',          id: 'SeedsAI' },
+  { mode: 'aiview',  Icon: CpuAi, title: 'AIView', id: 'SeedsAIView' },
+  { mode: 'aichat',  Icon: BotMessageSquare, title: 'AIChat', id: 'SeedsAIChat' },
 ];
 
 interface Props {

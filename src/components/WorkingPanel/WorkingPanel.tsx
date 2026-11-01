@@ -36,7 +36,10 @@ import type { LayoutMode } from '../Layout/AppLayout';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { INIT_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
 import { clientPointToPosition } from '../../utils/editorDropPosition';
+import { chatAiMetadata } from '../../services/chatAiSetting';
 import './WorkingPanel.css';
+
+const NEW_WORKING_CHAT_TITLE = 'ASK:Working｜新しい相談';
 
 type DropEdgeDir = 'left' | 'right' | 'up' | 'down';
 
@@ -109,6 +112,7 @@ function findWorkingAreaIdAtPoint(clientX: number, clientY: number, excludeAreaI
 interface SharedProps {
   areas:            Map<string, TTWorkingArea>;
   vault:            TTVault;
+  seedsProjectId?:  string;
   focusedAreaId:    string | null;
   dragId:           string | null;
   overAreaId:       string | null;
@@ -134,6 +138,7 @@ function LayoutView({ node, shared }: { node: LayoutNode; shared: SharedProps })
         <WorkingArea
           area={area}
           vault={shared.vault}
+          seedsProjectId={shared.seedsProjectId}
           isFocused={shared.focusedAreaId === area.ID}
           isDragging={shared.dragId === area.ID}
           isDropTarget={shared.overAreaId === area.ID}
@@ -201,14 +206,9 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   useAppUpdate(panel);
   useAppUpdate(vault);
 
-  // Edit モードでは AiChat 設定パネルをタブごと隠すため、選択中だった場合は Pane 設定へ退避する
   const isEditMode = layoutMode === 'simple';
-  useEffect(() => {
-    if (isEditMode && panel.ViewMode === 'chat') {
-      panel.SetViewMode('panes');
-    }
-  }, [isEditMode, panel.ViewMode, panel]);
   useAppUpdate(app.SeedsPanel);
+  const seedsProjectId = app.SeedsPanel.ProjectID || undefined;
 
   // 設定パネル: 開閉は panel.IsAreaOpen、幅は Status WorkingSettingPanel.Area.OpenWidth のモードで決まる
   const settingsPanelWidth = useResolvedAreaWidth('WorkingSettingPanel.Area.OpenWidth', panel.AreaWidthMode, INIT_AREA_WIDTH.Working, panel.AreaUserWidth);
@@ -315,7 +315,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   // ── エリア分割（FocusPaneと同じ内容）────────────────────────────────
 
   const handleInsertPane = useCallback((dir: PaneDirection, placement: PanePlacement) =>
-    duplicateWorkingPane(panel, vault, dir, placement), [vault, panel]);
+    duplicateWorkingPane(panel, vault, dir, placement, seedsProjectId), [vault, panel, seedsProjectId]);
 
   const handleSplitRight = useCallback(() => handleInsertPane('right', 'split'), [handleInsertPane]);
   const handleSplitBelow = useCallback(() => handleInsertPane('down', 'split'), [handleInsertPane]);
@@ -332,17 +332,24 @@ export function WorkingPanel({ app, layoutMode }: Props) {
 
   const handleCreateHtml = useCallback(async () => {
     try {
-      const t = await vault.CreateBlankThink('html', NEW_HTML_CONTENT);
+      const t = await vault.CreateBlankThink('html', NEW_HTML_CONTENT, seedsProjectId);
       panel.AddToRight(t.ID, 'html', t.Name);
     } catch (error) {
       console.error('[WorkingPanel] HTML creation failed', error);
       window.alert('HTML資料を保存できませんでした。接続を確認して再度お試しください。');
     }
-  }, [vault, panel]);
+  }, [vault, panel, seedsProjectId]);
 
   const handleCreateMemo = useCallback(async () => {
-    const t = await vault.CreateBlankThink('memo', '新規メモ');
+    const t = await vault.CreateBlankThink('memo', '新規メモ', seedsProjectId);
     panel.AddToRight(t.ID, 'texteditor', t.Name);
+  }, [vault, panel, seedsProjectId]);
+
+  // 作成時の Pane の AI を chatファイルの metadata に記録し、Chat モードで開く
+  const handleCreateChat = useCallback(async () => {
+    const selection = { provider: panel.AIChatProvider, model: panel.AIChatModel };
+    const t = await vault.CreateBlankThink('chat', NEW_WORKING_CHAT_TITLE, undefined, chatAiMetadata(selection));
+    panel.AddToRight(t.ID, 'chat', t.Name);
   }, [vault, panel]);
 
   const handleReadMemo = useCallback(() => {
@@ -357,7 +364,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
       const content = `${title}\n${text}`;
       try {
         const isHtml = /\.html?$/i.test(file.name);
-        const t = await vault.CreateBlankThink(isHtml ? 'html' : 'memo', content);
+        const t = await vault.CreateBlankThink(isHtml ? 'html' : 'memo', content, seedsProjectId);
         panel.AddToRight(t.ID, isHtml ? 'html' : 'markdown', t.Name);
       } catch (error) {
         console.error('[WorkingPanel] import failed', error);
@@ -365,7 +372,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
       }
     };
     input.click();
-  }, [vault, panel]);
+  }, [vault, panel, seedsProjectId]);
 
   const handleSaveMemo = useCallback(() => {
     const focusedArea = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
@@ -384,9 +391,9 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   }, [panel, vault]);
 
   const handleCreateTable = useCallback(async () => {
-    const t = await vault.CreateBlankThink('table', '新規テーブル');
+    const t = await vault.CreateBlankThink('table', '新規テーブル', seedsProjectId);
     panel.AddToRight(t.ID, 'texteditor', t.Name);
-  }, [vault, panel]);
+  }, [vault, panel, seedsProjectId]);
 
   const handleReadTable = useCallback(() => {
     const input = document.createElement('input');
@@ -425,14 +432,14 @@ export function WorkingPanel({ app, layoutMode }: Props) {
 
       if (sections.length === 0) return;
       const { content, colheader } = tableSectionToMetadataForm(title, sections[0]);
-      const t = await vault.CreateBlankThink('table', title);
+      const t = await vault.CreateBlankThink('table', title, seedsProjectId);
       t.Metadata = { ...t.Metadata, colheader };
       t.Content = content;
       await t.SaveContent();
       panel.AddToRight(t.ID, 'datagrid', t.Name);
     };
     input.click();
-  }, [vault, panel]);
+  }, [vault, panel, seedsProjectId]);
 
   const handleSaveTable = useCallback(() => {
     const focusedArea = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
@@ -749,13 +756,13 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     // URL / path D&D → links Think を新規作成
     const link = extractLinkDrop(e);
     if (link && shouldAllowLocalDrop(e)) {
-      const newThink = await vault.CreateLinksThink(link.title, link.url, await getPcName());
+      const newThink = await vault.CreateLinksThink(link.title, link.url, await getPcName(), seedsProjectId);
       const id    = newThink.ID;
       const title = newThink.Name;
       if (overlay.type === 'split' && overlay.areaId) panel.FocusArea(overlay.areaId);
       panel.InsertArea(id, 'texteditor', title, overlay.dir, overlay.type);
     }
-  }, [computeDropOverlay, panel, vault]);
+  }, [computeDropOverlay, panel, vault, seedsProjectId]);
 
   const handleDragStart = useCallback((e: React.MouseEvent, areaId: string) => {
     e.preventDefault();
@@ -816,6 +823,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   const shared: SharedProps = {
     areas:           areaMap,
     vault,
+    seedsProjectId,
     focusedAreaId:   panel.FocusedAreaId,
     dragId,
     overAreaId,
@@ -875,6 +883,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
           onCreateMemo={handleCreateMemo}
           onReadMemo={handleReadMemo}
           onSaveMemo={handleSaveMemo}
+          onCreateChat={handleCreateChat}
           onCreateTable={handleCreateTable}
           onReadTable={handleReadTable}
           onSaveTable={handleSaveTable}

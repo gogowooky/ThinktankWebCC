@@ -886,7 +886,11 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       const ctx = consumeTextEditorDrop(item);
       if (!ctx) return;
       try {
-        const linkThink = await app.Models.Vault.CreateLinksThink(ctx.title, ctx.target, await getPcName());
+        const pcName = await getPcName();
+        const seedsProjectId = app.SeedsPanel?.ProjectID;
+        const linkThink = seedsProjectId
+          ? await app.Models.Vault.CreateLinksThink(ctx.title, ctx.target, pcName, seedsProjectId)
+          : await app.Models.Vault.CreateLinksThink(ctx.title, ctx.target, pcName);
         const tag = formatLinkTag(linkTagNameOf(ctx.target), linkThink.ID);
         ctx.editor.executeEdits('external-drop-tag', [{ range: ctx.range, text: tag, forceMoveMarkers: true }]);
         ctx.editor.focus();

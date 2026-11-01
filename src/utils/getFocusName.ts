@@ -23,6 +23,7 @@ export function getFocusName(el: Element | null): string {
       const id = btn.id || btn.getAttribute('aria-label') || '';
       if (id === 'Panes') return 'WorkingSetting.Panes';
       if (id === 'TextEditor') return 'WorkingSetting.Texteditor';
+      if (id === 'ChatSetting') return 'WorkingSetting.Chatsetting';
       if (id === 'Markdown') return 'WorkingSetting.Markdown';
       if (id === 'DataGrid') return 'WorkingSetting.Datagrid';
       if (id === 'Card') return 'WorkingSetting.Card';

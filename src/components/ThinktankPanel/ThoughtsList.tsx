@@ -13,7 +13,7 @@
 
 import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Target, FileText, MessagesSquare, Link, Table, FileCode, Activity, File } from 'lucide-react';
+import { Target, FileText, Bot, MessagesSquare, Link, Table, FileCode, Activity, File } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -79,6 +79,7 @@ function getTypeIcon(contentType: string) {
     case 'project':
     case 'bundle':   return <Target        size={13} className="thoughts-list__icon" />;
     case 'memo':     return <FileText      size={13} className="thoughts-list__icon" />;
+    case 'aiview':   return <Bot           size={13} className="thoughts-list__icon" />;
     case 'chat':     return <MessagesSquare size={13} className="thoughts-list__icon" />;
     case 'links':    return <Link          size={13} className="thoughts-list__icon" />;
     case 'table':    return <Table         size={13} className="thoughts-list__icon" />;

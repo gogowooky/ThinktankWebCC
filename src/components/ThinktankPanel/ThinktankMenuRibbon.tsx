@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LayoutList, FolderInput, Save, ListRestart, SquareX } from 'lucide-react';
+import { CheckSquare, Square, Trash2, ListCheck, ArrowDownAZ, LayoutList, FolderInput, ListRestart } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './ThinktankMenuRibbon.css';
 
@@ -25,7 +25,6 @@ interface Props {
   onToggleColumnDialog:  () => void;
   onToggleFilterSelectDialog: () => void;
   onCreateBundle:        () => void;
-  onClearTodoSelection:  () => void;
   onRefresh:             () => void;
 }
 
@@ -38,7 +37,7 @@ export function ThinktankMenuRibbon({
   onCheckAll, onClearChecks, onDeleteChecked,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
-  onCreateBundle, onClearTodoSelection, onRefresh,
+  onCreateBundle, onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -50,64 +49,12 @@ export function ThinktankMenuRibbon({
 
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
-  /* ── プロジェクト: AbstractView が自前のリボンを持つ ──────── */
-  if (viewMode === 'project') return null;
+  /* ── プロジェクト・AIView: AbstractView / AiViewPanel が自前のリボンを持つ ── */
+  if (viewMode === 'project' || viewMode === 'aiview') return null;
 
-  /* ── 設定モード: ボタンなし ─────────────────────────────── */
-  if (viewMode === 'settings') {
+  /* ── 設定・AIChat: ボタンなし ──────────────────────────────── */
+  if (viewMode === 'settings' || viewMode === 'aichat') {
     return <div className="menu-ribbon thinktank-menu-ribbon" />;
-  }
-
-  /* ── AI モード: 保存ボタン＋Think一覧共通の表示設定ボタン ──── */
-  if (viewMode === 'chat') {
-    return (
-      <div className="menu-ribbon thinktank-menu-ribbon">
-        <div className="tooltip-wrapper" data-tip="会話履歴は閲覧専用です" data-tip-side="right">
-          <button
-            className="menu-ribbon__btn menu-ribbon__btn--icon"
-            disabled
-          >
-            <Save size={14} />
-          </button>
-        </div>
-
-        <div className="menu-ribbon__sep" />
-
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onRefresh}
-          data-tip="表示更新"
-          data-tip-side="right"
-        >
-          <ListRestart size={14} />
-        </button>
-
-        <button
-          className={`menu-ribbon__btn menu-ribbon__btn--icon${showColumnDialog ? ' menu-ribbon__btn--active' : ''}`}
-          onClick={onToggleColumnDialog}
-          data-tip="表示項目とソート"
-        >
-          <ArrowDownAZ size={14} />
-        </button>
-
-        <button
-          className={`menu-ribbon__btn menu-ribbon__btn--icon${showFilterSelectDialog ? ' menu-ribbon__btn--active' : ''}`}
-          onClick={onToggleFilterSelectDialog}
-          data-tip="フィルター選択"
-        >
-          <LayoutList size={14} />
-        </button>
-
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onClearTodoSelection}
-          data-tip="アイテム選択をクリア"
-          data-tip-side="left"
-        >
-          <SquareX size={14} />
-        </button>
-      </div>
-    );
   }
 
   /* ── 通常モード ─────────────────────────────────────────── */

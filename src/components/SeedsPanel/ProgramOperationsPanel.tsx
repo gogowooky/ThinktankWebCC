@@ -3,7 +3,6 @@
  * Seedsパネル（Program Master / 暮らしのテーマ）における統合業務管理・思考支援コンポーネント。
  * - ドメインプロファイル切替（clinical-trial ⇔ elderly-support）
  * - Program Gate 管理（通過ガード・ブロッカー管理）
- * - 昇格済み公式レコード（Decision / Evidence / Risk / Assumption / Action / GateResult / Learning）と引用元再確認（needs_revalidation）
  * - 専門 AI Agent 協働実行（Orchestrator）
  * - イベント駆動の監査履歴（Compliance Ledger）
  */
@@ -12,17 +11,15 @@ import { useEffect, useState } from 'react';
 import type { TTVault } from '../../models/TTVault';
 import { useDomainProfile } from '../../platform/DomainProfileManager';
 import { operationsService } from '../../services/OperationsService';
-import { PromotionReview } from '../ThoughtSupport/PromotionReview';
 import type { BundleOperationsState, GateStatus } from '../../../shared/operations';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 
 interface ProgramOperationsPanelProps {
   vault: TTVault;
   bundleId: string;
-  onOpen: (id: string) => void;
 }
 
-export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOperationsPanelProps) {
+export function ProgramOperationsPanel({ vault, bundleId }: ProgramOperationsPanelProps) {
   useAppUpdate(vault);
   const { profile, availableProfiles, switchProfile } = useDomainProfile();
   const [opsState, setOpsState] = useState<BundleOperationsState | null>(null);
@@ -50,16 +47,13 @@ export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOpera
 
   if (!opsState) return null;
 
-  const activeRecords = opsState.promotedRecords.filter((r) => r.status !== 'superseded');
-  const revalRecords = activeRecords.filter((r) => r.status === 'needs_revalidation');
-
   async function handleGateChange(gateId: string, nextStatus: GateStatus) {
     setStatusMsg('');
     const res = await operationsService.updateGate(vault, bundleId, {
       gateId,
       status: nextStatus,
       reviewer,
-      linkedRecordIds: activeRecords.map((r) => r.id),
+      linkedRecordIds: [],
     });
     if (!res.ok) {
       setStatusMsg(res.error || 'Gate 変更に失敗しました。');
@@ -67,13 +61,6 @@ export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOpera
     }
     setOpsState(res.state);
     setStatusMsg(`Gate「${gateId}」を ${nextStatus} に更新しました。`);
-  }
-
-  async function handleResolveRevalidation(recordId: string) {
-    setStatusMsg('');
-    const next = await operationsService.confirmRevalidation(vault, bundleId, recordId, reviewer);
-    setOpsState(next);
-    setStatusMsg('引用元の更新内容を確認し、レコードを Active に復帰しました。');
   }
 
   async function handleRunAgent() {
@@ -90,9 +77,7 @@ export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOpera
       );
       setAgentReply(res.reply);
       setOpsState(res.state);
-      setStatusMsg(
-        `Agent（${res.executedCli}）を実行し、昇格候補 ${res.addedCandidatesCount} 件を抽出しました。`,
-      );
+      setStatusMsg(`Agent（${res.executedCli}）を実行しました。`);
     } catch (e) {
       setStatusMsg((e as Error).message || 'Agent 実行に失敗しました。');
     } finally {
@@ -164,48 +149,6 @@ export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOpera
         </p>
       )}
 
-      {revalRecords.length > 0 && (
-        <div
-          role="alert"
-          style={{
-            border: '1px solid #f59e0b',
-            background: 'rgba(245, 158, 11, 0.12)',
-            borderRadius: 4,
-            padding: 8,
-            marginBottom: 8,
-          }}
-        >
-          <strong>⚠ 根拠資料の更新に伴う再確認待ち（{revalRecords.length}件）</strong>
-          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
-            {revalRecords.map((r) => (
-              <li key={r.id} style={{ marginBottom: 4 }}>
-                <span>
-                  <strong>{r.title}</strong> ({profile.promotionKinds[r.type]?.label || r.type} v
-                  {r.version}) — {r.revalidationReason}
-                </span>{' '}
-                {r.citations.map((c, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => onOpen(c.sourceThinkid)}
-                    style={{ marginRight: 4, fontSize: '0.75rem' }}
-                  >
-                    引用元を開く
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => void handleResolveRevalidation(r.id)}
-                  style={{ fontSize: '0.75rem' }}
-                >
-                  再確認完了として承認
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* 1. Program Gate・段階到達確認 */}
       <details open style={{ marginBottom: 8 }}>
         <summary style={{ fontWeight: 600, cursor: 'pointer' }}>
@@ -255,65 +198,7 @@ export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOpera
         </div>
       </details>
 
-      {/* 2. 昇格候補レビュー＆承認済み公式レコード一覧 */}
-      <details open style={{ marginBottom: 8 }}>
-        <summary style={{ fontWeight: 600, cursor: 'pointer' }}>
-          {profile.terminology.promotionSectionTitle}（承認済み {activeRecords.length}件）
-        </summary>
-        <PromotionReview vault={vault} bundleId={bundleId} onOpen={onOpen} />
-        {activeRecords.length === 0 ? (
-          <p style={{ fontSize: '0.78rem', opacity: 0.75, marginTop: 6 }}>
-            まだ昇格承認されたレコードはありません。AIChatの提案または「手動で昇格候補を追加」から登録できます。
-          </p>
-        ) : (
-          <ul style={{ margin: '8px 0 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 6 }}>
-            {activeRecords.map((rec) => {
-              const kindCfg = profile.promotionKinds[rec.type];
-              return (
-                <li
-                  key={rec.id}
-                  style={{
-                    border: '1px solid rgba(128,128,128,0.25)',
-                    borderRadius: 4,
-                    padding: '6px 8px',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6 }}>
-                    <span>
-                      <strong>[{kindCfg?.label || rec.type}]</strong> {rec.title}{' '}
-                      <small>(v{rec.version})</small>
-                    </span>
-                    <span style={{ fontSize: '0.74rem', opacity: 0.8 }}>
-                      決定/担当: {rec.ownerOrDecisionMaker} · 承認: {rec.approvedBy}
-                    </span>
-                  </div>
-                  <p style={{ margin: '3px 0', fontSize: '0.8rem' }}>{rec.summary}</p>
-                  <div style={{ fontSize: '0.74rem', opacity: 0.85 }}>
-                    理由・根拠: {rec.rationale}
-                    {rec.citations.length > 0 && (
-                      <>
-                        {' · '}引用:{' '}
-                        {rec.citations.map((c, idx) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => onOpen(c.sourceThinkid)}
-                            style={{ marginRight: 4, fontSize: '0.72rem' }}
-                          >
-                            [{c.sourceTitle || c.sourceThinkid}]
-                          </button>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </details>
-
-      {/* 3. 専門AI Agent 協働実行（Orchestrator） */}
+      {/* 2. 専門AI Agent 協働実行（Orchestrator） */}
       <details style={{ marginBottom: 8 }}>
         <summary style={{ fontWeight: 600, cursor: 'pointer' }}>
           {profile.terminology.orchestratorSectionTitle}
@@ -337,7 +222,7 @@ export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOpera
               disabled={agentRunning}
               onClick={() => void handleRunAgent()}
             >
-              {agentRunning ? 'ローカル AI CLI で点検中…' : '専門Agentで点検・候補抽出'}
+              {agentRunning ? 'ローカル AI CLI で点検中…' : '専門Agentで点検'}
             </button>
           </div>
           <input
@@ -367,7 +252,7 @@ export function ProgramOperationsPanel({ vault, bundleId, onOpen }: ProgramOpera
         </div>
       </details>
 
-      {/* 4. 監査イベント履歴（Compliance Ledger） */}
+      {/* 3. 監査イベント履歴（Compliance Ledger） */}
       <details>
         <summary style={{ fontWeight: 600, cursor: 'pointer' }}>
           {profile.terminology.auditSectionTitle}（{opsState.complianceLedger.length}件）

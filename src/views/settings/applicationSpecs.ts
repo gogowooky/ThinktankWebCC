@@ -100,7 +100,7 @@ export const applicationSpecs: Record<string, PropSpec> = {
       if (panelName === 'Thinktank') {
         app.ThinktankPanel.IsAreaOpen = true;
         if (subName) {
-          app.ThinktankPanel.ViewMode = subName.toLowerCase() as TTApplication['ThinktankPanel']['ViewMode'];
+          app.ThinktankPanel.SetViewMode(subName.toLowerCase() as TTApplication['ThinktankPanel']['ViewMode']);
         }
         focusSelector('.thinktank-panel, .thinktank-area');
       } else if (panelName === 'Seeds') {

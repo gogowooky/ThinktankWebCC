@@ -61,6 +61,12 @@
   background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.18);
 }
 
+/* TextEditor の YAML＋本文 表示中（Pane の TextEditor アイコンと同じ色） */
+.menu-ribbon__btn--raw,
+.menu-ribbon__btn--raw:hover {
+  color: color-mix(in srgb, #ff3b3b 75%, rgb(var(--on-ribbon-rgb, 255 255 255)));
+}
+
 .menu-ribbon__btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;

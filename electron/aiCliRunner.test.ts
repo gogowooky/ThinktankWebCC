@@ -8,6 +8,11 @@ const fs = require('node:fs') as typeof import('node:fs');
 const { EventEmitter } = require('node:events') as typeof import('node:events');
 const {
   runDomainAiConversation,
+  runGeminiNotebookConversation,
+  getGeminiNotebookTitle,
+  authProbeLoggedIn,
+  detectAiAuthentication,
+  startAiAuthentication,
   executeIsolatedCli,
   setMaxConcurrentCliProcesses,
   DEFAULT_MAX_CONCURRENT_CLI_PROCESSES,
@@ -18,6 +23,16 @@ const {
   extractCliResponse,
 } = require('./aiCliRunner.cjs') as {
   runDomainAiConversation: (params: Record<string, unknown>) => Promise<{ reply: string }>;
+  runGeminiNotebookConversation: (params: Record<string, unknown>) => Promise<{
+    reply: string;
+    citations: unknown[];
+    proposals: unknown[];
+    executedCli: string;
+  }>;
+  getGeminiNotebookTitle: (params: Record<string, unknown>) => Promise<string>;
+  authProbeLoggedIn: (provider: string, probe: Record<string, unknown>) => boolean;
+  detectAiAuthentication: (options?: Record<string, unknown>) => Promise<Record<string, { available: boolean; loggedIn: boolean; loginUrl: string }>>;
+  startAiAuthentication: (provider: string, options?: Record<string, unknown>) => { started: boolean; loginUrl: string };
   executeIsolatedCli: (params: Record<string, unknown>) => Promise<{
     cliName: string;
     stdout: string;
@@ -29,7 +44,7 @@ const {
   DEFAULT_MAX_CONCURRENT_CLI_PROCESSES: number;
   AiCliError: new (message: string) => Error;
   SUPPORTED_CLIS: string[];
-  buildCliArgs: (cliName: string, model?: string) => string[];
+  buildCliArgs: (cliName: string, model?: string, options?: Record<string, unknown>) => string[];
   buildCliInput: (cliName: string, prompt: string) => string;
   extractCliResponse: (cliName: string, stdout: string) => string;
 };
@@ -102,6 +117,195 @@ describe('Antigravity CLI adapter', () => {
       result: { status: 'ERROR', response: '', error: 'authentication required' },
     });
     expect(() => extractCliResponse('antigravity', output)).toThrow('authentication required');
+  });
+});
+
+describe('Thinktank MCP を各 CLI に渡す引数', () => {
+  const mcpServer = {
+    command: 'C:\\Program Files\\Thinktank\\Thinktank.exe',
+    args: ['C:\\app\\electron\\mcpServer.cjs'],
+    env: { ELECTRON_RUN_AS_NODE: '1', THINKTANK_MCP_PIPE: '\\\\.\\pipe\\tt-1' },
+  };
+  const options = { mcpConfigPath: 'C:\\tmp\\run\\mcp-config.json', mcpServer };
+
+  it('claude: --safe-mode は MCP も無効にするため使わず、--restricted で隔離して Thinktank MCP だけ許可する', () => {
+    const args = buildCliArgs('claude', undefined, options);
+    expect(args).not.toContain('--safe-mode');
+    expect(args).toEqual(expect.arrayContaining(['--restricted', '--strict-mcp-config', '--mcp-config', options.mcpConfigPath]));
+    expect(args[args.indexOf('--allowedTools') + 1]).toBe('mcp__thinktank__*');
+    // MCP を渡さないときは従来どおり --safe-mode
+    expect(buildCliArgs('claude')).toContain('--safe-mode');
+  });
+
+  it('codex: 作業ディレクトリの .codex/config.toml は読まれないため -c で登録し、ツールを承認済みにする', () => {
+    const args = buildCliArgs('codex', undefined, options);
+    const configs = args.flatMap((a, i) => (args[i - 1] === '-c' ? [a] : []));
+    expect(configs).toEqual([
+      "mcp_servers.thinktank.command='C:\\Program Files\\Thinktank\\Thinktank.exe'",
+      "mcp_servers.thinktank.args=['C:\\app\\electron\\mcpServer.cjs']",
+      "mcp_servers.thinktank.env={ ELECTRON_RUN_AS_NODE = '1', THINKTANK_MCP_PIPE = '\\\\.\\pipe\\tt-1' }",
+      'mcp_servers.thinktank.default_tools_approval_mode="approve"',
+    ]);
+    expect(args[args.length - 1]).toBe('-');
+  });
+
+  it('antigravity: ヘッドレスでは MCP が自動で拒否されるため、Thinktank MCP だけ許可する設定を渡す', () => {
+    const args = buildCliArgs('antigravity', undefined, options);
+    expect(JSON.parse(args[args.indexOf('--settings') + 1])).toEqual({ permissions: { allow: ['mcp(thinktank/*)'] } });
+  });
+});
+
+describe('記録に残す AI モデル名', () => {
+  const { resolveModelLabel } = require('./aiCliRunner.cjs') as {
+    resolveModelLabel: (cliName: string, model?: string, homeDir?: string) => string;
+  };
+
+  it('指定モデル → CLI 設定の既定モデル → 「CLI名（既定モデル）」の順に決める', () => {
+    const home = fs.mkdtempSync(join(tmpdir(), 'thinktank-home-'));
+    vi.stubEnv('CODEX_HOME', '');
+    try {
+      expect(resolveModelLabel('claude', 'claude-opus-5', home)).toBe('opus');
+      expect(resolveModelLabel('codex', '', home)).toBe('codex（既定モデル）');
+      fs.mkdirSync(join(home, '.codex'));
+      fs.writeFileSync(join(home, '.codex', 'config.toml'), 'model = "gpt-5.6-sol"\n[mcp_servers.x]\nmodel = "other"\n');
+      expect(resolveModelLabel('codex', '', home)).toBe('gpt-5.6-sol');
+      fs.mkdirSync(join(home, '.claude'));
+      fs.writeFileSync(join(home, '.claude', 'settings.json'), JSON.stringify({ model: 'sonnet' }));
+      expect(resolveModelLabel('claude', undefined, home)).toBe('sonnet');
+      expect(resolveModelLabel('antigravity', '', home)).toBe('antigravity（既定モデル）');
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('GeminiNotebook CLI adapter', () => {
+  it('queries the selected Notebook ID and returns the JSON answer', async () => {
+    const fakeSpawn = vi.fn((_bin: string, args: string[], opts: { shell: boolean; cwd: string }) => {
+      expect(args.slice(0, 5)).toEqual([
+        'notebook', 'query', 'notebook-123', 'この資料の要点は？', '--json',
+      ]);
+      expect(args).toContain('--timeout');
+      expect(opts.shell).toBe(false);
+      expect(fs.existsSync(opts.cwd)).toBe(true);
+
+      const child = new EventEmitter() as InstanceType<typeof EventEmitter> & {
+        stdout: InstanceType<typeof EventEmitter>;
+        stderr: InstanceType<typeof EventEmitter>;
+        kill: () => void;
+      };
+      child.stdout = new EventEmitter();
+      child.stderr = new EventEmitter();
+      child.kill = vi.fn();
+      queueMicrotask(() => {
+        child.stdout.emit('data', Buffer.from(JSON.stringify({ answer: 'Notebookに基づく回答' }), 'utf8'));
+        child.emit('close', 0);
+      });
+      return child;
+    });
+
+    const response = await runGeminiNotebookConversation({
+      notebookId: 'notebook-123',
+      userMessage: 'この資料の要点は？',
+      binPathOverride: '/fake/nlm',
+      spawnImpl: fakeSpawn,
+      timeoutMs: 20_000,
+    });
+
+    expect(response).toEqual({
+      reply: 'Notebookに基づく回答',
+      insufficientEvidence: false,
+      citations: [],
+      proposals: [],
+      executedCli: 'nlm',
+    });
+  });
+
+  it('rejects an unset Notebook ID before starting the CLI', async () => {
+    await expect(runGeminiNotebookConversation({ notebookId: 'None', userMessage: '質問' }))
+      .rejects.toThrow('Notebook ID が設定されていません');
+  });
+
+  it('gets the configured Notebook title as JSON', async () => {
+    const fakeSpawn = vi.fn((_bin: string, args: string[]) => {
+      expect(args).toEqual(['notebook', 'get', 'notebook-123', '--json']);
+      const child = new EventEmitter() as InstanceType<typeof EventEmitter> & {
+        stdout: InstanceType<typeof EventEmitter>;
+        stderr: InstanceType<typeof EventEmitter>;
+        kill: () => void;
+      };
+      child.stdout = new EventEmitter();
+      child.stderr = new EventEmitter();
+      child.kill = vi.fn();
+      queueMicrotask(() => {
+        child.stdout.emit('data', Buffer.from(JSON.stringify({ id: 'notebook-123', title: '臨床研究ノート' })));
+        child.emit('close', 0);
+      });
+      return child;
+    });
+    await expect(getGeminiNotebookTitle({
+      notebookId: 'notebook-123',
+      binPathOverride: '/fake/nlm',
+      spawnImpl: fakeSpawn,
+    })).resolves.toBe('臨床研究ノート');
+  });
+});
+
+describe('AI CLI browser authentication', () => {
+  it('recognizes each CLI authentication response without exposing account details', () => {
+    expect(authProbeLoggedIn('Claude', { exitCode: 0, stdout: '{"loggedIn":true}', stderr: '', timedOut: false })).toBe(true);
+    expect(authProbeLoggedIn('OpenAI', { exitCode: 0, stdout: 'Logged in using ChatGPT', stderr: '', timedOut: false })).toBe(true);
+    expect(authProbeLoggedIn('Gemini', { exitCode: 1, stdout: '', stderr: 'Please sign in', timedOut: false })).toBe(false);
+    expect(authProbeLoggedIn('GNB', { exitCode: 0, stdout: 'Authentication valid', stderr: '', timedOut: false })).toBe(true);
+    expect(authProbeLoggedIn('GNB', { exitCode: 0, stdout: 'Authentication valid', stderr: '', timedOut: true })).toBe(false);
+  });
+
+  it('reports login status for cloud CLIs and leaves Local unset', async () => {
+    const fakeSpawn = vi.fn((_bin: string, args: string[]) => {
+      const child = new EventEmitter() as InstanceType<typeof EventEmitter> & {
+        stdout: InstanceType<typeof EventEmitter>;
+        stderr: InstanceType<typeof EventEmitter>;
+        kill: () => void;
+      };
+      child.stdout = new EventEmitter();
+      child.stderr = new EventEmitter();
+      child.kill = vi.fn();
+      queueMicrotask(() => {
+        const command = args.join(' ');
+        if (command === 'auth status') child.stdout.emit('data', Buffer.from('{"loggedIn":true}'));
+        else if (command === 'login status') child.stdout.emit('data', Buffer.from('Logged in using ChatGPT'));
+        else if (command === 'models') child.stderr.emit('data', Buffer.from('Please sign in'));
+        else child.stdout.emit('data', Buffer.from('Authentication valid'));
+        child.emit('close', command === 'models' ? 1 : 0);
+      });
+      return child;
+    });
+
+    const status = await detectAiAuthentication({
+      spawnImpl: fakeSpawn,
+      pathsOverride: { OpenAI: '/fake/codex', Gemini: '/fake/agy', Claude: '/fake/claude', GNB: '/fake/nlm' },
+    });
+    expect(status.OpenAI.loggedIn).toBe(true);
+    expect(status.Gemini.loggedIn).toBe(false);
+    expect(status.Claude.loggedIn).toBe(true);
+    expect(status.GNB.loggedIn).toBe(true);
+    expect(status.Local).toMatchObject({ available: false, loggedIn: false, loginUrl: '' });
+  });
+
+  it('starts the selected CLI browser login in a detached process', () => {
+    const child = new EventEmitter() as InstanceType<typeof EventEmitter> & { unref: () => void };
+    child.unref = vi.fn();
+    const fakeSpawn = vi.fn(() => child);
+    const result = startAiAuthentication('GNB', {
+      spawnImpl: fakeSpawn,
+      pathsOverride: { GNB: '/fake/nlm' },
+    });
+    expect(fakeSpawn).toHaveBeenCalledWith('/fake/nlm', ['login', '--storage', 'protected'], expect.objectContaining({
+      detached: true,
+      windowsHide: false,
+    }));
+    expect(child.unref).toHaveBeenCalled();
+    expect(result.started).toBe(true);
   });
 });
 

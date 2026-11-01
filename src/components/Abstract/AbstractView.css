@@ -23,16 +23,6 @@
   --on-ribbon-rgb: var(--seeds-on-menuribbon-rgb);
 }
 
-.abstract-view__ribbon--working {
-  background: var(--working-menuribbon-bg);
-  --on-ribbon-rgb: var(--working-on-menuribbon-rgb);
-}
-
-.abstract-view__ribbon--harvest {
-  background: var(--harvest-menuribbon-bg);
-  --on-ribbon-rgb: var(--harvest-on-menuribbon-rgb);
-}
-
 .abstract-view__content {
   flex: 1;
   overflow: hidden;

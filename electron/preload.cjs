@@ -30,10 +30,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getActive:     ()                            => ipcRenderer.invoke('profile:getActive'),
     listAvailable: ()                            => ipcRenderer.invoke('profile:listAvailable'),
     setActive:     (profileId)                   => ipcRenderer.invoke('profile:setActive', profileId),
-    saveCustom:    (profileObj)                  => ipcRenderer.invoke('profile:saveCustom', profileObj),
   },
   ai: {
     getStatus:     ()                            => ipcRenderer.invoke('ai:getStatus'),
+    getAuthStatus: ()                            => ipcRenderer.invoke('ai:getAuthStatus'),
+    login:         (provider)                    => ipcRenderer.invoke('ai:login', provider),
+    getGnbNotebookTitle: (notebookId)             => ipcRenderer.invoke('ai:getGnbNotebookTitle', notebookId),
+    onAuthChanged: (callback)                    => {
+      const handler = (_event, payload) => callback(payload);
+      ipcRenderer.on('ai:auth-changed', handler);
+      return () => ipcRenderer.removeListener('ai:auth-changed', handler);
+    },
     conversation:  (params)                      => ipcRenderer.invoke('ai:conversation', params),
     agent:         (params)                      => ipcRenderer.invoke('ai:agent', params),
   },

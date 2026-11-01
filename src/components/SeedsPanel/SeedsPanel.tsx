@@ -12,7 +12,7 @@ import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
 import { SeedsTabBar } from './SeedsTabBar';
 import { SeedsArea } from './SeedsArea';
-import { updateProjectTargets } from '../../utils/thinkFormat';
+import { projectTargetIds, updateProjectTargets } from '../../utils/thinkFormat';
 import './SeedsPanel.css';
 
 const MIN_WIDTH = 160;
@@ -61,23 +61,8 @@ export function SeedsPanel({ app, width, onResize }: Props) {
 
           if (targetBundle.IsMetaOnly) await targetBundle.LoadContent();
 
-          const contentLines = targetBundle.Content.split('\n');
-          const hasFilter = contentLines.some(line => {
-            const trimmed = line.trim();
-            return trimmed.startsWith('>') || trimmed.startsWith('>>');
-          });
-
-          let newIds: string[] = [];
-
-          if (hasFilter) {
-            // 現在のフィルター一致結果を非同期で取得
-            const currentMatchedThinks = await vault.GetThinksForProjectAsync(targetBundle.ID);
-            const currentMatchedIds = currentMatchedThinks.map(t => t.ID);
-            newIds = Array.from(new Set([...currentMatchedIds, ...droppedIds]));
-          } else {
-            const existingIds = targetBundle.getThinkIds();
-            newIds = Array.from(new Set([...existingIds, ...droppedIds]));
-          }
+          const existingIds = projectTargetIds(targetBundle.Content);
+          const newIds = Array.from(new Set([...existingIds, ...droppedIds]));
 
           const targetItems = newIds.map(tid => {
             const t = vault.GetThink(tid);
@@ -88,7 +73,7 @@ export function SeedsPanel({ app, width, onResize }: Props) {
           await targetBundle.SaveContent();
 
           // キャッシュ更新と画面再ロード
-          await vault.GetThinksForProjectAsync(targetBundle.ID);
+          await vault.GetProjectTargetsAsync(targetBundle.ID);
           setRefreshKey(k => k + 1);
           vault.NotifyUpdated();
         }

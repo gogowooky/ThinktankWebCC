@@ -11,13 +11,26 @@ import { TTProjectView } from './TTProjectView';
 import type { MediaType } from '../types';
 import type { TTThink } from '../models/TTThink';
 import { TTUIStateManager } from './TTUIStateManager';
+import { TTModels } from '../models/TTModels';
+import { isRootProjectTitle } from '../utils/thinkFormat';
 import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
 import { setPanelCheckedIds, togglePanelChecks, setPanelAreaOpen, setPanelAiModel, subscribePanelAiModel } from './panelBehavior';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type SeedsViewMode = 'filter' | 'chat' | 'project' | 'settings';
+/** 'chat' は旧「対話」。AIChat に置き換えたため受け取ったら aichat で開く */
+export type SeedsViewMode = 'filter' | 'chat' | 'project' | 'aiview' | 'aichat' | 'settings';
+
+/** 開くときの表示指定。MediaType のほか、「プロジェクト」サブパネルで開く 'project' を受ける */
+type SeedsOpenMode = MediaType | 'project';
+
+// datagrid メディアは Think一覧（filter）モードにマップする
+function viewModeOfMedia(mediaType: SeedsOpenMode): SeedsViewMode {
+  if (mediaType === 'datagrid') return 'filter';
+  if (mediaType === 'chat') return 'aichat';
+  return mediaType as SeedsViewMode;
+}
 
 export class TTSeedsPanel extends TTUIItem {
   /** SeedsAreaの開閉状態（true=開いている）*/
@@ -96,13 +109,16 @@ export class TTSeedsPanel extends TTUIItem {
   /**
    * ProjectをSeedsAreaで開く。
    * Areaが閉じていれば自動的に開く。
+   * root（タイトル「Thinktank」）の projectファイルは Thinktank パネル専用なので、Seeds には設定しない。
    */
-  public OpenProject(projectId: string, mediaType: MediaType = 'datagrid'): void {
+  public OpenProject(projectId: string, mediaType: SeedsOpenMode = 'datagrid'): void {
+    const target = TTModels.currentInstance?.Vault.GetThink(projectId);
+    if (target?.ContentType === 'project' && isRootProjectTitle(target.Name)) return;
+    this.ProjectView.Open(projectId);
     this.ProjectID = projectId;
     this.CheckedThoughtIDs = []; // チェッククリア
     if (mediaType !== 'settings' as string) {
-      // datagrid メディアは Think一覧（filter）モードにマップする
-      this.ViewMode = (mediaType === 'datagrid' ? 'filter' : mediaType) as SeedsViewMode;
+      this.ViewMode = viewModeOfMedia(mediaType);
     }
     if (!this.IsAreaOpen) {
       this.IsAreaOpen = true;
@@ -117,6 +133,7 @@ export class TTSeedsPanel extends TTUIItem {
 
   /** Project表示をクリアする */
   public ClearProject(): void {
+    this.ProjectView.Close();
     this.ProjectID = '';
     this.CheckedThoughtIDs = []; // チェッククリア
     this.NotifyUpdated();
@@ -142,14 +159,13 @@ export class TTSeedsPanel extends TTUIItem {
 
   /** 表示モードを切り替える */
   public SetViewMode(mode: SeedsViewMode): void {
-    this.ViewMode = mode;
+    this.ViewMode = mode === 'chat' ? 'aichat' : mode;
     this.NotifyUpdated();
   }
 
   /** 後方互換：MediaTypeで表示モードを設定（settingsモード以外） */
   public SetMediaType(mediaType: MediaType): void {
-    // datagrid メディアは Think一覧（filter）モードにマップする
-    this.ViewMode = (mediaType === 'datagrid' ? 'filter' : mediaType) as SeedsViewMode;
+    this.ViewMode = viewModeOfMedia(mediaType);
     this.NotifyUpdated();
   }
 

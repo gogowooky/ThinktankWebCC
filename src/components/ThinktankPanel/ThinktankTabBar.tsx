@@ -2,13 +2,14 @@
  * ThinktankTabBar.tsx
  * ThinktankPanel の縦タブバー（旧Ribbon）ボタン群。
  *
- * 上部: Think一覧（検索・Bundle一覧を統合）/ 概要 / 対話
+ * 上部: Think一覧（検索・Bundle一覧を統合）/ プロジェクト / AIView / AIChat
  * 下部: 設定
  */
 
 import {
-  MessageCircle, Files, Target, Settings,
+  Files, Target, BotMessageSquare, Settings,
 } from 'lucide-react';
+import { CpuAi } from '../AiPanels/CpuAi';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import type { ThinktankViewMode } from '../../views/TTThinktankPanel';
 import './ThinktankTabBar.css';
@@ -19,6 +20,7 @@ interface Props {
   viewMode: ThinktankViewMode;
   onSetViewMode: (mode: ThinktankViewMode) => void;
   onRefresh: () => void;
+  projectName?: string;
   vaultName?: string;
   isEditMode?: boolean;
 }
@@ -33,7 +35,8 @@ const MODE_BUTTONS: {
 }[] = [
   { mode: 'filter',  icon: <Files       size={16} />, label: 'Think一覧', id: 'ThinktankThinkList' },
   { mode: 'project', icon: <Target size={16} />, label: 'プロジェクト', id: 'ThinktankProject' },
-  { mode: 'chat',    icon: <MessageCircle size={16} />, label: '対話', id: 'ThinktankAI' },
+  { mode: 'aiview',  icon: <CpuAi size={16} />, label: 'AIView', id: 'ThinktankAIView' },
+  { mode: 'aichat',  icon: <BotMessageSquare size={16} />, label: 'AIChat', id: 'ThinktankAIChat' },
 ];
 
 // ── コンポーネント ──────────────────────────────────────────────────────
@@ -44,20 +47,18 @@ export function ThinktankTabBar({
   viewMode,
   onSetViewMode,
   onRefresh,
+  projectName,
   vaultName,
-  isEditMode = false,
 }: Props) {
-  const visibleButtons = isEditMode ? MODE_BUTTONS.filter(b => b.mode !== 'chat') : MODE_BUTTONS;
-
   return (
     <VerticalTabBar
       panelId="thinktank"
       side="left"
       isOpen={isOpen}
       onToggle={onToggle}
-      bottomLabel={vaultName}
+      bottomLabel={projectName ?? vaultName}
     >
-      {visibleButtons.map(({ mode: m, icon, label, id }) => (
+      {MODE_BUTTONS.map(({ mode: m, icon, label, id }) => (
         <button
           key={m}
           id={id}

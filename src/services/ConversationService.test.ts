@@ -2,13 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   ConversationClient,
   chatOnlyConversationContext,
-  setTurnPromotionCandidatesForTest,
   type ConversationTurn,
 } from './ConversationService';
 import { StorageManager } from './storage/StorageManager';
 import { StorageConflictError, type ThinkMeta, type SavePayload } from './storage/IStorageBackend';
 import { readConversationLog } from '../../shared/contracts/conversationRecord';
-import { extractOperationsState } from '../../shared/operations';
 
 function makeTurn(id: string, bundleId: string, question: string, reply: string, model: string): ConversationTurn {
   return {
@@ -33,7 +31,7 @@ describe('ConversationClient parallel save and optimistic lock retry', () => {
     vi.restoreAllMocks();
   });
 
-  it('serializes concurrent save calls within the same app so turns and promotion candidates from multiple panels are preserved', async () => {
+  it('serializes concurrent save calls within the same app so turns from multiple panels are preserved', async () => {
     const store = new Map<string, { meta: ThinkMeta; body: string }>();
     let versionCounter = 1;
 
@@ -109,23 +107,6 @@ describe('ConversationClient parallel save and optimistic lock retry', () => {
     const turn1 = makeTurn('turn-1', 'bundle-1', '質問1', '回答1 (Claude)', 'claude-opus-5');
     const turn2 = makeTurn('turn-2', 'bundle-1', '質問2', '回答2 (Gemini)', 'gemini-3.5-flash');
 
-    setTurnPromotionCandidatesForTest('turn-1', [
-      {
-        type: 'decision',
-        title: '決定候補A',
-        summary: '要約A',
-        citations: [],
-      },
-    ]);
-    setTurnPromotionCandidatesForTest('turn-2', [
-      {
-        type: 'action',
-        title: 'アクション候補B',
-        summary: '要約B',
-        citations: [],
-      },
-    ]);
-
     const client = new ConversationClient();
     await Promise.all([
       client.save(turn1, 'chat-seeds', 'bundle-1'),
@@ -137,11 +118,7 @@ describe('ConversationClient parallel save and optimistic lock retry', () => {
     expect(seedsLog.turns.map((t) => t.id)).toEqual(['turn-1']);
     expect(harvestLog.turns.map((t) => t.id)).toEqual(['turn-2']);
 
-    const bundleOps = extractOperationsState(store.get('bundle-1')?.meta.metadata);
-    expect(bundleOps.promotionCandidates.map((c) => c.title).sort()).toEqual([
-      'アクション候補B',
-      '決定候補A',
-    ]);
+    expect(store.get('bundle-1')?.meta.metadata).toEqual({});
   });
 
   it('retries automatically on cross-client StorageConflictError and merges turns without losing data', async () => {

@@ -6,9 +6,12 @@ export async function duplicateWorkingPane(
   vault: Pick<TTVault, 'CreateBlankThink'>,
   dir: PaneDirection,
   placement: PanePlacement,
+  seedsProjectId?: string,
 ): Promise<void> {
   if (panel.Layout === null) {
-    const think = await vault.CreateBlankThink('memo', '新規メモ');
+    const think = seedsProjectId
+      ? await vault.CreateBlankThink('memo', '新規メモ', seedsProjectId)
+      : await vault.CreateBlankThink('memo', '新規メモ');
     if (placement === 'split') panel.AddFirst(think.ID, 'texteditor', think.Name);
     else panel.InsertArea(think.ID, 'texteditor', think.Name, dir, placement);
   } else {

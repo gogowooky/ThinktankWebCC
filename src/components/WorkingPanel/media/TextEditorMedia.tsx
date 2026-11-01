@@ -22,6 +22,7 @@ import { registerMarkdownFolding, registerHexColorProvider } from './texteditor/
 import { applyEditorDecorations } from './texteditor/editorDecorations';
 import { clientPointToPosition } from '../../../utils/editorDropPosition';
 import { isLocalPathTarget } from '../../../utils/linkFormat';
+import { isReadOnlyContentType } from '../../../types';
 /**
  * TextEditorMedia.tsx
  * Monaco Editor によるテキスト編集メディア。
@@ -48,6 +49,7 @@ export interface TextEditorMediaRef {
 interface Toast { msg: string; type: 'success' | 'error'; }
 
 export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(function TextEditorMedia({ areaId, think, onSave, onDirtyChange, onTitleChange, editorSettings, refreshKey, autoSaveRef, rawYaml }: MediaProps, ref) {
+  const readOnly = isReadOnlyContentType(think?.ContentType);
   // YAML表示の有無は WorkingArea が key で作り直すため、インスタンスごとに固定
   const rawYamlRef = useRef(rawYaml ?? false);
   const savedRef = useRef(think ? getEditorValue(think, rawYamlRef.current) : '');
@@ -60,12 +62,14 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const thinkRef = useRef(think);
   const onSaveRef = useRef(onSave);
   const areaIdRef = useRef(areaId);
+  const readOnlyRef = useRef(readOnly);
 
   useEffect(() => {
     thinkRef.current = think;
     onSaveRef.current = onSave;
     areaIdRef.current = areaId;
-  }, [think, onSave, areaId]);
+    readOnlyRef.current = readOnly;
+  }, [think, onSave, areaId, readOnly]);
 
   useImperativeHandle(ref, () => ({
     focus: () => editorRef.current?.focus(),
@@ -109,8 +113,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // 内容が同じ（書式だけの違い）なら反映しない
     if (rawYamlRef.current && rawTextMatchesThink(currentEditorVal, think)) return;
     if (currentEditorVal !== nextVal && currentEditorVal === savedRef.current) {
-      editor.setValue(nextVal);
       savedRef.current = nextVal;
+      editor.setValue(nextVal);
     }
   }, [think, think?.Content]);
 
@@ -227,7 +231,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         }
 
         // think.Metadata.editor に状態を保存
-        if (think && pos && model) {
+        if (think && !readOnlyRef.current && pos && model) {
           const closed = getClosedHeadings(editor);
           const sel = editor.getSelection();
           let selectionData = null;
@@ -256,6 +260,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     disposablesRef.current.push(focusDisposable);
 
     const blurDisposable = editor.onDidBlurEditorText(() => {
+      if (readOnlyRef.current) return;
       const currentThink = thinkRef.current;
       if (!currentThink) return;
       const body = editor.getValue();
@@ -293,7 +298,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     foldedDecorationsRef.current = editor.createDecorationsCollection();
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      if (!think) return;
+      if (!think || readOnly) return;
       const body = editor.getValue();
       const nextContent = reconstructContent(think, body, rawYamlRef.current);
       if (nextContent === null) {
@@ -392,7 +397,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     }
 
     updateDecorations();
-  }, [onSave, think, areaId, showToast]); // updateDecorations は後で依存に追加
+  }, [onSave, think, areaId, showToast, readOnly]); // updateDecorations は後で依存に追加
 
   // マウント/アンマウント時のアクティブエディタのクリーンアップ
   useEffect(() => {
@@ -406,7 +411,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       const editor = editorRef.current;
       const currentThink = thinkRef.current;
       const currentOnSave = onSaveRef.current;
-      if (editor && currentThink && currentOnSave) {
+      if (editor && currentThink && currentOnSave && !readOnlyRef.current) {
         const body = editor.getValue();
         const currentSaved = getEditorValue(currentThink, rawYamlAtMount);
         const nextContent = body !== currentSaved ? reconstructContent(currentThink, body, rawYamlAtMount) : null;
@@ -435,6 +440,10 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   }, []);
 
   useEffect(() => {
+    if (readOnly) {
+      if (autoSaveRef) autoSaveRef.current = null;
+      return;
+    }
     // 保留中の編集を即保存する。Promise を返すので呼び出し側は完了を待てる
     // （ビュー切替・ウィンドウ終了・タブ非表示時のフラッシュに使う。D-1）。
     const flush = (): Promise<void> | void => {
@@ -463,7 +472,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       if (autoSaveRef) autoSaveRef.current = null;
       unregisterPaneFlush(guardKey);
     };
-  }, [autoSaveRef, areaId, think, onSave]);
+  }, [autoSaveRef, areaId, think, onSave, readOnly]);
 
   // ── 動的スタイルの生成 ───────────────────────────────────────────────────
 
@@ -607,6 +616,12 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
 
   const handleChange = useCallback((value: string | undefined) => {
     const v = value ?? '';
+    if (readOnly) {
+      onDirtyChange(false);
+      if (v !== savedRef.current) editorRef.current?.setValue(savedRef.current);
+      updateDecorations();
+      return;
+    }
     const isDirty = v !== savedRef.current;
     onDirtyChange(isDirty);
     updateDecorations();
@@ -639,7 +654,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           });
       }, 3000);
     }
-  }, [onDirtyChange, updateDecorations, onTitleChange, think, onSave]);
+  }, [onDirtyChange, updateDecorations, onTitleChange, think, onSave, readOnly]);
 
   // ── URL / パス ドロップ ───────────────────────────────────────────────────
 
@@ -650,6 +665,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // ドロップ自体は下の handleDrop 側でこのイベントを直接検出して処理するため、ゴースト表示
     // を優先してここでは外部 URL / パスドラッグだけを処理する。
     const types = e.dataTransfer.types;
+    if (readOnly) return;
     const hasFileOrUri = types.includes('Files') || types.includes('text/uri-list');
     // text/plain は通常の選択文字列D&Dでも付くため、dragover中にURL/パスを読める場合だけ奪う。
     const hasPlainLink = types.includes('text/plain') && !!extractLinkDrop(e);
@@ -657,7 +673,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(true);
-  }, []);
+  }, [readOnly]);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -672,6 +688,12 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // Pane）の判定とAlt判定を1箇所（WorkingPanel.handleBodyDrop）に一本化することで、
     // このコンポーネント側とのタイミング・判定不一致を避けている。
     if (e.dataTransfer.types.includes('application/x-thought-id')) return;
+
+    if (readOnly) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
 
     // URL / パスでない通常の文字列D&Dは Monaco の既定動作へ渡す。
     const fallback = extractLinkDrop(e);
@@ -708,7 +730,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // Action側がペイロードを同期的にconsumeしてから非同期処理へ入る。
     TTShortcutManager.instance.executeActionDirect(actionId);
     TTShortcutManager.instance.setPendingTextEditorDrop(null);
-  }, []);
+  }, [readOnly]);
 
   if (!think) {
     return (
@@ -740,6 +762,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           lineNumbers: (editorSettings?.lineNumbers ?? true) ? 'on' : 'off',
           wordWrap: (editorSettings?.wordWrap ?? true) ? 'on' : 'off',
           scrollBeyondLastLine: false,
+          readOnly,
+          domReadOnly: readOnly,
           fontFamily: "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
           padding: { top: 10, bottom: 10 },
           renderLineHighlight: 'line',

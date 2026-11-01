@@ -29,14 +29,19 @@ it('keeps placeholder Working settings disabled while implemented settings remai
   expect(select).toHaveBeenCalledWith('texteditor');
 });
 
-it('does not open placeholder Harvest settings and keeps the conversation tab usable', async () => {
+it('does not open placeholder Harvest settings and keeps the AIView/AIChat tabs usable', async () => {
   const select = vi.fn();
-  await act(async () => root.render(<HarvestTabBar isOpen={true} viewMode="chat" onToggle={vi.fn()} onSetMode={select} />));
+  await act(async () => root.render(<HarvestTabBar isOpen={true} viewMode="aiview" onToggle={vi.fn()} onSetMode={select} />));
   const settings = host.querySelector<HTMLButtonElement>('#HarvestSetting')!;
   expect(settings.disabled).toBe(true);
   expect(settings.title).toContain('未実装');
   await act(async () => settings.click());
   expect(select).not.toHaveBeenCalled();
-  await act(async () => host.querySelector<HTMLButtonElement>('#HarvestAI')!.click());
-  expect(select).toHaveBeenCalledWith('chat');
+  // 旧「対話」と「プロジェクト」は Harvest から外した
+  expect(host.querySelector('#HarvestAI')).toBeNull();
+  expect(host.querySelector('#HarvestProject')).toBeNull();
+  await act(async () => host.querySelector<HTMLButtonElement>('#HarvestAIView')!.click());
+  expect(select).toHaveBeenCalledWith('aiview');
+  await act(async () => host.querySelector<HTMLButtonElement>('#HarvestAIChat')!.click());
+  expect(select).toHaveBeenCalledWith('aichat');
 });

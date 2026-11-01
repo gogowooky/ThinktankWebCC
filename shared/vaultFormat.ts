@@ -13,6 +13,7 @@ export const SAFE_ID_RE = /^[A-Za-z0-9_-]{1,200}$/;
 
 export const VALID_CATEGORIES = [
   'memo',
+  'aiview',
   'project',
   'table',
   'links',

@@ -5,13 +5,12 @@ import type { SupportPanel } from '../../services/thoughtSupport';
 import './SupportChat.css';
 import './SupportConversation.css';
 import { SupportConversation } from './SupportConversation';
-import type { TaskSeed } from '../../services/taskSeed';
 
 export interface SupportChatRef { focus: () => void; abortStreaming: () => void }
 interface Props {
   vault: TTVault; panelName: SupportPanel; selectedId: string; bundleId?: string;
   modelSelector: AiModelSelectorProps;
-  onStartTask?: (chatId: string, title: string, seed?: TaskSeed) => Promise<void>;
+  idleStatus?: React.ReactNode;
   pane?: boolean;
 }
 
@@ -29,7 +28,7 @@ export const SupportChat = forwardRef<SupportChatRef, Props>(function SupportCha
     ['--support-toolbar-bg' as string]: `var(--${panel}-menuribbon-bg)`,
   }}>
     <SupportConversation vault={props.vault} panelName={props.panelName} bundleId={props.bundleId ?? ''} chatId={props.selectedId}
-      modelSelector={props.modelSelector}
-      draftScope={scope} pane={props.pane} onStartTask={props.onStartTask} />
+      modelSelector={props.modelSelector} idleStatus={props.idleStatus}
+      draftScope={scope} pane={props.pane} />
   </div>;
 });

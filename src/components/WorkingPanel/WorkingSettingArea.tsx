@@ -1,12 +1,12 @@
 import { forwardRef, useImperativeHandle } from 'react';
 import type { WorkingSettingAreaProps as Props } from './settings/types';
 import { useWorkingSettingsState } from './settings/useWorkingSettingsState';
-import { ChatSettings } from './settings/ChatSettings';
 import { PaneSettings } from './settings/PaneSettings';
 import { TextEditorSettings } from './settings/TextEditorSettings';
+import { ChatSettings } from './settings/ChatSettings';
 import { HtmlSettings } from './settings/HtmlSettings';
 import { DataGridSettings } from './settings/DataGridSettings';
-import { AbstractView } from '../Abstract/AbstractView';
+import { AiViewPanel, AiChatPanel } from '../AiPanels/AiPanels';
 import './WorkingSettingArea.css';
 
 export interface WorkingSettingAreaRef { focus: () => void; }
@@ -14,7 +14,7 @@ export interface WorkingSettingAreaRef { focus: () => void; }
 export const WorkingSettingArea = forwardRef<WorkingSettingAreaRef, Props>(function WorkingSettingArea(props, ref) {
   const { activeSettings, width } = props;
   const state = useWorkingSettingsState(props.panel, props.vault, activeSettings);
-  const { panelRef, firstPanesRef, firstTexteditorRef, firstDatagridRef, firstHtmlRef, aiChatViewRef, panelName } = state;
+  const { panelRef, firstPanesRef, firstTexteditorRef, firstDatagridRef, firstHtmlRef, panelName } = state;
   useImperativeHandle(ref, () => ({
     focus: () => {
       switch (activeSettings) {
@@ -29,7 +29,6 @@ export const WorkingSettingArea = forwardRef<WorkingSettingAreaRef, Props>(funct
         case 'texteditor': firstTexteditorRef.current?.focus(); break;
         case 'datagrid': firstDatagridRef.current?.focus(); break;
         case 'html': firstHtmlRef.current?.focus(); break;
-        case 'chat': aiChatViewRef.current?.focus(); break;
         default: panelRef.current?.focus(); break;
       }
     },
@@ -40,13 +39,14 @@ export const WorkingSettingArea = forwardRef<WorkingSettingAreaRef, Props>(funct
 
       <div className="working-setting-area__header">Working&gt;{panelName}</div>
 
-      <div className={`working-setting-area__body${activeSettings === 'chat' ? ' working-setting-area__body--chat' : ''}`}>
-        {activeSettings === 'chat' ? <ChatSettings {...context} />
-          : activeSettings === 'panes' ? <PaneSettings {...context} />
+      <div className={`working-setting-area__body${activeSettings === 'aiview' || activeSettings === 'aichat' ? ' working-setting-area__body--fill' : ''}`}>
+        {activeSettings === 'panes' ? <PaneSettings {...context} />
             : activeSettings === 'texteditor' ? <TextEditorSettings {...context} />
+              : activeSettings === 'chatsetting' ? <ChatSettings {...context} />
               : activeSettings === 'html' ? <HtmlSettings {...context} />
                 : activeSettings === 'datagrid' ? <DataGridSettings {...context} />
-                  : activeSettings === 'project' ? <AbstractView projectView={props.panel.ProjectView} vault={props.vault} workingPanel={props.panel} panelKey="working" />
+                  : activeSettings === 'aiview' ? <AiViewPanel panelKey="working" />
+                  : activeSettings === 'aichat' ? <AiChatPanel />
                   : <div className="working-setting-area__placeholder">
                     {panelName} の設定は今後追加予定です。
                   </div>}

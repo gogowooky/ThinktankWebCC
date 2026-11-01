@@ -1,6 +1,7 @@
 /**
  * src/platform/DomainProfileManager.ts
- * ドメインプロファイル（clinical-trial / elderly-support / カスタム編集）の状態管理・永続化・React Hook。
+ * ドメインプロファイル（clinical-trial / elderly-support）の状態管理・永続化・React Hook。
+ * 編集画面は廃止済み。以前に保存したカスタムプロファイルは読み込みだけ続ける。
  * - PC版 (Electron): window.electronAPI.profile を通じて .thinktank/prompts/<id>/profile.json と連携
  * - Web版: localStorage および Drive の .thinktank/prompts/<id>/profile.json と連携
  */
@@ -94,40 +95,6 @@ class DomainProfileManagerImpl {
     return this.currentProfile;
   }
 
-  public async saveCustomProfile(updated: DomainProfile): Promise<DomainProfile> {
-    const resolved = resolveDomainProfile(updated, updated.id);
-    if (typeof window !== 'undefined' && window.electronAPI?.profile) {
-      try {
-        await window.electronAPI.profile.saveCustom(resolved);
-      } catch {
-        // Also persist to localStorage below
-      }
-    }
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY_ACTIVE_ID, resolved.id);
-        localStorage.setItem(`${STORAGE_KEY_CUSTOM_PREFIX}${resolved.id}`, JSON.stringify(resolved));
-      }
-    } catch {
-      // ignore
-    }
-    this.currentProfile = resolved;
-    this.notify();
-    return this.currentProfile;
-  }
-
-  public async resetProfileToDefault(profileId: string): Promise<DomainProfile> {
-    const base = BUILTIN_DOMAIN_PROFILES[profileId] ?? CLINICAL_TRIAL_PROFILE;
-    try {
-      if (typeof localStorage !== 'undefined') {
-        localStorage.removeItem(`${STORAGE_KEY_CUSTOM_PREFIX}${profileId}`);
-      }
-    } catch {
-      // ignore
-    }
-    return this.saveCustomProfile(structuredClone(base));
-  }
-
   public subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
     return () => {
@@ -148,8 +115,6 @@ export function useDomainProfile(): {
   profile: DomainProfile;
   availableProfiles: DomainProfile[];
   switchProfile: (profileId: string) => Promise<DomainProfile>;
-  saveCustomProfile: (updated: DomainProfile) => Promise<DomainProfile>;
-  resetProfileToDefault: (profileId: string) => Promise<DomainProfile>;
 } {
   const [profile, setProfile] = useState<DomainProfile>(() => DomainProfileManager.activeProfile);
 
@@ -162,7 +127,5 @@ export function useDomainProfile(): {
     profile,
     availableProfiles: DomainProfileManager.availableProfiles,
     switchProfile: (id) => DomainProfileManager.switchProfile(id),
-    saveCustomProfile: (p) => DomainProfileManager.saveCustomProfile(p),
-    resetProfileToDefault: (id) => DomainProfileManager.resetProfileToDefault(id),
   };
 }

@@ -9,7 +9,7 @@
 
 import { useState, useMemo, useCallback, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
-  FileText, Target, Table, Link, MessagesSquare, Globe,
+  FileText, Bot, Target, Table, Link, MessagesSquare, Globe,
   RefreshCcw, ChevronDown, ChevronRight,
   type LucideIcon,
 } from 'lucide-react';
@@ -23,6 +23,7 @@ import './CardMedia.css';
 
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo:    FileText,
+  aiview:  Bot,
   project: Target,
   table:   Table,
   links:   Link,
@@ -32,6 +33,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
 
 const CONTENT_COLORS: Record<ContentType, string> = {
   memo:    '#3b78c4',
+  aiview:  '#7e57c2',
   project: '#c9a227',
   table:   '#2e7d32',
   links:   '#7b1fa2',

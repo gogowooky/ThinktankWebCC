@@ -1,6 +1,3 @@
-import { useSupportSelection } from '../../hooks/useSupportSelection';
-import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
-import { useSupportChats } from '../../hooks/useSupportChats';
 /**
  * SeedsArea.tsx
  * SeedsPanel の表示エリア。
@@ -12,13 +9,12 @@ import { useSupportChats } from '../../hooks/useSupportChats';
  * - 本体:
  *   - settings  → SeedsSettingsView（Bundle プロファイル）
  *   - filter    → 選択 Bundle 内の Think 一覧（datagrid メディアで描画）
- *   - markdown  → MarkdownMedia
- *   - chat      → ChatMedia
- *   - abstract  → AbstractView（概要）
+ *   - project   → AbstractView（projectファイルの一覧と表示）
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
+import type { TTThink } from '../../models/TTThink';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { useContentSearch } from '../../hooks/useContentSearch';
 import { SeedsMenuRibbon } from './SeedsMenuRibbon';
@@ -29,29 +25,29 @@ import type { SeedsFilterPanelRef } from './SeedsFilterPanel';
 import { SeedsSearchBar } from './SeedsSearchBar';
 import { ThoughtsList, applyFilter } from '../ThinktankPanel/ThoughtsList';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
-import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
+import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
 import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
-import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
 import { applySort, applyDateFilter } from '../../utils/sortUtils';
 import { buildBundleNames } from '../../utils/bundleNames';
 import type { DateFilterState } from '../../utils/sortUtils';
 import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
-import type { ContentType } from '../../types';
-import {
-  updateProjectTargets,
-  NEW_CHAT_SENTINEL_ID,
-} from '../../utils/thinkFormat';
+import { CONTENT_TYPES, type ContentType } from '../../types';
+import { projectTargetIds, updateProjectTargets } from '../../utils/thinkFormat';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './SeedsArea.css';
 import { AbstractView } from '../Abstract/AbstractView';
+import { AiViewPanel, AiChatPanel } from '../AiPanels/AiPanels';
+import { ProjectListFilters } from '../ThinktankPanel/ProjectListFilters';
+import { useProjectStatusFilter } from '../../hooks/useProjectStatusFilter';
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'project', 'table', 'links', 'chat', 'html'];
+const ALL_CONTENT_TYPES: readonly ContentType[] = CONTENT_TYPES;
 
 const SEEDS_MODE_NAMES: Record<string, string> = {
   filter:  'Think一覧',
   project: 'プロジェクト',
-  chat:    '対話',
+  aiview:  'AIView',
+  aichat:  'AIChat',
 };
 
 
@@ -78,9 +74,8 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
   const [sort,             setSort]             = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
-  // フィルター欄の表示/非表示設定（Think一覧用。会話履歴モードは種別なし・タイトルのみデフォルトの別state）
+  // フィルター欄の表示/非表示設定（Think一覧用）
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
-  const [chatFilterVisibility, setChatFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
   const [focusedId, setFocusedId] = useState<string | null>(() => panel.CurrentItemID || null);
@@ -110,50 +105,54 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     handleSearchQueryChange, handleSearch,
   } = useContentSearch(vault, 'SeedsArea');
 
-  // ── チャット state ─────────────────────────────────────────────────────
-  const aiChatViewRef                   = useRef<SupportChatRef>(null);
   const filterPanelRef                  = useRef<SeedsFilterPanelRef>(null);
   const settingsViewRef                 = useRef<SeedsSettingsViewRef>(null);
-  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Seeds');
 
-  // ── Think 一覧（選択 Bundle 内の全 Think → フィルタ適用）──────────────────
-  const [thinksInBundle, setThinksInBundle] = useState(() =>
-    panel.BundleID ? vault.GetThinksForBundle(panel.BundleID) : []
-  );
+  // ── Think 一覧（project 設定中はその # 対象 に直接記載された Think、未設定なら全 Think）────
+  const [thinksInBundle, setThinksInBundle] = useState<TTThink[]>([]);
+  // 「プロジェクト」で # 対象 を書き換えたときも一覧を取り直す
+  const bundleContent = panel.BundleID ? vault.GetThink(panel.BundleID)?.Content ?? '' : '';
   useEffect(() => {
     if (!panel.BundleID) { setThinksInBundle([]); return; }
-    void vault.GetThinksForBundleAsync(panel.BundleID).then(newThinks => {
+    let cancelled = false;
+    void vault.GetProjectTargetsAsync(panel.BundleID).then(newThinks => {
+      if (cancelled) return;
       setThinksInBundle(newThinks);
       vault.NotifyUpdated();
     });
-  }, [panel.BundleID, vault, refreshKey, vault.IsLoaded, vault.Count]);
-
-  // Seedsで選択中のBundleからタイトル上の担当がSeedsのChatを表示する。
-  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Seeds", panel.BundleID, selectedTodoMemoId);
-
-  // 選択中の TODO メモが一覧から消えたら選択を空に戻す
-  useEffect(() => {
-    if (vault.IsLoaded && selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
-      setSelectedTodoMemoId('');
-    }
-  }, [todoMemoThinks, selectedTodoMemoId]);
+    return () => { cancelled = true; };
+  }, [panel.BundleID, vault, refreshKey, vault.IsLoaded, vault.Count, bundleContent]);
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
-
-  const dateFilter = useMemo<DateFilterState>(() => ({
-    show: true,
-    createdDate, createdRange, updatedDate, updatedRange,
-  }), [createdDate, createdRange, updatedDate, updatedRange]);
 
   const checkedSet = useMemo(() => new Set(panel.CheckedThoughtIDs), [panel.CheckedThoughtIDs]);
 
   // 母集合: 検索語があれば検索結果、なければ選択 Bundle 内の Think
-  const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : thinksInBundle;
+  // project 未設定のときは Thinktank>Think一覧と同じく全ファイルを出す（追加・削除のときだけ取り直す）
+  const allThinks = useMemo(() => vault.GetThinks(), [vault, vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
+  const listBase = panel.ProjectID ? thinksInBundle : allThinks;
+  // 検索語があれば検索結果。project 設定中はその配下に限る（Thinktank>Think一覧と同じ）
+  const searchBase = useMemo(() => {
+    if (!(searchSearched && searchQuery.trim() !== '')) return listBase;
+    if (!panel.ProjectID) return searchResults;
+    const memberIds = new Set(listBase.map(t => t.ID));
+    return searchResults.filter(t => memberIds.has(t.ID));
+  }, [searchSearched, searchQuery, searchResults, listBase, panel.ProjectID]);
 
-  const typeFilteredBase = useMemo(
+  const typeOnlyBase = useMemo(
     () => searchBase.filter(t => visibleTypes.has(t.ContentType)),
     [searchBase, visibleTypes],
   );
+  // 種別が project だけのときは、さらに # 状態・# 見通し で絞り込む
+  const isProjectOnly = visibleTypes.size === 1 && visibleTypes.has('project');
+  const projectStatus = useProjectStatusFilter(typeOnlyBase, isProjectOnly);
+  const typeFilteredBase = projectStatus.filtered;
+
+  // project だけのときは日付欄を隠すので、隠れた入力値で絞り込まない（値は他の種別へ戻したとき用に残す）
+  const dateFilter = useMemo<DateFilterState>(() => ({
+    show: !isProjectOnly,
+    createdDate, createdRange, updatedDate, updatedRange,
+  }), [isProjectOnly, createdDate, createdRange, updatedDate, updatedRange]);
 
   const bundleNames = useMemo(() => buildBundleNames(vault, typeFilteredBase), [vault, typeFilteredBase]);
 
@@ -198,8 +197,6 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         settingsViewRef.current?.focus();
       } else if (panel.MediaType === 'datagrid') {
         filterPanelRef.current?.focus();
-      } else if (panel.MediaType === 'chat') {
-        aiChatViewRef.current?.focus();
       }
     }, 50);
     return () => clearTimeout(timer);
@@ -212,7 +209,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
 
     bundle.LoadContent(true)
       .then(() => {
-        return vault.GetThinksForBundleAsync(panel.BundleID);
+        return vault.GetProjectTargetsAsync(panel.BundleID);
       })
       .then(newThinks => {
         setThinksInBundle(newThinks);
@@ -237,9 +234,10 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     if (!bundle || bundle.ContentType !== 'project') return;
     if (bundle.IsMetaOnly) await bundle.LoadContent();
 
-    const remainingThinks = thinksInBundle
-      .filter(thinkInBundle => !panel.CheckedThoughtIDs.includes(thinkInBundle.ID));
-    const remaining = remainingThinks.map(t => t.ID);
+    // 書き換えるのはこの Project が直接参照している分だけ。配下の Project の中身をここへ展開しない
+    const remaining = projectTargetIds(bundle.Content)
+      .filter(id => !panel.CheckedThoughtIDs.includes(id));
+    const remainingThinks = remaining.flatMap(id => vault.GetThink(id) ?? []);
 
     const newContent = updateProjectTargets(
       bundle.Content,
@@ -252,12 +250,12 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     await bundle.SaveContent();
 
     // 更新後のThink一覧を再取得してステートを更新し、変更を通知する
-    const newThinks = await vault.GetThinksForProjectAsync(panel.ProjectID);
+    const newThinks = await vault.GetProjectTargetsAsync(panel.ProjectID);
     setThinksInBundle(newThinks);
     vault.NotifyUpdated();
 
     panel.SetCheckedThoughtIDs([]);
-  }, [panel, vault, thinksInBundle]);
+  }, [panel, vault]);
 
   const handleToggleCheckedOnly   = useCallback(() => setShowCheckedOnly(v => !v), []);
   const handleToggleColumnDialog  = useCallback(() => setShowColumnDialog(v => !v), []);
@@ -311,17 +309,11 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
     panel.SetCheckedThoughtIDs(Array.from(nextSet));
   }, [panel]);
 
+  // Project 種別は Seeds の「プロジェクト」にロード（一覧はその配下に切り替わる）、それ以外は Working へ
   const handleOpenThinkInWorking = useCallback((id: string) => {
-    app.OpenThinkInWorking(id);
-  }, [app]);
-
-  // AIChat一覧の選択状態を更新する（空選択でクリア）。
-  // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
-  // 入力と応答は共通チャットが自動保存する。
-  const handleSelectTodoMemo = useCallback((id: string) => {
-    aiChatViewRef.current?.abortStreaming();
-    setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
-  }, []);
+    if (vault.GetThink(id)?.ContentType === 'project') panel.OpenProject(id, 'datagrid');
+    else app.OpenThinkInWorking(id);
+  }, [app, vault, panel]);
 
   // ── 算出値 ────────────────────────────────────────────────────────────────
   const think = panel.BundleID ? vault.GetThink(panel.BundleID) ?? null : null;
@@ -350,15 +342,14 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         showFilterSelectDialog={showFilterSelectDialog}
         visibleCount={visibleThinks.length}
         totalCount={typeFilteredBase.length}
-        hasBundle={!!panel.BundleID}
+
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onExcludeChecked={handleExcludeChecked}
-        onClearBundle={() => panel.ClearBundle()}
+
         onToggleCheckedOnly={handleToggleCheckedOnly}
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
-        onClearTodoSelection={() => handleSelectTodoMemo('')}
         onRefresh={handleRefresh}
       />
 
@@ -375,20 +366,11 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
 
       {/* ── フィルター選択ダイアログ ───────────────────────────── */}
       {showFilterSelectDialog && (
-        panel.MediaType === 'chat' && !showSettings ? (
-          <FilterSelectDialog
-            visibility={chatFilterVisibility}
-            onChange={setChatFilterVisibility}
-            hiddenFields={['type']}
-            onClose={() => setShowFilterSelectDialog(false)}
-          />
-        ) : (
-          <FilterSelectDialog
-            visibility={filterVisibility}
-            onChange={setFilterVisibility}
-            onClose={() => setShowFilterSelectDialog(false)}
-          />
-        )
+        <FilterSelectDialog
+          visibility={filterVisibility}
+          onChange={setFilterVisibility}
+          onClose={() => setShowFilterSelectDialog(false)}
+        />
       )}
 
       {/* ── フィルターパネル + 検索バー（Think一覧モードのみ）────────── */}
@@ -409,8 +391,8 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
             updatedRange={updatedRange}
             onUpdatedRangeChange={setUpdatedRange}
             showTextFilter={filterVisibility.title}
-            showCreatedDateFilter={filterVisibility.createdDate}
-            showUpdatedDateFilter={filterVisibility.updatedDate}
+            showCreatedDateFilter={filterVisibility.createdDate && !isProjectOnly}
+            showUpdatedDateFilter={filterVisibility.updatedDate && !isProjectOnly}
           />
           <SeedsSearchBar
             searchQuery={searchQuery}
@@ -418,6 +400,14 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
             onSearch={handleSearch}
             loading={searchLoading}
             visibleTypes={visibleTypes}
+            typeSubFilters={isProjectOnly && (
+              <ProjectListFilters
+                states={projectStatus.states}
+                outlooks={projectStatus.outlooks}
+                onStatesChange={projectStatus.setStates}
+                onOutlooksChange={projectStatus.setOutlooks}
+              />
+            )}
             onToggleType={handleToggleType}
             onSelectAllTypes={handleSelectAllTypes}
             onClearAllTypes={handleClearAllTypes}
@@ -433,44 +423,22 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
           <SeedsSettingsView ref={settingsViewRef} think={think} vault={vault} onClear={() => panel.ClearProject()} />
         ) : panel.ViewMode === 'project' ? (
           <AbstractView projectView={panel.ProjectView} vault={vault} workingPanel={app.WorkingPanel} panelKey="seeds" />
+        ) : panel.ViewMode === 'aiview' ? (
+          <AiViewPanel panelKey="seeds" />
+        ) : panel.ViewMode === 'aichat' ? (
+          <AiChatPanel />
         ) : isThinkListMode ? (
-          !panel.ProjectID ? (
-            <div className="seeds-area__empty">
-              <span>Project をドロップして選択してください</span>
-            </div>
-          ) : (
-            <ThoughtsList
-              thoughts={visibleThinks}
-              selectedId=""
-              checkedIds={panel.CheckedThoughtIDs}
-              columns={columns}
-              bundleNames={bundleNames}
-              onOpen={handleOpenThinkInWorking}
-              onToggleCheck={handleToggleCheck}
-              focusedId={focusedId}
-              onFocusChange={handleFocusChange}
-            />
-          )
-        ) : panel.MediaType === 'chat' ? (
-          <div className="seeds-area__chat-wrap">
-            {supportListError && <p role="alert">{supportListError}</p>}
-            <ThinktankChatMemoPicker
-              thinks={todoMemoThinks}
-              vault={vault}
-              columns={columns}
-              sort={sort}
-              filterVisibility={chatFilterVisibility}
-              selectedId={selectedTodoMemoId}
-              onSelect={handleSelectTodoMemo}
-              checkedIds={panel.CheckedThoughtIDs}
-              onToggleCheck={handleToggleCheck}
-            />
-            <div className="seeds-area__chat-body">
-              <SupportChat ref={aiChatViewRef} vault={vault} panelName="Seeds"
-                selectedId={selectedTodoMemoId} bundleId={panel.BundleID}
-                modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
-            </div>
-          </div>
+          <ThoughtsList
+            thoughts={visibleThinks}
+            selectedId=""
+            checkedIds={panel.CheckedThoughtIDs}
+            columns={columns}
+            bundleNames={bundleNames}
+            onOpen={handleOpenThinkInWorking}
+            onToggleCheck={handleToggleCheck}
+            focusedId={focusedId}
+            onFocusChange={handleFocusChange}
+          />
         ) : !think ? (
           <div className="seeds-area__empty">
             <span>Bundle をドロップして選択してください</span>

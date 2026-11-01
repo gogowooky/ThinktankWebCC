@@ -6,8 +6,8 @@
  * 既存パネルの選択保存・旧設定の読み込み互換性を維持する。
  */
 
-/** local は Local AI 用の枠（AIChat.ModelNames.Local）。まだ使えず、選択肢にも出さない */
-export type AiProvider = 'anthropic' | 'openai' | 'gemini' | 'local';
+/** gnb は Gemini Notebook、local は未実装の Local AI 用の枠。 */
+export type AiProvider = 'anthropic' | 'openai' | 'gemini' | 'gnb' | 'local';
 
 export interface AiModelOption {
   provider: AiProvider;
@@ -39,8 +39,10 @@ export const DEFAULT_AI_MODEL_SELECTION: AiModelSelection = {
 function isValidSelection(v: unknown): v is AiModelSelection {
   if (!v || typeof v !== 'object') return false;
   const s = v as Record<string, unknown>;
-  return typeof s['provider'] === 'string' && typeof s['model'] === 'string' &&
-    AI_MODEL_OPTIONS.some(o => o.provider === s['provider'] && o.model === s['model']);
+  if (typeof s['provider'] !== 'string' || typeof s['model'] !== 'string') return false;
+  // GNB は固定カタログではなく、利用者が設定した Notebook ID をモデル値として扱う。
+  if (s['provider'] === 'gnb') return Boolean(s['model'].trim()) && s['model'] !== 'None';
+  return AI_MODEL_OPTIONS.some(o => o.provider === s['provider'] && o.model === s['model']);
 }
 
 export function selectionToValue(selection: AiModelSelection): string {

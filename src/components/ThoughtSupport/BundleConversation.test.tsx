@@ -16,7 +16,6 @@ import { TTThink } from '../../models/TTThink';
 import { TTModels } from '../../models/TTModels';
 import { TTApplication } from '../../views/TTApplication';
 import type { ConversationContext, ConversationTurn } from '../../services/ConversationService';
-import { SUBTASK_REVIEW_QUESTION } from '../../../shared/contracts/subtaskContext';
 import { resetDraftStores } from '../../services/draftStore';
 const context = (bundleId = 'a'): ConversationContext => ({ schemaVersion: 1, snapshotId: 'snapshot', vaultId: 'vault', bundleId, capturedAt: '2026-09-14T00:00:00Z', scope: 'bundle-only', quality: 'complete', sources: [], manualState: null, issues: [] });
 const turn = (): ConversationTurn => ({ schemaVersion: 1, id: 'turn', createdAt: '2026-09-14T00:00:00Z', question: '質問', context: context(), answer: { reply: '回答', insufficientEvidence: true, citations: [], proposals: [] }, provider: 'test', model: 'model' });
@@ -29,13 +28,21 @@ beforeEach(() => {
   api.context.mockImplementation(async id => context(id)); api.generate.mockResolvedValue(turn()); api.save.mockResolvedValue(undefined);
 });
 afterEach(async () => { await act(async () => root.unmount()); TTApplication.resetInstance(); resetDraftStores(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
-it('shows consultation actions without asking users to select a review or decomposition prompt', async () => {
-  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" consultation
-    inputHeader={<button>相談を課題として開始</button>} onOpen={vi.fn()} />));
-  expect(host.textContent).toContain('相談のアクション');
-  expect(host.textContent).toContain('相談を課題として開始');
+it('has no AI picker or prepared-question actions below the message field', async () => {
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a" onOpen={vi.fn()}
+    modelSelector={{ value: { provider: 'openai', model: 'gpt-5.6' }, onChange: vi.fn() }} />));
+  expect(host.querySelector('details')).toBeNull();
+  expect(host.querySelector('input[type="radio"]')).toBeNull();
   expect(host.textContent).not.toContain('質問を入力');
   expect(api.context).toHaveBeenCalledWith('a', expect.anything());
+});
+it('does not expose information promotion controls in Chat', async () => {
+  const bundle = new TTThink(); bundle.ID = 'a'; bundle.Metadata = { operations: {} }; vault.AddThink(bundle);
+  api.history.mockResolvedValue([turn()]);
+  await show('a', 'chat-a');
+  expect(host.querySelector('.promotion-review')).toBeNull();
+  expect(host.textContent).not.toContain('情報の昇格');
+  expect(host.textContent).not.toContain('昇格候補');
 });
 it('captures Bundle sources after saved Chat synchronization completes', async () => {
   let resolve!: (turns: ConversationTurn[]) => void;
@@ -105,22 +112,10 @@ it('keeps an unsaved answer while hidden and discards it on explicit app-lifetim
   expect(clean.defaultPrevented).toBe(false);
 });
 
-it.each(['サブ課題への分解を相談する質問を入力', '続きから相談する質問を入力'])('only drafts %s and protects existing input', async label => {
-  await show(); await click(label);
-  const draft = host.querySelector('textarea')!.value;
-  expect(draft.length).toBeGreaterThan(0); expect(api.generate).not.toHaveBeenCalled();
-  expect(button(label).disabled).toBe(true);
-  await show('', 'chat-only'); expect(button(label)).toBeUndefined();
-});
-
-it('prepares a parent review without sending and refreshes child records when explicitly sent', async () => {
+it('refreshes child records when a question about a parent task is sent', async () => {
   const before: ConversationContext = { ...context(), subtasks: { scope: 'loaded-direct-children', items: [{ bundleId: 'child', title: '会場予約', status: 'unrecorded' }] } };
   api.context.mockResolvedValue(before);
-  await show();
-  expect(host.textContent).toContain('子課題の状況（1件）');
-  await click('子課題を含めて次の行動を整理する質問を入力');
-  expect(host.querySelector('textarea')!.value).toBe(SUBTASK_REVIEW_QUESTION);
-  expect(api.generate).not.toHaveBeenCalled();
+  await show(); await input('次の行動を整理してください');
   const after: ConversationContext = { ...before, subtasks: { scope: 'loaded-direct-children', items: [{ bundleId: 'child', title: '会場予約', status: 'unsaved' }] } };
   api.context.mockResolvedValue(after);
   await click('送信');
@@ -135,12 +130,6 @@ it('refreshes child records on normal sends and stops if refresh fails', async (
   expect(api.generate).not.toHaveBeenCalled(); expect(host.querySelector('textarea')!.value).toBe('次は何をしますか');
   expect(host.textContent).toContain('子課題の状況が大きすぎます');
 });
-it('does not offer parent review in chat-only scope or replace an existing draft', async () => {
-  await show('', 'chat'); expect(button('子課題を含めて次の行動を整理する質問を入力')).toBeUndefined();
-  await show(); await input('自分の下書き');
-  expect(button('子課題を含めて次の行動を整理する質問を入力').disabled).toBe(true);
-});
-
 it('shows inline Think citation tags that open sources without a reference block', async () => {
   const value = turn(); value.answer.reply = '回答[:>1]。補足[:>2]。';
   value.context.sources = ['a', 'b'].map(id => ({ thinkId: id, title: `資料${id}`, content: '題名\n引用', contentHash: 'hash' }));
@@ -197,7 +186,7 @@ it('allows a Chat-only conversation without loading Bundle context', async () =>
   await show('', 'chat-a');
   expect(api.context).not.toHaveBeenCalled();
   expect(api.history).toHaveBeenCalledWith('', expect.any(AbortSignal), 'chat-a', 'vault', vault, expect.any(Function));
-  expect(host.textContent).toContain('参照資料：なし');
+  expect(host.textContent).not.toContain('参照資料');
 });
 
 it('always loads the selected Bundle sources and sends them without an opt-in', async () => {
@@ -225,12 +214,6 @@ it('keeps drafts separate between Seeds and AIChat for the same Bundle', async (
   await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" draftScope="aichat:Thinktank:panel" onOpen={vi.fn()} />));
   expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toBe('AIChatの質問'); expect(api.generate).not.toHaveBeenCalled();
 });
-it('prepares a progress review without sending or overwriting an existing question', async () => {
-  await show(); await click('進行を見直す質問を入力');
-  expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toContain('本人の完了状態は確定しない');
-  expect(api.generate).not.toHaveBeenCalled(); expect(button('進行を見直す質問を入力').disabled).toBe(true);
-  expect(button('送信').disabled).toBe(false);
-});
 it('treats the Send button as confirmation and persists without adopting proposals', async () => {
   await show('a', 'chat-a'); await input('質問');
   expect(button('送信').disabled).toBe(false);
@@ -255,42 +238,6 @@ it('opens each turn record in a dialog from the icon under that turn, and never 
   expect(button('保存する')).toBeDefined();
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="閉じる"]')!.click());
   expect(host.querySelector('.bundle-conversation-record')).toBeNull();
-});
-it('puts the settings and secondary actions behind the collapsed options block', async () => {
-  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a"
-    inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
-  const options = host.querySelector<HTMLDetailsElement>('.bundle-conversation-options')!;
-  expect(options.querySelector('summary')!.textContent).toBe('条件・機能・参照情報');
-  expect(button('課題として始める').closest('.bundle-conversation-options')).not.toBeNull();
-  expect(options.textContent).not.toContain('Bundle内の資料を使う');
-  const groups = [...options.querySelectorAll<HTMLDetailsElement>(':scope > details')];
-  expect(groups.map(d => d.querySelector('summary')!.textContent)).toEqual(['課題を作成する', '進行を見直す', '参照情報']);
-  // 折りたたみを開けたら3区分もまとめて開く
-  expect(groups.every(d => d.open)).toBe(false);
-  await act(async () => { options.open = true; options.dispatchEvent(new Event('toggle')); });
-  expect(groups.every(d => d.open)).toBe(true);
-});
-it('keeps the groups collapsed when the summary is opened with shift, without carrying it over', async () => {
-  vi.useFakeTimers();
-  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" chatId="chat-a"
-    inputHeader={<button type="button">課題として始める</button>} onOpen={vi.fn()} />));
-  const options = host.querySelector<HTMLDetailsElement>('.bundle-conversation-options')!;
-  const summary = options.querySelector('summary')!;
-  const groups = [...options.querySelectorAll<HTMLDetailsElement>(':scope > details')];
-  // Native toggle is queued; dispatching another toggle would consume Shift twice.
-  const press = async (shiftKey: boolean, open: boolean) => act(async () => {
-    summary.dispatchEvent(new MouseEvent('click', { bubbles: true, shiftKey }));
-    options.open = open; await vi.runAllTimersAsync();
-  });
-  await press(true, true);
-  expect(groups.some(d => d.open)).toBe(false);
-  // Shiftは読み捨てる。次に普通に開いたときは従来どおりまとめて開く
-  await press(false, false);
-  await press(false, true);
-  expect(groups.every(d => d.open)).toBe(true);
-  // 閉じるときのShiftでも畳む（次に開き直しても畳まれたまま出る）
-  await press(true, false);
-  expect(groups.some(d => d.open)).toBe(false);
 });
 it('carries the send and newline guidance inside the empty message field only', async () => {
   await show('a', 'chat-a');
@@ -396,16 +343,10 @@ it('can cancel preparation without losing input or generating automatically', as
   await click('送信');
   expect(api.generate).toHaveBeenCalledTimes(1);
 });
-it('sends the model chosen for the panel and lets the user switch it in the reference info', async () => {
-  const { setAvailableModels } = await import('../../services/aiChatModelStatus');
-  setAvailableModels('Gemini', ['gemini-3.6-flash', 'gemini-3.5-pro']);
-  const onChange = vi.fn();
+it('sends the model chosen for the panel', async () => {
   const selection = { provider: 'gemini' as const, model: 'gemini-3.6-flash' };
-  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" onOpen={vi.fn()} modelSelector={{ value: selection, onChange }} />));
-  const select = host.querySelector<HTMLSelectElement>('select[aria-label="AIモデル"]')!;
-  expect(select.value).toBe('gemini:gemini-3.6-flash');
-  await act(async () => { select.value = 'gemini:gemini-3.5-pro'; select.dispatchEvent(new Event('change', { bubbles: true })); });
-  expect(onChange).toHaveBeenCalledWith({ provider: 'gemini', model: 'gemini-3.5-pro' });
+  await act(async () => root.render(<BundleConversation vault={vault} bundleId="a" onOpen={vi.fn()} modelSelector={{ value: selection, onChange: vi.fn() }} />));
+  expect(host.querySelector('select[aria-label="AIモデル"]')).toBeNull();
   await input('質問'); await click('送信');
   expect(api.generate.mock.calls[0][5]).toEqual(selection);
 });

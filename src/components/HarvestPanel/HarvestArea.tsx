@@ -1,32 +1,26 @@
-import { useSupportSelection } from '../../hooks/useSupportSelection';
-import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
-import { useSupportChats } from '../../hooks/useSupportChats';
 /**
  * HarvestArea.tsx
  * HarvestPanel のメインエリア。
  *
- * - メモ選択(DataGrid) + SupportChat
+ * - AIView / AIChat / 設定
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { HarvestMenuRibbon } from './HarvestMenuRibbon';
 import type { HarvestViewMode } from './HarvestTabBar';
-import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from '../ThinktankPanel/ColumnSortDialog';
-import type { ColumnConfig, SortConfig } from '../ThinktankPanel/ColumnSortDialog';
-import { FilterSelectDialog, DEFAULT_CHAT_FILTER_VISIBILITY } from '../ThinktankPanel/FilterSelectDialog';
-import type { FilterVisibility } from '../ThinktankPanel/FilterSelectDialog';
-import { ThinktankChatMemoPicker } from '../ThinktankPanel/ThinktankChatMemoPicker';
-import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
-import { AbstractView } from '../Abstract/AbstractView';
+import { AiViewPanel, AiChatPanel } from '../AiPanels/AiPanels';
 import '../../components/Layout/MenuRibbon.css';
 import './HarvestArea.css';
 
 const HARVEST_MODE_NAMES: Record<HarvestViewMode, string> = {
-  project:  'プロジェクト',
-  chat:     '対話',
+  aiview:   'AIView',
+  aichat:   'AIChat',
   settings: '設定',
+  // 旧値（SetViewMode で読み替えるが、直接代入された場合でも見出しが空にならないようにする）
+  chat:     'AIChat',
+  project:  'AIView',
 };
 
 interface Props {
@@ -42,48 +36,15 @@ export function HarvestArea({ app, viewMode }: Props) {
   const vault       = app.Models.Vault;
   useAppUpdate(vault);
 
-  // コンテキスト付きシステムプロンプトを生成
-  const harvestChatRef     = useRef<SupportChatRef>(null);
   const settingsCheckRef   = useRef<HTMLInputElement>(null);
-  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Harvest');
-  const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS);
-  const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
-  const [showColumnDialog, setShowColumnDialog] = useState(false);
-  const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
-  const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
-  // Seedsで選択中のBundleからタイトル上の担当がHarvestのChatを表示する。
-  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Harvest", app.SeedsPanel.BundleID, selectedTodoMemoId);
-
-  // 選択中の TODO メモが一覧から消えたら選択を空に戻す
-  useEffect(() => {
-    if (vault.IsLoaded && selectedTodoMemoId && !todoMemoThinks.some(t => t.ID === selectedTodoMemoId)) {
-      setSelectedTodoMemoId('');
-    }
-  }, [todoMemoThinks, selectedTodoMemoId]);
-
-  const handleToggleColumnDialog = useCallback(() => setShowColumnDialog(v => !v), []);
-  const handleToggleFilterSelectDialog = useCallback(() => setShowFilterSelectDialog(v => !v), []);
-  const handleRefresh = useCallback(() => {
-    app.RefreshAll().catch(e => console.error('[HarvestArea] RefreshAll failed:', e));
-  }, [app]);
   // モード切り替え時に対応する入力要素へフォーカス
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (viewMode === 'chat')     harvestChatRef.current?.focus();
       if (viewMode === 'settings') settingsCheckRef.current?.focus();
     }, 50);
     return () => clearTimeout(timer);
   }, [viewMode]);
-
-  // AIChat一覧の選択状態を更新する（空選択でクリア）。
-  // 「新規チャット」行が選ばれた場合もファイルは作らず、空選択と同じ「未保存の新規チャット」状態にする。
-  // 入力と応答は共通チャットが自動保存する。
-  const handleSelectTodoMemo = useCallback((id: string) => {
-    harvestChatRef.current?.abortStreaming();
-    setSelectedTodoMemoId(id === NEW_CHAT_SENTINEL_ID ? '' : id);
-  }, []);
-
 
   return (
     <div className="harvest-area">
@@ -93,35 +54,8 @@ export function HarvestArea({ app, viewMode }: Props) {
         Harvest&gt;{HARVEST_MODE_NAMES[viewMode]}
       </div>
 
-      {/* ── メニューリボン ─────────────────────────────────────── */}
-      <HarvestMenuRibbon
-        viewMode={viewMode}
-        showColumnDialog={showColumnDialog}
-        showFilterSelectDialog={showFilterSelectDialog}
-        onToggleColumnDialog={handleToggleColumnDialog}
-        onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
-        onClearTodoSelection={() => handleSelectTodoMemo('')}
-        onRefresh={handleRefresh}
-      />
-
-      {showColumnDialog && (
-        <ColumnSortDialog
-          columns={columns}
-          sort={sort}
-          onColumnsChange={setColumns}
-          onSortChange={setSort}
-          onClose={() => setShowColumnDialog(false)}
-        />
-      )}
-
-      {showFilterSelectDialog && (
-        <FilterSelectDialog
-          visibility={filterVisibility}
-          onChange={setFilterVisibility}
-          hiddenFields={['type']}
-          onClose={() => setShowFilterSelectDialog(false)}
-        />
-      )}
+      {/* ── メニューリボン（AIView は自前のリボンを持つ） ───────────── */}
+      {viewMode !== 'aiview' && viewMode !== 'project' && <HarvestMenuRibbon />}
 
       {/* ── コンテンツ ───────────────────────────────────────── */}
       <div className="harvest-area__chat">
@@ -131,28 +65,10 @@ export function HarvestArea({ app, viewMode }: Props) {
               style={{ position: 'absolute', opacity: 0, width: 1, height: 1, pointerEvents: 'none' }} />
             Harvest設定は今後追加予定です。
           </div>
-        ) : viewMode === 'project' ? (
-          <AbstractView projectView={panel.ProjectView} vault={vault} workingPanel={app.WorkingPanel} panelKey="harvest" />
+        ) : viewMode === 'aichat' || viewMode === 'chat' ? (
+          <AiChatPanel />
         ) : (
-          <>
-            {supportListError && <p role="alert">{supportListError}</p>}
-            <ThinktankChatMemoPicker
-              thinks={todoMemoThinks}
-              vault={vault}
-              columns={columns}
-              sort={sort}
-              filterVisibility={filterVisibility}
-              selectedId={selectedTodoMemoId}
-              onSelect={handleSelectTodoMemo}
-              checkedIds={panel.CheckedThoughtIDs}
-              onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
-            />
-            <div className="harvest-area__chat-body">
-              <SupportChat ref={harvestChatRef} vault={vault} panelName="Harvest"
-                selectedId={selectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
-                modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
-            </div>
-          </>
+          <AiViewPanel panelKey="harvest" />
         )}
       </div>
 

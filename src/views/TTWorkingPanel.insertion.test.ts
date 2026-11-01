@@ -121,6 +121,14 @@ it.each(['add', 'split'] as const)('waits for the first Think before inserting a
   expect(panel.FocusedAreaId).toBe(panel.Areas[0].ID);
 });
 
+it('registers the first Working Think in the configured Seeds project', async () => {
+  const panel = new TTWorkingPanel();
+  const think = new TTThink(); think.ID = 'new-memo'; think.Name = '新規メモ';
+  const vault = { CreateBlankThink: vi.fn().mockResolvedValue(think) };
+  await duplicateWorkingPane(panel, vault, 'right', 'add', 'seeds-project');
+  expect(vault.CreateBlankThink).toHaveBeenCalledWith('memo', '新規メモ', 'seeds-project');
+});
+
 it('leaves the panel empty when initial Think creation fails', async () => {
   const panel = new TTWorkingPanel();
   const vault = { CreateBlankThink: vi.fn().mockRejectedValue(new Error('offline')) };

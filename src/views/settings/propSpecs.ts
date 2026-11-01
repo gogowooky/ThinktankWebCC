@@ -18,6 +18,7 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   'SeedsPanel.Area.IsOpen': panelSpecs['SeedsPanel.Area.IsOpen'],
   'SeedsPanel.Area.OpenWidth': panelSpecs['SeedsPanel.Area.OpenWidth'],
   'SeedsPanel.Mode.Name': panelSpecs['SeedsPanel.Mode.Name'],
+  'ThinktankPanel.Project.ID': panelSpecs['ThinktankPanel.Project.ID'],
   'SeedsPanel.Project.ID': panelSpecs['SeedsPanel.Project.ID'],
   'ThinktankPanel.Filter.CursorPos': panelSpecs['ThinktankPanel.Filter.CursorPos'],
   'SeedsPanel.Filter.CursorPos': panelSpecs['SeedsPanel.Filter.CursorPos'],

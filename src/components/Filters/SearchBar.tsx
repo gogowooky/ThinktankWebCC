@@ -6,13 +6,14 @@
  */
 
 import React, { useImperativeHandle, forwardRef, useRef } from 'react';
-import { TextSearch, X, FileText, Target, Table, Link, MessagesSquare, FileCode, SquareCheck, type LucideIcon } from 'lucide-react';
+import { TextSearch, X, FileText, Bot, Target, Table, Link, MessagesSquare, FileCode, SquareCheck, type LucideIcon } from 'lucide-react';
 import type { ContentType } from '../../types';
 import './FilterPanel.css';
 import './SearchBar.css';
 
 const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'memo',    Icon: FileText,       label: 'メモ' },
+  { type: 'aiview',  Icon: Bot,            label: 'AI View' },
   { type: 'project', Icon: Target,         label: 'Project' },
   { type: 'table',   Icon: Table,          label: 'テーブル' },
   { type: 'links',   Icon: Link,           label: 'リンク' },
@@ -35,6 +36,8 @@ export interface SearchBarProps {
   onClearAllTypes:     () => void;
   showContentFilter?:  boolean;
   showTypeFilter?:     boolean;
+  /** 種別の選び方に応じて種別ボタンの下に足す絞り込み欄（project だけのときの状態・見通し等） */
+  typeSubFilters?:     React.ReactNode;
 }
 
 interface Props extends SearchBarProps {
@@ -48,6 +51,7 @@ export const SearchBar = forwardRef<SearchBarRef, Props>(function SearchBar({
   visibleTypes, onToggleType, onSelectAllTypes, onClearAllTypes,
   showContentFilter = true,
   showTypeFilter = true,
+  typeSubFilters,
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null);
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }));
@@ -126,6 +130,7 @@ export const SearchBar = forwardRef<SearchBarRef, Props>(function SearchBar({
           })()}
         </div>
       )}
+      {showTypeFilter && typeSubFilters}
     </div>
   );
 });

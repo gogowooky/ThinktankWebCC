@@ -230,10 +230,6 @@ ipcMain.handle('profile:setActive', (_event, profileId) => {
   return vaultEngine.setActiveDomainProfile(profileId);
 });
 
-ipcMain.handle('profile:saveCustom', (_event, profileObj) => {
-  return vaultEngine.saveCustomDomainProfile(profileObj);
-});
-
 // ── IPC ハンドラー（ローカル AI CLI 設定隔離実行） ────────────────────────
 
 ipcMain.handle('ai:getStatus', () => {
@@ -246,7 +242,31 @@ ipcMain.handle('ai:getStatus', () => {
   };
 });
 
+ipcMain.handle('ai:getAuthStatus', () => aiCliRunner.detectAiAuthentication());
+
+ipcMain.handle('ai:login', (_event, provider) => aiCliRunner.startAiAuthentication(provider, {
+  onClose: () => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      if (!win.isDestroyed()) {
+        win.webContents.send('ai:auth-changed', { provider });
+      }
+    }
+  },
+}));
+
+ipcMain.handle('ai:getGnbNotebookTitle', (_event, notebookId) => (
+  aiCliRunner.getGeminiNotebookTitle({ notebookId })
+));
+
 ipcMain.handle('ai:conversation', async (_event, params) => {
+  if (params?.provider === 'gnb') {
+    return aiCliRunner.runGeminiNotebookConversation({
+      notebookId: params?.model,
+      userMessage: params?.userMessage,
+      timeoutMs: params?.timeoutMs,
+    });
+  }
+
   const profile = params?.profileId
     ? vaultEngine.getDomainProfileById(params.profileId)
     : vaultEngine.getActiveDomainProfile();

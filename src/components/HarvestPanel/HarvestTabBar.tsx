@@ -3,10 +3,11 @@
  * HarvestPanel の 縦型タブバー（旧Ribbon）。
  *
  * side="right" でパネルの右端に配置。
- * ボタン: 概要 / 対話 / 設定
+ * ボタン: AIView / AIChat / 設定
  */
 
-import { MessageCircle, Target, Settings } from 'lucide-react';
+import { BotMessageSquare, Settings } from 'lucide-react';
+import { CpuAi } from '../AiPanels/CpuAi';
 import { VerticalTabBar } from '../Layout/VerticalTabBar';
 import './HarvestTabBar.css';
 
@@ -29,22 +30,22 @@ export function HarvestTabBar({ isOpen, viewMode, onToggle, onSetMode }: Props) 
       onToggle={onToggle}
     >
       <button
-        id="HarvestProject"
-        className={`harvest-tab-bar__btn${viewMode === 'project' ? ' harvest-tab-bar__btn--active' : ''}`}
-        onClick={() => onSetMode('project')}
-        data-tip="プロジェクト"
-        aria-label="HarvestProject"
+        id="HarvestAIView"
+        className={`harvest-tab-bar__btn${viewMode === 'aiview' ? ' harvest-tab-bar__btn--active' : ''}`}
+        onClick={() => onSetMode('aiview')}
+        data-tip="AIView"
+        aria-label="HarvestAIView"
       >
-        <Target size={16} />
+        <CpuAi size={16} />
       </button>
       <button
-        id="HarvestAI"
-        className={`harvest-tab-bar__btn${viewMode === 'chat' ? ' harvest-tab-bar__btn--active' : ''}`}
-        onClick={() => onSetMode('chat')}
-        data-tip="対話"
-        aria-label="HarvestAI"
+        id="HarvestAIChat"
+        className={`harvest-tab-bar__btn${viewMode === 'aichat' ? ' harvest-tab-bar__btn--active' : ''}`}
+        onClick={() => onSetMode('aichat')}
+        data-tip="AIChat"
+        aria-label="HarvestAIChat"
       >
-        <MessageCircle size={16} />
+        <BotMessageSquare size={16} />
       </button>
       <button
         id="HarvestSetting"

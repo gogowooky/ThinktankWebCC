@@ -22,7 +22,7 @@ export const workingSpecs: Record<string, PropSpec> = {
   },
   'WorkingSettingPanel.Mode.Name': {
     panel: 'WorkingPanel',
-    default: 'Panes', type: 'string', candidates: '^(Panes|Texteditor|Markdown|Datagrid|Card|Graph|Html|Chat|Project)$',
+    default: 'Panes', type: 'string', candidates: '^(Panes|Texteditor|Chatsetting|Markdown|Datagrid|Card|Graph|Html|Aiview|Aichat|Chat|Project)$',
     description: 'Working設定パネルモード',
     get: (app) => capitalize(app.WorkingPanel.ViewMode),
     set: (app, v) => { app.WorkingPanel.SetViewMode((['workout', 'develop', 'discuss', 'working'].includes(v.toLowerCase()) ? 'panes' : v.toLowerCase()) as WorkingViewMode); },

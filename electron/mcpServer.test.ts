@@ -40,7 +40,7 @@ describe('Thinktank MCP Server & Bridge (Step 1 - Step 3)', () => {
       thinkid: '2026-10-20-100000',
       category: 'project',
       title: '再生医療治験プロジェクト',
-      body: ['=', '# 状態', '状態値：進行中', '# 対象', '[memo:2026-10-20-100001]: 出荷規格メモ'].join('\n'),
+      body: ['=', '# 状態', '進行中', '# 対象', '[memo:2026-10-20-100001]: 出荷規格メモ'].join('\n'),
       keywords: '治験, 再生医療',
     });
 
@@ -163,7 +163,7 @@ describe('Thinktank MCP Server & Bridge (Step 1 - Step 3)', () => {
           arguments: {
             title: '輸送安定性試験プロトコル案',
             body: '夏場および冬場の温度逸脱シミュレーションを実施する。',
-            category: 'memo',
+            category: 'aiview',
             keywords: '輸送, 安定性',
             projectId: '2026-10-20-100000',
           },
@@ -173,12 +173,13 @@ describe('Thinktank MCP Server & Bridge (Step 1 - Step 3)', () => {
     );
     const createdPayload = JSON.parse(createRes.result.content[0].text);
     expect(createdPayload.ok).toBe(true);
+    expect(createdPayload.created.category).toBe('aiview');
     const newId = createdPayload.created.thinkid;
     expect(newId).toMatch(/^\d{4}-\d{2}-\d{2}-\d{6}/);
 
     // 親Projectの「# 対象」に自動でリンク行が追加されていること
     const updatedProject = vaultEngine.getRecord('2026-10-20-100000');
-    expect(updatedProject.body).toContain(`[memo:${newId}]: 輸送安定性試験プロトコル案`);
+    expect(updatedProject.body).toContain(`[aiview:${newId}]: 輸送安定性試験プロトコル案`);
     expect(mutations).toEqual([
       { action: 'create', thinkid: newId, projectId: '2026-10-20-100000' },
     ]);

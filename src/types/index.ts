@@ -19,14 +19,24 @@ export type AppMode = 'pwa' | 'local';
  * TTThink のコンテンツ種別（v5）
  * v4: memo/chat/pickup/link/table
  * v5: memo/project/table/links/chat/html
+ * v6: memo/aiview/project/table/links/chat/html
  */
-export type ContentType =
-  | 'memo'     // テキストメモ（markdown含む）
-  | 'project'  // プロジェクト（対象・状態・プロンプト・評価等を本文に持つ）
-  | 'table'    // テーブルデータ（独自形式md）
-  | 'links'    // URL/ローカルURI等へのリンク集
-  | 'chat'     // AIとの対話記録
-  | 'html';    // HTML資料（1行目タイトル、以降HTML本文）
+export const CONTENT_TYPES = [
+  'memo',     // テキストメモ（Markdown含む）
+  'aiview',   // AI生成ビュー（memo互換Markdown、UIでは読み取り専用）
+  'project',  // プロジェクト（対象・状態・プロンプト・評価等を本文に持つ）
+  'table',    // テーブルデータ（独自形式md）
+  'links',    // URL/ローカルURI等へのリンク集
+  'chat',     // AIとの対話記録
+  'html',     // HTML資料（1行目タイトル、以降HTML本文）
+] as const;
+
+export type ContentType = (typeof CONTENT_TYPES)[number];
+
+/** UI上で本文を書き換えないコンテンツ種別。 */
+export function isReadOnlyContentType(contentType: string | null | undefined): boolean {
+  return contentType === 'aiview';
+}
 
 // #endregion
 

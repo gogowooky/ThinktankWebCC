@@ -16,10 +16,12 @@ export function matchesChatFilters(name: string, kinds: Set<string>, states: Set
 interface RowProps {
   label: string; values: readonly string[]; icons: LucideIcon[]; labels?: string[];
   selected: Set<string>; current?: string; onChange: (values: Set<string>) => void;
+  /** 何の一覧の絞り込みか（読み上げ名に使う） */
+  subject?: string;
 }
-function FilterRow({ label, values, icons, labels, selected, current, onChange }: RowProps) {
+export function FilterRow({ label, values, icons, labels, selected, current, onChange, subject = 'Chat' }: RowProps) {
   const all = values.every(value => selected.has(value));
-  return <div className="tt-search-bar__types" role="group" aria-label={`Chatの${label}フィルター`}>
+  return <div className="tt-search-bar__types" role="group" aria-label={`${subject}の${label}フィルター`}>
     {values.map((value, i) => {
       const Icon = icons[i]; const active = selected.has(value); const tip = labels?.[i] ?? value;
       return <button key={value} type="button" className={`tt-search-bar__type-btn${active ? ' tt-search-bar__type-btn--active' : ''}${current === value ? ' tt-chat-filter--current' : ''}`}

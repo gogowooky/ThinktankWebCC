@@ -3,10 +3,12 @@ const backend = vi.hoisted(() => ({ save: vi.fn() }));
 vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instance: backend } }));
 import { TTVault } from './TTVault';
 import { TTThink } from './TTThink';
+import { projectTargetIds } from '../utils/thinkFormat';
 
 const version = '2026-10-13T01:00:00Z';
 const creators: Array<{ name: string; category: string; create: (vault: TTVault) => Promise<TTThink> }> = [
   { name: 'blank', category: 'memo', create: vault => vault.CreateBlankThink('memo', 'メモ') },
+  { name: 'AI view', category: 'aiview', create: vault => vault.CreateBlankThink('aiview', 'AIまとめ') },
   { name: 'bundle', category: 'project', create: vault => vault.CreateBundleFromIds([]) },
   { name: 'links', category: 'links', create: vault => vault.CreateLinksThink('リンク', 'https://example.com') },
   { name: 'chat', category: 'chat', create: vault => vault.CreateChatThink('会話\n本文') },
@@ -89,4 +91,15 @@ it('keeps a saved child and restores Bundle content when linking fails, allowing
   await vault.LinkThinksToBundle(bundle.ID, [child.ID]);
   expect(bundle.Content).toContain(child.ID);
   expect(vault.Count).toBe(2);
+});
+
+it('registers newly created Working-style Think files in the specified Seeds project target section', async () => {
+  const vault = new TTVault('test');
+  const project = await vault.CreateProject('作業');
+  const memo = await vault.CreateBlankThink('memo', '新規メモ', project.ID);
+  const link = await vault.CreateLinksThink('参照', 'https://example.com', '', project.ID);
+
+  expect(projectTargetIds(project.Content)).toEqual([memo.ID, link.ID]);
+  expect(project.Content).toContain(`[memo:${memo.ID}]: 新規メモ`);
+  expect(project.Content).toContain(`[link:${link.ID}]: 参照`);
 });

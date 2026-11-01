@@ -1,6 +1,6 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { FileText, Target, Table, Link, MessagesSquare, Globe, type LucideIcon } from 'lucide-react';
+import { FileText, Bot, Target, Table, Link, MessagesSquare, Globe, type LucideIcon } from 'lucide-react';
 import type { TTThink } from '../../../../models/TTThink';
 import type { ContentType } from '../../../../types';
 import type { MediaProps } from '../types';
@@ -9,6 +9,7 @@ import { applyFilter } from '../../../ThinktankPanel/ThoughtsList';
 import { HighlightedText } from './HighlightedText';
 const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
   memo: FileText,
+  aiview: Bot,
   project: Target,
   table: Table,
   links: Link,
@@ -18,6 +19,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
 
 const CONTENT_LABELS: Record<ContentType, string> = {
   memo: 'メモ',
+  aiview: 'AI View',
   project: 'プロジェクト',
   table: 'テーブル',
   links: 'リンク',

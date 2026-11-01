@@ -1,80 +1,11 @@
 /**
  * HarvestMenuRibbon.tsx
- * HarvestArea 上部の横向きリボン
+ * HarvestArea 上部の横向きリボン（AIChat・設定とも今はボタンが無く、帯だけ出して他パネルと高さを揃える。AIView は AiViewPanel が自前のリボンを持つ）
  */
 
-import { Save, ListRestart, ArrowDownAZ, LayoutList, SquareX } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './HarvestMenuRibbon.css';
 
-interface Props {
-  viewMode:              string;
-  showColumnDialog:      boolean;
-  showFilterSelectDialog: boolean;
-  onToggleColumnDialog:  () => void;
-  onToggleFilterSelectDialog: () => void;
-  onClearTodoSelection:  () => void;
-  onRefresh:             () => void;
-}
-
-export function HarvestMenuRibbon({
-  viewMode,
-  showColumnDialog, showFilterSelectDialog,
-  onToggleColumnDialog, onToggleFilterSelectDialog,
-  onClearTodoSelection, onRefresh,
-}: Props) {
-  // プロジェクトは AbstractView が自前のリボンを持つ
-  if (viewMode === 'project') return null;
-  if (viewMode === 'settings') {
-    return <div className="menu-ribbon harvest-menu-ribbon" />;
-  }
-
-  return (
-    <div className="menu-ribbon harvest-menu-ribbon">
-      <div className="tooltip-wrapper" data-tip="会話履歴は閲覧専用です" data-tip-side="right">
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          disabled
-        >
-          <Save size={14} />
-        </button>
-      </div>
-
-      <div className="menu-ribbon__sep" />
-
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--icon"
-        onClick={onRefresh}
-        data-tip="表示更新"
-        data-tip-side="right"
-      >
-        <ListRestart size={14} />
-      </button>
-
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${showColumnDialog ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={onToggleColumnDialog}
-        data-tip="表示項目とソート"
-      >
-        <ArrowDownAZ size={14} />
-      </button>
-
-      <button
-        className={`menu-ribbon__btn menu-ribbon__btn--icon${showFilterSelectDialog ? ' menu-ribbon__btn--active' : ''}`}
-        onClick={onToggleFilterSelectDialog}
-        data-tip="フィルター選択"
-      >
-        <LayoutList size={14} />
-      </button>
-
-      <button
-        className="menu-ribbon__btn menu-ribbon__btn--icon"
-        onClick={onClearTodoSelection}
-        data-tip="アイテム選択をクリア"
-        data-tip-side="left"
-      >
-        <SquareX size={14} />
-      </button>
-    </div>
-  );
+export function HarvestMenuRibbon() {
+  return <div className="menu-ribbon harvest-menu-ribbon" />;
 }

@@ -57,6 +57,8 @@ export interface RelayAiConversationPayload {
   agentId?: string;
   profileId?: string;
   preferredCli?: 'claude' | 'codex' | 'antigravity';
+  provider?: 'anthropic' | 'openai' | 'gemini' | 'gnb' | 'local';
+  model?: string;
 }
 
 export interface RelayEnvelopePlaintext<T = unknown> {

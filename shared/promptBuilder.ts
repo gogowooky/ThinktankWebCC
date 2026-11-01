@@ -7,7 +7,7 @@
  */
 
 import type { DomainProfile, PanelId, PanelRoleKey } from './domainProfile';
-import type { PromotedRecord, GateRecord } from './operations';
+import type { GateRecord } from './operations';
 
 export interface PromptDocumentContext {
   thinkid: string;
@@ -48,7 +48,6 @@ export interface BuildConversationPromptParams {
   nextAction?: string;
   subtasks?: PromptSubtaskContext[];
   pausePoints?: PromptPausePointContext[];
-  promotedRecords?: PromotedRecord[];
   gates?: GateRecord[];
   relatedDocuments?: PromptDocumentContext[];
   recentMessages?: PromptChatMessage[];
@@ -58,6 +57,12 @@ export interface BuildConversationPromptParams {
   /** MCP有効時に関連資料の抜粋を圧縮してオンデマンド取得を促す1件あたり最大文字数（既定: 600） */
   mcpExcerptMaxLength?: number;
 }
+
+/**
+ * 依頼文（userMessage）に書くと、AI CLI を起動する側が実際に使う AI モデル名へ置き換える差し込み記号。
+ * 使う CLI・モデルは中継先の PC で決まるため、画面側では書けない
+ */
+export const AI_MODEL_PLACEHOLDER = '{{AI_MODEL}}';
 
 function normalizePanelId(role?: PanelRoleKey): PanelId {
   if (!role) return 'Working';
@@ -83,7 +88,6 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
     nextAction,
     subtasks = [],
     pausePoints = [],
-    promotedRecords = [],
     gates = [],
     relatedDocuments = [],
     recentMessages = [],
@@ -97,11 +101,6 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
   const specialistAgent = agentId
     ? profile.agents.find((a) => a.id === agentId)
     : undefined;
-
-  const activeRecords = promotedRecords.filter((r) => r.status !== 'superseded');
-  const promotionTypesList = Object.values(profile.promotionKinds)
-    .map((t) => `- "${t.kind}" (${t.label}): ${t.description}`)
-    .join('\n');
 
   const lines: string[] = [];
 
@@ -143,16 +142,6 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
         `- [${g.status.toUpperCase()}] ${g.label} (${g.gateId}): ${g.description}${
           g.blockers.length > 0 ? ` | Blockers: ${g.blockers.join(', ')}` : ''
         }`,
-      );
-    }
-  }
-
-  if (activeRecords.length > 0) {
-    lines.push('');
-    lines.push(`## ${profile.terminology.promotionSectionTitle}`);
-    for (const r of activeRecords.slice(0, 25)) {
-      lines.push(
-        `- [${r.type.toUpperCase()} v${r.version} | ${r.status}] ${r.title}: ${r.summary} (担当/決定者: ${r.ownerOrDecisionMaker})`,
       );
     }
   }
@@ -200,10 +189,9 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
     lines.push('- `thinktank_search`: Vault内の関連メモ・課題・過去事例をキーワードやタグで全文検索する');
     lines.push('- `thinktank_list_meta`: Vault全体または特定Projectに紐づくThinkのメタデータ一覧を取得する');
     lines.push('- `thinktank_get_record`: 指定 `thinkid` の全文（body）および思考支援メタデータ（support）を取得する');
-    lines.push('- `thinktank_get_project_context`: 指定 `projectId` の目標・Gate状態・昇格済みレコード・関連Thinkを一括取得する');
-    lines.push('- `thinktank_create_think`: ユーザーの依頼に基づき新規Think（memo / task / links / table）を作成しProjectに紐づける');
+    lines.push('- `thinktank_get_project_context`: 指定 `projectId` の目標・Gate状態・関連Thinkを一括取得する');
+    lines.push('- `thinktank_create_think`: ユーザーの依頼に基づき新規Think（memo / aiview / task / links / table）を作成しProjectに紐づける');
     lines.push('- `thinktank_update_think`: 既存Thinkを更新する（事前に `thinktank_get_record` で取得した `expectedVersion` が必須）');
-    lines.push('- `thinktank_add_promotion_candidate`: 重要な決定・根拠・リスク等をProjectの昇格候補（`pending_review`）として登録する');
   }
 
   if (recentMessages.length > 0) {
@@ -223,7 +211,6 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
   lines.push(
     '以下の JSON スキーマに従い、純粋な JSON オブジェクト（または ```json コードブロック）で応答してください。',
   );
-  lines.push(`昇格候補（promotionCandidates）の type には以下が指定可能です:\n${promotionTypesList}`);
   lines.push(`
 \`\`\`json
 {
@@ -253,19 +240,6 @@ export function buildConversationPrompt(params: BuildConversationPromptParams): 
     {
       "reason": "保留理由",
       "resumeCondition": "再開条件"
-    }
-  ],
-  "promotionCandidates": [
-    {
-      "type": "decision | evidence | risk | assumption | action | gate_result | learning",
-      "title": "昇格候補の簡潔なタイトル",
-      "summary": "要旨",
-      "rationale": "背景・理由・根拠",
-      "impactScope": "影響範囲",
-      "proposedOwner": "想定担当者または決定者ロール",
-      "citations": [
-        { "sourceThinkid": "thinkid", "sourceTitle": "タイトル", "snippet": "抜粋" }
-      ]
     }
   ]
 }

@@ -21,25 +21,9 @@ import {
 import { THINK_FIELDS, type ThinkField } from '../../shared/contracts/thinkSupportRecord';
 import { DomainProfileManager } from '../platform/DomainProfileManager';
 import { FirestoreRelayClient } from '../platform/web/FirestoreRelayClient';
-import { extractOperationsState, addPromotionCandidate } from '../../shared/operations';
-import type { ValidatedPromotionCandidate } from '../../shared/responseValidator';
 import { invokeIpc } from '../utils/ipcError';
 
 export type { ConversationContext, ConversationTurn } from '../../shared/contracts/conversationRecord';
-
-/** Turn ID ごとに AI が抽出した昇格候補（PromotionCandidates）を保持するインメモリマップ */
-const turnPromotionCandidatesMap = new Map<string, ValidatedPromotionCandidate[]>();
-
-export function getTurnPromotionCandidates(turnId: string): ValidatedPromotionCandidate[] {
-  return turnPromotionCandidatesMap.get(turnId) ?? [];
-}
-
-export function setTurnPromotionCandidatesForTest(
-  turnId: string,
-  candidates: ValidatedPromotionCandidate[],
-): void {
-  turnPromotionCandidatesMap.set(turnId, candidates);
-}
 
 // 同一プロセス内の複数パネルから同時に応答が返った際、同じ Bundle / Chat への保存が衝突しないよう直列化する。
 let saveQueue: Promise<void> = Promise.resolve();
@@ -239,6 +223,7 @@ export class ConversationClient {
 
       const payload = {
         cliName,
+        provider: model?.provider,
         model: model?.model,
         profileId: profile.id,
         panelRole: context.scope === 'chat-only' ? ('Thinktank' as const) : ('Working' as const),
@@ -256,7 +241,6 @@ export class ConversationClient {
         insufficientEvidence?: boolean;
         citations?: Array<{ sourceThinkid: string; snippet?: string }>;
         proposals?: Array<{ field: string; proposedValue: string; reason: string }>;
-        promotionCandidates?: ValidatedPromotionCandidate[];
         executedCli?: string;
       };
 
@@ -272,10 +256,6 @@ export class ConversationClient {
           throw new Error(relayRes.error || 'Firebase E2EE 中継でのAI応答取得に失敗しました。');
         }
         aiRes = relayRes.result;
-      }
-
-      if (aiRes.promotionCandidates && aiRes.promotionCandidates.length > 0) {
-        turnPromotionCandidatesMap.set(requestId, aiRes.promotionCandidates);
       }
 
       // ConversationRecord 契約に沿った Citation / Proposal の正規化
@@ -381,68 +361,7 @@ export class ConversationClient {
     const activeVault = TTModels.Instance?.Vault;
     const think = activeVault?.GetThink(targetId);
 
-    const extractedCandidates = turnPromotionCandidatesMap.get(turn.id) ?? [];
-    const targetOpsId = bundleId || turn.context.bundleId || targetId;
-
-    const applyCandidatesToOps = (
-      opsMetadata: Record<string, unknown> | undefined,
-    ): ReturnType<typeof extractOperationsState> => {
-      let opsState = extractOperationsState(
-        opsMetadata,
-        DomainProfileManager.activeProfile,
-      );
-      extractedCandidates.forEach((cand, idx) => {
-        const candidateId = `cand_${turn.id}_${idx}`;
-        if (opsState.promotionCandidates.some((c) => c.id === candidateId)) return;
-        opsState = addPromotionCandidate(
-          opsState,
-          {
-            id: candidateId,
-            bundleId: targetOpsId,
-            sourceChatThinkid: chatId,
-            sourceMessageId: turn.id,
-            type: cand.type,
-            title: cand.title,
-            summary: cand.summary,
-            rationale: cand.rationale,
-            impactScope: cand.impactScope,
-            proposedOwner: cand.proposedOwner,
-            dueDate: cand.dueDate,
-            citations: cand.citations,
-            createdBy: 'ai',
-          },
-          'ai',
-        );
-      });
-      return opsState;
-    };
-
-    // 昇格候補の対象 Bundle が保存対象 Chat とは別レコードの場合、Bundle 側を楽観ロック自動リトライ付きで先に更新する
-    if (extractedCandidates.length > 0 && targetOpsId !== targetId) {
-      for (let attempt = 0; attempt < MAX_CONFLICT_RETRIES; attempt++) {
-        const opsRecord = await StorageManager.instance.getRecord(targetOpsId);
-        if (!opsRecord) break;
-        const opsState = applyCandidatesToOps(opsRecord.meta.metadata);
-        try {
-          const savedOpsMeta = await StorageManager.instance.updateMetadata(
-            targetOpsId,
-            { operations: opsState },
-            opsRecord.meta.updatedAt || undefined,
-          );
-          const opsThink = activeVault?.GetThink(targetOpsId);
-          if (opsThink) {
-            opsThink.Metadata = savedOpsMeta.metadata ?? {};
-            opsThink.UpdatedAt = savedOpsMeta.updatedAt;
-            opsThink.markMetadataSaved();
-          }
-          break;
-        } catch (err) {
-          if (!isConflictError(err) || attempt === MAX_CONFLICT_RETRIES - 1) throw err;
-        }
-      }
-    }
-
-    // 会話ターン本体（および targetOpsId === targetId の場合の昇格候補）を楽観ロック自動リトライ付きで保存する
+    // 会話ターン本体を楽観ロック自動リトライ付きで保存する
     for (let attempt = 0; attempt < MAX_CONFLICT_RETRIES; attempt++) {
       const record = await StorageManager.instance.getRecord(targetId);
       if (!record) throw new Error('保存対象のレコードが見つかりません。');
@@ -458,15 +377,9 @@ export class ConversationClient {
         : [...currentTurns, turn];
       const nextLog = { schemaVersion: 1 as const, turns: nextTurns };
 
-      const operations =
-        extractedCandidates.length > 0 && targetOpsId === targetId
-          ? applyCandidatesToOps(record.meta.metadata)
-          : undefined;
-
       const nextMetadata: Record<string, unknown> = {
         ...(record.meta.metadata ?? {}),
         thinkConversations: nextLog,
-        ...(operations ? { operations } : {}),
       };
       let savedMeta;
       let savedFullContent = record.body
@@ -490,7 +403,6 @@ export class ConversationClient {
             targetId,
             {
               thinkConversations: nextLog,
-              ...(operations ? { operations } : {}),
             },
             record.meta.updatedAt || undefined,
           );
@@ -504,7 +416,6 @@ export class ConversationClient {
           think.markMetadataSaved();
           activeVault?.NotifyUpdated(false);
         }
-        turnPromotionCandidatesMap.delete(turn.id);
         return;
       } catch (err) {
         if (!isConflictError(err) || attempt === MAX_CONFLICT_RETRIES - 1) throw err;

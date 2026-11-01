@@ -43,6 +43,38 @@
   cursor: not-allowed;
 }
 
+/* ── 送信の右に出すこのチャットの AI 種別（色は送信と同じ）──── */
+.chat-media__ai {
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-media__ai--error {
+  color: var(--text-error, #c62828);
+  white-space: pre-wrap;
+}
+
+/* AI 種別・GNB の Notebook 名は下線付きで押すとメニュー（会話面のボタンは既定で薄い色なので、送信と同じ色に戻す） */
+.bundle-conversation button.chat-media__choice {
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* 末尾の「web」はその Web サイトへのリンク（色は送信と同じ） */
+.chat-media__site,
+.chat-media__site:visited {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* チャット本体が残りの領域を占有（表示切替のホスト / 閲覧専用 / 旧 AiChatView 共通）*/
 .chat-media > .support-chat-host,
 .chat-media > .ai-chat-view,

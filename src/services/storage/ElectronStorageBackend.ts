@@ -29,6 +29,16 @@ export interface ElectronAiStatus {
   activeProfileId: string;
 }
 
+export type ElectronAiAuthProvider = 'OpenAI' | 'Gemini' | 'Claude' | 'GNB' | 'Local';
+
+export interface ElectronAiProviderAuthStatus {
+  available: boolean;
+  loggedIn: boolean;
+  loginUrl: string;
+}
+
+export type ElectronAiAuthStatus = Record<ElectronAiAuthProvider, ElectronAiProviderAuthStatus>;
+
 export interface ElectronRelayStatus {
   enabled: boolean;
   deviceId: string;
@@ -87,10 +97,13 @@ declare global {
         getActive:     () => Promise<DomainProfile>;
         listAvailable: () => Promise<Array<{ id: string; name: string; subtitle: string; description: string }>>;
         setActive:     (profileId: string) => Promise<DomainProfile>;
-        saveCustom:    (profileObj: DomainProfile) => Promise<DomainProfile>;
       };
       ai?: {
         getStatus:    () => Promise<ElectronAiStatus>;
+        getAuthStatus?: () => Promise<ElectronAiAuthStatus>;
+        login?:        (provider: ElectronAiAuthProvider) => Promise<{ started: boolean; loginUrl: string }>;
+        getGnbNotebookTitle?: (notebookId: string) => Promise<string>;
+        onAuthChanged?: (callback: (payload: { provider?: ElectronAiAuthProvider }) => void) => () => void;
         conversation: (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string }>;
         agent:        (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string }>;
       };

@@ -1,132 +1,40 @@
-import { TTApplication } from '../../../views/TTApplication';
-import { SupportChat } from '../../ThoughtSupport/SupportChat';
-import { SquareX, Save, ArrowDownAZ, LayoutList, ListRestart } from 'lucide-react';
-import { ColumnSortDialog } from '../../ThinktankPanel/ColumnSortDialog';
-import { FilterSelectDialog } from '../../ThinktankPanel/FilterSelectDialog';
-import { ThinktankChatMemoPicker } from '../../ThinktankPanel/ThinktankChatMemoPicker';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, MessagesSquare } from 'lucide-react';
 import type { WorkingSettingsContext } from './types';
 
-type Props = Pick<WorkingSettingsContext,
-  'panel'
-  | 'vault'
-  | 'onRefresh'
-  | 'aiChatViewRef'
-  | 'selectedTodoMemoId'
-  | 'columns'
-  | 'setColumns'
-  | 'sort'
-  | 'setSort'
-  | 'showColumnDialog'
-  | 'setShowColumnDialog'
-  | 'filterVisibility'
-  | 'setFilterVisibility'
-  | 'showFilterSelectDialog'
-  | 'setShowFilterSelectDialog'
-  | 'todoMemoThinks'
-  | 'supportListError'
-  | 'handleSelectTodoMemo'
-  | 'handleToggleColumnDialog'
-  | 'handleToggleFilterSelectDialog'
->;
+type Props = Pick<WorkingSettingsContext, 'onCreateChat'>;
 
-export function ChatSettings({
-  panel,
-  vault,
-  onRefresh,
-  aiChatViewRef,
-  selectedTodoMemoId,
-  columns,
-  setColumns,
-  sort,
-  setSort,
-  showColumnDialog,
-  setShowColumnDialog,
-  filterVisibility,
-  setFilterVisibility,
-  showFilterSelectDialog,
-  setShowFilterSelectDialog,
-  todoMemoThinks,
-  supportListError,
-  handleSelectTodoMemo,
-  handleToggleColumnDialog,
-  handleToggleFilterSelectDialog,
-}: Props) {
-  return (<div className="working-setting-area__chat">
-    <div className="working-setting-area__chat-toolbar">
-      <button
-        className="working-setting-area__chat-btn"
-        disabled={true}
-        data-tip="会話履歴は閲覧専用です"
+/** Working>Chat設定 */
+export function ChatSettings({ onCreateChat }: Props) {
+  const [isChatOpen, setIsChatOpen] = useState(true);
+  return (
+    <div className="working-setting-area__section">
+      <div
+        className="working-setting-area__section-header"
+        onClick={() => setIsChatOpen(!isChatOpen)}
       >
-        <Save size={14} className="ws-icon" />
-      </button>
+        {isChatOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <span className="working-setting-area__section-label" style={{ marginBottom: 0 }}>Chat</span>
+      </div>
 
-      <div className="working-setting-area__chat-sep" />
-
-      <button
-        className="working-setting-area__chat-btn"
-        onClick={onRefresh}
-        data-tip="表示更新"
-      >
-        <ListRestart size={14} className="ws-icon" />
-      </button>
-      <button
-        className={`working-setting-area__chat-btn${showColumnDialog ? ' working-setting-area__chat-btn--active' : ''}`}
-        onClick={handleToggleColumnDialog}
-        data-tip="表示項目とソート"
-      >
-        <ArrowDownAZ size={14} className="ws-icon" />
-      </button>
-      <button
-        className={`working-setting-area__chat-btn${showFilterSelectDialog ? ' working-setting-area__chat-btn--active' : ''}`}
-        onClick={handleToggleFilterSelectDialog}
-        data-tip="フィルター選択"
-      >
-        <LayoutList size={14} className="ws-icon" />
-      </button>
-      <button
-        className="working-setting-area__chat-btn"
-        onClick={() => handleSelectTodoMemo('')}
-        data-tip="アイテム選択をクリア"
-      >
-        <SquareX size={14} className="ws-icon" />
-      </button>
+      {isChatOpen && (
+        <div className="working-setting-area__section-content">
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '4px' }}>
+            <span className="working-setting-area__color-label" style={{ width: '28px', flexShrink: 0 }}>新規</span>
+            <div className="working-setting-area__icon-row" style={{ flex: 1 }}>
+              <button
+                className="working-setting-area__icon-btn"
+                onClick={onCreateChat}
+                data-tip="新規chatファイルを作成"
+                aria-label="新規chatファイルを作成"
+                data-tip-side="top-start"
+              >
+                <MessagesSquare size={16} className="ws-icon" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-
-    {showColumnDialog && (
-      <ColumnSortDialog
-        columns={columns}
-        sort={sort}
-        onColumnsChange={setColumns}
-        onSortChange={setSort}
-        onClose={() => setShowColumnDialog(false)}
-      />
-    )}
-    {showFilterSelectDialog && (
-      <FilterSelectDialog
-        visibility={filterVisibility}
-        onChange={setFilterVisibility}
-        hiddenFields={['type']}
-        onClose={() => setShowFilterSelectDialog(false)}
-      />
-    )}
-
-    {supportListError && <p role="alert">{supportListError}</p>}
-    <ThinktankChatMemoPicker
-      thinks={todoMemoThinks}
-      vault={vault}
-      columns={columns}
-      sort={sort}
-      filterVisibility={filterVisibility}
-      selectedId={selectedTodoMemoId}
-      onSelect={handleSelectTodoMemo}
-      checkedIds={panel.CheckedThoughtIDs}
-      onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
-    />
-    <div className="working-setting-area__chat-body">
-      <SupportChat ref={aiChatViewRef} vault={vault} panelName="Working"
-        selectedId={selectedTodoMemoId} bundleId={TTApplication.Instance.SeedsPanel.BundleID}
-        modelSelector={{ value: { provider: panel.SettingAIChatProvider, model: panel.SettingAIChatModel }, onChange: selection => panel.SetSettingAIChatModel(selection) }} />
-    </div>
-  </div>);
+  );
 }

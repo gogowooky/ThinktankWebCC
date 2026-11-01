@@ -29,9 +29,24 @@ import {
   reassembleChunks,
   encryptRelayPayload,
   decryptRelayPayload,
+  isValidCategory,
 } from './index';
 
 describe('shared/vaultFormat', () => {
+  it('accepts aiview as a Markdown vault category', () => {
+    expect(isValidCategory('aiview')).toBe(true);
+    const parsed = parseMdRecord(serializeMdRecord({
+      thinkid: '2026-10-30-120000-aiview',
+      category: 'aiview',
+      title: 'AIまとめ',
+      createdAt: '2026-10-30T03:00:00.000Z',
+      updatedAt: '2026-10-30T03:00:00.000Z',
+      body: '# 結論\n本文',
+    }));
+    expect(parsed.category).toBe('aiview');
+    expect(parsed.body).toBe('# 結論\n本文');
+  });
+
   it('preserves body byte-for-byte including CRLF/LF mix and YAML-like blocks without corruption', () => {
     const bodyWithMixedNewlines =
       '1行目 CRLF\r\n2行目 LF\n---\ntitle: 偽のfrontmatter\n---\n末尾の空行\r\n\r\n';
@@ -299,6 +314,8 @@ describe('shared/promptBuilder & shared/responseValidator', () => {
     });
     expect(prompt).toContain('CMC／GCTP Agent');
     expect(prompt).toContain('出荷規格のリスクを整理してください');
+    expect(prompt).not.toContain('promotionCandidates');
+    expect(prompt).not.toContain('thinktank_add_promotion_candidate');
 
     const rawCliOut = `以下が分析結果です。\n\`\`\`json\n${JSON.stringify({
       reply: '出荷規格における生細胞率のばらつきが主要リスクです。',

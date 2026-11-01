@@ -12,6 +12,9 @@ import { disposeVaultDrafts, draftVaultLease, resetDraftStores } from '../servic
 
 afterEach(() => { resetDraftStores(); });
 
+// Project を作ると、組み込んだ Think へ親の記録（metadata.parentProjectid）も保存するため、Project 自体の保存だけを数える
+const projectSaveCount = () => storage.save.mock.calls.filter(([payload]) => (payload as { category?: string }).category === 'project').length;
+
 function deferred<Value>() {
   let resolve!: (value: Value) => void;
   let reject!: (error: Error) => void;
@@ -40,7 +43,7 @@ it('adopts separate candidates once each, preserves successes after partial fail
   const turn = { id: 'decompose', context: { scope: 'bundle-only', vaultId: vault.ID, bundleId: parent.ID }, answer: { proposals: [], subtaskCandidates: candidates } } as unknown as ConversationTurn;
   storage.save.mockClear();
   const [first, duplicate] = await Promise.all([vault.CreateSubtaskFromConversation(turn, chat.ID, '会場', 'venue'), vault.CreateSubtaskFromConversation(turn, chat.ID, '会場', 'venue')]);
-  expect(duplicate.ID).toBe(first.ID); expect(storage.save).toHaveBeenCalledTimes(1);
+  expect(duplicate.ID).toBe(first.ID); expect(projectSaveCount()).toBe(1);
   storage.save.mockRejectedValueOnce(new Error('保存失敗'));
   await expect(vault.CreateSubtaskFromConversation(turn, chat.ID, '参加者', 'guests')).rejects.toThrow('保存失敗');
   expect(vault.GetBundles()).toHaveLength(2);
@@ -75,7 +78,7 @@ it('saves confirmed task details together with the Bundle and preserves the Chat
   const seed = { goal: '誕生日を祝う', completionCriteria: '会を終えて片付ける' };
   storage.save.mockClear();
   const bundle = await vault.CreateTaskBundle('誕生日会', [chat.ID], seed);
-  expect(storage.save).toHaveBeenCalledTimes(1);
+  expect(projectSaveCount()).toBe(1);
   expect(storage.save).toHaveBeenCalledWith(expect.objectContaining({ metadata: { thinkSupport: expect.objectContaining({
     values: expect.objectContaining(seed), author: 'human', revision: 1,
   }) } }));
@@ -103,14 +106,14 @@ it('creates a related subtask once for simultaneous adoption and after reloading
     vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約'),
   ]);
   expect(first.ID).toBe(second.ID);
-  expect(storage.save).toHaveBeenCalledTimes(1);
+  expect(projectSaveCount()).toBe(1);
   expect(first.Metadata.taskRelation).toEqual({ schemaVersion: 1, parentId: parent.ID, chatId: chat.ID, turnId: turn.id, panel: 'Working' });
   expect(readThinkSupport(first.Metadata.thinkSupport)?.values.goal).toBe('会場を予約する');
   expect(parseBundle(first.Content).ids).toEqual([chat.ID]);
   const reloaded = new TTVault('vault');
   reloaded.AddThink(parent); reloaded.AddThink(chat); reloaded.AddThink(first);
   expect((await reloaded.CreateSubtaskFromConversation(turn, chat.ID, '別名')).ID).toBe(first.ID);
-  expect(storage.save).toHaveBeenCalledTimes(1);
+  expect(projectSaveCount()).toBe(1);
   await expect(vault.CreateSubtaskFromConversation({ ...turn, context: { ...turn.context, vaultId: 'other' } }, chat.ID, '不正')).rejects.toThrow('対象');
 });
 
@@ -122,7 +125,7 @@ it('creates one task Bundle with the confirmed title and links the consultation 
   expect(bundle.Name).toBe('誕生日会を開催する');
   expect(parseBundle(bundle.Content).ids).toEqual([chat.ID]);
   expect((await vault.GetThinksForBundleAsync(bundle.ID, true)).map(t => t.ID)).toEqual([chat.ID]);
-  expect(storage.save).toHaveBeenLastCalledWith(expect.objectContaining({
+  expect(storage.save).toHaveBeenCalledWith(expect.objectContaining({
     thinkid: bundle.ID,
     category: 'project',
     relatedIds: chat.ID,
@@ -161,7 +164,7 @@ it.each([
   const lifetime = draftVaultLease(vault);
   const first = vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約', candidateId, lifetime.isCurrent);
   const duplicate = vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約', candidateId, lifetime.isCurrent);
-  expect(storage.save).toHaveBeenCalledTimes(1);
+  expect(projectSaveCount()).toBe(1);
   expect(notify).not.toHaveBeenCalled();
 
   if (outcome === 'saved') save.resolve({ updatedAt: '2026-10-13T00:00:00Z' });
@@ -178,7 +181,7 @@ it.each([
   expect(created.Name).toBe('会場の予約');
   expect(parseBundle(created.Content).ids).toEqual([chat.ID]);
   expect(created.Metadata.taskRelation).toMatchObject({ parentId: parent.ID, chatId: chat.ID, turnId: turn.id });
-  expect(storage.save).toHaveBeenCalledTimes(2);
+  expect(projectSaveCount()).toBe(2);
   expect(notify).toHaveBeenCalledTimes(1);
 });
 
@@ -194,12 +197,12 @@ it('rechecks a subtask retry lifetime after waiting and lets the latest lifetime
   disposeVaultDrafts(vault);
   const latestLifetime = draftVaultLease(vault);
   const latest = vault.CreateSubtaskFromConversation(turn, chat.ID, '会場の予約', 'venue', latestLifetime.isCurrent);
-  expect(storage.save).toHaveBeenCalledTimes(1);
+  expect(projectSaveCount()).toBe(1);
   save.resolve({ updatedAt: '2026-10-13T00:00:00Z' });
   await Promise.all([oldRejected, waitingRejected]);
   const created = await latest;
   expect(vault.GetBundles()).toEqual([parent, created]);
   expect(created.Name).toBe('会場の予約');
-  expect(storage.save).toHaveBeenCalledTimes(2);
+  expect(projectSaveCount()).toBe(2);
   expect(storage.save.mock.calls.some(([payload]) => payload.fullContent.includes('失効した新要求'))).toBe(false);
 });

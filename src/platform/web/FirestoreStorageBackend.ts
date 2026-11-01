@@ -250,6 +250,21 @@ function isPreconditionFailure(status: number, body: unknown): boolean {
   );
 }
 
+function snapshotFromDocument(thinkid: string, doc: FirestoreDocument): ThinkSnapshotRecord {
+  const fields = doc.fields ?? {};
+  const metadata = fields.metadata?.mapValue
+    ? (decodeFirestoreValue(fields.metadata) as Record<string, unknown>)
+    : parseMetadata(stringField(fields, 'metadataJson'));
+  return {
+    thinkid,
+    title: stringField(fields, 'title'),
+    body: stringField(fields, 'body'),
+    metadata,
+    sourceUpdatedAt: stringField(fields, 'sourceUpdatedAt'),
+    snapshotAt: timestampOrStringField(fields, 'snapshotAt') || doc.updateTime || '',
+  };
+}
+
 export class FirestoreStorageBackend implements IStorageBackend {
   private readonly vaultId: string;
   private records = new Map<string, StoredThinkRecord>();
@@ -1017,20 +1032,34 @@ export class FirestoreStorageBackend implements IStorageBackend {
         `スナップショットの取得に失敗しました (${firestoreErrorMessage(response.status, body)})`,
       );
     }
-    const doc = (await response.json()) as FirestoreDocument;
-    const fields = doc.fields ?? {};
-    const metadata = fields.metadata?.mapValue
-      ? (decodeFirestoreValue(fields.metadata) as Record<string, unknown>)
-      : parseMetadata(stringField(fields, 'metadataJson'));
+    return snapshotFromDocument(thinkid, (await response.json()) as FirestoreDocument);
+  }
 
-    return {
-      thinkid,
-      title: stringField(fields, 'title'),
-      body: stringField(fields, 'body'),
-      metadata,
-      sourceUpdatedAt: stringField(fields, 'sourceUpdatedAt'),
-      snapshotAt: timestampOrStringField(fields, 'snapshotAt') || doc.updateTime || '',
-    };
+  /**
+   * snapshots 配下のスナップショットをすべて、古い順に返す。
+   * 今は snapshots/current の1件だけだが、日付ごとに残すようになっても最新・最古を選べるようにする
+   */
+  public async listSnapshots(thinkid: string): Promise<ThinkSnapshotRecord[]> {
+    if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
+    const ctx = await this.context();
+    const baseUrl = `${ctx.collectionUrl}/${encodeURIComponent(thinkid)}/snapshots`;
+    const records: ThinkSnapshotRecord[] = [];
+    let pageToken = '';
+    do {
+      const url = `${baseUrl}?pageSize=300${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
+      const response = await fetch(url, { headers: ctx.authHeaders });
+      if (response.status === 404) return [];
+      if (!response.ok) {
+        const body = await this.readJson(response);
+        throw new Error(
+          `スナップショットの取得に失敗しました (${firestoreErrorMessage(response.status, body)})`,
+        );
+      }
+      const page = (await response.json()) as { documents?: FirestoreDocument[]; nextPageToken?: string };
+      for (const doc of page.documents ?? []) records.push(snapshotFromDocument(thinkid, doc));
+      pageToken = page.nextPageToken ?? '';
+    } while (pageToken);
+    return records.sort((x, y) => x.snapshotAt.localeCompare(y.snapshotAt));
   }
 
   /** snapshots/current のスナップショットを破棄する */

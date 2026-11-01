@@ -25,6 +25,7 @@ export interface WorkingSettingAreaProps {
   onCreateMemo: () => void;
   onReadMemo: () => void;
   onSaveMemo: () => void;
+  onCreateChat: () => void;
   onCreateTable: () => void;
   onReadTable: () => void;
   onSaveTable: () => void;

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 vi.mock('../../../hooks/useSupportChats', () => ({ useSupportChats: () => ({ chats: [], error: '' }) }));
 // プロジェクト表示は Monaco を読み込むため、設定画面のテストでは差し替える
 vi.mock('../../Abstract/AbstractView', () => ({ AbstractView: () => null }));
+vi.mock('../../AiPanels/AiPanels', () => ({ AiViewPanel: () => null, AiChatPanel: () => null }));
 import { TTApplication } from '../../../views/TTApplication';
 import { WorkingSettingArea, type WorkingSettingAreaRef } from '../WorkingSettingArea';
 import { broadcastPanelSectionsSetAll } from '../../../hooks/usePanelSectionsSetAll';
@@ -27,7 +28,7 @@ beforeEach(() => {
     onAddLeft: vi.fn(), onAddRight: vi.fn(), onAddTop: vi.fn(), onAddBottom: vi.fn(),
     onRemoveFocused: vi.fn(), onClearAll: vi.fn(), onCloseNotInBundle: vi.fn(), hasBundle: false,
     onEqualizeWidths: vi.fn(), onEqualizeHeights: vi.fn(), onCreateHtml: vi.fn(),
-    onCreateMemo: vi.fn(), onReadMemo: vi.fn(), onSaveMemo: vi.fn(),
+    onCreateMemo: vi.fn(), onReadMemo: vi.fn(), onSaveMemo: vi.fn(), onCreateChat: vi.fn(),
     onCreateTable: vi.fn(), onReadTable: vi.fn(), onSaveTable: vi.fn(), onRefresh: vi.fn(),
   };
 });
@@ -37,6 +38,17 @@ afterEach(async () => {
 async function show(activeSettings: WorkingSettingAreaProps['activeSettings']) {
   await act(async () => root.render(<WorkingSettingArea {...props} activeSettings={activeSettings} ref={ref} />));
 }
+
+it('Chat設定: 「Chat」項の「新規」で chatファイルを作る', async () => {
+  await show('chatsetting');
+  expect(host.querySelector('.working-setting-area__header')?.textContent).toBe('Working>Chat設定');
+  const header = [...host.querySelectorAll<HTMLElement>('.working-setting-area__section-header')].map(el => el.textContent);
+  expect(header).toEqual(['Chat']);
+  const button = host.querySelector<HTMLButtonElement>('[aria-label="新規chatファイルを作成"]')!;
+  expect(button.querySelector('.lucide-messages-square')).not.toBeNull();
+  await act(async () => button.click());
+  expect(props.onCreateChat).toHaveBeenCalledTimes(1);
+});
 
 it('keeps section state across settings switches and forwards focus and actions', async () => {
   await show('texteditor');

@@ -8,6 +8,7 @@
 
 import { TTUIItem } from '../models/TTUIItem';
 import { TTProjectView } from './TTProjectView';
+import { TTUIStateManager } from './TTUIStateManager';
 import type { ContentType } from '../types/index';
 import type { TTThink } from '../models/TTThink';
 import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
@@ -19,8 +20,10 @@ import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 /** ThinktankArea の表示モード */
 export type ThinktankViewMode =
   | 'filter'    // Think一覧（タイトル/日時/種別フィルター・全文/AI検索を統合）
-  | 'chat'      // AI相談
+  | 'chat'      // 旧「対話」。SetViewMode で aichat に読み替える
   | 'project'   // プロジェクト
+  | 'aiview'    // AIView
+  | 'aichat'    // AIChat
   | 'settings'; // 保管庫設定
 
 export class TTThinktankPanel extends TTUIItem {
@@ -33,6 +36,10 @@ export class TTThinktankPanel extends TTUIItem {
   /** ユーザーが Splitter で設定した幅(px)。AreaWidthMode='user' のときに使う。 */
   public AreaUserWidth: number = INIT_AREA_WIDTH.Thinktank;
 
+
+  /** 現在選択中のProjectID（空 = 未選択）*/
+  /** 設定中のProjectID（空 = 未設定）*/
+  public ProjectID: string = '';
 
   /** 現在選択中のProjectID（空 = 未選択）*/
   public SelectedProjectID: string = '';
@@ -113,12 +120,36 @@ export class TTThinktankPanel extends TTUIItem {
     return projectId;
   }
 
+  /**
+   * Projectを設定・表示する。
+   * @returns 設定したProjectID
+   */
+  public OpenProject(projectId: string): string {
+    this.ProjectID = projectId;
+    this.SelectedProjectID = projectId;
+    this.ProjectView.Open(projectId);
+    this.NotifyUpdated();
+    TTUIStateManager.instance.notifyPropertyChanged('ThinktankPanel.Project.ID');
+    return projectId;
+  }
+
+  /** ThinktankパネルのProject設定だけを解除する */
+  public ClearProject(): void {
+    this.SelectedProjectID = '';
+    this.ProjectID = '';
+    this.ProjectView.Close();
+    this.NotifyUpdated();
+    TTUIStateManager.instance.notifyPropertyChanged('ThinktankPanel.Project.ID');
+  }
+
   public SelectBundle(bundleId: string): string {
     return this.SelectProject(bundleId);
   }
 
   /** Project選択を解除する */
   public ClearSelection(): void {
+    this.ProjectID = '';
+    this.ProjectView.Close();
     this.SelectedProjectID = '';
     this.NotifyUpdated();
   }
@@ -152,7 +183,8 @@ export class TTThinktankPanel extends TTUIItem {
 
   /** 表示モードを切り替える */
   public SetViewMode(mode: ThinktankViewMode): void {
-    this.ViewMode = mode;
+    // 旧「対話」は AIChat に置き換えた。保存済みの Status やショートカットの旧値も AIChat で開く
+    this.ViewMode = mode === 'chat' ? 'aichat' : mode;
     this.NotifyUpdated();
   }
 

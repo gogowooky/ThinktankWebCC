@@ -21,10 +21,10 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'ThinktankPanel.Mode.Name': {
     panel: 'ThinktankPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Project|Settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Project|Aiview|Aichat|Settings)$',
     description: '左パネルモード',
     get: (app) => capitalize(app.ThinktankPanel.ViewMode),
-    set: (app, v) => { app.ThinktankPanel.ViewMode = v.toLowerCase() as ThinktankViewMode; },
+    set: (app, v) => { app.ThinktankPanel.SetViewMode(v.toLowerCase() as ThinktankViewMode); },
   },
   'ThinktankPanel.CurrentItem.ID': {
     panel: 'ThinktankPanel',
@@ -56,10 +56,25 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'SeedsPanel.Mode.Name': {
     panel: 'SeedsPanel',
-    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Project|Settings)$',
+    default: 'Filter', type: 'string', candidates: '^(Filter|Chat|Project|Aiview|Aichat|Settings)$',
     description: '上部パネル表示モード',
     get: (app) => capitalize(app.SeedsPanel.ViewMode),
     set: (app, v) => { app.SeedsPanel.SetViewMode(v.toLowerCase() as SeedsViewMode); },
+  },
+  'ThinktankPanel.Project.ID': {
+    panel: 'ThinktankPanel',
+    default: 'none', type: 'string', candidates: '.*',
+    description: 'ThinktankパネルのprojectファイルID',
+    get: (app) => app.ThinktankPanel.ProjectID || 'none',
+    set: (app, v) => {
+      if (v === 'none' || !v) {
+        if (app.ThinktankPanel.ProjectID || app.ThinktankPanel.ProjectView.ThinkID) {
+          app.ThinktankPanel.ClearProject();
+        }
+      } else {
+        app.ThinktankPanel.OpenProject(v);
+      }
+    },
   },
   'SeedsPanel.Project.ID': {
     panel: 'SeedsPanel',
@@ -171,7 +186,7 @@ export const panelSpecs: Record<string, PropSpec> = {
   },
   'HarvestPanel.Mode.Name': {
     panel: 'HarvestPanel',
-    default: 'Chat', type: 'string', candidates: '^(Chat|Project|Settings)$',
+    default: 'Aiview', type: 'string', candidates: '^(Chat|Project|Aiview|Aichat|Settings)$',
     description: '右パネル表示モード',
     get: (app) => capitalize(app.HarvestPanel.ViewMode),
     set: (app, v) => { app.HarvestPanel.SetViewMode(v.toLowerCase() as HarvestViewMode); },

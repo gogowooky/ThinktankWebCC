@@ -1,0 +1,128 @@
+.ai-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+  padding: 24px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+  text-align: center;
+  opacity: 0.5;
+  user-select: none;
+  outline: none;
+}
+
+.ai-panel__icon {
+  flex-shrink: 0;
+}
+
+/* ── AIView ── */
+
+.ai-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  outline: none;
+}
+
+.ai-view__ribbon {
+  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.9);
+}
+
+.ai-view__ribbon--thinktank {
+  background: var(--thinktank-menuribbon-bg);
+  --on-ribbon-rgb: var(--thinktank-on-menuribbon-rgb);
+}
+
+.ai-view__ribbon--seeds {
+  background: var(--seeds-menuribbon-bg);
+  --on-ribbon-rgb: var(--seeds-on-menuribbon-rgb);
+}
+
+.ai-view__ribbon--working {
+  background: var(--working-menuribbon-bg);
+  --on-ribbon-rgb: var(--working-on-menuribbon-rgb);
+}
+
+.ai-view__ribbon--harvest {
+  background: var(--harvest-menuribbon-bg);
+  --on-ribbon-rgb: var(--harvest-on-menuribbon-rgb);
+}
+
+/* 要約の作成状況（リボンの直下） */
+.ai-view__status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+  line-height: 1.4;
+  border-bottom: 1px solid rgb(128 128 128 / 0.25);
+}
+
+.ai-view__status svg {
+  flex-shrink: 0;
+}
+
+.ai-view__status-text {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+}
+
+.ai-view__status--running {
+  color: var(--accent-text, #1565c0);
+  background: rgb(21 101 192 / 0.1);
+}
+
+.ai-view__status--done {
+  color: var(--success-text, #2e7d32);
+  background: rgb(46 125 50 / 0.1);
+}
+
+.ai-view__status--app {
+  color: var(--warning-text, #a15c00);
+  background: rgb(237 108 2 / 0.12);
+}
+
+.ai-view__status--error {
+  color: var(--error-text, #d32f2f);
+  background: var(--error-bg, rgb(211 47 47 / 0.1));
+}
+
+.ai-view__elapsed {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+
+.ai-view__spin {
+  animation: ai-view-spin 1s linear infinite;
+}
+
+@keyframes ai-view-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ai-view__content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+  background: var(--working-content-bg);
+}
+
+.ai-view__busy {
+  animation: ai-view-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ai-view-pulse {
+  50% { opacity: 0.35; }
+}

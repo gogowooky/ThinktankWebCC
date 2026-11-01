@@ -4,7 +4,6 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
-import { TTProjectView } from './TTProjectView';
 import { TTWorkingArea } from './TTWorkingArea';
 import type { MediaType } from '../types';
 import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
@@ -17,7 +16,9 @@ import type { ColorProp, ColorStyle } from '../utils/defaultColor';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type WorkingViewMode = 'panes' | 'texteditor' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'chat' | 'project';
+export type WorkingViewMode = 'panes' | 'texteditor' | 'chatsetting' | 'markdown' | 'datagrid' | 'card' | 'graph' | 'html' | 'aiview' | 'aichat';
+/** 旧「対話」（chat）と廃止した「プロジェクト」（project）。保存済みの Status 等から来るので SetViewMode だけが受け取る */
+type LegacyWorkingViewMode = 'chat' | 'project';
 
 export type TableCellDisplay = 'Line' | 'FitToColumn';
 export type TableCellPosition = 'Left' | 'Center' | 'Right';
@@ -178,9 +179,6 @@ export class TTWorkingPanel extends TTUIItem {
     togglePanelChecks(this, id, forceChecked);
   }
 
-  /** 「プロジェクト」サブパネルで表示中のファイル */
-  public ProjectView = new TTProjectView('WorkingPanel');
-
   public override get ClassName(): string { return 'TTWorkingPanel'; }
 
   constructor() {
@@ -199,8 +197,9 @@ export class TTWorkingPanel extends TTUIItem {
   /** ToolBar StatusMode用テキスト (CSV形式) */
   public StatusModeText: string = 'ThinktankPanel.Mode.Name,SeedsPanel.Mode.Name,WorkingSettingPanel.Mode.Name';
 
-  public SetViewMode(mode: WorkingViewMode): void {
-    this.ViewMode = mode;
+  public SetViewMode(mode: WorkingViewMode | LegacyWorkingViewMode): void {
+    // 保存済みの Status やショートカットに残る旧値を、置き換え先のサブパネルで開く
+    this.ViewMode = mode === 'chat' ? 'aichat' : mode === 'project' ? 'panes' : mode;
     this.NotifyUpdated();
   }
 

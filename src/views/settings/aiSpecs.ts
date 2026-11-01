@@ -11,7 +11,7 @@ function aiChatModelNameSpecs(): Record<string, PropSpec> {
       type: 'string',
       // 一覧は実行時に決まるので、ここでは CSV であることだけを確かめる
       candidates: '^[^,]+(,[^,]+)*$',
-      description: `各パネルのAIChatが${name}のときのモデルID（CSV。先頭が選択中）`,
+      description: `各パネルのAIChatが${name}のときの${name === 'GNB' ? 'Notebook ID' : 'モデルID'}（CSV。先頭が選択中）`,
       get: () => getModelNames(name),
       set: (_app, v) => { setModelNames(name, v); },
     };

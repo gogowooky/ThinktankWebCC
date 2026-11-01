@@ -10,7 +10,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { TTWorkingArea } from '../../views/TTWorkingArea';
 import type { TTVault } from '../../models/TTVault';
-import type { MediaType } from '../../types';
+import { isReadOnlyContentType, type MediaType } from '../../types';
 import type { AiModelSelection } from '../../services/aiModels';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { useHighlight } from '../../contexts/HighlightContext';
@@ -43,6 +43,8 @@ import './WorkingArea.css';
 interface Props {
   area:              TTWorkingArea;
   vault:             TTVault;
+  /** Workingで新規作成したThinkを追加する Seeds の設定Project */
+  seedsProjectId?:   string;
   isFocused:         boolean;
   isDragging:        boolean;
   isDropTarget:      boolean;
@@ -56,7 +58,7 @@ interface Props {
 }
 
 export function WorkingArea({
-  area, vault, isFocused, isDragging, isDropTarget, isExternalDrag,
+  area, vault, seedsProjectId, isFocused, isDragging, isDropTarget, isExternalDrag,
   onFocus, onDragStart, onDragEnter, onDragLeave, onMediaTypeChange, onClose,
 }: Props) {
   const [isDirty,         setIsDirty]         = useState(false);
@@ -120,7 +122,7 @@ export function WorkingArea({
   useEffect(() => {
     if (isFocused && area.ResourceID) {
       const t = vault.GetThink(area.ResourceID);
-      if (t) {
+      if (t && !isReadOnlyContentType(t.ContentType)) {
         if (!t.Metadata || typeof t.Metadata !== 'object') t.Metadata = {};
         if (t.Metadata.highlightWord !== panel.HighlightWord) {
           t.Metadata.highlightWord = panel.HighlightWord;
@@ -136,6 +138,7 @@ export function WorkingArea({
         const currentThink = vault.GetThink(area.ResourceID);
         if (currentThink) {
           e.preventDefault();
+          if (isReadOnlyContentType(currentThink.ContentType)) return;
           // 本文・メタデータを保存（楽観ロックの照合を通す。衝突は reportSaveError が再送出）
           currentThink.SaveContent().then(() => {
             setIsDirty(false);
@@ -151,9 +154,9 @@ export function WorkingArea({
 
   // タイトルへの URL/path D&D → 常に新規 links Think を作成して表示
   const handleUrlDrop = useCallback(async (url: string, title: string) => {
-    const newThink = await vault.CreateLinksThink(title, url, await getPcName());
+    const newThink = await vault.CreateLinksThink(title, url, await getPcName(), seedsProjectId);
     area.OpenThink(newThink.ID, 'texteditor', newThink.Name);
-  }, [vault, area]);
+  }, [vault, area, seedsProjectId]);
 
   // コンテンツ領域への URL/path D&D（links ペインのみ）。linkファイルは1件1ファイルなので
   // 追記せず、タイトルへのドロップと同じく新しい linkファイルに差し替える。
@@ -197,6 +200,7 @@ export function WorkingArea({
     const actionId = TTShortcutManager.instance.resolveDragAction('ThinkFileDrag', e.nativeEvent);
     if (!actionId) return;
     if (actionId === 'WorkingPanel.DroppedFile.ID:Insert') {
+      if (isReadOnlyContentType(vault.GetThink(area.ResourceID)?.ContentType)) return;
       const ref = mediaRef.current;
       const editor = ref && 'getEditor' in ref ? ref.getEditor() : null;
       if (!editor) return;
@@ -207,7 +211,7 @@ export function WorkingArea({
     }
     TTShortcutManager.instance.setPendingThinkDrop({ thinkId, kind: 'load-replace', areaId: area.ID });
     void TTActions.Execute('WorkingPanel.DroppedFile.ID:Load');
-  }, [area.ID]);
+  }, [area.ID, area.ResourceID, vault]);
 
   // 保存ハンドラー（TextEditorMedia から Ctrl+S・自動保存で呼ばれる）
   // 保存先は content の出所（thinkId）に固定する。area.ResourceID を参照すると、
@@ -216,6 +220,7 @@ export function WorkingArea({
     const targetId = thinkId ?? area.ResourceID;
     const think = vault.GetThink(targetId);
     if (!think) return Promise.resolve();
+    if (isReadOnlyContentType(think.ContentType)) return Promise.resolve();
     think.Content = content;
 
     const isCurrentResource = targetId === area.ResourceID;
@@ -239,7 +244,7 @@ export function WorkingArea({
   // リアルタイムタイトル同期（thought / table の第一行編集時）
   const handleTitleChange = useCallback((title: string) => {
     const think = vault.GetThink(area.ResourceID);
-    if (!think) return;
+    if (!think || isReadOnlyContentType(think.ContentType)) return;
     think.Name  = title;
     area.Title  = title;
     panel.NotifyUpdated();
@@ -269,6 +274,14 @@ export function WorkingArea({
     && !seedsIncludedIds.includes(area.ResourceID);
 
   const editorSettings = useEditorSettings(panel);
+
+  // projectファイルは TextEditor でだけ表示する。保存済みレイアウトや他の操作で別の表示形式になっていたら戻す
+  const isProject = think?.ContentType === 'project';
+  useEffect(() => {
+    if (isProject && area.MediaType !== 'texteditor' && area.MediaType !== 'panes') {
+      onMediaTypeChange(area.ID, 'texteditor');
+    }
+  }, [isProject, area.MediaType, area.ID, onMediaTypeChange]);
 
   // AI Chat のモデルは panel 単位で1つ。Pane の Chat と WorkingSetting の 会話履歴 が同じ値を見る
   const aiChatModel = { provider: panel.AIChatProvider, model: panel.AIChatModel };

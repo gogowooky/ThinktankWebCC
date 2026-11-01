@@ -31,6 +31,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
   const panel = app.ThinktankPanel;
   const vault = app.Models.Vault;
   useAppUpdate(panel);
+  useAppUpdate(vault);
 
   const handleToggle     = useCallback(() => panel.ToggleArea(), [panel]);
   const handleSetViewMode = useCallback(
@@ -63,7 +64,7 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
         viewMode={panel.ViewMode}
         onSetViewMode={handleSetViewMode}
         onRefresh={handleRefresh}
-        vaultName={vault.VaultName}
+        projectName={panel.ProjectID ? (vault.GetThink(panel.ProjectID)?.Name ?? panel.ProjectID) : undefined}
         isEditMode={layoutMode === 'simple'}
       />
       <PanelArea

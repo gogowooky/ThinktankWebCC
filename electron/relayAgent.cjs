@@ -741,6 +741,14 @@ class RelayAgent {
         }
         case 'ai.conversation':
         case 'ai.agent': {
+          if (payload.provider === 'gnb') {
+            result = await this.aiCliRunner.runGeminiNotebookConversation({
+              notebookId: payload.model,
+              userMessage: payload.userMessage || '',
+              timeoutMs: payload.timeoutMs,
+            });
+            break;
+          }
           const profile = payload.profileId
             ? this.vaultEngine.getDomainProfileById(payload.profileId)
             : this.vaultEngine.getActiveDomainProfile();

@@ -2,7 +2,7 @@
 import { act, createRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { ContentType } from '../../types';
+import { CONTENT_TYPES, type ContentType } from '../../types';
 import { loadHistory } from '../../utils/historyUtils';
 import { ThinktankSearchBar } from '../ThinktankPanel/ThinktankSearchBar';
 import { SeedsSearchBar } from '../SeedsPanel/SeedsSearchBar';
@@ -15,7 +15,7 @@ const panels = [
   { name: 'Thinktank', prefix: 'tt-search-bar', SearchBar: ThinktankSearchBar, FilterPanel: ThinktankFilterPanel },
   { name: 'Seeds', prefix: 'seeds-search-bar', SearchBar: SeedsSearchBar, FilterPanel: SeedsFilterPanel },
 ];
-const allTypes: ContentType[] = ['memo', 'project', 'table', 'links', 'chat', 'html'];
+const allTypes: ContentType[] = [...CONTENT_TYPES];
 let host: HTMLDivElement;
 let root: ReturnType<typeof createRoot>;
 
@@ -49,6 +49,7 @@ it.each(panels)('$name keeps search Enter, type selection and the focus ref', as
   await act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
   expect(onSearch).toHaveBeenCalledTimes(1);
   const memo = host.querySelector<HTMLButtonElement>('button[aria-label="メモ"]')!;
+  expect(host.querySelector<HTMLButtonElement>('button[aria-label="AI View"]')).not.toBeNull();
   expect(memo.classList.contains(`${prefix}__type-btn--active`)).toBe(true);
   await act(async () => memo.click());
   expect(onToggleType).toHaveBeenCalledWith('memo');

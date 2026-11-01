@@ -31,7 +31,7 @@ import { parseTableContent, TableSection } from '../utils/tableFormat';
 
 import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
 
-import { AI_CHAT_PROVIDER_NAMES, applyAiModelCatalog, applySelection, getModelNames, type AiChatProviderName } from '../services/aiChatModelStatus';
+import { applySelection, type AiChatProviderName } from '../services/aiChatModelStatus';
 import { loadAiModelSelection } from '../services/aiModels';
 
 import { canonicalPanelName, canonicalPanelStatusKey, canonicalPanelStatusList } from '../utils/panelNames';
@@ -107,19 +107,6 @@ export class TTUIStateManager {
       this._applyContent(stored);
     }
     if (!stored?.includes('.AIChat.ModelName')) this._migrateLegacyAiModels();
-    this.refreshAiModelCatalog();
-  }
-
-  /**
-   * 各社の主要モデル（AI_MODEL_CATALOG）で AIChat.ModelNames.* を揃え直す。
-   * 起動時の md・保存値の適用より後に呼ぶ（保存済みの選択を先頭に残すため）。
-   */
-  refreshAiModelCatalog(): void {
-    applyAiModelCatalog();
-    const app = this._app;
-    if (!app) return;
-    for (const name of AI_CHAT_PROVIDER_NAMES) this._emit(`AIChat.ModelNames.${name}`, getModelNames(name));
-    app.NotifyUpdated(false);
   }
 
   /**

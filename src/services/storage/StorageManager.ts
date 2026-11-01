@@ -179,6 +179,14 @@ export class StorageManager {
     return Promise.resolve(null);
   }
 
+  /** スナップショットを古い順にすべて返す */
+  public listSnapshots(thinkid: string): Promise<ThinkSnapshotRecord[]> {
+    if (this.backend instanceof FirestoreStorageBackend) {
+      return this.backend.listSnapshots(thinkid);
+    }
+    return Promise.resolve([]);
+  }
+
   public deleteSnapshot(thinkid: string): Promise<void> {
     if (this.backend instanceof FirestoreStorageBackend) {
       return this.backend.deleteSnapshot(thinkid);

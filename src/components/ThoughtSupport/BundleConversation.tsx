@@ -11,12 +11,7 @@ import { parseManagedChatTitle } from '../../utils/managedChat';
 import { ProposalReview } from './ProposalReview';
 import { ProgressProposal } from './ProgressProposal';
 import { SubtaskProposal } from './SubtaskProposal';
-import { PromotionReview } from './PromotionReview';
-import { SubtaskContextView, ProgressContextDetail } from './SubtaskContextView';
-import { SUBTASK_REVIEW_QUESTION } from '../../../shared/contracts/subtaskContext';
 import type { AiModelSelectorProps } from './modelSelectorTypes';
-import { modelChoices } from '../../services/aiChatModelStatus';
-import { selectionToValue } from '../../services/aiModels';
 import '../ThinktankPanel/ColumnSortDialog.css';
 import './BundleConversation.css';
 
@@ -43,22 +38,6 @@ function Answer({ presentation, onOpen, after }: { presentation: ReturnType<type
     return link ? <button key={index} type="button" onClick={() => onOpen(link.thinkId)}>{part}</button> : part;
   })}{after}</p>;
 }
-/**
- * 会話に使うモデルの選択。選択肢は Status AIChat.ModelNames.*（各社の今使える主要モデル）。
- * 選び直すとそのモデルがそのプロバイダの先頭（選択中）になり、このパネルのプロバイダも切り替わる。
- */
-function ModelSelect({ selector, disabled }: { selector: AiModelSelectorProps; disabled: boolean }) {
-  const choices = modelChoices();
-  const value = selectionToValue(selector.value);
-  const known = choices.some(c => selectionToValue(c.selection) === value);
-  return <p>AI：<select aria-label="AIモデル" value={value} disabled={disabled} onChange={e => {
-    const picked = choices.find(c => selectionToValue(c.selection) === e.target.value);
-    if (picked) selector.onChange(picked.selection);
-  }}>
-    {!known && <option value={value}>{selector.value.provider} / {selector.value.model}（使えません）</option>}
-    {choices.map(c => <option key={selectionToValue(c.selection)} value={selectionToValue(c.selection)}>{c.name} / {c.selection.model}</option>)}
-  </select></p>;
-}
 /** 入力欄の高さを中身ちょうどに合わせる。いったん auto に戻さないと、行を減らしても
     scrollHeight が縮まず（今の高さが下限になる）、欄が伸びたきり戻らない。
     空のときは高さを書かない。Chromium の scrollHeight は placeholder の折り返し行数まで
@@ -67,11 +46,12 @@ function fitToText(el: HTMLTextAreaElement) {
   el.style.height = 'auto';
   el.style.height = el.value ? `${el.scrollHeight}px` : '';
 }
-/** inputHeader は宿主が入力帯の先頭に差し込む操作。ログと一緒に流れると押せないので、ここへ預ける。 */
 interface ConversationProps {
-  vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string; inputHeader?: ReactNode; consultation?: boolean;
+  vault: TTVault; bundleId?: string; chatId?: string; onOpen: (id: string) => void; draftScope?: string;
   /** 送信に使うモデル。省略時はサーバー既定のモデルと会話する */
   modelSelector?: AiModelSelectorProps
+  /** 送信の右に、待機・失敗の文言が無い間だけ出すもの（Pane の Chat ではこのチャットの AI） */
+  idleStatus?: React.ReactNode
 }
 function cachedChatHistory(vault: TTVault, chatId?: string): ConversationTurn[] {
   if (!chatId) return [];
@@ -84,7 +64,7 @@ export function BundleConversation(props: ConversationProps) {
   const lifetime = useMemo(() => draftVaultLease(props.vault), [props.vault]);
   return <ConversationPanel key={JSON.stringify([lifetime.identity, props.bundleId, props.chatId, props.draftScope])} {...props} lifetime={lifetime} />;
 }
-function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'seeds', inputHeader, consultation = false, modelSelector, lifetime }: ConversationProps & { lifetime: DraftVaultLease }) {
+function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, draftScope = 'seeds', modelSelector, idleStatus, lifetime }: ConversationProps & { lifetime: DraftVaultLease }) {
   const draft = getDraft(vault, selectedBundleId ?? '', `${draftScope}:${chatId ?? 'bundle'}`, lifetime);
   const bundleId = selectedBundleId;
   const cachedHistory = cachedChatHistory(vault, chatId);
@@ -99,11 +79,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
   const [record, setRecord] = useState<ConversationTurn>();
   const alive = useRef(true);
   const logRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLDivElement>(null);
-  const optionsRef = useRef<HTMLDetailsElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
-  // 見出しを押した時のShiftの有無。toggle イベントは修飾キーを持たないので、click で拾って預ける。
-  const collapseChildren = useRef(false);
   const controller = useRef<AbortController>();
   const locked = useRef(false);
   const composing = useRef(false);
@@ -192,7 +168,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           nextContext = undefined; failures.push((e as Error).message);
         }
       }
-      if (availability.status === 'fulfilled' && !availability.value.enabled) failures.push('AI対話は停止中です。履歴と参照資料は確認できます。');
+      if (availability.status === 'fulfilled' && !availability.value.enabled) failures.push('AI対話は停止中です。履歴は確認できます。');
       setMessage(failures.join('\n'));
       if (nextContext && loadedTurns && availability.status === 'fulfilled' && availability.value.enabled) {
         ready = { context: nextContext, history: loadedTurns };
@@ -293,43 +269,6 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
       }
     }
   }
-  /**
-   * 折りたたみを開いたら、中身が全部見える位置まで入力帯を送る。
-   * 開いた先が枠の下にはみ出したままだと、何が増えたのか分からない。
-   * 枠より背が高くて収まらないときは、代わりに先頭を上端へ寄せる。
-   */
-  function revealOptions(event: React.SyntheticEvent<HTMLDetailsElement>) {
-    if (!lifetime.isCurrent()) return;
-    // 中の区分を開閉しただけのときに、区分を開き直したりスクロールし直したりしない
-    if (event.target !== event.currentTarget) return;
-    const panel = optionsRef.current;
-    if (!panel) return;
-    // 見出しを押した時のShiftは、開く・閉じるのどちらでも読み捨てる。持ち越すと
-    // 次の通常の開閉まで畳んでしまう。
-    const collapse = collapseChildren.current;
-    collapseChildren.current = false;
-    const groups = panel.querySelectorAll<HTMLDetailsElement>(':scope > details');
-    // 通常は開けたときに3区分も開く。ひとつずつ開かせると、何がどこにあるか覚える負担が増える。
-    // Shift付きは畳む。どこに何があるかは分かっていて、目的の区分だけを開きたいとき用。
-    // 閉じるときにも畳むので、次に開き直しても畳まれたまま出る。
-    if (collapse) groups.forEach(group => {
-      if (!lifetime.isCurrent()) return;
-      group.open = false;
-    });
-    else if (event.currentTarget.open) groups.forEach(group => {
-      if (!lifetime.isCurrent()) return;
-      group.open = true;
-    });
-
-    const band = inputRef.current;
-    if (!band || !event.currentTarget.open) return;
-    // getBoundingClientRect が同期でレイアウトを確定させるので、開いた直後の寸法で測れる。
-    // requestAnimationFrame は描画されていないウィンドウでは呼ばれず、送りそこねる。
-    const bandRect = band.getBoundingClientRect(), panelRect = panel.getBoundingClientRect();
-    const top = panelRect.top - bandRect.top + band.scrollTop;
-    const target = panelRect.height >= band.clientHeight ? top : top + panelRect.height - band.clientHeight;
-    band.scrollTop = Math.max(0, Math.min(target, band.scrollHeight - band.clientHeight));
-  }
   const turns = pending && !history.some(t => t.id === pending.id) ? [...history, pending] : history;
   const presentations = turns.map(turn => conversationPresentation(turn));
   // 管理用の接頭辞（ASK:Thinktank｜…）は一覧で読める。会話の見出しには表題だけを出す。
@@ -356,14 +295,11 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
           <ProposalReview vault={vault} turn={turn} disabled={!!busy || !!pending} />
           {turn.id === history.at(-1)?.id && <ProgressProposal key={`${vault.ID}:${turn.context.bundleId}:${turn.id}`} vault={vault} turn={turn} disabled={!!busy || !!pending} />}
           {turn.id === history.at(-1)?.id && <SubtaskProposal vault={vault} turn={turn} chatId={chatId} disabled={!!busy || !!pending} />}
-          {turn.id === history.at(-1)?.id && (Boolean(window.electronAPI?.ai) || Boolean(vault.GetThink(turn.context.bundleId)?.Metadata?.operations)) && (
-            <PromotionReview vault={vault} bundleId={turn.context.bundleId} chatId={chatId} turnId={turn.id} disabled={!!busy || !!pending} onOpen={onOpen} />
-          )}
         </article>)}
       </div>
       {/* 入力とその状態表示（資料範囲・待機・保存失敗）は、履歴をたどっている間も
           同じ位置に見えていないと操作できないので、ログのスクロールから切り離す。 */}
-      <div className="bundle-conversation-input" ref={inputRef}>
+      <div className="bundle-conversation-input">
         {pending && !busy && <div className="bundle-conversation-notice" role="status"><p>回答を保存できませんでした。</p>
           <div className="bundle-conversation-notice-actions">
             <button type="button" disabled={!!busy} onClick={() => void retrySave()}>保存を再試行</button>{' '}
@@ -389,8 +325,7 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
             draft.question = e.target.value; setQuestion(e.target.value);
           }} />
           {/* 待機表示もエラーも送信行に置く。入力欄の上下に帯が増えるほど、押す場所が遠くなる。
-          行は入力欄の中（最下行）に置く。外に出すと、その下に畳んである
-          「条件・機能・参照情報」が入力欄から一段離れてしまう。
+          行は入力欄の中（最下行）に置き、入力欄と押す場所を一体に見せる。
           送信を先に置くのは、待機・失敗の文言の長さで押す位置が動かないようにするため。 */}
           <div className="bundle-conversation-composer-footer">
             <div className="bundle-conversation-actions">
@@ -398,69 +333,12 @@ function ConversationPanel({ vault, bundleId: selectedBundleId, chatId, onOpen, 
               {busy === PREPARING && <button type="button" onClick={cancelPreparation}>準備を中断</button>}
               <button type="button" className="bundle-conversation-send" disabled={!question.trim() || !!busy || !!pending || (!!status && !status.enabled)} onClick={() => void submit()}>送信</button>
             </div>
-            <p className="bundle-conversation-status" role="status">
+            <p className={`bundle-conversation-status${!busy && !(pending ? '' : message) && idleStatus ? ' bundle-conversation-status--idle' : ''}`} role="status">
               {busy && <span className="bundle-conversation-spinner" aria-hidden="true" />}
-              {busy || (pending ? '' : message)}
+              {busy || (pending ? '' : message) || idleStatus}
             </p>
           </div>
         </div>
-        {/* 会話のたびには触らない設定・操作はここへ畳む。開いている間だけ入力帯が伸びる。 */}
-        <details className="bundle-conversation-options" ref={optionsRef} onToggle={revealOptions}>
-          <summary onClick={e => {
-            if (!lifetime.isCurrent()) return;
-            collapseChildren.current = e.shiftKey;
-          }}
-            onKeyDown={e => {
-              if (!lifetime.isCurrent()) return;
-              if (e.key === 'Enter' || e.key === ' ') collapseChildren.current = e.shiftKey;
-            }}>条件・機能・参照情報</summary>
-
-          {(inputHeader || (!consultation && bundleId)) && <details>
-            <summary>{consultation ? '相談のアクション' : '課題を作成する'}</summary>
-            {inputHeader}
-            {!consultation && bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
-              if (!lifetime.isCurrent()) return;
-              const value = 'この課題の目的と完了条件に向けて、個別に進められるサブ課題候補を最大5件に分解してください。各候補の目的・完了条件・分解理由を示し、既存の子課題と重複させないでください。候補の作成や採用はまだ行わないでください。';
-              draft.question = value; setQuestion(value); setContext(undefined);
-            }}>サブ課題への分解を相談する質問を入力</button>}
-          </details>}
-          {!consultation && <details>
-            <summary>進行を見直す</summary>
-            <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
-              if (!lifetime.isCurrent()) return;
-              const reviewQuestion = 'このBundleの目的・完了条件と資料、直近の会話に基づいて進行を見直してください。目的からの逸脱の可能性、同じ検討の繰り返し、不足する根拠を、確認できる事実と推測に分けて示してください。次の一手、保留、終結を検討する候補と理由を提案してください。検討・意思決定・実行・検証の完了を混同せず、本人の完了状態は確定しないでください。';
-              draft.question = reviewQuestion; setQuestion(reviewQuestion);
-            }}>進行を見直す質問を入力</button>
-            {bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
-              if (!lifetime.isCurrent()) return;
-              draft.question = SUBTASK_REVIEW_QUESTION; setQuestion(SUBTASK_REVIEW_QUESTION); setContext(undefined);
-            }}>子課題を含めて次の行動を整理する質問を入力</button>}
-            {bundleId && <button type="button" disabled={!!busy || !!pending || !!question.trim()} onClick={() => {
-              if (!lifetime.isCurrent()) return;
-              const value = 'この課題の本人確認済みの到達状態・残課題・保留条件・再開メモを確認して、続きから取り組むための要約と次の一手を示してください。条件が満たされたか不明なら本人に確認してください。この質問だけでは保留の解除や完了を確定しないでください。';
-              draft.question = value; setQuestion(value); setContext(undefined);
-            }}>続きから相談する質問を入力</button>}
-          </details>}
-          {(status || context) && <details>
-            <summary>参照情報</summary>
-            {status && (status.enabled && modelSelector
-              ? <ModelSelect selector={modelSelector} disabled={!!busy || !!pending} />
-              : <p>AI：{status.enabled ? `${status.provider} / ${status.model}` : '停止中'}</p>)}
-            {context && <>
-              <p>相談の対象：{context.scope === 'chat-only' ? '課題化前の相談' : vault.GetThink(context.bundleId)?.Name || context.bundleId}</p>
-              <p>参照資料：{context.scope === 'chat-only' ? 'なし' : `${context.sources.length}件`}</p>
-              {context.bundleProgress && <details><summary>この課題の到達状態・再開メモ</summary>
-                <p>読み込み済みの記録です。送信時に取り直しますが、別端末の最新変更は保証しません。</p>
-                <ProgressContextDetail item={context.bundleProgress} />
-              </details>}
-              {context.subtasks && <SubtaskContextView value={context.subtasks} onOpen={onOpen} />}
-              {context.issues.length > 0 && <ul>{context.issues.map((issue, index) => <li key={index}>{issue}</li>)}</ul>}
-              {context.sources.length > 0 && <details><summary>参照資料を確認</summary>
-                {context.sources.map(s => <div key={s.thinkId}><button type="button" onClick={() => onOpen(s.thinkId)}>{s.title || s.thinkId}</button><pre>{s.content}</pre></div>)}
-              </details>}
-            </>}
-          </details>}
-        </details>
       </div>
       {record && <div className="col-sort-dialog__backdrop" onClick={() => setRecord(undefined)}>
         <div className="col-sort-dialog bundle-conversation-record" role="dialog" aria-label="会話の記録" onClick={e => e.stopPropagation()}>

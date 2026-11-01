@@ -6,13 +6,17 @@ vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instanc
 import { TTVault } from '../models/TTVault';
 import { TTApplication } from './TTApplication';
 import { TTUIStateManager } from './TTUIStateManager';
-import { setAvailableModels } from '../services/aiChatModelStatus';
+import { getModelNames, setModelNames } from '../services/aiChatModelStatus';
+
 import { createDraftStore, hasUnsavedDrafts, resetDraftStores } from '../services/draftStore';
 import { TTShortcutManager } from './TTShortcutManager';
 import { TTThinktankPanel } from './TTThinktankPanel';
 import { TTSeedsPanel } from './TTSeedsPanel';
 import { TTWorkingPanel } from './TTWorkingPanel';
 import { TTHarvestPanel } from './TTHarvestPanel';
+
+/** 購読者への通知を確実に起こすため、毎回違う値にする */
+function changeClaudeModels() { setModelNames('Claude', getModelNames('Claude') === 'model-a' ? 'model-b' : 'model-a'); }
 
 beforeEach(() => { TTApplication.resetInstance(); resetDraftStores(); localStorage.clear(); models.vault = new TTVault(); vi.useFakeTimers(); });
 afterEach(() => { TTApplication.resetInstance(); resetDraftStores(); vi.clearAllTimers(); vi.useRealTimers(); vi.restoreAllMocks(); });
@@ -69,7 +73,7 @@ it('removes every wildcard listener and model subscription on repeated applicati
     app.dispose();
     expect(app.ListenerKeys).not.toContain('TTUIStateManager');
     expect(remove.mock.calls).toHaveLength((cycle + 1) * 13);
-    setAvailableModels('Claude', []);
+    changeClaudeModels();
     expect(notify).not.toHaveBeenCalled();
     expect((window as Window & { ttApp?: TTApplication }).ttApp).toBeUndefined();
   }
@@ -99,10 +103,10 @@ it('detaches the old manager root and pending debounce save while resetting hidd
 
 it.each([TTThinktankPanel, TTSeedsPanel, TTWorkingPanel, TTHarvestPanel])('disposes the model-name subscription for %s', Panel => {
   const panel = new Panel(), notify = vi.spyOn(panel, 'NotifyUpdated');
-  setAvailableModels('Claude', []);
+  changeClaudeModels();
   expect(notify).toHaveBeenCalledTimes(1);
   panel.dispose(); panel.dispose(); notify.mockClear();
-  setAvailableModels('Claude', []);
+  changeClaudeModels();
   expect(notify).not.toHaveBeenCalled();
   expect(panel._parent).toBeNull();
 });

@@ -7,14 +7,14 @@
  */
 
 import { TTUIItem } from '../models/TTUIItem';
-import { TTProjectView } from './TTProjectView';
 import { selectionFor, type AiChatProviderName } from '../services/aiChatModelStatus';
 import { setPanelCheckedIds, togglePanelChecks, setPanelAreaOpen, setPanelAiModel, subscribePanelAiModel } from './panelBehavior';
 import type { AiModelSelection, AiProvider } from '../services/aiModels';
 import { INIT_AREA_WIDTH, type AreaWidthMode } from '../utils/panelAreaWidth';
 
 
-export type HarvestViewMode = 'chat' | 'project' | 'settings';
+/** 'chat'（旧「対話」）と 'project'（廃止）は旧値。SetViewMode で aichat / aiview に読み替える */
+export type HarvestViewMode = 'aiview' | 'aichat' | 'settings' | 'chat' | 'project';
 
 /** AIチャットのメッセージ */
 export interface ChatMessage {
@@ -36,7 +36,7 @@ export class TTHarvestPanel extends TTUIItem {
 
 
   /** 表示モード */
-  public ViewMode: HarvestViewMode = 'chat';
+  public ViewMode: HarvestViewMode = 'aiview';
 
   /** 連携中のProjectID（空 = 未設定）*/
   public LinkedProjectID: string = '';
@@ -67,9 +67,6 @@ export class TTHarvestPanel extends TTUIItem {
     togglePanelChecks(this, id, forceChecked);
   }
 
-  /** 「プロジェクト」サブパネルで表示中のファイル */
-  public ProjectView = new TTProjectView('HarvestPanel');
-
   public override get ClassName(): string {
     return 'TTHarvestPanel';
   }
@@ -99,7 +96,8 @@ export class TTHarvestPanel extends TTUIItem {
 
   /** 表示モードを切り替える */
   public SetViewMode(mode: HarvestViewMode): void {
-    this.ViewMode = mode;
+    // 保存済みの Status やショートカットに残る旧値を、置き換え先のサブパネルで開く
+    this.ViewMode = mode === 'chat' ? 'aichat' : mode === 'project' ? 'aiview' : mode;
     this.NotifyUpdated();
   }
 

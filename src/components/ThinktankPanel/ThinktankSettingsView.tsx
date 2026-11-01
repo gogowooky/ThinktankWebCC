@@ -1,13 +1,14 @@
 /**
  * ThinktankSettingsView.tsx
- * Thinktank>設定。アクション・概要のAI設定・Firebase・Google Drive API・Vault を並べる。
+ * Thinktank>設定。表示・AIモデル・Default AI・Firebase・Google Drive API・Vault を並べる。
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Save, ChevronDown, ChevronRight, AArrowUp, AArrowDown, Columns2, Columns4 } from 'lucide-react';
 import { TTActions } from '../../views/TTActions';
 import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
-import { DomainProfileSettingsPanel } from './DomainProfileSettingsPanel';
+import { AiModelSettingsPanel } from './AiModelSettingsPanel';
+import { PanelAiSettingsPanel } from './PanelAiSettingsPanel';
 import { FirebaseSettingsPanel } from './FirebaseSettingsPanel';
 import { GoogleDriveSettingsPanel } from './GoogleDriveSettingsPanel';
 import './ThinktankSettingsView.css';
@@ -48,7 +49,9 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   const [history]                           = useState(loadHistory);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
   const [isZoomOpen,     setIsZoomOpen]     = useState(true);
-  usePanelSectionsSetAll('thinktank', [setIsVaultOpen, setIsZoomOpen]);
+  const [isModelOpen,    setIsModelOpen]    = useState(true);
+  const [isPanelAiOpen,  setIsPanelAiOpen]  = useState(true);
+  usePanelSectionsSetAll('thinktank', [setIsVaultOpen, setIsZoomOpen, setIsModelOpen, setIsPanelAiOpen]);
 
   const handleZoom = useCallback((actionId: 'Application.Display.Zoom:ZoomIn' | 'Application.Display.Zoom:ZoomOut') => {
     void TTActions.Execute(actionId);
@@ -61,11 +64,11 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
   return (
     <div ref={rootRef} className="tt-settings-view" tabIndex={-1}>
 
-      {/* ── アクション ── */}
+      {/* ── 表示 ── */}
       <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsZoomOpen(v => !v)}>
           {isZoomOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-          <h2 className="tt-settings-section__title">アクション</h2>
+          <h2 className="tt-settings-section__title">表示</h2>
         </div>
         {isZoomOpen && (
           <div className="tt-settings-zoom">
@@ -111,7 +114,24 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
         )}
       </section>
 
-      <DomainProfileSettingsPanel />
+      {/* ── AIモデル ── */}
+      <section className="tt-settings-section">
+        <div className="tt-settings-section__header" onClick={() => setIsModelOpen(v => !v)}>
+          {isModelOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="tt-settings-section__title">AIモデル</h2>
+        </div>
+        {isModelOpen && <AiModelSettingsPanel />}
+      </section>
+
+      {/* ── Default AI ── */}
+      <section className="tt-settings-section">
+        <div className="tt-settings-section__header" onClick={() => setIsPanelAiOpen(v => !v)}>
+          {isPanelAiOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+          <h2 className="tt-settings-section__title">Default AI</h2>
+        </div>
+        {isPanelAiOpen && <PanelAiSettingsPanel />}
+      </section>
+
       <FirebaseSettingsPanel />
       <GoogleDriveSettingsPanel />
 

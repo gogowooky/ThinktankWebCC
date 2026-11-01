@@ -1,9 +1,3 @@
-import { useSupportSelection } from '../../hooks/useSupportSelection';
-import { useNewSupportChat } from '../../hooks/useNewSupportChat';
-import { SupportChat, type SupportChatRef } from '../ThoughtSupport/SupportChat';
-import { useSupportChats } from '../../hooks/useSupportChats';
-import { startTaskFromChat } from '../../services/startTaskFromChat';
-import { draftVaultLease } from '../../services/draftStore';
 /**
  * ThinktankArea.tsx
  * ThinktankPanel のコンテンツエリア。
@@ -29,15 +23,17 @@ import { ThinktankFilterView } from './ThinktankFilterView';
 import { ThinktankSearchBar } from './ThinktankSearchBar';
 import { applySort } from '../../utils/sortUtils';
 import { buildBundleNames } from '../../utils/bundleNames';
-import type { ContentType } from '../../types';
+import { CONTENT_TYPES, type ContentType } from '../../types';
 import { ThinktankSettingsView } from './ThinktankSettingsView';
 import type { ThinktankSettingsViewRef } from './ThinktankSettingsView';
 import { ColumnSortDialog, DEFAULT_COLUMNS, DEFAULT_SORT } from './ColumnSortDialog';
 import type { ColumnConfig, SortConfig } from './ColumnSortDialog';
-import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY, DEFAULT_CHAT_FILTER_VISIBILITY } from './FilterSelectDialog';
+import { FilterSelectDialog, DEFAULT_FILTER_VISIBILITY } from './FilterSelectDialog';
 import type { FilterVisibility } from './FilterSelectDialog';
-import { ThinktankChatMemoPicker } from './ThinktankChatMemoPicker';
 import { AbstractView } from '../Abstract/AbstractView';
+import { AiViewPanel, AiChatPanel } from '../AiPanels/AiPanels';
+import { ProjectListFilters } from './ProjectListFilters';
+import { useProjectStatusFilter } from '../../hooks/useProjectStatusFilter';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import './ThinktankArea.css';
@@ -47,11 +43,12 @@ import type { LayoutMode } from '../Layout/AppLayout';
 const THINKTANK_MODE_NAMES: Record<string, string> = {
   filter:   'Think一覧',
   project:  'プロジェクト',
-  chat:     '対話',
+  aiview:   'AIView',
+  aichat:   'AIChat',
   settings: '設定',
 };
 
-const ALL_CONTENT_TYPES: ContentType[] = ['memo', 'project', 'table', 'links', 'chat', 'html'];
+const ALL_CONTENT_TYPES: readonly ContentType[] = CONTENT_TYPES;
 // Edit（=simple）で開く種別。編集の対象になる本文だけを出す。Projectは資料の束、
 // Chatは会話履歴で、どれもここで書き換えるものではないので既定では出さない。
 const EDIT_CONTENT_TYPES: ContentType[] = ['memo', 'table', 'links', 'html'];
@@ -106,9 +103,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [sort,    setSort]    = useState<SortConfig>(DEFAULT_SORT);
   const [showColumnDialog, setShowColumnDialog] = useState(false);
 
-  // フィルター欄の表示/非表示設定（Think一覧用。会話履歴モードは種別なし・タイトルのみデフォルトの別state）
+  // フィルター欄の表示/非表示設定（Think一覧用）
   const [filterVisibility, setFilterVisibility] = useState<FilterVisibility>(DEFAULT_FILTER_VISIBILITY);
-  const [chatFilterVisibility, setChatFilterVisibility] = useState<FilterVisibility>(DEFAULT_CHAT_FILTER_VISIBILITY);
   const [showFilterSelectDialog, setShowFilterSelectDialog] = useState(false);
 
   // 日付フィルター state（常時表示）
@@ -130,11 +126,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     if (prev === layoutMode) return;
     setVisibleTypes(defaultVisibleTypes(layoutMode));
   }, [layoutMode]);
-
-  // チャット state
-  const aiChatViewRef                   = useRef<SupportChatRef>(null);
-  const [selectedTodoMemoId, setSelectedTodoMemoId] = useSupportSelection(vault, 'Thinktank');
-  const newChat = useNewSupportChat(vault, setSelectedTodoMemoId);
 
   const filterPanelRef   = useRef<ThinktankFilterPanelRef>(null);
   const settingsViewRef  = useRef<ThinktankSettingsViewRef>(null);
@@ -175,9 +166,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         case 'filter':
           filterPanelRef.current?.focus();
           break;
-        case 'chat':
-          aiChatViewRef.current?.focus();
-          break;
         case 'settings':
           settingsViewRef.current?.focus();
           break;
@@ -206,24 +194,41 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   // vault.Count が変わったとき（追加・削除）のみ再取得
   const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Vault全体からタイトル上の担当がThinktankのChatを表示する。
-  const { chats: todoMemoThinks, error: supportListError } = useSupportChats(vault, "Thinktank", '', selectedTodoMemoId);
-
-  // Chat自体が削除された場合だけ選択を空に戻す（Thinktankは全Chatが対象）。
+  // projectファイルをロード中は、その配下の Think だけを一覧の母集合にする。
+  // 「プロジェクト」で # 対象 を書き換えたときも取り直す
+  const loadedProjectId = panel.ProjectID;
+  const loadedProjectContent = loadedProjectId ? vault.GetThink(loadedProjectId)?.Content ?? '' : '';
+  const [projectMembers, setProjectMembers] = useState<TTThink[] | null>(null);
   useEffect(() => {
-    if (vault.IsLoaded && selectedTodoMemoId && !vault.GetThink(selectedTodoMemoId)) {
-      setSelectedTodoMemoId('');
-    }
-  }, [todoMemoThinks, selectedTodoMemoId]);
+    if (!loadedProjectId) { setProjectMembers(null); return; }
+    let cancelled = false;
+    void vault.GetProjectDescendantsAsync(loadedProjectId).then(members => {
+      if (!cancelled) setProjectMembers(members);
+    });
+    return () => { cancelled = true; };
+  }, [loadedProjectId, loadedProjectContent, vault, vault.Count, vault.IsLoaded]);
+  const listBase = useMemo(
+    () => (loadedProjectId ? projectMembers ?? [] : allThinks),
+    [loadedProjectId, projectMembers, allThinks],
+  );
 
-  // 母集合: 検索語があれば検索結果、なければ全 Think
-  const searchBase = (searchSearched && searchQuery.trim() !== '') ? searchResults : allThinks;
+  // 母集合: 検索語があれば検索結果（ロード中は配下に限る）、なければ一覧の母集合
+  const searchBase = useMemo(() => {
+    if (!(searchSearched && searchQuery.trim() !== '')) return listBase;
+    if (!loadedProjectId) return searchResults;
+    const memberIds = new Set(listBase.map(t => t.ID));
+    return searchResults.filter(t => memberIds.has(t.ID));
+  }, [searchSearched, searchQuery, searchResults, listBase, loadedProjectId]);
 
   // 種別フィルター → ソート（タイトル/日付/チェックは FilterView 側で適用）
-  const typeFilteredBase = useMemo(
+  const typeOnlyBase = useMemo(
     () => searchBase.filter(t => visibleTypes.has(t.ContentType)),
     [searchBase, visibleTypes],
   );
+  // 種別が project だけのときは、さらに # 状態・# 見通し で絞り込む
+  const isProjectOnly = visibleTypes.size === 1 && visibleTypes.has('project');
+  const projectStatus = useProjectStatusFilter(typeOnlyBase, isProjectOnly);
+  const typeFilteredBase = projectStatus.filtered;
   const bundleNames = useMemo(() => buildBundleNames(vault, typeFilteredBase), [vault, typeFilteredBase]);
   const sortedBase = useMemo(() => applySort(typeFilteredBase, sort, bundleNames), [typeFilteredBase, sort, bundleNames]);
 
@@ -249,15 +254,15 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     app.OpenThinkInWorking(id);
   }, [app, vault]);
 
-  // Project 種別はその場で Seeds へ、それ以外は Working へ
+  // Project 種別は Thinktank の「プロジェクト」にロード（一覧はその配下に絞られる）、それ以外は Working へ
   const handleOpenItem = useCallback((id: string) => {
     const t = vault.GetThink(id);
     if (t?.ContentType === 'project') {
-      app.OpenProject(id, 'datagrid');
+      panel.OpenProject(id);
     } else {
       handleSelect(id);
     }
-  }, [app, vault, handleSelect]);
+  }, [panel, vault, handleSelect]);
 
   const handleFocusChange = useCallback((id: string | null) => {
     const nextVal = id || '';
@@ -320,19 +325,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     panel.ClearChecks();
   }, [panel, vault, visibleIds]);
 
-  // 新規Chatは保存成功後に選択する。既存Chatの下書きは共通UIが保持する。
-  const handleSelectTodoMemo = (id: string) => {
-    aiChatViewRef.current?.abortStreaming();
-    void newChat.select(id);
-  };
-
-  const handleStartTask = useCallback(async (chatId: string, title: string, seed?: import('../../services/taskSeed').TaskSeed) => {
-    const lease = draftVaultLease(vault);
-    const bundle = await startTaskFromChat(vault, chatId, title, seed, lease.isCurrent);
-    if (!lease.isCurrent()) return;
-    app.OpenBundle(bundle.ID, 'datagrid');
-  }, [app, vault]);
-
   // pendingSearchQueryRef がセットされていて searchQuery が一致したら検索実行
   useEffect(() => {
     if (pendingSearchQueryRef.current !== null && searchQuery === pendingSearchQueryRef.current) {
@@ -352,35 +344,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   let content: React.ReactNode;
 
-  if (viewMode === 'chat') {
-    content = (
-      <div className="thinktank-area__chat-wrap">
-        {supportListError && <p role="alert">{supportListError}</p>}
-        {newChat.creating && <p role="status">新しいChatを保存しています…</p>}
-        {newChat.error && <p role="alert">{newChat.error}</p>}
-            <ThinktankChatMemoPicker
-          thinks={todoMemoThinks}
-          vault={vault}
-          columns={columns}
-          sort={sort}
-          filterVisibility={chatFilterVisibility}
-          selectedId={selectedTodoMemoId}
-          onSelect={handleSelectTodoMemo}
-          checkedIds={panel.CheckedThoughtIDs}
-          onToggleCheck={(id, force) => panel.ToggleCheck(id, force)}
-        />
-        <div className="thinktank-area__chat-body">
-          <SupportChat ref={aiChatViewRef} vault={vault} panelName="Thinktank"
-                selectedId={selectedTodoMemoId} bundleId={app.SeedsPanel.BundleID}
-                onStartTask={handleStartTask}
-                modelSelector={{ value: { provider: panel.AIChatProvider, model: panel.AIChatModel }, onChange: selection => panel.SetAIChatModel(selection) }} />
-        </div>
-      </div>
-    );
-  } else if (viewMode === 'settings') {
+  if (viewMode === 'settings') {
     content = <ThinktankSettingsView ref={settingsViewRef} />;
   } else if (viewMode === 'project') {
     content = <AbstractView projectView={panel.ProjectView} vault={vault} workingPanel={app.WorkingPanel} panelKey="thinktank" />;
+  } else if (viewMode === 'aiview') {
+    content = <AiViewPanel panelKey="thinktank" />;
+  } else if (viewMode === 'aichat') {
+    content = <AiChatPanel />;
   } else {
     // filter モード（検索・Project一覧を統合）
     content = (
@@ -389,10 +360,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         selectedId={panel.SelectedProjectID}
         checkedIds={panel.CheckedThoughtIDs}
         checkedOnly={panel.ShowCheckedOnly}
-        createdDate={createdDate}
-        createdRange={createdRange}
-        updatedDate={updatedDate}
-        updatedRange={updatedRange}
+        // project だけのときは日付欄を隠すので、隠れた入力値で絞り込まない（値は他の種別へ戻したとき用に残す）
+        createdDate={isProjectOnly ? '' : createdDate}
+        createdRange={isProjectOnly ? '' : createdRange}
+        updatedDate={isProjectOnly ? '' : updatedDate}
+        updatedRange={isProjectOnly ? '' : updatedRange}
         columns={columns}
         bundleNames={bundleNames}
         onOpen={handleOpenItem}
@@ -419,7 +391,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         showFilterSelectDialog={showFilterSelectDialog}
         canCreateBundle={canCreateBundle}
         visibleCount={filterVisible.length}
-        totalCount={allThinks.length}
+        totalCount={listBase.length}
         onCheckAll={handleCheckAll}
         onClearChecks={handleClearChecks}
         onDeleteChecked={handleDeleteChecked}
@@ -427,7 +399,6 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onToggleColumnDialog={handleToggleColumnDialog}
         onToggleFilterSelectDialog={handleToggleFilterSelectDialog}
         onCreateBundle={handleCreateBundle}
-        onClearTodoSelection={() => handleSelectTodoMemo('')}
         onRefresh={onRefresh}
       />
 
@@ -442,20 +413,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
       )}
 
       {showFilterSelectDialog && (
-        viewMode === 'chat' ? (
-          <FilterSelectDialog
-            visibility={chatFilterVisibility}
-            onChange={setChatFilterVisibility}
-            hiddenFields={['type']}
-            onClose={() => setShowFilterSelectDialog(false)}
-          />
-        ) : (
-          <FilterSelectDialog
-            visibility={filterVisibility}
-            onChange={setFilterVisibility}
-            onClose={() => setShowFilterSelectDialog(false)}
-          />
-        )
+        <FilterSelectDialog
+          visibility={filterVisibility}
+          onChange={setFilterVisibility}
+          onClose={() => setShowFilterSelectDialog(false)}
+        />
       )}
 
       {isFilterMode && (
@@ -475,8 +437,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
             updatedRange={updatedRange}
             onUpdatedRangeChange={setUpdatedRange}
             showTextFilter={filterVisibility.title}
-            showCreatedDateFilter={filterVisibility.createdDate}
-            showUpdatedDateFilter={filterVisibility.updatedDate}
+            showCreatedDateFilter={filterVisibility.createdDate && !isProjectOnly}
+            showUpdatedDateFilter={filterVisibility.updatedDate && !isProjectOnly}
           />
           <ThinktankSearchBar
             searchQuery={searchQuery}
@@ -484,6 +446,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
             onSearch={handleSearch}
             loading={searchLoading}
             visibleTypes={visibleTypes}
+            typeSubFilters={isProjectOnly && (
+              <ProjectListFilters
+                states={projectStatus.states}
+                outlooks={projectStatus.outlooks}
+                onStatesChange={projectStatus.setStates}
+                onOutlooksChange={projectStatus.setOutlooks}
+              />
+            )}
             onToggleType={handleToggleType}
             onSelectAllTypes={handleSelectAllTypes}
             showContentFilter={filterVisibility.content}

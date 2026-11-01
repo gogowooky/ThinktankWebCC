@@ -9,10 +9,10 @@
  */
 
 import { TTCollection } from './TTCollection';
-import { TTThink } from './TTThink';
+import { TTThink, type ProjectMembersListener } from './TTThink';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
-import { parseProject, serializeProject, updateProjectTargets } from '../utils/thinkFormat';
+import { PARENT_PROJECT_ID_KEY, parseProject, projectTargetIds, serializeProject, targetsAllThinks, updateProjectTargets } from '../utils/thinkFormat';
 import { createLinkFile, serializeLinkFile } from '../utils/linkFormat';
 import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 import type { TaskSeed } from '../services/taskSeed';
@@ -33,7 +33,7 @@ export interface BundleResolutionOptions {
   onIssue?: (issue: { code: 'cycle' | 'missing_think'; thinkId: string }) => void;
 }
 
-export class TTVault extends TTCollection {
+export class TTVault extends TTCollection implements ProjectMembersListener {
   /** Firestore上のVault ID（PC版ではMarkdownバックアップのディレクトリ名にも使う）*/
   public VaultName: string = 'vault_ver2';
 
@@ -151,6 +151,8 @@ export class TTVault extends TTCollection {
       if (strict && think.IsMetaOnly) throw new Error('Bundle本文を読み込めませんでした');
       const parsed = parseProject(think.Content);
       options.onBundle?.(think);
+      // # 対象 の1行目が「*」の Project は全ファイルを対象とする（Project 以外を全件）
+      if (targetsAllThinks(think.Content)) allThinks.forEach(t => state.ids.add(t.ID));
       for (const id of parsed.ids) {
         if (isProjectType(this.GetThink(id)?.ContentType)) await collectParams(id, visited);
         else state.ids.add(id);
@@ -170,6 +172,55 @@ export class TTVault extends TTCollection {
       this._bundleInputsSnapshot = snapshot;
     }
     return result.members;
+  }
+
+  /**
+   * 指定 Project の配下（本文で参照している Think と、その中の Project が参照している Think を何段でも）を返す。
+   * GetThinksForProjectAsync と違い、途中の Project ファイル自身も含める（Think一覧で階層をたどれるように）。
+   * 自分自身・循環・Vault に無い ID は除く。
+   */
+  public async GetProjectDescendantsAsync(projectId: string): Promise<TTThink[]> {
+    const result = new Map<string, TTThink>();
+    const visited = new Set<string>([projectId]);
+    const queue = [projectId];
+    while (queue.length > 0) {
+      const project = this.GetThink(queue.shift()!);
+      if (!project || project.ContentType !== 'project') continue;
+      if (project.IsMetaOnly) await project.LoadContent();
+      // # 対象 の1行目が「*」なら、Vault の全ファイル（Project 自身を除く）が配下
+      if (targetsAllThinks(project.Content)) return this.GetThinks().filter(t => t.ID !== projectId);
+      for (const id of parseProject(project.Content).ids) {
+        if (visited.has(id)) continue;
+        visited.add(id);
+        const think = this.GetThink(id);
+        if (!think) continue;
+        result.set(id, think);
+        if (think.ContentType === 'project') queue.push(id);
+      }
+    }
+    return [...result.values()];
+  }
+
+  /**
+   * Project 自身の # 対象 に直接記載された Think を返す。
+   * 子 Project の # 対象は再帰展開しない。Seeds>Think一覧用。
+   */
+  public async GetProjectTargetsAsync(projectId: string): Promise<TTThink[]> {
+    const project = this.GetThink(projectId);
+    if (!project || project.ContentType !== 'project') return [];
+    if (project.IsMetaOnly) await project.LoadContent();
+    if (project.IsMetaOnly) return [];
+    if (targetsAllThinks(project.Content)) return this.GetThinks().filter(t => t.ID !== projectId);
+
+    const result: TTThink[] = [];
+    const seen = new Set<string>();
+    for (const id of projectTargetIds(project.Content)) {
+      if (id === projectId || seen.has(id)) continue;
+      seen.add(id);
+      const think = this.GetThink(id);
+      if (think) result.push(think);
+    }
+    return result;
   }
 
   /** @deprecated Use GetThinksForProjectAsync */
@@ -327,6 +378,14 @@ export class TTVault extends TTCollection {
     return this.CreateProjectFromIds(ids);
   }
 
+  /**
+   * 規定フォーマットのテンプレート Project ファイルを作成して保存する。
+   * parentProjectId を渡すと、その Project の # 対象 に新しい Project を載せる（配下に作る）。
+   */
+  public CreateProject(title: string = '新規プロジェクト', parentProjectId?: string): Promise<TTThink> {
+    return this._createProject({ title, ...(parentProjectId ? { parentProjectId } : {}) });
+  }
+
   private async _createThink(options: {
     id?: string;
     contentType: ContentType;
@@ -372,6 +431,7 @@ export class TTVault extends TTCollection {
     }
     think.markSaved();
     if (metadata) think.markMetadataSaved();
+    if (contentType === 'project') await this.SyncParentProjectIds(id, [], parseProject(fullContent).ids);
     if (bundleId) await this._linkThinkToProject(bundleId, id);
     this.NotifyUpdated();
     return think;
@@ -384,7 +444,8 @@ export class TTVault extends TTCollection {
     thinkSupport?: ThinkSupportRecord,
     taskRelation?: TaskRelation,
     originChatId?: string,
-    isCurrent?: () => boolean
+    isCurrent?: () => boolean,
+    parentProjectId?: string,
   }): Promise<TTThink> {
     const { title, ids = [] } = options;
     const items = ids.map(id => {
@@ -402,7 +463,8 @@ export class TTVault extends TTCollection {
       ...(options.taskRelation ? { taskRelation: options.taskRelation } : {}),
     };
     return this._createThink({ contentType: 'project', fullContent, relatedIds: ids.join(','),
-      ...(Object.keys(metadata).length ? { metadata } : {}), ...(options.isCurrent ? { isCurrent: options.isCurrent } : {}) });
+      ...(Object.keys(metadata).length ? { metadata } : {}), ...(options.isCurrent ? { isCurrent: options.isCurrent } : {}),
+      ...(options.parentProjectId ? { bundleId: options.parentProjectId } : {}) });
   }
 
   /** 本人が採用した課題名と関連資料から、1課題を表すProjectを作成する。 */
@@ -495,9 +557,9 @@ export class TTVault extends TTCollection {
     if (!bundle || !isProject) throw new Error('対象Projectが見つかりません。');
     if (bundle.IsMetaOnly) await bundle.LoadContent();
     if (bundle.IsMetaOnly) throw new Error('Project本文を読み込めませんでした。');
-    const parsed = parseProject(bundle.Content);
-    if (parsed.ids.includes(newId)) return;
-    const allIds = [...parsed.ids, newId];
+    const targetIds = projectTargetIds(bundle.Content);
+    if (targetIds.includes(newId)) return;
+    const allIds = [...targetIds, newId];
     const items = allIds.map(id => {
       const target = this.GetThink(id);
       return {
@@ -514,8 +576,17 @@ export class TTVault extends TTCollection {
   }
 
   /** 1件の URL/パスをまとめた linkファイルを作成して保存する（書式は utils/linkFormat.ts） */
-  public async CreateLinksThink(title: string, target: string, pcName: string = ''): Promise<TTThink> {
-    return this._createThink({ contentType: 'links', fullContent: serializeLinkFile(createLinkFile(title, target, pcName)) });
+  public async CreateLinksThink(title: string, target: string, pcName: string = '', bundleId?: string): Promise<TTThink> {
+    return this._createThink({
+      contentType: 'links',
+      fullContent: serializeLinkFile(createLinkFile(title, target, pcName)),
+      ...(bundleId ? { bundleId } : {}),
+    });
+  }
+
+  /** AI が書いた本文を AIViewファイル（UIでは読み取り専用）として保存する */
+  public async CreateAiViewThink(content: string): Promise<TTThink> {
+    return this._createThink({ contentType: 'aiview', fullContent: content });
   }
 
   /** チャット会話を TTThink(ContentType='chat') として保存する。
@@ -564,6 +635,8 @@ export class TTVault extends TTCollection {
     };
 
     let think = this.GetThink(id);
+    const previousMembers = contentType === 'project' && think && !think.IsMetaOnly
+      ? parseProject(think.Content).ids : null;
     if (!think) {
       think = new TTThink();
       think.ID = id;
@@ -603,9 +676,74 @@ export class TTVault extends TTCollection {
     } catch (err) {
       console.warn(`[TTVault] ApplyMcpRecordSync Firestore sync warning (${id}):`, err);
     }
+    // 子の Think を新規作成して Project に載せた直後もここを通る（子は先に同期済み）
+    if (contentType === 'project') await this.SyncParentProjectIds(id, previousMembers, parseProject(fullContent).ids);
 
     this.NotifyUpdated();
     return think;
+  }
+
+  // ── 親 project の記録（metadata.parentProjectid）──────────────────────
+
+  /**
+   * projectファイルの構成が変わったとき、子の Think の metadata.parentProjectid を合わせる。
+   * - 参照している Think のうち、親の記録が無い（または記録先の project がもう無い）ものに、このプロジェクトの ID を記録する。
+   *   既に別の親が記録されていれば置き換えない（最初に組み込んだ project を親として保つ）
+   * - 参照が外れた Think は、記録がこのプロジェクトのときだけ消す（beforeIds が null＝保存前の構成が分からないときは消さない）
+   * project 本体の保存とは独立させ、失敗しても保存は失敗にしない。
+   * 編集中の自動保存（TTThink）からは待たずに走らせ、入力中の保存を遅らせない。
+   */
+  public OnProjectMembersSaved(projectId: string, beforeIds: string[] | null, afterIds: string[]): void {
+    void this.SyncParentProjectIds(projectId, beforeIds, afterIds);
+  }
+
+  public async SyncParentProjectIds(projectId: string, beforeIds: string[] | null, afterIds: string[]): Promise<void> {
+    const after = new Set(afterIds.filter(id => id !== projectId));
+    const writes: Promise<void>[] = [];
+    for (const id of after) {
+      if (!this._hasLiveParentProject(id)) writes.push(this._writeParentProjectId(id, projectId));
+    }
+    for (const id of beforeIds ?? []) {
+      if (!after.has(id) && this._parentProjectIdOf(id) === projectId) writes.push(this._writeParentProjectId(id, undefined));
+    }
+    await this._settleParentWrites(writes);
+  }
+
+  /** 記録先の project が Vault から消えていれば、親は無いものとして新しい親を受け入れる */
+  private _hasLiveParentProject(id: string): boolean {
+    const parentId = this._parentProjectIdOf(id);
+    return !!parentId && this.GetThink(parentId)?.ContentType === 'project';
+  }
+
+  private _parentProjectIdOf(id: string): string | undefined {
+    const value: unknown = this.GetThink(id)?.Metadata?.[PARENT_PROJECT_ID_KEY];
+    return typeof value === 'string' && value ? value : undefined;
+  }
+
+  private async _writeParentProjectId(id: string, projectId: string | undefined): Promise<void> {
+    const think = this.GetThink(id);
+    if (!think || this._parentProjectIdOf(id) === projectId) return;
+    if (think.IsMetaOnly) {
+      // 本文未取得のまま Think 全体を保存すると本文を失うので、metadata だけを書き換える
+      const saved = await StorageManager.instance.updateMetadata(id, { [PARENT_PROJECT_ID_KEY]: projectId }, think.UpdatedAt || undefined);
+      think.Metadata = saved.metadata ?? {};
+      think.markMetadataSaved();
+      if (saved.updatedAt) think.UpdatedAt = saved.updatedAt;
+      return;
+    }
+    // 開いている Think は保存の順番待ちに乗せ、編集中の保存と楽観ロックで衝突しないようにする
+    const next = { ...think.Metadata };
+    if (projectId) next[PARENT_PROJECT_ID_KEY] = projectId;
+    else delete next[PARENT_PROJECT_ID_KEY];
+    think.Metadata = next;
+    await think.SaveContent();
+  }
+
+  private async _settleParentWrites(writes: Promise<void>[]): Promise<void> {
+    const results = await Promise.allSettled(writes);
+    for (const r of results) {
+      if (r.status === 'rejected') console.warn('[TTVault] parentProjectid の記録に失敗しました:', r.reason);
+    }
   }
 
   /** 指定 ID の Think を 保存先から削除しメモリからも除去する。
@@ -626,6 +764,10 @@ export class TTVault extends TTCollection {
     this.Count = this._children.size;
     this.InvalidateItemsCache();
     this.NotifyUpdated();
+    // 削除した project を親として記録している Think から、その記録を外す
+    const deleted = new Set(ids.filter(id => !failedIds.includes(id)));
+    const orphans = [...this._children.values()].filter(t => deleted.has(this._parentProjectIdOf(t.ID) ?? ''));
+    await this._settleParentWrites(orphans.map(t => this._writeParentProjectId(t.ID, undefined)));
     if (failedIds.length > 0) {
       throw new Error(`一部のThinkの削除に失敗しました: ${failedIds.join(', ')}`);
     }

@@ -87,7 +87,7 @@ export interface McpProjectContextResult {
 export interface McpCreateThinkParams {
   title: string;
   body?: string;
-  category?: 'memo' | 'task' | 'links' | 'table';
+  category?: 'memo' | 'aiview' | 'task' | 'links' | 'table';
   keywords?: string;
   relatedIds?: string;
   projectId?: string;
@@ -232,8 +232,8 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
         },
         category: {
           type: 'string',
-          enum: ['memo', 'task', 'links', 'table'],
-          description: 'Thinkの種別（既定: memo）。links は1件のURL/パスにつき1ファイルで、本文は「=」の行に続けて「# Link」（URL、または引用符で囲んだパス）「# Affiliation」（URLはサーバーアドレス、パスは引用符で囲んだ「(PC名)親フォルダ」）「# Abstract」（概要）の見出しを置く',
+          enum: ['memo', 'aiview', 'task', 'links', 'table'],
+          description: 'Thinkの種別（既定: memo）。aiview はMarkdown形式のAI生成ビューで、アプリ上では読み取り専用。links は1件のURL/パスにつき1ファイルで、本文は「=」の行に続けて「# Link」（URL、または引用符で囲んだパス）「# Affiliation」（URLはサーバーアドレス、パスは引用符で囲んだ「(PC名)親フォルダ」）「# Abstract」（概要）の見出しを置く',
         },
         keywords: {
           type: 'string',
@@ -377,8 +377,11 @@ const VALID_PROMOTION_TYPES: ReadonlySet<PromotionTargetType> = new Set([
   'learning',
 ]);
 
-const VALID_CREATE_CATEGORIES: ReadonlySet<'memo' | 'task' | 'links' | 'table'> = new Set([
+type CreateCategory = 'memo' | 'aiview' | 'task' | 'links' | 'table';
+
+const VALID_CREATE_CATEGORIES: ReadonlySet<CreateCategory> = new Set([
   'memo',
+  'aiview',
   'task',
   'links',
   'table',
@@ -477,8 +480,8 @@ export async function executeMcpToolCall(
           return formatToolResult('新規 Think の作成には title が必須です。', true);
         }
         const rawCategory = typeof args.category === 'string' ? args.category.trim() : 'memo';
-        const category = VALID_CREATE_CATEGORIES.has(rawCategory as 'memo' | 'task' | 'links' | 'table')
-          ? (rawCategory as 'memo' | 'task' | 'links' | 'table')
+        const category = VALID_CREATE_CATEGORIES.has(rawCategory as CreateCategory)
+          ? (rawCategory as CreateCategory)
           : 'memo';
         const body = typeof args.body === 'string' ? args.body : '';
         const keywords = typeof args.keywords === 'string' ? args.keywords.trim() : undefined;

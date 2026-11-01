@@ -15,6 +15,19 @@ import type { SavePayload, ThinkMeta } from '../services/storage/IStorageBackend
 import { reportSaveResult } from '../services/storage/saveStatus';
 import { parseProject, splitContent, extractTitleLine } from '../utils/thinkFormat';
 
+/**
+ * projectファイルの保存後に、構成（参照しているThink）の変化を受け取る側。実体は TTVault。
+ * TTVault は TTThink を import するため、循環を避けて形だけで受ける。
+ */
+export interface ProjectMembersListener {
+  /** beforeIds が null のときは保存前の構成が分からない */
+  OnProjectMembersSaved(projectId: string, beforeIds: string[] | null, afterIds: string[]): void;
+}
+
+function isProjectMembersListener(value: unknown): value is ProjectMembersListener {
+  return typeof (value as ProjectMembersListener | null)?.OnProjectMembersSaved === 'function';
+}
+
 export class TTThink extends TTObject {
   /** コンテンツ種別 */
   public ContentType: ContentType = 'memo';
@@ -171,6 +184,9 @@ export class TTThink extends TTObject {
   private async _saveNow(force: boolean): Promise<void> {
     if (!this.IsDirty && !this.IsMetadataDirty && !this._fieldsDirty && !force) return;
     this._cancelRetry();
+    // 本文未取得（IsMetaOnly）の保存済み内容はタイトル行だけで、保存前の構成とは言えない
+    const savedMembers = this.ContentType === 'project' && !this.IsMetaOnly
+      ? parseProject(this._savedContent).ids : null;
     // 応答待ちの間も入力は続くため、送った時点の内容だけを保存済みとして記録する
     const content = this._content;
     const metadataJson = JSON.stringify(this.Metadata);
@@ -189,6 +205,9 @@ export class TTThink extends TTObject {
       // 親 Vault に通知してDataGridを再描画させる（UpdateDateは自分自身では更新しない）
       if (this._parent) {
         this._parent.NotifyUpdated(false);
+      }
+      if (this.ContentType === 'project' && isProjectMembersListener(this._parent)) {
+        this._parent.OnProjectMembersSaved(this.ID, savedMembers, parseProject(content).ids);
       }
     } catch (e) {
       // 呼び出し元が保存失敗を検知できるよう、ログのみで握りつぶさず再送出する。

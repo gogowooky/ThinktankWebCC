@@ -82,7 +82,7 @@ description:    拡大表示
 　統一されている。文字だけが拡大・縮小し、余白・パネル幅・レイアウトは不変で再フローする
 　（zoom はブラウザ差が大きいため不使用）。Monaco エディタは CSS 非継承なので
 　TextEditorMedia が fontSize/lineHeight にこの倍率を掛けて updateOptions する。
-　倍率は localStorage（tt-app-zoom）に永続化。Thinktank>設定>アクション>サイズ のアイコンから呼び出す。
+　倍率は localStorage（tt-app-zoom）に永続化。Thinktank>設定>表示>サイズ のアイコンから呼び出す。
 ## Action：　260827　Application.Display.Zoom:ZoomOut
 description:    縮小表示
 　表示文字サイズを 10% 縮小する（下限 50%）。
@@ -482,33 +482,40 @@ description:    ToolBarの現在のモードの入力欄のテキストをクリ
 　ToolBarの現在のモードの入力欄のテキストをクリップボードにコピーする
 
 # Panel AIChat =====================================================================================================
-
 ## Status：　261012　AIChat.ModelNames.Claude
-起動時にClaude APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
+Thinktank>設定>AIモデルで入力したモデル名（CSV）で、その1番目を送信に使う。既定は空（None）。
 description:    各パネルのAIChatがClaudeのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.Claude
-current:        claude-opus-5
+current:        None
 default:        None
 type:           string
 candidates:     ^[^,]+(,[^,]+)*$
 ## Status：　261012　AIChat.ModelNames.OpenAI
-起動時にOpenAI APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
+Thinktank>設定>AIモデルで入力したモデル名（CSV）で、その1番目を送信に使う。既定は空（None）。
 description:    各パネルのAIChatがOpenAIのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.OpenAI
-current:        gpt-6.1-sol
+current:        None
 default:        None
 type:           string
 candidates:     ^[^,]+(,[^,]+)*$
 ## Status：　261012　AIChat.ModelNames.Gemini
-起動時にGemini APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。
+Thinktank>設定>AIモデルで入力したモデル名（CSV）で、その1番目を送信に使う。既定は空（None）。
 description:    各パネルのAIChatがGeminiのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.Gemini
-current:        gemini-3.8-flash
+current:        None
+default:        None
+type:           string
+candidates:     ^[^,]+(,[^,]+)*$
+## Status：　261030　AIChat.ModelNames.GNB
+Thinktank>設定>AIモデルで入力したGemini NotebookのNotebook ID（CSV）で、その1番目を送信とリンクに使う。既定は空（None）。
+description:    各パネルのAIChatがGNBのときのNotebook ID（CSV。先頭が選択中）
+key:            AIChat.ModelNames.GNB
+current:        None
 default:        None
 type:           string
 candidates:     ^[^,]+(,[^,]+)*$
 ## Status：　261012　AIChat.ModelNames.Local
-起動時にLocal AI APIで使用できるモデル名をCSV形式で設定し、その1番目を選択中のモデルとする。現時点でLocal AIは使用できないので None のみとする。
+Thinktank>設定>AIモデルで入力したモデル名（CSV）で、その1番目を送信に使う。既定は空（None）。現時点でLocal AIは送信に使えない。
 description:    各パネルのAIChatがLocalのときのモデルID（CSV。先頭が選択中）
 key:            AIChat.ModelNames.Local
 current:        None
@@ -522,7 +529,7 @@ key:            ThinktankPanel.AIChat.ModelName
 current:        Claude
 default:        Claude
 type:           string
-candidates:     ^(Claude|OpenAI|Gemini|Local)$
+candidates:     ^(Claude|OpenAI|Gemini|GNB|Local)$
 ## Status：　261012　SeedsPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    SeedsPanelのAIChatで用いるAIモデル名
@@ -530,7 +537,7 @@ key:            SeedsPanel.AIChat.ModelName
 current:        Claude
 default:        Claude
 type:           string
-candidates:     ^(Claude|OpenAI|Gemini|Local)$
+candidates:     ^(Claude|OpenAI|Gemini|GNB|Local)$
 ## Status：　261012　WorkingSettingPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    WorkingSettingPanelのAIChatで用いるAIモデル名
@@ -538,7 +545,7 @@ key:            WorkingSettingPanel.AIChat.ModelName
 current:        Claude
 default:        Claude
 type:           string
-candidates:     ^(Claude|OpenAI|Gemini|Local)$
+candidates:     ^(Claude|OpenAI|Gemini|GNB|Local)$
 ## Status：　261012　WorkingPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    WorkingPanelのAIChatで用いるAIモデル名
@@ -546,7 +553,7 @@ key:            WorkingPanel.AIChat.ModelName
 current:        Claude
 default:        Claude
 type:           string
-candidates:     ^(Claude|OpenAI|Gemini|Local)$
+candidates:     ^(Claude|OpenAI|Gemini|GNB|Local)$
 ## Status：　261012　HarvestPanel.AIChat.ModelName
 AIChatでは、Status変数 "AIChat.ModelNames.{本ModelName}" からモデル名を取得して API通信する。
 description:    HarvestPanelのAIChatで用いるAIモデル名
@@ -554,10 +561,21 @@ key:            HarvestPanel.AIChat.ModelName
 current:        Claude
 default:        Claude
 type:           string
-candidates:     ^(Claude|OpenAI|Gemini|Local)$
+candidates:     ^(Claude|OpenAI|Gemini|GNB|Local)$
 
 　A（261012実装）：
 　　■ AIChat.ModelNames.*（全パネル共通。src\services\aiChatModelStatus.ts）
+　　　【261030 改】値は Thinktank>設定>AIモデル（ChatGPT / Gemini / Claude / GeminiNotebook(GNB) / Local の CSV 欄）で
+　　　利用者が入力したものをそのまま一覧とし、先頭を送信に使う。
+　　　GNB欄だけはモデルIDではなくNotebook IDを入力し、項目名のリンク先とnlm CLIへの問い合わせ先に使う。
+　　　Notebook IDが未設定のとき、項目名はGemini Notebookのトップページへのリンクにする。
+　　　各項目の右側には対応CLIの認証状態を「ログイン済」「未ログイン」で表示する。
+　　　未ログインはブラウザ認証リンクとし、PC版では各CLIのログイン処理を開始、Web版では各サービスの
+　　　ログインページを開く。Localの認証状態は「未設定」と表示する。
+　　　GNB欄の入力ボックス直下には、CSV先頭のNotebook IDからnlm CLIで取得した
+　　　「タイトル：{Notebookタイトル}」を表示する。
+　　　サーバー（下記）は廃止済みで一覧の自動取得はしない。既定値も入れない（全社 None 始まり）。
+　　　以下は 261012 時点の記録。
 　　　値は API のモデルIDの CSV で、先頭が選択中。起動時にサーバーの
 　　　/api/think-support/conversations/models（server\services\AIModelCatalog.ts）から各社の
 　　　「今使える最新の主要モデル」を取得して設定し直す。保存済みの選択が一覧にあれば先頭に残し、
@@ -573,8 +591,10 @@ candidates:     ^(Claude|OpenAI|Gemini|Local)$
 　　　会話の送信時に、このプロバイダの AIChat.ModelNames.* の先頭のモデルを指定して送る。
 　　　サーバーは上記の一覧（許可リスト）にあるモデルだけを受け付け、その社と会話する
 　　　（Claude の会話実装 AnthropicProvider を追加）。会話の記録の provider / model も送ったモデルになる。
-　　　会話画面の「条件・機能・参照情報 > 参照情報」の AI 欄で選び直せ、選んだモデルがその社の先頭に移り、
-　　　そのパネルのプロバイダも切り替わる。
+　　　Thinktank>設定>Default AI のドロップダウン（ChatGPT / Claude / Gemini / GNB / Local）で選ぶ。
+　　　項目と Status の対応：Thinktank → ThinktankPanel、Seeds → SeedsPanel、Working → WorkingSettingPanel、
+　　　Harvest → HarvestPanel、Panes → WorkingPanel（各 .AIChat.ModelName）。会話画面には選択欄を置かない。
+　　　送るモデルはそのプロバイダの AIChat.ModelNames.* の先頭（Thinktank>設定>AIモデルで入力）。
 　　　旧版のパネル別の保存値（localStorage の tt-ai-model-*）は初回起動時に引き継ぐ。
 
 # Panel Focused ====================================================================================================
@@ -584,7 +604,6 @@ candidates:     ^(Claude|OpenAI|Gemini|Local)$
 下位項目をすべて開く →終了
 「Shift+FocusedPanelの開ボタン左クリック」にこのアクションをBindする
 description:    フォーカスパネルのエリアを段階的に開く
-
 ## Action 完了：　261021　FocusedPanel.Area.CloseStepwise
 エリアが開いているときで、下位項目の一部が開いているとき：すべての下位項目を閉じる　→終了
 エリアを閉じる →終了
@@ -610,7 +629,6 @@ description:    フォーカスパネルのエリアを段階的に閉じる
 　　- 注意：開閉ボタンはエリアを開くと閉ボタンに変わるため、ボタンからは OpenStepwise の2段目
 　　　（下位項目をすべて開く）に届きません。2段目はキー割当や TTActions.Execute から実行できます。
 　　- テスト：src\views\TTPanelAreaStepwise.test.ts
-
 ## Action：　260917　FocusedPanel.Area.IsOpen:Toggle
 エリアを開くときはFocusedPanel.Area.OpenWidth:Userの位置で開く
 description:    フォーカスパネルのエリア開閉をUser位置でトグルする
@@ -1223,22 +1241,20 @@ candidates:     .*
 　　直後（Load側はPane差し替え/新規Pane追加の成否によらず、Insert側はエディタ未選択でも）に
 　　設定します。
 
-## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Link
+## Action：　261030　TextEditor.CurrentEditor.DDInsert:Link
 description:    D&DされたURLまたはパスをそのままテキストとして挿入する
 　browser等のURL、Explorer等のファイルパス、URL/パス形式のテキスト、URL/パスを指す
 　WindowsショートカットがTextEditorへD&Dされたとき、「URL.D&D」または「FILEPATH.D&D」
 　メニューから選択して、ドロップ位置へリンク先文字列を挿入します。URLはそのまま、
 　ファイルパスは `"C:\\folder\\file.ext"` のように引用符で囲んで挿入します。
-
-## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Menu
+## Action：　261030　TextEditor.CurrentEditor.DDInsert:Menu
 description:    D&Dされた外部URLまたはパスの挿入方法をメニューから選ぶ
 　LocalFileDrag（ブラウザURL・ローカルファイル・ディレクトリ）を受け取り、統一された
 　「LINK.D&D」メニューを表示します。URLとパスの最終的なタグ種別はAction側で判別します。
 　ブラウザ専用のBrowserLinkDragは設けず、URLもLocalFileDragへ正規化します。
 　（261030）ディレクトリ用のLocalDirDragは割り当てるActionがファイルと同じだったため廃止し、
 　　ディレクトリもLocalFileDragとして扱います。
-
-## Action 完了：　261030　TextEditor.CurrentEditor.DDInsert:Tag
+## Action：　261030　TextEditor.CurrentEditor.DDInsert:Tag
 description:    D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する
 　同じD&Dメニューから選択すると、URL/パスを1件のlinkファイルとして保存し、リンク先に応じた
 　GMail / GDrive / GPhoto / GNB / path / link タグをドロップ位置へ挿入します。
@@ -2093,6 +2109,23 @@ description:    現在のタグ定義をVault内の「ThinktankSearchTag」と�
 　本文は docs/DefaultSearchTag.md と同じ「ID, "Description", URL」形式で、サーバー取得分に Vaultメモの上書きを重ねた現在の
 　タグ定義を書く（URL の無いタグは NoURL）。タグ定義を取得できないときは書き戻さない。
 　Load と同じ形式で書くので、書き戻した後に Load すると同じ状態に戻る。結果はステータスバーの ACTION 欄に表示する。
+## Action：　261101　TextEditor.Dictionary.Load
+description:    Vault内の「ThinktankDictionary」という名前のMemoを読み込み、辞書をDefaultに戻してから適用する（Memoに無いキーはDefaultの状態になる）
+　A（261101実装）：既定の辞書は docs/DefaultDictionary.yaml（YAMLのマッピング）。src/utils/defaultDictionary.ts が
+　　?raw で取り込み、モジュール読み込み時（起動時）に js-yaml でパースして DEFAULT_DICTIONARY に持つ。
+　　各所からは getDictionary() / lookupDictionary(key) / lookupDictionaryString(key) で参照する
+　　（key は "親.子" のドット区切りで入れ子もたどれる。トップレベルに同名のキーがあればそちらを優先）。
+　　変化を追う場合は onDictionaryChange() で購読する。
+　　Load は Memo の本文（1行目のタイトルを除く）を YAML として読み、トップレベルのキー単位で既定値に重ねる。
+　　YAML として読めないときは辞書を変えずにエラーを返す。登録は src/views/actions/textEditorDictionaryActions.ts。
+　　キー割当・ボタンは未設定（TTActions.Execute / コマンドから実行可能）。
+## Action：　261101　TextEditor.Dictionary.Reset
+description:    辞書をDefaultの状態に戻す
+　Vaultメモ由来の上書き分をクリアし、docs/DefaultDictionary.yaml の内容に戻す。
+## Action：　261101　TextEditor.Dictionary.Save
+description:    現在の辞書をVault内の「ThinktankDictionary」という名前のMemoに書き戻す（無ければ作る）
+　既定値に上書きを重ねた現在の辞書を docs/DefaultDictionary.yaml と同じ YAML 形式で書く（src/views/actions/bindingMemo.ts）。
+　Load と同じ形式なので、書き戻した後に Load すると同じ状態に戻る。
 # TextEditor ExDate ================================================================================================
 ## Action：　260625　TextEditor.EditDate.InsertExDate
 description:    カーソル位置に日付文字を挿入しExDateモードに入る

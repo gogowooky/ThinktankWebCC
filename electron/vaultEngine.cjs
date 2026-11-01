@@ -984,21 +984,6 @@ class VaultEngine {
     }
     return resolved;
   }
-
-  saveCustomDomainProfile(profileObj) {
-    const resolved = shared.resolveDomainProfile(
-      profileObj,
-      profileObj?.id || this.config.activeProfileId,
-    );
-    const promptsDir = this.getPromptsDir();
-    const targetDir = path.join(promptsDir, resolved.id);
-    fs.mkdirSync(targetDir, { recursive: true });
-    this._atomicWrite(
-      path.join(targetDir, 'profile.json'),
-      JSON.stringify(resolved, null, 2) + '\n',
-    );
-    return resolved;
-  }
 }
 
 module.exports = {

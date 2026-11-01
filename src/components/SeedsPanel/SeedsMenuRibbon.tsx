@@ -6,8 +6,8 @@
 
 import { useCallback } from 'react';
 import {
-  CheckSquare, Square, ListX, ListCheck, SquareX,
-  ArrowDownAZ, LayoutList, Save, ListRestart,
+  CheckSquare, Square, ListX, ListCheck,
+  ArrowDownAZ, LayoutList, ListRestart,
 } from 'lucide-react';
 import '../../components/Layout/MenuRibbon.css';
 import './SeedsMenuRibbon.css';
@@ -25,13 +25,10 @@ interface Props {
   onCheckAll:           () => void;
   onClearChecks:        () => void;
   onExcludeChecked:     () => void;
-  onClearBundle:        () => void;
   onToggleCheckedOnly:  () => void;
   onToggleColumnDialog: () => void;
   onToggleFilterSelectDialog: () => void;
-  onClearTodoSelection: () => void;
   onRefresh:            () => void;
-  hasBundle:            boolean;
 }
 
 export function SeedsMenuRibbon({
@@ -40,11 +37,10 @@ export function SeedsMenuRibbon({
   visibleIds, checkedIds, showCheckedOnly,
   showColumnDialog, showFilterSelectDialog,
   visibleCount, totalCount,
-  hasBundle,
-  onCheckAll, onClearChecks, onExcludeChecked, onClearBundle,
+  onCheckAll, onClearChecks, onExcludeChecked,
   onToggleCheckedOnly,
   onToggleColumnDialog, onToggleFilterSelectDialog,
-  onClearTodoSelection, onRefresh,
+  onRefresh,
 }: Props) {
   const allChecked = visibleIds.length > 0 && visibleIds.every(id => checkedIds.includes(id));
   const hasChecked = checkedIds.length > 0;
@@ -56,64 +52,11 @@ export function SeedsMenuRibbon({
 
   const visibleChecked = checkedIds.filter(id => visibleIds.includes(id)).length;
 
-  /* ── プロジェクト: AbstractView が自前のリボンを持つ ──────── */
-  if (!showSettings && mediaType === 'project') return null;
+  /* ── プロジェクト・AIView: AbstractView / AiViewPanel が自前のリボンを持つ ── */
+  if (!showSettings && (mediaType === 'project' || mediaType === 'aiview')) return null;
 
-  /* ── 設定モード / チャット・グラフモード ───────────────────── */
-  if (showSettings || mediaType === 'chat' || mediaType === 'project') {
-    const showChatControls = !showSettings && mediaType === 'chat';
-
-    if (showChatControls) {
-      return (
-        <div className="menu-ribbon seeds-menu-ribbon">
-          <div className="tooltip-wrapper" data-tip="会話履歴は閲覧専用です" data-tip-side="right">
-            <button
-              className="menu-ribbon__btn menu-ribbon__btn--icon"
-              disabled
-            >
-              <Save size={14} />
-            </button>
-          </div>
-
-          <div className="menu-ribbon__sep" />
-
-          <button
-            className="menu-ribbon__btn menu-ribbon__btn--icon"
-            onClick={onRefresh}
-            data-tip="表示更新"
-            data-tip-side="right"
-          >
-            <ListRestart size={14} />
-          </button>
-
-          <button
-            className={`menu-ribbon__btn menu-ribbon__btn--icon${showColumnDialog ? ' menu-ribbon__btn--active' : ''}`}
-            onClick={onToggleColumnDialog}
-            data-tip="表示項目とソート"
-          >
-            <ArrowDownAZ size={14} />
-          </button>
-
-          <button
-            className={`menu-ribbon__btn menu-ribbon__btn--icon${showFilterSelectDialog ? ' menu-ribbon__btn--active' : ''}`}
-            onClick={onToggleFilterSelectDialog}
-            data-tip="フィルター選択"
-          >
-            <LayoutList size={14} />
-          </button>
-
-          <button
-            className="menu-ribbon__btn menu-ribbon__btn--icon"
-            onClick={onClearTodoSelection}
-            data-tip="アイテム選択をクリア"
-            data-tip-side="left"
-          >
-            <SquareX size={14} />
-          </button>
-        </div>
-      );
-    }
-
+  /* ── 設定・AIChat ──────────────────────────────────────── */
+  if (showSettings || mediaType === 'aichat') {
     return (
       <div className="menu-ribbon seeds-menu-ribbon">
         <div className="menu-ribbon__spacer" />
@@ -189,17 +132,6 @@ export function SeedsMenuRibbon({
           disabled={!hasChecked}
         >
           <ListX size={14} />
-        </button>
-      </div>
-
-      {/* Bundle設定クリア */}
-      <div className="tooltip-wrapper" data-tip="Bundle設定をクリア" data-tip-side="left">
-        <button
-          className="menu-ribbon__btn menu-ribbon__btn--icon"
-          onClick={onClearBundle}
-          disabled={!hasBundle}
-        >
-          <SquareX size={14} />
         </button>
       </div>
 

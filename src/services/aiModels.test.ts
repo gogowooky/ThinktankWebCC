@@ -21,4 +21,10 @@ describe('Gemini model migration', () => {
     localStorage.setItem('panel', JSON.stringify(selection));
     expect(loadAiModelSelection('panel')).toEqual(selection);
   });
+  it('preserves a dynamic GNB Notebook ID', () => {
+    const selection = { provider: 'gnb', model: 'notebook-123' } as const;
+    localStorage.setItem('panel', JSON.stringify(selection));
+    expect(loadAiModelSelection('panel')).toEqual(selection);
+    expect(modelLabel(selection)).toBe('notebook-123');
+  });
 });

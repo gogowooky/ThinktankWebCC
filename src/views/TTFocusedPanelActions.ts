@@ -32,16 +32,17 @@ import { registerTextEditorCursorContentActions } from './actions/textEditorCurs
 import { registerTextEditorKeyBindingActions } from './actions/textEditorKeyBindingActions';
 import { registerTextEditorColorBindingActions } from './actions/textEditorColorBindingActions';
 import { registerTextEditorSearchTagActions } from './actions/textEditorSearchTagActions';
+import { registerTextEditorDictionaryActions } from './actions/textEditorDictionaryActions';
 import { registerTextEditorPasteActions } from './actions/textEditorPasteActions';
 
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
-  Thinktank:      ['filter', 'project', 'chat', 'settings'],
-  Seeds:       ['filter', 'project', 'chat', 'settings'],
-  WorkingSetting: ['panes', 'project', 'chat', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
-  Working:        ['panes', 'project', 'texteditor', 'markdown', 'datagrid', 'card', 'graph'],
-  Harvest:        ['project', 'chat', 'settings'],
+  Thinktank:      ['filter', 'project', 'aiview', 'aichat', 'settings'],
+  Seeds:       ['filter', 'project', 'aiview', 'aichat', 'settings'],
+  WorkingSetting: ['panes', 'aiview', 'aichat', 'texteditor', 'chatsetting', 'markdown', 'datagrid', 'card', 'graph'],
+  Working:        ['panes', 'aiview', 'aichat', 'texteditor', 'chatsetting', 'markdown', 'datagrid', 'card', 'graph'],
+  Harvest:        ['aiview', 'aichat', 'settings'],
 };
 
 /** フォーカス列 → 開閉セクションの一括操作で使うパネルID（Working は2列とも設定エリアを指す） */
@@ -1016,6 +1017,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   registerTextEditorKeyBindingActions(app);
   registerTextEditorColorBindingActions(app);
   registerTextEditorSearchTagActions(app);
+  registerTextEditorDictionaryActions(app);
   registerTextEditorCurrentFoldingActions(app);
   registerTextEditorDateActions(app);
   registerTextEditorBulletActions(app);

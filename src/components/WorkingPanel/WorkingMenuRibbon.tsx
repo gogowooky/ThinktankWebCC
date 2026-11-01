@@ -7,10 +7,11 @@
  */
 
 import { useState, useCallback } from 'react';
-import { FileText, Target, Table, Link, MessageCircle, MessagesSquare, Globe, NotebookPen, BookOpenText, IdCard, Share2, X, type LucideIcon } from 'lucide-react';
+import { FileText, Bot, Target, Table, Link, MessageCircle, MessagesSquare, Globe, NotebookPen, BookOpenText, IdCard, X, type LucideIcon } from 'lucide-react';
 
 const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo:    FileText,
+  aiview:  Bot,
   project: Target,
   bundle:  Target,
   table:   Table,
@@ -34,12 +35,9 @@ const HTML_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> 
   { type: 'html', Icon: Globe, title: 'HTML表示' },
 ];
 
-const BUNDLE_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
+// projectファイルは TextEditor でだけ表示する
+const PROJECT_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
   { type: 'texteditor', Icon: NotebookPen,  title: 'テキストエディタ' },
-  { type: 'datagrid',   Icon: Table,        title: 'テーブル' },
-  { type: 'markdown',   Icon: BookOpenText, title: 'Markdown' },
-  { type: 'card',       Icon: IdCard,       title: 'カード' },
-  { type: 'graph',      Icon: Share2,       title: 'グラフ' },
 ];
 
 const TABLE_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
@@ -251,7 +249,7 @@ interface Props {
 
 export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
-    : (contentType === 'project' || contentType === 'bundle') ? BUNDLE_BUTTONS
+    : (contentType === 'project' || contentType === 'bundle') ? PROJECT_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
     : contentType === 'html' ? HTML_BUTTONS
     : MEMO_BUTTONS;
@@ -321,7 +319,11 @@ export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = fals
             key={type}
             className={`working-menu-ribbon__media-btn${area.MediaType === type ? ' working-menu-ribbon__media-btn--active' : ''}${type === 'texteditor' && area.MediaType === 'texteditor' && area.RawYaml ? ' working-menu-ribbon__media-btn--raw' : ''}`}
             onClick={e => onMediaTypeChange(type, type === 'texteditor' && e.shiftKey)}
-            data-tip={type === 'texteditor' ? `${title}（Shift+クリック: YAML込みで表示・保存）` : title}
+            data-tip={type === 'texteditor'
+              ? contentType === 'aiview'
+                ? `${title}（読み取り専用、Shift+クリック: YAML込みで表示）`
+                : `${title}（Shift+クリック: YAML込みで表示・保存）`
+              : title}
             data-tip-side="left"
           >
             <Icon size={12} />

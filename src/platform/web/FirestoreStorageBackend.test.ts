@@ -372,6 +372,14 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
       return new Response('{}', { status: 200 });
     }
 
+    // GET: snapshots コレクションの一覧
+    const listPath = url.split('?')[0];
+    if (listPath.endsWith('/snapshots')) {
+      const prefix = `${listPath.split('/documents/')[1]}/`;
+      const found = [...documents.values()].filter((doc) => (String(doc.name).split('/documents/')[1] ?? '').startsWith(prefix));
+      return new Response(JSON.stringify(found.length ? { documents: found } : {}), { status: 200 });
+    }
+
     // GET: パスが完全一致するドキュメントを返す
     const path = url.split('/documents/')[1] ?? url.split('/v1/')[1] ?? '';
     for (const [name, doc] of documents.entries()) {
@@ -408,6 +416,9 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
     metadata: { step: 1 },
   });
 
+  // 一覧でも同じスナップショットが1件だけ読める
+  expect(await backend.listSnapshots('a')).toEqual([expect.objectContaining({ thinkid: 'a', title: '初版タイトル', body: '初版本文' })]);
+
   // 3. 差分チェック（変更前）: hasChanges = false
   const diffBefore = await backend.getDiff('a');
   expect(diffBefore?.hasChanges).toBe(false);
@@ -430,5 +441,6 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
   // 5. スナップショット削除
   await backend.deleteSnapshot('a');
   expect(await backend.getSnapshot('a')).toBeNull();
+  expect(await backend.listSnapshots('a')).toEqual([]);
   expect(await backend.getDiff('a')).toBeNull();
 });

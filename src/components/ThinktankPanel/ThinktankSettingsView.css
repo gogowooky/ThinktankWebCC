@@ -82,6 +82,117 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* ── AIモデル ── */
+
+/* 当パネルは明るい地色なので、共通の .tt-settings-input（暗い地色向けの淡い文字）では読めない。
+   Firebase / Google Drive API 欄の入力と同じ配色にそろえる。 */
+.tt-ai-model .tt-settings-input,
+.tt-panel-ai__select {
+  color: color-mix(in srgb, var(--thinktank-base, #1d618f) 30%, #16161f);
+  background: var(--thinktank-content-bg, #ffffff);
+  border: 1px solid var(--thinktank-border, rgba(29, 97, 143, 0.28));
+}
+
+.tt-ai-model .tt-settings-input:focus {
+  background: var(--thinktank-content-bg, #ffffff);
+}
+
+.tt-ai-models {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tt-ai-model {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tt-ai-model__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tt-ai-model__label {
+  font-size: calc(11px * var(--tt-font-scale, 1));
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.tt-ai-model__label-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tt-ai-model__auth {
+  flex: 0 0 auto;
+  font-size: calc(10px * var(--tt-font-scale, 1));
+  font-weight: 600;
+}
+
+.tt-ai-model__auth--logged-in {
+  color: var(--text-muted);
+}
+
+.tt-ai-model__auth--unset {
+  color: var(--text-muted);
+}
+
+.tt-ai-model__auth--login-link {
+  color: var(--accent-color, #1a73e8);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.tt-ai-model__notebook-title {
+  color: var(--text-muted);
+  font-size: calc(10px * var(--tt-font-scale, 1));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tt-ai-model__notebook-title-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* ── パネルAI ── */
+
+.tt-panel-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* 項目名を左、選択を右端に置き、パネル名の列と選択の列をそろえる */
+.tt-panel-ai__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tt-panel-ai__label {
+  font-size: calc(11px * var(--tt-font-scale, 1));
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.tt-panel-ai__select {
+  min-width: 96px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: calc(11px * var(--tt-font-scale, 1));
+}
+
 /* 枠なしのアイコンだけのボタン（保存・ログイン等）。.tt-settings-zoom__icon と同じ寸法・配色 */
 .tt-settings-icon-btn {
   display: flex;
@@ -109,7 +220,7 @@
   cursor: default;
 }
 
-/* ── アクション ──
+/* ── 表示 ──
    アイコンボタン 28px角 / アイコン 16px は
    Working>Pane設定>アクションの「分割」行に合わせる。
    ラベルは「サイズ」の3文字が収まるよう 40px。

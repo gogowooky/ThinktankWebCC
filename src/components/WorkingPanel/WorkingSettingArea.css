@@ -35,72 +35,6 @@
   text-overflow: ellipsis;
 }
 
-/* ── AI相談チャット ─────────────────────────────────── */
-.working-setting-area__chat {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-}
-
-/* チャット白領域の最上部ツールバー（パネル色より少し薄い色）*/
-.working-setting-area__chat-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-shrink: 0;
-  height: 28px;
-  padding: 0 6px;
-  background: var(--working-ribbon-soft);
-  --on-ribbon-rgb: var(--working-on-ribbon-soft-rgb);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-.working-setting-area__chat-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 22px;
-  border-radius: 4px;
-  color: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.6);
-  transition: background 100ms ease, color 100ms ease;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.working-setting-area__chat-btn:hover:not(:disabled) {
-  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.12);
-  color: rgb(var(--on-ribbon-rgb, 255 255 255));
-}
-
-.working-setting-area__chat-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.working-setting-area__chat-btn--active {
-  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.18);
-  color: rgb(var(--on-ribbon-rgb, 255 255 255));
-}
-
-.working-setting-area__chat-sep {
-  width: 1px;
-  height: 16px;
-  background: rgb(var(--on-ribbon-rgb, 255 255 255) / 0.2);
-  margin: 0 3px;
-  flex-shrink: 0;
-}
-
-/* AiChatView がツールバー＋メモ選択の残りの高さを占有する。
-   このエリアだけ親が濃いリボン色なので、他パネル（.thinktank-area 等が
-   --*-area-bg を敷く）と同じ地色をここで明示し、会話の文字色と合わせる。 */
-.working-setting-area__chat-body {
-  flex: 1;
-  min-height: 0;
-  background: var(--working-area-bg);
-}
-
 /* ── 本体 ──────────────────────────────────────────── */
 .working-setting-area__body {
   flex: 1;
@@ -109,8 +43,8 @@
   padding: 8px 0;
 }
 
-/* AI相談チャットは本体全体を占有する（余白・スクロールは AiChatView 側で制御） */
-.working-setting-area__body--chat {
+/* AIView・AIChat は本体全体を占有する（余白・スクロールは各サブパネル側で制御） */
+.working-setting-area__body--fill {
   padding: 0;
   overflow: hidden;
   min-height: 0;
