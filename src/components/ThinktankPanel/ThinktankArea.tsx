@@ -36,6 +36,7 @@ import { ProjectListFilters } from './ProjectListFilters';
 import { useProjectStatusFilter } from '../../hooks/useProjectStatusFilter';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
+import { VaultLoadNotice } from './VaultLoadNotice';
 import './ThinktankArea.css';
 
 import type { LayoutMode } from '../Layout/AppLayout';
@@ -352,6 +353,15 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     content = <AiViewPanel panelKey="thinktank" />;
   } else if (viewMode === 'aichat') {
     content = <AiChatPanel />;
+  } else if (!vault.IsLoaded && vault.LoadError) {
+    // 読めなかった一覧を空の一覧として見せない（新しいPCで未ログインのとき等）
+    content = (
+      <VaultLoadNotice
+        vault={vault}
+        error={vault.LoadError}
+        onOpenSettings={() => panel.SetViewMode('settings')}
+      />
+    );
   } else {
     // filter モード（検索・Project一覧を統合）
     content = (

@@ -20,6 +20,22 @@ import { getFirebaseApiKey, getFirebaseClient } from './firebaseClient';
 
 const STORAGE_KEY_SESSION = 'thinktank.web.firebaseSession';
 
+/**
+ * Think データ用 Firebase へのログインが必要なことを示す。
+ * 新しいPC・ブラウザでは未ログインが正常な初期状態なので、通信障害などと
+ * 区別して一覧の場所にログイン案内を出すために使う。
+ */
+export class FirebaseSignInRequiredError extends Error {
+  constructor(message = 'Firebase 未ログインです。設定画面の「Google でログイン」からログインしてください。') {
+    super(message);
+    this.name = 'FirebaseSignInRequiredError';
+  }
+}
+
+export function isFirebaseSignInRequiredError(error: unknown): error is FirebaseSignInRequiredError {
+  return error instanceof FirebaseSignInRequiredError;
+}
+
 function getApiKey(): string {
   return getFirebaseApiKey();
 }
@@ -125,7 +141,7 @@ class FirebaseAuthServiceImpl {
       await this.saveSdkUser(auth.currentUser);
       return auth.currentUser;
     }
-    throw new Error('Firebase SDK が未ログインです。設定画面からもう一度ログインしてください。');
+    throw new FirebaseSignInRequiredError('Firebase SDK が未ログインです。設定画面からもう一度ログインしてください。');
   }
 
   /** Electron メインプロセスで行ったOSブラウザログインをデータ画面へ引き継ぐ。 */
@@ -163,7 +179,7 @@ class FirebaseAuthServiceImpl {
       session = await this.syncFromElectronRelayIfAvailable();
     }
     if (!session) {
-      throw new Error('Firebase 未ログインです。設定画面の「Google でログイン」からログインしてください。');
+      throw new FirebaseSignInRequiredError();
     }
     if (needsFirebaseTokenRefresh(session)) {
       if (!this.refreshing) {

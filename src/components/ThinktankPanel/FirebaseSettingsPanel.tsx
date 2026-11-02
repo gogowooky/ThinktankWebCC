@@ -11,6 +11,11 @@ import { FirebaseAuthService } from '../../platform/web/FirebaseAuthService';
 import type { ElectronRelayStatus } from '../../services/storage/ElectronStorageBackend';
 import { TTModels } from '../../models/TTModels';
 import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
+import {
+  isElectronBrowserSignIn,
+  signInForThinkData,
+  type ThinkDataSignInResult,
+} from '../../services/thinkDataSignIn';
 
 function loadWebPcLinkEnabled(): boolean {
   return FirestoreRelayClient.getConfig().enabled;
@@ -109,43 +114,25 @@ export const FirebaseSettingsPanel: React.FC = () => {
     return () => clearInterval(timer);
   }, [isOpen]);
 
-  const handleElectronGoogleLogin = async (): Promise<ElectronRelayStatus | null> => {
-    const signIn = window.electronAPI?.relay?.signInWithGoogle;
-    if (!signIn) return null;
+  const handleOAuthLogin = async (): Promise<ThinkDataSignInResult | null> => {
+    const viaBrowser = isElectronBrowserSignIn();
     setBusy(true);
-    setStatusMessage('ブラウザで Google のログイン画面を開いています... ログインが終わったらこの画面に戻ってください。');
+    setStatusMessage(
+      viaBrowser
+        ? 'ブラウザで Google のログイン画面を開いています... ログインが終わったらこの画面に戻ってください。'
+        : 'Think データ用 Firebase のログインウィンドウを開いています...',
+    );
     try {
-      const env = (import.meta as unknown as { env?: Record<string, string> }).env ?? {};
-      const st = await signIn({ apiKey: env.VITE_FIREBASE_API_KEY || '', firebaseProjectId });
-      setPcRelayStatus(st);
-      const session = await FirebaseAuthService.syncFromElectronRelayIfAvailable();
-      if (session) setFirebaseUser({ uid: session.uid, email: session.email });
+      const { user, relayStatus } = await signInForThinkData(firebaseProjectId);
+      if (relayStatus) setPcRelayStatus(relayStatus);
+      if (user) setFirebaseUser(user);
       await TTModels.Instance?.Vault?.ReloadAll();
-      setStatusMessage(`Think データ用 Firebase にログインしました（${st.firebaseEmail || 'メール不明'}）。`);
-      return st;
+      const email = relayStatus?.firebaseEmail || user?.email || '';
+      setStatusMessage(`Think データ用 Firebase にログインしました${email ? `（${email}）` : ''}。`);
+      return { user, relayStatus };
     } catch (e) {
-      setStatusMessage(`Google ログイン失敗: ${e instanceof Error ? e.message : String(e)}`);
+      setStatusMessage(`${viaBrowser ? 'Google' : 'Firebase'} ログイン失敗: ${e instanceof Error ? e.message : String(e)}`);
       return null;
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleOAuthLogin = async (): Promise<boolean> => {
-    if (window.electronAPI?.relay?.signInWithGoogle) {
-      return Boolean(await handleElectronGoogleLogin());
-    }
-    setBusy(true);
-    setStatusMessage('Think データ用 Firebase のログインウィンドウを開いています...');
-    try {
-      await FirebaseAuthService.signInWithGooglePopup();
-      setFirebaseUser(FirebaseAuthService.getCurrentUser());
-      await TTModels.Instance?.Vault?.ReloadAll();
-      setStatusMessage('Think データ用 Firebase にログインしました。');
-      return true;
-    } catch (e) {
-      setStatusMessage(`Firebase ログイン失敗: ${e instanceof Error ? e.message : String(e)}`);
-      return false;
     } finally {
       setBusy(false);
     }
@@ -172,8 +159,8 @@ export const FirebaseSettingsPanel: React.FC = () => {
   const handleTogglePcRelay = async (nextEnabled: boolean) => {
     if (!window.electronAPI?.relay?.configure) return;
     if (nextEnabled && !pcRelayStatus?.firebaseSignedIn) {
-      const signedIn = await handleElectronGoogleLogin();
-      if (!signedIn?.firebaseSignedIn) return;
+      const result = await handleOAuthLogin();
+      if (!result?.relayStatus?.firebaseSignedIn) return;
     }
     setBusy(true);
     try {
@@ -197,8 +184,7 @@ export const FirebaseSettingsPanel: React.FC = () => {
 
   const handleToggleWebPcLink = async (nextEnabled: boolean) => {
     if (nextEnabled && !FirebaseAuthService.getCurrentUser()) {
-      const signedIn = await handleOAuthLogin();
-      if (!signedIn) return;
+      if (!(await handleOAuthLogin())) return;
     }
     FirestoreRelayClient.saveConfig({ enabled: nextEnabled });
     setWebPcLinkEnabled(nextEnabled);

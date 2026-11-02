@@ -1,0 +1,85 @@
+/* VaultLoadNotice.css */
+
+.tt-vault-notice {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 24px 12px;
+}
+
+.tt-vault-notice__card {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--thinktank-border);
+  border-radius: 6px;
+  background: var(--thinktank-tint-weak);
+  /* 一覧の文字色は淡い既定値を継ぐため、設定画面と同じ濃さを明示する */
+  color: color-mix(in srgb, var(--thinktank-base, #1d618f) 30%, #16161f);
+}
+
+.tt-vault-notice__title {
+  margin: 0;
+  font-size: calc(13px * var(--tt-font-scale, 1));
+  font-weight: 700;
+}
+
+.tt-vault-notice__text,
+.tt-vault-notice__message {
+  margin: 0;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.tt-vault-notice__text--error {
+  white-space: pre-wrap;
+}
+
+.tt-vault-notice__message {
+  color: var(--text-muted, #565f89);
+}
+
+.tt-vault-notice__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tt-vault-notice__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+  border: 1px solid var(--thinktank-border);
+  border-radius: 4px;
+  background: var(--thinktank-content-bg);
+  color: inherit;
+  cursor: pointer;
+}
+
+.tt-vault-notice__btn:hover:not(:disabled) {
+  background: var(--thinktank-hover);
+}
+
+.tt-vault-notice__btn--primary {
+  border-color: var(--thinktank-base);
+  background: var(--thinktank-base);
+  color: rgb(var(--thinktank-on-ribbon-rgb));
+}
+
+.tt-vault-notice__btn--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--thinktank-base) 85%, #000);
+}
+
+.tt-vault-notice__btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

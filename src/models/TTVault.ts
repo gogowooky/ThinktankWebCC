@@ -12,6 +12,7 @@ import { TTCollection } from './TTCollection';
 import { TTThink, type ProjectMembersListener } from './TTThink';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
+import { isFirebaseSignInRequiredError } from '../platform/web/FirebaseAuthService';
 import { PARENT_PROJECT_ID_KEY, parseProject, projectTargetIds, serializeProject, targetsAllThinks, updateProjectTargets } from '../utils/thinkFormat';
 import { createLinkFile, serializeLinkFile } from '../utils/linkFormat';
 import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
@@ -33,9 +34,18 @@ export interface BundleResolutionOptions {
   onIssue?: (issue: { code: 'cycle' | 'missing_think'; thinkId: string }) => void;
 }
 
+/** 一覧を読めなかった理由。signin は未ログイン（新しいPC・ブラウザの初期状態）。 */
+export interface VaultLoadError {
+  kind: 'signin' | 'error';
+  message: string;
+}
+
 export class TTVault extends TTCollection implements ProjectMembersListener {
   /** Firestore上のVault ID（PC版ではMarkdownバックアップのディレクトリ名にも使う）*/
   public VaultName: string = 'vault_ver2';
+
+  /** 直近の LoadCache が失敗した理由。空の一覧と「読めなかった」を画面で区別するために保持する。 */
+  public LoadError: VaultLoadError | null = null;
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
   private _bundleThinksCache = new Map<string, { ids: string[]; snapshot: BundleResolutionSnapshot }>();
@@ -313,11 +323,21 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
         }
         this.Count    = this._children.size;
         this.IsLoaded = true;
+        this.LoadError = null;
         this.NotifyRefresh();
         console.log(`[TTVault] LoadCache: ${this.Count} items loaded (vault=${this.ID})`);
         return;
       } catch (e) {
+        if (isFirebaseSignInRequiredError(e)) {
+          // 未ログインは待っても解消しないので再試行せず、ログイン案内を出す。
+          console.warn(`[TTVault] LoadCache: Firebase 未ログインのため一覧を読み込めません (vault=${this.ID})`);
+          this.setLoadError({ kind: 'signin', message: e.message });
+          return;
+        }
         console.error(`[TTVault] LoadCache failed (attempt ${attempt}/${maxAttempts}):`, e);
+        if (attempt === maxAttempts) {
+          this.setLoadError({ kind: 'error', message: e instanceof Error ? e.message : String(e) });
+        }
         if (attempt < maxAttempts) {
           await new Promise(resolve => setTimeout(resolve, 500 * attempt));
         }
@@ -325,6 +345,11 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
         // ReloadAll() 等による再試行が「ロード済みだが空」に阻まれないようにするため。
       }
     }
+  }
+
+  private setLoadError(error: VaultLoadError): void {
+    this.LoadError = error;
+    this.NotifyRefresh();
   }
 
   /** 全データをストレージから再ロードしリスナーを発火する（表示更新用）*/
