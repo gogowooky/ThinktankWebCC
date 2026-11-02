@@ -1,7 +1,7 @@
 /**
  * VaultLoadNotice.tsx
  * Think一覧を読めなかったときに、空の一覧の代わりに理由と次の操作を示す。
- * 新しいPC・ブラウザでは Think データ用 Firebase が未ログインなのが普通で、
+ * 新しい端末・ブラウザでは Think データ用 Firebase が未ログインなのが普通で、
  * 何も出さないと「データが消えた」ように見えるため。
  */
 
@@ -59,7 +59,7 @@ export function VaultLoadNotice({ vault, error, onOpenSettings }: Props) {
         </h3>
         {isSignIn ? (
           <p className="tt-vault-notice__text">
-            データはクラウド（Firebase）に保存されています。このPC・ブラウザではまだログインしていないため、一覧を表示できません。
+            データはクラウド（Firebase）に保存されています。この端末・ブラウザではまだログインしていないため、一覧を表示できません。
             Chrome などで Google にログイン済みでも、アプリでは一度ログイン操作が必要です。
           </p>
         ) : (
