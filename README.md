@@ -20,6 +20,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-03
 - コミット番号: c2f25a7
+- デプロイ日: 2026-11-03（JST）
+- デプロイ対象コミット: 2dcb9dc（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 Firebaseに接続せず、指定したThinkファイルFolderの `.md` を正本として使える「ローカル運用モード」を追加した（設定 > モード切替、再起動で反映）。フォルダは thinks/・snapshots/・trash/・system/ に分け、上書き・削除前の版を trash/ に日時付きで残してクラウド同期フォルダでも消失しないようにした。Firestore⇔ThinkファイルFolder の移行（新しい方を残す）と、モード切替時の画面側一時保存の消去を備える。詳細は `docs/261103/ローカル運用モード.md`。
 
