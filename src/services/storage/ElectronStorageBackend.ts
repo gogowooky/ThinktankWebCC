@@ -71,9 +71,59 @@ export interface ElectronMcpMutationPayload {
   projectRecord?: ElectronMcpMutatedRecord | null;
 }
 
+export interface ElectronAppModeSetting {
+  storageMode: 'firestore' | 'local';
+  localVaultDir: string;
+}
+
+export interface ElectronAppModeInfo {
+  /** 今回の起動で使っているモード */
+  running: ElectronAppModeSetting;
+  /** 次回起動で使う保存済みの設定 */
+  saved: ElectronAppModeSetting;
+  /** Firestore モードの Markdown バックアップ先。ThinkファイルFolder と重ねられない */
+  backupVaultRoot: string;
+  /** ローカル運用で起動できず Firestore で起動したときの理由 */
+  startupProblem: string;
+}
+
+export interface ElectronSnapshotRecord {
+  thinkid: string;
+  title: string;
+  body: string;
+  metadata: Record<string, unknown>;
+  sourceUpdatedAt: string;
+  snapshotAt: string;
+}
+
+export interface ElectronLocalRecord {
+  meta: ThinkMeta;
+  body: string;
+  support: Record<string, unknown>;
+  updatedAt: string;
+}
+
 declare global {
   interface Window {
     electronAPI?: {
+      appMode?: {
+        storageMode: 'firestore' | 'local';
+        get:          () => Promise<ElectronAppModeInfo>;
+        selectFolder: (currentDir?: string) => Promise<string | null>;
+        apply:        (next: ElectronAppModeSetting) => Promise<{ ok: true } | { ok: false; error: string }>;
+      };
+      snapshot?: {
+        create: (id: string) => Promise<ElectronSnapshotRecord>;
+        get:    (id: string) => Promise<ElectronSnapshotRecord | null>;
+        list:   (id: string) => Promise<ElectronSnapshotRecord[]>;
+        delete: (id: string) => Promise<void>;
+      };
+      localVault?: {
+        listMeta:     (dir: string) => Promise<ThinkMeta[]>;
+        getRecord:    (dir: string, id: string) => Promise<ElectronLocalRecord | null>;
+        importNewer:  (dir: string, payload: SavePayload & { createdAt: string; updatedAt: string }) => Promise<{ thinkid: string; status: 'created' | 'updated' | 'skipped'; updatedAt: string }>;
+        stashVersion: (dir: string, record: { meta: ThinkMeta; body: string }, reason: 'firestore-overwritten') => Promise<boolean>;
+      };
       storage: {
         listMeta:       ()                => Promise<ThinkMeta[]>;
         getContent:     (id: string)      => Promise<string | null>;

@@ -2,9 +2,9 @@
  * StorageManager.ts
  * ストレージバックエンドのシングルトン管理クラス
  *
- * Electron / Web とも Think の正本は Firestore。
- * Electron のローカル Markdown は FirestoreStorageBackend が保存成功後に
- * best-effort で書き出すバックアップであり、読み取り元にはしない。
+ * Think の正本は通常 Firestore。Electron のローカル Markdown は FirestoreStorageBackend が
+ * 保存成功後に best-effort で書き出すバックアップであり、読み取り元にはしない。
+ * PC版のローカル運用モードだけは、ThinkファイルFolder の .md を IPC 経由で正本とする。
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
@@ -17,28 +17,43 @@ import {
   type ThinkSnapshotRecord,
   type ThinkDiffResult,
 } from '../../platform/web/FirestoreStorageBackend';
+import { currentStorageMode, type StorageMode } from './storageMode';
+import { copyFirestoreToLocal, copyLocalToFirestore, type VaultMigrationResult } from './vaultMigration';
 
-export type { ThinkSnapshotRecord, ThinkDiffResult };
+export type { ThinkSnapshotRecord, ThinkDiffResult, VaultMigrationResult };
 
 export class StorageManager {
   private static _instance: StorageManager | null = null;
 
   public backend: IStorageBackend;
   public readonly mode: 'electron' | 'pwa';
+  public readonly storageMode: StorageMode;
   public webProvider: 'drive' | 'local' = 'local';
 
   private constructor() {
     this.mode =
       typeof window !== 'undefined' && window.electronAPI ? 'electron' : 'pwa';
+    this.storageMode = currentStorageMode();
     // relay APIを持たない旧preloadは移行前クライアント（および単体テスト）として
-    // ローカル保存を維持する。現行ElectronとWebの正本は必ずFirestore。
+    // ローカル保存を維持する。
     this.backend =
-      this.mode === 'electron' && !window.electronAPI?.relay
+      this.mode === 'electron' && (this.storageMode === 'local' || !window.electronAPI?.relay)
         ? new ElectronStorageBackend()
         : new FirestoreStorageBackend();
     console.log(
-      `[StorageManager] mode=${this.mode} (${this.backend instanceof FirestoreStorageBackend ? 'Firestore canonical storage' : 'legacy IPC storage'})`,
+      `[StorageManager] mode=${this.mode} (${this.backend instanceof FirestoreStorageBackend ? 'Firestore canonical storage' : this.storageMode === 'local' ? 'local folder storage' : 'legacy IPC storage'})`,
     );
+  }
+
+  private get localSnapshotApi() {
+    return typeof window !== 'undefined' ? window.electronAPI?.snapshot : undefined;
+  }
+
+  private requireFirestore(action: string): FirestoreStorageBackend {
+    if (!(this.backend instanceof FirestoreStorageBackend)) {
+      throw new Error(`${action}は「Firestore で使う」モードで実行してください。`);
+    }
+    return this.backend;
   }
 
   public static get instance(): StorageManager {
@@ -142,25 +157,47 @@ export class StorageManager {
     });
   }
 
-  public importElectronMarkdownBackup(): Promise<MarkdownImportResult> {
+  public importElectronMarkdownBackup(
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<MarkdownImportResult> {
     if (!(this.backend instanceof FirestoreStorageBackend)) {
       throw new Error('Firestore正本を使用する現行PC版で実行してください。');
     }
-    return this.backend.importElectronMarkdownBackup();
+    return this.backend.importElectronMarkdownBackup(onProgress);
   }
 
-  public exportAllToElectronMarkdownBackup(): Promise<{ exported: number; failedIds: string[] }> {
+  public exportAllToElectronMarkdownBackup(
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ exported: number; failedIds: string[] }> {
     if (!(this.backend instanceof FirestoreStorageBackend)) {
       throw new Error('Firestore正本を使用する現行PC版で実行してください。');
     }
-    return this.backend.exportAllToElectronMarkdownBackup();
+    return this.backend.exportAllToElectronMarkdownBackup(onProgress);
   }
 
-  public restoreFromElectronMarkdownBackup(): Promise<{ restored: number; failedIds: string[] }> {
+  public restoreFromElectronMarkdownBackup(
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ restored: number; failedIds: string[] }> {
     if (!(this.backend instanceof FirestoreStorageBackend)) {
       throw new Error('Firestore正本を使用する現行PC版で実行してください。');
     }
-    return this.backend.restoreFromElectronMarkdownBackup();
+    return this.backend.restoreFromElectronMarkdownBackup(onProgress);
+  }
+
+  // ── Firestore ⇔ ThinkファイルFolder の移行（最新を残す） ─────────────────
+
+  public copyFirestoreToLocal(
+    localVaultDir: string,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<VaultMigrationResult> {
+    return copyFirestoreToLocal(this.requireFirestore('ThinkファイルFolder への移行'), localVaultDir, onProgress);
+  }
+
+  public copyLocalToFirestore(
+    localVaultDir: string,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<VaultMigrationResult> {
+    return copyLocalToFirestore(this.requireFirestore('Firestore への移行'), localVaultDir, onProgress);
   }
 
   // ── スナップショット機能 ──────────────────────────────────────────
@@ -169,6 +206,8 @@ export class StorageManager {
     if (this.backend instanceof FirestoreStorageBackend) {
       return this.backend.createSnapshot(thinkid);
     }
+    const local = this.localSnapshotApi;
+    if (this.storageMode === 'local' && local) return local.create(thinkid);
     throw new Error('スナップショット機能は Firestore ストレージでのみ利用可能です。');
   }
 
@@ -176,6 +215,8 @@ export class StorageManager {
     if (this.backend instanceof FirestoreStorageBackend) {
       return this.backend.getSnapshot(thinkid);
     }
+    const local = this.localSnapshotApi;
+    if (this.storageMode === 'local' && local) return local.get(thinkid);
     return Promise.resolve(null);
   }
 
@@ -184,6 +225,8 @@ export class StorageManager {
     if (this.backend instanceof FirestoreStorageBackend) {
       return this.backend.listSnapshots(thinkid);
     }
+    const local = this.localSnapshotApi;
+    if (this.storageMode === 'local' && local) return local.list(thinkid);
     return Promise.resolve([]);
   }
 
@@ -191,14 +234,31 @@ export class StorageManager {
     if (this.backend instanceof FirestoreStorageBackend) {
       return this.backend.deleteSnapshot(thinkid);
     }
+    const local = this.localSnapshotApi;
+    if (this.storageMode === 'local' && local) return local.delete(thinkid);
     return Promise.resolve();
   }
 
-  public getDiff(thinkid: string): Promise<ThinkDiffResult | null> {
+  public async getDiff(thinkid: string): Promise<ThinkDiffResult | null> {
     if (this.backend instanceof FirestoreStorageBackend) {
       return this.backend.getDiff(thinkid);
     }
-    return Promise.resolve(null);
+    if (this.storageMode !== 'local') return null;
+    const [latest, snapshot] = await Promise.all([this.getRecord(thinkid), this.getSnapshot(thinkid)]);
+    if (!latest || latest.meta.isDeleted || !snapshot) return null;
+    const latestMetadata = latest.meta.metadata ?? {};
+    const titleChanged = latest.meta.title !== snapshot.title;
+    const bodyChanged = latest.body !== snapshot.body;
+    const metadataChanged = JSON.stringify(latestMetadata) !== JSON.stringify(snapshot.metadata ?? {});
+    return {
+      thinkid,
+      hasChanges: titleChanged || bodyChanged || metadataChanged,
+      titleChanged,
+      bodyChanged,
+      metadataChanged,
+      latest: { title: latest.meta.title, body: latest.body, metadata: latestMetadata, updatedAt: latest.meta.updatedAt },
+      snapshot,
+    };
   }
 }
 

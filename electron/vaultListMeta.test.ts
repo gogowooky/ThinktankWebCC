@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -66,6 +66,34 @@ describe('VaultEngine.listMeta with edits made on other devices', () => {
     const [meta] = engine.listMeta();
     expect(meta.updatedAt).toBe(later);
     expect(meta.title).toBe('携帯で直した題');
+  });
+
+  it('stops re-reading a file that stays older than a shard with a wrong date', () => {
+    const saved = engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: 'PCで書いた題\n本文' });
+    const wrong = new Date(Date.parse(saved.updatedAt) + 60_000).toISOString();
+    fs.mkdirSync(engine.getIndexDir(), { recursive: true });
+    fs.writeFileSync(
+      join(engine.getIndexDir(), 'shard-web-phone.json'),
+      JSON.stringify(shared.createIndexShard('web-phone', [
+        { thinkid: ID, category: 'memo', title: 'PCで書いた題', keywords: null, relatedIds: null, sizeBytes: 0,
+          isDeleted: false, createdAt: wrong, updatedAt: wrong },
+      ])),
+      'utf8',
+    );
+    const mdPath = join(engine.getVaultDir(), `${ID}.md`);
+    const readSpy = vi.spyOn(fs, 'readFileSync');
+    const mdReads = () => readSpy.mock.calls.filter(([p]) => p === mdPath).length;
+
+    expect(engine.listMeta()[0].updatedAt).toBe(saved.updatedAt);
+    expect(mdReads()).toBe(1);
+    expect(engine.listMeta()[0].updatedAt).toBe(saved.updatedAt);
+    expect(mdReads()).toBe(1);
+
+    // その端末が本当に書き換えたら、シャードの日付が変わるのでもう一度読む
+    const later = new Date(Date.parse(wrong) + 60_000).toISOString();
+    simulateEditElsewhere(later, '携帯で直した題', true);
+    expect(engine.listMeta()[0].title).toBe('携帯で直した題');
+    readSpy.mockRestore();
   });
 
   it('keeps its own newer version when the other shard is older', () => {

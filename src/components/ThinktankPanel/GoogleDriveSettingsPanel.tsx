@@ -140,7 +140,9 @@ export const GoogleDriveSettingsPanel: React.FC = () => {
     setActiveAction('import');
     setStatusMessage('初回取り込み中（MarkdownバックアップからFirestoreへ未登録Thinkを取り込んでいます）...');
     try {
-      const result = await StorageManager.instance.importElectronMarkdownBackup();
+      const result = await StorageManager.instance.importElectronMarkdownBackup(
+        (done, total) => setStatusMessage(`初回取り込み中... ${done} / ${total}件`),
+      );
       await TTModels.Instance?.Vault?.ReloadAll();
       setStatusMessage(
         `初回取り込み完了: ${result.imported}件追加、${result.skipped}件スキップ` +
@@ -163,7 +165,9 @@ export const GoogleDriveSettingsPanel: React.FC = () => {
     setActiveAction('backup');
     setStatusMessage('Firestoreデータをバックアップ中（ローカルMarkdownバックアップへ一括書き出し中）...');
     try {
-      const result = await StorageManager.instance.exportAllToElectronMarkdownBackup();
+      const result = await StorageManager.instance.exportAllToElectronMarkdownBackup(
+        (done, total) => setStatusMessage(`バックアップ中... ${done} / ${total}件`),
+      );
       setStatusMessage(
         `バックアップ完了: ${result.exported}件書き出し` +
           (result.failedIds.length ? `、${result.failedIds.length}件失敗` : ''),
@@ -187,7 +191,9 @@ export const GoogleDriveSettingsPanel: React.FC = () => {
     setActiveAction('restore');
     setStatusMessage('バックアップデータを書戻し中（ローカルMarkdownからFirestoreへ反映中）...');
     try {
-      const result = await StorageManager.instance.restoreFromElectronMarkdownBackup();
+      const result = await StorageManager.instance.restoreFromElectronMarkdownBackup(
+        (done, total) => setStatusMessage(`書戻し中... ${done} / ${total}件`),
+      );
       await TTModels.Instance?.Vault?.ReloadAll();
       setStatusMessage(
         `書戻し完了: ${result.restored}件反映` +

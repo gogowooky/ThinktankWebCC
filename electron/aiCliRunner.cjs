@@ -404,6 +404,7 @@ function prepareSandboxMcpConfig(sandboxDir, options = {}) {
     ELECTRON_RUN_AS_NODE: '1',
     ...(options.pipePath ? { THINKTANK_MCP_PIPE: options.pipePath } : {}),
     ...(options.vaultDir ? { THINKTANK_VAULT_DIR: options.vaultDir } : {}),
+    ...(options.localVaultRoot ? { THINKTANK_LOCAL_VAULT_ROOT: options.localVaultRoot } : {}),
     ...(options.userDataDir ? { THINKTANK_USER_DATA_DIR: options.userDataDir } : {}),
     ...(options.projectId ? { THINKTANK_DEFAULT_PROJECT_ID: options.projectId } : {}),
   };
@@ -633,10 +634,13 @@ async function executeIsolatedCli({
         : undefined;
     const userDataDir =
       activeMcpHost && activeMcpHost.vaultEngine ? activeMcpHost.vaultEngine.userDataDir : undefined;
+    const localVaultRoot =
+      activeMcpHost && activeMcpHost.vaultEngine ? activeMcpHost.vaultEngine.localVaultRoot || undefined : undefined;
 
     const { mcpConfigPath, mcpServerScript, execCommand, env: mcpEnv } = prepareSandboxMcpConfig(sandboxDir, {
       pipePath: bridgeServer ? bridgeServer.pipePath : undefined,
       vaultDir,
+      localVaultRoot,
       userDataDir,
       projectId,
     });

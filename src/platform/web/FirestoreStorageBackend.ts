@@ -782,14 +782,17 @@ export class FirestoreStorageBackend implements IStorageBackend {
   }
 
   /** 旧PC版のMarkdown正本を、利用者が明示したときだけFirestoreへ初回移行する。 */
-  public async importElectronMarkdownBackup(): Promise<MarkdownImportResult> {
+  public async importElectronMarkdownBackup(
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<MarkdownImportResult> {
     const storage = typeof window !== 'undefined' ? window.electronAPI?.storage : undefined;
     if (!storage?.listMeta) {
       throw new Error('Markdownバックアップを読み込めるPC版で実行してください。');
     }
     const metas = await storage.listMeta();
     const result: MarkdownImportResult = { imported: 0, skipped: 0, failedIds: [], systemSkipped: 0 };
-    for (const meta of metas) {
+    for (const [index, meta] of metas.entries()) {
+      onProgress?.(index, metas.length);
       if (meta.thinkid === '__tt_ui_state__' || meta.thinkid === '__tt_shortcuts__') {
         result.skipped += 1;
         result.systemSkipped = (result.systemSkipped ?? 0) + 1;
@@ -825,18 +828,62 @@ export class FirestoreStorageBackend implements IStorageBackend {
         console.warn(`[FirestoreStorageBackend] 初回移行に失敗しました (${meta.thinkid})`, error);
       }
     }
+    onProgress?.(metas.length, metas.length);
     return result;
   }
 
+  /** 一覧を読み直し、削除されていない全 Think を本文付きで返す（ThinkファイルFolder への移行用）。 */
+  public async listRecordsForMigration(): Promise<FirestoreThinkRecord[]> {
+    await this.listMeta();
+    return [...this.records.values()].map((record) => ({ meta: record.meta, body: record.body }));
+  }
+
+  /**
+   * 移行用。Firestore 側の版（削除済みを含む）より新しいときだけ書き込み、作成・更新日時は移行元の値を保つ。
+   * 上書きされる版は書き込み前に beforeOverwrite へ渡す（呼び出し側で退避する）。
+   */
+  public async importNewerRecord(
+    record: FirestoreThinkRecord,
+    beforeOverwrite?: (replaced: FirestoreThinkRecord) => Promise<void>,
+  ): Promise<'created' | 'updated' | 'skipped'> {
+    const id = record.meta.thinkid;
+    if (!isSafeThinkId(id)) throw new Error(`不正な thinkid です: ${id}`);
+    if (!record.meta.updatedAt) throw new Error(`移行元の更新日時がありません: ${id}`);
+    const existing = await this.fetchDocument(id, true);
+    if (existing && (existing.meta.updatedAt || '') >= record.meta.updatedAt) return 'skipped';
+    if (existing && !existing.meta.isDeleted && beforeOverwrite) {
+      await beforeOverwrite({ meta: existing.meta, body: existing.body });
+    }
+    const fullContent = record.body ? `${record.meta.title}\n${record.body}` : record.meta.title;
+    const rawCat = record.meta.category || 'memo';
+    const meta: ThinkMeta = {
+      ...record.meta,
+      category: rawCat === 'bundle' ? 'project' : rawCat === 'abstract' ? 'memo' : rawCat,
+      keywords: record.meta.keywords || '',
+      relatedIds: record.meta.relatedIds || '',
+      sizeBytes: utf8Bytes(fullContent),
+      isDeleted: false,
+      createdAt: record.meta.createdAt || inferCreatedAtFromThinkId(id, record.meta.updatedAt),
+      metadata: record.meta.metadata ?? {},
+    };
+    await this.commitDocument(id, this.documentFields({ meta, body: record.body }), existing, Boolean(existing));
+    this.records.set(id, { meta, body: record.body, firestoreUpdateTime: '' });
+    await this.writeElectronMarkdownBackup({ meta, body: record.body });
+    return existing && !existing.meta.isDeleted ? 'updated' : 'created';
+  }
+
   /** Firestore正本の全データを取得し、PC版のMarkdownバックアップへ一括書き出しする */
-  public async exportAllToElectronMarkdownBackup(): Promise<{ exported: number; failedIds: string[] }> {
+  public async exportAllToElectronMarkdownBackup(
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ exported: number; failedIds: string[] }> {
     const storage = typeof window !== 'undefined' ? window.electronAPI?.storage : undefined;
     if (!storage?.save && !storage?.writeBackup) {
       throw new Error('Markdownバックアップを保存できるPC版で実行してください。');
     }
     const metas = await this.listMeta();
     const result = { exported: 0, failedIds: [] as string[] };
-    for (const meta of metas) {
+    for (const [index, meta] of metas.entries()) {
+      onProgress?.(index, metas.length);
       if (meta.isDeleted) continue;
       try {
         const body = (await this.getBody(meta.thinkid)) ?? '';
@@ -847,18 +894,22 @@ export class FirestoreStorageBackend implements IStorageBackend {
         console.warn(`[FirestoreStorageBackend] バックアップ書出しに失敗しました (${meta.thinkid})`, err);
       }
     }
+    onProgress?.(metas.length, metas.length);
     return result;
   }
 
   /** PC版のMarkdownバックアップからFirestoreへ強制的に全件書き戻す（上書き） */
-  public async restoreFromElectronMarkdownBackup(): Promise<{ restored: number; failedIds: string[] }> {
+  public async restoreFromElectronMarkdownBackup(
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<{ restored: number; failedIds: string[] }> {
     const storage = typeof window !== 'undefined' ? window.electronAPI?.storage : undefined;
     if (!storage?.listMeta) {
       throw new Error('Markdownバックアップを読み込めるPC版で実行してください。');
     }
     const metas = await storage.listMeta();
     const result = { restored: 0, failedIds: [] as string[] };
-    for (const meta of metas) {
+    for (const [index, meta] of metas.entries()) {
+      onProgress?.(index, metas.length);
       if (meta.thinkid === '__tt_ui_state__' || meta.thinkid === '__tt_shortcuts__' || meta.isDeleted) {
         continue;
       }
@@ -883,6 +934,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
         console.warn(`[FirestoreStorageBackend] 書き戻しに失敗しました (${meta.thinkid})`, err);
       }
     }
+    onProgress?.(metas.length, metas.length);
     return result;
   }
 

@@ -9,6 +9,8 @@
  * - 端末別シャード索引 (.thinktank/index/shard-<deviceId>.json) の更新
  * - Drive for desktop 衝突コピーの検出
  * - .thinktank/prompts/ のドメインプロファイル管理
+ * - ローカル運用モード（localVaultRoot 指定時）では、このフォルダ配下の .md を正本とする
+ *   （thinks/ snapshots/ trash/ system/ の配置。docs/261103/ローカル運用モード.md）
  */
 
 const fs = require('fs');
@@ -21,21 +23,47 @@ function hostnameToken() {
   return os.hostname().replace(/[^A-Za-z0-9_-]/g, '_');
 }
 
+/** trash/ の退避名に使う日時。同期フォルダ上でも並び順が分かり、ファイル名に使えない文字を含まない。 */
+function fileTimestamp() {
+  return new Date().toISOString().replace(/[:.]/g, '-');
+}
+
+/** thinkid には '.' が入らないので、退避名 <thinkid>.<理由>-<日時>.md の先頭が thinkid になる。 */
+function thinkIdFromTrashName(fileName) {
+  return fileName.split('.')[0];
+}
+
+function readJsonFile(filePath) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
 class VaultEngine {
   /**
    * @param {{ userDataDir: string, appRootDir: string, defaultVaultDir: string, deviceIdPrefix?: string }} options
    * deviceIdPrefix は起動するプログラムの種類（Electron 版は 'pc'、常駐エージェントは 'agent'）。
    */
-  constructor({ userDataDir, appRootDir, defaultVaultDir, deviceIdPrefix = 'pc', autoIndexRefresh = false }) {
+  constructor({ userDataDir, appRootDir, defaultVaultDir, deviceIdPrefix = 'pc', autoIndexRefresh = false, localVaultRoot = '' }) {
     this.userDataDir = userDataDir;
     this.appRootDir = appRootDir;
     this.deviceIdPrefix = deviceIdPrefix;
     this.autoIndexRefresh = autoIndexRefresh;
+    this.localVaultRoot = localVaultRoot ? path.resolve(localVaultRoot) : '';
     this._shardTimer = null;
     this._bodyPackTimer = null;
     this._fullIndexPromise = null;
     this.configFilePath = path.join(userDataDir, 'vault-engine-config.json');
-    this.overlayFilePath = path.join(userDataDir, 'vault-meta-overlay.json');
+    // 一覧の記録はフォルダごとに分ける。Firestore のバックアップ先と混ざらないようにし、
+    // 同期フォルダ内に置かないことで別PCの記録とも混ざらないようにする。
+    this.overlayFilePath = this.localVaultRoot
+      ? path.join(
+          userDataDir,
+          `vault-meta-overlay-local-${crypto.createHash('sha256').update(this.localVaultRoot.toLowerCase()).digest('hex').slice(0, 12)}.json`,
+        )
+      : path.join(userDataDir, 'vault-meta-overlay.json');
     this.defaultVaultDir = defaultVaultDir;
     this.config = this._loadConfig(defaultVaultDir);
     this._metaMap = null;
@@ -52,16 +80,17 @@ class VaultEngine {
 
   _loadOverlay() {
     if (!fs.existsSync(this.overlayFilePath)) {
-      return { updated: {}, deleted: {} };
+      return { updated: {}, deleted: {}, shardChecked: {} };
     }
     try {
       const parsed = JSON.parse(fs.readFileSync(this.overlayFilePath, 'utf8'));
       return {
         updated: parsed && typeof parsed.updated === 'object' ? parsed.updated : {},
         deleted: parsed && typeof parsed.deleted === 'object' ? parsed.deleted : {},
+        shardChecked: parsed && typeof parsed.shardChecked === 'object' ? parsed.shardChecked : {},
       };
     } catch {
-      return { updated: {}, deleted: {} };
+      return { updated: {}, deleted: {}, shardChecked: {} };
     }
   }
 
@@ -235,11 +264,16 @@ class VaultEngine {
     };
   }
 
+  isLocalMode() {
+    return Boolean(this.localVaultRoot);
+  }
+
   /**
    * vaultDir が .../vault_ver2 を指している場合はその親を VaultRoot とみなし、
    * そうでない場合は vaultDir 直下に vault_ver2 がある場合はそれを使う。
    */
   getVaultDir() {
+    if (this.localVaultRoot) return path.join(this.localVaultRoot, 'thinks');
     let configured = this.config.vaultDir;
     // Drive for desktop 未起動などでドライブ自体が無いと mkdir が起動時に落ちる。
     // 設定は残し、ドライブが戻れば自動で元の場所に戻す。
@@ -258,6 +292,7 @@ class VaultEngine {
   }
 
   getVaultRootDir() {
+    if (this.localVaultRoot) return this.localVaultRoot;
     const vDir = this.getVaultDir();
     return path.basename(vDir) === 'vault_ver2' ? path.dirname(vDir) : vDir;
   }
@@ -266,12 +301,21 @@ class VaultEngine {
     return path.join(this.getVaultRootDir(), 'trash');
   }
 
+  /** アプリ用ファイルの置き場。ローカル運用では利用者に分かる名前の system/ にする。 */
+  _systemDir() {
+    return path.join(this.getVaultRootDir(), this.localVaultRoot ? 'system' : '.thinktank');
+  }
+
   getIndexDir() {
-    return path.join(this.getVaultRootDir(), '.thinktank', 'index');
+    return path.join(this._systemDir(), 'index');
+  }
+
+  getSnapshotsDir() {
+    return path.join(this.getVaultRootDir(), 'snapshots');
   }
 
   getPromptsDir() {
-    const vaultPrompts = path.join(this.getVaultRootDir(), '.thinktank', 'prompts');
+    const vaultPrompts = path.join(this._systemDir(), 'prompts');
     if (fs.existsSync(vaultPrompts)) {
       return vaultPrompts;
     }
@@ -282,6 +326,50 @@ class VaultEngine {
     fs.mkdirSync(this.getVaultDir(), { recursive: true });
     fs.mkdirSync(this.getTrashDir(), { recursive: true });
     fs.mkdirSync(this.getIndexDir(), { recursive: true });
+    if (this.localVaultRoot) fs.mkdirSync(this.getSnapshotsDir(), { recursive: true });
+  }
+
+  /**
+   * ローカル運用では、消す・上書きされる版を trash/ へ日時付きで退避する。
+   * 同じ Think を何度消しても前の退避を上書きしない（同期フォルダ上でのファイル消失対策）。
+   */
+  _trashPath(thinkid, reason, ext) {
+    return path.join(this.getTrashDir(), `${thinkid}.${reason}-${fileTimestamp()}${ext}`);
+  }
+
+  /** 現在の .md / .support.json を消さずに trash/ へ写す（移行で上書きされる側を残す）。 */
+  stashCurrentVersion(thinkid, reason = 'overwritten') {
+    const mdPath = this._mdPath(thinkid);
+    if (!fs.existsSync(mdPath)) return false;
+    fs.mkdirSync(this.getTrashDir(), { recursive: true });
+    fs.copyFileSync(mdPath, this._trashPath(thinkid, reason, '.md'));
+    const supPath = this._supportPath(thinkid);
+    if (fs.existsSync(supPath)) fs.copyFileSync(supPath, this._trashPath(thinkid, reason, '.support.json'));
+    return true;
+  }
+
+  /** 移行元など、手元に無い版を trash/ へ書き残す。 */
+  stashExternalVersion(record, reason) {
+    const thinkid = String(record?.meta?.thinkid ?? '');
+    if (!shared.isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
+    const meta = record.meta;
+    const mdText = shared.serializeMdRecord({
+      thinkid,
+      category: meta.category,
+      title: meta.title,
+      keywords: meta.keywords,
+      relatedIds: meta.relatedIds,
+      createdAt: meta.createdAt,
+      updatedAt: meta.updatedAt,
+      body: record.body ?? '',
+    });
+    this._atomicWrite(this._trashPath(thinkid, reason, '.md'), mdText);
+    if (shared.hasNonEmptyMetadata(meta.metadata)) {
+      this._atomicWrite(
+        this._trashPath(thinkid, reason, '.support.json'),
+        shared.serializeSupportFile({ thinkid, updatedAt: meta.updatedAt, metadata: meta.metadata }),
+      );
+    }
   }
 
   _mdPath(thinkid) {
@@ -419,8 +507,12 @@ class VaultEngine {
       const hasExternalSupport = supSet.has(id) || legSet.has(id);
       const ownMeta = overlay.updated[id] && typeof overlay.updated[id] === 'object' ? overlay.updated[id] : null;
       const shardMeta = shardMap.get(id);
+      // 読み直してもファイルがシャードより古いままなら、そのシャードの日付が誤っている
+      // （例: 古い版の PC が frontmatter の無いメモに更新時刻を付けた）。同じ値で読み直し続けると
+      // 起動のたびに G: の数千件を同期で読み、画面が数分固まるので、確かめた値は覚えておく。
       const changedElsewhere =
-        ownMeta && shardMeta && (shardMeta.updatedAt || '') > (ownMeta.updatedAt || '');
+        ownMeta && shardMeta && (shardMeta.updatedAt || '') > (ownMeta.updatedAt || '') &&
+        overlay.shardChecked[id] !== shardMeta.updatedAt;
       const cachedMeta = changedElsewhere ? null : ownMeta || shardMeta;
       if (cachedMeta && (!hasExternalSupport || cachedMeta.metadata)) {
         metaMap.set(id, cachedMeta);
@@ -437,6 +529,9 @@ class VaultEngine {
         metaMap.set(meta.thinkid, meta);
         if (this._bodyMap) this._bodyMap.set(meta.thinkid, parsed.body);
         overlay.updated[meta.thinkid] = meta;
+        if (shardMeta && (shardMeta.updatedAt || '') > (meta.updatedAt || '')) {
+          overlay.shardChecked[meta.thinkid] = shardMeta.updatedAt;
+        }
         overlayDirty = true;
       } catch (e) {
         console.warn(`[VaultEngine] listMeta skip ${id}.md:`, e.message);
@@ -723,6 +818,13 @@ class VaultEngine {
     const trashDir = this.getTrashDir();
     fs.mkdirSync(trashDir, { recursive: true });
 
+    if (this.localVaultRoot) {
+      if (fs.existsSync(mdPath)) fs.renameSync(mdPath, this._trashPath(thinkid, 'deleted', '.md'));
+      if (fs.existsSync(supPath)) fs.renameSync(supPath, this._trashPath(thinkid, 'deleted', '.support.json'));
+      this._recordOverlayDelete(thinkid);
+      return { thinkid, deletedAt: new Date().toISOString() };
+    }
+
     if (fs.existsSync(mdPath)) {
       const destMd = path.join(trashDir, `${thinkid}.md`);
       if (fs.existsSync(destMd)) fs.unlinkSync(destMd);
@@ -863,9 +965,13 @@ class VaultEngine {
     const deletedIds = {};
     if (fs.existsSync(trashDir)) {
       for (const f of fs.readdirSync(trashDir)) {
-        if (f.endsWith('.md')) {
+        // 移行で上書きされた版の退避（<id>.overwritten-…）は削除ではないので数えない
+        const isDeletion = f.endsWith('.md') && (!f.slice(0, -3).includes('.') || f.includes('.deleted-'));
+        if (isDeletion) {
           const stat = fs.statSync(path.join(trashDir, f));
-          deletedIds[f.slice(0, -3)] = stat.mtime.toISOString();
+          const id = thinkIdFromTrashName(f);
+          const mtimeIso = stat.mtime.toISOString();
+          if (!deletedIds[id] || deletedIds[id] < mtimeIso) deletedIds[id] = mtimeIso;
         }
       }
     }
@@ -928,6 +1034,70 @@ class VaultEngine {
       this._fullIndexPromise = null;
     });
     return this._fullIndexPromise;
+  }
+
+  /**
+   * 移行用。手元の版より新しいときだけ書き込み、作成・更新日時は移行元の値を保つ。
+   * 上書きされる手元の版は trash/ に残す。
+   */
+  importNewerRecord(payload) {
+    const thinkid = String(payload?.thinkid ?? '');
+    const incomingUpdatedAt = String(payload?.updatedAt ?? '');
+    if (!incomingUpdatedAt) throw new Error(`移行元の更新日時がありません: ${thinkid}`);
+    const existing = this.getRecord(thinkid);
+    if (existing && (existing.meta.updatedAt || '') >= incomingUpdatedAt) {
+      return { thinkid, status: 'skipped', updatedAt: existing.meta.updatedAt };
+    }
+    if (existing) this.stashCurrentVersion(thinkid, 'overwritten');
+    const meta = this.saveBackupSnapshot(payload);
+    return { thinkid, status: existing ? 'updated' : 'created', updatedAt: meta.updatedAt };
+  }
+
+  // ── スナップショット（ローカル運用。Firestore の snapshots/current と同じ契約） ──
+
+  _snapshotPath(thinkid) {
+    if (!shared.isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
+    return path.join(this.getSnapshotsDir(), thinkid, 'current.json');
+  }
+
+  createSnapshot(thinkid) {
+    const record = this.getRecord(thinkid);
+    if (!record) throw new Error(`対象の Think「${thinkid}」が見つかりません。`);
+    const snapshot = {
+      schemaVersion: 1,
+      thinkid,
+      title: record.meta.title,
+      body: record.body,
+      metadata: record.meta.metadata ?? {},
+      sourceUpdatedAt: record.meta.updatedAt,
+      snapshotAt: new Date().toISOString(),
+    };
+    this._atomicWrite(this._snapshotPath(thinkid), JSON.stringify(snapshot, null, 2) + '\n');
+    return snapshot;
+  }
+
+  getSnapshot(thinkid) {
+    const filePath = this._snapshotPath(thinkid);
+    return fs.existsSync(filePath) ? readJsonFile(filePath) : null;
+  }
+
+  listSnapshots(thinkid) {
+    const dir = path.dirname(this._snapshotPath(thinkid));
+    if (!fs.existsSync(dir)) return [];
+    return fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => readJsonFile(path.join(dir, f)))
+      .filter((s) => s && typeof s.snapshotAt === 'string')
+      .sort((x, y) => x.snapshotAt.localeCompare(y.snapshotAt));
+  }
+
+  /** 破棄したスナップショットも消さずに trash/ へ移す。 */
+  deleteSnapshot(thinkid) {
+    const filePath = this._snapshotPath(thinkid);
+    if (!fs.existsSync(filePath)) return;
+    fs.mkdirSync(this.getTrashDir(), { recursive: true });
+    fs.renameSync(filePath, this._trashPath(thinkid, 'snapshot', '.json'));
   }
 
   /**

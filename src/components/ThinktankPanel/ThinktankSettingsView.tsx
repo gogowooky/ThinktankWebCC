@@ -1,6 +1,6 @@
 /**
  * ThinktankSettingsView.tsx
- * Thinktank>設定。表示・AIモデル・Default AI・Firebase・Google Drive API・Vault を並べる。
+ * Thinktank>設定。表示・AIモデル・Default AI・モード切替・Firebase・Google Drive API・Vault を並べる。
  */
 
 import { useState, useCallback, useRef, useImperativeHandle, forwardRef } from 'react';
@@ -11,6 +11,8 @@ import { AiModelSettingsPanel } from './AiModelSettingsPanel';
 import { PanelAiSettingsPanel } from './PanelAiSettingsPanel';
 import { FirebaseSettingsPanel } from './FirebaseSettingsPanel';
 import { GoogleDriveSettingsPanel } from './GoogleDriveSettingsPanel';
+import { StorageModeSettingsPanel } from './StorageModeSettingsPanel';
+import { isLocalStorageMode } from '../../services/storage/storageMode';
 import './ThinktankSettingsView.css';
 
 export interface ThinktankSettingsViewRef {
@@ -45,6 +47,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
     focus: () => rootRef.current?.focus({ preventScroll: true }),
   }));
 
+  const localMode = isLocalStorageMode();
   const [value,          setValue]          = useState(loadValue);
   const [history]                           = useState(loadHistory);
   const [isVaultOpen,    setIsVaultOpen]    = useState(true);
@@ -132,11 +135,13 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
         {isPanelAiOpen && <PanelAiSettingsPanel />}
       </section>
 
-      <FirebaseSettingsPanel />
-      <GoogleDriveSettingsPanel />
+      <StorageModeSettingsPanel />
+      {/* ローカル運用では Firebase・Drive・Firestore 上の Vault 名を使わない */}
+      {!localMode && <FirebaseSettingsPanel />}
+      {!localMode && <GoogleDriveSettingsPanel />}
 
       {/* ── Vault ── */}
-      <section className="tt-settings-section">
+      {!localMode && <section className="tt-settings-section">
         <div className="tt-settings-section__header" onClick={() => setIsVaultOpen(v => !v)}>
           {isVaultOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
           <h2 className="tt-settings-section__title">Vault</h2>
@@ -168,7 +173,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
             </div>
           </>
         )}
-      </section>
+      </section>}
     </div>
   );
 });

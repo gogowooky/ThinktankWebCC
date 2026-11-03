@@ -2,7 +2,29 @@
 
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
+// main.cjs が additionalArguments で渡す今回の起動の運用モード
+const storageModeArg = process.argv.find((arg) => arg.startsWith('--tt-storage-mode='));
+const storageMode = storageModeArg && storageModeArg.split('=')[1] === 'local' ? 'local' : 'firestore';
+
 contextBridge.exposeInMainWorld('electronAPI', {
+  appMode: {
+    storageMode,
+    get:           ()                            => ipcRenderer.invoke('appMode:get'),
+    selectFolder:  (currentDir)                  => ipcRenderer.invoke('appMode:selectFolder', currentDir),
+    apply:         (next)                        => ipcRenderer.invoke('appMode:apply', next),
+  },
+  snapshot: {
+    create:        (id)                          => ipcRenderer.invoke('snapshot:create', id),
+    get:           (id)                          => ipcRenderer.invoke('snapshot:get', id),
+    list:          (id)                          => ipcRenderer.invoke('snapshot:list', id),
+    delete:        (id)                          => ipcRenderer.invoke('snapshot:delete', id),
+  },
+  localVault: {
+    listMeta:      (dir)                         => ipcRenderer.invoke('localVault:listMeta', dir),
+    getRecord:     (dir, id)                     => ipcRenderer.invoke('localVault:getRecord', dir, id),
+    importNewer:   (dir, payload)                => ipcRenderer.invoke('localVault:importNewer', dir, payload),
+    stashVersion:  (dir, record, reason)         => ipcRenderer.invoke('localVault:stashVersion', dir, record, reason),
+  },
   storage: {
     listMeta:      ()                            => ipcRenderer.invoke('storage:listMeta'),
     getContent:    (id)                          => ipcRenderer.invoke('storage:getContent', id),

@@ -45,8 +45,9 @@ function resolveStandaloneVaultEngine() {
     defaultVaultDir,
     deviceIdPrefix: 'mcp',
     autoIndexRefresh: false,
+    localVaultRoot: process.env.THINKTANK_LOCAL_VAULT_ROOT || '',
   });
-  if (process.env.THINKTANK_VAULT_DIR && engine.config.vaultDir !== process.env.THINKTANK_VAULT_DIR) {
+  if (!engine.isLocalMode() && process.env.THINKTANK_VAULT_DIR && engine.config.vaultDir !== process.env.THINKTANK_VAULT_DIR) {
     engine.config.vaultDir = process.env.THINKTANK_VAULT_DIR;
   }
   return engine;

@@ -243,9 +243,11 @@ it('skips legacy system settings before making any Firestore requests', async ()
   } } });
   const fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
-  const result = await new FirestoreStorageBackend().importElectronMarkdownBackup();
+  const onProgress = vi.fn();
+  const result = await new FirestoreStorageBackend().importElectronMarkdownBackup(onProgress);
   expect(result).toMatchObject({ imported: 0, skipped: 2, systemSkipped: 2, failedIds: [] });
   expect(fetchMock).not.toHaveBeenCalled();
+  expect(onProgress.mock.calls).toEqual([[0, 2], [1, 2], [2, 2]]);
 });
 
 it('creates a lightweight tombstone with timestamp deletedAt and 90-day expireAt on delete', async () => {

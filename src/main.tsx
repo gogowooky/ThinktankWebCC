@@ -5,6 +5,7 @@ import App from './App'
 import { seedMobileDisplayDefaults } from './utils/deviceInfo'
 import { applyAppZoom } from './utils/appZoom'
 import { FirebaseAuthService } from './platform/web/FirebaseAuthService'
+import { isLocalStorageMode, resetCachesIfStorageModeChanged } from './services/storage/storageMode'
 
 // OAuth 2.0 リダイレクト後のポップアップ・コールバック処理
 if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
@@ -30,6 +31,8 @@ if (typeof window !== 'undefined' && window.location.hash.includes('access_token
   }
 }
 
+// 前回とモード（Firestore / ローカル）が違えば、UI状態を読む前に前のモードの記録を消す
+if (resetCachesIfStorageModeChanged()) console.log('[StorageMode] モードが切り替わったため画面側の記録を消しました')
 // iPhone 表示時はレンダリング前に簡易レイアウトへ先行設定する（初回描画のちらつき防止）
 seedMobileDisplayDefaults()
 // 保存済みの表示倍率をレンダリング前に反映する（初回描画のちらつき防止）
@@ -42,7 +45,8 @@ createRoot(document.getElementById('root')!).render(
 )
 
 // データ用Firebaseセッションをrendererとメインプロセスの間で相互に引き継ぐ。
-if (window.electronAPI?.relay) {
+// ローカル運用では Firebase に接続しない。
+if (window.electronAPI?.relay && !isLocalStorageMode()) {
   void (async () => {
     // メインプロセスのOSブラウザログインを正とし、rendererに古い別UIDの
     // セッションが残っていても必ず同じアカウントへ揃える。
