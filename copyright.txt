@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.11",
+  "version": "2.6.12",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "c2f25a7",
-  "commitDateTime": "2026-11-03-213505",
-  "commitMessage": "feat: PC版にローカル運用モードを追加する"
+  "commitId": "b174116",
+  "commitDateTime": "2026-11-03-231342",
+  "commitMessage": "chore: PC版インストーラーを2.6.12で作り直し、導入手順を記す"
 }
