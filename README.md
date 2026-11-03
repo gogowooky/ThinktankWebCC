@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-03
 - コミット番号: b174116
+- デプロイ日: 2026-11-03（JST）
+- デプロイ対象コミット: 56abe01（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 ローカル運用モードを含むPC版のインストーラー `release/Thinktank Setup 2.6.12.exe` を作り直した。exe にテストファイルを含めないようにし、起動時の自己診断（`TT_SELFTEST=1`）に運用モードを出すようにした。README に PC版の作成と導入（ローカル運用モードへの切り替え、設定の保存先）を記した。作ったexeをローカル運用モードで起動し、`app://` から画面が出て ThinkファイルFolder（thinks/・snapshots/・trash/・system/）が作られることを確認。
 ### v2.6.11 feat: PC版にローカル運用モードを追加する
