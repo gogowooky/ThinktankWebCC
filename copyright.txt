@@ -1,15 +1,15 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.10",
+  "version": "2.6.11",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "branchName": "TTWebCC260926BigChange",
+  "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "db672f4",
-  "commitDateTime": "2026-11-03-162139",
-  "commitMessage": "chore: package.json のバージョンを記録上のバージョンに揃える"
+  "commitId": "c2f25a7",
+  "commitDateTime": "2026-11-03-213505",
+  "commitMessage": "feat: PC版にローカル運用モードを追加する"
 }
