@@ -667,7 +667,7 @@ function createWindow(startUrl) {
         const renderedTitles = document.querySelectorAll('.thoughts-list__title').length;
 
         return JSON.stringify({
-          hasElectronAPI: !!api, evalBlocked, ipcMetaCount, ipcError, contentLen,
+          hasElectronAPI: !!api, storageMode: api.appMode ? api.appMode.storageMode : null, evalBlocked, ipcMetaCount, ipcError, contentLen,
           openPathRejectsRelative, renderedTitles, origin: location.origin,
           csp: csp ? csp.slice(0, 45) + '...' : null
         });
