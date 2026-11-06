@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.7.0",
+  "version": "2.6.13",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "b174116",
-  "commitDateTime": "2026-11-03-231342",
-  "commitMessage": "chore: PC版インストーラーを2.6.12で作り直し、導入手順を記す"
+  "commitId": "7590c3c",
+  "commitDateTime": "2026-11-06-235449",
+  "commitMessage": "perf: 起動時の白フラッシュ抑制・検索ウォームアップ遅延とエディタ装飾の最適化"
 }
