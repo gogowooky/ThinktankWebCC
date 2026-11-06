@@ -7,6 +7,7 @@ const storageModeArg = process.argv.find((arg) => arg.startsWith('--tt-storage-m
 const storageMode = storageModeArg && storageModeArg.split('=')[1] === 'local' ? 'local' : 'firestore';
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  perfEnabled: process.argv.includes('--tt-perf=1'),
   appMode: {
     storageMode,
     get:           ()                            => ipcRenderer.invoke('appMode:get'),

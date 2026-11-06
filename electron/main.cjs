@@ -12,6 +12,9 @@ const { RelayAgent } = require('./relayAgent.cjs');
 const { ThinktankMcpHost } = require('./mcpBridge.cjs');
 const { loadDesktopClient, signInWithGoogleLoopback } = require('./googleLoopbackAuth.cjs');
 const appMode = require('./appMode.cjs');
+const { perfEnabled, perfMark, perfTime } = require('./perfLog.cjs');
+
+perfMark('modules-loaded');
 
 const GOOGLE_DESKTOP_CLIENT_FILE = 'google-oauth-desktop.json';
 const shared = require('./shared-dist/index.js');
@@ -33,6 +36,7 @@ protocol.registerSchemesAsPrivileged([
       supportFetchAPI: true,
       corsEnabled: true,
       stream: true,
+      codeCache: true,
     },
   },
 ]);
@@ -187,11 +191,11 @@ ipcMain.handle('storage:getSupport', (_event, id) => {
 });
 
 ipcMain.handle('storage:save', (_event, payload) => {
-  return vaultEngine.saveRecord(payload);
+  return perfTime('storage:save', () => vaultEngine.saveRecord(payload));
 });
 
 ipcMain.handle('storage:writeBackup', (_event, payload) => {
-  return vaultEngine.saveBackupSnapshot(payload);
+  return perfTime('storage:writeBackup', () => vaultEngine.saveBackupSnapshot(payload));
 });
 
 ipcMain.handle('storage:saveSupport', (_event, id, metadata, expectedVersion) => {
@@ -567,13 +571,18 @@ function createWindow(startUrl) {
   const win = new BrowserWindow({
     width:  1400,
     height: 900,
+    // 画面の読み込み中に白く光らないよう、index.html の背景色と揃える
+    backgroundColor: '#1e2030',
     webPreferences: {
       preload:          path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration:  false,
       sandbox:          false,
       // 画面は起動直後に保存先を決めるので、IPC の往復を待たずに preload から読めるよう渡す
-      additionalArguments: [`--tt-storage-mode=${STARTUP_MODE.storageMode}`],
+      additionalArguments: [
+        `--tt-storage-mode=${STARTUP_MODE.storageMode}`,
+        ...(perfEnabled ? ['--tt-perf=1'] : []),
+      ],
     },
   });
 
@@ -584,6 +593,7 @@ function createWindow(startUrl) {
     const message = isNewApi ? e.message : args[2];
     const severe  = isNewApi ? (level === 'warning' || level === 'error') : level >= 2;
     if (severe) console.log(`[renderer:${level}] ${message}`);
+    else if (perfEnabled && String(message).startsWith('[Perf]')) console.error(message);
   });
 
   // 地図・検索タグなどの外部ページは既定ブラウザで開く。Google ログインのポップアップだけは
@@ -597,6 +607,8 @@ function createWindow(startUrl) {
     }
     return { action: 'deny' };
   });
+
+  win.webContents.once('did-finish-load', () => perfMark('did-finish-load'));
 
   win.webContents.on('did-fail-load', (_e, code, desc, url) => {
     console.error(`[main] 画面の読み込みに失敗: ${desc} (${code}) ${url}`);
@@ -686,8 +698,12 @@ function createWindow(startUrl) {
 
 // ── アプリ起動 ─────────────────────────────────────────────────────────────
 
+const SEARCH_WARM_UP_DELAY_MS = 20_000;
+let searchWarmUpTimer = null;
+
 app.whenReady()
   .then(() => {
+    perfMark('ready');
     registerAppProtocol();
     const vDir = vaultEngine.getVaultDir();
     console.log(`[Vault] mode=${STARTUP_MODE.storageMode} userData=${app.getPath('userData')} dir=${vDir}`);
@@ -710,7 +726,11 @@ app.whenReady()
     if (!isLocalMode) relayAgent.start();
     // 前回の終了後に G: で変わったファイルも Web 版の索引に載るよう、起動後に一度作り直す
     vaultEngine.scheduleIndexRefresh({ shardDelayMs: 30_000, bodyPackDelayMs: 10 * 60_000 });
-    vaultEngine.warmUpSearch().catch((err) => console.warn(`[Vault] 検索の準備に失敗しました: ${err.message || err}`));
+    // 一覧の同期読み込みと本文パックの解析で止まるので、画面の読み込みと競合させない。
+    // 待つ間に検索が来ても search() が自分で本文を読む。
+    searchWarmUpTimer = setTimeout(() => {
+      vaultEngine.warmUpSearch().catch((err) => console.warn(`[Vault] 検索の準備に失敗しました: ${err.message || err}`));
+    }, SEARCH_WARM_UP_DELAY_MS);
   })
   .catch(err => {
     console.error('[main] 起動に失敗しました:', err);
@@ -722,6 +742,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('before-quit', () => {
+  clearTimeout(searchWarmUpTimer);
   relayAgent.stop();
   vaultEngine.stopIndexRefresh();
 });

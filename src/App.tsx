@@ -17,9 +17,11 @@ import { isIPhone } from './utils/deviceInfo'
 import { flushAllPanes } from './utils/unsavedGuard'
 import { StorageConflictError } from './services/storage/IStorageBackend'
 import { onSaveStatusChange } from './services/storage/saveStatus'
+import { perfMark } from './utils/perfLog'
 
 export default function App() {
   useEffect(() => {
+    perfMark('first-commit')
     const app = TTApplication.Instance
     const vault = app.Models.Vault
 

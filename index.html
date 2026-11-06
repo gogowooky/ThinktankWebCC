@@ -8,9 +8,13 @@
     <meta name="theme-color" content="#1e2030" />
     <meta name="description" content="Thinktank - 記憶・思考・判断支援アプリ" />
     <title>Thinktank</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #1e2030; }
+      .tt-boot { display: flex; height: 100vh; align-items: center; justify-content: center; color: #565f89; font: 14px system-ui, sans-serif; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"><div class="tt-boot">Thinktank を起動しています…</div></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -19,10 +19,11 @@ import './TextEditorMedia.css';
 import { getEditorValue, reconstructContent } from './texteditor/editorContent';
 import { getCollapsedStartLines, getClosedHeadings } from './texteditor/editorFolding';
 import { registerMarkdownFolding, registerHexColorProvider } from './texteditor/editorProviders';
-import { applyEditorDecorations } from './texteditor/editorDecorations';
+import { applyEditorDecorations, injectHighlightStyles } from './texteditor/editorDecorations';
 import { clientPointToPosition } from '../../../utils/editorDropPosition';
 import { isLocalPathTarget } from '../../../utils/linkFormat';
 import { isReadOnlyContentType } from '../../../types';
+import { perfMark } from '../../../utils/perfLog';
 /**
  * TextEditorMedia.tsx
  * Monaco Editor によるテキスト編集メディア。
@@ -35,6 +36,9 @@ import { isReadOnlyContentType } from '../../../types';
 /** Monaco の等倍時 fontSize / lineHeight（表示文字サイズ倍率の基準値）。 */
 const EDITOR_BASE_FONT_SIZE = 13;
 const EDITOR_BASE_LINE_HEIGHT = 20;
+
+/** 既存の装飾は入力に追随するので、全行の走査は打鍵が途切れてからでよい。 */
+const DECORATION_DELAY_MS = 120;
 
 export interface TextEditorMediaRef {
   focus: () => void;
@@ -57,6 +61,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   const editorRef = useRef<any>(null);
   const disposablesRef = useRef<any[]>([]);
   const headingStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const decorationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRestoringRef = useRef(true);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const thinkRef = useRef(think);
@@ -125,6 +130,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
   }, []);
 
   const handleMount: OnMount = useCallback((editor, monaco) => {
+    perfMark('editor-mounted');
     editorRef.current = editor;
     // WorkingPanel.DroppedFile.ID:Insert がドロップ位置のPaneからエディタを引けるよう登録する
     if (areaId) TTShortcutManager.instance.registerAreaEditor(areaId, editor);
@@ -426,6 +432,9 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       if (headingStatusTimerRef.current) {
         clearTimeout(headingStatusTimerRef.current);
       }
+      if (decorationTimerRef.current) {
+        clearTimeout(decorationTimerRef.current);
+      }
       disposablesRef.current.forEach(d => d.dispose());
       disposablesRef.current = [];
       if (areaIdRef.current) {
@@ -553,6 +562,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     // 色・属性は docs/DefaultColor.md 由来の TextEditor.<種別>.Style.* に従う
     linkStyleEl.textContent = linkStyleCss(editorSettings.linkStyles);
 
+    injectHighlightStyles(editorSettings);
+
     // インライン書式（**bold** / *italic* / __underline__ / ~~strikethrough~~）用CSSの注入。
     // 色・属性は docs/DefaultColor.md 由来の TextEditor.<書式名>.* に従う。
     // MarkdownMedia と同じスタイルシートを共有するので、どちらのビューでも同じ見た目になる。
@@ -614,17 +625,25 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     applyEditorDecorations(editorRef.current, decorationsCollectionRef.current, editorSettings);
   }, [editorSettings]);
 
+  const updateDecorationsRef = useRef(updateDecorations);
+  updateDecorationsRef.current = updateDecorations;
+
+  const scheduleDecorations = useCallback(() => {
+    if (decorationTimerRef.current) clearTimeout(decorationTimerRef.current);
+    decorationTimerRef.current = setTimeout(() => updateDecorationsRef.current(), DECORATION_DELAY_MS);
+  }, []);
+
   const handleChange = useCallback((value: string | undefined) => {
     const v = value ?? '';
     if (readOnly) {
       onDirtyChange(false);
       if (v !== savedRef.current) editorRef.current?.setValue(savedRef.current);
-      updateDecorations();
+      scheduleDecorations();
       return;
     }
     const isDirty = v !== savedRef.current;
     onDirtyChange(isDirty);
-    updateDecorations();
+    scheduleDecorations();
     // どの種別も第一行（frontmatterがあればその title: 値）がタイトルなので、memoと同じくリアルタイム同期する
     // YAML表示では1行目が "---" なので、タイトルは保存時に Content から決め直す
     if (onTitleChange && think && !rawYamlRef.current) {
@@ -654,7 +673,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           });
       }, 3000);
     }
-  }, [onDirtyChange, updateDecorations, onTitleChange, think, onSave, readOnly]);
+  }, [onDirtyChange, scheduleDecorations, onTitleChange, think, onSave, readOnly]);
 
   // ── URL / パス ドロップ ───────────────────────────────────────────────────
 

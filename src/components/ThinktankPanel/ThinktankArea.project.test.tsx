@@ -30,6 +30,9 @@ function add(id: string, contentType: ContentType, content: string) {
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
   host = document.createElement('div'); document.body.appendChild(host); root = createRoot(host);
+  const vault = TTApplication.Instance.Models.Vault;
+  vault.IsLoaded = true;
+  vault.LoadError = null;
   add(PROJECT, 'project', `親P\n=\n# 対象\n[project:${CHILD}]\n[memo:${MEMO_IN}]`);
   add(CHILD, 'project', '子P\n=');
   add(MEMO_IN, 'memo', '配下メモ');

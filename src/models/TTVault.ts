@@ -12,6 +12,7 @@ import { TTCollection } from './TTCollection';
 import { TTThink, type ProjectMembersListener } from './TTThink';
 import type { ContentType } from '../types';
 import { StorageManager } from '../services/storage/StorageManager';
+import { perfMark } from '../utils/perfLog';
 import { isFirebaseSignInRequiredError } from '../platform/web/FirebaseAuthService';
 import { PARENT_PROJECT_ID_KEY, parseProject, projectTargetIds, serializeProject, targetsAllThinks, updateProjectTargets } from '../utils/thinkFormat';
 import { createLinkFile, serializeLinkFile } from '../utils/linkFormat';
@@ -325,6 +326,7 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
         this.IsLoaded = true;
         this.LoadError = null;
         this.NotifyRefresh();
+        perfMark(`vault-loaded(${this.Count})`);
         console.log(`[TTVault] LoadCache: ${this.Count} items loaded (vault=${this.ID})`);
         return;
       } catch (e) {

@@ -6,6 +6,10 @@ import { seedMobileDisplayDefaults } from './utils/deviceInfo'
 import { applyAppZoom } from './utils/appZoom'
 import { FirebaseAuthService } from './platform/web/FirebaseAuthService'
 import { isLocalStorageMode, resetCachesIfStorageModeChanged } from './services/storage/storageMode'
+import { perfMark, startPerfObservers } from './utils/perfLog'
+
+perfMark('modules-evaluated')
+startPerfObservers()
 
 // OAuth 2.0 リダイレクト後のポップアップ・コールバック処理
 if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {

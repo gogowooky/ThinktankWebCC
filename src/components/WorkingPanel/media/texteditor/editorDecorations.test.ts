@@ -2,7 +2,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import type { editor as MonacoEditor } from 'monaco-editor';
 import type { MediaProps } from '../types';
-import { applyEditorDecorations } from './editorDecorations';
+import { applyEditorDecorations, injectHighlightStyles } from './editorDecorations';
 import { getCollapsedStartLines, getClosedHeadings } from './editorFolding';
 import { inlineStyleClass, linkStyleClass, styleClass } from '../../../../utils/defaultColor';
 
@@ -26,6 +26,7 @@ it('preserves heading, bullet, full-width space, word, link and inline decoratio
     bulletStyles: [{ mark: '*', style }],
   };
   applyEditorDecorations(editor, collection, settings);
+  injectHighlightStyles(settings);
   const decorations = set.mock.calls[0][0];
   const classes = decorations.map(decoration => decoration.options.inlineClassName);
   expect(classes).toEqual(expect.arrayContaining([
@@ -35,6 +36,42 @@ it('preserves heading, bullet, full-width space, word, link and inline decoratio
   expect(decorations.find(decoration => decoration.options.inlineClassName === styleClass('Heading', 1))?.range)
     .toMatchObject({ startLineNumber: 1, startColumn: 1, endLineNumber: 1, endColumn: 10 });
   expect(document.getElementById('text-editor-highlight-styles')?.textContent).toContain('#123456');
+});
+
+it('does not rewrite the highlight stylesheet while decorating', () => {
+  class Range {
+    constructor(public startLineNumber: number, public startColumn: number, public endLineNumber: number, public endColumn: number) {}
+  }
+  window.monaco = { Range } as unknown as typeof import('monaco-editor');
+  const editor = { getModel: () => ({ getLineCount: () => 1, getLineContent: () => 'text' }) } as unknown as MonacoEditor.IStandaloneCodeEditor;
+  const collection = { set: vi.fn() } as unknown as MonacoEditor.IEditorDecorationsCollection;
+  const style = { Color: '#123456', BgColor: 'none', Attrs: 'bold' };
+  applyEditorDecorations(editor, collection, {
+    lineNumbers: true, wordWrap: true, minimap: true, showFullWidthSpace: false, unicodeHighlight: false,
+    bracketPairColorization: true, highlightWord: '', highlightStyles: [style], headingStyles: [style],
+    background: '#ffffff', foreground: '#123456', selectionBackground: '#dddddd', occurrenceBackground: '#eeeeee',
+  });
+  expect(document.getElementById('text-editor-highlight-styles')).toBeNull();
+});
+
+it('matches a highlight word on every line, not only the first', () => {
+  class Range {
+    constructor(public startLineNumber: number, public startColumn: number, public endLineNumber: number, public endColumn: number) {}
+  }
+  window.monaco = { Range } as unknown as typeof import('monaco-editor');
+  const lines = ['needle', 'xx needle', '**a** needle'];
+  const editor = { getModel: () => ({ getLineCount: () => lines.length, getLineContent: (line: number) => lines[line - 1] }) } as unknown as MonacoEditor.IStandaloneCodeEditor;
+  const set = vi.fn<(decorations: MonacoEditor.IModelDeltaDecoration[]) => void>();
+  const style = { Color: '#ff0000', BgColor: 'none', Attrs: 'bold' };
+  applyEditorDecorations(editor, { set } as unknown as MonacoEditor.IEditorDecorationsCollection, {
+    lineNumbers: true, wordWrap: true, minimap: true, showFullWidthSpace: false, unicodeHighlight: false,
+    bracketPairColorization: true, highlightWord: 'needle', highlightStyles: [style], headingStyles: [style],
+    background: '#ffffff', foreground: '#123456', selectionBackground: '#dddddd', occurrenceBackground: '#eeeeee',
+  });
+  const decorations = set.mock.calls[0][0];
+  const hits = decorations.filter(d => d.options.inlineClassName === styleClass('Highlighter', 1));
+  expect(hits.map(d => d.range.startLineNumber)).toEqual([1, 2, 3]);
+  expect(decorations.filter(d => d.options.inlineClassName === inlineStyleClass('bold'))).toHaveLength(1);
 });
 
 it('keeps closed-heading line numbers and handles an unavailable folding contribution', () => {

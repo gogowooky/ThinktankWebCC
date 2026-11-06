@@ -106,6 +106,7 @@ export interface ElectronLocalRecord {
 declare global {
   interface Window {
     electronAPI?: {
+      perfEnabled?: boolean;
       appMode?: {
         storageMode: 'firestore' | 'local';
         get:          () => Promise<ElectronAppModeInfo>;

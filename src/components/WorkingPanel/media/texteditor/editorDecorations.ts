@@ -4,15 +4,19 @@ import { INLINE_MASK_CHAR, INLINE_STYLE_RULES, colorStyleToCss, inlineStyleClass
 import type { MarkKind, MarkStyle } from '../../../../utils/defaultColor';
 import type { editor as MonacoEditor } from 'monaco-editor';
 
-export function matchMarkStyle(
-  kind: MarkKind,
-  styles: MarkStyle[],
-  textAfterIndent: string,
-): { className: string; } | null {
-  const candidates = styles
+type MarkCandidate = MarkStyle & { index: number };
+
+function markCandidates(styles: MarkStyle[]): MarkCandidate[] {
+  return styles
     .map((s, index) => ({ ...s, index }))
     .sort((a, b) => b.mark.length - a.mark.length);
+}
 
+function matchMarkCandidate(
+  kind: MarkKind,
+  candidates: MarkCandidate[],
+  textAfterIndent: string,
+): { className: string; } | null {
   for (const c of candidates) {
     const pattern = c.mark.endsWith(' ') ? c.mark : c.mark + ' ';
     if (!textAfterIndent.startsWith(pattern)) continue;
@@ -23,29 +27,67 @@ export function matchMarkStyle(
   return null;
 }
 
-export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEditor | null, collection: MonacoEditor.IEditorDecorationsCollection | null, editorSettings: MediaProps['editorSettings']): void {
-  if (!editor || !collection || !editorSettings) return;
+interface HighlightMatcher {
+  regex: RegExp;
+  groupIndex: number;
+  minimapColor?: string;
+}
 
-  const model = editor.getModel();
-  if (!model) return;
+function highlightMatchers(editorSettings: NonNullable<MediaProps['editorSettings']>): HighlightMatcher[] {
+  if (!editorSettings.highlightWord) return [];
+  const hlOptions = {
+    matchCase: editorSettings.highlightMatchCase,
+    isRegex: editorSettings.highlightIsRegex,
+    matchWidth: editorSettings.highlightMatchWidth,
+  };
+  const matchers: HighlightMatcher[] = [];
+  // カンマでグループ分割 (最大5つ)
+  splitHighlighterGroups(editorSettings.highlightWord).forEach((groupStr, groupIndex) => {
+    const groupStyle = editorSettings.highlightStyles[groupIndex];
+    // 半角/全角スペースで単語分割
+    for (const word of splitHighlighterWords(groupStr)) {
+      try {
+        matchers.push({
+          regex: new RegExp(buildWordPattern(word, hlOptions), hlOptions.matchCase ? 'g' : 'gi'),
+          groupIndex,
+          minimapColor: groupStyle && !isUnset(groupStyle.BgColor) ? groupStyle.BgColor : undefined,
+        });
+      } catch {
+        // 入力途中の不正な正規表現は無視する
+      }
+    }
+  });
+  return matchers;
+}
 
-  // コメント設定のパース
-  // Comment / Bullet のスタイルは editorSettings から配列で直接取得します
-  const commentStyles = editorSettings.commentStyles || [];
-  const bulletStyles = editorSettings.bulletStyles || [];
-
-  // --- ハイライトグループの動的スタイル注入 ---
+/**
+ * 色・属性は docs/DefaultColor.md 由来の TextEditor.Highlighter.Style(1..6).* に従う。
+ * <style> の書き換えは画面全体のスタイル再計算を起こすので、設定が変わったときだけ呼ぶ。
+ */
+export function injectHighlightStyles(editorSettings: NonNullable<MediaProps['editorSettings']>): void {
   let highlightStyleEl = document.getElementById('text-editor-highlight-styles');
   if (!highlightStyleEl) {
     highlightStyleEl = document.createElement('style');
     highlightStyleEl.id = 'text-editor-highlight-styles';
     document.head.appendChild(highlightStyleEl);
   }
-  // 色・属性は docs/DefaultColor.md 由来の TextEditor.Highlighter.Style(1..6).* に従う
   highlightStyleEl.textContent = editorSettings.highlightStyles.map((style, index) => {
     const decls = colorStyleToCss(style);
     return decls ? `.${styleClass('Highlighter', index + 1)} { ${decls} border-radius: 2px; }` : '';
   }).filter(Boolean).join('\n');
+}
+
+export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEditor | null, collection: MonacoEditor.IEditorDecorationsCollection | null, editorSettings: MediaProps['editorSettings']): void {
+  if (!editor || !collection || !editorSettings) return;
+
+  const model = editor.getModel();
+  if (!model) return;
+
+  // 行ごとに作り直すと文書の行数ぶん無駄になるものは、走査の前に一度だけ用意する
+  const commentCandidates = markCandidates(editorSettings.commentStyles || []);
+  const bulletCandidates = markCandidates(editorSettings.bulletStyles || []);
+  const matchers = highlightMatchers(editorSettings);
+  const inlineRules = INLINE_STYLE_RULES.map(rule => ({ rule, regex: new RegExp(rule.pattern, 'g') }));
 
   const newDecorations: MonacoEditor.IModelDeltaDecoration[] = [];
   const linesCount = model.getLineCount();
@@ -78,8 +120,8 @@ export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEdito
       const textAfterIndent = indentMatch ? indentMatch[2] : lineContent;
 
       // 行頭記号の装飾。Comment を先に見て、該当しなければ Bullet を見る
-      const matched = matchMarkStyle('Comment', commentStyles, textAfterIndent)
-        ?? matchMarkStyle('Bullet', bulletStyles, textAfterIndent);
+      const matched = matchMarkCandidate('Comment', commentCandidates, textAfterIndent)
+        ?? matchMarkCandidate('Bullet', bulletCandidates, textAfterIndent);
 
       if (matched) {
         newDecorations.push({
@@ -109,51 +151,28 @@ export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEdito
     }
 
     // 単語ハイライトの装飾（複数グループ対応）
-    if (editorSettings.highlightWord) {
-      const hlOptions = {
-        matchCase: editorSettings.highlightMatchCase,
-        isRegex: editorSettings.highlightIsRegex,
-        matchWidth: editorSettings.highlightMatchWidth,
-      };
-      // カンマでグループ分割 (最大5つ)
-      const groups = splitHighlighterGroups(editorSettings.highlightWord);
-      groups.forEach((groupStr, groupIndex) => {
-        // 半角/全角スペースで単語分割
-        const words = splitHighlighterWords(groupStr);
-        if (words.length === 0) return;
-
-        const groupStyle = editorSettings.highlightStyles[groupIndex];
-
-        words.forEach(word => {
-          const pattern = buildWordPattern(word, hlOptions);
-          let regex: RegExp;
-          try {
-            regex = new RegExp(pattern, hlOptions.matchCase ? 'g' : 'gi');
-          } catch {
-            return;
-          }
-          let wordMatch;
-          while ((wordMatch = regex.exec(lineContent)) !== null) {
-            const matchLen = wordMatch[0].length;
-            if (matchLen === 0) {
-              regex.lastIndex++;
-              continue;
-            }
-            const startCol = wordMatch.index + 1;
-            const endCol = startCol + matchLen;
-            newDecorations.push({
-              range: new window.monaco!.Range(i, startCol, i, endCol),
-              options: {
-                inlineClassName: styleClass('Highlighter', groupIndex + 1),
-                minimap: groupStyle && !isUnset(groupStyle.BgColor) ? {
-                  color: groupStyle.BgColor,
-                  position: 1 // Inline
-                } : undefined
-              }
-            });
+    for (const { regex, groupIndex, minimapColor } of matchers) {
+      regex.lastIndex = 0;
+      let wordMatch;
+      while ((wordMatch = regex.exec(lineContent)) !== null) {
+        const matchLen = wordMatch[0].length;
+        if (matchLen === 0) {
+          regex.lastIndex++;
+          continue;
+        }
+        const startCol = wordMatch.index + 1;
+        const endCol = startCol + matchLen;
+        newDecorations.push({
+          range: new window.monaco!.Range(i, startCol, i, endCol),
+          options: {
+            inlineClassName: styleClass('Highlighter', groupIndex + 1),
+            minimap: minimapColor ? {
+              color: minimapColor,
+              position: 1 // Inline
+            } : undefined
           }
         });
-      });
+      }
     }
 
     // 1. ダブルクォーテーションで囲まれたURIやファイルパスのハイライト
@@ -246,8 +265,8 @@ export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEdito
     // 判定の済んだ記号だけを伏せ字にして次のルールへ渡すことで、`**太字**` の `*` が
     // 斜体の記号として再解釈されるのを防ぎつつ、`*斜体の中の **太字**` の入れ子は残す。
     let scanLine = lineContent;
-    for (const rule of INLINE_STYLE_RULES) {
-      const regex = new RegExp(rule.pattern, 'g');
+    for (const { rule, regex } of inlineRules) {
+      regex.lastIndex = 0;
       const markers: number[] = [];
       let inlineMatch;
       while ((inlineMatch = regex.exec(scanLine)) !== null) {
