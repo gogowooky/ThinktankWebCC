@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.6.14 feat: linkファイルのCaption・GAS経由のタイトル取得と同一リンク再利用、起動高速化と不要コード整理
+
+- 日付: 2026-11-08
+- コミット番号: 56ec6eb
+
+linkファイルに # Caption 項を追加し、作成時にGDriveのファイル名・GMailの件名・Googleフォトの撮影日（yyyy-MM-dd）・File:/Folder:+名前・ページタイトル（不明ならAffiliation）を設定。gmail/gdrive/link/file/dir タグの後ろにCaptionを挿入し、パスのタグを [file:ID]/[dir:ID] に分割（[path:ID] は読み取り互換）。同じリンク先のlinkファイルがあれば再利用し、2行目は = 30個とした。利用者自身のGoogle Apps Script（scripts/gas/linkTitle.gs、docs/261108/GASリンクタイトル取得.md）にGDrive名・GMail件名を問い合わせる設定画面と処理を追加（新形式のGMail URLの復元を含む）。あわせてThink一覧の前回キャッシュ表示、エディタの遅延読込、画面用ライブラリのdevDependencies移動、廃止済みのDrive正本・ローカル中継・ChatApiService等の削除を含む。型検査成功、全738テスト成功。設定画面はブラウザ版で表示と入力チェックを確認（GASへの実際の問い合わせは未確認）。
+
 ### v2.6.13 perf: 起動時の白フラッシュ抑制・検索ウォームアップ遅延とエディタ装飾の最適化
 
 - 日付: 2026-11-06

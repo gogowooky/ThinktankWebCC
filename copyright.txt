@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.13",
+  "version": "2.6.14",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "7590c3c",
-  "commitDateTime": "2026-11-06-235449",
-  "commitMessage": "perf: 起動時の白フラッシュ抑制・検索ウォームアップ遅延とエディタ装飾の最適化"
+  "commitId": "56ec6eb",
+  "commitDateTime": "2026-11-08-211555",
+  "commitMessage": "feat: linkファイルのCaption・GAS経由のタイトル取得と同一リンク再利用、起動高速化と不要コード整理"
 }
