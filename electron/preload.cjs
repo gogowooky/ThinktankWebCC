@@ -78,6 +78,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   system: {
     openPath:        (target)                    => ipcRenderer.invoke('system:openPath', target),
     readShortcutLink:(target)                    => ipcRenderer.invoke('system:readShortcutLink', target),
+    isDirectory:     (target)                    => ipcRenderer.invoke('system:isDirectory', target),
   },
   getPathForFile: (file) => webUtils.getPathForFile(file),
 });

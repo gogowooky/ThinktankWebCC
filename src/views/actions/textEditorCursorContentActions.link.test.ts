@@ -165,6 +165,58 @@ describe('URL / パスのDDInsert', () => {
   });
 });
 
+describe('URL/パス ⇔ Linkタグ', () => {
+  const withSetPosition = (editor: object) => Object.assign(editor, { setPosition: vi.fn() });
+
+  it('Url:ToTag はURLを参照タグ（Caption付き）に置き換える', async () => {
+    const line = '資料 https://example.com/page を見る';
+    const { editor, executeEdits, createLinksThink } = setup(line, 12, undefined);
+    withSetPosition(editor);
+    expect(await run('TextEditor.CurrentEditor.DoOnCursorPos:Url:ToTag')).toBe('タグ化: [link:2026-10-30-130000] page');
+    expect(createLinksThink).toHaveBeenCalledWith({ target: 'https://example.com/page', title: 'page' }, '');
+    expect(executeEdits.mock.calls[0][1][0]).toMatchObject({
+      range: { startLineNumber: 1, startColumn: 4, endLineNumber: 1, endColumn: 28 },
+      text: '[link:2026-10-30-130000] page',
+    });
+  });
+
+  it('File:ToTag は引用符ごとパスを [file:ID] に置き換える', async () => {
+    const line = '"C:\\My Docs\\plan.md" 参照';
+    const { editor, executeEdits, createLinksThink } = setup(line, 5, undefined);
+    withSetPosition(editor);
+    expect(await run('TextEditor.CurrentEditor.DoOnCursorPos:File:ToTag')).toBe('タグ化: [file:2026-10-30-130000] plan.md');
+    expect(createLinksThink.mock.calls[0][0]).toEqual({ target: 'C:\\My Docs\\plan.md', title: 'plan.md' });
+    expect(executeEdits.mock.calls[0][1][0].range).toMatchObject({ startColumn: 1, endColumn: 21 });
+  });
+
+  it('URLでない位置では何もしない', async () => {
+    const { createLinksThink } = setup('ただの文章', 2, undefined);
+    expect(await run('TextEditor.CurrentEditor.DoOnCursorPos:Url:ToTag')).toBe('カーソル位置のテキストがURLではありません');
+    expect(await run('TextEditor.CurrentEditor.DoOnCursorPos:File:ToTag')).toBe('カーソル位置のテキストがファイルパスではありません');
+    expect(createLinksThink).not.toHaveBeenCalled();
+  });
+
+  it('Link:FromTag はタグと直後の Caption をリンク先に置き換える', async () => {
+    const content = NEW_FORMAT.replace('=\n', '=\n# Caption\n見積書.pdf\n');
+    const line = `前 [gdrive:${LINK_ID}] 見積書.pdf 後`;
+    const { editor, executeEdits } = setup(line, 5, fakeThink('links', content));
+    withSetPosition(editor);
+    expect(await run('TextEditor.CurrentEditor.DoOnCursorPos:Link:FromTag')).toBe('リンク先に置換: https://drive.google.com/file/d/abc/view');
+    const edit = executeEdits.mock.calls[0][1][0];
+    expect(line.slice(edit.range.startColumn - 1, edit.range.endColumn - 1)).toBe(`[gdrive:${LINK_ID}] 見積書.pdf`);
+  });
+
+  it('Link:FromTag はパスを引用符で囲み、Caption が無ければタグだけを置き換える', async () => {
+    const line = `[file:${LINK_ID}] メモ`;
+    const { editor, executeEdits } = setup(line, 3, fakeThink('links', 'b.md\n=\n# Caption\nFile:b.md\n# Link\n"C:\\a\\b.md"\n# Abstract'));
+    withSetPosition(editor);
+    await run('TextEditor.CurrentEditor.DoOnCursorPos:Link:FromTag');
+    const edit = executeEdits.mock.calls[0][1][0];
+    expect(edit.text).toBe('"C:\\a\\b.md"');
+    expect(line.slice(edit.range.startColumn - 1, edit.range.endColumn - 1)).toBe(`[file:${LINK_ID}]`);
+  });
+});
+
 describe('Projectの AIまとめ・AI議論 のタグ', () => {
   it.each(['aiview', 'chat', 'AIView'])('[%s:ID] はそのThinkを開く', async tag => {
     const { openThink } = setup(`[${tag}:${LINK_ID}]`, 2, fakeThink('chat', '議論\n## 質問'));

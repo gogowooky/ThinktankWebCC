@@ -18,9 +18,9 @@ import { getErrorMessage } from '../../utils/errorMessage';
 import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
 import { defaultSearchTagUrls } from '../../utils/defaultSearchTags';
 import type { SearchTagRow } from '../../utils/searchTagFormat';
-import { captionOfLinkFile, formatLinkTag, formatLinkTagWithCaption, isLocalPathTarget, linkTagNameOf, linkTagOfFile, parseLinkFile, parseLinkTag, type LinkFile, type LinkSource } from '../../utils/linkFormat';
+import { baseNameOf, captionOfLinkFile, formatLinkTag, formatLinkTagWithCaption, isLocalPathTarget, linkTagNameOf, linkTagOfFile, parseLinkFile, parseLinkTag, type LinkFile, type LinkSource } from '../../utils/linkFormat';
 import { getPcName } from '../../utils/pcName';
-import { findTextOnCursor } from '../../utils/textOnCursor';
+import { findTextOnCursor, findTextRangeOnCursor } from '../../utils/textOnCursor';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
 // Vaultメモ（ThinktankSearchTag）由来の上書き分。id一致分のみ既定値（docs/DefaultSearchTag.md）を置換する
@@ -196,6 +196,24 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
 
   function getTextOnCursorSafe(): string {
     return getCurrentTextOnCursor() || TTUIStateManager.instance.getProperty('TextEditor.CurrentEditor.TextOnCursorPos') || '';
+  }
+
+  /**
+   * URL/パスの linkファイルを用意して参照タグ（Caption 付き）を返す。
+   * 同じリンク先の linkファイルがあればそれを使う。Seeds で開いているProjectがあれば登録する。
+   */
+  async function linkTagForSource(source: LinkSource): Promise<string> {
+    const pcName = await getPcName();
+    const seedsProjectId = app.SeedsPanel?.ProjectID;
+    const { think: linkThink } = seedsProjectId
+      ? await app.Models.Vault.GetOrCreateLinksThink(source, pcName, seedsProjectId)
+      : await app.Models.Vault.GetOrCreateLinksThink(source, pcName);
+    // 既存のlinkファイルを使う場合も、そのファイルの Caption を添える
+    if (linkThink.IsMetaOnly) await linkThink.LoadContent();
+    const file = parseLinkFile(linkThink.Content);
+    return file
+      ? formatLinkTagWithCaption(linkTagOfFile(file), linkThink.ID, captionOfLinkFile(file))
+      : formatLinkTag(linkTagNameOf(source.target), linkThink.ID);
   }
 
   TTActions.Register({
@@ -449,6 +467,122 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         item.Result = `[エラー] ${getErrorMessage(err)}`;
       }
     }
+  });
+
+  // ── URL/パス ⇔ Linkタグ ─────────────────────────────────────────────────
+  /** カーソル位置の URL・パス・タグとその範囲（エディタに渡せる IRange） */
+  const targetOnCursor = () => {
+    const editor = TTShortcutManager.instance.activeEditor;
+    const pos = editor?.getPosition?.();
+    const model = editor?.getModel?.();
+    if (!pos || !model) return null;
+    const line: string = model.getLineContent(pos.lineNumber);
+    const found = findTextRangeOnCursor(line, pos.column);
+    if (!found) return null;
+    return {
+      editor,
+      line,
+      text: found.text,
+      lineNumber: pos.lineNumber as number,
+      startColumn: found.startColumn,
+      endColumn: found.endColumn,
+    };
+  };
+
+  const replaceOnCursor = (
+    target: NonNullable<ReturnType<typeof targetOnCursor>>, endColumn: number, text: string, source: string,
+  ) => {
+    const range = { startLineNumber: target.lineNumber, startColumn: target.startColumn, endLineNumber: target.lineNumber, endColumn };
+    target.editor.executeEdits(source, [{ range, text, forceMoveMarkers: true }]);
+    target.editor.setPosition({ lineNumber: target.lineNumber, column: target.startColumn + text.length });
+    target.editor.focus();
+  };
+
+  const urlTitle = (url: string): string => {
+    try {
+      const u = new URL(url);
+      const last = u.pathname.split('/').filter(Boolean).pop();
+      return last ? decodeURIComponent(last) : u.hostname;
+    } catch {
+      return url;
+    }
+  };
+
+  /** file:// のURIは linkファイルに書くパスへ直す */
+  const fileUriToPath = (target: string): string => {
+    if (!/^file:\/\//i.test(target)) return target;
+    try {
+      return decodeURIComponent(new URL(target).pathname).replace(/^\/([a-zA-Z]:)/, '$1').replace(/\//g, '\\');
+    } catch {
+      return target;
+    }
+  };
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Url:ToTag',
+    Description: 'カーソル位置のURLの linkファイルを用意し（同じリンク先があれば再利用）、URLを参照タグに置き換える',
+    Completion: async (item) => {
+      try {
+        const target = targetOnCursor();
+        if (!target || !/^https?:\/\//i.test(target.text)) { item.Result = 'カーソル位置のテキストがURLではありません'; return; }
+        const tag = await linkTagForSource({ target: target.text, title: urlTitle(target.text) });
+        replaceOnCursor(target, target.endColumn, tag, 'url-to-tag');
+        item.Result = `タグ化: ${tag}`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:File:ToTag',
+    Description: 'カーソル位置のファイルパスの linkファイルを用意し（同じリンク先があれば再利用）、パスを参照タグに置き換える',
+    Completion: async (item) => {
+      try {
+        const target = targetOnCursor();
+        const path = target ? fileUriToPath(target.text) : '';
+        if (!target || /^https?:\/\//i.test(path) || (path.startsWith('[') && path.endsWith(']')) || !isLocalPathTarget(path)) {
+          item.Result = 'カーソル位置のテキストがファイルパスではありません';
+          return;
+        }
+        // フォルダかどうかは PC版なら実際に確かめる（[file:ID] / [dir:ID] の区別に使う）
+        const stat = await window.electronAPI?.system?.isDirectory?.(path).catch(() => null);
+        const isDirectory = stat && stat.ok ? stat.isDirectory : undefined;
+        const tag = await linkTagForSource({
+          target: path,
+          title: baseNameOf(path),
+          ...(isDirectory !== undefined ? { isDirectory } : {}),
+        });
+        replaceOnCursor(target, target.endColumn, tag, 'file-to-tag');
+        item.Result = `タグ化: ${tag}`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Link:FromTag',
+    Description: 'カーソル位置のLinkタグを、linkファイルのリンク先（URL、または引用符で囲んだパス）に置き換える',
+    Completion: async (item) => {
+      try {
+        const target = targetOnCursor();
+        const tag = target ? parseLinkTag(target.text) : null;
+        if (!target || !tag) { item.Result = 'カーソル位置のテキストがLinkタグではありません'; return; }
+        const resolved = await linkFileOnCursor();
+        if (typeof resolved === 'string') { item.Result = resolved; return; }
+        const link = resolved.file.link;
+        const replacement = isLocalPathTarget(link) ? `"${link.replace(/"/g, '""')}"` : link;
+        // タグ作成時に添えた「 Caption」が直後に残っていれば、それも一緒に置き換える
+        const caption = ` ${captionOfLinkFile(resolved.file)}`;
+        const after = target.line.slice(target.endColumn - 1);
+        const endColumn = caption.trim() && after.startsWith(caption) ? target.endColumn + caption.length : target.endColumn;
+        replaceOnCursor(target, endColumn, replacement, 'link-from-tag');
+        item.Result = `リンク先に置換: ${replacement}`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
   });
 
   TTActions.Register(UNAVAILABLE_ACTIONS.mail);
@@ -826,23 +960,12 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       const ctx = consumeTextEditorDrop(item);
       if (!ctx) return;
       try {
-        const pcName = await getPcName();
-        const seedsProjectId = app.SeedsPanel?.ProjectID;
-        const source: LinkSource = {
+        const tag = await linkTagForSource({
           target: ctx.target,
           title: ctx.title,
           ...(ctx.pageTitle ? { pageTitle: ctx.pageTitle } : {}),
           ...(ctx.isDirectory !== undefined ? { isDirectory: ctx.isDirectory } : {}),
-        };
-        const { think: linkThink } = seedsProjectId
-          ? await app.Models.Vault.GetOrCreateLinksThink(source, pcName, seedsProjectId)
-          : await app.Models.Vault.GetOrCreateLinksThink(source, pcName);
-        // 既存のlinkファイルを使う場合も、そのファイルの Caption を添える
-        if (linkThink.IsMetaOnly) await linkThink.LoadContent();
-        const file = parseLinkFile(linkThink.Content);
-        const tag = file
-          ? formatLinkTagWithCaption(linkTagOfFile(file), linkThink.ID, captionOfLinkFile(file))
-          : formatLinkTag(linkTagNameOf(ctx.target), linkThink.ID);
+        });
         ctx.editor.executeEdits('external-drop-tag', [{ range: ctx.range, text: tag, forceMoveMarkers: true }]);
         ctx.editor.focus();
         item.Result = `Insert: ${tag}`;

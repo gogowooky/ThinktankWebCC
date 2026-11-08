@@ -496,6 +496,19 @@ ipcMain.handle('system:openPath', async (_event, target) => {
   return error ? { ok: false, error } : { ok: true };
 });
 
+// linkファイルの [file:ID] / [dir:ID] を決めるため、存在とフォルダかどうかだけを返す（中身は読まない）
+ipcMain.handle('system:isDirectory', async (_event, target) => {
+  if (typeof target !== 'string' || !target.trim() || target.includes('\0') || !path.isAbsolute(target.trim())) {
+    return { ok: false, error: 'path must be absolute' };
+  }
+  try {
+    const stat = await fs.promises.stat(target.trim());
+    return { ok: true, isDirectory: stat.isDirectory() };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+});
+
 // Windows の .lnk は renderer の File API ではリンク先を読めないため、Electron の
 // shell.readShortcutLink() だけを限定公開する。任意ファイル読取にしないよう .lnk のみ許可する。
 ipcMain.handle('system:readShortcutLink', async (_event, target) => {

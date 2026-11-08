@@ -1616,6 +1616,20 @@ Menuは、基本は↑↓キー、Enter、ESCで選択、決定、キャンセ�
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
 description:    カーソル位置のURLをブラウザで開く
 　CursorPos位置が、urlを表す部分であれば、ブラウザで対象のURLを開いてください。
+## Action：　261108　TextEditor.CurrentEditor.DoOnCursorPos:Url:ToTag
+description:    カーソル位置のURLを読み取りタグ化する
+　A（261108実装）：カーソル位置の http(s) URL の linkファイルを用意し、URL を参照タグ（Caption 付き）に置き換えます
+　　（例：https://drive.google.com/file/d/xxx/view → [gdrive:ID] 見積書.pdf）。
+　　同じリンク先の linkファイルがあれば新しく作らずそれを使います。Seeds で開いているProjectがあればそこへ登録します。
+　　GDrive・GMail は GAS が設定されていれば名前・件名を問い合わせます（docs\261108\GASリンクタイトル取得.md）。
+　　キャレットはタグの直後、Undo 1回で元に戻ります。DoOnCursorPos:Menu の「Url > T)タグ化する」から実行します。
+## Action：　261108　TextEditor.CurrentEditor.DoOnCursorPos:File:ToTag
+description:    カーソル位置のファイルパスを読み取りタグ化する
+　A（261108実装）：カーソル位置のファイルパス（引用符で囲んだパス、file:// を含む）の linkファイルを用意し、
+　　パスを参照タグ（例：[file:ID] File:plan.md、[dir:ID] Folder:Pictures）に置き換えます。引用符ごと置き換えます。
+　　ファイルかフォルダかは PC版では実際に確かめ（system:isDirectory）、ブラウザ版では末尾の区切りで判断します。
+　　同じリンク先の再利用・Project登録・キャレット位置は Url:ToTag と同じです。「File > T)タグ化する」から実行します。
+
 ## Action：　260630　TextEditor.CurrentEditor.DoOnCursorPos:File:Open
 description:    カーソル位置のファイルパスをOS既定アプリで開く
 　CursorPos位置が、filepathを表す部分であれば、サーバーAPI(/api/system/open)を経由し、OSの規定のアプリでローカルファイル/フォルダを起動してください。
@@ -1642,6 +1656,13 @@ description:    カーソル位置のGoogleRouteタグでGoogleマップのル�
 description:    カーソル位置のYahooTransferタグでYahoo!乗換案内を開く
 ## Action：　260709　TextEditor.CurrentEditor.DoOnCursorPos:Think:Open
 description:    カーソル位置のThinkタグで対象Thinkを開く、またはタイトル・コンテンツ検索する
+## Action：　261108　TextEditor.CurrentEditor.DoOnCursorPos:Link:FromTag
+description:    カーソル位置のLinkタグが示す linkファイルのリンク先に置換する
+　A（261108実装）：カーソル位置の Link タグを、linkファイルの # Link の値に置き換えます。URL はそのまま、
+　　パスは引用符で囲みます（"C:\path\file.md"）。タグの直後にそのファイルの Caption（「 見積書.pdf」等）が
+　　残っていれば、それも一緒に置き換えます。linkファイル自体は消しません。
+　　キャレットは置き換えた文字の直後、Undo 1回で元に戻ります。「Link > U)リンク先（URL・パス）に置き換える」から実行します。
+
 ## Action：　261030　TextEditor.CurrentEditor.DoOnCursorPos:Link:Open
 description:    カーソル位置のLinkタグが指す linkファイルのリンク先を開く
 　A（261030実装）：[link:ID] [gmail:ID] [gdrive:ID] [gphoto:ID] [gnb:ID] [path:ID]（タグ名の大文字小文字は問わない）の

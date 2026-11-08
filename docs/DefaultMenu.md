@@ -69,8 +69,10 @@
 # DoOnCursorPos:Menu のメニュー。メニュー名はカーソル位置の種類（Url / File / タグの種類）で、ID 列は実行する ActionID
 
 "Url > O)ブラウザで開く",                           TextEditor.CurrentEditor.DoOnCursorPos:Url:Open
+"Url > T)タグ化する",                               TextEditor.CurrentEditor.DoOnCursorPos:Url:ToTag
 
 "File > O)既定のアプリで開く",                        TextEditor.CurrentEditor.DoOnCursorPos:File:Open
+"File > T)タグ化する",                               TextEditor.CurrentEditor.DoOnCursorPos:File:ToTag
 
 "WebSearch > O)ブラウザで検索",                     TextEditor.CurrentEditor.DoOnCursorPos:WebSearch:Open
 "WebSearch > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
@@ -90,6 +92,7 @@
 
 "Link > O)リンク先を開く",                        TextEditor.CurrentEditor.DoOnCursorPos:Link:Open
 "Link > L)linkファイルを開く",                     TextEditor.CurrentEditor.DoOnCursorPos:LinkFile:Open
+"Link > U)リンク先（URL・パス）に置き換える",          TextEditor.CurrentEditor.DoOnCursorPos:Link:FromTag
 "Link > D)タグを除く",                        TextEditor.CurrentEditor.DoOnCursorPos:DeTag
 
 "Mail > O)メールを開く・検索",                        TextEditor.CurrentEditor.DoOnCursorPos:Mail:Open

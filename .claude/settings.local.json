@@ -470,7 +470,9 @@
       "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\3a540e126d457b64\\\\b8e7e448-30f9-421b-a5c2-1f8ef0e6e5df\\\\scratchpad\\\\gmailtoken2.mjs\")",
       "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\3a540e126d457b64\\\\b8e7e448-30f9-421b-a5c2-1f8ef0e6e5df\\\\scratchpad\\\\gmailtoken3.mjs\")",
       "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\3a540e126d457b64\\\\b8e7e448-30f9-421b-a5c2-1f8ef0e6e5df\\\\scratchpad\\\\gmailtoken4.mjs\")",
-      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Expected|Received|Test Files|Tests \" | Select-Object -First 30)"
+      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Expected|Received|Test Files|Tests \" | Select-Object -First 30)",
+      "PowerShell(npm run firebase:deploy 2>&1)",
+      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Expected|Received|Error:|Test Files|Tests \" | Select-Object -First 30)"
     ]
   }
 }
