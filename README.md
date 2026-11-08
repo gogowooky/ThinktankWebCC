@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-08
 - コミット番号: 56ec6eb
+- デプロイ日: 2026-11-08（JST）
+- デプロイ対象コミット: f23a01e（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 linkファイルに # Caption 項を追加し、作成時にGDriveのファイル名・GMailの件名・Googleフォトの撮影日（yyyy-MM-dd）・File:/Folder:+名前・ページタイトル（不明ならAffiliation）を設定。gmail/gdrive/link/file/dir タグの後ろにCaptionを挿入し、パスのタグを [file:ID]/[dir:ID] に分割（[path:ID] は読み取り互換）。同じリンク先のlinkファイルがあれば再利用し、2行目は = 30個とした。利用者自身のGoogle Apps Script（scripts/gas/linkTitle.gs、docs/261108/GASリンクタイトル取得.md）にGDrive名・GMail件名を問い合わせる設定画面と処理を追加（新形式のGMail URLの復元を含む）。あわせてThink一覧の前回キャッシュ表示、エディタの遅延読込、画面用ライブラリのdevDependencies移動、廃止済みのDrive正本・ローカル中継・ChatApiService等の削除を含む。型検査成功、全738テスト成功。設定画面はブラウザ版で表示と入力チェックを確認（GASへの実際の問い合わせは未確認）。
 
