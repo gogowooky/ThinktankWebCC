@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.15",
+  "version": "2.6.16",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "4729467",
-  "commitDateTime": "2026-11-08-213534",
-  "commitMessage": "feat: カーソル位置のURL・パスのタグ化とLinkタグのリンク先への置換"
+  "commitId": "a18b06e",
+  "commitDateTime": "2026-11-08-220040",
+  "commitMessage": "feat: Ctrl+Eで隠れた文書末の見出しを展開、Splitter追従改善、最初/最後のPane移動、強調設定"
 }
