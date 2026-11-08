@@ -73,6 +73,8 @@ export interface MonacoMenuOptions {
   nodes:         MenuNode[] | (() => Promise<MenuNode[]>);
   /** メニューの基準となる要素（省略時はビューポート中央上部） */
   anchor?:       HTMLElement | null;
+  /** メニュー左上を置く画面座標（キャレット位置など）。指定すると anchor より優先する */
+  at?:           { left: number; top: number } | null;
   /**
    * ノードが空だった場合に表示する文言。
    * 読み込み結果（失敗理由など）に応じて変えたい場合は関数を渡す
@@ -86,7 +88,7 @@ export interface MonacoMenuOptions {
  * キャンセル時は null を返す。
  */
 export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | null> {
-  const { title, nodes: source, anchor, emptyMessage = '選択できる項目がありません' } = options;
+  const { title, nodes: source, anchor, at, emptyMessage = '選択できる項目がありません' } = options;
 
   return new Promise((resolve) => {
     document.getElementById(OVERLAY_ID)?.remove();
@@ -187,6 +189,12 @@ export function showMonacoMenu(options: MonacoMenuOptions): Promise<string | nul
 
     // ── 配置 ────────────────────────────────────────────────────────────
     const placeRoot = (panel: MenuPanel) => {
+      if (at) {
+        const height = panel.el.getBoundingClientRect().height;
+        panel.el.style.left = `${clamp(at.left, 4, window.innerWidth - PANEL_WIDTH - 4)}px`;
+        panel.el.style.top  = `${clamp(at.top, 4, Math.max(4, window.innerHeight - height - 4))}px`;
+        return;
+      }
       // monaco の Quick Input と同じく、対象エディタ上端の中央に寄せる。
       // エディタ本体がまだレイアウトされておらず実寸を持たない場合は、
       // 実寸を持つ最も近い祖先（ペインのコンテンツ領域）を基準にする。

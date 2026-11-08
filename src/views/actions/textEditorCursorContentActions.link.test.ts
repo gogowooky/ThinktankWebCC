@@ -217,6 +217,40 @@ describe('URL/パス ⇔ Linkタグ', () => {
   });
 });
 
+describe('WorkingPanel.FocusedPane.PaneNumber:Copy', () => {
+  const runCopy = async (think: FakeThink | undefined, focused = true) => {
+    const writeText = vi.fn(async () => undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+    const app = {
+      Models: { Vault: { GetThink: (id: string) => (id === LINK_ID ? think : undefined) } },
+      WorkingPanel: {
+        FocusedAreaId: focused ? 'area1' : null,
+        GetArea: (id: string) => (id === 'area1' ? { ID: 'area1', ResourceID: LINK_ID } : undefined),
+      },
+    } as unknown as TTApplication;
+    registerTextEditorCursorContentActions(app);
+    const result = await run('WorkingPanel.FocusedPane.PaneNumber:Copy');
+    return { result, writeText };
+  };
+
+  it('linkファイルは Caption 付きのLinkタグをコピーする', async () => {
+    const { result, writeText } = await runCopy(fakeThink('links', NEW_FORMAT, true));
+    expect(writeText).toHaveBeenCalledWith(`[gdrive:${LINK_ID}] 資料`);
+    expect(result).toBe(`コピー: [gdrive:${LINK_ID}] 資料`);
+  });
+
+  it('それ以外は [memo:ID] をコピーする', async () => {
+    const { writeText } = await runCopy(fakeThink('memo', 'メモ\n本文'));
+    expect(writeText).toHaveBeenCalledWith(`[memo:${LINK_ID}]`);
+  });
+
+  it('フォーカス中のPaneが無ければ何もしない', async () => {
+    const { result, writeText } = await runCopy(undefined, false);
+    expect(result).toBe('[対象Paneなし]');
+    expect(writeText).not.toHaveBeenCalled();
+  });
+});
+
 describe('Projectの AIまとめ・AI議論 のタグ', () => {
   it.each(['aiview', 'chat', 'AIView'])('[%s:ID] はそのThinkを開く', async tag => {
     const { openThink } = setup(`[${tag}:${LINK_ID}]`, 2, fakeThink('chat', '議論\n## 質問'));

@@ -967,6 +967,18 @@ candidates:     ^(Texteditor|Markdown|Datagrid|Card|Graph|Chat)$
 
 ## Status：　260613　WorkingPanel.FocusedPane.ID
 
+## Action：　261108　WorkingPanel.FocusedPane.ShowMenu
+description:    FocusPaneのカーソル位置にコンテキストメニューを表示する
+　A（261108実装）：docs\DefaultMenu.md の「FocusedPane」メニューを表示し、選んだアクションを実行します。
+　　TextEditor のPaneではキャレットの直下に、それ以外のPaneではPane上端の中央に出します。Esc でキャンセルします。
+　　ショートカット：Working フォーカス中の Shift+F10。
+## Action：　261108　WorkingPanel.FocusedPane.PaneNumber:Copy
+description:    FocusPaneのthinkファイルのIDに準じたタグを生成しクリップボードにコピーする
+　A（261108実装）：フォーカス中のPaneに開いている Thinkファイルの参照タグをクリップボードにコピーします。
+　　linkファイルはリンク先に応じたタグと Caption（例：[gdrive:ID] 見積書.pdf、[file:ID] File:plan.md）、
+　　それ以外は [memo:ID] です。Thinkファイルの Alt+ドロップ（WorkingPanel.DroppedFile.ID:Insert）で入るタグと同じです。
+　　「FocusedPane > T)タグをコピーする」から実行します。
+
 ## Action：　260728　WorkingPanel.FocusedPane.PaneNumber:ReFocus
 description:    WorkingPanelの現在フォーカス中のPaneに再度フォーカスする
 　WorkingPanelの指定のPane番号に再度フォーカスする
@@ -990,6 +1002,14 @@ description:    フォーカスペインを最後のペインに移動する
 　　設定される値は以下の通りです。
 　　- `1`〜`6` （表示されているペインの配置順）
 　　- `0` （フォーカスされているペインがない場合）
+
+## Action：　261108　WorkingPanel.FocusedPane.FileHistory:AddNew
+description:    FocusPaneに現在表示されているファイル種別と同じファイルを新規に作成して表示する
+　A（261108実装）：フォーカス中のPaneに表示している Thinkファイルの種別（memo / table / html / chat 等）で
+　　新しいファイルを作り、同じPane・同じ表示モードで開きます（ファイル履歴に追加されます）。
+　　タイトルは「新規メモ」「新規テーブル」等の仮の名前、Project は「新規プロジェクト」です。
+　　Seeds で開いているProjectがあればそこへ登録します。Paneにファイルが無いときは memo を作ります。
+　　「FocusedPane > N)新規ファイルを挿入する」から実行します。
 
 ## Action：　260814　WorkingPanel.FocusedPane.FileHistory:Menu
 description:    フォーカスペインのファイル履歴をメニューで表示して選択する

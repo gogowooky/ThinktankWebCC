@@ -199,6 +199,20 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
   }
 
   /**
+   * Thinkファイルを本文から参照するタグ。linkファイルはリンク先に応じた [gdrive:ID] 等（Caption 付き）、
+   * それ以外は [memo:ID]（Thinkドロップの Insert と Pane の「タグをコピー」で共通）。
+   */
+  async function thinkRefTag(thinkId: string): Promise<string> {
+    const think = app.Models.Vault.GetThink(thinkId);
+    if (think?.ContentType !== 'links') return `[memo:${thinkId}]`;
+    if (think.IsMetaOnly) await think.LoadContent();
+    const file = parseLinkFile(think.Content);
+    return file
+      ? formatLinkTagWithCaption(linkTagOfFile(file), thinkId, captionOfLinkFile(file))
+      : formatLinkTag('link', thinkId);
+  }
+
+  /**
    * URL/パスの linkファイルを用意して参照タグ（Caption 付き）を返す。
    * 同じリンク先の linkファイルがあればそれを使う。Seeds で開いているProjectがあれば登録する。
    */
@@ -579,6 +593,52 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         const endColumn = caption.trim() && after.startsWith(caption) ? target.endColumn + caption.length : target.endColumn;
         replaceOnCursor(target, endColumn, replacement, 'link-from-tag');
         item.Result = `リンク先に置換: ${replacement}`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
+  // ── フォーカス中のPane ──────────────────────────────────────────────────
+  TTActions.Register({
+    ActionID: 'WorkingPanel.FocusedPane.PaneNumber:Copy',
+    Description: 'フォーカス中のPaneのThinkファイルを参照するタグ（[memo:ID]、linkファイルは [gdrive:ID] 等）をクリップボードにコピーする',
+    Completion: async (item) => {
+      try {
+        const panel = app.WorkingPanel;
+        const area = panel.FocusedAreaId ? panel.GetArea(panel.FocusedAreaId) : null;
+        const thinkId = area?.ResourceID;
+        if (!thinkId) { item.Result = '[対象Paneなし]'; return; }
+        const tag = await thinkRefTag(thinkId);
+        await navigator.clipboard.writeText(tag);
+        item.Result = `コピー: ${tag}`;
+      } catch (err) {
+        item.Result = `[エラー] ${getErrorMessage(err)}`;
+      }
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkingPanel.FocusedPane.ShowMenu',
+    Description: 'フォーカス中のPaneのカーソル位置に FocusedPane メニュー（docs/DefaultMenu.md）を表示し、選んだアクションを実行する',
+    Completion: async (item) => {
+      try {
+        const panel = app.WorkingPanel;
+        const areaId = panel.FocusedAreaId;
+        if (!areaId) { item.Result = '[対象Paneなし]'; return; }
+        const editor = TTShortcutManager.instance.getAreaEditor(areaId);
+        const areaEl = document.querySelector<HTMLElement>(`.working-area[data-area-id="${CSS.escape(areaId)}"]`);
+        // TextEditor ならキャレットの直下に出す。それ以外のPaneはPane上端の中央に出す
+        let at: { left: number; top: number } | null = null;
+        const pos = editor?.getPosition?.();
+        const caret = pos ? editor.getScrolledVisiblePosition?.(pos) : null;
+        const editorRect = editor?.getDomNode?.()?.getBoundingClientRect?.();
+        if (caret && editorRect) at = { left: editorRect.left + caret.left, top: editorRect.top + caret.top + caret.height };
+        const actionId = await showDefaultMenu('FocusedPane', editor?.getDomNode?.() ?? areaEl, 'FocusedPane', at);
+        editor?.focus?.();
+        if (!actionId) { item.Result = 'キャンセルしました'; return; }
+        const selected = await TTActions.Execute(actionId);
+        item.Result = selected.Result;
       } catch (err) {
         item.Result = `[エラー] ${getErrorMessage(err)}`;
       }
@@ -1048,15 +1108,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
         editor.focus();
         item.Result = `Insert: ${text}`;
       };
-      const think = app.Models.Vault.GetThink(ctx.thinkId);
-      if (think?.ContentType !== 'links') { insert(`[memo:${ctx.thinkId}]`); return; }
-      const loaded = think.IsMetaOnly ? think.LoadContent() : Promise.resolve();
-      return loaded.then(() => {
-        const file = parseLinkFile(think.Content);
-        insert(file
-          ? formatLinkTagWithCaption(linkTagOfFile(file), ctx.thinkId, captionOfLinkFile(file))
-          : formatLinkTag('link', ctx.thinkId));
-      });
+      return thinkRefTag(ctx.thinkId).then(insert);
     },
   });
 }

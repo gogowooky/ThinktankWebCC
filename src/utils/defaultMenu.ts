@@ -50,11 +50,14 @@ export function buildDefaultMenuNodes(rows: DefaultMenuRow[], menuName: string):
  * docs/DefaultMenu.md のメニュー menuName を表示する。title を省略するとメニュー名がタイトルになる。
  * 項目を選ぶとメニューを閉じてその ID を返し、キャンセル時は null を返す。
  */
-export function showDefaultMenu(menuName: string, anchor?: HTMLElement | null, title?: string): Promise<string | null> {
+export function showDefaultMenu(
+  menuName: string, anchor?: HTMLElement | null, title?: string, at?: { left: number; top: number } | null,
+): Promise<string | null> {
   return showMonacoMenu({
     title: title ?? menuName,
     nodes: buildDefaultMenuNodes(parseDefaultMenu(defaultMenuContent), menuName),
     anchor,
+    ...(at ? { at } : {}),
     emptyMessage: `「${menuName}」のメニュー項目がありません（docs/DefaultMenu.md）`,
   });
 }

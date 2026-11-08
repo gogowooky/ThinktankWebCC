@@ -33,8 +33,10 @@ Working*    ,       ,Alt+PageDown       ,WorkingPanel.FocusedPane.PaneNumber:Nex
 Working*    ,       ,Alt+PageUp         ,WorkingPanel.FocusedPane.PaneNumber:Prev       ,前のペインへ移動
 Working*    ,       ,Shift+Alt+PageUp   ,WorkingPanel.FocusedPane.PaneNumber:First      ,最初のペインへ移動
 Working*    ,       ,Shift+Alt+PageDown ,WorkingPanel.FocusedPane.PaneNumber:Last       ,最後のペインへ移動
+Working*    ,       ,Shift+F10          ,WorkingPanel.FocusedPane.ShowMenu              ,フォーカスPaneのメニューを表示
 Working*    ,ExApp  ,M                  ,WorkingPanel.FocusedPane.Mode:Prev             ,ペインモード左
 Working*    ,ExApp  ,Shift+M            ,WorkingPanel.FocusedPane.Mode:Next             ,ペインモード右
+
 
 *           ,ExApp  ,Z                  ,ToolBar.Mode.Name:Prev                         ,ツールバー左
 *           ,ExApp  ,Shift+Z            ,ToolBar.Mode.Name:Next                         ,ツールバー右

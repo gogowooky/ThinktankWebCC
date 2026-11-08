@@ -35,6 +35,16 @@ import { registerTextEditorSearchTagActions } from './actions/textEditorSearchTa
 import { registerTextEditorDictionaryActions } from './actions/textEditorDictionaryActions';
 import { registerTextEditorPasteActions } from './actions/textEditorPasteActions';
 
+/** FileHistory:AddNew で新規作成するファイルの仮タイトル（種別ごと） */
+const NEW_FILE_TITLES: Partial<Record<string, string>> = {
+  memo: '新規メモ',
+  table: '新規テーブル',
+  html: '新規HTML',
+  links: '新規リンク',
+  chat: '新しい相談',
+  aiview: '新規AIまとめ',
+};
+
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
@@ -802,6 +812,29 @@ export function registerFocusedPanelActions(app: TTApplication): void {
         notifyFileHistory();
         item.Result = `履歴 ${area.HistoryPos}/${area.HistoryMax}: ${entry.title || entry.id}`;
       });
+    },
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkingPanel.FocusedPane.FileHistory:AddNew',
+    Description: 'フォーカスペインに表示中のファイルと同じ種別のファイルを新規作成して表示する（ファイル履歴に追加）',
+    Completion: async (item) => {
+      const area = focusedArea();
+      if (!area) { item.Result = '[対象Paneなし]'; return; }
+      const vault = app.Models.Vault;
+      const current = area.ResourceID ? vault.GetThink(area.ResourceID) : undefined;
+      const contentType = current?.ContentType ?? 'memo';
+      const projectId = app.SeedsPanel?.ProjectID || undefined;
+      try {
+        const think = contentType === 'project'
+          ? await vault.CreateProject('新規プロジェクト', projectId)
+          : await vault.CreateBlankThink(contentType, NEW_FILE_TITLES[contentType] ?? `新規${contentType}`, projectId);
+        area.OpenThink(think.ID, area.MediaType, think.Name);
+        notifyFileHistory();
+        item.Result = `新規作成: ${think.Name}（${contentType}）`;
+      } catch (err) {
+        item.Result = `[エラー] ${err instanceof Error ? err.message : String(err)}`;
+      }
     },
   });
 

@@ -474,7 +474,9 @@
       "PowerShell(npm run firebase:deploy 2>&1)",
       "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Expected|Received|Error:|Test Files|Tests \" | Select-Object -First 30)",
       "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils src/components/WorkingPanel 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Error:|Test Files|Tests \" | Select-Object -First 20)",
-      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/components 2>&1 | Select-String -Pattern \"FAIL|×|Test Files|Tests \")"
+      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/components 2>&1 | Select-String -Pattern \"FAIL|×|Test Files|Tests \")",
+      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Error:|Test Files|Tests \" | Select-Object -First 20)",
+      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils 2>&1 | Select-String -Pattern \"FAIL|×|Error:|Test Files|Tests \" | Select-Object -First 20)"
     ]
   }
 }

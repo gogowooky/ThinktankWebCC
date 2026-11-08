@@ -114,3 +114,7 @@
 "LINK.D&D > L)Linkをそのまま挿入",                  TextEditor.CurrentEditor.DDInsert:Link
 "LINK.D&D > T)タグを挿入",                          TextEditor.CurrentEditor.DDInsert:Tag
 
+# フォーカス中のPaneのメニュー、WorkingPanel.FocusedPane.ShowMenu
+
+"FocusedPane > T)タグをコピーする",                WorkingPanel.FocusedPane.PaneNumber:Copy
+"FocusedPane > N)新規ファイルを挿入する",           WorkingPanel.FocusedPane.FileHistory:AddNew
