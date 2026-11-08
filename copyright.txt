@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.16",
+  "version": "2.6.17",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "a18b06e",
-  "commitDateTime": "2026-11-08-220040",
-  "commitMessage": "feat: Ctrl+Eで隠れた文書末の見出しを展開、Splitter追従改善、最初/最後のPane移動、強調設定"
+  "commitId": "5203ad4",
+  "commitDateTime": "2026-11-08-230217",
+  "commitMessage": "feat: FocusedPaneメニュー（Shift+F10）・Paneの参照タグコピー・同種ファイルの新規作成"
 }

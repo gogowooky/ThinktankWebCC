@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.6.17 feat: FocusedPaneメニュー（Shift+F10）・Paneの参照タグコピー・同種ファイルの新規作成
+
+- 日付: 2026-11-08
+- コミット番号: 5203ad4
+
+WorkingPanel.FocusedPane.ShowMenu を追加し、DefaultMenu.md の FocusedPane メニューをTextEditorではキャレット直下に表示するようにした（Workingフォーカス中のShift+F10）。WorkingPanel.FocusedPane.PaneNumber:Copy でPaneのThinkファイルの参照タグ（linkファイルはCaption付きLinkタグ、他は [memo:ID]）をクリップボードへコピー、WorkingPanel.FocusedPane.FileHistory:AddNew で表示中と同じ種別のファイルを新規作成して同じPaneに開けるようにした。メニュー部品に表示位置の座標指定を追加し、Thinkドロップのタグ生成を共通化。型検査成功、関連テスト338件成功（メニューの画面表示は未ログインのため未確認）。
+
 ### v2.6.16 feat: Ctrl+Eで隠れた文書末の見出しを展開、Splitter追従改善、最初/最後のPane移動、強調設定
 
 - 日付: 2026-11-08
