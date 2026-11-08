@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-08
 - コミット番号: 4729467
+- デプロイ日: 2026-11-08（JST）
+- デプロイ対象コミット: 6a57b12（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 DoOnCursorPos:Url:ToTag / File:ToTag を追加し、カーソル位置のURL・ファイルパスのlinkファイルを用意（同じリンク先は再利用、GDrive・GMailはGASで名前・件名を取得）して Caption 付きの参照タグに置き換えるようにした。DoOnCursorPos:Link:FromTag を追加し、Linkタグ（直後のCaptionを含む）をリンク先のURL・引用符付きパスに戻せるようにした。PC版ではフォルダ判定用IPC（system:isDirectory）で [file:ID] / [dir:ID] を区別する。DefaultMenu.md の Url / File / Link メニューに項目を追加し、Status-Action-Binding.md に実装内容を記載。型検査成功、関連テスト333件成功（アプリ上での操作は未確認）。
 
