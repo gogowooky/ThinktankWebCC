@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-08
 - コミット番号: 5203ad4
+- デプロイ日: 2026-11-08（JST）
+- デプロイ対象コミット: 57e81df（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 WorkingPanel.FocusedPane.ShowMenu を追加し、DefaultMenu.md の FocusedPane メニューをTextEditorではキャレット直下に表示するようにした（Workingフォーカス中のShift+F10）。WorkingPanel.FocusedPane.PaneNumber:Copy でPaneのThinkファイルの参照タグ（linkファイルはCaption付きLinkタグ、他は [memo:ID]）をクリップボードへコピー、WorkingPanel.FocusedPane.FileHistory:AddNew で表示中と同じ種別のファイルを新規作成して同じPaneに開けるようにした。メニュー部品に表示位置の座標指定を追加し、Thinkドロップのタグ生成を共通化。型検査成功、関連テスト338件成功（メニューの画面表示は未ログインのため未確認）。
 
