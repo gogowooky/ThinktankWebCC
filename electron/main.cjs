@@ -185,17 +185,12 @@ ipcMain.handle('storage:getRecord', (_event, id) => {
   return vaultEngine.getRecord(id);
 });
 
-ipcMain.handle('storage:getSupport', (_event, id) => {
-  const rec = vaultEngine.getRecord(id);
-  return rec ? rec.support : null;
-});
-
 ipcMain.handle('storage:save', (_event, payload) => {
-  return perfTime('storage:save', () => vaultEngine.saveRecord(payload));
+  return perfTime('storage:save', () => vaultEngine.saveRecordAsync(payload));
 });
 
 ipcMain.handle('storage:writeBackup', (_event, payload) => {
-  return perfTime('storage:writeBackup', () => vaultEngine.saveBackupSnapshot(payload));
+  return perfTime('storage:writeBackup', () => vaultEngine.saveBackupSnapshotAsync(payload));
 });
 
 ipcMain.handle('storage:saveSupport', (_event, id, metadata, expectedVersion) => {
@@ -232,14 +227,6 @@ ipcMain.handle('vault:selectFolder', async () => {
   }
   const selected = res.filePaths[0];
   return vaultEngine.saveConfig({ vaultDir: selected });
-});
-
-ipcMain.handle('vault:listConflicts', () => {
-  return vaultEngine.listConflictFiles();
-});
-
-ipcMain.handle('vault:writeShard', () => {
-  return vaultEngine.writeDeviceShard();
 });
 
 // ── IPC ハンドラー（運用モード: Firestore / ローカル） ──────────────────────
@@ -492,10 +479,6 @@ ipcMain.handle('relay:signInWithGoogle', async (_event, options) => {
   }
 });
 
-ipcMain.handle('relay:executePlain', async (_event, envelope) => {
-  return relayAgent.executePlainRequest(envelope);
-});
-
 ipcMain.handle('relay:handleEncrypted', async (_event, payload) => {
   return relayAgent.handleEncryptedRequest(payload);
 });
@@ -551,11 +534,11 @@ function registerAppProtocol() {
 function installCsp() {
   const csp = isDev
     ? "default-src 'self' app: 'unsafe-inline' 'unsafe-eval' http://localhost:*; " +
-      "connect-src 'self' app: ws://localhost:* http://localhost:* https://*.googleapis.com https://*.firebaseio.com; " +
+      "connect-src 'self' app: ws://localhost:* http://localhost:* https://*.googleapis.com https://*.firebaseio.com https://script.google.com https://script.googleusercontent.com; " +
       "img-src 'self' app: data: blob:; worker-src 'self' app: blob:; " +
       "object-src 'none'; base-uri 'none';"
     : "default-src 'self' app:; script-src 'self' app: 'unsafe-eval'; style-src 'self' app: 'unsafe-inline'; " +
-      "img-src 'self' app: data: blob:; font-src 'self' app: data:; connect-src 'self' app: https://*.googleapis.com https://*.firebaseio.com; " +
+      "img-src 'self' app: data: blob:; font-src 'self' app: data:; connect-src 'self' app: https://*.googleapis.com https://*.firebaseio.com https://script.google.com https://script.googleusercontent.com; " +
       "worker-src 'self' app: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';";
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {

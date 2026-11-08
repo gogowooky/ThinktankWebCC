@@ -1,5 +1,4 @@
 import { TTModels } from '../models/TTModels';
-import type { TTThink } from '../models/TTThink';
 import { StorageManager } from './storage/StorageManager';
 import { StorageConflictError } from './storage/IStorageBackend';
 
@@ -12,15 +11,6 @@ export interface BundleMetadata {
 function isVersionConflict(e: unknown): boolean {
   const err = e as { code?: string; message?: string };
   return err?.code === 'VERSION_CONFLICT' || !!err?.message?.includes('競合');
-}
-
-/**
- * ブラウザ版で Think 全体を保存し直す前に本文を揃える。一覧だけ読んだ段階（IsMetaOnly）では
- * 本文がタイトル行しかなく、そのまま保存すると本文を失うため。
- */
-export async function ensureFullContent(think: TTThink): Promise<void> {
-  if (think.IsMetaOnly) await think.LoadContent();
-  if (think.IsMetaOnly) throw new Error('本文を読み込めないため保存できません。再読み込みしてください。');
 }
 
 /** Bundle のメタデータを Firestore 正本から読む。 */

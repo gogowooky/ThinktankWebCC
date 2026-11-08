@@ -1,10 +1,11 @@
 import { UNAVAILABLE_ACTIONS } from '../../../views/unavailableActions';
 import { ChevronDown, ChevronRight, File, FileText, FileClock, DatabaseBackup, Save, Mic, MicOff, Eraser, FilePen, FileX, FileInput } from 'lucide-react';
-import { TTActions } from '../../../views/TTActions';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { isUnset, parseAttrs, styleStatusId } from '../../../utils/defaultColor';
 import type { WorkingSettingsContext } from './types';
 import { TEXT_EDITOR_BASE_COLORS, TEXT_EDITOR_TAG_COLORS, ColorStyleRow, MarkStyleRows } from './ColorSettings';
+const FULL_WIDTH_DIGITS = ['１', '２', '３', '４', '５', '６'];
+
 const BINDING_ROWS: { label: string; memo: string; actionPrefix: string; }[] = [
   { label: 'キー設定', memo: 'ThinktankKeyBinding', actionPrefix: 'TextEditor.KeyBinding' },
   { label: '色設定', memo: 'ThinktankColorBinding', actionPrefix: 'TextEditor.ColorBinding' },
@@ -416,58 +417,15 @@ export function TextEditorSettings({
 
       {isSectionColorOpen && (
         <div className="working-setting-area__section-content">
-          {[1, 2, 3, 4, 5, 6].map(level => {
-            const statusId = styleStatusId('Heading', level);
-            const style = panel.GetColorStatus(statusId);
-            const fw = ['１', '２', '３', '４', '５', '６'][level - 1];
-            const attrs = parseAttrs(style.Attrs);
-            const hasBg = !isUnset(style.BgColor);
-            return (
-              <div key={level} className="working-setting-area__heading-style-row">
-                <span className="working-setting-area__heading-style-label">セクション{fw}</span>
-                <input
-                  type="color"
-                  className="working-setting-area__color-picker"
-                  value={isUnset(style.Color) ? '#000000' : style.Color.slice(0, 7)}
-                  onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
-                  data-tip={`セクション${fw}の文字色`}
-                />
-                <label className="working-setting-area__small-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={attrs.has('bold')}
-                    onChange={e => panel.ToggleColorStatusAttr(statusId, 'bold', e.target.checked)}
-                  />
-                  B
-                </label>
-                <label className="working-setting-area__small-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={attrs.has('underline')}
-                    onChange={e => panel.ToggleColorStatusAttr(statusId, 'underline', e.target.checked)}
-                  />
-                  U
-                </label>
-                <label className="working-setting-area__small-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={hasBg}
-                    onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.checked ? '#ffffff' : 'undefined')}
-                  />
-                  BG
-                </label>
-                {hasBg && (
-                  <input
-                    type="color"
-                    className="working-setting-area__color-picker"
-                    value={style.BgColor.slice(0, 7)}
-                    onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
-                    data-tip={`セクション${fw}の背景色`}
-                  />
-                )}
-              </div>
-            );
-          })}
+          {FULL_WIDTH_DIGITS.map((fw, index) => (
+            <ColorStyleRow
+              key={fw}
+              panel={panel}
+              statusId={styleStatusId('Heading', index + 1)}
+              label={`セクション${fw}`}
+              swatchLabel={false}
+            />
+          ))}
         </div>
       )}
     </div>
@@ -488,7 +446,7 @@ export function TextEditorSettings({
           {[1, 2, 3, 4, 5, 6].map(group => {
             const statusId = styleStatusId('Highlighter', group);
             const style = panel.GetColorStatus(statusId);
-            const fw = ['１', '２', '３', '４', '５', '６'][group - 1];
+            const fw = FULL_WIDTH_DIGITS[group - 1];
             const attrs = parseAttrs(style.Attrs);
             const hasBg = !isUnset(style.BgColor);
             const hasFg = !isUnset(style.Color);

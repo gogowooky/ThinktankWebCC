@@ -9,7 +9,6 @@
 import { useCallback } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { StorageManager } from '../../services/storage/StorageManager';
 import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
 import { ThinktankTabBar } from './ThinktankTabBar';

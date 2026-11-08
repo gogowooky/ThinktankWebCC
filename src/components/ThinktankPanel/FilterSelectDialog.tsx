@@ -25,17 +25,6 @@ export const DEFAULT_FILTER_VISIBILITY: FilterVisibility = {
   type:        true,
 };
 
-/** AI相談モードの DataGrid 用フィルター表示のデフォルト（タイトルのみ ON） */
-export const DEFAULT_CHAT_FILTER_VISIBILITY: FilterVisibility = {
-  chatKind: true,
-  chatState: true,
-  title:       true,
-  createdDate: false,
-  updatedDate: false,
-  content:     false,
-  type:        false,
-};
-
 const FILTER_ITEMS: { field: keyof FilterVisibility; label: string }[] = [
   { field: 'title',       label: 'タイトル' },
   { field: 'createdDate', label: '作成日(ID)' },

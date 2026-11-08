@@ -233,7 +233,7 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
         category: {
           type: 'string',
           enum: ['memo', 'aiview', 'task', 'links', 'table'],
-          description: 'Thinkの種別（既定: memo）。aiview はMarkdown形式のAI生成ビューで、アプリ上では読み取り専用。links は1件のURL/パスにつき1ファイルで、本文は「=」の行に続けて「# Link」（URL、または引用符で囲んだパス）「# Affiliation」（URLはサーバーアドレス、パスは引用符で囲んだ「(PC名)親フォルダ」）「# Abstract」（概要）の見出しを置く',
+          description: 'Thinkの種別（既定: memo）。aiview はMarkdown形式のAI生成ビューで、アプリ上では読み取り専用。links は1件のURL/パスにつき1ファイルで、本文はタイトル行・「=」30個の行に続けて「# Caption」（参照タグの後ろに添える表示名。GDriveはファイル名/フォルダー名、GMailはメールタイトル、GPhotoは撮影日をyyyy-MM-dd形式で（撮影場所が分かれば「(撮影場所)」を添える）、パスは「File:ファイル名」か「Folder:フォルダー名」、その他はリンク先タイトルで不明ならAffiliationの値）「# Link」（URL、または引用符で囲んだパス）「# Affiliation」（URLはサーバーアドレス、パスは引用符で囲んだ「(PC名)親フォルダ」）「# Abstract」（概要）の見出しを置く',
         },
         keywords: {
           type: 'string',

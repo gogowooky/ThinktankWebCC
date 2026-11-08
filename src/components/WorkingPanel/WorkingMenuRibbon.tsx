@@ -145,7 +145,44 @@ export function shouldInsertLocalDrop(e: React.DragEvent): boolean {
   return resolved.actionId === LOCAL_DROP_INSERT_ACTION || resolved.actionId === LOCAL_DROP_TAG_ACTION;
 }
 
-export function extractLinkDrop(e: React.DragEvent): { url: string; title: string } | null {
+/** D&Dされたリンク先。pageTitle はブラウザが渡したページ・リンクの本当のタイトル */
+export interface LinkDrop {
+  url: string;
+  title: string;
+  pageTitle?: string;
+  isDirectory?: boolean;
+}
+
+/**
+ * ブラウザからのドラッグに付く text/html（<a href>タイトル</a>）からタイトルを取る。
+ * テキストの無いサムネイル（Googleフォト等）は aria-label / title 属性を使う。
+ */
+export function pageTitleFromDragHtml(html: string, url: string): string | undefined {
+  if (!html.trim() || typeof DOMParser === 'undefined') return undefined;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const anchors = Array.from(doc.querySelectorAll('a'));
+  const anchor = anchors.find(a => a.getAttribute('href') === url) ?? anchors[0];
+  const img = anchor?.querySelector('img');
+  const candidates = [
+    anchor?.textContent,
+    anchor?.getAttribute('aria-label'),
+    anchor?.getAttribute('title'),
+    img?.getAttribute('alt'),
+    img?.getAttribute('aria-label'),
+    doc.querySelector('title')?.textContent,
+  ];
+  const found = candidates.map(c => (c ?? '').replace(/\s+/g, ' ').trim()).find(c => c && c !== url);
+  return found || undefined;
+}
+
+function droppedItemIsDirectory(dataTransfer: DataTransfer): boolean | undefined {
+  const item = dataTransfer.items?.[0];
+  if (!item || item.kind !== 'file' || typeof item.webkitGetAsEntry !== 'function') return undefined;
+  const entry = item.webkitGetAsEntry();
+  return entry ? entry.isDirectory : undefined;
+}
+
+export function extractLinkDrop(e: React.DragEvent): LinkDrop | null {
   // 1. URI list（ブラウザのアドレスバー / リンクドラッグ）。ブラウザによってはFilesや
   //    text/plainも同時に付くため、タイトルや一時ショートカットよりURLを必ず優先する。
   const uriList = e.dataTransfer.getData('text/uri-list');
@@ -156,7 +193,8 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
         const localPath = fileUriToPath(first);
         return { url: localPath, title: titleFromPath(localPath) };
       }
-      return { url: first, title: titleFromUrl(first) };
+      const pageTitle = pageTitleFromDragHtml(e.dataTransfer.getData('text/html'), first);
+      return { url: first, title: titleFromUrl(first), ...(pageTitle ? { pageTitle } : {}) };
     }
   }
 
@@ -164,7 +202,8 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
   const plain = e.dataTransfer.getData('text/plain').trim();
   if (plain) {
     if (/^https?:\/\//i.test(plain) || /^ftp:\/\//i.test(plain)) {
-      return { url: plain, title: titleFromUrl(plain) };
+      const pageTitle = pageTitleFromDragHtml(e.dataTransfer.getData('text/html'), plain);
+      return { url: plain, title: titleFromUrl(plain), ...(pageTitle ? { pageTitle } : {}) };
     }
     if (/^file:\/\//i.test(plain)) {
       const localPath = fileUriToPath(plain);
@@ -181,8 +220,9 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
     const electronPath = window.electronAPI?.getPathForFile(file) ?? undefined;
     const plainIsPath  = /^[a-zA-Z]:[\\/]/.test(plain) || /^\\\\/.test(plain) || /^\//.test(plain);
     const url = electronPath ?? (plainIsPath ? plain : null) ?? file.name;
-    const title = file.name.replace(/\.[^/.]+$/, '');
-    return { url, title };
+    const isDirectory = droppedItemIsDirectory(e.dataTransfer);
+    const title = isDirectory ? file.name : file.name.replace(/\.[^/.]+$/, '');
+    return { url, title, ...(isDirectory !== undefined ? { isDirectory } : {}) };
   }
   return null;
 }
@@ -191,7 +231,7 @@ export function extractLinkDrop(e: React.DragEvent): { url: string; title: strin
  * 外部URL/パスをショートカットのD&D疑似イベントへ正規化する。
  * ローカルのファイル・ディレクトリもブラウザURLも LocalFileDrag にまとめる。
  */
-export function externalDropDragKind(e: React.DragEvent, link: { url: string; title: string } | null): typeof LOCAL_FILE_DRAG | null {
+export function externalDropDragKind(e: React.DragEvent, link: LinkDrop | null): typeof LOCAL_FILE_DRAG | null {
   return isLocalFileDrag(e.dataTransfer) || link ? LOCAL_FILE_DRAG : null;
 }
 
@@ -200,7 +240,7 @@ export function externalDropDragKind(e: React.DragEvent, link: { url: string; ti
  * ショートカットはリンク先を解決して返す。解決できない場合はショートカット自身のパスへ
  * フォールバックし、D&D 操作そのものは失わない。
  */
-export async function resolveLinkDrop(e: React.DragEvent): Promise<{ url: string; title: string } | null> {
+export async function resolveLinkDrop(e: React.DragEvent): Promise<LinkDrop | null> {
   const fallback = extractLinkDrop(e);
   const file = e.dataTransfer.files[0];
   if (!file) return fallback;
@@ -209,7 +249,8 @@ export async function resolveLinkDrop(e: React.DragEvent): Promise<{ url: string
   if (/\.url$/i.test(file.name)) {
     try {
       const target = parseWindowsUrlShortcut(await file.text());
-      if (target) return { url: target, title: shortcutTitle };
+      // ブラウザのアドレスバーからのドラッグでは、.url のファイル名がページのタイトルになっている
+      if (target) return { url: target, title: shortcutTitle, pageTitle: fallback?.pageTitle ?? shortcutTitle };
     } catch {
       // File.text() を利用できないブラウザでは通常のファイルパス扱いへ戻す。
     }
@@ -244,7 +285,7 @@ interface Props {
   onMediaTypeChange: (type: MediaType, rawYaml?: boolean) => void;
   onClose:           () => void;
   onResourceDrop:    (thinkId: string, e: React.DragEvent) => void;
-  onUrlDrop?:        (url: string, title: string) => void;
+  onUrlDrop?:        (link: LinkDrop) => void;
 }
 
 export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
@@ -280,7 +321,7 @@ export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = fals
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) { onResourceDrop(thinkId, e); return; }
     const link = extractLinkDrop(e);
-    if (link && shouldAllowLocalDrop(e) && onUrlDrop) onUrlDrop(link.url, link.title);
+    if (link && shouldAllowLocalDrop(e) && onUrlDrop) onUrlDrop(link);
   }, [onResourceDrop, onUrlDrop]);
 
   return (

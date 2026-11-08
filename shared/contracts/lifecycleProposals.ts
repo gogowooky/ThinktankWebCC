@@ -21,12 +21,3 @@ export function validatePauseCandidates(value: unknown, question: string, scope:
       || !text(p.reason, 2000) || !text(p.resumeCondition, 4000, true) || !text(p.resumeSummary, 4000, true)) throw new Error('保留・再開候補の根拠が本人の発言と一致しません。');
   }
 }
-
-export const subtaskCandidatesSchema = { type: 'array', items: { type: 'object', additionalProperties: false,
-  required: ['id', 'title', 'goal', 'completionCriteria', 'reason'], properties: {
-    id: { type: 'string' }, title: { type: 'string' }, goal: { type: 'string' }, completionCriteria: { type: 'string' }, reason: { type: 'string' },
-  } } };
-export const pauseCandidatesSchema = { type: 'array', items: { type: 'object', additionalProperties: false,
-  required: ['paused', 'userQuote', 'reason', 'resumeCondition', 'resumeSummary'], properties: {
-    paused: { type: 'boolean' }, userQuote: { type: 'string' }, reason: { type: 'string' }, resumeCondition: { type: 'string' }, resumeSummary: { type: 'string' },
-  } } };

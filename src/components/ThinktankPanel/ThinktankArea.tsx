@@ -192,8 +192,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
 
   // ── メモ化済み計算 ────────────────────────────────────────────────────────
 
-  // vault.Count が変わったとき（追加・削除）のみ再取得
-  const allThinks = useMemo(() => vault.GetThinks(), [vault.Count]); // eslint-disable-line react-hooks/exhaustive-deps
+  // 追加・削除・正本との照合で一覧が変わったときのみ再取得
+  const allThinks = useMemo(() => vault.GetThinks(), [vault.Count, vault.ListRevision]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // projectファイルをロード中は、その配下の Think だけを一覧の母集合にする。
   // 「プロジェクト」で # 対象 を書き換えたときも取り直す

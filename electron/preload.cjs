@@ -30,7 +30,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     listMeta:      ()                            => ipcRenderer.invoke('storage:listMeta'),
     getContent:    (id)                          => ipcRenderer.invoke('storage:getContent', id),
     getRecord:     (id)                          => ipcRenderer.invoke('storage:getRecord', id),
-    getSupport:    (id)                          => ipcRenderer.invoke('storage:getSupport', id),
     save:          (payload)                     => ipcRenderer.invoke('storage:save', payload),
     writeBackup:   (payload)                     => ipcRenderer.invoke('storage:writeBackup', payload),
     saveSupport:   (id, metadata, expectedVer)   => ipcRenderer.invoke('storage:saveSupport', id, metadata, expectedVer),
@@ -41,8 +40,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getConfig:     ()                            => ipcRenderer.invoke('vault:getConfig'),
     setConfig:     (partial)                     => ipcRenderer.invoke('vault:setConfig', partial),
     selectFolder:  ()                            => ipcRenderer.invoke('vault:selectFolder'),
-    listConflicts: ()                            => ipcRenderer.invoke('vault:listConflicts'),
-    writeShard:    ()                            => ipcRenderer.invoke('vault:writeShard'),
     onMcpMutated:  (callback)                    => {
       const handler = (_event, payload) => callback(payload);
       ipcRenderer.on('vault:mcp-mutated', handler);
@@ -76,7 +73,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setFirebaseSession: (session)                => ipcRenderer.invoke('relay:setFirebaseSession', session),
     signOutFirebase: ()                          => ipcRenderer.invoke('relay:signOutFirebase'),
     signInWithGoogle: (options)                  => ipcRenderer.invoke('relay:signInWithGoogle', options),
-    executePlain:    (envelope)                  => ipcRenderer.invoke('relay:executePlain', envelope),
     handleEncrypted: (payload)                   => ipcRenderer.invoke('relay:handleEncrypted', payload),
   },
   system: {

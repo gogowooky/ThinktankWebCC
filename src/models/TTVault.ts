@@ -11,11 +11,13 @@
 import { TTCollection } from './TTCollection';
 import { TTThink, type ProjectMembersListener } from './TTThink';
 import type { ContentType } from '../types';
+import type { ThinkMeta } from '../services/storage/IStorageBackend';
 import { StorageManager } from '../services/storage/StorageManager';
 import { perfMark } from '../utils/perfLog';
 import { isFirebaseSignInRequiredError } from '../platform/web/FirebaseAuthService';
 import { PARENT_PROJECT_ID_KEY, parseProject, projectTargetIds, serializeProject, targetsAllThinks, updateProjectTargets } from '../utils/thinkFormat';
-import { createLinkFile, serializeLinkFile } from '../utils/linkFormat';
+import { fetchLinkTitle } from '../services/linkTitleService';
+import { createLinkFile, linkTargetKey, parseLinkFile, serializeLinkFile, type LinkSource } from '../utils/linkFormat';
 import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
@@ -47,6 +49,9 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
 
   /** 直近の LoadCache が失敗した理由。空の一覧と「読めなかった」を画面で区別するために保持する。 */
   public LoadError: VaultLoadError | null = null;
+
+  /** 件数が同じでも一覧の中身が入れ替わったことを描画側へ伝える */
+  public ListRevision: number = 0;
 
   /** GetThinksForBundleAsync の結果をキャッシュする（同期版 GetThinksForBundle 用）*/
   private _bundleThinksCache = new Map<string, { ids: string[]; snapshot: BundleResolutionSnapshot }>();
@@ -294,33 +299,16 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
    * （シェル側にreadiness gateが無いため）。一過性の接続失敗を「ロード済みだが
    * 空」として確定させてしまわないよう、短い間隔でリトライしてから諦める。
    */
-  public override async LoadCache(): Promise<void> {
+  public override async LoadCache(useCachedList: boolean = false): Promise<void> {
+    const cachedIds = useCachedList ? await this._showCachedList() : null;
     const maxAttempts = 3;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const metas = await StorageManager.instance.listMeta();
-        for (const meta of metas) {
-          const think = new TTThink();
-          think.ID          = meta.thinkid;
-          think.VaultID     = this.ID;
-          const rawCat      = meta.category;
-          think.ContentType = (rawCat === 'bundle' ? 'project' : rawCat === 'abstract' ? 'memo' : rawCat) as ContentType;
-          think.Keywords    = meta.keywords  ?? '';
-          think.RelatedIDs  = meta.relatedIds ?? '';
-          // metadata が万一オブジェクト以外（文字列化されたYAML等）で届いた場合、
-          // そのまま代入すると think.Metadata.xxx = ... の代入時に
-          // "Cannot create property on string" で描画がクラッシュする。
-          if (meta.metadata != null && typeof meta.metadata !== 'object') {
-            console.error(`[TTVault] LoadCache: metadata is not an object for ${meta.thinkid}, resetting to {}`, meta.metadata);
-          }
-          think.Metadata    = (meta.metadata && typeof meta.metadata === 'object') ? meta.metadata : {};
-          think.markMetadataSaved();
-          think.IsMetaOnly  = true;
-          think.UpdatedAt   = meta.updatedAt ?? '';
-          think.setContentSilent(meta.title);
-          think.markSaved();
-          think._parent = this;
-          this._children.set(think.ID, think);
+        if (cachedIds) {
+          await this._applyFreshList(metas, cachedIds);
+        } else {
+          for (const meta of metas) this._addThinkFromMeta(meta);
         }
         this.Count    = this._children.size;
         this.IsLoaded = true;
@@ -346,6 +334,78 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
         // 最終試行も失敗した場合は IsLoaded を true にせず false のまま残す。
         // ReloadAll() 等による再試行が「ロード済みだが空」に阻まれないようにするため。
       }
+    }
+  }
+
+  private _addThinkFromMeta(meta: ThinkMeta): void {
+    const think = new TTThink();
+    think.ID          = meta.thinkid;
+    think.VaultID     = this.ID;
+    think.ContentType = TTThink.contentTypeOf(meta.category);
+    think.Keywords    = meta.keywords  ?? '';
+    think.RelatedIDs  = meta.relatedIds ?? '';
+    // metadata が万一オブジェクト以外（文字列化されたYAML等）で届いた場合、
+    // そのまま代入すると think.Metadata.xxx = ... の代入時に
+    // "Cannot create property on string" で描画がクラッシュする。
+    if (meta.metadata != null && typeof meta.metadata !== 'object') {
+      console.error(`[TTVault] LoadCache: metadata is not an object for ${meta.thinkid}, resetting to {}`, meta.metadata);
+    }
+    think.Metadata    = (meta.metadata && typeof meta.metadata === 'object') ? meta.metadata : {};
+    think.markMetadataSaved();
+    think.IsMetaOnly  = true;
+    think.UpdatedAt   = meta.updatedAt ?? '';
+    think.setContentSilent(meta.title);
+    think.markSaved();
+    think._parent = this;
+    this._children.set(think.ID, think);
+  }
+
+  /**
+   * 前回の一覧を先に出す。通信を待たずに画面を使い始められるが、中身は古い可能性がある。
+   * @returns 表示した ID（一覧を出せなければ null）
+   */
+  private async _showCachedList(): Promise<Set<string> | null> {
+    let metas: ThinkMeta[] | null = null;
+    try {
+      metas = await StorageManager.instance.listMetaCached();
+    } catch (e) {
+      console.warn('[TTVault] 前回の一覧を読めませんでした', e);
+    }
+    if (!metas || metas.length === 0) return null;
+    for (const meta of metas) this._addThinkFromMeta(meta);
+    this.Count    = this._children.size;
+    this.IsLoaded = true;
+    this.NotifyRefresh();
+    perfMark(`vault-cached(${this.Count})`);
+    return new Set(metas.map(meta => meta.thinkid));
+  }
+
+  /**
+   * キャッシュで出した一覧を正本へ揃える。編集中の Think には触らず、手元より古い情報でも戻さない。
+   * 表示後に作られた Think は取得済みの一覧に無いことがあるので、消すのはキャッシュ由来のものだけ。
+   */
+  private async _applyFreshList(metas: ThinkMeta[], cachedIds: Set<string>): Promise<void> {
+    const freshIds = new Set(metas.map(meta => meta.thinkid));
+    let changed = false;
+    for (const meta of metas) {
+      const think = this.GetThink(meta.thinkid);
+      if (!think) {
+        this._addThinkFromMeta(meta);
+        changed = true;
+      } else if (think.ApplyNewerMeta(meta)) {
+        changed = true;
+      }
+    }
+    for (const id of cachedIds) {
+      const think = this.GetThink(id);
+      if (!think || freshIds.has(id) || think.IsDirty || think.IsMetadataDirty) continue;
+      think._parent = null;
+      this._children.delete(id);
+      changed = true;
+    }
+    if (changed) {
+      this.ListRevision++;
+      this.InvalidateItemsCache();
     }
   }
 
@@ -602,11 +662,56 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
     catch (error) { bundle.Content = previousContent; throw error; }
   }
 
-  /** 1件の URL/パスをまとめた linkファイルを作成して保存する（書式は utils/linkFormat.ts） */
-  public async CreateLinksThink(title: string, target: string, pcName: string = '', bundleId?: string): Promise<TTThink> {
+  /** 同じリンク先の linkファイルを探す。本文未読込のものは Metadata.linkTarget が無ければ読んで確かめる */
+  public async FindLinksThink(target: string): Promise<TTThink | undefined> {
+    const key = linkTargetKey(target);
+    if (!key) return undefined;
+    const links = this.GetThinks().filter(t => t.ContentType === 'links');
+    const matches = (t: TTThink): boolean => {
+      if (!t.IsMetaOnly) {
+        const file = parseLinkFile(t.Content);
+        return !!file && linkTargetKey(file.link) === key;
+      }
+      const recorded = t.Metadata?.linkTarget;
+      return typeof recorded === 'string' && linkTargetKey(recorded) === key;
+    };
+    const found = links.find(matches);
+    if (found) return found;
+    const unknown = links.filter(t => t.IsMetaOnly && typeof t.Metadata?.linkTarget !== 'string');
+    // 一度に大量の本文取得を投げないよう、少しずつ読む
+    const BATCH = 20;
+    for (let i = 0; i < unknown.length; i += BATCH) {
+      const batch = unknown.slice(i, i + BATCH);
+      await Promise.all(batch.map(t => t.LoadContent().catch(() => undefined)));
+      const hit = batch.find(t => !t.IsMetaOnly && matches(t));
+      if (hit) return hit;
+    }
+    return undefined;
+  }
+
+  /**
+   * 1件の URL/パスをまとめた linkファイルを用意する（書式は utils/linkFormat.ts）。
+   * 同じリンク先の linkファイルがあれば新しく作らずそれを返す（1リンク=1ファイル）。
+   */
+  public async GetOrCreateLinksThink(source: LinkSource, pcName: string = '', bundleId?: string): Promise<{ think: TTThink; created: boolean }> {
+    const existing = await this.FindLinksThink(source.target);
+    if (existing) {
+      if (bundleId) await this._linkThinkToProject(bundleId, existing.ID);
+      return { think: existing, created: false };
+    }
+    // GDrive/GMail は利用者の GAS に名前・件名を問い合わせる（ドラッグ情報のリンク文字より確か）。
+    // GAS が未設定・失敗ならドラッグ情報のタイトルを使う
+    const pageTitle = await fetchLinkTitle(source.target) ?? source.pageTitle;
+    return { think: await this.CreateLinksThink(pageTitle ? { ...source, pageTitle } : source, pcName, bundleId), created: true };
+  }
+
+  /** 重複を確かめずに linkファイルを作成する。通常は GetOrCreateLinksThink を使う */
+  public CreateLinksThink(source: LinkSource, pcName: string = '', bundleId?: string): Promise<TTThink> {
     return this._createThink({
       contentType: 'links',
-      fullContent: serializeLinkFile(createLinkFile(title, target, pcName)),
+      fullContent: serializeLinkFile(createLinkFile(source, pcName)),
+      // 一覧のメタデータだけで重複を判定できるよう、リンク先を控えておく
+      metadata: { linkTarget: source.target },
       ...(bundleId ? { bundleId } : {}),
     });
   }

@@ -13,15 +13,15 @@
  *   'simple' … SeedsPanel / HarvestPanel を非表示
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { TTApplication } from '../../views/TTApplication';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { HighlightProvider } from '../../contexts/HighlightContext';
-import { ThinktankPanel } from '../ThinktankPanel/ThinktankPanel';
-import { SeedsPanel } from '../SeedsPanel/SeedsPanel';
-import { WorkingPanel } from '../WorkingPanel/WorkingPanel';
-import { HarvestPanel } from '../HarvestPanel/HarvestPanel';
-import { ApplicationStatusBarArea } from './ApplicationStatusBarArea';
+import { ThinktankPanel as ThinktankPanelView } from '../ThinktankPanel/ThinktankPanel';
+import { SeedsPanel as SeedsPanelView } from '../SeedsPanel/SeedsPanel';
+import { WorkingPanel as WorkingPanelView } from '../WorkingPanel/WorkingPanel';
+import { HarvestPanel as HarvestPanelView } from '../HarvestPanel/HarvestPanel';
+import { ApplicationStatusBarArea as ApplicationStatusBarAreaView } from './ApplicationStatusBarArea';
 import { THEME_STATUS_KEYS, applyPanelThemeCss } from '../../utils/panelTheme';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { INIT_AREA_WIDTH, MIN_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidth';
@@ -30,6 +30,13 @@ import './AppLayout.css';
 // パネル本文領域の初期幅・最小値は utils/panelAreaWidth.ts に集約（Working 側と共用）
 
 export type LayoutMode = 'sipoc' | 'simple';
+
+// 各パネルは自分の表示に必要なモデルを購読している。ここの再描画（幅の変更用）を波及させない
+const ThinktankPanel = memo(ThinktankPanelView);
+const SeedsPanel = memo(SeedsPanelView);
+const WorkingPanel = memo(WorkingPanelView);
+const HarvestPanel = memo(HarvestPanelView);
+const ApplicationStatusBarArea = memo(ApplicationStatusBarAreaView);
 
 const LS_LAYOUT_MODE = 'tt-layout-mode';
 

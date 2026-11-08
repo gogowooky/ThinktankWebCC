@@ -1,6 +1,4 @@
-export function isElectron(): boolean {
-  return typeof window !== 'undefined' && !!window.electronAPI;
-}
+
 
 /**
  * 旧版の平文 `/api/think-support/*` 経路は使わない。

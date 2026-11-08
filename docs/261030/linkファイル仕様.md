@@ -12,12 +12,14 @@
 | 行 | 内容 |
 |---|---|
 | 1行目 | タイトル（webページのタイトル、ファイル名など） |
-| 2行目 | 空行、または `=` の連続（新規作成時は `=`） |
+| 2行目 | 空行、または `=` の連続（新規作成時は `=` 30個） |
 | 3行目以降 | 下記の見出し構成の Markdown |
 
 ```
 Example Domain
-=
+==============================
+# Caption
+Example Domain
 # Link
 https://example.com/
 # Affiliation
@@ -25,6 +27,24 @@ example.com
 # Abstract
 リンク先の概要
 ```
+
+- `# Caption` — 参照タグの後ろに添える表示名（2026-11-08 追加）。作成時に次の値を入れる。
+  | 種別 | 値 |
+  |---|---|
+  | GDrive | ファイル名またはフォルダー名 |
+  | GMail | メールタイトル |
+  | GPhoto | 撮影日を `yyyy-MM-dd` で。撮影場所が分かれば `yyyy-MM-dd(撮影場所)` |
+  | path | ファイルは `File:{ファイル名}`、フォルダは `Folder:{フォルダー名}` |
+  | link | リンク先タイトル。不明なら Affiliation の値 |
+  - タイトルはブラウザからのドラッグに付く `text/html`（`<a>` のテキスト・aria-label）か、
+    アドレスバーからのドラッグで作られる `.url` のファイル名から取る。タブ名の「 - Google ドライブ」
+    「 - 〇〇@gmail.com - Gmail」等は外す。
+  - GDrive・GMail は、設定されていれば利用者の GAS に名前・件名を問い合わせ、ドラッグ情報より優先する
+    （`docs/261108/GASリンクタイトル取得.md`）。
+  - GDrive・GMail・GPhoto もタイトルが分からなければ Affiliation の値にする。
+  - GPhoto の撮影日はサムネイルの説明から読む。撮影場所はドラッグ情報に含まれないことが多く、
+    分からなければ日付だけにする。
+  - Caption 項の無い旧ファイルは、1行目のタイトル等から補って使う（`captionOfLinkFile`）。
 
 - `# Link` — リンク先の URL またはパス（1行）。パスは `"C:\path\file.jpg"` のように引用符で囲む。
 - `# Affiliation` — URL ならサーバーアドレス（`URL.host`。ポートがあれば含む）、パスなら
@@ -45,8 +65,12 @@ example.com
 | `gdrive` | `drive.google.com`、`docs.google.com`（Docs/Sheets/Slides も Drive 上のファイル） |
 | `gphoto` | `photos.google.com`、`photos.app.goo.gl` |
 | `gnb` | `notebook.google.com`、`notebooklm.google.com`（旧 NotebookLM の保存済みリンク） |
-| `path` | ドライブ・UNC・`/` で始まるパス、`file:` URI、スキームの無い文字列 |
+| `file` | ドライブ・UNC・`/` で始まるパス、`file:` URI、スキームの無い文字列のうちファイル |
+| `dir` | 同じくパスのうちフォルダ（Caption が `Folder:` で始まるもの） |
 | `link` | 上記以外（http の Google URL、`mailto:` なども含む） |
+
+- パスのタグ名は `linkTagOfFile()` が linkファイルの Caption から決める（2026-11-08 に `path` から分けた）。
+  既存の `[path:ID]` は読み取りだけ互換を保つ。
 
 - タグ名の大文字小文字は問わない（`[GDrive:ID]` も可）。
 - 値が ThinkID の形式のときだけ Link タグとして扱う。`[GMail:検索語]` のような値は
@@ -60,11 +84,18 @@ example.com
 | DoOnCursorPos:Menu の「Link」 | O) リンク先を開く / L) linkファイルを開く（`DoOnCursorPos:LinkFile:Open`） / D) タグを除く |
 | Thinkファイルの Alt+ドロップ（Insert） | linkファイルならリンク先に応じた `[gdrive:ID]` 等、それ以外は従来どおり `[memo:ID]` を挿入 |
 
+- `gmail`・`gdrive`・`link`・`file`・`dir` のタグを作るときは、タグの後ろに半角空白と Caption を添える
+  （例：`[gdrive:ID] 見積書.pdf`、`[file:ID] File:plan.md`、`[dir:ID] Folder:Pictures`）。`gphoto`・`gnb` は添えない。
+
 ## 4. 作成
 
 - Working のタイトル（リボン）とPane の外への URL/パスのドロップでは、新しい linkファイルを作成して表示する
-  （`TTVault.CreateLinksThink`）。TextEditor本文へのドロップでは「そのまま挿入」または
+  （`TTVault.GetOrCreateLinksThink`）。TextEditor本文へのドロップでは「そのまま挿入」または
   「linkファイルを作成して参照タグを挿入」をメニューで選ぶ（`TextEditor.CurrentEditor.DDInsert:*`）。
+- 作成前に同じリンク先の linkファイルを探し、あれば新しく作らずそれを開く／そのタグを挿入する
+  （`TTVault.FindLinksThink`）。Windowsのパスは区切り・大文字小文字・末尾区切りを問わず、URLは完全一致で比べる。
+  新しく作る linkファイルは Metadata の `linkTarget` にリンク先を控え、本文を読まずに照合できるようにする。
+  `linkTarget` の無い旧ファイルは本文を読んで確かめる。
 - Windowsの `.url`、Electron版の `.lnk` はショートカット自身ではなくリンク先を解決する。
 - linkファイルを開いた Pane の本文へのドロップも、追記せず新しい linkファイルを作って Pane を差し替える（1リンク=1ファイル）。
 - AI CLI の `thinktank_create_think`（category=links）の説明にも同じ書式を記載している。

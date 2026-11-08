@@ -42,6 +42,7 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - 画面から OS・ファイルに触れる処理は preload（`electron/preload.cjs`）経由の IPC にする
 - Web版（Firebase Hosting）はFirestore正本を直接利用する。PC連携ON時だけFirestore経由のE2EE中継を使い、Drive APIは外部資料に限定する。デプロイは `npm run firebase:deploy`
 - GPU キャッシュエラー（Windows）は無視してよい
+- `dependencies` はメインプロセスが実行時に require するものだけにする。画面のライブラリは Vite がバンドルするので `devDependencies` に置く（`dependencies` はすべて配布物へ同梱される）
 
 ## 変更を加える前に
 - `src/components/WorkingPanel/` など既存コンポーネントの構造を Read で確認する
@@ -65,6 +66,7 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - Think本文・メタデータは `users/{uid}/vaults/{vaultId}/thinks/{thinkid}` のFirestore文書を正本とする
 - 共通の正本読み書きは `src/platform/web/FirestoreStorageBackend.ts`。`electron/vaultEngine.cjs` はMarkdownバックアップ・ローカル索引・AI CLI用のローカル参照を担当する
 - PC版には「ローカル運用モード」がある（設定 > モード切替、再起動で反映）。このときだけ ThinkファイルFolder の `.md` を正本とし、Firebase に接続しない。詳細は `docs/261103/ローカル運用モード.md`
+- Think一覧は起動時に前回の一覧（IndexedDB、`src/services/storage/thinkListCache.ts`）を先に表示し、全件取得の結果で揃える。キャッシュは表示専用で、正本の判定には使わない
 - PC連携は既定OFF。ElectronはAI CLI提供側、Webは接続側。依頼・応答はFirestoreリアルタイムリスナーで監視する
 - 旧 BigQuery（`thinktank.vault_ver2`）は廃止済み。移行用スクリプトだけが `scripts/` に残る
 

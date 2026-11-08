@@ -82,25 +82,6 @@ export function isTodoChatThink(think: { ContentType: string; Name: string }, pr
   return think.ContentType === 'chat' && !!info && info.panel.toLowerCase() === owner?.toLowerCase();
 }
 
-/**
- * 選択された Think の内容を Chat メッセージ配列としてロードする。
- * chat形式（## ユーザー発言）ならそのまま復元し、そうでなければ本文
- * （タイトル行を除く）をそのまま最初のユーザーメッセージとして扱う。
- */
-export function loadChatFromThink(think: { Content: string } | undefined | null): ChatMessage[] {
-  if (!think) return [];
-  const parsed = parseChat(think.Content);
-  if (parsed.length > 0) return parsed;
-  const { body } = splitContent(think.Content);
-  if (!body.trim()) return [];
-  return [{
-    id:        `u-${Date.now()}`,
-    role:      'user',
-    content:   body.trim(),
-    timestamp: new Date().toISOString(),
-  }];
-}
-
 /** AI相談のDataGrid先頭に置く「新規チャット」行の仮想ID。実在するThinkのIDとは衝突しない特殊値 */
 export const NEW_CHAT_SENTINEL_ID = '__new_chat__';
 
@@ -111,18 +92,6 @@ export function newChatTitle(prefix: string): string {
   const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   const time = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
   return `${prefix}${date} ${time}`;
-}
-
-/**
- * 未保存の chat を初めて保存するときのタイトルを、会話内容から組み立てる
- * （最初のユーザー発言の冒頭を要約として使う）。
- * プレフィックスを付けるのは、保存後もAI相談のドロップボックス一覧（@プレフィックス始まりの
- * chat のみを対象とする）から見えるようにするため。
- */
-export function chatContentTitle(prefix: string, messages: ChatMessage[]): string {
-  const firstUser = messages.find(m => m.role === 'user')?.content.trim() ?? '';
-  const summary = firstUser.replace(/\s+/g, ' ').slice(0, 40);
-  return summary ? `${prefix}${summary}` : newChatTitle(prefix);
 }
 
 // #endregion
@@ -164,9 +133,6 @@ export function isRootProjectTitle(title: string): boolean {
 
 /** テンプレートに置くAIへの指示の見出し（旧 # プロンプト を目的別に分けたもの）。中身は自由記述 */
 export const PROJECT_PROMPT_HEADINGS = ['現状把握用プロンプト', '進捗把握用プロンプト', '実績把握用プロンプト'] as const;
-
-/** @deprecated Use ProjectContent */
-export type BundleContent = ProjectContent;
 
 /**
  * Think ID とみなす形式。yyyy-MM-dd-HHmmss、および末尾サフィックス（AI 生成の -memo /
@@ -370,9 +336,6 @@ export interface ProjectCreateOptions {
   aiDiscussionIds?: string[];
 }
 
-/** @deprecated Use ProjectCreateOptions */
-export type BundleCreateOptions = ProjectCreateOptions;
-
 /**
  * オプションから project 本文（Markdownテキスト）をシリアライズして生成する
  */
@@ -401,9 +364,6 @@ export function serializeProject(options: ProjectCreateOptions): string {
   ];
   return lines.join('\n');
 }
-
-/** @deprecated Use serializeProject */
-export const serializeBundle = serializeProject;
 
 /**
  * 既存の project 本文の「# 対象」セクション内の Think 参照行を更新する。

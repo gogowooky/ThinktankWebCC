@@ -44,13 +44,13 @@ export const PANEL_COLOR_ROWS: { statusId: string; label: string; tip: string; }
   })),
 ];
 
-export function ColorStyleRow({ panel, statusId, label }: { panel: TTWorkingPanel; statusId: string; label: string; }) {
+export function ColorStyleRow({ panel, statusId, label, swatchLabel = true }: { panel: TTWorkingPanel; statusId: string; label: string; swatchLabel?: boolean; }) {
   const style = panel.GetColorStatus(statusId);
   const attrs = parseAttrs(style.Attrs);
   const hasBg = !isUnset(style.BgColor);
   return (
     <div className="working-setting-area__heading-style-row">
-      <span className="working-setting-area__heading-style-label working-setting-area__swatch-label">{label}</span>
+      <span className={`working-setting-area__heading-style-label${swatchLabel ? ' working-setting-area__swatch-label' : ''}`}>{label}</span>
       <input
         type="color"
         className="working-setting-area__color-picker"

@@ -148,6 +148,9 @@ export class TTThink extends TTObject {
     try {
       const body = await StorageManager.instance.getBody(this.ID);
       if (body !== null) {
+        // 一覧が前回のキャッシュだと版やメタデータが古いので、本文と同じ版へ揃える
+        const known = StorageManager.instance.knownMeta(this.ID);
+        if (known) this.ApplyNewerMeta(known);
         // _content at this point is the raw title line from LoadCache (e.g. "# My Memo")
         // Use it directly instead of this.Name which has the # prefix stripped
         const titleLine = this._content ? this._content.split('\n')[0] : `# ${this.Name}`;
@@ -161,6 +164,32 @@ export class TTThink extends TTObject {
     } catch (e) {
       console.error(`[TTThink] LoadContent failed (${this.ID}):`, e);
     }
+  }
+
+  /**
+   * 手元より新しい版のメタデータを取り込む。未保存の変更があれば何もしない
+   * （保存時の楽観ロックが衝突として知らせる）。本文は扱わないので呼び出し側で LoadContent する。
+   * @returns 取り込んだかどうか
+   */
+  public ApplyNewerMeta(meta: ThinkMeta): boolean {
+    if ((meta.updatedAt || '') <= this.UpdatedAt) return false;
+    if (this.IsDirty || this.IsMetadataDirty || this._fieldsDirty) return false;
+    this.ContentType = TTThink.contentTypeOf(meta.category);
+    this.Keywords = meta.keywords ?? '';
+    this.RelatedIDs = meta.relatedIds ?? '';
+    this.Metadata = meta.metadata && typeof meta.metadata === 'object' ? meta.metadata : {};
+    this.markMetadataSaved();
+    this.UpdatedAt = meta.updatedAt;
+    if (this.IsMetaOnly) {
+      this.setContentSilent(meta.title);
+      this.markSaved();
+    }
+    return true;
+  }
+
+  /** 保存先の分類名を画面の ContentType に読み替える（旧名は読み込み時に現行名へ揃える） */
+  public static contentTypeOf(category: string): ContentType {
+    return (category === 'bundle' ? 'project' : category === 'abstract' ? 'memo' : category) as ContentType;
   }
 
   /**

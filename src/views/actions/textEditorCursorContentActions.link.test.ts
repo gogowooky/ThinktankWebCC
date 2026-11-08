@@ -31,9 +31,12 @@ function setup(line: string, column: number, think: FakeThink | undefined) {
   };
   TTShortcutManager.instance.setActiveEditor(editor);
   const openThink = vi.fn(() => undefined);
-  const createLinksThink = vi.fn(async () => ({ ID: '2026-10-30-130000' }));
+  const createLinksThink = vi.fn(async (source: { target: string; title: string }) => ({
+    think: { ID: '2026-10-30-130000', IsMetaOnly: false, Content: `${source.title}\n=\n# Caption\n${source.title}\n# Link\n${source.target}\n# Affiliation\n# Abstract` },
+    created: true,
+  }));
   const app = {
-    Models: { Vault: { GetThink: (id: string) => (id === LINK_ID ? think : undefined), CreateLinksThink: createLinksThink } },
+    Models: { Vault: { GetThink: (id: string) => (id === LINK_ID ? think : undefined), GetOrCreateLinksThink: createLinksThink } },
     WorkingPanel: { Areas: [], FocusedAreaId: '', DroppedFileID: '' },
     OpenThinkInWorking: openThink,
   } as unknown as TTApplication;
@@ -105,7 +108,15 @@ describe('ThinkファイルのInsertドロップ', () => {
     const { executeEdits } = setup('', 1, fakeThink('links', NEW_FORMAT, true));
     TTShortcutManager.instance.setPendingThinkDrop({ thinkId: LINK_ID, kind: 'insert' });
     await run('WorkingPanel.DroppedFile.ID:Insert');
-    expect(executeEdits.mock.calls[0][1][0].text).toBe(`[gdrive:${LINK_ID}]`);
+    expect(executeEdits.mock.calls[0][1][0].text).toBe(`[gdrive:${LINK_ID}] 資料`);
+  });
+
+  it('Caption 項があればそれをタグの後ろに添える', async () => {
+    const content = NEW_FORMAT.replace('=\n', '=\n# Caption\n見積書.pdf\n');
+    const { executeEdits } = setup('', 1, fakeThink('links', content));
+    TTShortcutManager.instance.setPendingThinkDrop({ thinkId: LINK_ID, kind: 'insert' });
+    await run('WorkingPanel.DroppedFile.ID:Insert');
+    expect(executeEdits.mock.calls[0][1][0].text).toBe(`[gdrive:${LINK_ID}] 見積書.pdf`);
   });
 
   it('linkファイル以外は従来どおり [memo:ID]', async () => {
@@ -130,10 +141,10 @@ describe('URL / パスのDDInsert', () => {
   it('Tagはlinkファイルを作り、リンク先に応じた参照タグを挿入する', async () => {
     const { editor, executeEdits, createLinksThink } = setup('', 1, undefined);
     const target = 'https://mail.google.com/mail/u/0/#inbox';
-    TTShortcutManager.instance.setPendingTextEditorDrop({ target, title: 'Gmail', kind: 'url', editor, range });
-    expect(await run('TextEditor.CurrentEditor.DDInsert:Tag')).toBe('Insert: [gmail:2026-10-30-130000]');
-    expect(createLinksThink).toHaveBeenCalledWith('Gmail', target, '');
-    expect(executeEdits.mock.calls[0][1][0]).toMatchObject({ range, text: '[gmail:2026-10-30-130000]' });
+    TTShortcutManager.instance.setPendingTextEditorDrop({ target, title: 'Gmail', pageTitle: '件名', kind: 'url', editor, range });
+    expect(await run('TextEditor.CurrentEditor.DDInsert:Tag')).toBe('Insert: [gmail:2026-10-30-130000] Gmail');
+    expect(createLinksThink).toHaveBeenCalledWith({ target, title: 'Gmail', pageTitle: '件名' }, '');
+    expect(executeEdits.mock.calls[0][1][0]).toMatchObject({ range, text: '[gmail:2026-10-30-130000] Gmail' });
   });
 
   it('ドロップ情報が無い場合は何も作成・挿入しない', async () => {

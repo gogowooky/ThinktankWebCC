@@ -62,6 +62,8 @@ describe('VaultEngine automatic index refresh', () => {
     expect(indexFiles(engine)).not.toContain(shard);
 
     vi.advanceTimersByTime(15_000);
+    // メインプロセスを止めないよう非同期で書くので、書き終わるのを待つ
+    await engine.whenIndexIdle();
     expect(indexFiles(engine)).toContain(shard);
     expect(indexFiles(engine)).not.toContain(bodyPack);
     const written = JSON.parse(fs.readFileSync(join(engine.getIndexDir(), shard), 'utf8'));

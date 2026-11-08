@@ -45,7 +45,6 @@
 import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { parseTableContent, type TableSection } from '../utils/tableFormat';
-import { TTUIStateManager } from './TTUIStateManager';
 import { TTActions } from './TTActions';
 import { getFocusName } from '../utils/getFocusName';
 import localShortcutContent from '../../docs/DefaultShortcut.md?raw';
@@ -100,6 +99,8 @@ export type ThinkDropContext =
 export interface TextEditorDropContext {
   target: string;
   title: string;
+  pageTitle?: string;
+  isDirectory?: boolean;
   kind: 'url' | 'path';
   editor: any;
   range: any;

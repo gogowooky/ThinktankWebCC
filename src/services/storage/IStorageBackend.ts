@@ -58,6 +58,12 @@ export interface IStorageBackend {
   /** メタデータ一覧（content なし）を取得する */
   listMeta(): Promise<ThinkMeta[]>;
 
+  /** 前回の一覧を通信なしで返す。古い可能性があるので、必ず listMeta の結果で確かめ直す。 */
+  listMetaCached?(): Promise<ThinkMeta[] | null>;
+
+  /** getBody などで正本から読んだ直後の、その版のメタデータ */
+  knownMeta?(id: string): ThinkMeta | null;
+
   /**
    * 本文のみ取得する（タイトル行を含まない）。
    * TTThink.Content は「タイトル行 + 本文」なので、戻り値はそれとは別物。

@@ -22,7 +22,6 @@ export interface ConversationTurn {
 }
 export interface ConversationLog { schemaVersion: 1; turns: ConversationTurn[] }
 export const MAX_CONTEXT_CHARS = 120000;
-export const MAX_LOG_BYTES = 2000000;
 const TRANSCRIPT_START = '<!-- thinktank-ai-conversation:start -->';
 const TRANSCRIPT_END = '<!-- thinktank-ai-conversation:end -->';
 

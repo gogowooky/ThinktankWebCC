@@ -14,8 +14,8 @@ import { isReadOnlyContentType, type MediaType } from '../../types';
 import type { AiModelSelection } from '../../services/aiModels';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { useHighlight } from '../../contexts/HighlightContext';
-import { WorkingMenuRibbon, extractLinkDrop, shouldAllowLocalDrop } from './WorkingMenuRibbon';
-import { TextEditorMedia } from './media/TextEditorMedia';
+import { WorkingMenuRibbon, extractLinkDrop, shouldAllowLocalDrop, type LinkDrop } from './WorkingMenuRibbon';
+import { TextEditorMedia } from './media/LazyTextEditorMedia';
 import { useEditorSettings } from './media/useEditorSettings';
 import { getPcName } from '../../utils/pcName';
 import { readColHeader, tableContentWithBodyHeader } from '../../utils/tableFormat';
@@ -152,10 +152,12 @@ export function WorkingArea({
     return () => window.removeEventListener('keydown', handleGlobalSave);
   }, [vault, area.ResourceID]);
 
-  // タイトルへの URL/path D&D → 常に新規 links Think を作成して表示
-  const handleUrlDrop = useCallback(async (url: string, title: string) => {
-    const newThink = await vault.CreateLinksThink(title, url, await getPcName(), seedsProjectId);
-    area.OpenThink(newThink.ID, 'texteditor', newThink.Name);
+  // タイトルへの URL/path D&D → links Think を表示（同じリンク先のものがあればそれを使う）
+  const handleUrlDrop = useCallback(async (link: LinkDrop) => {
+    const { think } = await vault.GetOrCreateLinksThink(
+      { target: link.url, title: link.title, pageTitle: link.pageTitle, isDirectory: link.isDirectory },
+      await getPcName(), seedsProjectId);
+    area.OpenThink(think.ID, 'texteditor', think.Name);
   }, [vault, area, seedsProjectId]);
 
   // コンテンツ領域への URL/path D&D（links ペインのみ）。linkファイルは1件1ファイルなので
@@ -188,7 +190,7 @@ export function WorkingArea({
     e.preventDefault();
     e.stopPropagation(); // TextEditorMedia / Monaco に渡さない
     setIsContentLinkDrop(false);
-    await handleUrlDrop(link.url, link.title);
+    await handleUrlDrop(link);
   }, [vault, area.ResourceID, area.MediaType, handleUrlDrop]);
 
   // タイトルへのThinkドロップ: Alt修飾の有無で Load（Pane差し替え）/ Insert（タグ挿入）を

@@ -18,8 +18,9 @@ import { getErrorMessage } from '../../utils/errorMessage';
 import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
 import { defaultSearchTagUrls } from '../../utils/defaultSearchTags';
 import type { SearchTagRow } from '../../utils/searchTagFormat';
-import { formatLinkTag, isLocalPathTarget, linkTagNameOf, parseLinkFile, parseLinkTag, type LinkFile } from '../../utils/linkFormat';
+import { captionOfLinkFile, formatLinkTag, formatLinkTagWithCaption, isLocalPathTarget, linkTagNameOf, linkTagOfFile, parseLinkFile, parseLinkTag, type LinkFile, type LinkSource } from '../../utils/linkFormat';
 import { getPcName } from '../../utils/pcName';
+import { findTextOnCursor } from '../../utils/textOnCursor';
 
 // ── 検索タグキャッシュ ────────────────────────────────────────────────────────
 // Vaultメモ（ThinktankSearchTag）由来の上書き分。id一致分のみ既定値（docs/DefaultSearchTag.md）を置換する
@@ -190,68 +191,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     const model = editor.getModel();
     if (!pos || !model) return '';
 
-    const lineNumber = pos.lineNumber;
-    const column = pos.column;
-    const lineContent = model.getLineContent(lineNumber);
-
-    const quotedRegex = /"([^"]+)"/g;
-    const urlRegex = /https?:\/\/[^\s")]+/g;
-    const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
-    const tagRegex = /\[([^\]]+)\]/g;
-
-    let textOnCursor = '';
-    let match;
-
-    // 1. まずダブルクォーテーションで囲まれたURIやファイルパスを最優先で探索する
-    while ((match = quotedRegex.exec(lineContent)) !== null) {
-      const startCol = match.index + 1;
-      const endCol = startCol + match[0].length;
-      if (column >= startCol && column <= endCol) {
-        const content = match[1];
-        const isUri = /^https?:\/\//i.test(content) || /^file:\/\//i.test(content);
-        const isFilePath = /^([a-zA-Z]:\\|\\\\)/.test(content) || /^([a-zA-Z]:\/)/.test(content);
-        if (isUri || isFilePath) {
-          textOnCursor = content;
-          break;
-        }
-      }
-    }
-
-    // 2. ダブルクォーテーションに合致しなかった場合は従来のマッチングを行う
-    if (!textOnCursor) {
-      while ((match = urlRegex.exec(lineContent)) !== null) {
-        const startCol = match.index + 1;
-        const endCol = startCol + match[0].length;
-        if (column >= startCol && column <= endCol) {
-          textOnCursor = match[0];
-          break;
-        }
-      }
-    }
-
-    if (!textOnCursor) {
-      while ((match = fileRegex.exec(lineContent)) !== null) {
-        const startCol = match.index + 1;
-        const endCol = startCol + match[0].length;
-        if (column >= startCol && column <= endCol) {
-          textOnCursor = match[0];
-          break;
-        }
-      }
-    }
-
-    if (!textOnCursor) {
-      while ((match = tagRegex.exec(lineContent)) !== null) {
-        const startCol = match.index + 1;
-        const endCol = startCol + match[0].length;
-        if (column >= startCol && column <= endCol) {
-          textOnCursor = match[0];
-          break;
-        }
-      }
-    }
-
-    return textOnCursor;
+    return findTextOnCursor(model.getLineContent(pos.lineNumber), pos.column);
   }
 
   function getTextOnCursorSafe(): string {
@@ -888,10 +828,21 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       try {
         const pcName = await getPcName();
         const seedsProjectId = app.SeedsPanel?.ProjectID;
-        const linkThink = seedsProjectId
-          ? await app.Models.Vault.CreateLinksThink(ctx.title, ctx.target, pcName, seedsProjectId)
-          : await app.Models.Vault.CreateLinksThink(ctx.title, ctx.target, pcName);
-        const tag = formatLinkTag(linkTagNameOf(ctx.target), linkThink.ID);
+        const source: LinkSource = {
+          target: ctx.target,
+          title: ctx.title,
+          ...(ctx.pageTitle ? { pageTitle: ctx.pageTitle } : {}),
+          ...(ctx.isDirectory !== undefined ? { isDirectory: ctx.isDirectory } : {}),
+        };
+        const { think: linkThink } = seedsProjectId
+          ? await app.Models.Vault.GetOrCreateLinksThink(source, pcName, seedsProjectId)
+          : await app.Models.Vault.GetOrCreateLinksThink(source, pcName);
+        // 既存のlinkファイルを使う場合も、そのファイルの Caption を添える
+        if (linkThink.IsMetaOnly) await linkThink.LoadContent();
+        const file = parseLinkFile(linkThink.Content);
+        const tag = file
+          ? formatLinkTagWithCaption(linkTagOfFile(file), linkThink.ID, captionOfLinkFile(file))
+          : formatLinkTag(linkTagNameOf(ctx.target), linkThink.ID);
         ctx.editor.executeEdits('external-drop-tag', [{ range: ctx.range, text: tag, forceMoveMarkers: true }]);
         ctx.editor.focus();
         item.Result = `Insert: ${tag}`;
@@ -979,7 +930,9 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
       const loaded = think.IsMetaOnly ? think.LoadContent() : Promise.resolve();
       return loaded.then(() => {
         const file = parseLinkFile(think.Content);
-        insert(formatLinkTag(file ? linkTagNameOf(file.link) : 'link', ctx.thinkId));
+        insert(file
+          ? formatLinkTagWithCaption(linkTagOfFile(file), ctx.thinkId, captionOfLinkFile(file))
+          : formatLinkTag('link', ctx.thinkId));
       });
     },
   });

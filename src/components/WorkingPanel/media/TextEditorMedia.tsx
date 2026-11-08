@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState, forwardRef, useImperativeHandle } from 'react';
 import './monacoSetup';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import type { MediaProps } from './types';
@@ -24,6 +24,7 @@ import { clientPointToPosition } from '../../../utils/editorDropPosition';
 import { isLocalPathTarget } from '../../../utils/linkFormat';
 import { isReadOnlyContentType } from '../../../types';
 import { perfMark } from '../../../utils/perfLog';
+import { findTextOnCursor } from '../../../utils/textOnCursor';
 /**
  * TextEditorMedia.tsx
  * Monaco Editor によるテキスト編集メディア。
@@ -169,45 +170,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
           }
 
           // カーソル下のテキスト（URL, FilePath, Tag）検出
-          const lineNumber = pos.lineNumber;
-          const column = pos.column;
-          const lineContent = model.getLineContent(lineNumber);
-
-          const urlRegex = /https?:\/\/[^\s")]+/g;
-          const fileRegex = /([a-zA-Z]:\\|\\\\)[^\s"<>|?*]+/g;
-          const tagRegex = /\[([^\]]+)\]/g;
-
-          let match;
-          while ((match = urlRegex.exec(lineContent)) !== null) {
-            const startCol = match.index + 1;
-            const endCol = startCol + match[0].length;
-            if (column >= startCol && column <= endCol) {
-              textOnCursor = match[0];
-              break;
-            }
-          }
-
-          if (!textOnCursor) {
-            while ((match = fileRegex.exec(lineContent)) !== null) {
-              const startCol = match.index + 1;
-              const endCol = startCol + match[0].length;
-              if (column >= startCol && column <= endCol) {
-                textOnCursor = match[0];
-                break;
-              }
-            }
-          }
-
-          if (!textOnCursor) {
-            while ((match = tagRegex.exec(lineContent)) !== null) {
-              const startCol = match.index + 1;
-              const endCol = startCol + match[0].length;
-              if (column >= startCol && column <= endCol) {
-                textOnCursor = match[0];
-                break;
-              }
-            }
-          }
+          textOnCursor = findTextOnCursor(model.getLineContent(pos.lineNumber), pos.column);
         }
 
         const workingPanel = TTApplication.Instance.WorkingPanel;
@@ -230,10 +193,12 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         }
 
         if (isChanged) {
-          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingOffset');
-          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentFolding.HeadingNumber');
-          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentEditor.CursorPos');
-          TTUIStateManager.instance.notifyConstPropertyChanged('TextEditor.CurrentEditor.TextOnCursorPos');
+          TTUIStateManager.instance.notifyConstPropertiesChanged([
+            'TextEditor.CurrentFolding.HeadingOffset',
+            'TextEditor.CurrentFolding.HeadingNumber',
+            'TextEditor.CurrentEditor.CursorPos',
+            'TextEditor.CurrentEditor.TextOnCursorPos',
+          ]);
         }
 
         // think.Metadata.editor に状態を保存
@@ -742,6 +707,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     TTShortcutManager.instance.setPendingTextEditorDrop({
       target: link.url,
       title: link.title,
+      ...(link.pageTitle ? { pageTitle: link.pageTitle } : {}),
+      ...(link.isDirectory !== undefined ? { isDirectory: link.isDirectory } : {}),
       kind: isLocalPathTarget(link.url) ? 'path' : 'url',
       editor,
       range,
@@ -750,6 +717,38 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
     TTShortcutManager.instance.executeActionDirect(actionId);
     TTShortcutManager.instance.setPendingTextEditorDrop(null);
   }, [readOnly]);
+
+  // @monaco-editor/react はオブジェクトが変わるたびに updateOptions を呼ぶので、値が同じなら同じものを渡す
+  const editorOptions = useMemo(() => ({
+    minimap: { enabled: editorSettings?.minimap ?? false },
+    fontSize: Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
+    lineHeight: Math.round(EDITOR_BASE_LINE_HEIGHT * fontScale),
+    lineNumbers: (editorSettings?.lineNumbers ?? true) ? 'on' as const : 'off' as const,
+    wordWrap: (editorSettings?.wordWrap ?? true) ? 'on' as const : 'off' as const,
+    scrollBeyondLastLine: false,
+    readOnly,
+    domReadOnly: readOnly,
+    fontFamily: "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
+    padding: { top: 10, bottom: 10 },
+    renderLineHighlight: 'line' as const,
+    smoothScrolling: true,
+    folding: true,
+    showFoldingControls: 'always' as const,
+    // Monaco 標準の折り畳みハイライト（.folded-background）を切る。
+    // その色 editor.foldBackground の既定値は「選択色の30%」で、切らないと
+    // TextEditor.Selection.Theme の変更が折り畳み行の色に混ざる。折り畳み行の色は
+    // TextEditor.FoldingHeader.Theme だけが決めるようにする。
+    foldingHighlight: false,
+    unicodeHighlight: {
+      ambiguousCharacters: editorSettings?.unicodeHighlight ?? true,
+      invisibleCharacters: editorSettings?.unicodeHighlight ?? true,
+    },
+    bracketPairColorization: {
+      enabled: editorSettings?.bracketPairColorization ?? true,
+    },
+    matchBrackets: (editorSettings?.bracketPairColorization ?? true) ? 'always' as const : 'never' as const,
+    occurrencesHighlight: 'singleFile' as const,
+  }), [editorSettings, fontScale, readOnly]);
 
   if (!think) {
     return (
@@ -774,36 +773,7 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
         onMount={handleMount}
         onChange={handleChange}
         loading={<div className="text-editor-media__loading">エディタ読み込み中…</div>}
-        options={{
-          minimap: { enabled: editorSettings?.minimap ?? false },
-          fontSize: Math.round(EDITOR_BASE_FONT_SIZE * fontScale),
-          lineHeight: Math.round(EDITOR_BASE_LINE_HEIGHT * fontScale),
-          lineNumbers: (editorSettings?.lineNumbers ?? true) ? 'on' : 'off',
-          wordWrap: (editorSettings?.wordWrap ?? true) ? 'on' : 'off',
-          scrollBeyondLastLine: false,
-          readOnly,
-          domReadOnly: readOnly,
-          fontFamily: "'JetBrains Mono', 'Consolas', 'Courier New', monospace",
-          padding: { top: 10, bottom: 10 },
-          renderLineHighlight: 'line',
-          smoothScrolling: true,
-          folding: true,
-          showFoldingControls: 'always',
-          // Monaco 標準の折り畳みハイライト（.folded-background）を切る。
-          // その色 editor.foldBackground の既定値は「選択色の30%」で、切らないと
-          // TextEditor.Selection.Theme の変更が折り畳み行の色に混ざる。折り畳み行の色は
-          // TextEditor.FoldingHeader.Theme だけが決めるようにする。
-          foldingHighlight: false,
-          unicodeHighlight: {
-            ambiguousCharacters: editorSettings?.unicodeHighlight ?? true,
-            invisibleCharacters: editorSettings?.unicodeHighlight ?? true,
-          },
-          bracketPairColorization: {
-            enabled: editorSettings?.bracketPairColorization ?? true
-          },
-          matchBrackets: (editorSettings?.bracketPairColorization ?? true) ? 'always' : 'never',
-          occurrencesHighlight: 'singleFile',
-        }}
+        options={editorOptions}
       />
 
       {/* ドラッグオーバーレイ */}

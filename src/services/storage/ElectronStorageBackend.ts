@@ -6,9 +6,7 @@
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
 import type { DomainProfile } from '../../../shared/domainProfile';
 import type { ValidatedAiResponse } from '../../../shared/responseValidator';
-import type { FirestoreRelayChunkDoc, RelayEnvelopePlaintext, RelayResponsePlaintext } from '../../../shared/relayProtocol';
-import type { DriveConflictFileInfo } from '../../../shared/conflict';
-import type { IndexShardV1 } from '../../../shared/searchIndex';
+import type { FirestoreRelayChunkDoc } from '../../../shared/relayProtocol';
 
 export interface ElectronVaultConfig {
   vaultDir: string;
@@ -129,7 +127,6 @@ declare global {
         listMeta:       ()                => Promise<ThinkMeta[]>;
         getContent:     (id: string)      => Promise<string | null>;
         getRecord?:     (id: string)      => Promise<{ meta: ThinkMeta; body: string; support: Record<string, unknown>; updatedAt: string } | null>;
-        getSupport?:    (id: string)      => Promise<Record<string, unknown> | null>;
         save:           (p: SavePayload)  => Promise<ThinkMeta>;
         writeBackup?:   (p: SavePayload & { createdAt: string; updatedAt: string }) => Promise<ThinkMeta>;
         saveSupport?:   (id: string, metadata: Record<string, unknown>, expectedVer?: string) => Promise<{ thinkid: string; updatedAt: string; metadata: Record<string, unknown> }>;
@@ -140,8 +137,6 @@ declare global {
         getConfig:     () => Promise<ElectronVaultConfig>;
         setConfig:     (partial: Partial<ElectronVaultConfig>) => Promise<ElectronVaultConfig>;
         selectFolder:  () => Promise<ElectronVaultConfig | null>;
-        listConflicts: () => Promise<Array<DriveConflictFileInfo & { sizeBytes: number; mtimeIso: string }>>;
-        writeShard:    () => Promise<IndexShardV1>;
         onMcpMutated?: (callback: (payload: ElectronMcpMutationPayload) => void) => () => void;
       };
       profile?: {
@@ -168,7 +163,6 @@ declare global {
         setFirebaseSession?: (session: { refreshToken: string; email: string; apiKey: string }) => Promise<ElectronRelayStatus>;
         signOutFirebase?: () => Promise<ElectronRelayStatus>;
         signInWithGoogle?: (options: { apiKey: string; firebaseProjectId: string }) => Promise<ElectronRelayStatus>;
-        executePlain:    <TReq = unknown, TRes = unknown>(envelope: RelayEnvelopePlaintext<TReq>) => Promise<RelayResponsePlaintext<TRes>>;
         handleEncrypted: (payload: { encryptedRequest: string; chunks?: FirestoreRelayChunkDoc[] }) => Promise<{ encryptedResponse: string; responseChunks: FirestoreRelayChunkDoc[] }>;
       };
       system?: {

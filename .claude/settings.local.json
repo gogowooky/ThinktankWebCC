@@ -462,7 +462,15 @@
       "PowerShell(Get-Process electron -ErrorAction SilentlyContinue)",
       "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=50648\")",
       "PowerShell(Get-Process Thinktank -ErrorAction SilentlyContinue)",
-      "Bash(sort -k5 -n -r)"
+      "Bash(sort -k5 -n -r)",
+      "PowerShell(npx vitest run src/utils/linkFormat.test.ts src/models/TTVault.creation.test.ts src/views/actions/textEditorCursorContentActions.link.test.ts src/components/WorkingPanel/WorkingMenuRibbon.test.ts 2>&1)",
+      "PowerShell(node scripts/build-electron-shared.mjs; if \\($?\\) { npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\" })",
+      "PowerShell(node scripts/build-electron-shared.mjs; npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/utils src/models src/views src/components/WorkingPanel 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Expected|Received|Test Files|Tests \" | Select-Object -First 30)",
+      "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\3a540e126d457b64\\\\b8e7e448-30f9-421b-a5c2-1f8ef0e6e5df\\\\scratchpad\\\\gmailtoken.mjs\")",
+      "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\3a540e126d457b64\\\\b8e7e448-30f9-421b-a5c2-1f8ef0e6e5df\\\\scratchpad\\\\gmailtoken2.mjs\")",
+      "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\3a540e126d457b64\\\\b8e7e448-30f9-421b-a5c2-1f8ef0e6e5df\\\\scratchpad\\\\gmailtoken3.mjs\")",
+      "PowerShell(node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\3a540e126d457b64\\\\b8e7e448-30f9-421b-a5c2-1f8ef0e6e5df\\\\scratchpad\\\\gmailtoken4.mjs\")",
+      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Expected|Received|Test Files|Tests \" | Select-Object -First 30)"
     ]
   }
 }

@@ -87,16 +87,6 @@ export function pickColorStyle(
   return store?.[statusId] ?? getDefaultColorStyle(statusId);
 }
 
-/**
- * StatusID変数1つぶんの既定値を返す。
- * DefaultColor.md に行がない（コメントアウト等）か無設定の場合は fallback を使う。
- * 既存の設定値（TextEditorSettings 等）の初期値を DefaultColor.md 側へ寄せるために使う。
- */
-export function defaultColorValue(statusId: string, prop: ColorProp, fallback: string): string {
-  const value = DEFAULT_COLOR_MAP[statusId]?.[prop];
-  return value && !isUnset(value) ? value : fallback;
-}
-
 /** 全 StatusID の既定スタイルを複製した実行時ストアを作る */
 export function createColorStatusDefaults(): Record<string, ColorStyle> {
   return Object.fromEntries(DEFAULT_COLOR_ENTRIES.map(e => [e.statusId, { ...e.style }]));

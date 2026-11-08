@@ -1,6 +1,6 @@
 /**
  * GraphMedia.tsx
- * react-force-graph による関係グラフ表示メディア。
+ * react-force-graph-2d による関係グラフ表示メディア。
  *
  * - 中心ノード: 現在の Think（赤橙）
  * - RelatedIDs に含まれる Think をエッジでつなぐ（青）
@@ -14,7 +14,6 @@ import type { MediaProps } from './types';
 export interface GraphMediaRef { focus: () => void; }
 import './GraphMedia.css';
 
-// react-force-graph のデフォルトエクスポートは各形式のコンポーネント
 // TypeScript 型がパッケージに含まれているが型ガードとして any を使用
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -24,10 +23,9 @@ let ForceGraph2D: any = null;
 async function loadForceGraph() {
   if (ForceGraph2D) return;
   try {
-    const mod = await import('react-force-graph');
-    ForceGraph2D = (mod as any).ForceGraph2D ?? (mod as any).default?.ForceGraph2D ?? (mod as any).default;
+    ForceGraph2D = (await import('react-force-graph-2d')).default;
   } catch (e) {
-    console.warn('[GraphMedia] react-force-graph のロードに失敗しました', e);
+    console.warn('[GraphMedia] react-force-graph-2d のロードに失敗しました', e);
   }
 }
 

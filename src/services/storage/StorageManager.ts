@@ -8,7 +8,6 @@
  */
 
 import type { IStorageBackend, ThinkMeta, SavePayload } from './IStorageBackend';
-import type { DriveApiStorageBackend } from '../../platform/web/DriveApiStorageBackend';
 import { ElectronStorageBackend } from './ElectronStorageBackend';
 import {
   FirestoreStorageBackend,
@@ -28,7 +27,6 @@ export class StorageManager {
   public backend: IStorageBackend;
   public readonly mode: 'electron' | 'pwa';
   public readonly storageMode: StorageMode;
-  public webProvider: 'drive' | 'local' = 'local';
 
   private constructor() {
     this.mode =
@@ -63,21 +61,18 @@ export class StorageManager {
     return StorageManager._instance;
   }
 
-  /**
-   * 旧設定画面との一時的な互換API。Think の保存先は切り替えず、常に Firestore。
-   */
-  public setWebProvider(provider: 'drive' | 'local'): void {
-    this.webProvider = provider;
-  }
-
-  public getDriveBackend(): DriveApiStorageBackend | null {
-    return null;
-  }
-
   // ── 公開メソッド（TTVault / TTThink から呼ぶ） ─────────────────────
 
   public listMeta(): Promise<ThinkMeta[]> {
     return this.backend.listMeta();
+  }
+
+  public async listMetaCached(): Promise<ThinkMeta[] | null> {
+    return (await this.backend.listMetaCached?.()) ?? null;
+  }
+
+  public knownMeta(id: string): ThinkMeta | null {
+    return this.backend.knownMeta?.(id) ?? null;
   }
 
   /** 本文のみ（タイトル行を含まない）。TTThink.Content とは別物。 */

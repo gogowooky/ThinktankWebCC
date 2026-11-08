@@ -17,9 +17,12 @@ import { firestoreUserDocumentsBaseUrl } from '../../../shared/firebaseAuth';
 import { inferCreatedAtFromThinkId, isSafeThinkId } from '../../../shared/vaultFormat';
 import { nextVersionTimestamp } from '../../../shared/conflict';
 import { searchVaultRecords } from '../../../shared/searchIndex';
+import { readThinkListCache, writeThinkListCache } from '../../services/storage/thinkListCache';
 
 const DEFAULT_VAULT_ID = 'vault_ver2';
 const FIREBASE_PROJECT_STORAGE_KEY = 'thinktank.web.firebaseProjectId';
+/** 約 15MB の複製で画面が止まるので、一覧の表示が落ち着いてから書く */
+const LIST_CACHE_WRITE_DELAY_MS = 3000;
 
 /**
  * Firestoreの保存容量で判定する。JSON転送表現のサイズとは区別する。
@@ -270,6 +273,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
   private records = new Map<string, StoredThinkRecord>();
   private hasLoadedList = false;
   private backupSync: Promise<void> = Promise.resolve();
+  private listInFlight: Promise<ThinkMeta[]> | null = null;
 
   constructor(vaultId = '') {
     this.vaultId = getVaultId(vaultId);
@@ -495,7 +499,26 @@ export class FirestoreStorageBackend implements IStorageBackend {
     return record ? { meta: record.meta, body: record.body } : null;
   }
 
-  public async listMeta(): Promise<ThinkMeta[]> {
+  private listCacheKey(uid: string): string {
+    return `${getFirebaseProjectId()}/${uid}/${this.vaultId}`;
+  }
+
+  public async listMetaCached(): Promise<ThinkMeta[] | null> {
+    const uid = FirebaseAuthService.getCurrentUser?.()?.uid;
+    return uid ? readThinkListCache(this.listCacheKey(uid)) : null;
+  }
+
+  public knownMeta(id: string): ThinkMeta | null {
+    return this.records.get(id)?.meta ?? null;
+  }
+
+  /** 起動直後は一覧の表示と検索が重なるので、全件の取得は同時に1回だけにする */
+  public listMeta(): Promise<ThinkMeta[]> {
+    this.listInFlight ??= this.fetchList().finally(() => { this.listInFlight = null; });
+    return this.listInFlight;
+  }
+
+  private async fetchList(): Promise<ThinkMeta[]> {
     const ctx = await this.context();
     const nextRecords = new Map<string, StoredThinkRecord>();
     const deletedIds = new Set<string>();
@@ -537,9 +560,11 @@ export class FirestoreStorageBackend implements IStorageBackend {
     this.backupSync = this.backupSync
       .then(() => this.syncElectronMarkdownBackups(nextRecords, deletedIds))
       .catch((error) => console.warn('[FirestoreStorageBackend] Markdownバックアップの同期に失敗しました', error));
-    return [...nextRecords.values()]
+    const metas = [...nextRecords.values()]
       .map((record) => record.meta)
       .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+    setTimeout(() => { void writeThinkListCache(this.listCacheKey(ctx.uid), metas); }, LIST_CACHE_WRITE_DELAY_MS);
+    return metas;
   }
 
   private async migrateLegacyCategories(
@@ -588,7 +613,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
     existing: StoredThinkRecord | null,
     requireExistingVersion: boolean,
     extraWrites: Array<Record<string, unknown>> = [],
-  ): Promise<void> {
+  ): Promise<string> {
     const ctx = await this.context();
     const documentName = `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
       `/vaults/${this.vaultId}/thinks/${id}`;
@@ -645,8 +670,11 @@ export class FirestoreStorageBackend implements IStorageBackend {
         }),
       },
     );
-    if (response.ok) return;
     const body = await this.readJson(response);
+    if (response.ok) {
+      const results = (body as { writeResults?: Array<{ updateTime?: string }> } | null)?.writeResults;
+      return results?.[results.length - 1]?.updateTime ?? '';
+    }
     if (isPreconditionFailure(response.status, body)) {
       const latest = await this.fetchDocument(id).catch(() => null);
       throw new StorageConflictError(id, latest?.meta.updatedAt ?? '');
@@ -667,6 +695,15 @@ export class FirestoreStorageBackend implements IStorageBackend {
     if (!isSafeThinkId(payload.thinkid)) {
       throw new Error(`不正な thinkid です: ${payload.thinkid}`);
     }
+    const known = this.reusableRecord(payload);
+    if (known) {
+      try {
+        return await this.commitSave(payload, known, importedDates);
+      } catch (error) {
+        // 前提の版が古かっただけで本当の衝突とは限らないので、下で読み直して判定する
+        if (!(error instanceof StorageConflictError)) throw error;
+      }
+    }
     const existing = await this.fetchDocument(payload.thinkid, true);
     if (payload.baseUpdatedAt) {
       const currentVersion = existing?.meta.updatedAt ?? '';
@@ -674,7 +711,25 @@ export class FirestoreStorageBackend implements IStorageBackend {
         throw new StorageConflictError(payload.thinkid, currentVersion);
       }
     }
+    return this.commitSave(payload, existing, importedDates);
+  }
 
+  /**
+   * 直前に読み書きした版なら、本文を読み直さず Firestore の更新時刻を前提条件にして書く。
+   * 別の端末が更新していれば Firestore が書き込みを断るので、確認の精度は読み直しと変わらない。
+   */
+  private reusableRecord(payload: SavePayload): StoredThinkRecord | null {
+    const record = this.records.get(payload.thinkid);
+    if (!payload.baseUpdatedAt || !record?.firestoreUpdateTime) return null;
+    if (record.meta.updatedAt !== payload.baseUpdatedAt) return null;
+    return record.meta.isDeleted || record.payloadParts ? null : record;
+  }
+
+  private async commitSave(
+    payload: SavePayload,
+    existing: StoredThinkRecord | null,
+    importedDates?: { createdAt?: string; updatedAt?: string },
+  ): Promise<ThinkMeta> {
     const { title, body } = splitFullContent(payload.fullContent);
     const updatedAt =
       (!existing && importedDates?.updatedAt) || nextVersionTimestamp(existing?.meta.updatedAt);
@@ -698,9 +753,9 @@ export class FirestoreStorageBackend implements IStorageBackend {
       metadata,
     };
     const fields = this.documentFields({ meta, body });
-    await this.commitDocument(payload.thinkid, fields, existing, Boolean(payload.baseUpdatedAt));
+    const firestoreUpdateTime = await this.commitDocument(payload.thinkid, fields, existing, Boolean(payload.baseUpdatedAt));
 
-    this.records.set(payload.thinkid, { meta, body, firestoreUpdateTime: '' });
+    this.records.set(payload.thinkid, { meta, body, firestoreUpdateTime });
     await this.writeElectronMarkdownBackup({ meta, body });
     return meta;
   }
@@ -808,20 +863,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
           result.skipped += 1;
           continue;
         }
-        const record = storage.getRecord ? await storage.getRecord(meta.thinkid) : null;
-        const body = record?.body ?? (await storage.getContent(meta.thinkid)) ?? '';
-        const sourceMeta = record?.meta ?? meta;
-        await this.saveRecord({
-          thinkid: sourceMeta.thinkid,
-          category: sourceMeta.category,
-          fullContent: body ? `${sourceMeta.title}\n${body}` : sourceMeta.title,
-          keywords: sourceMeta.keywords,
-          relatedIds: sourceMeta.relatedIds,
-          metadata: sourceMeta.metadata,
-        }, {
-          createdAt: sourceMeta.createdAt,
-          updatedAt: sourceMeta.updatedAt,
-        });
+        await this.saveFromMarkdownBackup(storage, meta);
         result.imported += 1;
       } catch (error) {
         result.failedIds.push(meta.thinkid);
@@ -830,6 +872,26 @@ export class FirestoreStorageBackend implements IStorageBackend {
     }
     onProgress?.(metas.length, metas.length);
     return result;
+  }
+
+  private async saveFromMarkdownBackup(
+    storage: NonNullable<NonNullable<Window['electronAPI']>['storage']>,
+    meta: ThinkMeta,
+  ): Promise<void> {
+    const record = storage.getRecord ? await storage.getRecord(meta.thinkid) : null;
+    const body = record?.body ?? (await storage.getContent(meta.thinkid)) ?? '';
+    const sourceMeta = record?.meta ?? meta;
+    await this.saveRecord({
+      thinkid: sourceMeta.thinkid,
+      category: sourceMeta.category,
+      fullContent: body ? `${sourceMeta.title}\n${body}` : sourceMeta.title,
+      keywords: sourceMeta.keywords,
+      relatedIds: sourceMeta.relatedIds,
+      metadata: sourceMeta.metadata,
+    }, {
+      createdAt: sourceMeta.createdAt,
+      updatedAt: sourceMeta.updatedAt,
+    });
   }
 
   /** 一覧を読み直し、削除されていない全 Think を本文付きで返す（ThinkファイルFolder への移行用）。 */
@@ -914,20 +976,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
         continue;
       }
       try {
-        const record = storage.getRecord ? await storage.getRecord(meta.thinkid) : null;
-        const body = record?.body ?? (await storage.getContent(meta.thinkid)) ?? '';
-        const sourceMeta = record?.meta ?? meta;
-        await this.saveRecord({
-          thinkid: sourceMeta.thinkid,
-          category: sourceMeta.category,
-          fullContent: body ? `${sourceMeta.title}\n${body}` : sourceMeta.title,
-          keywords: sourceMeta.keywords,
-          relatedIds: sourceMeta.relatedIds,
-          metadata: sourceMeta.metadata,
-        }, {
-          createdAt: sourceMeta.createdAt,
-          updatedAt: sourceMeta.updatedAt,
-        });
+        await this.saveFromMarkdownBackup(storage, meta);
         result.restored += 1;
       } catch (err) {
         result.failedIds.push(meta.thinkid);

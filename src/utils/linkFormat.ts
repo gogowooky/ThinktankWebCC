@@ -5,16 +5,17 @@
  * linkファイルは1件のURL/パスを1ファイルにまとめる。本文の書式:
  *   1行目  タイトル
  *   2行目  空行、または = の連続
- *   3行目〜 # Link / # Affiliation / # Abstract の見出し
+ *   3行目〜 # Caption / # Link / # Affiliation / # Abstract の見出し
  *   pathは # Link で引用符に包み、# Affiliation は「(PC名)親フォルダ」とする。
  * 旧書式（「* [タイトル](URL)」の箇条書きを並べたリンク集）は読み取りだけ互換を保つ。
  */
 
 import { THINK_ID_RE } from './thinkFormat';
 
-export type LinkTagName = 'gmail' | 'gdrive' | 'gphoto' | 'gnb' | 'path' | 'link';
+// path は「ローカルのパス」という種別名。参照タグには file / dir を使い、[path:ID] は旧タグとして読むだけにする
+export type LinkTagName = 'gmail' | 'gdrive' | 'gphoto' | 'gnb' | 'file' | 'dir' | 'path' | 'link';
 
-export const LINK_TAG_NAMES: readonly LinkTagName[] = ['gmail', 'gdrive', 'gphoto', 'gnb', 'path', 'link'];
+export const LINK_TAG_NAMES: readonly LinkTagName[] = ['gmail', 'gdrive', 'gphoto', 'gnb', 'file', 'dir', 'path', 'link'];
 
 // ホスト名は完全一致で照合する（部分一致だと photos.google.com.example.test などを取り違える）
 const HOST_TAGS: ReadonlyArray<{ tag: LinkTagName; hosts: readonly string[] }> = [
@@ -100,14 +101,89 @@ export function linkAffiliationOf(target: string, pcName: string): string {
 
 export interface LinkFile {
   title: string;
+  /** 参照タグの後ろに添える短い表示名。旧ファイルでは空のことがある（captionOfLinkFile で補う） */
+  caption: string;
   link: string;
   affiliation: string;
   abstract: string;
 }
 
-const LINK_SECTIONS = ['Link', 'Affiliation', 'Abstract'] as const;
+/** linkファイル作成時に、ドロップ等から分かったリンク先の情報 */
+export interface LinkSource {
+  target: string;
+  /** URL/パスから推測した仮のタイトル */
+  title: string;
+  /** ブラウザのドラッグ情報等から得たリンク先の本当のタイトル（分からなければ undefined） */
+  pageTitle?: string;
+  isDirectory?: boolean;
+}
+
+/** 参照タグの後ろに Caption を添えるタグ */
+const CAPTIONED_TAGS: readonly LinkTagName[] = ['gmail', 'gdrive', 'link', 'file', 'dir', 'path'];
+
+// ブラウザのタブ名に付く「 - Google ドライブ」等のサービス名を外し、ファイル名・件名だけにする
+const GOOGLE_TITLE_SUFFIX_RE = /\s+[-–]\s+Google\s*(?:ドライブ|Drive|ドキュメント|Docs|スプレッドシート|Sheets|スライド|Slides|フォーム|Forms|フォト|Photos)\s*$/i;
+const GMAIL_TITLE_SUFFIX_RE = /(?:\s+[-–]\s+[^\s@]+@[^\s@]+)?\s+[-–]\s+Gmail\s*$/i;
+
+function cleanPageTitle(tag: LinkTagName, pageTitle: string | undefined, target: string): string {
+  let s = (pageTitle ?? '').replace(/\s+/g, ' ').trim();
+  if (!s || s === target.trim()) return '';
+  if (tag === 'gmail') s = s.replace(GMAIL_TITLE_SUFFIX_RE, '').trim();
+  else s = s.replace(GOOGLE_TITLE_SUFFIX_RE, '').trim();
+  return s;
+}
+
+/** ファイル／フォルダのパスから末尾の名前を取り出す */
+export function baseNameOf(target: string): string {
+  const s = target.trim().replace(/[\\/]+$/, '');
+  return s.split(/[\\/]/).filter(Boolean).pop() ?? s;
+}
+
+const NUMERIC_DATE_RE = /(\d{4})\s*[/年.-]\s*(\d{1,2})\s*[/月.-]\s*(\d{1,2})/;
+const ENGLISH_DATE_RE = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? (\d{1,2}), (\d{4})/i;
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+
+/** 写真の説明から撮影日を yyyy-MM-dd で取り出す */
+function photoDateOf(text: string): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const numeric = text.match(NUMERIC_DATE_RE);
+  if (numeric) return `${numeric[1]}-${pad(Number(numeric[2]))}-${pad(Number(numeric[3]))}`;
+  const english = text.match(ENGLISH_DATE_RE);
+  if (english) return `${english[3]}-${pad(MONTHS.indexOf(english[1].toLowerCase()) + 1)}-${pad(Number(english[2]))}`;
+  return '';
+}
+
+/**
+ * Googleフォトの写真の説明（サムネイルの aria-label 等）から撮影日を取り出し、
+ * 「{yyyy-MM-dd}({撮影場所})」にする。撮影場所はドラッグ情報に含まれないため、
+ * 説明に「場所:」「Location:」等があるときだけ添える。
+ */
+function photoCaptionOf(text: string): string {
+  const date = photoDateOf(text);
+  if (!date) return '';
+  const place = text.match(/(?:場所|撮影場所|Location)\s*[:：]\s*([^\n\-–]+)/i)?.[1]?.trim();
+  return place ? `${date}(${place})` : date;
+}
+
+/**
+ * Caption の値。GDrive=ファイル名/フォルダー名、GMail=メールタイトル、GPhoto=撮影日時(撮影場所)、
+ * path=File:/Folder:+名前、link=リンク先タイトル（不明なら Affiliation）。
+ * Googleのサービスもタイトルが分からなければ Affiliation に倒す（URL末尾の "view" 等は名前にならない）。
+ */
+export function linkCaptionOf(source: LinkSource, affiliation: string): string {
+  const tag = linkTagNameOf(source.target);
+  if (tag === 'path') {
+    const isDirectory = source.isDirectory ?? /[\\/]$/.test(source.target.trim());
+    return `${isDirectory ? 'Folder' : 'File'}:${baseNameOf(source.target)}`;
+  }
+  const title = cleanPageTitle(tag, source.pageTitle, source.target);
+  if (tag === 'gphoto') return photoCaptionOf(source.pageTitle ?? '') || title || affiliation;
+  return title || affiliation;
+}
+
+const LINK_SECTIONS = ['Caption', 'Link', 'Affiliation', 'Abstract'] as const;
 type LinkSection = typeof LINK_SECTIONS[number];
-const SECTION_HEADING_RE = /^#\s+(Link|Affiliation|Abstract)\s*$/i;
+const SECTION_HEADING_RE = /^#\s+(Caption|Link|Affiliation|Abstract)\s*$/i;
 
 function quoteValue(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
@@ -121,11 +197,16 @@ function unquoteValue(value: string): string {
   return trimmed;
 }
 
+/** 新規作成時の2行目（タイトルの下線） */
+export const LINK_TITLE_RULE = '='.repeat(30);
+
 export function serializeLinkFile(file: LinkFile): string {
   const isPath = isLocalPathTarget(file.link);
   const lines = [
     file.title,
-    '=',
+    LINK_TITLE_RULE,
+    '# Caption',
+    ...(file.caption ? [file.caption] : []),
     '# Link',
     isPath ? quoteValue(file.link) : file.link,
     '# Affiliation',
@@ -136,8 +217,54 @@ export function serializeLinkFile(file: LinkFile): string {
   return lines.join('\n');
 }
 
-export function createLinkFile(title: string, target: string, pcName: string): LinkFile {
-  return { title, link: target, affiliation: linkAffiliationOf(target, pcName), abstract: '' };
+export function createLinkFile(source: LinkSource, pcName: string): LinkFile {
+  const affiliation = linkAffiliationOf(source.target, pcName);
+  const tag = linkTagNameOf(source.target);
+  // 1行目もリンク先の本当のタイトルが分かればそれを使う（pathはファイル名のまま）
+  const pageTitle = tag === 'path' ? '' : cleanPageTitle(tag, source.pageTitle, source.target);
+  return {
+    title: pageTitle || source.title,
+    caption: linkCaptionOf(source, affiliation),
+    link: source.target,
+    affiliation,
+    abstract: '',
+  };
+}
+
+/** Caption 項の無い旧linkファイルでも、タイトル等から Caption を補って返す */
+export function captionOfLinkFile(file: LinkFile): string {
+  if (file.caption.trim()) return file.caption.trim();
+  return linkCaptionOf({ target: file.link, title: file.title, pageTitle: file.title }, file.affiliation);
+}
+
+/** 同じリンク先かを比べるためのキー。Windowsのパスは区切り・大文字小文字を問わない */
+export function linkTargetKey(target: string): string {
+  const s = target.trim();
+  if (!isLocalPathTarget(s)) return s;
+  const unquoted = s.length >= 2 && s.startsWith('"') && s.endsWith('"') ? s.slice(1, -1) : s;
+  if (WINDOWS_DRIVE_RE.test(unquoted) || unquoted.startsWith('\\\\')) {
+    return unquoted.replace(/\//g, '\\').replace(/(?<!^[a-zA-Z]:)\\+$/, '').toLowerCase();
+  }
+  return unquoted.length > 1 ? unquoted.replace(/\/+$/, '') : unquoted;
+}
+
+/**
+ * linkファイルの参照タグ名。パスはファイルなら file、フォルダなら dir にする
+ * （フォルダかどうかは作成時に決めた Caption の「Folder:」で判断する）。
+ */
+export function linkTagOfFile(file: LinkFile): LinkTagName {
+  const tag = linkTagNameOf(file.link);
+  if (tag !== 'path') return tag;
+  const caption = file.caption.trim();
+  const isDirectory = caption ? /^Folder:/i.test(caption) : /[\\/]$/.test(file.link.trim());
+  return isDirectory ? 'dir' : 'file';
+}
+
+/** 参照タグを組み立てる。GMail/GDrive/link/file/dir はタグの後ろに Caption を添える */
+export function formatLinkTagWithCaption(tag: LinkTagName, thinkId: string, caption: string): string {
+  const base = formatLinkTag(tag, thinkId);
+  const text = caption.replace(/\s+/g, ' ').trim();
+  return CAPTIONED_TAGS.includes(tag) && text ? `${base} ${text}` : base;
 }
 
 /**
@@ -147,7 +274,7 @@ export function createLinkFile(title: string, target: string, pcName: string): L
 export function parseLinkFile(content: string): LinkFile | null {
   const lines = content.split(/\r?\n/);
   const title = lines[0] ?? '';
-  const sections: Record<LinkSection, string[]> = { Link: [], Affiliation: [], Abstract: [] };
+  const sections: Record<LinkSection, string[]> = { Caption: [], Link: [], Affiliation: [], Abstract: [] };
   let current: LinkSection | null = null;
   for (const line of lines.slice(1)) {
     const heading = line.trim().match(SECTION_HEADING_RE);
@@ -162,13 +289,14 @@ export function parseLinkFile(content: string): LinkFile | null {
   if (link) {
     return {
       title,
+      caption: sections.Caption.map(l => l.trim()).filter(Boolean).join(' '),
       link,
       affiliation: unquoteValue(sections.Affiliation.join('\n')),
       abstract: sections.Abstract.join('\n').trim(),
     };
   }
   const legacy = parseLegacyLinks(content)[0];
-  return legacy ? { title, link: legacy.url, affiliation: '', abstract: '' } : null;
+  return legacy ? { title, caption: '', link: legacy.url, affiliation: '', abstract: '' } : null;
 }
 
 export interface LegacyLinkItem {

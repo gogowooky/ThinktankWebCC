@@ -1,7 +1,6 @@
 import { PROP_SPECS } from './settings/propSpecs';
 import type { ConfigKey, ConfigListener, PropDef } from './settings/types';
 export type { ConfigKey, ConfigListener } from './settings/types';
-export { focusSelector } from './settings/stateHelpers';
 /**
  * TTUIStateManager.ts
  * UIアイテム状態の永続化・Undo/Redo管理。
@@ -215,6 +214,16 @@ export class TTUIStateManager {
     if (!spec || !spec.isConst) return;
     const val = spec.get(this._app);
     this._emit(key, val);
+    this._app.NotifyUpdated(false);
+  }
+
+  /** 同時に変わる読み取り専用プロパティをまとめて通知し、アプリ更新は1回で済ませる */
+  notifyConstPropertiesChanged(keys: ConfigKey[]): void {
+    if (!this._app) return;
+    for (const key of keys) {
+      const spec = PROP_SPECS[key];
+      if (spec?.isConst) this._emit(key, spec.get(this._app));
+    }
     this._app.NotifyUpdated(false);
   }
 

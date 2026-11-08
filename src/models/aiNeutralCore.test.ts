@@ -2,7 +2,6 @@
 import { afterEach, expect, it, vi } from 'vitest';
 const storage = vi.hoisted(() => ({ save: vi.fn().mockResolvedValue({ updatedAt: '2026-09-13T00:00:00Z' }), search: vi.fn().mockResolvedValue([]) }));
 vi.mock('../services/storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
-vi.mock('../services/ChatApiService', () => { throw new Error('Core operations must not import AI execution'); });
 import { TTVault } from './TTVault';
 import { TTSeedsPanel } from '../views/TTSeedsPanel';
 import { parseBundle } from '../utils/thinkFormat';

@@ -11,6 +11,7 @@ import { FirebaseAuthService } from '../../platform/web/FirebaseAuthService';
 import type { ElectronRelayStatus } from '../../services/storage/ElectronStorageBackend';
 import { TTModels } from '../../models/TTModels';
 import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
+import { BORDER_COLOR, CARD_BG, SUB_CARD_BG, TEXT_MAIN, TEXT_MUTED, inputStyle } from './settingsPanelStyles';
 import {
   isElectronBrowserSignIn,
   signInForThinkData,
@@ -20,24 +21,6 @@ import {
 function loadWebPcLinkEnabled(): boolean {
   return FirestoreRelayClient.getConfig().enabled;
 }
-
-const TEXT_MAIN = 'color-mix(in srgb, var(--thinktank-base, #1d618f) 30%, #16161f)';
-const TEXT_MUTED = 'var(--text-muted, #565f89)';
-const CARD_BG = 'var(--thinktank-content-bg, #ffffff)';
-const SUB_CARD_BG = 'var(--thinktank-tint-weak, #f2f7fa)';
-const BORDER_COLOR = 'var(--thinktank-border, rgba(29, 97, 143, 0.28))';
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  marginTop: '3px',
-  padding: '5px 8px',
-  fontSize: 'calc(11px * var(--tt-font-scale, 1))',
-  borderRadius: '4px',
-  border: `1px solid ${BORDER_COLOR}`,
-  backgroundColor: CARD_BG,
-  color: TEXT_MAIN,
-  boxSizing: 'border-box',
-};
 
 const inlineRowStyle: React.CSSProperties = {
   display: 'flex',

@@ -10,7 +10,7 @@ const creators: Array<{ name: string; category: string; create: (vault: TTVault)
   { name: 'blank', category: 'memo', create: vault => vault.CreateBlankThink('memo', 'メモ') },
   { name: 'AI view', category: 'aiview', create: vault => vault.CreateBlankThink('aiview', 'AIまとめ') },
   { name: 'bundle', category: 'project', create: vault => vault.CreateBundleFromIds([]) },
-  { name: 'links', category: 'links', create: vault => vault.CreateLinksThink('リンク', 'https://example.com') },
+  { name: 'links', category: 'links', create: vault => vault.CreateLinksThink({ target: 'https://example.com', title: 'リンク' }) },
   { name: 'chat', category: 'chat', create: vault => vault.CreateChatThink('会話\n本文') },
   { name: 'fixed ID', category: 'memo', create: vault => vault.AddThinkWithContent('fixed', 'メモ', 'memo', 'keyword', 'メモ\n本文') },
 ];
@@ -97,9 +97,31 @@ it('registers newly created Working-style Think files in the specified Seeds pro
   const vault = new TTVault('test');
   const project = await vault.CreateProject('作業');
   const memo = await vault.CreateBlankThink('memo', '新規メモ', project.ID);
-  const link = await vault.CreateLinksThink('参照', 'https://example.com', '', project.ID);
+  const { think: link } = await vault.GetOrCreateLinksThink({ target: 'https://example.com', title: '参照' }, '', project.ID);
 
   expect(projectTargetIds(project.Content)).toEqual([memo.ID, link.ID]);
   expect(project.Content).toContain(`[memo:${memo.ID}]: 新規メモ`);
   expect(project.Content).toContain(`[link:${link.ID}]: 参照`);
+});
+
+it('reuses an existing link file with the same target instead of creating another', async () => {
+  const vault = new TTVault('test');
+  const first = await vault.GetOrCreateLinksThink({ target: 'C:\\Docs\\Plan.md', title: 'Plan' });
+  const second = await vault.GetOrCreateLinksThink({ target: 'c:/docs/plan.md', title: 'plan' });
+  expect(first.created).toBe(true);
+  expect(second).toEqual({ think: first.think, created: false });
+  expect(vault.Count).toBe(1);
+});
+
+it('finds a link file whose body is not loaded yet by reading it', async () => {
+  const vault = new TTVault('test');
+  const meta = new TTThink();
+  meta.ID = '2026-11-08-100000';
+  meta.ContentType = 'links';
+  meta.IsMetaOnly = true;
+  const body = 'Example\n=\n# Caption\nExample\n# Link\nhttps://example.com/a\n# Affiliation\nexample.com\n# Abstract';
+  meta.LoadContent = vi.fn(async () => { meta.setContentSilent(body); meta.IsMetaOnly = false; });
+  vault.AddThink(meta);
+  expect(await vault.FindLinksThink('https://example.com/a')).toBe(meta);
+  expect(await vault.FindLinksThink('https://example.com/b')).toBeUndefined();
 });

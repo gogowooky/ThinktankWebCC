@@ -1,7 +1,19 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type React from 'react';
-import { externalDropDragKind, extractLinkDrop, parseWindowsUrlShortcut } from './WorkingMenuRibbon';
+import { externalDropDragKind, extractLinkDrop, pageTitleFromDragHtml, parseWindowsUrlShortcut } from './WorkingMenuRibbon';
+
+describe('pageTitleFromDragHtml', () => {
+  const url = 'https://example.com/a';
+  it('ドラッグに付く <a> のテキストをタイトルにする', () => {
+    expect(pageTitleFromDragHtml(`<a href="${url}">Example  Domain</a>`, url)).toBe('Example Domain');
+  });
+  it('テキストが無ければ aria-label を使い、URLそのものはタイトルにしない', () => {
+    expect(pageTitleFromDragHtml(`<a href="${url}" aria-label="写真 - 2026/11/03"><img src="x"></a>`, url)).toBe('写真 - 2026/11/03');
+    expect(pageTitleFromDragHtml(`<a href="${url}">${url}</a>`, url)).toBeUndefined();
+    expect(pageTitleFromDragHtml('', url)).toBeUndefined();
+  });
+});
 
 describe('parseWindowsUrlShortcut', () => {
   it('Internet Shortcut のURL行を大文字小文字を問わず読む', () => {

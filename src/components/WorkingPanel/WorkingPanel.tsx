@@ -706,6 +706,8 @@ export function WorkingPanel({ app, layoutMode }: Props) {
         TTShortcutManager.instance.setPendingTextEditorDrop({
           target: link.url,
           title: link.title,
+          ...(link.pageTitle ? { pageTitle: link.pageTitle } : {}),
+          ...(link.isDirectory !== undefined ? { isDirectory: link.isDirectory } : {}),
           kind: isLocalPathTarget(link.url) ? 'path' : 'url',
           editor,
           range,
@@ -756,9 +758,11 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     // URL / path D&D → links Think を新規作成
     const link = extractLinkDrop(e);
     if (link && shouldAllowLocalDrop(e)) {
-      const newThink = await vault.CreateLinksThink(link.title, link.url, await getPcName(), seedsProjectId);
-      const id    = newThink.ID;
-      const title = newThink.Name;
+      const { think: linkThink } = await vault.GetOrCreateLinksThink(
+        { target: link.url, title: link.title, pageTitle: link.pageTitle, isDirectory: link.isDirectory },
+        await getPcName(), seedsProjectId);
+      const id    = linkThink.ID;
+      const title = linkThink.Name;
       if (overlay.type === 'split' && overlay.areaId) panel.FocusArea(overlay.areaId);
       panel.InsertArea(id, 'texteditor', title, overlay.dir, overlay.type);
     }

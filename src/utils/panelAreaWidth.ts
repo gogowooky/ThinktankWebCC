@@ -17,9 +17,6 @@ import { TTUIStateManager } from '../views/TTUIStateManager';
 
 export type AreaWidthMode = 'init' | 'user' | 'foredit';
 
-/** Status の candidates と揃える（next/prev の循環順もこの順） */
-export const AREA_WIDTH_MODES: readonly AreaWidthMode[] = ['init', 'user', 'foredit'];
-
 /** この幅モードを保持する Status のキー */
 export type AreaWidthKey =
   | 'ThinktankPanel.Area.OpenWidth'

@@ -12,7 +12,8 @@ import type { TTWorkingPanel } from '../../views/TTWorkingPanel';
 import type { TTProjectView } from '../../views/TTProjectView';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { TextEditorMedia, type TextEditorMediaRef } from '../WorkingPanel/media/TextEditorMedia';
+import { TextEditorMedia } from '../WorkingPanel/media/LazyTextEditorMedia';
+import type { TextEditorMediaRef } from '../WorkingPanel/media/TextEditorMedia';
 import { TextEditorModeButton } from '../Layout/TextEditorModeButton';
 import { useEditorSettings } from '../WorkingPanel/media/useEditorSettings';
 import { readColHeader, tableContentWithBodyHeader } from '../../utils/tableFormat';
@@ -236,4 +237,3 @@ export function AbstractView({ projectView, vault, workingPanel, panelKey }: Pro
   );
 }
 
-export const ProjectView = AbstractView;

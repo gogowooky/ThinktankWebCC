@@ -11,6 +11,7 @@ import { AiModelSettingsPanel } from './AiModelSettingsPanel';
 import { PanelAiSettingsPanel } from './PanelAiSettingsPanel';
 import { FirebaseSettingsPanel } from './FirebaseSettingsPanel';
 import { GoogleDriveSettingsPanel } from './GoogleDriveSettingsPanel';
+import { LinkTitleGasSettingsPanel } from './LinkTitleGasSettingsPanel';
 import { StorageModeSettingsPanel } from './StorageModeSettingsPanel';
 import { isLocalStorageMode } from '../../services/storage/storageMode';
 import './ThinktankSettingsView.css';
@@ -139,6 +140,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
       {/* ローカル運用では Firebase・Drive・Firestore 上の Vault 名を使わない */}
       {!localMode && <FirebaseSettingsPanel />}
       {!localMode && <GoogleDriveSettingsPanel />}
+      <LinkTitleGasSettingsPanel />
 
       {/* ── Vault ── */}
       {!localMode && <section className="tt-settings-section">

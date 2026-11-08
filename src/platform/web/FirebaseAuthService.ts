@@ -17,6 +17,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { getFirebaseApiKey, getFirebaseClient } from './firebaseClient';
+import { clearThinkListCache } from '../../services/storage/thinkListCache';
 
 const STORAGE_KEY_SESSION = 'thinktank.web.firebaseSession';
 
@@ -75,6 +76,7 @@ class FirebaseAuthServiceImpl {
   public async signOut(): Promise<void> {
     this.save(null);
     await Promise.all([
+      clearThinkListCache(),
       getFirebaseClient()
         .then(({ auth }) => signOutFirebaseSdk(auth))
         .catch(() => {}),

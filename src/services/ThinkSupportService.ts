@@ -9,7 +9,7 @@ import {
   type ThinkSupportRecord,
 } from '../../shared/contracts/thinkSupportRecord';
 export { THINK_FIELDS, emptyThinkValues, readThinkSupport } from '../../shared/contracts/thinkSupportRecord';
-export type { ThinkField, ThinkValues, ThinkSources, ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
+export type { ThinkValues, ThinkSources, ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 
 export class ThinkSupportService {
   async read(id: string): Promise<ThinkMeta> {

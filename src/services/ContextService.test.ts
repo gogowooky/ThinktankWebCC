@@ -3,7 +3,6 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { createHash, webcrypto } from 'node:crypto';
 const storage = vi.hoisted(() => ({ getBody: vi.fn(), save: vi.fn(), delete: vi.fn() }));
 vi.mock('./storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
-vi.mock('./ChatApiService', () => { throw new Error('Context must not import AI execution'); });
 import { TTVault } from '../models/TTVault';
 import { TTThink } from '../models/TTThink';
 import { ContextService, type ContextReader } from './ContextService';

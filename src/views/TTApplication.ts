@@ -19,6 +19,9 @@ import { disposeVaultDrafts } from '../services/draftStore';
 import type { TTVault } from '../models/TTVault';
 import { TTShortcutManager } from './TTShortcutManager';
 
+/** カーソルに追随する読み取り専用 Status。パネルの描画には使わず、ステータス欄は個別に購読している。 */
+const CURSOR_STATUS_KEY = /^TextEditor\.Current(?:Folding|Editor)\./;
+
 export class TTApplication extends TTUIItem {
   /** 4パネルのビューモデル */
   public ThinktankPanel: TTThinktankPanel;
@@ -89,7 +92,9 @@ export class TTApplication extends TTUIItem {
     listen('WorkingSettingPanel.*', () => this.WorkingPanel.NotifyUpdated());
     listen('HarvestPanel.*', () => this.HarvestPanel.NotifyUpdated());
     listen('Application.*', () => this.NotifyUpdated(false));
-    listen('TextEditor.*', () => this.WorkingPanel.NotifyUpdated());
+    listen('TextEditor.*', key => {
+      if (!CURSOR_STATUS_KEY.test(key)) this.WorkingPanel.NotifyUpdated();
+    });
     listen('ToolBar.*', () => this.WorkingPanel.NotifyUpdated());
     listen('Thinktank.*', () => this.ThinktankPanel.NotifyUpdated());
     listen('Seeds.*', () => this.SeedsPanel.NotifyUpdated());

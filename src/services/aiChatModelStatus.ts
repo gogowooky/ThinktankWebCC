@@ -38,10 +38,6 @@ export function providerNameOf(provider: AiProvider): AiChatProviderName {
   return AI_CHAT_PROVIDER_NAMES.find(n => PROVIDER_OF[n] === provider) ?? 'Claude';
 }
 
-export function providerOf(name: AiChatProviderName): AiProvider {
-  return PROVIDER_OF[name];
-}
-
 export function isProviderName(value: string): value is AiChatProviderName {
   return (AI_CHAT_PROVIDER_NAMES as string[]).includes(value);
 }

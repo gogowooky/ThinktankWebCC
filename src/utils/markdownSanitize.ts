@@ -13,10 +13,16 @@
 
 import { Marked } from 'marked';
 import { markedHighlight } from 'marked-highlight';
-import hljs from 'highlight.js';
+import hljs from 'highlight.js/lib/common';
+import dos from 'highlight.js/lib/languages/dos';
+import powershell from 'highlight.js/lib/languages/powershell';
 import DOMPurify from 'dompurify';
 import { buildSectionTree, type MarkdownSection } from './markdownSections';
 import { inlineStyleClass } from './defaultColor';
+
+// 全言語を読むと初期バンドルが約1.5MB増えるので、主要言語に Windows の作業でよく使うものだけ足す
+hljs.registerLanguage('dos', dos);
+hljs.registerLanguage('powershell', powershell);
 
 /** 属性値へ埋め込む前に HTML 特殊文字を無害化する */
 export function escapeHtml(s: string): string {

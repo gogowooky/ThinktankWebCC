@@ -11,7 +11,7 @@ import { BotMessageSquare, CircleAlert, CircleCheck, LoaderCircle, type LucideIc
 import { CpuAi } from './CpuAi';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { TextEditorMedia } from '../WorkingPanel/media/TextEditorMedia';
+import { TextEditorMedia } from '../WorkingPanel/media/LazyTextEditorMedia';
 import { useEditorSettings } from '../WorkingPanel/media/useEditorSettings';
 import { TextEditorModeButton } from '../Layout/TextEditorModeButton';
 import {

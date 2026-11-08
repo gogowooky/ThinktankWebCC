@@ -6,7 +6,7 @@
  * workingIds         : WorkingPanelで現在開いているThink ID一覧
  */
 
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo, useRef } from 'react';
 import { useAppUpdate } from '../hooks/useAppUpdate';
 import { TTApplication } from '../views/TTApplication';
 
@@ -30,6 +30,15 @@ export function useHighlight(): HighlightState {
   return useContext(HighlightContext);
 }
 
+/** 通知のたびに配列を作り直しても、内容が同じなら購読側を再描画させない */
+function useStableIds(ids: string[]): string[] {
+  const stable = useRef(ids);
+  if (stable.current.length !== ids.length || stable.current.some((id, index) => id !== ids[index])) {
+    stable.current = ids;
+  }
+  return stable.current;
+}
+
 export function HighlightProvider({ children }: { children: React.ReactNode }) {
   const app      = TTApplication.Instance;
   const seeds = app.SeedsPanel;
@@ -41,29 +50,26 @@ export function HighlightProvider({ children }: { children: React.ReactNode }) {
   useAppUpdate(vault);
 
   const seedsBundleId = seeds.BundleID;
-  const seedsBundleIds = seedsBundleId ? [seedsBundleId] : [];
+  const seedsBundleIds = useStableIds(seedsBundleId ? [seedsBundleId] : []);
 
-  const seedsIncludedIds = seedsBundleId
+  const seedsIncludedIds = useStableIds(seedsBundleId
     ? vault.GetThinksForBundle(seedsBundleId).map(t => t.ID)
-    : [];
+    : []);
 
-  const seedsCheckedIds = seeds.CheckedThoughtIDs;
+  const seedsCheckedIds = useStableIds(seeds.CheckedThoughtIDs);
 
-  const workingIds = working.Areas.map(a => a.ResourceID).filter(Boolean);
+  const workingIds = useStableIds(working.Areas.map(a => a.ResourceID).filter(Boolean));
 
   const focusedArea = working.Areas.find(a => a.ID === working.FocusedAreaId);
   const workingFocusedId = focusedArea ? focusedArea.ResourceID : null;
 
+  const value = useMemo(
+    () => ({ seedsBundleIds, seedsIncludedIds, seedsCheckedIds, workingIds, workingFocusedId }),
+    [seedsBundleIds, seedsIncludedIds, seedsCheckedIds, workingIds, workingFocusedId],
+  );
+
   return (
-    <HighlightContext.Provider
-      value={{
-        seedsBundleIds,
-        seedsIncludedIds,
-        seedsCheckedIds,
-        workingIds,
-        workingFocusedId,
-      }}
-    >
+    <HighlightContext.Provider value={value}>
       {children}
     </HighlightContext.Provider>
   );
