@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-08
 - コミット番号: a18b06e
+- デプロイ日: 2026-11-08（JST）
+- デプロイ対象コミット: 2a1303a（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 Ctrl+E（CursorPos:LineEnd+）で文書末へ移動するとき、文書末が折畳で隠れていれば文書末を含む見出し（祖先を含む）をすべて開くようにした。WorkingのSplitterは移動量を最新の比率に足し込み、Splitter幅を除いた長さで計算してカーソルに追従させた（両側の内部比率は維持）。WorkingPanel.FocusedPane.PaneNumber:First / Last を追加し、ExApp（Shift+P / Shift+N）とWorkingフォーカス中（Alt+PageUp/PageDown、Shift+Alt+PageUp/PageDown）のショートカットを登録。Working>TextEditor設定の表示設定の下に「強調」欄を追加し、太字・下線・打消・斜体の B/I/U/S・文字色・背景色を設定できるようにした。型検査成功、関連テスト成功。強調欄はブラウザ版で表示と切替を確認（Ctrl+EとSplitterは未ログインのため画面では未確認）。
 
