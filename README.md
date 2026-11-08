@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.6.15 feat: カーソル位置のURL・パスのタグ化とLinkタグのリンク先への置換
+
+- 日付: 2026-11-08
+- コミット番号: 4729467
+
+DoOnCursorPos:Url:ToTag / File:ToTag を追加し、カーソル位置のURL・ファイルパスのlinkファイルを用意（同じリンク先は再利用、GDrive・GMailはGASで名前・件名を取得）して Caption 付きの参照タグに置き換えるようにした。DoOnCursorPos:Link:FromTag を追加し、Linkタグ（直後のCaptionを含む）をリンク先のURL・引用符付きパスに戻せるようにした。PC版ではフォルダ判定用IPC（system:isDirectory）で [file:ID] / [dir:ID] を区別する。DefaultMenu.md の Url / File / Link メニューに項目を追加し、Status-Action-Binding.md に実装内容を記載。型検査成功、関連テスト333件成功（アプリ上での操作は未確認）。
+
 ### v2.6.14 feat: linkファイルのCaption・GAS経由のタイトル取得と同一リンク再利用、起動高速化と不要コード整理
 
 - 日付: 2026-11-08

@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.14",
+  "version": "2.6.15",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "56ec6eb",
-  "commitDateTime": "2026-11-08-211555",
-  "commitMessage": "feat: linkファイルのCaption・GAS経由のタイトル取得と同一リンク再利用、起動高速化と不要コード整理"
+  "commitId": "4729467",
+  "commitDateTime": "2026-11-08-213534",
+  "commitMessage": "feat: カーソル位置のURL・パスのタグ化とLinkタグのリンク先への置換"
 }
