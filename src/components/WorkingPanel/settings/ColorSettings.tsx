@@ -1,5 +1,5 @@
 import type { TTWorkingPanel } from '../../../views/TTWorkingPanel';
-import { FOLDING_HEADER_STATUS_ID, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, parseMarks, styleStatusId, type ColorProp, type MarkKind } from '../../../utils/defaultColor';
+import { FOLDING_HEADER_STATUS_ID, INLINE_STYLE_RULES, LINK_STYLE_STATUS_IDS, isUnset, parseAttrs, parseMarks, styleStatusId, type ColorProp, type MarkKind } from '../../../utils/defaultColor';
 import { DD_GHOST_KINDS, FOCUSING_BORDER_STATUS_ID, PANEL_THEME_KINDS, ddGhostStatusId, panelThemeStatusId } from '../../../utils/panelTheme';
 
 export const TEXT_EDITOR_BASE_COLORS: {
@@ -74,6 +74,78 @@ export function ColorStyleRow({ panel, statusId, label, swatchLabel = true }: { 
         />
         U
       </label>
+      <label className="working-setting-area__small-checkbox">
+        <input
+          type="checkbox"
+          checked={hasBg}
+          onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.checked ? '#ffffff' : 'undefined')}
+        />
+        BG
+      </label>
+      {hasBg && (
+        <input
+          type="color"
+          className="working-setting-area__color-picker"
+          value={style.BgColor.slice(0, 7)}
+          onChange={e => panel.SetColorStatus(statusId, 'BgColor', e.target.value)}
+          data-tip={`${label}の背景色`}
+        />
+      )}
+    </div>
+  );
+}
+
+/** 「強調」欄：TextEditor のインライン書式（INLINE_STYLE_RULES）ごとの文字Attribute */
+export const TEXT_EDITOR_EMPHASIS_ROWS: { statusId: string; label: string; marker: string; }[] =
+  INLINE_STYLE_RULES.map(rule => ({
+    statusId: rule.statusId,
+    marker: rule.marker,
+    label: { bold: '太字', underline: '下線', strikethrough: '打消', italic: '斜体' }[rule.name],
+  }));
+
+const EMPHASIS_ATTRS: { attr: string; label: string; tip: string; }[] = [
+  { attr: 'bold', label: 'B', tip: '太字' },
+  { attr: 'italic', label: 'I', tip: '斜体' },
+  { attr: 'underline', label: 'U', tip: '下線' },
+  { attr: 'strikethrough', label: 'S', tip: '打消線' },
+];
+
+/** 文字色（無指定可）・背景色（無指定可）・B/I/U/S の属性を編集する行 */
+export function EmphasisStyleRow({ panel, statusId, label, marker }: { panel: TTWorkingPanel; statusId: string; label: string; marker: string; }) {
+  const style = panel.GetColorStatus(statusId);
+  const attrs = parseAttrs(style.Attrs);
+  const hasFg = !isUnset(style.Color);
+  const hasBg = !isUnset(style.BgColor);
+  return (
+    <div className="working-setting-area__heading-style-row" style={{ flexWrap: 'wrap' }}>
+      <span className="working-setting-area__heading-style-label" data-tip={`${marker}文字${marker} の表示`}>{label}</span>
+      {EMPHASIS_ATTRS.map(({ attr, label: attrLabel, tip }) => (
+        <label key={attr} className="working-setting-area__small-checkbox" data-tip={tip}>
+          <input
+            type="checkbox"
+            checked={attrs.has(attr)}
+            onChange={e => panel.ToggleColorStatusAttr(statusId, attr, e.target.checked)}
+          />
+          {attrLabel}
+        </label>
+      ))}
+      <label className="working-setting-area__small-checkbox">
+        <input
+          type="checkbox"
+          checked={hasFg}
+          onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.checked ? '#000000' : 'undefined')}
+        />
+        FG
+      </label>
+      {hasFg && (
+        <input
+          type="color"
+          className="working-setting-area__color-picker"
+          value={style.Color.slice(0, 7)}
+          onChange={e => panel.SetColorStatus(statusId, 'Color', e.target.value)}
+          data-tip={`${label}の文字色`}
+        />
+      )}
       <label className="working-setting-area__small-checkbox">
         <input
           type="checkbox"

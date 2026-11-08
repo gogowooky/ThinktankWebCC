@@ -974,6 +974,15 @@ description:    WorkingPanelの現在フォーカス中のPaneに再度フォー
 description:    フォーカスペインを次のペインに移動する
 ## Action：　260619　WorkingPanel.FocusedPane.PaneNumber:Prev
 description:    フォーカスペインを前のペインに移動する
+## Action：　261108　WorkingPanel.FocusedPane.PaneNumber:First
+description:    フォーカスペインを最初のペインに移動する
+　A（261108実装）：Pane番号（WorkingPanel.FocusedPane.PaneNumber と同じ順）の1番目のPaneにフォーカスします。
+　　ショートカット：ExApp の Shift+P、Working フォーカス中の Shift+Alt+PageUp。
+## Action：　261108　WorkingPanel.FocusedPane.PaneNumber:Last
+description:    フォーカスペインを最後のペインに移動する
+　A（261108実装）：Pane番号の最後のPaneにフォーカスします。
+　　ショートカット：ExApp の Shift+N、Working フォーカス中の Shift+Alt+PageDown。
+　（261108）Next / Prev にも Working フォーカス中の Alt+PageDown / Alt+PageUp を割り当てました（ExApp の N / P は従来どおり）。
 ## Status：　260619　WorkingPanel.FocusedPane.PaneNumber
 
 　Q：設定値を記載してください。
@@ -1823,6 +1832,8 @@ description:    カーソルを行末→テキスト末尾の順に移動する�
 　↓ CurPosが行末尾ではない場合、CurPosを行末尾位置に移動する　→　終了
 　↓ CurPosが行末尾だがテキスト末尾ではない場合、CurPosをテキスト末尾位置に移動する　→　終了
 　↓ CurPosがテキスト末尾の場合、テキストすべてを選択する
+　（261108）テキスト末尾へ移動するとき、末尾が折畳で隠れていれば、末尾を含む見出し（祖先を含む）をすべて開いてから
+　　キャレットを置きます（unfoldRegionsHidingLine）。隠れていなければ折畳状態は変えません。
 ## Status：　260629　TextEditor.CurrentEditor.CursorPos
 description:    現在のエディタのカーソルのOffset位置
 key:            TextEditor.CurrentEditor.CursorPos

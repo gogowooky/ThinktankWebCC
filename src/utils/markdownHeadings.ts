@@ -83,6 +83,28 @@ export function isLineFolded(editor: MonacoEditor.IStandaloneCodeEditor, lineNum
   return false;
 }
 
+/**
+ * 行 lineNumber を折畳で隠している見出し（祖先を含む）をすべて開く。開いた数を返す。
+ * Monaco の 'editor.unfold' は対象の状態によって処理対象を祖先へすり替えるため、
+ * foldingModel を直接操作して「その行を含む閉じた領域」だけを開く。
+ */
+export function unfoldRegionsHidingLine(editor: MonacoEditor.IStandaloneCodeEditor, lineNumber: number): number {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const foldingModel = (editor as any).getContribution?.('editor.contrib.folding')?.foldingModel;
+  const regions = foldingModel?.regions;
+  if (!regions) return 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hiding: any[] = [];
+  for (let i = 0; i < regions.length; i++) {
+    // 見出し行（start）自身は折り畳んでも見えているので、本文側（start < line <= end）だけを対象にする
+    if (regions.isCollapsed(i) && regions.getStartLineNumber(i) < lineNumber && lineNumber <= regions.getEndLineNumber(i)) {
+      hiding.push(regions.toRegion(i));
+    }
+  }
+  if (hiding.length > 0) foldingModel.toggleCollapseState(hiding);
+  return hiding.length;
+}
+
 /** 見出しのfoldスコープ末尾行（次の同位以上の見出しの直前まで）。frontmatterは常に自分自身のみ */
 export function headingScopeEnd(headings: HeadingAttribute[], idx: number, lineCount: number): number {
   const h = headings[idx];

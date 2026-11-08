@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, File, FileText, FileClock, DatabaseBackup, S
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
 import { isUnset, parseAttrs, styleStatusId } from '../../../utils/defaultColor';
 import type { WorkingSettingsContext } from './types';
-import { TEXT_EDITOR_BASE_COLORS, TEXT_EDITOR_TAG_COLORS, ColorStyleRow, MarkStyleRows } from './ColorSettings';
+import { TEXT_EDITOR_BASE_COLORS, TEXT_EDITOR_EMPHASIS_ROWS, TEXT_EDITOR_TAG_COLORS, ColorStyleRow, EmphasisStyleRow, MarkStyleRows } from './ColorSettings';
 const FULL_WIDTH_DIGITS = ['１', '２', '３', '４', '５', '６'];
 
 const BINDING_ROWS: { label: string; memo: string; actionPrefix: string; }[] = [
@@ -20,6 +20,8 @@ type Props = Pick<WorkingSettingsContext,
   | 'firstTexteditorRef'
   | 'isDisplaySettingsOpen'
   | 'setIsDisplaySettingsOpen'
+  | 'isEmphasisSettingsOpen'
+  | 'setIsEmphasisSettingsOpen'
   | 'isColorSettingsOpen'
   | 'setIsColorSettingsOpen'
   | 'isCommentColorOpen'
@@ -52,6 +54,8 @@ export function TextEditorSettings({
   firstTexteditorRef,
   isDisplaySettingsOpen,
   setIsDisplaySettingsOpen,
+  isEmphasisSettingsOpen,
+  setIsEmphasisSettingsOpen,
   isColorSettingsOpen,
   setIsColorSettingsOpen,
   isCommentColorOpen,
@@ -322,6 +326,25 @@ export function TextEditorSettings({
             />
             <span className="working-setting-area__checkbox-text">括弧対応</span>
           </label>
+        </div>
+      )}
+    </div>
+    <div className="working-setting-area__divider" />
+
+    {/* 強調（**太字** __下線__ ~~打消~~ *斜体* の文字Attribute。docs/DefaultColor.md の TextEditor.Bold 等）*/}
+    <div className="working-setting-area__section">
+      <div
+        className="working-setting-area__section-header"
+        onClick={() => setIsEmphasisSettingsOpen(!isEmphasisSettingsOpen)}
+      >
+        {isEmphasisSettingsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <span className="working-setting-area__section-label" style={{ marginBottom: 0 }}>強調</span>
+      </div>
+      {isEmphasisSettingsOpen && (
+        <div className="working-setting-area__section-content">
+          {TEXT_EDITOR_EMPHASIS_ROWS.map(({ statusId, label, marker }) => (
+            <EmphasisStyleRow key={statusId} panel={panel} statusId={statusId} label={label} marker={marker} />
+          ))}
         </div>
       )}
     </div>

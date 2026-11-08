@@ -10,6 +10,7 @@ import type { TTApplication } from '../TTApplication';
 import { TTActions } from '../TTActions';
 import { TTShortcutManager } from '../TTShortcutManager';
 import { getErrorMessage } from '../../utils/errorMessage';
+import { unfoldRegionsHidingLine } from '../../utils/markdownHeadings';
 
 // ── 単語境界の判定（CursorPos:PrevWord / NextWord 用） ─────────────────────────
 // 境界は次の位置に置く:
@@ -168,9 +169,11 @@ export function registerTextEditorCursorMoveActions(app: TTApplication): void {
           item.Result = `行末尾（L${lineNumber}:C${lineMaxColumn}）に移動しました`;
         } else if (lineNumber < totalLines || column < lastLineMaxColumn) {
           const newPos = { lineNumber: totalLines, column: lastLineMaxColumn };
+          // 文書末が折畳で隠れていれば、そこを含む見出しをすべて開いてからキャレットを置く
+          const unfolded = unfoldRegionsHidingLine(editor, totalLines);
           editor.setPosition(newPos);
           editor.revealPosition(newPos);
-          item.Result = `テキスト末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました`;
+          item.Result = `テキスト末尾（L${totalLines}:C${lastLineMaxColumn}）に移動しました${unfolded ? `（見出し${unfolded}件を開きました）` : ''}`;
         } else {
           editor.setSelection({
             startLineNumber: 1,

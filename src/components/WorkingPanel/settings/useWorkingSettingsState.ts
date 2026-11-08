@@ -27,6 +27,8 @@ export function useWorkingSettingsState(panel: TTWorkingPanel, _vault: TTVault, 
 
   const [isDisplaySettingsOpen, setIsDisplaySettingsOpen] = useState(true);
 
+  const [isEmphasisSettingsOpen, setIsEmphasisSettingsOpen] = useState(true);
+
   const [isColorSettingsOpen, setIsColorSettingsOpen] = useState(true);
 
   const [isCommentColorOpen, setIsCommentColorOpen] = useState(true);
@@ -50,7 +52,7 @@ export function useWorkingSettingsState(panel: TTWorkingPanel, _vault: TTVault, 
   const [isTableDisplaySettingsOpen, setIsTableDisplaySettingsOpen] = useState(true);
 
   usePanelSectionsSetAll('working', [
-    setIsActionSettingsOpen, setIsDisplaySettingsOpen, setIsColorSettingsOpen,
+    setIsActionSettingsOpen, setIsDisplaySettingsOpen, setIsEmphasisSettingsOpen, setIsColorSettingsOpen,
     setIsCommentColorOpen, setIsBulletColorOpen, setIsSectionColorOpen,
     setIsHighlightColorOpen, setIsPanelColorOpen, setIsMemoSettingsOpen,
     setIsEditSettingsOpen, setIsKeySettingsOpen, setIsTableSettingsOpen,
@@ -85,6 +87,8 @@ export function useWorkingSettingsState(panel: TTWorkingPanel, _vault: TTVault, 
     setIsActionSettingsOpen,
     isDisplaySettingsOpen,
     setIsDisplaySettingsOpen,
+    isEmphasisSettingsOpen,
+    setIsEmphasisSettingsOpen,
     isColorSettingsOpen,
     setIsColorSettingsOpen,
     isCommentColorOpen,

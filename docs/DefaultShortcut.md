@@ -27,6 +27,12 @@ Keyboard Shortcuts
 
 Working*    ,ExApp  ,N                  ,WorkingPanel.FocusedPane.PaneNumber:Next       ,ペイン次
 Working*    ,ExApp  ,P                  ,WorkingPanel.FocusedPane.PaneNumber:Prev       ,ペイン前
+Working*    ,ExApp  ,Shift+P            ,WorkingPanel.FocusedPane.PaneNumber:First      ,最初のペイン
+Working*    ,ExApp  ,Shift+N            ,WorkingPanel.FocusedPane.PaneNumber:Last       ,最後のペイン
+Working*    ,       ,Alt+PageDown       ,WorkingPanel.FocusedPane.PaneNumber:Next       ,次のペインへ移動
+Working*    ,       ,Alt+PageUp         ,WorkingPanel.FocusedPane.PaneNumber:Prev       ,前のペインへ移動
+Working*    ,       ,Shift+Alt+PageUp   ,WorkingPanel.FocusedPane.PaneNumber:First      ,最初のペインへ移動
+Working*    ,       ,Shift+Alt+PageDown ,WorkingPanel.FocusedPane.PaneNumber:Last       ,最後のペインへ移動
 Working*    ,ExApp  ,M                  ,WorkingPanel.FocusedPane.Mode:Prev             ,ペインモード左
 Working*    ,ExApp  ,Shift+M            ,WorkingPanel.FocusedPane.Mode:Next             ,ペインモード右
 

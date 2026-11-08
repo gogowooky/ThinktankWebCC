@@ -688,6 +688,30 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
+  /** Pane番号順（collectAreaIds）の index 番目のPaneへフォーカスを移す */
+  const focusPaneAt = (item: { Result: string }, pick: (count: number) => number): void => {
+    const wPanel = app.WorkingPanel;
+    const layout = wPanel.Layout;
+    if (!layout) { item.Result = '[レイアウトなし]'; return; }
+    const order = collectAreaIds(layout);
+    if (order.length === 0) { item.Result = '[ペインなし]'; return; }
+    const idx = pick(order.length);
+    wPanel.FocusArea(order[idx]);
+    item.Result = `Pane ${idx + 1}`;
+  };
+
+  TTActions.Register({
+    ActionID: 'WorkingPanel.FocusedPane.PaneNumber:First',
+    Description: 'フォーカスペインを最初のペインに移動する',
+    Completion: (item) => focusPaneAt(item, () => 0),
+  });
+
+  TTActions.Register({
+    ActionID: 'WorkingPanel.FocusedPane.PaneNumber:Last',
+    Description: 'フォーカスペインを最後のペインに移動する',
+    Completion: (item) => focusPaneAt(item, count => count - 1),
+  });
+
   TTActions.Register({
     ActionID: 'WorkingPanel.FocusedPane.PaneNumber:ReFocus',
     Description: 'WorkingPanelの現在フォーカス中のPaneに再度フォーカスする',

@@ -124,7 +124,8 @@ interface SharedProps {
   onDragLeave:      () => void;
   onMediaType:      (areaId: string, type: MediaType, rawYaml?: boolean) => void;
   onClose:          (areaId: string) => void;
-  onSplitRatio:     (nodeId: string, ratio: number) => void;
+  /** 境界を動かした量（比率）。両側のまとまりの内部比率はそのままで全体が伸縮する */
+  onSplitRatioDelta: (nodeId: string, deltaRatio: number) => void;
 }
 
 // ── LayoutView（再帰）───────────────────────────────────────────────────
@@ -166,11 +167,14 @@ function SplitView({ node, shared }: { node: SplitNodeData; shared: SharedProps 
   const handleResize = useCallback((delta: number) => {
     const el   = containerRef.current;
     if (!el) return;
-    const size = isVertical ? el.offsetWidth : el.offsetHeight;
-    if (size === 0) return;
-    const next = Math.max(0.1, Math.min(0.9, ratio + delta / size));
-    shared.onSplitRatio(node.id, next);
-  }, [isVertical, ratio, node.id, shared]);
+    // flex で比率配分されるのは Splitter 自身の幅を除いた部分なので、それを分母にしてカーソルに追従させる
+    const splitter = el.children[1] as HTMLElement | undefined;
+    const splitterSize = splitter ? (isVertical ? splitter.offsetWidth : splitter.offsetHeight) : 0;
+    const size = (isVertical ? el.offsetWidth : el.offsetHeight) - splitterSize;
+    if (size <= 0) return;
+    // 再描画前に次の pointermove が来ても移動量を取りこぼさないよう、最新の比率に足し込む
+    shared.onSplitRatioDelta(node.id, delta / size);
+  }, [isVertical, node.id, shared]);
 
   return (
     <div
@@ -308,8 +312,8 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     panel.FocusArea(areaId);
   }, [panel]);
 
-  const handleSplitRatio = useCallback((nodeId: string, ratio: number) => {
-    setSplitRatios(prev => ({ ...prev, [nodeId]: ratio }));
+  const handleSplitRatioDelta = useCallback((nodeId: string, deltaRatio: number) => {
+    setSplitRatios(prev => ({ ...prev, [nodeId]: Math.max(0.1, Math.min(0.9, (prev[nodeId] ?? 0.5) + deltaRatio)) }));
   }, []);
 
   // ── エリア分割（FocusPaneと同じ内容）────────────────────────────────
@@ -839,7 +843,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     onDragLeave:     handleDragLeave,
     onMediaType:     handleMediaType,
     onClose:         handleClose,
-    onSplitRatio:    handleSplitRatio,
+    onSplitRatioDelta: handleSplitRatioDelta,
   };
 
   // ── レンダリング ──────────────────────────────────────────────────
