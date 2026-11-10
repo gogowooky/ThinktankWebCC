@@ -69,7 +69,7 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - PC版には「ローカル運用モード」がある（設定 > モード切替、再起動で反映）。このときだけ ThinkファイルFolder の `.md` を正本とし、Firebase に接続しない。詳細は `docs/261103/ローカル運用モード.md`
 - Think一覧は起動時に前回の一覧（IndexedDB、`src/services/storage/thinkListCache.ts`）を先に表示し、全件取得の結果で揃える。キャッシュは表示専用で、正本の判定には使わない
 - PC連携は既定OFF。ElectronはAI CLI提供側、Webは接続側。依頼・応答はFirestoreリアルタイムリスナーで監視する
-- 旧 BigQuery（`thinktank.vault_ver2`）は廃止済み。移行用スクリプトだけが `scripts/` に残る
+- 旧 BigQuery（`thinktank.vault_ver2`）は廃止済み。依存ライブラリ・移行用スクリプトも削除済みで、コードに BigQuery への接続は残っていない
 
 ## やってはいけないこと
 - `electron/main.cjs` を ES Module 形式に書き換える（CJS固定）
