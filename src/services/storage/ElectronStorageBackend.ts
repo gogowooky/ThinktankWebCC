@@ -53,6 +53,46 @@ export interface ElectronRelayStatus {
   isProcessing?: boolean;
 }
 
+export interface ElectronMcpHttpAddress {
+  address: string;
+  kind: 'loopback' | 'tailscale';
+  interface: string;
+}
+
+export interface ElectronMcpHttpToken {
+  id: string;
+  label: string;
+  pcId: string;
+  createdAt: string;
+  /** 失効済みなら失効時刻、有効なら空文字 */
+  revokedAt: string;
+}
+
+/** きなこ向け MCP HTTP 入口の状態。トークンのハッシュや平文は含まれない。 */
+export interface ElectronMcpHttpStatus {
+  enabled: boolean;
+  listening: boolean;
+  /** ローカル運用モードでは常に true。HTTP は起動せず、操作もできない。 */
+  localMode: boolean;
+  bindAddress: string;
+  bindKind: 'loopback' | 'tailscale' | 'other';
+  addresses: ElectronMcpHttpAddress[];
+  endpointUrl: string;
+  port: number;
+  pcId: string;
+  lastError: string;
+  tokens: ElectronMcpHttpToken[];
+}
+
+/** 発行直後の1回だけ返る。トークンの平文はここでしか得られない。 */
+export interface ElectronMcpHttpIssuedToken {
+  id: string;
+  token: string;
+  pcId: string;
+  label: string;
+  createdAt: string;
+}
+
 export interface ElectronMcpMutatedRecord {
   meta: ThinkMeta;
   body: string;
@@ -154,6 +194,14 @@ declare global {
         agent:        (params: Record<string, unknown>) => Promise<ValidatedAiResponse & { executedCli: string }>;
         /** 実行中の AI CLI を止める（requestId は conversation に渡したもの） */
         cancel?:      (requestId: string) => Promise<boolean>;
+      };
+      mcpHttp?: {
+        getStatus:    () => Promise<ElectronMcpHttpStatus>;
+        setEnabled:   (enabled: boolean) => Promise<ElectronMcpHttpStatus>;
+        configure:    (partial: { bindAddress?: string; port?: number }) => Promise<ElectronMcpHttpStatus>;
+        createToken:  (options?: { label?: string }) => Promise<ElectronMcpHttpIssuedToken>;
+        reissueToken: (options?: { label?: string }) => Promise<ElectronMcpHttpIssuedToken>;
+        revokeToken:  (id: string) => Promise<ElectronMcpHttpStatus>;
       };
       relay?: {
         getStatus:       () => Promise<ElectronRelayStatus>;

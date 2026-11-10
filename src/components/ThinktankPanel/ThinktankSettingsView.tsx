@@ -10,6 +10,7 @@ import { usePanelSectionsSetAll } from '../../hooks/usePanelSectionsSetAll';
 import { AiModelSettingsPanel } from './AiModelSettingsPanel';
 import { PanelAiSettingsPanel } from './PanelAiSettingsPanel';
 import { FirebaseSettingsPanel } from './FirebaseSettingsPanel';
+import { McpHttpSettingsPanel } from './McpHttpSettingsPanel';
 import { GoogleDriveSettingsPanel } from './GoogleDriveSettingsPanel';
 import { LinkTitleGasSettingsPanel } from './LinkTitleGasSettingsPanel';
 import { StorageModeSettingsPanel } from './StorageModeSettingsPanel';
@@ -139,6 +140,8 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
       <StorageModeSettingsPanel />
       {/* ローカル運用では Firebase・Drive・Firestore 上の Vault 名を使わない */}
       {!localMode && <FirebaseSettingsPanel />}
+      {/* Electron 版のみ。ローカル運用モードでは節を出したうえで操作を無効化する */}
+      <McpHttpSettingsPanel />
       {!localMode && <GoogleDriveSettingsPanel />}
       <LinkTitleGasSettingsPanel />
 

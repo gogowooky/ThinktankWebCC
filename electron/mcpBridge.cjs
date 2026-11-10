@@ -83,6 +83,13 @@ function generateUniqueThinkId(existingIdsSet, baseDate = new Date()) {
   return `${formatId(baseDate)}-${crypto.randomBytes(2).toString('hex')}`;
 }
 
+/** shared.classifyMcpError が優先して読む `code` を付けた Error を作る。 */
+function createCodedError(code, message) {
+  const err = new Error(message);
+  err.code = code;
+  return err;
+}
+
 class ThinktankMcpHost {
   /**
    * @param {{
@@ -182,9 +189,23 @@ class ThinktankMcpHost {
     };
   }
 
-  async createThink({ title, body = '', category = 'memo', keywords = '', relatedIds = '', projectId }) {
+  async createThink({
+    title,
+    body = '',
+    category = 'memo',
+    keywords = '',
+    relatedIds = '',
+    projectId,
+    projectIds,
+  }) {
     const existingIds = new Set(this.vaultEngine.listMeta().map((m) => m.thinkid));
     const thinkid = generateUniqueThinkId(existingIds);
+
+    // projectId（後方互換）と projectIds をまとめ、順序を保ったまま重複を除く。先頭が親（ホーム）Project。
+    const targetProjectIds = [];
+    for (const id of [projectId, ...(Array.isArray(projectIds) ? projectIds : [])]) {
+      if (id && !targetProjectIds.includes(id)) targetProjectIds.push(id);
+    }
 
     const relSet = new Set(
       String(relatedIds || '')
@@ -192,7 +213,7 @@ class ThinktankMcpHost {
         .map((s) => s.trim())
         .filter(Boolean),
     );
-    if (projectId) relSet.add(projectId);
+    for (const id of targetProjectIds) relSet.add(id);
 
     const savedMeta = this.vaultEngine.saveRecord({
       thinkid,
@@ -203,51 +224,58 @@ class ThinktankMcpHost {
       relatedIds: Array.from(relSet).join(','),
     });
 
-    if (projectId) {
-      const projectRec = this.vaultEngine.getRecord(projectId);
-      if (projectRec) {
-        const projectDirty = this.isThinkDirty ? await this.isThinkDirty(projectId) : false;
-        if (!projectDirty) {
-          const nextProjectBody = appendThinkToProjectBody(projectRec.body, {
-            thinkid,
-            category,
-            title,
-          });
-          const projectRelSet = new Set(
-            String(projectRec.meta.relatedIds || '')
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean),
-          );
-          projectRelSet.add(thinkid);
-          this.vaultEngine.saveRecord({
-            thinkid: projectId,
-            title: projectRec.meta.title,
-            body: nextProjectBody,
-            category: projectRec.meta.category,
-            keywords: projectRec.meta.keywords,
-            relatedIds: Array.from(projectRelSet).join(','),
-          });
-        }
-      }
+    // 画面で編集中の Project は保護して書き込まない（Think 側の relatedIds では紐づく）。
+    const updatedProjectIds = [];
+    for (const targetId of targetProjectIds) {
+      const projectRec = this.vaultEngine.getRecord(targetId);
+      if (!projectRec) continue;
+      const projectDirty = this.isThinkDirty ? await this.isThinkDirty(targetId) : false;
+      if (projectDirty) continue;
+      const nextProjectBody = appendThinkToProjectBody(projectRec.body, {
+        thinkid,
+        category,
+        title,
+      });
+      const projectRelSet = new Set(
+        String(projectRec.meta.relatedIds || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+      );
+      projectRelSet.add(thinkid);
+      this.vaultEngine.saveRecord({
+        thinkid: targetId,
+        title: projectRec.meta.title,
+        body: nextProjectBody,
+        category: projectRec.meta.category,
+        keywords: projectRec.meta.keywords,
+        relatedIds: Array.from(projectRelSet).join(','),
+      });
+      updatedProjectIds.push(targetId);
     }
 
     if (this.onRecordMutated) {
-      await this.onRecordMutated({ action: 'create', thinkid, projectId });
+      await this.onRecordMutated({ action: 'create', thinkid, projectId: targetProjectIds[0] });
+      // 画面側は create イベントの projectRecord（先頭 Project）しか反映しないため、他の Project は個別に通知する。
+      for (const extraId of updatedProjectIds) {
+        if (extraId === targetProjectIds[0]) continue;
+        await this.onRecordMutated({ action: 'update', thinkid: extraId });
+      }
     }
     return savedMeta;
   }
 
   async updateThink({ thinkid, expectedVersion, title, body, appendBody, keywords, relatedIds }) {
     if (this.isThinkDirty && (await this.isThinkDirty(thinkid))) {
-      throw new Error(
+      throw createCodedError(
+        'EDITING_IN_PROGRESS',
         `Think "${thinkid}" は現在画面のエディタで編集中（未保存変更あり）のため、AI からの上書きは保護されています。`,
       );
     }
 
     const existing = this.vaultEngine.getRecord(thinkid);
     if (!existing) {
-      throw new Error(`更新対象の Think が見つかりません: ${thinkid}`);
+      throw createCodedError('NOT_FOUND', `更新対象の Think が見つかりません: ${thinkid}`);
     }
 
     let nextBody = existing.body;
@@ -288,7 +316,7 @@ class ThinktankMcpHost {
 
     const existing = this.vaultEngine.getRecord(projectId);
     if (!existing) {
-      throw new Error(`昇格候補の登録先 Project が見つかりません: ${projectId}`);
+      throw createCodedError('NOT_FOUND', `昇格候補の登録先 Project が見つかりません: ${projectId}`);
     }
 
     const profile = this.vaultEngine.getActiveDomainProfile();
@@ -342,6 +370,78 @@ class ThinktankMcpHost {
     return profileId
       ? this.vaultEngine.getDomainProfileById(profileId)
       : this.vaultEngine.getActiveDomainProfile();
+  }
+}
+
+/**
+ * 1回の依頼の間に起きた書き込み・競合・参照を記録する MCP ホスト。
+ * 依頼の結果（作成/更新したThink、登録した候補、競合、使った材料）を AI の自己申告ではなく
+ * 実際のツール呼び出しから組み立てるために使う。依頼ごとに新しく作り、他の依頼とは共有しない。
+ */
+class RecordingMcpHost extends ThinktankMcpHost {
+  /** @param {ThinktankMcpHost} base */
+  constructor(base) {
+    super({
+      vaultEngine: base.vaultEngine,
+      isThinkDirty: base.isThinkDirty,
+      onRecordMutated: base.onRecordMutated,
+    });
+    this.recorded = {
+      createdThinkIds: [],
+      updatedThinkIds: [],
+      candidateIds: [],
+      usedSourceIds: [],
+      conflicts: [],
+    };
+  }
+
+  _pushUnique(list, id) {
+    if (id && !list.includes(id)) list.push(id);
+  }
+
+  _recordConflict(err, thinkid) {
+    const code = shared.classifyMcpError(err);
+    if (code === 'VERSION_CONFLICT' || code === 'EDITING_IN_PROGRESS') {
+      this.recorded.conflicts.push({
+        thinkid,
+        code,
+        reason: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  async getRecord(params) {
+    const rec = await super.getRecord(params);
+    if (rec) this._pushUnique(this.recorded.usedSourceIds, params.thinkid);
+    return rec;
+  }
+
+  async createThink(params) {
+    const meta = await super.createThink(params);
+    this._pushUnique(this.recorded.createdThinkIds, meta.thinkid);
+    return meta;
+  }
+
+  async updateThink(params) {
+    try {
+      const meta = await super.updateThink(params);
+      this._pushUnique(this.recorded.updatedThinkIds, params.thinkid);
+      return meta;
+    } catch (err) {
+      this._recordConflict(err, params.thinkid);
+      throw err;
+    }
+  }
+
+  async addPromotionCandidate(params) {
+    try {
+      const res = await super.addPromotionCandidate(params);
+      this._pushUnique(this.recorded.candidateIds, res.candidateId);
+      return res;
+    } catch (err) {
+      this._recordConflict(err, params.projectId);
+      throw err;
+    }
   }
 }
 
@@ -484,6 +584,8 @@ function forwardJsonRpcOverPipe(pipePath, request, timeoutMs = 30_000) {
 
 module.exports = {
   ThinktankMcpHost,
+  RecordingMcpHost,
+  createCodedError,
   extractLinkedIdsFromProjectBody,
   appendThinkToProjectBody,
   generateUniqueThinkId,

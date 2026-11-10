@@ -65,6 +65,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
     agent:         (params)                      => ipcRenderer.invoke('ai:agent', params),
     cancel:        (requestId)                   => ipcRenderer.invoke('ai:cancel', requestId),
   },
+  mcpHttp: {
+    getStatus:       ()                          => ipcRenderer.invoke('mcpHttp:getStatus'),
+    setEnabled:      (enabled)                   => ipcRenderer.invoke('mcpHttp:setEnabled', enabled),
+    configure:       (partial)                   => ipcRenderer.invoke('mcpHttp:configure', partial),
+    createToken:     (options)                   => ipcRenderer.invoke('mcpHttp:createToken', options),
+    reissueToken:    (options)                   => ipcRenderer.invoke('mcpHttp:reissueToken', options),
+    revokeToken:     (id)                        => ipcRenderer.invoke('mcpHttp:revokeToken', id),
+  },
   relay: {
     getStatus:       ()                          => ipcRenderer.invoke('relay:getStatus'),
     getFirebaseSession: ()                       => ipcRenderer.invoke('relay:getFirebaseSession'),

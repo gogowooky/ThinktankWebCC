@@ -12,6 +12,10 @@ export type RelayOperationKind =
   | 'deleteRecord'
   | 'ai.conversation'
   | 'ai.agent'
+  /** MCP ツール1件を中継役PCの ThinktankMcpHost で実行する（きなこ等からの直接呼び出しをキューに溜める用） */
+  | 'mcp.toolCall'
+  /** きなこの非同期ファシリテーション依頼（shared/kinakoRequest.ts のエンベロープ） */
+  | 'kinako.request'
   | 'ping';
 
 export type RelayRequestStatus =
@@ -59,6 +63,11 @@ export interface RelayAiConversationPayload {
   preferredCli?: 'claude' | 'codex' | 'antigravity';
   provider?: 'anthropic' | 'openai' | 'gemini' | 'gnb' | 'local';
   model?: string;
+}
+
+export interface RelayMcpToolCallPayload {
+  name: string;
+  arguments?: Record<string, unknown>;
 }
 
 export interface RelayEnvelopePlaintext<T = unknown> {

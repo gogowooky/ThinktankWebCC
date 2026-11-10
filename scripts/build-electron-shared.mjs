@@ -30,6 +30,7 @@ const sharedFiles = [
   'shared/relayCrypto.ts',
   'shared/firebaseAuth.ts',
   'shared/mcpProtocol.ts',
+  'shared/kinakoRequest.ts',
   'shared/index.ts',
 ].map((f) => path.join(rootDir, f));
 

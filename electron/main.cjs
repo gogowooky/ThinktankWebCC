@@ -9,6 +9,7 @@ const { validateShortcutPath } = require('./shortcutPath.cjs');
 const { VaultEngine } = require('./vaultEngine.cjs');
 const aiCliRunner = require('./aiCliRunner.cjs');
 const { RelayAgent } = require('./relayAgent.cjs');
+const { McpHttpServer } = require('./mcpHttpServer.cjs');
 const { ThinktankMcpHost } = require('./mcpBridge.cjs');
 const { loadDesktopClient, signInWithGoogleLoopback } = require('./googleLoopbackAuth.cjs');
 const appMode = require('./appMode.cjs');
@@ -170,6 +171,15 @@ const mcpHost = new ThinktankMcpHost({
 });
 
 aiCliRunner.setDefaultMcpHost(mcpHost);
+relayAgent.setMcpHost(mcpHost);
+
+// きなこ向け MCP HTTP 入口（設定で有効にした場合だけ待ち受ける。ローカル運用モードでは起動しない）
+const mcpHttpServer = new McpHttpServer({
+  userDataDir: app.getPath('userData'),
+  mcpHost,
+  getDeviceId: () => vaultEngine.config.deviceId,
+  isLocalMode,
+});
 
 // ── IPC ハンドラー（Storage / Vault v1） ────────────────────────────────────
 
@@ -402,6 +412,15 @@ ipcMain.handle('ai:agent', async (_event, params) => {
     profile,
   });
 });
+
+// ── IPC ハンドラー（MCP HTTP 入口） ─────────────────────────────────────────
+
+ipcMain.handle('mcpHttp:getStatus', () => mcpHttpServer.getStatus());
+ipcMain.handle('mcpHttp:setEnabled', (_event, enabled) => mcpHttpServer.setEnabled(Boolean(enabled)));
+ipcMain.handle('mcpHttp:configure', (_event, partial) => mcpHttpServer.configure(partial || {}));
+ipcMain.handle('mcpHttp:createToken', (_event, options) => mcpHttpServer.createToken(options || {}));
+ipcMain.handle('mcpHttp:reissueToken', (_event, options) => mcpHttpServer.reissueToken(options || {}));
+ipcMain.handle('mcpHttp:revokeToken', (_event, id) => mcpHttpServer.revokeToken(String(id || '')));
 
 // ── IPC ハンドラー（中継役PC RelayAgent） ──────────────────────────────────
 
@@ -720,6 +739,7 @@ app.whenReady()
     }
     // ローカル運用では Firebase に接続しない
     if (!isLocalMode) relayAgent.start();
+    void mcpHttpServer.start();
     // 前回の終了後に G: で変わったファイルも Web 版の索引に載るよう、起動後に一度作り直す
     vaultEngine.scheduleIndexRefresh({ shardDelayMs: 30_000, bodyPackDelayMs: 10 * 60_000 });
     // 一覧の同期読み込みと本文パックの解析で止まるので、画面の読み込みと競合させない。
@@ -740,5 +760,6 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
   clearTimeout(searchWarmUpTimer);
   relayAgent.stop();
+  void mcpHttpServer.stop();
   vaultEngine.stopIndexRefresh();
 });

@@ -11,10 +11,13 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
+const { RecordingMcpHost } = require('./mcpBridge.cjs');
 
 const HEARTBEAT_INTERVAL_MS = 60_000;
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60_000;
 const LISTENER_RETRY_MS = 5_000;
+const KINAKO_RESULT_CACHE_LIMIT = 200;
+const KINAKO_TIMEOUT_MS = 10 * 60_000;
 
 async function loadFirebaseSdk() {
   const [appSdk, authSdk, firestoreSdk] = await Promise.all([
@@ -69,6 +72,181 @@ class RelayAgent {
     this._activeRequests = new Set();
     this._inFlightRequestIds = new Set();
     this._processingCount = 0;
+    /** きなこ依頼の結果を requestId で覚え、再送されても二重実行しない。 */
+    this.kinakoResultsPath = path.join(userDataDir, 'kinako-results.json');
+    this._kinakoResults = null;
+    this._kinakoInFlight = new Map();
+    this.mcpHost = null;
+  }
+
+  /** mcp.toolCall / kinako.request の実行先。ホストはメインプロセスが作るため後から受け取る。 */
+  setMcpHost(mcpHost) {
+    this.mcpHost = mcpHost || null;
+  }
+
+  _loadKinakoResults() {
+    if (this._kinakoResults) return this._kinakoResults;
+    this._kinakoResults = new Map();
+    try {
+      const raw = JSON.parse(fs.readFileSync(this.kinakoResultsPath, 'utf8'));
+      for (const item of Array.isArray(raw) ? raw : []) {
+        if (item && typeof item.requestId === 'string') this._kinakoResults.set(item.requestId, item);
+      }
+    } catch {
+      // 無い・壊れている場合は空から始める
+    }
+    return this._kinakoResults;
+  }
+
+  _rememberKinakoResult(result) {
+    const map = this._loadKinakoResults();
+    map.delete(result.requestId);
+    map.set(result.requestId, result);
+    while (map.size > KINAKO_RESULT_CACHE_LIMIT) {
+      map.delete(map.keys().next().value);
+    }
+    try {
+      fs.mkdirSync(path.dirname(this.kinakoResultsPath), { recursive: true });
+      fs.writeFileSync(this.kinakoResultsPath, JSON.stringify([...map.values()], null, 2), 'utf8');
+    } catch (err) {
+      console.warn(`[Relay] きなこ依頼の結果を保存できませんでした: ${err.message || err}`);
+    }
+  }
+
+  _kinakoFailure(envelope, code, message, partial = {}) {
+    return {
+      requestId: envelope.requestId,
+      targetPc: envelope.targetPc,
+      status: 'failed',
+      createdThinkIds: [],
+      updatedThinkIds: [],
+      candidateIds: [],
+      usedSourceIds: [],
+      conflicts: [],
+      failure: { code, message },
+      completedAt: new Date().toISOString(),
+      ...partial,
+    };
+  }
+
+  /**
+   * きなこの非同期依頼（shared/kinakoRequest.ts）を実行する。
+   * - 宛先PCが自分でなければ実行せず failed（PC間で材料を混ぜない）
+   * - 同じ requestId は結果を返すだけで再実行しない
+   * - 結果は AI の自己申告ではなく、実際のツール呼び出し（RecordingMcpHost）から組み立てる
+   */
+  async executeKinakoRequest(rawEnvelope) {
+    const validation = shared.validateKinakoRequestEnvelope(rawEnvelope);
+    const requestIdHint =
+      rawEnvelope && typeof rawEnvelope.requestId === 'string' ? rawEnvelope.requestId : 'unknown';
+    if (validation.status === 'error') {
+      return this._kinakoFailure(
+        { requestId: requestIdHint, targetPc: String(rawEnvelope?.targetPc || '') },
+        'INVALID_ARGUMENT',
+        validation.message,
+      );
+    }
+    const envelope = validation.value;
+
+    if (
+      !shared.matchesTargetPc(envelope.targetPc, {
+        deviceId: this.config.deviceId,
+        deviceName: this.config.deviceName,
+      })
+    ) {
+      return this._kinakoFailure(
+        envelope,
+        'TARGET_PC_MISMATCH',
+        `この依頼の宛先は「${envelope.targetPc}」で、このPC（${this.config.deviceId}）ではありません。`,
+      );
+    }
+    if (envelope.mode !== 'web') {
+      return this._kinakoFailure(
+        envelope,
+        'INVALID_ARGUMENT',
+        'Firestore 中継で受け付けるのは mode: web の依頼だけです（Local版は依頼書を PC 上の AI へ渡します）。',
+      );
+    }
+    if (!this.mcpHost) {
+      return this._kinakoFailure(envelope, 'INTERNAL_ERROR', 'MCP ホストが初期化されていません。');
+    }
+
+    const cached = this._loadKinakoResults().get(envelope.requestId);
+    if (cached) return cached;
+    const running = this._kinakoInFlight.get(envelope.requestId);
+    if (running) return running;
+
+    const promise = this._runKinakoRequest(envelope).finally(() => {
+      this._kinakoInFlight.delete(envelope.requestId);
+    });
+    this._kinakoInFlight.set(envelope.requestId, promise);
+    return promise;
+  }
+
+  async _runKinakoRequest(envelope) {
+    const host = new RecordingMcpHost(this.mcpHost);
+    const projectRec = envelope.projectId ? this.vaultEngine.getRecord(envelope.projectId) : null;
+    if (envelope.projectId && !projectRec) {
+      return this._kinakoFailure(envelope, 'NOT_FOUND', `対象 Project が見つかりません: ${envelope.projectId}`);
+    }
+
+    let reply = '';
+    let aiError = null;
+    try {
+      const profile = this.vaultEngine.getActiveDomainProfile();
+      const ai = await this.aiCliRunner.runDomainAiConversation({
+        cliName: this.vaultEngine.config.preferredCli || 'claude',
+        model: this.vaultEngine.config.preferredModel || undefined,
+        profile,
+        panelRole: 'Working',
+        bundleId: envelope.projectId || 'default',
+        bundleTitle: projectRec?.meta?.title || `きなこ依頼 ${envelope.requestId}`,
+        bundleSummary: projectRec?.support?.summary,
+        userMessage: shared.buildKinakoRequestPrompt(envelope),
+        timeoutMs: KINAKO_TIMEOUT_MS,
+        requestId: envelope.requestId,
+        projectId: envelope.projectId,
+        mcpHost: host,
+      });
+      reply = typeof ai?.reply === 'string' ? ai.reply : '';
+    } catch (err) {
+      aiError = err;
+    }
+
+    const r = host.recorded;
+    const wroteSomething =
+      r.createdThinkIds.length > 0 || r.updatedThinkIds.length > 0 || r.candidateIds.length > 0;
+    const base = {
+      requestId: envelope.requestId,
+      targetPc: envelope.targetPc,
+      createdThinkIds: r.createdThinkIds,
+      updatedThinkIds: r.updatedThinkIds,
+      candidateIds: r.candidateIds,
+      usedSourceIds: r.usedSourceIds,
+      conflicts: r.conflicts,
+      ...(reply ? { summary: reply } : {}),
+      completedAt: new Date().toISOString(),
+    };
+
+    let result;
+    if (aiError) {
+      result = {
+        ...base,
+        status: 'failed',
+        failure: {
+          code: 'AI_EXECUTION_FAILED',
+          message: aiError.message || String(aiError),
+        },
+      };
+    } else if (r.conflicts.length > 0) {
+      result = { ...base, status: 'conflict' };
+    } else {
+      result = { ...base, status: 'done' };
+    }
+
+    // 何も書かずに失敗しただけなら、同じ requestId での再送で再実行できるよう覚えない。
+    if (result.status !== 'failed' || wroteSomething) this._rememberKinakoResult(result);
+    return result;
   }
 
   _loadConfig() {
@@ -771,6 +949,24 @@ class RelayAgent {
             bundleSummary: bundleRec?.support?.summary || payload.bundleSummary,
             userMessage: payload.userMessage || '',
           });
+          break;
+        }
+        case 'mcp.toolCall': {
+          if (!this.mcpHost) throw new Error('MCP ホストが初期化されていません。');
+          const toolName = typeof payload.name === 'string' ? payload.name : '';
+          const toolResult = await shared.executeMcpToolCall(toolName, payload.arguments, this.mcpHost);
+          const text = toolResult.content?.[0]?.text ?? '';
+          let parsed = text;
+          try {
+            parsed = JSON.parse(text);
+          } catch {
+            // JSON でない本文はそのまま返す
+          }
+          result = { isError: Boolean(toolResult.isError), payload: parsed };
+          break;
+        }
+        case 'kinako.request': {
+          result = await this.executeKinakoRequest(payload);
           break;
         }
         default:

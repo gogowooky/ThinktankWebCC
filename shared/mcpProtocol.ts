@@ -19,7 +19,7 @@ import type { CitationRef, PromotionCandidate, PromotedRecord, GateRecord } from
 export const MCP_PROTOCOL_VERSION = '2024-11-05';
 export const MCP_SERVER_INFO = {
   name: 'thinktank',
-  version: '2.6.4',
+  version: '2.7.0',
 };
 
 export interface McpJsonRpcRequest {
@@ -90,7 +90,10 @@ export interface McpCreateThinkParams {
   category?: 'memo' | 'aiview' | 'task' | 'links' | 'table';
   keywords?: string;
   relatedIds?: string;
+  /** 後方互換用。projectIds と併用した場合は両方に登録する。 */
   projectId?: string;
+  /** 作成と同時に「# 対象」へ登録する Project（複数可）。 */
+  projectIds?: string[];
 }
 
 export interface McpUpdateThinkParams {
@@ -135,7 +138,7 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
   {
     name: 'thinktank_search',
     description:
-      'Thinktank Vault内のThink（メモ・課題・Project・チャット等）をキーワード・タグ・カテゴリ指定で全文検索し、一致したメタデータ一覧を返す。',
+      'Thinktank Vault内のThink（メモ・課題・Project・チャット等）をキーワード・タグ・カテゴリ指定で全文検索し、一致したメタデータ一覧を返す。応答の truncated が true のときは上限で打ち切られているため、クエリを絞って再検索する。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -159,7 +162,7 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
   {
     name: 'thinktank_list_meta',
     description:
-      'Vault内の最新Thinkメタデータ一覧、または指定した projectId（Project）に紐づく関連Think一覧を取得する。',
+      'Vault内の最新Thinkメタデータ一覧、または指定した projectId（Project）に紐づく関連Think一覧を取得する。応答の truncated が true のときは上限で打ち切られている。',
     inputSchema: {
       type: 'object',
       properties: {
@@ -246,6 +249,11 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
         projectId: {
           type: 'string',
           description: '作成したThinkを自動的に紐づける親Projectのthinkid',
+        },
+        projectIds: {
+          type: 'array',
+          items: { type: 'string' },
+          description: '複数のProjectへ同時に紐づける場合のthinkid配列（projectId と併用可。先頭が親Project）',
         },
       },
       required: ['title'],
@@ -350,6 +358,54 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
       additionalProperties: false,
     },
   },
+  {
+    name: 'thinktank_add_promotion_candidates',
+    description:
+      '同一Projectに対する昇格候補（pending_review）を1回の呼び出しで複数件まとめて登録する（最大20件）。1件でも引数が不正なら何も登録しない。承認・却下は人間が画面で行う。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        projectId: {
+          type: 'string',
+          description: '登録先Projectのthinkid',
+        },
+        candidates: {
+          type: 'array',
+          description: '登録する昇格候補のリスト（1〜20件）。各要素は thinktank_add_promotion_candidate の projectId 以外の引数と同じ。',
+          items: {
+            type: 'object',
+            properties: {
+              type: {
+                type: 'string',
+                enum: ['decision', 'evidence', 'risk', 'assumption', 'action', 'gate_result', 'learning'],
+              },
+              title: { type: 'string' },
+              summary: { type: 'string' },
+              rationale: { type: 'string' },
+              impactScope: { type: 'string' },
+              proposedOwner: { type: 'string' },
+              dueDate: { type: 'string' },
+              citations: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    sourceThinkid: { type: 'string' },
+                    sourceTitle: { type: 'string' },
+                    snippet: { type: 'string' },
+                  },
+                  required: ['sourceThinkid'],
+                },
+              },
+            },
+            required: ['type', 'title', 'summary'],
+          },
+        },
+      },
+      required: ['projectId', 'candidates'],
+      additionalProperties: false,
+    },
+  },
 ];
 
 export const THINKTANK_MCP_RESOURCE_TEMPLATES: readonly McpResourceTemplateDefinition[] = [
@@ -393,13 +449,68 @@ function clampLimit(raw: unknown, defaultLimit = 50, maxLimit = 200): number {
   return Math.min(Math.floor(num), maxLimit);
 }
 
-function resolveProjectIdArg(args: Record<string, unknown>): string | undefined {
-  const raw = typeof args.projectId === 'string' && args.projectId.trim()
-    ? args.projectId.trim()
-    : typeof args.bundleId === 'string' && args.bundleId.trim()
-      ? args.bundleId.trim()
-      : undefined;
-  return raw;
+/** MCP ツールエラーの機械判別用コード（仕様書 7.2）。 */
+export type McpErrorCode =
+  | 'NOT_FOUND'
+  | 'VERSION_CONFLICT'
+  | 'EDITING_IN_PROGRESS'
+  | 'INVALID_ARGUMENT'
+  | 'INVALID_ID'
+  | 'UNKNOWN_TOOL'
+  | 'INTERNAL_ERROR';
+
+export interface McpToolErrorPayload {
+  ok: false;
+  error: {
+    code: McpErrorCode;
+    /** 従来どおりの日本語メッセージ（人間向け） */
+    message: string;
+    thinkid?: string;
+    retryable: boolean;
+  };
+}
+
+const MCP_ERROR_CODES: ReadonlySet<string> = new Set<McpErrorCode>([
+  'NOT_FOUND',
+  'VERSION_CONFLICT',
+  'EDITING_IN_PROGRESS',
+  'INVALID_ARGUMENT',
+  'INVALID_ID',
+  'UNKNOWN_TOOL',
+  'INTERNAL_ERROR',
+]);
+
+/**
+ * VERSION_CONFLICT と EDITING_IN_PROGRESS は「人間が触っている」サインなので、自動リトライで押し切らない。
+ * INVALID_ARGUMENT だけは引数を直した 1 回の再試行を許す。
+ */
+const RETRYABLE_BY_CODE: Record<McpErrorCode, boolean> = {
+  NOT_FOUND: false,
+  VERSION_CONFLICT: false,
+  EDITING_IN_PROGRESS: false,
+  INVALID_ARGUMENT: true,
+  INVALID_ID: false,
+  UNKNOWN_TOOL: false,
+  INTERNAL_ERROR: false,
+};
+
+export function isMcpErrorCode(value: unknown): value is McpErrorCode {
+  return typeof value === 'string' && MCP_ERROR_CODES.has(value);
+}
+
+/**
+ * バックエンドが送出した例外を MCP エラーコードへ分類する。
+ * 型付きの `code` を最優先し、無い場合だけ従来の日本語メッセージで判定する（旧バックエンドとの互換用）。
+ */
+export function classifyMcpError(err: unknown): McpErrorCode {
+  const code = (err as { code?: unknown } | null)?.code;
+  if (isMcpErrorCode(code)) return code;
+  const message = err instanceof Error ? err.message : String(err);
+  if (message.includes('編集中')) return 'EDITING_IN_PROGRESS';
+  if (message.includes('競合')) return 'VERSION_CONFLICT';
+  if (message.includes('見つかりません')) return 'NOT_FOUND';
+  if (message.includes('不正な thinkid') || message.includes('不正な projectId')) return 'INVALID_ID';
+  return 'INTERNAL_ERROR';
 }
 
 function formatToolResult(payload: unknown, isError = false): {
@@ -413,8 +524,120 @@ function formatToolResult(payload: unknown, isError = false): {
   };
 }
 
+function formatToolError(code: McpErrorCode, message: string, thinkid?: string) {
+  const payload: McpToolErrorPayload = {
+    ok: false,
+    error: {
+      code,
+      message,
+      ...(thinkid ? { thinkid } : {}),
+      retryable: RETRYABLE_BY_CODE[code],
+    },
+  };
+  return formatToolResult(payload, true);
+}
+
+/** 引数の thinkid / projectId のうち、エラーに添えられるものを返す。 */
+function pickErrorThinkId(args: Record<string, unknown>): string | undefined {
+  for (const key of ['thinkid', 'projectId', 'bundleId']) {
+    const v = args[key];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return undefined;
+}
+
+const MAX_BATCH_CANDIDATES = 20;
+
+function resolveProjectIdArg(args: Record<string, unknown>): string | undefined {
+  const raw = typeof args.projectId === 'string' && args.projectId.trim()
+    ? args.projectId.trim()
+    : typeof args.bundleId === 'string' && args.bundleId.trim()
+      ? args.bundleId.trim()
+      : undefined;
+  return raw;
+}
+
+/** projectId と projectIds をまとめ、重複を除いた順序付きリストにする。不正IDがあればそれを返す。 */
+function resolveProjectIdsArg(
+  args: Record<string, unknown>,
+): { ids: string[]; invalid?: string } {
+  const ids: string[] = [];
+  const push = (raw: unknown): string | undefined => {
+    if (typeof raw !== 'string') return undefined;
+    const v = raw.trim();
+    if (!v) return undefined;
+    if (!isSafeThinkId(v)) return v;
+    if (!ids.includes(v)) ids.push(v);
+    return undefined;
+  };
+  const single = resolveProjectIdArg(args);
+  if (single !== undefined) {
+    const bad = push(single);
+    if (bad) return { ids, invalid: bad };
+  }
+  if (Array.isArray(args.projectIds)) {
+    for (const item of args.projectIds) {
+      const bad = push(item);
+      if (bad) return { ids, invalid: bad };
+    }
+  }
+  return { ids };
+}
+
+type ParsedCandidate = Omit<McpAddPromotionCandidateParams, 'projectId'>;
+
+function parseCitations(raw: unknown): CitationRef[] {
+  const citations: CitationRef[] = [];
+  if (!Array.isArray(raw)) return citations;
+  for (const item of raw) {
+    if (!item || typeof item !== 'object') continue;
+    const c = item as Record<string, unknown>;
+    const sourceThinkid = typeof c.sourceThinkid === 'string' ? c.sourceThinkid.trim() : '';
+    if (!sourceThinkid) continue;
+    citations.push({
+      sourceThinkid,
+      sourceTitle: typeof c.sourceTitle === 'string' ? c.sourceTitle.trim() : undefined,
+      snippet: typeof c.snippet === 'string' ? c.snippet.trim() : undefined,
+    });
+  }
+  return citations;
+}
+
+/** 昇格候補1件分の引数を検証する。単体ツールと一括ツールで同じ規則を使う。 */
+function parseCandidateInput(
+  raw: Record<string, unknown>,
+):
+  | { status: 'ok'; value: ParsedCandidate }
+  | { status: 'error'; error: { code: McpErrorCode; message: string } } {
+  const rawType = typeof raw.type === 'string' ? raw.type.trim() : '';
+  if (!VALID_PROMOTION_TYPES.has(rawType as PromotionTargetType)) {
+    return { status: 'error', error: { code: 'INVALID_ARGUMENT', message: `不正な昇格候補 type です: ${rawType}` } };
+  }
+  const title = typeof raw.title === 'string' ? raw.title.trim() : '';
+  const summary = typeof raw.summary === 'string' ? raw.summary.trim() : '';
+  if (!title || !summary) {
+    return { status: 'error', error: { code: 'INVALID_ARGUMENT', message: '昇格候補の登録には title と summary が必須です。' } };
+  }
+  const optional = (key: string): string | undefined =>
+    typeof raw[key] === 'string' ? (raw[key] as string).trim() : undefined;
+  return {
+    status: 'ok',
+    value: {
+      type: rawType as PromotionTargetType,
+      title,
+      summary,
+      rationale: optional('rationale'),
+      impactScope: optional('impactScope'),
+      proposedOwner: optional('proposedOwner'),
+      dueDate: optional('dueDate'),
+      citations: parseCitations(raw.citations),
+    },
+  };
+}
+
 /**
  * MCP の `tools/call` を処理し、バリデーションとバックエンド呼び出しを行う。
+ * エラーはすべて `{ ok:false, error:{ code, message, thinkid?, retryable } }` の JSON を text に載せ、isError を立てる。
  */
 export async function executeMcpToolCall(
   name: string,
@@ -428,9 +651,12 @@ export async function executeMcpToolCall(
         const query = typeof args.query === 'string' ? args.query.trim() : '';
         const category = typeof args.category === 'string' && args.category.trim() ? args.category.trim() : undefined;
         const limit = clampLimit(args.limit, 50, 200);
-        const results = await backend.search({ query, limit, category });
+        // 1件多く取り、上限到達で打ち切られたかを truncated として明示する。
+        const fetched = await backend.search({ query, limit: limit + 1, category });
+        const results = fetched.slice(0, limit);
         return formatToolResult({
           count: results.length,
+          truncated: fetched.length > limit,
           items: results,
         });
       }
@@ -438,13 +664,15 @@ export async function executeMcpToolCall(
       case 'thinktank_list_meta': {
         const projectId = resolveProjectIdArg(args);
         if (projectId && !isSafeThinkId(projectId)) {
-          return formatToolResult(`不正な projectId です: ${projectId}`, true);
+          return formatToolError('INVALID_ID', `不正な projectId です: ${projectId}`, projectId);
         }
         const category = typeof args.category === 'string' && args.category.trim() ? args.category.trim() : undefined;
         const limit = clampLimit(args.limit, 50, 200);
-        const items = await backend.listMeta({ projectId, category, limit });
+        const fetched = await backend.listMeta({ projectId, category, limit: limit + 1 });
+        const items = fetched.slice(0, limit);
         return formatToolResult({
           count: items.length,
+          truncated: fetched.length > limit,
           items,
         });
       }
@@ -452,12 +680,12 @@ export async function executeMcpToolCall(
       case 'thinktank_get_record': {
         const thinkid = typeof args.thinkid === 'string' ? args.thinkid.trim() : '';
         if (!isSafeThinkId(thinkid)) {
-          return formatToolResult(`不正な thinkid です: ${thinkid}`, true);
+          return formatToolError('INVALID_ID', `不正な thinkid です: ${thinkid}`, thinkid || undefined);
         }
         const includeSupport = args.includeSupport !== false;
         const record = await backend.getRecord({ thinkid, includeSupport });
         if (!record) {
-          return formatToolResult(`指定された Think が見つかりません: ${thinkid}`, true);
+          return formatToolError('NOT_FOUND', `指定された Think が見つかりません: ${thinkid}`, thinkid);
         }
         return formatToolResult(record);
       }
@@ -465,11 +693,11 @@ export async function executeMcpToolCall(
       case 'thinktank_get_project_context': {
         const projectId = resolveProjectIdArg(args) ?? '';
         if (!isSafeThinkId(projectId)) {
-          return formatToolResult(`不正な projectId です: ${projectId}`, true);
+          return formatToolError('INVALID_ID', `不正な projectId です: ${projectId}`, projectId || undefined);
         }
         const ctx = await backend.getProjectContext({ projectId });
         if (!ctx) {
-          return formatToolResult(`指定された Project が見つかりません: ${projectId}`, true);
+          return formatToolError('NOT_FOUND', `指定された Project が見つかりません: ${projectId}`, projectId);
         }
         return formatToolResult(ctx);
       }
@@ -477,7 +705,7 @@ export async function executeMcpToolCall(
       case 'thinktank_create_think': {
         const title = typeof args.title === 'string' ? args.title.replace(/[\r\n]+/g, ' ').trim() : '';
         if (!title) {
-          return formatToolResult('新規 Think の作成には title が必須です。', true);
+          return formatToolError('INVALID_ARGUMENT', '新規 Think の作成には title が必須です。');
         }
         const rawCategory = typeof args.category === 'string' ? args.category.trim() : 'memo';
         const category = VALID_CREATE_CATEGORIES.has(rawCategory as CreateCategory)
@@ -486,9 +714,9 @@ export async function executeMcpToolCall(
         const body = typeof args.body === 'string' ? args.body : '';
         const keywords = typeof args.keywords === 'string' ? args.keywords.trim() : undefined;
         const relatedIds = typeof args.relatedIds === 'string' ? args.relatedIds.trim() : undefined;
-        const projectId = resolveProjectIdArg(args);
-        if (projectId && !isSafeThinkId(projectId)) {
-          return formatToolResult(`不正な projectId です: ${projectId}`, true);
+        const { ids: projectIds, invalid } = resolveProjectIdsArg(args);
+        if (invalid) {
+          return formatToolError('INVALID_ID', `不正な projectId です: ${invalid}`, invalid);
         }
         const saved = await backend.createThink({
           title,
@@ -496,7 +724,8 @@ export async function executeMcpToolCall(
           category,
           keywords,
           relatedIds,
-          projectId,
+          projectId: projectIds[0],
+          projectIds: projectIds.length > 0 ? projectIds : undefined,
         });
         return formatToolResult({
           ok: true,
@@ -507,17 +736,18 @@ export async function executeMcpToolCall(
       case 'thinktank_update_think': {
         const thinkid = typeof args.thinkid === 'string' ? args.thinkid.trim() : '';
         if (!isSafeThinkId(thinkid)) {
-          return formatToolResult(`不正な thinkid です: ${thinkid}`, true);
+          return formatToolError('INVALID_ID', `不正な thinkid です: ${thinkid}`, thinkid || undefined);
         }
         const expectedVersion = typeof args.expectedVersion === 'string' ? args.expectedVersion.trim() : '';
         if (!expectedVersion) {
-          return formatToolResult(
+          return formatToolError(
+            'INVALID_ARGUMENT',
             '既存 Think の更新には expectedVersion（取得時の updatedAt）の指定が必須です。',
-            true,
+            thinkid,
           );
         }
         if (args.body !== undefined && args.appendBody !== undefined) {
-          return formatToolResult('body と appendBody は同時に指定できません。', true);
+          return formatToolError('INVALID_ARGUMENT', 'body と appendBody は同時に指定できません。', thinkid);
         }
         const saved = await backend.updateThink({
           thinkid,
@@ -537,42 +767,13 @@ export async function executeMcpToolCall(
       case 'thinktank_add_promotion_candidate': {
         const projectId = resolveProjectIdArg(args) ?? '';
         if (!isSafeThinkId(projectId)) {
-          return formatToolResult(`不正な projectId です: ${projectId}`, true);
+          return formatToolError('INVALID_ID', `不正な projectId です: ${projectId}`, projectId || undefined);
         }
-        const rawType = typeof args.type === 'string' ? args.type.trim() : '';
-        if (!VALID_PROMOTION_TYPES.has(rawType as PromotionTargetType)) {
-          return formatToolResult(`不正な昇格候補 type です: ${rawType}`, true);
+        const parsed = parseCandidateInput(args);
+        if (parsed.status === 'error') {
+          return formatToolError(parsed.error.code, parsed.error.message, projectId);
         }
-        const title = typeof args.title === 'string' ? args.title.trim() : '';
-        const summary = typeof args.summary === 'string' ? args.summary.trim() : '';
-        if (!title || !summary) {
-          return formatToolResult('昇格候補の登録には title と summary が必須です。', true);
-        }
-        const citations: CitationRef[] = [];
-        if (Array.isArray(args.citations)) {
-          for (const item of args.citations) {
-            if (!item || typeof item !== 'object') continue;
-            const c = item as Record<string, unknown>;
-            const sourceThinkid = typeof c.sourceThinkid === 'string' ? c.sourceThinkid.trim() : '';
-            if (!sourceThinkid) continue;
-            citations.push({
-              sourceThinkid,
-              sourceTitle: typeof c.sourceTitle === 'string' ? c.sourceTitle.trim() : undefined,
-              snippet: typeof c.snippet === 'string' ? c.snippet.trim() : undefined,
-            });
-          }
-        }
-        const res = await backend.addPromotionCandidate({
-          projectId,
-          type: rawType as PromotionTargetType,
-          title,
-          summary,
-          rationale: typeof args.rationale === 'string' ? args.rationale.trim() : undefined,
-          impactScope: typeof args.impactScope === 'string' ? args.impactScope.trim() : undefined,
-          proposedOwner: typeof args.proposedOwner === 'string' ? args.proposedOwner.trim() : undefined,
-          dueDate: typeof args.dueDate === 'string' ? args.dueDate.trim() : undefined,
-          citations,
-        });
+        const res = await backend.addPromotionCandidate({ projectId, ...parsed.value });
         return formatToolResult({
           ok: true,
           status: 'pending_review',
@@ -580,12 +781,86 @@ export async function executeMcpToolCall(
         });
       }
 
+      case 'thinktank_add_promotion_candidates': {
+        const projectId = resolveProjectIdArg(args) ?? '';
+        if (!isSafeThinkId(projectId)) {
+          return formatToolError('INVALID_ID', `不正な projectId です: ${projectId}`, projectId || undefined);
+        }
+        if (!Array.isArray(args.candidates) || args.candidates.length === 0) {
+          return formatToolError('INVALID_ARGUMENT', 'candidates に 1 件以上の昇格候補を指定してください。', projectId);
+        }
+        if (args.candidates.length > MAX_BATCH_CANDIDATES) {
+          return formatToolError(
+            'INVALID_ARGUMENT',
+            `一括登録できる昇格候補は ${MAX_BATCH_CANDIDATES} 件までです（指定: ${args.candidates.length} 件）。`,
+            projectId,
+          );
+        }
+        // 1件でも不正なら何も登録しない。検証を先に全件済ませ、登録途中の中途半端な状態を避ける。
+        const parsedList: ParsedCandidate[] = [];
+        for (let i = 0; i < args.candidates.length; i++) {
+          const item = args.candidates[i];
+          if (!item || typeof item !== 'object' || Array.isArray(item)) {
+            return formatToolError('INVALID_ARGUMENT', `candidates[${i}] はオブジェクトで指定してください。`, projectId);
+          }
+          const parsed = parseCandidateInput(item as Record<string, unknown>);
+          if (parsed.status === 'error') {
+            return formatToolError(parsed.error.code, `candidates[${i}]: ${parsed.error.message}`, projectId);
+          }
+          parsedList.push(parsed.value);
+        }
+
+        // 登録は直列。Project 側の保存が楽観ロックで連鎖するため並列にしない。
+        const results: Array<
+          | { index: number; ok: true; candidateId: string; updatedAt: string }
+          | { index: number; ok: false; error: McpToolErrorPayload['error'] }
+        > = [];
+        let totalPendingCandidates: number | undefined;
+        let registered = 0;
+        for (let i = 0; i < parsedList.length; i++) {
+          try {
+            const res = await backend.addPromotionCandidate({ projectId, ...parsedList[i] });
+            registered += 1;
+            totalPendingCandidates = res.totalPendingCandidates;
+            results.push({ index: i, ok: true, candidateId: res.candidateId, updatedAt: res.updatedAt });
+          } catch (err) {
+            const code = classifyMcpError(err);
+            results.push({
+              index: i,
+              ok: false,
+              error: {
+                code,
+                message: err instanceof Error ? err.message : String(err),
+                thinkid: projectId,
+                retryable: RETRYABLE_BY_CODE[code],
+              },
+            });
+            // 競合・編集中は後続も同じ理由で失敗するため、押し切らず打ち切る。
+            if (code === 'VERSION_CONFLICT' || code === 'EDITING_IN_PROGRESS') break;
+          }
+        }
+        const payload = {
+          ok: registered === parsedList.length,
+          status: 'pending_review' as const,
+          projectId,
+          requested: parsedList.length,
+          registered,
+          totalPendingCandidates,
+          results,
+        };
+        return formatToolResult(payload, registered === 0);
+      }
+
       default:
-        return formatToolResult(`未知の MCP ツールです: ${name}`, true);
+        return formatToolError('UNKNOWN_TOOL', `未知の MCP ツールです: ${name}`);
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return formatToolResult(`ツール実行エラー (${name}): ${message}`, true);
+    return formatToolError(
+      classifyMcpError(err),
+      `ツール実行エラー (${name}): ${message}`,
+      pickErrorThinkId(args),
+    );
   }
 }
 
