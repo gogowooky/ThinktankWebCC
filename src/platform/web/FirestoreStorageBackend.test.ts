@@ -77,6 +77,42 @@ it('writes a new Think to the user vault as the canonical Firestore document', a
   expect(commitFields.metadataJson).toBeUndefined();
 });
 
+it('records the saving device id in metadata.savedDeviceId, keeping existing metadata when none is passed', async () => {
+  const commits: Array<Record<string, { mapValue?: { fields?: Record<string, unknown> } }>> = [];
+  const existing = storedDocument();
+  (existing.fields as Record<string, unknown>).metadata = {
+    mapValue: { fields: { linkTarget: { stringValue: 'https://example.com/' }, savedDeviceId: { stringValue: 'pc_OLD_000000' } } },
+  };
+  vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
+    const url = String(input);
+    if (url.endsWith('/thinks/a') && !init?.method) return new Response(JSON.stringify(existing), { status: 200 });
+    if (url.endsWith('/thinks/b') && !init?.method) return new Response('{}', { status: 404 });
+    if (url.endsWith('/documents:commit')) {
+      const body = JSON.parse(String(init?.body || '{}')) as {
+        writes?: Array<{ update?: { fields?: Record<string, { mapValue?: { fields?: Record<string, unknown> } }> } }>;
+      };
+      commits.push(body.writes?.[0]?.update?.fields ?? {});
+      return new Response('{}', { status: 200 });
+    }
+    throw new Error(`unexpected request: ${url}`);
+  }));
+  const backend = new FirestoreStorageBackend();
+
+  const updated = await backend.save({
+    thinkid: 'a', category: 'memo', fullContent: '題名\n本文2', keywords: '', relatedIds: '', savedDeviceId: 'web_0a1b2c3d',
+  });
+  expect(updated.metadata).toEqual({ linkTarget: 'https://example.com/', savedDeviceId: 'web_0a1b2c3d' });
+  expect(commits[0].metadata).toEqual({ mapValue: { fields: {
+    linkTarget: { stringValue: 'https://example.com/' },
+    savedDeviceId: { stringValue: 'web_0a1b2c3d' },
+  } } });
+
+  const created = await backend.save({
+    thinkid: 'b', category: 'memo', fullContent: '新規', keywords: '', relatedIds: '', metadata: { step: 1 }, savedDeviceId: 'pc_PC1_a1b2c3',
+  });
+  expect(created.metadata).toEqual({ step: 1, savedDeviceId: 'pc_PC1_a1b2c3' });
+});
+
 it('reads native metadata maps and legacy JSON metadata without losing nested values', async () => {
   const legacy = storedDocument();
   legacy.fields.metadataJson.stringValue = JSON.stringify({ legacy: { enabled: true } });

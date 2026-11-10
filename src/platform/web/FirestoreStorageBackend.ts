@@ -11,7 +11,7 @@ import type {
   SavePayload,
   ThinkMeta,
 } from '../../services/storage/IStorageBackend';
-import { StorageConflictError } from '../../services/storage/IStorageBackend';
+import { StorageConflictError, withSavedDeviceId } from '../../services/storage/IStorageBackend';
 import { FirebaseAuthService } from './FirebaseAuthService';
 import { firestoreUserDocumentsBaseUrl } from '../../../shared/firebaseAuth';
 import { inferCreatedAtFromThinkId, isSafeThinkId } from '../../../shared/vaultFormat';
@@ -737,7 +737,10 @@ export class FirestoreStorageBackend implements IStorageBackend {
       existing?.meta.createdAt ||
       importedDates?.createdAt ||
       inferCreatedAtFromThinkId(payload.thinkid, updatedAt);
-    const metadata = payload.metadata ?? existing?.meta.metadata ?? {};
+    const metadata = withSavedDeviceId(
+      payload.metadata ?? existing?.meta.metadata ?? {},
+      payload.savedDeviceId,
+    );
     const rawCat = payload.category || existing?.meta.category || 'memo';
     const category = rawCat === 'bundle' ? 'project' : rawCat === 'abstract' ? 'memo' : rawCat;
     const meta: ThinkMeta = {

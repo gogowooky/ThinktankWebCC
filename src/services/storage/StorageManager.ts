@@ -18,6 +18,7 @@ import {
 } from '../../platform/web/FirestoreStorageBackend';
 import { currentStorageMode, type StorageMode } from './storageMode';
 import { copyFirestoreToLocal, copyLocalToFirestore, type VaultMigrationResult } from './vaultMigration';
+import { getDeviceId } from '../../utils/deviceId';
 
 export type { ThinkSnapshotRecord, ThinkDiffResult, VaultMigrationResult };
 
@@ -80,8 +81,10 @@ export class StorageManager {
     return this.backend.getBody(id);
   }
 
-  public save(payload: SavePayload): Promise<ThinkMeta> {
-    return this.backend.save(payload);
+  /** 保存する。保存した端末の id を metadata.savedDeviceId に記録する。 */
+  public async save(payload: SavePayload): Promise<ThinkMeta> {
+    const savedDeviceId = payload.savedDeviceId || (await getDeviceId()) || undefined;
+    return this.backend.save(savedDeviceId ? { ...payload, savedDeviceId } : payload);
   }
 
   public delete(id: string): Promise<void> {

@@ -89,8 +89,33 @@ describe('linkファイルの書式', () => {
     ].join('\n'));
   });
 
+  it('作成時に端末idを # 作成端末 に書く（Affiliation の後、Abstract の前）', () => {
+    const text = serializeLinkFile(createLinkFile({ target: 'https://example.com/', title: 'example.com' }, 'PC1', 'pc_PC1_a1b2c3'));
+    expect(text).toBe([
+      'example.com',
+      '==============================',
+      '# Caption',
+      'example.com',
+      '# Link',
+      'https://example.com/',
+      '# Affiliation',
+      'example.com',
+      '# 作成端末',
+      'pc_PC1_a1b2c3',
+      '# Abstract',
+    ].join('\n'));
+    expect(parseLinkFile(text)?.createdDeviceId).toBe('pc_PC1_a1b2c3');
+  });
+
+  it('# 作成端末 の無い旧ファイルは空として読み、書き直しても項を増やさない', () => {
+    const old = 'T\n=\n# Link\nhttps://a.example/\n# Affiliation\na.example\n# Abstract\nメモ';
+    const file = parseLinkFile(old);
+    expect(file?.createdDeviceId).toBe('');
+    expect(serializeLinkFile(file!)).not.toContain('# 作成端末');
+  });
+
   it('serialize → parse で往復する', () => {
-    const file = { title: '資料', caption: 'File:b.md', link: 'C:\\a\\b.md', affiliation: '(PC1)C:\\a', abstract: '概要1\n概要2' };
+    const file = { title: '資料', caption: 'File:b.md', link: 'C:\\a\\b.md', affiliation: '(PC1)C:\\a', createdDeviceId: 'web_0a1b2c3d', abstract: '概要1\n概要2' };
     const serialized = serializeLinkFile(file);
     expect(serialized).toContain('# Link\n"C:\\a\\b.md"');
     expect(serialized).toContain('# Affiliation\n"(PC1)C:\\a"');
@@ -105,7 +130,7 @@ describe('linkファイルの書式', () => {
 
   it('2行目が空行やCRLFでも読める', () => {
     expect(parseLinkFile('T\r\n\r\n# Link\r\nhttps://a.example/\r\n# Abstract\r\nメモ')).toEqual({
-      title: 'T', caption: '', link: 'https://a.example/', affiliation: '', abstract: 'メモ',
+      title: 'T', caption: '', link: 'https://a.example/', affiliation: '', createdDeviceId: '', abstract: 'メモ',
     });
   });
 
@@ -115,7 +140,7 @@ describe('linkファイルの書式', () => {
       { title: 'Anthropic', url: 'https://www.anthropic.com' },
       { title: 'https://github.com', url: 'https://github.com' },
     ]);
-    expect(parseLinkFile(legacy)).toEqual({ title: 'リンク集', caption: '', link: 'https://www.anthropic.com', affiliation: '', abstract: '' });
+    expect(parseLinkFile(legacy)).toEqual({ title: 'リンク集', caption: '', link: 'https://www.anthropic.com', affiliation: '', createdDeviceId: '', abstract: '' });
   });
 
   it('リンクが無ければ null', () => {
@@ -157,8 +182,8 @@ describe('Caption', () => {
   });
 
   it('Caption の無い旧ファイルはタイトル等から補う', () => {
-    expect(captionOfLinkFile({ title: '資料', caption: '', link: 'https://example.com/', affiliation: 'example.com', abstract: '' })).toBe('資料');
-    expect(captionOfLinkFile({ title: 'b', caption: '', link: 'C:\\a\\b.md', affiliation: '', abstract: '' })).toBe('File:b.md');
+    expect(captionOfLinkFile({ title: '資料', caption: '', link: 'https://example.com/', affiliation: 'example.com', createdDeviceId: '', abstract: '' })).toBe('資料');
+    expect(captionOfLinkFile({ title: 'b', caption: '', link: 'C:\\a\\b.md', affiliation: '', createdDeviceId: '', abstract: '' })).toBe('File:b.md');
   });
 });
 
@@ -197,7 +222,7 @@ describe('参照タグ', () => {
   });
 
   it('パスのlinkファイルはファイルなら file、フォルダなら dir のタグにする', () => {
-    const file = (link: string, caption: string) => ({ title: 't', caption, link, affiliation: '', abstract: '' });
+    const file = (link: string, caption: string) => ({ title: 't', caption, link, affiliation: '', createdDeviceId: '', abstract: '' });
     expect(linkTagOfFile(file('C:\\a\\b.md', 'File:b.md'))).toBe('file');
     expect(linkTagOfFile(file('C:\\a\\pics', 'Folder:pics'))).toBe('dir');
     expect(linkTagOfFile(file('/home/me/docs/', ''))).toBe('dir');

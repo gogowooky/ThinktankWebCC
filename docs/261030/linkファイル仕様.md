@@ -24,6 +24,8 @@ Example Domain
 https://example.com/
 # Affiliation
 example.com
+# 作成端末
+pc_MYPC_a1b2c3
 # Abstract
 リンク先の概要
 ```
@@ -51,6 +53,11 @@ example.com
   `"(PC名)親フォルダ"`（例：`"(MYPC)C:\Users\me\Pictures"`）。
   - PC名は Electron 版ではOSのホスト名。ブラウザ版ではホスト名を知る手段が無いため `unknown`。
   - ブラウザ版のファイルD&Dのようにファイル名しか取れない場合は空にする。
+- `# 作成端末` — linkファイルを作成した端末の id（2026-11-10 追加。`src/utils/deviceId.ts`）。
+  - Electron 版は設定画面の PC連携に表示される Device ID（例 `pc_MYPC_a1b2c3`）。
+  - ブラウザ版はブラウザごとに初回発行して localStorage に保存する `web_<16進8桁>`。
+  - 作成時に書き、その後は変えない。この項の無い旧ファイルは空として読み、書き直しても項を足さない。
+  - 最後に保存した端末は、本文ではなく metadata の `savedDeviceId` に記録される（全種別共通）。
 - `# Abstract` — リンク先の概要。作成時は空。
 - 見出し名の大文字小文字、CRLF は読み取り時に問わない。
 - 読み取り時は旧来の引用符なしpath／Affiliationにも対応する。

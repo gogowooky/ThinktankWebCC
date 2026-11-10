@@ -89,6 +89,21 @@ describe('ローカル運用の配置', () => {
   });
 });
 
+describe('保存した端末の記録', () => {
+  it('savedDeviceId を metadata に記録し、metadata の無い保存でも既存の metadata を残す', () => {
+    engine.saveRecord({ thinkid: ID, category: 'links', fullContent: 'T\n本文', keywords: '', relatedIds: '', metadata: { linkTarget: 'https://example.com/' }, savedDeviceId: 'pc_PC1_a1b2c3' });
+    expect(newEngine().getRecord(ID)?.meta.metadata).toEqual({ linkTarget: 'https://example.com/', savedDeviceId: 'pc_PC1_a1b2c3' });
+
+    engine.saveRecord({ thinkid: ID, category: 'links', fullContent: 'T\n本文2', keywords: '', relatedIds: '', savedDeviceId: 'pc_PC2_d4e5f6' });
+    expect(newEngine().getRecord(ID)?.meta.metadata).toEqual({ linkTarget: 'https://example.com/', savedDeviceId: 'pc_PC2_d4e5f6' });
+  });
+
+  it('savedDeviceId を渡さない保存では metadata を変えない', () => {
+    engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: 'T', keywords: '', relatedIds: '', metadata: { step: 1 } });
+    expect(newEngine().getRecord(ID)?.meta.metadata).toEqual({ step: 1 });
+  });
+});
+
 describe('ファイルを消さない', () => {
   it('同じ Think を何度消しても前の退避を上書きしない', () => {
     engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: '1回目', keywords: '', relatedIds: '' });

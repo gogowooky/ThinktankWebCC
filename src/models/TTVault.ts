@@ -18,6 +18,7 @@ import { isFirebaseSignInRequiredError } from '../platform/web/FirebaseAuthServi
 import { PARENT_PROJECT_ID_KEY, parseProject, projectTargetIds, serializeProject, targetsAllThinks, updateProjectTargets } from '../utils/thinkFormat';
 import { fetchLinkTitle } from '../services/linkTitleService';
 import { createLinkFile, linkTargetKey, parseLinkFile, serializeLinkFile, type LinkSource } from '../utils/linkFormat';
+import { getDeviceId, peekDeviceId } from '../utils/deviceId';
 import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
 import type { TaskSeed } from '../services/taskSeed';
 import { readTaskRelation, type TaskRelation } from '../services/taskRelation';
@@ -702,14 +703,18 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
     // GDrive/GMail は利用者の GAS に名前・件名を問い合わせる（ドラッグ情報のリンク文字より確か）。
     // GAS が未設定・失敗ならドラッグ情報のタイトルを使う
     const pageTitle = await fetchLinkTitle(source.target) ?? source.pageTitle;
-    return { think: await this.CreateLinksThink(pageTitle ? { ...source, pageTitle } : source, pcName, bundleId), created: true };
+    const deviceId = await getDeviceId();
+    return { think: await this.CreateLinksThink(pageTitle ? { ...source, pageTitle } : source, pcName, bundleId, deviceId), created: true };
   }
 
-  /** 重複を確かめずに linkファイルを作成する。通常は GetOrCreateLinksThink を使う */
-  public CreateLinksThink(source: LinkSource, pcName: string = '', bundleId?: string): Promise<TTThink> {
+  /**
+   * 重複を確かめずに linkファイルを作成する。通常は GetOrCreateLinksThink を使う。
+   * deviceId は # 作成端末 に書く端末の id。省略時は取得済みの id（未取得なら空）を使う。
+   */
+  public CreateLinksThink(source: LinkSource, pcName: string = '', bundleId?: string, deviceId: string = peekDeviceId()): Promise<TTThink> {
     return this._createThink({
       contentType: 'links',
-      fullContent: serializeLinkFile(createLinkFile(source, pcName)),
+      fullContent: serializeLinkFile(createLinkFile(source, pcName, deviceId)),
       // 一覧のメタデータだけで重複を判定できるよう、リンク先を控えておく
       metadata: { linkTarget: source.target },
       ...(bundleId ? { bundleId } : {}),

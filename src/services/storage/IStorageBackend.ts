@@ -30,6 +30,25 @@ export interface SavePayload {
    * ）。対応するかどうかはバックエンドごとに異なる。
    */
   baseUpdatedAt?: string;
+  /**
+   * 保存した端末の id。指定すると、保存後の metadata.savedDeviceId をこの値にする
+   * （metadata を渡さなかった場合も、既存の metadata に加えて記録する）。
+   * 画面からの保存では StorageManager.save が自動で付ける。Markdownバックアップからの復元や
+   * 移行のように、元の記録をそのまま残したい保存では付けない。
+   */
+  savedDeviceId?: string;
+}
+
+/** 最後に保存した端末の id を記録する metadata のキー */
+export const SAVED_DEVICE_ID_KEY = 'savedDeviceId';
+
+/** metadata に保存した端末の id を加えた新しいオブジェクトを返す（id が空なら元のまま） */
+export function withSavedDeviceId<T extends Record<string, unknown>>(
+  metadata: T,
+  deviceId: string | undefined,
+): T {
+  const id = deviceId?.trim();
+  return id ? { ...metadata, [SAVED_DEVICE_ID_KEY]: id } : metadata;
 }
 
 /** 楽観ロックの衝突（サーバー側に自分の知らない更新がある）*/

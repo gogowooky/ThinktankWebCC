@@ -5,8 +5,9 @@
  * linkファイルは1件のURL/パスを1ファイルにまとめる。本文の書式:
  *   1行目  タイトル
  *   2行目  空行、または = の連続
- *   3行目〜 # Caption / # Link / # Affiliation / # Abstract の見出し
+ *   3行目〜 # Caption / # Link / # Affiliation / # 作成端末 / # Abstract の見出し
  *   pathは # Link で引用符に包み、# Affiliation は「(PC名)親フォルダ」とする。
+ *   # 作成端末 は作成した端末の id（utils/deviceId.ts）。この項より前に作られたファイルには無い。
  * 旧書式（「* [タイトル](URL)」の箇条書きを並べたリンク集）は読み取りだけ互換を保つ。
  */
 
@@ -105,6 +106,8 @@ export interface LinkFile {
   caption: string;
   link: string;
   affiliation: string;
+  /** 作成した端末の id（# 作成端末）。この項の無い旧ファイルでは空 */
+  createdDeviceId: string;
   abstract: string;
 }
 
@@ -181,9 +184,9 @@ export function linkCaptionOf(source: LinkSource, affiliation: string): string {
   return title || affiliation;
 }
 
-const LINK_SECTIONS = ['Caption', 'Link', 'Affiliation', 'Abstract'] as const;
+const LINK_SECTIONS = ['Caption', 'Link', 'Affiliation', '作成端末', 'Abstract'] as const;
 type LinkSection = typeof LINK_SECTIONS[number];
-const SECTION_HEADING_RE = /^#\s+(Caption|Link|Affiliation|Abstract)\s*$/i;
+const SECTION_HEADING_RE = /^#\s+(Caption|Link|Affiliation|作成端末|Abstract)\s*$/i;
 
 function quoteValue(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
@@ -211,13 +214,15 @@ export function serializeLinkFile(file: LinkFile): string {
     isPath ? quoteValue(file.link) : file.link,
     '# Affiliation',
     ...(file.affiliation ? [isPath ? quoteValue(file.affiliation) : file.affiliation] : []),
+    // 旧ファイルを書き直すときに空の項を増やさないよう、値があるときだけ書く
+    ...(file.createdDeviceId ? ['# 作成端末', file.createdDeviceId] : []),
     '# Abstract',
     ...(file.abstract ? [file.abstract] : []),
   ];
   return lines.join('\n');
 }
 
-export function createLinkFile(source: LinkSource, pcName: string): LinkFile {
+export function createLinkFile(source: LinkSource, pcName: string, deviceId: string = ''): LinkFile {
   const affiliation = linkAffiliationOf(source.target, pcName);
   const tag = linkTagNameOf(source.target);
   // 1行目もリンク先の本当のタイトルが分かればそれを使う（pathはファイル名のまま）
@@ -227,6 +232,7 @@ export function createLinkFile(source: LinkSource, pcName: string): LinkFile {
     caption: linkCaptionOf(source, affiliation),
     link: source.target,
     affiliation,
+    createdDeviceId: deviceId.trim(),
     abstract: '',
   };
 }
@@ -274,7 +280,7 @@ export function formatLinkTagWithCaption(tag: LinkTagName, thinkId: string, capt
 export function parseLinkFile(content: string): LinkFile | null {
   const lines = content.split(/\r?\n/);
   const title = lines[0] ?? '';
-  const sections: Record<LinkSection, string[]> = { Caption: [], Link: [], Affiliation: [], Abstract: [] };
+  const sections: Record<LinkSection, string[]> = { Caption: [], Link: [], Affiliation: [], 作成端末: [], Abstract: [] };
   let current: LinkSection | null = null;
   for (const line of lines.slice(1)) {
     const heading = line.trim().match(SECTION_HEADING_RE);
@@ -292,11 +298,12 @@ export function parseLinkFile(content: string): LinkFile | null {
       caption: sections.Caption.map(l => l.trim()).filter(Boolean).join(' '),
       link,
       affiliation: unquoteValue(sections.Affiliation.join('\n')),
+      createdDeviceId: sections.作成端末.map(l => l.trim()).find(Boolean) ?? '',
       abstract: sections.Abstract.join('\n').trim(),
     };
   }
   const legacy = parseLegacyLinks(content)[0];
-  return legacy ? { title, caption: '', link: legacy.url, affiliation: '', abstract: '' } : null;
+  return legacy ? { title, caption: '', link: legacy.url, affiliation: '', createdDeviceId: '', abstract: '' } : null;
 }
 
 export interface LegacyLinkItem {

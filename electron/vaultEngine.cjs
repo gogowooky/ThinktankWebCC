@@ -907,11 +907,22 @@ class VaultEngine {
     let supText = null;
     let removeSupport = false;
     let support = null;
-    if (payload.metadata !== undefined && payload.metadata !== null) {
+    // 保存した端末の id（画面からの保存で付く）。metadata が無い保存でも既存の metadata に加えて記録する
+    const savedDeviceId =
+      !isBackupSnapshot && typeof payload.savedDeviceId === 'string' ? payload.savedDeviceId.trim() : '';
+    let requestedMetadata = payload.metadata;
+    if (savedDeviceId) {
+      const base =
+        requestedMetadata !== undefined && requestedMetadata !== null
+          ? (typeof requestedMetadata === 'string' ? JSON.parse(requestedMetadata) : requestedMetadata)
+          : (existing ? this.readSupportMetadata(thinkid, existing)?.metadata : null) ?? {};
+      requestedMetadata = { ...base, savedDeviceId };
+    }
+    if (requestedMetadata !== undefined && requestedMetadata !== null) {
       const metaObj =
-        typeof payload.metadata === 'string'
-          ? JSON.parse(payload.metadata)
-          : payload.metadata;
+        typeof requestedMetadata === 'string'
+          ? JSON.parse(requestedMetadata)
+          : requestedMetadata;
       if (shared.hasNonEmptyMetadata(metaObj)) {
         support = { schemaVersion: 1, thinkid, updatedAt, metadata: metaObj };
         supText = shared.serializeSupportFile({
