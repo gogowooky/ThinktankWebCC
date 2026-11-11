@@ -81,7 +81,7 @@ it('records the saving device id in metadata.savedDeviceId, keeping existing met
   const commits: Array<Record<string, { mapValue?: { fields?: Record<string, unknown> } }>> = [];
   const existing = storedDocument();
   (existing.fields as Record<string, unknown>).metadata = {
-    mapValue: { fields: { linkTarget: { stringValue: 'https://example.com/' }, savedDeviceId: { stringValue: 'pc_OLD_000000' } } },
+    mapValue: { fields: { linkTarget: { stringValue: 'https://example.com/' }, savedDeviceId: { stringValue: 'OLDPC' } } },
   };
   vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
     const url = String(input);
@@ -99,18 +99,18 @@ it('records the saving device id in metadata.savedDeviceId, keeping existing met
   const backend = new FirestoreStorageBackend();
 
   const updated = await backend.save({
-    thinkid: 'a', category: 'memo', fullContent: '題名\n本文2', keywords: '', relatedIds: '', savedDeviceId: 'web_0a1b2c3d',
+    thinkid: 'a', category: 'memo', fullContent: '題名\n本文2', keywords: '', relatedIds: '', savedDeviceId: 'web-win-chrome',
   });
-  expect(updated.metadata).toEqual({ linkTarget: 'https://example.com/', savedDeviceId: 'web_0a1b2c3d' });
+  expect(updated.metadata).toEqual({ linkTarget: 'https://example.com/', savedDeviceId: 'web-win-chrome' });
   expect(commits[0].metadata).toEqual({ mapValue: { fields: {
     linkTarget: { stringValue: 'https://example.com/' },
-    savedDeviceId: { stringValue: 'web_0a1b2c3d' },
+    savedDeviceId: { stringValue: 'web-win-chrome' },
   } } });
 
   const created = await backend.save({
-    thinkid: 'b', category: 'memo', fullContent: '新規', keywords: '', relatedIds: '', metadata: { step: 1 }, savedDeviceId: 'pc_PC1_a1b2c3',
+    thinkid: 'b', category: 'memo', fullContent: '新規', keywords: '', relatedIds: '', metadata: { step: 1 }, savedDeviceId: 'PC1',
   });
-  expect(created.metadata).toEqual({ step: 1, savedDeviceId: 'pc_PC1_a1b2c3' });
+  expect(created.metadata).toEqual({ step: 1, savedDeviceId: 'PC1' });
 });
 
 it('reads native metadata maps and legacy JSON metadata without losing nested values', async () => {

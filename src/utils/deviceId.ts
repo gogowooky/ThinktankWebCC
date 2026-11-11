@@ -2,56 +2,90 @@
  * deviceId.ts
  * この端末の id。Thinkファイル保存時の metadata.savedDeviceId と、linkファイルの「# 作成端末」に記録する。
  *
- * - Electron 版: VaultEngine が発行・保存している Device ID（例 `pc_MYPC_a1b2c3`）。
- *   設定画面の PC連携に表示される Device ID と同じ値。
- * - ブラウザ版: 初回に `web_<16進8桁>` を発行して localStorage に保存する。
- *   ブラウザ（プロファイル）ごとに別の id になり、サイトデータを消すと新しい id になる。
+ * - Electron 版: PC名（OSのホスト名。例 `MYPC`）。取れなければ `pc-win` のようにOSで代える。
+ * - ブラウザ版: PC名を知る手段が無いため、OSとブラウザから決める。
+ *   PC は `web-<OS>-<ブラウザ>`（例 `web-win-chrome`、`web-mac-safari`）、
+ *   モバイルは `mobile-<OS>`（例 `mobile-ios`、`mobile-android`）。
+ *   同じ種類の端末（Windows の Chrome 2台など）は同じ id になる。
  */
 
-const WEB_DEVICE_ID_KEY = 'thinktank.web.deviceId';
+import { getPcName } from './pcName';
+
+export interface UserAgentInfo {
+  userAgent: string;
+  /** Chromium 系の navigator.userAgentData.platform（例 "Windows"、"macOS"、"Android"） */
+  platform?: string;
+  /** Chromium 系の navigator.userAgentData.mobile */
+  mobile?: boolean;
+  /** navigator.maxTouchPoints。iPad の Safari は Mac と名乗るため、タッチ対応かで見分ける */
+  maxTouchPoints?: number;
+}
+
+type OsName = 'win' | 'mac' | 'linux' | 'chromeos' | 'ios' | 'ipados' | 'android' | 'other';
+
+const MOBILE_OS: readonly OsName[] = ['ios', 'ipados', 'android'];
+
+function osOf(info: UserAgentInfo): OsName {
+  const ua = info.userAgent;
+  if (/iPhone|iPod/.test(ua)) return 'ios';
+  if (/iPad/.test(ua) || (/Macintosh/.test(ua) && (info.maxTouchPoints ?? 0) > 1)) return 'ipados';
+  if (/Android/.test(ua)) return 'android';
+  switch ((info.platform ?? '').toLowerCase()) {
+    case 'windows': return 'win';
+    case 'macos': return 'mac';
+    case 'linux': return 'linux';
+    case 'chrome os':
+    case 'chromeos': return 'chromeos';
+    case 'android': return 'android';
+    case 'ios': return 'ios';
+  }
+  if (/Windows/.test(ua)) return 'win';
+  if (/Macintosh|Mac OS X/.test(ua)) return 'mac';
+  if (/CrOS/.test(ua)) return 'chromeos';
+  if (/Linux/.test(ua)) return 'linux';
+  return 'other';
+}
+
+/** 判定の順番に意味がある（Edge・Opera の UA には Chrome も、Chrome の UA には Safari も含まれる） */
+function browserOf(userAgent: string): string {
+  if (/Edg(e|A|iOS)?\//.test(userAgent)) return 'edge';
+  if (/OPR\/|Opera/.test(userAgent)) return 'opera';
+  if (/Firefox\/|FxiOS\//.test(userAgent)) return 'firefox';
+  if (/Chrome\/|CriOS\//.test(userAgent)) return 'chrome';
+  if (/Safari\//.test(userAgent)) return 'safari';
+  return 'other';
+}
+
+/** OS とブラウザから端末の id を作る（PC名が分からないとき用） */
+export function deviceIdFromUserAgent(info: UserAgentInfo): string {
+  const os = osOf(info);
+  if (info.mobile || MOBILE_OS.includes(os)) return `mobile-${os}`;
+  return `web-${os}-${browserOf(info.userAgent)}`;
+}
+
+function currentUserAgentInfo(): UserAgentInfo {
+  if (typeof navigator === 'undefined') return { userAgent: '' };
+  const uaData = (navigator as Navigator & { userAgentData?: { platform?: string; mobile?: boolean } }).userAgentData;
+  return {
+    userAgent: navigator.userAgent ?? '',
+    ...(uaData?.platform ? { platform: uaData.platform } : {}),
+    ...(typeof uaData?.mobile === 'boolean' ? { mobile: uaData.mobile } : {}),
+    maxTouchPoints: navigator.maxTouchPoints ?? 0,
+  };
+}
 
 let cached: Promise<string> | null = null;
 let resolved = '';
 
-function randomHex(bytes: number): string {
-  const buf = new Uint8Array(bytes);
-  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
-    crypto.getRandomValues(buf);
-  } else {
-    for (let i = 0; i < bytes; i++) buf[i] = Math.floor(Math.random() * 256);
-  }
-  return Array.from(buf, b => b.toString(16).padStart(2, '0')).join('');
-}
-
-/** localStorage が使えない環境（プライベートブラウズ等）では、この起動中だけの id になる */
-function webDeviceId(): string {
-  try {
-    const saved = localStorage.getItem(WEB_DEVICE_ID_KEY)?.trim();
-    if (saved) return saved;
-  } catch {
-    // 読めなければ新しく発行する
-  }
-  const id = `web_${randomHex(4)}`;
-  try {
-    localStorage.setItem(WEB_DEVICE_ID_KEY, id);
-  } catch {
-    // 保存できなくても今回の起動中は同じ id を使う
-  }
-  return id;
-}
-
 async function resolveDeviceId(): Promise<string> {
   if (typeof window === 'undefined') return '';
-  const getConfig = window.electronAPI?.vault?.getConfig;
-  if (getConfig) {
-    try {
-      const id = (await getConfig())?.deviceId?.trim();
-      if (id) return id;
-    } catch {
-      // Electron 側から取れなければブラウザ版と同じ方法で発行する
-    }
+  if (window.electronAPI) {
+    const pcName = (await getPcName().catch(() => '')).trim();
+    if (pcName) return pcName;
+    // PC名が取れなければ OS だけでも残す（例 pc-win）
+    return deviceIdFromUserAgent(currentUserAgentInfo()).replace(/^web-([^-]+)-.*$/, 'pc-$1');
   }
-  return webDeviceId();
+  return deviceIdFromUserAgent(currentUserAgentInfo());
 }
 
 /** この端末の id。取得できない環境（テスト等で window が無い）では空文字 */

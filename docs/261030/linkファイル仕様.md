@@ -25,7 +25,7 @@ https://example.com/
 # Affiliation
 example.com
 # 作成端末
-pc_MYPC_a1b2c3
+MYPC
 # Abstract
 リンク先の概要
 ```
@@ -54,8 +54,16 @@ pc_MYPC_a1b2c3
   - PC名は Electron 版ではOSのホスト名。ブラウザ版ではホスト名を知る手段が無いため `unknown`。
   - ブラウザ版のファイルD&Dのようにファイル名しか取れない場合は空にする。
 - `# 作成端末` — linkファイルを作成した端末の id（2026-11-10 追加。`src/utils/deviceId.ts`）。
-  - Electron 版は設定画面の PC連携に表示される Device ID（例 `pc_MYPC_a1b2c3`）。
-  - ブラウザ版はブラウザごとに初回発行して localStorage に保存する `web_<16進8桁>`。
+  | 環境 | 値 | 例 |
+  |---|---|---|
+  | Electron 版 | PC名（OSのホスト名）。取れなければ `pc-<OS>` | `MYPC` |
+  | ブラウザ版（PC） | `web-<OS>-<ブラウザ>` | `web-win-chrome`、`web-mac-safari` |
+  | ブラウザ版（モバイル） | `mobile-<OS>` | `mobile-ios`、`mobile-android`、`mobile-ipados` |
+  - OS は `win` / `mac` / `linux` / `chromeos` / `ios` / `ipados` / `android`、ブラウザは
+    `chrome` / `edge` / `firefox` / `safari` / `opera`。判別できなければ `other`。
+  - ブラウザ版はPC名を知る手段が無いため、OSとブラウザから決める（`navigator.userAgentData`・User-Agent）。
+    Mac と名乗る iPad の Safari はタッチ対応かどうかで見分ける。
+  - 同じ種類の端末（Windows の Chrome 2台など）は同じ値になり、区別できない。
   - 作成時に書き、その後は変えない。この項の無い旧ファイルは空として読み、書き直しても項を足さない。
   - 最後に保存した端末は、本文ではなく metadata の `savedDeviceId` に記録される（全種別共通）。
 - `# Abstract` — リンク先の概要。作成時は空。

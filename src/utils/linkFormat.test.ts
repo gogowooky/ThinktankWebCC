@@ -90,7 +90,7 @@ describe('linkファイルの書式', () => {
   });
 
   it('作成時に端末idを # 作成端末 に書く（Affiliation の後、Abstract の前）', () => {
-    const text = serializeLinkFile(createLinkFile({ target: 'https://example.com/', title: 'example.com' }, 'PC1', 'pc_PC1_a1b2c3'));
+    const text = serializeLinkFile(createLinkFile({ target: 'https://example.com/', title: 'example.com' }, 'PC1', 'PC1'));
     expect(text).toBe([
       'example.com',
       '==============================',
@@ -101,10 +101,10 @@ describe('linkファイルの書式', () => {
       '# Affiliation',
       'example.com',
       '# 作成端末',
-      'pc_PC1_a1b2c3',
+      'PC1',
       '# Abstract',
     ].join('\n'));
-    expect(parseLinkFile(text)?.createdDeviceId).toBe('pc_PC1_a1b2c3');
+    expect(parseLinkFile(text)?.createdDeviceId).toBe('PC1');
   });
 
   it('# 作成端末 の無い旧ファイルは空として読み、書き直しても項を増やさない', () => {
@@ -115,7 +115,7 @@ describe('linkファイルの書式', () => {
   });
 
   it('serialize → parse で往復する', () => {
-    const file = { title: '資料', caption: 'File:b.md', link: 'C:\\a\\b.md', affiliation: '(PC1)C:\\a', createdDeviceId: 'web_0a1b2c3d', abstract: '概要1\n概要2' };
+    const file = { title: '資料', caption: 'File:b.md', link: 'C:\\a\\b.md', affiliation: '(PC1)C:\\a', createdDeviceId: 'web-win-chrome', abstract: '概要1\n概要2' };
     const serialized = serializeLinkFile(file);
     expect(serialized).toContain('# Link\n"C:\\a\\b.md"');
     expect(serialized).toContain('# Affiliation\n"(PC1)C:\\a"');
