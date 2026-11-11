@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.6.18 feat: Think保存時の端末id記録とlinkファイルの「# 作成端末」、きなこ連携MCP、ローカル退避名の重複修正
+
+- 日付: 2026-11-11
+- コミット番号: 424af61
+
+v2.6.17 以降の変更（058e92d〜424af61）をまとめて記録する。きなこ連携の MCP インターフェイスを追加：Streamable な POST /mcp の HTTP サーバー（Bearer トークン・PC紐づけ、localhost/Tailscale のみで待ち受け、既定OFF、ローカル運用モードでは起動しない）、設定画面「MCP HTTPサーバー」（ON/OFF・待受表示・トークン発行/再発行/失効）、Firestore 中継の mcp.toolCall / kinako.request（冪等・宛先PC照合）、構造化エラー・truncated・候補一括登録ツール（8ツール目）・projectIds、docs/kinako-relay-client.md と scripts/mcp-http-smoke.mjs。Think 保存時に端末idを metadata.savedDeviceId に記録するようにした（StorageManager.save で付け、Firestore 正本とローカル運用モードの両方に反映。metadata の無い保存でも既存の metadata を残す。Markdownバックアップ復元・移行では付けない）。端末idは Electron 版は PC名、Web 版はPC名が取れないため web-win-chrome / web-mac-safari / mobile-ios のように OS とブラウザから決める（src/utils/deviceId.ts）。linkファイルに「# 作成端末」項（Affiliation と Abstract の間）を追加し、作成時に端末idを書く（項の無い旧ファイルは書き直しても足さない）。ローカル運用モードで同じ Think を同じミリ秒に続けて削除・退避すると trash/ の退避名が重なって前の退避が上書きされる不具合を、日時を 1 ミリ秒ずつ進めて空いている名前を使うことで修正（名前の形式は不変。時々失敗していたテストの原因）。git-update スキルを SKILL.md に改名して大文字小文字を区別する環境でも使えるようにし、.agent 側の古い別版を削除。claude.md の BigQuery 廃止の記述を実態に合わせ、linkファイル仕様を更新。型検査成功、テスト 906件成功。実機の Electron・各ブラウザでの端末id表示は未確認。変更: 33ファイル（+3263 / -158行）。
+
 ### v2.6.17 feat: FocusedPaneメニュー（Shift+F10）・Paneの参照タグコピー・同種ファイルの新規作成
 
 - 日付: 2026-11-08

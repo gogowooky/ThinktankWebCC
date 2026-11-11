@@ -1,15 +1,15 @@
 {
   "appName": "Thinktank",
-  "version": "2.6.17",
+  "version": "2.6.18",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "branchName": "TTWebCC261103LocalMode",
-  "commitPC": "E15",
-  "commitId": "5203ad4",
-  "commitDateTime": "2026-11-08-230217",
-  "commitMessage": "feat: FocusedPaneメニュー（Shift+F10）・Paneの参照タグコピー・同種ファイルの新規作成"
+  "branchName": "claude/determined-fermi-ba3hz0",
+  "commitPC": "vm",
+  "commitId": "424af61",
+  "commitDateTime": "2026-11-11-192537",
+  "commitMessage": "feat: Think保存時の端末id記録とlinkファイルの「# 作成端末」、きなこ連携MCP、ローカル退避名の重複修正"
 }
