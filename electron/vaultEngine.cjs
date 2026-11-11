@@ -25,8 +25,8 @@ function hostnameToken() {
 }
 
 /** trash/ の退避名に使う日時。同期フォルダ上でも並び順が分かり、ファイル名に使えない文字を含まない。 */
-function fileTimestamp() {
-  return new Date().toISOString().replace(/[:.]/g, '-');
+function fileTimestamp(ms = Date.now()) {
+  return new Date(ms).toISOString().replace(/[:.]/g, '-');
 }
 
 /** thinkid には '.' が入らないので、退避名 <thinkid>.<理由>-<日時>.md の先頭が thinkid になる。 */
@@ -435,9 +435,17 @@ class VaultEngine {
   /**
    * ローカル運用では、消す・上書きされる版を trash/ へ日時付きで退避する。
    * 同じ Think を何度消しても前の退避を上書きしない（同期フォルダ上でのファイル消失対策）。
+   * 同じミリ秒に続けて退避すると名前が重なるため、既にあれば日時を 1 ミリ秒ずつ進めて空いている名前にする。
+   * .md と .support.json は同じ日時でそろえる（exts の全部が空いている日時を選ぶ）。
+   * @returns {string[]} exts と同じ順の退避先パス
    */
-  _trashPath(thinkid, reason, ext) {
-    return path.join(this.getTrashDir(), `${thinkid}.${reason}-${fileTimestamp()}${ext}`);
+  _trashPaths(thinkid, reason, exts) {
+    const dir = this.getTrashDir();
+    for (let ms = Date.now(); ; ms++) {
+      const stamp = fileTimestamp(ms);
+      const paths = exts.map(ext => path.join(dir, `${thinkid}.${reason}-${stamp}${ext}`));
+      if (!paths.some(p => fs.existsSync(p))) return paths;
+    }
   }
 
   /** 現在の .md / .support.json を消さずに trash/ へ写す（移行で上書きされる側を残す）。 */
@@ -445,9 +453,10 @@ class VaultEngine {
     const mdPath = this._mdPath(thinkid);
     if (!fs.existsSync(mdPath)) return false;
     fs.mkdirSync(this.getTrashDir(), { recursive: true });
-    fs.copyFileSync(mdPath, this._trashPath(thinkid, reason, '.md'));
+    const [mdDest, supDest] = this._trashPaths(thinkid, reason, ['.md', '.support.json']);
+    fs.copyFileSync(mdPath, mdDest);
     const supPath = this._supportPath(thinkid);
-    if (fs.existsSync(supPath)) fs.copyFileSync(supPath, this._trashPath(thinkid, reason, '.support.json'));
+    if (fs.existsSync(supPath)) fs.copyFileSync(supPath, supDest);
     return true;
   }
 
@@ -466,10 +475,11 @@ class VaultEngine {
       updatedAt: meta.updatedAt,
       body: record.body ?? '',
     });
-    this._atomicWrite(this._trashPath(thinkid, reason, '.md'), mdText);
+    const [mdDest, supDest] = this._trashPaths(thinkid, reason, ['.md', '.support.json']);
+    this._atomicWrite(mdDest, mdText);
     if (shared.hasNonEmptyMetadata(meta.metadata)) {
       this._atomicWrite(
-        this._trashPath(thinkid, reason, '.support.json'),
+        supDest,
         shared.serializeSupportFile({ thinkid, updatedAt: meta.updatedAt, metadata: meta.metadata }),
       );
     }
@@ -1032,8 +1042,9 @@ class VaultEngine {
     fs.mkdirSync(trashDir, { recursive: true });
 
     if (this.localVaultRoot) {
-      if (fs.existsSync(mdPath)) fs.renameSync(mdPath, this._trashPath(thinkid, 'deleted', '.md'));
-      if (fs.existsSync(supPath)) fs.renameSync(supPath, this._trashPath(thinkid, 'deleted', '.support.json'));
+      const [mdDest, supDest] = this._trashPaths(thinkid, 'deleted', ['.md', '.support.json']);
+      if (fs.existsSync(mdPath)) fs.renameSync(mdPath, mdDest);
+      if (fs.existsSync(supPath)) fs.renameSync(supPath, supDest);
       this._recordOverlayDelete(thinkid);
       return { thinkid, deletedAt: new Date().toISOString() };
     }
@@ -1293,7 +1304,7 @@ class VaultEngine {
     const filePath = this._snapshotPath(thinkid);
     if (!fs.existsSync(filePath)) return;
     fs.mkdirSync(this.getTrashDir(), { recursive: true });
-    fs.renameSync(filePath, this._trashPath(thinkid, 'snapshot', '.json'));
+    fs.renameSync(filePath, this._trashPaths(thinkid, 'snapshot', ['.json'])[0]);
   }
 
   /**

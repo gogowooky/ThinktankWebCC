@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -114,6 +114,30 @@ describe('ファイルを消さない', () => {
     expect(trashed).toHaveLength(2);
     expect(trashed.every(f => f.startsWith(`${ID}.deleted-`))).toBe(true);
     expect(engine.listMeta()).toEqual([]);
+  });
+
+  it('同じミリ秒に続けて消しても、日時を進めて別名で残す（名前の形式は変えない）', () => {
+    const now = Date.parse('2026-11-11T01:23:45.678Z');
+    const spy = vi.spyOn(Date, 'now').mockReturnValue(now);
+    try {
+      for (const text of ['1回目', '2回目', '3回目']) {
+        engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: text, keywords: '', relatedIds: '', metadata: { step: text } });
+        engine.deleteRecord(ID);
+      }
+    } finally {
+      spy.mockRestore();
+    }
+    const trashed = fs.readdirSync(engine.getTrashDir()).sort();
+    expect(trashed).toEqual([
+      `${ID}.deleted-2026-11-11T01-23-45-678Z.md`,
+      `${ID}.deleted-2026-11-11T01-23-45-678Z.support.json`,
+      `${ID}.deleted-2026-11-11T01-23-45-679Z.md`,
+      `${ID}.deleted-2026-11-11T01-23-45-679Z.support.json`,
+      `${ID}.deleted-2026-11-11T01-23-45-680Z.md`,
+      `${ID}.deleted-2026-11-11T01-23-45-680Z.support.json`,
+    ]);
+    const bodies = trashed.filter(f => f.endsWith('.md')).map(f => fs.readFileSync(join(engine.getTrashDir(), f), 'utf8'));
+    expect(bodies.map(b => ['1回目', '2回目', '3回目'].find(t => b.includes(t)))).toEqual(['1回目', '2回目', '3回目']);
   });
 
   it('移行では手元より新しい版だけを書き、上書きされる版を trash/ に残す', () => {
