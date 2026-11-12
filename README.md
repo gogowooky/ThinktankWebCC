@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.7.2 feat: きなこ連携トークン中継（専用アカウントのIDトークンをDrive経由で受け渡し）・Firestoreルールのきなこ例外
+
+- 日付: 2026-11-12
+- コミット番号: 5170b5f
+
+外部 AI エージェント（きなこ）が専用 Firebase ユーザーとして Firestore に接続するための認証基盤を追加した。PC版がきなこ専用アカウントでサインインし（legacy v3 の verifyPassword。パスワードは保存せず、残すのはリフレッシュトークンだけ）、有効期限1時間の ID トークンを Google Drive の `Thinktank/kinako-relay/token-<deviceId>.json` へ一時ファイル＋リネームで書き出す。書き出しは Firestore モードかつ PC連携 ON の間だけで、60秒ごとに期限を確認して更新し、PC連携 OFF・切断でファイルを削除する。設定に「きなこ連携（認証）」（接続・切断・有効期限表示）を追加。firestore.rules は、きなこ専用 uid に所有者ツリー配下の relayRequests（chunks 含む）と thinks（snapshots 含む）だけを許可する例外を追加し、Rules test API で325件の評価を確認のうえデプロイ済み。あわせて Shift+LEFT1 で FocusedPane メニューを開く既定ショートカットを追加。型検査成功、全テスト910件成功（Electron を起動しての接続・Drive 書き出しの手動確認は未実施）。
+
 ### v2.6.17 feat: FocusedPaneメニュー（Shift+F10）・Paneの参照タグコピー・同種ファイルの新規作成
 
 - 日付: 2026-11-08
