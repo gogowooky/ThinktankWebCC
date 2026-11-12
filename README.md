@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-12
 - コミット番号: 5170b5f
+- デプロイ日: 2026-11-12（JST）
+- デプロイ対象コミット: 05b9024（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。
 
 外部 AI エージェント（きなこ）が専用 Firebase ユーザーとして Firestore に接続するための認証基盤を追加した。PC版がきなこ専用アカウントでサインインし（legacy v3 の verifyPassword。パスワードは保存せず、残すのはリフレッシュトークンだけ）、有効期限1時間の ID トークンを Google Drive の `Thinktank/kinako-relay/token-<deviceId>.json` へ一時ファイル＋リネームで書き出す。書き出しは Firestore モードかつ PC連携 ON の間だけで、60秒ごとに期限を確認して更新し、PC連携 OFF・切断でファイルを削除する。設定に「きなこ連携（認証）」（接続・切断・有効期限表示）を追加。firestore.rules は、きなこ専用 uid に所有者ツリー配下の relayRequests（chunks 含む）と thinks（snapshots 含む）だけを許可する例外を追加し、Rules test API で325件の評価を確認のうえデプロイ済み。あわせて Shift+LEFT1 で FocusedPane メニューを開く既定ショートカットを追加。型検査成功、全テスト910件成功（Electron を起動しての接続・Drive 書き出しの手動確認は未実施）。
 
