@@ -12,6 +12,7 @@ const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
 const { RecordingMcpHost } = require('./mcpBridge.cjs');
+const kinakoRelay = require('./kinakoTokenRelay.cjs');
 
 const HEARTBEAT_INTERVAL_MS = 60_000;
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60_000;
@@ -44,7 +45,15 @@ async function loadFirebaseSdk() {
 }
 
 class RelayAgent {
-  constructor({ userDataDir, vaultEngine, aiCliRunner, firebaseApiKey, firestoreSdkLoader }) {
+  constructor({
+    userDataDir,
+    vaultEngine,
+    aiCliRunner,
+    firebaseApiKey,
+    firestoreSdkLoader,
+    isLocalMode = false,
+    getKinakoRelayDir,
+  }) {
     this.userDataDir = userDataDir;
     this.vaultEngine = vaultEngine;
     this.aiCliRunner = aiCliRunner;
@@ -77,6 +86,17 @@ class RelayAgent {
     this._kinakoResults = null;
     this._kinakoInFlight = new Map();
     this.mcpHost = null;
+    // きなこ専用アカウントのセッション。所有者の authSession とは混ぜない
+    this.isLocalMode = Boolean(isLocalMode);
+    // Drive のマウントは起動より遅れることがあるので、書くたびに解決する
+    this._getKinakoRelayDir = typeof getKinakoRelayDir === 'function' ? getKinakoRelayDir : () => '';
+    /** @type {{ uid: string, email: string, idToken: string, refreshToken: string, expiresAtMs: number } | null} */
+    this.kinakoSession = null;
+    this._kinakoIssuedAtMs = 0;
+    this._kinakoWrittenToken = '';
+    this._kinakoSyncing = null;
+    this._kinakoTimer = null;
+    this._kinakoProblem = '';
   }
 
   /** mcp.toolCall / kinako.request の実行先。ホストはメインプロセスが作るため後から受け取る。 */
@@ -263,6 +283,8 @@ class RelayAgent {
       firebaseUid: '',
       firebaseEmail: '',
       firebaseRefreshToken: '',
+      kinakoEmail: kinakoRelay.KINAKO_EMAIL,
+      kinakoRefreshToken: '',
       lastHeartbeatAt: new Date().toISOString(),
       processedCount: 0,
     };
@@ -287,10 +309,12 @@ class RelayAgent {
     if (this.config.enabled) {
       this._startHeartbeat();
     }
+    void this._updateKinakoRelay();
   }
 
   stop() {
     this._stopHeartbeat();
+    this._stopKinakoTimer();
   }
 
   saveConfig(partial) {
@@ -301,6 +325,7 @@ class RelayAgent {
     } else {
       this._stopHeartbeat();
     }
+    void this._updateKinakoRelay();
     return this.getStatus();
   }
 
@@ -421,6 +446,176 @@ class RelayAgent {
         });
     }
     return this._authRefreshing;
+  }
+
+  // ── きなこ連携（認証トークンの中継） ──────────────────────────────────────
+
+  /**
+   * きなこ専用アカウントでサインインし、リフレッシュトークンだけを保存する。
+   * パスワードは保存もログ出力もしない（きなこ側にも渡さない）。
+   */
+  async setKinakoPassword(password) {
+    if (this.isLocalMode) {
+      throw new Error('ローカル運用モードでは きなこ連携（認証）を使えません。');
+    }
+    if (typeof password !== 'string' || !password) {
+      throw new Error('パスワードを入力してください。');
+    }
+    if (!this.firebaseApiKey) {
+      throw new Error('VITE_FIREBASE_API_KEY が設定されていません。');
+    }
+    const session = await shared.signInWithEmailPassword(
+      this.firebaseApiKey,
+      kinakoRelay.KINAKO_EMAIL,
+      password,
+    );
+    this.kinakoSession = session;
+    this._kinakoIssuedAtMs = Date.now();
+    this.config.kinakoEmail = kinakoRelay.KINAKO_EMAIL;
+    this.config.kinakoRefreshToken = session.refreshToken;
+    // saveConfig は所有者側の待ち受けを張り直すので使わない
+    this._persistConfig();
+    await this._updateKinakoRelay();
+    return this.getKinakoAuthStatus();
+  }
+
+  /** 画面表示用。トークン文字列そのものは返さない。 */
+  getKinakoAuthStatus() {
+    const connected = !this.isLocalMode && Boolean(this.config.kinakoRefreshToken);
+    return {
+      connected,
+      email: this.config.kinakoEmail || kinakoRelay.KINAKO_EMAIL,
+      tokenExpiresAt:
+        connected && this.kinakoSession ? new Date(this.kinakoSession.expiresAtMs).toISOString() : '',
+      localMode: this.isLocalMode,
+      relayEnabled: Boolean(this.config.enabled),
+      tokenFileWritten: Boolean(this._kinakoWrittenToken),
+      problem: this._kinakoProblem,
+    };
+  }
+
+  async signOutKinako() {
+    this.kinakoSession = null;
+    this._kinakoIssuedAtMs = 0;
+    this._kinakoProblem = '';
+    this.config.kinakoRefreshToken = '';
+    this._persistConfig();
+    await this._updateKinakoRelay();
+    return this.getKinakoAuthStatus();
+  }
+
+  _isKinakoRelayActive() {
+    return (
+      !this.isLocalMode &&
+      Boolean(this.config.enabled && this.config.kinakoRefreshToken && this.firebaseApiKey)
+    );
+  }
+
+  _kinakoTokenFilePath() {
+    const dir = this._getKinakoRelayDir();
+    return dir ? kinakoRelay.tokenFilePath(dir, this.config.deviceId) : '';
+  }
+
+  _removeKinakoTokenFile() {
+    this._kinakoWrittenToken = '';
+    const filePath = this._kinakoTokenFilePath();
+    if (!filePath) return;
+    try {
+      kinakoRelay.removeTokenFile(filePath);
+    } catch (err) {
+      console.warn(`[RelayAgent] きなこ用トークンファイルを削除できません: ${err.message || err}`);
+    }
+  }
+
+  _stopKinakoTimer() {
+    if (this._kinakoTimer) {
+      clearInterval(this._kinakoTimer);
+      this._kinakoTimer = null;
+    }
+  }
+
+  /**
+   * PC連携が ON で きなこ接続済みの間だけ、ハートビートと同じ間隔でトークンファイルを保つ。
+   * 所有者が未ログインでも動くよう、所有者側のハートビートとは別のタイマーにしている。
+   */
+  _updateKinakoRelay() {
+    this._stopKinakoTimer();
+    if (this._isKinakoRelayActive()) {
+      this._kinakoTimer = setInterval(() => {
+        void this._syncKinakoTokenFile();
+      }, HEARTBEAT_INTERVAL_MS);
+    }
+    return this._syncKinakoTokenFile();
+  }
+
+  _syncKinakoTokenFile() {
+    if (!this._kinakoSyncing) {
+      this._kinakoSyncing = this._syncKinakoTokenFileOnce().finally(() => {
+        this._kinakoSyncing = null;
+      });
+    }
+    return this._kinakoSyncing;
+  }
+
+  async _syncKinakoTokenFileOnce() {
+    if (!this._isKinakoRelayActive()) {
+      this._removeKinakoTokenFile();
+      return;
+    }
+    const refreshToken = this.config.kinakoRefreshToken;
+    try {
+      if (!this.kinakoSession || shared.needsFirebaseTokenRefresh(this.kinakoSession)) {
+        const session = await shared.refreshFirebaseIdToken(
+          this.firebaseApiKey,
+          refreshToken,
+          this.config.kinakoEmail || kinakoRelay.KINAKO_EMAIL,
+        );
+        // 更新を待つ間に切断・OFF されていたら、消したトークンを書き戻さない
+        if (this.config.kinakoRefreshToken !== refreshToken || !this._isKinakoRelayActive()) {
+          this._removeKinakoTokenFile();
+          return;
+        }
+        this.kinakoSession = session;
+        this._kinakoIssuedAtMs = Date.now();
+        if (session.refreshToken !== refreshToken) {
+          this.config.kinakoRefreshToken = session.refreshToken;
+          this._persistConfig();
+        }
+      }
+      const filePath = this._kinakoTokenFilePath();
+      if (!filePath) {
+        this._reportKinakoProblem(
+          'Google Drive の Thinktank フォルダが見つからないため、トークンファイルを書き出せません。',
+        );
+        return;
+      }
+      const session = this.kinakoSession;
+      if (this._kinakoWrittenToken !== session.idToken || !fs.existsSync(filePath)) {
+        kinakoRelay.writeTokenFileAtomic(
+          filePath,
+          kinakoRelay.buildTokenFileContent({
+            deviceId: this.config.deviceId,
+            idToken: session.idToken,
+            expiresAtMs: session.expiresAtMs,
+            issuedAtMs: this._kinakoIssuedAtMs,
+          }),
+        );
+        this._kinakoWrittenToken = session.idToken;
+      }
+      this._reportKinakoProblem('');
+    } catch (err) {
+      // 期限切れのトークンは きなこ側で使えないので、残さない
+      if (!this.kinakoSession || Date.now() >= this.kinakoSession.expiresAtMs) {
+        this._removeKinakoTokenFile();
+      }
+      this._reportKinakoProblem(`きなこ用トークンを更新できません: ${err.message || err}`);
+    }
+  }
+
+  _reportKinakoProblem(message) {
+    if (message === this._kinakoProblem) return;
+    this._kinakoProblem = message;
+    if (message) console.warn(`[RelayAgent] ${message}`);
   }
 
   _persistConfig() {

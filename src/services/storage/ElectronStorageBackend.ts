@@ -53,6 +53,19 @@ export interface ElectronRelayStatus {
   isProcessing?: boolean;
 }
 
+/** きなこ専用アカウントの接続状態（トークン文字列は含まない） */
+export interface ElectronKinakoAuthStatus {
+  connected: boolean;
+  email: string;
+  /** ID トークンの有効期限（ISO 8601）。まだ取得していなければ空 */
+  tokenExpiresAt: string;
+  localMode: boolean;
+  /** PC連携モードが ON か。OFF の間はトークンファイルを書かない */
+  relayEnabled: boolean;
+  tokenFileWritten: boolean;
+  problem: string;
+}
+
 export interface ElectronMcpHttpAddress {
   address: string;
   kind: 'loopback' | 'tailscale';
@@ -210,6 +223,9 @@ declare global {
         rotateSecret:    () => Promise<ElectronRelayStatus>;
         setFirebaseSession?: (session: { refreshToken: string; email: string; apiKey: string }) => Promise<ElectronRelayStatus>;
         signOutFirebase?: () => Promise<ElectronRelayStatus>;
+        setKinakoPassword?: (password: string) => Promise<ElectronKinakoAuthStatus>;
+        getKinakoAuthStatus?: () => Promise<ElectronKinakoAuthStatus>;
+        signOutKinako?: () => Promise<ElectronKinakoAuthStatus>;
         signInWithGoogle?: (options: { apiKey: string; firebaseProjectId: string }) => Promise<ElectronRelayStatus>;
         handleEncrypted: (payload: { encryptedRequest: string; chunks?: FirestoreRelayChunkDoc[] }) => Promise<{ encryptedResponse: string; responseChunks: FirestoreRelayChunkDoc[] }>;
       };

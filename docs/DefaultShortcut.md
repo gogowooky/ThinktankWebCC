@@ -34,6 +34,7 @@ Working*    ,       ,Alt+PageUp         ,WorkingPanel.FocusedPane.PaneNumber:Pre
 Working*    ,       ,Shift+Alt+PageUp   ,WorkingPanel.FocusedPane.PaneNumber:First      ,最初のペインへ移動
 Working*    ,       ,Shift+Alt+PageDown ,WorkingPanel.FocusedPane.PaneNumber:Last       ,最後のペインへ移動
 Working*    ,       ,Shift+F10          ,WorkingPanel.FocusedPane.ShowMenu              ,フォーカスPaneのメニューを表示
+Working*    ,       ,Shift+LEFT1        ,WorkingPanel.FocusedPane.ShowMenu              ,フォーカスPaneのメニューを表示
 Working*    ,ExApp  ,M                  ,WorkingPanel.FocusedPane.Mode:Prev             ,ペインモード左
 Working*    ,ExApp  ,Shift+M            ,WorkingPanel.FocusedPane.Mode:Next             ,ペインモード右
 
@@ -82,8 +83,8 @@ Seeds.Filter     ,ExApp  ,Alt+K          ,SeedsPanel.Filter.Cursor:ToggleCheck  
 # Editor ActionTag
 *TextEditor ,       ,Alt+Enter              ,TextEditor.CurrentEditor.DoOnCaretPos                  ,URL・パス・タグは1stAction →選択テキストをタグ化
 *TextEditor ,       ,Shift+Alt+Enter        ,TextEditor.CurrentEditor.DoOnCursorPos:Menu            ,URL・パス・タグのMenuAction
-*TextEditor ,       ,Right1                 ,TextEditor.CurrentEditor.DoOnCursorPos                 ,URL・パス・タグの起動
-*TextEditor ,       ,Left2                  ,TextEditor.CurrentEditor.DoOnCursorPos:Menu            ,URL・パス・タグのメニュー表示
+*TextEditor ,       ,RIGHT1                 ,TextEditor.CurrentEditor.DoOnCursorPos                 ,URL・パス・タグの起動
+*TextEditor ,       ,LEFT2                  ,TextEditor.CurrentEditor.DoOnCursorPos:Menu            ,URL・パス・タグのメニュー表示
 
 # Editor/ToolBar SearchMode 外部検索関連
 *TextEditor ,       ,Alt+F                  ,ToolBar.SearchMode.Text:SetAndFocus                    ,選択テキストをキーワード検索入力欄に設定してフォーカスする

@@ -9,6 +9,7 @@ const { validateShortcutPath } = require('./shortcutPath.cjs');
 const { VaultEngine } = require('./vaultEngine.cjs');
 const aiCliRunner = require('./aiCliRunner.cjs');
 const { RelayAgent } = require('./relayAgent.cjs');
+const { resolveKinakoRelayDir } = require('./kinakoTokenRelay.cjs');
 const { McpHttpServer } = require('./mcpHttpServer.cjs');
 const { ThinktankMcpHost } = require('./mcpBridge.cjs');
 const { loadDesktopClient, signInWithGoogleLoopback } = require('./googleLoopbackAuth.cjs');
@@ -132,6 +133,8 @@ const relayAgent = new RelayAgent({
   userDataDir: app.getPath('userData'),
   vaultEngine,
   aiCliRunner,
+  isLocalMode,
+  getKinakoRelayDir: () => resolveKinakoRelayDir(),
 });
 
 const mcpHost = new ThinktankMcpHost({
@@ -457,6 +460,19 @@ ipcMain.handle('relay:setFirebaseSession', async (_event, session) => {
 
 ipcMain.handle('relay:signOutFirebase', () => {
   return relayAgent.signOutFirebase();
+});
+
+// きなこ専用アカウントのパスワードはここで使い切る（保存するのはリフレッシュトークンだけ）
+ipcMain.handle('relay:setKinakoPassword', async (_event, password) => {
+  return relayAgent.setKinakoPassword(typeof password === 'string' ? password : '');
+});
+
+ipcMain.handle('relay:getKinakoAuthStatus', () => {
+  return relayAgent.getKinakoAuthStatus();
+});
+
+ipcMain.handle('relay:signOutKinako', () => {
+  return relayAgent.signOutKinako();
 });
 
 // 製品版の画面（app://）は Google の戻り先に登録できないため、いつものブラウザでログインしてもらう

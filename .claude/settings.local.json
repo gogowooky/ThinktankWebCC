@@ -476,7 +476,15 @@
       "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils src/components/WorkingPanel 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Error:|Test Files|Tests \" | Select-Object -First 20)",
       "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/components 2>&1 | Select-String -Pattern \"FAIL|×|Test Files|Tests \")",
       "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils 2>&1 | Select-String -Pattern \"FAIL|×|AssertionError|Error:|Test Files|Tests \" | Select-Object -First 20)",
-      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils 2>&1 | Select-String -Pattern \"FAIL|×|Error:|Test Files|Tests \" | Select-Object -First 20)"
+      "PowerShell(npx tsc --noEmit -p .; \"tsc exit: $LASTEXITCODE\"; npx vitest run src/views src/utils 2>&1 | Select-String -Pattern \"FAIL|×|Error:|Test Files|Tests \" | Select-Object -First 20)",
+      "PowerShell(npx --no-install firebase --version)",
+      "PowerShell(java -version)",
+      "PowerShell(\\(Get-Command firebase -ErrorAction SilentlyContinue\\).Source; firebase --version; Select-String -Path package.json -Pattern firebase)",
+      "PowerShell(npx -y firebase-tools login:list; Test-Path \"$env:USERPROFILE\\\\.config\\\\configstore\\\\firebase-tools.json\"; \\(Get-Command gcloud -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell($t = \\(gcloud auth print-access-token\\); node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c2bc893ed411a134\\\\8e578139-24cb-43c4-85b9-290f09a6e2eb\\\\scratchpad\\\\test-rules.mjs\" firestore.rules thinktankweb-483408 $t)",
+      "PowerShell($f = \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c2bc893ed411a134\\\\8e578139-24cb-43c4-85b9-290f09a6e2eb\\\\scratchpad\\\\users.json\"; npx -y firebase-tools auth:export $f --format=json --project thinktankweb-483408 | Out-Null; \\(Get-Content $f -Raw | ConvertFrom-Json\\).users | Select-Object localId, email, @{n='providers';e={\\($_.providerUserInfo.providerId\\) -join ','}} | Format-Table -AutoSize; Remove-Item $f)",
+      "PowerShell($t = \\(gcloud auth print-access-token\\); node \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c2bc893ed411a134\\\\8e578139-24cb-43c4-85b9-290f09a6e2eb\\\\scratchpad\\\\show-deployed.mjs\" firestore.rules thinktankweb-483408 $t; git status --short firestore.rules; Get-Date -Format o)",
+      "PowerShell($s = \"C:\\\\Users\\\\gogow\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c2bc893ed411a134\\\\8e578139-24cb-43c4-85b9-290f09a6e2eb\\\\scratchpad\"; $t = \\(gcloud auth print-access-token\\); node \"$s\\\\test-rules.mjs\" firestore.rules thinktankweb-483408 $t; if \\($LASTEXITCODE -eq 0\\) { npx -y firebase-tools deploy --only firestore:rules --project thinktankweb-483408; node \"$s\\\\show-deployed.mjs\" firestore.rules thinktankweb-483408 $t })"
     ]
   }
 }

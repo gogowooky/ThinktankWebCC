@@ -66,6 +66,43 @@ export async function signInWithGoogleAccessToken(
   };
 }
 
+/**
+ * メールアドレスとパスワードで Firebase にサインインする（きなこ専用アカウント用）。
+ * このプロジェクトでは v1 の accounts:signInWithEmailPassword が 404 を返すため、legacy v3 の verifyPassword を使う。
+ * Firebase JS SDK の signInWithEmailAndPassword も内部で v1 を呼ぶので使えない。
+ */
+export async function signInWithEmailPassword(
+  apiKey: string,
+  email: string,
+  password: string,
+): Promise<FirebaseAuthSession> {
+  const res = await fetch(
+    `https://identitytoolkit.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, returnSecureToken: true }),
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`Firebase サインインに失敗しました (${await readAuthError(res)})`);
+  }
+  const data = (await res.json()) as {
+    localId: string;
+    email?: string;
+    idToken: string;
+    refreshToken: string;
+    expiresIn?: string;
+  };
+  return {
+    uid: data.localId,
+    email: data.email || email,
+    idToken: data.idToken,
+    refreshToken: data.refreshToken,
+    expiresAtMs: Date.now() + Number(data.expiresIn || '3600') * 1000,
+  };
+}
+
 /** リフレッシュトークンから新しい ID トークンを得る。uid もここで確定する。 */
 export async function refreshFirebaseIdToken(
   apiKey: string,
