@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-15
 - コミット番号: db86de6
+- デプロイ日: 2026-11-15（JST）
+- デプロイ対象コミット: 0470cfa（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 成功。公開URLのHTTP 200と、配信JavaScriptが公開用ビルドと一致することを確認。PC版インストーラー `release/Thinktank Setup 2.7.3.exe` も作成。
 
 WorkingPanel で Pane タイトルを別の Pane タイトルへ D&D すると、表示位置の選択ではなく両 Pane の内容を入れ替えるようにした。タイトルへの D&D（他パネルの DataGrid からの Think・リンクを含む）では、ゴーストを対象 Pane 全体に出す。ToolBar.HighlighterMode.Text:AddSelected 実行時は ToolBar を Highlighter 表示に切り替え、フォーカスは選択元に残す。dir/file タグの後ろの「Folder:」「File:」を省き（Caption には判定用に残す）、GPhoto の linkファイルのタイトルを「yyyy年MM月dd日撮影」にした。TextEditor に行頭の TAB の数ごとの文字色（TextEditor.Indent.Style1..6、設定「字下げ色」。既定は色なし、Bullet/Comment 行には付けない）を追加。Think一覧は種別が Project だけのとき、各 Project の下に本文で含む Project を字下げして Tree 表示し（開閉・←/→、同じ Project が複数行に出てもカーソルは行で決める CurrentItemRow を追加）、linkファイルは表示モードを TextEditor/Markdown/リンク先表示の3つにして、リンク先表示では # Link の https ページを Pane 内に埋め込む（GDrive/Docs は /preview に変換、PC版は CSP に frame-src https: を足し、埋め込んだページの応答から X-Frame-Options と frame-ancestors を外す）。既定ショートカットの AddSelected を Alt+H に変更。型検査成功、全テスト920件成功（画面での手動確認は未実施）。
 
