@@ -165,6 +165,14 @@ function photoCaptionOf(text: string): string {
   return place ? `${date}(${place})` : date;
 }
 
+/** Googleフォトのlinkファイルの1行目。撮影日が分からなければ空（呼び出し側で通常のタイトルに倒す） */
+function photoTitleOf(source: LinkSource): string {
+  const date = photoDateOf(source.pageTitle ?? '') || photoDateOf(source.title);
+  if (!date) return '';
+  const [y, m, d] = date.split('-');
+  return `${y}年${m}月${d}日撮影`;
+}
+
 /**
  * Caption の値。GDrive=ファイル名/フォルダー名、GMail=メールタイトル、GPhoto=撮影日時(撮影場所)、
  * path=File:/Folder:+名前、link=リンク先タイトル（不明なら Affiliation）。
@@ -179,6 +187,21 @@ export function linkCaptionOf(source: LinkSource, affiliation: string): string {
   const title = cleanPageTitle(tag, source.pageTitle, source.target);
   if (tag === 'gphoto') return photoCaptionOf(source.pageTitle ?? '') || title || affiliation;
   return title || affiliation;
+}
+
+/**
+ * linkファイルの HTML表示で埋め込む URL。https 以外（パス・http・mailto 等）は埋め込まないので null。
+ * Google ドライブ／ドキュメント類は通常のページが埋め込みを拒むため、埋め込み用の /preview に置き換える。
+ */
+export function linkEmbedUrl(target: string): string | null {
+  if (isLocalPathTarget(target)) return null;
+  const url = parseUrl(target.trim());
+  if (!url || url.protocol !== 'https:') return null;
+  const drive = url.host === 'drive.google.com' && url.pathname.match(/^\/file\/d\/([^/]+)/);
+  if (drive) return `https://drive.google.com/file/d/${drive[1]}/preview`;
+  const doc = url.host === 'docs.google.com' && url.pathname.match(/^\/(document|spreadsheets|presentation)\/d\/([^/]+)/);
+  if (doc) return `https://docs.google.com/${doc[1]}/d/${doc[2]}/preview`;
+  return url.toString();
 }
 
 const LINK_SECTIONS = ['Caption', 'Link', 'Affiliation', 'Abstract'] as const;
@@ -223,7 +246,7 @@ export function createLinkFile(source: LinkSource, pcName: string): LinkFile {
   // 1行目もリンク先の本当のタイトルが分かればそれを使う（pathはファイル名のまま）
   const pageTitle = tag === 'path' ? '' : cleanPageTitle(tag, source.pageTitle, source.target);
   return {
-    title: pageTitle || source.title,
+    title: (tag === 'gphoto' ? photoTitleOf(source) : '') || pageTitle || source.title,
     caption: linkCaptionOf(source, affiliation),
     link: source.target,
     affiliation,
@@ -263,7 +286,9 @@ export function linkTagOfFile(file: LinkFile): LinkTagName {
 /** 参照タグを組み立てる。GMail/GDrive/link/file/dir はタグの後ろに Caption を添える */
 export function formatLinkTagWithCaption(tag: LinkTagName, thinkId: string, caption: string): string {
   const base = formatLinkTag(tag, thinkId);
-  const text = caption.replace(/\s+/g, ' ').trim();
+  let text = caption.replace(/\s+/g, ' ').trim();
+  // Caption の File:/Folder: は dir/file の判定に使うため残し、タグ自体が種類を示す表示では省く
+  if (tag === 'file' || tag === 'dir') text = text.replace(/^(?:File|Folder)\s*:\s*/i, '');
   return CAPTIONED_TAGS.includes(tag) && text ? `${base} ${text}` : base;
 }
 

@@ -75,6 +75,9 @@ export class TTThinktankPanel extends TTUIItem {
   /** 現在カーソル（フォーカス）が当たっているItemのID */
   public CurrentItemID: string = '';
 
+  /** カーソル行の位置（FilteredThoughts の添字。-1=不明）。Tree 表示で同じ ID の行が複数あるときに行を決める */
+  public CurrentItemRow: number = -1;
+
   /** フィルタ適用後の表示中Think一覧（CursorPosアクション用スナップショット） */
   public FilteredThoughts: TTThink[] = [];
 

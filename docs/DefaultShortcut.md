@@ -94,7 +94,7 @@ ToolBar.Search,     ,Alt+F                  ,WorkingPanel.FocusedPane.PaneNumber
 
 # Editor/ToolBar Highlighter ハイライト関連
 *TextEditor ,       ,Alt+X                  ,ToolBar.HighlighterMode.Text:Focus                     ,Highlighter入力欄にフォーカスする
-*TextEditor ,       ,Alt+C                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
+*TextEditor ,       ,Alt+H                  ,ToolBar.HighlighterMode.Text:AddSelected               ,選択テキストをHighlighterに追加する
 ToolBar*    ,       ,Alt+C                  ,ToolBar.CurrentMode.Text:Clear                         ,ToolBarの現在のモードの入力欄をクリアする
 ToolBar.Highlighter,,Alt+X                  ,WorkingPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる
 ToolBar*    ,       ,Alt+X                  ,WorkingPanel.FocusedPane.PaneNumber:ReFocus            ,フォーカスPaneに再度フォーカスを当てる

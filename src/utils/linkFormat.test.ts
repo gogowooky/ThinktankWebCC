@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   captionOfLinkFile,
   createLinkFile,
+  linkEmbedUrl,
   formatLinkTag,
   formatLinkTagWithCaption,
   linkTargetKey,
@@ -144,6 +145,14 @@ describe('Caption', () => {
     expect(caption('https://photos.google.com/photo/1', 'Photo - Mar 5, 2024, 2:22:13 PM - Location: Kyoto')).toBe('2024-03-05(Kyoto)');
   });
 
+  it('GPhoto のlinkファイルのタイトルは「yyyy年MM月dd日撮影」（撮影日不明なら通常のタイトル）', () => {
+    const title = (pageTitle: string) =>
+      createLinkFile({ target: 'https://photos.google.com/photo/1', title: 'x', pageTitle }, 'PC1').title;
+    expect(title('写真 - 横向き - 2026/11/3 14:22:10')).toBe('2026年11月03日撮影');
+    expect(title('Photo - Mar 5, 2024, 2:22:13 PM')).toBe('2024年03月05日撮影');
+    expect(title('夕焼け - Google フォト')).toBe('夕焼け');
+  });
+
   it('path はファイル/フォルダーを区別する', () => {
     expect(caption('C:\\a\\b.md')).toBe('File:b.md');
     expect(caption('C:\\a\\pics', undefined, true)).toBe('Folder:pics');
@@ -175,11 +184,27 @@ describe('リンク先の同一判定キー', () => {
   });
 });
 
+describe('linkEmbedUrl', () => {
+  it('https はそのまま、Google ドライブ／ドキュメントは埋め込み用の /preview にする', () => {
+    expect(linkEmbedUrl('https://example.com/a?b=1')).toBe('https://example.com/a?b=1');
+    expect(linkEmbedUrl('https://drive.google.com/file/d/1AbC/view?usp=sharing')).toBe('https://drive.google.com/file/d/1AbC/preview');
+    expect(linkEmbedUrl('https://docs.google.com/document/d/1AbC/edit#heading=h')).toBe('https://docs.google.com/document/d/1AbC/preview');
+    expect(linkEmbedUrl('https://docs.google.com/spreadsheets/d/1X/edit')).toBe('https://docs.google.com/spreadsheets/d/1X/preview');
+  });
+
+  it('パス・http・その他のスキームは埋め込まない', () => {
+    expect(linkEmbedUrl('C:\\a\\b.md')).toBeNull();
+    expect(linkEmbedUrl('http://example.com/')).toBeNull();
+    expect(linkEmbedUrl('javascript:alert(1)')).toBeNull();
+    expect(linkEmbedUrl('mailto:a@example.com')).toBeNull();
+  });
+});
+
 describe('参照タグ', () => {
   it('GMail/GDrive/link/path はタグの後ろに Caption を添える', () => {
     expect(formatLinkTagWithCaption('gdrive', '2026-10-30-120000', '見積書.pdf')).toBe('[gdrive:2026-10-30-120000] 見積書.pdf');
-    expect(formatLinkTagWithCaption('file', '2026-10-30-120000', 'File:b.md')).toBe('[file:2026-10-30-120000] File:b.md');
-    expect(formatLinkTagWithCaption('dir', '2026-10-30-120000', 'Folder:pics')).toBe('[dir:2026-10-30-120000] Folder:pics');
+    expect(formatLinkTagWithCaption('file', '2026-10-30-120000', 'File:b.md')).toBe('[file:2026-10-30-120000] b.md');
+    expect(formatLinkTagWithCaption('dir', '2026-10-30-120000', 'Folder:pics')).toBe('[dir:2026-10-30-120000] pics');
     expect(formatLinkTagWithCaption('gphoto', '2026-10-30-120000', '2026/11/03')).toBe('[gphoto:2026-10-30-120000]');
     expect(formatLinkTagWithCaption('link', '2026-10-30-120000', '')).toBe('[link:2026-10-30-120000]');
   });

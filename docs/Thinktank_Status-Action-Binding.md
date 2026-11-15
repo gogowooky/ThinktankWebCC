@@ -1410,8 +1410,8 @@ candidates:     ^[0-9]+$
 
 将来的にタグごとに分ける可能性あり、
 
-　TextEditor.Highlighter.Style(1..6).* / TextEditor.Heading.Style(1..6).* は docs/DefaultColor.md で定義します。
-　（WorkingSettingPanel>TextEditor設定 の セクション色 / ハイライト色 での変更もそちらの値を書き換えます）
+　TextEditor.Highlighter.Style(1..6).* / TextEditor.Heading.Style(1..6).* / TextEditor.Indent.Style(1..6).* は docs/DefaultColor.md で定義します。
+　（WorkingSettingPanel>TextEditor設定 の セクション色 / 字下げ色 / ハイライト色 での変更もそちらの値を書き換えます）
 
 　各パネルのテーマ色は docs/DefaultColor.md の (Thinktank|Seeds|Working|Harvest|ToolBar).Theme.* で定義します。
 　　Color   … パネルの基礎色（リボン等）。他のパネル色はこの色から生成します。
@@ -1431,6 +1431,10 @@ candidates:     ^[0-9]+$
 　　コメント色 … TextEditor.Comment.Marks の各記号 → TextEditor.Comment.Style(n).*
 　　項目色 … TextEditor.Bullet.Marks の各記号 → TextEditor.Bullet.Style(n).*
 　　セクション色 … TextEditor.Heading.Style(1..6).*
+　　字下げ色 … TextEditor.Indent.Style(1..6).*（261114追加）
+　　　行頭の TAB の数 n の行で、字下げの後ろの文字に Style(n) を付けます。TAB 6個以上は Style6。
+　　　スペースの字下げは数えません。Bullet/Comment の行・見出し行には付けません（そちらの色を優先）。
+　　　既定はすべて undefined（色なし）です。
 　　ハイライト色 … TextEditor.Highlighter.Style(1..6).*
 　（261013）パネル色は WorkingSettingPanel>Pane設定 の「アクション」の下へ移しました。
 　　パネル色   … (Thinktank|Seeds|Working|Harvest|ToolBar).Theme.Color（基礎色のみ）、
@@ -1655,7 +1659,7 @@ description:    カーソル位置のURLを読み取りタグ化する
 ## Action：　261108　TextEditor.CurrentEditor.DoOnCursorPos:File:ToTag
 description:    カーソル位置のファイルパスを読み取りタグ化する
 　A（261108実装）：カーソル位置のファイルパス（引用符で囲んだパス、file:// を含む）の linkファイルを用意し、
-　　パスを参照タグ（例：[file:ID] File:plan.md、[dir:ID] Folder:Pictures）に置き換えます。引用符ごと置き換えます。
+　　パスを参照タグ（例：[file:ID] plan.md、[dir:ID] Pictures）に置き換えます。引用符ごと置き換えます。
 　　ファイルかフォルダかは PC版では実際に確かめ（system:isDirectory）、ブラウザ版では末尾の区切りで判断します。
 　　同じリンク先の再利用・Project登録・キャレット位置は Url:ToTag と同じです。「File > T)タグ化する」から実行します。
 

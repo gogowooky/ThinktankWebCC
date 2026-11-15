@@ -517,6 +517,20 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       el.textContent = markStyleCss(kind, styles);
     }
 
+    // 字下げ（行頭の TAB の数）用CSSの注入。TextEditor.Indent.Style(1..6).* に従う
+    let indentStyleEl = document.getElementById('text-editor-indent-styles');
+    if (!indentStyleEl) {
+      indentStyleEl = document.createElement('style');
+      indentStyleEl.id = 'text-editor-indent-styles';
+      document.head.appendChild(indentStyleEl);
+    }
+    indentStyleEl.textContent = (editorSettings.indentStyles ?? []).map((style, index) => {
+      const decls = colorStyleToCss(style);
+      if (!decls) return '';
+      const cls = styleClass('Indent', index + 1);
+      return `.${cls}, .${cls} * { ${decls} }`;
+    }).filter(Boolean).join('\n');
+
     // URL/Filepath/Tag用のCSSの注入
     let linkStyleEl = document.getElementById('text-editor-link-styles');
     if (!linkStyleEl) {

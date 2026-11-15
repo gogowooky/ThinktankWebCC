@@ -15,6 +15,7 @@ import type { TTThink } from '../models/TTThink';
 import { TTActions } from './TTActions';
 import { TTShortcutManager, DEFAULT_ACTION } from './TTShortcutManager';
 import { getFocusName } from '../utils/getFocusName';
+import { cursorRowIndex } from '../utils/thinkTree';
 import { TTUIStateManager, type ConfigKey } from './TTUIStateManager';
 import type { AreaWidthMode } from '../utils/panelAreaWidth';
 import { ZOOM_DEFAULT, ZOOM_STEP } from '../utils/appZoom';
@@ -76,6 +77,7 @@ type PanelLike = {
 /** Think一覧のカーソルアクションが必要とするパネルの最小インターフェース */
 type FilterCursorPanel = {
   CurrentItemID:       string;
+  CurrentItemRow:      number;
   FilteredThoughts:    TTThink[];
   CheckedThoughtIDs:   string[];
   ToggleCheck(id: string | string[], forceChecked?: boolean): void;
@@ -330,14 +332,13 @@ export function registerFocusedPanelActions(app: TTApplication): void {
           const panel = spec.panelOf();
           const list = panel.FilteredThoughts;
           if (list.length === 0) { item.Result = '[一覧なし]'; return; }
-          const curIdx = panel.CurrentItemID
-            ? list.findIndex(t => t.ID === panel.CurrentItemID)
-            : -1;
+          const curIdx = cursorRowIndex(list, panel.CurrentItemID, panel.CurrentItemRow);
           // カーソル未表示（0行）からの移動は方向によらず先頭行へ
           const nextIdx = curIdx < 0
             ? 0
             : Math.max(0, Math.min(curIdx + dir, list.length - 1));
           panel.CurrentItemID = list[nextIdx].ID;
+          panel.CurrentItemRow = nextIdx;
           notifyCursor(spec);
           item.Result = `行${nextIdx + 1}: ${list[nextIdx].Name || list[nextIdx].ID}`;
         },

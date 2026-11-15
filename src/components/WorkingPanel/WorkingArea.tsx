@@ -33,8 +33,9 @@ import { ChatMedia }       from './media/ChatMedia';
 import type { ChatMediaRef }       from './media/ChatMedia';
 
 import { HtmlMedia, type HtmlMediaRef } from './media/HtmlMedia';
+import { LinkTargetMedia, type LinkTargetMediaRef } from './media/LinkTargetMedia';
 
-type AnyMediaRef = HtmlMediaRef | TextEditorMediaRef | MarkdownMediaRef | DataGridMediaRef | CardMediaRef | GraphMediaRef | ChatMediaRef;
+type AnyMediaRef = HtmlMediaRef | LinkTargetMediaRef |TextEditorMediaRef | MarkdownMediaRef | DataGridMediaRef | CardMediaRef | GraphMediaRef | ChatMediaRef;
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTActions } from '../../views/TTActions';
@@ -297,7 +298,9 @@ export function WorkingArea({
       case 'panes':      return <TextEditorMedia ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} />;
       // YAML表示の切替でエディタを作り直し、表示内容（YAML有無）と保存の扱いを入れ替える
       case 'texteditor': return <TextEditorMedia key={area.RawYaml ? 'raw-yaml' : 'text'} ref={mediaRef as React.Ref<TextEditorMediaRef>} {...mediaProps} rawYaml={area.RawYaml} />;
-      case 'html': return <HtmlMedia ref={mediaRef as React.Ref<HtmlMediaRef>} {...mediaProps} />;
+      case 'html': return think?.ContentType === 'links'
+        ? <LinkTargetMedia ref={mediaRef as React.Ref<LinkTargetMediaRef>} {...mediaProps} />
+        : <HtmlMedia ref={mediaRef as React.Ref<HtmlMediaRef>} {...mediaProps} />;
       case 'markdown':   return <MarkdownMedia   ref={mediaRef as React.Ref<MarkdownMediaRef>}   {...mediaProps} />;
       case 'datagrid':   return <DataGridMedia   ref={mediaRef as React.Ref<DataGridMediaRef>}   {...mediaProps} />;
       case 'card':       return <CardMedia       ref={mediaRef as React.Ref<CardMediaRef>}       {...mediaProps} />;

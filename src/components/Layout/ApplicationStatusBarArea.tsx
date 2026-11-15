@@ -14,6 +14,7 @@ import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { TTActions } from '../../views/TTActions';
 import { getFocusName } from '../../utils/getFocusName';
+import { consumeToolBarModeFocusSuppression } from '../../utils/toolBarModeFocus';
 import type { TTWorkingPanel } from '../../views/TTWorkingPanel';
 import copywriteRaw from '../../../copyright.txt?raw';
 import { CommandIncrementalSearch, type CommandCandidate } from './CommandIncrementalSearch';
@@ -107,6 +108,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   // panel.ToolBarMode 変化検知のタイミングでは inputRef が未アタッチの場合がある。
   // mode 自体に依存させることで、入力欄がマウント済みの状態でのみ実行される。
   useEffect(() => {
+    if (consumeToolBarModeFocusSuppression()) return;
     if (mode !== 'keyaction') {
       inputRef.current?.focus();
     }

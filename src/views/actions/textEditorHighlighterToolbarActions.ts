@@ -14,6 +14,7 @@ import { TTUIStateManager, type ConfigKey } from '../TTUIStateManager';
 import { getErrorMessage } from '../../utils/errorMessage';
 import { findHighlightRanges } from '../../utils/highlightMatches';
 import { showDefaultMenu } from '../../utils/defaultMenu';
+import { suppressNextToolBarModeFocus } from '../../utils/toolBarModeFocus';
 import { buildKeywordSearchUrl } from './textEditorCursorContentActions';
 
 /** 検索サイトを選ぶメニュー（docs/DefaultMenu.md のメニュー名） */
@@ -125,6 +126,12 @@ export function registerTextEditorHighlighterToolbarActions(app: TTApplication):
       if (!selected) {
         item.Result = '[選択テキストなし]';
         return;
+      }
+
+      // 追加結果が見えるよう表示だけ Highlighter に切り替える（フォーカスは選択元に残す）
+      if (app.WorkingPanel.ToolBarMode !== 'Highlighter') {
+        suppressNextToolBarModeFocus();
+        TTUIStateManager.instance.applyProperty('ToolBar.Mode.Name', 'Highlighter');
       }
 
       const current = app.WorkingPanel.HighlightWord;

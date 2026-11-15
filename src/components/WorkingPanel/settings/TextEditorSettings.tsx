@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { UNAVAILABLE_ACTIONS } from '../../../views/unavailableActions';
 import { ChevronDown, ChevronRight, File, FileText, FileClock, DatabaseBackup, Save, Mic, MicOff, Eraser, FilePen, FileX, FileInput } from 'lucide-react';
 import { TTShortcutManager } from '../../../views/TTShortcutManager';
@@ -79,6 +80,7 @@ export function TextEditorSettings({
   handleVoiceMicOff,
   handleVoiceEraser,
 }: Props) {
+  const [isIndentColorOpen, setIsIndentColorOpen] = useState(false);
   return (<>
     {/* メモ操作 */}
     <div className="working-setting-area__section">
@@ -446,6 +448,32 @@ export function TextEditorSettings({
               panel={panel}
               statusId={styleStatusId('Heading', index + 1)}
               label={`セクション${fw}`}
+              swatchLabel={false}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+    <div className="working-setting-area__divider" />
+
+    {/* 字下げ色設定（行頭の TAB の数 → Indent.StyleN）*/}
+    <div className="working-setting-area__section">
+      <div
+        className="working-setting-area__section-header"
+        onClick={() => setIsIndentColorOpen(!isIndentColorOpen)}
+      >
+        {isIndentColorOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+        <span className="working-setting-area__section-label" style={{ marginBottom: 0 }}>字下げ色</span>
+      </div>
+
+      {isIndentColorOpen && (
+        <div className="working-setting-area__section-content">
+          {FULL_WIDTH_DIGITS.map((fw, index) => (
+            <ColorStyleRow
+              key={fw}
+              panel={panel}
+              statusId={styleStatusId('Indent', index + 1)}
+              label={index === FULL_WIDTH_DIGITS.length - 1 ? `TAB${fw}以上` : `TAB${fw}`}
               swatchLabel={false}
             />
           ))}

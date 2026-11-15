@@ -149,17 +149,21 @@ export function colorStyleToInlineStyle(style: ColorStyle | undefined): Record<s
 // いずれも docs/DefaultColor.md の TextEditor.<種別>.Style(1..N).* が色・表示属性を持つ。
 // Bullet / Comment は行頭記号を TextEditor.<種別>.Marks（CSV）に別途持ち、
 // その n 番目のアイテムが StyleN に対応する。
-// Heading は見出しレベル、Highlighter はハイライトグループ番号が n になる。
+// Heading は見出しレベル、Highlighter はハイライトグループ番号、Indent は行頭の TAB の数が n になる。
 
-export type StyleKind = 'Bullet' | 'Comment' | 'Heading' | 'Highlighter';
+export type StyleKind = 'Bullet' | 'Comment' | 'Heading' | 'Highlighter' | 'Indent';
 
 /** 行頭記号を持つ種別（記号は Marks 側、色は StyleN 側） */
 export type MarkKind = 'Bullet' | 'Comment';
 
+/** 番号で引く種別 */
+export type IndexedStyleKind = 'Heading' | 'Highlighter' | 'Indent';
+
 /** 番号で引く種別と、その登録数 */
-export const INDEXED_STYLE_COUNT: Record<'Heading' | 'Highlighter', number> = {
+export const INDEXED_STYLE_COUNT: Record<IndexedStyleKind, number> = {
   Heading:     6,
   Highlighter: 6,
+  Indent:      6,
 };
 
 /** TextEditor.<種別>.Marks の既定値 */
@@ -186,6 +190,7 @@ export function styleClass(kind: StyleKind, index: number): string {
     case 'Comment':     return `custom-comment-c${index}`;
     case 'Heading':     return `custom-heading-${index}`;
     case 'Highlighter': return `custom-highlight-g${index}`;
+    case 'Indent':      return `custom-indent-t${index}`;
   }
 }
 
@@ -199,9 +204,9 @@ export function pickStyle(
   return store?.[statusId] ?? getDefaultColorStyle(statusId);
 }
 
-/** Heading / Highlighter のスタイル一覧（配列の添字0が Style1）*/
+/** Heading / Highlighter / Indent のスタイル一覧（配列の添字0が Style1）*/
 export function pickIndexedStyles(
-  kind: 'Heading' | 'Highlighter',
+  kind: IndexedStyleKind,
   store: Record<string, ColorStyle> | undefined,
 ): ColorStyle[] {
   return Array.from({ length: INDEXED_STYLE_COUNT[kind] }, (_, i) => pickStyle(kind, i + 1, store));

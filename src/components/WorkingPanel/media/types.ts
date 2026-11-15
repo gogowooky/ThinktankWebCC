@@ -77,6 +77,8 @@ export interface MediaProps {
     /** 行頭記号（TextEditor.<種別>.Marks）と色・表示属性（TextEditor.<種別>.StyleN.*）の組 */
     commentStyles?: MarkStyle[];
     bulletStyles?:  MarkStyle[];
+    /** 行頭の TAB の数 1..6 の表示属性（TextEditor.Indent.StyleN.*）。6個を超える字下げは Style6 */
+    indentStyles?: ColorStyle[];
     /** カーソル位置判定の対象になる Url / Filepath / Tag の表示属性 */
     linkStyles?: LinkStyles;
     /** `**bold**` / `*italic*` / `__underline__` / `~~strikethrough~~` の表示属性 */

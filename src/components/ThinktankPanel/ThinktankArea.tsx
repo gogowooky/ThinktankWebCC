@@ -37,6 +37,7 @@ import { useProjectStatusFilter } from '../../hooks/useProjectStatusFilter';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { addTitleSearchKeywordToHighlighter } from '../../utils/highlighterKeyword';
 import { VaultLoadNotice } from './VaultLoadNotice';
+import { childProjectIds } from '../../utils/thinkTree';
 import './ThinktankArea.css';
 
 import type { LayoutMode } from '../Layout/AppLayout';
@@ -76,11 +77,14 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const [filterTitleQuery, setFilterTitleQuery] = useState('');
 
   const [focusedId, setFocusedId] = useState<string | null>(() => panel.CurrentItemID || null);
+  const [focusedRow, setFocusedRow] = useState<number>(() => panel.CurrentItemRow);
 
   // 外部からの CurrentItem.ID の変更イベントを監視・同期
+  // （カーソル行アクションは CurrentItemRow も更新してから通知する）
   useEffect(() => {
-    const handleKeyChange = (key: string, val: string) => {
+    const handleKeyChange = (_key: string, val: string) => {
       setFocusedId(val || null);
+      setFocusedRow(panel.CurrentItemRow);
     };
     TTUIStateManager.instance.addListener('ThinktankPanel.CurrentItem.ID', handleKeyChange);
     return () => {
@@ -230,6 +234,30 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const isProjectOnly = visibleTypes.size === 1 && visibleTypes.has('project');
   const projectStatus = useProjectStatusFilter(typeOnlyBase, isProjectOnly);
   const typeFilteredBase = projectStatus.filtered;
+  // 種別が project だけのときは Tree 表示にし、各 Project の下にそれが含む Project を並べる。
+  // 含む Project は本文から読むので、本文未読の Project は先に読む
+  const projectsKey = isProjectOnly
+    ? allThinks.filter(t => t.ContentType === 'project').map(t => `${t.ID}@${t.UpdatedAt}`).join('\0')
+    : '';
+  const [childProjectMap, setChildProjectMap] = useState<Map<string, string[]> | null>(null);
+  useEffect(() => {
+    if (!isProjectOnly) { setChildProjectMap(null); return; }
+    let cancelled = false;
+    const projects = vault.GetThinks().filter(t => t.ContentType === 'project');
+    void Promise.all(projects.filter(p => p.IsMetaOnly).map(p => p.LoadContent().catch(() => undefined))).then(() => {
+      if (cancelled) return;
+      const isProject = (id: string) => vault.GetThink(id)?.ContentType === 'project';
+      setChildProjectMap(new Map(projects.map(p => [p.ID, childProjectIds(p, isProject)])));
+    });
+    return () => { cancelled = true; };
+  }, [isProjectOnly, projectsKey, vault]);
+  const childProjectsOf = useMemo(() => {
+    if (!childProjectMap) return undefined;
+    return (id: string) => (childProjectMap.get(id) ?? [])
+      .map(childId => vault.GetThink(childId))
+      .filter((t): t is TTThink => t !== undefined);
+  }, [childProjectMap, vault]);
+
   const bundleNames = useMemo(() => buildBundleNames(vault, typeFilteredBase), [vault, typeFilteredBase]);
   const sortedBase = useMemo(() => applySort(typeFilteredBase, sort, bundleNames), [typeFilteredBase, sort, bundleNames]);
 
@@ -237,7 +265,8 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   const isFilterMode = viewMode === 'filter';
 
   const visibleThinks = isFilterMode ? filterVisible : [];
-  const visibleIds = useMemo(() => visibleThinks.map(t => t.ID), [visibleThinks]);
+  // Tree 表示では同じ Think が複数の行に出るので、ID の一覧は重複を除く
+  const visibleIds = useMemo(() => [...new Set(visibleThinks.map(t => t.ID))], [visibleThinks]);
 
   // ThinktankPanel.Filter.CursorPos アクションが行番号を解決するための一覧スナップショット
   useEffect(() => {
@@ -265,8 +294,11 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
     }
   }, [panel, vault, handleSelect]);
 
-  const handleFocusChange = useCallback((id: string | null) => {
+  const handleFocusChange = useCallback((id: string | null, row?: number) => {
     const nextVal = id || '';
+    // 同じ ID の別の行（Tree 表示の重複行）へ移ったときも行だけは更新する
+    panel.CurrentItemRow = row ?? -1;
+    setFocusedRow(panel.CurrentItemRow);
     if (panel.CurrentItemID !== nextVal) {
       panel.CurrentItemID = nextVal;
       setFocusedId(nextVal || null);
@@ -382,7 +414,9 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
         onVisibleChange={handleFilterVisibleChange}
         titleQuery={filterTitleQuery}
         focusedId={focusedId}
+        focusedRow={focusedRow}
         onFocusChange={handleFocusChange}
+        childrenOf={isProjectOnly ? childProjectsOf : undefined}
       />
     );
   }

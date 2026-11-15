@@ -58,7 +58,7 @@ export function getFocusedPaneAllowedModes(app: TTApplication): string[] {
     project: ['texteditor'],
     table: ['texteditor', 'datagrid', 'card'],
     chat: ['texteditor', 'chat'],
-    links: ['texteditor', 'markdown'],
+    links: ['texteditor', 'markdown', 'html'],
   };
   const allowed = mapping[think.ContentType] || ['texteditor', 'markdown'];
   return allowed.map(m => capitalize(m));

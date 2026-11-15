@@ -110,6 +110,25 @@
   accent-color: var(--thinktank-ribbon-bg);
 }
 
+/* Tree 表示の開閉ボタン（子の無い行は同じ幅の空要素） */
+.thoughts-list__tree-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #888;
+  cursor: pointer;
+}
+
+.thoughts-list__tree-toggle:hover {
+  color: #1a1a2e;
+}
+
 .thoughts-list__icon {
   flex-shrink: 0;
   color: #888;

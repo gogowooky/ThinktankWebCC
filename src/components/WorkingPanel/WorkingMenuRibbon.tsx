@@ -35,6 +35,13 @@ const HTML_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> 
   { type: 'html', Icon: Globe, title: 'HTML表示' },
 ];
 
+// linkファイルの HTML表示は、ファイル自体ではなくリンク先を表示する
+const LINKS_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
+  { type: 'texteditor', Icon: NotebookPen,  title: 'テキストエディタ' },
+  { type: 'markdown',   Icon: BookOpenText, title: 'Markdown' },
+  { type: 'html',       Icon: Globe,        title: 'リンク先表示' },
+];
+
 // projectファイルは TextEditor でだけ表示する
 const PROJECT_BUTTONS: Array<{ type: MediaType; Icon: LucideIcon; title: string }> = [
   { type: 'texteditor', Icon: NotebookPen,  title: 'テキストエディタ' },
@@ -67,7 +74,7 @@ function titleFromPath(path: string): string {
   return path.replace(/\\/g, '/').replace(/\/$/, '').split('/').filter(Boolean).pop() ?? path;
 }
 
-function isDragLink(types: readonly string[]): boolean {
+export function isDragLink(types: readonly string[]): boolean {
   return types.includes('text/uri-list') || types.includes('Files') || types.includes('text/plain');
 }
 
@@ -293,6 +300,7 @@ export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = fals
     : (contentType === 'project' || contentType === 'bundle') ? PROJECT_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
     : contentType === 'html' ? HTML_BUTTONS
+    : contentType === 'links' ? LINKS_BUTTONS
     : MEMO_BUTTONS;
 
   const [isDropTarget, setIsDropTarget] = useState(false);

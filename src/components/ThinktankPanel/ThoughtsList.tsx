@@ -13,7 +13,7 @@
 
 import { useRef, useState, useEffect, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Target, FileText, Bot, MessagesSquare, Link, Table, FileCode, Activity, File } from 'lucide-react';
+import { Target, FileText, Bot, MessagesSquare, Link, Table, FileCode, Activity, File, ChevronDown, ChevronRight } from 'lucide-react';
 import type { TTThink } from '../../models/TTThink';
 import { DEFAULT_COLUMNS } from './ColumnSortDialog';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -21,6 +21,7 @@ import { useHighlight } from '../../contexts/HighlightContext';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { toLocalDate, toLocalStamp } from '../../utils/localDateTime';
+import { cursorRowIndex, type ThinkTreeRow } from '../../utils/thinkTree';
 import './ThoughtsList.css';
 
 export const ROW_HEIGHT = 36;
@@ -39,8 +40,16 @@ interface Props {
   /** 「バンドル」列の表示値。buildBundleNames() の結果を渡す（未指定なら空欄） */
   bundleNames?: Map<string, string>;
   focusedId: string | null;
-  onFocusChange: (id: string | null) => void;
+  /** 同じ ID の行が複数あるとき（Tree 表示）にカーソル行を決める添字。省略時は最初に現れる行 */
+  focusedRow?: number;
+  /** row はクリック・キー操作でカーソルを置いた行の添字 */
+  onFocusChange: (id: string | null, row?: number) => void;
+  /** thoughts と同じ並びの Tree 情報。指定すると字下げと開閉ボタンを出す */
+  treeRows?: ThinkTreeRow[];
+  onToggleExpand?: (key: string, expand: boolean) => void;
 }
+
+const TREE_INDENT_PX = 16;
 
 /** フィルタートークンを適用して TTThink[] を絞り込む */
 export function applyFilter(thoughts: TTThink[], filter: string): TTThink[] {
@@ -161,7 +170,10 @@ export function ThoughtsList({
   onToggleCheck = () => {},
   bundleNames,
   focusedId,
+  focusedRow,
   onFocusChange,
+  treeRows,
+  onToggleExpand,
 }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const { seedsBundleIds, seedsIncludedIds, seedsCheckedIds, workingIds, workingFocusedId } = useHighlight();
@@ -178,50 +190,49 @@ export function ThoughtsList({
     overscan: OVERSCAN,
   });
 
+  const focusIdx = cursorRowIndex(thoughts, focusedId, focusedRow);
+
   // 外部からの focusedId の変更を検知して、スクロール位置を自動調整する
   useEffect(() => {
-    if (focusedId) {
-      const idx = thoughts.findIndex(t => t.ID === focusedId);
-      if (idx !== -1) {
-        virtualizer.scrollToIndex(idx, { align: 'auto' });
-      }
-    }
-  }, [focusedId, thoughts, virtualizer]);
+    if (focusIdx !== -1) virtualizer.scrollToIndex(focusIdx, { align: 'auto' });
+  }, [focusIdx, virtualizer]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       const dir = e.key === 'ArrowDown' ? 1 : -1;
-      const cur = focusedId ? thoughts.findIndex(t => t.ID === focusedId) : -1;
-      const next = cur < 0
+      const next = focusIdx < 0
         ? (dir > 0 ? 0 : thoughts.length - 1)
-        : Math.max(0, Math.min(thoughts.length - 1, cur + dir));
-      onFocusChange(thoughts[next]?.ID ?? null);
+        : Math.max(0, Math.min(thoughts.length - 1, focusIdx + dir));
+      onFocusChange(thoughts[next]?.ID ?? null, next);
       virtualizer.scrollToIndex(next, { align: 'auto' });
+    } else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && treeRows && focusIdx >= 0) {
+      const row = treeRows[focusIdx];
+      const expand = e.key === 'ArrowRight';
+      if (row?.hasChildren && row.expanded !== expand) {
+        e.preventDefault();
+        onToggleExpand?.(row.key, expand);
+      }
     } else if (e.key === 'Enter') {
       if (focusedId) onOpen?.(focusedId);
     }
   };
 
-  const handleCheckClick = (e: React.MouseEvent, id: string) => {
+  const handleCheckClick = (e: React.MouseEvent, id: string, index: number) => {
     e.stopPropagation();
     const isCurrentlyChecked = checkedIds.includes(id);
     const nextChecked = !isCurrentlyChecked;
 
-    if (e.shiftKey && focusedId && focusedId !== id) {
-      const fromIdx = thoughts.findIndex(t => t.ID === focusedId);
-      const toIdx = thoughts.findIndex(t => t.ID === id);
-      if (fromIdx !== -1 && toIdx !== -1) {
-        const start = Math.min(fromIdx, toIdx);
-        const end = Math.max(fromIdx, toIdx);
-        const idsInRange = thoughts.slice(start, end + 1).map(t => t.ID);
-        onToggleCheck(idsInRange, nextChecked);
-        onFocusChange(id);
-        return;
-      }
+    if (e.shiftKey && focusIdx !== -1 && focusIdx !== index) {
+      const start = Math.min(focusIdx, index);
+      const end = Math.max(focusIdx, index);
+      const idsInRange = [...new Set(thoughts.slice(start, end + 1).map(t => t.ID))];
+      onToggleCheck(idsInRange, nextChecked);
+      onFocusChange(id, index);
+      return;
     }
     onToggleCheck(id);
-    onFocusChange(id);
+    onFocusChange(id, index);
   };
 
   if (thoughts.length === 0) {
@@ -250,12 +261,13 @@ export function ThoughtsList({
           const isSeedsChecked  = !isEditMode && seedsCheckedIds.includes(thought.ID);
           const isInWorking        = workingIds.includes(thought.ID);
           const isWorkingFocused   = workingFocusedId === thought.ID;
-          const isFocused          = thought.ID === focusedId;
+          const isFocused          = vItem.index === focusIdx;
           const isNewChatRow       = thought.ID === NEW_CHAT_SENTINEL_ID;
+          const treeRow            = treeRows?.[vItem.index];
 
           return (
             <div
-              key={thought.ID}
+              key={treeRow?.key ?? thought.ID}
               draggable={!isNewChatRow}
               onDragStart={e => {
                 // 'copy'のみだとOSによってはAlt修飾（Insert用）でのドロップ受理が
@@ -281,10 +293,28 @@ export function ThoughtsList({
                 left:   0,
                 right:  0,
                 height: ROW_HEIGHT,
+                ...(treeRow ? { paddingLeft: 8 + treeRow.depth * TREE_INDENT_PX } : {}),
               }}
-              onClick={() => onFocusChange(thought.ID)}
+              onClick={() => onFocusChange(thought.ID, vItem.index)}
               onDoubleClick={() => onOpen?.(thought.ID)}
             >
+              {treeRow && (
+                treeRow.hasChildren
+                  ? (
+                    <button
+                      type="button"
+                      className="thoughts-list__tree-toggle"
+                      onClick={e => { e.stopPropagation(); onToggleExpand?.(treeRow.key, !treeRow.expanded); }}
+                      onDoubleClick={e => e.stopPropagation()}
+                      aria-label={treeRow.expanded ? '含むProjectを閉じる' : '含むProjectを開く'}
+                      aria-expanded={treeRow.expanded}
+                    >
+                      {treeRow.expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                    </button>
+                  )
+                  // 開閉ボタンの無い行もアイコン・タイトルの位置を揃える
+                  : <span className="thoughts-list__tree-toggle" aria-hidden="true" />
+              )}
               {showCheckbox && (
                 isNewChatRow
                   // 実在しない仮想行はチェック対象外。他行とアイコン/タイトルの位置を
@@ -296,7 +326,7 @@ export function ThoughtsList({
                       className="thoughts-list__check"
                       checked={isChecked}
                       onChange={() => { /* onChangeはonClickで処理するため空 */ }}
-                      onClick={e => handleCheckClick(e, thought.ID)}
+                      onClick={e => handleCheckClick(e, thought.ID, vItem.index)}
                       aria-label={`${thought.Name} を選択`}
                     />
                   )

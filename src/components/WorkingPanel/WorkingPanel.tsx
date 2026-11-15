@@ -25,7 +25,7 @@ import { WorkingTabBar } from './WorkingTabBar';
 import { NEW_HTML_CONTENT } from '../../utils/htmlPreview';
 import { WorkingSettingArea } from './WorkingSettingArea';
 import type { WorkingSettingAreaRef } from './WorkingSettingArea';
-import { externalDropDragKind, extractLinkDrop, resolveLinkDrop, shouldAllowLocalDrop } from './WorkingMenuRibbon';
+import { externalDropDragKind, extractLinkDrop, isDragLink, resolveLinkDrop, shouldAllowLocalDrop } from './WorkingMenuRibbon';
 import { getPcName } from '../../utils/pcName';
 import { isLocalPathTarget } from '../../utils/linkFormat';
 import { parseTableContent, sectionToCsv, tableSectionToMetadataForm, readColHeader, parseCsvLine } from '../../utils/tableFormat';
@@ -137,6 +137,7 @@ function LayoutView({ node, shared }: { node: LayoutNode; shared: SharedProps })
     return (
       <div className="working-panel__leaf">
         <WorkingArea
+          key={area.ID}
           area={area}
           vault={shared.vault}
           seedsProjectId={shared.seedsProjectId}
@@ -259,7 +260,8 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   }, []);
 
   interface DropOverlay {
-    type:   'add' | 'split';
+    /** swap = Pane タイトル同士の D&D（両 Pane の内容を入れ替える） */
+    type:   'add' | 'split' | 'swap';
     /**
      * ゴーストの色の種類。added = Pane 領域全体（端・空の領域）から決めた位置、
      * divided = 特定 Pane の上で決めた位置。Pane が1つのときは type が 'add' でも divided になる
@@ -592,6 +594,30 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     return { type: overlayType, ghost: 'divided' as const, dir: splitDir, areaId, style: s };
   }, [panel]);
 
+  // Pane タイトルへの D&D は表示位置の選択ではなく、その Pane の内容を置き換える
+  // （Pane 同士なら入れ替え）。ゴーストは対象 Pane 全体に出し、そこへ入ることを示す
+  const computeTitleOverlay = useCallback((
+    e: { clientX: number; clientY: number },
+    excludeAreaId?: string,
+  ): DropOverlay | null => {
+    const bodyEl = bodyRef.current;
+    if (!bodyEl) return null;
+    const ribbonEl = document.elementsFromPoint(e.clientX, e.clientY)
+      .find(el => el.classList.contains('working-menu-ribbon'));
+    const areaEl = ribbonEl?.closest('.working-area') as HTMLElement | null | undefined;
+    const areaId = areaEl?.getAttribute('data-area-id');
+    if (!areaEl || !areaId || areaId === excludeAreaId) return null;
+    const br = bodyEl.getBoundingClientRect();
+    const ar = areaEl.getBoundingClientRect();
+    return {
+      type: 'swap',
+      ghost: 'divided',
+      dir: 'right',
+      areaId,
+      style: { left: ar.left - br.left, top: ar.top - br.top, width: ar.width, height: ar.height },
+    };
+  }, []);
+
   const handleBodyDragOver = useCallback((e: React.DragEvent) => {
     const types = e.dataTransfer.types;
     const hasThink = types.includes('application/x-thought-id');
@@ -662,13 +688,22 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     }
   }, [computeDropOverlay]);
 
-  // タイトルバー（WorkingMenuRibbon）はdragoverをstopPropagationするため、
-  // handleBodyDragOverが呼ばれず直前のオーバーレイが残ってしまう。キャプチャ段階で消す。
+  // タイトルバー（WorkingMenuRibbon）はdragoverをstopPropagationするため handleBodyDragOver が
+  // 呼ばれない。キャプチャ段階で、Pane タイトル同士の D&D と同じ Pane 全体のゴーストに切り替える
   const handleBodyDragOverCapture = useCallback((e: React.DragEvent) => {
-    if ((e.target as Element).closest?.('.working-menu-ribbon')) {
-      setDropOverlay(null);
-      setInsertCaret(null);
-    }
+    if (!(e.target as Element).closest?.('.working-menu-ribbon')) return;
+    setInsertCaret(null);
+    const types = e.dataTransfer.types;
+    const accepts = types.includes('application/x-thought-id') || isDragLink(types);
+    setDropOverlay(accepts ? computeTitleOverlay(e) : null);
+  }, [computeTitleOverlay]);
+
+  // タイトルバーの drop も stopPropagation されるため、document の後始末に届かない
+  const handleBodyDropCapture = useCallback((e: React.DragEvent) => {
+    if (!(e.target as Element).closest?.('.working-menu-ribbon')) return;
+    setDropOverlay(null);
+    setInsertCaret(null);
+    setIsExternalDrag(false);
   }, []);
 
   const handleBodyDragLeave = useCallback((e: React.DragEvent) => {
@@ -781,15 +816,23 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     setDragTitle(title);
     setDragPos({ x: e.clientX, y: e.clientY });
 
+    const computeOverlay = (ev: MouseEvent): DropOverlay | null =>
+      computeTitleOverlay(ev, areaId)
+      ?? computeDropOverlay(ev, { skipRibbonCheck: true, excludeAreaId: areaId });
+
     const onMouseMove = (ev: MouseEvent) => {
       setDragPos({ x: ev.clientX, y: ev.clientY });
-      const overlay = computeDropOverlay(ev, { skipRibbonCheck: true, excludeAreaId: areaId });
-      setDropOverlay(overlay);
+      setDropOverlay(computeOverlay(ev));
     };
     const onMouseUp = (ev: MouseEvent) => {
-      const overlay = computeDropOverlay(ev, { skipRibbonCheck: true, excludeAreaId: areaId });
+      const overlay = computeOverlay(ev);
       setDropOverlay(null);
-      if (overlay) {
+      if (overlay?.type === 'swap') {
+        if (overlay.areaId) {
+          panel.SwapAreas(areaId, overlay.areaId);
+          panel.FocusArea(areaId);
+        }
+      } else if (overlay) {
         panel.MoveArea(areaId, overlay.areaId ?? null, overlay.dir, overlay.type);
       }
       overAreaIdRef.current = null;
@@ -802,7 +845,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
     };
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup',   onMouseUp);
-  }, [panel, computeDropOverlay]);
+  }, [panel, computeDropOverlay, computeTitleOverlay]);
 
   const handleDragEnter = useCallback((areaId: string) => {
     if (dragId && dragId !== areaId) {
@@ -910,6 +953,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
         onDragOver={handleBodyDragOver}
         onDragLeave={handleBodyDragLeave}
         onDrop={handleBodyDrop}
+        onDropCapture={handleBodyDropCapture}
       >
         {panel.Layout === null ? (
           <WorkingAreaEmpty isFullPanel onAdd={handleAddRight} />

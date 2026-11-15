@@ -45,6 +45,8 @@ example.com
   - GPhoto の撮影日はサムネイルの説明から読む。撮影場所はドラッグ情報に含まれないことが多く、
     分からなければ日付だけにする。
   - Caption 項の無い旧ファイルは、1行目のタイトル等から補って使う（`captionOfLinkFile`）。
+  - GPhoto の1行目（タイトル）は撮影日から `yyyy年MM月dd日撮影` にする（2026-11-14）。
+    撮影日が分からなければ通常どおりリンク先タイトル。
 
 - `# Link` — リンク先の URL またはパス（1行）。パスは `"C:\path\file.jpg"` のように引用符で囲む。
 - `# Affiliation` — URL ならサーバーアドレス（`URL.host`。ポートがあれば含む）、パスなら
@@ -85,7 +87,23 @@ example.com
 | Thinkファイルの Alt+ドロップ（Insert） | linkファイルならリンク先に応じた `[gdrive:ID]` 等、それ以外は従来どおり `[memo:ID]` を挿入 |
 
 - `gmail`・`gdrive`・`link`・`file`・`dir` のタグを作るときは、タグの後ろに半角空白と Caption を添える
-  （例：`[gdrive:ID] 見積書.pdf`、`[file:ID] File:plan.md`、`[dir:ID] Folder:Pictures`）。`gphoto`・`gnb` は添えない。
+  （例：`[gdrive:ID] 見積書.pdf`、`[file:ID] plan.md`、`[dir:ID] Pictures`）。`gphoto`・`gnb` は添えない。
+  - `file`・`dir` はタグ名が種類を示すので、Caption 先頭の `File:`・`Folder:` は添えない（2026-11-14）。
+    Caption 自体には残す（`dir` の判定に使うため）。
+
+### linkファイル自体の表示（2026-11-15）
+
+- Pane の表示モードは TextEditor・Markdown・HTML表示（リンク先表示）の3つ。「開く」ときは TextEditor。
+- HTML表示ではファイル自体ではなく `# Link` のリンク先を表示する（`LinkTargetMedia`）。
+  - https のページは iframe に埋め込む。Google ドライブ／ドキュメント／スプレッドシート／スライドは
+    埋め込み用の `/preview` に置き換える（`linkEmbedUrl`）。
+  - 埋め込みを拒むサイト（Gmail・Googleフォト等、X-Frame-Options / CSP frame-ancestors を返すもの）は、
+    Web版では拒否画面になる。ツールバーの「ブラウザで開く」で外部ブラウザに開ける。
+  - PC版は埋め込んだページ（subFrame）の応答から X-Frame-Options と CSP の frame-ancestors を取り除き、
+    拒むサイトも表示する（`allowFraming`）。ただし iframe 内ではログイン Cookie が送られずログイン画面になる、
+    サイトが自分で表示をやめる、といった場合は表示できない（2026-11-15）。
+  - ローカルパスは埋め込めないため、「既定のアプリで開く」ボタンだけを出す（PC版のみ）。http・mailto 等は表示しない。
+  - PC版はアプリの CSP に `frame-src https:` を足し、埋め込んだページの応答には CSP を被せない（`electron/main.cjs`）。
 
 ## 4. 作成
 

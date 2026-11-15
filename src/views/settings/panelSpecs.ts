@@ -3,6 +3,34 @@ import type { SeedsViewMode } from '../TTSeedsPanel';
 import type { HarvestViewMode } from '../TTHarvestPanel';
 import type { PropSpec } from './types';
 import { capitalize, parseBool } from './stateHelpers';
+import type { TTThink } from '../../models/TTThink';
+import { cursorRowIndex } from '../../utils/thinkTree';
+
+interface CursorListPanel {
+  CurrentItemID: string;
+  CurrentItemRow: number;
+  FilteredThoughts: TTThink[];
+}
+
+/** Think一覧のカーソル行（1始まり、なしは '0'）。Tree 表示で同じ ID の行が複数あっても行で決める */
+function cursorPosOf(panel: CursorListPanel): string {
+  const idx = cursorRowIndex(panel.FilteredThoughts, panel.CurrentItemID, panel.CurrentItemRow);
+  return idx >= 0 ? String(idx + 1) : '0';
+}
+
+function setCursorPos(panel: CursorListPanel, v: string): void {
+  const pos = parseInt(v, 10);
+  if (isNaN(pos) || pos <= 0) {
+    panel.CurrentItemID = '';
+    panel.CurrentItemRow = -1;
+    return;
+  }
+  const idx = pos - 1;
+  if (idx < panel.FilteredThoughts.length) {
+    panel.CurrentItemID = panel.FilteredThoughts[idx].ID;
+    panel.CurrentItemRow = idx;
+  }
+}
 
 export const panelSpecs: Record<string, PropSpec> = {
   'ThinktankPanel.Area.IsOpen': {
@@ -94,50 +122,16 @@ export const panelSpecs: Record<string, PropSpec> = {
     default: '0', type: 'string', candidates: '.*',
     description: 'Thinktank>Think一覧のカーソル位置',
     isConst: true,
-    get: (app) => {
-      const list = app.ThinktankPanel.FilteredThoughts;
-      const curId = app.ThinktankPanel.CurrentItemID;
-      if (!curId || list.length === 0) return '0';
-      const idx = list.findIndex(t => t.ID === curId);
-      return idx >= 0 ? String(idx + 1) : '0';
-    },
-    set: (app, v) => {
-      const pos = parseInt(v, 10);
-      if (isNaN(pos) || pos <= 0) {
-        app.ThinktankPanel.CurrentItemID = '';
-        return;
-      }
-      const list = app.ThinktankPanel.FilteredThoughts;
-      const idx = pos - 1;
-      if (idx < list.length) {
-        app.ThinktankPanel.CurrentItemID = list[idx].ID;
-      }
-    },
+    get: (app) => cursorPosOf(app.ThinktankPanel),
+    set: (app, v) => setCursorPos(app.ThinktankPanel, v),
   },
   'SeedsPanel.Filter.CursorPos': {
     panel: 'SeedsPanel',
     default: '0', type: 'string', candidates: '.*',
     description: 'Seeds>Think一覧のカーソル位置',
     isConst: true,
-    get: (app) => {
-      const list = app.SeedsPanel.FilteredThoughts;
-      const curId = app.SeedsPanel.CurrentItemID;
-      if (!curId || list.length === 0) return '0';
-      const idx = list.findIndex(t => t.ID === curId);
-      return idx >= 0 ? String(idx + 1) : '0';
-    },
-    set: (app, v) => {
-      const pos = parseInt(v, 10);
-      if (isNaN(pos) || pos <= 0) {
-        app.SeedsPanel.CurrentItemID = '';
-        return;
-      }
-      const list = app.SeedsPanel.FilteredThoughts;
-      const idx = pos - 1;
-      if (idx < list.length) {
-        app.SeedsPanel.CurrentItemID = list[idx].ID;
-      }
-    },
+    get: (app) => cursorPosOf(app.SeedsPanel),
+    set: (app, v) => setCursorPos(app.SeedsPanel, v),
   },
   'ThinktankPanel.Filter.CursorPosID': {
     panel: 'ThinktankPanel',

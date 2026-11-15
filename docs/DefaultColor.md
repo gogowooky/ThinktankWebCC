@@ -48,6 +48,14 @@ TextEditor.Heading.Style4,          #dcdcaa,        undefined,        bold|under
 TextEditor.Heading.Style5,          #c586c0,        undefined,        bold|underline
 TextEditor.Heading.Style6,          #569cd6,        undefined,        bold|underline
 
+# 行頭の TAB の数ごとの色（StyleN = TAB N個。N個を超える字下げは Style6）。Bullet/Comment の行には付かない
+TextEditor.Indent.Style1,           undefined,      undefined,        undefined
+TextEditor.Indent.Style2,           undefined,      undefined,        undefined
+TextEditor.Indent.Style3,           undefined,      undefined,        undefined
+TextEditor.Indent.Style4,           undefined,      undefined,        undefined
+TextEditor.Indent.Style5,           undefined,      undefined,        undefined
+TextEditor.Indent.Style6,           undefined,      undefined,        undefined
+
 
 # Color=パネルの基礎色（リボン等）／BgColor=コンテンツ表示部の背景。他の色はこの2色から生成する
 # リボン上の文字色は地の明るさから白/黒を自動で選ぶ（ToolBar は BgColor が文字色）

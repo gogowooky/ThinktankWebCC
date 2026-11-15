@@ -41,6 +41,7 @@ export function useEditorSettings(panel: TTWorkingPanel): NonNullable<MediaProps
       headingStyles:   pickIndexedStyles('Heading',     panel?.TextEditor.ColorStatus),
       commentStyles,
       bulletStyles,
+      indentStyles:        pickIndexedStyles('Indent', panel?.TextEditor.ColorStatus),
       linkStyles:          pickLinkStyles(panel?.TextEditor.ColorStatus),
       inlineStyles:        pickInlineStyles(panel?.TextEditor.ColorStatus),
       foldingHeaderStyle:  pickColorStyle(FOLDING_HEADER_STATUS_ID, panel?.TextEditor.ColorStatus),

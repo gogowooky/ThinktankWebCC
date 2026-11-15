@@ -74,6 +74,33 @@ it('matches a highlight word on every line, not only the first', () => {
   expect(decorations.filter(d => d.options.inlineClassName === inlineStyleClass('bold'))).toHaveLength(1);
 });
 
+it('colors text after leading tabs by tab count, except bullet lines and unset styles', () => {
+  class Range {
+    constructor(public startLineNumber: number, public startColumn: number, public endLineNumber: number, public endColumn: number) {}
+  }
+  window.monaco = { Range } as unknown as typeof import('monaco-editor');
+  const lines = ['plain', '\tone', '\t\ttwo', '\t\t\tthree', '\t\t\t\t\t\t\t\tdeep', '\t* bullet', '\t'];
+  const editor = { getModel: () => ({ getLineCount: () => lines.length, getLineContent: (line: number) => lines[line - 1] }) } as unknown as MonacoEditor.IStandaloneCodeEditor;
+  const set = vi.fn<(decorations: MonacoEditor.IModelDeltaDecoration[]) => void>();
+  const style = { Color: '#ff0000', BgColor: 'none', Attrs: 'none' };
+  const unset = { Color: 'undefined', BgColor: 'undefined', Attrs: 'undefined' };
+  applyEditorDecorations(editor, { set } as unknown as MonacoEditor.IEditorDecorationsCollection, {
+    lineNumbers: true, wordWrap: true, minimap: true, showFullWidthSpace: false, unicodeHighlight: false,
+    bracketPairColorization: true, highlightWord: '', highlightStyles: [style], headingStyles: [style],
+    background: '#ffffff', foreground: '#123456', selectionBackground: '#dddddd', occurrenceBackground: '#eeeeee',
+    bulletStyles: [{ mark: '*', style }],
+    indentStyles: [style, style, unset, style, style, style],
+  });
+  const indent = set.mock.calls[0][0]
+    .filter(d => String(d.options.inlineClassName).startsWith('custom-indent-'))
+    .map(d => [d.range.startLineNumber, d.range.startColumn, d.options.inlineClassName]);
+  expect(indent).toEqual([
+    [2, 2, styleClass('Indent', 1)],
+    [3, 3, styleClass('Indent', 2)],
+    [5, 9, styleClass('Indent', 6)],
+  ]);
+});
+
 it('keeps closed-heading line numbers and handles an unavailable folding contribution', () => {
   const editor = { getContribution: () => ({ foldingModel: { regions: {
     length: 3, isCollapsed: (index: number) => index !== 1, getStartLineNumber: (index: number) => index * 4 + 1,

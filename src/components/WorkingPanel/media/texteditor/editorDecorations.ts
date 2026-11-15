@@ -27,6 +27,18 @@ function matchMarkCandidate(
   return null;
 }
 
+/**
+ * 行頭の TAB の数に応じた字下げのクラス。用意した Style の数を超える字下げは最後の Style を使う。
+ * hasStyle[n-1] は StyleN に色・属性が設定されているか（無設定ならクラスを付けない）。
+ */
+function indentClassOf(lineContent: string, hasStyle: boolean[]): string | null {
+  if (hasStyle.length === 0) return null;
+  const tabs = lineContent.match(/^\t*/)?.[0].length ?? 0;
+  if (tabs === 0) return null;
+  const level = Math.min(tabs, hasStyle.length);
+  return hasStyle[level - 1] ? styleClass('Indent', level) : null;
+}
+
 interface HighlightMatcher {
   regex: RegExp;
   groupIndex: number;
@@ -86,6 +98,7 @@ export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEdito
   // 行ごとに作り直すと文書の行数ぶん無駄になるものは、走査の前に一度だけ用意する
   const commentCandidates = markCandidates(editorSettings.commentStyles || []);
   const bulletCandidates = markCandidates(editorSettings.bulletStyles || []);
+  const indentLevels = (editorSettings.indentStyles ?? []).map(style => !!colorStyleToCss(style));
   const matchers = highlightMatchers(editorSettings);
   const inlineRules = INLINE_STYLE_RULES.map(rule => ({ rule, regex: new RegExp(rule.pattern, 'g') }));
 
@@ -131,6 +144,16 @@ export function applyEditorDecorations(editor: MonacoEditor.IStandaloneCodeEdito
             inlineClassName: matched.className
           }
         });
+      } else {
+        // 字下げの色は Bullet/Comment の色を上書きしないよう、どちらにも当たらない行だけに付ける。
+        // 背景色が字下げ部分に広がらないよう、字下げの後ろの文字だけを対象にする
+        const indentClass = indentClassOf(lineContent, indentLevels);
+        if (indentClass && textAfterIndent) {
+          newDecorations.push({
+            range: new window.monaco!.Range(i, lineContent.length - textAfterIndent.length + 1, i, lineContent.length + 1),
+            options: { inlineClassName: indentClass },
+          });
+        }
       }
     }
 
