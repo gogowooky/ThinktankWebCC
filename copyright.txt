@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.7.2",
+  "version": "2.7.3",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "5170b5f",
-  "commitDateTime": "2026-11-12-232128",
-  "commitMessage": "feat: きなこ連携トークン中継（専用アカウントのIDトークンをDrive経由で受け渡し）・Firestoreルールのきなこ例外"
+  "commitId": "db86de6",
+  "commitDateTime": "2026-11-15-195303",
+  "commitMessage": "feat: Pane入れ替えD&D・ProjectのTree表示・字下げ色・linkファイルのリンク先表示"
 }
