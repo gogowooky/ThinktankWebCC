@@ -140,32 +140,29 @@ export function baseNameOf(target: string): string {
 }
 
 const NUMERIC_DATE_RE = /(\d{4})\s*[/年.-]\s*(\d{1,2})\s*[/月.-]\s*(\d{1,2})/;
-const ENGLISH_DATE_RE = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? (\d{1,2}), (\d{4})/i;
+const ENGLISH_DATE_RE = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? (\d{1,2}),? (\d{4})/i;
+// 英国式等の「5 Mar 2024」
+const DAY_FIRST_DATE_RE = /\b(\d{1,2}) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?,? (\d{4})/i;
 const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
 
-/** 写真の説明から撮影日を yyyy-MM-dd で取り出す */
-function photoDateOf(text: string): string {
+/** 写真の説明から撮影日を yyyy-MM-dd で取り出す。見つからなければ空文字 */
+export function photoDateOf(text: string): string {
   const pad = (n: number) => String(n).padStart(2, '0');
+  const valid = (y: string, m: number, d: number) =>
+    m >= 1 && m <= 12 && d >= 1 && d <= 31 ? `${y}-${pad(m)}-${pad(d)}` : '';
   const numeric = text.match(NUMERIC_DATE_RE);
-  if (numeric) return `${numeric[1]}-${pad(Number(numeric[2]))}-${pad(Number(numeric[3]))}`;
+  if (numeric) return valid(numeric[1], Number(numeric[2]), Number(numeric[3]));
   const english = text.match(ENGLISH_DATE_RE);
-  if (english) return `${english[3]}-${pad(MONTHS.indexOf(english[1].toLowerCase()) + 1)}-${pad(Number(english[2]))}`;
+  if (english) return valid(english[3], MONTHS.indexOf(english[1].toLowerCase()) + 1, Number(english[2]));
+  const dayFirst = text.match(DAY_FIRST_DATE_RE);
+  if (dayFirst) return valid(dayFirst[3], MONTHS.indexOf(dayFirst[2].toLowerCase()) + 1, Number(dayFirst[1]));
   return '';
 }
 
 /**
- * Googleフォトの写真の説明（サムネイルの aria-label 等）から撮影日を取り出し、
- * 「{yyyy-MM-dd}({撮影場所})」にする。撮影場所はドラッグ情報に含まれないため、
- * 説明に「場所:」「Location:」等があるときだけ添える。
+ * Googleフォトのlinkファイルの1行目と Caption（どちらも「yyyy年MM月dd日撮影」）。
+ * 撮影日はサムネイルの説明（aria-label 等）から読む。分からなければ空（呼び出し側で通常の値に倒す）。
  */
-function photoCaptionOf(text: string): string {
-  const date = photoDateOf(text);
-  if (!date) return '';
-  const place = text.match(/(?:場所|撮影場所|Location)\s*[:：]\s*([^\n\-–]+)/i)?.[1]?.trim();
-  return place ? `${date}(${place})` : date;
-}
-
-/** Googleフォトのlinkファイルの1行目。撮影日が分からなければ空（呼び出し側で通常のタイトルに倒す） */
 function photoTitleOf(source: LinkSource): string {
   const date = photoDateOf(source.pageTitle ?? '') || photoDateOf(source.title);
   if (!date) return '';
@@ -174,7 +171,7 @@ function photoTitleOf(source: LinkSource): string {
 }
 
 /**
- * Caption の値。GDrive=ファイル名/フォルダー名、GMail=メールタイトル、GPhoto=撮影日時(撮影場所)、
+ * Caption の値。GDrive=ファイル名/フォルダー名、GMail=メールタイトル、GPhoto=yyyy年MM月dd日撮影、
  * path=File:/Folder:+名前、link=リンク先タイトル（不明なら Affiliation）。
  * Googleのサービスもタイトルが分からなければ Affiliation に倒す（URL末尾の "view" 等は名前にならない）。
  */
@@ -185,7 +182,7 @@ export function linkCaptionOf(source: LinkSource, affiliation: string): string {
     return `${isDirectory ? 'Folder' : 'File'}:${baseNameOf(source.target)}`;
   }
   const title = cleanPageTitle(tag, source.pageTitle, source.target);
-  if (tag === 'gphoto') return photoCaptionOf(source.pageTitle ?? '') || title || affiliation;
+  if (tag === 'gphoto') return photoTitleOf(source) || title || affiliation;
   return title || affiliation;
 }
 

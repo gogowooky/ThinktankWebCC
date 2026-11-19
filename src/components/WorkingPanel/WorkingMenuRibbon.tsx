@@ -22,6 +22,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
 import type { TTWorkingArea } from '../../views/TTWorkingArea';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { isLocalFileDrag } from '../../utils/keyboardUtils';
+import { linkTagNameOf, photoDateOf } from '../../utils/linkFormat';
 import type { MediaType } from '../../types';
 import './WorkingMenuRibbon.css';
 
@@ -178,7 +179,16 @@ export function pageTitleFromDragHtml(html: string, url: string): string | undef
     img?.getAttribute('aria-label'),
     doc.querySelector('title')?.textContent,
   ];
-  const found = candidates.map(c => (c ?? '').replace(/\s+/g, ' ').trim()).find(c => c && c !== url);
+  const normalize = (c: string | null | undefined) => (c ?? '').replace(/\s+/g, ' ').trim();
+  if (linkTagNameOf(url) === 'gphoto') {
+    // 撮影日の入った説明が <a> 自身でなく子要素の aria-label 等に付くことや、
+    // <a> に日付を含まない文字（動画の長さ等）が入ることがあるため、HTML全体から日付入りのものを探す
+    const described = Array.from(doc.querySelectorAll('[aria-label], [title], [alt]'))
+      .flatMap(el => ['aria-label', 'title', 'alt'].map(name => el.getAttribute(name)));
+    const dated = [...candidates, ...described, doc.body?.textContent].map(normalize).find(c => photoDateOf(c));
+    if (dated) return dated;
+  }
+  const found = candidates.map(normalize).find(c => c && c !== url);
   return found || undefined;
 }
 

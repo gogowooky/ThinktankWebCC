@@ -139,10 +139,17 @@ describe('Caption', () => {
     expect(caption('https://mail.google.com/mail/u/0/#inbox/1', '打合せの件 - me@gmail.com - Gmail')).toBe('打合せの件');
   });
 
-  it('GPhoto は撮影日を yyyy-MM-dd で（撮影場所が分かれば括弧で添える）', () => {
-    expect(caption('https://photos.google.com/photo/1', '写真 - 横向き - 2026/11/3 14:22:10')).toBe('2026-11-03');
-    expect(caption('https://photos.google.com/photo/1', '写真 - 2026年1月5日 9:00')).toBe('2026-01-05');
-    expect(caption('https://photos.google.com/photo/1', 'Photo - Mar 5, 2024, 2:22:13 PM - Location: Kyoto')).toBe('2024-03-05(Kyoto)');
+  it('GPhoto の Caption もタイトルと同じ「yyyy年MM月dd日撮影」', () => {
+    expect(caption('https://photos.google.com/photo/1', '写真 - 横向き - 2026/11/3 14:22:10')).toBe('2026年11月03日撮影');
+    expect(caption('https://photos.google.com/photo/1', '写真 - 2026年1月5日 9:00')).toBe('2026年01月05日撮影');
+    expect(caption('https://photos.google.com/photo/1', 'Photo - Mar 5, 2024, 2:22:13 PM - Location: Kyoto')).toBe('2024年03月05日撮影');
+    expect(caption('https://photos.google.com/photo/1', 'Photo - 5 Mar 2024, 14:22:13')).toBe('2024年03月05日撮影');
+    expect(caption('https://photos.google.com/photo/1')).toBe('photos.google.com');
+  });
+
+  it('GPhoto の Caption の無い旧ファイルはタイトルの撮影日から補う', () => {
+    expect(captionOfLinkFile({ title: '2026年11月03日撮影', caption: '', link: 'https://photos.google.com/photo/1', affiliation: 'photos.google.com', abstract: '' }))
+      .toBe('2026年11月03日撮影');
   });
 
   it('GPhoto のlinkファイルのタイトルは「yyyy年MM月dd日撮影」（撮影日不明なら通常のタイトル）', () => {

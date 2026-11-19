@@ -33,7 +33,7 @@ example.com
   |---|---|
   | GDrive | ファイル名またはフォルダー名 |
   | GMail | メールタイトル |
-  | GPhoto | 撮影日を `yyyy-MM-dd` で。撮影場所が分かれば `yyyy-MM-dd(撮影場所)` |
+  | GPhoto | 撮影日から `yyyy年MM月dd日撮影`（1行目と同じ。2026-11-19 に `yyyy-MM-dd(撮影場所)` から変更） |
   | path | ファイルは `File:{ファイル名}`、フォルダは `Folder:{フォルダー名}` |
   | link | リンク先タイトル。不明なら Affiliation の値 |
   - タイトルはブラウザからのドラッグに付く `text/html`（`<a>` のテキスト・aria-label）か、
@@ -42,8 +42,9 @@ example.com
   - GDrive・GMail は、設定されていれば利用者の GAS に名前・件名を問い合わせ、ドラッグ情報より優先する
     （`docs/261108/GASリンクタイトル取得.md`）。
   - GDrive・GMail・GPhoto もタイトルが分からなければ Affiliation の値にする。
-  - GPhoto の撮影日はサムネイルの説明から読む。撮影場所はドラッグ情報に含まれないことが多く、
-    分からなければ日付だけにする。
+  - GPhoto の撮影日はサムネイルの説明から読む。`<a>` のテキストに限らず、ドラッグの HTML 全体の
+    aria-label・title・alt から日付の入ったものを探す（`pageTitleFromDragHtml`）。
+    写真を開いた画面のアドレスバーからのドラッグには撮影日が含まれないため、通常のタイトル／Affiliation になる。
   - Caption 項の無い旧ファイルは、1行目のタイトル等から補って使う（`captionOfLinkFile`）。
   - GPhoto の1行目（タイトル）は撮影日から `yyyy年MM月dd日撮影` にする（2026-11-14）。
     撮影日が分からなければ通常どおりリンク先タイトル。

@@ -13,6 +13,13 @@ describe('pageTitleFromDragHtml', () => {
     expect(pageTitleFromDragHtml(`<a href="${url}">${url}</a>`, url)).toBeUndefined();
     expect(pageTitleFromDragHtml('', url)).toBeUndefined();
   });
+  it('Googleフォトは子要素の説明も含めて撮影日の入ったものを選ぶ', () => {
+    const photo = 'https://photos.google.com/photo/AF1';
+    expect(pageTitleFromDragHtml(
+      `<a href="${photo}">0:15<div role="checkbox" aria-label="写真 - 横向き - 2026/11/03 14:22:10"></div></a>`, photo,
+    )).toBe('写真 - 横向き - 2026/11/03 14:22:10');
+    expect(pageTitleFromDragHtml(`<a href="${photo}">夕焼け</a>`, photo)).toBe('夕焼け');
+  });
 });
 
 describe('parseWindowsUrlShortcut', () => {
