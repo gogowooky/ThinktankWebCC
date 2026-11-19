@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.7.4 fix: GPhotoのlinkファイルのタイトルとCaptionを撮影日「yyyy年MM月dd日撮影」にする
+
+- 日付: 2026-11-20
+- コミット番号: c281902
+
+GPhoto の linkファイルの Caption を、1行目のタイトルと同じ「yyyy年MM月dd日撮影」にした（旧: yyyy-MM-dd(撮影場所)）。ブラウザからのドラッグの HTML は <a> のテキストを優先していたため、サムネイルに日付以外の文字が入る・日付の説明が子要素に付く場合に撮影日を取れなかった。GPhoto では HTML 全体の aria-label・title・alt から撮影日の入った説明を探すようにし、「5 Mar 2024」形式も読み、ありえない月日は採用しない。linkファイル仕様と AI CLI 向けの links 書式説明も更新。linkFormat・WorkingMenuRibbon のテスト53件成功、型検査成功（実際の Googleフォトからのドラッグは未確認）。
+
 ### v2.7.3 feat: Pane入れ替えD&D・ProjectのTree表示・字下げ色・linkファイルのリンク先表示
 
 - 日付: 2026-11-15

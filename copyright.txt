@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.7.3",
+  "version": "2.7.4",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "db86de6",
-  "commitDateTime": "2026-11-15-195303",
-  "commitMessage": "feat: Pane入れ替えD&D・ProjectのTree表示・字下げ色・linkファイルのリンク先表示"
+  "commitId": "c281902",
+  "commitDateTime": "2026-11-20-064047",
+  "commitMessage": "fix: GPhotoのlinkファイルのタイトルとCaptionを撮影日「yyyy年MM月dd日撮影」にする"
 }
