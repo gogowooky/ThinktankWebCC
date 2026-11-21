@@ -249,6 +249,7 @@ https://firestore.googleapis.com/v1/projects/{projectId}/databases/(default)/doc
   1. PC の設定（Firebase / PC連携）に deviceId が表示される。
   2. `users/{uid}/devices/{deviceId}` ドキュメント（`deviceId`, `deviceName`, `lastHeartbeatAt`）を読む。同じ uid に複数 PC があれば、ここに複数ドキュメントが並ぶ。
 - HTTP 経由の MCP（`electron/mcpHttpServer.cjs`）のトークンも deviceId に紐づく。別 PC のトークンは 403。
+- HTTP 経由の MCP の待ち受けは localhost（`127.0.0.1`）固定で、待ち受けアドレスを選ぶ設定はない（Tailscale 等のアドレスでの待ち受けは 2026-11 に廃止）。別端末から直接は届かないので、きなこからは本書の Firestore 中継を使う。
 
 ## 8. 未定事項（コードに規定なし）
 

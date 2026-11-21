@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { copyFirestoreToLocal, copyLocalToFirestore } from './vaultMigration';
+import { copyFirestoreToLocal, copyLocalToFirestore, overwriteFolderToFirestore } from './vaultMigration';
 import type { FirestoreStorageBackend } from '../../platform/web/FirestoreStorageBackend';
 import type { ThinkMeta } from './IStorageBackend';
 
@@ -63,5 +63,38 @@ describe('ThinkファイルFolder → Firestore', () => {
     const result = await copyLocalToFirestore(firestore, DIR);
     expect(result).toEqual({ created: 0, updated: 1, skipped: 0, failedIds: ['b'] });
     expect(stashVersion).toHaveBeenCalledWith(DIR, replaced, 'firestore-overwritten');
+  });
+});
+
+describe('上書き用Thinkファイルフォルダー → Firestore（上書き）', () => {
+  it('更新日時に関わらず全件を上書きし、上書きされる版を退避する。読めない・削除済みは数えて飛ばす', async () => {
+    const stashFirestoreVersion = vi.fn().mockResolvedValue(true);
+    const getRecord = vi.fn().mockImplementation(async (_dir: string, id: string) =>
+      id === 'c' ? null : { meta: meta(id, '2020-01-01T00:00:00.000Z'), body: `old-${id}` });
+    (window as unknown as { electronAPI: unknown }).electronAPI = {
+      overwriteImport: {
+        listIds: vi.fn().mockResolvedValue(['a', 'b', 'c', '__tt_ui_state__']),
+        getRecord,
+        stashFirestoreVersion,
+      },
+    };
+    const replaced = { meta: meta('a', '2026-11-20T00:00:00.000Z'), body: 'firestore-a' };
+    const overwriteRecord = vi.fn().mockImplementation(async (record: { meta: ThinkMeta }, beforeOverwrite: (r: unknown) => Promise<void>) => {
+      if (record.meta.thinkid === 'b') return 'created';
+      await beforeOverwrite(replaced);
+      return 'updated';
+    });
+    const firestore = { overwriteRecord, importNewerRecord: vi.fn() } as unknown as FirestoreStorageBackend;
+    const progress = vi.fn();
+    const result = await overwriteFolderToFirestore(firestore, DIR, progress);
+    expect(result).toEqual({ created: 1, updated: 1, skipped: 1, failedIds: [] });
+    expect(getRecord).not.toHaveBeenCalledWith(DIR, '__tt_ui_state__');
+    expect(overwriteRecord.mock.calls[0][0]).toEqual({ meta: meta('a', '2020-01-01T00:00:00.000Z'), body: 'old-a' });
+    expect(stashFirestoreVersion).toHaveBeenCalledWith(replaced);
+    expect(progress).toHaveBeenLastCalledWith(3, 3);
+  });
+
+  it('PC版でなければ実行しない', async () => {
+    await expect(overwriteFolderToFirestore({} as FirestoreStorageBackend, DIR)).rejects.toThrow('PC版');
   });
 });

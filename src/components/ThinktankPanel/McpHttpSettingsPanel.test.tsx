@@ -15,12 +15,6 @@ const baseStatus = (over: Partial<ElectronMcpHttpStatus> = {}): ElectronMcpHttpS
   enabled: false,
   listening: false,
   localMode: false,
-  bindAddress: '127.0.0.1',
-  bindKind: 'loopback',
-  addresses: [
-    { address: '127.0.0.1', kind: 'loopback', interface: 'lo' },
-    { address: '100.101.102.103', kind: 'tailscale', interface: 'Tailscale' },
-  ],
   endpointUrl: '',
   port: 47821,
   pcId: 'pc_test',
@@ -86,16 +80,14 @@ it('ローカル運用モードでは節を出したうえで、すべての操�
   expect(api.setEnabled).not.toHaveBeenCalled();
 });
 
-it('ON にすると起動し、待ち受けアドレスの種類と接続先を表示する', async () => {
+it('ON にすると起動し、localhost の接続先を表示する', async () => {
   const api = {
     getStatus: vi.fn().mockResolvedValue(baseStatus()),
     setEnabled: vi.fn().mockResolvedValue(
       baseStatus({
         enabled: true,
         listening: true,
-        bindAddress: '100.101.102.103',
-        bindKind: 'tailscale',
-        endpointUrl: 'http://100.101.102.103:47821/mcp',
+        endpointUrl: 'http://127.0.0.1:47821/mcp',
       }),
     ),
   };
@@ -103,19 +95,16 @@ it('ON にすると起動し、待ち受けアドレスの種類と接続先を�
   await act(async () => root.render(<McpHttpSettingsPanel />));
   await flush();
 
-  // 既定は OFF で、localhost のみなら別端末から届かないことを案内する
   const sw = host.querySelector('input[role="switch"]') as HTMLInputElement;
   expect(sw.checked).toBe(false);
-  expect(host.textContent).toContain('localhost のみの待ち受けです');
-  expect(host.textContent).toContain('100.101.102.103（Tailscale）');
-  expect(host.textContent).toContain('127.0.0.1（localhost のみ）');
+  expect(host.textContent).toContain('待ち受けは localhost（127.0.0.1）のみです');
+  expect(host.querySelector('select')).toBeNull();
 
   await act(async () => sw.click());
   await flush();
   expect(api.setEnabled).toHaveBeenCalledWith(true);
   expect(host.textContent).toContain('待ち受け中');
-  expect(host.textContent).toContain('http://100.101.102.103:47821/mcp');
-  expect(host.textContent).toContain('（Tailscale）');
+  expect(host.textContent).toContain('http://127.0.0.1:47821/mcp');
 });
 
 it('起動に失敗したときは理由を表示する', async () => {

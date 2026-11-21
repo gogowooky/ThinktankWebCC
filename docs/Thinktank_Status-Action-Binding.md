@@ -1286,7 +1286,7 @@ description:    D&Dされた外部URLまたはパスの挿入方法をメニュ�
 ## Action：　261030　TextEditor.CurrentEditor.DDInsert:Tag
 description:    D&DされたURLまたはパスのlinkファイルを作成し、参照タグを挿入する
 　同じD&Dメニューから選択すると、URL/パスを1件のlinkファイルとして保存し、リンク先に応じた
-　GMail / GDrive / GPhoto / GNB / path / link タグをドロップ位置へ挿入します。
+　GMail / GDrive / GPhoto / GNB / file / dir / link タグをドロップ位置へ挿入します。
 　WindowsのInternet Shortcut（.url）とShell Link（.lnk、Electron版）はリンク先を解決します。
 　メニュー定義はdocs\DefaultMenu.md、linkファイル書式とタグ判定はsrc\utils\linkFormat.tsに集約しています。
 　Electron版で画像等のローカルファイルをTextEditorへD&Dした場合も、Pane作成へ流さず
@@ -1698,7 +1698,7 @@ description:    カーソル位置のLinkタグが示す linkファイルのリ�
 
 ## Action：　261030　TextEditor.CurrentEditor.DoOnCursorPos:Link:Open
 description:    カーソル位置のLinkタグが指す linkファイルのリンク先を開く
-　A（261030実装）：[link:ID] [gmail:ID] [gdrive:ID] [gphoto:ID] [gnb:ID] [path:ID]（タグ名の大文字小文字は問わない）の
+　A（261030実装）：[link:ID] [gmail:ID] [gdrive:ID] [gphoto:ID] [gnb:ID] [file:ID] [dir:ID]（タグ名の大文字小文字は問わない）の
 　　ID の linkファイルを読み、# Link のURLをブラウザで、パスをOS既定のアプリ（PC版のみ）で開きます。
 　　値が ThinkID でないタグ（[GMail:検索語] 等）は Link タグとして扱いません（docs\261028 のタグ増設計画に残す）。
 　　旧書式（箇条書きのリンク集）の linkファイルは先頭のリンクを開きます。http(s) 以外のURLは開きません。

@@ -20,6 +20,7 @@ import { useEditorSettings } from './media/useEditorSettings';
 import { getPcName } from '../../utils/pcName';
 import { readColHeader, tableContentWithBodyHeader } from '../../utils/tableFormat';
 import { reportSaveError } from '../../utils/saveError';
+import { StorageManager } from '../../services/storage/StorageManager';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -155,10 +156,15 @@ export function WorkingArea({
 
   // タイトルへの URL/path D&D → links Think を表示（同じリンク先のものがあればそれを使う）
   const handleUrlDrop = useCallback(async (link: LinkDrop) => {
-    const { think } = await vault.GetOrCreateLinksThink(
-      { target: link.url, title: link.title, pageTitle: link.pageTitle, isDirectory: link.isDirectory },
-      await getPcName(), seedsProjectId);
-    area.OpenThink(think.ID, 'texteditor', think.Name);
+    try {
+      const { think } = await vault.GetOrCreateLinksThink(
+        { target: link.url, title: link.title, pageTitle: link.pageTitle, isDirectory: link.isDirectory },
+        await getPcName(), seedsProjectId);
+      area.OpenThink(think.ID, 'texteditor', think.Name);
+    } catch (err) {
+      // ドロップ元のイベントはもう終わっているため、ここで拾わないと失敗が無言で消える
+      console.error('[WorkingArea] linkファイルの作成に失敗しました:', link.url, err);
+    }
   }, [vault, area, seedsProjectId]);
 
   // コンテンツ領域への URL/path D&D（links ペインのみ）。linkファイルは1件1ファイルなので
@@ -339,6 +345,8 @@ export function WorkingArea({
       <WorkingMenuRibbon
         area={area}
         contentType={think?.ContentType}
+        onSaveSnapshot={contentReady && think && StorageManager.instance.storageMode === 'firestore'
+          ? () => StorageManager.instance.createSnapshot(think.ID) : undefined}
         isFocused={isFocused}
         isDirty={isDirty}
         isOutsideBundle={isOutsideBundle}

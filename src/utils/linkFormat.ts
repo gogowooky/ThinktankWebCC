@@ -12,13 +12,18 @@
 
 import { THINK_ID_RE } from './thinkFormat';
 
-// path は「ローカルのパス」という種別名。参照タグには file / dir を使い、[path:ID] は旧タグとして読むだけにする
-export type LinkTagName = 'gmail' | 'gdrive' | 'gphoto' | 'gnb' | 'file' | 'dir' | 'path' | 'link';
+export type LinkTagName = 'gmail' | 'gdrive' | 'gphoto' | 'gnb' | 'file' | 'dir' | 'link';
 
-export const LINK_TAG_NAMES: readonly LinkTagName[] = ['gmail', 'gdrive', 'gphoto', 'gnb', 'file', 'dir', 'path', 'link'];
+export const LINK_TAG_NAMES: readonly LinkTagName[] = ['gmail', 'gdrive', 'gphoto', 'gnb', 'file', 'dir', 'link'];
+
+/**
+ * リンク先の種別。ローカルのパスはファイルかフォルダかをURL/パスだけでは決めきれないため path とし、
+ * 参照タグにするときに file / dir へ分ける（linkTagOfFile / linkTagOfTarget）。
+ */
+export type LinkKind = Exclude<LinkTagName, 'file' | 'dir'> | 'path';
 
 // ホスト名は完全一致で照合する（部分一致だと photos.google.com.example.test などを取り違える）
-const HOST_TAGS: ReadonlyArray<{ tag: LinkTagName; hosts: readonly string[] }> = [
+const HOST_TAGS: ReadonlyArray<{ tag: LinkKind; hosts: readonly string[] }> = [
   { tag: 'gmail',  hosts: ['mail.google.com'] },
   // Docs/Sheets/Slides も Drive 上のファイルなので gdrive に含める
   { tag: 'gdrive', hosts: ['drive.google.com', 'docs.google.com'] },
@@ -44,8 +49,8 @@ function parseUrl(target: string): URL | null {
   try { return new URL(target.trim()); } catch { return null; }
 }
 
-/** リンク先のURL/パスから、参照タグに使うタグ名を決める（タグ名の判定はここだけで行う）。 */
-export function linkTagNameOf(target: string): LinkTagName {
+/** リンク先のURL/パスから種別を決める（ホスト名による判定はここだけで行う）。 */
+export function linkKindOf(target: string): LinkKind {
   if (isLocalPathTarget(target)) return 'path';
   const url = parseUrl(target);
   if (!url || url.protocol !== 'https:') return 'link';
@@ -119,13 +124,13 @@ export interface LinkSource {
 }
 
 /** 参照タグの後ろに Caption を添えるタグ */
-const CAPTIONED_TAGS: readonly LinkTagName[] = ['gmail', 'gdrive', 'link', 'file', 'dir', 'path'];
+const CAPTIONED_TAGS: readonly LinkTagName[] = ['gmail', 'gdrive', 'link', 'file', 'dir'];
 
 // ブラウザのタブ名に付く「 - Google ドライブ」等のサービス名を外し、ファイル名・件名だけにする
 const GOOGLE_TITLE_SUFFIX_RE = /\s+[-–]\s+Google\s*(?:ドライブ|Drive|ドキュメント|Docs|スプレッドシート|Sheets|スライド|Slides|フォーム|Forms|フォト|Photos)\s*$/i;
 const GMAIL_TITLE_SUFFIX_RE = /(?:\s+[-–]\s+[^\s@]+@[^\s@]+)?\s+[-–]\s+Gmail\s*$/i;
 
-function cleanPageTitle(tag: LinkTagName, pageTitle: string | undefined, target: string): string {
+function cleanPageTitle(tag: LinkKind, pageTitle: string | undefined, target: string): string {
   let s = (pageTitle ?? '').replace(/\s+/g, ' ').trim();
   if (!s || s === target.trim()) return '';
   if (tag === 'gmail') s = s.replace(GMAIL_TITLE_SUFFIX_RE, '').trim();
@@ -176,7 +181,7 @@ function photoTitleOf(source: LinkSource): string {
  * Googleのサービスもタイトルが分からなければ Affiliation に倒す（URL末尾の "view" 等は名前にならない）。
  */
 export function linkCaptionOf(source: LinkSource, affiliation: string): string {
-  const tag = linkTagNameOf(source.target);
+  const tag = linkKindOf(source.target);
   if (tag === 'path') {
     const isDirectory = source.isDirectory ?? /[\\/]$/.test(source.target.trim());
     return `${isDirectory ? 'Folder' : 'File'}:${baseNameOf(source.target)}`;
@@ -239,7 +244,7 @@ export function serializeLinkFile(file: LinkFile): string {
 
 export function createLinkFile(source: LinkSource, pcName: string): LinkFile {
   const affiliation = linkAffiliationOf(source.target, pcName);
-  const tag = linkTagNameOf(source.target);
+  const tag = linkKindOf(source.target);
   // 1行目もリンク先の本当のタイトルが分かればそれを使う（pathはファイル名のまま）
   const pageTitle = tag === 'path' ? '' : cleanPageTitle(tag, source.pageTitle, source.target);
   return {
@@ -273,11 +278,15 @@ export function linkTargetKey(target: string): string {
  * （フォルダかどうかは作成時に決めた Caption の「Folder:」で判断する）。
  */
 export function linkTagOfFile(file: LinkFile): LinkTagName {
-  const tag = linkTagNameOf(file.link);
-  if (tag !== 'path') return tag;
   const caption = file.caption.trim();
-  const isDirectory = caption ? /^Folder:/i.test(caption) : /[\\/]$/.test(file.link.trim());
-  return isDirectory ? 'dir' : 'file';
+  return linkTagOfTarget(file.link, caption ? /^Folder:/i.test(caption) : undefined);
+}
+
+/** リンク先から参照タグ名を決める。パスは isDirectory が分からなければ末尾の区切りでフォルダとみなす */
+export function linkTagOfTarget(target: string, isDirectory?: boolean): LinkTagName {
+  const kind = linkKindOf(target);
+  if (kind !== 'path') return kind;
+  return (isDirectory ?? /[\\/]$/.test(target.trim())) ? 'dir' : 'file';
 }
 
 /** 参照タグを組み立てる。GMail/GDrive/link/file/dir はタグの後ろに Caption を添える */
@@ -350,8 +359,7 @@ export function formatLinkTag(tag: LinkTagName, thinkId: string): string {
 export function parseLinkTag(text: string): { tag: LinkTagName; thinkId: string } | null {
   const match = text.trim().match(/^\[([A-Za-z]+):\s*([^\]]*?)\s*\]$/);
   if (!match) return null;
-  // 廃止した [links:ID]（旧Projectの # 対象 に残る）も読み取りだけ [link:ID] として扱う
-  const name = match[1].toLowerCase() === 'links' ? 'link' : match[1].toLowerCase();
+  const name = match[1].toLowerCase();
   const tag = LINK_TAG_NAMES.find(t => t === name);
   if (!tag || !THINK_ID_RE.test(match[2])) return null;
   return { tag, thinkId: match[2] };

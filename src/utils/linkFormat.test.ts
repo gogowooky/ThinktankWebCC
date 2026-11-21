@@ -8,7 +8,8 @@ import {
   linkTargetKey,
   linkTagOfFile,
   linkAffiliationOf,
-  linkTagNameOf,
+  linkKindOf,
+  linkTagOfTarget,
   parentFolderOf,
   parseLegacyLinks,
   parseLinkFile,
@@ -17,7 +18,7 @@ import {
   serializeLinkFile,
 } from './linkFormat';
 
-describe('linkTagNameOf', () => {
+describe('linkKindOf', () => {
   it.each([
     ['https://mail.google.com/mail/u/0/#inbox/18f3abc012345678', 'gmail'],
     ['https://drive.google.com/file/d/1AbC/view', 'gdrive'],
@@ -29,13 +30,13 @@ describe('linkTagNameOf', () => {
     ['https://example.com/page', 'link'],
     ['mailto:someone@example.com', 'link'],
   ] as const)('%s → %s', (target, tag) => {
-    expect(linkTagNameOf(target)).toBe(tag);
+    expect(linkKindOf(target)).toBe(tag);
   });
 
   it('ホスト名は完全一致で判定し、似せたホストやhttpはlinkにする', () => {
-    expect(linkTagNameOf('https://photos.google.com.example.test/x')).toBe('link');
-    expect(linkTagNameOf('https://evil.example/drive.google.com')).toBe('link');
-    expect(linkTagNameOf('http://drive.google.com/x')).toBe('link');
+    expect(linkKindOf('https://photos.google.com.example.test/x')).toBe('link');
+    expect(linkKindOf('https://evil.example/drive.google.com')).toBe('link');
+    expect(linkKindOf('http://drive.google.com/x')).toBe('link');
   });
 
   it.each([
@@ -46,7 +47,7 @@ describe('linkTagNameOf', () => {
     'file:///C:/a/b.txt',
     'report.pdf',
   ])('%s はパス', target => {
-    expect(linkTagNameOf(target)).toBe('path');
+    expect(linkKindOf(target)).toBe('path');
   });
 });
 
@@ -208,7 +209,7 @@ describe('linkEmbedUrl', () => {
 });
 
 describe('参照タグ', () => {
-  it('GMail/GDrive/link/path はタグの後ろに Caption を添える', () => {
+  it('GMail/GDrive/link/file/dir はタグの後ろに Caption を添える', () => {
     expect(formatLinkTagWithCaption('gdrive', '2026-10-30-120000', '見積書.pdf')).toBe('[gdrive:2026-10-30-120000] 見積書.pdf');
     expect(formatLinkTagWithCaption('file', '2026-10-30-120000', 'File:b.md')).toBe('[file:2026-10-30-120000] b.md');
     expect(formatLinkTagWithCaption('dir', '2026-10-30-120000', 'Folder:pics')).toBe('[dir:2026-10-30-120000] pics');
@@ -219,7 +220,7 @@ describe('参照タグ', () => {
   it('タグ名とThinkIDを組み立て・読み取る（大文字小文字は問わない）', () => {
     expect(formatLinkTag('gdrive', '2026-10-30-120000')).toBe('[gdrive:2026-10-30-120000]');
     expect(parseLinkTag('[GDrive:2026-10-30-120000]')).toEqual({ tag: 'gdrive', thinkId: '2026-10-30-120000' });
-    expect(parseLinkTag('[path: 2026-10-30-120000-a3f9 ]')).toEqual({ tag: 'path', thinkId: '2026-10-30-120000-a3f9' });
+    expect(parseLinkTag('[file: 2026-10-30-120000-a3f9 ]')).toEqual({ tag: 'file', thinkId: '2026-10-30-120000-a3f9' });
   });
 
   it('値がThinkIDでない・未知のタグ名は対象外', () => {
@@ -238,7 +239,15 @@ describe('参照タグ', () => {
     expect(parseLinkTag('[dir:2026-10-30-120000]')).toEqual({ tag: 'dir', thinkId: '2026-10-30-120000' });
   });
 
-  it('廃止した [links:ID] は [link:ID] として読む', () => {
-    expect(parseLinkTag('[links:2026-10-30-120000]')).toEqual({ tag: 'link', thinkId: '2026-10-30-120000' });
+  it('使わなくなった [path:ID]・[links:ID] はLinkタグとして読まない', () => {
+    expect(parseLinkTag('[path:2026-10-30-120000]')).toBeNull();
+    expect(parseLinkTag('[links:2026-10-30-120000]')).toBeNull();
+  });
+
+  it('リンク先だけから決めるタグ名は、パスなら file / dir にする', () => {
+    expect(linkTagOfTarget('C:\\a\\b.md')).toBe('file');
+    expect(linkTagOfTarget('C:\\a\\pics\\')).toBe('dir');
+    expect(linkTagOfTarget('C:\\a\\pics', true)).toBe('dir');
+    expect(linkTagOfTarget('https://photos.google.com/photo/1')).toBe('gphoto');
   });
 });

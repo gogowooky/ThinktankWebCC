@@ -17,7 +17,7 @@ import {
   type ThinkDiffResult,
 } from '../../platform/web/FirestoreStorageBackend';
 import { currentStorageMode, type StorageMode } from './storageMode';
-import { copyFirestoreToLocal, copyLocalToFirestore, type VaultMigrationResult } from './vaultMigration';
+import { copyFirestoreToLocal, copyLocalToFirestore, overwriteFolderToFirestore, type VaultMigrationResult } from './vaultMigration';
 
 export type { ThinkSnapshotRecord, ThinkDiffResult, VaultMigrationResult };
 
@@ -193,6 +193,13 @@ export class StorageManager {
     onProgress?: (done: number, total: number) => void,
   ): Promise<VaultMigrationResult> {
     return copyLocalToFirestore(this.requireFirestore('Firestore への移行'), localVaultDir, onProgress);
+  }
+
+  public overwriteFolderToFirestore(
+    sourceDir: string,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<VaultMigrationResult> {
+    return overwriteFolderToFirestore(this.requireFirestore('Firestore への上書きコピー'), sourceDir, onProgress);
   }
 
   // ── スナップショット機能 ──────────────────────────────────────────

@@ -27,3 +27,26 @@ it('projectファイルの Pane は表示モードのアイコンを TextEditor 
   expect(await mediaTips('memo')).toEqual(['テキストエディタ', 'Markdown']);
   expect(await mediaTips('table')).toEqual(['テキストエディタ', 'テーブル', 'カード']);
 });
+
+it('takes a snapshot only when the user clicks after edits are saved', async () => {
+  const area = new TTWorkingArea();
+  const save = vi.fn(async () => undefined);
+  const alert = vi.spyOn(window, 'alert').mockImplementation(() => {});
+  const render = (isDirty: boolean) => act(async () => root.render(
+    <WorkingMenuRibbon area={area} contentType="memo" isFocused isDirty={isDirty}
+      onSaveSnapshot={save} onDragStart={() => {}} onMediaTypeChange={() => {}}
+      onClose={() => {}} onResourceDrop={() => {}} />,
+  ));
+  try {
+    await render(true);
+    const button = host.querySelector<HTMLButtonElement>('button[aria-label="スナップショットを保存"]')!;
+    expect(button.disabled).toBe(true);
+    await render(false);
+    expect(save).not.toHaveBeenCalled();
+    await act(async () => button.click());
+    expect(save).toHaveBeenCalledTimes(1);
+    expect(alert).toHaveBeenCalledWith(expect.stringContaining('保存しました'));
+  } finally {
+    alert.mockRestore();
+  }
+});

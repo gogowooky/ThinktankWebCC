@@ -66,12 +66,6 @@ export interface ElectronKinakoAuthStatus {
   problem: string;
 }
 
-export interface ElectronMcpHttpAddress {
-  address: string;
-  kind: 'loopback' | 'tailscale';
-  interface: string;
-}
-
 export interface ElectronMcpHttpToken {
   id: string;
   label: string;
@@ -87,9 +81,7 @@ export interface ElectronMcpHttpStatus {
   listening: boolean;
   /** ローカル運用モードでは常に true。HTTP は起動せず、操作もできない。 */
   localMode: boolean;
-  bindAddress: string;
-  bindKind: 'loopback' | 'tailscale' | 'other';
-  addresses: ElectronMcpHttpAddress[];
+  /** 待ち受けは 127.0.0.1 固定。待ち受け中のときだけ値が入る。 */
   endpointUrl: string;
   port: number;
   pcId: string;
@@ -161,7 +153,7 @@ declare global {
       appMode?: {
         storageMode: 'firestore' | 'local';
         get:          () => Promise<ElectronAppModeInfo>;
-        selectFolder: (currentDir?: string) => Promise<string | null>;
+        selectFolder: (currentDir?: string, title?: string) => Promise<string | null>;
         apply:        (next: ElectronAppModeSetting) => Promise<{ ok: true } | { ok: false; error: string }>;
       };
       snapshot?: {
@@ -175,6 +167,11 @@ declare global {
         getRecord:    (dir: string, id: string) => Promise<ElectronLocalRecord | null>;
         importNewer:  (dir: string, payload: SavePayload & { createdAt: string; updatedAt: string }) => Promise<{ thinkid: string; status: 'created' | 'updated' | 'skipped'; updatedAt: string }>;
         stashVersion: (dir: string, record: { meta: ThinkMeta; body: string }, reason: 'firestore-overwritten') => Promise<boolean>;
+      };
+      overwriteImport?: {
+        listIds:               (dir: string) => Promise<string[]>;
+        getRecord:             (dir: string, id: string) => Promise<{ meta: ThinkMeta; body: string } | null>;
+        stashFirestoreVersion: (record: { meta: ThinkMeta; body: string }) => Promise<boolean>;
       };
       storage: {
         listMeta:       ()                => Promise<ThinkMeta[]>;
@@ -211,7 +208,7 @@ declare global {
       mcpHttp?: {
         getStatus:    () => Promise<ElectronMcpHttpStatus>;
         setEnabled:   (enabled: boolean) => Promise<ElectronMcpHttpStatus>;
-        configure:    (partial: { bindAddress?: string; port?: number }) => Promise<ElectronMcpHttpStatus>;
+        configure:    (partial: { port?: number }) => Promise<ElectronMcpHttpStatus>;
         createToken:  (options?: { label?: string }) => Promise<ElectronMcpHttpIssuedToken>;
         reissueToken: (options?: { label?: string }) => Promise<ElectronMcpHttpIssuedToken>;
         revokeToken:  (id: string) => Promise<ElectronMcpHttpStatus>;

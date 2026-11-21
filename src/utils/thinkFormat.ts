@@ -408,7 +408,7 @@ export function updateProjectTargets(content: string, items: ProjectTargetItem[]
   }));
   const formatLine = (item: ProjectTargetItem): string => {
     const existing = existingTags.get(item.id);
-    const keepTag = item.contentType === 'links' && existing && existing !== 'links';
+    const keepTag = item.contentType === 'links' && existing;
     const line = formatProjectTargetLine(item);
     return keepTag ? line.replace(/^\[[^:\]]*:/, `[${existing}:`) : line;
   };

@@ -80,7 +80,7 @@ describe('Linkタグ（[gdrive:ID] 等）', () => {
   });
 
   it('パスはブラウザ版では開かず、PC版のみと伝える', async () => {
-    setup(`[path:${LINK_ID}]`, 2, fakeThink('links', 'b.md\n=\n# Link\nC:\\a\\b.md\n# Affiliation\nPC:C:\n# Abstract'));
+    setup(`[file:${LINK_ID}]`, 2, fakeThink('links', 'b.md\n=\n# Link\nC:\\a\\b.md\n# Affiliation\nPC:C:\n# Abstract'));
     expect(await run('TextEditor.CurrentEditor.DoOnCursorPos:Link:Open')).toContain('PC版');
     expect(windowOpen).not.toHaveBeenCalled();
   });

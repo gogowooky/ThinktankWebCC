@@ -81,8 +81,8 @@ https://example.com/
   `*` は Think 参照ではないので `parentProjectid` は付かない。# 対象 を書き直しても `*` は1行目に残る。
   配下の project が `*` のときも、それを含む project の対象は全ファイルになる。
 - Thinkファイルは `[種別:ID]: タイトル`（タイトルは省略可）。種別はThinkのContentType。
-- linkファイルは `[link:ID]`。リンク先に応じた `[gmail:ID]` `[gdrive:ID]` `[gphoto:ID]` `[gnb:ID]` `[path:ID]`
-  も書ける（docs/261030/linkファイル仕様.md）。`[links:ID]` は廃止。
+- linkファイルは `[link:ID]`。リンク先に応じた `[gmail:ID]` `[gdrive:ID]` `[gphoto:ID]` `[gnb:ID]` `[file:ID]` `[dir:ID]`
+  も書ける（docs/261030/linkファイル仕様.md）。`[links:ID]`・`[path:ID]` は廃止。
 - URL・パス・検索タグ（`[Google:語]` 等）のようにThink参照でない行もそのまま並べられる。
 - Seedsへのドロップ等で対象を更新すると、Think参照の行だけを書き直し、それ以外の行は残す。
   既存の `[gdrive:ID]` 等の詳しいLinkタグ名は書き直しでも保つ。新しく載せる linkファイルは `[link:ID]`。
@@ -139,8 +139,9 @@ projectファイルに組み込まれた Think の metadata に、親となる p
   この projectファイル自身の `# AIまとめ`・`# AI議論` に載っているものを除いたもの。
   `*` で全ファイルを対象にしているとき（配下の project が `*` の場合も）は、どの projectファイルにも名指しされていない
   ファイルを、1か月以内に更新されたものに限る。
-- snapshot は `users/{uid}/vaults/{vaultId}/thinks/{thinkid}/snapshots/` の文書（`listSnapshots`）。今は `current` の1件だけなので
-  最新と最古は同じになる。snapshot が無いファイルは「比較できない」と添えて現在の内容を渡す。差分の無いファイルは名前だけを渡す。
+- Firestore モードでは Working の各 Think のタイトルバーにあるカメラボタンで、保存済みの版を手動でスナップショットに追加できる。
+  同日も複数世代を保持し、進捗要約は最新、実績要約は最古のスナップショットと比較する。旧形式の `snapshots/current` も参照できる。
+  snapshot が無いファイルは「比較できない」と添えて現在の内容を渡す。差分の無いファイルは名前だけを渡す。
 - AI に渡す文字数は1ファイル 6,000 字・全体 200,000 字まで。超えた分は省略したと書いて渡す。
 - AI は既存の AI CLI 呼び出し（PC版は IPC、Web版は PC連携の中継の `ai.conversation`）。
 
@@ -193,7 +194,7 @@ projectファイルに組み込まれた Think の metadata に、親となる p
 
 - 廃止: `# 見通し` の自由記述、`# 状態` の `状態値：` 表記と `最終評価日：`、`# 出力先`、`# 評価内容`、`# 評価日時`、`[links:ID]` タグ、`# プロンプト`（2026-10-31 に現状把握用・進捗把握用・実績把握用の3つへ分割）。
 - 既存ファイルに残る廃止項目は読み取りで害が無いため、変換・削除はしない。
-  `[links:ID]` はThink参照・Linkタグとして読み、`# 対象` を書き直すときに `[link:ID]` へ置き換える。
+  `[links:ID]` は Linkタグとしては読まず、`# 対象` の書き直しでも置き換えない（2026-11-21 に互換処理を廃止）。
 - Project見出しが一つも無い旧形式は本文からThink参照を拾う。`# 対象` が無いファイルへ対象を追加するときは、自由記載を残したまま `# 対象` を挿入する。
 - AI CLI（MCP）からProjectへThinkを紐づけるときも同じタグ名（links は `link`）を使う
   （`shared/vaultFormat.ts` の `projectTargetTag`）。

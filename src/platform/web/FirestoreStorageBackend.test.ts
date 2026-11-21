@@ -260,6 +260,7 @@ it('creates a lightweight tombstone with timestamp deletedAt and 90-day expireAt
 
   vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
     const url = String(input);
+    if (url.includes('/thinks/to-delete/snapshots?')) return new Response('{}');
     if (url.endsWith('/thinks/to-delete') && !init?.method) {
       return new Response(JSON.stringify({
         ...storedDocument(),
@@ -310,6 +311,7 @@ it('deletes child payloadParts together when soft-deleting an oversized Think', 
 
   vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
     const url = String(input);
+    if (url.includes('/thinks/oversized-to-delete/snapshots?')) return new Response('{}');
     if (url.endsWith('/thinks/oversized-to-delete') && !init?.method) {
       return new Response(JSON.stringify({
         ...storedDocument(),
@@ -344,7 +346,7 @@ it('deletes child payloadParts together when soft-deleting an oversized Think', 
   expect(deleteWrites.some((w) => String(w.delete).endsWith('/payloadParts/rev-xyz_1'))).toBe(true);
 });
 
-it('creates, retrieves, diffs and deletes a single snapshot under the subcollection', async () => {
+it('retains legacy and new snapshots, compares against the latest and discards only that version', async () => {
   const documents = new Map<string, Record<string, unknown>>();
 
   // 初期ドキュメントの準備
@@ -353,6 +355,12 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
   thinkDoc.fields.body = { stringValue: '初版本文' };
   (thinkDoc.fields as Record<string, unknown>).metadata = { mapValue: { fields: { step: { integerValue: '1' } } } };
   documents.set(thinkDoc.name, thinkDoc);
+  const legacyName = thinkDoc.name + '/snapshots/current';
+  documents.set(legacyName, {
+    name: legacyName, updateTime: thinkDoc.updateTime, fields: {
+      ...thinkDoc.fields, title: { stringValue: '旧形式' }, snapshotAt: { timestampValue: thinkDoc.updateTime },
+    },
+  });
 
   vi.stubGlobal('fetch', vi.fn(async (input: string | URL, init?: RequestInit) => {
     const url = String(input);
@@ -360,18 +368,20 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
       const body = JSON.parse(String(init?.body || '{}')) as {
         writes?: Array<{
           update?: { name?: string; fields?: Record<string, unknown> };
+          updateMask?: { fieldPaths: string[] };
           delete?: string;
         }>;
       };
       for (const w of body.writes ?? []) {
         if (w.update?.name) {
-          documents.set(w.update.name, { name: w.update.name, fields: w.update.fields, updateTime: new Date().toISOString() });
+          const previous = w.updateMask ? documents.get(w.update.name)?.fields as Record<string, unknown> : {};
+          documents.set(w.update.name, { name: w.update.name, fields: { ...previous, ...w.update.fields }, updateTime: new Date().toISOString() });
         }
         if (w.delete) {
           documents.delete(w.delete);
         }
       }
-      return new Response('{}', { status: 200 });
+      return new Response(JSON.stringify({ writeResults: body.writes?.map(() => ({ updateTime: new Date().toISOString() })) }));
     }
 
     // GET: snapshots コレクションの一覧
@@ -379,7 +389,15 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
     if (listPath.endsWith('/snapshots')) {
       const prefix = `${listPath.split('/documents/')[1]}/`;
       const found = [...documents.values()].filter((doc) => (String(doc.name).split('/documents/')[1] ?? '').startsWith(prefix));
-      return new Response(JSON.stringify(found.length ? { documents: found } : {}), { status: 200 });
+      const params = new URL(url).searchParams;
+      if (params.has('mask.fieldPaths')) return new Response(JSON.stringify({ documents: found }));
+      const at = (doc: Record<string, unknown>) => (doc.fields as { snapshotAt: { timestampValue: string } }).snapshotAt.timestampValue;
+      found.sort((a, b) => at(a).localeCompare(at(b)) || String(a.name).localeCompare(String(b.name)));
+      if (params.get('orderBy')?.includes('desc')) found.reverse();
+      const start = Number(params.get('pageToken') ?? 0);
+      // 強制的に1件ずつ返し、旧形式も含めページの先まで読むことを検証する。
+      return new Response(JSON.stringify({ documents: found.slice(start, start + 1),
+        nextPageToken: start + 1 < found.length ? String(start + 1) : undefined }));
     }
 
     // GET: パスが完全一致するドキュメントを返す
@@ -405,9 +423,7 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
     sourceUpdatedAt: '2026-10-19T00:00:00.000Z',
   });
 
-  // snapshots/current にドキュメントが保存されていること
-  const snapKey = [...documents.keys()].find((k) => k.endsWith('/thinks/a/snapshots/current'));
-  expect(snapKey).toBeDefined();
+  expect([...documents.keys()].filter(k => k.includes('/snapshots/'))).toHaveLength(2);
 
   // 2. スナップショット取得
   const retrieved = await backend.getSnapshot('a');
@@ -418,8 +434,7 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
     metadata: { step: 1 },
   });
 
-  // 一覧でも同じスナップショットが1件だけ読める
-  expect(await backend.listSnapshots('a')).toEqual([expect.objectContaining({ thinkid: 'a', title: '初版タイトル', body: '初版本文' })]);
+  expect((await backend.listSnapshots('a')).map(s => s.title)).toEqual(['旧形式', '初版タイトル']);
 
   // 3. 差分チェック（変更前）: hasChanges = false
   const diffBefore = await backend.getDiff('a');
@@ -440,9 +455,27 @@ it('creates, retrieves, diffs and deletes a single snapshot under the subcollect
   expect(diffAfter?.latest.title).toBe('更新後タイトル');
   expect(diffAfter?.snapshot.title).toBe('初版タイトル');
 
-  // 5. スナップショット削除
+  // 同じミリ秒の保存でも別の世代になる。
+  vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2099-01-01T01:00:00.000Z');
+  try {
+    await Promise.all([backend.createSnapshot('a'), backend.createSnapshot('a')]);
+  } finally {
+    vi.restoreAllMocks();
+  }
+  expect((await backend.listSnapshots('a')).map(s => s.title)).toEqual(['旧形式', '初版タイトル', '更新後タイトル', '更新後タイトル']);
+  expect((await backend.getDiff('a'))?.hasChanges).toBe(false);
+  await backend.deleteSnapshot('a');
+  expect(await backend.listSnapshots('a')).toHaveLength(3);
+  await backend.deleteSnapshot('a');
+  expect((await backend.getSnapshot('a'))?.title).toBe('初版タイトル');
+  await backend.deleteSnapshot('a');
+  expect((await backend.getSnapshot('a'))?.title).toBe('旧形式');
   await backend.deleteSnapshot('a');
   expect(await backend.getSnapshot('a')).toBeNull();
   expect(await backend.listSnapshots('a')).toEqual([]);
   expect(await backend.getDiff('a')).toBeNull();
+  await backend.createSnapshot('a');
+  await backend.createSnapshot('a');
+  await backend.delete('a');
+  expect([...documents.keys()].filter(k => k.includes('/snapshots/'))).toEqual([]);
 });

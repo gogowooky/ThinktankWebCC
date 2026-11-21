@@ -770,6 +770,7 @@ export class FirestoreStorageBackend implements IStorageBackend {
         return;
       }
       if (existing.meta.isDeleted) {
+        await this.purgeSnapshots(id, existing.firestoreUpdateTime);
         this.records.delete(id);
         await this.deleteElectronMarkdownBackup(id);
         return;
@@ -815,14 +816,17 @@ export class FirestoreStorageBackend implements IStorageBackend {
         }
       }
 
+      let tombstoneTime: string;
       try {
-        await this.commitDocument(id, tombstoneFields, existing, true, extraWrites);
-        this.records.delete(id);
-        await this.deleteElectronMarkdownBackup(id);
-        return;
+        tombstoneTime = await this.commitDocument(id, tombstoneFields, existing, true, extraWrites);
       } catch (error) {
         if (!(error instanceof StorageConflictError) || attempt > 0) throw error;
+        continue;
       }
+      this.records.delete(id);
+      await this.purgeSnapshots(id, tombstoneTime);
+      await this.deleteElectronMarkdownBackup(id);
+      return;
     }
   }
 
@@ -913,6 +917,35 @@ export class FirestoreStorageBackend implements IStorageBackend {
     if (!record.meta.updatedAt) throw new Error(`移行元の更新日時がありません: ${id}`);
     const existing = await this.fetchDocument(id, true);
     if (existing && (existing.meta.updatedAt || '') >= record.meta.updatedAt) return 'skipped';
+    return this.writeImportedRecord(record, existing, beforeOverwrite);
+  }
+
+  /**
+   * 上書きコピー用。更新日時に関わらず Firestore の版を置き換える。
+   * 更新日時は書き込んだ時刻にする（元の古い日付のままだと、他の端末の一覧キャッシュや
+   * バックアップが自分の版のほうが新しいとみなし、上書きが伝わらないため）。作成日時は元の値を保つ。
+   */
+  public async overwriteRecord(
+    record: FirestoreThinkRecord,
+    beforeOverwrite?: (replaced: FirestoreThinkRecord) => Promise<void>,
+  ): Promise<'created' | 'updated'> {
+    const id = record.meta.thinkid;
+    if (!isSafeThinkId(id)) throw new Error(`不正な thinkid です: ${id}`);
+    const existing = await this.fetchDocument(id, true);
+    const updatedAt = new Date().toISOString();
+    return this.writeImportedRecord(
+      { meta: { ...record.meta, updatedAt }, body: record.body },
+      existing,
+      beforeOverwrite,
+    );
+  }
+
+  private async writeImportedRecord(
+    record: FirestoreThinkRecord,
+    existing: StoredThinkRecord | null,
+    beforeOverwrite?: (replaced: FirestoreThinkRecord) => Promise<void>,
+  ): Promise<'created' | 'updated'> {
+    const id = record.meta.thinkid;
     if (existing && !existing.meta.isDeleted && beforeOverwrite) {
       await beforeOverwrite({ meta: existing.meta, body: existing.body });
     }
@@ -1068,126 +1101,136 @@ export class FirestoreStorageBackend implements IStorageBackend {
 
   // ── スナップショット機能 ──────────────────────────────────────────
 
-  /** 指定 Think の最新状態のコピーを snapshots/current に保存する（一覧には現れない） */
+  /** 手動保存ごとに新規文書を作る。過去の snapshots/current も同じ一覧で読める。 */
   public async createSnapshot(thinkid: string): Promise<ThinkSnapshotRecord> {
     if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
-    const record = await this.fetchDocument(thinkid);
-    if (!record || record.meta.isDeleted) {
-      throw new Error(`対象の Think「${thinkid}」が見つかりません。`);
-    }
-
     const ctx = await this.context();
-    const snapshotDocName =
-      `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
-      `/vaults/${this.vaultId}/thinks/${thinkid}/snapshots/current`;
-    const snapshotAt = new Date().toISOString();
-    const fields: Record<string, FirestoreValue> = {
-      schemaVersion: { integerValue: '1' },
-      thinkid: { stringValue: thinkid },
-      title: { stringValue: record.meta.title },
-      body: { stringValue: record.body },
-      metadata: encodeMetadata(record.meta.metadata),
-      sourceUpdatedAt: { stringValue: record.meta.updatedAt },
-      snapshotAt: { timestampValue: snapshotAt },
-    };
-
-    const response = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
-        ctx.projectId,
-      )}/databases/(default)/documents:commit`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
-        body: JSON.stringify({
-          writes: [{ update: { name: snapshotDocName, fields } }],
-        }),
-      },
-    );
-    if (!response.ok) {
+    const parentName = `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}/vaults/${this.vaultId}/thinks/${thinkid}`;
+    const snapshotId = crypto.randomUUID();
+    for (let attempt = 0; ; attempt++) {
+      const record = await this.fetchDocument(thinkid);
+      if (!record) throw new Error(`対象の Think「${thinkid}」が見つかりません。`);
+      const snapshotAt = new Date().toISOString();
+      const fields: Record<string, FirestoreValue> = {
+        schemaVersion: { integerValue: '1' },
+        thinkid: { stringValue: thinkid },
+        title: { stringValue: record.meta.title },
+        sourceUpdatedAt: { stringValue: record.meta.updatedAt },
+        snapshotAt: { timestampValue: snapshotAt },
+      };
+      if (record.payloadParts) {
+        // 大きな本文は元から版単位の不変ドキュメントに保存されている。
+        fields.payloadParts = { mapValue: { fields: {
+          revision: { stringValue: record.payloadParts.revision },
+          count: { integerValue: String(record.payloadParts.count) },
+        } } };
+      } else {
+        fields.body = { stringValue: record.body };
+        fields.metadata = encodeMetadata(record.meta.metadata);
+      }
+      const name = `${parentName}/snapshots/${record.meta.updatedAt}_${snapshotId}`;
+      // 同じコミットで親の版を照合する。取得後に削除されたThinkの下に履歴を作らない。
+      const response = await fetch(`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(ctx.projectId)}/databases/(default)/documents:commit`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
+        body: JSON.stringify({ writes: [
+          { update: { name: parentName, fields: { thinkid: fields.thinkid } }, updateMask: { fieldPaths: ['thinkid'] },
+            currentDocument: { updateTime: record.firestoreUpdateTime } },
+          { update: { name, fields }, currentDocument: { exists: false },
+            updateTransforms: [{ fieldPath: 'snapshotAt', setToServerValue: 'REQUEST_TIME' }] },
+        ] }),
+      });
       const body = await this.readJson(response);
-      throw new Error(
-        `スナップショットの保存に失敗しました (${firestoreErrorMessage(response.status, body)})`,
-      );
+      if (response.ok) {
+        const results = (body as { writeResults?: Array<{ transformResults?: FirestoreValue[] }> } | null)?.writeResults;
+        return { thinkid, title: record.meta.title, body: record.body, metadata: record.meta.metadata ?? {},
+          sourceUpdatedAt: record.meta.updatedAt, snapshotAt: results?.[1]?.transformResults?.[0]?.timestampValue ?? snapshotAt };
+      }
+      if (attempt < 2 && isPreconditionFailure(response.status, body)) continue;
+      throw new Error(`スナップショットの保存に失敗しました (${firestoreErrorMessage(response.status, body)})`);
     }
-
-    return {
-      thinkid,
-      title: record.meta.title,
-      body: record.body,
-      metadata: record.meta.metadata ?? {},
-      sourceUpdatedAt: record.meta.updatedAt,
-      snapshotAt,
-    };
   }
 
-  /** snapshots/current のスナップショットを取得する */
-  public async getSnapshot(thinkid: string): Promise<ThinkSnapshotRecord | null> {
+  private async *snapshotPages(thinkid: string, params: URLSearchParams): AsyncGenerator<FirestoreDocument[]> {
     if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
     const ctx = await this.context();
-    const url = `${ctx.collectionUrl}/${encodeURIComponent(thinkid)}/snapshots/current`;
-    const response = await fetch(url, { headers: ctx.authHeaders });
-    if (response.status === 404) return null;
-    if (!response.ok) {
-      const body = await this.readJson(response);
-      throw new Error(
-        `スナップショットの取得に失敗しました (${firestoreErrorMessage(response.status, body)})`,
-      );
-    }
-    return snapshotFromDocument(thinkid, (await response.json()) as FirestoreDocument);
-  }
-
-  /**
-   * snapshots 配下のスナップショットをすべて、古い順に返す。
-   * 今は snapshots/current の1件だけだが、日付ごとに残すようになっても最新・最古を選べるようにする
-   */
-  public async listSnapshots(thinkid: string): Promise<ThinkSnapshotRecord[]> {
-    if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
-    const ctx = await this.context();
-    const baseUrl = `${ctx.collectionUrl}/${encodeURIComponent(thinkid)}/snapshots`;
-    const records: ThinkSnapshotRecord[] = [];
-    let pageToken = '';
-    do {
-      const url = `${baseUrl}?pageSize=300${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`;
-      const response = await fetch(url, { headers: ctx.authHeaders });
-      if (response.status === 404) return [];
+    const url = `${ctx.collectionUrl}/${encodeURIComponent(thinkid)}/snapshots`;
+    for (;;) {
+      const response = await fetch(`${url}?${params}`, { headers: ctx.authHeaders });
+      if (response.status === 404) return;
       if (!response.ok) {
         const body = await this.readJson(response);
-        throw new Error(
-          `スナップショットの取得に失敗しました (${firestoreErrorMessage(response.status, body)})`,
-        );
+        throw new Error(`スナップショット一覧の取得に失敗しました (${firestoreErrorMessage(response.status, body)})`);
       }
-      const page = (await response.json()) as { documents?: FirestoreDocument[]; nextPageToken?: string };
-      for (const doc of page.documents ?? []) records.push(snapshotFromDocument(thinkid, doc));
-      pageToken = page.nextPageToken ?? '';
-    } while (pageToken);
-    return records.sort((x, y) => x.snapshotAt.localeCompare(y.snapshotAt));
+      const page = (await response.json()) as FirestoreListResponse;
+      yield page.documents ?? [];
+      if (!page.nextPageToken) return;
+      params.set('pageToken', page.nextPageToken);
+    }
   }
 
-  /** snapshots/current のスナップショットを破棄する */
-  public async deleteSnapshot(thinkid: string): Promise<void> {
-    if (!isSafeThinkId(thinkid)) throw new Error(`不正な thinkid です: ${thinkid}`);
-    const ctx = await this.context();
-    const snapshotDocName =
-      `projects/${ctx.projectId}/databases/(default)/documents/users/${ctx.uid}` +
-      `/vaults/${this.vaultId}/thinks/${thinkid}/snapshots/current`;
+  private async latestSnapshotDocument(thinkid: string): Promise<FirestoreDocument | null> {
+    const params = new URLSearchParams({ pageSize: '1', orderBy: 'snapshotAt desc, __name__ desc' });
+    for await (const docs of this.snapshotPages(thinkid, params)) {
+      if (docs.length) return docs[0];
+    }
+    return null;
+  }
 
-    const response = await fetch(
-      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(
-        ctx.projectId,
-      )}/databases/(default)/documents:commit`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
-        body: JSON.stringify({
-          writes: [{ delete: snapshotDocName }],
-        }),
-      },
-    );
+  private async readSnapshot(thinkid: string, doc: FirestoreDocument): Promise<ThinkSnapshotRecord> {
+    const snapshot = snapshotFromDocument(thinkid, doc);
+    if (doc.fields?.payloadParts) {
+      const record = await this.hydrateDocument(doc);
+      if (!record) throw new Error('スナップショットの分割データが不正です。');
+      snapshot.body = record.body;
+      snapshot.metadata = record.meta.metadata ?? {};
+    }
+    return snapshot;
+  }
+
+  public async getSnapshot(thinkid: string): Promise<ThinkSnapshotRecord | null> {
+    const doc = await this.latestSnapshotDocument(thinkid);
+    return doc ? this.readSnapshot(thinkid, doc) : null;
+  }
+
+  /** 旧形式の current を含め、最古から最新の順で返す。 */
+  public async listSnapshots(thinkid: string): Promise<ThinkSnapshotRecord[]> {
+    const records: ThinkSnapshotRecord[] = [];
+    const params = new URLSearchParams({ pageSize: '100', orderBy: 'snapshotAt asc, __name__ asc' });
+    for await (const docs of this.snapshotPages(thinkid, params)) {
+      for (const doc of docs) records.push(await this.readSnapshot(thinkid, doc));
+    }
+    return records;
+  }
+
+  private async removeSnapshotDocs(docs: FirestoreDocument[]): Promise<void> {
+    if (!docs.length) return;
+    const ctx = await this.context();
+    const response = await fetch(`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(ctx.projectId)}/databases/(default)/documents:commit`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', ...ctx.authHeaders },
+      body: JSON.stringify({ writes: docs.map(doc => ({
+        delete: doc.name, currentDocument: { updateTime: doc.updateTime },
+      })) }),
+    });
     if (!response.ok) {
       const body = await this.readJson(response);
-      throw new Error(
-        `スナップショットの削除に失敗しました (${firestoreErrorMessage(response.status, body)})`,
-      );
+      throw new Error(`スナップショットの削除に失敗しました (${firestoreErrorMessage(response.status, body)})`);
+    }
+  }
+
+  /** 一回の破棄で消すのは最新の一件。古い履歴はそのまま使える。 */
+  public async deleteSnapshot(thinkid: string): Promise<void> {
+    const doc = await this.latestSnapshotDocument(thinkid);
+    if (doc) await this.removeSnapshotDocs([doc]);
+  }
+
+  /** 親の削除より古い履歴だけを小分けに消す。途中で失敗しても削除を再試行できる。 */
+  private async purgeSnapshots(thinkid: string, tombstoneTime: string): Promise<void> {
+    // Firestore時刻はUTC・小数部0/3/6/9桁。文字列比較では末尾の Z を除くと順序が揃う。
+    const cutoff = tombstoneTime.replace(/Z$/, '');
+    const params = new URLSearchParams({ pageSize: '200', 'mask.fieldPaths': 'thinkid' });
+    for await (const docs of this.snapshotPages(thinkid, params)) {
+      const expired = docs.filter(doc => doc.updateTime && doc.updateTime.replace(/Z$/, '') <= cutoff);
+      await this.removeSnapshotDocs(expired);
     }
   }
 

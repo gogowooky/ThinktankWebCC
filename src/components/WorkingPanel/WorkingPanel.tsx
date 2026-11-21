@@ -244,18 +244,30 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   // D&D オーバーレイ（アイテムドロップ時の新Paneプレビュー）
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  // dragend / drop が body 外で終了したときのクリーンアップ
+  // dragend / drop が body 外で終了したときのクリーンアップ。
+  // Think一覧の行は仮想スクロールで、ドラッグ中の再描画でドラッグ元の行が DOM から外れると
+  // dragend が window まで届かない。他パネルの drop が stopPropagation する場合も document に
+  // 届かない。そのため drop は window のキャプチャ段階で拾い、それでも取りこぼした分は
+  // 「ネイティブ D&D 中は mousemove が来ない」ことを使い、D&D 後の最初の mousemove で消す
   useEffect(() => {
+    let isNativeDragging = false;
     const cleanup = () => {
+      isNativeDragging = false;
       setDropOverlay(null);
       setInsertCaret(null);
       setIsExternalDrag(false);
     };
-    document.addEventListener('dragend', cleanup);
-    document.addEventListener('drop',    cleanup);
+    const markNativeDrag = () => { isNativeDragging = true; };
+    const cleanupAfterNativeDrag = () => { if (isNativeDragging) cleanup(); };
+    window.addEventListener('dragover',  markNativeDrag,         true);
+    window.addEventListener('dragend',   cleanup,                true);
+    window.addEventListener('drop',      cleanup,                true);
+    window.addEventListener('mousemove', cleanupAfterNativeDrag, true);
     return () => {
-      document.removeEventListener('dragend', cleanup);
-      document.removeEventListener('drop',    cleanup);
+      window.removeEventListener('dragover',  markNativeDrag,         true);
+      window.removeEventListener('dragend',   cleanup,                true);
+      window.removeEventListener('drop',      cleanup,                true);
+      window.removeEventListener('mousemove', cleanupAfterNativeDrag, true);
     };
   }, []);
 

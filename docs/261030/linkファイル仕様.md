@@ -60,7 +60,7 @@ example.com
 
 ## 3. 参照タグ
 
-タグ名はリンク先から `linkTagNameOf()` が決める（ホスト名は完全一致、https のみ）。
+タグ名はリンク先の種別 `linkKindOf()` から決める（ホスト名は完全一致、https のみ）。
 
 | タグ | 判定 |
 |---|---|
@@ -73,7 +73,7 @@ example.com
 | `link` | 上記以外（http の Google URL、`mailto:` なども含む） |
 
 - パスのタグ名は `linkTagOfFile()` が linkファイルの Caption から決める（2026-11-08 に `path` から分けた）。
-  既存の `[path:ID]` は読み取りだけ互換を保つ。
+- 旧タグ `[path:ID]`・`[links:ID]` は 2026-11-21 に読み取り互換も廃止した（Linkタグとして扱わない）。
 
 - タグ名の大文字小文字は問わない（`[GDrive:ID]` も可）。
 - 値が ThinkID の形式のときだけ Link タグとして扱う。`[GMail:検索語]` のような値は

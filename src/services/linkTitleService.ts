@@ -6,7 +6,7 @@
  * 読み取りは利用者の権限で動く GAS 側で行う。手順は docs/261108/GASリンクタイトル取得.md。
  */
 
-import { linkTagNameOf } from '../utils/linkFormat';
+import { linkKindOf } from '../utils/linkFormat';
 
 const STORAGE_KEY_URL = 'thinktank.linkTitleGas.url';
 const STORAGE_KEY_TOKEN = 'thinktank.linkTitleGas.token';
@@ -102,7 +102,7 @@ function driveRequestOf(url: URL): LinkTitleRequest | null {
 
 /** リンク先のURLから、GAS へ問い合わせる内容を決める。対象外なら null */
 export function linkTitleRequestOf(target: string): LinkTitleRequest | null {
-  const tag = linkTagNameOf(target);
+  const tag = linkKindOf(target);
   if (tag !== 'gmail' && tag !== 'gdrive') return null;
   let url: URL;
   try { url = new URL(target.trim()); } catch { return null; }

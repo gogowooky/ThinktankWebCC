@@ -11,7 +11,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   appMode: {
     storageMode,
     get:           ()                            => ipcRenderer.invoke('appMode:get'),
-    selectFolder:  (currentDir)                  => ipcRenderer.invoke('appMode:selectFolder', currentDir),
+    selectFolder:  (currentDir, title)           => ipcRenderer.invoke('appMode:selectFolder', currentDir, title),
     apply:         (next)                        => ipcRenderer.invoke('appMode:apply', next),
   },
   snapshot: {
@@ -25,6 +25,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getRecord:     (dir, id)                     => ipcRenderer.invoke('localVault:getRecord', dir, id),
     importNewer:   (dir, payload)                => ipcRenderer.invoke('localVault:importNewer', dir, payload),
     stashVersion:  (dir, record, reason)         => ipcRenderer.invoke('localVault:stashVersion', dir, record, reason),
+  },
+  overwriteImport: {
+    listIds:               (dir)                 => ipcRenderer.invoke('overwriteImport:listIds', dir),
+    getRecord:             (dir, id)             => ipcRenderer.invoke('overwriteImport:getRecord', dir, id),
+    stashFirestoreVersion: (record)              => ipcRenderer.invoke('overwriteImport:stashFirestoreVersion', record),
   },
   storage: {
     listMeta:      ()                            => ipcRenderer.invoke('storage:listMeta'),

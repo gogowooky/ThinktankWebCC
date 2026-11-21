@@ -18,7 +18,7 @@ import { getErrorMessage } from '../../utils/errorMessage';
 import { jumpPosition, requestEditorOpen, type EditorJump } from '../../utils/editorJump';
 import { defaultSearchTagUrls } from '../../utils/defaultSearchTags';
 import type { SearchTagRow } from '../../utils/searchTagFormat';
-import { baseNameOf, captionOfLinkFile, formatLinkTag, formatLinkTagWithCaption, isLocalPathTarget, linkTagNameOf, linkTagOfFile, parseLinkFile, parseLinkTag, type LinkFile, type LinkSource } from '../../utils/linkFormat';
+import { baseNameOf, captionOfLinkFile, formatLinkTag, formatLinkTagWithCaption, isLocalPathTarget, linkTagOfFile, linkTagOfTarget, parseLinkFile, parseLinkTag, type LinkFile, type LinkSource } from '../../utils/linkFormat';
 import { getPcName } from '../../utils/pcName';
 import { findTextOnCursor, findTextRangeOnCursor } from '../../utils/textOnCursor';
 
@@ -227,7 +227,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
     const file = parseLinkFile(linkThink.Content);
     return file
       ? formatLinkTagWithCaption(linkTagOfFile(file), linkThink.ID, captionOfLinkFile(file))
-      : formatLinkTag(linkTagNameOf(source.target), linkThink.ID);
+      : formatLinkTag(linkTagOfTarget(source.target, source.isDirectory), linkThink.ID);
   }
 
   TTActions.Register({
@@ -445,7 +445,7 @@ export function registerTextEditorCursorContentActions(app: TTApplication): void
 
   TTActions.Register({
     ActionID: 'TextEditor.CurrentEditor.DoOnCursorPos:Link:Open',
-    Description: 'Linkタグ（[link:ID] [gdrive:ID] [path:ID] 等）が指す linkファイルのリンク先を開きます',
+    Description: 'Linkタグ（[link:ID] [gdrive:ID] [file:ID] 等）が指す linkファイルのリンク先を開きます',
     Completion: async (item) => {
       try {
         const resolved = await linkFileOnCursor();

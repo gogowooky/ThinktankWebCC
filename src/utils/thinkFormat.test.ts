@@ -129,7 +129,7 @@ describe('project 形式の往復', () => {
       'P', '=', '# 状態', '進行中',
       '# 対象',
       '[gdrive:2026-01-02-030405]: 資料',
-      '[links:2026-01-02-030406]: 旧リンク',
+      '[link:2026-01-02-030406]: リンク',
       'https://example.com/',
       '"C:\\docs\\plan.md"',
       '[Google:検索語]',
@@ -137,7 +137,7 @@ describe('project 形式の往復', () => {
     ].join('\n');
     const updated = updateProjectTargets(content, [
       { id: '2026-01-02-030405', contentType: 'links', title: '資料' },
-      { id: '2026-01-02-030406', contentType: 'links', title: '旧リンク' },
+      { id: '2026-01-02-030406', contentType: 'links', title: 'リンク' },
       { id: '2026-01-02-030408', contentType: 'chat', title: '議論' },
       { id: '2026-01-02-030409', contentType: 'memo', title: '追加' },
     ]);
@@ -145,7 +145,7 @@ describe('project 形式の往復', () => {
       'P', '=', '# 状態', '進行中',
       '# 対象',
       '[gdrive:2026-01-02-030405]: 資料',
-      '[link:2026-01-02-030406]: 旧リンク',
+      '[link:2026-01-02-030406]: リンク',
       '[memo:2026-01-02-030409]: 追加',
       'https://example.com/',
       '"C:\\docs\\plan.md"',

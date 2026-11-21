@@ -1,9 +1,10 @@
 /**
  * src/components/ThinktankPanel/McpHttpSettingsPanel.tsx
  * Thinktank > 設定 > MCP HTTPサーバー
- * きなこ（クラウド側 AI）が Tailscale 越しに接続する MCP の入口（POST /mcp）を、画面から ON/OFF し、
+ * きなこ（クラウド側 AI）向けの MCP の入口（POST /mcp）を、画面から ON/OFF し、
  * 接続用トークンを発行・再発行・失効する。
  *
+ * - 待ち受けは localhost（127.0.0.1）固定。
  * - 既定は OFF。ローカル運用モードでは操作できず、サーバーも起動しない（main 側でも同じ判定をしている）。
  * - トークンの平文は発行した直後の1回だけここに表示する。保存されるのはハッシュだけで、後から見ることはできない。
  * - Electron 版だけの機能。Web 版（mcpHttp が無い環境）では何も描画しない。
@@ -52,12 +53,6 @@ const labelStyle: React.CSSProperties = {
 };
 
 const fieldStyle: React.CSSProperties = { ...inputStyle, marginTop: 0, flex: 1, minWidth: 0 };
-
-const KIND_LABEL: Record<string, string> = {
-  loopback: 'localhost のみ',
-  tailscale: 'Tailscale',
-  other: 'その他',
-};
 
 function errorText(e: unknown): string {
   const raw = e instanceof Error ? e.message : String(e);
@@ -114,7 +109,6 @@ export const McpHttpSettingsPanel: React.FC = () => {
   const locked = busy || localMode || !status;
   const activeTokens = (status?.tokens ?? []).filter((t) => !t.revokedAt);
   const revokedTokens = (status?.tokens ?? []).filter((t) => t.revokedAt);
-  const tailscaleAddresses = (status?.addresses ?? []).filter((a) => a.kind === 'tailscale');
 
   const run = async (action: () => Promise<void>) => {
     setBusy(true);
@@ -139,12 +133,6 @@ export const McpHttpSettingsPanel: React.FC = () => {
       } else {
         setMessage({ text: `起動できませんでした: ${st.lastError || '理由不明'}`, isError: true });
       }
-    });
-
-  const handleBindAddress = (address: string) =>
-    run(async () => {
-      applyStatus(await api.configure({ bindAddress: address }));
-      setMessage({ text: `待ち受けアドレスを ${address} にしました。`, isError: false });
     });
 
   const handleSavePort = () =>
@@ -242,27 +230,6 @@ export const McpHttpSettingsPanel: React.FC = () => {
             </label>
 
             <div style={rowStyle}>
-              <label htmlFor="tt-mcp-http-bind" style={labelStyle}>待ち受けアドレス:</label>
-              <select
-                id="tt-mcp-http-bind"
-                value={status?.bindAddress ?? '127.0.0.1'}
-                disabled={locked}
-                onChange={(e) => void handleBindAddress(e.target.value)}
-                style={fieldStyle}
-              >
-                {(status?.addresses ?? []).map((a) => (
-                  <option key={a.address} value={a.address}>
-                    {a.address}（{KIND_LABEL[a.kind]}）
-                  </option>
-                ))}
-                {status && !status.addresses.some((a) => a.address === status.bindAddress) && (
-                  <option value={status.bindAddress}>
-                    {status.bindAddress}（{KIND_LABEL[status.bindKind]}・現在このPCに見つかりません）
-                  </option>
-                )}
-              </select>
-            </div>
-            <div style={rowStyle}>
               <label htmlFor="tt-mcp-http-port" style={labelStyle}>ポート:</label>
               <input
                 id="tt-mcp-http-port"
@@ -301,20 +268,13 @@ export const McpHttpSettingsPanel: React.FC = () => {
               </div>
               {status?.listening && (
                 <div>
-                  接続先: <code style={{ wordBreak: 'break-all' }}>{status.endpointUrl}</code>（{KIND_LABEL[status.bindKind]}）
+                  接続先: <code style={{ wordBreak: 'break-all' }}>{status.endpointUrl}</code>
                 </div>
               )}
               {status && <div>このPCの識別子: <code>{status.pcId}</code></div>}
               {status?.lastError && <div style={{ color: '#b91c1c' }}>エラー: {status.lastError}</div>}
-              {status && !localMode && status.bindKind === 'loopback' && (
-                <div style={{ color: TEXT_MUTED }}>
-                  localhost のみの待ち受けです。きなこ（別端末）から接続するには、待ち受けアドレスに Tailscale のアドレスを選んでください。
-                </div>
-              )}
-              {status && !localMode && tailscaleAddresses.length === 0 && (
-                <div style={{ color: TEXT_MUTED }}>
-                  このPCに Tailscale のアドレスが見つかりません。Tailscale が起動しているか確認してください。
-                </div>
+              {status && !localMode && (
+                <div style={{ color: TEXT_MUTED }}>待ち受けは localhost（127.0.0.1）のみです。</div>
               )}
             </div>
           </div>

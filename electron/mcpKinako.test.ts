@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const fs = require('node:fs') as typeof import('node:fs');
 const { VaultEngine } = require('./vaultEngine.cjs');
 const { ThinktankMcpHost } = require('./mcpBridge.cjs');
-const { McpHttpServer, isAllowedBindAddress, classifyAddress, listSelectableAddresses } = require('./mcpHttpServer.cjs');
+const { McpHttpServer } = require('./mcpHttpServer.cjs');
 const { RelayAgent } = require('./relayAgent.cjs');
 const shared = require('./shared-dist/index.js');
 
@@ -316,28 +316,10 @@ describe('MCP interface for kinako (spec chapters 7, 8, 10)', () => {
       expect(notFound.status).toBe(404);
     });
 
-    it('classifies addresses and lists only localhost and Tailscale as selectable', () => {
-      expect(classifyAddress('127.0.0.1')).toBe('loopback');
-      expect(classifyAddress('100.64.0.1')).toBe('tailscale');
-      expect(classifyAddress('100.127.255.254')).toBe('tailscale');
-      expect(classifyAddress('100.128.0.1')).toBe('other');
-      expect(classifyAddress('192.168.0.5')).toBe('other');
-      const picked = listSelectableAddresses({
-        Ethernet: [{ address: '192.168.0.5', internal: false }],
-        Tailscale: [{ address: '100.101.102.103', internal: false }, { address: 'fd7a:115c:a1e0::1', internal: false }],
-        lo: [{ address: '127.0.0.1', internal: true }],
-      });
-      expect(picked.map((a: { address: string; kind: string }) => `${a.address}:${a.kind}`)).toEqual([
-        '127.0.0.1:loopback',
-        '100.101.102.103:tailscale',
-        'fd7a:115c:a1e0::1:tailscale',
-      ]);
-    });
-
-    it('reports the listening endpoint and address kind in its status', async () => {
-      expect(http.getStatus()).toMatchObject({ listening: false, endpointUrl: '', bindKind: 'loopback' });
+    it('reports the listening endpoint in its status', async () => {
+      expect(http.getStatus()).toMatchObject({ listening: false, endpointUrl: '' });
       await http.setEnabled(true);
-      expect(http.getStatus()).toMatchObject({ listening: true, endpointUrl: url, bindKind: 'loopback' });
+      expect(http.getStatus()).toMatchObject({ listening: true, endpointUrl: url });
       expect(JSON.stringify(http.getStatus())).not.toMatch(/tokenHash|ttmcp_/);
     });
 
@@ -360,13 +342,22 @@ describe('MCP interface for kinako (spec chapters 7, 8, 10)', () => {
       expect(local.getStatus().tokens).toEqual([]);
     });
 
-    it('only binds to localhost or Tailscale addresses and never runs in local mode', async () => {
-      expect(isAllowedBindAddress('127.0.0.1')).toBe(true);
-      expect(isAllowedBindAddress('100.101.102.103')).toBe(true);
-      expect(isAllowedBindAddress('fd7a:115c:a1e0::1')).toBe(true);
-      expect(isAllowedBindAddress('0.0.0.0')).toBe(false);
-      expect(isAllowedBindAddress('192.168.1.10')).toBe(false);
-      await expect(http.configure({ bindAddress: '0.0.0.0' })).rejects.toThrow('Tailscale');
+    it('always binds to localhost, ignoring a stale bindAddress, and never runs in local mode', async () => {
+      const staleDir = join(tempRoot, 'stale');
+      fs.mkdirSync(staleDir, { recursive: true });
+      const stalePort = await freePort();
+      fs.writeFileSync(
+        join(staleDir, 'mcp-http-config.json'),
+        JSON.stringify({ enabled: true, bindAddress: '0.0.0.0', port: stalePort, tokens: [] }),
+      );
+      const stale = new McpHttpServer({ userDataDir: staleDir, mcpHost: {}, getDeviceId: () => deviceId });
+      try {
+        await stale.start();
+        expect(stale.getStatus()).toMatchObject({ listening: true, endpointUrl: `http://127.0.0.1:${stalePort}/mcp` });
+        expect(stale.server.address().address).toBe('127.0.0.1');
+      } finally {
+        await stale.stop();
+      }
 
       const local = new McpHttpServer({ userDataDir: join(tempRoot, 'local'), mcpHost: {}, getDeviceId: () => deviceId, isLocalMode: true });
       await expect(local.setEnabled(true)).rejects.toThrow('ローカル運用モード');

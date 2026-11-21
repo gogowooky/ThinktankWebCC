@@ -90,3 +90,37 @@ export async function copyLocalToFirestore(
   }
   return result;
 }
+
+/**
+ * 上書き用Thinkファイルフォルダーの .md を、更新日時に関わらず Firestore へ上書きする。
+ * フォルダには書き込まない。上書きされる Firestore の版は Markdownバックアップ先の trash/ に退避する。
+ */
+export async function overwriteFolderToFirestore(
+  firestore: FirestoreStorageBackend,
+  sourceDir: string,
+  onProgress?: (done: number, total: number) => void,
+): Promise<VaultMigrationResult> {
+  const api = typeof window !== 'undefined' ? window.electronAPI?.overwriteImport : undefined;
+  if (!api) throw new Error('上書きコピーは PC版で実行してください。');
+  const ids = (await api.listIds(sourceDir)).filter((id) => !NON_MIGRATED_IDS.has(id));
+  const result = emptyResult();
+  for (const [index, id] of ids.entries()) {
+    try {
+      const record = await api.getRecord(sourceDir, id);
+      if (!record) {
+        result.skipped += 1;
+      } else {
+        const outcome = await firestore.overwriteRecord(
+          { meta: record.meta, body: record.body },
+          async (replaced) => { await api.stashFirestoreVersion(replaced); },
+        );
+        result[outcome] += 1;
+      }
+    } catch (error) {
+      result.failedIds.push(id);
+      console.warn(`[vaultMigration] Firestore へ上書きできませんでした (${id})`, error);
+    }
+    onProgress?.(index + 1, ids.length);
+  }
+  return result;
+}

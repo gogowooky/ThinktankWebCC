@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { FileText, Bot, Target, Table, Link, MessageCircle, MessagesSquare, Globe, NotebookPen, BookOpenText, IdCard, X, type LucideIcon } from 'lucide-react';
+import { FileText, Bot, Target, Table, Link, MessageCircle, MessagesSquare, Globe, NotebookPen, BookOpenText, IdCard, Camera, X, type LucideIcon } from 'lucide-react';
 
 const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo:    FileText,
@@ -22,7 +22,7 @@ const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
 import type { TTWorkingArea } from '../../views/TTWorkingArea';
 import { TTShortcutManager } from '../../views/TTShortcutManager';
 import { isLocalFileDrag } from '../../utils/keyboardUtils';
-import { linkTagNameOf, photoDateOf } from '../../utils/linkFormat';
+import { linkKindOf, photoDateOf } from '../../utils/linkFormat';
 import type { MediaType } from '../../types';
 import './WorkingMenuRibbon.css';
 
@@ -180,7 +180,7 @@ export function pageTitleFromDragHtml(html: string, url: string): string | undef
     doc.querySelector('title')?.textContent,
   ];
   const normalize = (c: string | null | undefined) => (c ?? '').replace(/\s+/g, ' ').trim();
-  if (linkTagNameOf(url) === 'gphoto') {
+  if (linkKindOf(url) === 'gphoto') {
     // 撮影日の入った説明が <a> 自身でなく子要素の aria-label 等に付くことや、
     // <a> に日付を含まない文字（動画の長さ等）が入ることがあるため、HTML全体から日付入りのものを探す
     const described = Array.from(doc.querySelectorAll('[aria-label], [title], [alt]'))
@@ -303,9 +303,10 @@ interface Props {
   onClose:           () => void;
   onResourceDrop:    (thinkId: string, e: React.DragEvent) => void;
   onUrlDrop?:        (link: LinkDrop) => void;
+  onSaveSnapshot?:   () => Promise<unknown>;
 }
 
-export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop }: Props) {
+export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop, onSaveSnapshot }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
     : (contentType === 'project' || contentType === 'bundle') ? PROJECT_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
@@ -314,6 +315,21 @@ export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = fals
     : MEMO_BUTTONS;
 
   const [isDropTarget, setIsDropTarget] = useState(false);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
+
+  async function saveSnapshot() {
+    if (!onSaveSnapshot || isDirty || savingSnapshot) return;
+    const title = area.Title;
+    setSavingSnapshot(true);
+    try {
+      await onSaveSnapshot();
+      window.alert(`「${title}」のスナップショットを保存しました。`);
+    } catch (error) {
+      window.alert(`スナップショットを保存できませんでした。\n${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setSavingSnapshot(false);
+    }
+  }
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     const types = e.dataTransfer.types;
@@ -338,8 +354,16 @@ export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = fals
     setIsDropTarget(false);
     const thinkId = e.dataTransfer.getData('application/x-thought-id');
     if (thinkId) { onResourceDrop(thinkId, e); return; }
-    const link = extractLinkDrop(e);
-    if (link && shouldAllowLocalDrop(e) && onUrlDrop) onUrlDrop(link);
+    if (!onUrlDrop || !shouldAllowLocalDrop(e)) return;
+    // dataTransfer は drop の処理中しか読めないため、非同期の解決もここで始めておく。
+    // .url / .lnk はショートカット自身ではなくリンク先の linkファイルにする
+    const fallback = extractLinkDrop(e);
+    void resolveLinkDrop(e)
+      .catch(() => null)
+      .then(link => {
+        const target = link ?? fallback;
+        if (target) onUrlDrop(target);
+      });
   }, [onResourceDrop, onUrlDrop]);
 
   return (
@@ -391,6 +415,12 @@ export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = fals
       </div>
 
       {/* 閉じるボタン */}
+      {onSaveSnapshot && <button type="button" className="working-menu-ribbon__media-btn"
+        aria-label="スナップショットを保存" disabled={isDirty || savingSnapshot}
+        data-tip={isDirty ? '編集中の内容を保存してからスナップショットを作成できます' : 'スナップショットを保存'}
+        data-tip-side="bottom" onClick={saveSnapshot}>
+        <Camera size={13} />
+      </button>}
       <button
         className="working-menu-ribbon__close"
         onClick={onClose}

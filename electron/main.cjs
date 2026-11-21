@@ -14,6 +14,7 @@ const { McpHttpServer } = require('./mcpHttpServer.cjs');
 const { ThinktankMcpHost } = require('./mcpBridge.cjs');
 const { loadDesktopClient, signInWithGoogleLoopback } = require('./googleLoopbackAuth.cjs');
 const appMode = require('./appMode.cjs');
+const overwriteImport = require('./overwriteImport.cjs');
 const { perfEnabled, perfMark, perfTime } = require('./perfLog.cjs');
 
 perfMark('modules-loaded');
@@ -255,10 +256,10 @@ ipcMain.handle('appMode:get', () => ({
   startupProblem: STARTUP_MODE.startupProblem,
 }));
 
-ipcMain.handle('appMode:selectFolder', async (_event, currentDir) => {
+ipcMain.handle('appMode:selectFolder', async (_event, currentDir, title) => {
   const wins = BrowserWindow.getAllWindows();
   const res = await dialog.showOpenDialog(wins[0] || undefined, {
-    title: 'ThinkファイルFolder を選択',
+    title: typeof title === 'string' && title ? title : 'ThinkファイルFolder を選択',
     defaultPath: typeof currentDir === 'string' && currentDir ? currentDir : app.getPath('documents'),
     properties: ['openDirectory', 'createDirectory'],
   });
@@ -329,6 +330,27 @@ ipcMain.handle('localVault:getRecord', (_event, dir, id) => migrationEngine(dir)
 ipcMain.handle('localVault:importNewer', (_event, dir, payload) => migrationEngine(dir).importNewerRecord(payload));
 ipcMain.handle('localVault:stashVersion', (_event, dir, record, reason) => {
   migrationEngine(dir).stashExternalVersion(record, reason === 'firestore-overwritten' ? reason : 'firestore');
+  return true;
+});
+
+// ── IPC ハンドラー（上書き用Thinkファイルフォルダー → Firestore の上書きコピー） ──
+// 読むだけで、指定フォルダには書かない。上書きされる Firestore の版は Markdownバックアップ先の trash/ に残す。
+
+function requireFirestoreModeForOverwrite() {
+  if (isLocalMode) throw new Error('上書きコピーは「Firestore で使う」モードで実行してください。');
+}
+
+ipcMain.handle('overwriteImport:listIds', (_event, dir) => {
+  requireFirestoreModeForOverwrite();
+  return overwriteImport.listOverwriteIds(dir);
+});
+ipcMain.handle('overwriteImport:getRecord', (_event, dir, id) => {
+  requireFirestoreModeForOverwrite();
+  return overwriteImport.readOverwriteRecord(dir, id);
+});
+ipcMain.handle('overwriteImport:stashFirestoreVersion', (_event, record) => {
+  requireFirestoreModeForOverwrite();
+  vaultEngine.stashExternalVersion(record, 'firestore-overwritten');
   return true;
 });
 

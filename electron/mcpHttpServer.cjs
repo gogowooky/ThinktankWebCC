@@ -2,11 +2,11 @@
 
 /**
  * electron/mcpHttpServer.cjs
- * きなこ（クラウド側 AI）が Tailscale 越しに接続するための MCP Streamable HTTP トランスポート（POST /mcp）。
+ * きなこ（クラウド側 AI）向けの MCP Streamable HTTP トランスポート（POST /mcp）。
  *
  * 方針（docs: MCP インターフェイス仕様書 3.3）:
  * - ツール定義・処理本体は変えない。受けた JSON-RPC をそのまま shared.handleMcpJsonRpcMessage（ThinktankMcpHost）へ渡す。
- * - 既定は OFF。ON にしても待ち受けは localhost か Tailscale のアドレスに限る（LAN 全体へは出さない）。
+ * - 既定は OFF。ON にしても待ち受けは localhost（127.0.0.1）に固定する（ネットワークへは出さない）。
  * - 認証は PC ごとに発行する Bearer トークン。保存するのは SHA-256 ハッシュだけで、平文は発行時に1度だけ返す。
  * - ローカル運用モードでは起動しない（外部接続なしが前提のため）。
  *
@@ -17,51 +17,15 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const http = require('http');
-const net = require('net');
-const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
 
 const CONFIG_FILE = 'mcp-http-config.json';
 const DEFAULT_PORT = 47821;
-const DEFAULT_BIND_ADDRESS = '127.0.0.1';
+// 旧設定ファイルに別の bindAddress が残っていても読まない（localhost 以外へは出さない）。
+const BIND_ADDRESS = '127.0.0.1';
 const MAX_BODY_BYTES = 4 * 1024 * 1024;
 const TOKEN_PREFIX = 'ttmcp_';
-
-/** Tailscale の IPv4 (100.64.0.0/10) / IPv6 (fd7a:115c:a1e0::/48) か、ループバックだけを許す。 */
-function isAllowedBindAddress(address) {
-  const kind = classifyAddress(address);
-  return kind === 'loopback' || kind === 'tailscale';
-}
-
-/** 'loopback' | 'tailscale' | 'other'。設定画面の表示と、待ち受けの許可判定で同じ分類を使う。 */
-function classifyAddress(address) {
-  const a = String(address || '').trim().toLowerCase();
-  if (a === '127.0.0.1' || a === '::1' || a === 'localhost') return 'loopback';
-  if (net.isIPv4(a)) {
-    const [o1, o2] = a.split('.').map(Number);
-    return o1 === 100 && o2 >= 64 && o2 <= 127 ? 'tailscale' : 'other';
-  }
-  if (net.isIPv6(a)) return a.startsWith('fd7a:115c:a1e0:') ? 'tailscale' : 'other';
-  return 'other';
-}
-
-/**
- * このPCで待ち受けに選べるアドレス（localhost と Tailscale のみ）。
- * LAN など他のアドレスは、待ち受けに使えないので画面にも出さない。
- */
-function listSelectableAddresses(interfaces = os.networkInterfaces()) {
-  const result = [{ address: '127.0.0.1', kind: 'loopback', interface: 'lo' }];
-  for (const [name, infos] of Object.entries(interfaces || {})) {
-    for (const info of infos || []) {
-      if (!info || info.internal) continue;
-      if (classifyAddress(info.address) === 'tailscale' && !result.some((r) => r.address === info.address)) {
-        result.push({ address: info.address, kind: 'tailscale', interface: name });
-      }
-    }
-  }
-  return result;
-}
 
 function hashToken(token) {
   return crypto.createHash('sha256').update(String(token), 'utf8').digest('hex');
@@ -80,10 +44,8 @@ function safeEqualHex(a, b) {
 
 function normalizeConfig(raw) {
   const port = Number(raw && raw.port);
-  const bindAddress = raw && isAllowedBindAddress(raw.bindAddress) ? String(raw.bindAddress).trim() : DEFAULT_BIND_ADDRESS;
   return {
     enabled: Boolean(raw && raw.enabled),
-    bindAddress,
     port: Number.isInteger(port) && port >= 1024 && port <= 65535 ? port : DEFAULT_PORT,
     tokens: Array.isArray(raw && raw.tokens)
       ? raw.tokens
@@ -135,19 +97,13 @@ class McpHttpServer {
   /** トークンのハッシュを含めない公開用の状態。 */
   getStatus() {
     const listening = Boolean(this.server && this.server.listening);
-    const host = this.config.bindAddress.includes(':') ? `[${this.config.bindAddress}]` : this.config.bindAddress;
     return {
       // ローカル運用モードでは、設定ファイルが「有効」のままでも常に無効として扱う（起動しない）
       enabled: this.config.enabled && !this.isLocalMode,
       listening,
       localMode: this.isLocalMode,
-      bindAddress: this.config.bindAddress,
-      /** 待ち受けアドレスの種類。'tailscale' でなければ、きなこ（別端末）からは届かない。 */
-      bindKind: classifyAddress(this.config.bindAddress),
-      /** 待ち受けに選べるアドレス（localhost と、このPCに見つかった Tailscale のアドレス） */
-      addresses: listSelectableAddresses(),
       /** 待ち受け中のときだけ、接続先 URL を返す */
-      endpointUrl: listening ? `http://${host}:${this.config.port}/mcp` : '',
+      endpointUrl: listening ? `http://${BIND_ADDRESS}:${this.config.port}/mcp` : '',
       port: this.config.port,
       pcId: this.getDeviceId(),
       lastError: this.lastError,
@@ -163,10 +119,6 @@ class McpHttpServer {
 
   async start() {
     if (this.isLocalMode || !this.config.enabled || this.server) return this.getStatus();
-    if (!isAllowedBindAddress(this.config.bindAddress)) {
-      this.lastError = `待ち受けアドレスは localhost か Tailscale のアドレスに限られます: ${this.config.bindAddress}`;
-      return this.getStatus();
-    }
     const server = http.createServer((req, res) => {
       void this._handle(req, res).catch(() => {
         if (!res.headersSent) this._send(res, 500, { error: 'Internal Server Error' });
@@ -179,7 +131,7 @@ class McpHttpServer {
     try {
       await new Promise((resolve, reject) => {
         server.once('error', reject);
-        server.listen(this.config.port, this.config.bindAddress, () => {
+        server.listen(this.config.port, BIND_ADDRESS, () => {
           server.removeListener('error', reject);
           resolve();
         });
@@ -211,13 +163,7 @@ class McpHttpServer {
     return this.getStatus();
   }
 
-  async configure({ bindAddress, port } = {}) {
-    if (bindAddress !== undefined) {
-      if (!isAllowedBindAddress(bindAddress)) {
-        throw new Error('待ち受けアドレスは localhost か Tailscale のアドレス（100.64.0.0/10）に限られます。');
-      }
-      this.config.bindAddress = String(bindAddress).trim();
-    }
+  async configure({ port } = {}) {
     if (port !== undefined) {
       const p = Number(port);
       if (!Number.isInteger(p) || p < 1024 || p > 65535) {
@@ -302,7 +248,7 @@ class McpHttpServer {
     if (!origin) return true; // サーバー間通信（きなこ）は Origin を付けない
     try {
       const host = new URL(origin).hostname.replace(/^\[|\]$/g, '').toLowerCase();
-      return host === 'localhost' || host === this.config.bindAddress.toLowerCase();
+      return host === 'localhost' || host === BIND_ADDRESS;
     } catch {
       return false;
     }
@@ -368,9 +314,6 @@ class McpHttpServer {
 
 module.exports = {
   McpHttpServer,
-  isAllowedBindAddress,
-  classifyAddress,
-  listSelectableAddresses,
   hashToken,
   DEFAULT_PORT,
 };

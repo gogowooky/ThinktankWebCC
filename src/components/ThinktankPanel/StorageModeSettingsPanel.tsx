@@ -3,6 +3,7 @@
  * Thinktank > 設定 > モード切替（PC版のみ）
  * 「Firestore で使う／ローカルで使う」と ThinkファイルFolder を選び、再起動で反映する。
  * Firestore モードのときは ThinkファイルFolder との間で Think を写せる（最新を残す）。
+ * 上書き用Thinkファイルフォルダーからは、日付に関わらず Firestore へ上書きコピーできる。
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -20,6 +21,17 @@ function describeMigration(result: VaultMigrationResult): string {
   return `新規 ${result.created} 件、更新 ${result.updated} 件、変更なし ${result.skipped} 件${failed}`;
 }
 
+// 上書き用Thinkファイルフォルダーは端末ごとの作業用の指定なので、localStorage に覚えるだけにする
+const OVERWRITE_DIR_KEY = 'tt.storageMode.overwriteDir';
+
+function loadOverwriteDir(): string {
+  try { return localStorage.getItem(OVERWRITE_DIR_KEY) ?? ''; } catch { return ''; }
+}
+
+function saveOverwriteDir(dir: string): void {
+  try { localStorage.setItem(OVERWRITE_DIR_KEY, dir); } catch { /* 覚えられなくても入力欄の値で動く */ }
+}
+
 export function StorageModeSettingsPanel() {
   const api = typeof window !== 'undefined' ? window.electronAPI?.appMode : undefined;
   const [isOpen, setIsOpen] = useState(true);
@@ -28,6 +40,12 @@ export function StorageModeSettingsPanel() {
   const [draft, setDraft] = useState<ElectronAppModeSetting>({ storageMode: 'firestore', localVaultDir: '' });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
+  const [overwriteDir, setOverwriteDir] = useState(loadOverwriteDir);
+
+  const updateOverwriteDir = useCallback((dir: string) => {
+    setOverwriteDir(dir);
+    saveOverwriteDir(dir);
+  }, []);
 
   useEffect(() => {
     if (!api) return;
@@ -95,6 +113,39 @@ export function StorageModeSettingsPanel() {
     }
   }, [draft.localVaultDir]);
 
+  const handlePickOverwriteFolder = useCallback(async () => {
+    if (!api) return;
+    const picked = await api.selectFolder(overwriteDir || undefined, '上書き用Thinkファイルフォルダーを選択');
+    if (picked) updateOverwriteDir(picked);
+  }, [api, overwriteDir, updateOverwriteDir]);
+
+  const runOverwrite = useCallback(async () => {
+    const dir = overwriteDir.trim();
+    const question = `上書き用Thinkファイルフォルダー（${dir}）の Thinkファイルを Firestore へ上書きコピーします。\n`
+      + '同じ ID の Think は更新日時に関わらず上書きします（上書きされる Firestore の版は Markdownバックアップ先の trash/ に退避します）。';
+    if (!window.confirm(`${question}\n\nよろしいですか？`)) return;
+    setBusy(true);
+    setMessage({ kind: 'info', text: '編集中の内容を保存しています...' });
+    try {
+      // 未保存の編集が後から保存されると、上書きした内容を古い版で戻してしまうため先に保存する
+      await window.__ttFlushAllSaves?.();
+      setMessage({ kind: 'info', text: 'フォルダを読み込んでいます...' });
+      const result = await StorageManager.instance.overwriteFolderToFirestore(
+        dir,
+        (done, total) => setMessage({ kind: 'info', text: `上書きコピーしています... ${done} / ${total}` }),
+      );
+      await TTModels.Instance?.Vault?.ReloadAll();
+      setMessage({
+        kind: result.failedIds.length ? 'error' : 'done',
+        text: `Firestore への上書きコピーが完了しました: ${describeMigration(result)}`,
+      });
+    } catch (e) {
+      setMessage({ kind: 'error', text: `上書きコピーに失敗しました: ${e instanceof Error ? e.message : String(e)}` });
+    } finally {
+      setBusy(false);
+    }
+  }, [overwriteDir]);
+
   if (!api) return null;
 
   const runningLocal = info?.running.storageMode === 'local';
@@ -103,6 +154,7 @@ export function StorageModeSettingsPanel() {
     || (draft.storageMode === 'local' && draft.localVaultDir.trim() !== info?.running.localVaultDir)
   );
   const canMigrate = !busy && Boolean(info) && !runningLocal && Boolean(draft.localVaultDir.trim());
+  const canOverwrite = !busy && Boolean(info) && !runningLocal && Boolean(overwriteDir.trim());
 
   return (
     <section className="tt-settings-section tt-storage-mode">
@@ -197,6 +249,38 @@ export function StorageModeSettingsPanel() {
               {runningLocal
                 ? 'コピーは「Firestore で使う」モードで実行してください（Firebase へのログインが必要です）。'
                 : '同じ Think は更新日時の新しい方を残します。上書きされる版は ThinkファイルFolder の trash/ に退避します。'}
+            </p>
+          </div>
+
+          <div className="tt-storage-mode__card">
+            <div className="tt-storage-mode__card-title">Firestore へ ファイルを上書きコピー</div>
+            <div className="tt-storage-mode__row">
+              <label htmlFor="tt-overwrite-dir" className="tt-storage-mode__label">上書き用Thinkファイルフォルダー:</label>
+              <input
+                id="tt-overwrite-dir"
+                type="text"
+                className="tt-settings-input tt-storage-mode__input"
+                value={overwriteDir}
+                placeholder="例: C:\Users\me\Desktop\修正版"
+                spellCheck={false}
+                autoComplete="off"
+                disabled={busy}
+                onChange={(e) => updateOverwriteDir(e.target.value)}
+              />
+              <button type="button" className="tt-settings-icon-btn" disabled={busy} onClick={() => void handlePickOverwriteFolder()} data-tip="フォルダを選ぶ" aria-label="フォルダを選ぶ（上書き用）">
+                <FolderOpen size={16} />
+              </button>
+            </div>
+            <div className="tt-storage-mode__migrate">
+              <button type="button" className="tt-storage-mode__btn" disabled={!canOverwrite} onClick={() => void runOverwrite()}>
+                <CloudUpload size={14} aria-hidden="true" />
+                上書き用Thinkファイル → Firestoreへ上書きコピー
+              </button>
+            </div>
+            <p className="tt-settings-section__desc">
+              {runningLocal
+                ? '上書きコピーは「Firestore で使う」モードで実行してください（Firebase へのログインが必要です）。'
+                : 'フォルダ内の .md（thinks/ があればその中）を、同じ ID の Think があっても更新日時に関わらず上書きします。更新日時は上書きした時刻になります。上書きされる Firestore の版は Markdownバックアップ先の trash/ に退避します。'}
             </p>
           </div>
         </div>
