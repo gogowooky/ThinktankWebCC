@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.7.4",
+  "version": "2.7.5",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "c281902",
-  "commitDateTime": "2026-11-20-064047",
-  "commitMessage": "fix: GPhotoのlinkファイルのタイトルとCaptionを撮影日「yyyy年MM月dd日撮影」にする"
+  "commitId": "d6ef7b6",
+  "commitDateTime": "2026-11-22-003035",
+  "commitMessage": "feat: Firestoreの手動スナップショットを複数世代保存する"
 }
