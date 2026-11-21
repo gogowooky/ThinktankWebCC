@@ -28,6 +28,10 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 - 日付: 2026-11-22
 - コミット番号: d6ef7b6
+- デプロイ日: 2026-11-22（JST）
+- デプロイ対象コミット: ea9863d（更新記録を含む）
+- 公開先: [Firebase Hosting / thinktankweb-483408](https://thinktankweb-483408.web.app)
+- デプロイ結果: 公開 URL の HTTP 200 と配信 JavaScript の SHA-256 がビルド成果物と一致することを確認。Windows 用 `Thinktank Setup 2.7.5.exe` を作成し、配布メタデータの SHA-512 と照合した。
 
 Firestore モードでは Working のカメラボタンを押すたびに、保存済みの Think を新しいスナップショットとして追加できる。同じ Think の過去の世代と旧形式で保存したスナップショットも履歴に残り、差分表示では直近の保存分を使う。PC 版には、指定フォルダーの Think を Firestore に上書きコピーする機能も含めた。HTTP 経由の MCP は localhost で待ち受ける。旧リンクタグ `[path:ID]` と `[links:ID]` の読み取り互換を終了した。
 
