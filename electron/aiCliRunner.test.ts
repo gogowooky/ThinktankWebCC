@@ -155,6 +155,31 @@ describe('Thinktank MCP を各 CLI に渡す引数', () => {
   });
 });
 
+describe('AI CLI が応答なしで失敗したときの説明', () => {
+  const { describeCliFailure } = require('./aiCliRunner.cjs') as { describeCliFailure: (cli: string, code: number, stderr: string) => string };
+  const header = 'OpenAI Codex v0.162.1\n--------\nworkdir: C:\\tmp\nmodel: gpt-6.2-astra\n--------\nuser\n# System\n(依頼文の写しが続く)';
+
+  it('認証エラー（401・未ログイン）はログインし直す案内にする', () => {
+    const stderr = `${header}\nERROR: unexpected status 401 Unauthorized: Missing bearer or basic authentication in header`;
+    expect(describeCliFailure('codex', 1, stderr)).toBe(
+      'AI CLI（codex）にログインしていません（認証エラー）。Thinktank の設定の「AIモデル」でログインし直すか、別の AI CLI を選んでください。');
+  });
+
+  it('使えないモデルは、色の制御文字を除いて設定を直す案内にする', () => {
+    const line = '\u001b[1m\u001b[31mERROR:\u001b[0m\u001b[0m {"type":"error","status":400,"error":{"type":"invalid_request_error","message":"The \'gpt-6.2-astra\' model is not supported when using Codex with a ChatGPT account.","code":"model_not_found"}}';
+    const message = describeCliFailure('codex', 1, `${header}\n${line}\n${line}`);
+    expect(message).toContain("The 'gpt-6.2-astra' model is not supported when using Codex with a ChatGPT account.");
+    expect(message).toContain('~/.codex/config.toml');
+    expect(message).not.toContain('\u001b');
+  });
+
+  it('先頭の実行情報ではなく、末尾の ERROR 行を示す', () => {
+    const message = describeCliFailure('codex', 1, `${header}\nERROR: stream disconnected before completion`);
+    expect(message).toContain('stream disconnected before completion');
+    expect(message).not.toContain('workdir');
+  });
+});
+
 describe('Antigravity が許可されていない操作で止まったとき', () => {
   it('英語の詳細ではなく、何が起きたかと次の手を日本語で伝える', () => {
     const output = JSON.stringify({

@@ -587,6 +587,27 @@ function extractCliResponse(cliName, stdout) {
   return terminalResult.response;
 }
 
+/**
+ * 終了コードが 0 以外で応答も無かったときの説明。
+ * codex の stderr は先頭に実行情報と依頼文の写しが並び、原因は末尾に出るため、末尾の ERROR 行を優先して示す。
+ */
+function describeCliFailure(cliName, code, stderr) {
+  // eslint-disable-next-line no-control-regex
+  const text = String(stderr || '').replace(/\u001b\[[0-9;]*[A-Za-z]/g, '');
+  const modelError = /"message":"(The '[^']+' model is not supported[^"]*)"/.exec(text);
+  if (modelError) {
+    return `AI CLI（${cliName}）の既定のモデルがこのアカウントでは使えません（${modelError[1]}）。`
+      + `${cliName} の設定（codex は ~/.codex/config.toml の model）で使えるモデルに変えてください。`;
+  }
+  if (/401 Unauthorized|Not logged in|Missing bearer|not authenticated|Invalid API key|Please run .*login/i.test(text)) {
+    return `AI CLI（${cliName}）にログインしていません（認証エラー）。Thinktank の設定の「AIモデル」でログインし直すか、別の AI CLI を選んでください。`;
+  }
+  const lines = [...new Set(text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean))];
+  const errors = lines.filter((l) => /\berror\b/i.test(l));
+  const detail = (errors.length ? errors.slice(-3) : lines.slice(-5)).join(' / ');
+  return `AI CLI (${cliName}) が終了コード ${code} で失敗しました: ${detail.slice(-600)}`;
+}
+
 /** 許可していない操作を AI CLI が求めて止まった。stderr の英語の詳細は付けずに伝える */
 class AiCliDeniedError extends Error {
   constructor(message) {
@@ -714,11 +735,7 @@ async function executeIsolatedCli({
         finished = true;
         clearTimeout(timer);
         if (code !== 0 && !stdout.trim()) {
-          reject(
-            new Error(
-              `AI CLI (${cliName}) が終了コード ${code} で失敗しました: ${(stderr || '').slice(0, 400)}`,
-            ),
-          );
+          reject(new Error(describeCliFailure(cliName, code, stderr)));
           return;
         }
         try {
@@ -1071,6 +1088,7 @@ module.exports = {
   getGeminiNotebookTitle,
   runGeminiNotebookConversation,
   runDomainAiConversation,
+  describeCliFailure,
   cancelCliRun,
   AiCliCanceledError,
 };
