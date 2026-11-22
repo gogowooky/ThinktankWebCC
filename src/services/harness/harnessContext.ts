@@ -8,15 +8,20 @@
 import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import {
-  PARENT_PROJECT_ID_KEY, PROJECT_RULES_HEADING, isRootProjectTitle, parseProject, projectHarnessIds,
+  PARENT_PROJECT_ID_KEY, PROJECT_RULES_HEADING, parseProject, projectHarnessIds,
   projectTargetIds, readProjectSectionText, readProjectStatus, type HarnessField,
 } from '../../utils/thinkFormat';
 import { latestAiViewEntries } from '../../utils/aiViewFormat';
+import { HARNESS_CHAR_LIMITS, findRootProject } from './harnessRoot';
 
-/** 記事の上限（PROFILE・INDEX は 3,000字、projects は 5,000字、styles は 3,000字） */
-export const HARNESS_CHAR_LIMITS: Partial<Record<HarnessField, number>> = {
-  PROFILE: 3_000, INDEX: 3_000, projects: 5_000, styles: 3_000, knowledge: 3_000, INBOX: 10_000,
-};
+/**
+ * アプリの既定の規約。記事の筆者が実際の失敗から足したルールで、利用者の規約より前に置く。
+ */
+export const HARNESS_DEFAULT_RULES = [
+  '見出しや件名だけで「要対応」と判断しない。元のメール・スレッド・Think と照らし合わせた根拠を INBOX の項目に書く。',
+  '古い記録を日付で一律に退避しない。退避してよいのは、終わった経緯だけ。',
+  '確かめていないことを確かめたと書かない。未実施のことは未実施と書く。',
+];
 const MAX_STATUS_CHARS = 4_000;
 const MAX_DECISION_CHARS = 8_000;
 const LOG_ENTRIES = 3;
@@ -50,7 +55,7 @@ export async function projectLineage(vault: TTVault, project: TTThink): Promise<
     const parent = typeof parentId === 'string' ? vault.GetThink(parentId) : undefined;
     current = parent && parent.ContentType === 'project' ? parent : null;
   }
-  const root = vault.GetProjects().find(p => isRootProjectTitle(p.Name));
+  const root = findRootProject(vault);
   if (root && !seen.has(root.ID)) {
     const ready = await loaded(root);
     if (ready) chain.unshift(ready);
@@ -82,6 +87,9 @@ export interface HarnessDocument {
   id: string;
   title: string;
   body: string;
+  /** 本文の字数（省略前） */
+  chars: number;
+  limit?: number;
 }
 
 export interface HarnessContext {
@@ -104,8 +112,13 @@ export interface HarnessContext {
   chatHistory: string;
 }
 
-function doc(think: TTThink, max: number, body = bodyOf(think)): HarnessDocument {
-  return { id: think.ID, title: think.Name, body: clip(body, max) };
+function doc(think: TTThink, max: number, body = bodyOf(think), limit?: number): HarnessDocument {
+  return { id: think.ID, title: think.Name, body: clip(body, max), chars: body.length, ...(limit ? { limit } : {}) };
+}
+
+function limited(think: TTThink, field: HarnessField): HarnessDocument {
+  const limit = HARNESS_CHAR_LIMITS[field]!;
+  return doc(think, limit * 2, bodyOf(think), limit);
 }
 
 export interface CollectHarnessContextInput {
@@ -133,6 +146,11 @@ export async function collectHarnessContext(input: CollectHarnessContextInput): 
     .filter(l => l && !/^\[[A-Za-z0-9_-]*:?[^\]]*\]/.test(l) && l !== '*');
   const profile = await nearestAiWork(vault, lineage, 'PROFILE');
   const index = await nearestAiWork(vault, lineage, 'INDEX');
+  // 作法は project をまたいで使うため、祖先（root を含む）の styles も渡す
+  const styles: TTThink[] = [];
+  for (const p of lineage) {
+    for (const work of await aiWorksOf(vault, p, 'styles')) if (!styles.includes(work)) styles.push(work);
+  }
   return {
     projectId: project.ID,
     projectTitle: parseProject(project.Content).title,
@@ -141,10 +159,10 @@ export async function collectHarnessContext(input: CollectHarnessContextInput): 
     conditions: readProjectSectionText(project.Content, '条件'),
     targets,
     otherTargets,
-    profile: profile ? doc(profile, HARNESS_CHAR_LIMITS.PROFILE!) : null,
-    index: index ? doc(index, HARNESS_CHAR_LIMITS.INDEX!) : null,
-    projects: (await aiWorksOf(vault, project, 'projects')).map(t => doc(t, HARNESS_CHAR_LIMITS.projects!)),
-    styles: (await aiWorksOf(vault, project, 'styles')).map(t => doc(t, HARNESS_CHAR_LIMITS.styles!)),
+    profile: profile ? limited(profile, 'PROFILE') : null,
+    index: index ? limited(index, 'INDEX') : null,
+    projects: (await aiWorksOf(vault, project, 'projects')).map(t => limited(t, 'projects')),
+    styles: styles.map(t => limited(t, 'styles')),
     status: doc(status, MAX_STATUS_CHARS),
     decision: doc(decision, MAX_DECISION_CHARS),
     log: doc(log, MAX_LOG_CHARS, latestAiViewEntries(log.Content, LOG_ENTRIES)),
@@ -181,16 +199,17 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
     lines.push('下の規約と記録を読み、status の「次の行動」から仕事を進めてください。会話はセッションをまたいで消えるため、続きに必要なことは必ず記録に残します。', '');
   }
 
-  lines.push('# 規約（親から子の順。後のものほど優先）');
-  if (ctx.rules.length === 0) lines.push('（規約はまだありません）');
+  lines.push('# 規約（アプリの既定のあとに、親から子の順。後のものほど優先）');
+  lines.push('## アプリの既定', ...HARNESS_DEFAULT_RULES.map(r => `- ${r}`));
   for (const r of ctx.rules) lines.push(`## ${r.projectTitle}`, r.text);
   lines.push('');
 
+  const size = (d: HarnessDocument) => (d.limit ? `（${d.chars}/${d.limit}字${d.chars > d.limit * 0.9 ? '。上限に近いので、細かな内容を styles・knowledge へ分ける提案をする' : ''}）` : '');
   lines.push('# 利用者と文脈');
-  section(lines, `PROFILE（利用者の好み）${ctx.profile ? ` thinkid="${ctx.profile.id}"` : ''}`, ctx.profile?.body ?? '');
+  section(lines, `PROFILE（利用者の好み）${ctx.profile ? ` thinkid="${ctx.profile.id}"${size(ctx.profile)}` : ''}`, ctx.profile?.body ?? '');
   section(lines, `INDEX（文脈の索引。必要な文脈は thinktank_get_record で読む）${ctx.index ? ` thinkid="${ctx.index.id}"` : ''}`, ctx.index?.body ?? '');
-  for (const p of ctx.projects) section(lines, `projects: ${p.title} thinkid="${p.id}"`, p.body);
-  for (const s of ctx.styles) section(lines, `styles: ${s.title} thinkid="${s.id}"`, s.body);
+  for (const p of ctx.projects) section(lines, `projects: ${p.title} thinkid="${p.id}"${size(p)}`, p.body);
+  for (const s of ctx.styles) section(lines, `styles: ${s.title} thinkid="${s.id}"${size(s)}`, s.body);
 
   lines.push('# この project');
   lines.push(`- 状態: ${ctx.state}`);
@@ -214,7 +233,17 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   lines.push('```', `# [${opts.dateTime}] 実行 ${opts.runId}`, '（観点・判断と理由・エラーと対処。見出しは ## 以下）', '```');
   lines.push(`2. status（thinkid="${ctx.status.id}"）: フェーズ・直近の成果・未了・次の行動・期限を、今の状態に書き直す（1画面に収める）。`);
   lines.push(`3. decision（thinkid="${ctx.decision.id}"）: 利用者と決めたことがあれば「決定・理由・根拠（利用者の発言）・日付」で追加する。既存の決定は消さない。`);
-  lines.push('- 「今回だけ」の指示は log にだけ残す。「今後も」と言われた好みや作法は、reply で提案するだけにする（PROFILE・styles は書き換えない）。');
+  lines.push('- 「今回だけ」の指示は log にだけ残す。');
+  lines.push('');
+
+  lines.push('# 訂正の提案（「今後は」「いつも」と言われたとき）');
+  lines.push('利用者が今後も続けてほしいことを言ったら、PROFILE・styles・knowledge・規約は書き換えず、応答の JSON の "corrections" で提案する。利用者が承認したものだけをアプリが書き込む。行き先は種類で決める:');
+  lines.push('- PROFILE: どの作業にも共通する好み');
+  lines.push('- styles: 特定の業務のやり方（targetName に業務名。既存の styles に足すなら targetId）');
+  lines.push('- projects: この project の現況');
+  lines.push('- knowledge: 繰り返し出る技術の罠や手順（targetName に題名）');
+  lines.push('- rules: 働き方のルール（この project の # 規約）');
+  lines.push('userQuote には今回の利用者の発言から、根拠になる部分をそのまま写す（言い換えない）。「今回だけ」「今日は」の指示は提案にしない。');
   lines.push('');
 
   lines.push('# 止まる場面');
@@ -224,6 +253,10 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   lines.push('応答の JSON には、上の形式に加えて次の "harness" を必ず入れる。');
   lines.push('```json');
   lines.push('{ "harness": { "state": "continue | waiting | done", "question": "waiting / done のときに利用者へ聞くこと" } }');
+  lines.push('```');
+  lines.push('訂正の提案があるときだけ、次の "corrections" も入れる（最大5件）。');
+  lines.push('```json');
+  lines.push('{ "corrections": [ { "kind": "PROFILE | styles | projects | knowledge | rules", "text": "書き足す1文", "userQuote": "利用者の発言の写し", "reason": "理由", "targetId": "既存の AIWork の thinkid（任意）", "targetName": "新しく作るときの名前（任意）" } ] }');
   lines.push('```');
   lines.push('- continue: 利用者の返事を待たずに次の作業へ進める');
   lines.push('- waiting: 利用者の判断や情報が要る（question に聞くことを書く）');

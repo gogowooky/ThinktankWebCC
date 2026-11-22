@@ -14,6 +14,9 @@ import { HarnessLoop, type HarnessLoopStatus } from '../../services/harness/harn
 import { findHarnessChat } from '../../services/harness/harnessChat';
 import { findHarnessAiWork } from '../../services/harness/harnessAiWork';
 import type { HarnessTurnStage } from '../../services/harness/harnessRun';
+import {
+  CORRECTION_KIND_LABELS, decideCorrection, pendingCorrections,
+} from '../../services/harness/harnessCorrections';
 import type { SummaryPanelKey } from '../../services/projectSummary';
 import './AiChatPanel.css';
 
@@ -65,6 +68,8 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   const running = !!loop?.running;
   const elapsed = useElapsedSeconds(running && loop ? loop.startedAt : null);
   const [draft, setDraft] = useState('');
+  const [deciding, setDeciding] = useState<string | null>(null);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
   const [, setLoadCount] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -89,6 +94,18 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
     void HarnessLoop.start(vault, projectId, { userMessage: text, trigger: 'chat' });
   };
   const stop = () => { void HarnessLoop.requestStop(vault, projectId); };
+  const decide = async (id: string, decision: 'approve' | 'reject') => {
+    if (!project || !chat || deciding) return;
+    setDeciding(id);
+    setDecisionError(null);
+    try {
+      await decideCorrection(vault, project, chat, id, decision);
+    } catch (e) {
+      setDecisionError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setDeciding(null);
+    }
+  };
 
   if (!isProject) return <div className="ai-panel">projectファイルがロードされていません。</div>;
   if (!ready) return <div className="ai-panel">読み込み中…</div>;
@@ -104,6 +121,7 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   const title = parseProject(project.Content).title;
   const state = readProjectStatus(project.Content).state;
   const statusBody = status && !status.IsMetaOnly ? status.Content.split(/\r?\n/).slice(1).join('\n').trim() : '';
+  const pending = pendingCorrections(chat);
 
   let banner: React.ReactNode = null;
   if (running && loop) {
@@ -146,6 +164,25 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
           <summary>現在地（status）</summary>
           <div className="ai-chat__status-body">{statusBody}</div>
         </details>
+      )}
+      {pending.length > 0 && (
+        <div className="ai-chat__corrections" aria-label="訂正の提案">
+          <div className="ai-chat__corrections-title">訂正の提案（承認すると次回から使われます）</div>
+          {pending.map(c => (
+            <div key={c.id} className="ai-chat__correction">
+              <div className="ai-chat__correction-text">
+                <span className="ai-chat__correction-kind">{CORRECTION_KIND_LABELS[c.kind]}</span>
+                {c.text}
+                <div className="ai-chat__correction-quote">本人の発言:「{c.userQuote}」{c.reason ? ` ／ ${c.reason}` : ''}</div>
+              </div>
+              <div className="ai-chat__correction-actions">
+                <button onClick={() => void decide(c.id, 'approve')} disabled={!!deciding || running}>承認</button>
+                <button onClick={() => void decide(c.id, 'reject')} disabled={!!deciding || running}>見送る</button>
+              </div>
+            </div>
+          ))}
+          {decisionError && <div className="ai-chat__correction-error" role="alert">{decisionError}</div>}
+        </div>
       )}
       <div className="ai-chat__messages" ref={listRef}>
         {messages.length === 0 && (

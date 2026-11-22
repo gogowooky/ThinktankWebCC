@@ -245,6 +245,49 @@ projectファイルに組み込まれた Think の metadata に、親となる p
   5. log の今回の記録の末尾に、アプリが「関連chat・変更したThink・作成したThink・拒否したThink」を加える。
   6. chat に「## 発言」と「(モデル) 日時」＋返答を加える（AI の質問は「**確認**:」として添える）。
 
+### 6.2 訂正の振り分け（Phase 2、2026-11-22）
+
+- root（タイトル「Thinktank」の project。無ければ作る）に PROFILE・INDEX・INBOX の AIWork を置く（`src/services/harness/harnessRoot.ts`）。
+  PROFILE・INBOX は雛形の説明つきで作る。配下の project は最も近い祖先の PROFILE・INDEX を使う。
+- INDEX はアプリが作る索引。読み込み済みのハーネス project の PROFILE・styles・knowledge・projects・INBOX を、
+  種類ごとに `[aiwork:ID] タイトル（project名）（更新日、字数）` で並べる。実行のたびと、訂正の承認のたびに作り直す（変化が無ければ保存しない）。
+- 文脈には、アプリの既定の規約（見出しだけで要対応にしない・日付で一律に退避しない・確かめていないことを確かめたと書かない）を
+  利用者の規約より前に置く。styles は root から対象までの祖先のものを渡す。PROFILE・INDEX・projects・styles には
+  字数と上限（3,000／3,000／5,000／3,000字）を添え、9割を超えたら分割を提案させる。
+- 訂正の提案（`harnessCorrections.ts`）: 利用者が「今後は」と言ったら、AI は応答の JSON の `corrections` で
+  種類（PROFILE・styles・projects・knowledge・rules）・本文・本人の発言の引用・理由（・targetId／targetName）を返す。
+  引用が今回の発言に含まれるものだけを採り（利用者の発言が無い自動の回は採らない）、chat の metadata `harnessCorrections` に
+  未承認で置き、chat 本文にも「訂正の提案（未承認）」として残す。
+- 承認・見送りは AIChat の提案の一覧のボタンで行う。承認すると、行き先へ「- 本文（日付、根拠:「引用」）」を1行書き足し、INDEX を作り直し、
+  chat に結果を残す。行き先: PROFILE は最も近い祖先の PROFILE、styles・knowledge は祖先にある同じ名前のもの（無ければ root に
+  「Thinktank｜styles｜名前」で作る）、projects は対象 project の projects、rules は対象 project の `# 規約`（projectファイルが編集中なら承認しない）。
+  上限を超えたら chat で分割を勧める。
+
+### 6.3 点検（harness-doctor、Phase 3、2026-11-22）
+
+- `src/services/harness/harnessDoctor.ts`。報告するだけで直さない。clean は「検査の範囲で異常なし」の意味。
+- いつ: 常駐しない。PC版で Vault が読み込まれた後に一度と、ループが終わるたびに、root の `# doctor` の先頭の記録
+  「# [yyyy-MM-dd HH:mm] 点検」から7日以上たっていれば点検する（`maybeRunHarnessDoctor`）。
+- 対象: すべての project を読み込み、ハーネスの project（`isHarnessProject`）を調べる。
+- 検査（NG／WARN）:
+
+| 区分 | 検査 | 段階 |
+|---|---|---|
+| 参照 | 項目の ID が Vault に無い・AIWork（aiview）でない | NG |
+| 参照 | 1件だけの項目（log・status 等）に複数の ID | WARN |
+| 字数 | PROFILE・INDEX 3,000字、projects 5,000字、styles・knowledge 3,000字、INBOX 10,000字を超えた | WARN |
+| 鮮度 | 状態が進行中で status が7日以上未更新／projects が30日以上未更新 | WARN |
+| 実行 | 実行中の印（`harnessLock`）が20分以上残っている | WARN |
+| 原本 | `# AI議論` の chat が無い・別の project のハーネスの chat／ハーネスの chat が持ち主の `# AI議論` に載っていない（両方向） | WARN |
+| INDEX | INDEX に載っている AIWork が無い（NG）／項目の AIWork が INDEX に載っていない（WARN） | NG／WARN |
+| INBOX | 出典（参照タグか URL）の無い項目 | WARN |
+| 道具 | 設定の AI CLI が見つからない・ログインしていない（PC版だけ） | NG |
+
+- 報告: root の `# doctor`（Thinktank｜doctor）の先頭に「NG: n / WARN: m」と各行（何が・どこで・どうすればよいか）を書き、
+  検査の範囲と「検査しないもの」（内容どうしの矛盾、PROFILE・規約が本人の考えに合うか、記録の内容が正しいか、読み込めなかった projectファイル）を添える。
+  直近10件だけ残す（前の版はスナップショット）。
+- 検査は、実際に起きた故障を足していく（記事の方針）。各検査はテストで故障を作って検出を確かめている。
+
 ## 7. 廃止した項目と互換
 
 - 廃止: `# 見通し` の自由記述、`# 状態` の `状態値：` 表記と `最終評価日：`、`# 出力先`、`# 評価内容`、`# 評価日時`、`[links:ID]` タグ、`# プロンプト`（2026-10-31 に現状把握用・進捗把握用・実績把握用の3つへ分割）。

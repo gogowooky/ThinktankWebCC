@@ -22,6 +22,8 @@ import {
   HARNESS_CHAT_HISTORY_MESSAGES, buildHarnessMessage, collectHarnessContext, type HarnessContext,
 } from './harnessContext';
 import { snapshotBeforeWrite } from './aiWorkVersions';
+import { ensureRootHarness } from './harnessRoot';
+import { formatCorrectionsForChat, readCorrectionCandidates, stageCorrections } from './harnessCorrections';
 
 export type HarnessDirectiveState = 'continue' | 'waiting' | 'done';
 export interface HarnessDirective {
@@ -148,6 +150,8 @@ export interface HarnessTurnResult {
   logWrittenBy: 'ai' | 'app';
   record: HarnessRecord;
   chatId: string;
+  /** 今回の訂正の提案（未承認） */
+  correctionIds: string[];
 }
 
 export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<HarnessTurnResult> {
@@ -160,6 +164,7 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
   if (!project || project.ContentType !== 'project') throw new Error('projectファイルが見つかりません。');
   if (project.IsMetaOnly) await project.LoadContent();
 
+  await ensureRootHarness(vault);
   const log = await ensureHarnessAiWork(vault, project, 'log');
   const status = await ensureHarnessAiWork(vault, project, 'status');
   const decision = await ensureHarnessAiWork(vault, project, 'decision');
@@ -239,15 +244,20 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
   }
 
   const directive = readHarnessDirective(first.rawText);
+  const corrections = stageCorrections(chat, project.ID, runId, readCorrectionCandidates(first.rawText, userMessage), now());
   const question = directive?.question && !reply.includes(directive.question) ? `\n\n**確認**: ${directive.question}` : '';
+  const proposals = corrections.length ? `\n\n${formatCorrectionsForChat(corrections)}` : '';
   const incomplete = missing.length > 0 ? `\n\n（記録が不完全です: ${missing.join('・')} が書かれませんでした）` : '';
   await appendHarnessChatTurn(vault, chat, {
     question: options.chatQuestion ?? (userMessage?.trim() || '（自動）続き'),
     model,
     createdAt: now().toISOString(),
-    reply: `${reply || '（応答なし）'}${question}${incomplete}`,
+    reply: `${reply || '（応答なし）'}${question}${proposals}${incomplete}`,
   });
   vault.NotifyUpdated(false);
 
-  return { runId, directive, reply, model, recordComplete: missing.length === 0, logWrittenBy, record, chatId: chat.ID };
+  return {
+    runId, directive, reply, model, recordComplete: missing.length === 0, logWrittenBy, record, chatId: chat.ID,
+    correctionIds: corrections.map(c => c.id),
+  };
 }

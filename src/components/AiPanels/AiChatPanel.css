@@ -33,6 +33,61 @@
   padding: 4px 0;
 }
 
+.ai-chat__corrections {
+  border-bottom: 1px solid rgb(128 128 128 / 0.25);
+  padding: 4px 8px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+  background: rgb(237 108 2 / 0.08);
+  max-height: 35vh;
+  overflow: auto;
+}
+
+.ai-chat__corrections-title {
+  font-weight: 600;
+  padding: 2px 0 4px;
+}
+
+.ai-chat__correction {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 4px 0;
+  border-top: 1px dashed rgb(128 128 128 / 0.25);
+}
+
+.ai-chat__correction-text {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ai-chat__correction-kind {
+  display: inline-block;
+  margin-right: 6px;
+  opacity: 0.75;
+}
+
+.ai-chat__correction-quote {
+  opacity: 0.7;
+  font-size: calc(11px * var(--tt-font-scale, 1));
+}
+
+.ai-chat__correction-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.ai-chat__correction-actions button {
+  cursor: pointer;
+}
+
+.ai-chat__correction-error {
+  color: var(--error-text, #d32f2f);
+  padding: 4px 0;
+}
+
 .ai-chat__messages {
   flex: 1;
   min-height: 0;

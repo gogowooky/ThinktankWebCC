@@ -8,6 +8,11 @@ vi.mock('../../services/harness/harnessLoop', async (importOriginal) => {
   original.HarnessLoop.start = start as unknown as typeof original.HarnessLoop.start;
   return original;
 });
+const decide = vi.hoisted(() => vi.fn(async () => ({})));
+vi.mock('../../services/harness/harnessCorrections', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../services/harness/harnessCorrections')>()),
+  decideCorrection: decide,
+}));
 import { AiChatPanel } from './AiChatPanel';
 import { TTVault } from '../../models/TTVault';
 import { TTThink } from '../../models/TTThink';
@@ -73,4 +78,22 @@ it('chat の会話と status を表示し、発言を送るとループを始め
   });
   await act(async () => { host.querySelector<HTMLButtonElement>('.ai-chat__send')!.click(); });
   expect(start).toHaveBeenCalledWith(vault, PROJECT, { userMessage: '主催者に確認してください', trigger: 'chat' });
+});
+
+it('未承認の訂正の提案を出し、承認・見送りを決められる', async () => {
+  const correction = {
+    id: 'r1-1', kind: 'PROFILE', text: '判断が要るものを先に知らせる', userQuote: '今後は判断が要るものを先に', reason: '本人の希望',
+    projectId: PROJECT, runId: 'r1', createdAt: '2026-11-22T01:00:00Z', status: 'pending',
+  };
+  const chat = add(CHAT, 'chat', 'TASK:Seeds｜朝の秘書業務', { harnessChat: { projectId: PROJECT }, harnessCorrections: [correction, { ...correction, id: 'r1-2', status: 'approved' }] });
+  const project = add(PROJECT, 'project', `朝の秘書業務\n=\n# 状態\n待機\n# 規約\n報告は冒頭に結論\n# AI議論\n[chat:${CHAT}]`);
+  TTApplication.Instance.SeedsPanel.OpenProject(PROJECT);
+  await show();
+
+  const rows = host.querySelectorAll('.ai-chat__correction');
+  expect(rows).toHaveLength(1);
+  expect(rows[0].textContent).toContain('共通の好み（PROFILE）');
+  expect(rows[0].textContent).toContain('本人の発言:「今後は判断が要るものを先に」');
+  await act(async () => { rows[0].querySelector('button')!.click(); });
+  expect(decide).toHaveBeenCalledWith(vault, project, chat, 'r1-1', 'approve');
 });

@@ -342,6 +342,17 @@ export function setProjectHarnessId(content: string, field: HarnessField, id: st
   return [...lines.slice(0, range.end), tag, ...lines.slice(range.end)].join('\n');
 }
 
+/** # 規約 の末尾に1行加える。見出しが無ければ # 条件 の後（無ければ # AIまとめ の前、それも無ければ末尾）に加える */
+export function appendProjectRule(content: string, line: string): string {
+  const lines = content.split(/\r?\n/);
+  const range = projectSectionRange(lines, PROJECT_RULES_HEADING);
+  if (range) return [...lines.slice(0, range.end), line, ...lines.slice(range.end)].join('\n');
+  const conditions = projectSectionRange(lines, '条件');
+  const summary = projectSectionRange(lines, PROJECT_AI_SUMMARY_HEADING);
+  const at = conditions ? conditions.end : summary ? summary.start - 1 : lines.length;
+  return [...lines.slice(0, at), `# ${PROJECT_RULES_HEADING}`, line, ...lines.slice(at)].join('\n');
+}
+
 /** AIハーネスを使う project か（# 規約 かハーネスの項目の見出しがある） */
 export function isHarnessProject(content: string): boolean {
   const lines = content.split(/\r?\n/);

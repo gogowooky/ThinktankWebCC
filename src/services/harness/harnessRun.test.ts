@@ -178,7 +178,7 @@ it('監視: ハーネスの project が保存された内容で「進行中」�
     const project = await setupProject();
     const plain = await vault.CreateProjectFromIds([]);
     const start = vi.fn();
-    const stop = startHarnessWatcher(vault, { start, debounceMs: 0 });
+    const stop = startHarnessWatcher(vault, { start, doctor: vi.fn(), debounceMs: 0 });
 
     project.Content = project.Content.replace('# 状態\n未着手', '# 状態\n進行中');
     vault.NotifyUpdated(false);
