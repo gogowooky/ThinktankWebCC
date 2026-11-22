@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.7.5",
+  "version": "2.7.6",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "d6ef7b6",
-  "commitDateTime": "2026-11-22-003035",
-  "commitMessage": "feat: Firestoreの手動スナップショットを複数世代保存する"
+  "commitId": "f294fe0",
+  "commitDateTime": "2026-11-23-004816",
+  "commitMessage": "feat: AIハーネスの週次の改善を追加し、役割を AIWork にする（Phase 5）"
 }

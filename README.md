@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.7.6 feat: AIハーネスの週次の改善を追加し、役割を AIWork にする（Phase 5）
+
+- 日付: 2026-11-23
+- コミット番号: f294fe0
+
+記事「自分の代わりに動くAgentへ」のハーネスを取り入れる計画（docs/261122/AIハーネス実装計画.md）の Phase 0〜5 を実装した（89d385b〜f294fe0）。projectファイルに `# 規約` と log・status・decision・board・PROFILE・INDEX・INBOX・projects・styles・knowledge・doctor・役割 の項目を置き、AIView ファイルを AIWork と呼ぶ（新しいタグは `[aiwork:ID]`、`[aiview:ID]` も読む）。状態を「進行中」にして保存するか、AIChat サブパネルで発言すると AI CLI がループで作業し、判断が要ると「待機」にして chat で聞く。書き込みは log・status・decision に限り、記録が無ければ一度だけ追加で依頼する。「今後は」の訂正と週次の改善案は承認制で PROFILE・styles・knowledge・規約へ書き、INDEX はアプリが作る。点検（doctor）は7日ごとに参照・字数・鮮度・原本・INDEX・ログインを調べる。まとめ役は担当（「役割 | 名前」の AIWork）に分担を任せ、報告を共有ボードで検証する。AIWork の書き換え前には自動でスナップショットを残し、版の比較で戻せる。あわせて、AI CLI が応答なしで失敗したときの説明（未ログイン・使えないモデル）と、ThinkファイルのD&Dで新しいPaneが開かない不具合を直した。テスト992件成功・型チェック成功（実際の AI CLI での受け入れ試験は未実施）。
+
 ### v2.7.5 feat: Firestoreの手動スナップショットを複数世代保存する
 
 - 日付: 2026-11-22
