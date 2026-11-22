@@ -7,7 +7,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { FileText, Bot, Target, Table, Link, MessageCircle, MessagesSquare, Globe, NotebookPen, BookOpenText, IdCard, Camera, X, type LucideIcon } from 'lucide-react';
+import { FileText, Bot, Target, Table, Link, MessageCircle, MessagesSquare, Globe, NotebookPen, BookOpenText, IdCard, Camera, History, X, type LucideIcon } from 'lucide-react';
 
 const CONTENT_TYPE_ICONS: Record<string, LucideIcon> = {
   memo:    FileText,
@@ -304,9 +304,11 @@ interface Props {
   onResourceDrop:    (thinkId: string, e: React.DragEvent) => void;
   onUrlDrop?:        (link: LinkDrop) => void;
   onSaveSnapshot?:   () => Promise<unknown>;
+  /** AIWork の版の比較を開く */
+  onShowVersions?:   () => void;
 }
 
-export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop, onSaveSnapshot }: Props) {
+export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = false, isOutsideBundle = false, onDragStart, onMediaTypeChange, onClose, onResourceDrop, onUrlDrop, onSaveSnapshot, onShowVersions }: Props) {
   const mediaButtons = contentType === 'chat'    ? CHAT_BUTTONS
     : (contentType === 'project' || contentType === 'bundle') ? PROJECT_BUTTONS
     : contentType === 'table'   ? TABLE_BUTTONS
@@ -420,6 +422,10 @@ export function WorkingMenuRibbon({ area, contentType, isFocused, isDirty = fals
         data-tip={isDirty ? '編集中の内容を保存してからスナップショットを作成できます' : 'スナップショットを保存'}
         data-tip-side="bottom" onClick={saveSnapshot}>
         <Camera size={13} />
+      </button>}
+      {onShowVersions && <button type="button" className="working-menu-ribbon__media-btn"
+        aria-label="版の比較" data-tip="版の比較" data-tip-side="bottom" onClick={onShowVersions}>
+        <History size={13} />
       </button>}
       <button
         className="working-menu-ribbon__close"

@@ -120,6 +120,21 @@ export interface ProjectContent {
 
 export const PROJECT_AI_SUMMARY_HEADING = 'AIまとめ';
 export const PROJECT_AI_DISCUSSION_HEADING = 'AI議論';
+/** このprojectと配下に適用する働き方（親から子の順に連結して使う）。自由記述 */
+export const PROJECT_RULES_HEADING = '規約';
+
+/**
+ * AIハーネスの項目。見出し名＝項目名で、値は AIWork（ContentType は aiview）の参照タグ。
+ * docs/261122/AIハーネス実装計画.md §2
+ */
+export const HARNESS_FIELDS = [
+  'log', 'status', 'decision', 'board', 'PROFILE', 'INDEX', 'INBOX', 'projects', 'styles', 'knowledge', 'doctor',
+] as const;
+export type HarnessField = typeof HARNESS_FIELDS[number];
+/** 複数の AIWork を並べられる項目。それ以外は1件だけ */
+export const HARNESS_MULTI_FIELDS: ReadonlySet<HarnessField> = new Set<HarnessField>(['projects', 'styles', 'knowledge']);
+/** AIWork の参照タグ名。旧名の aiview も同じものとして読む */
+export const AIWORK_TAG = 'aiwork';
 /**
  * Thinktank>プロジェクトの「root」で開く projectファイルのタイトル。
  * このタイトルの projectファイルは Thinktank パネルにだけ設定できる（Seeds には設定しない）
@@ -188,6 +203,7 @@ function projectSectionRange(lines: string[], name: string): { start: number; en
 function projectValueRanges(lines: string[]): Array<{ start: number; end: number }> {
   const knownHeadings = new Set<string>([
     '見通し', '状態', '対象', ...PROJECT_PROMPT_HEADINGS, '条件', PROJECT_AI_SUMMARY_HEADING, PROJECT_AI_DISCUSSION_HEADING,
+    PROJECT_RULES_HEADING, ...HARNESS_FIELDS,
   ]);
   const allHeadingIndexes = lines.flatMap((line, idx) => idx > 0 && /^#+\s+/.test(line.trim()) ? [idx] : []);
   const knownHeadingIndexes = allHeadingIndexes.filter(idx => knownHeadings.has(lines[idx].trim().replace(/^#+\s+/, '')));
@@ -203,10 +219,12 @@ function csvThinkRefs(line: string): Array<{ tag: string; id: string }> {
   return line.split(',').flatMap(cell => projectThinkRef(cell) ?? []);
 }
 
+const CSV_HEADINGS = new Set<string>([PROJECT_AI_SUMMARY_HEADING, ...HARNESS_FIELDS]);
+
 function projectSectionIds(lines: string[], name: string): string[] {
   const range = projectSectionRange(lines, name);
   if (!range) return [];
-  const refsOf = name === PROJECT_AI_SUMMARY_HEADING ? csvThinkRefs : (l: string) => projectThinkRef(l) ?? [];
+  const refsOf = CSV_HEADINGS.has(name) ? csvThinkRefs : (l: string) => projectThinkRef(l) ?? [];
   return lines.slice(range.start, range.end).flatMap(l => refsOf(l)).map(ref => ref.id);
 }
 
@@ -223,14 +241,14 @@ export function parseProject(content: string): ProjectContent {
   const lines = content.split(/\r?\n/);
   const rawTitle = lines[0] ?? '';
   const title = rawTitle.replace(/^>>?\s*/, '');
-  const aiRange = projectSectionRange(lines, PROJECT_AI_SUMMARY_HEADING);
-  const inAiSummary = (idx: number) => !!aiRange && idx >= aiRange.start && idx < aiRange.end;
+  const csvRanges = [...CSV_HEADINGS].flatMap(name => projectSectionRange(lines, name) ?? []);
+  const inCsvSection = (idx: number) => csvRanges.some(range => idx >= range.start && idx < range.end);
   const valueRanges = projectValueRanges(lines);
   const hasAnyHeading = lines.some((line, idx) => idx > 0 && /^#+\s+/.test(line.trim()));
   const ids = (valueRanges.length > 0
     ? valueRanges.flatMap(range => lines.slice(range.start, range.end).map((line, offset) => ({ line, idx: range.start + offset })))
     : hasAnyHeading ? [] : lines.slice(1).map((line, offset) => ({ line, idx: offset + 1 })))
-    .flatMap(({ line, idx }) => inAiSummary(idx) ? csvThinkRefs(line).map(ref => ref.id) : projectThinkRef(line)?.id ?? []);
+    .flatMap(({ line, idx }) => inCsvSection(idx) ? csvThinkRefs(line).map(ref => ref.id) : projectThinkRef(line)?.id ?? []);
   return {
     title,
     ids,
@@ -261,11 +279,11 @@ export function firstAiViewId(content: string): string | null {
 }
 
 /**
- * # AIまとめ の先頭のCSVの先頭に [aiview:ID] を加える（次回からその AIViewファイルへ書き込むため）。
+ * # AIまとめ の先頭のCSVの先頭に [aiwork:ID] を加える（次回からその AIWork へ書き込むため）。
  * # AIまとめ が無ければ # AI議論 の前（それも無ければ末尾）に見出しごと加える
  */
 export function addAiViewIdToHead(content: string, id: string): string {
-  const tag = `[aiview:${id}]`;
+  const tag = `[${AIWORK_TAG}:${id}]`;
   const lines = content.split(/\r?\n/);
   const range = projectSectionRange(lines, PROJECT_AI_SUMMARY_HEADING);
   if (!range) {
@@ -282,6 +300,46 @@ export function addAiViewIdToHead(content: string, id: string): string {
   const cells = lines[firstIdx].split(',').map(c => c.trim()).filter(c => c !== '');
   lines[firstIdx] = [tag, ...cells].join(',');
   return lines.join('\n');
+}
+
+/** ハーネスの項目に書かれた AIWork の ID（書かれた順）。見出しが無ければ空 */
+export function projectHarnessIds(content: string, field: HarnessField): string[] {
+  return projectSectionIds(content.split(/\r?\n/), field);
+}
+
+/** ハーネスのすべての項目の AIWork の ID */
+export function allProjectHarnessIds(content: string): string[] {
+  const lines = content.split(/\r?\n/);
+  return HARNESS_FIELDS.flatMap(field => projectSectionIds(lines, field));
+}
+
+/** 1件の項目（log・status 等）の AIWork の ID。無ければ null */
+export function firstHarnessId(content: string, field: HarnessField): string | null {
+  return projectHarnessIds(content, field)[0] ?? null;
+}
+
+/**
+ * ハーネスの項目に [aiwork:ID] を書く。
+ * 1件の項目は値を置き換え、複数の項目（projects・styles・knowledge）は末尾に加える（既にあれば変えない）。
+ * 見出しが無ければ # AIまとめ の前（無ければ # AI議論 の前、それも無ければ末尾）に見出しごと加える。
+ */
+export function setProjectHarnessId(content: string, field: HarnessField, id: string): string {
+  const tag = `[${AIWORK_TAG}:${id}]`;
+  const lines = content.split(/\r?\n/);
+  const range = projectSectionRange(lines, field);
+  if (!range) {
+    const anchor = projectSectionRange(lines, PROJECT_AI_SUMMARY_HEADING)
+      ?? projectSectionRange(lines, PROJECT_AI_DISCUSSION_HEADING);
+    const at = anchor ? anchor.start - 1 : lines.length;
+    const head = lines.slice(0, at);
+    while (head.length > 1 && head[head.length - 1].trim() === '') head.pop();
+    return [...head, `# ${field}`, tag, ...lines.slice(at)].join('\n');
+  }
+  if (!HARNESS_MULTI_FIELDS.has(field)) {
+    return [...lines.slice(0, range.start), tag, ...lines.slice(range.end)].join('\n');
+  }
+  if (projectSectionIds(lines, field).includes(id)) return content;
+  return [...lines.slice(0, range.end), tag, ...lines.slice(range.end)].join('\n');
 }
 
 /** @deprecated Use parseProject */
@@ -358,7 +416,7 @@ export function serializeProject(options: ProjectCreateOptions): string {
     '# 条件',
     ...(options.conditions ? [options.conditions] : []),
     `# ${PROJECT_AI_SUMMARY_HEADING}`,
-    ...(options.aiSummaryIds ?? []).map(id => `[aiview:${id}]`),
+    ...(options.aiSummaryIds ?? []).map(id => `[${AIWORK_TAG}:${id}]`),
     `# ${PROJECT_AI_DISCUSSION_HEADING}`,
     ...(options.aiDiscussionIds ?? []).map(id => `[chat:${id}]`),
   ];
@@ -387,7 +445,8 @@ export function updateProjectTargets(content: string, items: ProjectTargetItem[]
   const range = projectSectionRange(lines, '対象');
   if (!range) {
     const insertBefore = new Set<string>([
-      ...PROJECT_PROMPT_HEADINGS, '条件', PROJECT_AI_SUMMARY_HEADING, PROJECT_AI_DISCUSSION_HEADING,
+      ...PROJECT_PROMPT_HEADINGS, '条件', PROJECT_RULES_HEADING, ...HARNESS_FIELDS,
+      PROJECT_AI_SUMMARY_HEADING, PROJECT_AI_DISCUSSION_HEADING,
     ]);
     const at = lines.findIndex((line, idx) => idx > 0 && [...insertBefore].some(name => new RegExp(`^#\\s+${name}\\s*$`).test(line.trim())));
     const insertion = at === -1 ? lines.length : at;
@@ -399,7 +458,7 @@ export function updateProjectTargets(content: string, items: ProjectTargetItem[]
   // 呼び出し元は本文全体の参照（ids）から items を作るため、AIまとめ・AI議論の参照が
   // 混ざってくる。そのままだと # 対象 へ重複して書き足されるので除く。
   const parsed = parseProject(content);
-  const aiIds = new Set([...parsed.aiSummaryIds, ...parsed.aiDiscussionIds]);
+  const aiIds = new Set([...parsed.aiSummaryIds, ...parsed.aiDiscussionIds, ...allProjectHarnessIds(content)]);
   const sectionLines = lines.slice(range.start, range.end);
   // [gdrive:ID] のように手で（または本文から）付けた詳しいLinkタグは書き換えで失わない
   const existingTags = new Map(sectionLines.flatMap(l => {

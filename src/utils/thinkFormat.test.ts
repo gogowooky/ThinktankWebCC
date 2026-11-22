@@ -14,7 +14,70 @@ import {
   readProjectSectionText,
   serializeProject,
   updateProjectTargets,
+  projectHarnessIds,
+  allProjectHarnessIds,
+  firstHarnessId,
+  setProjectHarnessId,
 } from './thinkFormat';
+
+describe('AIハーネスの項目', () => {
+  const base = [
+    'P', '=', '# 対象', '[memo:2026-01-02-030405]',
+    '# 規約', '決まったことは冒頭に書く', '[memo:2026-01-02-030406]',
+    '# log', '[aiwork:2026-01-02-030410]',
+    '# styles', '[aiwork:2026-01-02-030411], [aiview:2026-01-02-030412]', '[aiwork:2026-01-02-030413]',
+    '# AIまとめ', '[aiview:2026-01-02-030407]',
+    '# AI議論', '[chat:2026-01-02-030408]',
+  ].join('\n');
+
+  it('項目ごとの AIWork を読み、CSV と旧名のタグも読む', () => {
+    expect(firstHarnessId(base, 'log')).toBe('2026-01-02-030410');
+    expect(projectHarnessIds(base, 'styles')).toEqual(['2026-01-02-030411', '2026-01-02-030412', '2026-01-02-030413']);
+    expect(firstHarnessId(base, 'status')).toBeNull();
+    expect(allProjectHarnessIds(base)).toEqual(['2026-01-02-030410', '2026-01-02-030411', '2026-01-02-030412', '2026-01-02-030413']);
+  });
+
+  it('規約・ハーネスの参照も project の所属（ids）に含め、# 対象 には含めない', () => {
+    expect(parseProject(base).ids).toEqual([
+      '2026-01-02-030405', '2026-01-02-030406', '2026-01-02-030410',
+      '2026-01-02-030411', '2026-01-02-030412', '2026-01-02-030413', '2026-01-02-030407', '2026-01-02-030408',
+    ]);
+    expect(projectTargetIds(base)).toEqual(['2026-01-02-030405']);
+  });
+
+  it('# 対象 を書き直してもハーネスの AIWork を重複させない', () => {
+    const updated = updateProjectTargets(base, [
+      { id: '2026-01-02-030405', contentType: 'memo' },
+      { id: '2026-01-02-030410', contentType: 'aiview' },
+      { id: '2026-01-02-030412', contentType: 'aiview' },
+    ]);
+    expect(projectTargetIds(updated)).toEqual(['2026-01-02-030405']);
+  });
+
+  it('見出しが無ければ # AIまとめ の前に加える', () => {
+    expect(setProjectHarnessId(base, 'status', '2026-01-02-030420'))
+      .toContain('[aiwork:2026-01-02-030413]\n# status\n[aiwork:2026-01-02-030420]\n# AIまとめ');
+    expect(setProjectHarnessId('P\n=\n# 条件\n\n# AI議論', 'board', '2026-01-02-030420'))
+      .toBe('P\n=\n# 条件\n# board\n[aiwork:2026-01-02-030420]\n# AI議論');
+    expect(setProjectHarnessId('P\n=\n# 条件', 'PROFILE', '2026-01-02-030420'))
+      .toBe('P\n=\n# 条件\n# PROFILE\n[aiwork:2026-01-02-030420]');
+  });
+
+  it('1件の項目は置き換え、複数の項目は末尾に加える', () => {
+    const replaced = setProjectHarnessId(base, 'log', '2026-01-02-030420');
+    expect(projectHarnessIds(replaced, 'log')).toEqual(['2026-01-02-030420']);
+    const added = setProjectHarnessId(base, 'styles', '2026-01-02-030420');
+    expect(projectHarnessIds(added, 'styles')).toEqual(['2026-01-02-030411', '2026-01-02-030412', '2026-01-02-030413', '2026-01-02-030420']);
+    expect(setProjectHarnessId(base, 'styles', '2026-01-02-030412')).toBe(base);
+    expect(firstHarnessId(added, 'log')).toBe('2026-01-02-030410');
+  });
+
+  it('項目値の終わりの空行より後ろの自由記載は書き換えない', () => {
+    const content = 'P\n=\n# decision\n[aiwork:2026-01-02-030410]\n\n自由記載\n# AI議論';
+    expect(setProjectHarnessId(content, 'decision', '2026-01-02-030420'))
+      .toBe('P\n=\n# decision\n[aiwork:2026-01-02-030420]\n\n自由記載\n# AI議論');
+  });
+});
 
 describe('splitContent', () => {
   it('先頭行を title、残りを body に分割する', () => {
@@ -103,7 +166,7 @@ describe('project 形式の往復', () => {
       '# 状態', '未着手',
       '# 対象', '[link:2026-01-02-030405]: 資料',
       '# 現状把握用プロンプト', '# 進捗把握用プロンプト', '# 実績把握用プロンプト', '# 条件',
-      '# AIまとめ', '[aiview:2026-01-02-030407]',
+      '# AIまとめ', '[aiwork:2026-01-02-030407]',
       '# AI議論', '[chat:2026-01-02-030408]',
     ].join('\n'));
     expect(parseProject(serialized)).toEqual({
@@ -258,12 +321,18 @@ describe('# AIまとめ のCSVと要約の書き込み先', () => {
 
   it('作った AIViewファイルのタグを先頭のCSVの先頭に加える', () => {
     expect(addAiViewIdToHead(content, '2026-01-02-030409')).toContain(
-      '# AIまとめ\n[aiview:2026-01-02-030409],[aiview:2026-01-02-030401],[aiview:2026-01-02-030402]\n[aiview:2026-01-02-030403]\n# AI議論');
+      '# AIまとめ\n[aiwork:2026-01-02-030409],[aiview:2026-01-02-030401],[aiview:2026-01-02-030402]\n[aiview:2026-01-02-030403]\n# AI議論');
     expect(addAiViewIdToHead('P\n=\n# AIまとめ\n# AI議論', '2026-01-02-030409'))
-      .toBe('P\n=\n# AIまとめ\n[aiview:2026-01-02-030409]\n# AI議論');
+      .toBe('P\n=\n# AIまとめ\n[aiwork:2026-01-02-030409]\n# AI議論');
     expect(addAiViewIdToHead('P\n=\n# 条件\n\n# AI議論\n[chat:2026-01-02-030404]', '2026-01-02-030409'))
-      .toBe('P\n=\n# 条件\n# AIまとめ\n[aiview:2026-01-02-030409]\n# AI議論\n[chat:2026-01-02-030404]');
-    expect(addAiViewIdToHead('P\n=\n# 条件', '2026-01-02-030409')).toBe('P\n=\n# 条件\n# AIまとめ\n[aiview:2026-01-02-030409]');
+      .toBe('P\n=\n# 条件\n# AIまとめ\n[aiwork:2026-01-02-030409]\n# AI議論\n[chat:2026-01-02-030404]');
+    expect(addAiViewIdToHead('P\n=\n# 条件', '2026-01-02-030409')).toBe('P\n=\n# 条件\n# AIまとめ\n[aiwork:2026-01-02-030409]');
+  });
+
+  it('[aiwork:ID] と旧名の [aiview:ID] を同じ AIWork として読む', () => {
+    const mixed = 'P\n=\n# AIまとめ\n[aiwork:2026-01-02-030401],[aiview:2026-01-02-030402]';
+    expect(parseProject(mixed).aiSummaryIds).toEqual(['2026-01-02-030401', '2026-01-02-030402']);
+    expect(firstAiViewId(mixed)).toBe('2026-01-02-030401');
   });
 
   it('見出し直後から次の見出しまでを読む', () => {

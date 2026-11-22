@@ -1,0 +1,103 @@
+/* AiWorkVersionsDialog.css */
+
+.aiwork-versions__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+  background: rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aiwork-versions {
+  width: min(760px, calc(100vw - 32px));
+  height: min(560px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+  background: var(--thinktank-content-bg, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  font-size: calc(11px * var(--tt-font-scale, 1));
+}
+
+.aiwork-versions__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.aiwork-versions__title {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aiwork-versions__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  display: flex;
+  padding: 2px;
+}
+
+.aiwork-versions__close:hover {
+  color: #444;
+}
+
+.aiwork-versions__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.aiwork-versions__controls label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aiwork-versions__restore {
+  margin-left: auto;
+  cursor: pointer;
+}
+
+.aiwork-versions__body {
+  flex: 1;
+  overflow: auto;
+  padding: 6px 10px;
+}
+
+.aiwork-versions__message {
+  color: #666;
+  padding: 8px 0;
+}
+
+.aiwork-versions__message--error {
+  color: #b3261e;
+}
+
+.aiwork-versions__diff {
+  margin: 0;
+  font-family: Consolas, 'Courier New', monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aiwork-versions__added {
+  background: rgba(46, 160, 67, 0.15);
+}
+
+.aiwork-versions__removed {
+  background: rgba(248, 81, 73, 0.15);
+}

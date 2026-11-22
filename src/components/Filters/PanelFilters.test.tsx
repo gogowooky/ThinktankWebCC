@@ -49,7 +49,7 @@ it.each(panels)('$name keeps search Enter, type selection and the focus ref', as
   await act(async () => { input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); });
   expect(onSearch).toHaveBeenCalledTimes(1);
   const memo = host.querySelector<HTMLButtonElement>('button[aria-label="メモ"]')!;
-  expect(host.querySelector<HTMLButtonElement>('button[aria-label="AI View"]')).not.toBeNull();
+  expect(host.querySelector<HTMLButtonElement>('button[aria-label="AIWork"]')).not.toBeNull();
   expect(memo.classList.contains(`${prefix}__type-btn--active`)).toBe(true);
   await act(async () => memo.click());
   expect(onToggleType).toHaveBeenCalledWith('memo');

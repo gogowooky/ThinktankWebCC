@@ -13,7 +13,7 @@ import './SearchBar.css';
 
 const TYPE_DEFS: { type: ContentType; Icon: LucideIcon; label: string }[] = [
   { type: 'memo',    Icon: FileText,       label: 'メモ' },
-  { type: 'aiview',  Icon: Bot,            label: 'AI View' },
+  { type: 'aiview',  Icon: Bot,            label: 'AIWork' },
   { type: 'project', Icon: Target,         label: 'Project' },
   { type: 'table',   Icon: Table,          label: 'テーブル' },
   { type: 'links',   Icon: Link,           label: 'リンク' },

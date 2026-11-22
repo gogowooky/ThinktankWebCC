@@ -1,13 +1,13 @@
 /**
  * AiPanels.tsx
  * Thinktank / Seeds / Working / Harvest に共通の「AIView」「AIChat」サブパネル。
- * AIView はロード中の projectファイルの要約（# AIまとめ の先頭の AIViewファイル）を TextEditor で表示する。
- * AIViewファイルは AI CLI だけが書き、利用者は編集できない（読み取り専用）。
+ * AIView はロード中の projectファイルの要約（# AIまとめ の先頭の AIWork。旧称 AIViewファイル）を TextEditor で表示する。
+ * AIWork は AI CLI だけが書き、利用者は編集できない（読み取り専用）。版の比較で前の版へは戻せる。
  * AIChat の中身は今後実装する。
  */
 
 import { useEffect, useState } from 'react';
-import { BotMessageSquare, CircleAlert, CircleCheck, LoaderCircle, type LucideIcon } from 'lucide-react';
+import { BotMessageSquare, CircleAlert, CircleCheck, History, LoaderCircle, type LucideIcon } from 'lucide-react';
 import { CpuAi } from './CpuAi';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -18,6 +18,8 @@ import {
   PROJECT_SUMMARIES, SUMMARY_KIND_OF_PANEL, findSummaryAiView, generateProjectSummary,
   type ProjectSummaryProgress, type SummaryPanelKey,
 } from '../../services/projectSummary';
+import { aiWorkVersionsAvailable } from '../../services/harness/aiWorkVersions';
+import { AiWorkVersionsDialog } from './AiWorkVersionsDialog';
 import '../Layout/MenuRibbon.css';
 import './AiPanels.css';
 
@@ -132,6 +134,8 @@ export function AiViewPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   // YAML＋本文 表示は、その AIViewファイルを表示している間だけ
   const [rawYamlThinkId, setRawYamlThinkId] = useState<string | null>(null);
   const rawYaml = !!aiView && rawYamlThinkId === aiView.ID;
+  const [showVersions, setShowVersions] = useState(false);
+  const canCompare = !!aiView && !running && aiWorkVersionsAvailable();
 
   // projectファイル・AIViewファイルの本文が未取得なら読み込む（読み終えたら描き直す）
   useEffect(() => {
@@ -213,6 +217,17 @@ export function AiViewPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
           <CpuAi size={14} className={running ? 'ai-view__busy' : undefined} />
         </button>
         <div className="menu-ribbon__spacer" />
+        {canCompare && (
+          <button
+            className="menu-ribbon__btn menu-ribbon__btn--icon"
+            onClick={() => setShowVersions(true)}
+            data-tip="版の比較"
+            data-tip-side="left"
+            aria-label="版の比較"
+          >
+            <History size={14} />
+          </button>
+        )}
         <TextEditorModeButton
           readOnly
           rawYaml={rawYaml}
@@ -221,6 +236,9 @@ export function AiViewPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
       </div>
       {status}
       <div className="ai-view__content">{body}</div>
+      {showVersions && aiView && (
+        <AiWorkVersionsDialog aiWork={aiView} vault={vault} onClose={() => setShowVersions(false)} />
+      )}
     </div>
   );
 }

@@ -19,7 +19,7 @@ const CONTENT_ICONS: Record<ContentType, LucideIcon> = {
 
 const CONTENT_LABELS: Record<ContentType, string> = {
   memo: 'メモ',
-  aiview: 'AI View',
+  aiview: 'AIWork',
   project: 'プロジェクト',
   table: 'テーブル',
   links: 'リンク',

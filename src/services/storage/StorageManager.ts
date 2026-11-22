@@ -204,6 +204,11 @@ export class StorageManager {
 
   // ── スナップショット機能 ──────────────────────────────────────────
 
+  /** スナップショットを作成・一覧できるか（Firestore、またはローカル運用モードのPC版） */
+  public get supportsSnapshots(): boolean {
+    return this.backend instanceof FirestoreStorageBackend || (this.storageMode === 'local' && !!this.localSnapshotApi);
+  }
+
   public createSnapshot(thinkid: string): Promise<ThinkSnapshotRecord> {
     if (this.backend instanceof FirestoreStorageBackend) {
       return this.backend.createSnapshot(thinkid);

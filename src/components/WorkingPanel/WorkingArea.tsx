@@ -21,6 +21,8 @@ import { getPcName } from '../../utils/pcName';
 import { readColHeader, tableContentWithBodyHeader } from '../../utils/tableFormat';
 import { reportSaveError } from '../../utils/saveError';
 import { StorageManager } from '../../services/storage/StorageManager';
+import { aiWorkVersionsAvailable } from '../../services/harness/aiWorkVersions';
+import { AiWorkVersionsDialog } from '../AiPanels/AiWorkVersionsDialog';
 import type { TextEditorMediaRef } from './media/TextEditorMedia';
 import { MarkdownMedia }   from './media/MarkdownMedia';
 import type { MarkdownMediaRef }   from './media/MarkdownMedia';
@@ -64,6 +66,7 @@ export function WorkingArea({
   onFocus, onDragStart, onDragEnter, onDragLeave, onMediaTypeChange, onClose,
 }: Props) {
   const [isDirty,         setIsDirty]         = useState(false);
+  const [showVersions,    setShowVersions]    = useState(false);
   const [loadedResourceId, setLoadedResourceId] = useState<string | null>(null);
   const autoSaveRef = useRef<(() => void | Promise<unknown>) | null>(null);
   const mediaRef = useRef<AnyMediaRef | null>(null);
@@ -347,6 +350,8 @@ export function WorkingArea({
         contentType={think?.ContentType}
         onSaveSnapshot={contentReady && think && StorageManager.instance.storageMode === 'firestore'
           ? () => StorageManager.instance.createSnapshot(think.ID) : undefined}
+        onShowVersions={contentReady && think?.ContentType === 'aiview' && aiWorkVersionsAvailable()
+          ? () => setShowVersions(true) : undefined}
         isFocused={isFocused}
         isDirty={isDirty}
         isOutsideBundle={isOutsideBundle}
@@ -389,6 +394,9 @@ export function WorkingArea({
         )}
       </div>
 
+      {showVersions && think && (
+        <AiWorkVersionsDialog aiWork={think} vault={vault} onClose={() => setShowVersions(false)} />
+      )}
     </div>
   );
 }

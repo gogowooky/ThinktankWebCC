@@ -21,6 +21,7 @@ import {
 } from '../utils/thinkFormat';
 import { aiViewEntryHeading, formatLocalDate, prependAiViewEntry } from '../utils/aiViewFormat';
 import { diffLines } from '../utils/lineDiff';
+import { snapshotBeforeWrite } from './harness/aiWorkVersions';
 
 export type ProjectSummaryKind = 'current' | 'progress' | 'result';
 
@@ -350,6 +351,7 @@ export async function generateProjectSummary(options: GenerateProjectSummaryOpti
 
   const date = formatLocalDate(now);
   const heading = aiViewEntryHeading(date, spec.label);
+  await snapshotBeforeWrite(aiView);
   const before = aiView.Content;
   onProgress({ stage: 'ai', targetCount: targets.length });
   const { reply, modelLabel } = await requestReply({

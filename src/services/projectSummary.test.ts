@@ -155,7 +155,7 @@ it('# AIまとめ の先頭のタグが読み取れなければ、新しい AIVi
   const { aiView } = await generateProjectSummary({
     kind: 'current', panelKey: 'thinktank', vault, projectId: project.ID, requestReply: async () => ({ reply: '要約' }), aiWriteWaitMs: 0,
   });
-  expect(project.Content).toContain(`# AIまとめ\n[aiview:${aiView.ID}],[aiview:2020-01-01-000000],[aiview:2020-01-01-000001]`);
+  expect(project.Content).toContain(`# AIまとめ\n[aiwork:${aiView.ID}],[aiview:2020-01-01-000000],[aiview:2020-01-01-000001]`);
 });
 
 it('AI の失敗時は AIViewファイルを変えない', async () => {
