@@ -10,7 +10,12 @@ import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { readProjectStatus, setProjectState, type ProjectState } from '../../utils/thinkFormat';
 import { appendHarnessChatTurn, ensureHarnessChat } from './harnessChat';
-import { runHarnessTurn, type HarnessRequestReply, type HarnessTurnStage } from './harnessRun';
+import { requestHarnessReply, runHarnessTurn, type HarnessRequestReply, type HarnessTurnStage } from './harnessRun';
+import { runTeam } from './harnessTeam';
+import { boardRowLabel } from './harnessBoard';
+
+/** ループの段階。team は担当が作業している間 */
+export type HarnessLoopStage = HarnessTurnStage | 'team';
 
 export const MAX_TURNS_PER_START = 5;
 export const HARNESS_LOCK_KEY = 'harnessLock';
@@ -23,7 +28,9 @@ export interface HarnessLoopStatus {
   running: boolean;
   turn: number;
   maxTurns: number;
-  stage?: HarnessTurnStage;
+  stage?: HarnessLoopStage;
+  /** 作業中の担当の数（チームで進めているとき） */
+  teamRunning?: number;
   startedAt: number;
   /** 終わったときの結果 */
   outcome?: { type: 'waiting' | 'stopped' | 'limit' | 'error'; message: string };
@@ -147,6 +154,18 @@ class HarnessLoopManager {
           onStage: stage => { status.stage = stage; this.notify(); },
         });
         const directive = result.directive;
+        if (directive?.state === 'delegate' && result.team?.assignments.length) {
+          status.stage = 'team';
+          status.teamRunning = result.team.assignments.length;
+          this.notify();
+          const rows = await runTeam({
+            vault, project, team: result.team, requestReply: options.requestReply ?? requestHarnessReply,
+            onProgress: running => { status.teamRunning = running; this.notify(); },
+          });
+          status.teamRunning = 0;
+          await this.note(vault, project, `担当の作業が終わりました: ${rows.map(r => `${r.id} ${r.role}［${boardRowLabel(r.state)}］`).join('、')}。まとめ役が報告を確かめます。`);
+          continue;
+        }
         if (!directive || directive.state !== 'continue') {
           const message = !directive
             ? 'AI が次の進め方（harness.state）を返さなかったため、確認を待ちます。'

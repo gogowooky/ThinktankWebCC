@@ -33,6 +33,20 @@
   padding: 4px 0;
 }
 
+.ai-chat__board-row {
+  padding: 2px 0;
+}
+
+.ai-chat__board-row--verified {
+  color: var(--success-text, #2e7d32);
+}
+
+.ai-chat__board-row--blocked,
+.ai-chat__board-row--failed,
+.ai-chat__board-row--rejected {
+  color: var(--warning-text, #a15c00);
+}
+
 .ai-chat__corrections {
   border-bottom: 1px solid rgb(128 128 128 / 0.25);
   padding: 4px 8px;

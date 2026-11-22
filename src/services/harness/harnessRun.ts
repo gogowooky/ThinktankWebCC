@@ -24,8 +24,13 @@ import {
 import { snapshotBeforeWrite } from './aiWorkVersions';
 import { ensureRootHarness } from './harnessRoot';
 import { formatCorrectionsForChat, readCorrectionCandidates, stageCorrections } from './harnessCorrections';
+import {
+  applyVerify, readBoard, readTeamDirective, readVerifyItems, writeBoard, type TeamDirective, type VerifyItem,
+} from './harnessBoard';
+import { projectHarnessIds } from '../../utils/thinkFormat';
+import { ensureRoleProjects } from './harnessRoles';
 
-export type HarnessDirectiveState = 'continue' | 'waiting' | 'done';
+export type HarnessDirectiveState = 'continue' | 'waiting' | 'done' | 'delegate';
 export interface HarnessDirective {
   state: HarnessDirectiveState;
   question?: string;
@@ -38,7 +43,7 @@ export function readHarnessDirective(rawText: string | undefined): HarnessDirect
   const harness = obj?.harness;
   if (!harness || typeof harness !== 'object' || Array.isArray(harness)) return null;
   const { state, question } = harness as Record<string, unknown>;
-  if (state !== 'continue' && state !== 'waiting' && state !== 'done') return null;
+  if (state !== 'continue' && state !== 'waiting' && state !== 'done' && state !== 'delegate') return null;
   return { state, ...(typeof question === 'string' && question.trim() ? { question: question.trim() } : {}) };
 }
 
@@ -61,7 +66,7 @@ const AI_TIMEOUT_MS = 600_000;
 const AI_WRITE_WAIT_MS = 10_000;
 const AI_WRITE_POLL_MS = 500;
 
-async function requestHarnessReply(payload: Record<string, unknown>): Promise<HarnessAiResponse> {
+export async function requestHarnessReply(payload: Record<string, unknown>): Promise<HarnessAiResponse> {
   const electronAi = typeof window !== 'undefined' ? window.electronAPI?.ai : undefined;
   if (electronAi?.conversation) return invokeIpc(() => electronAi.conversation(payload)) as Promise<HarnessAiResponse>;
   if (FirestoreRelayClient.isConfigured()) {
@@ -152,6 +157,22 @@ export interface HarnessTurnResult {
   chatId: string;
   /** 今回の訂正の提案（未承認） */
   correctionIds: string[];
+  /** delegate のときの分担（担当を動かすのはループ） */
+  team: TeamDirective | null;
+}
+
+/** まとめ役の検証を board に書く（board が無ければ何もしない） */
+async function applyVerifyToBoard(vault: TTVault, project: TTThink, items: VerifyItem[]): Promise<VerifyItem[]> {
+  if (items.length === 0) return [];
+  const [boardId] = projectHarnessIds(project.Content, 'board');
+  const board = boardId ? vault.GetThink(boardId) : undefined;
+  if (!board || board.ContentType !== 'aiview') return [];
+  if (board.IsMetaOnly) await board.LoadContent();
+  const { data, applied } = applyVerify(readBoard(board), items);
+  if (applied.length) {
+    await writeBoard(vault, board, data).catch(error => console.warn('[harnessRun] board に検証を書けませんでした', error));
+  }
+  return applied;
 }
 
 export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<HarnessTurnResult> {
@@ -165,6 +186,7 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
   if (project.IsMetaOnly) await project.LoadContent();
 
   await ensureRootHarness(vault);
+  await ensureRoleProjects(vault);
   const log = await ensureHarnessAiWork(vault, project, 'log');
   const status = await ensureHarnessAiWork(vault, project, 'status');
   const decision = await ensureHarnessAiWork(vault, project, 'decision');
@@ -245,19 +267,24 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
 
   const directive = readHarnessDirective(first.rawText);
   const corrections = stageCorrections(chat, project.ID, runId, readCorrectionCandidates(first.rawText, userMessage), now());
+  const team = directive?.state === 'delegate' ? readTeamDirective(first.rawText) : null;
+  const verified = await applyVerifyToBoard(vault, project, readVerifyItems(first.rawText));
   const question = directive?.question && !reply.includes(directive.question) ? `\n\n**確認**: ${directive.question}` : '';
   const proposals = corrections.length ? `\n\n${formatCorrectionsForChat(corrections)}` : '';
+  const verifiedNote = verified.length ? `\n\n共有ボードの検証: ${verified.map(v => `${v.id} → ${v.result}`).join('、')}` : '';
+  const teamNote = team?.assignments.length ? `\n\n担当に任せます: ${team.assignments.map(a => `${a.role}（${a.task.slice(0, 40)}）`).join('、')}` : '';
   const incomplete = missing.length > 0 ? `\n\n（記録が不完全です: ${missing.join('・')} が書かれませんでした）` : '';
   await appendHarnessChatTurn(vault, chat, {
     question: options.chatQuestion ?? (userMessage?.trim() || '（自動）続き'),
     model,
     createdAt: now().toISOString(),
-    reply: `${reply || '（応答なし）'}${question}${proposals}${incomplete}`,
+    reply: `${reply || '（応答なし）'}${question}${verifiedNote}${teamNote}${proposals}${incomplete}`,
   });
   vault.NotifyUpdated(false);
 
   return {
     runId, directive, reply, model, recordComplete: missing.length === 0, logWrittenBy, record, chatId: chat.ID,
     correctionIds: corrections.map(c => c.id),
+    team,
   };
 }

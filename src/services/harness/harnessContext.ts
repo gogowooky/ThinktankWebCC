@@ -13,6 +13,8 @@ import {
 } from '../../utils/thinkFormat';
 import { latestAiViewEntries } from '../../utils/aiViewFormat';
 import { HARNESS_CHAR_LIMITS, findRootProject } from './harnessRoot';
+import { boardForPrompt, readBoard } from './harnessBoard';
+import { listRoles } from './harnessRoles';
 
 /**
  * アプリの既定の規約。記事の筆者が実際の失敗から足したルールで、利用者の規約より前に置く。
@@ -110,6 +112,10 @@ export interface HarnessContext {
   decision: HarnessDocument;
   log: HarnessDocument;
   chatHistory: string;
+  /** 共有ボードの要約（行が無ければ空） */
+  board: string;
+  /** 任せられる担当（役割名と、規約の1行目） */
+  roles: Array<{ name: string; summary: string }>;
 }
 
 function doc(think: TTThink, max: number, body = bodyOf(think), limit?: number): HarnessDocument {
@@ -167,6 +173,8 @@ export async function collectHarnessContext(input: CollectHarnessContextInput): 
     decision: doc(decision, MAX_DECISION_CHARS),
     log: doc(log, MAX_LOG_CHARS, latestAiViewEntries(log.Content, LOG_ENTRIES)),
     chatHistory: input.chatHistory,
+    board: boardForPrompt(readBoard((await aiWorksOf(vault, project, 'board'))[0] ?? null)),
+    roles: (await listRoles(vault)).map(r => ({ name: r.name, summary: r.rules.split(/\r?\n/)[0] ?? '' })),
   };
 }
 
@@ -221,6 +229,7 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   section(lines, `status（現在地） thinkid="${ctx.status.id}"`, ctx.status.body);
   section(lines, `decision（決定の一覧。ここに無い決定は未決） thinkid="${ctx.decision.id}"`, ctx.decision.body);
   section(lines, `log（経緯。直近の記録だけ。古いものは thinktank_get_record で読む） thinkid="${ctx.log.id}"`, ctx.log.body);
+  if (ctx.board) section(lines, '共有ボード（担当の報告と検証の状態。書くのはアプリ）', ctx.board);
   if (ctx.chatHistory) section(lines, '直近の会話', ctx.chatHistory);
 
   lines.push('# 今回の依頼');
@@ -246,13 +255,26 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   lines.push('userQuote には今回の利用者の発言から、根拠になる部分をそのまま写す（言い換えない）。「今回だけ」「今日は」の指示は提案にしない。');
   lines.push('');
 
+  lines.push('# チームで進める（あなたはまとめ役）');
+  lines.push('観点が3つ以上、または対象が10件以上あるなど、分けたほうが確かな作業は、担当に任せてよい。担当は並行して動き、結果と根拠を返す（記録は書かない）。');
+  lines.push(`任せられる担当: ${ctx.roles.length ? ctx.roles.map(r => `${r.name}（${r.summary}）`).join('／') : '（定義なし。役割名を書けば即席の担当として動く）'}`);
+  lines.push('- 任せるときは harness.state を "delegate" にし、"team" にゴール・完了条件・分担（担当と作業）を書く。作業には、何を・どの正本と比べ・どうなれば完了かを書く。');
+  lines.push('- 共有ボードに「reported（報告済み・未検証）」の行があれば、報告の根拠を自分で確かめ、"verify" で verified（確かめた）・rejected（差し戻す）・blocked（本人の判断が要る）を返す。担当の「できました」だけで verified にしない。');
+  lines.push('- 確かめた範囲と、やっていないことを、所見（note）に書く。');
+  lines.push('');
+
   lines.push('# 止まる場面');
   lines.push('次の場面では作業を進めず、利用者に確認する: 元に戻せない操作、外部への送信、依頼範囲の変更、価値判断が必要な完了の判定。');
   lines.push('');
   lines.push('# 応答の JSON に加える項目');
   lines.push('応答の JSON には、上の形式に加えて次の "harness" を必ず入れる。');
   lines.push('```json');
-  lines.push('{ "harness": { "state": "continue | waiting | done", "question": "waiting / done のときに利用者へ聞くこと" } }');
+  lines.push('{ "harness": { "state": "continue | waiting | done | delegate", "question": "waiting / done のときに利用者へ聞くこと" } }');
+  lines.push('```');
+  lines.push('担当に任せるとき（delegate）と、報告を確かめたときは、次も入れる。');
+  lines.push('```json');
+  lines.push('{ "team": { "goal": "ゴール", "doneCriteria": "完了条件", "assignments": [ { "role": "担当の名前", "task": "作業" } ] },');
+  lines.push('  "verify": [ { "id": "T1", "result": "verified | rejected | blocked", "note": "確かめた範囲・やっていないこと" } ] }');
   lines.push('```');
   lines.push('訂正の提案があるときだけ、次の "corrections" も入れる（最大5件）。');
   lines.push('```json');
@@ -261,6 +283,7 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   lines.push('- continue: 利用者の返事を待たずに次の作業へ進める');
   lines.push('- waiting: 利用者の判断や情報が要る（question に聞くことを書く）');
   lines.push('- done: 完了条件を満たしたと考える（question で「完了としてよいか」を、成果の要約と確かめた内容を添えて聞く）');
+  lines.push('- delegate: 分担を担当に任せる（team に書く）。担当の報告がそろったら、あなたに次の依頼が来る');
   lines.push('reply には、利用者に伝えること（今回したこと・結果・聞きたいこと）を書く。');
   return lines.join('\n');
 }

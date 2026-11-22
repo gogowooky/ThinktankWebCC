@@ -13,14 +13,16 @@ import { isHarnessProject, parseChat, parseProject, readProjectStatus } from '..
 import { HarnessLoop, type HarnessLoopStatus } from '../../services/harness/harnessLoop';
 import { findHarnessChat } from '../../services/harness/harnessChat';
 import { findHarnessAiWork } from '../../services/harness/harnessAiWork';
-import type { HarnessTurnStage } from '../../services/harness/harnessRun';
+import type { HarnessLoopStage } from '../../services/harness/harnessLoop';
+import { boardRowLabel, readBoard } from '../../services/harness/harnessBoard';
 import {
   CORRECTION_KIND_LABELS, decideCorrection, pendingCorrections,
 } from '../../services/harness/harnessCorrections';
 import type { SummaryPanelKey } from '../../services/projectSummary';
 import './AiChatPanel.css';
 
-const STAGE_LABELS: Record<HarnessTurnStage, string> = {
+const STAGE_LABELS: Record<HarnessLoopStage, string> = {
+  team: '担当が作業しています',
   prepare: '記録と文脈を用意しています',
   ai: 'AI CLI が作業しています',
   verify: '記録が残ったかを確かめています',
@@ -64,6 +66,7 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   const harness = ready && isHarnessProject(project.Content);
   const chat = harness ? findHarnessChat(vault, project) : null;
   const status = harness ? findHarnessAiWork(vault, project, 'status') : null;
+  const boardWork = harness ? findHarnessAiWork(vault, project, 'board') : null;
   const loop = useHarnessStatus(projectId);
   const running = !!loop?.running;
   const elapsed = useElapsedSeconds(running && loop ? loop.startedAt : null);
@@ -75,11 +78,11 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
 
   useEffect(() => {
     let cancelled = false;
-    const pending = [project, chat, status].filter((t): t is NonNullable<typeof t> => !!t && t.IsMetaOnly);
+    const pending = [project, chat, status, boardWork].filter((t): t is NonNullable<typeof t> => !!t && t.IsMetaOnly);
     if (pending.length === 0) return;
     void Promise.all(pending.map(t => t.LoadContent())).then(() => { if (!cancelled) setLoadCount(n => n + 1); });
     return () => { cancelled = true; };
-  }, [project, chat, status]);
+  }, [project, chat, status, boardWork]);
 
   const messages = chat && !chat.IsMetaOnly ? parseChat(chat.Content.split(/\r?\n/).slice(1).join('\n')) : [];
   useEffect(() => {
@@ -122,6 +125,7 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   const state = readProjectStatus(project.Content).state;
   const statusBody = status && !status.IsMetaOnly ? status.Content.split(/\r?\n/).slice(1).join('\n').trim() : '';
   const pending = pendingCorrections(chat);
+  const board = readBoard(boardWork && !boardWork.IsMetaOnly ? boardWork : null);
 
   let banner: React.ReactNode = null;
   if (running && loop) {
@@ -129,7 +133,8 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
       <div className="ai-view__status ai-view__status--running" role="status" aria-live="polite">
         <LoaderCircle size={14} className="ai-view__spin" />
         <span className="ai-view__status-text">
-          {loop.turn}/{loop.maxTurns}回目: {loop.stage ? STAGE_LABELS[loop.stage] : '始めています'}…
+          {loop.turn}/{loop.maxTurns}回目: {loop.stage ? STAGE_LABELS[loop.stage] : '始めています'}
+          {loop.stage === 'team' && loop.teamRunning ? `（残り ${loop.teamRunning} 件）` : ''}…
         </span>
         <span className="ai-view__elapsed">{elapsed}秒</span>
       </div>
@@ -163,6 +168,19 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
         <details className="ai-chat__status">
           <summary>現在地（status）</summary>
           <div className="ai-chat__status-body">{statusBody}</div>
+        </details>
+      )}
+      {board.rows.length > 0 && (
+        <details className="ai-chat__status ai-chat__board">
+          <summary>共有ボード（{board.rows.filter(r => r.state === 'verified').length}/{board.rows.length} 件 検証済み）</summary>
+          <div className="ai-chat__status-body">
+            {board.goal && <div>ゴール: {board.goal}</div>}
+            {board.rows.map(r => (
+              <div key={r.id} className={`ai-chat__board-row ai-chat__board-row--${r.state}`}>
+                {r.id} ［{boardRowLabel(r.state)}］ {r.role}: {r.task}
+              </div>
+            ))}
+          </div>
         </details>
       )}
       {pending.length > 0 && (
