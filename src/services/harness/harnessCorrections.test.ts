@@ -60,8 +60,8 @@ it('提案は、種類・本文・引用が揃い、引用が今回の発言に�
   ] });
   const said = '今後は判断が要るものを先に知らせて。報告は箇条書きで。';
   expect(readCorrectionCandidates(raw, said)).toEqual([
-    { kind: 'PROFILE', text: '判断が要るものを先に知らせる', userQuote: '今後は 判断が要るものを先に', reason: '本人の希望' },
-    { kind: 'styles', text: '箇条書きにする', userQuote: '箇条書き', reason: '', targetName: '朝の報告' },
+    { kind: 'PROFILE', text: '判断が要るものを先に知らせる', userQuote: '今後は 判断が要るものを先に', reason: '本人の希望', origin: 'user' },
+    { kind: 'styles', text: '箇条書きにする', userQuote: '箇条書き', reason: '', targetName: '朝の報告', origin: 'user' },
   ]);
   expect(readCorrectionCandidates(raw, undefined)).toEqual([]);
 });

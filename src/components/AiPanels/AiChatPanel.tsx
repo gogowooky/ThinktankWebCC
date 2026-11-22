@@ -9,14 +9,16 @@ import { useEffect, useRef, useState } from 'react';
 import { CircleAlert, CircleCheck, CircleStop, LoaderCircle, Send } from 'lucide-react';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
-import { isHarnessProject, parseChat, parseProject, readProjectStatus } from '../../utils/thinkFormat';
+import { isHarnessProject, isRootProjectTitle, parseChat, parseProject, readProjectStatus } from '../../utils/thinkFormat';
+import { formatLocalDate } from '../../utils/aiViewFormat';
+import { collectActivity, type ActivityEntry } from '../../services/harness/harnessReview';
 import { HarnessLoop, type HarnessLoopStatus } from '../../services/harness/harnessLoop';
 import { findHarnessChat } from '../../services/harness/harnessChat';
 import { findHarnessAiWork } from '../../services/harness/harnessAiWork';
 import type { HarnessLoopStage } from '../../services/harness/harnessLoop';
 import { boardRowLabel, readBoard } from '../../services/harness/harnessBoard';
 import {
-  CORRECTION_KIND_LABELS, decideCorrection, pendingCorrections,
+  CORRECTION_KIND_LABELS, correctionBasis, decideCorrection, pendingCorrections,
 } from '../../services/harness/harnessCorrections';
 import type { SummaryPanelKey } from '../../services/projectSummary';
 import './AiChatPanel.css';
@@ -29,6 +31,32 @@ const STAGE_LABELS: Record<HarnessLoopStage, string> = {
   retry: '足りない記録の追記を依頼しています',
   record: '会話と記録を保存しています',
 };
+
+/** 日次一覧: その日にハーネスの log に書かれた記録。保存せず、開いたときに集める */
+function DailyList({ vault }: { vault: TTApplication['Models']['Vault'] }) {
+  const [entries, setEntries] = useState<ActivityEntry[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const load = () => {
+    const today = formatLocalDate(new Date());
+    setError(null);
+    collectActivity(vault, today, today).then(setEntries, e => setError(e instanceof Error ? e.message : String(e)));
+  };
+  return (
+    <details className="ai-chat__status" onToggle={e => { if ((e.target as HTMLDetailsElement).open) load(); }}>
+      <summary>日次一覧（今日の記録）</summary>
+      <div className="ai-chat__status-body">
+        {error ? `読み込めませんでした: ${error}`
+          : entries === null ? '読み込み中…'
+            : entries.length === 0 ? '今日の記録はまだありません。'
+              : entries.map(e => (
+                <div key={`${e.logId}-${e.time}-${e.heading}`}>
+                  {e.time} 「{e.projectTitle}」 {e.heading}{e.firstLine ? `: ${e.firstLine}` : ''}
+                </div>
+              ))}
+      </div>
+    </details>
+  );
+}
 
 function loadedProjectId(app: TTApplication, panelKey: SummaryPanelKey): string {
   if (panelKey === 'thinktank') return app.ThinktankPanel.ProjectID;
@@ -170,6 +198,7 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
           <div className="ai-chat__status-body">{statusBody}</div>
         </details>
       )}
+      {isRootProjectTitle(project.Name) && <DailyList vault={vault} />}
       {board.rows.length > 0 && (
         <details className="ai-chat__status ai-chat__board">
           <summary>共有ボード（{board.rows.filter(r => r.state === 'verified').length}/{board.rows.length} 件 検証済み）</summary>
@@ -191,7 +220,7 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
               <div className="ai-chat__correction-text">
                 <span className="ai-chat__correction-kind">{CORRECTION_KIND_LABELS[c.kind]}</span>
                 {c.text}
-                <div className="ai-chat__correction-quote">本人の発言:「{c.userQuote}」{c.reason ? ` ／ ${c.reason}` : ''}</div>
+                <div className="ai-chat__correction-quote">{correctionBasis(c)}{c.reason ? ` ／ ${c.reason}` : ''}</div>
               </div>
               <div className="ai-chat__correction-actions">
                 <button onClick={() => void decide(c.id, 'approve')} disabled={!!deciding || running}>承認</button>

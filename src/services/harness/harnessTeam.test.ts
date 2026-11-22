@@ -14,28 +14,44 @@ vi.mock('../storage/StorageManager', () => ({ StorageManager: { instance: storag
 vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { instance: storage } }));
 import { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
-import { firstHarnessId, parseProject, readProjectStatus } from '../../utils/thinkFormat';
+import { firstHarnessId, parseProject, projectHarnessIds, readProjectStatus, setProjectHarnessId } from '../../utils/thinkFormat';
 import {
   applyVerify, readBoard, readTeamDirective, readVerifyItems, serializeBoard, type BoardData,
 } from './harnessBoard';
-import { ensureRoleProjects, listRoles, ROLE_TEMPLATES } from './harnessRoles';
+import { ensureRoleWorks, listRoles, roleNameOf, serializeRole, ROLE_TEMPLATES } from './harnessRoles';
 import { HarnessLoop } from './harnessLoop';
 import type { HarnessAiResponse } from './harnessRun';
 
 let vault: TTVault;
 beforeEach(() => { vi.clearAllMocks(); vault = new TTVault('vault'); HarnessLoop.reset(); });
 
-it('役割が1つも無ければ雛形を root の配下に作り、# 条件 の AI・モデルを読む。1つでもあれば作らない', async () => {
-  expect(await ensureRoleProjects(vault)).toBe(ROLE_TEMPLATES.length);
-  expect(await ensureRoleProjects(vault)).toBe(0);
-  const check = vault.GetProjects().find(p => p.Name === '役割｜確かめる')!;
-  expect(readProjectStatus(check.Content).state).toBe('ツール');
-  expect(check.Metadata.parentProjectid).toBe(vault.GetProjects().find(p => p.Name === 'Thinktank')!.ID);
+it('役割は「役割 | 名前」の AIWork で、root の # 役割 に並べる。無ければ雛形を作り、# 条件 の AI・モデルを読む', async () => {
+  expect(await ensureRoleWorks(vault)).toBe(ROLE_TEMPLATES.length);
+  expect(await ensureRoleWorks(vault)).toBe(0);
+  const root = vault.GetProjects().find(p => p.Name === 'Thinktank')!;
+  const ids = projectHarnessIds(root.Content, '役割');
+  expect(ids).toHaveLength(ROLE_TEMPLATES.length);
+  const check = ids.map(id => vault.GetThink(id)!).find(t => t.Name === '役割 | 確かめる')!;
+  expect(check.ContentType).toBe('aiview');
+  expect(check.Content).toMatch(/^役割 \| 確かめる\n# 仕事\n成果物を指定の正本と突き合わせる。/);
+  expect(vault.GetProjects().some(p => p.Name.startsWith('役割'))).toBe(false);
   check.Content = check.Content.replace('# 条件', '# 条件\nAI: claude\nモデル: claude-opus');
-  const roles = await listRoles(vault);
+  const roles = await listRoles(vault, [root]);
   expect(roles.map(r => r.name)).toEqual(expect.arrayContaining(['確かめる', '読む・探す', '批評する']));
-  expect(roles.find(r => r.name === '確かめる')).toMatchObject({ cli: 'claude', model: 'claude-opus' });
+  expect(roles.find(r => r.name === '確かめる')).toMatchObject({ id: check.ID, cli: 'claude', model: 'claude-opus' });
   expect(roles.find(r => r.name === '確かめる')!.rules).toContain('正本と突き合わせる');
+  expect(roleNameOf('役割｜確かめる')).toBe('確かめる');
+  expect(roleNameOf('確かめる')).toBeNull();
+});
+
+it('子の project の # 役割 は root の同じ名前の役割より優先する', async () => {
+  await ensureRoleWorks(vault);
+  const root = vault.GetProjects().find(p => p.Name === 'Thinktank')!;
+  const own = await vault.CreateAiViewThink(serializeRole('確かめる', 'この案件の正本は仕様書だけ'));
+  const project = await vault.CreateProjectFromIds([]);
+  project.Content = setProjectHarnessId(project.Content, '役割', own.ID);
+  const roles = await listRoles(vault, [root, project]);
+  expect(roles.find(r => r.name === '確かめる')).toMatchObject({ id: own.ID, rules: 'この案件の正本は仕様書だけ' });
 });
 
 it('board はアプリだけが書く形で、< や --> を含む報告でも読み戻せる', () => {

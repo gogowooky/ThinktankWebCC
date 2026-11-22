@@ -23,6 +23,7 @@ export const HARNESS_FIELD_LABELS: Record<HarnessField, string> = {
   styles: '業務の作法',
   knowledge: '知見',
   doctor: '診断レポート',
+  役割: 'チームの担当',
 };
 
 function asAiWork(vault: TTVault, id: string): TTThink | null {

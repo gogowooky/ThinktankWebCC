@@ -121,10 +121,12 @@ it('監視は Vault が読み込まれたら一度だけ点検の期限を確か
   try {
     await healthy();
     const doctor = vi.fn();
-    const stop = startHarnessWatcher(vault, { start: vi.fn(), doctor, debounceMs: 0 });
+    const review = vi.fn();
+    const stop = startHarnessWatcher(vault, { start: vi.fn(), doctor, review, debounceMs: 0 });
     vault.NotifyUpdated(false);
     await vi.runAllTimersAsync();
     expect(doctor).toHaveBeenCalledTimes(1);
+    expect(review).toHaveBeenCalledTimes(1);
     stop();
   } finally {
     vi.useRealTimers();

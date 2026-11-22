@@ -116,6 +116,8 @@ export interface HarnessContext {
   board: string;
   /** 任せられる担当（役割名と、規約の1行目） */
   roles: Array<{ name: string; summary: string }>;
+  /** 週次の改善 project のときだけ: 1週間の材料 */
+  reviewMaterial?: string;
 }
 
 function doc(think: TTThink, max: number, body = bodyOf(think), limit?: number): HarnessDocument {
@@ -134,6 +136,7 @@ export interface CollectHarnessContextInput {
   status: TTThink;
   decision: TTThink;
   chatHistory: string;
+  reviewMaterial?: string;
 }
 
 export async function collectHarnessContext(input: CollectHarnessContextInput): Promise<HarnessContext> {
@@ -174,7 +177,8 @@ export async function collectHarnessContext(input: CollectHarnessContextInput): 
     log: doc(log, MAX_LOG_CHARS, latestAiViewEntries(log.Content, LOG_ENTRIES)),
     chatHistory: input.chatHistory,
     board: boardForPrompt(readBoard((await aiWorksOf(vault, project, 'board'))[0] ?? null)),
-    roles: (await listRoles(vault)).map(r => ({ name: r.name, summary: r.rules.split(/\r?\n/)[0] ?? '' })),
+    roles: (await listRoles(vault, lineage)).map(r => ({ name: r.name, summary: r.rules.split(/\r?\n/)[0] ?? '' })),
+    ...(input.reviewMaterial !== undefined ? { reviewMaterial: input.reviewMaterial } : {}),
   };
 }
 
@@ -232,6 +236,11 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   if (ctx.board) section(lines, '共有ボード（担当の報告と検証の状態。書くのはアプリ）', ctx.board);
   if (ctx.chatHistory) section(lines, '直近の会話', ctx.chatHistory);
 
+  if (ctx.reviewMaterial !== undefined) {
+    lines.push('# 1週間の材料（アプリが集めた事実。改善案の根拠はここに載っている ID だけ）');
+    lines.push(ctx.reviewMaterial || '（材料なし）', '');
+  }
+
   lines.push('# 今回の依頼');
   lines.push(opts.userMessage?.trim() ? `利用者の発言: ${opts.userMessage.trim()}` : '（利用者の発言なし。status の次の行動から続ける）');
   lines.push('');
@@ -252,12 +261,16 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   lines.push('- projects: この project の現況');
   lines.push('- knowledge: 繰り返し出る技術の罠や手順（targetName に題名）');
   lines.push('- rules: 働き方のルール（この project の # 規約）');
-  lines.push('userQuote には今回の利用者の発言から、根拠になる部分をそのまま写す（言い換えない）。「今回だけ」「今日は」の指示は提案にしない。');
+  if (ctx.reviewMaterial !== undefined) {
+    lines.push('この見直しでは userQuote の代わりに evidenceIds（根拠の project・AIWork の ID の配列。1週間の材料に載っているものだけ）を書く。材料に無い ID を書いた提案は採られない。');
+  } else {
+    lines.push('userQuote には今回の利用者の発言から、根拠になる部分をそのまま写す（言い換えない）。「今回だけ」「今日は」の指示は提案にしない。');
+  }
   lines.push('');
 
   lines.push('# チームで進める（あなたはまとめ役）');
   lines.push('観点が3つ以上、または対象が10件以上あるなど、分けたほうが確かな作業は、担当に任せてよい。担当は並行して動き、結果と根拠を返す（記録は書かない）。');
-  lines.push(`任せられる担当: ${ctx.roles.length ? ctx.roles.map(r => `${r.name}（${r.summary}）`).join('／') : '（定義なし。役割名を書けば即席の担当として動く）'}`);
+  lines.push(`任せられる担当（# 役割 の AIWork）: ${ctx.roles.length ? ctx.roles.map(r => `${r.name}（${r.summary}）`).join('／') : '（定義なし。役割名を書けば即席の担当として動く）'}`);
   lines.push('- 任せるときは harness.state を "delegate" にし、"team" にゴール・完了条件・分担（担当と作業）を書く。作業には、何を・どの正本と比べ・どうなれば完了かを書く。');
   lines.push('- 共有ボードに「reported（報告済み・未検証）」の行があれば、報告の根拠を自分で確かめ、"verify" で verified（確かめた）・rejected（差し戻す）・blocked（本人の判断が要る）を返す。担当の「できました」だけで verified にしない。');
   lines.push('- 確かめた範囲と、やっていないことを、所見（note）に書く。');
@@ -278,7 +291,7 @@ export function buildHarnessMessage(ctx: HarnessContext, opts: HarnessMessageOpt
   lines.push('```');
   lines.push('訂正の提案があるときだけ、次の "corrections" も入れる（最大5件）。');
   lines.push('```json');
-  lines.push('{ "corrections": [ { "kind": "PROFILE | styles | projects | knowledge | rules", "text": "書き足す1文", "userQuote": "利用者の発言の写し", "reason": "理由", "targetId": "既存の AIWork の thinkid（任意）", "targetName": "新しく作るときの名前（任意）" } ] }');
+  lines.push('{ "corrections": [ { "kind": "PROFILE | styles | projects | knowledge | rules", "text": "書き足す1文", "userQuote": "利用者の発言の写し", "reason": "理由", "targetId": "既存の AIWork の thinkid（任意）", "targetName": "新しく作るときの名前（任意）", "evidenceIds": ["週次の見直しのときだけ"] } ] }');
   lines.push('```');
   lines.push('- continue: 利用者の返事を待たずに次の作業へ進める');
   lines.push('- waiting: 利用者の判断や情報が要る（question に聞くことを書く）');

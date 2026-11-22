@@ -35,12 +35,17 @@ const MAX_CANDIDATES = 5;
 export interface CorrectionCandidate {
   kind: CorrectionKind;
   text: string;
+  /** 本人の発言の引用（利用者の訂正）。週次の改善の提案では空 */
   userQuote: string;
   reason: string;
-  /** 書き足す先の AIWork（既存のもの） */
+  /** 書き足す先の AIWork（既存のもの）。rules では書き足す先の project */
   targetId?: string;
   /** 新しく作る AIWork の名前（styles・knowledge） */
   targetName?: string;
+  /** 週次の改善の提案の根拠（材料に載っていた project・AIWork の ID） */
+  evidenceIds?: string[];
+  /** user = 利用者の訂正、review = 週次の改善の提案 */
+  origin?: 'user' | 'review';
 }
 
 export interface HarnessCorrection extends CorrectionCandidate {
@@ -63,27 +68,43 @@ function shortText(value: unknown, max: number): string | null {
 }
 
 /**
- * 応答の JSON の "corrections" を読む。種類・本文・引用が揃い、引用が今回の発言に含まれるものだけを採る。
- * 利用者の発言が無い回（自動で続けた回）は提案を採らない
+ * 応答の JSON の "corrections" を読む。種類・本文・根拠が揃ったものだけを採る。
+ * 利用者の訂正（既定）は、引用が今回の発言に含まれるものだけ。利用者の発言が無い回（自動で続けた回）は採らない。
+ * 週次の改善（evidenceIds を渡す）は、根拠の ID がすべて渡した材料にあるものだけ（記録から辿れない提案を採らない）。
  */
-export function readCorrectionCandidates(rawText: string | undefined, userMessage: string | undefined): CorrectionCandidate[] {
-  if (!rawText || !userMessage?.trim()) return [];
+export function readCorrectionCandidates(
+  rawText: string | undefined, userMessage: string | undefined, review?: { evidenceIds: ReadonlySet<string> },
+): CorrectionCandidate[] {
+  if (!rawText || (!review && !userMessage?.trim())) return [];
   const list = extractJsonFromCliOutput(rawText)?.corrections;
   if (!Array.isArray(list)) return [];
-  const said = squash(userMessage);
+  const said = squash(userMessage ?? '');
   const out: CorrectionCandidate[] = [];
   for (const item of list) {
     if (!item || typeof item !== 'object' || out.length >= MAX_CANDIDATES) continue;
     const rec = item as Record<string, unknown>;
     const kind = CORRECTION_KINDS.find(k => k === rec.kind);
     const text = shortText(rec.text, 2_000);
-    const userQuote = shortText(rec.userQuote, 500);
-    if (!kind || !text || !userQuote || !said.includes(squash(userQuote))) continue;
+    if (!kind || !text) continue;
     const targetId = typeof rec.targetId === 'string' && THINK_ID_RE.test(rec.targetId.trim()) ? rec.targetId.trim() : undefined;
     const targetName = shortText(rec.targetName, 60) ?? undefined;
-    out.push({ kind, text, userQuote, reason: shortText(rec.reason, 1_000) ?? '', ...(targetId ? { targetId } : {}), ...(targetName ? { targetName } : {}) });
+    const base = { kind, text, reason: shortText(rec.reason, 1_000) ?? '', ...(targetId ? { targetId } : {}), ...(targetName ? { targetName } : {}) };
+    if (review) {
+      const evidenceIds = Array.isArray(rec.evidenceIds) ? [...new Set(rec.evidenceIds.filter((id): id is string => typeof id === 'string'))] : [];
+      if (evidenceIds.length === 0 || !evidenceIds.every(id => review.evidenceIds.has(id))) continue;
+      out.push({ ...base, userQuote: '', evidenceIds, origin: 'review' });
+      continue;
+    }
+    const userQuote = shortText(rec.userQuote, 500);
+    if (!userQuote || !said.includes(squash(userQuote))) continue;
+    out.push({ ...base, userQuote, origin: 'user' });
   }
   return out;
+}
+
+/** 提案の根拠の表示（本人の発言か、週次の改善の根拠の ID） */
+export function correctionBasis(c: CorrectionCandidate): string {
+  return c.evidenceIds?.length ? `根拠: ${c.evidenceIds.map(id => `[${id}]`).join(' ')}` : `本人の発言:「${c.userQuote}」`;
 }
 
 export function readCorrections(chat: TTThink | null): HarnessCorrection[] {
@@ -109,9 +130,10 @@ export function stageCorrections(chat: TTThink, projectId: string, runId: string
 /** chat に残す、提案の一覧（承認は AIChat のボタンで行う） */
 export function formatCorrectionsForChat(list: HarnessCorrection[]): string {
   if (!list.length) return '';
+  const review = list.some(c => c.origin === 'review');
   return [
-    '### 訂正の提案（未承認。AIChat で承認すると次回から使われます）',
-    ...list.map(c => `- ${CORRECTION_KIND_LABELS[c.kind]}: ${c.text}（本人の発言:「${c.userQuote}」）`),
+    `### ${review ? '改善' : '訂正'}の提案（未承認。AIChat で承認すると次回から使われます）`,
+    ...list.map(c => `- ${CORRECTION_KIND_LABELS[c.kind]}: ${c.text}（${correctionBasis(c)}）`),
   ].join('\n');
 }
 
@@ -153,7 +175,35 @@ async function resolveTarget(vault: TTVault, project: TTThink, c: HarnessCorrect
 }
 
 function entryLine(c: HarnessCorrection, now: Date): string {
-  return `- ${c.text.replace(/\r?\n/g, ' ')}（${formatLocalDate(now)}、根拠:「${c.userQuote.replace(/\r?\n/g, ' ')}」）`;
+  const basis = c.evidenceIds?.length
+    ? `週次の改善、根拠: ${c.evidenceIds.map(id => `[${id}]`).join(' ')}`
+    : `根拠:「${c.userQuote.replace(/\r?\n/g, ' ')}」`;
+  return `- ${c.text.replace(/\r?\n/g, ' ')}（${formatLocalDate(now)}、${basis}）`;
+}
+
+/** 規約を書き足す project。週次の改善では targetId の project（無ければ対象 project） */
+async function rulesTarget(vault: TTVault, project: TTThink, c: HarnessCorrection): Promise<TTThink> {
+  const other = c.targetId ? vault.GetThink(c.targetId) : undefined;
+  const target = other && other.ContentType === 'project' ? other : project;
+  if (target.IsMetaOnly) await target.LoadContent();
+  return target;
+}
+
+/**
+ * 週次の改善の提案の採否を、提案した project（週次の改善）の decision に残す。
+ * 見送った判断も残すと、次の見直しで同じ案を繰り返さずに済む（記事 9章）
+ */
+async function recordReviewDecision(vault: TTVault, c: HarnessCorrection, adopted: boolean, now: Date): Promise<void> {
+  const owner = vault.GetThink(c.projectId);
+  if (!owner || owner.ContentType !== 'project') return;
+  if (owner.IsMetaOnly) await owner.LoadContent();
+  const decision = await ensureHarnessAiWork(vault, owner, 'decision');
+  if (decision.IsMetaOnly) await decision.LoadContent();
+  await snapshotBeforeWrite(decision);
+  const previous = decision.Content;
+  decision.Content = `${previous.replace(/\s+$/, '')}\n- ［${adopted ? '採用' : '見送り'}］${CORRECTION_KIND_LABELS[c.kind]}: ${c.text.replace(/\r?\n/g, ' ')}`
+    + `（${formatLocalDate(now)}${c.reason ? `、理由: ${c.reason.replace(/\r?\n/g, ' ')}` : ''}、${correctionBasis(c)}）`;
+  try { await decision.SaveContent(); } catch (error) { decision.Content = previous; throw error; }
 }
 
 export interface DecideCorrectionResult {
@@ -177,12 +227,12 @@ export async function decideCorrection(
 
   if (decision === 'approve') {
     if (target.kind === 'rules') {
-      if (project.IsMetaOnly) await project.LoadContent();
-      if (project.IsDirty) throw new Error('projectファイルを保存してから承認してください。');
-      const previous = project.Content;
-      project.Content = appendProjectRule(previous, entryLine(target, now));
-      try { await project.SaveContent(); } catch (error) { project.Content = previous; throw error; }
-      decided.appliedTo = '# 規約';
+      const ruled = await rulesTarget(vault, project, target);
+      if (ruled.IsDirty) throw new Error('projectファイルを保存してから承認してください。');
+      const previous = ruled.Content;
+      ruled.Content = appendProjectRule(previous, entryLine(target, now));
+      try { await ruled.SaveContent(); } catch (error) { ruled.Content = previous; throw error; }
+      decided.appliedTo = ruled === project ? '# 規約' : `[project:${ruled.ID}] の # 規約`;
     } else {
       const work = await resolveTarget(vault, project, target);
       await snapshotBeforeWrite(work);
@@ -198,6 +248,8 @@ export async function decideCorrection(
     const { index } = await ensureRootHarness(vault);
     await refreshHarnessIndex(vault, index);
   }
+
+  if (target.origin === 'review') await recordReviewDecision(vault, target, decision === 'approve', now);
 
   chat.Metadata = { ...chat.Metadata, [CORRECTIONS_KEY]: list.map(c => (c.id === correctionId ? decided : c)) };
   const message = decision === 'approve'

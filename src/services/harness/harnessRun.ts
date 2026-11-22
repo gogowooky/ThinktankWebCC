@@ -28,7 +28,8 @@ import {
   applyVerify, readBoard, readTeamDirective, readVerifyItems, writeBoard, type TeamDirective, type VerifyItem,
 } from './harnessBoard';
 import { projectHarnessIds } from '../../utils/thinkFormat';
-import { ensureRoleProjects } from './harnessRoles';
+import { ensureRoleWorks } from './harnessRoles';
+import { collectReviewMaterial, isReviewProject } from './harnessReview';
 
 export type HarnessDirectiveState = 'continue' | 'waiting' | 'done' | 'delegate';
 export interface HarnessDirective {
@@ -186,7 +187,7 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
   if (project.IsMetaOnly) await project.LoadContent();
 
   await ensureRootHarness(vault);
-  await ensureRoleProjects(vault);
+  await ensureRoleWorks(vault);
   const log = await ensureHarnessAiWork(vault, project, 'log');
   const status = await ensureHarnessAiWork(vault, project, 'status');
   const decision = await ensureHarnessAiWork(vault, project, 'decision');
@@ -196,9 +197,11 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
     await snapshotBeforeWrite(work);
   }
 
+  const review = isReviewProject(project) ? await collectReviewMaterial(vault, now()) : null;
   const ctx: HarnessContext = await collectHarnessContext({
     vault, project, log, status, decision,
     chatHistory: recentHarnessChatText(chat, HARNESS_CHAT_HISTORY_MESSAGES),
+    ...(review ? { reviewMaterial: review.text } : {}),
   });
   const runId = newRunId();
   const dateTime = formatLocalDateTime(now());
@@ -266,7 +269,8 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
   }
 
   const directive = readHarnessDirective(first.rawText);
-  const corrections = stageCorrections(chat, project.ID, runId, readCorrectionCandidates(first.rawText, userMessage), now());
+  const candidates = readCorrectionCandidates(first.rawText, userMessage, review ? { evidenceIds: review.evidenceIds } : undefined);
+  const corrections = stageCorrections(chat, project.ID, runId, candidates, now());
   const team = directive?.state === 'delegate' ? readTeamDirective(first.rawText) : null;
   const verified = await applyVerifyToBoard(vault, project, readVerifyItems(first.rawText));
   const question = directive?.question && !reply.includes(directive.question) ? `\n\n**確認**: ${directive.question}` : '';

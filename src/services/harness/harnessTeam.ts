@@ -12,6 +12,7 @@ import { parseProject, projectTargetIds } from '../../utils/thinkFormat';
 import { ensureHarnessAiWork } from './harnessAiWork';
 import { readBoard, writeBoard, type BoardData, type BoardRow, type TeamDirective } from './harnessBoard';
 import { findRole, listRoles, type HarnessRole } from './harnessRoles';
+import { projectLineage } from './harnessContext';
 import type { HarnessRequestReply } from './harnessRun';
 
 const WORKER_TIMEOUT_MS = 600_000;
@@ -76,7 +77,7 @@ export async function runTeam(options: RunTeamOptions): Promise<BoardRow[]> {
   const { vault, project, team, requestReply, now = () => new Date(), onProgress = () => {} } = options;
   const board = await ensureHarnessAiWork(vault, project, 'board');
   if (board.IsMetaOnly) await board.LoadContent();
-  const roles = await listRoles(vault);
+  const roles = await listRoles(vault, await projectLineage(vault, project));
   const assigned = addAssignments(readBoard(board), team, roles);
   let data = assigned.data;
   await writeBoard(vault, board, data);

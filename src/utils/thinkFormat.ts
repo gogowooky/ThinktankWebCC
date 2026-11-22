@@ -128,11 +128,11 @@ export const PROJECT_RULES_HEADING = '規約';
  * docs/261122/AIハーネス実装計画.md §2
  */
 export const HARNESS_FIELDS = [
-  'log', 'status', 'decision', 'board', 'PROFILE', 'INDEX', 'INBOX', 'projects', 'styles', 'knowledge', 'doctor',
+  'log', 'status', 'decision', 'board', 'PROFILE', 'INDEX', 'INBOX', 'projects', 'styles', 'knowledge', 'doctor', '役割',
 ] as const;
 export type HarnessField = typeof HARNESS_FIELDS[number];
 /** 複数の AIWork を並べられる項目。それ以外は1件だけ */
-export const HARNESS_MULTI_FIELDS: ReadonlySet<HarnessField> = new Set<HarnessField>(['projects', 'styles', 'knowledge']);
+export const HARNESS_MULTI_FIELDS: ReadonlySet<HarnessField> = new Set<HarnessField>(['projects', 'styles', 'knowledge', '役割']);
 /** AIWork の参照タグ名。旧名の aiview も同じものとして読む */
 export const AIWORK_TAG = 'aiwork';
 /**

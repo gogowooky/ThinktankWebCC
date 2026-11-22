@@ -21,7 +21,7 @@ const STATE_LABELS: Record<BoardRowState, string> = {
 export interface BoardRow {
   id: string;
   role: string;
-  /** 役割 project の ID。定義に無い役割（即席の担当）なら無い */
+  /** 役割の AIWork の ID。定義に無い役割（即席の担当）なら無い */
   roleId?: string;
   task: string;
   state: BoardRowState;

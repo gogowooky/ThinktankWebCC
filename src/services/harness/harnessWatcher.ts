@@ -2,7 +2,7 @@
  * harnessWatcher.ts
  * AIハーネスを使う project の # 状態 が、保存された内容で「進行中」に変わったらループを始める。
  * 起動時にすでに進行中だった project は、見えた時点の状態として控えるだけで始めない（勝手に走り出さないため）。
- * 点検（harness-doctor）は常駐させず、Vault が読み込まれた後とループが終わった後に、期限が来ていれば行う。
+ * 点検（harness-doctor）と週次の見直しは常駐させず、Vault が読み込まれた後とループが終わった後に、期限が来ていれば行う。
  * AI CLI を動かせる PC版だけで使う。
  */
 
@@ -10,6 +10,7 @@ import type { TTVault } from '../../models/TTVault';
 import { isHarnessProject, readProjectStatus } from '../../utils/thinkFormat';
 import { HarnessLoop, lockedByOther } from './harnessLoop';
 import { maybeRunHarnessDoctor } from './harnessDoctor';
+import { maybeRunWeeklyReview } from './harnessReviewTrigger';
 
 const DEBOUNCE_MS = 300;
 
@@ -18,13 +19,17 @@ export interface HarnessWatcherOptions {
   start?: (projectId: string) => void;
   /** テスト用。省略時は期限が来ていれば点検する */
   doctor?: () => void;
+  /** テスト用。省略時は期限が来ていれば週次の見直しを始める */
+  review?: () => void;
   debounceMs?: number;
 }
 
 export function startHarnessWatcher(vault: TTVault, options: HarnessWatcherOptions = {}): () => void {
   const seen = new Map<string, string>();
   const start = options.start ?? (projectId => { void HarnessLoop.start(vault, projectId, { trigger: 'state' }); });
-  const doctor = options.doctor ?? (() => { void maybeRunHarnessDoctor(vault); });
+  const doctorOnly = options.doctor ?? (() => { void maybeRunHarnessDoctor(vault); });
+  const review = options.review ?? (() => { void maybeRunWeeklyReview(vault); });
+  const doctor = () => { doctorOnly(); review(); };
   let doctorChecked = false;
   const scan = () => {
     const projects = vault.GetProjects();

@@ -208,6 +208,7 @@ projectファイルに組み込まれた Think の metadata に、親となる p
 | `# PROFILE` / `# INDEX` / `# INBOX` | 1 | 利用者の好み／文脈の索引／未対応の用件（主に root に置く） |
 | `# projects` / `# styles` / `# knowledge` | 複数 | 案件の現況／業務の作法／知見 |
 | `# doctor` | 1 | 診断レポート（root に置く） |
+| `# 役割` | 複数 | チームの担当（役割）の AIWork（タイトル「役割 \| 名前」。主に root に置く） |
 
 - これらの参照も `parseProject().ids` に含める（親projectの記録の対象）。`# 対象` へは重複させない。
 - 読み書きは `src/utils/thinkFormat.ts`（`projectHarnessIds`・`firstHarnessId`・`setProjectHarnessId`）。
@@ -290,9 +291,11 @@ projectファイルに組み込まれた Think の metadata に、親となる p
 
 ### 6.4 役割とチーム（共有ボード、Phase 4、2026-11-22）
 
-- 役割（`src/services/harness/harnessRoles.ts`）: タイトル「役割｜名前」・`# 状態` が「ツール」の project。`# 規約` に担う仕事と返す内容、
-  `# 条件` に「AI: claude｜codex｜antigravity」「モデル: 名前」（任意）を書く。ハーネスの実行時に役割が1つも無ければ、
-  root の配下に雛形（読む・探す／調べる／下書きする／確かめる／仕分ける／批評する）を作る。1つでもあれば作らない（消した役割を作り直さない）。
+- 役割（`src/services/harness/harnessRoles.ts`）: タイトル「役割 | 名前」の AIWork。本文の `# 仕事` に担う仕事と返す内容、
+  `# 条件` に「AI: claude｜codex｜antigravity」「モデル: 名前」（任意）を書き、project の `# 役割` 項に並べる。
+  使える役割は root から対象 project までの `# 役割` に並んだもの（同じ名前なら子のもの）。ハーネスの実行時に root の `# 役割` が空なら、
+  雛形（読む・探す／調べる／下書きする／確かめる／仕分ける／批評する）の AIWork を作って並べる。1つでもあれば作らない（消した役割を作り直さない）。
+  AIWork なので画面では読み取り専用（直すときは AI に頼むか、版の比較から戻す）。
 - まとめ役（通常の実行の AI）は、分けたほうが確かな作業を担当に任せられる。応答の JSON で `harness.state` を `delegate` にし、
   `team` にゴール・完了条件・分担（担当と作業）を書く。
 - 担当（`harnessTeam.ts`）: アプリが分担を `# board` の行（T1, T2, …）にし、担当の AI CLI を並行して動かす（同時に動く数は PC版の上限）。
@@ -304,6 +307,23 @@ projectファイルに組み込まれた Think の metadata に、親となる p
   アプリが読むデータをコメント `<!-- harness-board-data … -->` で置く。行は委譲の記録（記事の delegations.jsonl）も兼ねる。
 - AIChat に「共有ボード（検証済みの数／行数）」を表示し、担当の作業中は「担当が作業しています（残り n 件）」と出す。
 - 本人の判断が要る行（blocked）があれば、まとめ役は `waiting` で質問して止まる（人に戻す4つの場面）。
+
+### 6.5 週次の改善・日次一覧・週報（Phase 5、2026-11-23）
+
+- 週次の改善 project（`src/services/harness/harnessReview.ts`）: タイトル「週次の改善」、metadata `harnessReview: true`、root の配下。
+  `# 規約` に見直しの観点（3回以上の繰り返し・毎回口で伝える指示・繰り返す失敗・使われていない作法・規約と運用のずれ・点検の警告）と、
+  改善案の出し方・週報の書き方を置く。初めての見直しのときにアプリが作る。
+- 起動（`harnessReviewTrigger.ts`）: 常駐しない。PC版で Vault が読み込まれた後とループの終わりに、前回の見直し（週次の改善の log の先頭の記録の日付）から
+  7日以上たち、この1週間にハーネスの記録があれば、ループを「（定期）週次の見直しをしてください」で始める。1日に1回までしか試さない。
+- 材料（アプリが集める事実）: 直近7日の、ハーネスの project の log の記録（日付・project・見出し・最初の行。週次の改善と役割の project は除く）、
+  最新の点検の報告、root の PROFILE・styles・knowledge の一覧。依頼文の「# 1週間の材料」に入れる。
+- 改善案: 訂正の提案と同じ `corrections` で出す。`userQuote` の代わりに `evidenceIds`（根拠の project・AIWork の ID）を書き、
+  すべて材料に載っている ID のものだけを採る。規約の改善は `rules` とし、`targetId` の project の `# 規約` に書き足す。
+  承認・見送りは AIChat のボタンで行い、採否（［採用］／［見送り］・理由・根拠）を週次の改善 project の decision に残す
+  （次の見直しで同じ案を繰り返させない）。候補が無ければ「今回は候補なし」で終える。
+- 週報の下書き: 週次の改善の AI が、log の今回の記録に「## 週報（下書き）」として1週間の要点を書く。
+- 日次一覧: 保存しない。root の projectファイルをロードしたときの AIChat に「日次一覧（今日の記録）」を出し、開いたときに
+  その日のハーネスの log の記録を集めて表示する。
 
 ## 7. 廃止した項目と互換
 
