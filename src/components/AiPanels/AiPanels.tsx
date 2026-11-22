@@ -3,11 +3,11 @@
  * Thinktank / Seeds / Working / Harvest に共通の「AIView」「AIChat」サブパネル。
  * AIView はロード中の projectファイルの要約（# AIまとめ の先頭の AIWork。旧称 AIViewファイル）を TextEditor で表示する。
  * AIWork は AI CLI だけが書き、利用者は編集できない（読み取り専用）。版の比較で前の版へは戻せる。
- * AIChat の中身は今後実装する。
+ * AIChat は AIハーネスの対話（AiChatPanel.tsx）。
  */
 
 import { useEffect, useState } from 'react';
-import { BotMessageSquare, CircleAlert, CircleCheck, History, LoaderCircle, type LucideIcon } from 'lucide-react';
+import { CircleAlert, CircleCheck, History, LoaderCircle } from 'lucide-react';
 import { CpuAi } from './CpuAi';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
@@ -22,15 +22,6 @@ import { aiWorkVersionsAvailable } from '../../services/harness/aiWorkVersions';
 import { AiWorkVersionsDialog } from './AiWorkVersionsDialog';
 import '../Layout/MenuRibbon.css';
 import './AiPanels.css';
-
-function Placeholder({ Icon, name }: { Icon: LucideIcon; name: string }) {
-  return (
-    <div className="ai-panel" tabIndex={-1}>
-      <Icon size={20} className="ai-panel__icon" />
-      <span>{name}は今後追加予定です。</span>
-    </div>
-  );
-}
 
 // AIViewファイルは読み取り専用なので、エディタからの保存・変更通知は受けるだけにする
 const ignoreSave = () => Promise.resolve();
@@ -243,6 +234,4 @@ export function AiViewPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   );
 }
 
-export function AiChatPanel() {
-  return <Placeholder Icon={BotMessageSquare} name="AIChat" />;
-}
+export { AiChatPanel } from './AiChatPanel';

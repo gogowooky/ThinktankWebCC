@@ -46,7 +46,7 @@ export const WorkingSettingArea = forwardRef<WorkingSettingAreaRef, Props>(funct
               : activeSettings === 'html' ? <HtmlSettings {...context} />
                 : activeSettings === 'datagrid' ? <DataGridSettings {...context} />
                   : activeSettings === 'aiview' ? <AiViewPanel panelKey="working" />
-                  : activeSettings === 'aichat' ? <AiChatPanel />
+                  : activeSettings === 'aichat' ? <AiChatPanel panelKey="working" />
                   : <div className="working-setting-area__placeholder">
                     {panelName} の設定は今後追加予定です。
                   </div>}

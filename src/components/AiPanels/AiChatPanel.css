@@ -1,0 +1,97 @@
+/* AiChatPanel.css（.ai-view の部品を流用し、対話の部分だけを足す） */
+
+.ai-chat__title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+  padding-left: 6px;
+}
+
+.ai-chat__state {
+  flex-shrink: 0;
+  font-size: calc(11px * var(--tt-font-scale, 1));
+  opacity: 0.85;
+}
+
+.ai-chat__status {
+  border-bottom: 1px solid rgb(128 128 128 / 0.25);
+  padding: 4px 8px;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+}
+
+.ai-chat__status summary {
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.ai-chat__status-body {
+  max-height: 30vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  padding: 4px 0;
+}
+
+.ai-chat__messages {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--working-content-bg);
+  font-size: calc(12px * var(--tt-font-scale, 1));
+}
+
+.ai-chat__empty {
+  opacity: 0.6;
+  text-align: center;
+  padding: 16px;
+}
+
+.ai-chat__message {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.5;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+.ai-chat__message--user {
+  align-self: flex-end;
+  max-width: 85%;
+  background: rgb(21 101 192 / 0.12);
+}
+
+.ai-chat__message--assistant {
+  background: rgb(128 128 128 / 0.08);
+}
+
+.ai-chat__composer {
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-top: 1px solid rgb(128 128 128 / 0.25);
+}
+
+.ai-chat__input {
+  flex: 1;
+  min-height: 3.2em;
+  max-height: 30vh;
+  resize: vertical;
+  font: inherit;
+  font-size: calc(12px * var(--tt-font-scale, 1));
+}
+
+.ai-chat__send {
+  align-self: flex-end;
+  cursor: pointer;
+  padding: 6px 8px;
+}
+
+.ai-chat__send:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

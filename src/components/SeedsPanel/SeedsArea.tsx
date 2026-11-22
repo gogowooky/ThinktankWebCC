@@ -426,7 +426,7 @@ export function SeedsArea({ app, showSettings, refreshKey }: Props) {
         ) : panel.ViewMode === 'aiview' ? (
           <AiViewPanel panelKey="seeds" />
         ) : panel.ViewMode === 'aichat' ? (
-          <AiChatPanel />
+          <AiChatPanel panelKey="seeds" />
         ) : isThinkListMode ? (
           <ThoughtsList
             thoughts={visibleThinks}

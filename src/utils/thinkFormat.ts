@@ -342,6 +342,25 @@ export function setProjectHarnessId(content: string, field: HarnessField, id: st
   return [...lines.slice(0, range.end), tag, ...lines.slice(range.end)].join('\n');
 }
 
+/** AIハーネスを使う project か（# 規約 かハーネスの項目の見出しがある） */
+export function isHarnessProject(content: string): boolean {
+  const lines = content.split(/\r?\n/);
+  return [PROJECT_RULES_HEADING, ...HARNESS_FIELDS].some(name => projectSectionRange(lines, name) !== null);
+}
+
+/** # AI議論 に [chat:ID] を加える（既にあれば変えない）。見出しが無ければ末尾に加える */
+export function addProjectDiscussionId(content: string, chatId: string): string {
+  const lines = content.split(/\r?\n/);
+  const range = projectSectionRange(lines, PROJECT_AI_DISCUSSION_HEADING);
+  if (!range) {
+    const head = [...lines];
+    while (head.length > 1 && head[head.length - 1].trim() === '') head.pop();
+    return [...head, `# ${PROJECT_AI_DISCUSSION_HEADING}`, `[chat:${chatId}]`].join('\n');
+  }
+  if (projectSectionIds(lines, PROJECT_AI_DISCUSSION_HEADING).includes(chatId)) return content;
+  return [...lines.slice(0, range.end), `[chat:${chatId}]`, ...lines.slice(range.end)].join('\n');
+}
+
 /** @deprecated Use parseProject */
 export const parseBundle = parseProject;
 
@@ -366,6 +385,18 @@ function projectSectionValue<T extends string>(lines: string[], name: string, ca
   // 2026-10-30 までの「状態値：進行中」形式のファイルも同じ値として絞り込めるようにする
   const value = first?.replace(/^状態値[：:]\s*/, '');
   return candidates.find(c => c === value) ?? null;
+}
+
+/**
+ * # 状態 の値を書き換える。見出しが無ければ # 見通し の後（無ければ「=」の行の後、それも無ければタイトルの後）に加える
+ */
+export function setProjectState(content: string, state: ProjectState): string {
+  const lines = content.split(/\r?\n/);
+  const range = projectSectionRange(lines, '状態');
+  if (range) return [...lines.slice(0, range.start), state, ...lines.slice(range.end)].join('\n');
+  const outlook = projectSectionRange(lines, '見通し');
+  const at = outlook ? outlook.end : lines[1]?.trim() === '=' ? 2 : 1;
+  return [...lines.slice(0, at), '# 状態', state, ...lines.slice(at)].join('\n');
 }
 
 /**

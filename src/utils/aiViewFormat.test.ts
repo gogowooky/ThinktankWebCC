@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { demoteHeadings, formatLocalDate, prependAiViewEntry } from './aiViewFormat';
+import {
+  appendToHarnessRunEntry, demoteHeadings, formatLocalDate, formatLocalDateTime, hasHarnessRunEntry, latestAiViewEntries,
+  prependAiViewEntry,
+} from './aiViewFormat';
 import { diffLines } from './lineDiff';
 
 describe('AIViewファイルの日報形式', () => {
@@ -22,6 +25,28 @@ describe('AIViewファイルの日報形式', () => {
   it('要約の # 見出しだけを1段下げ、コードブロックの中は変えない', () => {
     expect(demoteHeadings('# 見出し\n## 小見出し\n```\n# コード\n```\n本文 # 文中'))
       .toBe('## 見出し\n## 小見出し\n```\n# コード\n```\n本文 # 文中');
+  });
+});
+
+describe('AIハーネスの log の記録', () => {
+  const log = [
+    'P｜log',
+    '# [2026-11-22 10:30] 実行 bbbb2222', '(claude)', '新しい記録', '```', '# [x] 実行 zzzz', '```', '',
+    '# [2026-11-21 09:00] 実行 aaaa1111', '古い記録',
+  ].join('\n');
+
+  it('実行IDで記録を見分け、直近の記録だけを取り出す', () => {
+    expect(formatLocalDateTime(new Date(2026, 10, 22, 9, 5))).toBe('2026-11-22 09:05');
+    expect(hasHarnessRunEntry(log, 'bbbb2222')).toBe(true);
+    expect(hasHarnessRunEntry(log, 'aaaa111')).toBe(false);
+    expect(latestAiViewEntries(log, 1)).toBe('# [2026-11-22 10:30] 実行 bbbb2222\n(claude)\n新しい記録\n```\n# [x] 実行 zzzz\n```');
+    expect(latestAiViewEntries(log, 5)).toContain('古い記録');
+  });
+
+  it('記録の末尾にアプリが確かめた事実を加える（次の記録やコードブロックの中には入れない）', () => {
+    const updated = appendToHarnessRunEntry(log, 'bbbb2222', ['- 関連chat: [chat:2026-11-22-000001]']);
+    expect(updated).toContain('```\n- 関連chat: [chat:2026-11-22-000001]\n\n# [2026-11-21 09:00]');
+    expect(appendToHarnessRunEntry(log, 'cccc3333', ['x'])).toBe(log);
   });
 });
 

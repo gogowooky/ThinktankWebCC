@@ -384,7 +384,7 @@ export function ThinktankArea({ app, layoutMode, onLayoutModeChange, onRefresh }
   } else if (viewMode === 'aiview') {
     content = <AiViewPanel panelKey="thinktank" />;
   } else if (viewMode === 'aichat') {
-    content = <AiChatPanel />;
+    content = <AiChatPanel panelKey="thinktank" />;
   } else if (!vault.IsLoaded && vault.LoadError) {
     // 読めなかった一覧を空の一覧として見せない（新しいPCで未ログインのとき等）
     content = (

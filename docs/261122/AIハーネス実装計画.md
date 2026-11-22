@@ -1,6 +1,7 @@
 # AIハーネス実装計画（project × AIWork）
 
-状態: §5 は推奨案で確定（2026-11-22）。Phase 0 実装済み（2026-11-22）。Phase 1 以降は未実装。
+状態: §5 は推奨案で確定（2026-11-22）。Phase 0・Phase 1 実装済み（2026-11-22、仕様は `docs/261030/projectファイル仕様.md` §6）。
+Phase 2 以降は未実装。Phase 1 の受け入れ試験のうち、実機（実際の AI CLI）での確認はまだ。
 参照: 記事「自分の代わりに動くAgentへ。Claude CodeとCodexで作る自律改善ハーネス」
 （https://zenn.dev/nttdata_tech/articles/9562962cc181a1 、2026-11-19 公開）と、ChatGPTとの壁打ち（2026-11-21〜22）。
 

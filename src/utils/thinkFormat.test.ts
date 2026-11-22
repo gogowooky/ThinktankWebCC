@@ -18,6 +18,9 @@ import {
   allProjectHarnessIds,
   firstHarnessId,
   setProjectHarnessId,
+  setProjectState,
+  addProjectDiscussionId,
+  isHarnessProject,
 } from './thinkFormat';
 
 describe('AIハーネスの項目', () => {
@@ -70,6 +73,18 @@ describe('AIハーネスの項目', () => {
     expect(projectHarnessIds(added, 'styles')).toEqual(['2026-01-02-030411', '2026-01-02-030412', '2026-01-02-030413', '2026-01-02-030420']);
     expect(setProjectHarnessId(base, 'styles', '2026-01-02-030412')).toBe(base);
     expect(firstHarnessId(added, 'log')).toBe('2026-01-02-030410');
+  });
+
+  it('# 状態 の書き換え・# AI議論 への追加・ハーネスの判定', () => {
+    expect(setProjectState('P\n=\n# 見通し\nタスク\n# 状態\n未着手\n# 対象', '進行中')).toBe('P\n=\n# 見通し\nタスク\n# 状態\n進行中\n# 対象');
+    expect(setProjectState('P\n=\n# 見通し\nタスク\n# 対象', '待機')).toBe('P\n=\n# 見通し\nタスク\n# 状態\n待機\n# 対象');
+    expect(setProjectState('P\n=\n# 対象', '待機')).toBe('P\n=\n# 状態\n待機\n# 対象');
+    expect(addProjectDiscussionId('P\n=\n# AI議論\n[chat:2026-01-02-030408]', '2026-01-02-030409'))
+      .toBe('P\n=\n# AI議論\n[chat:2026-01-02-030408]\n[chat:2026-01-02-030409]');
+    expect(addProjectDiscussionId('P\n=\n# AI議論\n[chat:2026-01-02-030408]', '2026-01-02-030408')).toBe('P\n=\n# AI議論\n[chat:2026-01-02-030408]');
+    expect(addProjectDiscussionId('P\n=\n# 条件\n', '2026-01-02-030409')).toBe('P\n=\n# 条件\n# AI議論\n[chat:2026-01-02-030409]');
+    expect(isHarnessProject(base)).toBe(true);
+    expect(isHarnessProject('P\n=\n# 状態\n進行中\n# 対象')).toBe(false);
   });
 
   it('項目値の終わりの空行より後ろの自由記載は書き換えない', () => {

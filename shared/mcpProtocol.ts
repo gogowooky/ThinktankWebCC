@@ -457,6 +457,8 @@ export type McpErrorCode =
   | 'INVALID_ARGUMENT'
   | 'INVALID_ID'
   | 'UNKNOWN_TOOL'
+  /** この依頼で書き換えを許されていない Think（AIハーネスの書き込み制限） */
+  | 'PERMISSION_DENIED'
   | 'INTERNAL_ERROR';
 
 export interface McpToolErrorPayload {
@@ -477,6 +479,7 @@ const MCP_ERROR_CODES: ReadonlySet<string> = new Set<McpErrorCode>([
   'INVALID_ARGUMENT',
   'INVALID_ID',
   'UNKNOWN_TOOL',
+  'PERMISSION_DENIED',
   'INTERNAL_ERROR',
 ]);
 
@@ -491,6 +494,7 @@ const RETRYABLE_BY_CODE: Record<McpErrorCode, boolean> = {
   INVALID_ARGUMENT: true,
   INVALID_ID: false,
   UNKNOWN_TOOL: false,
+  PERMISSION_DENIED: false,
   INTERNAL_ERROR: false,
 };
 

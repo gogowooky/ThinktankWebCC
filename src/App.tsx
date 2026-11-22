@@ -19,6 +19,7 @@ import { StorageConflictError } from './services/storage/IStorageBackend'
 import { onSaveStatusChange } from './services/storage/saveStatus'
 import { perfMark } from './utils/perfLog'
 import { preloadTextEditor } from './components/WorkingPanel/media/LazyTextEditorMedia'
+import { startHarnessWatcher } from './services/harness/harnessWatcher'
 
 export default function App() {
   useEffect(() => {
@@ -115,6 +116,9 @@ export default function App() {
       })()
     })
 
+    // AIハーネス: 状態を「進行中」にして保存した project のループを始める。AI CLI を動かせる PC版だけ
+    const stopHarnessWatcher = window.electronAPI?.ai?.conversation ? startHarnessWatcher(vault) : undefined
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       void flushAllPanes()
       if (hasUnsavedChanges()) {
@@ -196,6 +200,7 @@ export default function App() {
       window.removeEventListener('pagehide', handlePageHide)
       document.removeEventListener('visibilitychange', handleFlushOnHide)
       unsubscribeMcpMutated?.()
+      stopHarnessWatcher?.()
       delete window.__ttHasUnsavedChanges
       delete window.__ttIsThinkDirty
       delete window.__ttFlushAllSaves

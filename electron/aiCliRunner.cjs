@@ -12,7 +12,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
-const { startMcpBridgeServer } = require('./mcpBridge.cjs');
+const { startMcpBridgeServer, RecordingMcpHost } = require('./mcpBridge.cjs');
 
 const SUPPORTED_CLIS = ['claude', 'codex', 'antigravity'];
 const DEFAULT_MAX_CONCURRENT_CLI_PROCESSES = 4;
@@ -972,7 +972,15 @@ async function runDomainAiConversation(params) {
   const modelLabel = resolveModelLabel(selectedCli, model);
 
   const resolvedProfile = profile || shared.getBuiltinDomainProfile('clinical-trial');
-  const activeMcpHost = mcpHost !== undefined ? mcpHost : defaultMcpHost;
+  const baseMcpHost = mcpHost !== undefined ? mcpHost : defaultMcpHost;
+  // AIハーネスの実行は、書き換えてよい AIWork を限り、作成・更新した Think を AI の自己申告ではなく実際の呼び出しから記録する
+  const harnessWritableIds = params.harness && Array.isArray(params.harness.writableIds)
+    ? params.harness.writableIds.filter((id) => shared.isSafeThinkId(String(id)))
+    : null;
+  const harnessHost = baseMcpHost && harnessWritableIds
+    ? new RecordingMcpHost(baseMcpHost, { writableIds: harnessWritableIds })
+    : null;
+  const activeMcpHost = harnessHost || baseMcpHost;
   const promptText = shared.buildConversationPrompt({
     profile: resolvedProfile,
     panelRole,
@@ -1014,6 +1022,7 @@ async function runDomainAiConversation(params) {
     ...shared.validateAiCliResponse(execResult.stdout),
     executedCli: selectedCli,
     modelLabel,
+    ...(harnessHost ? { harnessRecord: harnessHost.recorded } : {}),
   };
 }
 

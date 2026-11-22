@@ -379,19 +379,26 @@ class ThinktankMcpHost {
  * 実際のツール呼び出しから組み立てるために使う。依頼ごとに新しく作り、他の依頼とは共有しない。
  */
 class RecordingMcpHost extends ThinktankMcpHost {
-  /** @param {ThinktankMcpHost} base */
-  constructor(base) {
+  /**
+   * @param {ThinktankMcpHost} base
+   * @param {{ writableIds?: string[] }} [options]
+   *   writableIds を渡すと、既存 Think の更新はその ID だけに限る（AIハーネスで記録を書く AIWork）。
+   *   規約上の約束ではなく仕組みで守るため、AI がほかの Think を書き換えようとしても拒否する。
+   */
+  constructor(base, options = {}) {
     super({
       vaultEngine: base.vaultEngine,
       isThinkDirty: base.isThinkDirty,
       onRecordMutated: base.onRecordMutated,
     });
+    this.writableIds = Array.isArray(options.writableIds) ? new Set(options.writableIds.map(String)) : null;
     this.recorded = {
       createdThinkIds: [],
       updatedThinkIds: [],
       candidateIds: [],
       usedSourceIds: [],
       conflicts: [],
+      deniedThinkIds: [],
     };
   }
 
@@ -423,6 +430,13 @@ class RecordingMcpHost extends ThinktankMcpHost {
   }
 
   async updateThink(params) {
+    if (this.writableIds && !this.writableIds.has(String(params.thinkid))) {
+      this._pushUnique(this.recorded.deniedThinkIds, params.thinkid);
+      throw createCodedError(
+        'PERMISSION_DENIED',
+        `Think "${params.thinkid}" はこの依頼で書き換えを許されていません。書き換えてよいのは ${[...this.writableIds].join(', ')} だけです。`,
+      );
+    }
     try {
       const meta = await super.updateThink(params);
       this._pushUnique(this.recorded.updatedThinkIds, params.thinkid);

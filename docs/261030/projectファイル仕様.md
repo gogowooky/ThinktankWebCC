@@ -219,6 +219,32 @@ projectファイルに組み込まれた Think の metadata に、親となる p
   タイトルバーの「版の比較」で、2つの版（スナップショット・現在の内容）の差分を見られ、比較元の版へ戻せる。戻す前の内容も版として残る。
   自動スナップショットの保持数の上限はまだ設けていない。
 
+### 6.1 AIハーネスの実行（Phase 1、2026-11-22）
+
+- 対象: `# 規約` かハーネスの項目の見出しがある project（`isHarnessProject`）。
+- 起動の合図（どちらでも起動する）:
+  - `# 状態` を「進行中」にして**保存**する。PC版の `startHarnessWatcher`（`src/services/harness/harnessWatcher.ts`）が、
+    保存された内容で状態が「進行中」に変わったのを見て始める。アプリ起動時に既に進行中だった project は始めない。
+  - AIChat サブパネル（`src/components/AiPanels/AiChatPanel.tsx`）で発言を送る（「始めて」も一つの発言）。
+    未着手・待機・保留・完了でも「進行中」にして始める。
+- ループ（`harnessLoop.ts`）: 「進行中」の間、1回の起動で最大5回まで実行を続ける。AI が応答の JSON の `harness.state` で
+  `waiting`（利用者の判断待ち）・`done`（完了の確認）を返したら「待機」にして止める。`harness.state` が無いときも「待機」。
+  上限に達したとき・エラーのときも「待機」にして chat に知らせる。完了にするのは利用者。「止める」ボタンは状態を「保留」にし、
+  今の実行が終わったところで止まる。実行中は project の metadata に `harnessLock`（画面ごとのID・時刻）を付け、
+  ほかの画面・PCでの二重起動を防ぐ（20分より古い印は無視）。
+- 1回の実行（`harnessRun.ts`）:
+  1. log・status・decision の AIWork と、会話を残す chat（タイトル `TASK:Seeds｜projectタイトル`、`# AI議論` と
+     chat の metadata `taskContext`・`harnessChat` で結ぶ）が無ければ作る。AIWork は書き換え前にスナップショットを残す。
+  2. 文脈（`harnessContext.ts`）: root から対象までの `# 規約`（親→子）、最も近い祖先の PROFILE・INDEX、自分の projects・styles、
+     `# 条件`・`# 対象`、status・decision の全文、log の直近3件、chat の直近10発言を渡す。
+  3. AI CLI へは `harness: { writableIds: [log, status, decision] }` を付けて依頼する。MCP は既存 Think の更新をこの3つに限り、
+     ほかは `PERMISSION_DENIED` で拒否する（`electron/mcpBridge.cjs` の `RecordingMcpHost`）。作成・更新・拒否した Think は
+     応答の `harnessRecord` で返る。
+  4. log に「# [yyyy-MM-dd HH:mm] 実行 {実行ID}」の記録が無い、または status が空なら、一度だけ追加で依頼する。
+     それでも log が無ければアプリが回答を log に残し、chat に「記録が不完全」と書く。
+  5. log の今回の記録の末尾に、アプリが「関連chat・変更したThink・作成したThink・拒否したThink」を加える。
+  6. chat に「## 発言」と「(モデル) 日時」＋返答を加える（AI の質問は「**確認**:」として添える）。
+
 ## 7. 廃止した項目と互換
 
 - 廃止: `# 見通し` の自由記述、`# 状態` の `状態値：` 表記と `最終評価日：`、`# 出力先`、`# 評価内容`、`# 評価日時`、`[links:ID]` タグ、`# プロンプト`（2026-10-31 に現状把握用・進捗把握用・実績把握用の3つへ分割）。

@@ -66,7 +66,7 @@ export function HarvestArea({ app, viewMode }: Props) {
             Harvest設定は今後追加予定です。
           </div>
         ) : viewMode === 'aichat' || viewMode === 'chat' ? (
-          <AiChatPanel />
+          <AiChatPanel panelKey="harvest" />
         ) : (
           <AiViewPanel panelKey="harvest" />
         )}
