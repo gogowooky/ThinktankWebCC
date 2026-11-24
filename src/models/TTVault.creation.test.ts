@@ -93,6 +93,17 @@ it('keeps a saved child and restores Bundle content when linking fails, allowing
   expect(vault.Count).toBe(2);
 });
 
+it('does not link a project into itself', async () => {
+  const vault = new TTVault('test');
+  const memo = await vault.CreateBlankThink('memo', 'メモ');
+  const project = await vault.CreateProject('作業');
+  const before = project.Content;
+  await vault.LinkThinksToProject(project.ID, [project.ID]);
+  expect(project.Content).toBe(before);
+  await vault.LinkThinksToProject(project.ID, [project.ID, memo.ID]);
+  expect(projectTargetIds(project.Content)).toEqual([memo.ID]);
+});
+
 it('registers newly created Working-style Think files in the specified Seeds project target section', async () => {
   const vault = new TTVault('test');
   const project = await vault.CreateProject('作業');

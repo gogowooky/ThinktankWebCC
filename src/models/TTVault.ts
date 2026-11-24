@@ -642,6 +642,8 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
     const bundle = this.GetThink(bundleId);
     const isProject = bundle?.ContentType === 'project' || (bundle?.ContentType as string) === 'bundle';
     if (!bundle || !isProject) throw new Error('対象Projectが見つかりません。');
+    // 自分自身は対象にしない（Tree・対象の取得でも無視されるので、本文に意味のない行を残さない）
+    if (newId === bundleId) return;
     if (bundle.IsMetaOnly) await bundle.LoadContent();
     if (bundle.IsMetaOnly) throw new Error('Project本文を読み込めませんでした。');
     const targetIds = projectTargetIds(bundle.Content);
