@@ -1,6 +1,6 @@
 {
   "appName": "Thinktank",
-  "version": "2.7.6",
+  "version": "2.7.7",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
@@ -9,7 +9,7 @@
   "projectName": "ThinktankWebCC",
   "branchName": "TTWebCC261103LocalMode",
   "commitPC": "E15",
-  "commitId": "f294fe0",
-  "commitDateTime": "2026-11-23-004816",
-  "commitMessage": "feat: AIハーネスの週次の改善を追加し、役割を AIWork にする（Phase 5）"
+  "commitId": "fab7449",
+  "commitDateTime": "2026-11-24-205937",
+  "commitMessage": "feat: AIハーネスの定刻起動とGoogle Workspace連携（GAS）を追加する"
 }
