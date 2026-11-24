@@ -26,13 +26,15 @@ export const ROLE_TEMPLATES: RoleTemplate[] = [
   { name: '批評する', work: '重要な成果物を、作った担当とは独立に批評する。\n返す内容: 問題点・その重さ・直し方の案。', conditions: '（作者とは別の AI を使うときは「AI: claude」のように書く）' },
 ];
 
+export type HarnessCliName = 'claude' | 'codex' | 'antigravity';
+
 export interface HarnessRole {
   id: string;
   name: string;
   /** 本文の「# 仕事」 */
   rules: string;
   /** 「# 条件」の「AI: 」 */
-  cli?: 'claude' | 'codex' | 'antigravity';
+  cli?: HarnessCliName;
   /** 「# 条件」の「モデル: 」 */
   model?: string;
 }
@@ -47,8 +49,19 @@ export function serializeRole(name: string, work: string, conditions = ''): stri
   return [`${ROLE_TITLE_PREFIX}${name}`, '# 仕事', work, '# 条件', ...(conditions ? [conditions] : [])].join('\n');
 }
 
-function parseConditions(text: string): Pick<HarnessRole, 'cli' | 'model'> {
-  const cli = /^\s*AI\s*[:：]\s*(claude|codex|antigravity)\s*$/im.exec(text)?.[1] as HarnessRole['cli'] | undefined;
+const CLI_ALIASES: Record<string, HarnessCliName> = {
+  claude: 'claude',
+  codex: 'codex',
+  openai: 'codex',
+  chatgpt: 'codex',
+  antigravity: 'antigravity',
+  gemini: 'antigravity',
+};
+
+/** 「# 条件」欄の「AI: ...」「モデル: ...」を読む（役割と project で共用） */
+export function parseAiConditions(text: string): { cli?: HarnessCliName; model?: string } {
+  const rawCli = /^\s*AI\s*[:：]\s*(\S+)\s*$/im.exec(text)?.[1]?.toLowerCase();
+  const cli = rawCli ? CLI_ALIASES[rawCli] : undefined;
   const model = /^\s*モデル\s*[:：]\s*(\S+)\s*$/m.exec(text)?.[1];
   return { ...(cli ? { cli } : {}), ...(model ? { model } : {}) };
 }
@@ -60,7 +73,7 @@ export function readRole(think: TTThink): HarnessRole | null {
   return {
     id: think.ID, name,
     rules: readProjectSectionText(think.Content, '仕事'),
-    ...parseConditions(readProjectSectionText(think.Content, '条件')),
+    ...parseAiConditions(readProjectSectionText(think.Content, '条件')),
   };
 }
 

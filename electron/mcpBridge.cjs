@@ -12,6 +12,7 @@ const net = require('net');
 const os = require('os');
 const path = require('path');
 const shared = require('./shared-dist/index.js');
+const { callGoogleWorkspaceGas } = require('./googleWorkspaceGas.cjs');
 
 const PROJECT_THINK_TAG_RE = /^(?:\*\s+)?\[(?:([A-Za-z0-9_-]+):)?([^\]:\s]+)\]/;
 
@@ -371,6 +372,16 @@ class ThinktankMcpHost {
       ? this.vaultEngine.getDomainProfileById(profileId)
       : this.vaultEngine.getActiveDomainProfile();
   }
+
+  async callGoogleWorkspace(kind, params = {}) {
+    const cfg = this.vaultEngine.config || {};
+    return callGoogleWorkspaceGas({
+      url: cfg.workspaceGasUrl || '',
+      token: cfg.workspaceGasToken || '',
+      kind,
+      params,
+    });
+  }
 }
 
 /**
@@ -456,6 +467,17 @@ class RecordingMcpHost extends ThinktankMcpHost {
       this._recordConflict(err, params.projectId);
       throw err;
     }
+  }
+
+  async callGoogleWorkspace(kind, params = {}) {
+    // 書き込み不可のチーム担当ワーカー（writableIds: []）には Google ドライブへの書き込みも許可しない
+    if (kind === 'drive_write' && this.writableIds && this.writableIds.size === 0) {
+      throw createCodedError(
+        'PERMISSION_DENIED',
+        'この担当 AI は読み取り専用のため、Google ドライブへの書き込み（thinktank_google_drive_write）は許可されていません。',
+      );
+    }
+    return super.callGoogleWorkspace(kind, params);
   }
 }
 

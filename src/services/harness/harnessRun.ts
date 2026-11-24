@@ -28,7 +28,9 @@ import {
   applyVerify, readBoard, readTeamDirective, readVerifyItems, writeBoard, type TeamDirective, type VerifyItem,
 } from './harnessBoard';
 import { projectHarnessIds } from '../../utils/thinkFormat';
-import { ensureRoleWorks } from './harnessRoles';
+import type { PanelRoleKey } from '../../../shared/domainProfile';
+import { NO_MODEL, selectionFor, type AiChatProviderName } from '../aiChatModelStatus';
+import { ensureRoleWorks, parseAiConditions, type HarnessCliName } from './harnessRoles';
 import { collectReviewMaterial, isReviewProject } from './harnessReview';
 
 export type HarnessDirectiveState = 'continue' | 'waiting' | 'done' | 'delegate';
@@ -131,6 +133,22 @@ function thinkTag(vault: TTVault, id: string): string {
 
 export type HarnessTurnStage = 'prepare' | 'ai' | 'verify' | 'retry' | 'record';
 
+const PROVIDER_TO_CLI: Partial<Record<string, HarnessCliName>> = {
+  anthropic: 'claude',
+  openai: 'codex',
+  gemini: 'antigravity',
+};
+
+/** パネルの Default AI 設定（AiChatProviderName）をハーネス用の cliName・model へ変換する */
+export function resolveHarnessCliFromProvider(providerName: AiChatProviderName): { cliName: HarnessCliName; model?: string } {
+  const { provider, model } = selectionFor(providerName);
+  const cliName = PROVIDER_TO_CLI[provider];
+  if (!cliName) {
+    throw new Error(`AIハーネスでは「${providerName}」を使えません。設定の「Default AI」で Claude・ChatGPT・Gemini のいずれかを選んでください。`);
+  }
+  return { cliName, ...(model && model !== NO_MODEL ? { model } : {}) };
+}
+
 export interface RunHarnessTurnOptions {
   vault: TTVault;
   projectId: string;
@@ -138,6 +156,10 @@ export interface RunHarnessTurnOptions {
   userMessage?: string;
   /** chat に残す発言の見出し（省略時は userMessage、無ければ「（自動）続き」） */
   chatQuestion?: string;
+  /** 実行する AI CLI とモデル（プロジェクトの # 条件 に指定があればそちらを優先） */
+  cliName?: HarnessCliName;
+  model?: string;
+  panelRole?: PanelRoleKey;
   /** テスト用。省略時は PC版 IPC か PC連携の中継で AI CLI に依頼する */
   requestReply?: HarnessRequestReply;
   now?: () => Date;
@@ -207,10 +229,16 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
   const dateTime = formatLocalDateTime(now());
   const statusBefore = status.Content;
   const writableIds = [log.ID, status.ID, decision.ID];
+  const condAi = parseAiConditions(ctx.conditions);
+  const cliName = condAi.cli ?? options.cliName;
+  const requestedModel = condAi.model ?? options.model;
+  const panelRole = options.panelRole ?? 'Seeds';
   const payload = (message: string, requestId: string) => ({
     requestId,
     profileId: DomainProfileManager.activeProfile.id,
-    panelRole: 'Seeds',
+    panelRole,
+    ...(cliName ? { cliName } : {}),
+    ...(requestedModel ? { model: requestedModel } : {}),
     bundleId: project.ID,
     projectId: project.ID,
     bundleTitle: ctx.projectTitle,

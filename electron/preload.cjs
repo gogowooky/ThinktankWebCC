@@ -59,6 +59,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   ai: {
     getStatus:     ()                            => ipcRenderer.invoke('ai:getStatus'),
     getAuthStatus: ()                            => ipcRenderer.invoke('ai:getAuthStatus'),
+    listModels:    ()                            => ipcRenderer.invoke('ai:listModels'),
     login:         (provider)                    => ipcRenderer.invoke('ai:login', provider),
     getGnbNotebookTitle: (notebookId)             => ipcRenderer.invoke('ai:getGnbNotebookTitle', notebookId),
     onAuthChanged: (callback)                    => {
@@ -95,6 +96,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openPath:        (target)                    => ipcRenderer.invoke('system:openPath', target),
     readShortcutLink:(target)                    => ipcRenderer.invoke('system:readShortcutLink', target),
     isDirectory:     (target)                    => ipcRenderer.invoke('system:isDirectory', target),
+  },
+  workspaceGas: {
+    getConfig:       ()                          => ipcRenderer.invoke('workspaceGas:getConfig'),
+    saveConfig:      (partial)                   => ipcRenderer.invoke('workspaceGas:saveConfig', partial),
+    test:            (partial)                   => ipcRenderer.invoke('workspaceGas:test', partial),
   },
   getPathForFile: (file) => webUtils.getPathForFile(file),
 });

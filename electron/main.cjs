@@ -12,6 +12,7 @@ const { RelayAgent } = require('./relayAgent.cjs');
 const { resolveKinakoRelayDir } = require('./kinakoTokenRelay.cjs');
 const { McpHttpServer } = require('./mcpHttpServer.cjs');
 const { ThinktankMcpHost } = require('./mcpBridge.cjs');
+const { isValidGasUrl, testGoogleWorkspaceGas } = require('./googleWorkspaceGas.cjs');
 const { loadDesktopClient, signInWithGoogleLoopback } = require('./googleLoopbackAuth.cjs');
 const appMode = require('./appMode.cjs');
 const overwriteImport = require('./overwriteImport.cjs');
@@ -386,6 +387,7 @@ ipcMain.handle('ai:getStatus', () => {
 });
 
 ipcMain.handle('ai:getAuthStatus', () => aiCliRunner.detectAiAuthentication());
+ipcMain.handle('ai:listModels', () => aiCliRunner.discoverAvailableModels());
 
 ipcMain.handle('ai:login', (_event, provider) => aiCliRunner.startAiAuthentication(provider, {
   onClose: () => {
@@ -400,6 +402,26 @@ ipcMain.handle('ai:login', (_event, provider) => aiCliRunner.startAiAuthenticati
 ipcMain.handle('ai:getGnbNotebookTitle', (_event, notebookId) => (
   aiCliRunner.getGeminiNotebookTitle({ notebookId })
 ));
+
+ipcMain.handle('workspaceGas:getConfig', () => ({
+  url: vaultEngine.config.workspaceGasUrl || '',
+  token: vaultEngine.config.workspaceGasToken || '',
+}));
+
+ipcMain.handle('workspaceGas:saveConfig', (_event, partial) => {
+  const url = typeof partial?.url === 'string' ? partial.url.trim() : '';
+  const token = typeof partial?.token === 'string' ? partial.token.trim() : '';
+  if (url && !isValidGasUrl(url)) {
+    throw new Error('URLは https://script.google.com/macros/s/…/exec の形で入力してください。');
+  }
+  vaultEngine.saveConfig({ workspaceGasUrl: url, workspaceGasToken: token });
+  return { url, token };
+});
+
+ipcMain.handle('workspaceGas:test', (_event, partial) => testGoogleWorkspaceGas({
+  url: typeof partial?.url === 'string' ? partial.url.trim() : '',
+  token: typeof partial?.token === 'string' ? partial.token.trim() : '',
+}));
 
 ipcMain.handle('ai:conversation', async (_event, params) => {
   if (params?.provider === 'gnb') {

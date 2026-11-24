@@ -20,6 +20,7 @@ import { getEditorValue, reconstructContent } from './texteditor/editorContent';
 import { getCollapsedStartLines, getClosedHeadings } from './texteditor/editorFolding';
 import { registerMarkdownFolding, registerHexColorProvider } from './texteditor/editorProviders';
 import { applyEditorDecorations, injectHighlightStyles } from './texteditor/editorDecorations';
+import { installTextFocusResync } from './texteditor/editorFocusResync';
 import { clientPointToPosition } from '../../../utils/editorDropPosition';
 import { isLocalPathTarget } from '../../../utils/linkFormat';
 import { isReadOnlyContentType } from '../../../types';
@@ -249,6 +250,8 @@ export const TextEditorMedia = forwardRef<TextEditorMediaRef, MediaProps>(functi
       }
     });
     disposablesRef.current.push(blurDisposable);
+
+    disposablesRef.current.push(installTextFocusResync(editor));
 
     if (editor.hasTextFocus()) {
       TTShortcutManager.instance.setActiveEditor(editor);

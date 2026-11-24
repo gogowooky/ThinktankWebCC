@@ -11,7 +11,7 @@ import { DomainProfileManager } from '../../platform/DomainProfileManager';
 import { parseProject, projectTargetIds } from '../../utils/thinkFormat';
 import { ensureHarnessAiWork } from './harnessAiWork';
 import { readBoard, writeBoard, type BoardData, type BoardRow, type TeamDirective } from './harnessBoard';
-import { findRole, listRoles, type HarnessRole } from './harnessRoles';
+import { findRole, listRoles, type HarnessCliName, type HarnessRole } from './harnessRoles';
 import { projectLineage } from './harnessContext';
 import type { HarnessRequestReply } from './harnessRun';
 
@@ -68,13 +68,15 @@ export interface RunTeamOptions {
   project: TTThink;
   team: TeamDirective;
   requestReply: HarnessRequestReply;
+  defaultCliName?: HarnessCliName;
+  defaultModel?: string;
   now?: () => Date;
   onProgress?: (running: number) => void;
 }
 
 /** 分担を board に書き、担当を並行して動かし、報告を行に書く。追加した行を返す */
 export async function runTeam(options: RunTeamOptions): Promise<BoardRow[]> {
-  const { vault, project, team, requestReply, now = () => new Date(), onProgress = () => {} } = options;
+  const { vault, project, team, requestReply, defaultCliName, defaultModel, now = () => new Date(), onProgress = () => {} } = options;
   const board = await ensureHarnessAiWork(vault, project, 'board');
   if (board.IsMetaOnly) await board.LoadContent();
   const roles = await listRoles(vault, await projectLineage(vault, project));
@@ -95,6 +97,8 @@ export async function runTeam(options: RunTeamOptions): Promise<BoardRow[]> {
     onProgress(running);
     await update(row.id, { state: 'running', runId, startedAt: now().toISOString() });
     try {
+      const cliName = role?.cli ?? defaultCliName;
+      const model = role?.model ?? (role?.cli ? undefined : defaultModel);
       const res = await requestReply({
         requestId: runId,
         profileId: DomainProfileManager.activeProfile.id,
@@ -106,8 +110,8 @@ export async function runTeam(options: RunTeamOptions): Promise<BoardRow[]> {
         userMessage: buildWorkerMessage(project, vault, data, row, role),
         timeoutMs: WORKER_TIMEOUT_MS,
         harness: { writableIds: [] },
-        ...(role?.cli ? { cliName: role.cli } : {}),
-        ...(role?.model ? { model: role.model } : {}),
+        ...(cliName ? { cliName } : {}),
+        ...(model ? { model } : {}),
       });
       const report = (res.reply ?? '').trim();
       await update(row.id, {

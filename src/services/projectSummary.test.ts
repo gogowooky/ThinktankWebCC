@@ -32,8 +32,6 @@ async function setupProject() {
   const project = await vault.CreateProjectFromIds([a.ID, b.ID]);
   project.Content = project.Content
     .replace(/^[^\n]*/, '計画P')
-    .replace('# 現状把握用プロンプト', '# 現状把握用プロンプト\n課題を3点挙げる')
-    .replace('# 進捗把握用プロンプト', '# 進捗把握用プロンプト\n先週からの変化')
     .replace('# 条件', '# 条件\n社外秘');
   await project.SaveContent();
   return { a, b, project };
@@ -68,9 +66,7 @@ it('現状要約: AIViewファイルを用意して # AIまとめ の先頭に�
   expect(message).toContain('title="計画P"');
   // 2行目のモデル名は AI CLI を起動する側が {{AI_MODEL}} を置き換えて渡す
   expect(message).toContain('```\n# [2026-10-31] 現状要約\n({{AI_MODEL}})\n');
-  expect(message).toContain('課題を3点挙げる');
   expect(message).toContain('社外秘');
-  expect(message).not.toContain('先週からの変化');
   expect(message).toContain(`[memo:${a.ID}] A\nA\n一行目\n二行目`);
   expect(message).toContain(`[memo:${b.ID}] B`);
 });
@@ -116,7 +112,6 @@ it('進捗要約は最新の snapshot、実績要約は最古の snapshot との
   const progress = vi.fn(async () => ({ reply: '進捗' }));
   await generateProjectSummary({ kind: 'progress', panelKey: 'working', vault, projectId: project.ID, requestReply: progress, aiWriteWaitMs: 0 });
   const progressMessage = messageOf(progress);
-  expect(progressMessage).toContain('先週からの変化');
   expect(progressMessage).toContain('### 変更なし（1件）');
   expect(progressMessage).toContain(`A（${a.ID}）`);
   expect(progressMessage).toContain(`[memo:${b.ID}] B\n（スナップショットが無いため比較できません。現在の内容）`);
@@ -150,7 +145,7 @@ it('# 対象 が「*」のときは、名指しされていないファイルを
 
 it('# AIまとめ の先頭のタグが読み取れなければ、新しい AIViewファイルを作ってその前に載せる', async () => {
   const { project } = await setupProject();
-  project.Content = project.Content.replace('# AIまとめ', '# AIまとめ\n[aiview:2020-01-01-000000],[aiview:2020-01-01-000001]');
+  project.Content = project.Content.replace('# AI議論', '# AIまとめ\n[aiview:2020-01-01-000000],[aiview:2020-01-01-000001]\n# AI議論');
   await project.SaveContent();
   const { aiView } = await generateProjectSummary({
     kind: 'current', panelKey: 'thinktank', vault, projectId: project.ID, requestReply: async () => ({ reply: '要約' }), aiWriteWaitMs: 0,

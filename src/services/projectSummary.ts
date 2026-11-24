@@ -27,8 +27,6 @@ export type ProjectSummaryKind = 'current' | 'progress' | 'result';
 
 export interface ProjectSummarySpec {
   label: string;
-  /** projectファイルの見出し（AIへの指示） */
-  promptHeading: string;
   /** 比べる snapshot。none は現在の内容だけを読む */
   snapshot: 'none' | 'latest' | 'oldest';
   /** AI への依頼の中身 */
@@ -37,15 +35,15 @@ export interface ProjectSummarySpec {
 
 export const PROJECT_SUMMARIES: Record<ProjectSummaryKind, ProjectSummarySpec> = {
   current: {
-    label: '現状要約', promptHeading: '現状把握用プロンプト', snapshot: 'none',
+    label: '現状要約', snapshot: 'none',
     task: '対象ファイルの現時点の内容をまとめて、プロジェクトの現状を要約してください。',
   },
   progress: {
-    label: '進捗要約', promptHeading: '進捗把握用プロンプト', snapshot: 'latest',
+    label: '進捗要約', snapshot: 'latest',
     task: '各対象ファイルの最新のスナップショットから現在までの差分をもとに、その間の進捗を要約してください。',
   },
   result: {
-    label: '実績要約', promptHeading: '実績把握用プロンプト', snapshot: 'oldest',
+    label: '実績要約', snapshot: 'oldest',
     task: '各対象ファイルの最古のスナップショットから現在までの差分をもとに、これまでの実績を要約してください。',
   },
 };
@@ -122,9 +120,6 @@ export function buildProjectSummaryMessage(
   lines.push(`- 状態: ${readProjectSectionText(projectContent, '状態') || '不明'}`);
   const conditions = readProjectSectionText(projectContent, '条件');
   if (conditions) lines.push(`- 条件:\n${conditions}`);
-  lines.push('');
-  lines.push(`## 指示（# ${spec.promptHeading}）`);
-  lines.push(readProjectSectionText(projectContent, spec.promptHeading) || '（指示なし。上の依頼に沿って要約してください）');
   lines.push('');
   lines.push(`## 対象ファイル（${targets.length}件）`);
   if (options.recentOnly) lines.push('（# 対象 が「*」のため、1か月以内に更新されたファイルに限っています）');

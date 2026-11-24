@@ -14,6 +14,7 @@ import { McpHttpSettingsPanel } from './McpHttpSettingsPanel';
 import { KinakoTokenRelaySettingsPanel } from './KinakoTokenRelaySettingsPanel';
 import { GoogleDriveSettingsPanel } from './GoogleDriveSettingsPanel';
 import { LinkTitleGasSettingsPanel } from './LinkTitleGasSettingsPanel';
+import { GoogleWorkspaceGasSettingsPanel } from './GoogleWorkspaceGasSettingsPanel';
 import { StorageModeSettingsPanel } from './StorageModeSettingsPanel';
 import { isLocalStorageMode } from '../../services/storage/storageMode';
 import './ThinktankSettingsView.css';
@@ -146,6 +147,7 @@ export const ThinktankSettingsView = forwardRef<ThinktankSettingsViewRef, Props>
       <KinakoTokenRelaySettingsPanel />
       {!localMode && <GoogleDriveSettingsPanel />}
       <LinkTitleGasSettingsPanel />
+      <GoogleWorkspaceGasSettingsPanel />
 
       {/* ── Vault ── */}
       {!localMode && <section className="tt-settings-section">

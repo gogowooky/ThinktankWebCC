@@ -11,11 +11,12 @@ import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { formatLocalDateTime, latestAiViewEntries, prependAiViewEntry } from '../../utils/aiViewFormat';
 import {
-  HARNESS_FIELDS, HARNESS_MULTI_FIELDS, isHarnessProject, parseProject, projectHarnessIds, readProjectStatus,
-  type HarnessField,
+  HARNESS_FIELDS, HARNESS_MULTI_FIELDS, isHarnessProject, parseProject, projectHarnessIds,
+  readProjectSectionText, readProjectStatus, type HarnessField,
 } from '../../utils/thinkFormat';
 import { HARNESS_CHAT_METADATA_KEY } from './harnessChat';
 import { HARNESS_LOCK_KEY, HARNESS_LOCK_TTL_MS } from './harnessLoop';
+import { parseScheduleConditions } from './harnessSchedule';
 import { HARNESS_CHAR_LIMITS, bodyOf, ensureRootHarness, findRootProject } from './harnessRoot';
 import { ensureHarnessAiWork } from './harnessAiWork';
 import { snapshotBeforeWrite } from './aiWorkVersions';
@@ -124,6 +125,11 @@ export async function collectDoctorFindings(vault: TTVault, env: DoctorEnv = {})
       if (Number.isFinite(at) && now.getTime() - at >= HARNESS_LOCK_TTL_MS) add('WARN', '実行', `${name} に実行中の印が残っています（${lock.at}）。前回のループが途中で終わった可能性があります。chat と log を確かめてください。`);
     }
 
+    const { invalidLines } = parseScheduleConditions(readProjectSectionText(p.Content, '条件'));
+    for (const line of invalidLines) {
+      add('WARN', '定刻', `${name} の # 条件 にある「${line}」は定刻として解釈できません。「定刻: 毎日 08:00」「定刻: 平日 08:30」「定刻: 毎週 月水金 09:00」などの形式で書いてください。`);
+    }
+
     for (const chatId of parseProject(p.Content).aiDiscussionIds) {
       const chat = vault.GetThink(chatId);
       if (!chat) { add('WARN', '原本', `${name} の # AI議論 が指す chat ${chatId} が Vault にありません。会話の原本を辿れません。`); continue; }
@@ -184,7 +190,7 @@ export function formatDoctorReport(findings: DoctorFinding[]): string {
     `NG: ${ng} / WARN: ${warn}${findings.length === 0 ? '（clean: 下の検査の範囲で異常なし）' : ''}`,
     ...findings.map(f => `- ${f.level} [${f.area}] ${f.message}`),
     '',
-    '検査の範囲: 参照・字数・鮮度・実行中の印・会話の原本（両方向）・INDEX（両方向）・INBOX の出典・AI CLI のログイン',
+    '検査の範囲: 参照・字数・鮮度・実行中の印・定刻書式・会話の原本（両方向）・INDEX（両方向）・INBOX の出典・AI CLI のログイン',
     `検査しないもの: ${DOCTOR_NOT_CHECKED.join('／')}`,
   ].join('\n');
 }

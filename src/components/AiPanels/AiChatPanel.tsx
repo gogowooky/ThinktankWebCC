@@ -12,7 +12,10 @@ import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { isHarnessProject, isRootProjectTitle, parseChat, parseProject, readProjectStatus } from '../../utils/thinkFormat';
 import { formatLocalDate } from '../../utils/aiViewFormat';
 import { collectActivity, type ActivityEntry } from '../../services/harness/harnessReview';
+import type { PanelRoleKey } from '../../../shared/domainProfile';
+import type { AiChatProviderName } from '../../services/aiChatModelStatus';
 import { HarnessLoop, type HarnessLoopStatus } from '../../services/harness/harnessLoop';
+import { resolveHarnessCliFromProvider } from '../../services/harness/harnessRun';
 import { findHarnessChat } from '../../services/harness/harnessChat';
 import { findHarnessAiWork } from '../../services/harness/harnessAiWork';
 import type { HarnessLoopStage } from '../../services/harness/harnessLoop';
@@ -58,6 +61,20 @@ function DailyList({ vault }: { vault: TTApplication['Models']['Vault'] }) {
   );
 }
 
+const PANEL_ROLE: Record<SummaryPanelKey, PanelRoleKey> = {
+  thinktank: 'Thinktank',
+  seeds: 'Seeds',
+  working: 'Working',
+  harvest: 'Harvest',
+};
+
+function providerNameOfPanel(app: TTApplication, panelKey: SummaryPanelKey): AiChatProviderName {
+  if (panelKey === 'thinktank') return app.ThinktankPanel.AIChatProviderName;
+  if (panelKey === 'working') return app.WorkingPanel.SettingAIChatProviderName;
+  if (panelKey === 'harvest') return app.HarvestPanel.AIChatProviderName;
+  return app.SeedsPanel.AIChatProviderName;
+}
+
 function loadedProjectId(app: TTApplication, panelKey: SummaryPanelKey): string {
   if (panelKey === 'thinktank') return app.ThinktankPanel.ProjectID;
   return app.SeedsPanel.ProjectID;
@@ -101,6 +118,7 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   const [draft, setDraft] = useState('');
   const [deciding, setDeciding] = useState<string | null>(null);
   const [decisionError, setDecisionError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [, setLoadCount] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -121,8 +139,20 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
   const send = () => {
     const text = draft.trim();
     if (!text || !harness || running) return;
-    setDraft('');
-    void HarnessLoop.start(vault, projectId, { userMessage: text, trigger: 'chat' });
+    try {
+      const { cliName, model } = resolveHarnessCliFromProvider(providerNameOfPanel(app, panelKey));
+      setSendError(null);
+      setDraft('');
+      void HarnessLoop.start(vault, projectId, {
+        userMessage: text,
+        trigger: 'chat',
+        cliName,
+        model,
+        panelRole: PANEL_ROLE[panelKey],
+      });
+    } catch (e) {
+      setSendError(e instanceof Error ? e.message : String(e));
+    }
   };
   const stop = () => { void HarnessLoop.requestStop(vault, projectId); };
   const decide = async (id: string, decision: 'approve' | 'reject') => {
@@ -165,6 +195,13 @@ export function AiChatPanel({ panelKey }: { panelKey: SummaryPanelKey }) {
           {loop.stage === 'team' && loop.teamRunning ? `（残り ${loop.teamRunning} 件）` : ''}…
         </span>
         <span className="ai-view__elapsed">{elapsed}秒</span>
+      </div>
+    );
+  } else if (sendError) {
+    banner = (
+      <div className="ai-view__status ai-view__status--error" role="alert">
+        <CircleAlert size={14} />
+        <span className="ai-view__status-text">{sendError}</span>
       </div>
     );
   } else if (loop?.outcome) {

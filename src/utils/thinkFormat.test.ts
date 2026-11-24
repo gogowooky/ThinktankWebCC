@@ -144,11 +144,12 @@ describe('project 形式の往復', () => {
       '# 対象',
       '[memo:2026-01-02-030405]',
       '[memo:2026-01-02-030406]',
-      '# 現状把握用プロンプト',
-      '# 進捗把握用プロンプト',
-      '# 実績把握用プロンプト',
+      '# 規約',
+      '（目的と完了条件を書いてください）',
+      '# ノートブック名',
+      '（調査に使うノートブック名またはIDを書いてください）',
       '# 条件',
-      '# AIまとめ',
+      '（使用するAIや条件があれば書いてください。例: AI: Claude）',
       '# AI議論',
     ].join('\n'));
     const parsed = parseProject(serialized);
@@ -173,6 +174,7 @@ describe('project 形式の往復', () => {
     const serialized = serializeProject({
       title: 'P', outlook: 'テーマ',
       items: [{ id: '2026-01-02-030405', contentType: 'links', title: '資料' }],
+      notebookName: 'nb-123',
       aiSummaryIds: ['2026-01-02-030407'], aiDiscussionIds: ['2026-01-02-030408'],
     });
     expect(serialized).toBe([
@@ -180,10 +182,13 @@ describe('project 形式の往復', () => {
       '# 見通し', 'テーマ',
       '# 状態', '未着手',
       '# 対象', '[link:2026-01-02-030405]: 資料',
-      '# 現状把握用プロンプト', '# 進捗把握用プロンプト', '# 実績把握用プロンプト', '# 条件',
+      '# 規約', '（目的と完了条件を書いてください）',
+      '# ノートブック名', 'nb-123',
+      '# 条件', '（使用するAIや条件があれば書いてください。例: AI: Claude）',
       '# AIまとめ', '[aiwork:2026-01-02-030407]',
       '# AI議論', '[chat:2026-01-02-030408]',
     ].join('\n'));
+    expect(readProjectSectionText(serialized, 'ノートブック名')).toBe('nb-123');
     expect(parseProject(serialized)).toEqual({
       title: 'P',
       ids: ['2026-01-02-030405', '2026-01-02-030407', '2026-01-02-030408'],
@@ -321,7 +326,7 @@ describe('# 対象 の「*」（全ファイル対象）', () => {
 });
 
 describe('# AIまとめ のCSVと要約の書き込み先', () => {
-  const content = 'P\n=\n# 現状把握用プロンプト\n課題を挙げる\n要点だけ\n# AIまとめ\n[aiview:2026-01-02-030401], [aiview:2026-01-02-030402]\n[aiview:2026-01-02-030403]\n# AI議論\n[chat:2026-01-02-030404]\n\n# 自由記載の見出し\n[aiview:2026-01-02-999999]';
+  const content = 'P\n=\n# 条件\n課題を挙げる\n要点だけ\n# AIまとめ\n[aiview:2026-01-02-030401], [aiview:2026-01-02-030402]\n[aiview:2026-01-02-030403]\n# AI議論\n[chat:2026-01-02-030404]\n\n# 自由記載の見出し\n[aiview:2026-01-02-999999]';
 
   it('1行に「,」区切りで並べた [aiview:ID] をすべて読む', () => {
     expect(parseProject(content).aiSummaryIds).toEqual(['2026-01-02-030401', '2026-01-02-030402', '2026-01-02-030403']);
@@ -351,8 +356,8 @@ describe('# AIまとめ のCSVと要約の書き込み先', () => {
   });
 
   it('見出し直後から次の見出しまでを読む', () => {
-    expect(readProjectSectionText(content, '現状把握用プロンプト')).toBe('課題を挙げる\n要点だけ');
-    expect(readProjectSectionText(content, '進捗把握用プロンプト')).toBe('');
+    expect(readProjectSectionText(content, '条件')).toBe('課題を挙げる\n要点だけ');
+    expect(readProjectSectionText(content, '見通し')).toBe('');
   });
 
   it('空行で終了した項目の自由記載は解析せず、後続のProject見出しは解析する', () => {

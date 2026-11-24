@@ -32,6 +32,11 @@ async function saveOrRevert(think: TTThink, previous: string): Promise<void> {
   catch (error) { think.Content = previous; throw error; }
 }
 
+/** ハーネス用 chat ファイルのタイトル（他の AIWork と揃えた「projectタイトル｜chat」形式） */
+export function harnessChatTitle(projectTitle: string): string {
+  return `${projectTitle}｜chat`;
+}
+
 /** 会話を残す chat を返す。無ければ作り、# AI議論 と chat の metadata（taskContext）で project に結び付ける */
 export async function ensureHarnessChat(vault: TTVault, project: TTThink): Promise<TTThink> {
   if (project.IsMetaOnly) await project.LoadContent();
@@ -41,7 +46,7 @@ export async function ensureHarnessChat(vault: TTVault, project: TTThink): Promi
     return existing;
   }
   const title = parseProject(project.Content).title;
-  const chat = await vault.CreateChatThink(`TASK:Seeds｜${title}`);
+  const chat = await vault.CreateChatThink(harnessChatTitle(title));
   chat.Metadata = {
     ...chat.Metadata,
     taskContext: { schemaVersion: 1, bundleId: project.ID },

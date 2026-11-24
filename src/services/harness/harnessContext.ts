@@ -8,8 +8,8 @@
 import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import {
-  PARENT_PROJECT_ID_KEY, PROJECT_RULES_HEADING, parseProject, projectHarnessIds,
-  projectTargetIds, readProjectSectionText, readProjectStatus, type HarnessField,
+  PARENT_PROJECT_ID_KEY, PROJECT_CONDITIONS_PLACEHOLDER, PROJECT_RULES_HEADING, PROJECT_TARGET_PLACEHOLDER,
+  parseProject, projectHarnessIds, projectTargetIds, readProjectSectionText, readProjectStatus, type HarnessField,
 } from '../../utils/thinkFormat';
 import { latestAiViewEntries } from '../../utils/aiViewFormat';
 import { HARNESS_CHAR_LIMITS, findRootProject } from './harnessRoot';
@@ -152,7 +152,7 @@ export async function collectHarnessContext(input: CollectHarnessContextInput): 
   });
   const targetText = readProjectSectionText(project.Content, '対象');
   const otherTargets = targetText.split(/\r?\n/).map(l => l.trim())
-    .filter(l => l && !/^\[[A-Za-z0-9_-]*:?[^\]]*\]/.test(l) && l !== '*');
+    .filter(l => l && !/^\[[A-Za-z0-9_-]*:?[^\]]*\]/.test(l) && l !== '*' && l !== PROJECT_TARGET_PLACEHOLDER);
   const profile = await nearestAiWork(vault, lineage, 'PROFILE');
   const index = await nearestAiWork(vault, lineage, 'INDEX');
   // 作法は project をまたいで使うため、祖先（root を含む）の styles も渡す
@@ -165,7 +165,10 @@ export async function collectHarnessContext(input: CollectHarnessContextInput): 
     projectTitle: parseProject(project.Content).title,
     state: readProjectStatus(project.Content).state,
     rules,
-    conditions: readProjectSectionText(project.Content, '条件'),
+    conditions: (() => {
+      const text = readProjectSectionText(project.Content, '条件');
+      return text === PROJECT_CONDITIONS_PLACEHOLDER ? '' : text;
+    })(),
     targets,
     otherTargets,
     profile: profile ? limited(profile, 'PROFILE') : null,

@@ -57,6 +57,17 @@ export function modelIdsOf(csv: string): string[] {
   return normalized === NO_MODEL ? [] : normalized.split(',');
 }
 
+/** 既存の並び順（先頭の選択中モデル）を保ったまま、CLI から取得した未登録モデルを後ろへ加える */
+export function mergeDiscoveredModels(currentCsv: string, discovered: string[]): string {
+  const existing = modelIdsOf(currentCsv);
+  const next = [...existing];
+  for (const id of discovered) {
+    const clean = id.trim();
+    if (clean && clean !== NO_MODEL && !next.includes(clean)) next.push(clean);
+  }
+  return next.join(',') || NO_MODEL;
+}
+
 // ── 状態（全パネル共通） ─────────────────────────────────────────────────────
 
 const modelNames: Record<AiChatProviderName, string> = {

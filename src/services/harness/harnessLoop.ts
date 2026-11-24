@@ -10,7 +10,9 @@ import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { readProjectStatus, setProjectState, type ProjectState } from '../../utils/thinkFormat';
 import { appendHarnessChatTurn, ensureHarnessChat } from './harnessChat';
+import type { PanelRoleKey } from '../../../shared/domainProfile';
 import { requestHarnessReply, runHarnessTurn, type HarnessRequestReply, type HarnessTurnStage } from './harnessRun';
+import type { HarnessCliName } from './harnessRoles';
 import { runTeam } from './harnessTeam';
 import { boardRowLabel } from './harnessBoard';
 
@@ -49,7 +51,10 @@ export function lockedByOther(project: TTThink, nowMs = Date.now()): boolean {
 export interface StartHarnessLoopOptions {
   /** chat からの発言。状態の変更で起動したときは省略 */
   userMessage?: string;
-  trigger: 'state' | 'chat';
+  trigger: 'state' | 'chat' | 'schedule';
+  cliName?: HarnessCliName;
+  model?: string;
+  panelRole?: PanelRoleKey;
   requestReply?: HarnessRequestReply;
   maxTurns?: number;
   aiWriteWaitMs?: number;
@@ -149,6 +154,9 @@ class HarnessLoopManager {
           vault, projectId,
           ...(first && options.userMessage ? { userMessage: options.userMessage } : {}),
           ...(first && !options.userMessage && options.trigger === 'state' ? { chatQuestion: '（開始）状態を「進行中」にしました' } : {}),
+          ...(options.cliName ? { cliName: options.cliName } : {}),
+          ...(options.model ? { model: options.model } : {}),
+          ...(options.panelRole ? { panelRole: options.panelRole } : {}),
           ...(options.requestReply ? { requestReply: options.requestReply } : {}),
           ...(options.aiWriteWaitMs !== undefined ? { aiWriteWaitMs: options.aiWriteWaitMs } : {}),
           onStage: stage => { status.stage = stage; this.notify(); },
@@ -160,6 +168,8 @@ class HarnessLoopManager {
           this.notify();
           const rows = await runTeam({
             vault, project, team: result.team, requestReply: options.requestReply ?? requestHarnessReply,
+            ...(options.cliName ? { defaultCliName: options.cliName } : {}),
+            ...(options.model ? { defaultModel: options.model } : {}),
             onProgress: running => { status.teamRunning = running; this.notify(); },
           });
           status.teamRunning = 0;

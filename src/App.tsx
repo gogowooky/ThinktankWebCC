@@ -9,7 +9,8 @@ import { useEffect } from 'react'
 import { AppLayout } from './components/Layout/AppLayout'
 import { TTModels } from './models/TTModels'
 import { TTApplication } from './views/TTApplication'
-import { TTUIStateManager } from './views/TTUIStateManager'
+import { TTUIStateManager, type ConfigKey } from './views/TTUIStateManager'
+import { getModelNames, mergeDiscoveredModels, NO_MODEL } from './services/aiChatModelStatus'
 import { TTShortcutManager } from './views/TTShortcutManager'
 import { registerFocusedPanelActions } from './views/TTFocusedPanelActions'
 import { getFocusName } from './utils/getFocusName'
@@ -20,6 +21,8 @@ import { onSaveStatusChange } from './services/storage/saveStatus'
 import { perfMark } from './utils/perfLog'
 import { preloadTextEditor } from './components/WorkingPanel/media/LazyTextEditorMedia'
 import { startHarnessWatcher } from './services/harness/harnessWatcher'
+import { startHarnessScheduler } from './services/harness/harnessSchedule'
+import { resolveHarnessCliFromProvider } from './services/harness/harnessRun'
 
 export default function App() {
   useEffect(() => {
@@ -49,6 +52,21 @@ export default function App() {
         if (ui.getProperty('TextEditor.WordWrap.IsVisible') !== 'true') {
           ui.applyProperty('TextEditor.WordWrap.IsVisible', 'true')
         }
+      }
+
+      // 初回のみ（OpenAI/Gemini/Claude のいずれかが未設定のときだけ）バックグラウンドで最新モデルを自動入力する
+      const listModels = window.electronAPI?.ai?.listModels
+      const autoFillTargets = (['OpenAI', 'Gemini', 'Claude'] as const).filter(p => getModelNames(p) === NO_MODEL)
+      if (listModels && autoFillTargets.length > 0) {
+        void listModels().then(found => {
+          const entries: [ConfigKey, string][] = []
+          for (const p of autoFillTargets) {
+            if (getModelNames(p) !== NO_MODEL) continue
+            const merged = mergeDiscoveredModels(NO_MODEL, found[p] ?? [])
+            if (merged !== NO_MODEL) entries.push([`AIChat.ModelNames.${p}`, merged])
+          }
+          if (entries.length > 0) TTUIStateManager.instance.applyProperties(entries, false)
+        }).catch(() => {})
       }
     })
 
@@ -116,8 +134,25 @@ export default function App() {
       })()
     })
 
-    // AIハーネス: 状態を「進行中」にして保存した project のループを始める。AI CLI を動かせる PC版だけ
-    const stopHarnessWatcher = window.electronAPI?.ai?.conversation ? startHarnessWatcher(vault) : undefined
+    // AIハーネス: 状態を「進行中」にして保存した project の監視と、# 条件 の定刻起動。AI CLI を動かせる PC版だけ
+    const resolveHarnessStartOptions = (projectId: string) => {
+      const isThinktank = app.ThinktankPanel.ProjectID === projectId;
+      const providerName = isThinktank ? app.ThinktankPanel.AIChatProviderName : app.SeedsPanel.AIChatProviderName;
+      try {
+        return {
+          ...resolveHarnessCliFromProvider(providerName),
+          panelRole: (isThinktank ? 'Thinktank' : 'Seeds') as 'Thinktank' | 'Seeds',
+        };
+      } catch {
+        return { panelRole: (isThinktank ? 'Thinktank' : 'Seeds') as 'Thinktank' | 'Seeds' };
+      }
+    }
+    const stopHarnessWatcher = window.electronAPI?.ai?.conversation ? startHarnessWatcher(vault, {
+      resolveStartOptions: resolveHarnessStartOptions,
+    }) : undefined
+    const stopHarnessScheduler = window.electronAPI?.ai?.conversation ? startHarnessScheduler(vault, {
+      resolveStartOptions: resolveHarnessStartOptions,
+    }) : undefined
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       void flushAllPanes()
@@ -201,6 +236,7 @@ export default function App() {
       document.removeEventListener('visibilitychange', handleFlushOnHide)
       unsubscribeMcpMutated?.()
       stopHarnessWatcher?.()
+      stopHarnessScheduler?.()
       delete window.__ttHasUnsavedChanges
       delete window.__ttIsThinkDirty
       delete window.__ttFlushAllSaves

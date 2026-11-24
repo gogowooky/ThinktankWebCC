@@ -292,6 +292,8 @@ class VaultEngine {
       preferredCli: 'claude',
       preferredModel: '',
       activeProfileId: shared.DEFAULT_DOMAIN_PROFILE_ID,
+      workspaceGasUrl: '',
+      workspaceGasToken: '',
     };
     let config = base;
     let shouldPersist = false;

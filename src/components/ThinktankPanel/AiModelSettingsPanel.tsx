@@ -5,8 +5,8 @@
  */
 
 import { useCallback, useEffect, useReducer, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { TTUIStateManager } from '../../views/TTUIStateManager';
-import { getModelNames, modelIdsOf, normalizeModelNames, onModelNamesChange, type AiChatProviderName } from '../../services/aiChatModelStatus';
+import { TTUIStateManager, type ConfigKey } from '../../views/TTUIStateManager';
+import { getModelNames, mergeDiscoveredModels, modelIdsOf, normalizeModelNames, onModelNamesChange, type AiChatProviderName } from '../../services/aiChatModelStatus';
 import { geminiNotebookUrl } from '../../services/chatAiSetting';
 import type { ElectronAiAuthStatus, ElectronAiProviderAuthStatus } from '../../services/storage/ElectronStorageBackend';
 
@@ -200,7 +200,40 @@ export function AiModelSettingsPanel() {
   const [, rerender] = useReducer((x: number) => x + 1, 0);
   const [authStatus, setAuthStatus] = useState<ElectronAiAuthStatus>(DEFAULT_AUTH_STATUS);
   const [gnbRefreshCount, setGnbRefreshCount] = useState(0);
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverMessage, setDiscoverMessage] = useState<string | null>(null);
   useEffect(() => onModelNamesChange(rerender), []);
+
+  const handleDiscoverModels = useCallback(async () => {
+    const listModels = window.electronAPI?.ai?.listModels;
+    if (!listModels || discovering) return;
+    setDiscovering(true);
+    setDiscoverMessage('各 CLI から最新モデルを取得しています…');
+    try {
+      const found = await listModels();
+      const entries: [ConfigKey, string][] = [];
+      let addedCount = 0;
+      for (const p of ['OpenAI', 'Gemini', 'Claude'] as const) {
+        const current = getModelNames(p);
+        const merged = mergeDiscoveredModels(current, found[p] ?? []);
+        if (merged !== current) {
+          addedCount += modelIdsOf(merged).length - modelIdsOf(current).length;
+          entries.push([`AIChat.ModelNames.${p}`, merged]);
+        }
+      }
+      if (entries.length > 0) {
+        TTUIStateManager.instance.applyProperties(entries);
+        setDiscoverMessage(`最新のモデル候補を反映しました（${addedCount}件追加）。`);
+      } else {
+        const total = (found.OpenAI?.length ?? 0) + (found.Gemini?.length ?? 0) + (found.Claude?.length ?? 0);
+        setDiscoverMessage(total > 0 ? 'すでに最新のモデル候補が登録されています。' : 'CLI からモデル候補を取得できませんでした。');
+      }
+    } catch (err) {
+      setDiscoverMessage(`取得に失敗しました: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setDiscovering(false);
+    }
+  }, [discovering]);
 
   const refreshAuthStatus = useCallback(async () => {
     const getAuthStatus = window.electronAPI?.ai?.getAuthStatus;
@@ -249,8 +282,25 @@ export function AiModelSettingsPanel() {
     }
   }, [refreshAuthStatus]);
 
+  const canDiscover = typeof window !== 'undefined' && !!window.electronAPI?.ai?.listModels;
+
   return (
     <div className="tt-ai-models">
+      {canDiscover && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
+          <span style={{ fontSize: 'calc(10.5px * var(--tt-font-scale, 1))', opacity: 0.8 }} role="status" aria-live="polite">
+            {discoverMessage ?? 'APIキー不要で各CLIから候補を取得'}
+          </span>
+          <button
+            type="button"
+            disabled={discovering}
+            onClick={() => void handleDiscoverModels()}
+            style={{ padding: '4px 8px', fontSize: 'calc(11px * var(--tt-font-scale, 1))', cursor: discovering ? 'wait' : 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {discovering ? '取得中…' : '最新モデルを取得'}
+          </button>
+        </div>
+      )}
       {PROVIDERS.map(p => (
         <ProviderModels
           key={p.name}

@@ -22,8 +22,10 @@ const CHILD = '2026-10-31-000002';
 const MEMO_IN = '2026-10-31-000003';
 const OTHER = '2026-10-31-000004';
 
-function add(id: string, contentType: ContentType, content: string) {
-  const t = new TTThink(); t.ID = id; t.ContentType = contentType; t.Content = content; t.markSaved();
+function add(id: string, contentType: ContentType, content: string, metadata?: Record<string, unknown>) {
+  const t = new TTThink(); t.ID = id; t.ContentType = contentType; t.Content = content;
+  if (metadata) { t.Metadata = metadata; t.markMetadataSaved(); }
+  t.markSaved();
   TTApplication.Instance.Models.Vault.AddItem(t);
 }
 
@@ -34,7 +36,7 @@ beforeEach(() => {
   vault.IsLoaded = true;
   vault.LoadError = null;
   add(PROJECT, 'project', `親P\n=\n# 対象\n[project:${CHILD}]\n[memo:${MEMO_IN}]`);
-  add(CHILD, 'project', '子P\n=');
+  add(CHILD, 'project', '子P\n=', { parentProjectid: PROJECT });
   add(MEMO_IN, 'memo', '配下メモ');
   add(OTHER, 'project', '無関係P\n=');
 });
@@ -65,4 +67,18 @@ it('Think一覧でprojectを開くとプロジェクトにロードし、一覧�
   // ロードを外すと全体に戻る
   await act(async () => app.ThinktankPanel.ClearProject());
   await vi.waitFor(() => expect(rowTexts()).toContain('無関係P'));
+});
+
+it('parentProjectid を持つ子 project はツリー配下にのみ表示され、ルートには重複表示されない', async () => {
+  const app = TTApplication.Instance;
+  await act(async () => root.render(<ThinktankArea app={app} layoutMode="sipoc" onLayoutModeChange={() => {}} onRefresh={() => {}} />));
+  // childProjectMap の非同期構築完了後、子P は親P の配下に1回だけ表示される
+  await vi.waitFor(() => {
+    const childRows = [...host.querySelectorAll('.thoughts-list__row')].filter(r => r.textContent?.includes('子P'));
+    expect(childRows).toHaveLength(1);
+    expect(childRows[0].getAttribute('style')).toContain('padding-left: 24px');
+  });
+  const parentRows = [...host.querySelectorAll('.thoughts-list__row')].filter(r => r.textContent?.includes('親P'));
+  expect(parentRows).toHaveLength(1);
+  expect(parentRows[0].getAttribute('style')).toContain('padding-left: 8px');
 });

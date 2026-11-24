@@ -4,7 +4,7 @@
  */
 
 import { useMemo, useEffect, useRef, useState, useCallback } from 'react';
-import { flattenThinkTree } from '../../utils/thinkTree';
+import { flattenThinkTree, selectTreeRoots } from '../../utils/thinkTree';
 import { ThoughtsList, applyFilter } from './ThoughtsList';
 import type { TTThink } from '../../models/TTThink';
 import type { ColumnConfig } from './ColumnSortDialog';
@@ -65,9 +65,10 @@ export function ThinktankFilterView({
     });
   }, []);
 
-  // 子は絞り込み条件にかけず、親が含んでいるものをすべて出す
+  // 子は絞り込み条件にかけず、親が含んでいるものをすべて出す。
+  // parentProjectid を持ち、その親が現在の一覧内で子として展開される project はルート行に出さない
   const tree = useMemo(
-    () => (childrenOf ? flattenThinkTree(filtered, childrenOf, collapsed) : null),
+    () => (childrenOf ? flattenThinkTree(selectTreeRoots(filtered, childrenOf), childrenOf, collapsed) : null),
     [filtered, childrenOf, collapsed],
   );
   const rows = tree?.thinks ?? filtered;

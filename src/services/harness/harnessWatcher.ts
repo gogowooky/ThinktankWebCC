@@ -8,7 +8,7 @@
 
 import type { TTVault } from '../../models/TTVault';
 import { isHarnessProject, readProjectStatus } from '../../utils/thinkFormat';
-import { HarnessLoop, lockedByOther } from './harnessLoop';
+import { HarnessLoop, lockedByOther, type StartHarnessLoopOptions } from './harnessLoop';
 import { maybeRunHarnessDoctor } from './harnessDoctor';
 import { maybeRunWeeklyReview } from './harnessReviewTrigger';
 
@@ -17,6 +17,8 @@ const DEBOUNCE_MS = 300;
 export interface HarnessWatcherOptions {
   /** テスト用。省略時は HarnessLoop.start */
   start?: (projectId: string) => void;
+  /** 状態「進行中」から自動起動するときの CLI・パネル設定を解決する */
+  resolveStartOptions?: (projectId: string) => Partial<StartHarnessLoopOptions>;
   /** テスト用。省略時は期限が来ていれば点検する */
   doctor?: () => void;
   /** テスト用。省略時は期限が来ていれば週次の見直しを始める */
@@ -26,7 +28,10 @@ export interface HarnessWatcherOptions {
 
 export function startHarnessWatcher(vault: TTVault, options: HarnessWatcherOptions = {}): () => void {
   const seen = new Map<string, string>();
-  const start = options.start ?? (projectId => { void HarnessLoop.start(vault, projectId, { trigger: 'state' }); });
+  const start = options.start ?? (projectId => {
+    const extra = options.resolveStartOptions?.(projectId);
+    void HarnessLoop.start(vault, projectId, { trigger: 'state', ...extra });
+  });
   const doctorOnly = options.doctor ?? (() => { void maybeRunHarnessDoctor(vault); });
   const review = options.review ?? (() => { void maybeRunWeeklyReview(vault); });
   const doctor = () => { doctorOnly(); review(); };

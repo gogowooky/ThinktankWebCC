@@ -15,7 +15,7 @@ import type { ThinkMeta } from '../services/storage/IStorageBackend';
 import { StorageManager } from '../services/storage/StorageManager';
 import { perfMark } from '../utils/perfLog';
 import { isFirebaseSignInRequiredError } from '../platform/web/FirebaseAuthService';
-import { PARENT_PROJECT_ID_KEY, parseProject, projectTargetIds, serializeProject, targetsAllThinks, updateProjectTargets } from '../utils/thinkFormat';
+import { PARENT_PROJECT_ID_KEY, PROJECT_TITLE_PLACEHOLDER, parseProject, projectTargetIds, serializeProject, targetsAllThinks, updateProjectTargets } from '../utils/thinkFormat';
 import { fetchLinkTitle } from '../services/linkTitleService';
 import { createLinkFile, linkTargetKey, parseLinkFile, serializeLinkFile, type LinkSource } from '../utils/linkFormat';
 import { emptyThinkValues, readThinkSupport, type ThinkSupportRecord } from '../../shared/contracts/thinkSupportRecord';
@@ -469,7 +469,7 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
    * 規定フォーマットのテンプレート Project ファイルを作成して保存する。
    * parentProjectId を渡すと、その Project の # 対象 に新しい Project を載せる（配下に作る）。
    */
-  public CreateProject(title: string = '新規プロジェクト', parentProjectId?: string): Promise<TTThink> {
+  public CreateProject(title: string = PROJECT_TITLE_PLACEHOLDER, parentProjectId?: string): Promise<TTThink> {
     return this._createProject({ title, ...(parentProjectId ? { parentProjectId } : {}) });
   }
 

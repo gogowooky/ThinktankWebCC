@@ -15,7 +15,8 @@ vi.mock('../../services/storage/StorageManager', () => ({ StorageManager: { inst
 import { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { firstHarnessId, parseProject, readProjectStatus } from '../../utils/thinkFormat';
-import { readHarnessDirective, runHarnessTurn, type HarnessAiResponse } from './harnessRun';
+import { readHarnessDirective, resolveHarnessCliFromProvider, runHarnessTurn, type HarnessAiResponse } from './harnessRun';
+import { setModelNames } from '../aiChatModelStatus';
 import { HarnessLoop } from './harnessLoop';
 import { startHarnessWatcher } from './harnessWatcher';
 import { buildHarnessMessage, collectHarnessContext } from './harnessContext';
@@ -31,7 +32,8 @@ async function setupProject(extra = '') {
   const project = await vault.CreateProjectFromIds([memo.ID]);
   project.Content = project.Content
     .replace(/^[^\n]*/, '朝の秘書業務')
-    .replace('# 条件', `# 規約\n決まったことは冒頭に書く\n完了条件: 朝の報告を出す${extra}\n# 条件\nclaude`);
+    .replace('# 規約\n（目的と完了条件を書いてください）', `# 規約\n決まったことは冒頭に書く\n完了条件: 朝の報告を出す${extra}`)
+    .replace('# 条件\n（使用するAIや条件があれば書いてください。例: AI: Claude）', '# 条件\nclaude');
   await project.SaveContent();
   return project;
 }
@@ -86,6 +88,7 @@ it('1回の実行: AIWork と chat を用意し、書き込みを3つの AIWork 
   expect(log.Content).toContain(`- 変更したThink: [aiwork:${ids[1]}]`);
 
   const chat = vault.GetThink(result.chatId)!;
+  expect(chat.Name).toBe('朝の秘書業務｜chat');
   expect(parseProject(project.Content).aiDiscussionIds).toEqual([chat.ID]);
   expect(chat.Metadata.taskContext).toEqual({ schemaVersion: 1, bundleId: project.ID });
   expect(chat.Content).toContain('## 始めて');
@@ -125,7 +128,9 @@ it('規約は root から子へ連結し、PROFILE は祖先のものを使う',
   const root = await vault.CreateProjectFromIds([]);
   const profile = await vault.CreateAiViewThink('Thinktank｜PROFILE');
   profile.Content = 'Thinktank｜PROFILE\n- 判断が要るものを先に知らせる'; await profile.SaveContent();
-  root.Content = root.Content.replace(/^[^\n]*/, 'Thinktank').replace('# 条件', `# 規約\n共通の働き方\n# PROFILE\n[aiwork:${profile.ID}]\n# 条件`);
+  root.Content = root.Content
+    .replace(/^[^\n]*/, 'Thinktank')
+    .replace('# 規約\n（目的と完了条件を書いてください）', `# 規約\n共通の働き方\n# PROFILE\n[aiwork:${profile.ID}]`);
   await root.SaveContent();
   const project = await setupProject();
   const [log, status, decision] = await Promise.all(['L', 'S', 'D'].map(t => vault.CreateAiViewThink(t)));
@@ -177,6 +182,8 @@ it('監視: ハーネスの project が保存された内容で「進行中」�
   try {
     const project = await setupProject();
     const plain = await vault.CreateProjectFromIds([]);
+    plain.Content = '通常プロジェクト\n=\n# 状態\n未着手';
+    await plain.SaveContent();
     const start = vi.fn();
     const stop = startHarnessWatcher(vault, { start, doctor: vi.fn(), review: vi.fn(), debounceMs: 0 });
 
@@ -199,4 +206,39 @@ it('監視: ハーネスの project が保存された内容で「進行中」�
   } finally {
     vi.useRealTimers();
   }
+});
+
+it('パネルの Default AI（resolveHarnessCliFromProvider）を cliName・model に変換し、GNB/Local は拒否する', () => {
+  setModelNames('OpenAI', 'gpt-5.6');
+  setModelNames('Gemini', 'None');
+  expect(resolveHarnessCliFromProvider('OpenAI')).toEqual({ cliName: 'codex', model: 'gpt-5.6' });
+  expect(resolveHarnessCliFromProvider('Gemini')).toEqual({ cliName: 'antigravity' });
+  expect(resolveHarnessCliFromProvider('Claude')).toEqual({ cliName: 'claude' });
+  expect(() => resolveHarnessCliFromProvider('GNB')).toThrow(/Claude・ChatGPT・Gemini/);
+  expect(() => resolveHarnessCliFromProvider('Local')).toThrow(/Claude・ChatGPT・Gemini/);
+});
+
+it('cliName・model・panelRole が payload に渡され、project の # 条件 があればそちらを優先する', async () => {
+  const project = await setupProject();
+  const req1 = aiWrites(project);
+  await runHarnessTurn({
+    vault, projectId: project.ID, userMessage: '確認', cliName: 'codex', model: 'gpt-5.6', panelRole: 'Working',
+    requestReply: req1, now: NOW, aiWriteWaitMs: 0,
+  });
+  const payload1 = (req1.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+  expect(payload1.cliName).toBe('codex');
+  expect(payload1.model).toBe('gpt-5.6');
+  expect(payload1.panelRole).toBe('Working');
+
+  project.Content = project.Content.replace('# 条件\nclaude', '# 条件\nAI: Gemini\nモデル: gemini-2.5-pro');
+  await project.SaveContent();
+  const req2 = aiWrites(project);
+  await runHarnessTurn({
+    vault, projectId: project.ID, userMessage: '次へ', cliName: 'codex', model: 'gpt-5.6', panelRole: 'Thinktank',
+    requestReply: req2, now: NOW, aiWriteWaitMs: 0,
+  });
+  const payload2 = (req2.mock.calls[0] as unknown as [Record<string, unknown>])[0];
+  expect(payload2.cliName).toBe('antigravity');
+  expect(payload2.model).toBe('gemini-2.5-pro');
+  expect(payload2.panelRole).toBe('Thinktank');
 });

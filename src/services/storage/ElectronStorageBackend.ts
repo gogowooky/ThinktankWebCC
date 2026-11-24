@@ -197,6 +197,7 @@ declare global {
       ai?: {
         getStatus:    () => Promise<ElectronAiStatus>;
         getAuthStatus?: () => Promise<ElectronAiAuthStatus>;
+        listModels?:   () => Promise<{ OpenAI: string[]; Gemini: string[]; Claude: string[] }>;
         login?:        (provider: ElectronAiAuthProvider) => Promise<{ started: boolean; loginUrl: string }>;
         getGnbNotebookTitle?: (notebookId: string) => Promise<string>;
         onAuthChanged?: (callback: (payload: { provider?: ElectronAiAuthProvider }) => void) => () => void;

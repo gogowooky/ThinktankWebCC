@@ -11,7 +11,7 @@ import type { TTVault } from '../../models/TTVault';
 import type { TTThink } from '../../models/TTThink';
 import { formatLocalDate } from '../../utils/aiViewFormat';
 import {
-  PROJECT_RULES_HEADING, isHarnessProject, isRootProjectTitle, parseProject, projectHarnessIds,
+  PROJECT_RULES_HEADING, PROJECT_RULES_PLACEHOLDER, isHarnessProject, isRootProjectTitle, parseProject, projectHarnessIds,
 } from '../../utils/thinkFormat';
 import { ensureRootHarness, findRootProject } from './harnessRoot';
 
@@ -109,7 +109,7 @@ export async function ensureReviewProject(vault: TTVault): Promise<TTThink> {
   project.Metadata = { ...project.Metadata, [REVIEW_METADATA_KEY]: true };
   project.Content = project.Content
     .replace('# 見通し\n未設定', '# 見通し\nエリア')
-    .replace('# 条件', `# ${PROJECT_RULES_HEADING}\n${REVIEW_RULES}\n# 条件`);
+    .replace(`# ${PROJECT_RULES_HEADING}\n${PROJECT_RULES_PLACEHOLDER}`, `# ${PROJECT_RULES_HEADING}\n${REVIEW_RULES}`);
   await project.SaveContent();
   vault.NotifyUpdated(false);
   return project;

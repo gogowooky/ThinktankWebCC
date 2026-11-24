@@ -828,7 +828,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       const projectId = app.SeedsPanel?.ProjectID || undefined;
       try {
         const think = contentType === 'project'
-          ? await vault.CreateProject('新規プロジェクト', projectId)
+          ? await vault.CreateProject(undefined, projectId)
           : await vault.CreateBlankThink(contentType, NEW_FILE_TITLES[contentType] ?? `新規${contentType}`, projectId);
         area.OpenThink(think.ID, area.MediaType, think.Name);
         notifyFileHistory();

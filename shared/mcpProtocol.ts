@@ -132,6 +132,7 @@ export interface McpBackendAdapter {
     totalPendingCandidates: number;
   }>;
   getDomainProfile(profileId?: string): Promise<DomainProfile>;
+  callGoogleWorkspace?(kind: string, params: Record<string, unknown>): Promise<Record<string, unknown>>;
 }
 
 export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
@@ -403,6 +404,167 @@ export const THINKTANK_MCP_TOOLS: readonly McpToolDefinition[] = [
         },
       },
       required: ['projectId', 'candidates'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'thinktank_google_gmail_search',
+    description:
+      '利用者の Gmail を読み取り専用で検索し、スレッド一覧（threadId・件名・差出人・日時・スニペット・URL）を返す。メール送信や削除はできない。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Gmail 検索クエリ（例: "newer_than:2d", "is:unread", "from:example.com"。省略時は "newer_than:3d"）',
+        },
+        limit: {
+          type: 'number',
+          description: '最大取得件数（既定: 20、最大: 50）',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'thinktank_google_gmail_read',
+    description:
+      '指定した threadId の Gmail スレッド本文を読み取り専用で取得する。件名だけで判断せず本文と照合するために使う。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        threadId: {
+          type: 'string',
+          description: 'thinktank_google_gmail_search で取得した threadId',
+        },
+        maxChars: {
+          type: 'number',
+          description: '1メッセージあたりの本文最大文字数（既定: 6000、最大: 12000）',
+        },
+      },
+      required: ['threadId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'thinktank_google_calendar_events',
+    description:
+      '利用者の Google カレンダーから指定期間の予定一覧を読み取り専用で取得する。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        startIso: {
+          type: 'string',
+          description: '開始日時の ISO8601 文字列（省略時は今日の 00:00）',
+        },
+        endIso: {
+          type: 'string',
+          description: '終了日時の ISO8601 文字列（省略時は開始から 7 日後）',
+        },
+        limit: {
+          type: 'number',
+          description: '最大取得件数（既定: 30、最大: 50）',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'thinktank_google_tasks_list',
+    description:
+      '利用者の Google Tasks（ToDo）のリストとタスク一覧を読み取り専用で取得する。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        includeCompleted: {
+          type: 'boolean',
+          description: '完了済みタスクも含めるか（既定: false）',
+        },
+        limit: {
+          type: 'number',
+          description: '1リストあたりの最大取得件数（既定: 50、最大: 50）',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'thinktank_google_drive_search',
+    description:
+      '利用者の Google ドライブからファイルを検索して一覧（id・名前・mimeType・更新日時・URL）を返す。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: {
+          type: 'string',
+          description: 'ファイル名・本文の検索キーワード（省略時は直近ファイル）',
+        },
+        folderId: {
+          type: 'string',
+          description: '特定のフォルダ配下に絞る場合の Google ドライブのフォルダ ID（任意）',
+        },
+        limit: {
+          type: 'number',
+          description: '最大取得件数（既定: 20、最大: 50）',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'thinktank_google_drive_read',
+    description:
+      'Google ドライブの指定ファイル（Google ドキュメント・スプレッドシート・テキスト/Markdown/JSON）の内容を読み取る。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fileId: {
+          type: 'string',
+          description: '読み取る Google ドライブの fileId',
+        },
+        maxChars: {
+          type: 'number',
+          description: '最大読み取り文字数（既定: 10000、最大: 12000）',
+        },
+      },
+      required: ['fileId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'thinktank_google_drive_write',
+    description:
+      'Google ドライブにファイルを作成または更新・追記する（削除は不可）。既存ファイル更新時は fileId、新規作成時は name（任意で folderId・format）を指定する。',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        fileId: {
+          type: 'string',
+          description: '既存ファイルを更新・追記する場合の fileId（省略時は新規作成）',
+        },
+        name: {
+          type: 'string',
+          description: '新規作成時のファイル名（fileId 省略時は必須）',
+        },
+        folderId: {
+          type: 'string',
+          description: '新規作成時の保存先フォルダ ID（省略時はマイドライブ直下）',
+        },
+        format: {
+          type: 'string',
+          enum: ['text', 'google_doc'],
+          description: '新規作成時の形式（text または google_doc。既定: text）',
+        },
+        content: {
+          type: 'string',
+          description: '書き込む本文テキスト',
+        },
+        append: {
+          type: 'boolean',
+          description: '既存ファイル更新時に末尾へ追記するか（既定: false = 上書き）',
+        },
+      },
+      required: ['content'],
       additionalProperties: false,
     },
   },
@@ -853,6 +1015,47 @@ export async function executeMcpToolCall(
           results,
         };
         return formatToolResult(payload, registered === 0);
+      }
+
+      case 'thinktank_google_gmail_search':
+      case 'thinktank_google_gmail_read':
+      case 'thinktank_google_calendar_events':
+      case 'thinktank_google_tasks_list':
+      case 'thinktank_google_drive_search':
+      case 'thinktank_google_drive_read':
+      case 'thinktank_google_drive_write': {
+        const a = args ?? {};
+        if (typeof backend.callGoogleWorkspace !== 'function') {
+          return formatToolError(
+            'INTERNAL_ERROR',
+            'この実行環境では Google Workspace 連携（GAS）が有効になっていません。',
+          );
+        }
+        const kindMap: Record<string, string> = {
+          thinktank_google_gmail_search: 'gmail_search',
+          thinktank_google_gmail_read: 'gmail_read',
+          thinktank_google_calendar_events: 'calendar_events',
+          thinktank_google_tasks_list: 'tasks_list',
+          thinktank_google_drive_search: 'drive_search',
+          thinktank_google_drive_read: 'drive_read',
+          thinktank_google_drive_write: 'drive_write',
+        };
+        if (name === 'thinktank_google_gmail_read' && (!a.threadId || typeof a.threadId !== 'string')) {
+          return formatToolError('INVALID_ARGUMENT', 'threadId は必須です。');
+        }
+        if (name === 'thinktank_google_drive_read' && (!a.fileId || typeof a.fileId !== 'string')) {
+          return formatToolError('INVALID_ARGUMENT', 'fileId は必須です。');
+        }
+        if (name === 'thinktank_google_drive_write') {
+          if (typeof a.content !== 'string') {
+            return formatToolError('INVALID_ARGUMENT', 'content（文字列）は必須です。');
+          }
+          if ((!a.fileId || typeof a.fileId !== 'string') && (!a.name || typeof a.name !== 'string')) {
+            return formatToolError('INVALID_ARGUMENT', '既存ファイル更新時は fileId、新規作成時は name が必要です。');
+          }
+        }
+        const result = await backend.callGoogleWorkspace(kindMap[name], a);
+        return formatToolResult(result, false);
       }
 
       default:

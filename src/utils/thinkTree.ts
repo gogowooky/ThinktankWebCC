@@ -6,12 +6,17 @@
  * 同じ Project が複数の親の下や最上位に出ることがあるため、行は ID ではなく経路（key）で区別する。
  */
 
-import { parseProject, targetsAllThinks } from './thinkFormat';
+import { PARENT_PROJECT_ID_KEY, parseProject, targetsAllThinks } from './thinkFormat';
 
 interface ProjectLike {
   ID: string;
   ContentType: string;
   Content: string;
+}
+
+export interface TreeRootCandidate {
+  ID: string;
+  Metadata?: Record<string, unknown>;
 }
 
 export interface ThinkTreeRow {
@@ -39,6 +44,44 @@ export function childProjectIds(project: ProjectLike, isProject: (id: string) =>
     if (id !== project.ID && !ids.includes(id) && isProject(id)) ids.push(id);
   }
   return ids;
+}
+
+/**
+ * Tree 表示の最上位（ルート）に並べる Think を選ぶ。
+ * Metadata.parentProjectid が設定されていて、その親が一覧内にあり実際に子として展開されるものは
+ * 親の下に表示されるため最上位から省く。
+ * 親が一覧にいない場合（親をロード中・検索中・親が状態フィルターで非表示等）や循環参照で
+ * どこからも辿れなくなる場合は最上位に残す。
+ */
+export function selectTreeRoots<T extends TreeRootCandidate>(
+  items: readonly T[],
+  childrenOf: (id: string) => readonly T[],
+): T[] {
+  const byId = new Set(items.map(t => t.ID));
+  const hasVisibleParent = (item: T): boolean => {
+    const raw = item.Metadata?.[PARENT_PROJECT_ID_KEY];
+    const parentId = typeof raw === 'string' ? raw.trim() : '';
+    if (!parentId || parentId === item.ID || !byId.has(parentId)) return false;
+    return childrenOf(parentId).some(child => child.ID === item.ID);
+  };
+
+  const roots = items.filter(item => !hasVisibleParent(item));
+
+  // 循環参照（A の親が B、B の親が A）などでどのルートからも到達できない項目が消えないよう補完する
+  const reachable = new Set<string>();
+  const mark = (id: string) => {
+    if (reachable.has(id)) return;
+    reachable.add(id);
+    for (const child of childrenOf(id)) mark(child.ID);
+  };
+  for (const root of roots) mark(root.ID);
+  for (const item of items) {
+    if (!reachable.has(item.ID)) {
+      roots.push(item);
+      mark(item.ID);
+    }
+  }
+  return roots;
 }
 
 /**

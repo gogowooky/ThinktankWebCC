@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { childProjectIds, cursorRowIndex, flattenThinkTree } from './thinkTree';
+import { childProjectIds, cursorRowIndex, flattenThinkTree, selectTreeRoots } from './thinkTree';
 
 const project = (ID: string, targets: string[]) => ({
   ID,
@@ -48,6 +48,52 @@ describe('flattenThinkTree', () => {
   it('閉じた行の子は出さない', () => {
     const tree = flattenThinkTree([t('A'), t('B')], childrenOf, new Set(['A']));
     expect(tree.rows.map(r => r.key)).toEqual(['A', 'B', 'B/C', 'B/A']);
+  });
+});
+
+describe('selectTreeRoots', () => {
+  const item = (ID: string, parentProjectid?: string) => ({
+    ID,
+    Metadata: parentProjectid ? { parentProjectid } : {},
+  });
+
+  it('parentProjectid を持ち親が一覧内で展開される project はルートから省く（3階層含む）', () => {
+    const A = item('A');
+    const B = item('B', 'A');
+    const C = item('C', 'B');
+    const D = item('D');
+    const map: Record<string, typeof A[]> = { A: [B], B: [C], C: [], D: [] };
+    const childrenOf = (id: string) => map[id] ?? [];
+
+    const roots = selectTreeRoots([A, B, C, D], childrenOf);
+    expect(roots.map(x => x.ID)).toEqual(['A', 'D']);
+
+    const tree = flattenThinkTree(roots, childrenOf, new Set());
+    expect(tree.rows.map(r => `${r.key}@${r.depth}`)).toEqual(['A@0', 'A/B@1', 'A/B/C@2', 'D@0']);
+  });
+
+  it('parentProjectid の親が一覧にいない場合や親の子として展開されない場合はルートに残す', () => {
+    const B = item('B', 'A');
+    const C = item('C', 'B');
+    const E = item('E'); // 例: # 対象 = * で子なし
+    const F = item('F', 'E');
+    const map: Record<string, typeof B[]> = { B: [C], C: [], E: [], F: [] };
+    const childrenOf = (id: string) => map[id] ?? [];
+
+    const roots = selectTreeRoots([B, C, E, F], childrenOf);
+    expect(roots.map(x => x.ID)).toEqual(['B', 'E', 'F']);
+  });
+
+  it('循環参照で全件がルートから落ちる場合も到達不能な項目を補完して消さない', () => {
+    const A = item('A', 'B');
+    const B = item('B', 'A');
+    const map: Record<string, typeof A[]> = { A: [B], B: [A] };
+    const childrenOf = (id: string) => map[id] ?? [];
+
+    const roots = selectTreeRoots([A, B], childrenOf);
+    expect(roots.map(x => x.ID)).toEqual(['A']);
+    const tree = flattenThinkTree(roots, childrenOf, new Set());
+    expect(tree.rows.map(r => `${r.key}@${r.depth}`)).toEqual(['A@0', 'A/B@1']);
   });
 });
 

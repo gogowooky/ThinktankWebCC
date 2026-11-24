@@ -120,8 +120,16 @@ export interface ProjectContent {
 
 export const PROJECT_AI_SUMMARY_HEADING = 'AIまとめ';
 export const PROJECT_AI_DISCUSSION_HEADING = 'AI議論';
+export const PROJECT_NOTEBOOK_HEADING = 'ノートブック名';
 /** このprojectと配下に適用する働き方（親から子の順に連結して使う）。自由記述 */
 export const PROJECT_RULES_HEADING = '規約';
+
+/** 新規 project 作成時に各欄へあらかじめ入れておく入力ガイド */
+export const PROJECT_TITLE_PLACEHOLDER = '（ここにタイトルを書いてください）';
+export const PROJECT_TARGET_PLACEHOLDER = '（読み取るThinkファイルを指定してください）';
+export const PROJECT_RULES_PLACEHOLDER = '（目的と完了条件を書いてください）';
+export const PROJECT_NOTEBOOK_PLACEHOLDER = '（調査に使うノートブック名またはIDを書いてください）';
+export const PROJECT_CONDITIONS_PLACEHOLDER = '（使用するAIや条件があれば書いてください。例: AI: Claude）';
 
 /**
  * AIハーネスの項目。見出し名＝項目名で、値は AIWork（ContentType は aiview）の参照タグ。
@@ -145,9 +153,6 @@ export const ROOT_PROJECT_TITLE = 'Thinktank';
 export function isRootProjectTitle(title: string): boolean {
   return title.trim() === ROOT_PROJECT_TITLE;
 }
-
-/** テンプレートに置くAIへの指示の見出し（旧 # プロンプト を目的別に分けたもの）。中身は自由記述 */
-export const PROJECT_PROMPT_HEADINGS = ['現状把握用プロンプト', '進捗把握用プロンプト', '実績把握用プロンプト'] as const;
 
 /**
  * Think ID とみなす形式。yyyy-MM-dd-HHmmss、および末尾サフィックス（AI 生成の -memo /
@@ -202,7 +207,7 @@ function projectSectionRange(lines: string[], name: string): { start: number; en
 /** 文書内の各見出しに対する値範囲。見出し間の自由記載は含めない。 */
 function projectValueRanges(lines: string[]): Array<{ start: number; end: number }> {
   const knownHeadings = new Set<string>([
-    '見通し', '状態', '対象', ...PROJECT_PROMPT_HEADINGS, '条件', PROJECT_AI_SUMMARY_HEADING, PROJECT_AI_DISCUSSION_HEADING,
+    '見通し', '状態', '対象', PROJECT_NOTEBOOK_HEADING, '条件', PROJECT_AI_SUMMARY_HEADING, PROJECT_AI_DISCUSSION_HEADING,
     PROJECT_RULES_HEADING, ...HARNESS_FIELDS,
   ]);
   const allHeadingIndexes = lines.flatMap((line, idx) => idx > 0 && /^#+\s+/.test(line.trim()) ? [idx] : []);
@@ -431,6 +436,8 @@ export interface ProjectCreateOptions {
   items?: ProjectTargetItem[];
   outlook?: ProjectOutlook;
   status?: ProjectState;
+  rules?: string;
+  notebookName?: string;
   conditions?: string;
   aiSummaryIds?: string[];
   aiDiscussionIds?: string[];
@@ -446,19 +453,21 @@ export function serializeProject(options: ProjectCreateOptions): string {
     : ids.map(id => formatProjectTargetLine({ id }));
 
   const lines: string[] = [
-    title,
+    title.trim() || PROJECT_TITLE_PLACEHOLDER,
     '=',
     '# 見通し',
     options.outlook ?? '未設定',
     '# 状態',
     options.status ?? '未着手',
     '# 対象',
-    ...targetLines,
-    ...PROJECT_PROMPT_HEADINGS.map(h => `# ${h}`),
+    ...(targetLines.length > 0 ? targetLines : [PROJECT_TARGET_PLACEHOLDER]),
+    `# ${PROJECT_RULES_HEADING}`,
+    options.rules ?? PROJECT_RULES_PLACEHOLDER,
+    `# ${PROJECT_NOTEBOOK_HEADING}`,
+    options.notebookName ?? PROJECT_NOTEBOOK_PLACEHOLDER,
     '# 条件',
-    ...(options.conditions ? [options.conditions] : []),
-    `# ${PROJECT_AI_SUMMARY_HEADING}`,
-    ...(options.aiSummaryIds ?? []).map(id => `[${AIWORK_TAG}:${id}]`),
+    options.conditions ?? PROJECT_CONDITIONS_PLACEHOLDER,
+    ...(options.aiSummaryIds?.length ? [`# ${PROJECT_AI_SUMMARY_HEADING}`, ...options.aiSummaryIds.map(id => `[${AIWORK_TAG}:${id}]`)] : []),
     `# ${PROJECT_AI_DISCUSSION_HEADING}`,
     ...(options.aiDiscussionIds ?? []).map(id => `[chat:${id}]`),
   ];
@@ -487,7 +496,7 @@ export function updateProjectTargets(content: string, items: ProjectTargetItem[]
   const range = projectSectionRange(lines, '対象');
   if (!range) {
     const insertBefore = new Set<string>([
-      ...PROJECT_PROMPT_HEADINGS, '条件', PROJECT_RULES_HEADING, ...HARNESS_FIELDS,
+      PROJECT_NOTEBOOK_HEADING, '条件', PROJECT_RULES_HEADING, ...HARNESS_FIELDS,
       PROJECT_AI_SUMMARY_HEADING, PROJECT_AI_DISCUSSION_HEADING,
     ]);
     const at = lines.findIndex((line, idx) => idx > 0 && [...insertBefore].some(name => new RegExp(`^#\\s+${name}\\s*$`).test(line.trim())));
@@ -513,7 +522,9 @@ export function updateProjectTargets(content: string, items: ProjectTargetItem[]
     const line = formatProjectTargetLine(item);
     return keepTag ? line.replace(/^\[[^:\]]*:/, `[${existing}:`) : line;
   };
-  const nonThinkLines = sectionLines.filter(l => l.trim() !== '' && !isProjectThinkLine(l));
+  const nonThinkLines = sectionLines.filter(
+    l => l.trim() !== '' && !isProjectThinkLine(l) && l.trim() !== PROJECT_TARGET_PLACEHOLDER,
+  );
   // 全ファイル対象の「*」は1行目にあることが意味を持つので、書き直しても先頭に残す
   const allMark = targetsAllThinks(content) ? [PROJECT_ALL_TARGETS_MARK] : [];
   const restLines = allMark.length ? nonThinkLines.filter(l => l.trim() !== PROJECT_ALL_TARGETS_MARK) : nonThinkLines;

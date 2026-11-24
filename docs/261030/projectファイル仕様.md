@@ -234,7 +234,7 @@ projectファイルに組み込まれた Think の metadata に、親となる p
   今の実行が終わったところで止まる。実行中は project の metadata に `harnessLock`（画面ごとのID・時刻）を付け、
   ほかの画面・PCでの二重起動を防ぐ（20分より古い印は無視）。
 - 1回の実行（`harnessRun.ts`）:
-  1. log・status・decision の AIWork と、会話を残す chat（タイトル `TASK:Seeds｜projectタイトル`、`# AI議論` と
+  1. log・status・decision の AIWork と、会話を残す chat（タイトル `projectタイトル｜chat`、`# AI議論` と
      chat の metadata `taskContext`・`harnessChat` で結ぶ）が無ければ作る。AIWork は書き換え前にスナップショットを残す。
   2. 文脈（`harnessContext.ts`）: root から対象までの `# 規約`（親→子）、最も近い祖先の PROFILE・INDEX、自分の projects・styles、
      `# 条件`・`# 対象`、status・decision の全文、log の直近3件、chat の直近10発言を渡す。
@@ -279,6 +279,7 @@ projectファイルに組み込まれた Think の metadata に、親となる p
 | 字数 | PROFILE・INDEX 3,000字、projects 5,000字、styles・knowledge 3,000字、INBOX 10,000字を超えた | WARN |
 | 鮮度 | 状態が進行中で status が7日以上未更新／projects が30日以上未更新 | WARN |
 | 実行 | 実行中の印（`harnessLock`）が20分以上残っている | WARN |
+| 定刻 | `# 条件` にある `定刻:` / `スケジュール:` 行が解釈できない書式 | WARN |
 | 原本 | `# AI議論` の chat が無い・別の project のハーネスの chat／ハーネスの chat が持ち主の `# AI議論` に載っていない（両方向） | WARN |
 | INDEX | INDEX に載っている AIWork が無い（NG）／項目の AIWork が INDEX に載っていない（WARN） | NG／WARN |
 | INBOX | 出典（参照タグか URL）の無い項目 | WARN |
@@ -324,6 +325,18 @@ projectファイルに組み込まれた Think の metadata に、親となる p
 - 週報の下書き: 週次の改善の AI が、log の今回の記録に「## 週報（下書き）」として1週間の要点を書く。
 - 日次一覧: 保存しない。root の projectファイルをロードしたときの AIChat に「日次一覧（今日の記録）」を出し、開いたときに
   その日のハーネスの log の記録を集めて表示する。
+
+### 6.6 定刻起動（`harnessSchedule.ts`、2026-11-23）
+
+- `# 条件` に `定刻: ...`（または `スケジュール: ...`）行を書いたハーネス project（`isHarnessProject`）を、PC版の `startHarnessScheduler` が自動で起動する（1分ごとの定期チェック・起動直後・Vault 読込後・スリープ復帰時に確認）。
+- 書式（ローカル時刻、複数行可）:
+  - `定刻: 毎日 08:00`（時刻のみの `定刻: 08:00` も毎日扱い）
+  - `定刻: 平日 08:00`（月〜金）／`定刻: 土日 09:00`（土日・週末）
+  - `定刻: 毎週 月水金 08:30`（曜日指定。`・` や `,` 区切りも可）
+  - `定刻: 毎月 1日 09:00`（1〜31日）
+- 対象状態: `# 状態` が `未着手` または `待機` の project だけ。定刻起動を止めたいときは `保留`・`完了`・`中止` にする。
+- 遅れて開いた場合（当日キャッチアップ）: 定刻を過ぎてからアプリを開いた場合も、当日の未実行スロットがあれば開いたタイミングで即時に1回だけ起動する（複数スロットが過ぎていても最新1件のみ）。
+- 二重起動防止: 起動時に project の metadata `harnessScheduleLastRun`（`{ slot: "yyyy-MM-dd HH:mm", at: ISO日時 }`）へ記録し、アプリ再起動や複数 PC 同期でも同じ定刻が重複実行されないようにする。
 
 ## 7. 廃止した項目と互換
 
