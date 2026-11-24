@@ -77,7 +77,9 @@ it('chat の会話と status を表示し、発言を送るとループを始め
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
   });
   await act(async () => { host.querySelector<HTMLButtonElement>('.ai-chat__send')!.click(); });
-  expect(start).toHaveBeenCalledWith(vault, PROJECT, { userMessage: '主催者に確認してください', trigger: 'chat' });
+  expect(start).toHaveBeenCalledWith(vault, PROJECT, {
+    userMessage: '主催者に確認してください', trigger: 'chat', cliName: 'claude', panelRole: 'Seeds',
+  });
 });
 
 it('未承認の訂正の提案を出し、承認・見送りを決められる', async () => {

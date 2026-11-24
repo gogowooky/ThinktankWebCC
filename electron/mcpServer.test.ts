@@ -58,7 +58,7 @@ describe('Thinktank MCP Server & Bridge (Step 1 - Step 3)', () => {
     fs.rmSync(tempRoot, { recursive: true, force: true });
   });
 
-  it('exposes the 8 governance-compliant MCP tools and initializes properly', async () => {
+  it('exposes the 8 Vault tools and 7 Google Workspace tools and initializes properly', async () => {
     const host = new ThinktankMcpHost({ vaultEngine });
 
     const initRes = await handleMcpJsonRpcMessage(
@@ -84,8 +84,15 @@ describe('Thinktank MCP Server & Bridge (Step 1 - Step 3)', () => {
       'thinktank_update_think',
       'thinktank_add_promotion_candidate',
       'thinktank_add_promotion_candidates',
+      'thinktank_google_gmail_search',
+      'thinktank_google_gmail_read',
+      'thinktank_google_calendar_events',
+      'thinktank_google_tasks_list',
+      'thinktank_google_drive_search',
+      'thinktank_google_drive_read',
+      'thinktank_google_drive_write',
     ]);
-    expect(THINKTANK_MCP_TOOLS).toHaveLength(8);
+    expect(THINKTANK_MCP_TOOLS).toHaveLength(15);
   });
 
   it('supports search, list_meta, get_record, and get_project_context tools', async () => {

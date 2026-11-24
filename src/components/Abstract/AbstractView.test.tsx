@@ -21,7 +21,7 @@ import { TTHarvestPanel } from '../../views/TTHarvestPanel';
 import { TTWorkingPanel } from '../../views/TTWorkingPanel';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { StorageManager } from '../../services/storage/StorageManager';
-import { parseProject, serializeProject } from '../../utils/thinkFormat';
+import { PROJECT_TITLE_PLACEHOLDER, parseProject, serializeProject } from '../../utils/thinkFormat';
 
 let host: HTMLDivElement, root: ReturnType<typeof createRoot>, vault: TTVault, view: TTProjectView;
 const ID = '2026-10-30-000001';
@@ -96,7 +96,7 @@ it('新規ボタンで規定フォーマットのprojectファイルを作成・
   expect(host.querySelector('[data-testid="texteditor"]')?.textContent).toBe(ttProjId);
   const ttCreated = vault.GetThink(ttProjId)!;
   expect(ttCreated.ContentType).toBe('project');
-  expect(ttCreated.Content).toBe(serializeProject({ title: '新規プロジェクト' }));
+  expect(ttCreated.Content).toBe(serializeProject({ title: PROJECT_TITLE_PLACEHOLDER }));
 
   // 2. Seeds>Project で新規作成
   await show('seeds');
@@ -114,7 +114,7 @@ it('新規ボタンで規定フォーマットのprojectファイルを作成・
     </div>
   ));
   const labels = [...host.querySelectorAll('.vertical-tab-bar__label')].map(el => el.textContent);
-  expect(labels).toEqual(['新規プロジェクト', '新規プロジェクト']);
+  expect(labels).toEqual([PROJECT_TITLE_PLACEHOLDER, PROJECT_TITLE_PLACEHOLDER]);
 
   // 4. Seeds で「クリア」→ Seeds のみ解除、Thinktank は残る
   await show('seeds');
@@ -183,7 +183,7 @@ it('projectをロード中に「新規」を押すと、その配下に規定の
   await act(async () => { host.querySelector<HTMLButtonElement>('[data-tip="新規"]')!.click(); });
   const childId = app.ThinktankPanel.ProjectID;
   expect(childId).not.toBe(ID);
-  expect(vault.GetThink(childId)!.Content).toBe(serializeProject({ title: '新規プロジェクト' }));
+  expect(vault.GetThink(childId)!.Content).toBe(serializeProject({ title: PROJECT_TITLE_PLACEHOLDER }));
   // ロード中だった project の本文に載り、親の記録も付く
   expect(parseProject(vault.GetThink(ID)!.Content).ids).toEqual([childId]);
   await vi.waitFor(() => expect(vault.GetThink(childId)!.Metadata.parentProjectid).toBe(ID));
