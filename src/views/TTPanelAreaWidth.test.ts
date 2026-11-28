@@ -2,7 +2,7 @@
 // jsdom を使う理由: TTUIStateManager / TTApplication が services/storage/apiClient を読み込み、
 // apiClient がモジュール評価時に `window` を参照するため（TTWorkingPanel.test.ts と同じ事情）。
 //
-// docs/Thinktank_Status-Action-Binding.md の
+// docs/status-action/ の各パネルのファイル（04〜08_Panel_*.md）の
 //   Status: <Panel>Panel.Area.OpenWidth （init|user|foredit）
 //   Action: FocusedPanel.Area.OpenWidth:Initial / :User / :ForEdit / :Toggle
 // の受け入れ確認。

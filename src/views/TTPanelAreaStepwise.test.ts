@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // jsdom を使う理由は TTPanelAreaWidth.test.ts と同じ（apiClient がモジュール評価時に window を参照する）。
 //
-// docs/Thinktank_Status-Action-Binding.md の
+// docs/status-action/04_Panel_Focused.md の
 //   Action: FocusedPanel.Area.OpenStepwise / FocusedPanel.Area.CloseStepwise
 // の受け入れ確認。設定エリアの見出し・<details> は実画面と同じクラス名の DOM を置いて代用する。
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -28,7 +28,7 @@ import type { TTApplication } from './TTApplication';
 import type { TTVault } from '../models/TTVault';
 import { parseTableContent, TableSection } from '../utils/tableFormat';
 
-import localStatusContent from '../../docs/Thinktank_Status-Action-Binding.md?raw';
+import { STATUS_ACTION_BINDING as localStatusContent } from './statusActionBinding';
 
 import { applySelection, type AiChatProviderName } from '../services/aiChatModelStatus';
 import { loadAiModelSelection } from '../services/aiModels';

@@ -7,6 +7,7 @@ Thinkの正本はFirestore、外部資料はGoogle Drive、ローカル`.md`は�
 
 ## 要件・仕様
 詳細は `docs/requirements.md` を参照。概念・差別化の軸は `docs/concept.md` を参照。
+Status（状態）と Action（操作）の仕様は `docs/status-action/` に領域ごとのファイルで置く（書式と AI への依頼の仕方は同フォルダの `README.md`）。番号付きのファイルはアプリが起動時に読み込むので、項目の書き方を崩さない。
 
 ## 開発環境の起動
 

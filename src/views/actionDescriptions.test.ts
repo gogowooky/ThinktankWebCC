@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { actionDescriptionFromDoc, parseActionDescriptions } from './actionDescriptions';
 import { TTActions } from './TTActions';
 
-describe('Action descriptions from Thinktank_Status-Action-Binding.md', () => {
+describe('Action descriptions from docs/status-action/', () => {
   it('takes the ActionID from the heading and the first description line of each Action section', () => {
     const map = parseActionDescriptions([
       '## Action：　261014　A.B:C',

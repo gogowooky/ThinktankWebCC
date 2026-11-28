@@ -1,6 +1,6 @@
 /**
  * aiChatModelStatus.ts
- * AIChat のモデル選択を Status 変数として持つ（docs/Thinktank_Status-Action-Binding.md の # Panel AIChat）。
+ * AIChat のモデル選択を Status 変数として持つ（docs/status-action/03_Panel_AIChat.md）。
  *
  *   AIChat.ModelNames.{Claude|OpenAI|Gemini|GNB|Local} … モデル ID（GNB は Notebook ID）の CSV。先頭が選択中
  *   {Panel}.AIChat.ModelName                       … そのパネルが使うプロバイダ名（各パネルが保持）
