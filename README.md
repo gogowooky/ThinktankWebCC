@@ -24,6 +24,13 @@ Web版からAI CLIを利用する場合は、提供側のElectron版でFirebase�
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.7.8 feat: ハーネス実行時間計測とAIChat参照開閉・検索条件欄へのThink D&D・ExMode短縮表記の廃止
+
+- 日付: 2026-11-28
+- コミット番号: 33a24ed
+
+ハーネスループの各段階（開始・記録準備・版の確認・文脈組み立て・AI依頼・検証・追記依頼・担当分担・終了）の実時間と、PC側の AI CLI 実行内訳（CLI検出・実行枠待ち・起動準備・CLI実行・MCPツールごとの回数/失敗数/累計・最長時間）を計測し、project ごとに保持するようにした。AIChat サブパネルの「直近の実行時間」で内訳を確認して JSON で保存でき、`npm run perf:harness` で集計・複数ファイルの差分比較ができる。AIChat の会話・現在地・日次一覧・共有ボード・改善提案に含まれる `[aiwork:ID]` などの参照タグをクリックすると、まだ一覧に載っていない Think でもストレージから1件読み込んで Working に開く（`TTVault.GetOrLoadThink`）。Think一覧の行を検索条件欄（タイトル・作成日・更新日・コンテンツ検索）へ D&D すると、入る値のゴーストを出したうえで対応する条件を反映し、タイトル・コンテンツ検索はその場で検索を確定する（更新日フィルタの判定もローカル日付に修正）。あわせて `ExMode:ExApp`・`ExMode:ExOpt`・`ExMode:None` の短縮表記を廃止して `Application.Status.ExMode:*` に統一し、`Thinktank_Status-Action-Binding.md` に `Thinktank.KeyFocused.*` の Status 仕様を追記した。型チェック成功、全テスト159ファイル・1050件成功。
+
 ### v2.7.7 feat: AIハーネスの定刻起動とGoogle Workspace連携（GAS）を追加する
 
 - 日付: 2026-11-24
