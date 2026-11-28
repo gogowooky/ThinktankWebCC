@@ -40,6 +40,8 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 - Express サーバー（`server/`・`dist-server/`）と Cloud Run は廃止済み。HTTP の API サーバーを新設しない
   - 例外: きなこ（クラウド側 AI）向けの MCP 入口 `electron/mcpHttpServer.cjs`（`POST /mcp`、既定OFF、localhost（127.0.0.1）のみ、PC別 Bearer トークン、ローカル運用モードでは起動しない）。これ以外の HTTP サーバーは作らない
 - Electronメインプロセスは `electron/main.cjs`。パッケージ版の画面は `app://thinktank/` から配信する
+  - IPC ハンドラーは窓口の種類ごとに `electron/ipc/<種類>Ipc.cjs`（例: `relay:*` は `relayIpc.cjs`）。新しい窓口は該当ファイルに足し、preload.cjs にも追加する（`electron/ipc/ipcHandlers.test.ts` が両者の一致を確かめる）
+  - ウィンドウの生成は `electron/mainWindow.cjs`、`app://` の配信と CSP は `electron/appProtocol.cjs`
 - 画面から OS・ファイルに触れる処理は preload（`electron/preload.cjs`）経由の IPC にする
 - Web版（Firebase Hosting）はFirestore正本を直接利用する。PC連携ON時だけFirestore経由のE2EE中継を使い、Drive APIは外部資料に限定する。デプロイは `npm run firebase:deploy`
 - GPU キャッシュエラー（Windows）は無視してよい
