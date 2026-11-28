@@ -15,7 +15,7 @@ import { getErrorMessage } from '../../utils/errorMessage';
 import { findHighlightRanges } from '../../utils/highlightMatches';
 import { showDefaultMenu } from '../../utils/defaultMenu';
 import { suppressNextToolBarModeFocus } from '../../utils/toolBarModeFocus';
-import { buildKeywordSearchUrl } from './textEditorCursorContentActions';
+import { buildKeywordSearchUrl } from '../../utils/searchTagUrls';
 
 /** 検索サイトを選ぶメニュー（docs/DefaultMenu.md のメニュー名） */
 const KEYWORD_SEARCH_MENU = 'Keyword検索';

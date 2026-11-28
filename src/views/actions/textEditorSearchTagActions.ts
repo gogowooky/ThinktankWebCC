@@ -6,7 +6,7 @@ import type { TTApplication } from '../TTApplication';
 import { TTActions } from '../TTActions';
 import { parseSearchTagContent } from '../../utils/searchTagFormat';
 import { applySearchTagItemsOverride, getEffectiveSearchTagItems, resetSearchTagItemsOverride } from '../../utils/tagInsertMenu';
-import { applySearchTagUrlOverride, getEffectiveSearchTagUrls, resetSearchTagUrlOverride } from './textEditorCursorContentActions';
+import { applySearchTagUrlOverride, getEffectiveSearchTagUrls, resetSearchTagUrlOverride } from '../../utils/searchTagUrls';
 import { writeBindingMemo, writeResultMessage } from './bindingMemo';
 
 /** 起動中に検索するVaultメモのタイトル（大文字小文字は区別しない） */
