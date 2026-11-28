@@ -17,6 +17,8 @@ export function parseBool(value: string, current: boolean): boolean {
 export function focusSelector(selector: string, fallbackSelector?: string): void {
   const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [contenteditable], [tabindex]:not([tabindex="-1"])';
   setTimeout(() => {
+    // 待つ間に画面（テストでは jsdom）が片付けられていることがある。
+    if (typeof document === 'undefined') return;
     let root = document.querySelector<HTMLElement>(selector);
     if (!root && fallbackSelector) {
       root = document.querySelector<HTMLElement>(fallbackSelector);

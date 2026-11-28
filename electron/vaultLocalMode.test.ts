@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -91,10 +91,16 @@ describe('ローカル運用の配置', () => {
 
 describe('ファイルを消さない', () => {
   it('同じ Think を何度消しても前の退避を上書きしない', () => {
-    engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: '1回目', keywords: '', relatedIds: '' });
-    engine.deleteRecord(ID);
-    engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: '2回目', keywords: '', relatedIds: '' });
-    engine.deleteRecord(ID);
+    // 同じミリ秒に2回消すと退避名の日時が重なる。時計を止めてその場合を毎回確かめる。
+    vi.useFakeTimers({ now: new Date('2026-11-03T12:00:00.000Z'), toFake: ['Date'] });
+    try {
+      engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: '1回目', keywords: '', relatedIds: '' });
+      engine.deleteRecord(ID);
+      engine.saveRecord({ thinkid: ID, category: 'memo', fullContent: '2回目', keywords: '', relatedIds: '' });
+      engine.deleteRecord(ID);
+    } finally {
+      vi.useRealTimers();
+    }
     const trashed = fs.readdirSync(engine.getTrashDir()).filter(f => f.endsWith('.md'));
     expect(trashed).toHaveLength(2);
     expect(trashed.every(f => f.startsWith(`${ID}.deleted-`))).toBe(true);

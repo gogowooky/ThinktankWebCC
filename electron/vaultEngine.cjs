@@ -439,7 +439,11 @@ class VaultEngine {
    * 同じ Think を何度消しても前の退避を上書きしない（同期フォルダ上でのファイル消失対策）。
    */
   _trashPath(thinkid, reason, ext) {
-    return path.join(this.getTrashDir(), `${thinkid}.${reason}-${fileTimestamp()}${ext}`);
+    // 日時はミリ秒までなので、同じミリ秒に続けて退避すると名前が重なり前の退避を上書きしてしまう。
+    const base = path.join(this.getTrashDir(), `${thinkid}.${reason}-${fileTimestamp()}`);
+    let candidate = `${base}${ext}`;
+    for (let n = 1; fs.existsSync(candidate); n += 1) candidate = `${base}-${n}${ext}`;
+    return candidate;
   }
 
   /** 現在の .md / .support.json を消さずに trash/ へ写す（移行で上書きされる側を残す）。 */
