@@ -1,15 +1,15 @@
 {
   "appName": "Thinktank",
-  "version": "2.7.8",
+  "version": "2.7.9",
   "copyright": {
     "holder": "Shinichiro Egashira",
     "holderJa": "江頭　慎一郎",
     "year": 2026
   },
   "projectName": "ThinktankWebCC",
-  "branchName": "TTWebCC261103LocalMode",
-  "commitPC": "E15",
-  "commitId": "33a24ed",
-  "commitDateTime": "2026-11-28-172826",
-  "commitMessage": "feat: ハーネス実行時間計測とAIChat参照開閉・検索条件欄へのThink D&D・ExMode短縮表記の廃止"
+  "branchName": "claude/eloquent-babbage-8gsvnh",
+  "commitPC": "Claude Code（クラウド）",
+  "commitId": "4966093",
+  "commitDateTime": "2026-11-29-002934",
+  "commitMessage": "refactor: 大きなファイルの分割（第1〜3弾）とCI・テストの復旧"
 }

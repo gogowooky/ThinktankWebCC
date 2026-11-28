@@ -2,6 +2,17 @@
 
 <!-- git-update スキルがコミットのたびに、この直下へ新しい順で追記する。 -->
 <!-- デプロイ完了後は、該当バージョンに公開日（JST）・対象コミット・公開先・結果を追記する。 -->
+### v2.7.9 refactor: 大きなファイルの分割（第1〜3弾）とCI・テストの復旧
+
+- 日付: 2026-11-29
+- コミット番号: 4966093（16ebffc〜4966093）
+
+- CI: package-lock.json を package.json と揃え、9/17 以降止まっていた CI（型チェック・lint・テスト・ビルド）を復旧した。テストは CPU の半分で並列に動かす（約90秒→約47秒）。
+- 不具合: ローカル運用で同じ Think を同じミリ秒に続けて削除すると、trash/ の前の退避を上書きしていたのを直した。
+- 更新履歴を README.md から CHANGELOG.md へ移し、PCごとの許可設定（settings.local.json）を追跡対象から外した。
+- 分割（動作は変えていない）: TTFocusedPanelActions・textEditorCursorContentActions・main.cjs（electron/ipc/）・WorkingPanel・aiCliRunner（electron/aiCli/）・mcpProtocol（shared/mcp/）・vaultEngine（electron/vault/）・FirestoreStorageBackend・TTVault を役割ごとのファイルに分け、Status・Action の仕様書を docs/status-action/ の領域ごとのファイルにした。
+- 作業中の KeyFocus（Thinktank.KeyFocused.* の Status。未完成）を含む。テスト163ファイル・1062件成功。
+
 ### v2.7.8 feat: ハーネス実行時間計測とAIChat参照開閉・検索条件欄へのThink D&D・ExMode短縮表記の廃止
 
 - 日付: 2026-11-28
