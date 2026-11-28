@@ -68,6 +68,8 @@ Web版へAI CLIを提供する場合はElectron版のPC連携モードをONに�
 ## データモデル
 - Think本文・メタデータは `users/{uid}/vaults/{vaultId}/thinks/{thinkid}` のFirestore文書を正本とする
 - 共通の正本読み書きは `src/platform/web/FirestoreStorageBackend.ts`。`electron/vaultEngine.cjs` はMarkdownバックアップ・ローカル索引・AI CLI用のローカル参照を担当する
+  - `VaultEngine` のメソッドは役割ごとに `electron/vault/*.cjs`（overlay・listing・records・indexing・search・trashAndSnapshots・domainProfiles）に分けてあり、`vaultEngine.cjs` が取り込む
+- AI CLI の実行は `electron/aiCliRunner.cjs` が入口で、中身は `electron/aiCli/*.cjs`。MCP のプロトコル処理は `shared/mcpProtocol.ts` が入口で、中身は `shared/mcp/*.ts`
 - PC版には「ローカル運用モード」がある（設定 > モード切替、再起動で反映）。このときだけ ThinkファイルFolder の `.md` を正本とし、Firebase に接続しない。詳細は `docs/261103/ローカル運用モード.md`
 - Think一覧は起動時に前回の一覧（IndexedDB、`src/services/storage/thinkListCache.ts`）を先に表示し、全件取得の結果で揃える。キャッシュは表示専用で、正本の判定には使わない
 - PC連携は既定OFF。ElectronはAI CLI提供側、Webは接続側。依頼・応答はFirestoreリアルタイムリスナーで監視する
