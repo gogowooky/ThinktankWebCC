@@ -502,3 +502,21 @@ describe('Parallel AI CLI execution and sandbox isolation', () => {
     await Promise.all([r2, r3]);
   });
 });
+
+describe('設定隔離フォルダの MCP 接続設定', () => {
+  it('既定では electron/ 直下の mcpServer.cjs を起動するよう書く', () => {
+    const { prepareSandboxMcpConfig } = require('./aiCliRunner.cjs') as {
+      prepareSandboxMcpConfig: (dir: string, options?: Record<string, unknown>) => { mcpServerScript: string; mcpConfigPath: string };
+    };
+    const dir = fs.mkdtempSync(join(tmpdir(), 'tt-mcp-config-'));
+    try {
+      const { mcpServerScript, mcpConfigPath } = prepareSandboxMcpConfig(dir);
+      expect(mcpServerScript).toBe(join(__dirname, 'mcpServer.cjs'));
+      expect(fs.existsSync(mcpServerScript)).toBe(true);
+      const written = JSON.parse(fs.readFileSync(mcpConfigPath, 'utf8'));
+      expect(written.mcpServers.thinktank.args).toEqual([mcpServerScript]);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
