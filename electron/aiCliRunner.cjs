@@ -707,6 +707,7 @@ async function executeIsolatedCli({
   projectId,
   /** cancelCliRun で中断するときの識別子（画面の会話の requestId） */
   runId,
+  timing,
 }) {
   const binPath = binPathOverride || resolveExecutablePath(cliName);
   if (!binPath) {
@@ -717,14 +718,19 @@ async function executeIsolatedCli({
   const run = { canceled: false, cancel: () => { run.canceled = true; } };
   if (runId) runningCliRuns.set(runId, run);
 
+  const queuedAt = performance.now();
   await acquireCliSlot();
-  const sandboxDir = createRunSandboxDir();
+  const admittedAt = performance.now();
+  if (timing) timing.queueMs = Math.round(admittedAt - queuedAt);
+  let sandboxDir;
+  let processStart;
   const activeMcpHost = mcpHost !== undefined ? mcpHost : defaultMcpHost;
   let bridgeServer = null;
   try {
     if (run.canceled) throw new AiCliCanceledError();
+    sandboxDir = createRunSandboxDir();
     if (activeMcpHost) {
-      bridgeServer = await startMcpBridgeServer(activeMcpHost);
+      bridgeServer = await startMcpBridgeServer(activeMcpHost, timing);
     }
     const vaultDir =
       activeMcpHost && activeMcpHost.vaultEngine && typeof activeMcpHost.vaultEngine.getVaultDir === 'function'
@@ -763,6 +769,8 @@ async function executeIsolatedCli({
         delete childEnv.OPENAI_API_KEY;
       }
 
+      processStart = performance.now();
+      if (timing) timing.setupMs = Math.round(processStart - admittedAt);
       const child = spawnImpl(binPath, args, {
         cwd: sandboxDir,
         shell: isCmdWrapper,
@@ -834,11 +842,15 @@ async function executeIsolatedCli({
       child.stdin.end();
     });
   } finally {
+    if (timing) {
+      if (processStart !== undefined) timing.processMs = Math.round(performance.now() - processStart);
+      else timing.setupMs = Math.round(performance.now() - admittedAt);
+    }
     if (runId && runningCliRuns.get(runId) === run) runningCliRuns.delete(runId);
     if (bridgeServer) {
       await bridgeServer.close().catch(() => {});
     }
-    cleanupRunSandboxDir(sandboxDir);
+    if (sandboxDir) cleanupRunSandboxDir(sandboxDir);
     releaseCliSlot();
   }
 }
@@ -1030,6 +1042,23 @@ async function runGeminiNotebookConversation({
  * ローカル AI CLI（またはテスト/オフライン時の構造化フォールバック）を実行して検証済み応答を返す。
  */
 async function runDomainAiConversation(params) {
+  if (params.measureHarness !== true || !Array.isArray(params.harness?.writableIds)) {
+    return executeDomainConversation(params);
+  }
+  const start = performance.now();
+  const timing = { hostMs: 0, tools: {} };
+  try {
+    const result = await executeDomainConversation(params, timing);
+    return { ...result, harnessTiming: timing };
+  } catch (error) {
+    // IPCとWeb中継の両方で途中までの計測を渡し、呼び出し側で通常の失敗として処理する。
+    return { reply: '', harnessTiming: timing, harnessTimingError: error?.message ?? String(error) };
+  } finally {
+    timing.hostMs = Math.round(performance.now() - start);
+  }
+}
+
+async function executeDomainConversation(params, timing) {
   const {
     cliName = 'claude',
     model,
@@ -1053,7 +1082,9 @@ async function runDomainAiConversation(params) {
 
   // 指定された CLI が無ければ、インストール済みの他の CLI へ自動で切り替える
   const requestedCli = cliName === 'gemini' ? 'antigravity' : cliName;
+  const detectStart = performance.now();
   const detected = detectAvailableClis();
+  if (timing) timing.detectMs = Math.round(performance.now() - detectStart);
   const selectedCli = detected[requestedCli]?.available
     ? requestedCli
     : SUPPORTED_CLIS.find((c) => detected[c]?.available);
@@ -1106,6 +1137,7 @@ async function runDomainAiConversation(params) {
       mcpHost: activeMcpHost,
       projectId: params.projectId || bundleId,
       runId: params.requestId,
+      timing,
     });
   } catch (err) {
     if (err instanceof AiCliCanceledError) throw err;

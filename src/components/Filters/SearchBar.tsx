@@ -8,6 +8,7 @@
 import React, { useImperativeHandle, forwardRef, useRef } from 'react';
 import { TextSearch, X, FileText, Bot, Target, Table, Link, MessagesSquare, FileCode, SquareCheck, type LucideIcon } from 'lucide-react';
 import type { ContentType } from '../../types';
+import { useConfirmAfterChange, useThinkFieldDrop } from './useThinkFieldDrop';
 import './FilterPanel.css';
 import './SearchBar.css';
 
@@ -60,11 +61,14 @@ export const SearchBar = forwardRef<SearchBarRef, Props>(function SearchBar({
     if (e.key === 'Enter' && searchQuery.trim()) onSearch();
   };
 
+  // コンテンツ検索は確定するまで絞り込まれないため、Drop したら検索まで行う
+  const contentDrop = useThinkFieldDrop('content', useConfirmAfterChange(searchQuery, onSearchQueryChange, onSearch));
+
   return (
     <div className={classPrefix}>
       {/* 検索キーワード欄（タイトル絞り込み欄と同じスタイル） */}
       {showContentFilter && (
-        <div className="unified-filter-row">
+        <div className="unified-filter-row" {...contentDrop.dropProps}>
           <div className="unified-filter-row-left">
             <TextSearch size={12} className="unified-filter-icon" />
             <div className="unified-filter-text-wrapper">
@@ -80,6 +84,7 @@ export const SearchBar = forwardRef<SearchBarRef, Props>(function SearchBar({
                 autoComplete="off"
               />
             </div>
+            {contentDrop.ghost && <div className="unified-filter-drop-ghost">{contentDrop.ghost}</div>}
           </div>
           <div className="unified-filter-row-right">
             {loading && <span className="unified-filter-count">検索中…</span>}

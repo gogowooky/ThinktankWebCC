@@ -497,9 +497,28 @@ function createUniquePipePath() {
  * AI CLI が起動した `electron/mcpServer.cjs` サブプロセスからの JSON-RPC 要求を受け取り、
  * 親プロセスの `ThinktankMcpHost` で処理して応答を返す。
  */
-async function startMcpBridgeServer(mcpHost) {
+async function startMcpBridgeServer(mcpHost, timing) {
   const pipePath = createUniquePipePath();
   const sockets = new Set();
+  const pendingTools = new Set();
+
+  // 中断時にはCLIの終了時刻で打ち切る。自由入力の引数や未知のツール名は計測に残さない。
+  function beginTool(req) {
+    if (!timing || req.method !== 'tools/call') return null;
+    const name = shared.THINKTANK_MCP_TOOLS.find(tool => tool.name === req.params?.name)?.name ?? 'unknown';
+    const stat = timing.tools[name] ??= { count: 0, errors: 0, ms: 0, maxMs: 0 };
+    const start = performance.now();
+    const end = failed => {
+      if (!pendingTools.delete(end)) return;
+      const ms = Math.round(performance.now() - start);
+      stat.count++;
+      if (failed) stat.errors++;
+      stat.ms += ms;
+      stat.maxMs = Math.max(stat.maxMs, ms);
+    };
+    pendingTools.add(end);
+    return end;
+  }
 
   const server = net.createServer((socket) => {
     sockets.add(socket);
@@ -529,7 +548,13 @@ async function startMcpBridgeServer(mcpHost) {
             if (!socket.destroyed) socket.write(JSON.stringify(errRes) + '\n');
             return;
           }
-          const res = await shared.handleMcpJsonRpcMessage(req, mcpHost);
+          const endTool = beginTool(req ?? {});
+          let res;
+          try {
+            res = await shared.handleMcpJsonRpcMessage(req, mcpHost);
+          } finally {
+            endTool?.(!res || Boolean(res.error || res.result?.isError));
+          }
           if (res && !socket.destroyed) {
             socket.write(JSON.stringify(res) + '\n');
           }
@@ -549,6 +574,7 @@ async function startMcpBridgeServer(mcpHost) {
   return {
     pipePath,
     close: async () => {
+      for (const endTool of pendingTools) endTool(true);
       for (const s of sockets) {
         try {
           s.destroy();

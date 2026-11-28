@@ -7,6 +7,7 @@
 import type { TTThink } from '../models/TTThink';
 import type { SortConfig } from '../components/ThinktankPanel/ColumnSortDialog';
 import { computeDateRange } from './dateUtils';
+import { toLocalDate } from './localDateTime';
 
 export interface DateFilterState {
   show:         boolean;
@@ -50,7 +51,7 @@ export function applyDateFilter(items: TTThink[], df: DateFilterState): TTThink[
   if (!cR && !uR) return items;
   return items.filter(t => {
     if (cR) { const d = t.ID.slice(0, 10); if (d < cR.from || d > cR.to) return false; }
-    if (uR) { const d = (t.UpdatedAt || t.ID).slice(0, 10); if (d < uR.from || d > uR.to) return false; }
+    if (uR) { const d = toLocalDate(t.UpdatedAt || t.ID); if (d < uR.from || d > uR.to) return false; }
     return true;
   });
 }

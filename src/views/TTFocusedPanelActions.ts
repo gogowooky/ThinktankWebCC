@@ -49,56 +49,56 @@ const NEW_FILE_TITLES: Partial<Record<string, string>> = {
 // ── パネルごとの ViewMode 順序定義 ───────────────────────────────────────────
 
 const PANEL_VIEW_MODES: Record<string, string[]> = {
-  Thinktank:      ['filter', 'project', 'aiview', 'aichat', 'settings'],
-  Seeds:       ['filter', 'project', 'aiview', 'aichat', 'settings'],
+  Thinktank: ['filter', 'project', 'aiview', 'aichat', 'settings'],
+  Seeds: ['filter', 'project', 'aiview', 'aichat', 'settings'],
   WorkingSetting: ['panes', 'aiview', 'aichat', 'texteditor', 'chatsetting', 'markdown', 'datagrid', 'card', 'graph'],
-  Working:        ['panes', 'aiview', 'aichat', 'texteditor', 'chatsetting', 'markdown', 'datagrid', 'card', 'graph'],
-  Harvest:        ['aiview', 'aichat', 'settings'],
+  Working: ['panes', 'aiview', 'aichat', 'texteditor', 'chatsetting', 'markdown', 'datagrid', 'card', 'graph'],
+  Harvest: ['aiview', 'aichat', 'settings'],
 };
 
 /** フォーカス列 → 開閉セクションの一括操作で使うパネルID（Working は2列とも設定エリアを指す） */
 const SECTIONS_PANEL_IDS: Record<string, SectionsPanelId> = {
-  Thinktank:      'thinktank',
-  Seeds:          'seeds',
+  Thinktank: 'thinktank',
+  Seeds: 'seeds',
   WorkingSetting: 'working',
-  Working:        'working',
-  Harvest:        'harvest',
+  Working: 'working',
+  Harvest: 'harvest',
 };
 
 // ── 共通ヘルパー ─────────────────────────────────────────────────────────────
 
 type PanelLike = {
-  ToggleArea():            void;
-  IsAreaOpen:              boolean;
-  ViewMode:                string;
-  SetViewMode(mode: any):  void;
+  ToggleArea(): void;
+  IsAreaOpen: boolean;
+  ViewMode: string;
+  SetViewMode(mode: any): void;
 };
 
 /** Think一覧のカーソルアクションが必要とするパネルの最小インターフェース */
 type FilterCursorPanel = {
-  CurrentItemID:       string;
-  CurrentItemRow:      number;
-  FilteredThoughts:    TTThink[];
-  CheckedThoughtIDs:   string[];
+  CurrentItemID: string;
+  CurrentItemRow: number;
+  FilteredThoughts: TTThink[];
+  CheckedThoughtIDs: string[];
   ToggleCheck(id: string | string[], forceChecked?: boolean): void;
 };
 
 /** Think一覧を持つパネル（Thinktank / Seeds）ごとのアクション生成定義 */
 type FilterPanelSpec = {
-  prefix:         'ThinktankPanel' | 'SeedsPanel';
-  panelOf:        () => FilterCursorPanel;
+  prefix: 'ThinktankPanel' | 'SeedsPanel';
+  panelOf: () => FilterCursorPanel;
   currentItemKey: string;
-  open:           (id: string) => void;
+  open: (id: string) => void;
 };
 
 function getPanel(app: TTApplication, column: string = app.FocusedColumn): PanelLike | null {
   switch (column) {
-    case 'Thinktank':      return app.ThinktankPanel;
-    case 'Seeds':       return app.SeedsPanel;
+    case 'Thinktank': return app.ThinktankPanel;
+    case 'Seeds': return app.SeedsPanel;
     case 'WorkingSetting':
-    case 'Working':        return app.WorkingPanel;
-    case 'Harvest':        return app.HarvestPanel;
-    default:               return null;
+    case 'Working': return app.WorkingPanel;
+    case 'Harvest': return app.HarvestPanel;
+    default: return null;
   }
 }
 
@@ -112,11 +112,11 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   /** フォーカス列 → 幅モードを持つ Status キー（Working は Pane 側の列も設定パネルを指す） */
   const AREA_WIDTH_KEYS: Record<string, ConfigKey> = {
-    Thinktank:      'ThinktankPanel.Area.OpenWidth',
-    Seeds:       'SeedsPanel.Area.OpenWidth',
+    Thinktank: 'ThinktankPanel.Area.OpenWidth',
+    Seeds: 'SeedsPanel.Area.OpenWidth',
     WorkingSetting: 'WorkingSettingPanel.Area.OpenWidth',
-    Working:        'WorkingSettingPanel.Area.OpenWidth',
-    Harvest:        'HarvestPanel.Area.OpenWidth',
+    Working: 'WorkingSettingPanel.Area.OpenWidth',
+    Harvest: 'HarvestPanel.Area.OpenWidth',
   };
 
   const setFocusedAreaWidth = (item: TTActionItem, value: string): void => {
@@ -165,7 +165,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       },
     });
   };
-  registerAreaToggle('Toggle',        'user',    'User');
+  registerAreaToggle('Toggle', 'user', 'User');
   registerAreaToggle('ToggleForEdit', 'foredit', 'ForEdit');
 
   // ── エリアの段階的な開閉 ───────────────────────────────────────────────
@@ -216,8 +216,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   });
 
   for (const [suffix, value, label] of [
-    ['Initial', 'init',    '初期値'],
-    ['User',    'user',    'ユーザー設定値'],
+    ['Initial', 'init', '初期値'],
+    ['User', 'user', 'ユーザー設定値'],
     ['ForEdit', 'foredit', '編集時の値'],
   ] as const) {
     TTActions.Register({
@@ -246,7 +246,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       const panel = getPanel(app);
       const modes = PANEL_VIEW_MODES[app.FocusedColumn];
       if (!panel || !modes) { item.Result = '[対象なし]'; return; }
-      const idx  = modes.indexOf(panel.ViewMode);
+      const idx = modes.indexOf(panel.ViewMode);
       const prev = modes[(idx - 1 + modes.length) % modes.length];
       panel.SetViewMode(prev);
       item.Result = prev;
@@ -260,7 +260,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       const panel = getPanel(app);
       const modes = PANEL_VIEW_MODES[app.FocusedColumn];
       if (!panel || !modes) { item.Result = '[対象なし]'; return; }
-      const idx  = modes.indexOf(panel.ViewMode);
+      const idx = modes.indexOf(panel.ViewMode);
       const next = modes[(idx + 1) % modes.length];
       panel.SetViewMode(next);
       item.Result = next;
@@ -289,8 +289,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   /** Think一覧を持つパネルごとの定義（Thinktank / Seeds で共通のアクションを生成する） */
   const FILTER_PANELS: FilterPanelSpec[] = [
     {
-      prefix:         'ThinktankPanel',
-      panelOf:        () => app.ThinktankPanel,
+      prefix: 'ThinktankPanel',
+      panelOf: () => app.ThinktankPanel,
       currentItemKey: 'ThinktankPanel.CurrentItem.ID',
       // Bundle はその場で Seeds へ、それ以外は Working へ（一覧ダブルクリックと同じ挙動）
       open: (id) => {
@@ -302,8 +302,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       },
     },
     {
-      prefix:         'SeedsPanel',
-      panelOf:        () => app.SeedsPanel,
+      prefix: 'SeedsPanel',
+      panelOf: () => app.SeedsPanel,
       currentItemKey: 'SeedsPanel.CurrentItem.ID',
       open: (id) => { app.OpenThinkInWorking(id); },
     },
@@ -387,8 +387,8 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   const focusedFilterPanelRoots = (): Element[] => {
     switch (focusedColumnLive()) {
       case 'Thinktank': return Array.from(document.querySelectorAll('.thinktank-panel, .thinktank-area'));
-      case 'Seeds':  return Array.from(document.querySelectorAll('.seeds-panel, .seeds-area'));
-      default:          return [];
+      case 'Seeds': return Array.from(document.querySelectorAll('.seeds-panel, .seeds-area'));
+      default: return [];
     }
   };
 
@@ -396,15 +396,15 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   const focusedFilterPrefix = (): 'ThinktankPanel' | 'SeedsPanel' | null => {
     switch (focusedColumnLive()) {
       case 'Thinktank': return 'ThinktankPanel';
-      case 'Seeds':  return 'SeedsPanel';
-      default:          return null;
+      case 'Seeds': return 'SeedsPanel';
+      default: return null;
     }
   };
 
   for (const [suffix, label] of [
     ['CursorPos:PrevLine', 'カーソルを1行前に移動する'],
     ['CursorPos:NextLine', 'カーソルを1行後に移動する'],
-    ['Cursor:Action',      'カーソル位置のアイテムを開く'],
+    ['Cursor:Action', 'カーソル位置のアイテムを開く'],
   ] as const) {
     TTActions.Register({
       ActionID: `FocusedPanel.Filter.${suffix}`,
@@ -434,7 +434,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   };
 
   for (const [suffix, key, label] of [
-    ['CursorPos:PrevLine', 'ArrowUp',   'カーソルを1行前に移動する'],
+    ['CursorPos:PrevLine', 'ArrowUp', 'カーソルを1行前に移動する'],
     ['CursorPos:NextLine', 'ArrowDown', 'カーソルを1行後に移動する'],
   ] as const) {
     TTActions.Register({
@@ -481,10 +481,10 @@ export function registerFocusedPanelActions(app: TTApplication): void {
 
   /** 1つのボタン群に対して :Next / :Prev（循環フォーカス移動）を登録する */
   const registerIconStripNav = (
-    base:      string,
-    noun:      string,
+    base: string,
+    noun: string,
     getButtons: () => HTMLElement[],
-    emptyMsg:  string,
+    emptyMsg: string,
   ): void => {
     for (const [suffix, dir] of [['Prev', -1], ['Next', 1]] as const) {
       TTActions.Register({
@@ -534,7 +534,7 @@ export function registerFocusedPanelActions(app: TTApplication): void {
   };
 
   registerIconStripNav('FocusedPanel.Filter.ContentType', '種別アイコン', focusedTypeFilterButtons, '[種別フィルタなし]');
-  registerIconStripNav('FocusedPanel.Filter.Menu',        'メニューアイコン', focusedMenuRibbonButtons, '[メニューなし]');
+  registerIconStripNav('FocusedPanel.Filter.Menu', 'メニューアイコン', focusedMenuRibbonButtons, '[メニューなし]');
 
   // 種別 / メニューを問わず、いまキーボードフォーカスがあるアイコンを押下する
   TTActions.Register({
@@ -550,16 +550,16 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     },
   });
 
-  // ExMode 関連アクションの登録（'Application.Status.ExMode:xxx' と 'ExMode:xxx' の
-  // 2つのActionID表記がショートカット定義側で使われるため、両方を同じハンドラに解決させる）
+  // ExMode 関連アクションの登録
   const registerExModeAction = (mode: string): void => {
-    const completion = (item: TTActionItem) => {
-      app.Status.SetExMode(mode, item.Mods ?? '');
-      item.Result = `ExMode→${mode} [${item.Mods ?? ''}]`;
-    };
-    const description = `拡張モードを${mode}に設定する`;
-    TTActions.Register({ ActionID: `Application.Status.ExMode:${mode}`, Description: description, Completion: completion });
-    TTActions.Register({ ActionID: `ExMode:${mode}`, Description: description, Completion: completion });
+    TTActions.Register({
+      ActionID: `Application.Status.ExMode:${mode}`,
+      Description: `拡張モードを${mode}に設定する`,
+      Completion: (item: TTActionItem) => {
+        app.Status.SetExMode(mode, item.Mods ?? '');
+        item.Result = `ExMode→${mode} [${item.Mods ?? ''}]`;
+      },
+    });
   };
   registerExModeAction('ExApp');
   registerExModeAction('ExOpt');
@@ -798,10 +798,10 @@ export function registerFocusedPanelActions(app: TTApplication): void {
       const nodes = area.FileHistory.map((entry, idx) => {
         const pos = idx + 1;
         return {
-          key:    String(pos),
-          label:  `${pos === area.HistoryPos ? '● ' : ''}${entry.title || entry.id}`,
+          key: String(pos),
+          label: `${pos === area.HistoryPos ? '● ' : ''}${entry.title || entry.id}`,
           detail: entry.id,
-          value:  String(pos),
+          value: String(pos),
         };
       });
 
@@ -934,12 +934,12 @@ export function registerFocusedPanelActions(app: TTApplication): void {
     });
   };
   const IS_VISIBLE_TOGGLE_KEYS: Array<[ConfigKey, string]> = [
-    ['TextEditor.LineNumbers.IsVisible',              '行番号表示をトグルする'],
-    ['TextEditor.WordWrap.IsVisible',                 '折り返し表示をトグルする'],
-    ['TextEditor.Minimap.IsVisible',                  'ミニマップ表示をトグルする'],
-    ['TextEditor.FullWidthSpace.IsVisible',            '全角スペース強調表示をトグルする'],
-    ['TextEditor.UnicodeHighlight.IsVisible',          'Unicode文字強調表示をトグルする'],
-    ['TextEditor.BracketPairColorization.IsVisible',   '括弧の色分けをトグルする'],
+    ['TextEditor.LineNumbers.IsVisible', '行番号表示をトグルする'],
+    ['TextEditor.WordWrap.IsVisible', '折り返し表示をトグルする'],
+    ['TextEditor.Minimap.IsVisible', 'ミニマップ表示をトグルする'],
+    ['TextEditor.FullWidthSpace.IsVisible', '全角スペース強調表示をトグルする'],
+    ['TextEditor.UnicodeHighlight.IsVisible', 'Unicode文字強調表示をトグルする'],
+    ['TextEditor.BracketPairColorization.IsVisible', '括弧の色分けをトグルする'],
   ];
   for (const [key, description] of IS_VISIBLE_TOGGLE_KEYS) {
     registerToggleAction(`${key}:Toggle`, key, description);

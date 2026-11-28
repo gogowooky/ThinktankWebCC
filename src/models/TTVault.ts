@@ -285,6 +285,24 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
     return item instanceof TTThink ? item : undefined;
   }
 
+  /** 他の端末やAIが新しく作り、まだ一覧に載っていない参照先も、IDから1件だけ読み込む。 */
+  public async GetOrLoadThink(id: string): Promise<TTThink | undefined> {
+    const loaded = this.GetThink(id);
+    if (loaded) return loaded;
+    const record = await StorageManager.instance.getRecord(id);
+    // 読み込み中に同期で届いた Think（編集中の場合もある）を優先する。
+    const synced = this.GetThink(id);
+    if (synced) return synced;
+    if (!record || record.meta.isDeleted || record.meta.thinkid !== id) return undefined;
+    const think = this._addThinkFromMeta(record.meta);
+    think.setContentSilent(record.meta.title + '\n' + record.body);
+    think.markSaved();
+    think.IsMetaOnly = false;
+    this.Count = this._children.size;
+    this.NotifyUpdated(false);
+    return think;
+  }
+
   /** TTThink を追加する（VaultID を自動設定）*/
   public AddThink(think: TTThink): TTThink {
     think.VaultID = this.ID;
@@ -337,7 +355,7 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
     }
   }
 
-  private _addThinkFromMeta(meta: ThinkMeta): void {
+  private _addThinkFromMeta(meta: ThinkMeta): TTThink {
     const think = new TTThink();
     think.ID          = meta.thinkid;
     think.VaultID     = this.ID;
@@ -358,6 +376,7 @@ export class TTVault extends TTCollection implements ProjectMembersListener {
     think.markSaved();
     think._parent = this;
     this._children.set(think.ID, think);
+    return think;
   }
 
   /**

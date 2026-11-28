@@ -9,7 +9,7 @@
  *   focus       フォーカス名パターン（*=すべて、Working*=Working内すべて）
  *   exmode      ExMode 名（空文字 = ExMode なし）
  *   key         キー/マウス指定（例: ctrl+shift+z, left1, ctrl+wheelup）
- *   action      ActionID または {状態変数}:{設定値} または ExMode:{name}
+ *   action      ActionID または {状態変数}:{設定値}
  *   description 説明
  *
  * ── インデックス構造 ──────────────────────────────────────────────────────
@@ -20,7 +20,7 @@
  *   ActionID                    コロンなし → TTActions.Execute()
  *   Panel.Property:value        → TTUIStateManager.applyProperty()
  *   TextEditor.EditText.Undo / Redo  → UI状態 Undo/Redo
- *   ExMode:{name}               → Application.Status.SetExMode()
+ *   Application.Status.ExMode:{name} → Application.Status.SetExMode()
  *   TextEditor.CurrentEditor.DefaultAction → 何もせずキーをエディタへ素通し（以降の行も評価しない）
  *
  * ── key 書式 ─────────────────────────────────────────────────────────────
@@ -60,10 +60,10 @@ import {
 } from '../utils/keyboardUtils';
 
 interface ShortcutEntry {
-  focus:       string;   // '' → '*'
-  exmode:      string;   // '' = ExMode なし必須
-  key:         string;   // 正規化済み小文字
-  action:      string;
+  focus: string;   // '' → '*'
+  exmode: string;   // '' = ExMode なし必須
+  key: string;   // 正規化済み小文字
+  action: string;
   description: string;
 }
 
@@ -109,15 +109,15 @@ export interface TextEditorDropContext {
 // ── デフォルトショートカット ──────────────────────────────────────────────
 
 const DEFAULT_SHORTCUTS: ShortcutEntry[] = [
-  { focus: '*', exmode: '', key: 'ctrl+z', action: 'TextEditor.EditText.Undo',                                    description: '編集を元に戻す' },
-  { focus: '*', exmode: '', key: 'ctrl+y', action: 'TextEditor.EditText.Redo',                                    description: '編集をやり直す' },
-  { focus: '*', exmode: '', key: 'ctrl+shift+l', action: 'TextEditor.LineNumbers.IsVisible:toggle',    description: '行番号切り替え' },
-  { focus: '*', exmode: '', key: 'ctrl+shift+w', action: 'TextEditor.WordWrap.IsVisible:toggle',       description: '折り返し切り替え' },
-  { focus: '*', exmode: '', key: 'ctrl+shift+m', action: 'TextEditor.Minimap.IsVisible:toggle',        description: 'ミニマップ切り替え' },
-  { focus: '*TextEditor', exmode: '', key: 'alt+arrowup',    action: 'TextEditor.CurrentFolding.Heading:VisiblePrev',          description: '現表示範囲の折畳タイトル行を前方向に探索してカーソル移動' },
-  { focus: '*TextEditor', exmode: '', key: 'alt+arrowdown',  action: 'TextEditor.CurrentFolding.Heading:VisibleNext',          description: '現表示範囲の折畳タイトル行を後方向に探索してカーソル移動' },
+  { focus: '*', exmode: '', key: 'ctrl+z', action: 'TextEditor.EditText.Undo', description: '編集を元に戻す' },
+  { focus: '*', exmode: '', key: 'ctrl+y', action: 'TextEditor.EditText.Redo', description: '編集をやり直す' },
+  { focus: '*', exmode: '', key: 'ctrl+shift+l', action: 'TextEditor.LineNumbers.IsVisible:toggle', description: '行番号切り替え' },
+  { focus: '*', exmode: '', key: 'ctrl+shift+w', action: 'TextEditor.WordWrap.IsVisible:toggle', description: '折り返し切り替え' },
+  { focus: '*', exmode: '', key: 'ctrl+shift+m', action: 'TextEditor.Minimap.IsVisible:toggle', description: 'ミニマップ切り替え' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowup', action: 'TextEditor.CurrentFolding.Heading:VisiblePrev', description: '現表示範囲の折畳タイトル行を前方向に探索してカーソル移動' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowdown', action: 'TextEditor.CurrentFolding.Heading:VisibleNext', description: '現表示範囲の折畳タイトル行を後方向に探索してカーソル移動' },
   { focus: '*TextEditor', exmode: '', key: 'alt+arrowright', action: 'TextEditor.CurrentFolding.Heading:OpenStepwise', description: 'カーソル位置が折畳タイトル行の場合、自Folding→子Folding→孫Foldingと順にOpen状態にしてゆく' },
-  { focus: '*TextEditor', exmode: '', key: 'alt+arrowleft',  action: 'TextEditor.CurrentFolding.Heading:CloseStepwise',description: 'カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく' },
+  { focus: '*TextEditor', exmode: '', key: 'alt+arrowleft', action: 'TextEditor.CurrentFolding.Heading:CloseStepwise', description: 'カーソル位置が折畳タイトル行の場合、表示されている子孫Folding→→→子Folding→自Foldingと順にClose状態にしてゆく' },
 ];
 
 // ── フォーカスパターンマッチング ──────────────────────────────────────────
@@ -126,8 +126,8 @@ function matchesFocus(pattern: string, current: string): boolean {
   if (!pattern || pattern === '*') return true;
   const p = pattern.toLowerCase();
   const c = current.toLowerCase();
-  if (p.endsWith('*'))       return c.startsWith(p.slice(0, -1));
-  if (p.startsWith('*'))     return c.endsWith(p.slice(1));
+  if (p.endsWith('*')) return c.startsWith(p.slice(0, -1));
+  if (p.startsWith('*')) return c.endsWith(p.slice(1));
   return p === c || c.endsWith('.' + p);
 }
 
@@ -137,8 +137,8 @@ export class TTShortcutManager {
   static readonly THINK_ID = '__tt_shortcuts__';
   private static _instance: TTShortcutManager | null = null;
 
-  private _app:        TTApplication | null = null;
-  private _shortcuts:  ShortcutEntry[]      = [...DEFAULT_SHORTCUTS];
+  private _app: TTApplication | null = null;
+  private _shortcuts: ShortcutEntry[] = [...DEFAULT_SHORTCUTS];
   private _activeEditor: any = null;
   private _pendingThinkDrop: ThinkDropContext | null = null;
   private _pendingTextEditorDrop: TextEditorDropContext | null = null;
@@ -202,12 +202,12 @@ export class TTShortcutManager {
 
   // ── インデックス ──────────────────────────────────────────────────────
   /** 全件キーインデックス（ショートカット更新時に構築） */
-  private _keyIndex:            Map<string, ShortcutEntry[]> = new Map();
+  private _keyIndex: Map<string, ShortcutEntry[]> = new Map();
   /** 現在の focus+exmode でフィルタ済みアクティブテーブル（状態変化時に再構築） */
   private _activeTable: Map<string, ShortcutEntry[]> = new Map();
 
   // ── 現在状態 ──────────────────────────────────────────────────────────
-  private _currentFocus:  string = 'None';
+  private _currentFocus: string = 'None';
   private _currentExMode: string = '';
 
   /**
@@ -339,10 +339,10 @@ export class TTShortcutManager {
    */
   resolveDragAction(dragType: string, e: DragEvent | MouseEvent): string | null {
     const effective = {
-      ctrlKey:  e.ctrlKey  || this._heldMods.ctrl,
-      altKey:   e.altKey   || this._heldMods.alt,
+      ctrlKey: e.ctrlKey || this._heldMods.ctrl,
+      altKey: e.altKey || this._heldMods.alt,
       shiftKey: e.shiftKey || this._heldMods.shift,
-      metaKey:  e.metaKey  || this._heldMods.meta,
+      metaKey: e.metaKey || this._heldMods.meta,
     };
     const keyStr = dragEventToStr(dragType, effective);
     const candidates = this._activeTable.get(keyStr) ?? NO_CANDIDATES;
@@ -373,8 +373,8 @@ export class TTShortcutManager {
    * 未記載でも自動的に付加して登録する（ExMode 中は常にそのモディファイアが押下中）。
    */
   private _rebuildActiveTable(): void {
-    const focus      = this._currentFocus;
-    const exMode     = this._currentExMode.toLowerCase();
+    const focus = this._currentFocus;
+    const exMode = this._currentExMode.toLowerCase();
     const exModeMods = exMode ? (this._app?.Status.ExModeModKey ?? '') : '';
 
     this._activeTable = new Map();
@@ -401,7 +401,7 @@ export class TTShortcutManager {
    * 例: shortcutKey="shift+z", exModeMods="ctrl+alt" → "ctrl+alt+shift+z"
    */
   private _mergeExModeKey(shortcutKey: string, exModeMods: string): string {
-    const parts   = shortcutKey.split('+');
+    const parts = shortcutKey.split('+');
     const addMods = exModeMods.split('+').filter(p => (MOD_ORDER as readonly string[]).includes(p));
     const allMods = MOD_ORDER.filter(m => parts.includes(m) || addMods.includes(m));
     const nonMods = parts.filter(p => !(MOD_ORDER as readonly string[]).includes(p));
@@ -464,7 +464,7 @@ export class TTShortcutManager {
   private _isExModeAction(action: string): boolean {
     if (!action.includes(':')) return false;
     const target = action.slice(0, action.indexOf(':')).trim();
-    return target === 'ExMode' || target === 'Application.Status.ExMode';
+    return target === 'Application.Status.ExMode';
   }
 
   private _shouldHandle(e: Event): boolean {
@@ -517,7 +517,7 @@ export class TTShortcutManager {
       section.columns.findIndex(c => c.trim().toLowerCase() === name);
 
     const focIdx = col('focus');
-    const emIdx  = col('exmode');
+    const emIdx = col('exmode');
     const keyIdx = col('key');
     const actIdx = col('action');
     const dscIdx = col('description');
@@ -525,11 +525,11 @@ export class TTShortcutManager {
     if (keyIdx < 0 || actIdx < 0) return [];
 
     return section.rows.flatMap(row => {
-      const focus       = canonicalPanelPrefix(focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*');
-      const exmode      = emIdx  >= 0 ? (row[emIdx]?.trim().toLowerCase() ?? '') : '';
-      const action      = canonicalPanelPrefix(row[actIdx]?.trim() ?? '');
+      const focus = canonicalPanelPrefix(focIdx >= 0 ? (row[focIdx]?.trim() ?? '*') : '*');
+      const exmode = emIdx >= 0 ? (row[emIdx]?.trim().toLowerCase() ?? '') : '';
+      const action = canonicalPanelPrefix(row[actIdx]?.trim() ?? '');
       const description = dscIdx >= 0 ? (row[dscIdx]?.trim() ?? '') : '';
-      const keys        = parseMultiKey(row[keyIdx]?.trim() ?? '');
+      const keys = parseMultiKey(row[keyIdx]?.trim() ?? '');
       return keys
         .filter(k => k && action)
         .map(key => ({ focus, exmode, key, action, description }));
@@ -538,13 +538,13 @@ export class TTShortcutManager {
 
   private _loadFromContent(content: string): void {
     const sections = parseTableContent(content);
-    const section  = sections[0];
+    const section = sections[0];
     const tableShortcuts = section ? this._parseTableRows(section) : [];
 
     // テーブルで定義されていない DEFAULT_SHORTCUTS のエントリを補完する。
     // key が同一のエントリはテーブル側を優先（ユーザーが意図的に上書きした場合を尊重）。
     const tableKeys = new Set(tableShortcuts.map(s => s.key));
-    const defaults  = DEFAULT_SHORTCUTS.filter(s => !tableKeys.has(s.key));
+    const defaults = DEFAULT_SHORTCUTS.filter(s => !tableKeys.has(s.key));
     this._shortcuts = [...defaults, ...tableShortcuts];
 
     this._buildKeyIndex();
@@ -558,7 +558,7 @@ export class TTShortcutManager {
    */
   mergeContent(content: string): void {
     const sections = parseTableContent(content);
-    const section  = sections[0];
+    const section = sections[0];
     if (!section) return;
 
     const incoming = this._parseTableRows(section);

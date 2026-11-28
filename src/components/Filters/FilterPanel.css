@@ -107,6 +107,31 @@
   padding: 0;
 }
 
+/* 無効中の input はドラッグのイベントを親の行へ渡さないため、行自身に受けさせる */
+.unified-filter-date-input:disabled {
+  pointer-events: none;
+}
+
+/* Think の D&D で入る値のゴースト。今の入力値と重なって読めなくならないよう地を不透明にする */
+.unified-filter-drop-ghost {
+  position: absolute;
+  inset: -3px 0 -3px 14px;
+  z-index: 20;
+  display: block;
+  box-sizing: border-box;
+  padding: 0 4px;
+  line-height: 20px;
+  border: 1px dashed color-mix(in srgb, var(--ddghost-replaced) 80%, transparent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ddghost-replaced) 18%, #fff);
+  color: #1a1a2e;
+  font-size: calc(11px * var(--tt-font-scale, 1));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
 /* 範囲入力 */
 .unified-filter-range-input {
   width: 58px;

@@ -34,6 +34,23 @@
 　
 
 # Application ======================================================================================================
+## Status 実装： Thinktank.KeyFocused.Panel
+KeyboardフォーカスがあるPanelを保持・設定する。保持する値は以下の通り
+Thinktank, Seeds, WorkingSetting, Working, Harvest, ToolBar, None
+
+## Status 実装： Thinktank.KeyFocused.SubPanel
+KeyboardフォーカスがあるSubPanelを保持・設定する。保持する値は以下の通り
+Thinktank: Filer, Project, AIView, AIChat, Config, None
+Seeds: Filer, Project, AIView, AIChat, Config, None
+WorkingSetting: PaneConfig, AIView, AIChat, TextEditorConfig, ChatConfig, MarkdownConfig, DataGridConfig, CardConfig, GraphConfig, HtmlConfig, None
+Working: {PaneTitle}, None
+Harvest: AIView, AIChat, Config, None
+ToolBar: Status, Highlighter, KeyAction, Command, Search, Reminder, Copyright, None
+
+## Status 実装： Thinktank.KeyFocused.UIComponent
+KeyboardフォーカスがあるComponentを保持・設定する。保持する値は以下の通り
+TextEditor, MarkdownViewer, AIChat, ThinkFiler, DataGrid, Graph, Card, Html, Menu, Dialog 
+
 
 ## Status：　260710　Application.CheckedItem.IDs
 　IDをApplication.CheckedItem.IDs に変更します。
@@ -142,14 +159,6 @@ description:    拡張モードをExAppに設定する
 description:    拡張モードをExOptに設定する
 ## Action：　260911　Application.Status.ExMode:None
 description:    拡張モードをNoneに設定する
-## Action：　260911　ExMode:ExApp
-description:    拡張モードをExAppに設定する
-## Action：　260911　ExMode:ExOpt
-description:    拡張モードをExOptに設定する
-## Action：　260911　ExMode:None
-description:    拡張モードをNoneに設定する
-　ショートカット定義側で `Application.Status.ExMode:{mode}` と `ExMode:{mode}` の2表記が使われるため、
-　両方のActionIDを同じハンドラに解決するよう登録している（ExApp / ExOpt / None の3モード分）。
 ## Status：　260619　Application.Status.ExMode
 description:    拡張モード
 key:            Application.Status.ExMode

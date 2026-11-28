@@ -12,6 +12,7 @@ import { PanelArea } from '../Layout/PanelArea';
 import { Splitter } from '../Layout/Splitter';
 import { SeedsTabBar } from './SeedsTabBar';
 import { SeedsArea } from './SeedsArea';
+import { useNativeDragCleanup } from '../WorkingPanel/useNativeDragCleanup';
 import { projectTargetIds, updateProjectTargets } from '../../utils/thinkFormat';
 import './SeedsPanel.css';
 
@@ -38,6 +39,7 @@ export function SeedsPanel({ app, width, onResize }: Props) {
 
   const handleToggle = useCallback(() => panel.ToggleArea(), [panel]);
   const [isDragOver, setIsDragOver] = useState(false);
+  useNativeDragCleanup(() => setIsDragOver(false));
 
   const handleBundleDrop = useCallback(async (id: string) => {
     const dropped = vault.GetThink(id);
@@ -89,6 +91,11 @@ export function SeedsPanel({ app, width, onResize }: Props) {
     }
   }, []);
 
+  // 検索条件欄は自分で Drop を受けて dragover を止めるため、パネル全体のゴーストはここで消す
+  const handleDragOverCapture = useCallback((e: React.DragEvent) => {
+    if ((e.target as Element).closest('[data-think-drop-field]')) setIsDragOver(false);
+  }, []);
+
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node)) {
       setIsDragOver(false);
@@ -121,6 +128,7 @@ export function SeedsPanel({ app, width, onResize }: Props) {
   return (
     <div
       className={`seeds-panel${isDragOver ? ' seeds-panel--drag-over' : ''}`}
+      onDragOverCapture={handleDragOverCapture}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
