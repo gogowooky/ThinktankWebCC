@@ -15,6 +15,8 @@ import { requestHarnessReply, runHarnessTurn, type HarnessRequestReply, type Har
 import type { HarnessCliName } from './harnessRoles';
 import { runTeam } from './harnessTeam';
 import { boardRowLabel } from './harnessBoard';
+import { HarnessTimer } from './harnessTiming';
+import type { HarnessTimingReport } from '../../../shared/harnessTiming';
 
 /** ループの段階。team は担当が作業している間 */
 export type HarnessLoopStage = HarnessTurnStage | 'team';
@@ -34,6 +36,7 @@ export interface HarnessLoopStatus {
   /** 作業中の担当の数（チームで進めているとき） */
   teamRunning?: number;
   startedAt: number;
+  timing?: HarnessTimingReport;
   /** 終わったときの結果 */
   outcome?: { type: 'waiting' | 'stopped' | 'limit' | 'error'; message: string };
 }
@@ -120,12 +123,16 @@ class HarnessLoopManager {
     const project = vault.GetThink(projectId);
     if (!project || project.ContentType !== 'project') return false;
     const maxTurns = options.maxTurns ?? MAX_TURNS_PER_START;
+    const timer = new HarnessTimer();
+    const requestReply = timer.measureCalls(options.requestReply ?? requestHarnessReply);
     const status: HarnessLoopStatus = { projectId, running: true, turn: 0, maxTurns, startedAt: Date.now() };
     this.statuses.set(projectId, status);
     this.notify();
 
     const finish = async (outcome: NonNullable<HarnessLoopStatus['outcome']>, state: ProjectState | null) => {
+      timer.enter('finish', status.turn);
       await this.writeState(vault, project, state, false);
+      status.timing = timer.finish(projectId, outcome.type);
       status.running = false;
       status.stage = undefined;
       status.outcome = outcome;
@@ -157,17 +164,18 @@ class HarnessLoopManager {
           ...(options.cliName ? { cliName: options.cliName } : {}),
           ...(options.model ? { model: options.model } : {}),
           ...(options.panelRole ? { panelRole: options.panelRole } : {}),
-          ...(options.requestReply ? { requestReply: options.requestReply } : {}),
+          requestReply,
           ...(options.aiWriteWaitMs !== undefined ? { aiWriteWaitMs: options.aiWriteWaitMs } : {}),
-          onStage: stage => { status.stage = stage; this.notify(); },
+          onStage: stage => { timer.enter(stage, turn); status.stage = stage; this.notify(); },
         });
         const directive = result.directive;
         if (directive?.state === 'delegate' && result.team?.assignments.length) {
+          timer.enter('team', turn);
           status.stage = 'team';
           status.teamRunning = result.team.assignments.length;
           this.notify();
           const rows = await runTeam({
-            vault, project, team: result.team, requestReply: options.requestReply ?? requestHarnessReply,
+            vault, project, team: result.team, requestReply,
             ...(options.cliName ? { defaultCliName: options.cliName } : {}),
             ...(options.model ? { defaultModel: options.model } : {}),
             onProgress: running => { status.teamRunning = running; this.notify(); },

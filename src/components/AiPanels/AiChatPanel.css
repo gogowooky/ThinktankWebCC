@@ -138,6 +138,17 @@
   background: rgb(128 128 128 / 0.08);
 }
 
+.ai-chat__think-ref {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .ai-chat__composer {
   display: flex;
   gap: 6px;
@@ -147,11 +158,12 @@
 
 .ai-chat__input {
   flex: 1;
-  min-height: 3.2em;
+  min-height: calc(4 * 1.4em + 6px);
   max-height: 30vh;
   resize: vertical;
   font: inherit;
   font-size: calc(12px * var(--tt-font-scale, 1));
+  line-height: 1.4;
 }
 
 .ai-chat__send {

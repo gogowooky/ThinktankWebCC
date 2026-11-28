@@ -3,10 +3,33 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { isValidGasUrl, callGoogleWorkspaceGas, testGoogleWorkspaceGas } = require('./googleWorkspaceGas.cjs');
-const { RecordingMcpHost, ThinktankMcpHost } = require('./mcpBridge.cjs');
+const { RecordingMcpHost, ThinktankMcpHost, startMcpBridgeServer, forwardJsonRpcOverPipe } = require('./mcpBridge.cjs');
 const { handleMcpJsonRpcMessage } = require('./shared-dist/index.js');
 
 const VALID_URL = 'https://script.google.com/macros/s/AKfycbxTestScriptId12345/exec';
+
+it('MCP中継はGoogleツールの時間、回数、失敗数だけを集計する', async () => {
+  const timing = { tools: {} };
+  const host = { callGoogleWorkspace: vi.fn()
+    .mockResolvedValueOnce({ threads: [{ subject: '非公開の件名' }] })
+    .mockRejectedValueOnce(new Error('非公開のエラー')) };
+  const bridge = await startMcpBridgeServer(host, timing);
+  try {
+    const name = 'thinktank_google_gmail_search';
+    const params = { name, arguments: { query: '非公開の検索条件' } };
+    await forwardJsonRpcOverPipe(bridge.pipePath, { jsonrpc: '2.0', id: 1, method: 'tools/list' });
+    for (const id of [2, 3]) {
+      await forwardJsonRpcOverPipe(bridge.pipePath, { jsonrpc: '2.0', id, method: 'tools/call', params });
+    }
+    expect(host.callGoogleWorkspace).toHaveBeenCalledTimes(2);
+    expect(timing.tools).toEqual({ [name]: {
+      count: 2, errors: 1, ms: expect.any(Number), maxMs: expect.any(Number),
+    } });
+    expect(JSON.stringify(timing)).not.toContain('非公開');
+  } finally {
+    await bridge.close();
+  }
+});
 
 it('GAS URL の検証と接続テストを行う', async () => {
   expect(isValidGasUrl(VALID_URL)).toBe(true);

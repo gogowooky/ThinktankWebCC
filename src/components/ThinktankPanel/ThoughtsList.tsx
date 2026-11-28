@@ -21,6 +21,7 @@ import { useHighlight } from '../../contexts/HighlightContext';
 import { TTUIStateManager } from '../../views/TTUIStateManager';
 import { NEW_CHAT_SENTINEL_ID } from '../../utils/thinkFormat';
 import { toLocalDate, toLocalStamp } from '../../utils/localDateTime';
+import { beginThinkDrag, endThinkDrag } from '../../utils/thinkDrag';
 import { cursorRowIndex, type ThinkTreeRow } from '../../utils/thinkTree';
 import './ThoughtsList.css';
 
@@ -269,12 +270,8 @@ export function ThoughtsList({
             <div
               key={treeRow?.key ?? thought.ID}
               draggable={!isNewChatRow}
-              onDragStart={e => {
-                // 'copy'のみだとOSによってはAlt修飾（Insert用）でのドロップ受理が
-                // 不安定になることがあるため、'link'も許可しておく
-                e.dataTransfer.effectAllowed = 'copyLink';
-                e.dataTransfer.setData('application/x-thought-id', thought.ID);
-              }}
+              onDragStart={e => beginThinkDrag(e.dataTransfer, thought)}
+              onDragEnd={endThinkDrag}
               className={[
                 'thoughts-list__row',
                 isSelected         ? 'thoughts-list__row--selected'         : '',

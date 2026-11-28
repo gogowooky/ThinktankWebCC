@@ -67,6 +67,13 @@ afterEach(() => {
 });
 
 describe('runDomainAiConversation without any AI CLI', () => {
+  it('計測中は CLI が見つからなくても PC 側で計測できた部分を返す', async () => {
+    const result = await runDomainAiConversation({ cliName: 'claude', measureHarness: true, harness: { writableIds: [] } });
+    expect(result).toMatchObject({
+      harnessTimingError: expect.stringContaining('見つかりません'),
+      harnessTiming: { detectMs: expect.any(Number), hostMs: expect.any(Number), tools: {} },
+    });
+  });
   it('fails with a clear message instead of returning a canned answer', async () => {
     const run = runDomainAiConversation({
       cliName: 'claude',

@@ -32,6 +32,7 @@ import type { PanelRoleKey } from '../../../shared/domainProfile';
 import { NO_MODEL, selectionFor, type AiChatProviderName } from '../aiChatModelStatus';
 import { ensureRoleWorks, parseAiConditions, type HarnessCliName } from './harnessRoles';
 import { collectReviewMaterial, isReviewProject } from './harnessReview';
+import type { HostTiming } from '../../../shared/harnessTiming';
 
 export type HarnessDirectiveState = 'continue' | 'waiting' | 'done' | 'delegate';
 export interface HarnessDirective {
@@ -61,9 +62,11 @@ export interface HarnessAiResponse {
   modelLabel?: string;
   rawText?: string;
   harnessRecord?: HarnessRecord;
+  harnessTiming?: HostTiming;
+  harnessTimingError?: string;
 }
 
-export type HarnessRequestReply = (payload: Record<string, unknown>) => Promise<HarnessAiResponse>;
+export type HarnessRequestReply = (payload: Record<string, unknown>, workerRow?: string) => Promise<HarnessAiResponse>;
 
 const AI_TIMEOUT_MS = 600_000;
 const AI_WRITE_WAIT_MS = 10_000;
@@ -131,7 +134,7 @@ function thinkTag(vault: TTVault, id: string): string {
   return `[${type === 'aiview' ? 'aiwork' : type ?? 'memo'}:${id}]`;
 }
 
-export type HarnessTurnStage = 'prepare' | 'ai' | 'verify' | 'retry' | 'record';
+export type HarnessTurnStage = 'prepare' | 'snapshots' | 'context' | 'ai' | 'verify' | 'retry' | 'retryVerify' | 'record';
 
 const PROVIDER_TO_CLI: Partial<Record<string, HarnessCliName>> = {
   anthropic: 'claude',
@@ -214,11 +217,13 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
   const status = await ensureHarnessAiWork(vault, project, 'status');
   const decision = await ensureHarnessAiWork(vault, project, 'decision');
   const chat = await ensureHarnessChat(vault, project);
+  onStage('snapshots');
   for (const work of [log, status, decision]) {
     if (work.IsMetaOnly) await work.LoadContent();
     await snapshotBeforeWrite(work);
   }
 
+  onStage('context');
   const review = isReviewProject(project) ? await collectReviewMaterial(vault, now()) : null;
   const ctx: HarnessContext = await collectHarnessContext({
     vault, project, log, status, decision,
@@ -263,6 +268,7 @@ export async function runHarnessTurn(options: RunHarnessTurnOptions): Promise<Ha
     onStage('retry');
     const retry = await requestReply(payload(buildHarnessMessage(ctx, { runId, dateTime, missing }), `${runId}-retry`));
     record = mergeRecord(record, retry.harnessRecord);
+    onStage('retryVerify');
     await waitUntil([log, status], () => missingNow().length === 0, aiWriteWaitMs);
     missing = missingNow();
   }

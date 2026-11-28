@@ -137,4 +137,12 @@ it('チーム: まとめ役が任せると担当が並行して動き、報告�
   expect(chat.Content).toContain('担当の作業が終わりました: T1 確かめる［報告済み（未検証）］');
   expect(chat.Content).toContain('共有ボードの検証: T1 → verified、T2 → blocked');
   expect(coordinatorTurn).toBe(2);
+  const timing = HarnessLoop.getStatus(project.ID)?.timing;
+  expect(timing?.outcome).toBe('waiting');
+  expect(timing?.stages.filter(s => s.stage === 'team')).toHaveLength(1);
+  expect(timing?.calls.map(c => [c.turn, c.role, c.ok])).toEqual([
+    [1, 'まとめ役', true], [1, 'T1', true], [1, 'T2', true], [1, 'T3', false], [2, 'まとめ役', true],
+  ]);
+  expect(workerPayloads.every(p => p.measureHarness === true)).toBe(true);
+  expect(JSON.stringify(timing)).not.toContain('主催者');
 });

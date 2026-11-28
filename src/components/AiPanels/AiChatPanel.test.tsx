@@ -49,6 +49,20 @@ async function show() {
   await act(async () => root.render(<AiChatPanel panelKey="seeds" />));
 }
 
+it('開き直したprojectの直近の計測を秒で表示し、JSON保存を選べる', async () => {
+  const key = 'thinktank.harnessTiming.v1.' + PROJECT;
+  localStorage.setItem(key, JSON.stringify({ version: 1, startedAt: '2026-11-26T00:00:00Z', totalMs: 1250,
+    outcome: 'waiting', stages: [{ turn: 1, stage: 'context', ms: 1250 }], calls: [] }));
+  try {
+    add(PROJECT, 'project', '秘書業務\n=\n# 状態\n待機\n# 規約\n今日の予定をまとめる');
+    TTApplication.Instance.SeedsPanel.OpenProject(PROJECT);
+    await show();
+    expect(host.textContent).toContain('直近の実行時間（1.3秒）');
+    expect(host.textContent).toContain('文脈の組み立て　1.250秒');
+    expect(host.textContent).toContain('計測結果をJSONで保存');
+  } finally { localStorage.removeItem(key); }
+});
+
 it('ハーネスを使っていない project では、# 規約 を書く案内だけを出す', async () => {
   add(PROJECT, 'project', '計画\n=\n# 状態\n未着手');
   TTApplication.Instance.SeedsPanel.OpenProject(PROJECT);
@@ -98,4 +112,49 @@ it('未承認の訂正の提案を出し、承認・見送りを決められる'
   expect(rows[0].textContent).toContain('本人の発言:「今後は判断が要るものを先に」');
   await act(async () => { rows[0].querySelector('button')!.click(); });
   expect(decide).toHaveBeenCalledWith(vault, project, chat, 'r1-1', 'approve');
+});
+
+it('保存済みの会話からAIWork参照をクリックすると、一覧にまだないファイルもWorkingに開く', async () => {
+  const id = '2026-11-26-231508';
+  const tag = `[aiwork:${id}]`;
+  const body = `採用先 ${tag}\n旧形式 [aiview:${STATUS}]　[aiwork:不正なID]`;
+  const stored = add(CHAT, 'chat', `TASK:Seeds｜週次の改善\n## 採用します\n${body}`, { harnessChat: { projectId: PROJECT } });
+  add(STATUS, 'aiview', `現在地\n参照 ${tag}`);
+  add(PROJECT, 'project', `週次の改善\n=\n# 規約\n改善を提案\n# status\n[aiwork:${STATUS}]\n# AI議論\n[chat:${CHAT}]`);
+  const fetch = vi.spyOn(StorageManager.instance, 'getRecord').mockResolvedValue({
+    meta: { thinkid: id, category: 'aiview', title: '業務の作法', keywords: '', relatedIds: '', sizeBytes: 9,
+      isDeleted: false, createdAt: '', updatedAt: '2026-11-26T14:15:08Z' }, body: '採用した手順',
+  });
+  const app = TTApplication.Instance;
+  app.SeedsPanel.OpenProject(PROJECT);
+  await show();
+  const message = host.querySelector('.ai-chat__message--assistant')!;
+  const buttons = message.querySelectorAll('button');
+  expect(message.textContent).toBe(body);
+  expect([...buttons].map(btn => btn.textContent)).toEqual([tag, `[aiview:${STATUS}]`]);
+  expect(host.querySelector('.ai-chat__status-body button')?.textContent).toBe(tag);
+  expect(fetch).not.toHaveBeenCalled();
+  await act(async () => { buttons[0].click(); });
+  expect(fetch).toHaveBeenCalledWith(id);
+  expect(app.WorkingPanel.Areas.find(a => a.ID === app.WorkingPanel.FocusedAreaId)).toMatchObject({ ResourceID: id, MediaType: 'texteditor' });
+  expect(vault.GetThink(id)?.Content).toBe('業務の作法\n採用した手順');
+  expect(vault.GetThink(id)?.IsDirty).toBe(false);
+  expect(stored.Content).toContain(body);
+  await act(async () => { buttons[1].click(); });
+  expect(app.WorkingPanel.Areas.find(a => a.ID === app.WorkingPanel.FocusedAreaId)?.ResourceID).toBe(STATUS);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+it('見つからないAIWorkのIDはエラーとして表示し、空のPaneを開かない', async () => {
+  const id = '2026-11-26-231508-memo';
+  add(CHAT, 'chat', `TASK:Seeds｜確認\n## 結果\n[aiwork:${id}]`, { harnessChat: { projectId: PROJECT } });
+  add(PROJECT, 'project', `確認\n=\n# 規約\n確認する\n# AI議論\n[chat:${CHAT}]`);
+  const getRecord = vi.spyOn(StorageManager.instance, 'getRecord').mockResolvedValue(null);
+  const app = TTApplication.Instance;
+  app.SeedsPanel.OpenProject(PROJECT);
+  await show();
+  await act(async () => { host.querySelector<HTMLButtonElement>('.ai-chat__message button')!.click(); });
+  expect(getRecord).toHaveBeenCalledWith(id);
+  expect(host.querySelector('[role="alert"]')?.textContent).toContain(id);
+  expect(app.WorkingPanel.Areas.some(a => a.ResourceID === id)).toBe(false);
 });

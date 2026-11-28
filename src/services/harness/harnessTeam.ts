@@ -112,7 +112,7 @@ export async function runTeam(options: RunTeamOptions): Promise<BoardRow[]> {
         harness: { writableIds: [] },
         ...(cliName ? { cliName } : {}),
         ...(model ? { model } : {}),
-      });
+      }, row.id);
       const report = (res.reply ?? '').trim();
       await update(row.id, {
         state: report ? 'reported' : 'failed', ...(report ? { report } : { note: '担当の回答が空でした。' }),

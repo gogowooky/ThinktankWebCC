@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import { parseRange } from '../../utils/dateUtils';
 import { FilterHistoryPulldown } from '../ThinktankPanel/FilterHistoryPulldown';
 import { saveHistory } from '../../utils/historyUtils';
+import { useConfirmAfterChange, useThinkFieldDrop } from './useThinkFieldDrop';
 import './FilterPanel.css';
 
 export interface FilterPanelRef {
@@ -60,13 +61,26 @@ export const FilterPanel = React.memo(forwardRef<FilterPanelRef, FilterPanelProp
     focus: () => textInputRef.current?.focus(),
   }));
 
-  const handleTextKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && textValue.trim()) {
-      saveHistory(historyKey, textValue.trim());
-      setShowHistory(false);
-      onSearch?.();
-    }
+  const confirmText = () => {
+    if (!textValue.trim()) return;
+    saveHistory(historyKey, textValue.trim());
+    setShowHistory(false);
+    onSearch?.();
   };
+  const handleTextKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') confirmText();
+  };
+
+  const titleDrop = useThinkFieldDrop('title', useConfirmAfterChange(textValue, onTextChange, confirmText));
+  // 「@N」は日付を無視して現在から遡る指定なので、残すと Drop した日付が条件にならない
+  const createdDrop = useThinkFieldDrop('createdDate', date => {
+    onCreatedDateChange(date);
+    if (createdRange.trim().startsWith('@')) onCreatedRangeChange('');
+  });
+  const updatedDrop = useThinkFieldDrop('updatedDate', date => {
+    onUpdatedDateChange(date);
+    if (updatedRange.trim().startsWith('@')) onUpdatedRangeChange('');
+  });
 
   const cRangeInvalid = createdRange.trim() !== '' && !parseRange(createdRange.trim());
   const uRangeInvalid = updatedRange.trim() !== '' && !parseRange(updatedRange.trim());
@@ -75,7 +89,7 @@ export const FilterPanel = React.memo(forwardRef<FilterPanelRef, FilterPanelProp
     <div className="unified-filter-panel">
       {/* 1行目: テキストフィルタ */}
       {showTextFilter && (
-        <div className="unified-filter-row">
+        <div className="unified-filter-row" {...titleDrop.dropProps}>
           <div className="unified-filter-row-left">
             <TextIcon size={12} className="unified-filter-icon" />
             <div className="unified-filter-text-wrapper">
@@ -103,6 +117,7 @@ export const FilterPanel = React.memo(forwardRef<FilterPanelRef, FilterPanelProp
                 />
               )}
             </div>
+            {titleDrop.ghost && <div className="unified-filter-drop-ghost">{titleDrop.ghost}</div>}
           </div>
           <div className="unified-filter-row-right">
             <div className="tooltip-wrapper" data-tip="消去" data-tip-side="left">
@@ -124,7 +139,7 @@ export const FilterPanel = React.memo(forwardRef<FilterPanelRef, FilterPanelProp
       )}
 
       {showCreatedDateFilter && (
-        <div className="unified-filter-row">
+        <div className="unified-filter-row" {...createdDrop.dropProps}>
           <div className="unified-filter-row-left">
             <CalendarPlus2 size={12} className="unified-filter-icon" />
             <input
@@ -144,6 +159,7 @@ export const FilterPanel = React.memo(forwardRef<FilterPanelRef, FilterPanelProp
               data-tip-side="left"
               autoComplete="off"
             />
+            {createdDrop.ghost && <div className="unified-filter-drop-ghost">{createdDrop.ghost}</div>}
           </div>
           <div className="unified-filter-row-right">
             <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">
@@ -160,7 +176,7 @@ export const FilterPanel = React.memo(forwardRef<FilterPanelRef, FilterPanelProp
       )}
 
       {showUpdatedDateFilter && (
-        <div className="unified-filter-row">
+        <div className="unified-filter-row" {...updatedDrop.dropProps}>
           <div className="unified-filter-row-left">
             <CalendarArrowUp size={12} className="unified-filter-icon" />
             <input
@@ -180,6 +196,7 @@ export const FilterPanel = React.memo(forwardRef<FilterPanelRef, FilterPanelProp
               data-tip="範囲指定: +Nd(以降), -Nd(以前), +-Nd(前後), @Nd(現在から遡り)"
               data-tip-side="left"
             />
+            {updatedDrop.ghost && <div className="unified-filter-drop-ghost">{updatedDrop.ghost}</div>}
           </div>
           <div className="unified-filter-row-right">
             <div className="tooltip-wrapper" data-tip="条件をクリア" data-tip-side="left">

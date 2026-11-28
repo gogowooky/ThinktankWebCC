@@ -1,7 +1,7 @@
 {
   "name": "thinktank",
   "private": true,
-  "version": "2.7.7",
+  "version": "2.7.8",
   "type": "module",
   "scripts": {
     "build:electron-shared": "node scripts/build-electron-shared.mjs",
@@ -10,6 +10,8 @@
     "predev:electron": "npm run build:electron-shared",
     "build": "tsc -p tsconfig.json && vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preperf:harness": "npm run build:electron-shared",
+    "perf:harness": "node scripts/report-harness-timing.mjs",
     "lint": "eslint .",
     "pretest": "npm run build:electron-shared",
     "test": "node scripts/run-tests.mjs run",
