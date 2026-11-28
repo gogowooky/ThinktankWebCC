@@ -15,6 +15,7 @@ import { SeedsArea } from './SeedsArea';
 import { useNativeDragCleanup } from '../WorkingPanel/useNativeDragCleanup';
 import { projectTargetIds, updateProjectTargets } from '../../utils/thinkFormat';
 import './SeedsPanel.css';
+import { keySubPanels } from '../../utils/keyFocus';
 
 const MIN_WIDTH = 160;
 
@@ -128,6 +129,8 @@ export function SeedsPanel({ app, width, onResize }: Props) {
   return (
     <div
       className={`seeds-panel${isDragOver ? ' seeds-panel--drag-over' : ''}`}
+      data-key-panel="Seeds"
+      data-key-subpanel={panel.IsAreaOpen ? keySubPanels[panel.ViewMode] : 'None'}
       onDragOverCapture={handleDragOverCapture}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

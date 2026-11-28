@@ -340,6 +340,8 @@ export function WorkingArea({
     <div
       className={className}
       data-area-id={area.ID}
+      data-key-panel="Working"
+      data-key-subpanel={area.Title}
       tabIndex={-1}
       onMouseDown={onFocus}
       onMouseEnter={handleDragEnter}

@@ -39,6 +39,7 @@ import { INIT_AREA_WIDTH, useResolvedAreaWidth } from '../../utils/panelAreaWidt
 import { clientPointToPosition } from '../../utils/editorDropPosition';
 import { chatAiMetadata } from '../../services/chatAiSetting';
 import './WorkingPanel.css';
+import { keySubPanels } from '../../utils/keyFocus';
 
 const NEW_WORKING_CHAT_TITLE = 'ASK:Working｜新しい相談';
 
@@ -884,7 +885,8 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   // ── レンダリング ──────────────────────────────────────────────────
 
   return (
-    <div className="working-panel">
+    <div className="working-panel" data-key-panel="WorkingSetting"
+      data-key-subpanel={panel.IsAreaOpen ? keySubPanels[panel.ViewMode] : 'None'}>
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
       <WorkingTabBar
@@ -941,6 +943,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
       <div
         ref={bodyRef}
         className="ContentsArea"
+        data-key-panel="Working"
         onDragOverCapture={handleBodyDragOverCapture}
         onDragOver={handleBodyDragOver}
         onDragLeave={handleBodyDragLeave}

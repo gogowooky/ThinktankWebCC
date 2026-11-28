@@ -14,6 +14,7 @@ import { Splitter } from '../Layout/Splitter';
 import { HarvestTabBar, type HarvestViewMode } from './HarvestTabBar';
 import { HarvestArea } from './HarvestArea';
 import './HarvestPanel.css';
+import { keySubPanels } from '../../utils/keyFocus';
 
 const MIN_WIDTH = 160;
 
@@ -47,7 +48,8 @@ export function HarvestPanel({ app, width, onResize }: Props) {
   }, [onResize]);
 
   return (
-    <div className="harvest-panel">
+    <div className="harvest-panel" data-key-panel="Harvest"
+      data-key-subpanel={panel.IsAreaOpen ? keySubPanels[panel.ViewMode === 'project' ? 'aiview' : panel.ViewMode] : 'None'}>
       {panel.IsAreaOpen && (
         <Splitter onResize={handleResize} />
       )}
