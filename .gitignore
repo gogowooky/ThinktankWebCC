@@ -41,6 +41,10 @@ npm-debug.log*
 # Agent worktrees（Gitの追跡対象外）
 .agent/worktrees/
 
+# PCごとのAIツールの許可設定（一回限りのコマンドやPC固有のパスがたまるので共有しない）
+.claude/settings.local.json
+.agent/settings.local.json
+
 # C# build artifacts
 bin/
 obj/

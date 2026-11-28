@@ -1,25 +1,27 @@
 ---
 name: git-update
-description: GitHubに更新分を登録し、その際version情報を更新する。
+description: 本アプリの更新分をGitHubに登録し、その際version情報を更新する。
 ---
 
 以下は確認なしで自律的に進めること。
+（`.claude/skills/git-update/skill.md` と `.agent/skills/git-update/skill.md` は同じ内容に保つ）
 
-Githubにコミットする
+1. 変更をGitHubにコミットする
 
-copyright.txtを以下に従って更新する
-　version: 3桁目を+1する
+2. copyright.txtを以下に従って更新する（画面のステータスバーが読む）
+　version: 3桁目を+1する（package.json の version も同じ値にする）
 　copyright.year: コミット年
 　branchName: コミットしたブランチ名
 　commitPC: コミットしたPC名
-　commitID: コミットID(先頭7桁)
-　commitDateTime: コミット日時
-　commitMessage: コミットメッセージ
+　commitId: 1.のコミットID(先頭7桁)
+　commitDateTime: 1.のコミット日時
+　commitMessage: 1.のコミットメッセージ
 
-README.mdの先頭（見出し直下）に、以下を新しいエントリとして追記する（新しい順）
-　・コミットしたバージョン番号、コミットタイトル
-　・コミット日、コミット番号
-　・コミット内容
-README.mdが存在しない場合は新規作成する
+3. CHANGELOG.mdの先頭（コメント行の直下）に、新しいエントリを追記する（新しい順）
+　・見出し: `### v<バージョン> <コミットタイトル>`
+　・日付、コミット番号
+　・コミット内容: 箇条書きで3〜5行。詳しい経緯は書かない（コミットメッセージと git log にある）
+　CHANGELOG.md は大きいので、全体を読まずに先頭の数十行だけを読んで追記する
+　README.md には追記しない
 
-Githubにプッシュする
+4. 2.と3.を `chore: record v<バージョン> update` としてコミットし、GitHubにプッシュする
