@@ -7,6 +7,7 @@
  */
 
 import { useCallback } from 'react';
+import { keySubPanels } from '../../utils/keyFocus';
 import { TTApplication } from '../../views/TTApplication';
 import { useAppUpdate } from '../../hooks/useAppUpdate';
 import { PanelArea } from '../Layout/PanelArea';
@@ -56,7 +57,8 @@ export function ThinktankPanel({ app, width, onResize, layoutMode, onLayoutModeC
   }, [app]);
 
   return (
-    <div className="thinktank-panel">
+    <div className="thinktank-panel" data-key-panel="Thinktank"
+      data-key-subpanel={panel.IsAreaOpen ? keySubPanels[panel.ViewMode] : 'None'}>
       <ThinktankTabBar
         isOpen={panel.IsAreaOpen}
         onToggle={handleToggle}

@@ -34,12 +34,22 @@
 　
 
 # Application ======================================================================================================
-## Status 実装： Thinktank.KeyFocused.Panel
-KeyboardフォーカスがあるPanelを保持・設定する。保持する値は以下の通り
-Thinktank, Seeds, WorkingSetting, Working, Harvest, ToolBar, None
+## Status 完了：　261128　Thinktank.KeyFocused.Panel
+description:    キーボードフォーカスのあるパネル
+key:            Thinktank.KeyFocused.Panel
+current:        None
+default:        None
+type:           string
+candidates:     ^(Thinktank|Seeds|WorkingSetting|Working|Harvest|ToolBar|None)$
 
-## Status 実装： Thinktank.KeyFocused.SubPanel
-KeyboardフォーカスがあるSubPanelを保持・設定する。保持する値は以下の通り
+## Status 完了：　261128　Thinktank.KeyFocused.SubPanel
+description:    キーボードフォーカスのあるサブパネル（Working は Pane タイトル）
+key:            Thinktank.KeyFocused.SubPanel
+current:        None
+default:        None
+type:           string
+candidates:     .*
+
 Thinktank: Filer, Project, AIView, AIChat, Config, None
 Seeds: Filer, Project, AIView, AIChat, Config, None
 WorkingSetting: PaneConfig, AIView, AIChat, TextEditorConfig, ChatConfig, MarkdownConfig, DataGridConfig, CardConfig, GraphConfig, HtmlConfig, None
@@ -47,9 +57,16 @@ Working: {PaneTitle}, None
 Harvest: AIView, AIChat, Config, None
 ToolBar: Status, Highlighter, KeyAction, Command, Search, Reminder, Copyright, None
 
-## Status 実装： Thinktank.KeyFocused.UIComponent
-KeyboardフォーカスがあるComponentを保持・設定する。保持する値は以下の通り
-TextEditor, MarkdownViewer, AIChat, ThinkFiler, DataGrid, Graph, Card, Html, Menu, Dialog 
+## Status 完了：　261128　Thinktank.KeyFocused.UIComponent
+description:    キー入力を受ける UI 部品
+key:            Thinktank.KeyFocused.UIComponent
+current:        None
+default:        None
+type:           string
+candidates:     ^(TextEditor|MarkdownViewer|AIChatTextBox|ThinkFiler|DataGrid|Graph|Card|Html|Menu|Dialog|None)$
+
+ToolBar の Status 欄に以下を入力すると、フォーカスの移動に合わせて3つの現在値を確認できる。
+Thinktank.KeyFocused.Panel,Thinktank.KeyFocused.SubPanel,Thinktank.KeyFocused.UIComponent
 
 
 ## Status：　260710　Application.CheckedItem.IDs

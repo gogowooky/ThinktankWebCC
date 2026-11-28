@@ -413,7 +413,7 @@ export function ApplicationStatusBarArea({ panel }: Props) {
   };
 
   return (
-    <div className="ApplicationStatusBarArea">
+    <div className="ApplicationStatusBarArea" data-key-panel="ToolBar" data-key-subpanel={panel.ToolBarMode}>
 
       {/* 起動モードインジケータ */}
       <div

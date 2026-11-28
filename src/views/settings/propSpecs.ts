@@ -2,10 +2,19 @@ import type { PropSpec } from './types';
 import { registerColorStatusSpecs } from './colorSpecs';
 import { panelSpecs } from './panelSpecs';
 import { applicationSpecs } from './applicationSpecs';
+import { keyComponentCandidates, readKeyFocus } from '../../utils/keyFocus';
 import { workingSpecs } from './workingSpecs';
 import { editorSpecs } from './editorSpecs';
 import { toolbarSpecs } from './toolbarSpecs';
 import { aiSpecs, aiChatModelNames } from './aiSpecs';
+
+function keyFocusSpec(field: keyof ReturnType<typeof readKeyFocus>, description: string, candidates: string): PropSpec {
+  return {
+    panel: 'Application', default: 'None', type: 'string', isConst: true, description, candidates,
+    get: () => readKeyFocus()[field],
+    set: () => {},
+  };
+}
 
 // テーブルの並び順と旧設定の適用順を保持する。
 export const PROP_SPECS: Record<string, PropSpec> = {
@@ -54,6 +63,9 @@ export const PROP_SPECS: Record<string, PropSpec> = {
   'ToolBar.SearchMode.Text:SearchID': toolbarSpecs['ToolBar.SearchMode.Text:SearchID'],
   'ToolBar.ReminderMode.Text': toolbarSpecs['ToolBar.ReminderMode.Text'],
   'Application.FocusedPanel.Name': applicationSpecs['Application.FocusedPanel.Name'],
+  'Thinktank.KeyFocused.Panel': keyFocusSpec('Panel', 'キーボードフォーカスのあるパネル', '^(Thinktank|Seeds|WorkingSetting|Working|Harvest|ToolBar|None)$'),
+  'Thinktank.KeyFocused.SubPanel': keyFocusSpec('SubPanel', 'キーボードフォーカスのあるサブパネル（Working は Pane タイトル）', '.*'),
+  'Thinktank.KeyFocused.UIComponent': keyFocusSpec('UIComponent', 'キー入力を受ける UI 部品', keyComponentCandidates),
   'HarvestPanel.Area.IsOpen': panelSpecs['HarvestPanel.Area.IsOpen'],
   'HarvestPanel.Area.OpenWidth': panelSpecs['HarvestPanel.Area.OpenWidth'],
   'HarvestPanel.Mode.Name': panelSpecs['HarvestPanel.Mode.Name'],

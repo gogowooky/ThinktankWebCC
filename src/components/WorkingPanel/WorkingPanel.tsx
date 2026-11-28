@@ -27,6 +27,7 @@ import { LayoutView, type WorkingLayoutShared } from './WorkingLayoutView';
 import { useWorkingPanelDrop } from './useWorkingPanelDrop';
 import { useWorkingFileCommands } from './useWorkingFileCommands';
 import './WorkingPanel.css';
+import { keySubPanels } from '../../utils/keyFocus';
 
 // 初期幅は utils/panelAreaWidth.ts（INIT_AREA_WIDTH.Working）に集約
 const MIN_SETTINGS_WIDTH     = 120;
@@ -199,7 +200,8 @@ export function WorkingPanel({ app, layoutMode }: Props) {
   // ── レンダリング ──────────────────────────────────────────────────
 
   return (
-    <div className="working-panel">
+    <div className="working-panel" data-key-panel="WorkingSetting"
+      data-key-subpanel={panel.IsAreaOpen ? keySubPanels[panel.ViewMode] : 'None'}>
 
       {/* ── 左縦リボン ───────────────────────────────────────── */}
       <WorkingTabBar
@@ -256,6 +258,7 @@ export function WorkingPanel({ app, layoutMode }: Props) {
       <div
         ref={bodyRef}
         className="ContentsArea"
+        data-key-panel="Working"
         onDragOverCapture={handleBodyDragOverCapture}
         onDragOver={handleBodyDragOver}
         onDragLeave={handleBodyDragLeave}

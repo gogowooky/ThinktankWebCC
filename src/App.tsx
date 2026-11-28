@@ -14,6 +14,7 @@ import { getModelNames, mergeDiscoveredModels, NO_MODEL } from './services/aiCha
 import { TTShortcutManager } from './views/TTShortcutManager'
 import { registerFocusedPanelActions } from './views/TTFocusedPanelActions'
 import { getFocusName } from './utils/getFocusName'
+import { observeKeyFocus } from './utils/keyFocus'
 import { isIPhone } from './utils/deviceInfo'
 import { flushAllPanes } from './utils/unsavedGuard'
 import { StorageConflictError } from './services/storage/IStorageBackend'
@@ -176,6 +177,7 @@ export default function App() {
     const handleCtxMenu   = (e: MouseEvent)    => TTShortcutManager.instance.handleMouseEvent('contextmenu', e)
     const handleWheel     = (e: WheelEvent)    => TTShortcutManager.instance.handleWheelEvent(e)
     let _focusRaf = 0
+    const stopKeyFocus = observeKeyFocus(keys => TTUIStateManager.instance.notifyConstPropertiesChanged(keys))
     const handleFocusIn   = () => {
       cancelAnimationFrame(_focusRaf)
       _focusRaf = requestAnimationFrame(() => {
@@ -231,6 +233,7 @@ export default function App() {
       window.removeEventListener('blur',          handleWindowBlur)
       window.removeEventListener('unhandledrejection', handleUnhandledRejection)
       disposeSaveStatus()
+      stopKeyFocus()
       window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('pagehide', handlePageHide)
       document.removeEventListener('visibilitychange', handleFlushOnHide)
